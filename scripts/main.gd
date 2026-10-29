@@ -7,7 +7,6 @@ const CORE_RADIUS := 14.0
 const CORE_MAX_HP := 10
 const MERGE_DIST := 30.0
 const SAVE_PATH := "user://best.cfg"
-const CHOOSE_HINT := "선택지를 고르세요 (속성·공격방식·강화·연계). 설치된 오브젝트를 클릭하면 위치·방향 변경   V: 선택지 내리기"
 const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 위치·방향 변경"
 const PAUSE_TEXT := "일시정지\nP / Esc: 계속   R: 처음부터   M: 소리   O: 설정   F11: 전체 화면"
 const PLACE_HINT := "클릭: 설치 (오브젝트 위면 속성 겹치기)   오브젝트 꾹 누르기·끌기: 옮기기\n우클릭/Esc: 다시 고르기"
@@ -411,8 +410,8 @@ func _show_toast(t: String) -> void:
 
 
 func _update_hud() -> void:
-	hud.text = "웨이브 %d   점수 %d   중앙 %d/%d   최고 %d (웨이브 %d)" % [
-		wave, score, maxi(core_hp, 0), core_max, best_score, best_wave]
+	hud.text = "웨이브 %d   점수 %s   중앙 %d/%d   최고 %s (웨이브 %d)" % [
+		wave, num(score), maxi(core_hp, 0), core_max, num(best_score), best_wave]
 	if Meta.rules != 1:
 		hud.text += "   [%s]" % Rules.NAMES[Meta.rules]
 	if not selected.is_empty():
@@ -428,6 +427,16 @@ func _update_hud() -> void:
 
 
 # ---------- 단계 ----------
+
+## 큰 숫자를 천 단위 쉼표로 (3864489 → 3,864,489).
+static func num(n: int) -> String:
+	var t := str(absi(n))
+	var out := ""
+	while t.length() > 3:
+		out = "," + t.right(3) + out
+		t = t.left(t.length() - 3)
+	return ("-" if n < 0 else "") + t + out
+
 
 ## 11웨이브부터 구체 체력이 웨이브마다 곱으로 늘어난다 (오브젝트 성장 속도에 맞춤, Rules.hp_growth).
 static func hp_growth(w: int) -> float:
@@ -517,7 +526,7 @@ func _start_choose(new_round := true) -> void:
 	cards_hidden = false
 	choice_box.visible = true
 	_update_reroll_btn()
-	hint.text = CHOOSE_HINT + (" (%d개 남음)" % picks_left if picks_left > 1 else "")
+	hint.text = _choose_hint()
 
 
 func _make_choices() -> void:
@@ -640,6 +649,12 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 		b.mouse_entered.connect(func(): hover_elem = card["e"])
 		b.mouse_exited.connect(func(): hover_elem = -1)
 	return b
+
+
+## 고르기 안내. 이번 쉬는 시간에 더 고를 수가 있으면 첫 줄에 붙인다 (V 줄 끝에 붙어 내리기 횟수처럼 읽히던 것).
+func _choose_hint() -> String:
+	var left := " (%d개 남음)" % picks_left if picks_left > 1 else ""
+	return "선택지를 고르세요%s. 설치된 오브젝트를 클릭하면 위치·방향 변경\nV: 선택지 내리기" % left
 
 
 ## 띄어쓰기 단위로 줄을 나눈다. Godot 자동 줄바꿈은 한글을 음절마다 끊어 "형\n태"처럼 단어가 잘린다.
@@ -988,10 +1003,11 @@ func _game_over() -> void:
 	Meta.games += 1
 	_save_best()
 	var ach := "\n새 업적: " + ", ".join(new_achievements) if not new_achievements.is_empty() else ""
-	over_label.text = "게임 오버 (%s · %s)\n웨이브 %d · 점수 %d%s\n처치 %d · 최고 콤보 %d · 오브젝트 %d개%s\nR 또는 클릭: 다시 시작   Esc: 메뉴" % [Meta.MAPS[Meta.map_id]["name"], Rules.NAMES[Meta.rules], wave, score, record if record != "" else "   (최고 웨이브 %d)" % best_wave, kills, best_combo, towers.get_child_count(), ach]
+	over_label.text = "게임 오버 (%s · %s)\n웨이브 %d · 점수 %s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s\nR 또는 클릭: 다시 시작   Esc: 메뉴" % [Meta.MAPS[Meta.map_id]["name"], Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, num(kills), best_combo, towers.get_child_count(), ach]
 	over_label.visible = true
 	sfx.play("over", 0.0)
 	reroll_btn.visible = false
+	choice_box.visible = false
 	hint.text = ""
 
 
@@ -1293,7 +1309,7 @@ func _restore_hint() -> void:
 		Phase.PLACE:
 			hint.text = _place_hint()
 		Phase.CHOOSE:
-			hint.text = CHOOSE_HINT + (" (%d개 남음)" % picks_left if picks_left > 1 else "")
+			hint.text = _choose_hint()
 		Phase.READY:
 			hint.text = READY_HINT
 	if not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY, Phase.PLACE]:
@@ -1464,7 +1480,7 @@ func _menu_row(box: VBoxContainer, prev: Callable, next: Callable) -> Label:
 func _refresh_menu() -> void:
 	var m: Dictionary = Meta.MAPS[Meta.map_id]
 	var best := Meta.best_of(Meta.key())
-	map_label.text = "맵: %s  (←/→)\n%s\n최고 기록  웨이브 %d · 점수 %d" % [m["name"], m["desc"], best[0], best[1]]
+	map_label.text = "맵: %s  (←/→)\n%s\n최고 기록  웨이브 %d · 점수 %s" % [m["name"], m["desc"], best[0], num(best[1])]
 	rules_label.text = "규칙: %s  (↑/↓)\n%s" % [Rules.NAMES[Meta.rules], Rules.DESCS[Meta.rules]]
 	var ts: Dictionary = Meta.TOWER_SKINS[Meta.tower_skin]
 	skin_label.text = "오브젝트 모양: " + ts["name"]
@@ -1554,8 +1570,8 @@ func _toggle_records() -> void:
 	var lines := PackedStringArray(["[맵별 최고 기록 · %s]   (아무 곳이나 클릭: 닫기)" % Rules.NAMES[Meta.rules]])
 	for id in Meta.MAP_IDS:
 		var b := Meta.best_of(Meta.key(id))
-		lines.append("  %s: 웨이브 %d · 점수 %d" % [Meta.MAPS[id]["name"], b[0], b[1]])
-	lines.append("  총 처치 %d · 플레이 %d판" % [Meta.total_kills, Meta.games])
+		lines.append("  %s: 웨이브 %d · 점수 %s" % [Meta.MAPS[id]["name"], b[0], num(b[1])])
+	lines.append("  총 처치 %s · 플레이 %d판" % [num(Meta.total_kills), Meta.games])
 	lines.append("")
 	lines.append("[업적] %d / %d" % [Meta.achieved.size(), Meta.ACH_IDS.size()])
 	for id in Meta.ACH_IDS:
@@ -1724,7 +1740,7 @@ func _back_to_choose() -> void:
 	phase = Phase.CHOOSE
 	choice_box.visible = not cards_hidden
 	_update_reroll_btn()
-	hint.text = CHOOSE_HINT + (" (%d개 남음)" % picks_left if picks_left > 1 else "")
+	hint.text = _choose_hint()
 
 
 ## 쉬는 시간에 설치된 오브젝트를 클릭하면 위치·방향을 다시 정한다.
