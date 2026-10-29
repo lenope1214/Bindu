@@ -71,7 +71,7 @@ func affect(orbs: Array, delta: float) -> void:
 				if inside:
 					var away: Vector2 = (o.position - position).normalized()
 					o.position = position + away * (radius + o.radius())
-					o.root(0.1)
+					o.root(0.1, false)
 					_hit(o, 4.0 * Tower.pw(level) * delta, delta * 3.0)
 					hp -= 2.0 * delta
 	if kind == "rock" and hp <= 0.0:

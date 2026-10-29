@@ -28,12 +28,16 @@ var spawn_interval := 1.0
 var lanes: Array[float] = []  # 다음 웨이브 구체가 들어올 방향(라디안)
 var picks_left := 0  # 이번 쉬는 시간에 남은 설치 횟수
 var moving: Tower = null  # 위치를 옮기는 중인 오브젝트
-# 카드를 고른 뒤(PLACE) 오브젝트를 꾹 누르거나 끌면 카드를 유지한 채 옮긴다
+# 오브젝트를 꾹 누르거나 끌면 바로 옮긴다(카드를 고른 뒤에도). 선택된 오브젝트를 끌면 함께 움직인다.
 var press_t: Tower = null
 var press_pos := Vector2.ZERO
 var press_ms := 0
 var dragging := false
-var drag_orig := Vector2.ZERO
+var drag_group: Array = []  # 함께 끄는 오브젝트들
+var drag_origs: Array = []  # 끌기 전 위치
+var selected: Array = []  # 여러 개 선택 (빈 곳을 끌어 상자로, Shift/Ctrl+클릭으로 더하고 빼기)
+var boxing := false  # 선택 상자를 끄는 중
+var box_start := Vector2.ZERO
 var cards_hidden := false  # 선택지를 내려 필드를 보는 중
 var hide_btn: Button
 var move_orig_pos := Vector2.ZERO
@@ -71,6 +75,7 @@ var stars := PackedVector3Array()  # 배경 점 (x, y, 밝기)
 
 var hud: Label
 var hint: Label
+var ver_label: Label  # 왼쪽 아래 구석: 게임 버전 · 규칙 버전
 var toast: Label
 var toast_timer := 0.0
 var banner: Label
@@ -208,12 +213,22 @@ func _build_ui() -> void:
 
 	hint = Label.new()
 	hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	hint.position = Vector2(16, -56)
+	hint.position = Vector2(16, -66)
 	hint.size = Vector2(630, 44)
 	hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.add_theme_font_size_override("font_size", 15)
 	root.add_child(hint)
+
+	ver_label = Label.new()
+	ver_label.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	ver_label.position = Vector2(16, -22)
+	ver_label.size = Vector2(400, 18)
+	ver_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ver_label.add_theme_font_size_override("font_size", 12)
+	ver_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.45))
+	ver_label.text = _ver_text()
+	root.add_child(ver_label)
 
 	toast = Label.new()
 	toast.set_anchors_preset(Control.PRESET_CENTER_TOP)
@@ -409,6 +424,8 @@ func _update_hud() -> void:
 		wave, score, maxi(core_hp, 0), core_max, best_score, best_wave]
 	if Meta.rules != 1:
 		hud.text += "   [%s]" % Rules.NAMES[Meta.rules]
+	if not selected.is_empty():
+		hud.text += "   선택 %d개" % selected.size()
 	var nt := towers.get_child_count()
 	if nt > 1:
 		hud.text += "   무리 +%d%% (오브젝트 %d개)" % [roundi(Rules.crowd * (nt - 1) * 100), nt]
@@ -444,6 +461,13 @@ func _apply_rules() -> void:
 	Tower.tax_step = Rules.tax_step
 	if legend:
 		_refresh_legend()
+	if ver_label:
+		ver_label.text = _ver_text()
+
+
+## 실행 중인 빌드가 최신인지 알아보도록 구석에 표시 (버전은 project.godot의 config/version).
+func _ver_text() -> String:
+	return "빈두 v%s · 규칙 %s" % [ProjectSettings.get_setting("application/config/version", "?"), Rules.NAMES[Meta.rules]]
 
 
 static func wave_size(w: int) -> int:
@@ -884,6 +908,9 @@ func _update_auto_btn() -> void:
 
 func _start_wave() -> void:
 	countdown = -1.0
+	_drop_press()
+	boxing = false
+	selected.clear()
 	start_btn.visible = false
 	wave += 1
 	phase = Phase.WAVE
@@ -991,7 +1018,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_start_wave()
 		elif event.keycode == KEY_SPACE and phase == Phase.WAVE:
 			_toggle_speed()
-		elif event.keycode == KEY_ESCAPE and phase in [Phase.PLACE, Phase.AIM, Phase.MOVE]:
+		elif event.keycode == KEY_ESCAPE and (phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] or press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
 			_cancel_step()
 		elif event.keycode == KEY_P or event.keycode == KEY_ESCAPE:
 			_toggle_pause()
@@ -1001,11 +1028,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		if press_t:
 			_release_press()
 			return
+		if boxing:
+			_finish_box()
+			return
 		# 누른 채 끌어서 놓으면 그 방향으로 바로 확정
 		if phase == Phase.AIM and get_global_mouse_position().distance_to(place_pos) > 40.0 and Time.get_ticks_msec() - aim_start_ms > 150:
 			_confirm_aim()
 		return
 	if not (event is InputEventMouseButton and event.pressed):
+		return
+	if event.button_index == MOUSE_BUTTON_RIGHT and (press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
+		_cancel_step()
 		return
 	if records_panel.visible:
 		records_panel.visible = false
@@ -1024,7 +1057,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if phase in [Phase.CHOOSE, Phase.READY] and event.button_index == MOUSE_BUTTON_LEFT:
 		var t := _tower_at(mpos)
 		if t:
-			_start_move(t)
+			# 짧게 클릭: 옮기기(클릭으로 위치·방향), Shift/Ctrl+클릭: 선택에 더하기·빼기, 끌기: 바로 이동
+			_begin_press(t, mpos)
+		else:
+			# 빈 곳을 끌면 선택 상자
+			boxing = true
+			box_start = mpos
 		return
 	if phase == Phase.MOVE:
 		if event.button_index == MOUSE_BUTTON_LEFT:
@@ -1047,11 +1085,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		var target := _tower_at(mpos)
 		if target:
 			# 클릭은 손을 뗄 때 처리한다. 꾹 누르거나 끌면 카드를 유지한 채 옮긴다.
-			press_t = target
-			press_pos = mpos
-			press_ms = Time.get_ticks_msec()
-			dragging = false
-			drag_orig = target.position
+			_begin_press(target, mpos)
 			return
 		if mpos.distance_to(center()) < 50.0:
 			_show_toast("중앙 점에 너무 가까워요")
@@ -1091,13 +1125,19 @@ func _place_on(target: Tower) -> void:
 	_after_place()
 
 
-## PLACE에서 누른 오브젝트: 꾹 누르거나(0.35초) 끌면 옮기기 시작한다.
+func _begin_press(t: Tower, mpos: Vector2) -> void:
+	press_t = t
+	press_pos = mpos
+	press_ms = Time.get_ticks_msec()
+	dragging = false
+
+
+## 누른 오브젝트: 꾹 누르거나(0.35초) 끌면 옮기기 시작한다. 선택된 것을 끌면 선택 전부가 함께.
 func _update_press() -> void:
 	if not press_t:
 		return
-	if phase != Phase.PLACE or not is_instance_valid(press_t):
-		press_t = null
-		dragging = false
+	if not phase in [Phase.PLACE, Phase.CHOOSE, Phase.READY] or not is_instance_valid(press_t):
+		_drop_press()
 		return
 	var mpos := get_global_mouse_position()
 	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
@@ -1105,35 +1145,104 @@ func _update_press() -> void:
 		return
 	if not dragging and (mpos.distance_to(press_pos) > 12.0 or Time.get_ticks_msec() - press_ms >= 350):
 		dragging = true
-		press_t.place_pop = 1.0
-		hint.text = "끌어서 옮기는 중: 놓으면 그 자리에 둠 (방향은 그대로)   우클릭/Esc: 취소"
+		drag_group = selected.duplicate() if press_t in selected else [press_t]
+		drag_origs = drag_group.map(func(t): return t.position)
+		for t in drag_group:
+			t.place_pop = 1.0
+		hint.text = "끌어서 옮기는 중%s: 놓으면 그 자리에 둠 (방향은 그대로)   우클릭/Esc: 취소" % (" (%d개)" % drag_group.size() if drag_group.size() > 1 else "")
 	if dragging:
-		press_t.position = drag_orig + mpos - press_pos
-		press_t.queue_redraw()
+		for i in drag_group.size():
+			if is_instance_valid(drag_group[i]):
+				drag_group[i].position = drag_origs[i] + mpos - press_pos
+				drag_group[i].queue_redraw()
 
 
-## 누른 오브젝트에서 손을 뗐을 때: 끌었으면 그 자리에 두고, 짧은 클릭이면 카드를 넣는다.
+## 누른 오브젝트에서 손을 뗐을 때: 끌었으면 그 자리에 두고, 짧은 클릭이면 원래 클릭 동작.
 func _release_press() -> void:
 	var t := press_t
 	press_t = null
-	if not is_instance_valid(t) or phase != Phase.PLACE:
-		dragging = false
+	if not is_instance_valid(t) or not phase in [Phase.PLACE, Phase.CHOOSE, Phase.READY]:
+		_drop_press()
 		return
 	if not dragging:
-		_place_on(t)
+		if phase == Phase.PLACE:
+			_place_on(t)
+		elif Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META):
+			if t in selected:
+				selected.erase(t)
+			else:
+				selected.append(t)
+			_restore_hint()
+		else:
+			selected.clear()
+			_start_move(t)
 		return
 	dragging = false
-	hint.text = _place_hint()
-	if t.position.distance_to(center()) < 50.0:
-		_show_toast("중앙 점에 너무 가까워요")
-		t.position = drag_orig
-	elif _tower_at(t.position, t):
-		_show_toast("다른 오브젝트와 겹칠 수 없어요")
-		t.position = drag_orig
-	elif t.position.distance_to(drag_orig) > 4.0:
+	# 놓을 수 없는 자리가 하나라도 있으면 모두 원래 자리로
+	var bad := ""
+	for o in drag_group:
+		if not is_instance_valid(o):
+			continue
+		if o.position.distance_to(center()) < 50.0:
+			bad = "중앙 점에 너무 가까워요"
+		else:
+			for other in towers.get_children():
+				if not other in drag_group and other.position.distance_to(o.position) < MERGE_DIST:
+					bad = "다른 오브젝트와 겹칠 수 없어요"
+	if bad != "":
+		_show_toast(bad)
+		_revert_drag()
+	elif drag_group[0].position.distance_to(drag_origs[0]) > 4.0:
 		sfx.play("place")
-	t.place_pop = 1.0
-	t.queue_redraw()
+	for o in drag_group:
+		if is_instance_valid(o):
+			o.place_pop = 1.0
+			o.queue_redraw()
+	drag_group.clear()
+	_restore_hint()
+
+
+func _revert_drag() -> void:
+	for i in drag_group.size():
+		if is_instance_valid(drag_group[i]):
+			drag_group[i].position = drag_origs[i]
+			drag_group[i].queue_redraw()
+
+
+func _drop_press() -> void:
+	if dragging:
+		_revert_drag()
+	press_t = null
+	dragging = false
+	drag_group.clear()
+
+
+## 선택 상자를 놓았을 때: 상자 안 오브젝트 선택 (Shift/Ctrl: 기존 선택에 더함). 짧은 클릭이면 선택 해제.
+func _finish_box() -> void:
+	boxing = false
+	var r := Rect2(box_start, get_global_mouse_position() - box_start).abs()
+	var add := Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META)
+	if not add:
+		selected.clear()
+	if r.size.length() > 8.0:
+		for t in towers.get_children():
+			if r.grow(Tower.RADIUS * 0.5).has_point(t.position) and not t in selected:
+				selected.append(t)
+	_restore_hint()
+
+
+## 단계에 맞는 안내 문구로 되돌린다 (선택 중이면 선택 안내).
+func _restore_hint() -> void:
+	selected = selected.filter(func(t): return is_instance_valid(t))
+	match phase:
+		Phase.PLACE:
+			hint.text = _place_hint()
+		Phase.CHOOSE:
+			hint.text = CHOOSE_HINT + (" (%d개 남음)" % picks_left if picks_left > 1 else "")
+		Phase.READY:
+			hint.text = READY_HINT
+	if not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY, Phase.PLACE]:
+		hint.text = "선택 %d개: 선택한 오브젝트 하나를 끌면 함께 이동   Shift/Ctrl+클릭: 더하기·빼기   Esc/우클릭: 선택 해제" % selected.size()
 
 
 ## 방향 확정 (클릭, 또는 끌었다 놓기).
@@ -1523,12 +1632,15 @@ func _apply_card(target: Tower) -> void:
 ## 우클릭·Esc: 방향 고르기 → 위치 고르기 → 오브젝트 고르기 순으로 한 단계 되돌린다.
 func _cancel_step() -> void:
 	if press_t:
-		if dragging and is_instance_valid(press_t):
-			press_t.position = drag_orig
-			press_t.queue_redraw()
-		press_t = null
-		dragging = false
-		hint.text = _place_hint()
+		_drop_press()
+		_restore_hint()
+		return
+	if boxing:
+		boxing = false
+		return
+	if not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY]:
+		selected.clear()
+		_restore_hint()
 		return
 	if moving:
 		moving.position = move_orig_pos
@@ -2039,14 +2151,14 @@ func _update_fx(delta: float) -> void:
 
 ## 마우스를 올린 오브젝트의 정보.
 func _draw_tooltip() -> void:
-	if phase in [Phase.PLACE, Phase.GAMEOVER, Phase.MOVE, Phase.AIM] or title_label.visible:
+	if phase in [Phase.PLACE, Phase.GAMEOVER, Phase.MOVE, Phase.AIM] or title_label.visible or dragging or boxing:
 		return
 	var t := _tower_at(get_global_mouse_position())
 	if t == null:
 		_draw_orb_tooltip()
 		return
 	var lines: Array = []  # [글자, 색]
-	lines.append([t.title() + ("   (클릭: 옮기기)" if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""), Color.WHITE])
+	lines.append([t.title() + ("   (클릭: 옮기기 · 끌기: 바로 이동)" if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""), Color.WHITE])
 	lines.append(["공격방식: %s Lv%d - %s" % [Pat.pname(t.pattern), t.plv, Pat.PATTERNS[t.pattern]["desc"]], Pat.pcolor(t.pattern).lightened(0.2)])
 	for e in t.order:
 		lines.append(["%s Lv%d: %s" % [Elem.NAMES[e], t.lv(e), Elem.RIDER[e]], Elem.COLORS[e]])
@@ -2087,6 +2199,7 @@ func _draw_orb_tooltip() -> void:
 		if o.splits: parts.append("분열")
 		if o.burn_t > 0.0: parts.append("화상")
 		if o.poison_t > 0.0: parts.append("중독")
+		if o.root_immune > 0.0: parts.append("기절 면역")
 		if o.vuln_t > 0.0: parts.append("약화")
 		if o.slow_timer > 0.0: parts.append("감속")
 		if o.frozen_t > 0.0: parts.append("빙결")
@@ -2345,20 +2458,32 @@ func _draw() -> void:
 	if phase == Phase.MOVE and moving:
 		Tower.draw_range(self, mpos, moving.dir, moving.spec())
 	# 연결선: 옮길 자리에서 이어지는지 미리 보여 준다
-	var mover: Tower = moving if phase == Phase.MOVE else (press_t if dragging else null)
-	if mover:
+	var movers: Array = [moving] if phase == Phase.MOVE and moving else (drag_group if dragging else [])
+	for mover in movers:
+		if not is_instance_valid(mover):
+			continue
 		for o in mover.links:
-			if is_instance_valid(o):
-				var ok := mover.position.distance_to(o.position) <= Rules.link_range
+			if is_instance_valid(o) and not o in movers:
+				var ok: bool = mover.position.distance_to(o.position) <= Rules.link_range
 				draw_arc(o.position, Rules.link_range, 0, TAU, 64, Color(1, 1, 1, 0.15) if ok else Color(1, 0.4, 0.4, 0.35), 1.5)
 				if ok:
 					draw_line(mover.position, o.position, Color(0.6, 1, 1, 0.6), 2.0)
 				else:
 					draw_dashed_line(mover.position, o.position, Color(1, 0.4, 0.4, 0.7), 2.0, 10.0)
-	if phase in [Phase.CHOOSE, Phase.WAVE, Phase.READY]:
+	if phase in [Phase.CHOOSE, Phase.WAVE, Phase.READY] and not dragging:
 		var hov := _tower_at(mpos)
 		if hov:
 			Tower.draw_range(self, hov.position, hov.dir, hov.spec())
+	# 여러 개 선택: 하늘색 점선 고리, 선택 상자
+	for t in selected:
+		if is_instance_valid(t):
+			for i in 8:
+				var a0 := TAU * i / 8 + Time.get_ticks_msec() / 800.0
+				draw_arc(t.position, Tower.RADIUS + 12.0, a0, a0 + 0.45, 6, Color(0.5, 0.9, 1.0, 0.95), 2.5)
+	if boxing:
+		var r := Rect2(box_start, mpos - box_start).abs()
+		draw_rect(r, Color(0.5, 0.9, 1.0, 0.08))
+		draw_rect(r, Color(0.5, 0.9, 1.0, 0.8), false, 1.5)
 
 
 ## 방향 고르기. Shift를 누르면 15도 단위로 맞춘다.
