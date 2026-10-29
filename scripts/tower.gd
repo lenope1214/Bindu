@@ -1018,6 +1018,10 @@ static func _hash(x: float) -> float:
 ## sp: spec() 묶음 {"els", "pat", "plv", "mods"}
 ## focus: 바뀌는 부분(-2: 공격방식, 0 이상: 그 속성의 반응)만 진하게, 나머지는 옅게
 static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, focus := -1) -> void:
+	# 방향을 고를 때 마우스가 설치 지점과 겹치면 방향이 0이 되어 다각형이 깨진다
+	if not o.is_finite():
+		return
+	d = d.normalized() if d.is_finite() and d.length_squared() > 0.0001 else Vector2.RIGHT
 	var far := 1600.0
 	var els: Dictionary = sp["els"]
 	var l: int = sp["plv"]

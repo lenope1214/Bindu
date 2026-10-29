@@ -26,6 +26,7 @@ var spawn_timer := 0.0
 var spawn_interval := 1.0
 
 var lanes: Array[float] = []  # 다음 웨이브 구체가 들어올 방향(라디안)
+var prism_towers: Array = []  # 발사체가 지날 때 확인할 프리즘 오브젝트 (매 계산마다 갱신)
 var picks_left := 0  # 이번 쉬는 시간에 남은 설치 횟수
 var moving: Tower = null  # 위치를 옮기는 중인 오브젝트
 # 오브젝트를 꾹 누르거나 끌면 바로 옮긴다(카드를 고른 뒤에도). 선택된 오브젝트를 끌면 함께 움직인다.
@@ -257,6 +258,7 @@ func _build_ui() -> void:
 	legend_btn.add_theme_font_size_override("font_size", 14)
 	legend_btn.pressed.connect(_toggle_legend)
 	root.add_child(legend_btn)
+	legend.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # 긴 줄이 화면 밖으로 잘리지 않게
 	legend.add_theme_font_size_override("font_size", 14)
 	legend.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
 	_refresh_legend()
@@ -342,7 +344,7 @@ func _build_ui() -> void:
 
 	preview = Label.new()
 	preview.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	preview.position = Vector2(16, -204)
+	preview.position = Vector2(16, -214)
 	preview.size = Vector2(620, 144)
 	preview.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	preview.add_theme_font_size_override("font_size", 15)
@@ -373,9 +375,9 @@ func _build_ui() -> void:
 
 	help_label = Label.new()
 	help_label.set_anchors_preset(Control.PRESET_CENTER)
-	help_label.position = Vector2(-420, -280)
-	help_label.size = Vector2(840, 560)
-	help_label.add_theme_font_size_override("font_size", 17)
+	help_label.position = Vector2(-440, -300)
+	help_label.size = Vector2(880, 600)
+	help_label.add_theme_font_size_override("font_size", 16)
 	var hsb := StyleBoxFlat.new()
 	hsb.bg_color = Color(0.05, 0.06, 0.09, 0.95)
 	hsb.set_border_width_all(1)
@@ -383,26 +385,7 @@ func _build_ui() -> void:
 	hsb.set_content_margin_all(18)
 	hsb.set_corner_radius_all(6)
 	help_label.add_theme_stylebox_override("normal", hsb)
-	help_label.text = "\n".join([
-		"[조작]",
-		"1 / 2 / 3 또는 클릭: 선택지 고르기     Q: 선택지 새로고침",
-		"속성 카드: 빈 곳에 설치(직선탄) → 클릭(또는 끌어서 놓기)으로 방향, Shift: 15도",
-		"속성 카드를 오브젝트 위에: 속성 겹치기 (제한 없음)",
-		"공격방식·강화·연계 카드: 오브젝트 위에 놓기 (연결선은 두 개 차례로)",
-		"우클릭 / Esc: 한 단계 되돌리기",
-		"쉬는 시간에 오브젝트 클릭: 위치·방향 옮기기",
-		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
-		"P: 일시정지   M: 소리   Tab: 속성표   H: 도움말   F11: 전체 화면",
-		"R: 게임 오버 후 다시 시작",
-		"",
-		"[규칙]",
-		"중앙 체력 10. 구체가 닿으면 줄어듭니다",
-		"쉬는 시간마다 3개 중 1개를 고릅니다 (처음 두 번은 2개)",
-		"5웨이브마다 보스. 처치하면 체력 +2, 새로고침 +1",
-		"보스 웨이브를 넘기면 특성(전역 강화) 3개 중 1개 선택",
-		"공격방식은 직선탄일 때 한 번만 정할 수 있고, 같은 것을 넣으면 레벨업",
-		"속성을 많이 겹칠수록 피해는 늘고 공격 속도는 조금씩 느려집니다",
-	])
+	help_label.text = _help_text()
 	help_label.visible = false
 	root.add_child(help_label)
 
@@ -463,6 +446,37 @@ func _apply_rules() -> void:
 		_refresh_legend()
 	if ver_label:
 		ver_label.text = _ver_text()
+	if help_label:
+		help_label.text = _help_text()
+
+
+## 도움말: 상한·장수는 고른 규칙 버전에 따라 다르다.
+func _help_text() -> String:
+	var elems := "속성 %d종까지, 레벨은 제한 없음" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "종류 제한 없음"
+	var mods := "강화는 종류마다 %d개까지" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "강화는 제한 없이 쌓이지만 쌓을수록 효과가 절반씩"
+	return "\n".join([
+		"[조작]",
+		"1 / 2 / 3 또는 클릭: 선택지 고르기     Q: 선택지 새로고침     V: 선택지 내리고 필드 보기",
+		"속성 카드: 빈 곳에 설치(직선탄) → 클릭(또는 끌어서 놓기)으로 방향, Shift: 15도",
+		"속성 카드를 오브젝트 위에: 속성 겹치기 (%s)" % elems,
+		"공격방식·강화·연계 카드: 오브젝트 위에 놓기 (연결선은 두 개 차례로)",
+		"오브젝트 끌기: 방향은 그대로 두고 옮기기 (카드를 고른 뒤에는 꾹 눌러서)",
+		"빈 곳 끌기 / Shift·Ctrl+클릭: 여러 개 선택 → 그중 하나를 끌면 함께 이동",
+		"쉬는 시간에 오브젝트 클릭: 위치·방향 다시 정하기",
+		"우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
+		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
+		"P: 일시정지   M: 소리   Tab: 속성표   H: 도움말   F11: 전체 화면   R: 게임 오버 후 다시 시작",
+		"",
+		"[규칙 · %s]" % Rules.NAMES[Rules.version],
+		"중앙 체력 10. 구체가 닿으면 줄어듭니다",
+		"쉬는 시간마다 3개 중 1개를 고릅니다 (처음 두 번은 2번)" if Rules.picks == 1 else "쉬는 시간마다 3개 중 1개씩 %d번 고릅니다" % Rules.picks,
+		"5웨이브마다 보스. 처치하면 체력 +2, 새로고침 +1",
+		"보스 웨이브를 넘기면 특성(전역 강화) 3개 중 1개 선택",
+		"공격방식은 직선탄일 때 한 번만 정할 수 있고, 같은 것을 넣으면 레벨업",
+		"속성을 많이 겹칠수록 피해는 늘고 공격 속도는 조금씩 느려집니다. %s" % mods,
+		"감속은 최대 70%, 밀기는 조금씩만, 기절·속박·빙결은 연달아 걸리면 짧아지다 잠깐 면역",
+		"화면 밖 구체는 맞지 않습니다. 시작 화면에서 규칙 버전(↑/↓)과 맵(←/→)을 바꿀 수 있어요",
+	])
 
 
 ## 실행 중인 빌드가 최신인지 알아보도록 구석에 표시 (버전은 project.godot의 config/version).
@@ -587,7 +601,7 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 				b.text = "[%d] ★ 대격변: 공격방식 ★\n모든 오브젝트의 공격방식을\n직선탄을 뺀 무작위로 바꾼다\n고정·직선탄도 바뀜, 레벨 유지\n(희귀 1%%, 고르면 바로 발동)" % idx
 		"elem":
 			var e: int = card["e"]
-			b.text = "[%d] 속성: %s%s\n부가: %s\n빈 곳: 새 오브젝트(직선탄)\n오브젝트 위: 속성 겹치기%s" % [idx, Elem.NAMES[e], " Lv2" if card["lv"] == 2 else "", Elem.RIDER[e], " (%d종까지)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else ""]
+			b.text = "[%d] 속성: %s%s\n부가: %s\n빈 곳: 새 오브젝트(직선탄)\n오브젝트 위: 겹치기%s" % [idx, Elem.NAMES[e], " Lv2" if card["lv"] == 2 else "", Elem.RIDER[e], " (%d종까지)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else ""]
 			var combos := _combos_for(e)
 			if not combos.is_empty():
 				b.text += "\n" + "\n".join(combos.slice(0, 2))
@@ -604,7 +618,7 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 				b.text += "\n" + fits[0]
 		"mod":
 			var id: String = card["id"]
-			b.text = "[%d] 강화: %s\n%s\n오브젝트 위에 놓기%s" % [idx, Pat.MODS[id]["name"], Pat.MODS[id]["desc"], " (종류별 %d개까지)" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else " (쌓을수록 효과 절반씩)"]
+			b.text = "[%d] 강화: %s\n%s\n오브젝트 위에 놓기\n%s" % [idx, Pat.MODS[id]["name"], Pat.MODS[id]["desc"], "(종류별 %d개까지)" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "(쌓을수록 효과 절반씩)"]
 		"link":
 			var id: String = card["id"]
 			b.text = "[%d] 연계: %s\n%s\n%s" % [idx, Pat.LINKS[id]["name"], Pat.LINKS[id]["desc"], "오브젝트 두 개를 차례로 클릭" if id == "link" else "오브젝트 위에 놓기"]
@@ -1066,6 +1080,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if phase == Phase.MOVE:
 		if event.button_index == MOUSE_BUTTON_LEFT:
+			mpos = mpos.clamp(field_rect().position, field_rect().end)
 			if mpos.distance_to(center()) < 50.0:
 				_show_toast("중앙 점에 너무 가까워요")
 				return
@@ -1087,6 +1102,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			# 클릭은 손을 뗄 때 처리한다. 꾹 누르거나 끌면 카드를 유지한 채 옮긴다.
 			_begin_press(target, mpos)
 			return
+		mpos = mpos.clamp(field_rect().position, field_rect().end)
 		if mpos.distance_to(center()) < 50.0:
 			_show_toast("중앙 점에 너무 가까워요")
 			return
@@ -1151,9 +1167,16 @@ func _update_press() -> void:
 			t.place_pop = 1.0
 		hint.text = "끌어서 옮기는 중%s: 놓으면 그 자리에 둠 (방향은 그대로)   우클릭/Esc: 취소" % (" (%d개)" % drag_group.size() if drag_group.size() > 1 else "")
 	if dragging:
+		# 창 밖으로 끌어도 무리 전체가 화면 안에 남도록 이동량을 자른다
+		var delta := mpos - press_pos
+		var f := field_rect()
 		for i in drag_group.size():
 			if is_instance_valid(drag_group[i]):
-				drag_group[i].position = drag_origs[i] + mpos - press_pos
+				var q: Vector2 = drag_origs[i] + delta
+				delta += q.clamp(f.position, f.end) - q
+		for i in drag_group.size():
+			if is_instance_valid(drag_group[i]):
+				drag_group[i].position = drag_origs[i] + delta
 				drag_group[i].queue_redraw()
 
 
@@ -1429,15 +1452,17 @@ func _cycle_map(d: int) -> void:
 
 ## 오른쪽 설명: 상한은 규칙 버전에 따라 다르다.
 func _refresh_legend() -> void:
-	var cap_e := "%d종까지(레벨은 무제한)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "제한 없음(종류마다 공격 속도 -%d%%)" % roundi(Rules.tax_step * 100)
-	var cap_m := "종류별 %d개까지" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "제한 없음(쌓을수록 효과 절반씩)"
+	var cap_e := "한 오브젝트에 %d종까지(레벨은 무제한)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "종류 제한 없음, 종류마다 공격 속도 -%d%%" % roundi(Rules.tax_step * 100)
+	var cap_m := "종류별 %d개까지" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "제한 없음, 쌓을수록 효과 절반씩"
 	var lines := PackedStringArray([
 		"[오브젝트] 공격방식 + 속성 + 강화 + 연계",
 		"· 새 오브젝트는 직선탄 + 속성 1개",
 		"· 공격방식: 직선탄에만 넣을 수 있고 이후 고정,",
 		"   같은 공격방식을 넣으면 레벨업",
-		"· 속성: 한 오브젝트에 %s, 모든 공격에 부가효과" % cap_e,
-		"· 강화: %s, 공격방식을 변형" % cap_m,
+		"· 속성: 모든 공격에 부가효과,",
+		"   " + cap_e,
+		"· 강화: 공격방식을 변형,",
+		"   " + cap_m,
 		"· 연계: 연결선·프리즘·공명",
 		"",
 		"[특수 반응] 두 속성이 함께 있으면 추가 공격",
@@ -1890,7 +1915,7 @@ func _process(delta: float) -> void:
 	_update_hud()
 	queue_redraw()
 	if phase == Phase.MOVE and moving:
-		moving.position = get_global_mouse_position()
+		moving.position = get_global_mouse_position().clamp(field_rect().position, field_rect().end)
 	_update_press()
 	hide_btn.visible = phase == Phase.CHOOSE and not title_label.visible
 	hide_btn.text = ("▲ 선택지 다시 보기" if cards_hidden else "▼ 선택지 내리고 필드 보기") + " (V)"
@@ -1980,6 +2005,7 @@ func _resolve(delta: float) -> void:
 	targets = live_orbs.filter(func(o): return screen.grow(o.radius()).has_point(o.position))
 
 	_build_grid()
+	prism_towers = towers.get_children().filter(func(t): return t.prism > 0)
 	# 오브젝트 공격
 	for t in towers.get_children():
 		if not t.is_queued_for_deletion():
@@ -2113,6 +2139,11 @@ func _build_grid() -> void:
 			grid[k] = [o]
 
 
+## 오브젝트를 놓을 수 있는 화면 안쪽 영역 (가장자리에서 몸 반지름만큼 안).
+func field_rect() -> Rect2:
+	return get_viewport_rect().grow(-(Tower.RADIUS + 6.0))
+
+
 ## p에서 r(+가장 큰 구체 반지름) 안에 있을 수 있는 구체들.
 func near(p: Vector2, r: float) -> Array:
 	var out: Array = []
@@ -2181,10 +2212,32 @@ func _draw_tooltip() -> void:
 	var p := t.position + Vector2(28, -h / 2)
 	p.x = clampf(p.x, 8, size.x - w - 24)
 	p.y = clampf(p.y, 8, size.y - h - 8)
+	p = _avoid_cards(Rect2(p, Vector2(w + 16, h)), size)
 	fx_layer.draw_rect(Rect2(p, Vector2(w + 16, h)), Color(0.05, 0.06, 0.09, 0.92))
 	fx_layer.draw_rect(Rect2(p, Vector2(w + 16, h)), Color(1, 1, 1, 0.2), false, 1.0)
 	for i in lines.size():
 		fx_layer.draw_string(ui_font, p + Vector2(8, 20 + i * 18), lines[i][0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, lines[i][1])
+
+
+## 선택지 카드가 떠 있으면 툴팁이 카드 뒤에 가려지지 않게 위나 아래로 비킨다.
+func _avoid_cards(r: Rect2, size: Vector2) -> Vector2:
+	if not choice_box.visible or choice_box.get_child_count() == 0 or cards_hidden:
+		return r.position
+	var inv := get_canvas_transform().affine_inverse()
+	var cr: Rect2 = inv * choice_box.get_global_rect()
+	for b in [reroll_btn, hide_btn]:
+		if b.visible:
+			cr = cr.merge(inv * b.get_global_rect())
+	cr = cr.grow(6.0)
+	if not cr.intersects(r):
+		return r.position
+	var up := cr.position.y - r.size.y
+	var down := cr.end.y
+	if up >= 8.0 and (r.get_center().y < cr.get_center().y or down + r.size.y > size.y - 8.0):
+		return Vector2(r.position.x, up)
+	if down + r.size.y <= size.y - 8.0:
+		return Vector2(r.position.x, down)
+	return r.position
 
 
 ## 마우스를 올린 구체의 체력·상태.

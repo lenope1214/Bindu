@@ -129,8 +129,8 @@ func _steer(delta: float) -> void:
 
 ## 프리즘: 다른 오브젝트의 프리즘을 지나면 그 속성이 묻고 피해가 오른다.
 func _check_prisms() -> void:
-	for tw in owner_tower.main.towers.get_children():
-		if tw.prism > 0 and tw != owner_tower and not prisms.has(tw) and tw.position.distance_to(position) < Tower.RADIUS + 10.0 + radius:
+	for tw in owner_tower.main.prism_towers:
+		if tw != owner_tower and not prisms.has(tw) and tw.position.distance_to(position) < Tower.RADIUS + 10.0 + radius:
 			prisms[tw] = true
 			dmg *= 1.0 + 0.2 * tw.prism
 			for e in tw.elements:

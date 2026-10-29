@@ -6,7 +6,7 @@ Godot 4.5+ (4.7.2에서 열기). 도형만 사용.
 - Mac: `run_mac.command` 더블클릭 (빌드 없이 바로 실행, 에디터 안 열림)
 Godot에서 이 폴더의 `project.godot`을 불러와 F5.
 - Windows: `git pull` 뒤 `build_windows.bat`로 다시 빌드해야 새 내용이 exe에 들어감(exe는 git에 올라가지 않음).
-- 왼쪽 아래 구석의 `빈두 v0.4.0 · 규칙 …`으로 실행 중인 빌드 버전을 확인. 최신 버전은 `project.godot`의 `config/version`.
+- 왼쪽 아래 구석의 `빈두 v버전 · 규칙 …`으로 실행 중인 빌드 버전을 확인. 최신 버전은 `project.godot`의 `config/version`.
 
 ## 조작
 | 키 | 동작 |
