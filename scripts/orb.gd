@@ -282,10 +282,11 @@ func _draw() -> void:
 			var a0 := TAU * i / 6 - age * 0.8
 			draw_arc(Vector2.ZERO, r + 11.0, a0, a0 + 0.6, 6, rc, 3.0)
 	if sturdy:
-		# 굳셈: 네 귀퉁이 쐐기
+		# 굳셈: 네 귀퉁이 쐐기 (네모 구체는 모서리가 r*1.41까지 나와 있어 그 바깥에)
+		var base := r * 1.45 if kind == Kind.TANK else r + 1.0
 		for i in 4:
 			var d := Vector2.from_angle(PI / 4 + i * PI / 2)
-			draw_line(d * (r + 1.0), d * (r + 8.0), Color(0.75, 0.75, 0.8), 4.0)
+			draw_line(d * base, d * (base + 7.0), Color(0.75, 0.75, 0.8), 4.0)
 	if frozen_t > 0.0:
 		# 얼음 결정
 		draw_circle(Vector2.ZERO, r + 2.0, Color(0.75, 0.93, 1.0, 0.5))
