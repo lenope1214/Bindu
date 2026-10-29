@@ -10,7 +10,7 @@ const SAVE_PATH := "user://best.cfg"
 const CHOOSE_HINT := "선택지를 고르세요 (속성·공격방식·강화·연계). 설치된 오브젝트를 클릭하면 위치·방향 변경   V: 선택지 내리기"
 const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 위치·방향 변경"
 const PAUSE_TEXT := "일시정지\n\nP / Esc: 계속   R: 처음부터   M: 소리   O: 설정   F11: 전체 화면"
-const PLACE_HINT := "클릭: 설치 위치 (기존 오브젝트 위면 속성 겹치기)   오브젝트 꾹 누르기·끌기: 옮기기   우클릭/Esc: 다시 고르기"
+const PLACE_HINT := "클릭: 설치 (오브젝트 위면 속성 겹치기)   오브젝트 꾹 누르기·끌기: 옮기기\n우클릭/Esc: 다시 고르기"
 
 var phase := Phase.CHOOSE
 var wave := 0
@@ -462,7 +462,7 @@ func _help_text() -> String:
 		"속성 카드를 오브젝트 위에: 속성 겹치기 (%s)" % elems,
 		"공격방식·강화·연계 카드: 오브젝트 위에 놓기 (연결선은 두 개 차례로)",
 		"오브젝트 끌기: 방향은 그대로 두고 옮기기 (카드를 고른 뒤에는 꾹 눌러서)",
-		"빈 곳 끌기 / Shift·Ctrl+클릭: 여러 개 선택 → 그중 하나를 끌면 함께 이동",
+		"빈 곳 끌기 / Shift·Ctrl+클릭 / Ctrl+A(모두): 여러 개 선택 → 그중 하나를 끌면 함께 이동",
 		"쉬는 시간에 오브젝트 클릭: 위치·방향 다시 정하기",
 		"우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
@@ -1025,6 +1025,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_on_reroll()
 		elif event.keycode == KEY_V and phase == Phase.CHOOSE:
 			_set_cards_hidden(not cards_hidden)
+		elif event.keycode == KEY_A and (event.ctrl_pressed or event.meta_pressed) and phase in [Phase.CHOOSE, Phase.READY] and not perk_mode:
+			# 모두 선택: 한꺼번에 옮길 때
+			selected = towers.get_children()
+			_restore_hint()
 		elif event.keycode == KEY_R and phase == Phase.GAMEOVER:
 			get_tree().reload_current_scene()
 		elif event.keycode == KEY_M:
@@ -1266,7 +1270,7 @@ func _restore_hint() -> void:
 		Phase.READY:
 			hint.text = READY_HINT
 	if not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY, Phase.PLACE]:
-		hint.text = "선택 %d개: 선택한 오브젝트 하나를 끌면 함께 이동   Shift/Ctrl+클릭: 더하기·빼기   Esc/우클릭: 선택 해제" % selected.size()
+		hint.text = "선택 %d개: 선택한 오브젝트 하나를 끌면 함께 이동   Shift/Ctrl+클릭: 더하기·빼기   Ctrl+A: 모두   Esc/우클릭: 선택 해제" % selected.size()
 
 
 ## 방향 확정 (클릭, 또는 끌었다 놓기).
@@ -2220,13 +2224,21 @@ func _draw_tooltip() -> void:
 	var h := lines.size() * 18.0 + 10.0
 	var size := get_viewport_rect().size
 	var p := t.position + Vector2(28, -h / 2)
-	p.x = clampf(p.x, 8, size.x - w - 24)
+	p.x = clampf(p.x, 8, _right_limit() - w - 16)
 	p.y = clampf(p.y, 8, size.y - h - 8)
 	p = _avoid_cards(Rect2(p, Vector2(w + 16, h)), size)
 	fx_layer.draw_rect(Rect2(p, Vector2(w + 16, h)), Color(0.05, 0.06, 0.09, 0.92))
 	fx_layer.draw_rect(Rect2(p, Vector2(w + 16, h)), Color(1, 1, 1, 0.2), false, 1.0)
 	for i in lines.size():
 		fx_layer.draw_string(ui_font, p + Vector2(8, 20 + i * 18), lines[i][0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, lines[i][1])
+
+
+## 글자를 놓을 수 있는 오른쪽 끝: 오른쪽 설명이 떠 있으면 그 앞까지 (설명이 글자를 가린다).
+func _right_limit() -> float:
+	var r := get_viewport_rect().size.x - 8.0
+	if legend.visible:
+		r = minf(r, (get_canvas_transform().affine_inverse() * legend.get_global_rect()).position.x - 8.0)
+	return r
 
 
 ## 선택지 카드가 떠 있으면 툴팁이 카드 뒤에 가려지지 않게 위나 아래로 비킨다.
@@ -2499,14 +2511,15 @@ func _draw() -> void:
 				var txt := lines[i]
 				var c2: Color = tcol if i == 0 or txt.begins_with("반응") else Color(1, 1, 1, 0.85)
 				var w := ui_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
-				var tp := Vector2(clampf(target.position.x - w / 2, 8, get_viewport_rect().size.x - w - 8), maxf(y + i * 20.0, 16.0 + i * 20.0))
+				var tp := Vector2(clampf(target.position.x - w / 2, 8, _right_limit() - w), maxf(y + i * 20.0, 16.0 + i * 20.0))
 				draw_string(ui_font, tp + Vector2(1, 1), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color.BLACK)
 				draw_string(ui_font, tp, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, c2)
 		elif is_elem:
-			draw_circle(mpos, Tower.RADIUS, Color(col, 0.4))
-			var near := mpos.distance_to(c) < 50.0
+			var at := mpos.clamp(field_rect().position, field_rect().end)  # 실제로 놓일 자리
+			draw_circle(at, Tower.RADIUS, Color(col, 0.4))
+			var near := at.distance_to(c) < 50.0
 			var lbl := "중앙과 너무 가까움" if near else "새로 설치 (직선탄)"
-			draw_string(ui_font, mpos + Vector2(-40, Tower.RADIUS + 20), lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 0.5, 0.5) if near else Color(1, 1, 1, 0.7))
+			draw_string(ui_font, at + Vector2(-40, Tower.RADIUS + 20), lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 0.5, 0.5) if near else Color(1, 1, 1, 0.7))
 		else:
 			draw_arc(mpos, 10.0, 0, TAU, 20, Color(col, 0.8), 2.0)
 			draw_string(ui_font, mpos + Vector2(-50, 28), "오브젝트 위에 놓기", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 1, 1, 0.7))
