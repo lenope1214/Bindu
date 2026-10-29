@@ -40,7 +40,7 @@ function Find-Godot {
         $c = Get-Command $n -ErrorAction SilentlyContinue
         if ($c) { return $c.Source }
     }
-    $dirs = @("$env:USERPROFILE\Downloads", "$env:USERPROFILE\Desktop", "$env:LOCALAPPDATA\Programs", "C:\Godot", "D:\Godot", "C:\Program Files", "C:\Program Files\Godot", "$env:USERPROFILE\scoop\apps\godot\current", "C:\Program Files (x86)\Steam\steamapps\common\Godot Engine")
+    $dirs = @("$env:USERPROFILE\Downloads", "$env:USERPROFILE\Desktop", "$env:LOCALAPPDATA\Programs", "C:\Godot", "D:\Godot", "D:\tools\Godot", "$env:LOCALAPPDATA\Godot", "$env:LOCALAPPDATA\Programs\Godot", "C:\Program Files", "C:\Program Files\Godot", "$env:USERPROFILE\scoop\apps\godot\current", "C:\Program Files (x86)\Steam\steamapps\common\Godot Engine")
     foreach ($d in $dirs) {
         if (-not (Test-Path $d)) { continue }
         $f = Get-ChildItem -Path $d -Filter "Godot*_console.exe" -Recurse -Depth 2 -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
