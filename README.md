@@ -138,3 +138,9 @@ Finder에서 `build_windows.command`를 더블클릭하거나 터미널에서 �
 - Godot을 `/Applications/Godot.app`, PATH 순으로 찾음. 다른 위치면 `GODOT=/경로/Godot ./build_windows.command`.
 - 처음 한 번은 Godot 버전에 맞는 export 템플릿(약 1GB)을 자동으로 내려받아 설치.
 - 결과는 pck가 내장된 단일 exe라 그 파일만 Windows로 옮기면 실행됨.
+
+## Windows exe 빌드 (Windows에서)
+탐색기에서 `build_windows.bat`를 더블클릭. 디버그 빌드는 PowerShell에서 `.\build_windows.ps1 -DebugBuild`.
+- 실행 중인 Bindu.exe가 있으면 먼저 종료하고, 파일이 잠겨 있으면(백신 검사 등) 2초 간격으로 10번까지 다시 시도.
+- Godot을 `$env:GODOT`, PATH, 다운로드·바탕화면·`C:\Godot`·`D:\Godot` 순으로 찾음(콘솔 버전 우선). 다른 위치면 `$env:GODOT = "경로\Godot_v4.x-stable_win64_console.exe"`.
+- 처음 한 번은 export 템플릿(약 1GB)을 자동 설치. 결과는 프로젝트 폴더의 Bindu.exe, Bindu.zip.
