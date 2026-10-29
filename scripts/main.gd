@@ -244,6 +244,7 @@ func _build_ui() -> void:
 	choice_box.position = Vector2(-440, -90)
 	choice_box.size = Vector2(730, 180)
 	choice_box.add_theme_constant_override("separation", 20)
+	choice_box.alignment = BoxContainer.ALIGNMENT_CENTER  # 카드가 2장일 때도 가운데
 	root.add_child(choice_box)
 
 	legend = Label.new()
@@ -1334,6 +1335,7 @@ func _build_menu(root: Control) -> void:
 	records_panel.position = Vector2(-430, -300)
 	records_panel.size = Vector2(860, 600)
 	records_panel.add_theme_font_size_override("font_size", 15)
+	records_panel.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var rsb := StyleBoxFlat.new()
 	rsb.bg_color = Color(0.05, 0.06, 0.09, 0.97)
 	rsb.set_border_width_all(1)
@@ -1543,8 +1545,9 @@ func _toggle_records() -> void:
 			row.append("%s(%s+%s)" % [r["name"], Elem.NAMES[r["a"]], Elem.NAMES[r["b"]]])
 		else:
 			row.append("???")
-	lines.append("  " + ", ".join(row.slice(0, 5)))
-	lines.append("  " + ", ".join(row.slice(5)))
+	# 반응이 17개라 다섯 개씩 끊어 화면 밖으로 넘치지 않게
+	for i in range(0, row.size(), 5):
+		lines.append("  " + ", ".join(row.slice(i, i + 5)))
 	records_panel.text = "\n".join(lines)
 
 
@@ -1922,8 +1925,15 @@ func _process(delta: float) -> void:
 	# 펼쳐 있으면 새로고침 버튼 아래, 내려 두면 화면 위쪽 가운데
 	hide_btn.set_anchors_preset(Control.PRESET_CENTER_TOP if cards_hidden else Control.PRESET_CENTER)
 	var hy := 96.0 if cards_hidden else 148.0
-	hide_btn.offset_left = -130.0
-	hide_btn.offset_right = 130.0
+	# 카드 줄은 오른쪽 설명을 피해 왼쪽으로 비켜 있다. 설명을 숨기면 가운데로, 버튼도 카드 가운데에 맞춘다
+	var cx := 0.0 if legend_hidden else -75.0
+	choice_box.offset_left = cx - 365.0
+	choice_box.offset_right = cx + 365.0
+	reroll_btn.offset_left = cx - 170.0
+	reroll_btn.offset_right = cx + 170.0
+	var hx := 0.0 if cards_hidden else cx
+	hide_btn.offset_left = hx - 130.0
+	hide_btn.offset_right = hx + 130.0
 	hide_btn.offset_top = hy
 	hide_btn.offset_bottom = hy + 32.0
 	restart_armed = maxf(restart_armed - delta, 0.0)
@@ -2256,6 +2266,11 @@ func _draw_orb_tooltip() -> void:
 		if o.vuln_t > 0.0: parts.append("약화")
 		if o.slow_timer > 0.0: parts.append("감속")
 		if o.frozen_t > 0.0: parts.append("빙결")
+		if o.prison_t > 0.0: parts.append("감옥(받는 피해 +50%)")
+		if o.swamp_t > 0.0: parts.append("독늪(중독 2배)")
+		if o.curse_lv > 0: parts.append("저주")
+		if o.resist_e >= 0: parts.append("%s 저항" % Elem.NAMES[o.resist_e])
+		if o.sturdy: parts.append("굳셈")
 		var txt := " · ".join(parts)
 		var w := ui_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
 		var p: Vector2 = o.position + Vector2(-w / 2 - 8, -o.radius() - 40)
