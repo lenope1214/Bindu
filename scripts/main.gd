@@ -120,6 +120,8 @@ var bonus_rerolls := 0
 var combo := 0
 var combo_t := 0.0
 var ui_font: Font
+var perk_src := ""
+var perk_wrapped := ""
 var title_label: Control  # 메인 메뉴
 var map_label: Label
 var rules_label: Label
@@ -402,7 +404,7 @@ func _build_ui() -> void:
 	help_label.size = Vector2(880, 600)
 	help_label.add_theme_font_size_override("font_size", 16)
 	var hsb := StyleBoxFlat.new()
-	hsb.bg_color = Color(0.05, 0.06, 0.09, 0.95)
+	hsb.bg_color = Color(0.05, 0.06, 0.09, 1.0)  # 뒤 카드·설명 글자가 비쳐 보이지 않게
 	hsb.set_border_width_all(1)
 	hsb.border_color = Color(1, 1, 1, 0.25)
 	hsb.set_content_margin_all(18)
@@ -426,20 +428,31 @@ func _show_toast(t: String) -> void:
 
 
 func _update_hud() -> void:
-	hud.text = "웨이브 %d   점수 %s   중앙 %d/%d   최고 %s (웨이브 %d)" % [
+	var text := "웨이브 %d   점수 %s   중앙 %d/%d   최고 %s (웨이브 %d)" % [
 		wave, num(score), maxi(core_hp, 0), core_max, num(best_score), best_wave]
+	var extra := ""
 	if Meta.rules != 1:
-		hud.text += "   [%s]" % Rules.NAMES[Meta.rules]
+		extra += "   [%s]" % Rules.NAMES[Meta.rules]
 	if not selected.is_empty():
-		hud.text += "   선택 %d개" % selected.size()
+		extra += "   선택 %d개" % selected.size()
 	var nt := towers.get_child_count()
 	if nt > 1:
-		hud.text += "   무리 +%d%% (오브젝트 %d개)" % [roundi(Rules.crowd * (nt - 1) * 100), nt]
+		extra += "   무리 +%d%% (오브젝트 %d개)" % [roundi(Rules.crowd * (nt - 1) * 100), nt]
+	# 길어지면 오른쪽 위 설명 버튼과 겹치므로 둘째 줄로
+	if extra != "" and ui_font.get_string_size(text + extra, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x > 1080.0:
+		extra = "\n" + extra.strip_edges()
+	text += extra
 	if phase == Phase.WAVE:
-		hud.text += "\n남은 구체 %d" % (to_spawn + _alive_count(orbs))
+		text += "\n남은 구체 %d" % (to_spawn + _alive_count(orbs))
 	var pt := _perk_text()
+	if pt != perk_src:
+		perk_src = pt
+		perk_wrapped = _wrap_words(pt, 1080.0, 18)  # 특성이 많아도 오른쪽 위 버튼까지 뻗지 않게
 	if pt != "":
-		hud.text += "\n" + pt
+		text += "\n" + perk_wrapped
+	if hud.text != text:
+		hud.text = text
+		hud.reset_size()  # 글자가 짧아져도 바탕이 넓게 남지 않게
 
 
 # ---------- 단계 ----------
@@ -498,7 +511,8 @@ func _help_text() -> String:
 		"쉬는 시간에 오브젝트 클릭: 위치·방향 다시 정하기",
 		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 몫 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
-		"P: 일시정지   M: 소리   Tab: 속성표   H: 도움말   F11: 전체 화면   R: 게임 오버 후 다시 시작",
+		"P / Esc: 일시정지   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   F11: 전체 화면",
+		"R: 다시 시작 (게임 오버 뒤, 또는 일시정지 중 두 번)",
 		"",
 		"[규칙 · %s]" % Rules.NAMES[Rules.version],
 		"중앙 체력 10. 구체가 닿으면 줄어듭니다",
@@ -1067,6 +1081,10 @@ func _unhandled_input(event: InputEvent) -> void:
 					_cycle_rules(-1)
 				KEY_DOWN:
 					_cycle_rules(1)
+				KEY_F11:
+					_toggle_fullscreen()
+				KEY_M:
+					_toggle_mute()  # 시작 화면에도 소리 버튼이 보인다
 			return
 		if event.keycode == KEY_ESCAPE and phase == Phase.GAMEOVER:
 			if Time.get_ticks_msec() - over_ms > 800:
@@ -1086,8 +1104,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			help_label.visible = not help_label.visible
 		elif event.keycode == KEY_TAB:
 			_toggle_legend()
-		elif event.keycode in [KEY_1, KEY_2, KEY_3] and phase == Phase.CHOOSE and help_label.visible == false:
-			var i: int = event.keycode - KEY_1
+		elif event.keycode in [KEY_1, KEY_2, KEY_3, KEY_KP_1, KEY_KP_2, KEY_KP_3] and phase == Phase.CHOOSE and help_label.visible == false:
+			var i: int = event.keycode - (KEY_KP_1 if event.keycode >= KEY_KP_1 else KEY_1)
 			if perk_mode:
 				if i < perk_offer.size():
 					_on_perk(perk_offer[i])
@@ -1440,7 +1458,7 @@ func _build_menu(root: Control) -> void:
 	sv.add_child(st)
 	var vrow := HBoxContainer.new()
 	var vl := Label.new()
-	vl.text = "음량"
+	vl.text = "음량 %d%%" % roundi(Meta.volume * 100.0)
 	vl.custom_minimum_size = Vector2(120, 0)
 	vrow.add_child(vl)
 	var slider := HSlider.new()
@@ -1452,6 +1470,7 @@ func _build_menu(root: Control) -> void:
 	slider.focus_mode = Control.FOCUS_NONE
 	slider.value_changed.connect(func(v):
 		Meta.volume = v
+		vl.text = "음량 %d%%" % roundi(v * 100.0)
 		_apply_volume()
 		_save_best())
 	vrow.add_child(slider)
@@ -2004,6 +2023,7 @@ func _roll_kind() -> int:
 func _process(delta: float) -> void:
 	toast_timer -= delta
 	toast.visible = toast_timer > 0.0
+	toast.position.y = maxf(100.0, hud.position.y + hud.size.y + 36.0)  # 점수 줄이 길어져도 보스 체력 막대 아래
 	banner_t -= delta
 	banner.visible = banner_t > 0.0
 	banner.modulate.a = clampf(banner_t / 0.4, 0.0, 1.0)
@@ -2046,15 +2066,19 @@ func _process(delta: float) -> void:
 	if get_tree().paused:
 		fx_layer.queue_redraw()  # 멈춘 동안에도 오브젝트·구체 정보창은 마우스를 따라간다
 		return
+	# 도움말·설정 창을 보는 동안은 게임이 멈춘다 (읽는 사이 구체가 중앙에 닿거나 웨이브가 시작되지 않게)
+	var reading := (help_label.visible or settings_panel.visible or records_panel.visible) and not title_label.visible
 	if countdown >= 0.0 and phase == Phase.READY:
 		# 오브젝트를 끌거나 상자로 고르는 동안은 자동 시작을 멈춘다 (시작하면 끌던 것이 되돌아감)
-		if press_t or boxing:
+		if press_t or boxing or reading:
 			countdown = maxf(countdown, 1.0)
 		else:
 			countdown -= delta
 		start_btn.text = "%.1f초 뒤 시작 (Space: 바로)" % maxf(countdown, 0.0)
 		if countdown <= 0.0:
 			_start_wave()
+	if reading:
+		return
 	_update_fx(delta)
 	if phase != Phase.WAVE:
 		return
