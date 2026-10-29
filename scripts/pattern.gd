@@ -45,7 +45,6 @@ const LINKS := {
 }
 
 const LINK_IDS := ["link", "prism", "reso"]
-const LINK_RANGE := 320.0
 
 
 static func pname(id: String) -> String:

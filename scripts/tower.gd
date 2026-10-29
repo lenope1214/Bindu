@@ -2,14 +2,11 @@ class_name Tower
 extends Node2D
 ## 설치형 오브젝트. 설치 시 정한 방향으로 공격한다.
 ## - 공격방식(pattern): 형태. 하나만 갖고, 새 오브젝트는 직선탄.
-## - 속성(elements): 효과. 몇 개든 겹칠 수 있고 모든 공격에 부가효과가 붙는다.
-## - 강화(mods): 공격방식에 붙는 변형. 무제한.
+## - 속성(elements): 효과. 모든 공격에 부가효과가 붙는다. 종류 수 상한은 Rules.max_elems.
+## - 강화(mods): 공격방식에 붙는 변형. 종류마다 Rules.max_mod개까지.
 ## - 연계: 연결선(links), 프리즘, 공명.
 
 const RADIUS := 18.0
-const CROWD := 0.03  # 오브젝트 하나당 전체 피해 보너스
-const MAX_ELEMS := 3  # 한 오브젝트에 넣을 수 있는 속성 종류 (레벨은 무제한)
-const MAX_MOD := 3  # 강화 종류마다 쌓을 수 있는 수
 
 var elements := {}  # 속성 -> 겹친 수(=그 속성 레벨)
 var order: Array[int] = []  # 넣은 순서
@@ -26,11 +23,17 @@ var cd := {}  # 공격별 쿨다운
 var fx := {}  # 공격별 이펙트 남은 시간
 var t := 0.0
 var dealt := 0.0  # 이번(또는 지난) 웨이브에 준 피해
+var rx_dealt := 0.0  # 그중 특수 반응 피해 (측정·표시용)
 var recoil := 0.0  # 발사 반동
 var place_pop := 0.0  # 설치·겹치기 순간 커졌다 줄어드는 연출
 var rocks: Array = []
 var mines: Array = []
 var in_rx := false  # 지금 특수 반응 공격 중인지 (hit 피해 계산용)
+var rail_dir := Vector2.RIGHT  # 레일건이 마지막으로 쏜 방향
+var halo_cd := {}  # 광륜: 구체별 다시 맞힐 때까지 남은 시간
+var vine_cd := {}  # 덩굴: 구체별 다시 묶을 때까지 남은 시간
+var zaps: Array = []  # 감전 물길: 이번에 전류가 꽂힌 자리(로컬)
+var prison_c := Vector2.ZERO  # 빙결 감옥 중심(로컬)
 var main: Node
 
 
@@ -44,6 +47,18 @@ func lv(e: int) -> int:
 
 func m(id: String) -> int:
 	return mods.get(id, 0)
+
+
+## 강화 효과량. 버전 3은 같은 강화를 쌓을수록 효과가 절반씩 준다 (1, 1.5, 1.75, ...).
+func mf(id: String) -> float:
+	var n := m(id)
+	return 2.0 * (1.0 - pow(0.5, n)) if Rules.mod_decay else float(n)
+
+
+## 개수로 쓰는 강화(다중·관통·튕김): 효과량의 소수 부분은 확률로 하나 더.
+func mn(id: String) -> int:
+	var f := mf(id)
+	return int(f) + (1 if randf() < f - int(f) else 0)
 
 
 func total_level() -> int:
@@ -64,7 +79,7 @@ static var reach_mul := 1.0
 static var tax_step := 0.1
 
 
-## 쌓기 대가: 속성 종류 하나 늘 때마다 공격 속도 10% 감소.
+## 쌓기 대가: 속성 종류 하나 늘 때마다 공격 속도 감소 (기본 15%, 버전 3은 25%).
 func tax() -> float:
 	return 1.0 + tax_step * (order.size() - 1)
 
@@ -83,7 +98,7 @@ static func reach(l: int) -> float:
 
 ## 크기 강화 배율.
 func sz() -> float:
-	return 1.0 + 0.12 * m("size")
+	return 1.0 + 0.12 * mf("size")
 
 
 ## 속성이 많을수록, 공명·관통 강화로 피해가 늘어난다.
@@ -91,9 +106,9 @@ func sz() -> float:
 ## 한 오브젝트에 몰아 넣으면 반응 수 x 레벨 합으로 곱이 되던 문제를 막는다.
 func dmg_factor(rx := false) -> float:
 	var f := 1.3 * (1.0 if rx else 1.0 + 0.35 * (total_level() - 1))
-	# 무리: 설치된 오브젝트가 많을수록 모두 강해진다 (하나당 +3%)
+	# 무리: 설치된 오브젝트가 많을수록 모두 강해진다 (하나당 +3%, 버전 2는 +6%)
 	if main:
-		f *= 1.0 + CROWD * (main.towers.get_child_count() - 1)
+		f *= 1.0 + Rules.crowd * (main.towers.get_child_count() - 1)
 	if reso > 0 and main:
 		var near := 0
 		for o in main.towers.get_children():
@@ -101,11 +116,11 @@ func dmg_factor(rx := false) -> float:
 				near += 1
 		f *= 1.0 + 0.12 * reso * near
 	if m("pierce") > 0 and not pattern in Pat.PROJECTILE:
-		f *= 1.0 + 0.06 * m("pierce")
+		f *= 1.0 + 0.06 * mf("pierce")
 	if m("bounce") > 0 and not pattern in Pat.PROJECTILE and pattern != "chain":
-		f *= 1.0 + 0.04 * m("bounce")
+		f *= 1.0 + 0.04 * mf("bounce")
 	if m("size") > 0 and pattern in Pat.PROJECTILE:
-		f *= 1.0 + 0.04 * m("size")
+		f *= 1.0 + 0.04 * mf("size")
 	return f
 
 
@@ -139,15 +154,15 @@ func add(e: int, n: int) -> String:
 	return "반응: " + ", ".join(names)
 
 
-## 이 카드를 넣을 수 있는지 (속성 종류 3개, 강화 종류별 3개, 공격방식 고정).
+## 이 카드를 넣을 수 있는지 (속성 종류·강화 종류별 상한, 공격방식 고정).
 func can_take(card: Dictionary) -> bool:
 	match card["type"]:
 		"elem":
-			return elements.has(card["e"]) or order.size() < MAX_ELEMS
+			return elements.has(card["e"]) or order.size() < Rules.max_elems
 		"pat":
 			return can_pattern(card["id"])
 		"mod":
-			return m(card["id"]) < MAX_MOD
+			return m(card["id"]) < Rules.max_mod
 	return true
 
 
@@ -157,11 +172,11 @@ func refuse_text(card: Dictionary) -> String:
 		return ""
 	match card["type"]:
 		"elem":
-			return "속성은 %d종까지예요. 빈 곳에 새 오브젝트로 놓거나 연결선으로 나누세요" % MAX_ELEMS
+			return "속성은 %d종까지예요. 빈 곳에 새 오브젝트로 놓거나 연결선으로 나누세요" % Rules.max_elems
 		"pat":
 			return "이 오브젝트는 %s(으)로 정해져 있어요. 같은 공격방식만 넣을 수 있어요" % Pat.pname(pattern)
 		"mod":
-			return "%s은(는) %d개까지 쌓을 수 있어요" % [Pat.MODS[card["id"]]["name"], MAX_MOD]
+			return "%s은(는) %d개까지 쌓을 수 있어요" % [Pat.MODS[card["id"]]["name"], Rules.max_mod]
 	return ""
 
 
@@ -238,9 +253,9 @@ func add_link(id: String, other: Tower = null) -> String:
 	return Pat.LINKS[id]["name"]
 
 
-## 연결선이 지금 작동하는지: 옮겨서 거리(LINK_RANGE)를 넘으면 끊긴 상태.
+## 연결선이 지금 작동하는지: 옮겨서 거리(Rules.link_range)를 넘으면 끊긴 상태.
 func link_on(o) -> bool:
-	return is_instance_valid(o) and position.distance_to(o.position) <= Pat.LINK_RANGE
+	return is_instance_valid(o) and position.distance_to(o.position) <= Rules.link_range
 
 
 ## 연결된 오브젝트의 속성까지 합친 속성 (레벨은 큰 쪽).
@@ -294,7 +309,7 @@ func _ready_to(key, interval: float, delta: float) -> bool:
 
 ## 다중 발사 방향들 (가운데 기준 0.22라디안 간격).
 func dirs() -> Array:
-	var n := 1 + m("multi")
+	var n := 1 + mn("multi")
 	var out := []
 	for i in n:
 		out.append(aim.rotated((i - (n - 1) / 2.0) * 0.22))
@@ -303,7 +318,7 @@ func dirs() -> Array:
 
 ## 다중 발사면 공격 하나당 피해 55%, 더 쌓을수록 한 발은 조금씩 약해진다 (1개 x1.1, 3개 x1.7).
 func multi_k() -> float:
-	return 1.0 if m("multi") == 0 else 0.55 / (1.0 + 0.15 * (m("multi") - 1))
+	return 1.0 if m("multi") == 0 else 0.55 / (1.0 + 0.15 * (mf("multi") - 1.0))
 
 
 ## main이 웨이브 중 매 계산마다 호출한다.
@@ -315,7 +330,7 @@ func attack(delta: float, orbs: Array) -> void:
 	recoil = maxf(recoil - delta * 6.0, 0.0)
 	_update_aim(orbs, delta)
 	# 속성을 많이 겹칠수록 공격이 느려진다(쌓기 대가), 속사 강화로 빨라진다
-	var de := delta * spd_mul * (1.0 + 0.1 * m("rapid")) / tax()
+	var de := delta * spd_mul * (1.0 + 0.1 * mf("rapid")) / tax()
 	var k := de * 3.0  # 지속 공격의 부가효과 세기
 	var l := plv
 	var s := sz()
@@ -351,7 +366,7 @@ func attack(delta: float, orbs: Array) -> void:
 					recoil = 1.0
 		"wall":
 			rocks = rocks.filter(func(r): return is_instance_valid(r))
-			if _ready_to("p", 4.0 / spd(l), de) and rocks.size() < 2 + m("multi"):
+			if _ready_to("p", 4.0 / spd(l), de) and rocks.size() < 2 + roundi(mf("multi")):
 				main.spawn_rock(self, l)
 		"vortex":
 			if _ready_to("p", 4.5 / spd(l), de):
@@ -385,6 +400,14 @@ func _reactions(orbs: Array, de: float, k: float) -> void:
 
 
 func _reactions_inner(orbs: Array, de: float, k: float) -> void:
+	for key in halo_cd.keys():
+		halo_cd[key] -= de
+		if halo_cd[key] <= 0.0 or not is_instance_valid(key):
+			halo_cd.erase(key)
+	for key in vine_cd.keys():
+		vine_cd[key] -= de
+		if vine_cd[key] <= 0.0 or not is_instance_valid(key):
+			vine_cd.erase(key)
 	for r in reactions():
 		var l := mini(eff.get(r["a"], 1), eff.get(r["b"], 1))
 		var id: String = r["id"]
@@ -393,19 +416,27 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 				if _ready_to(id, 2.2 / spd(l), de):
 					main.spawn_proj(self, "log", l, dir)
 			"steam":
-				_cone(orbs, dir, 120.0 * reach(l), 0.8, func(o):
-					hit(o, 1.5 * pw(l) * de, k)
-					o.slow(0.3, 0.3)
+				# 물길 위로 증기: 띠 전체 감속·약화
+				_band(orbs, position, dir, chan_len(l), chan_w(l), func(o):
+					hit(o, 1.2 * pw(l) * de, k)
+					o.slow(0.35, 0.3)
 					o.vuln(0.5))
 			"vine":
-				if _ready_to(id, 1.6 / spd(l), de):
-					fx[id] = 0.35
-					_line(orbs, dir, 220.0 * reach(l), 14.0, func(o):
+				# 물길 따라 자란 덩굴: 지나가는 구체를 묶는다 (같은 구체는 3초에 한 번)
+				_band(orbs, position, dir, chan_len(l), chan_w(l), func(o):
+					if not vine_cd.has(o):
+						vine_cd[o] = 3.0
 						hit(o, 2.0 * pw(l))
-						o.root(1.5 + 0.25 * (l - 1)))
+						o.root(1.2 + 0.25 * (l - 1)))
 			"shock":
-				if _ready_to(id, 3.0 / spd(l), de):
-					main.spawn_zone("shock", l, position + dir * 150.0 * reach(l), self)
+				# 공격 방향으로 흐르는 물길: 0.5초마다 안의 구체에 전류
+				if _ready_to(id, 0.5, de):
+					zaps.clear()
+					fx[id] = 0.15
+					_band(orbs, position, dir, chan_len(l), chan_w(l), func(o):
+						hit(o, 0.9 * pw(l), 0.3)
+						o.slow(0.6, 0.5)
+						zaps.append(o.position - position))
 			"firestorm":
 				if _ready_to(id, 2.5 / spd(l), de):
 					main.spawn_proj(self, "tornado", l, dir)
@@ -423,18 +454,132 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 						hit(o, 3.0 * pw(l))
 						o.vuln(3.0)
 			"lava":
-				if _ready_to(id, 4.0 / spd(l), de):
-					main.spawn_zone("lava", l, position + dir * 120.0 * reach(l), self)
+				# 앞쪽에 가로로 서는 불타는 벽: 지나가면 크게 느려지고 탄다
+				var w := wall_of(id, l)
+				_band(orbs, w[0], w[1], w[2], 9.0, func(o):
+					hit(o, 1.4 * pw(l) * de, k)
+					o.slow(0.35, 0.3)
+					o.burn(1.0 * l, 1.5))
 			"mushroom":
 				mines = mines.filter(func(mm): return is_instance_valid(mm))
 				if _ready_to(id, 2.0 / spd(l), de) and mines.size() < 4 + l:
 					main.spawn_proj(self, "mushroom", l, dir)
+			"railgun":
+				# 체력이 가장 많은 구체를 조준해 화면 끝까지 관통
+				if not orbs.is_empty() and _ready_to(id, 3.5 / spd(l), de):
+					var best: Orb = null
+					for o in orbs:
+						if best == null or o.hp > best.hp:
+							best = o
+					rail_dir = (best.position - position).normalized()
+					fx[id] = 0.3
+					_line(orbs, rail_dir, 2000.0, 12.0, func(o):
+						hit(o, 6.0 * pw(l))
+						o.push(rail_dir * 25.0))
+			"halo":
+				# 주위를 도는 빛 칼날: 닿으면 반드시 치명타 (같은 구체는 0.5초에 한 번)
+				for bp in halo_blades(l):
+					for o in main.near(position + bp, 14.0):
+						if not halo_cd.has(o) and o.position.distance_to(position + bp) < 14.0 + o.radius():
+							halo_cd[o] = 0.5
+							hit(o, 1.0 * pw(l), 1.0, {}, true, true)
+			"quake":
+				if _ready_to(id, 3.5 / spd(l), de):
+					fx[id] = 0.4
+					for o in orbs:
+						if o.position.distance_to(position) < 150.0 * reach(l) + o.radius():
+							hit(o, 2.5 * pw(l))
+							o.root(0.8)
+			"storm":
+				if _ready_to(id, 2.5 / spd(l), de):
+					main.spawn_proj(self, "storm", l, dir)
+			"aurora":
+				if _ready_to(id, 2.5 / spd(l), de):
+					fx[id] = 0.35
+					var done := {}
+					for i in 5:
+						_line(orbs, dir.rotated((i - 2) * 0.22), 300.0 * reach(l), 8.0, func(o):
+							if not done.has(o):
+								done[o] = true
+								hit(o, 2.2 * pw(l))
+								o.add_chill(1.2))
+			"swamp":
+				# 가로로 깔리는 독 진흙: 크게 느려지고 중독 2배, 안에서 죽으면 독 폭발
+				var w := wall_of(id, l)
+				_band(orbs, w[0], w[1], w[2], 18.0, func(o):
+					hit(o, 1.0 * pw(l) * de, k)
+					o.slow(0.5, 0.3)
+					o.poison(0.8 * l, 3.0)
+					o.swamp_t = 0.3
+					o.swamp_lv = l)
+			"curse":
+				# 표식 구체는 계속 피해를 받는다
+				for o in orbs:
+					if o.curse_owner == self:
+						hit(o, 1.2 * pw(l) * de, k)
+				# 가장 가까운 구체에 표식 (동시에 레벨 수만큼)
+				if _ready_to(id, 2.0 / spd(l), de):
+					var mine := 0
+					var best: Orb = null
+					var bd := 320.0 * reach(l)
+					for o in orbs:
+						if o.curse_lv > 0:
+							if o.curse_owner == self:
+								mine += 1
+							continue
+						var dd: float = o.position.distance_to(position)
+						if dd < bd:
+							bd = dd
+							best = o
+					if best and mine < l:
+						best.curse_lv = l
+						best.curse_owner = self
+			"prison":
+				if _ready_to(id, 7.0 / spd(l), de):
+					fx[id] = 0.5
+					prison_c = dir * 150.0 * reach(l)
+					for o in orbs:
+						if o.position.distance_to(position + prison_c) < 90.0 + 8.0 * (l - 1) + o.radius():
+							hit(o, 2.0 * pw(l))
+							o.root(1.5)
+							o.prison_t = 1.5
+
+
+## 물길: 공격 방향으로 흐르는 띠. 웨이브가 시작되면 물이 앞으로 흘러 나간다.
+func chan_len(l: int) -> float:
+	var full := 260.0 * reach(l)
+	return minf(full, main.wave_time * 520.0) if main else full
+
+
+func chan_w(l: int) -> float:
+	return 20.0 + 3.0 * (l - 1)
+
+
+## 가로 벽(용암·독늪): [시작점(전역), 방향, 길이]. 공격 방향과 수직으로 선다.
+func wall_of(id: String, l: int) -> Array:
+	var dist := (120.0 if id == "lava" else 170.0) * reach(l)
+	var half := (70.0 if id == "lava" else 80.0) + 10.0 * (l - 1)
+	var n := dir.orthogonal()
+	return [position + dir * dist - n * half, n, half * 2.0]
+
+
+## 광륜 칼날 위치(로컬). 레벨마다 하나씩 늘어난다(최대 6).
+func halo_r(l: int) -> float:
+	return 110.0 * reach(l)
+
+
+func halo_blades(l: int) -> Array:
+	var n := mini(1 + l, 6)
+	var out := []
+	for i in n:
+		out.append(Vector2.from_angle(t * 2.4 + TAU * i / n) * halo_r(l))
+	return out
 
 
 ## 유도 강화: 범위·광선 공격은 앞쪽 가장 가까운 구체 쪽으로 방향이 돈다(최대 0.1라디안씩).
 func _update_aim(orbs: Array, delta: float) -> void:
-	var n := m("homing")
-	if n == 0 or pattern in Pat.PROJECTILE:
+	var n := mf("homing")
+	if n == 0.0 or pattern in Pat.PROJECTILE:
 		aim = dir
 		return
 	var limit := 0.1 * n
@@ -455,7 +600,7 @@ func _update_aim(orbs: Array, delta: float) -> void:
 ## 이 오브젝트의 공격이 구체에 닿았을 때. 겹친(나눠 받은) 모든 속성의 부가효과가 붙는다.
 ## k: 부가효과 세기 (한 방=1, 지속 공격=프레임 비례)
 ## extra: 프리즘에서 묻어 온 속성, can_split: 파편은 다시 분열하지 않는다
-func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true) -> void:
+func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_crit := false) -> void:
 	if not is_instance_valid(o) or o.hp <= 0.0:
 		return
 	var els: Dictionary = eff if not eff.is_empty() else elements
@@ -466,7 +611,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true) -> void:
 	var L := func(e: int) -> int: return els.get(e, 0)
 	var d := dmg * dmg_factor(in_rx)
 	var crit := false
-	if els.has(Elem.LIGHT) and randf() < minf(0.12 * L.call(Elem.LIGHT), 0.6) * minf(k, 1.0):
+	if force_crit or els.has(Elem.LIGHT) and randf() < minf(0.12 * L.call(Elem.LIGHT), 0.6) * minf(k, 1.0):
 		d *= 2.0
 		crit = k >= 1.0
 	if els.has(Elem.WOOD):
@@ -478,6 +623,8 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true) -> void:
 	d *= rm
 	o.hurt(d, crit)
 	dealt += d
+	if in_rx:
+		rx_dealt += d
 	if els.has(Elem.FIRE):
 		o.burn(0.8 * L.call(Elem.FIRE) * rm, 2.0)
 	if els.has(Elem.POISON):
@@ -495,7 +642,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true) -> void:
 		o.vuln(2.0)
 	if els.has(Elem.ELECTRIC) and randf() < 0.3 * k:
 		main.arc(o, d * 0.5 * L.call(Elem.ELECTRIC))
-	if can_split and m("split") > 0 and randf() < minf(0.6, 0.12 * m("split")) * minf(k, 1.0):
+	if can_split and m("split") > 0 and randf() < minf(0.6, 0.12 * mf("split")) * minf(k, 1.0):
 		for i in 2:
 			var p: Projectile = main.spawn_proj(self, "frag", plv, Vector2.from_angle(randf() * TAU))
 			p.dmg *= 0.5
@@ -508,6 +655,15 @@ func _cone(orbs: Array, d: Vector2, rng: float, half: float, f: Callable) -> voi
 	for o in orbs:
 		var v: Vector2 = o.position - position
 		if v.length() < rng + o.radius() and absf(d.angle_to(v)) < half:
+			f.call(o)
+
+
+## from에서 d 방향 띠(길이 length, 반폭 half_w) 안의 구체에 효과.
+func _band(orbs: Array, from: Vector2, d: Vector2, length: float, half_w: float, f: Callable) -> void:
+	for o in orbs:
+		var v: Vector2 = o.position - from
+		var along := v.dot(d)
+		if along > -o.radius() and along < length + o.radius() and absf(v.cross(d)) < half_w + o.radius():
 			f.call(o)
 
 
@@ -535,7 +691,7 @@ func _chain(orbs: Array, d: Vector2, l: int, used: Dictionary) -> bool:
 	var pts := PackedVector2Array([position + d * RADIUS])
 	var cur := first
 	var hitset := {}
-	for i in 3 + l + m("bounce"):
+	for i in 3 + l + mn("bounce"):
 		hitset[cur] = true
 		pts.append(cur.position)
 		hit(cur, 2.2 * pw(l) * multi_k())
@@ -693,15 +849,104 @@ func _draw_attack() -> void:
 				else:
 					var ch: float = 1.0 - cd.get("p", 0.0) / (2.0 / spd(l))
 					draw_circle(d * (RADIUS + 4.0), 2.0 + 4.0 * ch, Color(c, 0.4 + 0.6 * ch))
-	for r in reactions():
+	# 물이 들어간 반응은 같은 물길 하나 위에 겹쳐 그린다
+	var rxs := reactions()
+	var chan := 0.0
+	var cw := 0.0
+	for r in rxs:
+		if r["id"] in ["steam", "vine", "shock"]:
+			var rl0 := mini(eff.get(r["a"], 1), eff.get(r["b"], 1))
+			chan = maxf(chan, chan_len(rl0))
+			cw = maxf(cw, chan_w(rl0))
+	if chan > 0.0:
+		_draw_channel(chan, cw)
+	for r in rxs:
 		var rl := mini(eff.get(r["a"], 1), eff.get(r["b"], 1))
+		var n := dir.orthogonal()
 		match r["id"]:
 			"steam":
-				_draw_puffs(dir, 120.0 * reach(rl), 0.8, 18, 1.4, Color.WHITE, r["color"], 5.0, 16.0)
+				var L := chan_len(rl)
+				for i in 12:
+					var f := fmod(t * 0.6 + i * 0.13, 1.0)
+					var p := dir * L * fmod(i * 0.37 + 0.05, 1.0) + n * sin(i * 1.7) * chan_w(rl) * 0.6 + Vector2(0, -f * 18.0)
+					draw_circle(p, 5.0 + f * 10.0, Color(1, 1, 1, 0.28 * (1.0 - f)))
 			"vine":
-				var f: float = fx.get("vine", 0.0)
+				var L := chan_len(rl)
+				for side in [-1.0, 1.0]:
+					var pts := PackedVector2Array()
+					var steps := maxi(int(L / 12.0), 2)
+					for i in steps + 1:
+						var x := L * i / steps
+						pts.append(dir * x + n * (side * chan_w(rl) * 0.85 + sin(x * 0.06 + t * 2.0 + side) * 4.0))
+					draw_polyline(pts, r["color"], 3.0)
+					for i in range(1, steps, 3):
+						draw_circle(pts[i] + n * side * 4.0, 3.0, r["color"].lightened(0.25))
+			"shock":
+				var L := chan_len(rl)
+				var w := chan_w(rl)
+				for i in 4:
+					var p0 := dir * randf() * L + n * randf_range(-w, w) * 0.8
+					draw_line(p0, p0 + Vector2(randf_range(-14, 14), randf_range(-14, 14)), Color(Elem.COLORS[Elem.ELECTRIC], 0.9), 2.0)
+				if fx.get("shock", 0.0) > 0.0:
+					for zp in zaps:
+						var p0: Vector2 = dir * clampf(zp.dot(dir), 0.0, L)
+						var pts := PackedVector2Array([p0])
+						for s2 in 3:
+							pts.append(p0.lerp(zp, (s2 + 1) / 4.0) + Vector2(randf_range(-5, 5), randf_range(-5, 5)))
+						pts.append(zp)
+						draw_polyline(pts, Elem.COLORS[Elem.ELECTRIC], 2.5)
+			"lava", "swamp":
+				var wl := wall_of(r["id"], rl)
+				var a: Vector2 = wl[0] - position
+				var b: Vector2 = a + wl[1] * wl[2]
+				var hw := 9.0 if r["id"] == "lava" else 18.0
+				var dn := dir * hw
+				draw_colored_polygon(PackedVector2Array([a - dn, b - dn, b + dn, a + dn]), Color(r["color"], 0.55 if r["id"] == "lava" else 0.35))
+				if r["id"] == "lava":
+					draw_line(a, b, Color(1, 0.75, 0.2, 0.6 + 0.3 * sin(t * 5.0)), 4.0)
+					for i in 8:
+						var f := fmod(t * 0.9 + i * 0.29, 1.0)
+						draw_circle(a.lerp(b, fmod(i * 0.41, 1.0)) + Vector2(0, -f * 16.0), 2.5 * (1.0 - f) + 0.5, Color(1, 0.6, 0.15, 1.0 - f))
+				else:
+					for i in 7:
+						var f := fmod(t * 0.7 + i * 0.37, 1.0)
+						draw_arc(a.lerp(b, fmod(i * 0.53, 1.0)) + dir * sin(i * 2.3) * hw * 0.5, 2.0 + f * 6.0, 0, TAU, 10, Color(0.7, 0.95, 0.25, 1.0 - f), 1.5)
+			"railgun":
+				var f: float = fx.get("railgun", 0.0)
 				if f > 0.0:
-					_draw_wave(dir, 220.0 * reach(rl) * sin((1.0 - f / 0.35) * PI), 9.0, 0.03, r["color"], 5.0)
+					draw_line(rail_dir * RADIUS, rail_dir * 2000.0, Color(r["color"], f / 0.3), 10.0 * f / 0.3 + 2.0)
+					draw_line(rail_dir * RADIUS, rail_dir * 2000.0, Color(1, 1, 1, f / 0.3), 2.5)
+			"halo":
+				draw_arc(Vector2.ZERO, halo_r(rl), 0, TAU, 48, Color(r["color"], 0.12), 2.0)
+				for bp in halo_blades(rl):
+					var tg: Vector2 = bp.normalized().orthogonal() * 12.0
+					var rd: Vector2 = bp.normalized() * 5.0
+					draw_colored_polygon(PackedVector2Array([bp + tg, bp + rd, bp - tg, bp - rd]), r["color"])
+					draw_circle(bp, 3.0, Color.WHITE)
+			"quake":
+				var f: float = fx.get("quake", 0.0)
+				if f > 0.0:
+					var k2 := 1.0 - f / 0.4
+					var rad := 150.0 * reach(rl) * (0.3 + 0.7 * k2)
+					draw_arc(Vector2.ZERO, rad, 0, TAU, 48, Color(r["color"], 1.0 - k2), 6.0 * (1.0 - k2) + 1.5)
+					for i in 8:
+						var d2 := Vector2.from_angle(TAU * i / 8 + 0.3)
+						draw_line(d2 * RADIUS, d2 * rad + d2.orthogonal() * 8.0 * sin(i * 3.1), Color(0.35, 0.25, 0.15, 1.0 - k2), 3.0)
+			"aurora":
+				var f: float = fx.get("aurora", 0.0)
+				if f > 0.0:
+					var cols := [Color(0.4, 1.0, 0.6), Color(0.4, 0.9, 1.0), Color(0.7, 0.6, 1.0), Color(0.4, 0.9, 1.0), Color(0.4, 1.0, 0.6)]
+					for i in 5:
+						var d2 := dir.rotated((i - 2) * 0.22)
+						draw_line(d2 * RADIUS, d2 * 300.0 * reach(rl), Color(cols[i], f / 0.35 * 0.8), 6.0 * f / 0.35 + 1.5)
+			"prison":
+				var f: float = fx.get("prison", 0.0)
+				if f > 0.0:
+					var rad := 90.0 + 8.0 * (rl - 1)
+					draw_circle(prison_c, rad, Color(r["color"], 0.25 * f / 0.5))
+					for i in 10:
+						var d2 := Vector2.from_angle(TAU * i / 10)
+						draw_line(prison_c + d2 * rad * 0.6, prison_c + d2 * rad, Color(0.8, 0.85, 1.0, f / 0.5), 3.0)
 			"blizzard":
 				var rad := 130.0 * reach(rl)
 				draw_circle(Vector2.ZERO, rad, Color(r["color"], 0.08))
@@ -715,6 +960,23 @@ func _draw_attack() -> void:
 					var k := 1.0 - f / 0.8
 					draw_arc(Vector2.ZERO, 40.0 + k * 1400.0, 0, TAU, 96, Color(r["color"], 1.0 - k), 12.0 * (1.0 - k) + 2.0)
 					draw_circle(Vector2.ZERO, RADIUS + 10.0, Color(0, 0, 0, 0.8 * (1.0 - k)))
+
+
+## 물길 바닥: 공격 방향으로 흐르는 물.
+func _draw_channel(L: float, w: float) -> void:
+	var n := dir.orthogonal() * w
+	var a := dir * RADIUS * 0.6
+	var b := dir * L
+	var wc: Color = Elem.COLORS[Elem.WATER]
+	draw_colored_polygon(PackedVector2Array([a + n, b + n, b - n, a - n]), Color(wc, 0.22))
+	draw_line(a + n, b + n, Color(wc, 0.6), 2.0)
+	draw_line(a - n, b - n, Color(wc, 0.6), 2.0)
+	# 흐르는 물결
+	for i in 9:
+		var f := fmod(t * 0.9 + i / 9.0, 1.0)
+		var p := a.lerp(b, f)
+		draw_line(p + n * 0.7 + dir * 6.0, p - n * 0.7 + dir * 6.0, Color(0.75, 0.9, 1.0, 0.45 * (1.0 - f)), 2.0)
+	draw_arc(b, w, dir.angle() - PI / 2, dir.angle() + PI / 2, 12, Color(0.75, 0.9, 1.0, 0.7), 2.5)
 
 
 ## 부채꼴로 퍼져 나가는 입자(분사·증기).
@@ -800,18 +1062,30 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 		match r["id"]:
 			"burning":
 				_r_circle(ci, o + d * 180.0 * reach(rl), 50.0 + 8.0 * (rl - 1), rc)
-			"steam":
-				_r_cone(ci, o, d, 120.0 * reach(rl), 0.8, rc)
-			"vine":
-				_r_band(ci, o, d, 0.0, 220.0 * reach(rl), 14.0, rc)
-			"shock":
-				_r_circle(ci, o + d * 150.0 * reach(rl), 65.0 + 8.0 * (rl - 1), rc)
+			"steam", "vine", "shock":
+				_r_band(ci, o, d, 0.0, 260.0 * reach(rl), 20.0 + 3.0 * (rl - 1), rc)
 			"firestorm":
 				_r_band(ci, o, d, 0.0, 380.0, 26.0, rc)
 			"blizzard":
 				_r_circle(ci, o, 130.0 * reach(rl), rc)
 			"lava":
-				_r_circle(ci, o + d * 120.0 * reach(rl), 60.0 + 8.0 * (rl - 1), rc)
+				_r_wall(ci, o + d * 120.0 * reach(rl), d, 70.0 + 10.0 * (rl - 1), 9.0, rc)
+			"swamp":
+				_r_wall(ci, o + d * 170.0 * reach(rl), d, 80.0 + 10.0 * (rl - 1), 18.0, rc)
+			"railgun":
+				_r_circle(ci, o, RADIUS + 14.0, rc)
+			"halo":
+				ci.draw_arc(o, 110.0 * reach(rl), 0, TAU, 48, Color(rc.r, rc.g, rc.b, 0.3 * rc.a), 26.0)
+			"quake":
+				_r_circle(ci, o, 150.0 * reach(rl), rc)
+			"storm":
+				_r_band(ci, o, d, 0.0, 360.0 * reach(rl), 100.0, rc)
+			"aurora":
+				_r_cone(ci, o, d, 300.0 * reach(rl), 0.5, rc)
+			"curse":
+				ci.draw_arc(o, 320.0 * reach(rl), 0, TAU, 64, Color(rc.r, rc.g, rc.b, 0.5 * rc.a), 1.5)
+			"prison":
+				_r_circle(ci, o + d * 150.0 * reach(rl), 90.0 + 8.0 * (rl - 1), rc)
 			"mushroom":
 				_r_band(ci, o, d, 80.0, 240.0, 14.0, rc)
 			"eclipse":
@@ -835,6 +1109,16 @@ static func _r_band(ci: CanvasItem, o: Vector2, d: Vector2, from: float, to: flo
 	ci.draw_colored_polygon(pts, Color(c.r, c.g, c.b, 0.14 * c.a))
 	pts.append(a + n)
 	ci.draw_polyline(pts, Color(c.r, c.g, c.b, 0.6 * c.a), 1.5)
+
+
+## 가로 벽 미리보기: 중심 c, 공격 방향 d와 수직으로 반길이 half, 두께 반 hw.
+static func _r_wall(ci: CanvasItem, c: Vector2, d: Vector2, half: float, hw: float, col: Color) -> void:
+	var n := d.orthogonal() * half
+	var t2 := d * hw
+	var pts := PackedVector2Array([c - n - t2, c + n - t2, c + n + t2, c - n + t2])
+	ci.draw_colored_polygon(pts, Color(col.r, col.g, col.b, 0.14 * col.a))
+	pts.append(pts[0])
+	ci.draw_polyline(pts, Color(col.r, col.g, col.b, 0.6 * col.a), 1.5)
 
 
 static func _r_circle(ci: CanvasItem, p: Vector2, r: float, c: Color) -> void:
@@ -883,7 +1167,7 @@ func preview(card: Dictionary) -> Array:
 		"mod":
 			var id: String = card["id"]
 			sp["mods"][id] = m(id) + 1
-			out.append("%s %d → %d (최대 %d)" % [Pat.MODS[id]["name"], m(id), m(id) + 1, MAX_MOD])
+			out.append("%s %d → %d" % [Pat.MODS[id]["name"], m(id), m(id) + 1] + (" (최대 %d)" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "") + ("  효과 x%.2f → x%.2f" % [mf(id), 2.0 * (1.0 - pow(0.5, m(id) + 1))] if Rules.mod_decay else ""))
 			out.append(Pat.MODS[id]["desc"])
 		"link":
 			var id: String = card["id"]

@@ -19,10 +19,11 @@ var t := 0.0
 var trail := PackedVector2Array()  # 잔상(전역 좌표)
 var pierce_left := 0  # 관통 강화로 더 뚫을 수 있는 수
 var bounces := 0  # 튕김 강화
-var homing := 0  # 유도 강화
+var homing := 0.0  # 유도 강화
 var prisms := {}  # 지나온 프리즘 오브젝트
 var prism_els := {}  # 프리즘에서 묻은 속성
 var col := Color.WHITE
+var zap_t := 0.0  # 뇌우: 다음 낙뢰까지
 
 
 func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
@@ -59,11 +60,13 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 			speed = 110.0; dmg = 1.2 * p; radius = 26.0; continuous = true; max_travel = 380.0
 		"mushroom":
 			speed = 220.0; lob = true; max_travel = randf_range(80.0, 240.0)
+		"storm":
+			speed = 75.0; lob = true; dmg = 2.0 * p; radius = 100.0; max_travel = 360.0 * Tower.reach(l)
 	if k in Pat.PROJECTILE:
 		radius *= tower.sz()
-		pierce_left = tower.m("pierce")
-		bounces = tower.m("bounce")
-		homing = tower.m("homing")
+		pierce_left = tower.mn("pierce")
+		bounces = tower.mn("bounce")
+		homing = tower.mf("homing")
 	vel = d * speed
 	position = tower.position + d * Tower.RADIUS
 
@@ -81,7 +84,31 @@ func step(delta: float) -> void:
 	if is_instance_valid(owner_tower) and not lob and kind != "tornado":
 		_check_prisms()
 	t += delta
+	if kind == "storm":
+		_strike(delta)
 	queue_redraw()
+
+
+## 뇌우: 구름 아래(radius 안) 구체 하나에 0.35초마다 낙뢰.
+func _strike(delta: float) -> void:
+	zap_t -= delta
+	if zap_t > 0.0 or not is_instance_valid(owner_tower):
+		return
+	zap_t = 0.35
+	var tw := owner_tower
+	var cands: Array = tw.main.near(position, radius).filter(func(o): return o.hp > 0.0 and o.position.distance_to(position) < radius)
+	if cands.is_empty():
+		return
+	var o: Orb = cands.pick_random()
+	tw.in_rx = true
+	tw.hit(o, dmg)
+	tw.in_rx = false
+	var top := position + Vector2(0, -24)
+	var pts := PackedVector2Array([top])
+	for i in 4:
+		pts.append(top.lerp(o.position, (i + 1) / 5.0) + Vector2(randf_range(-10, 10), randf_range(-4, 4)))
+	pts.append(o.position)
+	tw.main.bolt(pts)
 
 
 ## 유도: 앞쪽 가까운 구체 쪽으로 방향을 튼다.
@@ -220,6 +247,14 @@ func _draw() -> void:
 		"mushroom":
 			var s := 1.0 + sin(travel / max_travel * PI) * 0.8
 			_draw_mushroom(self, s)
+		"storm":
+			var fade := clampf((max_travel - travel) / 40.0, 0.0, 1.0)
+			draw_circle(Vector2(0, 30), radius * 0.9, Color(0.6, 0.65, 0.9, 0.06 * fade))
+			for i in 7:
+				var p := Vector2(cos(i * 0.9 + t * 0.6) * 26.0, sin(i * 1.7) * 7.0 - 24.0)
+				draw_circle(p, 15.0 + 4.0 * sin(i * 2.1 + t), Color(0.55, 0.58, 0.72, 0.85 * fade))
+			for i in 4:
+				draw_circle(Vector2(-24 + i * 16, -30), 9.0, Color(0.75, 0.78, 0.9, 0.7 * fade))
 
 
 func _trail_color() -> Color:

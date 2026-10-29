@@ -7,10 +7,10 @@ const CORE_RADIUS := 14.0
 const CORE_MAX_HP := 10
 const MERGE_DIST := 30.0
 const SAVE_PATH := "user://best.cfg"
-const CHOOSE_HINT := "선택지를 고르세요 (속성·공격방식·강화·연계). 설치된 오브젝트를 클릭하면 위치·방향 변경"
+const CHOOSE_HINT := "선택지를 고르세요 (속성·공격방식·강화·연계). 설치된 오브젝트를 클릭하면 위치·방향 변경   V: 선택지 내리기"
 const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 위치·방향 변경"
 const PAUSE_TEXT := "일시정지\n\nP / Esc: 계속   R: 처음부터   M: 소리   O: 설정   F11: 전체 화면"
-const PLACE_HINT := "클릭: 설치 위치 (기존 오브젝트 위면 속성 겹치기)   우클릭/Esc: 다시 고르기"
+const PLACE_HINT := "클릭: 설치 위치 (기존 오브젝트 위면 속성 겹치기)   오브젝트 꾹 누르기·끌기: 옮기기   우클릭/Esc: 다시 고르기"
 
 var phase := Phase.CHOOSE
 var wave := 0
@@ -28,6 +28,14 @@ var spawn_interval := 1.0
 var lanes: Array[float] = []  # 다음 웨이브 구체가 들어올 방향(라디안)
 var picks_left := 0  # 이번 쉬는 시간에 남은 설치 횟수
 var moving: Tower = null  # 위치를 옮기는 중인 오브젝트
+# 카드를 고른 뒤(PLACE) 오브젝트를 꾹 누르거나 끌면 카드를 유지한 채 옮긴다
+var press_t: Tower = null
+var press_pos := Vector2.ZERO
+var press_ms := 0
+var dragging := false
+var drag_orig := Vector2.ZERO
+var cards_hidden := false  # 선택지를 내려 필드를 보는 중
+var hide_btn: Button
 var move_orig_pos := Vector2.ZERO
 var move_orig_dir := Vector2.RIGHT
 var move_return := Phase.CHOOSE  # 옮기기를 끝내면 돌아갈 단계
@@ -108,6 +116,7 @@ var combo_t := 0.0
 var ui_font: Font
 var title_label: Control  # 메인 메뉴
 var map_label: Label
+var rules_label: Label
 var skin_label: Label
 var core_label: Label
 var records_panel: Label
@@ -125,10 +134,10 @@ func _ready() -> void:
 	Tower.dmg_mul = 1.0
 	Tower.spd_mul = 1.0
 	Tower.reach_mul = 1.0
-	Tower.tax_step = 0.15
 	sfx = Sfx.new()
 	add_child(sfx)
 	_load_best()
+	_apply_rules()
 	zones = _layer("Zones")
 	towers = _layer("Towers")
 	orbs = _layer("Orbs")
@@ -235,20 +244,7 @@ func _build_ui() -> void:
 	root.add_child(legend_btn)
 	legend.add_theme_font_size_override("font_size", 14)
 	legend.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
-	var lines := PackedStringArray([
-		"[오브젝트] 공격방식 + 속성 + 강화 + 연계",
-		"· 새 오브젝트는 직선탄 + 속성 1개",
-		"· 공격방식: 직선탄에만 넣을 수 있고 이후 고정,",
-		"   같은 공격방식을 넣으면 레벨업",
-		"· 속성: 한 오브젝트에 3종까지(레벨은 무제한), 모든 공격에 부가효과",
-		"· 강화: 종류별 3개까지, 공격방식을 변형",
-		"· 연계: 연결선·프리즘·공명",
-		"",
-		"[특수 반응] 두 속성이 함께 있으면 추가 공격",
-	])
-	for r in Elem.REACTIONS:
-		lines.append("%s + %s = %s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["name"]])
-	legend.text = "\n".join(lines)
+	_refresh_legend()
 	root.add_child(legend)
 
 	reroll_btn = Button.new()
@@ -259,6 +255,13 @@ func _build_ui() -> void:
 	reroll_btn.pressed.connect(_on_reroll)
 	reroll_btn.visible = false
 	root.add_child(reroll_btn)
+
+	hide_btn = Button.new()
+	hide_btn.focus_mode = Control.FOCUS_NONE
+	hide_btn.add_theme_font_size_override("font_size", 14)
+	hide_btn.pressed.connect(func(): _set_cards_hidden(not cards_hidden))
+	hide_btn.visible = false
+	root.add_child(hide_btn)
 
 	var bar := HBoxContainer.new()
 	bar.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
@@ -404,9 +407,11 @@ func _show_toast(t: String) -> void:
 func _update_hud() -> void:
 	hud.text = "웨이브 %d   점수 %d   중앙 %d/%d   최고 %d (웨이브 %d)" % [
 		wave, score, maxi(core_hp, 0), core_max, best_score, best_wave]
+	if Meta.rules != 1:
+		hud.text += "   [%s]" % Rules.NAMES[Meta.rules]
 	var nt := towers.get_child_count()
 	if nt > 1:
-		hud.text += "   무리 +%d%% (오브젝트 %d개)" % [roundi(Tower.CROWD * (nt - 1) * 100), nt]
+		hud.text += "   무리 +%d%% (오브젝트 %d개)" % [roundi(Rules.crowd * (nt - 1) * 100), nt]
 	if phase == Phase.WAVE:
 		hud.text += "\n남은 구체 %d" % (to_spawn + _alive_count(orbs))
 	var pt := _perk_text()
@@ -416,22 +421,29 @@ func _update_hud() -> void:
 
 # ---------- 단계 ----------
 
-## 10웨이브부터 구체 체력이 웨이브마다 곱으로 늘어난다 (오브젝트 성장 속도에 맞춤).
-const HP_GROWTH := 1.05
-
-
+## 11웨이브부터 구체 체력이 웨이브마다 곱으로 늘어난다 (오브젝트 성장 속도에 맞춤, Rules.hp_growth).
 static func hp_growth(w: int) -> float:
-	return 1.0 if w <= 10 else pow(HP_GROWTH, w - 10)
+	return 1.0 if w <= 10 else pow(Rules.hp_growth, w - 10)
 
 
-## 저항 구체(12웨이브~): 웨이브마다 저항 속성 하나를 정하고 미리 알려 준다.
+## 저항 구체(12웨이브~, 버전 4는 8~): 웨이브마다 저항 속성 하나를 정하고 미리 알려 준다.
 static func resist_share(w: int) -> float:
-	return 0.0 if w < 12 else minf(0.3 + 0.01 * (w - 12), 0.6)
+	var s := Rules.resist_from
+	return 0.0 if w < s else minf(0.3 + 0.01 * (w - s), 0.6)
 
 
-## 굳센 구체(15웨이브~): 밀기·감속·기절·냉기 절반.
+## 굳센 구체(15웨이브~, 버전 4는 11~): 밀기·감속·기절·냉기 절반.
 static func sturdy_share(w: int) -> float:
-	return 0.0 if w < 15 else minf(0.15 + 0.01 * (w - 15), 0.4)
+	var s := Rules.sturdy_from
+	return 0.0 if w < s else minf(0.15 + 0.01 * (w - s), 0.4)
+
+
+## 고른 규칙 버전을 적용한다 (시작 화면에서 바꿀 때, 새 판마다).
+func _apply_rules() -> void:
+	Rules.apply(Meta.rules)
+	Tower.tax_step = Rules.tax_step
+	if legend:
+		_refresh_legend()
 
 
 static func wave_size(w: int) -> int:
@@ -449,13 +461,14 @@ func _start_choose(new_round := true) -> void:
 		t.queue_redraw()
 	if new_round:
 		_roll_lanes()
-		# 다음 웨이브 저항 속성: 12웨이브부터 60% 확률
-		wave_resist = Elem.ALL.pick_random() if wave + 1 >= 12 and randf() < 0.6 else -1
-		picks_left = 2 if wave <= 1 else 1  # 처음 두 번의 쉬는 시간은 2개씩
+		# 다음 웨이브 저항 속성: 12웨이브(버전 4는 8)부터 60% 확률
+		wave_resist = Elem.ALL.pick_random() if wave + 1 >= Rules.resist_from and randf() < 0.6 else -1
+		picks_left = 2 if wave <= 1 else Rules.picks  # 처음 두 번의 쉬는 시간은 2개씩
 		rerolls_left = 1 + bonus_rerolls + perks.get("reroll", 0)
 		bonus_rerolls = 0
 	_update_preview()
 	_make_choices()
+	cards_hidden = false
 	choice_box.visible = true
 	_update_reroll_btn()
 	hint.text = CHOOSE_HINT + (" (%d개 남음)" % picks_left if picks_left > 1 else "")
@@ -550,7 +563,7 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 				b.text = "[%d] ★ 대격변: 공격방식 ★\n모든 오브젝트의 공격방식을\n직선탄을 뺀 무작위로 바꾼다\n고정·직선탄도 바뀜, 레벨 유지\n(희귀 1%%, 고르면 바로 발동)" % idx
 		"elem":
 			var e: int = card["e"]
-			b.text = "[%d] 속성: %s%s\n부가: %s\n빈 곳: 새 오브젝트(직선탄)\n오브젝트 위: 속성 겹치기 (3종까지)" % [idx, Elem.NAMES[e], " Lv2" if card["lv"] == 2 else "", Elem.RIDER[e]]
+			b.text = "[%d] 속성: %s%s\n부가: %s\n빈 곳: 새 오브젝트(직선탄)\n오브젝트 위: 속성 겹치기%s" % [idx, Elem.NAMES[e], " Lv2" if card["lv"] == 2 else "", Elem.RIDER[e], " (%d종까지)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else ""]
 			var combos := _combos_for(e)
 			if not combos.is_empty():
 				b.text += "\n" + "\n".join(combos.slice(0, 2))
@@ -567,7 +580,7 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 				b.text += "\n" + fits[0]
 		"mod":
 			var id: String = card["id"]
-			b.text = "[%d] 강화: %s\n%s\n오브젝트 위에 놓기 (종류별 3개까지)" % [idx, Pat.MODS[id]["name"], Pat.MODS[id]["desc"]]
+			b.text = "[%d] 강화: %s\n%s\n오브젝트 위에 놓기%s" % [idx, Pat.MODS[id]["name"], Pat.MODS[id]["desc"], " (종류별 %d개까지)" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else " (쌓을수록 효과 절반씩)"]
 		"link":
 			var id: String = card["id"]
 			b.text = "[%d] 연계: %s\n%s\n%s" % [idx, Pat.LINKS[id]["name"], Pat.LINKS[id]["desc"], "오브젝트 두 개를 차례로 클릭" if id == "link" else "오브젝트 위에 놓기"]
@@ -619,6 +632,7 @@ func _start_perk() -> void:
 		b.focus_mode = Control.FOCUS_NONE
 		b.pressed.connect(_on_perk.bind(pk))
 		choice_box.add_child(b)
+	cards_hidden = false
 	choice_box.visible = true
 	reroll_btn.visible = false
 	hint.text = "특성을 하나 고르세요. 이번 판 끝까지 유지됩니다"
@@ -665,8 +679,21 @@ func _on_reroll() -> void:
 
 
 ## 새로고침 버튼: 남은 횟수를 같이 보여 준다.
+## 선택지 내리기·올리기 (V): 카드에 가려진 필드를 본다. 마우스를 올린 오브젝트 범위·정보는 그대로 보인다.
+func _set_cards_hidden(h: bool) -> void:
+	if phase != Phase.CHOOSE:
+		return
+	cards_hidden = h
+	choice_box.visible = not h
+	hover_elem = -1
+	if perk_mode:
+		reroll_btn.visible = false
+	else:
+		_update_reroll_btn()
+
+
 func _update_reroll_btn() -> void:
-	reroll_btn.visible = rerolls_left > 0
+	reroll_btn.visible = rerolls_left > 0 and not cards_hidden
 	reroll_btn.text = "선택지 새로고침 (Q) · %d회 남음" % rerolls_left
 
 
@@ -747,9 +774,11 @@ func _update_preview() -> void:
 		sp.append("체력 x%.1f" % hp_growth(nw))
 	if not sp.is_empty():
 		lines.append("특수: " + " · ".join(sp))
-	var fresh: String = {4: "빠른 구체", 6: "단단한 구체", 8: "보호막 두른 구체(먼저 보호막을 깎아야 함)", 10: "분열 구체(터지면 둘로 나뉨)", 11: "이제부터 구체 체력이 웨이브마다 %d%%씩 곱으로 늘어남" % roundi((HP_GROWTH - 1.0) * 100), 12: "저항 구체(같은 색 점선 고리: 그 속성 비중만큼 피해 최대 60% 감소)", 15: "굳센 구체(회색 쐐기: 밀기·감속·기절·냉기 절반)"}.get(nw, "")
-	if fresh != "":
-		lines.append("처음 등장: " + fresh)
+	var firsts := {4: "빠른 구체", 6: "단단한 구체", 8: "보호막 두른 구체(먼저 보호막을 깎아야 함)", 10: "분열 구체(터지면 둘로 나뉨)", 11: "이제부터 구체 체력이 웨이브마다 %d%%씩 곱으로 늘어남" % roundi((Rules.hp_growth - 1.0) * 100)}
+	for f in [[Rules.resist_from, "저항 구체(같은 색 점선 고리: 그 속성 비중만큼 피해 최대 60% 감소)"], [Rules.sturdy_from, "굳센 구체(회색 쐐기: 밀기·감속·기절·냉기 절반)"]]:
+		firsts[f[0]] = (firsts[f[0]] + ", " if firsts.has(f[0]) else "") + f[1]
+	if firsts.has(nw):
+		lines.append("처음 등장: " + firsts[nw])
 	if nw % 5 == 0:
 		lines.append("보스 등장! 중앙에 닿으면 체력 3 감소")
 	if wave == 0:
@@ -796,8 +825,8 @@ func _place_hint() -> String:
 			return PLACE_HINT
 		"link":
 			if picked["id"] == "link":
-				return ("연결할 두 번째 오브젝트 클릭 (%d 이내)" % int(Pat.LINK_RANGE) if link_a else "연결할 첫 오브젝트 클릭") + "   우클릭/Esc: 다시 고르기"
-	return "넣을 오브젝트를 클릭   우클릭/Esc: 다시 고르기"
+				return ("연결할 두 번째 오브젝트 클릭 (%d 이내)" % int(Rules.link_range) if link_a else "연결할 첫 오브젝트 클릭") + "   꾹 누르기·끌기: 옮기기   우클릭/Esc: 다시 고르기"
+	return "넣을 오브젝트를 클릭   꾹 누르기·끌기: 옮기기   우클릭/Esc: 다시 고르기"
 
 
 func _after_place() -> void:
@@ -861,7 +890,7 @@ func _start_wave() -> void:
 	wave_active = true
 	choice_box.visible = false
 	reroll_btn.visible = false
-	to_spawn = wave_size(wave)
+	to_spawn = roundi(wave_size(wave) * Rules.orb_mul)
 	if Meta.map_id == "cross":
 		to_spawn = roundi(to_spawn * 1.5)
 	for w in [10, 15, 20]:
@@ -874,6 +903,7 @@ func _start_wave() -> void:
 		t.cd.clear()
 		t.fx.clear()
 		t.dealt = 0.0
+		t.rx_dealt = 0.0
 	hint.text = ""
 	big_banner("웨이브 %d" % wave, Color.WHITE)
 	sfx.play("wave", 0.0)
@@ -920,6 +950,10 @@ func _unhandled_input(event: InputEvent) -> void:
 					_cycle_map(-1)
 				KEY_RIGHT:
 					_cycle_map(1)
+				KEY_UP:
+					_cycle_rules(-1)
+				KEY_DOWN:
+					_cycle_rules(1)
 			return
 		if event.keycode == KEY_ESCAPE and phase == Phase.GAMEOVER:
 			title_seen = false
@@ -947,6 +981,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_on_pick(offer[i])
 		elif event.keycode == KEY_Q and phase == Phase.CHOOSE and not perk_mode:
 			_on_reroll()
+		elif event.keycode == KEY_V and phase == Phase.CHOOSE:
+			_set_cards_hidden(not cards_hidden)
 		elif event.keycode == KEY_R and phase == Phase.GAMEOVER:
 			get_tree().reload_current_scene()
 		elif event.keycode == KEY_M:
@@ -962,6 +998,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if get_tree().paused:
 		return
 	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if press_t:
+			_release_press()
+			return
 		# 누른 채 끌어서 놓으면 그 방향으로 바로 확정
 		if phase == Phase.AIM and get_global_mouse_position().distance_to(place_pos) > 40.0 and Time.get_ticks_msec() - aim_start_ms > 150:
 			_confirm_aim()
@@ -1005,25 +1044,21 @@ func _unhandled_input(event: InputEvent) -> void:
 			_cancel_step()
 		return
 	if phase == Phase.PLACE and event.button_index == MOUSE_BUTTON_LEFT:
+		var target := _tower_at(mpos)
+		if target:
+			# 클릭은 손을 뗄 때 처리한다. 꾹 누르거나 끌면 카드를 유지한 채 옮긴다.
+			press_t = target
+			press_pos = mpos
+			press_ms = Time.get_ticks_msec()
+			dragging = false
+			drag_orig = target.position
+			return
 		if mpos.distance_to(center()) < 50.0:
 			_show_toast("중앙 점에 너무 가까워요")
 			return
-		var target := _tower_at(mpos)
 		if picked["type"] != "elem":
 			_apply_card(target)
 			return
-		if target and not target.can_take(picked):
-			_show_toast(target.refuse_text(picked))
-			return
-		if target:
-			var msg: String = target.add(picked["e"], picked["lv"])
-			_show_toast(msg)
-			sfx.play("place")
-			if msg.begins_with("반응"):
-				sfx.play("reaction", 0.0)
-				big_banner(msg + "!", Color(1, 0.8, 0.4))
-				burst(target.position, Color(1, 0.85, 0.4), 30, 260.0)
-			_after_place()
 		else:
 			place_pos = mpos
 			phase = Phase.AIM
@@ -1036,6 +1071,69 @@ func _unhandled_input(event: InputEvent) -> void:
 			_cancel_step()
 	elif phase == Phase.PLACE and event.button_index == MOUSE_BUTTON_RIGHT:
 		_cancel_step()
+
+
+## 고른 카드를 오브젝트에 넣는다 (PLACE에서 오브젝트를 짧게 클릭).
+func _place_on(target: Tower) -> void:
+	if picked["type"] != "elem":
+		_apply_card(target)
+		return
+	if not target.can_take(picked):
+		_show_toast(target.refuse_text(picked))
+		return
+	var msg: String = target.add(picked["e"], picked["lv"])
+	_show_toast(msg)
+	sfx.play("place")
+	if msg.begins_with("반응"):
+		sfx.play("reaction", 0.0)
+		big_banner(msg + "!", Color(1, 0.8, 0.4))
+		burst(target.position, Color(1, 0.85, 0.4), 30, 260.0)
+	_after_place()
+
+
+## PLACE에서 누른 오브젝트: 꾹 누르거나(0.35초) 끌면 옮기기 시작한다.
+func _update_press() -> void:
+	if not press_t:
+		return
+	if phase != Phase.PLACE or not is_instance_valid(press_t):
+		press_t = null
+		dragging = false
+		return
+	var mpos := get_global_mouse_position()
+	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		_release_press()
+		return
+	if not dragging and (mpos.distance_to(press_pos) > 12.0 or Time.get_ticks_msec() - press_ms >= 350):
+		dragging = true
+		press_t.place_pop = 1.0
+		hint.text = "끌어서 옮기는 중: 놓으면 그 자리에 둠 (방향은 그대로)   우클릭/Esc: 취소"
+	if dragging:
+		press_t.position = drag_orig + mpos - press_pos
+		press_t.queue_redraw()
+
+
+## 누른 오브젝트에서 손을 뗐을 때: 끌었으면 그 자리에 두고, 짧은 클릭이면 카드를 넣는다.
+func _release_press() -> void:
+	var t := press_t
+	press_t = null
+	if not is_instance_valid(t) or phase != Phase.PLACE:
+		dragging = false
+		return
+	if not dragging:
+		_place_on(t)
+		return
+	dragging = false
+	hint.text = _place_hint()
+	if t.position.distance_to(center()) < 50.0:
+		_show_toast("중앙 점에 너무 가까워요")
+		t.position = drag_orig
+	elif _tower_at(t.position, t):
+		_show_toast("다른 오브젝트와 겹칠 수 없어요")
+		t.position = drag_orig
+	elif t.position.distance_to(drag_orig) > 4.0:
+		sfx.play("place")
+	t.place_pop = 1.0
+	t.queue_redraw()
 
 
 ## 방향 확정 (클릭, 또는 끌었다 놓기).
@@ -1083,6 +1181,7 @@ func _build_menu(root: Control) -> void:
 	desc.text = "밖에서 몰려오는 구체를 막아 중앙 점을 지키세요\n공격방식·속성·강화·연계를 조합해 오브젝트를 키우세요"
 	box.add_child(desc)
 	map_label = _menu_row(box, func(): _cycle_map(-1), func(): _cycle_map(1))
+	rules_label = _menu_row(box, func(): _cycle_rules(-1), func(): _cycle_rules(1))
 	skin_label = _menu_row(box, func(): _cycle_skin("tower", -1), func(): _cycle_skin("tower", 1))
 	core_label = _menu_row(box, func(): _cycle_skin("core", -1), func(): _cycle_skin("core", 1))
 	var row := HBoxContainer.new()
@@ -1199,8 +1298,9 @@ func _menu_row(box: VBoxContainer, prev: Callable, next: Callable) -> Label:
 
 func _refresh_menu() -> void:
 	var m: Dictionary = Meta.MAPS[Meta.map_id]
-	var best := Meta.best_of(Meta.map_id)
+	var best := Meta.best_of(Meta.key())
 	map_label.text = "맵: %s  (←/→)\n%s\n최고 기록  웨이브 %d · 점수 %d" % [m["name"], m["desc"], best[0], best[1]]
+	rules_label.text = "규칙: %s  (↑/↓)\n%s" % [Rules.NAMES[Meta.rules], Rules.DESCS[Meta.rules]]
 	var ts: Dictionary = Meta.TOWER_SKINS[Meta.tower_skin]
 	skin_label.text = "오브젝트 모양: " + ts["name"]
 	var cs: Dictionary = Meta.CORE_SKINS[Meta.core_skin]
@@ -1216,6 +1316,42 @@ func _cycle_map(d: int) -> void:
 	_refresh_menu()
 	_save_best()
 	queue_redraw()
+
+
+## 오른쪽 설명: 상한은 규칙 버전에 따라 다르다.
+func _refresh_legend() -> void:
+	var cap_e := "%d종까지(레벨은 무제한)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "제한 없음(종류마다 공격 속도 -%d%%)" % roundi(Rules.tax_step * 100)
+	var cap_m := "종류별 %d개까지" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "제한 없음(쌓을수록 효과 절반씩)"
+	var lines := PackedStringArray([
+		"[오브젝트] 공격방식 + 속성 + 강화 + 연계",
+		"· 새 오브젝트는 직선탄 + 속성 1개",
+		"· 공격방식: 직선탄에만 넣을 수 있고 이후 고정,",
+		"   같은 공격방식을 넣으면 레벨업",
+		"· 속성: 한 오브젝트에 %s, 모든 공격에 부가효과" % cap_e,
+		"· 강화: %s, 공격방식을 변형" % cap_m,
+		"· 연계: 연결선·프리즘·공명",
+		"",
+		"[특수 반응] 두 속성이 함께 있으면 추가 공격",
+	])
+	# 반응이 많아 한 줄에 두 개씩
+	var rs: Array = Elem.REACTIONS
+	for i in range(0, rs.size(), 2):
+		var row := PackedStringArray()
+		for r in rs.slice(i, i + 2):
+			row.append("%s+%s %s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["name"]])
+		lines.append("   ".join(row))
+	legend.text = "\n".join(lines)
+
+
+## 규칙 버전 바꾸기: 기록은 버전마다 따로.
+func _cycle_rules(d: int) -> void:
+	var i := Rules.IDS.find(Meta.rules)
+	Meta.rules = Rules.IDS[(i + d + Rules.IDS.size()) % Rules.IDS.size()]
+	_apply_rules()
+	sfx.play("place")
+	_refresh_menu()
+	_save_best()
+	_update_hud()
 
 
 ## 잠긴 스킨은 건너뛰고, 잠긴 것이 있으면 해금 조건을 알려 준다.
@@ -1248,9 +1384,9 @@ func _toggle_records() -> void:
 	records_panel.visible = not records_panel.visible
 	if not records_panel.visible:
 		return
-	var lines := PackedStringArray(["[맵별 최고 기록]   (아무 곳이나 클릭: 닫기)"])
+	var lines := PackedStringArray(["[맵별 최고 기록 · %s]   (아무 곳이나 클릭: 닫기)" % Rules.NAMES[Meta.rules]])
 	for id in Meta.MAP_IDS:
-		var b := Meta.best_of(id)
+		var b := Meta.best_of(Meta.key(id))
 		lines.append("  %s: 웨이브 %d · 점수 %d" % [Meta.MAPS[id]["name"], b[0], b[1]])
 	lines.append("  총 처치 %d · 플레이 %d판" % [Meta.total_kills, Meta.games])
 	lines.append("")
@@ -1363,8 +1499,8 @@ func _apply_card(target: Tower) -> void:
 					return
 				if target == link_a:
 					return
-				if target.position.distance_to(link_a.position) > Pat.LINK_RANGE:
-					_show_toast("너무 멀어요 (%d 이내)" % int(Pat.LINK_RANGE))
+				if target.position.distance_to(link_a.position) > Rules.link_range:
+					_show_toast("너무 멀어요 (%d 이내)" % int(Rules.link_range))
 					return
 				if link_a.links.has(target):
 					_show_toast("이미 연결되어 있어요")
@@ -1386,6 +1522,14 @@ func _apply_card(target: Tower) -> void:
 
 ## 우클릭·Esc: 방향 고르기 → 위치 고르기 → 오브젝트 고르기 순으로 한 단계 되돌린다.
 func _cancel_step() -> void:
+	if press_t:
+		if dragging and is_instance_valid(press_t):
+			press_t.position = drag_orig
+			press_t.queue_redraw()
+		press_t = null
+		dragging = false
+		hint.text = _place_hint()
+		return
 	if moving:
 		moving.position = move_orig_pos
 		moving.dir = move_orig_dir
@@ -1407,7 +1551,7 @@ func _cancel_step() -> void:
 ## 선택지를 그대로 둔 채 오브젝트 고르기로 돌아간다.
 func _back_to_choose() -> void:
 	phase = Phase.CHOOSE
-	choice_box.visible = true
+	choice_box.visible = not cards_hidden
 	_update_reroll_btn()
 	hint.text = CHOOSE_HINT + (" (%d개 남음)" % picks_left if picks_left > 1 else "")
 
@@ -1501,7 +1645,7 @@ func spawn_zone(kind: String, l: int, pos: Vector2, t: Tower) -> Zone:
 ## 벽 공격방식: 발사 방향에 바위 벽. 오브젝트당 최대 2개(+다중 발사).
 func spawn_rock(t: Tower, l: int) -> void:
 	t.rocks = t.rocks.filter(func(r): return is_instance_valid(r) and not r.is_queued_for_deletion())
-	if t.rocks.size() >= 2 + t.m("multi"):
+	if t.rocks.size() >= 2 + roundi(t.mf("multi")):
 		return
 	var dist := 90.0 + 60.0 * t.rocks.size()
 	t.rocks.append(spawn_zone("rock", l, t.position + t.dir * dist * Tower.reach(l), t))
@@ -1635,6 +1779,16 @@ func _process(delta: float) -> void:
 	queue_redraw()
 	if phase == Phase.MOVE and moving:
 		moving.position = get_global_mouse_position()
+	_update_press()
+	hide_btn.visible = phase == Phase.CHOOSE and not title_label.visible
+	hide_btn.text = ("▲ 선택지 다시 보기" if cards_hidden else "▼ 선택지 내리고 필드 보기") + " (V)"
+	# 펼쳐 있으면 새로고침 버튼 아래, 내려 두면 화면 위쪽 가운데
+	hide_btn.set_anchors_preset(Control.PRESET_CENTER_TOP if cards_hidden else Control.PRESET_CENTER)
+	var hy := 96.0 if cards_hidden else 148.0
+	hide_btn.offset_left = -130.0
+	hide_btn.offset_right = 130.0
+	hide_btn.offset_top = hy
+	hide_btn.offset_bottom = hy + 32.0
 	restart_armed = maxf(restart_armed - delta, 0.0)
 	if get_tree().paused:
 		return
@@ -1683,8 +1837,8 @@ func _sim_step(delta: float) -> void:
 	elif to_spawn == 0 and _alive_count(orbs) == 0:
 		_achieve("first")
 		if wave >= 5:
-			Meta.map_best[Meta.map_id] = [maxi(Meta.best_of(Meta.map_id)[0], wave), maxi(Meta.best_of(Meta.map_id)[1], score)]
-			if Meta.MAP_IDS.all(func(id): return Meta.best_of(id)[0] >= 5):
+			Meta.map_best[Meta.key()] = [maxi(Meta.best_of(Meta.key())[0], wave), maxi(Meta.best_of(Meta.key())[1], score)]
+			if Meta.MAP_IDS.all(func(id): return Meta.best_of(Meta.key(id))[0] >= 5):
 				_achieve("allmaps")
 		var bonus := wave * 20
 		score += bonus
@@ -1776,6 +1930,10 @@ func _resolve(delta: float) -> void:
 				for other in targets:
 					if other != o and other.position.distance_to(o.position) < 80.0:
 						other.poison(o.poison_dps, 3.0)
+			if o.curse_lv > 0:
+				_curse_burst(o)
+			if o.swamp_t > 0.0:
+				_swamp_burst(o)
 			o.queue_free()
 			continue
 		if o.position.distance_to(center()) < CORE_RADIUS + o.radius():
@@ -1791,6 +1949,41 @@ func _resolve(delta: float) -> void:
 	for a in arcs:
 		a[2] -= delta
 	arcs = arcs.filter(func(a): return a[2] > 0.0)
+
+
+## 저주: 표식 구체가 죽으면 주변에 그 구체 최대 체력 비례 피해, 표식은 가까운 구체로 옮겨 간다.
+func _curse_burst(o: Orb) -> void:
+	var tw: Tower = o.curse_owner if is_instance_valid(o.curse_owner) else null
+	var dmg := 0.25 * o.max_hp * (1.0 + 0.2 * (o.curse_lv - 1))
+	var next: Orb = null
+	var bd := 220.0
+	for other in near(o.position, bd):
+		if other == o or other.hp <= 0.0:
+			continue
+		var d: float = other.position.distance_to(o.position)
+		if d < 100.0 + other.radius():
+			other.hurt(dmg)
+			if tw:
+				tw.dealt += dmg
+				tw.rx_dealt += dmg
+		if other.curse_lv == 0 and d < bd:
+			bd = d
+			next = other
+	burst(o.position, Color(0.75, 0.3, 0.9), 18, 200.0)
+	if next and tw:
+		next.curse_lv = o.curse_lv
+		next.curse_owner = tw
+		if arcs.size() < 80:
+			arcs.append([o.position, next.position, 0.25])
+	o.curse_lv = 0
+
+
+## 독늪 안에서 죽으면 독이 터져 주변 구체를 중독시킨다.
+func _swamp_burst(o: Orb) -> void:
+	for other in near(o.position, 90.0):
+		if other != o and other.hp > 0.0 and other.position.distance_to(o.position) < 90.0 + other.radius():
+			other.poison(1.5 * o.swamp_lv, 4.0)
+	burst(o.position, Color(0.6, 0.85, 0.2), 12, 160.0)
 
 
 ## 구체 위치 격자: 발사체·장판이 가까운 구체만 확인하도록.
@@ -2102,8 +2295,13 @@ func _draw() -> void:
 					draw_line(t.position + Vector2(-8, -8), t.position + Vector2(8, 8), Color(1, 0.3, 0.3, 0.7), 3.0)
 					draw_line(t.position + Vector2(8, -8), t.position + Vector2(-8, 8), Color(1, 0.3, 0.3, 0.7), 3.0)
 		if link_a:
-			draw_arc(link_a.position, Pat.LINK_RANGE, 0, TAU, 64, Color(col, 0.35), 1.5)
-			draw_line(link_a.position, mpos, Color(col, 0.7), 3.0)
+			draw_arc(link_a.position, Rules.link_range, 0, TAU, 64, Color(col, 0.35), 1.5)
+			var to := press_t.position if dragging and press_t != link_a else mpos
+			if link_a.position.distance_to(to) <= Rules.link_range:
+				draw_line(link_a.position, to, Color(col, 0.7), 3.0)
+			else:
+				draw_dashed_line(link_a.position, to, Color(1, 0.4, 0.4, 0.8), 3.0, 10.0)
+				draw_string(ui_font, to + Vector2(-30, Tower.RADIUS + 36), "너무 멂", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 0.5, 0.5))
 		var target := _tower_at(mpos)
 		if target:
 			var pv: Array = target.preview(picked)
@@ -2146,15 +2344,17 @@ func _draw() -> void:
 	# 마우스를 올린 오브젝트의 공격 범위
 	if phase == Phase.MOVE and moving:
 		Tower.draw_range(self, mpos, moving.dir, moving.spec())
-		# 연결선: 옮길 자리에서 이어지는지 미리 보여 준다
-		for o in moving.links:
+	# 연결선: 옮길 자리에서 이어지는지 미리 보여 준다
+	var mover: Tower = moving if phase == Phase.MOVE else (press_t if dragging else null)
+	if mover:
+		for o in mover.links:
 			if is_instance_valid(o):
-				var ok := mpos.distance_to(o.position) <= Pat.LINK_RANGE
-				draw_arc(o.position, Pat.LINK_RANGE, 0, TAU, 64, Color(1, 1, 1, 0.15) if ok else Color(1, 0.4, 0.4, 0.35), 1.5)
+				var ok := mover.position.distance_to(o.position) <= Rules.link_range
+				draw_arc(o.position, Rules.link_range, 0, TAU, 64, Color(1, 1, 1, 0.15) if ok else Color(1, 0.4, 0.4, 0.35), 1.5)
 				if ok:
-					draw_line(mpos, o.position, Color(0.6, 1, 1, 0.6), 2.0)
+					draw_line(mover.position, o.position, Color(0.6, 1, 1, 0.6), 2.0)
 				else:
-					draw_dashed_line(mpos, o.position, Color(1, 0.4, 0.4, 0.7), 2.0, 10.0)
+					draw_dashed_line(mover.position, o.position, Color(1, 0.4, 0.4, 0.7), 2.0, 10.0)
 	if phase in [Phase.CHOOSE, Phase.WAVE, Phase.READY]:
 		var hov := _tower_at(mpos)
 		if hov:
@@ -2185,7 +2385,7 @@ func _load_best() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(SAVE_PATH) == OK:
 		Meta.load_into(cfg)
-		var b := Meta.best_of(Meta.map_id)
+		var b := Meta.best_of(Meta.key())
 		best_wave = b[0]
 		best_score = b[1]
 		auto_start = cfg.get_value("option", "auto_start", false)
@@ -2198,9 +2398,9 @@ func _load_best() -> void:
 
 func _save_best() -> void:
 	var cfg := ConfigFile.new()
-	var b := Meta.best_of(Meta.map_id)
+	var b := Meta.best_of(Meta.key())
 	if best_wave > b[0] or best_score > b[1]:
-		Meta.map_best[Meta.map_id] = [maxi(best_wave, b[0]), maxi(best_score, b[1])]
+		Meta.map_best[Meta.key()] = [maxi(best_wave, b[0]), maxi(best_score, b[1])]
 	Meta.save_into(cfg)
 	cfg.set_value("option", "auto_start", auto_start)
 	cfg.set_value("option", "legend_hidden", legend_hidden)

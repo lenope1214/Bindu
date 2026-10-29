@@ -35,7 +35,7 @@ const ACHIEVEMENTS := {
 	"wave20": {"name": "철벽", "desc": "웨이브 20 도달"},
 	"boss": {"name": "보스 사냥", "desc": "보스 처치"},
 	"codex5": {"name": "연금술사", "desc": "특수 반응 5종 발견 (도감)"},
-	"codex9": {"name": "현자", "desc": "특수 반응 9종 모두 발견"},
+	"codex9": {"name": "현자", "desc": "특수 반응 모두 발견"},
 	"links3": {"name": "연결망", "desc": "한 판에 연결선 3개"},
 	"stack5": {"name": "무지개", "desc": "오브젝트 하나에 속성 5종"},
 	"combo30": {"name": "연쇄 폭발", "desc": "콤보 30"},
@@ -45,6 +45,7 @@ const ACH_IDS := ["first", "wave10", "wave15", "wave20", "boss", "codex5", "code
 
 # ---------- 저장되는 값 ----------
 static var map_id := "plain"
+static var rules := 1  # 규칙 버전 (Rules)
 static var tower_skin := "circle"
 static var core_skin := "dot"
 static var map_best := {}  # 맵 id -> [웨이브, 점수]
@@ -56,6 +57,11 @@ static var volume := 1.0
 static var shake_on := true
 static var numbers_on := true
 static var loaded := false
+
+
+## 기록 키: 버전 1은 맵 id 그대로(예전 기록 유지), 다른 버전은 따로 센다.
+static func key(id: String = map_id) -> String:
+	return id if rules == 1 else "%s@v%d" % [id, rules]
 
 
 static func best_of(id: String) -> Array:
@@ -86,6 +92,9 @@ static func load_into(cfg: ConfigFile) -> void:
 	map_id = cfg.get_value("meta", "map", "plain")
 	if not map_id in MAP_IDS:
 		map_id = "plain"
+	rules = cfg.get_value("meta", "rules", 1)
+	if not rules in Rules.IDS:
+		rules = 1
 	tower_skin = cfg.get_value("meta", "tower_skin", "circle")
 	core_skin = cfg.get_value("meta", "core_skin", "dot")
 	map_best = cfg.get_value("meta", "map_best", {})
@@ -108,6 +117,7 @@ static func load_into(cfg: ConfigFile) -> void:
 
 static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("meta", "map", map_id)
+	cfg.set_value("meta", "rules", rules)
 	cfg.set_value("meta", "tower_skin", tower_skin)
 	cfg.set_value("meta", "core_skin", core_skin)
 	cfg.set_value("meta", "map_best", map_best)

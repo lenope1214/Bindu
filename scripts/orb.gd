@@ -26,6 +26,11 @@ var poison_t := 0.0
 var vuln_t := 0.0
 var chill := 0.0
 var frozen_t := 0.0  # 빙결 표시
+var swamp_t := 0.0  # 독늪 안: 중독 2배, 죽으면 독 폭발
+var swamp_lv := 1
+var prison_t := 0.0  # 빙결 감옥: 받는 피해 +50%
+var curse_lv := 0  # 저주 표식 (죽으면 주변 피해, 표식이 옮겨 감)
+var curse_owner: Object = null
 var flash := 0.0
 var main: Node
 var dmg_acc := 0.0  # 피해 숫자 팝업용 누적
@@ -73,13 +78,15 @@ func step(delta: float) -> void:
 	vuln_t = maxf(vuln_t - delta, 0.0)
 	flash = maxf(flash - delta, 0.0)
 	frozen_t = maxf(frozen_t - delta, 0.0)
+	swamp_t = maxf(swamp_t - delta, 0.0)
+	prison_t = maxf(prison_t - delta, 0.0)
 	chill = maxf(chill - 0.4 * delta, 0.0)
 	if burn_t > 0.0:
 		burn_t -= delta
 		hurt(burn_dps * delta)
 	if poison_t > 0.0:
 		poison_t -= delta
-		hurt(poison_dps * delta)
+		hurt(poison_dps * delta * (2.0 if swamp_t > 0.0 else 1.0))
 	# 피해 숫자는 0.35초마다 묶어서 표시
 	pop_t -= delta
 	if pop_t <= 0.0 and dmg_acc >= 1.0 and main:
@@ -98,7 +105,7 @@ func step(delta: float) -> void:
 
 
 func hurt(amount: float, crit := false) -> void:
-	var d := amount * (1.3 if vuln_t > 0.0 else 1.0)
+	var d := amount * (1.5 if prison_t > 0.0 else 1.3 if vuln_t > 0.0 else 1.0)
 	if shield > 0.0:
 		var absorbed := minf(shield, d)
 		shield -= absorbed
@@ -244,6 +251,17 @@ func _draw() -> void:
 			draw_line(Vector2.ZERO, Vector2(cos(a), sin(a)) * (r + 6.0), Color(1, 1, 1, 0.8), 2.0)
 	elif root_timer > 0.0:
 		draw_arc(Vector2.ZERO, r + 6.0, 0, TAU, 24, Elem.COLORS[Elem.EARTH], 3.0)
+	if prison_t > 0.0:
+		# 빙결 감옥: 어두운 얼음 창살
+		for i in 8:
+			var a := TAU * i / 8
+			draw_line(Vector2(cos(a), sin(a)) * (r + 2.0), Vector2(cos(a), sin(a)) * (r + 10.0), Color(0.45, 0.5, 0.95, 0.9), 3.0)
+	if curse_lv > 0:
+		# 저주 표식: 머리 위에서 도는 보라색 눈
+		var cp := Vector2(0, -r - 18.0)
+		var cc := Color(0.75, 0.3, 0.9)
+		draw_arc(cp, 7.0, age * 3.0, age * 3.0 + TAU * 0.75, 12, cc, 2.0)
+		draw_circle(cp, 2.5, cc)
 	# 상태 표시 점: 화상·중독·약화·감속
 	var icons: Array = []
 	if burn_t > 0.0: icons.append(Elem.COLORS[Elem.FIRE])

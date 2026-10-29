@@ -12,8 +12,6 @@ var t := 0.0
 var tick := 0.0
 var hp := 1.0  # 바위 벽
 var dead := false
-var zap_pts: Array = []  # 감전 순간 번개 표시
-var zap_t := 0.0
 
 
 func setup(k: String, l: int, tower: Tower) -> void:
@@ -23,10 +21,6 @@ func setup(k: String, l: int, tower: Tower) -> void:
 	match k:
 		"burn":
 			radius = 50.0 + 8.0 * (l - 1); max_life = 4.0
-		"lava":
-			radius = 60.0 + 8.0 * (l - 1); max_life = 4.0
-		"shock":
-			radius = 65.0 + 8.0 * (l - 1); max_life = 3.0
 		"vortex":
 			radius = 90.0 + 10.0 * (l - 1); max_life = 2.5
 		"mine":
@@ -51,12 +45,6 @@ func _p() -> float:
 func affect(orbs: Array, delta: float) -> void:
 	t += delta
 	tick -= delta
-	var shock_tick := false
-	if kind == "shock" and tick <= 0.0:
-		tick = 0.5
-		shock_tick = true
-		zap_pts.clear()
-		zap_t = 0.15
 	for o in orbs:
 		var dist: float = o.position.distance_to(position)
 		var inside: bool = dist < radius + o.radius()
@@ -65,15 +53,6 @@ func affect(orbs: Array, delta: float) -> void:
 				if inside:
 					_hurt(o, 2.5 * _p() * delta)
 					o.burn(1.0, 1.0)
-			"lava":
-				if inside:
-					_hurt(o, 1.4 * _p() * delta)
-					o.slow(0.5, 0.3)
-			"shock":
-				if inside and shock_tick:
-					_hurt(o, 1.5 * _p())
-					o.slow(0.6, 0.5)
-					zap_pts.append(o.position - position)
 			"vortex":
 				if inside:
 					o.push((position - o.position).limit_length(80.0 * delta))
@@ -120,7 +99,6 @@ func _explode(orbs: Array) -> void:
 ## main이 웨이브 중 호출한다(배속이면 한 프레임에 여러 번).
 func step(delta: float) -> void:
 	life -= delta
-	zap_t = maxf(zap_t - delta, 0.0)
 	if life <= 0.0:
 		queue_free()
 	queue_redraw()
@@ -137,28 +115,6 @@ func _draw() -> void:
 				var f := fmod(t * 1.6 + i * 0.13, 1.0)
 				var p := Vector2(cos(ang), sin(ang)) * rr + Vector2(0, -f * 14.0)
 				draw_circle(p, (1.0 - f) * 6.0, Color(Elem.COLORS[Elem.FIRE].lerp(Color(1, 0.9, 0.3), f), a * (1.0 - f)))
-		"lava":
-			_ground(Color(0.95, 0.3, 0.05), a, 0.35)
-			draw_arc(Vector2.ZERO, radius - 4.0, 0, TAU, 48, Color(1, 0.75, 0.2, 0.4 * a * (0.6 + 0.4 * sin(t * 4.0))), 5.0)
-			for i in 8:
-				var f := fmod(t * 0.8 + i * 0.29, 1.0)
-				var p := Vector2(cos(i * 2.1), sin(i * 2.1)) * radius * fmod(i * 0.53, 0.9)
-				draw_arc(p, 2.0 + f * 6.0, 0, TAU, 12, Color(1, 0.8, 0.3, a * (1.0 - f)), 1.5)
-		"shock":
-			_ground(Color(0.55, 0.85, 1.0), a)
-			for i in 5:
-				var a0 := randf() * TAU
-				var p0 := Vector2(cos(a0), sin(a0)) * radius * randf()
-				var p1 := p0 + Vector2(randf_range(-20, 20), randf_range(-20, 20))
-				draw_line(p0, p1, Color(Elem.COLORS[Elem.ELECTRIC], a), 2.0)
-			if zap_t > 0.0:
-				draw_circle(Vector2.ZERO, radius, Color(1, 1, 0.6, 0.15 * zap_t / 0.15))
-				for zp in zap_pts:
-					var pts := PackedVector2Array([Vector2.ZERO])
-					for s in 4:
-						pts.append(Vector2.ZERO.lerp(zp, (s + 1) / 5.0) + Vector2(randf_range(-6, 6), randf_range(-6, 6)))
-					pts.append(zp)
-					draw_polyline(pts, Elem.COLORS[Elem.ELECTRIC], 2.5)
 		"puddle":
 			var pc: Color = owner_tower.color() if is_instance_valid(owner_tower) else Color(0.7, 0.9, 0.3)
 			_ground(pc, a, 0.25)
@@ -212,3 +168,5 @@ func _hurt(o: Orb, amount: float) -> void:
 	o.hurt(amount)
 	if is_instance_valid(owner_tower):
 		owner_tower.dealt += amount
+		if kind in ["burn", "mine", "boom"]:  # 장작 장판·독버섯은 반응 피해
+			owner_tower.rx_dealt += amount
