@@ -122,6 +122,8 @@ var combo := 0
 var combo_t := 0.0
 var ui_font: Font
 var perk_src := ""
+var hud_wrap_key := ""
+var hud_wrap := false
 var perk_wrapped := ""
 var title_label: Control  # 메인 메뉴
 var map_label: Label
@@ -446,9 +448,15 @@ func _update_hud() -> void:
 	var nt := towers.get_child_count()
 	if nt > 1:
 		extra += "   무리 +%d%% (오브젝트 %d개)" % [roundi(Rules.crowd * (nt - 1) * 100), nt]
-	# 길어지면 오른쪽 위 설명 버튼과 겹치므로 둘째 줄로
-	if extra != "" and ui_font.get_string_size(text + extra, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x > 1080.0:
-		extra = "\n" + extra.strip_edges()
+	# 길어지면 오른쪽 위 설명 버튼과 겹치므로 둘째 줄로. 글자 모양 계산은 비싸서
+	# 길이나 덧붙인 내용이 바뀔 때만 다시 잰다 (점수 숫자만 바뀌면 폭은 거의 그대로)
+	if extra != "":
+		var key := "%d|%s" % [text.length(), extra]
+		if key != hud_wrap_key:
+			hud_wrap_key = key
+			hud_wrap = ui_font.get_string_size(text + extra, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x > 1080.0
+		if hud_wrap:
+			extra = "\n" + extra.strip_edges()
 	text += extra
 	if phase == Phase.WAVE:
 		text += "\n남은 구체 %d" % (to_spawn + _alive_count(orbs))
@@ -2130,7 +2138,8 @@ func _process(delta: float) -> void:
 	# 배속: 한 프레임을 1배속 크기의 조각으로 나눠 여러 번 계산한다.
 	# 공격 주기·충돌이 배속과 상관없이 1배속과 같게 나온다.
 	var steps := ceili(game_speed)
-	var dt := delta * game_speed / steps
+	# 프레임이 한 번 크게 끊겨도(창 끌기·버벅임) 한 조각이 1/20초를 넘지 않게: 구체가 지뢰·벽을 건너뛰지 않는다
+	var dt := minf(delta, 0.05) * game_speed / steps
 	for i in steps:
 		_sim_step(dt)
 		if phase != Phase.WAVE:
