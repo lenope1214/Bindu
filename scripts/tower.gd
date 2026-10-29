@@ -24,6 +24,7 @@ var fx := {}  # 공격별 이펙트 남은 시간
 var t := 0.0
 var dealt := 0.0  # 이번(또는 지난) 웨이브에 준 피해
 var rx_dealt := 0.0  # 그중 특수 반응 피해 (측정·표시용)
+var run_dealt := 0.0  # 지난 웨이브들까지 합친 피해 (게임 오버 요약용)
 var recoil := 0.0  # 발사 반동
 var place_pop := 0.0  # 설치·겹치기 순간 커졌다 줄어드는 연출
 var rocks: Array = []

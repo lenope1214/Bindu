@@ -994,6 +994,7 @@ func _start_wave() -> void:
 	for t in towers.get_children():
 		t.cd.clear()
 		t.fx.clear()
+		t.run_dealt += t.dealt
 		t.dealt = 0.0
 		t.rx_dealt = 0.0
 	hint.text = ""
@@ -1014,7 +1015,17 @@ func _game_over() -> void:
 	Meta.games += 1
 	_save_best()
 	var ach := "\n새 업적: " + ", ".join(new_achievements) if not new_achievements.is_empty() else ""
-	over_label.text = "게임 오버 (%s · %s)\n웨이브 %d · 점수 %s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s\nR 또는 클릭: 다시 시작   Esc: 메뉴" % [Meta.MAPS[Meta.map_id]["name"], Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, num(kills), best_combo, towers.get_child_count(), ach]
+	# 판 전체에서 가장 많이 때린 오브젝트
+	var mvp := ""
+	var top: Tower = null
+	var total := 0.0
+	for t in towers.get_children():
+		total += t.run_dealt + t.dealt
+		if top == null or t.run_dealt + t.dealt > top.run_dealt + top.dealt:
+			top = t
+	if top and total > 0.0 and towers.get_child_count() > 1:
+		mvp = "\n가장 많이 때린 오브젝트: %s (%d%%)" % [top.title(), roundi((top.run_dealt + top.dealt) / total * 100.0)]
+	over_label.text = "게임 오버 (%s · %s)\n웨이브 %d · 점수 %s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\nR 또는 클릭: 다시 시작   Esc: 메뉴" % [Meta.MAPS[Meta.map_id]["name"], Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, num(kills), best_combo, towers.get_child_count(), mvp, ach]
 	over_label.visible = true
 	sfx.play("over", 0.0)
 	reroll_btn.visible = false
