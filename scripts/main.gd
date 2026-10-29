@@ -464,7 +464,7 @@ func _help_text() -> String:
 		"오브젝트 끌기: 방향은 그대로 두고 옮기기 (카드를 고른 뒤에는 꾹 눌러서)",
 		"빈 곳 끌기 / Shift·Ctrl+클릭 / Ctrl+A(모두): 여러 개 선택 → 그중 하나를 끌면 함께 이동",
 		"쉬는 시간에 오브젝트 클릭: 위치·방향 다시 정하기",
-		"우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
+		"Alt 누르고 있기: 모든 오브젝트의 공격 범위 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
 		"P: 일시정지   M: 소리   Tab: 속성표   H: 도움말   F11: 전체 화면   R: 게임 오버 후 다시 시작",
 		"",
@@ -1924,6 +1924,8 @@ func _process(delta: float) -> void:
 	if phase == Phase.MOVE and moving:
 		moving.position = get_global_mouse_position().clamp(field_rect().position, field_rect().end)
 	_update_press()
+	if boxing and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		_finish_box()  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
 	hide_btn.visible = phase == Phase.CHOOSE and not title_label.visible
 	hide_btn.text = ("▲ 선택지 다시 보기" if cards_hidden else "▼ 선택지 내리고 필드 보기") + " (V)"
 	# 펼쳐 있으면 새로고침 버튼 아래, 내려 두면 화면 위쪽 가운데
@@ -1944,7 +1946,11 @@ func _process(delta: float) -> void:
 	if get_tree().paused:
 		return
 	if countdown >= 0.0 and phase == Phase.READY:
-		countdown -= delta
+		# 오브젝트를 끌거나 상자로 고르는 동안은 자동 시작을 멈춘다 (시작하면 끌던 것이 되돌아감)
+		if press_t or boxing:
+			countdown = maxf(countdown, 1.0)
+		else:
+			countdown -= delta
 		start_btn.text = "%.1f초 뒤 시작 (Space: 바로)" % maxf(countdown, 0.0)
 		if countdown <= 0.0:
 			_start_wave()
@@ -2417,6 +2423,9 @@ func _draw() -> void:
 		var p1 := c + Vector2(cos(a), sin(a)) * CORE_RADIUS * 0.2
 		var p2 := c + Vector2(cos(a + 0.3), sin(a + 0.3)) * CORE_RADIUS * 0.95
 		draw_line(p1, p2, Color(0.3, 0.05, 0.08, 0.8), 1.5)
+	if title_label.visible:
+		# 시작 화면: 중앙 점이 메뉴 글자 뒤로 비치지 않게 배경을 어둡게
+		draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.6))
 	draw_arc(c, CORE_RADIUS + 5.0, -PI / 2, -PI / 2 + TAU * frac, 32, Color(1, 1, 1, 0.6), 2.0)
 
 	# 구체 진입 방향 표시
@@ -2551,7 +2560,16 @@ func _draw() -> void:
 					draw_line(mover.position, o.position, Color(0.6, 1, 1, 0.6), 2.0)
 				else:
 					draw_dashed_line(mover.position, o.position, Color(1, 0.4, 0.4, 0.7), 2.0, 10.0)
-	if phase in [Phase.CHOOSE, Phase.WAVE, Phase.READY] and not dragging:
+	if Input.is_key_pressed(KEY_ALT) and not title_label.visible:
+		# Alt를 누르고 있는 동안: 모든 오브젝트의 공격 범위
+		for t in towers.get_children():
+			Tower.draw_range(self, t.position, t.dir, t.spec())
+	elif dragging:
+		# 끄는 동안: 옮기는 오브젝트들의 범위 (방향은 그대로)
+		for t in drag_group:
+			if is_instance_valid(t):
+				Tower.draw_range(self, t.position, t.dir, t.spec())
+	elif phase in [Phase.CHOOSE, Phase.WAVE, Phase.READY]:
 		var hov := _tower_at(mpos)
 		if hov:
 			Tower.draw_range(self, hov.position, hov.dir, hov.spec())
