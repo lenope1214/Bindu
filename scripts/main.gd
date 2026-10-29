@@ -1909,13 +1909,27 @@ func _spawn_orb(kind := -1) -> void:
 
 
 ## 피해 숫자 팝업.
-func popup(pos: Vector2, amount: float, col: Color, big: bool, text := "") -> void:
+func popup(pos: Vector2, amount: float, col: Color, big: bool, text := "", life := 0.7) -> void:
 	if popups.size() > 120:
 		return
 	if text == "" and not Meta.numbers_on:
 		return
 	var txt := text if text != "" else str(maxi(roundi(amount), 1))
-	popups.append([pos + Vector2(randf_range(-8, 8), -10), txt, 0.7, col, big])
+	popups.append([pos + Vector2(randf_range(-8, 8), -10), txt, life, col, big])
+
+
+## 웨이브를 마치면 가장 많이 때린 오브젝트 위에 몫을 잠깐 띄운다 (무엇이 일하는지 알려 줌).
+func _show_mvp() -> void:
+	var best: Tower = null
+	var total := 0.0
+	for t in towers.get_children():
+		total += t.dealt
+		if best == null or t.dealt > best.dealt:
+			best = t
+	if best == null or total <= 0.0 or towers.get_child_count() < 2:
+		return
+	var txt := "최다 피해 %d%%" % roundi(best.dealt / total * 100.0)
+	popup(best.position + Vector2(-ui_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x / 2.0, -30), 0.0, Color(1, 0.9, 0.5), true, txt, 2.0)
 
 
 ## 구체가 터질 때 파편.
@@ -2063,6 +2077,7 @@ func _sim_step(delta: float) -> void:
 		score += bonus
 		_show_toast("웨이브 %d 클리어! +%d" % [wave, bonus])
 		sfx.play("clear", 0.0)
+		_show_mvp()
 		if perks.has("regen"):
 			core_hp = mini(core_hp + perks["regen"], core_max)
 		if wave % 5 == 0:
@@ -2337,9 +2352,17 @@ func _avoid_cards(r: Rect2, size: Vector2) -> Vector2:
 ## 마우스를 올린 구체의 체력·상태.
 func _draw_orb_tooltip() -> void:
 	var m := get_global_mouse_position()
-	for o: Orb in live_orbs.filter(func(x): return is_instance_valid(x)):
-		if o.hp <= 0.0 or o.position.distance_to(m) > o.radius() + 4.0:
+	# 작은 구체도 잡기 쉽게 최소 14 안, 여럿이면 가장 가까운 것
+	var o: Orb = null
+	var bd := INF
+	for x in live_orbs:
+		if not is_instance_valid(x) or x.hp <= 0.0:
 			continue
+		var d: float = x.position.distance_to(m)
+		if d <= maxf(x.radius() + 4.0, 14.0) and d < bd:
+			o = x
+			bd = d
+	if o:
 		var kinds := ["구체", "빠른 구체", "단단한 구체", "보스"]
 		var parts := PackedStringArray([kinds[o.kind], "체력 %d/%d" % [ceili(o.hp), roundi(o.max_hp)]])
 		if o.shield > 0.0: parts.append("보호막 %d" % ceili(o.shield))
@@ -2362,7 +2385,6 @@ func _draw_orb_tooltip() -> void:
 		p.y = maxf(p.y, 8)
 		fx_layer.draw_rect(Rect2(p, Vector2(w + 16, 24)), Color(0.05, 0.06, 0.09, 0.9))
 		fx_layer.draw_string(ui_font, p + Vector2(8, 17), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
-		return
 
 
 ## 중앙 점 스킨: 눈은 가장 가까운 구체를 본다, 태양은 빛살이 돈다.
@@ -2429,8 +2451,10 @@ func _draw_fx() -> void:
 	for p in popups:
 		var size := 22 if p[4] else 14
 		var a := clampf(p[2] / 0.3, 0.0, 1.0)
-		fx_layer.draw_string(ThemeDB.fallback_font, p[0] + Vector2(1, 1), p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0, 0, 0, 0.7 * a))
-		fx_layer.draw_string(ThemeDB.fallback_font, p[0], p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(p[3], a))
+		# 숫자는 기본 글꼴, 한글이 든 글자(콤보·최다 피해)는 한글 글꼴
+		var f: Font = ThemeDB.fallback_font if p[1].is_valid_int() else ui_font
+		fx_layer.draw_string(f, p[0] + Vector2(1, 1), p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0, 0, 0, 0.7 * a))
+		fx_layer.draw_string(f, p[0], p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(p[3], a))
 	_draw_boss_bar()
 	_draw_tooltip()
 

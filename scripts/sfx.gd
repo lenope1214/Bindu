@@ -4,10 +4,13 @@ extends Node
 
 const RATE := 22050
 const VOICES := 14
+const IMPORTANT := ["boss", "over", "wave", "clear", "core"]  # 잦은 타격음에 밀려 끊기지 않게 따로 재생
 
 var sounds := {}  # 이름 -> AudioStreamWAV
 var players: Array[AudioStreamPlayer] = []
 var next_voice := 0
+var lead: Array[AudioStreamPlayer] = []  # IMPORTANT 전용
+var next_lead := 0
 var last_play := {}  # 이름 -> 마지막 재생 시각(초), 너무 잦은 재생 방지
 var muted := false
 
@@ -38,6 +41,10 @@ func _ready() -> void:
 		var p := AudioStreamPlayer.new()
 		add_child(p)
 		players.append(p)
+	for i in 3:
+		var p := AudioStreamPlayer.new()
+		add_child(p)
+		lead.append(p)
 
 
 func play(name: String, pitch_jitter := 0.06) -> void:
@@ -47,8 +54,13 @@ func play(name: String, pitch_jitter := 0.06) -> void:
 	if now - last_play.get(name, -1.0) < MIN_GAP.get(name, 0.0):
 		return
 	last_play[name] = now
-	var p := players[next_voice]
-	next_voice = (next_voice + 1) % VOICES
+	var p: AudioStreamPlayer
+	if name in IMPORTANT:
+		p = lead[next_lead]
+		next_lead = (next_lead + 1) % lead.size()
+	else:
+		p = players[next_voice]
+		next_voice = (next_voice + 1) % VOICES
 	p.stream = sounds[name]
 	p.pitch_scale = 1.0 + randf_range(-pitch_jitter, pitch_jitter)
 	p.play()
