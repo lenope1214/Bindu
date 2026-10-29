@@ -1301,14 +1301,8 @@ func _release_press() -> void:
 	# 놓을 수 없는 자리가 하나라도 있으면 모두 원래 자리로
 	var bad := ""
 	for o in drag_group:
-		if not is_instance_valid(o):
-			continue
-		if o.position.distance_to(center()) < 50.0:
-			bad = "중앙 점에 너무 가까워요"
-		else:
-			for other in towers.get_children():
-				if not other in drag_group and other.position.distance_to(o.position) < MERGE_DIST:
-					bad = "다른 오브젝트와 겹칠 수 없어요"
+		if is_instance_valid(o) and bad == "":
+			bad = _bad_spot(o, drag_group)
 	if bad != "":
 		_show_toast(bad)
 		_revert_drag()
@@ -1320,6 +1314,16 @@ func _release_press() -> void:
 			o.queue_redraw()
 	drag_group.clear()
 	_restore_hint()
+
+
+## 옮기는 자리에 놓을 수 없으면 그 이유 (movers: 함께 움직이는 것들끼리는 겹쳐도 됨).
+func _bad_spot(o: Tower, movers: Array) -> String:
+	if o.position.distance_to(center()) < 50.0:
+		return "중앙 점에 너무 가까워요"
+	for other in towers.get_children():
+		if not other in movers and other.position.distance_to(o.position) < MERGE_DIST:
+			return "다른 오브젝트와 겹칠 수 없어요"
+	return ""
 
 
 func _revert_drag() -> void:
@@ -1428,8 +1432,12 @@ func _build_menu(root: Control) -> void:
 
 	records_panel = Label.new()
 	records_panel.set_anchors_preset(Control.PRESET_CENTER)
-	records_panel.position = Vector2(-430, -300)
-	records_panel.size = Vector2(860, 600)
+	# 내용이 늘면 위아래로 같이 자라게 (아래로만 자라면 오른쪽 아래 소리 버튼을 덮음)
+	records_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	records_panel.offset_left = -430.0
+	records_panel.offset_right = 430.0
+	records_panel.offset_top = -325.0
+	records_panel.offset_bottom = 285.0
 	records_panel.add_theme_font_size_override("font_size", 15)
 	records_panel.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var rsb := StyleBoxFlat.new()
@@ -1899,8 +1907,8 @@ func bolt(pts: PackedVector2Array) -> void:
 		bolts.append([pts, 0.22])
 
 
-## 전기 부가효과: 가까운 다른 구체로 전류가 튄다.
-func arc(from: Orb, dmg: float) -> void:
+## 전기 부가효과: 가까운 다른 구체로 전류가 튄다 (src: 쏜 오브젝트, 피해 기록용).
+func arc(from: Orb, dmg: float, src: Tower = null) -> void:
 	var best: Orb = null
 	var bd := 90.0
 	for o in near(from.position, bd):
@@ -1911,6 +1919,8 @@ func arc(from: Orb, dmg: float) -> void:
 				best = o
 	if best:
 		best.hurt(dmg)
+		if src:
+			src.dealt += dmg
 		if arcs.size() < 80:
 			arcs.append([from.position, best.position, 0.12])
 
@@ -2213,7 +2223,7 @@ func _resolve(delta: float) -> void:
 			if o.poison_t > 0.0:
 				for other in targets:
 					if other != o and other.position.distance_to(o.position) < 80.0:
-						other.poison(o.poison_dps, 3.0)
+						other.poison(o.poison_dps, 3.0, o.poison_src)
 			if o.curse_lv > 0:
 				_curse_burst(o)
 			if o.swamp_t > 0.0:
@@ -2266,7 +2276,7 @@ func _curse_burst(o: Orb) -> void:
 func _swamp_burst(o: Orb) -> void:
 	for other in near(o.position, 90.0):
 		if other != o and other.hp > 0.0 and other.position.distance_to(o.position) < 90.0 + other.radius():
-			other.poison(1.5 * o.swamp_lv, 4.0)
+			other.poison(1.5 * o.swamp_lv, 4.0, o.poison_src)
 	burst(o.position, Color(0.6, 0.85, 0.2), 12, 160.0)
 
 
@@ -2717,6 +2727,9 @@ func _draw() -> void:
 	for mover in movers:
 		if not is_instance_valid(mover):
 			continue
+		if _bad_spot(mover, movers) != "":
+			# 여기 놓으면 되돌아간다는 표시 (중앙에 너무 가깝거나 다른 오브젝트와 겹침)
+			draw_arc(mover.position, Tower.RADIUS + 10.0, 0, TAU, 32, Color(1, 0.25, 0.25, 0.75 + 0.25 * sin(Time.get_ticks_msec() / 90.0)), 4.0)
 		for o in mover.links:
 			if is_instance_valid(o) and not o in movers:
 				var ok: bool = mover.position.distance_to(o.position) <= Rules.link_range

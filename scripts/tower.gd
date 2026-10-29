@@ -460,7 +460,7 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 				_band(orbs, w[0], w[1], w[2], 9.0, func(o):
 					hit(o, 1.4 * pw(l) * de, k)
 					o.slow(0.35, 0.3)
-					o.burn(1.0 * l, 1.5))
+					o.burn(1.0 * l, 1.5, self))
 			"mushroom":
 				mines = mines.filter(func(mm): return is_instance_valid(mm))
 				if _ready_to(id, 2.0 / spd(l), de) and mines.size() < 4 + l:
@@ -510,7 +510,7 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 				_band(orbs, w[0], w[1], w[2], 18.0, func(o):
 					hit(o, 1.0 * pw(l) * de, k)
 					o.slow(0.5, 0.3)
-					o.poison(0.8 * l, 3.0)
+					o.poison(0.8 * l, 3.0, self)
 					o.swamp_t = 0.3
 					o.swamp_lv = l)
 			"curse":
@@ -627,9 +627,9 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	if in_rx:
 		rx_dealt += d
 	if els.has(Elem.FIRE):
-		o.burn(0.8 * L.call(Elem.FIRE) * rm, 2.0)
+		o.burn(0.8 * L.call(Elem.FIRE) * rm, 2.0, self)
 	if els.has(Elem.POISON):
-		o.poison(0.5 * L.call(Elem.POISON) * rm, 4.0)
+		o.poison(0.5 * L.call(Elem.POISON) * rm, 4.0, self)
 	if els.has(Elem.ICE):
 		o.add_chill(0.6 * k * L.call(Elem.ICE))
 	if els.has(Elem.WATER):
@@ -642,7 +642,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	if els.has(Elem.DARK):
 		o.vuln(2.0)
 	if els.has(Elem.ELECTRIC) and randf() < 0.3 * k:
-		main.arc(o, d * 0.5 * L.call(Elem.ELECTRIC))
+		main.arc(o, d * 0.5 * L.call(Elem.ELECTRIC), self)
 	if can_split and m("split") > 0 and randf() < minf(0.6, 0.12 * mf("split")) * minf(k, 1.0):
 		for i in 2:
 			var p: Projectile = main.spawn_proj(self, "frag", plv, Vector2.from_angle(randf() * TAU))

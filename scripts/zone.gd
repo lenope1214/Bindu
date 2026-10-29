@@ -52,7 +52,7 @@ func affect(orbs: Array, delta: float) -> void:
 			"burn":
 				if inside:
 					_hurt(o, 2.5 * _p() * delta)
-					o.burn(1.0, 1.0)
+					o.burn(1.0, 1.0, owner_tower)
 			"vortex":
 				if inside:
 					o.push((position - o.position).limit_length(80.0 * delta))
@@ -62,7 +62,7 @@ func affect(orbs: Array, delta: float) -> void:
 					_hit(o, 2.0 * _p() * delta, delta * 3.0)
 			"cloud":
 				if inside:
-					o.poison(0.8 * level, 2.0)
+					o.poison(0.8 * level, 2.0, owner_tower)
 			"mine":
 				if inside and not dead:
 					_explode(orbs)
@@ -83,7 +83,7 @@ func _explode(orbs: Array) -> void:
 	for o in orbs:
 		if o.position.distance_to(position) < 80.0:
 			_hurt(o, 3.0 * _p())
-			o.poison(1.0 * level, 4.0)
+			o.poison(1.0 * level, 4.0, owner_tower)
 	# 터지는 모습만 잠깐 보여 주고 사라진다
 	kind = "boom"
 	radius = 80.0

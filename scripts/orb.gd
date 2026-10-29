@@ -13,13 +13,13 @@ const ROOT_IMMUNE := 2.0
 const ROOT_DR_RESET := 4.0  # 이만큼 안 걸리면 처음부터
 
 var kind := Kind.NORMAL
-var core_dmg := 1
+var core_dmg := 1  # 중앙에 닿았을 때 깎는 체력
 var shield := 0.0  # 보호막: 이만큼 피해를 먼저 흡수
 var swirl := 0.0  # 나선 이동 각도(라디안)
 var splits := false  # 죽으면 작은 구체 2개
 var resist_e := -1  # 이 속성 피해를 덜 받는다 (부분 저항)
 var sturdy := false  # 굳셈: 밀기·감속·기절·냉기 효과 절반
-var minion_t := 4.0  # 보스: 부하 소환 주기  # 중앙에 닿았을 때 깎는 체력
+var minion_t := 4.0  # 보스: 부하 소환 주기
 var hp := 1.0
 var max_hp := 1.0
 var speed := 50.0
@@ -31,6 +31,8 @@ var burn_dps := 0.0
 var burn_t := 0.0
 var poison_dps := 0.0
 var poison_t := 0.0
+var burn_src: Object = null  # 화상·중독을 건 오브젝트: 지속 피해도 그 오브젝트의 피해 몫에 넣는다
+var poison_src: Object = null
 var vuln_t := 0.0
 var chill := 0.0
 var frozen_t := 0.0  # 빙결 표시
@@ -102,9 +104,12 @@ func step(delta: float) -> void:
 	if burn_t > 0.0:
 		burn_t -= delta
 		hurt(burn_dps * delta)
+		_credit(burn_src, burn_dps * delta)
 	if poison_t > 0.0:
 		poison_t -= delta
-		hurt(poison_dps * delta * (2.0 if swamp_t > 0.0 else 1.0))
+		var pd := poison_dps * delta * (2.0 if swamp_t > 0.0 else 1.0)
+		hurt(pd)
+		_credit(poison_src, pd)
 	# 피해 숫자는 0.35초마다 묶어서 표시
 	pop_t -= delta
 	if pop_t <= 0.0 and dmg_acc >= 1.0 and main:
@@ -198,14 +203,27 @@ func push(v: Vector2) -> void:
 	position += v
 
 
-func burn(dps: float, duration: float) -> void:
-	burn_dps = maxf(burn_dps if burn_t > 0.0 else 0.0, dps)
+## src: 건 오브젝트. 형을 두지 않는다(이미 사라진 오브젝트가 넘어와도 오류 없게).
+func burn(dps: float, duration: float, src = null) -> void:
+	var cur := burn_dps if burn_t > 0.0 else 0.0
+	if is_instance_valid(src) and dps >= cur:
+		burn_src = src  # 가장 센 화상을 건 쪽
+	burn_dps = maxf(cur, dps)
 	burn_t = maxf(burn_t, duration)
 
 
-func poison(dps: float, duration: float) -> void:
-	poison_dps = maxf(poison_dps if poison_t > 0.0 else 0.0, dps)
+func poison(dps: float, duration: float, src = null) -> void:
+	var cur := poison_dps if poison_t > 0.0 else 0.0
+	if is_instance_valid(src) and dps >= cur:
+		poison_src = src
+	poison_dps = maxf(cur, dps)
 	poison_t = maxf(poison_t, duration)
+
+
+## 지속 피해를 건 오브젝트의 피해 기록에 더한다 (표시용, 오브젝트가 사라졌으면 무시).
+func _credit(src, d: float) -> void:
+	if is_instance_valid(src):
+		src.dealt += d
 
 
 func vuln(duration: float) -> void:

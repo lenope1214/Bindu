@@ -153,7 +153,7 @@ func on_hit(o: Orb, delta: float) -> bool:
 			tw.in_rx = false
 		else:
 			o.hurt(dmg * delta)  # 주인 오브젝트가 사라진 경우
-		o.burn(1.0 * level, 2.0)
+		o.burn(1.0 * level, 2.0, tw)
 		return false
 	if hit.has(o):
 		return false
@@ -168,7 +168,7 @@ func on_hit(o: Orb, delta: float) -> bool:
 		"gust":
 			o.push(vel.normalized().orthogonal() * 20.0 * level)
 		"glob":
-			o.poison(1.2 * level, 5.0)
+			o.poison(1.2 * level, 5.0, tw)
 		"iron":
 			o.push(vel.normalized() * 30.0)
 	if pierce:
