@@ -9,7 +9,7 @@ const MERGE_DIST := 30.0
 const SAVE_PATH := "user://best.cfg"
 const CHOOSE_HINT := "선택지를 고르세요 (속성·공격방식·강화·연계). 설치된 오브젝트를 클릭하면 위치·방향 변경   V: 선택지 내리기"
 const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 위치·방향 변경"
-const PAUSE_TEXT := "일시정지\n\nP / Esc: 계속   R: 처음부터   M: 소리   O: 설정   F11: 전체 화면"
+const PAUSE_TEXT := "일시정지\nP / Esc: 계속   R: 처음부터   M: 소리   O: 설정   F11: 전체 화면"
 const PLACE_HINT := "클릭: 설치 (오브젝트 위면 속성 겹치기)   오브젝트 꾹 누르기·끌기: 옮기기\n우클릭/Esc: 다시 고르기"
 
 var phase := Phase.CHOOSE
@@ -334,11 +334,12 @@ func _build_ui() -> void:
 
 	paused_label = Label.new()
 	paused_label.set_anchors_preset(Control.PRESET_CENTER)
-	paused_label.position = Vector2(-350, -110)
-	paused_label.size = Vector2(700, 220)
+	# 화면 위쪽에 두어 멈춘 채로 가운데 필드의 오브젝트·구체 정보를 볼 수 있게
+	paused_label.position = Vector2(-350, -276)
+	paused_label.size = Vector2(700, 80)  # 글줄이 늘면 아래로 자란다
 	paused_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	paused_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	paused_label.add_theme_font_size_override("font_size", 22)
+	paused_label.add_theme_font_size_override("font_size", 20)
 	paused_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	paused_label.add_theme_constant_override("outline_size", 5)
 	paused_label.text = PAUSE_TEXT
@@ -470,7 +471,7 @@ func _help_text() -> String:
 		"오브젝트 끌기: 방향은 그대로 두고 옮기기 (카드를 고른 뒤에는 꾹 눌러서)",
 		"빈 곳 끌기 / Shift·Ctrl+클릭 / Ctrl+A(모두): 여러 개 선택 → 그중 하나를 끌면 함께 이동",
 		"쉬는 시간에 오브젝트 클릭: 위치·방향 다시 정하기",
-		"Alt 누르고 있기: 모든 오브젝트의 공격 범위 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
+		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 몫 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
 		"P: 일시정지   M: 소리   Tab: 속성표   H: 도움말   F11: 전체 화면   R: 게임 오버 후 다시 시작",
 		"",
@@ -629,7 +630,7 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 		"link":
 			var id: String = card["id"]
 			b.text = "[%d] 연계: %s\n%s\n%s" % [idx, Pat.LINKS[id]["name"], Pat.LINKS[id]["desc"], "오브젝트 두 개를 차례로 클릭" if id == "link" else "오브젝트 위에 놓기"]
-	b.text = _wrap_words(b.text, 212.0, 15)
+	b.text = _wrap_words(b.text, 220.0, 15)
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b.add_theme_font_size_override("font_size", 15)
 	b.add_theme_color_override("font_color", col)
@@ -686,7 +687,7 @@ func _start_perk() -> void:
 		b.add_theme_stylebox_override("hover", sbh)
 		b.add_theme_stylebox_override("pressed", sbh)
 		var have: int = perks.get(pk["id"], 0)
-		b.text = _wrap_words("[%d] 특성: %s\n\n%s%s" % [i + 1, pk["name"], pk["desc"], "\n\n(보유 %d)" % have if have > 0 else ""], 212.0, 17)
+		b.text = _wrap_words("[%d] 특성: %s\n\n%s%s" % [i + 1, pk["name"], pk["desc"], "\n\n(보유 %d)" % have if have > 0 else ""], 220.0, 17)
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		b.add_theme_font_size_override("font_size", 17)
 		b.add_theme_color_override("font_color", Color(1, 0.85, 0.45))
@@ -1033,7 +1034,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_tree().reload_current_scene()
 			else:
 				restart_armed = 2.0
-				paused_label.text = PAUSE_TEXT + "\n\nR을 한 번 더 누르면 처음부터"
+				paused_label.text = PAUSE_TEXT + "\nR을 한 번 더 누르면 처음부터"
 		elif event.keycode == KEY_H:
 			help_label.visible = not help_label.visible
 		elif event.keycode == KEY_TAB:
@@ -1977,6 +1978,7 @@ func _process(delta: float) -> void:
 	hide_btn.offset_bottom = hy + 32.0
 	restart_armed = maxf(restart_armed - delta, 0.0)
 	if get_tree().paused:
+		fx_layer.queue_redraw()  # 멈춘 동안에도 오브젝트·구체 정보창은 마우스를 따라간다
 		return
 	if countdown >= 0.0 and phase == Phase.READY:
 		# 오브젝트를 끌거나 상자로 고르는 동안은 자동 시작을 멈춘다 (시작하면 끌던 것이 되돌아감)
@@ -2253,7 +2255,11 @@ func _draw_tooltip() -> void:
 	for r in t.reactions():
 		lines.append(["반응 %s: %s" % [r["name"], r["desc"]], r["color"]])
 	if wave_time > 1.0:
-		lines.append(["%s 피해 %d (초당 %.1f)" % ["이번 웨이브" if phase == Phase.WAVE else "지난 웨이브", roundi(t.dealt), t.dealt / wave_time], Color(1, 0.9, 0.5)])
+		var total := 0.0
+		for o in towers.get_children():
+			total += o.dealt
+		var share := " · 전체의 %d%%" % roundi(t.dealt / total * 100.0) if total > 0.0 and towers.get_child_count() > 1 else ""
+		lines.append(["%s 피해 %d (초당 %.1f%s)" % ["이번 웨이브" if phase == Phase.WAVE else "지난 웨이브", roundi(t.dealt), t.dealt / wave_time, share], Color(1, 0.9, 0.5)])
 	if t.order.size() > 1:
 		lines.append(["쌓기 대가: 공격 속도 -%d%%" % roundi((1.0 - 1.0 / t.tax()) * 100.0), Color(1, 0.6, 0.6)])
 	var fs := 14
@@ -2398,7 +2404,32 @@ func _draw_fx() -> void:
 		var a := clampf(p[2] / 0.3, 0.0, 1.0)
 		fx_layer.draw_string(ThemeDB.fallback_font, p[0] + Vector2(1, 1), p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0, 0, 0, 0.7 * a))
 		fx_layer.draw_string(ThemeDB.fallback_font, p[0], p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(p[3], a))
+	_draw_boss_bar()
 	_draw_tooltip()
+
+
+## 보스가 있으면 화면 위 가운데에 체력 막대 (여럿이면 합계). 화면 흔들림을 따라가지 않게 카메라 흔들림만큼 되돌린다.
+func _draw_boss_bar() -> void:
+	if phase != Phase.WAVE:
+		return
+	var hp := 0.0
+	var mx := 0.0
+	var n := 0
+	for o in orbs.get_children():
+		if o.kind == Orb.Kind.BOSS and o.hp > 0.0:
+			hp += o.hp
+			mx += o.max_hp
+			n += 1
+	if n == 0:
+		return
+	var w := 300.0
+	var p := Vector2(center().x - w / 2.0, 62.0) + camera.offset
+	fx_layer.draw_rect(Rect2(p, Vector2(w, 10)), Color(0, 0, 0, 0.6))
+	fx_layer.draw_rect(Rect2(p, Vector2(w * clampf(hp / mx, 0.0, 1.0), 10)), Color(1, 0.3, 0.4))
+	fx_layer.draw_rect(Rect2(p, Vector2(w, 10)), Color(1, 1, 1, 0.3), false, 1.0)
+	var txt := "보스%s  %d / %d" % [" x%d" % n if n > 1 else "", ceili(hp), ceili(mx)]
+	fx_layer.draw_string(ui_font, p + Vector2(1, -3), txt, HORIZONTAL_ALIGNMENT_CENTER, w, 14, Color(0, 0, 0, 0.8))
+	fx_layer.draw_string(ui_font, p + Vector2(0, -4), txt, HORIZONTAL_ALIGNMENT_CENTER, w, 14, Color(1, 0.85, 0.88))
 
 
 ## 투척형 발사체가 착지했을 때.
@@ -2594,9 +2625,17 @@ func _draw() -> void:
 				else:
 					draw_dashed_line(mover.position, o.position, Color(1, 0.4, 0.4, 0.7), 2.0, 10.0)
 	if Input.is_key_pressed(KEY_ALT) and not title_label.visible:
-		# Alt를 누르고 있는 동안: 모든 오브젝트의 공격 범위
+		# Alt를 누르고 있는 동안: 모든 오브젝트의 공격 범위와 이번(지난) 웨이브 피해 몫 (약한 오브젝트 찾기)
+		var total := 0.0
 		for t in towers.get_children():
 			Tower.draw_range(self, t.position, t.dir, t.spec())
+			total += t.dealt
+		if total > 0.0:
+			for t in towers.get_children():
+				var txt := "%d%%" % roundi(t.dealt / total * 100.0)
+				var tp: Vector2 = t.position + Vector2(-40, Tower.RADIUS + 20)
+				draw_string(ui_font, tp + Vector2(1, 1), txt, HORIZONTAL_ALIGNMENT_CENTER, 80, 14, Color(0, 0, 0, 0.8))
+				draw_string(ui_font, tp, txt, HORIZONTAL_ALIGNMENT_CENTER, 80, 14, Color(1, 0.9, 0.5))
 	elif dragging:
 		# 끄는 동안: 옮기는 오브젝트들의 범위 (방향은 그대로)
 		for t in drag_group:
