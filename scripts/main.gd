@@ -209,7 +209,16 @@ func _build_ui() -> void:
 	layer.add_child(root)
 
 	hud = Label.new()
-	hud.position = Vector2(16, 10)
+	hud.position = Vector2(10, 6)
+	# 구체가 위쪽을 지나가도 글자가 묻히지 않게 옅은 바탕
+	var hsb0 := StyleBoxFlat.new()
+	hsb0.bg_color = Color(0.02, 0.03, 0.05, 0.55)
+	hsb0.set_corner_radius_all(5)
+	hsb0.content_margin_left = 6
+	hsb0.content_margin_right = 8
+	hsb0.content_margin_top = 4
+	hsb0.content_margin_bottom = 4
+	hud.add_theme_stylebox_override("normal", hsb0)
 	root.add_child(hud)
 
 	hint = Label.new()
@@ -233,10 +242,12 @@ func _build_ui() -> void:
 
 	toast = Label.new()
 	toast.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	toast.position = Vector2(-300, 60)
+	toast.position = Vector2(-300, 100)  # 점수 줄·보스 체력 막대 아래
 	toast.size = Vector2(600, 30)
 	toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	toast.add_theme_font_size_override("font_size", 22)
+	toast.add_theme_color_override("font_outline_color", Color.BLACK)
+	toast.add_theme_constant_override("outline_size", 5)
 	root.add_child(toast)
 
 	choice_box = HBoxContainer.new()
@@ -334,7 +345,7 @@ func _build_ui() -> void:
 	paused_label = Label.new()
 	paused_label.set_anchors_preset(Control.PRESET_CENTER)
 	# 화면 위쪽에 두어 멈춘 채로 가운데 필드의 오브젝트·구체 정보를 볼 수 있게
-	paused_label.position = Vector2(-350, -276)
+	paused_label.position = Vector2(-350, -248)  # 점수 줄·보스 막대 아래
 	paused_label.size = Vector2(700, 80)  # 글줄이 늘면 아래로 자란다
 	paused_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	paused_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -2439,7 +2450,8 @@ func _draw_boss_bar() -> void:
 	if n == 0:
 		return
 	var w := 300.0
-	var p := Vector2(center().x - w / 2.0, 62.0) + camera.offset
+	# 위쪽 점수 줄(바탕 상자) 바로 아래. 특성 줄이 늘면 같이 내려간다
+	var p := Vector2(center().x - w / 2.0, hud.position.y + hud.size.y + 20.0) + camera.offset
 	fx_layer.draw_rect(Rect2(p, Vector2(w, 10)), Color(0, 0, 0, 0.6))
 	fx_layer.draw_rect(Rect2(p, Vector2(w * clampf(hp / mx, 0.0, 1.0), 10)), Color(1, 0.3, 0.4))
 	fx_layer.draw_rect(Rect2(p, Vector2(w, 10)), Color(1, 1, 1, 0.3), false, 1.0)
