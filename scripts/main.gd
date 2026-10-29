@@ -162,6 +162,8 @@ func _ready() -> void:
 	_build_ui()
 	_apply_volume()
 	_update_speed_btn()
+	# 창 제목에도 한글 이름과 버전 (작업 표시줄에서 어떤 빌드인지 보이게)
+	get_window().title = "빈두 v%s" % ProjectSettings.get_setting("application/config/version", "?")
 	if title_seen or DisplayServer.get_name() == "headless":
 		_start_choose()
 	else:
@@ -383,6 +385,9 @@ func _build_ui() -> void:
 	over_label.set_anchors_preset(Control.PRESET_CENTER)
 	over_label.position = Vector2(-450, -150)
 	over_label.size = Vector2(900, 300)
+	# 글줄이 900보다 길어져도 가운데를 지키며 양쪽으로 자란다
+	over_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	over_label.grow_vertical = Control.GROW_DIRECTION_BOTH
 	over_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	over_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	over_label.add_theme_font_size_override("font_size", 26)
@@ -1009,9 +1014,11 @@ func _game_over() -> void:
 	wave_active = false
 	game_speed = 1.0
 	_update_speed_btn()
-	var record := "  최고 기록!" if score > best_score or wave > best_wave else ""
-	best_score = maxi(score, best_score)
-	best_wave = maxi(wave, best_wave)
+	# 기록은 지금 맵·규칙 버전의 저장값과 비교한다 (다른 키에서 남은 값이 섞이지 않게)
+	var prev := Meta.best_of(Meta.key())
+	var record := "  최고 기록!" if score > prev[1] or wave > prev[0] else ""
+	best_score = maxi(score, prev[1])
+	best_wave = maxi(wave, prev[0])
 	Meta.total_kills += kills
 	Meta.games += 1
 	_save_best()
@@ -1025,7 +1032,7 @@ func _game_over() -> void:
 		if top == null or t.run_dealt + t.dealt > top.run_dealt + top.dealt:
 			top = t
 	if top and total > 0.0 and towers.get_child_count() > 1:
-		mvp = "\n가장 많이 때린 오브젝트: %s (%d%%)" % [top.title(), roundi((top.run_dealt + top.dealt) / total * 100.0)]
+		mvp = "\n최다 피해: %s (%d%%)" % [top.title(), roundi((top.run_dealt + top.dealt) / total * 100.0)]
 	over_label.text = "게임 오버 (%s · %s)\n웨이브 %d · 점수 %s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\nR 또는 클릭: 다시 시작   Esc: 메뉴" % [Meta.MAPS[Meta.map_id]["name"], Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, num(kills), best_combo, towers.get_child_count(), mvp, ach]
 	over_label.visible = true
 	sfx.play("over", 0.0)
@@ -1062,8 +1069,9 @@ func _unhandled_input(event: InputEvent) -> void:
 					_cycle_rules(1)
 			return
 		if event.keycode == KEY_ESCAPE and phase == Phase.GAMEOVER:
-			title_seen = false
-			get_tree().reload_current_scene()
+			if Time.get_ticks_msec() - over_ms > 800:
+				title_seen = false
+				get_tree().reload_current_scene()
 			return
 		if event.keycode == KEY_F11:
 			_toggle_fullscreen()
@@ -1594,6 +1602,11 @@ func _toggle_records() -> void:
 	for id in Meta.MAP_IDS:
 		var b := Meta.best_of(Meta.key(id))
 		lines.append("  %s: 웨이브 %d · 점수 %s" % [Meta.MAPS[id]["name"], b[0], num(b[1])])
+	# 규칙 버전끼리 비교하기 쉽게: 지금 맵의 버전별 최고 웨이브
+	var vers := PackedStringArray()
+	for r in Rules.IDS:
+		vers.append("버전 %d: %d" % [r, Meta.best_of(Meta.key(Meta.map_id, r))[0]])
+	lines.append("  %s 버전별 최고 웨이브  %s" % [Meta.MAPS[Meta.map_id]["name"], " · ".join(vers)])
 	lines.append("  총 처치 %s · 플레이 %d판" % [num(Meta.total_kills), Meta.games])
 	lines.append("")
 	lines.append("[업적] %d / %d" % [Meta.achieved.size(), Meta.ACH_IDS.size()])

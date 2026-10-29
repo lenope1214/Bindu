@@ -60,8 +60,10 @@ static var loaded := false
 
 
 ## 기록 키: 버전 1은 맵 id 그대로(예전 기록 유지), 다른 버전은 따로 센다.
-static func key(id: String = map_id) -> String:
-	return id if rules == 1 else "%s@v%d" % [id, rules]
+static func key(id: String = map_id, r: int = -1) -> String:
+	if r < 0:
+		r = rules
+	return id if r == 1 else "%s@v%d" % [id, r]
 
 
 static func best_of(id: String) -> Array:
