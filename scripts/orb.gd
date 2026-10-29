@@ -1,0 +1,258 @@
+class_name Orb
+extends Node2D
+## 화면 밖에서 중앙 점으로 이동하는 구체.
+
+enum Kind { NORMAL, FAST, TANK, BOSS }
+
+var kind := Kind.NORMAL
+var core_dmg := 1
+var shield := 0.0  # 보호막: 이만큼 피해를 먼저 흡수
+var swirl := 0.0  # 나선 이동 각도(라디안)
+var splits := false  # 죽으면 작은 구체 2개
+var resist_e := -1  # 이 속성 피해를 덜 받는다 (부분 저항)
+var sturdy := false  # 굳셈: 밀기·감속·기절·냉기 효과 절반
+var minion_t := 4.0  # 보스: 부하 소환 주기  # 중앙에 닿았을 때 깎는 체력
+var hp := 1.0
+var max_hp := 1.0
+var speed := 50.0
+var target := Vector2.ZERO
+var slow_timer := 0.0
+var slow_factor := 1.0
+var root_timer := 0.0
+var burn_dps := 0.0
+var burn_t := 0.0
+var poison_dps := 0.0
+var poison_t := 0.0
+var vuln_t := 0.0
+var chill := 0.0
+var frozen_t := 0.0  # 빙결 표시
+var flash := 0.0
+var main: Node
+var dmg_acc := 0.0  # 피해 숫자 팝업용 누적
+var pop_t := 0.0
+var age := 0.0  # 등장 연출
+
+
+func radius() -> float:
+	match kind:
+		Kind.FAST:
+			return 9.0
+		Kind.BOSS:
+			return 30.0
+	return 9.0 + minf(max_hp, 12.0)
+
+
+## 종류에 맞춰 체력·속도 보정.
+func setup(k: int, base_hp: float, base_speed: float) -> void:
+	kind = k
+	match k:
+		Kind.NORMAL:
+			max_hp = base_hp; speed = base_speed
+		Kind.FAST:
+			max_hp = maxf(1.0, ceilf(base_hp * 0.6)); speed = base_speed * 1.8
+		Kind.TANK:
+			max_hp = ceilf(base_hp * 2.5); speed = base_speed * 0.6
+		Kind.BOSS:
+			max_hp = ceilf(base_hp * 12.0); speed = base_speed * 0.45; core_dmg = 3
+	hp = max_hp
+	if main:
+		speed *= main.orb_speed_mul
+
+
+## main이 웨이브 중 호출한다(배속이면 한 프레임에 여러 번).
+func step(delta: float) -> void:
+	age += delta
+	# A6: 보스는 주기적으로 빠른 부하를 부른다
+	if kind == Kind.BOSS and main:
+		minion_t -= delta
+		if minion_t <= 0.0:
+			minion_t = 4.0
+			main.spawn_minion(self)
+	slow_timer = maxf(slow_timer - delta, 0.0)
+	root_timer = maxf(root_timer - delta, 0.0)
+	vuln_t = maxf(vuln_t - delta, 0.0)
+	flash = maxf(flash - delta, 0.0)
+	frozen_t = maxf(frozen_t - delta, 0.0)
+	chill = maxf(chill - 0.4 * delta, 0.0)
+	if burn_t > 0.0:
+		burn_t -= delta
+		hurt(burn_dps * delta)
+	if poison_t > 0.0:
+		poison_t -= delta
+		hurt(poison_dps * delta)
+	# 피해 숫자는 0.35초마다 묶어서 표시
+	pop_t -= delta
+	if pop_t <= 0.0 and dmg_acc >= 1.0 and main:
+		main.popup(position, dmg_acc, Color.WHITE, false)
+		dmg_acc = 0.0
+		pop_t = 0.35
+	var mult := slow_factor if slow_timer > 0.0 else 1.0
+	if root_timer > 0.0:
+		mult = 0.0
+	if swirl != 0.0 and position.distance_to(target) > 60.0:
+		# 소용돌이 맵: 중앙을 향하되 옆으로 비껴 나선을 그린다
+		position += (target - position).normalized().rotated(swirl) * speed * mult * delta
+	else:
+		position = position.move_toward(target, speed * mult * delta)
+	queue_redraw()
+
+
+func hurt(amount: float, crit := false) -> void:
+	var d := amount * (1.3 if vuln_t > 0.0 else 1.0)
+	if shield > 0.0:
+		var absorbed := minf(shield, d)
+		shield -= absorbed
+		d -= absorbed
+		if shield <= 0.0 and main:
+			main.burst(position, Color(0.6, 0.9, 1.0), 8, 140.0)
+			main.sfx.play("shield", 0.0)
+	hp -= d
+	if amount > 0.3:
+		flash = 0.08
+	if crit and main:
+		main.popup(position, d, Color(1, 0.9, 0.3), true)
+		main.sfx.play("crit")
+	elif amount >= 0.5 and main:
+		main.sfx.play("hit", 0.12)
+	else:
+		dmg_acc += d
+
+
+## 저항 속성이 오브젝트 속성에서 차지하는 비율만큼 피해를 줄인다 (최대 60%).
+func resist_mul(els: Dictionary) -> float:
+	if resist_e < 0 or not els.has(resist_e):
+		return 1.0
+	var total := 0
+	for e in els:
+		total += els[e]
+	return 1.0 - 0.6 * float(els[resist_e]) / maxf(total, 1.0)
+
+
+func slow(factor: float, duration: float) -> void:
+	if sturdy:
+		factor = lerpf(factor, 1.0, 0.5)
+		duration *= 0.5
+	slow_factor = minf(slow_factor, factor) if slow_timer > 0.0 else factor
+	slow_timer = maxf(slow_timer, duration)
+
+
+func root(duration: float) -> void:
+	if sturdy:
+		duration *= 0.5
+	root_timer = maxf(root_timer, duration)
+
+
+func push(v: Vector2) -> void:
+	if sturdy:
+		v *= 0.5
+	position += v
+
+
+func burn(dps: float, duration: float) -> void:
+	burn_dps = maxf(burn_dps if burn_t > 0.0 else 0.0, dps)
+	burn_t = maxf(burn_t, duration)
+
+
+func poison(dps: float, duration: float) -> void:
+	poison_dps = maxf(poison_dps if poison_t > 0.0 else 0.0, dps)
+	poison_t = maxf(poison_t, duration)
+
+
+func vuln(duration: float) -> void:
+	vuln_t = maxf(vuln_t, duration)
+
+
+## 냉기가 3 쌓이면 1초 빙결.
+func add_chill(amount: float) -> void:
+	if sturdy:
+		amount *= 0.5
+	chill += amount
+	slow(0.7, 0.5)
+	if chill >= 3.0:
+		chill = 0.0
+		root(1.0)
+		frozen_t = 1.0
+
+
+## 터질 때 파편 색: 걸려 있던 상태를 따른다.
+func death_color() -> Color:
+	if burn_t > 0.0: return Elem.COLORS[Elem.FIRE]
+	if poison_t > 0.0: return Elem.COLORS[Elem.POISON]
+	if frozen_t > 0.0: return Elem.COLORS[Elem.ICE]
+	if vuln_t > 0.0: return Elem.COLORS[Elem.DARK]
+	return Color(0.9, 0.9, 1.0)
+
+
+func _draw() -> void:
+	var r := radius()
+	var appear := clampf(age / 0.3, 0.0, 1.0)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * appear)
+	# 그림자
+	draw_circle(Vector2(3, 4), r, Color(0, 0, 0, 0.35))
+	var body := Color(0.85, 0.85, 0.9)
+	if flash > 0.0:
+		body = Color.WHITE
+	if poison_t > 0.0:
+		body = body.lerp(Elem.COLORS[Elem.POISON], 0.35)
+	if burn_t > 0.0:
+		body = body.lerp(Elem.COLORS[Elem.FIRE], 0.35)
+	if vuln_t > 0.0:
+		body = body.lerp(Elem.COLORS[Elem.DARK], 0.35)
+	match kind:
+		Kind.FAST:
+			# 진행 방향을 향한 뾰족한 모양
+			var d := (target - position).normalized()
+			draw_colored_polygon(PackedVector2Array([d * r * 1.6, d.orthogonal() * r, -d * r * 0.6, -d.orthogonal() * r]), body)
+		Kind.TANK:
+			draw_rect(Rect2(Vector2(-r, -r), Vector2(r, r) * 2.0), body)
+			draw_rect(Rect2(Vector2(-r, -r), Vector2(r, r) * 2.0), Color(0.4, 0.4, 0.45), false, 3.0)
+		Kind.BOSS:
+			draw_circle(Vector2.ZERO, r, body.darkened(0.15))
+			for i in 8:
+				var a := TAU * i / 8 + Time.get_ticks_msec() / 900.0
+				draw_line(Vector2(cos(a), sin(a)) * r, Vector2(cos(a), sin(a)) * (r + 8), Color(1, 0.3, 0.4), 3.0)
+		_:
+			draw_circle(Vector2.ZERO, r, body)
+	var frac := clampf(hp / max_hp, 0.0, 1.0)
+	draw_arc(Vector2.ZERO, r + 3.0, -PI / 2, -PI / 2 + TAU * frac, 24, Color(1, 0.3, 0.4), 2.0)
+	if slow_timer > 0.0:
+		draw_arc(Vector2.ZERO, r - 3.0, 0, TAU, 24, Elem.COLORS[Elem.WATER], 2.0)
+	if shield > 0.0:
+		var hex := PackedVector2Array()
+		for i in 7:
+			var a := TAU * i / 6 + age
+			hex.append(Vector2(cos(a), sin(a)) * (r + 7.0))
+		draw_polyline(hex, Color(0.6, 0.9, 1.0, 0.9), 2.5)
+	if splits:
+		draw_line(Vector2(0, -r * 0.8), Vector2(0, r * 0.8), Color(0.3, 0.3, 0.4), 2.0)
+	if resist_e >= 0:
+		# 저항: 그 속성 색 점선 고리
+		var rc: Color = Elem.COLORS[resist_e]
+		for i in 6:
+			var a0 := TAU * i / 6 - age * 0.8
+			draw_arc(Vector2.ZERO, r + 11.0, a0, a0 + 0.6, 6, rc, 3.0)
+	if sturdy:
+		# 굳셈: 네 귀퉁이 쐐기
+		for i in 4:
+			var d := Vector2.from_angle(PI / 4 + i * PI / 2)
+			draw_line(d * (r + 1.0), d * (r + 8.0), Color(0.75, 0.75, 0.8), 4.0)
+	if frozen_t > 0.0:
+		# 얼음 결정
+		draw_circle(Vector2.ZERO, r + 2.0, Color(0.75, 0.93, 1.0, 0.5))
+		for i in 6:
+			var a := TAU * i / 6
+			draw_line(Vector2.ZERO, Vector2(cos(a), sin(a)) * (r + 6.0), Color(1, 1, 1, 0.8), 2.0)
+	elif root_timer > 0.0:
+		draw_arc(Vector2.ZERO, r + 6.0, 0, TAU, 24, Elem.COLORS[Elem.EARTH], 3.0)
+	# 상태 표시 점: 화상·중독·약화·감속
+	var icons: Array = []
+	if burn_t > 0.0: icons.append(Elem.COLORS[Elem.FIRE])
+	if poison_t > 0.0: icons.append(Elem.COLORS[Elem.POISON])
+	if vuln_t > 0.0: icons.append(Elem.COLORS[Elem.DARK])
+	if slow_timer > 0.0: icons.append(Elem.COLORS[Elem.WATER])
+	for i in icons.size():
+		draw_circle(Vector2(-(icons.size() - 1) * 4.0 + i * 8.0, -r - 9.0), 3.0, icons[i])
+	var font := ThemeDB.fallback_font
+	var txt := str(ceili(hp))
+	var size := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_CENTER, -1, 12)
+	draw_string(font, Vector2(-size.x / 2, 4), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.1, 0.1, 0.15))
