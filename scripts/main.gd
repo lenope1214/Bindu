@@ -109,7 +109,7 @@ const PERKS := [
 	{"id": "luck", "name": "행운", "desc": "선택지가 Lv2로 나올 확률 +20%"},
 	{"id": "regen", "name": "회복", "desc": "웨이브를 마칠 때마다 중앙 체력 +1"},
 	{"id": "slow", "name": "끈적한 공간", "desc": "모든 구체 이동 속도 -8%"},
-	{"id": "harmony", "name": "조화", "desc": "속성 쌓기 대가 절반"},
+	{"id": "harmony", "name": "조화", "desc": "속성을 여러 종류 겹쳐 생기는 공격 속도 감소가 절반으로"},
 ]
 var perks := {}  # id → 고른 횟수
 var perk_mode := false
@@ -711,6 +711,21 @@ func _wrap_words(text: String, width: float, fs: int) -> String:
 			else:
 				line = cand
 		out.append(line)
+	return "\n".join(out)
+
+
+## "a · b · c"처럼 구분자로 나뉜 글을 항목 단위로 줄바꿈 (항목 중간에서 끊지 않음).
+func _wrap_parts(text: String, sep: String, width: float, fs: int) -> String:
+	var out := PackedStringArray()
+	var line := ""
+	for part in text.split(sep):
+		var cand: String = part if line == "" else line + sep + part
+		if line != "" and ui_font.get_string_size(cand, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width:
+			out.append(line)
+			line = part
+		else:
+			line = cand
+	out.append(line)
 	return "\n".join(out)
 
 
@@ -1548,7 +1563,7 @@ func _refresh_menu() -> void:
 	var m: Dictionary = Meta.MAPS[Meta.map_id]
 	var best := Meta.best_of(Meta.key())
 	map_label.text = "맵: %s  (←/→)\n%s\n최고 기록  웨이브 %d · 점수 %s" % [m["name"], m["desc"], best[0], num(best[1])]
-	rules_label.text = "규칙: %s  (↑/↓)\n%s" % [Rules.NAMES[Meta.rules], Rules.DESCS[Meta.rules]]
+	rules_label.text = "규칙: %s  (↑/↓)\n%s" % [Rules.NAMES[Meta.rules], _wrap_parts(Rules.DESCS[Meta.rules], " · ", 470.0, 18)]
 	var ts: Dictionary = Meta.TOWER_SKINS[Meta.tower_skin]
 	skin_label.text = "오브젝트 모양: " + ts["name"]
 	var cs: Dictionary = Meta.CORE_SKINS[Meta.core_skin]
@@ -2232,7 +2247,7 @@ func _resolve(delta: float) -> void:
 			if o.poison_t > 0.0:
 				for other in targets:
 					if other != o and other.position.distance_to(o.position) < 80.0:
-						other.poison(o.poison_dps, 3.0, o.poison_src)
+						other.poison(o.poison_dps, 3.0, o.poison_src, o.poison_rx)
 			if o.curse_lv > 0:
 				_curse_burst(o)
 			if o.swamp_t > 0.0:
@@ -2285,7 +2300,7 @@ func _curse_burst(o: Orb) -> void:
 func _swamp_burst(o: Orb) -> void:
 	for other in near(o.position, 90.0):
 		if other != o and other.hp > 0.0 and other.position.distance_to(o.position) < 90.0 + other.radius():
-			other.poison(1.5 * o.swamp_lv, 4.0, o.poison_src)
+			other.poison(1.5 * o.swamp_lv, 4.0, o.poison_src, true)
 	burst(o.position, Color(0.6, 0.85, 0.2), 12, 160.0)
 
 
@@ -2607,10 +2622,10 @@ func _draw() -> void:
 		var p1 := c + Vector2(cos(a), sin(a)) * CORE_RADIUS * 0.2
 		var p2 := c + Vector2(cos(a + 0.3), sin(a + 0.3)) * CORE_RADIUS * 0.95
 		draw_line(p1, p2, Color(0.3, 0.05, 0.08, 0.8), 1.5)
-	if title_label.visible:
-		# 시작 화면: 중앙 점이 메뉴 글자 뒤로 비치지 않게 배경을 어둡게
-		draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.6))
 	draw_arc(c, CORE_RADIUS + 5.0, -PI / 2, -PI / 2 + TAU * frac, 32, Color(1, 1, 1, 0.6), 2.0)
+	if title_label.visible:
+		# 시작 화면: 중앙 점(체력 고리 포함)이 메뉴 글자 뒤로 비치지 않게 배경을 어둡게
+		draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.6))
 
 	# 구체 진입 방향 표시
 	for a in lanes:

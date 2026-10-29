@@ -460,7 +460,7 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 				_band(orbs, w[0], w[1], w[2], 9.0, func(o):
 					hit(o, 1.4 * pw(l) * de, k)
 					o.slow(0.35, 0.3)
-					o.burn(1.0 * l, 1.5, self))
+					o.burn(1.0 * l, 1.5, self, true))
 			"mushroom":
 				mines = mines.filter(func(mm): return is_instance_valid(mm))
 				if _ready_to(id, 2.0 / spd(l), de) and mines.size() < 4 + l:
@@ -510,7 +510,7 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 				_band(orbs, w[0], w[1], w[2], 18.0, func(o):
 					hit(o, 1.0 * pw(l) * de, k)
 					o.slow(0.5, 0.3)
-					o.poison(0.8 * l, 3.0, self)
+					o.poison(0.8 * l, 3.0, self, true)
 					o.swamp_t = 0.3
 					o.swamp_lv = l)
 			"curse":

@@ -153,7 +153,7 @@ func on_hit(o: Orb, delta: float) -> bool:
 			tw.in_rx = false
 		else:
 			o.hurt(dmg * delta)  # 주인 오브젝트가 사라진 경우
-		o.burn(1.0 * level, 2.0, tw)
+		o.burn(1.0 * level, 2.0, tw, kind in ["log", "tornado", "mushroom"])
 		return false
 	if hit.has(o):
 		return false
