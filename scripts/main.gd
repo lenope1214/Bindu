@@ -652,6 +652,7 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 			b.text = "[%d] 연계: %s\n%s\n%s" % [idx, Pat.LINKS[id]["name"], Pat.LINKS[id]["desc"], "오브젝트 두 개를 차례로 클릭" if id == "link" else "오브젝트 위에 놓기"]
 	b.text = _wrap_words(b.text, 220.0, 15)
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	b.focus_mode = Control.FOCUS_NONE  # 다른 버튼처럼: Space·Enter가 카드를 고르지 않게
 	b.add_theme_font_size_override("font_size", 15)
 	b.add_theme_color_override("font_color", col)
 	b.add_theme_color_override("font_hover_color", col.lightened(0.3))
@@ -2747,10 +2748,10 @@ func _load_best() -> void:
 		var b := Meta.best_of(Meta.key())
 		best_wave = b[0]
 		best_score = b[1]
-		auto_start = cfg.get_value("option", "auto_start", false)
-		legend_hidden = cfg.get_value("option", "legend_hidden", false)
-		sfx.muted = cfg.get_value("option", "muted", false)
-		fast_speed = cfg.get_value("option", "fast_speed", 2.0)
+		auto_start = Meta.val(cfg, "option", "auto_start", false)
+		legend_hidden = Meta.val(cfg, "option", "legend_hidden", false)
+		sfx.muted = Meta.val(cfg, "option", "muted", false)
+		fast_speed = Meta.val(cfg, "option", "fast_speed", 2.0)
 		if not fast_speed in SPEEDS:
 			fast_speed = 2.0
 

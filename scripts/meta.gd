@@ -65,7 +65,18 @@ static func key(id: String = map_id) -> String:
 
 
 static func best_of(id: String) -> Array:
-	return map_best.get(id, [0, 0])
+	var b: Variant = map_best.get(id, [0, 0])
+	return b if b is Array and b.size() >= 2 else [0, 0]
+
+
+## 저장값 읽기: 형식이 다르면(깨졌거나 손으로 고친 파일) 기본값으로. 숫자는 정수·실수를 서로 받아 준다.
+static func val(cfg: ConfigFile, sec: String, key: String, d: Variant) -> Variant:
+	var v: Variant = cfg.get_value(sec, key, d)
+	if typeof(d) == TYPE_FLOAT and typeof(v) == TYPE_INT:
+		return float(v)
+	if typeof(d) == TYPE_INT and typeof(v) == TYPE_FLOAT:
+		return int(v)
+	return v if typeof(v) == typeof(d) else d
 
 
 static func unlocked(need: String) -> bool:
@@ -89,22 +100,23 @@ static func discover(rid: String) -> bool:
 
 
 static func load_into(cfg: ConfigFile) -> void:
-	map_id = cfg.get_value("meta", "map", "plain")
+	map_id = val(cfg, "meta", "map", "plain")
 	if not map_id in MAP_IDS:
 		map_id = "plain"
-	rules = cfg.get_value("meta", "rules", 1)
+	rules = val(cfg, "meta", "rules", 1)
 	if not rules in Rules.IDS:
 		rules = 1
-	tower_skin = cfg.get_value("meta", "tower_skin", "circle")
-	core_skin = cfg.get_value("meta", "core_skin", "dot")
-	map_best = cfg.get_value("meta", "map_best", {})
-	achieved = cfg.get_value("meta", "achieved", {})
-	codex = cfg.get_value("meta", "codex", {})
-	total_kills = cfg.get_value("meta", "kills", 0)
-	games = cfg.get_value("meta", "games", 0)
-	volume = cfg.get_value("settings", "volume", 1.0)
-	shake_on = cfg.get_value("settings", "shake", true)
-	numbers_on = cfg.get_value("settings", "numbers", true)
+	tower_skin = val(cfg, "meta", "tower_skin", "circle")
+	core_skin = val(cfg, "meta", "core_skin", "dot")
+	map_best = val(cfg, "meta", "map_best", {})
+	achieved = val(cfg, "meta", "achieved", {})
+	codex = val(cfg, "meta", "codex", {})
+	total_kills = val(cfg, "meta", "kills", 0)
+	games = val(cfg, "meta", "games", 0)
+	volume = val(cfg, "settings", "volume", 1.0)
+	shake_on = val(cfg, "settings", "shake", true)
+	numbers_on = val(cfg, "settings", "numbers", true)
+	volume = clampf(volume, 0.0, 1.0)
 	# 예전 저장의 최고 기록은 평원 기록으로 옮긴다
 	if not map_best.has("plain") and cfg.has_section_key("best", "wave"):
 		map_best["plain"] = [cfg.get_value("best", "wave", 0), cfg.get_value("best", "score", 0)]
