@@ -7,6 +7,8 @@ const CORE_RADIUS := 14.0
 const CORE_MAX_HP := 10
 const MERGE_DIST := 30.0
 const SAVE_PATH := "user://best.cfg"
+const RUN_PATH := "user://run.cfg"  # 이어하기: 쉬는 시간마다 저장, 게임 오버면 지움
+const RUN_FORMAT := 1
 const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 위치·방향 변경"
 const PAUSE_TEXT := "일시정지\nP / Esc: 계속   R: 처음부터   M: 소리   O: 설정   F11: 전체 화면"
 const PLACE_HINT := "클릭: 설치 (오브젝트 위면 속성 겹치기)   오브젝트 꾹 누르기·끌기: 옮기기\n우클릭/Esc: 다시 고르기"
@@ -126,6 +128,9 @@ var hud_wrap_key := ""
 var hud_wrap := false
 var perk_wrapped := ""
 var title_label: Control  # 메인 메뉴
+var continue_btn: Button  # 저장된 판이 있을 때만 보임
+var new_btn: Button
+var new_armed := 0.0  # 저장된 판이 있을 때 새로 시작은 두 번 눌러야 (실수로 지우지 않게)
 var map_label: Label
 var rules_label: Label
 var skin_label: Label
@@ -173,6 +178,7 @@ func _ready() -> void:
 		_start_choose()
 	else:
 		title_label.visible = true
+		_refresh_continue()
 		hint.text = ""
 
 
@@ -184,6 +190,9 @@ func _notification(what: int) -> void:
 		esc.keycode = KEY_ESCAPE
 		esc.pressed = true
 		Input.parse_input_event(esc)
+	# 창을 닫거나 (모바일) 앱이 뒤로 가면 지금 쉬는 시간 상태를 한 번 더 저장 (옮긴 위치까지)
+	if (what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED) and towers and title_label:
+		_save_run()
 
 
 func _layer(n: String) -> Node2D:
@@ -529,6 +538,7 @@ func _help_text() -> String:
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
 		"P / Esc: 일시정지   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   F11: 전체 화면",
 		"R: 다시 시작 (게임 오버 뒤, 또는 일시정지 중 두 번)",
+		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 이어하기(Enter)로 그 쉬는 시간부터 (새로 시작은 N 두 번)",
 		"",
 		"[규칙 · %s]" % Rules.NAMES[Rules.version],
 		"중앙 체력 10. 구체가 닿으면 줄어듭니다",
@@ -560,14 +570,6 @@ static func spawn_count(w: int) -> int:
 
 
 func _start_choose(new_round := true) -> void:
-	phase = Phase.CHOOSE
-	wave_active = false
-	for p in projectiles.get_children():
-		p.queue_free()
-	for z in zones.get_children():
-		z.queue_free()
-	for t in towers.get_children():
-		t.queue_redraw()
 	if new_round:
 		_roll_lanes()
 		# 다음 웨이브 저항 속성: 12웨이브(버전 4는 8)부터 60% 확률
@@ -575,17 +577,34 @@ func _start_choose(new_round := true) -> void:
 		picks_left = 2 if wave <= 1 else Rules.picks  # 처음 두 번의 쉬는 시간은 2개씩
 		rerolls_left = 1 + bonus_rerolls + perks.get("reroll", 0)
 		bonus_rerolls = 0
-	_update_preview()
 	_make_choices()
+	_open_choose()
+	_save_run()
+
+
+## 선택지 화면을 연다 (offer는 이미 정해져 있음).
+func _open_choose() -> void:
+	phase = Phase.CHOOSE
+	wave_active = false
+	_clear_shots()
+	for t in towers.get_children():
+		t.queue_redraw()
+	_update_preview()
 	cards_hidden = false
 	choice_box.visible = true
 	_update_reroll_btn()
 	hint.text = _choose_hint()
 
 
+## 쉬는 시간이 되면 남은 탄·장판을 지운다.
+func _clear_shots() -> void:
+	for p in projectiles.get_children():
+		p.queue_free()
+	for z in zones.get_children():
+		z.queue_free()
+
+
 func _make_choices() -> void:
-	for c in choice_box.get_children():
-		c.queue_free()
 	offer.clear()
 	var guard := 0
 	while offer.size() < 3 and guard < 50:
@@ -603,6 +622,13 @@ func _make_choices() -> void:
 	# 속성 카드(새 오브젝트를 놓을 수 있는 카드)는 최소 1장
 	if not offer.any(func(cd): return cd["type"] == "elem"):
 		offer[randi() % offer.size()] = {"type": "elem", "e": Elem.ALL.pick_random(), "lv": 1}
+	_show_offer()
+
+
+## 선택지 카드 버튼을 offer대로 다시 만든다.
+func _show_offer() -> void:
+	for c in choice_box.get_children():
+		c.queue_free()
 	for i in offer.size():
 		choice_box.add_child(_card_button(offer[i], i + 1))
 
@@ -745,18 +771,22 @@ func _wrap_parts(text: String, sep: String, width: float, fs: int) -> String:
 
 ## 5웨이브마다: 특성 3개 중 1개.
 func _start_perk() -> void:
-	phase = Phase.CHOOSE
-	wave_active = false
-	perk_mode = true
-	for p in projectiles.get_children():
-		p.queue_free()
-	for z in zones.get_children():
-		z.queue_free()
-	for c in choice_box.get_children():
-		c.queue_free()
 	var pool: Array = PERKS.duplicate()
 	pool.shuffle()
 	perk_offer = pool.slice(0, 3)
+	_show_perks()
+	big_banner("특성 선택", Color(1, 0.85, 0.45))
+	_save_run()
+
+
+## 특성 고르기 화면 (perk_offer는 이미 정해져 있음).
+func _show_perks() -> void:
+	phase = Phase.CHOOSE
+	wave_active = false
+	perk_mode = true
+	_clear_shots()
+	for c in choice_box.get_children():
+		c.queue_free()
 	for i in perk_offer.size():
 		var pk: Dictionary = perk_offer[i]
 		var b := Button.new()
@@ -784,7 +814,6 @@ func _start_perk() -> void:
 	choice_box.visible = true
 	reroll_btn.visible = false
 	hint.text = "특성을 하나 고르세요. 이번 판 끝까지 유지됩니다"
-	big_banner("특성 선택", Color(1, 0.85, 0.45))
 
 
 func _on_perk(pk: Dictionary) -> void:
@@ -819,11 +848,15 @@ func _perk_text() -> String:
 
 
 func _on_reroll() -> void:
-	if rerolls_left <= 0 or phase != Phase.CHOOSE:
+	if phase != Phase.CHOOSE:
+		return
+	if rerolls_left <= 0:
+		_show_toast("이번 쉬는 시간의 새로고침을 다 썼어요")  # Q를 눌러도 아무 일이 없던 것
 		return
 	rerolls_left -= 1
 	_make_choices()
 	_update_reroll_btn()
+	_save_run()
 
 
 ## 새로고침 버튼: 남은 횟수를 같이 보여 준다.
@@ -997,6 +1030,7 @@ func _enter_ready() -> void:
 	start_btn.visible = true
 	start_btn.text = "웨이브 시작 (Space)"
 	hint.text = READY_HINT
+	_save_run()
 
 
 func _start_wave_from_ready() -> void:
@@ -1076,6 +1110,7 @@ func _game_over() -> void:
 	Meta.total_kills += kills
 	Meta.games += 1
 	_save_best()
+	_clear_run()
 	var ach := "\n새 업적: " + ", ".join(new_achievements) if not new_achievements.is_empty() else ""
 	# 판 전체에서 가장 많이 때린 오브젝트
 	var mvp := ""
@@ -1112,6 +1147,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				KEY_H:
 					help_label.visible = not help_label.visible
 				KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
+					if continue_btn.visible:
+						_continue_run()
+					else:
+						_close_title()
+				KEY_N:
 					_close_title()
 				KEY_LEFT:
 					_cycle_map(-1)
@@ -1168,6 +1208,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_start_wave()
 		elif event.keycode == KEY_SPACE and phase == Phase.WAVE:
 			_toggle_speed()
+		elif event.keycode == KEY_SPACE and phase == Phase.CHOOSE:
+			_show_toast(("특성을" if perk_mode else "선택지를") + " 먼저 고르세요 (1·2·3 또는 클릭)")
 		elif event.keycode == KEY_ESCAPE and (phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] or press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
 			_cancel_step()
 		elif event.keycode == KEY_P or event.keycode == KEY_ESCAPE:
@@ -1354,6 +1396,7 @@ func _release_press() -> void:
 			o.queue_redraw()
 	drag_group.clear()
 	_restore_hint()
+	_save_run()
 
 
 ## 옮기는 자리에 놓을 수 없으면 그 이유 (movers: 함께 움직이는 것들끼리는 겹쳐도 됨).
@@ -1469,6 +1512,17 @@ func _build_menu(root: Control) -> void:
 		b.pressed.connect(spec[1])
 		row.add_child(b)
 	row.get_child(0).add_theme_font_size_override("font_size", 20)
+	new_btn = row.get_child(0)
+	# 이어하기: 저장된 판이 있을 때만 (쉬는 시간마다 자동 저장)
+	continue_btn = Button.new()
+	continue_btn.custom_minimum_size = Vector2(630, 48)
+	continue_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	continue_btn.focus_mode = Control.FOCUS_NONE
+	continue_btn.add_theme_font_size_override("font_size", 19)
+	continue_btn.pressed.connect(_continue_run)
+	continue_btn.visible = false
+	box.add_child(continue_btn)
+	box.move_child(continue_btn, row.get_index())
 
 	records_panel = Label.new()
 	records_panel.set_anchors_preset(Control.PRESET_CENTER)
@@ -1523,17 +1577,23 @@ func _build_menu(root: Control) -> void:
 		_save_best())
 	vrow.add_child(slider)
 	sv.add_child(vrow)
-	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"]]:
+	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 첫 글자)", "symbols_on"]]:
 		var cb := CheckButton.new()
 		cb.text = spec[0]
-		cb.button_pressed = Meta.shake_on if spec[1] == "shake_on" else Meta.numbers_on
-		cb.focus_mode = Control.FOCUS_NONE
 		var key: String = spec[1]
+		match key:
+			"shake_on": cb.button_pressed = Meta.shake_on
+			"numbers_on": cb.button_pressed = Meta.numbers_on
+			"symbols_on": cb.button_pressed = Meta.symbols_on
+		cb.focus_mode = Control.FOCUS_NONE
 		cb.toggled.connect(func(on):
-			if key == "shake_on":
-				Meta.shake_on = on
-			else:
-				Meta.numbers_on = on
+			match key:
+				"shake_on": Meta.shake_on = on
+				"numbers_on": Meta.numbers_on = on
+				"symbols_on":
+					Meta.symbols_on = on
+					for t in towers.get_children():
+						t.queue_redraw()
 			_save_best())
 		sv.add_child(cb)
 	var fs := Button.new()
@@ -1751,13 +1811,186 @@ func _check_progress() -> void:
 
 
 func _close_title() -> void:
+	if continue_btn.visible and new_armed <= 0.0:
+		new_armed = 2.5
+		new_btn.text = "정말 새로 시작?"
+		return
+	_clear_run()
+	_hide_title()
+	lanes.clear()
+	_start_choose()
+
+
+func _hide_title() -> void:
 	title_label.visible = false
 	help_label.visible = false
 	records_panel.visible = false
 	settings_panel.visible = false
-	lanes.clear()
 	title_seen = true
-	_start_choose()
+
+
+# ---------- 이어하기 ----------
+
+## 쉬는 시간마다 판을 저장한다. 웨이브 중에 끄면 그 웨이브 앞 쉬는 시간부터 이어진다.
+func _save_run() -> void:
+	if title_label.visible or not phase in [Phase.CHOOSE, Phase.READY] or press_t or dragging:
+		return
+	var ts := towers.get_children()
+	var list: Array = []
+	for t in ts:
+		var d: Dictionary = t.to_save()
+		var li: Array = []
+		for o in t.links:
+			if is_instance_valid(o) and ts.has(o):
+				li.append(ts.find(o))
+		d["links"] = li
+		list.append(d)
+	var vals := {
+		"format": RUN_FORMAT, "version": ProjectSettings.get_setting("application/config/version", ""),
+		"map": Meta.map_id, "rules": Meta.rules, "wave": wave, "score": score, "kills": kills, "best_combo": best_combo,
+		"core_hp": core_hp, "core_max": core_max, "perks": perks, "orb_speed_mul": orb_speed_mul,
+		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
+		"rerolls_left": rerolls_left, "bonus_rerolls": bonus_rerolls, "picks_left": picks_left,
+		"lanes": Array(lanes), "wave_resist": wave_resist, "achievements": new_achievements,
+		"state": "perk" if perk_mode else ("ready" if phase == Phase.READY else "choose"),
+		"offer": offer, "perk_offer": perk_offer.map(func(pk): return pk["id"]), "towers": list,
+	}
+	var cfg := ConfigFile.new()
+	for k in vals:
+		cfg.set_value("run", k, vals[k])
+	cfg.save(RUN_PATH)
+
+
+func _clear_run() -> void:
+	if FileAccess.file_exists(RUN_PATH):
+		DirAccess.remove_absolute(RUN_PATH)
+
+
+## 저장된 판 요약 {wave, map, rules, cfg} (없거나 형식이 다르면 빈 사전).
+func _run_info() -> Dictionary:
+	var cfg := ConfigFile.new()
+	if cfg.load(RUN_PATH) != OK or Meta.val(cfg, "run", "format", 0) != RUN_FORMAT:
+		return {}
+	var map: String = Meta.val(cfg, "run", "map", "")
+	var r: int = Meta.val(cfg, "run", "rules", 0)
+	if not map in Meta.MAP_IDS or not r in Rules.IDS:
+		return {}
+	return {"wave": maxi(0, Meta.val(cfg, "run", "wave", 0)), "map": map, "rules": r, "cfg": cfg}
+
+
+## 시작 화면의 이어하기 버튼: 저장된 판이 있으면 그 판의 웨이브·맵·규칙을 보여 준다.
+func _refresh_continue() -> void:
+	var info := _run_info()
+	continue_btn.visible = not info.is_empty()
+	new_armed = 0.0
+	new_btn.text = "새로 시작 (N)" if continue_btn.visible else "시작 (Enter)"
+	if continue_btn.visible:
+		continue_btn.text = "이어하기 (Enter)   웨이브 %d부터 · %s · 버전 %d" % [info["wave"] + 1, Meta.MAPS[info["map"]]["name"], info["rules"]]
+
+
+## 저장된 선택지 카드가 지금 판에서도 쓸 수 있는 형식인지.
+func _valid_card(cd: Variant) -> bool:
+	if not cd is Dictionary:
+		return false
+	match cd.get("type"):
+		"elem": return cd.get("e") in Elem.ALL and cd.get("lv") is int
+		"pat": return cd.get("id") in Pat.PATTERN_IDS
+		"mod": return Pat.MODS.has(cd.get("id"))
+		"link": return Pat.LINKS.has(cd.get("id"))
+		"cata": return cd.get("id") in ["elem", "pat"]
+	return false
+
+
+## 시작 화면 [이어하기]: 저장된 쉬는 시간으로 돌아간다.
+func _continue_run() -> void:
+	var info := _run_info()
+	if info.is_empty():
+		_clear_run()
+		_refresh_continue()
+		return
+	var cfg: ConfigFile = info["cfg"]
+	var g := func(k: String, d: Variant) -> Variant: return Meta.val(cfg, "run", k, d)
+	Meta.map_id = info["map"]
+	Meta.rules = info["rules"]
+	_apply_rules()
+	_refresh_menu()
+	_save_best()
+	_hide_title()
+	wave = info["wave"]
+	score = maxi(0, g.call("score", 0))
+	kills = maxi(0, g.call("kills", 0))
+	best_combo = maxi(0, g.call("best_combo", 0))
+	core_max = maxi(1, g.call("core_max", CORE_MAX_HP))
+	core_hp = clampi(g.call("core_hp", core_max), 1, core_max)
+	core_disp = float(core_hp)
+	perks = {}
+	var pk_saved: Dictionary = g.call("perks", {})
+	for pk in PERKS:
+		if pk_saved.get(pk["id"]) is int and pk_saved[pk["id"]] > 0:
+			perks[pk["id"]] = pk_saved[pk["id"]]
+	orb_speed_mul = clampf(g.call("orb_speed_mul", 1.0), 0.05, 1.0)
+	Tower.dmg_mul = maxf(1.0, g.call("dmg_mul", 1.0))
+	Tower.spd_mul = maxf(1.0, g.call("spd_mul", 1.0))
+	Tower.reach_mul = maxf(1.0, g.call("reach_mul", 1.0))
+	Tower.tax_step = clampf(g.call("tax_step", Rules.tax_step), 0.0, Rules.tax_step)
+	rerolls_left = maxi(0, g.call("rerolls_left", 1))
+	bonus_rerolls = maxi(0, g.call("bonus_rerolls", 0))
+	picks_left = maxi(1, g.call("picks_left", 1))
+	lanes.assign((g.call("lanes", []) as Array).filter(func(a): return a is float))
+	if lanes.is_empty():
+		_roll_lanes()
+	wave_resist = g.call("wave_resist", -1)
+	if not wave_resist in Elem.ALL:
+		wave_resist = -1
+	new_achievements = (g.call("achievements", []) as Array).filter(func(a): return a is String)
+	# 오브젝트: 연결선은 저장 순서 번호로 다시 잇는다 (못 읽은 것은 null로 자리만 지킴)
+	var raw: Array = g.call("towers", [])
+	var made: Array = []
+	for d in raw:
+		var t: Tower = null
+		if d is Dictionary:
+			t = Tower.new()
+			t.main = self
+			t.load_save(d)
+			if t.order.is_empty():
+				t.free()
+				t = null
+			else:
+				towers.add_child(t)
+		made.append(t)
+	for i in made.size():
+		var li: Variant = raw[i].get("links", []) if made[i] else []
+		if li is Array:
+			for j in li:
+				if j is int and j >= 0 and j < made.size() and j != i and made[j] and not made[i].links.has(made[j]):
+					made[i].links.append(made[j])
+					if not made[j].links.has(made[i]):
+						made[j].links.append(made[i])
+	for t in towers.get_children():
+		t.eff = t.eff_now()
+	match g.call("state", "choose"):
+		"perk":
+			perk_offer = []
+			for id in g.call("perk_offer", []):
+				for pk in PERKS:
+					if pk["id"] == id:
+						perk_offer.append(pk)
+			if perk_offer.is_empty():
+				_start_perk()
+			else:
+				_show_perks()
+		"ready":
+			_clear_shots()
+			_update_preview()
+			_enter_ready()
+		_:
+			offer = (g.call("offer", []) as Array).filter(_valid_card)
+			if offer.is_empty():
+				_make_choices()
+			else:
+				_show_offer()
+			_open_choose()
+	_show_toast("웨이브 %d 앞 쉬는 시간부터 이어서 합니다" % (wave + 1))
 
 
 ## 공격방식·강화·연계 카드를 오브젝트에 넣는다.
@@ -1844,6 +2077,7 @@ func _back_to_choose() -> void:
 	choice_box.visible = not cards_hidden
 	_update_reroll_btn()
 	hint.text = _choose_hint()
+	_save_run()
 
 
 ## 쉬는 시간에 설치된 오브젝트를 클릭하면 위치·방향을 다시 정한다.
@@ -2005,7 +2239,9 @@ func _spawn_orb(kind := -1) -> void:
 ## 피해 숫자 팝업.
 func popup(pos: Vector2, amount: float, col: Color, big: bool, text := "", life := 0.7) -> void:
 	if popups.size() > 120:
-		return
+		if text == "":
+			return
+		popups.pop_front()  # 글자(최다 피해·콤보)는 피해 숫자가 꽉 차도 가장 오래된 것을 밀어내고 띄운다
 	if text == "" and not Meta.numbers_on:
 		return
 	var txt := text if text != "" else str(maxi(roundi(amount), 1))
@@ -2071,6 +2307,10 @@ func _roll_kind() -> int:
 # ---------- 루프 ----------
 
 func _process(delta: float) -> void:
+	if new_armed > 0.0:
+		new_armed -= delta
+		if new_armed <= 0.0:
+			new_btn.text = "새로 시작 (N)"
 	toast_timer -= delta
 	toast.visible = toast_timer > 0.0
 	toast.position.y = maxf(100.0, hud.position.y + hud.size.y + 36.0)  # 점수 줄이 길어져도 보스 체력 막대 아래

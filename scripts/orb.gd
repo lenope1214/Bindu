@@ -306,6 +306,9 @@ func _draw() -> void:
 		for i in 6:
 			var a0 := TAU * i / 6 - age * 0.8
 			draw_arc(Vector2.ZERO, r + 11.0, a0, a0 + 0.6, 6, rc, 3.0)
+		if Meta.symbols_on and main:
+			# 속성 기호(설정): 어느 속성에 강한지 글자로도
+			Elem.draw_symbol(self, main.ui_font, Vector2.from_angle(-PI / 4) * (r + 17.0), resist_e, 11)
 	if sturdy:
 		# 굳셈: 네 귀퉁이 쐐기 (네모 구체는 모서리가 r*1.41까지 나와 있어 그 바깥에)
 		var base := r * 1.45 if kind == Kind.TANK else r + 1.0

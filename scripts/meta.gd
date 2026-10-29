@@ -56,6 +56,7 @@ static var games := 0
 static var volume := 1.0
 static var shake_on := true
 static var numbers_on := true
+static var symbols_on := false  # 속성 색 위에 첫 글자 표시 (색만으로 구분하기 어려울 때)
 static var loaded := false
 
 
@@ -118,6 +119,7 @@ static func load_into(cfg: ConfigFile) -> void:
 	volume = val(cfg, "settings", "volume", 1.0)
 	shake_on = val(cfg, "settings", "shake", true)
 	numbers_on = val(cfg, "settings", "numbers", true)
+	symbols_on = val(cfg, "settings", "symbols", false)
 	volume = clampf(volume, 0.0, 1.0)
 	# 예전 저장의 최고 기록은 평원 기록으로 옮긴다
 	if not map_best.has("plain") and cfg.has_section_key("best", "wave"):
@@ -142,3 +144,4 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("settings", "volume", volume)
 	cfg.set_value("settings", "shake", shake_on)
 	cfg.set_value("settings", "numbers", numbers_on)
+	cfg.set_value("settings", "symbols", symbols_on)

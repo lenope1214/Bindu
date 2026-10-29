@@ -296,6 +296,51 @@ func spec() -> Dictionary:
 	return {"els": elements, "pat": pattern, "plv": plv, "mods": mods}
 
 
+## 이어하기 저장용 (연결선은 main이 오브젝트 번호로 따로 저장).
+func to_save() -> Dictionary:
+	return {"elements": elements, "order": Array(order), "pattern": pattern, "plv": plv, "mods": mods,
+		"prism": prism, "reso": reso, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt}
+
+
+## 저장값으로 되살린다. 알 수 없는 속성·공격방식·강화나 형식이 다른 값은 버린다.
+func load_save(d: Dictionary) -> void:
+	var els: Variant = d.get("elements", {})
+	var ord: Variant = d.get("order", [])
+	if els is Dictionary and ord is Array:
+		for e in ord:
+			if e is int and e in Elem.ALL and els.get(e) is int and els[e] > 0 and not order.has(e):
+				elements[e] = els[e]
+				order.append(e)
+	var p: Variant = d.get("pattern")
+	if p is String and p in Pat.PATTERN_IDS:
+		pattern = p
+	plv = maxi(1, _int(d.get("plv")))
+	var ms: Variant = d.get("mods", {})
+	if ms is Dictionary:
+		for id in ms:
+			if Pat.MODS.has(id) and _int(ms[id]) > 0:
+				mods[id] = _int(ms[id])
+	prism = maxi(0, _int(d.get("prism")))
+	reso = maxi(0, _int(d.get("reso")))
+	var pos: Variant = d.get("pos")
+	if pos is Vector2:
+		position = pos
+	var dv: Variant = d.get("dir")
+	if dv is Vector2 and dv.length() > 0.01:
+		dir = dv.normalized()
+	aim = dir
+	dealt = maxf(0.0, _float(d.get("dealt")))
+	run_dealt = maxf(0.0, _float(d.get("run_dealt")))
+
+
+static func _int(v: Variant) -> int:
+	return int(v) if v is int or v is float else 0
+
+
+static func _float(v: Variant) -> float:
+	return float(v) if v is int or v is float else 0.0
+
+
 # ---------- 공격 ----------
 
 func _ready_to(key, interval: float, delta: float) -> bool:
@@ -769,6 +814,11 @@ func _draw_body() -> void:
 			draw_circle(Vector2(cos(a), sin(a)) * (RADIUS + 7.0), 2.5, Elem.COLORS[order[i]])
 	draw_set_transform(Vector2.ZERO)
 	_draw_barrel()
+	if Meta.symbols_on:
+		# 포신에 가리지 않게 포신 위에 그린다
+		draw_set_transform(-dir * recoil * 5.0, 0.0, Vector2(s, s))
+		_draw_symbols(total, skin)
+		draw_set_transform(Vector2.ZERO)
 	if total > 1:
 		draw_string(ThemeDB.fallback_font, Vector2(-6, -RADIUS - 6), str(total), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
 	# 강화 개수: 아래쪽 작은 점
@@ -777,6 +827,19 @@ func _draw_body() -> void:
 		nm += mods[id]
 	for i in mini(nm, 8):
 		draw_circle(Vector2(-(mini(nm, 8) - 1) * 3.0 + i * 6.0, RADIUS + 7.0), 2.0, Color(1, 0.85, 0.45))
+
+
+## 속성 기호(설정): 몸체의 속성 칸마다 그 속성 이름 첫 글자. 하나뿐이면 가운데.
+func _draw_symbols(total: int, skin: String) -> void:
+	var font: Font = main.ui_font if main and main.ui_font else ThemeDB.fallback_font
+	var fs := 12 if order.size() <= 3 else 9
+	var rr := RADIUS * (0.8 if skin == "ring" else 0.55)
+	var a0 := -PI / 2
+	for e in order:
+		var span := TAU * lv(e) / total
+		var c := Vector2.ZERO if order.size() == 1 else Vector2.from_angle(a0 + span / 2.0) * rr
+		Elem.draw_symbol(self, font, c, e, fs)
+		a0 += span
 
 
 ## 스킨 외곽선: 각도 a에서 중심까지 거리.

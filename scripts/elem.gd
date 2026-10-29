@@ -29,6 +29,15 @@ const COLORS := {
 	METAL: Color(0.66, 0.68, 0.75),
 }
 
+## 속성 기호: 이름 첫 글자를 검은 테두리로 (색이 밝아도 어두워도 읽히게). c는 글자 가운데.
+static func draw_symbol(ci: CanvasItem, font: Font, c: Vector2, e: int, fs: int) -> void:
+	var ch: String = NAMES[e].left(1)
+	var w := font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var p := c + Vector2(-w / 2.0, fs * 0.38)
+	ci.draw_string_outline(font, p, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 3, Color(0, 0, 0, 0.85))
+	ci.draw_string(font, p, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+
+
 ## 고유 공격
 const FORM := {
 	FIRE: "화염 방사 (부채꼴 지속 피해)",
