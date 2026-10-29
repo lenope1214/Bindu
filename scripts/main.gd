@@ -98,6 +98,7 @@ var wave_resist := -1  # 다음 웨이브 저항 속성 (-1: 없음)
 var legend_btn: Button
 var aim_start_ms := 0
 var restart_armed := 0.0  # 일시정지 중 R 두 번이면 처음부터
+var over_ms := 0  # 게임 오버 시각: 직후 클릭이 결과를 못 보고 넘기지 않게
 var countdown := -1.0  # 자동 시작까지 남은 시간
 # 특성: 5웨이브마다 고르는 전역 강화
 const PERKS := [
@@ -283,8 +284,13 @@ func _build_ui() -> void:
 
 	var bar := HBoxContainer.new()
 	bar.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	bar.position = Vector2(-616, -50)
-	bar.size = Vector2(600, 36)
+	# 버튼이 늘어나도 오른쪽 여백(16)을 지키고 왼쪽으로 자란다
+	bar.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	bar.alignment = BoxContainer.ALIGNMENT_END
+	bar.offset_left = -616.0
+	bar.offset_right = -16.0
+	bar.offset_top = -50.0
+	bar.offset_bottom = -14.0
 	bar.add_theme_constant_override("separation", 8)
 	root.add_child(bar)
 	mute_btn = Button.new()
@@ -623,6 +629,7 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 		"link":
 			var id: String = card["id"]
 			b.text = "[%d] 연계: %s\n%s\n%s" % [idx, Pat.LINKS[id]["name"], Pat.LINKS[id]["desc"], "오브젝트 두 개를 차례로 클릭" if id == "link" else "오브젝트 위에 놓기"]
+	b.text = _wrap_words(b.text, 212.0, 15)
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b.add_theme_font_size_override("font_size", 15)
 	b.add_theme_color_override("font_color", col)
@@ -632,6 +639,22 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 		b.mouse_entered.connect(func(): hover_elem = card["e"])
 		b.mouse_exited.connect(func(): hover_elem = -1)
 	return b
+
+
+## 띄어쓰기 단위로 줄을 나눈다. Godot 자동 줄바꿈은 한글을 음절마다 끊어 "형\n태"처럼 단어가 잘린다.
+func _wrap_words(text: String, width: float, fs: int) -> String:
+	var out := PackedStringArray()
+	for para in text.split("\n"):
+		var line := ""
+		for w in para.split(" ", false):
+			var cand: String = w if line == "" else line + " " + w
+			if line != "" and ui_font.get_string_size(cand, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > width:
+				out.append(line)
+				line = w
+			else:
+				line = cand
+		out.append(line)
+	return "\n".join(out)
 
 
 ## 5웨이브마다: 특성 3개 중 1개.
@@ -663,7 +686,7 @@ func _start_perk() -> void:
 		b.add_theme_stylebox_override("hover", sbh)
 		b.add_theme_stylebox_override("pressed", sbh)
 		var have: int = perks.get(pk["id"], 0)
-		b.text = "[%d] 특성: %s\n\n%s%s" % [i + 1, pk["name"], pk["desc"], "\n\n(보유 %d)" % have if have > 0 else ""]
+		b.text = _wrap_words("[%d] 특성: %s\n\n%s%s" % [i + 1, pk["name"], pk["desc"], "\n\n(보유 %d)" % have if have > 0 else ""], 212.0, 17)
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		b.add_theme_font_size_override("font_size", 17)
 		b.add_theme_color_override("font_color", Color(1, 0.85, 0.45))
@@ -953,6 +976,7 @@ func _start_wave() -> void:
 
 func _game_over() -> void:
 	phase = Phase.GAMEOVER
+	over_ms = Time.get_ticks_msec()
 	wave_active = false
 	game_speed = 1.0
 	_update_speed_btn()
@@ -963,7 +987,7 @@ func _game_over() -> void:
 	Meta.games += 1
 	_save_best()
 	var ach := "\n새 업적: " + ", ".join(new_achievements) if not new_achievements.is_empty() else ""
-	over_label.text = "게임 오버 (%s)\n웨이브 %d · 점수 %d%s\n처치 %d · 최고 콤보 %d · 오브젝트 %d개%s\nR 또는 클릭: 다시 시작   Esc: 메뉴" % [Meta.MAPS[Meta.map_id]["name"], wave, score, record, kills, best_combo, towers.get_child_count(), ach]
+	over_label.text = "게임 오버 (%s · %s)\n웨이브 %d · 점수 %d%s\n처치 %d · 최고 콤보 %d · 오브젝트 %d개%s\nR 또는 클릭: 다시 시작   Esc: 메뉴" % [Meta.MAPS[Meta.map_id]["name"], Rules.NAMES[Meta.rules], wave, score, record if record != "" else "   (최고 웨이브 %d)" % best_wave, kills, best_combo, towers.get_child_count(), ach]
 	over_label.visible = true
 	sfx.play("over", 0.0)
 	reroll_btn.visible = false
@@ -1030,7 +1054,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			selected = towers.get_children()
 			_restore_hint()
 		elif event.keycode == KEY_R and phase == Phase.GAMEOVER:
-			get_tree().reload_current_scene()
+			if Time.get_ticks_msec() - over_ms > 800:
+				get_tree().reload_current_scene()
 		elif event.keycode == KEY_M:
 			_toggle_mute()
 		elif event.keycode == KEY_SPACE and phase == Phase.READY:
@@ -1068,7 +1093,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if title_label.visible or settings_panel.visible:
 		return
 	if phase == Phase.GAMEOVER and event.button_index == MOUSE_BUTTON_LEFT:
-		get_tree().reload_current_scene()
+		if Time.get_ticks_msec() - over_ms > 800:
+			get_tree().reload_current_scene()
 		return
 	var mpos := get_global_mouse_position()
 	if perk_mode:
@@ -1341,7 +1367,7 @@ func _build_menu(root: Control) -> void:
 	records_panel.add_theme_font_size_override("font_size", 15)
 	records_panel.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var rsb := StyleBoxFlat.new()
-	rsb.bg_color = Color(0.05, 0.06, 0.09, 0.97)
+	rsb.bg_color = Color(0.05, 0.06, 0.09, 1.0)
 	rsb.set_border_width_all(1)
 	rsb.border_color = Color(1, 1, 1, 0.25)
 	rsb.set_content_margin_all(18)
@@ -1352,8 +1378,8 @@ func _build_menu(root: Control) -> void:
 
 	settings_panel = PanelContainer.new()
 	settings_panel.set_anchors_preset(Control.PRESET_CENTER)
-	settings_panel.position = Vector2(-220, -170)
-	settings_panel.size = Vector2(440, 340)
+	settings_panel.position = Vector2(-220, -150)
+	settings_panel.size = Vector2(440, 0)  # 내용 높이에 맞춤
 	settings_panel.add_theme_stylebox_override("panel", rsb.duplicate())
 	settings_panel.visible = false
 	root.add_child(settings_panel)
@@ -1721,7 +1747,7 @@ func _start_move(t: Tower) -> void:
 
 
 func _toggle_pause() -> void:
-	if phase == Phase.GAMEOVER:
+	if phase == Phase.GAMEOVER or title_label.visible:
 		return
 	get_tree().paused = not get_tree().paused
 	paused_label.visible = get_tree().paused
@@ -1919,6 +1945,13 @@ func _process(delta: float) -> void:
 	legend_btn.visible = legend.visible
 	legend_btn.text = ("설명 보기" if legend_hidden else "설명 숨기기") + " (Tab)"
 	legend.visible = legend.visible and not legend_hidden
+	# 시작 화면 위에 설정·기록·도움말 창을 열면 뒤 메뉴 글자가 창 옆으로 삐져나와 보이지 않게 흐리게
+	title_label.modulate.a = 0.12 if settings_panel.visible or records_panel.visible or help_label.visible else 1.0
+	hud.visible = not title_label.visible  # 시작 화면엔 메뉴에 최고 기록이 따로 있다
+	# 시작 화면에서 일시정지·배속 버튼을 누르면 메뉴 위에 일시정지 창이 뜨던 문제
+	pause_btn.visible = not title_label.visible
+	speed_btn.visible = not title_label.visible
+	speed_pick.visible = not title_label.visible
 	_update_hud()
 	queue_redraw()
 	if phase == Phase.MOVE and moving:
