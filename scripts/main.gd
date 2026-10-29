@@ -369,6 +369,8 @@ func _build_ui() -> void:
 	preview.position = Vector2(16, -214)
 	preview.size = Vector2(620, 144)
 	preview.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	# 줄이 늘면 위로 자란다 (아래 안내 문구를 덮지 않게). 줄바꿈은 _update_preview에서 띄어쓰기 단위로
+	preview.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	preview.add_theme_font_size_override("font_size", 15)
 	root.add_child(preview)
 
@@ -533,6 +535,14 @@ func _ver_text() -> String:
 
 static func wave_size(w: int) -> int:
 	return 3 + w * 2
+
+
+## 실제로 나오는 구체 수 (규칙 버전 배율, 십자로 맵 1.5배). 미리보기와 웨이브가 같은 값을 쓴다.
+static func spawn_count(w: int) -> int:
+	var n := roundi(wave_size(w) * Rules.orb_mul)
+	if Meta.map_id == "cross":
+		n = roundi(n * 1.5)
+	return n
 
 
 func _start_choose(new_round := true) -> void:
@@ -862,7 +872,7 @@ func _els_name(t: Tower) -> String:
 func _update_preview() -> void:
 	var nw := wave + 1
 	var lines := PackedStringArray()
-	lines.append("다음 웨이브 %d: 구체 %d개, 진입 방향 %d곳" % [nw, wave_size(nw), lanes.size()])
+	lines.append("다음 웨이브 %d: 구체 %d개, 진입 방향 %d곳" % [nw, spawn_count(nw), lanes.size()])
 	var mix := PackedStringArray()
 	if nw >= 4:
 		mix.append("빠른 구체(뾰족)")
@@ -892,7 +902,8 @@ func _update_preview() -> void:
 		lines.append("보스 등장! 중앙에 닿으면 체력 3 감소")
 	if wave == 0:
 		lines.append("빨간 화살표 방향에서 구체가 와요. 길목을 가로지르게 설치하세요.")
-	preview.text = "\n".join(lines)
+	# 자동 줄바꿈은 한글 낱말 중간에서도 끊으므로 띄어쓰기에서 직접 바꾼다
+	preview.text = _wrap_words("\n".join(lines), 610.0, 15)
 	preview.add_theme_color_override("font_color", Color(1, 0.75, 0.75) if nw % 5 == 0 else Color(1, 1, 1, 0.85))
 
 
@@ -934,8 +945,8 @@ func _place_hint() -> String:
 			return PLACE_HINT
 		"link":
 			if picked["id"] == "link":
-				return ("연결할 두 번째 오브젝트 클릭 (%d 이내)" % int(Rules.link_range) if link_a else "연결할 첫 오브젝트 클릭") + "   꾹 누르기·끌기: 옮기기   우클릭/Esc: 다시 고르기"
-	return "넣을 오브젝트를 클릭   꾹 누르기·끌기: 옮기기   우클릭/Esc: 다시 고르기"
+				return ("연결할 두 번째 오브젝트 클릭 (%d 이내)" % int(Rules.link_range) if link_a else "연결할 첫 오브젝트 클릭") + "   꾹 누르기·끌기: 옮기기\n우클릭/Esc: 다시 고르기"
+	return "넣을 오브젝트를 클릭   꾹 누르기·끌기: 옮기기\n우클릭/Esc: 다시 고르기"
 
 
 func _after_place() -> void:
@@ -1002,9 +1013,7 @@ func _start_wave() -> void:
 	wave_active = true
 	choice_box.visible = false
 	reroll_btn.visible = false
-	to_spawn = roundi(wave_size(wave) * Rules.orb_mul)
-	if Meta.map_id == "cross":
-		to_spawn = roundi(to_spawn * 1.5)
+	to_spawn = spawn_count(wave)
 	for w in [10, 15, 20]:
 		if wave >= w:
 			_achieve("wave%d" % w)
@@ -1189,7 +1198,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			moving.position = mpos
 			phase = Phase.AIM
 			aim_start_ms = Time.get_ticks_msec()
-			hint.text = "클릭 또는 끌어서 놓기: 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)   우클릭/Esc: 옮기기 취소"
+			hint.text = "클릭 또는 끌어서 놓기: 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 옮기기 취소"
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			_cancel_step()
 		return
@@ -1210,7 +1219,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			place_pos = mpos
 			phase = Phase.AIM
 			aim_start_ms = Time.get_ticks_msec()
-			hint.text = "클릭 또는 끌어서 놓기: 발사 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)   우클릭/Esc: 위치 다시 고르기"
+			hint.text = "클릭 또는 끌어서 놓기: 발사 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 위치 다시 고르기"
 	elif phase == Phase.AIM:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			_confirm_aim()
@@ -1262,7 +1271,7 @@ func _update_press() -> void:
 		drag_origs = drag_group.map(func(t): return t.position)
 		for t in drag_group:
 			t.place_pop = 1.0
-		hint.text = "끌어서 옮기는 중%s: 놓으면 그 자리에 둠 (방향은 그대로)   우클릭/Esc: 취소" % (" (%d개)" % drag_group.size() if drag_group.size() > 1 else "")
+		hint.text = "끌어서 옮기는 중%s: 놓으면 그 자리에 둠 (방향은 그대로)\n우클릭/Esc: 취소" % (" (%d개)" % drag_group.size() if drag_group.size() > 1 else "")
 	if dragging:
 		# 창 밖으로 끌어도 무리 전체가 화면 안에 남도록 이동량을 자른다
 		var delta := mpos - press_pos
@@ -1366,7 +1375,7 @@ func _restore_hint() -> void:
 		Phase.READY:
 			hint.text = READY_HINT
 	if not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY, Phase.PLACE]:
-		hint.text = "선택 %d개: 선택한 오브젝트 하나를 끌면 함께 이동   Shift/Ctrl+클릭: 더하기·빼기   Ctrl+A: 모두   Esc/우클릭: 선택 해제" % selected.size()
+		hint.text = "선택 %d개: 선택한 오브젝트 하나를 끌면 함께 이동\nShift/Ctrl+클릭: 더하기·빼기   Ctrl+A: 모두   Esc/우클릭: 선택 해제" % selected.size()
 
 
 ## 방향 확정 (클릭, 또는 끌었다 놓기).
@@ -2060,7 +2069,7 @@ func _process(delta: float) -> void:
 	hide_btn.text = ("▲ 선택지 다시 보기" if cards_hidden else "▼ 선택지 내리고 필드 보기") + " (V)"
 	# 펼쳐 있으면 새로고침 버튼 아래, 내려 두면 화면 위쪽 가운데
 	hide_btn.set_anchors_preset(Control.PRESET_CENTER_TOP if cards_hidden else Control.PRESET_CENTER)
-	var hy := 96.0 if cards_hidden else 148.0
+	var hy := maxf(96.0, hud.position.y + hud.size.y + 8.0) if cards_hidden else 148.0  # 내려 둘 때는 점수 줄 아래
 	# 카드 줄은 오른쪽 설명을 피해 왼쪽으로 비켜 있다. 설명을 숨기면 가운데로, 버튼도 카드 가운데에 맞춘다
 	var cx := 0.0 if legend_hidden else -75.0
 	choice_box.offset_left = cx - 365.0
