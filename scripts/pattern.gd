@@ -26,14 +26,15 @@ const PATTERN_IDS := ["shot", "spray", "thorn", "stream", "chain", "gust", "shar
 ## 투사체를 쏘는 공격방식 (유도·튕김·관통 강화가 그대로 적용)
 const PROJECTILE := ["shot", "thorn", "gust", "shard", "iron"]
 
+## "피해 +N%"의 공백은 줄바꿈하지 않는 공백(U+00A0): 카드에서 숫자만 다음 줄로 넘어가지 않게
 const MODS := {
 	"multi": {"name": "다중 발사", "desc": "공격이 1개 더 나간다 (각 55%, 쌓을수록 조금씩 줄어듦)"},
 	"split": {"name": "분열", "desc": "맞은 구체에서 약한 파편 2개가 튄다 (확률 12%씩, 최대 60%)"},
 	"homing": {"name": "유도", "desc": "탄이 구체 쪽으로 천천히 휜다. 범위 공격은 구체 쪽으로 조금 돈다"},
-	"bounce": {"name": "튕김", "desc": "탄이 가까운 구체로 튄다(튕긴 탄 피해 40%). 번개는 1번 더 튄다"},
-	"size": {"name": "크기", "desc": "탄 크기·범위·사거리 +12%"},
+	"bounce": {"name": "튕김", "desc": "탄이 가까운 구체로 튄다(튕긴 탄 피해 40%). 번개는 1번 더 튄다. 그 밖의 공격은 피해 +4%"},
+	"size": {"name": "크기", "desc": "탄 크기·범위·사거리 +12% (탄을 쏘는 공격은 피해도 +4%)"},
 	"rapid": {"name": "속사", "desc": "공격 속도 +10%"},
-	"pierce": {"name": "관통", "desc": "탄이 1개 더 뚫는다(뚫을 때마다 피해 절반). 그 밖의 공격은 피해 +6%"},
+	"pierce": {"name": "관통", "desc": "탄이 1개 더 뚫는다(뚫을 때마다 피해 절반). 그 밖의 공격은 피해 +6%"},
 }
 
 const MOD_IDS := ["multi", "split", "homing", "bounce", "size", "rapid", "pierce"]
