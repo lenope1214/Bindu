@@ -80,6 +80,7 @@ var toast: Label
 var toast_timer := 0.0
 var banner: Label
 var banner_t := 0.0
+var banner_queue: Array = []  # 앞 글자가 떠 있는 동안 들어온 글자 [글, 색]
 var choice_box: HBoxContainer
 var over_label: Label
 var legend: Label
@@ -106,7 +107,7 @@ const PERKS := [
 	{"id": "reach", "name": "원거리", "desc": "모든 사거리 +12%"},
 	{"id": "core", "name": "단단한 중앙", "desc": "중앙 최대 체력 +3, 모두 회복"},
 	{"id": "reroll", "name": "넉넉한 선택", "desc": "쉬는 시간마다 새로고침 +1"},
-	{"id": "luck", "name": "행운", "desc": "선택지가 Lv2로 나올 확률 +20%"},
+	{"id": "luck", "name": "행운", "desc": "속성 카드가 Lv2로 나올 확률 +20%"},
 	{"id": "regen", "name": "회복", "desc": "웨이브를 마칠 때마다 중앙 체력 +1"},
 	{"id": "slow", "name": "끈적한 공간", "desc": "모든 구체 이동 속도 -8%"},
 	{"id": "harmony", "name": "조화", "desc": "속성을 여러 종류 겹쳐 생기는 공격 속도 감소가 절반으로"},
@@ -417,8 +418,13 @@ func _build_ui() -> void:
 	root.add_child(help_label)
 
 
-## 화면 가운데 크게 잠깐 뜨는 글자.
+## 화면 가운데 크게 잠깐 뜨는 글자. 앞 글자가 아직 또렷하면 뒤에 세워 차례로 보여 준다
+## (업적 직후 "웨이브 10"이 바로 덮어써 업적을 못 보던 것).
 func big_banner(t: String, col: Color) -> void:
+	if banner_t > 0.5:
+		if banner_queue.size() < 3:
+			banner_queue.append([t, col])
+		return
 	banner.text = t
 	banner.add_theme_color_override("font_color", col)
 	banner_t = 1.6
@@ -1052,6 +1058,8 @@ func _game_over() -> void:
 	wave_active = false
 	game_speed = 1.0
 	_update_speed_btn()
+	banner_queue.clear()  # 남은 가운데 글자가 게임 오버 글 위에 뜨지 않게 (새 업적은 아래 글에 나옴)
+	banner_t = minf(banner_t, 0.4)
 	# 기록은 지금 맵·규칙 버전의 저장값과 비교한다 (다른 키에서 남은 값이 섞이지 않게)
 	var prev := Meta.best_of(Meta.key())
 	var record := "  최고 기록!" if score > prev[1] or wave > prev[0] else ""
@@ -2059,6 +2067,9 @@ func _process(delta: float) -> void:
 	toast.visible = toast_timer > 0.0
 	toast.position.y = maxf(100.0, hud.position.y + hud.size.y + 36.0)  # 점수 줄이 길어져도 보스 체력 막대 아래
 	banner_t -= delta
+	if banner_t <= 0.0 and not banner_queue.is_empty():
+		var nb: Array = banner_queue.pop_front()
+		big_banner(nb[0], nb[1])
 	banner.visible = banner_t > 0.0
 	banner.modulate.a = clampf(banner_t / 0.4, 0.0, 1.0)
 	legend.visible = phase in [Phase.CHOOSE, Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.READY] and not title_label.visible
