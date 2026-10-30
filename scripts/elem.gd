@@ -3,7 +3,7 @@ class_name Elem
 ## - 겹친 속성마다 고유 공격(FORM)이 모두 발사된다.
 ## - 모든 공격에 겹친 속성 전부의 부가효과(RIDER)가 붙는다.
 ## - 특정 두 속성이 함께 있으면 특수 반응(REACTIONS) 공격이 추가된다.
-##   반응 모양은 한쪽 속성이 정한다: 물은 공격 방향으로 흐르는 물길, 땅은 가로로 서는 벽.
+##   반응 모양은 한쪽 속성이 정한다: 물은 공격 방향으로 흐르는 물길, 땅은 오브젝트 공격이 맞힌 구체에 붙는다(용암·독늪·모래시계).
 ##   소리는 부채꼴 파동, 시간은 잠시 뒤 같은 공격이 한 번 더(잔상), 영혼은 쫓아가는 혼불.
 ##   바람·소리·시간·영혼은 반응 3개, 나머지 속성은 4개씩.
 
@@ -108,14 +108,14 @@ const REACTIONS := [
 	{"id": "firestorm", "a": FIRE, "b": WIND, "name": "화염 회오리", "desc": "불타는 회오리가 전진", "color": Color(1.0, 0.5, 0.15)},
 	{"id": "blizzard", "a": ICE, "b": WIND, "name": "눈보라", "desc": "주변 원 안의 구체를 느리게 하고 냉기를 쌓음", "color": Color(0.85, 0.95, 1.0)},
 	{"id": "eclipse", "a": DARK, "b": LIGHT, "name": "일식", "desc": "몇 초마다 화면 안 모든 구체에 피해", "color": Color(0.95, 0.75, 1.0)},
-	{"id": "lava", "a": EARTH, "b": FIRE, "name": "용암 벽", "desc": "앞쪽에 가로로 서는 불타는 벽, 지나가면 크게 느려지고 탐", "color": Color(0.95, 0.3, 0.05)},
+	{"id": "lava", "a": EARTH, "b": FIRE, "name": "용암", "desc": "맞은 구체에 용암이 묻어 2초 뒤(죽으면 바로) 그 자리에서 터짐, 주변 피해·화상", "color": Color(0.95, 0.3, 0.05)},
 	{"id": "mushroom", "a": POISON, "b": WOOD, "name": "독버섯 지뢰", "desc": "굴러가며 길에 떨군 독버섯, 밟으면 터짐", "color": Color(0.8, 0.5, 0.95)},
 	{"id": "railgun", "a": METAL, "b": ELECTRIC, "name": "레일건", "desc": "체력이 가장 많은 구체를 조준해 화면 끝까지 관통 일격", "color": Color(0.7, 0.95, 1.0)},
 	{"id": "halo", "a": METAL, "b": LIGHT, "name": "광륜", "desc": "주위를 도는 빛 칼날, 닿으면 반드시 치명타", "color": Color(1.0, 0.95, 0.6)},
 	{"id": "quake", "a": METAL, "b": EARTH, "name": "지진", "desc": "몇 초마다 주변 구체 모두에 피해를 주고 기절시킴", "color": Color(0.75, 0.6, 0.45)},
 	{"id": "storm", "a": ELECTRIC, "b": WIND, "name": "뇌우", "desc": "번개 구름이 앞으로 떠가며 낙뢰", "color": Color(0.75, 0.8, 1.0)},
 	{"id": "aurora", "a": ICE, "b": LIGHT, "name": "오로라", "desc": "5갈래 빛줄기, 냉기가 크게 쌓임", "color": Color(0.5, 1.0, 0.8)},
-	{"id": "swamp", "a": EARTH, "b": POISON, "name": "독늪", "desc": "가로로 깔리는 독 진흙, 안에서 중독 2배·죽으면 독 폭발", "color": Color(0.5, 0.6, 0.2)},
+	{"id": "swamp", "a": EARTH, "b": POISON, "name": "독늪", "desc": "맞은 구체가 3초 안에 죽으면 그 자리에 늪, 늪 안은 느려지고 중독 2배·죽으면 독 폭발과 늪이 번짐", "color": Color(0.5, 0.6, 0.2)},
 	{"id": "curse", "a": DARK, "b": POISON, "name": "저주", "desc": "저주 걸린 구체는 계속 피해를 받고, 죽으면 주변에 큰 피해를 주며 저주가 옆 구체로 옮겨 감", "color": Color(0.6, 0.2, 0.7)},
 	{"id": "prison", "a": ICE, "b": DARK, "name": "빙결 감옥", "desc": "얼음 덩이가 지나간 길에 닿은 구체를 멈추고 받는 피해 +50%", "color": Color(0.45, 0.5, 0.95)},
 	{"id": "bell", "a": METAL, "b": SOUND, "name": "종", "desc": "주기적으로 종이 울려 앞쪽 부채꼴 구체에 울림 2번씩", "color": Color(0.95, 0.8, 0.55)},
@@ -123,7 +123,7 @@ const REACTIONS := [
 	{"id": "silence", "a": DARK, "b": SOUND, "name": "침묵", "desc": "앞쪽 파동에 맞은 구체는 2초간 저항·굳셈이 꺼지고 보스는 부하를 못 부름", "color": Color(0.55, 0.4, 0.65)},
 	{"id": "afterimage", "a": LIGHT, "b": TIME, "name": "잔광", "desc": "화면 끝까지 관통하는 광선, 1.2초 뒤 같은 자리에 한 번 더", "color": Color(1.0, 0.9, 0.6)},
 	{"id": "rewind", "a": ELECTRIC, "b": TIME, "name": "되감기 번개", "desc": "연쇄 번개가 친 구체들을 1초 뒤 한 번 더 침", "color": Color(0.95, 0.95, 0.5)},
-	{"id": "hourglass", "a": EARTH, "b": TIME, "name": "모래시계 벽", "desc": "가로로 서는 모래 벽, 지나가면 느려지고 받은 피해의 절반을 다시 받음", "color": Color(0.85, 0.7, 0.4)},
+	{"id": "hourglass", "a": EARTH, "b": TIME, "name": "모래시계", "desc": "맞은 구체를 1초 전 위치로 되감고(같은 구체는 4초에 한 번, 보스는 절반) 받은 피해의 절반을 다시 받음", "color": Color(0.85, 0.7, 0.4)},
 	{"id": "styx", "a": WATER, "b": SOUL, "name": "망자의 강", "desc": "물길 안에서 죽은 구체는 반드시 혼불이 됨", "color": Color(0.5, 0.55, 0.95)},
 	{"id": "plague", "a": POISON, "b": SOUL, "name": "역병 혼불", "desc": "쫓아가 맞힌 구체를 강하게 중독시키는 혼불 2개", "color": Color(0.65, 0.9, 0.5)},
 	{"id": "spirit", "a": WOOD, "b": SOUL, "name": "고목령", "desc": "쫓아가 맞힌 구체를 묶는 혼불 2개", "color": Color(0.5, 0.8, 0.55)},

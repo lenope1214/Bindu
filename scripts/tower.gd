@@ -47,6 +47,8 @@ var clock_ph := 0.0  # 시계침 위상
 var clock_hit := {}  # 시계침: 이번 한 번 훑는 동안 맞힌 구체 ([바늘 번호, 구체] -> true, 다중 발사 바늘은 따로 센다)
 var glint_d := Vector2.RIGHT  # 잔광: 1.2초 뒤 다시 쏠 방향
 var rewind_q: Array = []  # 되감기 번개: 1초 뒤 다시 칠 구체들
+var earth_rx := {}  # 맞힐 때 붙는 땅 반응 id → 레벨 (용암·독늪·모래시계). attack()마다 갱신
+var bogs: Array = []  # 독늪 늪 (오브젝트당 BOG_MAX개까지)
 var in_form := false  # 지금 형태 성질 효과를 주는 중인지 (자람·무게 보너스를 다시 받지 않게)
 var fe_cd := 0.0  # 형태 성질 "끝" 효과 다시 쓸 때까지 (날아가는 공격)
 var fe2 := 0.0  # 계속 공격하는 형태의 "끝" 효과 다시 쓸 때까지
@@ -742,6 +744,10 @@ func multi_k() -> float:
 func attack(delta: float, orbs: Array) -> void:
 	t += delta
 	eff = eff_now()
+	earth_rx.clear()
+	for r in reactions():
+		if r["id"] in ["lava", "swamp", "hourglass"]:
+			earth_rx[r["id"]] = mini(eff.get(r["a"], 1), eff.get(r["b"], 1))
 	for k in fx.keys():
 		fx[k] = maxf(fx[k] - delta, 0.0)
 	recoil = maxf(recoil - delta * 6.0, 0.0)
@@ -933,13 +939,6 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 					for o in orbs:
 						hit(o, 3.0 * pw(l))
 						o.vuln(3.0)
-			"lava":
-				# 앞쪽에 가로로 서는 불타는 벽: 지나가면 크게 느려지고 탄다
-				var w := wall_of(id, l)
-				_band(orbs, w[0], w[1], w[2], 9.0, func(o):
-					hit(o, 1.4 * pw(l) * de, k)
-					o.slow(0.35, 0.3)
-					o.burn(1.0 * l, 1.5, self, true))
 			"mushroom":
 				mines = mines.filter(func(mm): return is_instance_valid(mm))
 				if _ready_to(id, MUSH_IV / spd(l), de) and mines.size() < 4 + l:
@@ -983,15 +982,6 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 								done[o] = true
 								hit(o, 2.2 * pw(l))
 								o.add_chill(1.2))
-			"swamp":
-				# 가로로 깔리는 독 진흙: 크게 느려지고 중독 2배, 안에서 죽으면 독 폭발
-				var w := wall_of(id, l)
-				_band(orbs, w[0], w[1], w[2], 18.0, func(o):
-					hit(o, 1.0 * pw(l) * de, k)
-					o.slow(0.5, 0.3)
-					o.poison(0.8 * l, 3.0, self, true)
-					o.swamp_t = 0.3
-					o.swamp_lv = l)
 			"curse":
 				# 표식 구체는 계속 피해를 받는다
 				for o in orbs:
@@ -1078,13 +1068,6 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 							hit(o, 2.0 * pw(l))
 						main.bolt(pts)
 						rewind_q = [1.0, got]
-			"hourglass":
-				# 모래시계 벽: 가로로 서는 모래 벽, 안에서는 메아리 50%
-				var w := wall_of(id, l)
-				_band(orbs, w[0], w[1], w[2], 14.0, func(o):
-					hit(o, 1.0 * pw(l) * de, k)
-					o.slow(0.4, 0.3)
-					o.echo(0.5, 2.0, self))
 			"styx":
 				# 망자의 강: 물길 안에서 죽으면 반드시 혼불
 				_band(orbs, position, dir, chan_len(l), chan_w(l), func(o):
@@ -1162,12 +1145,55 @@ func chan_w(l: int) -> float:
 	return 20.0 + 3.0 * (l - 1)
 
 
-## 가로 벽(용암·독늪): [시작점(전역), 방향, 길이]. 공격 방향과 수직으로 선다.
-func wall_of(id: String, l: int) -> Array:
-	var dist: float = {"lava": 120.0, "swamp": 170.0, "hourglass": 150.0}[id] * reach(l)
-	var half: float = {"lava": 70.0, "swamp": 80.0, "hourglass": 75.0}[id] + 10.0 * (l - 1)
-	var n := dir.orthogonal()
-	return [position + dir * dist - n * half, n, half * 2.0]
+## 땅 반응은 오브젝트 공격(공격방식)이 맞힐 때 붙는다 (2026-10-30, 앞쪽 가로 벽 대신).
+## 용암: 묻은 구체가 LAVA_FUSE초 뒤(또는 죽을 때) 그 자리에서 터짐. 같은 구체는 터질 때까지 한 번만.
+const LAVA_FUSE := 2.0
+const LAVA_DMG := 2.4
+const LAVA_R := 70.0
+## 독늪: 맞은 구체가 BOG_MARK초 안에 죽으면 그 자리에 늪. 늪 안에서 죽으면 또 늪(번짐), 오브젝트당 BOG_MAX개.
+const BOG_MARK := 4.0
+const BOG_MAX := 6
+const BOG_R := 56.0
+const BOG_LIFE := 4.0
+## 모래시계: 맞은 구체를 약 1초 전 위치로 되감기 (같은 구체는 SAND_CD초에 한 번, 보스는 절반만), 받은 피해 메아리 50%.
+const SAND_CD := 3.0
+const SAND_DMG := 8.0
+
+
+func _earth_on_hit(o: Orb) -> void:
+	if earth_rx.has("lava") and o.lava_t <= 0.0:
+		o.lava_t = LAVA_FUSE
+		o.lava_lv = earth_rx["lava"]
+		o.lava_src = self
+	if earth_rx.has("swamp"):
+		o.bog_t = BOG_MARK
+		o.bog_lv = earth_rx["swamp"]
+		o.bog_src = self
+	if earth_rx.has("hourglass") and o.sand_cd <= 0.0 and o.hp > 0.0:
+		o.sand_cd = SAND_CD
+		var back := o.past_pos()
+		var to := o.position.lerp(back, 0.5 if o.kind == Orb.Kind.BOSS else 1.0)
+		main.burst(o.position, Color(0.85, 0.7, 0.4), 6, 90.0)
+		o.position = to
+		main.burst(to, Color(0.85, 0.7, 0.4), 6, 90.0)
+		o.echo(0.5, 2.0, self)
+		var tg := tag
+		in_rx = true
+		tag = "rx:hourglass"
+		hit(o, SAND_DMG * pw(earth_rx["hourglass"]))
+		in_rx = false
+		tag = tg
+
+
+## 독늪 늪 하나 (자리가 차 있으면 가장 오래된 늪을 없앤다).
+func spawn_bog(p: Vector2, l: int) -> void:
+	bogs = bogs.filter(func(z): return is_instance_valid(z) and not z.is_queued_for_deletion())
+	if bogs.size() >= BOG_MAX:
+		bogs[0].queue_free()
+		bogs.remove_at(0)
+	tag = "rx:swamp"
+	bogs.append(main.spawn_zone("bog", l, p, self))
+	tag = ""
 
 
 ## 광륜 칼날 위치(로컬). 레벨마다 하나씩 늘어난다(최대 6).
@@ -1277,6 +1303,8 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		_ring(o, minf(k, 1.0))
 	if els.has(Elem.TIME):
 		o.echo(minf(0.15 + 0.05 * els.get(Elem.TIME, 0), 0.4), 2.0, self)
+	if not in_rx and not in_form and not earth_rx.is_empty():
+		_earth_on_hit(o)
 	if els.has(Elem.SOUL):
 		if o.soul_t <= 0.0 or els.get(Elem.SOUL, 0) >= o.soul_lv:
 			o.soul_lv = els.get(Elem.SOUL, 0)
@@ -1741,31 +1769,6 @@ func _draw_attack() -> void:
 				for i in 6:
 					var f := fmod(t * 0.5 + i / 6.0, 1.0)
 					draw_circle(dir * L * f + n * sin(i * 2.3 + t) * chan_w(rl) * 0.5, 3.5, Color(r["color"].lightened(0.3), 0.7 * (1.0 - f)))
-			"hourglass":
-				var wl := wall_of("hourglass", rl)
-				var a: Vector2 = wl[0] - position
-				var b: Vector2 = a + wl[1] * wl[2]
-				var dn := dir * 14.0
-				draw_colored_polygon(PackedVector2Array([a - dn, b - dn, b + dn, a + dn]), Color(r["color"], 0.4))
-				for i in 10:
-					var f := fmod(t * 0.8 + i * 0.31, 1.0)
-					draw_circle(a.lerp(b, fmod(i * 0.47, 1.0)) - dn + dir * 28.0 * f, 1.8, Color(1.0, 0.9, 0.6, 1.0 - f))
-			"lava", "swamp":
-				var wl := wall_of(r["id"], rl)
-				var a: Vector2 = wl[0] - position
-				var b: Vector2 = a + wl[1] * wl[2]
-				var hw := 9.0 if r["id"] == "lava" else 18.0
-				var dn := dir * hw
-				draw_colored_polygon(PackedVector2Array([a - dn, b - dn, b + dn, a + dn]), Color(r["color"], 0.55 if r["id"] == "lava" else 0.35))
-				if r["id"] == "lava":
-					draw_line(a, b, Color(1, 0.75, 0.2, 0.6 + 0.3 * sin(t * 5.0)), 4.0)
-					for i in 8:
-						var f := fmod(t * 0.9 + i * 0.29, 1.0)
-						draw_circle(a.lerp(b, fmod(i * 0.41, 1.0)) + Vector2(0, -f * 16.0), 2.5 * (1.0 - f) + 0.5, Color(1, 0.6, 0.15, 1.0 - f))
-				else:
-					for i in 7:
-						var f := fmod(t * 0.7 + i * 0.37, 1.0)
-						draw_arc(a.lerp(b, fmod(i * 0.53, 1.0)) + dir * sin(i * 2.3) * hw * 0.5, 2.0 + f * 6.0, 0, TAU, 10, Color(0.7, 0.95, 0.25, 1.0 - f), 1.5)
 			"railgun":
 				var f: float = fx.get("railgun", 0.0)
 				if f > 0.0:
@@ -1955,18 +1958,12 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 				_r_band(ci, o, d, 0.0, far, 12.0, rc)
 			"rewind":
 				_r_cone(ci, o, d, 280.0 * reach(rl), 0.5, rc)
-			"hourglass":
-				_r_wall(ci, o + d * 150.0 * reach(rl), d, 75.0 + 10.0 * (rl - 1), 14.0, rc)
 			"plague", "spirit":
 				ci.draw_arc(o, 380.0, 0, TAU, 64, Color(rc.r, rc.g, rc.b, 0.5 * rc.a), 1.5)
 			"firestorm":
 				_r_band(ci, o, d, 0.0, 380.0, 26.0, rc)
 			"blizzard":
 				_r_circle(ci, o, 130.0 * reach(rl), rc)
-			"lava":
-				_r_wall(ci, o + d * 120.0 * reach(rl), d, 70.0 + 10.0 * (rl - 1), 9.0, rc)
-			"swamp":
-				_r_wall(ci, o + d * 170.0 * reach(rl), d, 80.0 + 10.0 * (rl - 1), 18.0, rc)
 			"railgun":
 				_r_circle(ci, o, RADIUS + 14.0, rc)
 			"halo":
@@ -2007,15 +2004,6 @@ static func _r_band(ci: CanvasItem, o: Vector2, d: Vector2, from: float, to: flo
 
 
 ## 가로 벽 미리보기: 중심 c, 공격 방향 d와 수직으로 반길이 half, 두께 반 hw.
-static func _r_wall(ci: CanvasItem, c: Vector2, d: Vector2, half: float, hw: float, col: Color) -> void:
-	var n := d.orthogonal() * half
-	var t2 := d * hw
-	var pts := PackedVector2Array([c - n - t2, c + n - t2, c + n + t2, c - n + t2])
-	ci.draw_colored_polygon(pts, Color(col.r, col.g, col.b, 0.14 * col.a))
-	pts.append(pts[0])
-	ci.draw_polyline(pts, Color(col.r, col.g, col.b, 0.6 * col.a), 1.5)
-
-
 static func _r_circle(ci: CanvasItem, p: Vector2, r: float, c: Color) -> void:
 	ci.draw_circle(p, r, Color(c.r, c.g, c.b, 0.14 * c.a))
 	ci.draw_arc(p, r, 0, TAU, 40, Color(c.r, c.g, c.b, 0.6 * c.a), 1.5)

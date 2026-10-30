@@ -44,6 +44,17 @@ var chill := 0.0
 var frozen_t := 0.0  # 빙결 표시
 var swamp_t := 0.0  # 독늪 안: 중독 2배, 죽으면 독 폭발
 var swamp_lv := 1
+var swamp_src: Object = null  # 독늪 늪을 만든 오브젝트 (안에서 죽으면 늪이 번진다)
+var lava_t := 0.0  # 용암: 묻은 뒤 남은 시간, 0이 되면(또는 죽으면) 그 자리에서 터짐
+var lava_lv := 1
+var lava_src: Object = null
+var bog_t := 0.0  # 독늪 표식: 이 시간 안에 죽으면 그 자리에 늪
+var bog_lv := 1
+var bog_src: Object = null
+var sand_cd := 0.0  # 모래시계 되감기 대기
+var hist := PackedVector2Array()  # 지난 위치 (0.25초마다 4개 = 1초)
+var hist_i := 0
+var hist_acc := 0.0
 var prison_t := 0.0  # 빙결 감옥: 받는 피해 +50%
 var marks := {}  # 협공: 맞힌 오브젝트 id -> 맞은 시각(age)
 var pincer_cd := 0.0
@@ -129,6 +140,20 @@ func step(delta: float) -> void:
 	flash = maxf(flash - delta, 0.0)
 	frozen_t = maxf(frozen_t - delta, 0.0)
 	swamp_t = maxf(swamp_t - delta, 0.0)
+	bog_t = maxf(bog_t - delta, 0.0)
+	sand_cd = maxf(sand_cd - delta, 0.0)
+	if lava_t > 0.0:
+		lava_t -= delta
+		if lava_t <= 0.0 and main:
+			main.lava_burst(self)
+	hist_acc -= delta
+	if hist_acc <= 0.0:
+		hist_acc = 0.25
+		if hist.size() < 4:
+			hist.append(position)
+		else:
+			hist[hist_i] = position
+			hist_i = (hist_i + 1) % 4
 	prison_t = maxf(prison_t - delta, 0.0)
 	tune_t = maxf(tune_t - delta, 0.0)
 	ring_cd = maxf(ring_cd - delta, 0.0)
@@ -212,6 +237,13 @@ func _echo_release() -> void:
 
 
 ## 시간 메아리를 건다. 이미 기록 중이면 더 큰 비율로만 바꾼다.
+## 모래시계: 약 1초 전 위치 (기록이 덜 쌓였으면 가장 오래된 것).
+func past_pos() -> Vector2:
+	if hist.is_empty():
+		return position
+	return hist[hist_i] if hist.size() == 4 else hist[0]
+
+
 func echo(frac: float, duration: float, src = null) -> void:
 	if echo_t > 0.0:
 		if frac > echo_frac:

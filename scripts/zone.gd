@@ -32,7 +32,7 @@ var dps := 0.0  # trail: 안에 있는 구체에 초당 피해 (레벨 배율 �
 var caught := {}  # trail prison: 이미 가둔 구체 (띠 하나에 한 번)
 
 ## 효과 줄이기(설정)에서 옅게 그리는 장판: 형태 성질·반응·투척 장판. 블랙홀·바위 벽·턱·독버섯은 막거나 끌어서 그대로
-const SOFT := ["trail", "cloud", "boom", "ember", "rill", "frost", "fog", "tick"]
+const SOFT := ["trail", "bog", "cloud", "boom", "ember", "rill", "frost", "fog", "tick"]
 
 
 func setup(k: String, l: int, tower: Tower) -> void:
@@ -54,6 +54,8 @@ func setup(k: String, l: int, tower: Tower) -> void:
 			radius = 35.0; max_life = 0.6
 		"mine":
 			radius = 14.0; max_life = 20.0
+		"bog":
+			radius = Tower.BOG_R + 6.0 * (l - 1); max_life = Tower.BOG_LIFE
 		"cloud":
 			radius = 60.0; max_life = 2.0
 		"rock":
@@ -191,6 +193,17 @@ func affect(orbs: Array, delta: float) -> void:
 			"cloud":
 				if inside:
 					o.poison(0.8 * level, 2.0, owner_tower, true, src)
+			"bog":
+				# 독늪: 느려지고 중독 2배, 안에서 죽으면 독 폭발·늪이 번짐
+				if inside and is_instance_valid(owner_tower):
+					owner_tower.in_rx = true
+					_hit(o, 1.0 * _p() * delta, delta * 3.0)
+					owner_tower.in_rx = false
+					o.slow(0.5, 0.3)
+					o.poison(0.8 * level, 3.0, owner_tower, true, src)
+					o.swamp_t = 0.3
+					o.swamp_lv = level
+					o.swamp_src = owner_tower
 			"mine":
 				if inside and not dead:
 					_explode(orbs)
@@ -320,6 +333,13 @@ func _draw() -> void:
 		"mine":
 			var pulse := 1.0 + 0.1 * sin(t * 6.0)
 			Projectile._draw_mushroom(self, pulse)
+		"bog":
+			var bc := Color(0.5, 0.6, 0.2)
+			_ground(bc, a, 0.3)
+			for i in 5:
+				var f := fmod(t * 0.7 + i * 0.37, 1.0)
+				var p := Vector2(cos(i * 2.3), sin(i * 2.3)) * radius * fmod(i * 0.61, 0.8)
+				draw_arc(p, 2.0 + f * 6.0, 0, TAU, 10, Color(0.7, 0.95, 0.25, a * (1.0 - f)), 1.5)
 		"cloud":
 			for i in 7:
 				var ang := i * 0.9 + t * 0.5

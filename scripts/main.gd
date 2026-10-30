@@ -830,7 +830,7 @@ func _src_top(d: Dictionary, n: int) -> Array:
 	return keys.slice(0, n)
 
 
-## 피해 출처 키 → 보이는 이름 (elem:fire → 불, rx:lava → 용암 벽).
+## 피해 출처 키 → 보이는 이름 (elem:fire → 불, rx:lava → 용암).
 static func src_name(key: String) -> String:
 	var p := key.split(":")
 	if p.size() != 2:
@@ -4889,6 +4889,12 @@ func _resolve(delta: float) -> void:
 				_curse_burst(o)
 			if o.swamp_t > 0.0:
 				_swamp_burst(o)
+			if o.lava_t > 0.0:
+				lava_burst(o)
+			# 독늪: 표식이 남았거나 늪 안에서 죽으면 그 자리에 늪 (늪이 번진다)
+			var bs: Object = o.bog_src if o.bog_t > 0.0 else o.swamp_src if o.swamp_t > 0.0 else null
+			if is_instance_valid(bs):
+				bs.spawn_bog(o.position, o.bog_lv if o.bog_t > 0.0 else o.swamp_lv)
 			if o.soul_t > 0.0 or o.styx_t > 0.0:
 				_soul_wisp(o)
 			o.queue_free()
@@ -4950,6 +4956,24 @@ func _curse_burst(o: Orb) -> void:
 		if arcs.size() < 80:
 			arcs.append([o.position, next.position, 0.25])
 	o.curse_lv = 0
+
+
+## 용암: 묻은 구체가 그 자리에서 터져 주변에 피해·화상 (오브젝트 반응 피해).
+func lava_burst(o: Orb) -> void:
+	o.lava_t = 0.0
+	var tw = o.lava_src
+	if not is_instance_valid(tw):
+		return
+	var l: int = o.lava_lv
+	tw.in_rx = true
+	tw.tag = "rx:lava"
+	for other in near(o.position, Tower.LAVA_R):
+		if other.hp > 0.0 and other.position.distance_to(o.position) < Tower.LAVA_R + other.radius():
+			tw.hit(other, Tower.LAVA_DMG * Tower.pw(l))
+			other.burn(1.0 * l, 2.0, tw, true, "rx:lava")
+	tw.in_rx = false
+	tw.tag = ""
+	burst(o.position, Color(0.95, 0.3, 0.05), 12, 170.0)
 
 
 ## 독늪 안에서 죽으면 독이 터져 주변 구체를 중독시킨다.
