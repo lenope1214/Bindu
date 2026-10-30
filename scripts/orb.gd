@@ -52,6 +52,7 @@ var main: Node
 var dmg_acc := 0.0  # 피해 숫자 팝업용 누적
 var pop_t := 0.0
 var age := 0.0  # 등장 연출
+var from_a := 0.0  # 나온 방향(중앙 기준 각도): 누수 기록·표시용
 
 
 func radius() -> float:
@@ -88,7 +89,8 @@ func step(delta: float) -> void:
 	if kind == Kind.BOSS and main:
 		minion_t -= delta
 		if minion_t <= 0.0:
-			minion_t = 4.0
+			# 첫 보스는 7초, 이후 웨이브마다 빨라져 13웨이브부터 4초마다
+			minion_t = clampf(9.0 - main.wave * 0.4, 4.0, 7.0)
 			main.spawn_minion(self)
 	slow_timer = maxf(slow_timer - delta, 0.0)
 	root_timer = maxf(root_timer - delta, 0.0)

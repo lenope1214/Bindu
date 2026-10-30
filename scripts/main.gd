@@ -49,6 +49,9 @@ var auto_start := false  # 끄면 설치 후 Space로 웨이브 시작
 var auto_btn: Button
 var start_btn: Button
 var cancel_btn: Button  # 옮기기·설치 중 화면 취소 (우클릭·Esc가 없는 터치 화면용)
+var wave_leaks: Array = []  # 이번 웨이브에 중앙에 닿은 구체 [나온 방향 번호, 종류, 피해]
+var leak_log: Array = []  # 웨이브마다 누수 요약 (봇·통계·안내용)
+var leak_flash: Array = []  # 화면 가장자리 붉은 번짐 [자리, 남은 시간]
 var boss_plan := {}  # 다음 보스: 쉬는 시간에 진입 각도·체력·속도·저항을 미리 정해 길과 정보를 정확히 보여 준다
 var touch_ui := false  # 마지막 입력이 터치였는지 (터치는 마우스를 올려 둘 수 없다)
 var offer: Array = []  # 이번 선택지 [카드, ...] 카드: {"type": "elem"|"pat"|"mod"|"link", ...}
@@ -100,6 +103,8 @@ var fast_speed := 2.0  # Space로 켜는 배속
 var paused_label: Label
 var pause_box: HBoxContainer  # 일시정지 창 아래 버튼 (계속·시작 화면·끄기)
 var legend_hidden := false
+var bar_open := false  # 오른쪽 아래 설정 버튼(소리·자동 시작·일시정지·배속)을 펼쳤는지. 접으면 펼치기 버튼만 남는다
+var bar_btn: Button
 var wave_resist := -1  # 다음 웨이브 저항 속성 (-1: 없음)
 var legend_btn: Button
 var aim_start_ms := 0
@@ -262,7 +267,7 @@ func _build_ui() -> void:
 	hint = Label.new()
 	hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	hint.position = Vector2(16, -66)
-	hint.size = Vector2(630, 44)
+	hint.size = Vector2(590, 44)  # 오른쪽 아래 설정 버튼 줄(펼쳤을 때 648)과 겹치지 않게
 	hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.add_theme_font_size_override("font_size", 15)
@@ -366,6 +371,11 @@ func _build_ui() -> void:
 	speed_pick.focus_mode = Control.FOCUS_NONE
 	speed_pick.item_selected.connect(_on_speed_pick)
 	bar.add_child(speed_pick)
+	# 맨 오른쪽: 접으면 이것만 남고, 펼치면 왼쪽으로 버튼이 늘어선다
+	bar_btn = Button.new()
+	bar_btn.custom_minimum_size = Vector2(96, 36)
+	bar_btn.pressed.connect(_toggle_bar)
+	bar.add_child(bar_btn)
 	start_btn = Button.new()
 	start_btn.text = "웨이브 시작 (Space)"
 	start_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
@@ -384,7 +394,7 @@ func _build_ui() -> void:
 	cancel_btn.pressed.connect(_cancel_step)
 	cancel_btn.visible = false
 	root.add_child(cancel_btn)
-	for b in [pause_btn, speed_btn, reroll_btn, auto_btn, start_btn, mute_btn, cancel_btn]:
+	for b in [pause_btn, speed_btn, reroll_btn, auto_btn, start_btn, mute_btn, cancel_btn, bar_btn]:
 		b.focus_mode = Control.FOCUS_NONE
 	_update_auto_btn()
 	mute_btn.text = "소리: " + ("끔" if sfx.muted else "켬") + " (M)"
@@ -611,16 +621,26 @@ func _ver_text() -> String:
 	return "빈두 v%s · 규칙 %s" % [ProjectSettings.get_setting("application/config/version", "?"), Rules.NAMES[Meta.rules]]
 
 
+## 웨이브 구체 수: 3 + 2w. 첫 웨이브는 70%에서 시작해 10웨이브에 100%가 된다 (초반에 판이 끝나지 않게).
 static func wave_size(w: int) -> int:
-	return 3 + w * 2
+	return roundi((3 + w * 2) * lerpf(0.7, 1.0, clampf((w - 1) / 9.0, 0.0, 1.0)))
 
 
 ## 실제로 나오는 구체 수 (규칙 버전 배율, 십자로 맵 1.5배). 미리보기와 웨이브가 같은 값을 쓴다.
 static func spawn_count(w: int) -> int:
 	var n := roundi(wave_size(w) * Rules.orb_mul)
+	# 새 진입 방향이 열리는 웨이브는 구체를 조금 덜 (새 길목을 막을 시간)
+	if Meta.map_id != "cross" and lanes_for(w) > lanes_for(w - 1):
+		n = roundi(n * 0.8)
 	if Meta.map_id == "cross":
 		n = roundi(n * 1.5)
 	return n
+
+
+## 웨이브 w의 진입 방향 수: 3웨이브마다 하나씩 늘어 4곳, 이후 6웨이브마다 하나씩 최대 6곳.
+## 새 구체 종류(빠른 4·단단한 7·보호막 8·분열 12)와 겹치지 않게 3·6·9웨이브(이후 18·24)에 열린다.
+static func lanes_for(w: int) -> int:
+	return mini(mini(1 + w / 3, 4 + maxi(0, (w - 12) / 6)), 6)
 
 
 func _start_choose(new_round := true) -> void:
@@ -955,9 +975,7 @@ func _update_reroll_btn() -> void:
 
 ## 진입 방향은 웨이브마다 조금씩 늘고, 가끔 하나가 옮겨 간다.
 func _roll_lanes() -> void:
-	# 진입 방향: 3웨이브마다 하나씩 늘어 4곳, 이후 6웨이브마다 하나씩 최대 6곳
-	var n := mini(1 + (wave + 1) / 3, 4 + maxi(0, (wave - 11) / 6))
-	n = mini(n, 6)
+	var n := lanes_for(wave + 1)
 	if Meta.map_id == "cross":
 		# 십자로: 처음부터 네 방향 고정
 		if lanes.size() != 4:
@@ -1024,15 +1042,18 @@ func _els_name(t: Tower) -> String:
 func _update_preview() -> void:
 	var nw := wave + 1
 	var lines := PackedStringArray()
+	var lk := _leak_text()
+	if lk != "":
+		lines.append(lk)
 	lines.append("다음 웨이브 %d: 구체 %d개, 진입 방향 %d곳" % [nw, spawn_count(nw), lanes.size()])
 	var mix := PackedStringArray()
 	if nw >= 4:
 		mix.append("빠른 구체(뾰족)")
-	if nw >= 6:
+	if nw >= 7:
 		mix.append("단단한 구체(네모)")
 	if nw >= 8:
 		mix.append("보호막")
-	if nw >= 10:
+	if nw >= 12:
 		mix.append("분열")
 	if not mix.is_empty():
 		lines.append("섞여 나옴: " + ", ".join(mix))
@@ -1045,7 +1066,7 @@ func _update_preview() -> void:
 		sp.append("체력 x%.1f" % hp_growth(nw))
 	if not sp.is_empty():
 		lines.append("특수: " + " · ".join(sp))
-	var firsts := {4: "빠른 구체", 6: "단단한 구체", 8: "보호막 두른 구체(먼저 보호막을 깎아야 함)", 10: "분열 구체(터지면 둘로 나뉨)", 11: "이제부터 구체 체력이 웨이브마다 %d%%씩 곱으로 늘어남" % roundi((Rules.hp_growth - 1.0) * 100)}
+	var firsts := {4: "빠른 구체", 7: "단단한 구체", 8: "보호막 두른 구체(먼저 보호막을 깎아야 함)", 12: "분열 구체(터지면 둘로 나뉨)", 11: "이제부터 구체 체력이 웨이브마다 %d%%씩 곱으로 늘어남" % roundi((Rules.hp_growth - 1.0) * 100)}
 	for f in [[Rules.resist_from, "저항 구체(같은 색 점선 고리: 그 속성 비중만큼 피해 최대 60% 감소)"], [Rules.sturdy_from, "굳센 구체(회색 쐐기: 밀기·감속·기절·냉기 절반)"]]:
 		firsts[f[0]] = (firsts[f[0]] + ", " if firsts.has(f[0]) else "") + f[1]
 	if firsts.has(nw):
@@ -1253,6 +1274,11 @@ func _toggle_legend() -> void:
 	_save_best()
 
 
+func _toggle_bar() -> void:
+	bar_open = not bar_open
+	_save_best()
+
+
 func _update_auto_btn() -> void:
 	auto_btn.text = "자동 시작: " + ("켬" if auto_start else "끔")
 
@@ -1269,6 +1295,7 @@ func _start_wave() -> void:
 	choice_box.visible = false
 	reroll_btn.visible = false
 	to_spawn = spawn_count(wave)
+	wave_leaks.clear()
 	for w in [10, 15, 20]:
 		if wave >= w:
 			_achieve("wave%d" % w)
@@ -1287,6 +1314,7 @@ func _start_wave() -> void:
 
 
 func _game_over() -> void:
+	_log_wave()
 	phase = Phase.GAMEOVER
 	over_ms = Time.get_ticks_msec()
 	wave_active = false
@@ -2625,7 +2653,7 @@ func _roll_orb(w: int) -> Dictionary:
 			hp = ceilf(hp * 1.6)
 		"storm":
 			hp = maxf(1.0, roundf(hp * 0.6))
-	var spd := 36.0 + w * 3.0 + randf() * 8.0
+	var spd := 30.0 + w * 3.0 + randf() * 8.0
 	# 저항·굳셈: 쉬는 시간에 미리 알려 준 대로
 	var res := wave_resist if wave_resist >= 0 and randf() < resist_share(w) else -1
 	return {"a": a, "hp": roundf(hp), "spd": spd, "resist": res, "sturdy": randf() < sturdy_share(w)}
@@ -2667,6 +2695,7 @@ func _spawn_orb(kind := -1, plan := {}) -> void:
 	var o := Orb.new()
 	var p: Dictionary = plan if not plan.is_empty() else _roll_orb(wave)
 	o.position = center() + Vector2.from_angle(p["a"]) * _spawn_radius()
+	o.from_a = p["a"]
 	o.target = center()
 	if kind < 0:
 		kind = _roll_kind()
@@ -2676,11 +2705,11 @@ func _spawn_orb(kind := -1, plan := {}) -> void:
 	o.setup(kind, p["hp"], p["spd"])
 	o.resist_e = p["resist"]
 	o.sturdy = p["sturdy"]
-	# A4·A5: 보호막(8웨이브~), 분열(10웨이브~)
+	# A4·A5: 보호막(8웨이브~), 분열(12웨이브~, 10웨이브는 보스·저항이 처음 겹침)
 	if kind == Orb.Kind.NORMAL or kind == Orb.Kind.TANK:
 		if wave >= 8 and randf() < minf(0.1 + 0.01 * wave, 0.3):
 			o.shield = (2.0 + wave * 0.3) * hp_growth(wave) * Rules.orb_hp
-		if wave >= 10 and randf() < 0.15:
+		if wave >= 12 and randf() < 0.15:
 			o.splits = true
 	orbs.add_child(o)
 
@@ -2725,6 +2754,7 @@ func spawn_minion(boss: Orb) -> void:
 	var o := Orb.new()
 	o.main = self
 	o.position = boss.position
+	o.from_a = boss.from_a
 	o.target = center()
 	o.setup(Orb.Kind.FAST, maxf(1.0, roundf(wave * 0.5 * hp_growth(wave) * Rules.orb_hp)), 36.0 + wave * 3.0)
 	o.resist_e = boss.resist_e
@@ -2736,6 +2766,7 @@ func _spawn_child(parent: Orb) -> void:
 	var o := Orb.new()
 	o.main = self
 	o.position = parent.position + Vector2(randf_range(-14, 14), randf_range(-14, 14))
+	o.from_a = parent.from_a
 	o.target = center()
 	o.setup(Orb.Kind.NORMAL, maxf(1.0, ceilf(parent.max_hp * 0.4)), parent.speed * 1.1 / orb_speed_mul)
 	o.resist_e = parent.resist_e
@@ -2746,7 +2777,8 @@ func _spawn_child(parent: Orb) -> void:
 ## 웨이브가 오를수록 빠른 구체(4웨이브~), 단단한 구체(6웨이브~)가 섞인다.
 func _roll_kind() -> int:
 	var x := randf()
-	if wave >= 6 and x < minf(0.08 + 0.02 * wave, 0.3):
+	# 단단한 구체는 7웨이브부터 (6웨이브는 세 번째 진입 방향이 열림)
+	if wave >= 7 and x < minf(0.08 + 0.02 * wave, 0.3):
 		return Orb.Kind.TANK
 	if wave >= 4 and x > 1.0 - minf(0.1 + 0.03 * wave, 0.35):
 		return Orb.Kind.FAST
@@ -2778,9 +2810,18 @@ func _process(delta: float) -> void:
 	title_label.modulate.a = 0.12 if settings_panel.visible or records_panel.visible or help_label.visible else 1.0
 	hud.visible = not title_label.visible  # 시작 화면엔 메뉴에 최고 기록이 따로 있다
 	# 시작 화면에서 일시정지·배속 버튼을 누르면 메뉴 위에 일시정지 창이 뜨던 문제
-	pause_btn.visible = not title_label.visible
-	speed_btn.visible = not title_label.visible
-	speed_pick.visible = not title_label.visible
+	# 게임 중엔 펼쳤을 때만 보인다 (단축키 M·P·Space는 접어도 된다). 시작 화면엔 소리·자동 시작만
+	var in_game := not title_label.visible
+	bar_btn.visible = in_game
+	# 펼쳤을 땐 좁은 ▶만 (버튼 줄이 왼쪽 아래 안내 문구까지 뻗지 않게)
+	bar_btn.text = "▶" if bar_open else "◀ 설정"
+	bar_btn.custom_minimum_size.x = 40.0 if bar_open else 96.0
+	bar_btn.tooltip_text = "설정 버튼 접기" if bar_open else "소리·자동 시작·일시정지·배속 버튼 펼치기"
+	mute_btn.visible = not in_game or bar_open
+	auto_btn.visible = not in_game or bar_open
+	pause_btn.visible = in_game and bar_open
+	speed_btn.visible = in_game and bar_open
+	speed_pick.visible = in_game and bar_open
 	_update_hud()
 	if pause_box.visible:
 		pause_box.position.y = paused_label.position.y + paused_label.size.y + 10.0
@@ -2868,6 +2909,7 @@ func _sim_step(delta: float) -> void:
 	if core_hp <= 0:
 		_game_over()
 	elif to_spawn == 0 and _alive_count(orbs) == 0:
+		_log_wave()
 		_achieve("first")
 		if wave >= 5:
 			Meta.map_best[Meta.key()] = [maxi(Meta.best_of(Meta.key())[0], wave), maxi(Meta.best_of(Meta.key())[1], score)]
@@ -2884,6 +2926,73 @@ func _sim_step(delta: float) -> void:
 			_start_perk()
 		else:
 			_start_choose()
+
+
+## 중앙에 닿은 구체를 기록하고, 그 구체가 들어온 화면 가장자리를 붉게 번지게 한다.
+func _record_leak(o: Orb) -> void:
+	wave_leaks.append([_lane_of(o.from_a), o.kind, o.core_dmg])
+	leak_flash.append([_entry_point(o.from_a), 1.2])
+
+
+## 각도 a에서 가장 가까운 진입 방향 번호 (없으면 -1).
+func _lane_of(a: float) -> int:
+	var best := -1
+	var bd := INF
+	for i in lanes.size():
+		var d := absf(angle_difference(a, lanes[i]))
+		if d < bd:
+			bd = d
+			best = i
+	return best
+
+
+## 각도 a에서 나온 구체가 화면에 들어오는 자리 (소용돌이 맵은 나선을 따라).
+func _entry_point(a: float) -> Vector2:
+	if Meta.map_id == "spiral":
+		var vr := get_viewport_rect()
+		for q in _orb_path(a):
+			if vr.has_point(q):
+				return q
+	return _edge_point(center(), Vector2.from_angle(a))
+
+
+## 8방위 이름 (화면 위가 북).
+static func compass(a: float) -> String:
+	return ["동", "남동", "남", "남서", "서", "북서", "북", "북동"][posmod(roundi(a / (PI / 4.0)), 8)]
+
+
+## 웨이브가 끝나면(클리어·게임 오버) 누수를 한 줄로 요약해 둔다.
+func _log_wave() -> void:
+	if wave <= 0 or (not leak_log.is_empty() and leak_log[-1]["w"] == wave):
+		return
+	var by_lane := {}
+	var kinds := {}
+	var dmg := 0
+	for l in wave_leaks:
+		by_lane[l[0]] = by_lane.get(l[0], 0) + 1
+		kinds[l[1]] = kinds.get(l[1], 0) + 1
+		dmg += l[2]
+	var dirs := {}
+	for i in by_lane:
+		dirs[compass(lanes[i]) if i >= 0 and i < lanes.size() else "?"] = by_lane[i]
+	leak_log.append({"w": wave, "n": wave_leaks.size(), "dmg": dmg, "dirs": dirs, "kinds": kinds, "towers": towers.get_child_count(), "lanes": lanes.size(), "core": core_hp})
+	if leak_log.size() > 200:
+		leak_log.pop_front()
+
+
+## 지난 웨이브 누수 안내 한 줄 ("지난 웨이브 누수: 북동쪽 3개(빠른 2) · 남쪽 1개"), 없으면 빈 문자열.
+func _leak_text() -> String:
+	if leak_log.is_empty() or leak_log[-1]["w"] != wave or leak_log[-1]["n"] == 0:
+		return ""
+	var e: Dictionary = leak_log[-1]
+	var parts := PackedStringArray()
+	for d in e["dirs"]:
+		parts.append("%s쪽 %d개" % [d, e["dirs"][d]])
+	var names := {Orb.Kind.NORMAL: "일반", Orb.Kind.FAST: "빠른", Orb.Kind.TANK: "단단한", Orb.Kind.BOSS: "보스"}
+	var ks := PackedStringArray()
+	for k in e["kinds"]:
+		ks.append("%s %d" % [names.get(k, "?"), e["kinds"][k]])
+	return "지난 웨이브 누수: %s (%s, 중앙 -%d)" % [" · ".join(parts), ", ".join(ks), e["dmg"]]
 
 
 func _alive_count(n: Node) -> int:
@@ -2978,6 +3087,7 @@ func _resolve(delta: float) -> void:
 			core_flash = 0.4
 			burst(center(), Color(1, 0.3, 0.35), 18, 220.0)
 			_show_toast("중앙 피격! %d/%d" % [maxi(core_hp, 0), core_max])
+			_record_leak(o)
 			o.queue_free()
 			continue
 
@@ -3056,6 +3166,9 @@ func near(p: Vector2, r: float) -> Array:
 
 
 func _update_fx(delta: float) -> void:
+	for lf in leak_flash:
+		lf[1] -= delta
+	leak_flash = leak_flash.filter(func(lf): return lf[1] > 0.0)
 	for p in popups:
 		p[0] += Vector2(0, -40.0 * delta)
 		p[2] -= delta
@@ -3419,6 +3532,11 @@ func _draw() -> void:
 				draw_circle(tip - d * f * (L - 40.0), 2.5, Color(col, 0.5 * (1.0 - f)))
 
 	_draw_boss_path(now)
+	# 누수: 구체가 들어온 화면 가장자리가 붉게 번진다 (어느 길목이 뚫렸는지)
+	for lf in leak_flash:
+		var f: float = lf[1] / 1.2
+		for k in 4:
+			draw_circle(lf[0], 40.0 + k * 34.0, Color(1, 0.15, 0.2, 0.16 * f * (1.0 - k * 0.22)))
 
 	# 연결선
 	for t in towers.get_children():
@@ -3587,6 +3705,7 @@ func _load_best() -> void:
 		best_score = b[1]
 		auto_start = Meta.val(cfg, "option", "auto_start", false)
 		legend_hidden = Meta.val(cfg, "option", "legend_hidden", false)
+		bar_open = Meta.val(cfg, "option", "bar_open", false)
 		sfx.muted = Meta.val(cfg, "option", "muted", false)
 		fast_speed = Meta.val(cfg, "option", "fast_speed", 2.0)
 		if not fast_speed in SPEEDS:
@@ -3601,6 +3720,7 @@ func _save_best() -> void:
 	Meta.save_into(cfg)
 	cfg.set_value("option", "auto_start", auto_start)
 	cfg.set_value("option", "legend_hidden", legend_hidden)
+	cfg.set_value("option", "bar_open", bar_open)
 	cfg.set_value("option", "muted", sfx.muted)
 	cfg.set_value("option", "fast_speed", fast_speed)
 	cfg.save(SAVE_PATH)

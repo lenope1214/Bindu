@@ -39,9 +39,28 @@ def rule_values(rules: int, patch_data: dict | None) -> dict:
     return vals
 
 
+def _roundi(x: float) -> int:
+    """Godot roundi (0.5는 0에서 멀어지는 쪽으로)."""
+    return int(math.floor(x + 0.5)) if x >= 0 else -int(math.floor(-x + 0.5))
+
+
+def lanes_for(w: int) -> int:
+    """main.gd lanes_for: 웨이브 w의 진입 방향 수."""
+    return min(min(1 + w // 3, 4 + max(0, (w - 12) // 6)), 6)
+
+
+def wave_size(w: int) -> int:
+    """main.gd wave_size: 3 + 2w, 첫 웨이브 70%에서 10웨이브 100%로."""
+    k = 0.7 + 0.3 * min(max((w - 1) / 9.0, 0.0), 1.0)
+    return _roundi((3 + w * 2) * k)
+
+
 def spawn_count(w: int, map_id: str, orb_mul: float) -> int:
-    n = round((3 + w * 2) * orb_mul)
-    return round(n * 1.5) if map_id == "cross" else n
+    """main.gd spawn_count: 새 진입 방향이 열리는 웨이브는 80%, 십자로는 1.5배."""
+    n = _roundi(wave_size(w) * orb_mul)
+    if map_id != "cross" and lanes_for(w) > lanes_for(w - 1):
+        n = _roundi(n * 0.8)
+    return _roundi(n * 1.5) if map_id == "cross" else n
 
 
 def max_score(wave: int, map_id: str, rules: int, patch_data: dict | None = None) -> int:

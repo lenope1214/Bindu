@@ -64,6 +64,10 @@ func _process(_d):
 	if OS.get_environment("PICKS") != "" and main.phase == 0 and main.wave != picks_w:
 		picks_w = main.wave
 		main.picks_left += int(OS.get_environment("PICKS"))
+	# 사람처럼: 쉬는 시간마다 진입 방향이 옮겨 가 비게 된 오브젝트를 빈 길목으로 옮긴다 (NOADAPT=1이면 안 함)
+	if OS.get_environment("NOADAPT") == "" and main.phase == 0 and main.wave != adapt_w:
+		adapt_w = main.wave
+		_rearrange()
 	if main.phase == 0 and main.offer.size() > 0 and not main.perk_mode:
 		var offer = main.offer
 		var ts = main.towers.get_children()
@@ -73,8 +77,7 @@ func _process(_d):
 		var uncovered = false
 		for cand0 in main.lanes:
 			var cand = eff_lane(cand0)
-			var lp = main.center() + Vector2(cos(cand), sin(cand)) * 170
-			if not ts.any(func(t): return t.position.distance_to(lp) < 160): uncovered = true
+			if not ts.any(func(t): return serves(t, cand)): uncovered = true
 		if uncovered or ts.size() < main.lanes.size() + 1:
 			for o in offer:
 				if o["type"] == "elem": pick = o; break
@@ -153,16 +156,15 @@ func _process(_d):
 			var fewest = 999
 			for cand0 in main.lanes:
 				var cand = eff_lane(cand0)
-				var lp = c + Vector2(cos(cand), sin(cand)) * 170
 				var cnt = 0
 				for t in ts:
-					if t.position.distance_to(lp) < 160: cnt += 1
+					if serves(t, cand): cnt += 1
 				if cnt < fewest: fewest = cnt; la = cand
 			lane_i += 1
 			var ld = Vector2(cos(la), sin(la))
 			var side = (1 if lane_i % 2 == 0 else -1) * (0.15 if Meta.map_id == "cross" else 1.0)
 			var p
-			if OS.get_environment("SMART") != "":
+			if _smart():
 				# 사람처럼: 중앙 가까이에서 진입 방향 그대로 겨눈다
 				p = c + ld * (90 + 25 * (lane_i % 3)) + ld.orthogonal() * 22 * side
 				main._place_tower(p, ld)
@@ -175,8 +177,48 @@ func _process(_d):
 		var ts = []
 		for t in main.towers.get_children(): ts.append(t.title())
 		print("RESULT wave=", main.wave, " score=", main.score, " ", main._perk_text(), " towers=", ts)
+		# 죽음 기록: 웨이브마다 새어 든 구체 수·방향·종류 (tools/run.sh bots가 모아 보여 줌)
+		for e in (main.leak_log if "leak_log" in main else []):
+			if e["n"] > 0:
+				print("LEAKS w=%d n=%d dmg=%d towers=%d lanes=%d kinds=%s dirs=%s" % [e["w"], e["n"], e["dmg"], e["towers"], e["lanes"], JSON.stringify(e["kinds"]), JSON.stringify(e["dirs"])])
 		return true
 	return false
+
+var adapt_w := -1
+## 오브젝트가 길목 a를 지키는지: 길목 선 가까이(120)에 있고, 길목 바깥쪽을 겨눔
+func serves(t, a) -> bool:
+	var c = main.center()
+	var ld = Vector2(cos(a), sin(a))
+	var far = c + ld * 600
+	var q = Geometry2D.get_closest_point_to_segment(t.position, c, far)
+	return t.position.distance_to(q) < 120 and absf(angle_difference(t.dir.angle(), (far - t.position).angle())) < 0.35
+
+func _rearrange():
+	var c = main.center()
+	var ls = main.lanes.map(func(a): return eff_lane(a))
+	for t in main.towers.get_children():
+		if ls.any(func(a): return serves(t, a)):
+			continue
+		# 지키는 오브젝트가 가장 적은 길목
+		var la = ls[0]
+		var fewest = 999
+		for a in ls:
+			var cnt = main.towers.get_children().filter(func(o): return o != t and serves(o, a)).size()
+			if cnt < fewest: fewest = cnt; la = a
+		lane_i += 1
+		var ld = Vector2(cos(la), sin(la))
+		var side = (1 if lane_i % 2 == 0 else -1) * (0.15 if Meta.map_id == "cross" else 1.0)
+		for k in 6:
+			var p
+			if _smart():
+				p = c + ld * (90 + 25 * ((lane_i + k) % 3) + 30 * k) + ld.orthogonal() * 22 * side
+			else:
+				p = c + ld * (150 + 30 * ((lane_i + k) % 3) + 30 * k) + ld.orthogonal() * 70 * side
+			if main._tower_at(p, t) == null and p.distance_to(c) > 60:
+				t.position = p.clamp(main.field_rect().position, main.field_rect().end)
+				t.dir = ld if _smart() else (c + ld * 600 - p).normalized()
+				t.queue_redraw()
+				break
 
 # 소용돌이 맵: 구체가 반지름 r을 지날 때의 각도
 func eff_lane(a):
@@ -186,3 +228,7 @@ func eff_lane(a):
 	while p.distance_to(c) > 170:
 		p += (c - p).normalized().rotated(0.6) * 4.0
 	return (p - c).angle()
+
+## 사람처럼 배치(중앙 가까이에서 길목 바깥쪽을 겨눔). tools/run.sh는 기본으로 켬, SMART=0이면 예전 봇
+func _smart() -> bool:
+	return not OS.get_environment("SMART") in ["", "0"]
