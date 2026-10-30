@@ -74,7 +74,7 @@ var leak_flash: Array = []  # 화면 가장자리 붉은 번짐 [자리, 남은 
 var boss_plan := {}  # 다음 보스: 쉬는 시간에 진입 각도·체력·속도·저항을 미리 정해 길과 정보를 정확히 보여 준다
 var touch_ui := false  # 마지막 입력이 터치였는지 (터치는 마우스를 올려 둘 수 없다)
 ## 터치 화면에선 버튼 글의 키 안내 "(Q)"·"(Space: 바로)"를 뺀다. "(S: 멈추기)"처럼 누르면 하는 일은 "(눌러서 멈추기)"로
-var key_re := RegEx.create_from_string(" ?\\((?:Q|V|S|D|E|F|K|O|H|M|N|P|T|Tab|Enter|Esc|F11|Space)(?:: [^)]*)?\\)")
+var key_re := RegEx.create_from_string(" ?\\((?:[KO] / )?(?:Q|V|S|D|E|F|K|O|H|M|N|P|T|Tab|Enter|Esc|F11|Space|←/→|↑/↓)(?:: [^)]*)?\\)")
 var key_t := 0.0
 var offer: Array = []  # 이번 선택지 [카드, ...] 카드: {"type": "elem"|"pat"|"mod"|"link", ...}
 var picked := {}  # 고른 카드
@@ -1960,6 +1960,7 @@ func _lane_arrows() -> Array:
 func _strip_key_hints() -> void:
 	var nodes: Array = ui_root.find_children("*", "Button", true, false)
 	nodes.append_array([dps_head, flip_label])
+	nodes.append_array(get_tree().get_nodes_in_group("key_hint"))  # 창 제목 (Esc: 닫기)
 	for b in nodes:
 		if not is_instance_valid(b):
 			continue
@@ -2454,7 +2455,7 @@ func _game_over() -> void:
 			tops.append("%s %d%%" % [src_name(key), roundi(rs[key] / total * 100.0)])
 		mvp += "\n피해 출처: " + ", ".join(tops)
 	var md := "" if Modes.on.is_empty() else "\n모드: %s · 점수 x%.2f%s" % [Modes.names(), Modes.mul(), "\n쉽게 모드: 최고 기록 따로, 리더보드 제외" if Modes.easy() else ""]
-	over_label.text = "%s (%s · %s)\n웨이브 %d · 점수 %s%s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\n클릭·R·Esc: 시작 화면으로" % ["판 끝냄" if ended else "게임 오버", Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, md, num(kills), best_combo, towers.get_child_count(), mvp, ach]
+	over_label.text = "%s (%s · %s)\n웨이브 %d · 점수 %s%s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\n%s" % ["판 끝냄" if ended else "게임 오버", Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, md, num(kills), best_combo, towers.get_child_count(), mvp, ach, "눌러서 시작 화면으로" if touch_ui else "클릭·R·Esc: 시작 화면으로"]
 	over_label.visible = true
 	_submit_run()
 	sfx.play("over", 0.0)
@@ -3040,6 +3041,7 @@ func _build_menu(root: Control) -> void:
 	settings_panel.add_child(sv)
 	var st := Label.new()
 	st.text = "설정 (O / Esc: 닫기)"
+	st.add_to_group("key_hint")
 	st.add_theme_font_size_override("font_size", 22)
 	sv.add_child(st)
 	var vrow := HBoxContainer.new()
@@ -3214,10 +3216,10 @@ func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0) ->
 func _refresh_menu() -> void:
 	var m: Dictionary = Meta.MAPS[Meta.map_id]
 	var best := Meta.best_of(Meta.run_key())
-	map_label.text = "맵: %s  (←/→)\n%s\n최고 기록%s  웨이브 %d · 점수 %s" % [Meta.map_name(), m["desc"], " (쉽게 모드)" if Modes.easy() else "", best[0], num(best[1])]
+	map_label.text = _kh("맵: %s  (←/→)\n%s\n최고 기록%s  웨이브 %d · 점수 %s" % [Meta.map_name(), m["desc"], " (쉽게 모드)" if Modes.easy() else "", best[0], num(best[1])])
 	flip_label.get_parent().visible = Meta.map_id == "line"
 	flip_label.text = "구체가 오는 쪽: %s  (F)" % ("왼쪽 → 문은 오른쪽 끝" if Meta.line_flip else "오른쪽 → 문은 왼쪽 끝")
-	rules_label.text = "규칙: %s%s  (↑/↓)\n%s" % [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 550.0, 18)]
+	rules_label.text = _kh("규칙: %s%s  (↑/↓)\n%s" % [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 550.0, 18)])
 	rules_label.get_parent().visible = Meta.games > 0  # 규칙 버전 고르기는 첫 판을 끝낸 뒤에 (그 전엔 버전 1)
 	modes_btn.visible = Meta.games > 0  # 모드도
 	modes_btn.text = "모드 (시험): %s   ▶" % ("없음" if Modes.on.is_empty() else "%s · 점수 x%.2f" % [Modes.names(), Modes.mul()])
@@ -3821,6 +3823,7 @@ func _build_modes(root: Control, sb: StyleBox) -> void:
 	modes_panel.add_child(v)
 	var t := Label.new()
 	t.text = "모드 (시험)   (Esc: 닫기)"
+	t.add_to_group("key_hint")
 	t.add_theme_font_size_override("font_size", 22)
 	v.add_child(t)
 	modes_head = Label.new()

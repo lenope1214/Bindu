@@ -74,6 +74,7 @@ func setup(perk_list: Array, sb: StyleBox, changed: Callable) -> void:
 	v.add_child(head)
 	var t := Label.new()
 	t.text = "도감   (K / Esc: 닫기)"
+	t.add_to_group("key_hint")  # 터치 화면에서 main이 키 안내를 뺀다
 	t.add_theme_font_size_override("font_size", 22)
 	head.add_child(t)
 	count_label = Label.new()
