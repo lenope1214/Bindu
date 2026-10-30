@@ -156,6 +156,9 @@ var settings_panel: PanelContainer
 var new_achievements: Array = []  # 이번 판에 새로 달성한 업적 이름
 var help_label: Label
 var hover_elem := -1  # 마우스를 올린 선택지의 속성
+var tip_orb: Node = null  # 마우스를 올린 구체 (그 구체만 체력 숫자를 보인다)
+var range_all := false  # 터치 화면 [범위 보기]: Alt를 누른 것처럼 모든 오브젝트 범위·피해 몫
+var range_btn: Button
 var wave_time := 0.0  # 이번 웨이브 경과 시간
 # 온라인 (Net·Patch): 판 기록·통계
 var net: Net
@@ -340,6 +343,16 @@ func _build_ui() -> void:
 	legend_btn.add_theme_font_size_override("font_size", 14)
 	legend_btn.pressed.connect(_toggle_legend)
 	root.add_child(legend_btn)
+	# 터치 화면용 Alt: 누를 때마다 모든 오브젝트 범위·피해 몫 보기 켜기·끄기 (터치를 한 번 쓰면 나타남)
+	range_btn = Button.new()
+	range_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	range_btn.position = Vector2(-280, 10)
+	range_btn.size = Vector2(112, 30)
+	range_btn.focus_mode = Control.FOCUS_NONE
+	range_btn.add_theme_font_size_override("font_size", 14)
+	range_btn.pressed.connect(func(): range_all = not range_all)
+	range_btn.visible = false
+	root.add_child(range_btn)
 	legend.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # 긴 줄이 화면 밖으로 잘리지 않게
 	legend.add_theme_font_size_override("font_size", 14)
 	legend.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
@@ -1438,6 +1451,7 @@ func _start_wave() -> void:
 		t.run_dealt += t.dealt
 		t.dealt = 0.0
 		t.rx_dealt = 0.0
+		t.queue_redraw()  # 레벨 숫자는 쉬는 시간에만
 	hint.text = ""
 	big_banner("웨이브 %d" % wave, Color.WHITE)
 	sfx.play("wave", 0.0)
@@ -1963,7 +1977,7 @@ func _build_menu(root: Control) -> void:
 		_save_best())
 	vrow.add_child(slider)
 	sv.add_child(vrow)
-	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 첫 글자)", "symbols_on"]]:
+	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 첫 글자)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"]]:
 		var cb := CheckButton.new()
 		cb.text = spec[0]
 		var key: String = spec[1]
@@ -1971,11 +1985,13 @@ func _build_menu(root: Control) -> void:
 			"shake_on": cb.button_pressed = Meta.shake_on
 			"numbers_on": cb.button_pressed = Meta.numbers_on
 			"symbols_on": cb.button_pressed = Meta.symbols_on
+			"orb_hp_on": cb.button_pressed = Meta.orb_hp_on
 		cb.focus_mode = Control.FOCUS_NONE
 		cb.toggled.connect(func(on):
 			match key:
 				"shake_on": Meta.shake_on = on
 				"numbers_on": Meta.numbers_on = on
+				"orb_hp_on": Meta.orb_hp_on = on
 				"symbols_on":
 					Meta.symbols_on = on
 					for t in towers.get_children():
@@ -2975,6 +2991,8 @@ func _process(delta: float) -> void:
 	legend.visible = phase in [Phase.CHOOSE, Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.READY] and not title_label.visible
 	preview.visible = legend.visible
 	legend_btn.visible = legend.visible
+	range_btn.visible = touch_ui and not title_label.visible and phase != Phase.GAMEOVER
+	range_btn.text = "범위 끄기" if range_all else "범위 보기"
 	legend_btn.text = ("설명 보기" if legend_hidden else "설명 숨기기") + " (Tab)"
 	legend.visible = legend.visible and not legend_hidden
 	# 시작 화면 위에 설정·기록·도움말 창을 열면 뒤 메뉴 글자가 창 옆으로 삐져나와 보이지 않게 흐리게
@@ -3364,6 +3382,7 @@ func _update_fx(delta: float) -> void:
 
 ## 마우스를 올린 오브젝트의 정보.
 func _draw_tooltip() -> void:
+	tip_orb = null
 	# 터치는 마우스를 올려 둘 수 없으니, 눌러서 옮기기 시작한 오브젝트의 정보를 보여 준다
 	var touch_move := phase == Phase.MOVE and touch_ui and moving != null
 	if (phase in [Phase.PLACE, Phase.GAMEOVER, Phase.MOVE, Phase.AIM] and not touch_move) or title_label.visible or dragging or boxing:
@@ -3488,6 +3507,7 @@ func _draw_orb_tooltip() -> void:
 		if d <= maxf(x.radius() + 4.0, 14.0) and d < bd:
 			o = x
 			bd = d
+	tip_orb = o
 	if o:
 		var kinds := ["구체", "빠른 구체", "단단한 구체", "보스"]
 		var parts := PackedStringArray([kinds[o.kind], "체력 %d/%d" % [ceili(o.hp), roundi(o.max_hp)]])
@@ -3815,7 +3835,7 @@ func _draw() -> void:
 					draw_line(mover.position, o.position, Color(0.6, 1, 1, 0.6), 2.0)
 				else:
 					draw_dashed_line(mover.position, o.position, Color(1, 0.4, 0.4, 0.7), 2.0, 10.0)
-	if Input.is_key_pressed(KEY_ALT) and not title_label.visible:
+	if (Input.is_key_pressed(KEY_ALT) or range_all) and not title_label.visible:
 		# Alt를 누르고 있는 동안: 모든 오브젝트의 공격 범위와 이번(지난) 웨이브 피해 몫 (약한 오브젝트 찾기)
 		var total := 0.0
 		for t in towers.get_children():

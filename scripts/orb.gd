@@ -351,7 +351,9 @@ func _draw() -> void:
 	if slow_timer > 0.0: icons.append(Elem.COLORS[Elem.WATER])
 	for i in icons.size():
 		draw_circle(Vector2(-(icons.size() - 1) * 4.0 + i * 8.0, -r - 9.0), 3.0, icons[i])
-	var font := ThemeDB.fallback_font
-	var txt := str(ceili(hp))
-	var size := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_CENTER, -1, 12)
-	draw_string(font, Vector2(-size.x / 2, 4), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.1, 0.1, 0.15))
+	# 체력 숫자: 보스·마우스를 올린 구체·설정에서 켠 때만 (평소엔 위의 붉은 고리로 본다)
+	if kind == Kind.BOSS or Meta.orb_hp_on or (main and main.tip_orb == self):
+		var font := ThemeDB.fallback_font
+		var txt := str(ceili(hp))
+		var size := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_CENTER, -1, 12)
+		draw_string(font, Vector2(-size.x / 2, 4), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.1, 0.1, 0.15))
