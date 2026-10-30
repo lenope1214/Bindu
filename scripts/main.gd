@@ -5656,6 +5656,23 @@ func _draw_tooltip() -> void:
 		lines.append(["  " + sp + " (모두 곱함)", Color(1, 1, 1, 0.65)])
 	if detail:
 		lines = lines.slice(0, nhead) + t.detail_lines()
+	elif _tip_rows(lines, maxw, fs) * lh + 10.0 > get_viewport_rect().size.y - _tip_top() - 8.0:
+		# 속성·반응이 아주 많으면 화면 높이를 넘어 위가 잘렸다: 반응 이름은 두 줄까지, 그래도 넘치면 속성 효과를 한 줄로
+		var avail := floori((get_viewport_rect().size.y - _tip_top() - 18.0) / lh)
+		for i in lines.size():
+			if (lines[i][0] as String).begins_with("반응 %d개: " % rxs.size()):
+				var names: Array = rxs.map(func(r): return r["name"])
+				var k := names.size()
+				var txt: String = lines[i][0]
+				while k > 1 and _wrap_words(txt, maxw, fs).count("\n") >= 2:
+					k -= 1
+					txt = "반응 %d개: %s 외 %d개" % [rxs.size(), ", ".join(names.slice(0, k)), names.size() - k]
+				lines[i] = [txt, lines[i][1]]
+		if _tip_rows(lines, maxw, fs) > avail and t.order.size() > 1:
+			var first := lines.find_custom(func(l): return (l[0] as String).begins_with(Elem.NAMES[t.order[0]] + " Lv"))
+			if first >= 0:
+				var riders: Array = t.order.map(func(e): return (Elem.RIDER[e] as String).get_slice(":", 0))
+				lines = lines.slice(0, first) + [["속성 효과: " + "·".join(riders) + (" (Shift: 자세히)" if not touch_ui else ""), Color(0.85, 0.85, 0.9)]] + lines.slice(first + t.order.size())
 	var rows: Array = []
 	var w := 0.0
 	for l in lines:
@@ -5683,6 +5700,14 @@ func _draw_tooltip() -> void:
 	fx_layer.draw_rect(Rect2(p, Vector2(w + 16, h)), Color(1, 1, 1, 0.2), false, 1.0)
 	for i in lines.size():
 		fx_layer.draw_string(ui_font, p + Vector2(8, 6 + fs + i * lh), lines[i][0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, lines[i][1])
+
+
+## 정보창 줄들을 maxw로 접었을 때 줄 수.
+func _tip_rows(lines: Array, maxw: float, fs: int) -> int:
+	var n := 0
+	for l in lines:
+		n += 1 if ui_font.get_string_size(l[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= maxw else _wrap_words(l[0], maxw, fs).count("\n") + 1
+	return n
 
 
 ## 정보창을 놓을 수 있는 위쪽 끝: 점수 줄 아래 (점수 줄이 정보창 첫 줄을 덮던 것).
