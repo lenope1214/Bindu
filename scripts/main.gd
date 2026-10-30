@@ -4144,8 +4144,9 @@ func _process(delta: float) -> void:
 	hide_btn.set_anchors_preset(Control.PRESET_CENTER_TOP if cards_hidden else Control.PRESET_CENTER)
 	# 카드 줄은 오른쪽 설명을 피해 왼쪽으로 비켜 있다. 설명을 숨기면 가운데로, 버튼도 카드 가운데에 맞춘다
 	var cx := 0.0 if legend_hidden else -75.0
-	choice_box.offset_left = cx - 365.0
-	choice_box.offset_right = cx + 365.0
+	# 글자를 키우면(설정) 카드 줄 오른쪽이 설명 밑으로 들어가던 것: 설명 왼쪽까지 들어가게 왼쪽으로 옮기고, 모자라면 줄인다
+	var room := (legend.get_rect().position.x - 8.0) if legend.visible else ui_root.size.x - 8.0
+	var kw := minf((room - 8.0) / 730.0, 1.0)
 	# 새로고침·내리기 버튼은 카드 바로 아래 한 줄에 (카드가 길어지면 버튼이 카드 글을 덮던 것).
 	# 카드+버튼 줄이 왼쪽 아래 다음 웨이브 안내에 닿으면 카드 줄을 위로 올리고, 그래도 모자라면(글자 크게) 0.7배까지 줄인다
 	var mid := ui_root.size.y / 2.0
@@ -4155,7 +4156,10 @@ func _process(delta: float) -> void:
 	if dps_panel.visible and ui_root.size.x / 2.0 + cx - 365.0 < 320.0:
 		floor_y += 44.0 + 48.0 + 6.0  # 왼쪽 위 DPS 표(머리 + 2줄, 나머지는 굴려 봄)를 덮지 않게
 	var need := ch + 8.0 + 36.0
-	var k := clampf((lim - floor_y) / need, 0.7, 1.0)
+	var k := clampf(minf((lim - floor_y) / need, kw), 0.7, 1.0)
+	cx = minf(cx, room - 365.0 * k - ui_root.size.x / 2.0)
+	choice_box.offset_left = cx - 365.0
+	choice_box.offset_right = cx + 365.0
 	var ctop := maxf(minf(mid - 90.0, lim - need * k), floor_y)
 	choice_box.pivot_offset = Vector2(choice_box.size.x / 2.0, 0.0)
 	choice_box.scale = Vector2(k, k)
