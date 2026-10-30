@@ -784,7 +784,7 @@ func _refresh_dps() -> void:
 	if sig == dps_sig:
 		return
 	dps_sig = sig
-	dps_head.text = ("▶" if dps_hidden else "▼") + " 지난 웨이브 DPS (D)"
+	dps_head.text = _kh(("▶" if dps_hidden else "▼") + " 지난 웨이브 DPS (D)")
 	for c in dps_list.get_children():
 		c.queue_free()
 	dps_scroll.visible = not dps_hidden
@@ -1819,7 +1819,7 @@ func _set_cards_hidden(h: bool) -> void:
 
 func _update_reroll_btn() -> void:
 	reroll_btn.visible = rerolls_left > 0 and not cards_hidden  # 모드 '외길'은 늘 0
-	reroll_btn.text = "새로고침 %d (Q)" % rerolls_left
+	reroll_btn.text = _kh("새로고침 %d (Q)" % rerolls_left)
 	reroll_btn.tooltip_text = "선택지 새로고침 (Q): 이번 쉬는 시간에 %d번 남음" % rerolls_left
 
 
@@ -3260,7 +3260,7 @@ func _refresh_menu() -> void:
 	var best := Meta.best_of(Meta.run_key())
 	map_label.text = _kh("맵: %s  (←/→)\n%s\n최고 기록%s  웨이브 %d · 점수 %s" % [Meta.map_name(), m["desc"], " (쉽게 모드)" if Modes.easy() else "", best[0], num(best[1])])
 	flip_label.get_parent().visible = Meta.map_id == "line"
-	flip_label.text = "구체가 오는 쪽: %s  (F)" % ("왼쪽 → 문은 오른쪽 끝" if Meta.line_flip else "오른쪽 → 문은 왼쪽 끝")
+	flip_label.text = _kh("구체가 오는 쪽: %s  (F)" % ("왼쪽 → 문은 오른쪽 끝" if Meta.line_flip else "오른쪽 → 문은 왼쪽 끝"))
 	rules_label.text = _kh("규칙: %s%s  (↑/↓)\n%s" % [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 550.0, 18)])
 	rules_label.get_parent().visible = Meta.games > 0  # 규칙 버전 고르기는 첫 판을 끝낸 뒤에 (그 전엔 버전 1)
 	modes_btn.visible = Meta.games > 0  # 모드도
@@ -4103,7 +4103,7 @@ func _refresh_continue() -> void:
 	if continue_btn.visible:
 		remote_btn.visible = false
 	new_armed = 0.0
-	new_btn.text = "새로 시작 (N)" if continue_btn.visible else "시작 (Enter)"
+	new_btn.text = _kh("새로 시작 (N)" if continue_btn.visible else "시작 (Enter)")
 	if continue_btn.visible:
 		continue_btn.text = "이어하기 (Enter)   웨이브 %d부터 · %s · 버전 %d" % [info["wave"] + 1, Meta.MAPS[info["map"]]["name"], info["rules"]]
 
@@ -4551,7 +4551,7 @@ func _toggle_pause() -> void:
 	paused_label.text = _pause_text()
 	restart_armed = 0.0
 	end_armed = 0.0
-	pause_btn.text = "계속 (P)" if get_tree().paused else "일시정지 (P)"
+	pause_btn.text = _kh("계속 (P)" if get_tree().paused else "일시정지 (P)")
 
 
 ## 일시정지 글: 지금 나가면 어디서부터 이어지는지도 알려 준다.
@@ -4573,7 +4573,7 @@ func _end_run() -> void:
 	get_tree().paused = false
 	paused_label.visible = false
 	pause_box.visible = false
-	pause_btn.text = "일시정지 (P)"
+	pause_btn.text = _kh("일시정지 (P)")
 	ended = true
 	_game_over()
 
@@ -4925,7 +4925,7 @@ func _process(delta: float) -> void:
 	if new_armed > 0.0:
 		new_armed -= delta
 		if new_armed <= 0.0:
-			new_btn.text = "새로 시작 (N)"
+			new_btn.text = _kh("새로 시작 (N)")
 	toast_timer -= delta
 	toast.visible = toast_timer > 0.0
 	if guide_t > 0.0 and not get_tree().paused:
