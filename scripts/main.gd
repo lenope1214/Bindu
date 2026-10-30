@@ -288,6 +288,7 @@ func _ready() -> void:
 		title_label.visible = true
 		_refresh_continue()
 		hint.text = ""
+		net.check()  # 시작 화면이 뜰 때마다 새 버전 확인 (처음 켤 때는 Net이 이미 묻는 중)
 
 
 ## 창이 포커스를 잃어도 판은 계속 진행된다 (직접 조작이 없으니 멈추지 않음).
@@ -2774,7 +2775,7 @@ func _toggle_records() -> void:
 
 # ---------- 온라인 ----------
 
-## 서버 응답(켤 때 한 번): 시작 화면이면 받은 패치를 바로 적용하고, 새 버전·공지를 띄운다.
+## 서버 응답(켤 때, 시작 화면으로 돌아올 때): 시작 화면이면 받은 패치를 바로 적용하고, 새 버전·공지를 띄운다.
 func _on_booted(info: Dictionary) -> void:
 	if info.is_empty() or update_btn == null:
 		return
@@ -2790,6 +2791,8 @@ func _on_booted(info: Dictionary) -> void:
 		update_btn.disabled = false
 		_set_update_action(func(): _start_update(latest) if auto else OS.shell_open(url))
 		update_btn.visible = true
+	elif not updater.busy:
+		update_btn.visible = false  # 다시 물어보니 새 버전이 없음 (서버에서 내림)
 	var msg := Patch.text("", "message", "")
 	notice_label.text = msg
 	notice_label.visible = msg != ""

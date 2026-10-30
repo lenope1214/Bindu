@@ -17,6 +17,9 @@ const LOG_EVERY := 30.0  # 오류를 서버로 보내는 최소 간격(초)
 
 static var info := {}  # 마지막 /v1/boot 응답
 static var boot_done := false  # 다시 시작(장면 새로 불러오기)해도 한 번만
+static var boot_ms := -1000000  # 마지막으로 확인을 보낸 때 (시작 화면으로 돌아올 때 너무 자주 묻지 않게)
+const RECHECK_MS := 30000
+var booting := false
 var sending := false
 var watch := ""  # 응답을 알려 줄 이번 판 기록
 var sending_logs := false
@@ -116,9 +119,18 @@ func _request(method: int, path: String, body := "", headers := PackedStringArra
 	return {"code": res[1] if res[0] == HTTPRequest.RESULT_SUCCESS else 0, "data": data}
 
 
+## 시작 화면이 뜰 때: 켠 뒤 시간이 지났으면 새 버전·패치를 다시 묻는다 (켜 둔 채 새 버전이 나온 경우).
+func check() -> void:
+	if reachable() and not booting and Time.get_ticks_msec() - boot_ms >= RECHECK_MS:
+		boot()
+
+
 func boot() -> void:
+	booting = true
+	boot_ms = Time.get_ticks_msec()
 	var have: int = Patch.pending["id"] if Patch.pending != null else Patch.id
 	var r := await _request(HTTPClient.METHOD_GET, "/v1/boot?game=%s&platform=%s&patch=%d" % [game_version(), platform(), have])
+	booting = false
 	if r["code"] != 200 or not r["data"] is Dictionary:
 		return
 	info = r["data"]
