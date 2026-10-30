@@ -92,7 +92,8 @@ def boot(game: str, platform: str = "", patch: int = -1, db: Session = Depends(g
             # 게임 안 업데이트: 받은 파일이 이 해시와 맞을 때만 바꿔 끼운다 (서명은 패치와 같은 키)
             latest.update(sha256=r.sha256, size=r.size, sig=signing.sign(release_payload(r.platform, r.version, r.url, r.sha256, r.size)))
     s = current_season(db)
-    return {"patch": patch_out, "latest": latest, "season": {"id": s.id, "name": s.name} if s else None}
+    # snap: 진행 중 판 기록(run·ended)을 받아 한 줄로 고칠 수 있는 서버. 게임은 이게 있을 때만 5웨이브마다 보낸다
+    return {"patch": patch_out, "latest": latest, "season": {"id": s.id, "name": s.name} if s else None, "snap": True}
 
 
 class TowerIn(BaseModel):
@@ -136,6 +137,8 @@ class RunIn(BaseModel):
     towers: list[TowerIn] = []
     src: dict[str, float] = {}  # 피해 출처 몫 {키: 0~1} (피해 출처를 보내는 버전부터)
     log: list[LogIn] = []
+    run: str = Field("", pattern=r"^[A-Za-z0-9-]{0,40}$")  # 판 번호: 같은 판의 진행 기록을 한 줄로 (0.5.1부터)
+    ended: bool = True  # False: 5웨이브마다 보내는 진행 중 기록
 
 
 @app.post("/v1/runs")
@@ -150,28 +153,42 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), db
     except Exception as e:
         raise HTTPException(422, str(e)[:300])
     ip = signing.ip_hash(request.client.host if request.client else "")
-    t = now()
-    last = db.scalar(select(func.max(Run.created_at)).where(Run.device_id == run.device))
-    if last and (t - last).total_seconds() < config.RUN_MIN_INTERVAL:
-        raise HTTPException(429, "too soon")
-    n_ip = db.scalar(select(func.count()).select_from(Run).where(Run.ip_hash == ip, Run.created_at > t - timedelta(hours=1)))
-    if n_ip >= config.RUN_PER_IP_HOUR:
-        raise HTTPException(429, "too many")
+    # 진행 중 판을 다시 보낸 것: 같은 줄을 고친다 (웨이브가 올라갔거나 판이 끝났을 때만)
+    row = db.scalars(select(Run).where(Run.device_id == run.device, Run.run_key == run.run).limit(1)).first() if run.run else None
+    if row is not None and (row.ended or (not run.ended and run.wave <= row.wave)):
+        return {"id": row.id, "accepted": row.valid, "season": row.season, "rank": None, "ignored": True}
+    if row is None:
+        t = now()
+        last = db.scalar(select(func.max(Run.created_at)).where(Run.device_id == run.device))
+        if last and (t - last).total_seconds() < config.RUN_MIN_INTERVAL:
+            raise HTTPException(429, "too soon")
+        n_ip = db.scalar(select(func.count()).select_from(Run).where(Run.ip_hash == ip, Run.created_at > t - timedelta(hours=1)))
+        if n_ip >= config.RUN_PER_IP_HOUR:
+            raise HTTPException(429, "too many")
 
     p = db.get(Patch, run.patch) if run.patch > 0 else None
     reason = validate.check(run.model_dump(), p.data if p else None)
     if not reason and db.get(Ban, run.device):
         reason = "banned"
+    if not reason and row is not None and not row.valid:
+        reason = row.reason  # 한 번 검증에 걸린 판은 계속 뺀다
     nick = clean_nick(run.nick, run.device)
     season = season_for(db, run.game, run.patch)
-    row = Run(device_id=run.device, nickname=nick, ip_hash=ip, platform=run.platform, game_version=run.game,
-              patch_id=run.patch, season=season, map=run.map, rules=run.rules, wave=run.wave, score=run.score,
-              kills=run.kills, best_combo=run.best_combo, game_secs=run.game_secs, real_secs=run.real_secs,
-              detail={"perks": run.perks, "modes": run.modes, "towers": [x.model_dump() for x in run.towers], "src": run.src, "log": [x.model_dump() for x in run.log]},
-              valid=reason == "", reason=reason,
-              hidden=validate.easy(run.modes))  # 쉽게 모드 판은 통계에만 (리더보드 제외)
-    db.add(row)
-    db.flush()
+    vals = dict(device_id=run.device, nickname=nick, ip_hash=ip, platform=run.platform, game_version=run.game,
+                patch_id=run.patch, season=season, map=run.map, rules=run.rules, wave=run.wave, score=run.score,
+                kills=run.kills, best_combo=run.best_combo, game_secs=run.game_secs, real_secs=run.real_secs,
+                detail={"perks": run.perks, "modes": run.modes, "towers": [x.model_dump() for x in run.towers], "src": run.src, "log": [x.model_dump() for x in run.log]},
+                valid=reason == "", reason=reason, run_key=run.run, ended=run.ended, updated_at=now())
+    if row is None:
+        row = Run(hidden=validate.easy(run.modes), **vals)  # 쉽게 모드 판은 통계에만 (리더보드 제외)
+        db.add(row)
+        db.flush()
+    else:
+        for k, v in vals.items():
+            setattr(row, k, v)
+        # 선택·구성·피해 출처는 지금까지 전체를 다시 받았으니 갈아 끼운다 (두 번 세지 않게)
+        for tbl in (Pick, Final, SrcShare):
+            db.execute(delete(tbl).where(tbl.run_id == row.id))
     for e in run.log[:2000]:
         kind = "perk" if e.k == "perk" else "card"
         for key in dict.fromkeys(k for k in e.o[:6] if KEY_RE.match(k)):  # 같은 선택지가 두 번 들어 있어도 한 번
@@ -261,7 +278,7 @@ def _board(db: Session, map_id: str, rules: int, season: int, since):
     if since is not None:
         conds.append(Run.created_at >= since)
     rn = func.row_number().over(partition_by=Run.device_id, order_by=(Run.score.desc(), Run.wave.desc(), Run.id)).label("rn")
-    sub = select(Run.id, Run.device_id, Run.nickname, Run.wave, Run.score, Run.game_version, Run.created_at, rn).where(*conds).subquery()
+    sub = select(Run.id, Run.device_id, Run.nickname, Run.wave, Run.score, Run.game_version, Run.created_at, Run.ended, rn).where(*conds).subquery()
     return sub
 
 
@@ -287,7 +304,7 @@ def leaderboard(map: str, rules: int, season: int = 0, period: str = "all", limi
     rows = db.execute(select(sub).where(sub.c.rn == 1).order_by(sub.c.score.desc(), sub.c.wave.desc(), sub.c.id).limit(limit)).all()
     total = db.scalar(select(func.count()).select_from(sub).where(sub.c.rn == 1))
     entries = [{"rank": i + 1, "nick": r.nickname, "wave": r.wave, "score": r.score, "game": r.game_version,
-                "date": r.created_at.strftime("%Y-%m-%d"), "me": r.device_id == device} for i, r in enumerate(rows)]
+                "date": r.created_at.strftime("%Y-%m-%d"), "me": r.device_id == device, "ended": r.ended} for i, r in enumerate(rows)]
     me = board_rank(db, map, rules, s.id, since, device) if device else None
     return {"season": {"id": s.id, "name": s.name}, "period": period, "total": total, "entries": entries, "me": me}
 
@@ -425,7 +442,7 @@ def list_runs(invalid: bool = False, limit: int = Query(50, le=500), db: Session
         q = q.where(Run.valid.is_(False))
     return [{"id": r.id, "created": r.created_at.isoformat(), "device": r.device_id, "nick": r.nickname, "game": r.game_version,
              "patch": r.patch_id, "season": r.season, "map": r.map, "rules": r.rules, "wave": r.wave, "score": r.score,
-             "valid": r.valid, "reason": r.reason, "hidden": r.hidden} for r in db.scalars(q)]
+             "valid": r.valid, "reason": r.reason, "hidden": r.hidden, "ended": r.ended} for r in db.scalars(q)]
 
 
 class HiddenIn(BaseModel):
@@ -455,14 +472,14 @@ def ban(body: BanIn, db: Session = Depends(get_db)):
 
 @app.get("/admin/api/stats", dependencies=[Depends(require_admin)])
 def get_stats(rules: int = 0, map: str = "", game: str = "", patch: int = -1, days: int = 0, valid_only: bool = True,
-              db: Session = Depends(get_db)):
-    return stats.summary(db, stats.Filter(rules, map, game, patch, days, valid_only))
+              ended_only: bool = False, db: Session = Depends(get_db)):
+    return stats.summary(db, stats.Filter(rules, map, game, patch, days, valid_only, ended_only))
 
 
 @app.get("/admin/api/stats.csv", dependencies=[Depends(require_admin)], response_class=PlainTextResponse)
 def get_stats_csv(kind: str = "picks", rules: int = 0, map: str = "", game: str = "", patch: int = -1, days: int = 0,
-                  valid_only: bool = True, db: Session = Depends(get_db)):
-    data = stats.summary(db, stats.Filter(rules, map, game, patch, days, valid_only))
+                  valid_only: bool = True, ended_only: bool = False, db: Session = Depends(get_db)):
+    data = stats.summary(db, stats.Filter(rules, map, game, patch, days, valid_only, ended_only))
     return PlainTextResponse(stats.to_csv(data, kind), media_type="text/csv; charset=utf-8",
                              headers={"Content-Disposition": f'attachment; filename="bindu_{kind}.csv"'})
 

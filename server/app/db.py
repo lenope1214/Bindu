@@ -77,6 +77,10 @@ class Run(Base):
     valid: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     reason: Mapped[str] = mapped_column(Text, default="")  # 검증에 걸린 이유
     hidden: Mapped[bool] = mapped_column(Boolean, default=False)  # 관리자가 리더보드에서 뺀 기록
+    # 진행 중 판: 게임이 5웨이브마다 같은 run_key로 다시 보내면 이 줄을 고친다. 예전 버전 기록은 run_key 없이 끝난 판
+    run_key: Mapped[str] = mapped_column(String(40), default="", index=True)
+    ended: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now)
 
 
 class Pick(Base):
@@ -151,7 +155,15 @@ def init_db() -> None:
     Base.metadata.create_all(engine)
     # create_all은 이미 있는 표에 열을 더하지 않는다: 나중에 생긴 열은 여기서
     have = {c["name"] for c in inspect(engine).get_columns("releases")}
+    have_runs = {c["name"] for c in inspect(engine).get_columns("runs")}
     with engine.begin() as con:
+        if "run_key" not in have_runs:
+            con.execute(text("ALTER TABLE runs ADD COLUMN run_key VARCHAR(40) DEFAULT ''"))
+            con.execute(text("CREATE INDEX IF NOT EXISTS ix_runs_run_key ON runs (run_key)"))
+        if "ended" not in have_runs:
+            con.execute(text("ALTER TABLE runs ADD COLUMN ended BOOLEAN DEFAULT TRUE"))
+        if "updated_at" not in have_runs:
+            con.execute(text("ALTER TABLE runs ADD COLUMN updated_at TIMESTAMP"))
         if "sha256" not in have:
             con.execute(text("ALTER TABLE releases ADD COLUMN sha256 VARCHAR(64) DEFAULT ''"))
         if "size" not in have:

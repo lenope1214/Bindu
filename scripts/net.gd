@@ -142,17 +142,29 @@ func boot() -> void:
 		elif not p.get("same", false):
 			Patch.accept(str(p.get("payload", "")), str(p.get("sig", "")))
 	booted.emit(info)
+	if snap_ok():
+		flush()  # 서버가 진행 중 기록을 받는다는 걸 알았으니 쌓아 둔 진행 기록도
 
 
-## 판이 끝나면: 기록을 보낼 목록에 넣고 보낸다.
+## 서버가 진행 중 판 기록(5웨이브마다)을 한 줄로 고칠 수 있는지. 모르는(예전) 서버에 보내면 판 하나가 여러 줄이 된다.
+static func snap_ok() -> bool:
+	return info.get("snap", false) == true
+
+
+## 판 기록을 보낼 목록에 넣고 보낸다. 같은 판(run)의 이전 기록은 빼고 최신 것만 남긴다.
+## 진행 중 기록(ended=false)은 응답을 알리지 않는다 (게임 오버 순위 표시는 끝 기록만).
 func submit(record: Dictionary) -> void:
 	if not enabled():
 		return
 	record["local"] = "%d-%d" % [Time.get_unix_time_from_system(), randi() % 100000]
+	var run := str(record.get("run", ""))
 	var box := _load_outbox()
+	if run != "":
+		box = box.filter(func(x): return str(x.get("run", "")) != run)
 	box.append(record)
 	_save_outbox(box.slice(-OUTBOX_MAX))
-	watch = record["local"]
+	if record.get("ended", true):
+		watch = record["local"]
 	flush()
 
 
@@ -162,7 +174,8 @@ func flush() -> void:
 		return
 	sending = true
 	while true:
-		var box := _load_outbox()
+		# 진행 중 기록은 서버가 받는다고 알려 준 뒤에만 (그 전엔 끝 기록이 와서 바꿔 끼울 때까지 둔다)
+		var box := _load_outbox().filter(func(x): return x.get("ended", true) or snap_ok())
 		if box.is_empty():
 			break
 		var rec: Dictionary = box[0]

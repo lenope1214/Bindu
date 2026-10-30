@@ -58,6 +58,7 @@
     <input id="f-patch" placeholder="패치 번호" size="8">
     <select id="f-days"><option value="0">기간 전체</option><option value="1">1일</option><option value="7">7일</option><option value="30">30일</option></select>
     <label class="dim"><input type="checkbox" id="f-all"> 검증 실패 포함</label>
+    <label class="dim" title="5웨이브마다 온 진행 중 기록은 빼고"><input type="checkbox" id="f-ended"> 끝난 판만</label>
     <button class="act" id="load-stats">불러오기</button>
     <button class="sub" data-csv="picks">선택 CSV</button>
     <button class="sub" data-csv="finals">구성 CSV</button>
@@ -181,7 +182,7 @@ function table(el, rows, cols) {
   draw();
 }
 function query() {
-  const q = new URLSearchParams({rules: $("f-rules").value, map: $("f-map").value, game: $("f-game").value.trim(), days: $("f-days").value, valid_only: !$("f-all").checked});
+  const q = new URLSearchParams({rules: $("f-rules").value, map: $("f-map").value, game: $("f-game").value.trim(), days: $("f-days").value, valid_only: !$("f-all").checked, ended_only: $("f-ended").checked});
   const p = $("f-patch").value.trim(); if (p !== "") q.set("patch", p);
   return q.toString();
 }
@@ -234,7 +235,7 @@ $("r-send").onclick = async () => {
 async function loadRuns() {
   const rs = await api(`/admin/runs?limit=200&invalid=${$("runs-bad").checked}`);
   table($("t-runs"), rs, [["번호", r => r.id, 1], ["날짜", r => r.created.slice(0, 16).replace("T", " ")], ["닉네임", r => esc(r.nick)], ["기기", r => r.device.slice(0, 8)], ["버전", r => `${r.game} p${r.patch} s${r.season}`],
-    ["맵·규칙", r => `${r.map} v${r.rules}`], ["웨이브", r => r.wave, 1], ["점수", (r, raw) => raw ? r.score : r.score.toLocaleString(), 1], ["검증", r => r.valid ? "통과" : `<span class="bad">${esc(r.reason)}</span>`],
+    ["맵·규칙", r => `${r.map} v${r.rules}`], ["웨이브", r => r.wave, 1], ["점수", (r, raw) => raw ? r.score : r.score.toLocaleString(), 1], ["상태", r => r.ended ? "끝남" : "진행 중"], ["검증", r => r.valid ? "통과" : `<span class="bad">${esc(r.reason)}</span>`],
     ["", (r, raw) => raw ? 0 : `<button class="sub" onclick="hideRun(${r.id}, ${!r.hidden})">${r.hidden ? "다시 보이기" : "리더보드에서 빼기"}</button> <button class="sub" onclick="banDev('${r.device}')">기기 차단</button>`]]);
 }
 $("load-runs").onclick = loadRuns;

@@ -45,6 +45,7 @@ class Filter:
     patch: int = -1
     days: int = 0
     valid_only: bool = True
+    ended_only: bool = False  # 진행 중 판(5웨이브마다 온 기록)은 빼고
 
     def conds(self):
         c = []
@@ -60,6 +61,8 @@ class Filter:
             c.append(Run.created_at >= now() - timedelta(days=self.days))
         if self.valid_only:
             c.append(Run.valid.is_(True))
+        if self.ended_only:
+            c.append(Run.ended.is_(True))
         return c
 
 

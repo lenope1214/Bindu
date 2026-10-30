@@ -210,6 +210,7 @@ var dps_focus: Tower = null  # 표에서 마우스를 올린 오브젝트
 var dps_hidden := false  # D: 표 접기
 # 온라인 (Net·Patch): 판 기록·통계
 var net: Net
+var run_id := ""  # 판 번호: 5웨이브마다 보내는 진행 기록과 끝 기록을 서버에서 한 줄로 (이어하기에 저장)
 var run_log: Array = []  # 선택지 기록 [{w, k: card|perk, o: 나온 것, p: 고른 것(새로고침이면 "")}]
 var run_game := 0.0  # 웨이브 진행 게임 시간 합
 var run_real := 0.0  # 실제로 플레이한 시간 (시작 화면·일시정지 빼고)
@@ -1017,6 +1018,7 @@ func _start_choose(new_round := true) -> void:
 		tutor = Meta.tutor_next and DisplayServer.get_name() != "headless"
 		tutor_given = {}
 		start_modes()
+		run_id = _new_run_id()
 	if new_round and tutor and wave + 1 >= TUTOR_OPEN.values().max() and Meta.tutor_next:
 		Meta.tutor_next = false  # 모두 열렸다: 다음 판부터는 처음부터 모두
 		_save_best()
@@ -2828,8 +2830,13 @@ func _on_update_failed(reason: String) -> void:
 	_set_update_action(func(): OS.shell_open(url))
 
 
-## 게임 오버: 판 기록(점수·특성·선택지·마지막 구성)을 서버로. 설정에서 끄면 보내지 않는다.
-func _submit_run() -> void:
+static func _new_run_id() -> String:
+	return "%d-%06d" % [Time.get_unix_time_from_system(), randi() % 1000000]
+
+
+## 판 기록(점수·특성·선택지·지금 구성)을 서버로. 설정에서 끄면 보내지 않는다.
+## done=false: 5웨이브마다 보내는 진행 중 기록. 서버는 같은 판 번호(run)면 한 줄을 고친다.
+func _submit_run(done := true) -> void:
 	if not Net.enabled():
 		return
 	var ts := towers.get_children()
@@ -2853,7 +2860,7 @@ func _submit_run() -> void:
 		"device": Meta.device_id, "nick": Meta.nickname, "platform": Net.platform(), "game": old_run_ver if old_run_ver != "" else Net.game_version(),
 		"patch": Patch.id, "map": Meta.map_id, "rules": Meta.rules, "modes": Array(Modes.on), "wave": wave, "score": score, "kills": kills,
 		"best_combo": best_combo, "game_secs": run_game, "real_secs": run_real, "perks": perks.duplicate(),
-		"towers": list, "src": src, "log": run_log,
+		"towers": list, "src": src, "log": run_log, "run": run_id, "ended": done,
 	})
 
 
@@ -2940,7 +2947,7 @@ func _on_board_loaded(d: Dictionary) -> void:
 		var shown_me := false
 		for e in d.get("entries", []):
 			shown_me = shown_me or e.get("me", false)
-			lines.append("  %d. %s   웨이브 %d · 점수 %s%s" % [int(e["rank"]), e["nick"], int(e["wave"]), num(int(e["score"])), "   ◀ 나" if e.get("me", false) else ""])
+			lines.append("  %d. %s   웨이브 %d · 점수 %s%s" % [int(e["rank"]), e["nick"], int(e["wave"]), num(int(e["score"])), ("   ◀ 나" if e.get("me", false) else "") + ("   ▶ 진행 중" if not e.get("ended", true) else "")])
 		if lines.is_empty():
 			lines.append("  아직 기록이 없어요")
 		var me: Variant = d.get("me")
@@ -3312,7 +3319,7 @@ func _save_run() -> void:
 		"lanes": Array(lanes), "wave_resist": wave_resist, "boss": boss_plan, "achievements": new_achievements,
 		"state": "perk" if perk_mode else ("ready" if phase == Phase.READY else "choose"),
 		"offer": offer, "perk_offer": perk_offer.map(func(pk): return pk["id"]), "towers": list,
-		"log": run_log, "game_secs": run_game, "real_secs": run_real,
+		"log": run_log, "game_secs": run_game, "real_secs": run_real, "run_id": run_id,
 		"tutor": tutor, "tutor_given": tutor_given.keys(),
 	}
 	var cfg := ConfigFile.new()
@@ -3428,6 +3435,9 @@ func _continue_run() -> void:
 	run_log = (g.call("log", []) as Array).filter(func(e): return e is Dictionary)
 	run_game = maxf(0.0, g.call("game_secs", 0.0))
 	run_real = maxf(0.0, g.call("real_secs", 0.0))
+	run_id = str(g.call("run_id", ""))
+	if run_id == "":
+		run_id = _new_run_id()  # 판 번호가 없던 예전 저장
 	tutor = g.call("tutor", false)
 	tutor_given = {}
 	for k in g.call("tutor_given", []):
@@ -4152,6 +4162,7 @@ func _sim_step(delta: float) -> void:
 		if perks.has("regen"):
 			core_hp = mini(core_hp + perks["regen"] * int(_perk_val("regen")), core_max)
 		if wave % 5 == 0:
+			_submit_run(false)  # 5웨이브마다 진행 중 기록 (중간에 꺼도 서버에 남게)
 			_start_perk()
 		else:
 			_start_choose()

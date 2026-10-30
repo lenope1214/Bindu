@@ -171,3 +171,36 @@ def test_logs():
         many = [dict(e, line=i) for i in range(20)]
         codes = [post_logs(c, many, device="dev-logs-cccc").status_code for _ in range(6)]
         assert codes[:5] == [200] * 5 and codes[5] == 429
+
+
+def test_snapshots():
+    # 진행 중 판: 같은 run_key는 한 줄을 고치고, 선택·피해 출처는 두 번 세지 않는다
+    with TestClient(app) as c:
+        assert c.get("/v1/boot", params={"game": "0.5.1"}).json()["snap"] is True
+        dev, key = "dev-snap-aaaa", "k1-abc"
+        kw = dict(device=dev, map="spiral", run=key, game="0.5.1", patch=2)
+        r1 = post_run(c, ended=False, wave=5, score=1000, **kw).json()
+        assert r1["accepted"]
+        lb = c.get("/v1/leaderboard", params={"map": "spiral", "rules": 1, "device": dev}).json()
+        assert lb["entries"][0]["ended"] is False and lb["entries"][0]["score"] == 1000
+        # 같은 웨이브·낮은 웨이브 진행 기록은 무시
+        assert post_run(c, ended=False, wave=5, score=99, **kw).json()["ignored"]
+        r2 = post_run(c, ended=False, wave=10, score=2000, game_secs=800.0, **kw).json()
+        assert r2["id"] == r1["id"]
+        r3 = post_run(c, ended=True, wave=12, score=2500, game_secs=900.0, **kw).json()
+        assert r3["id"] == r1["id"] and r3["rank"]["score"] == 2500
+        # 끝난 판에 늦게 온 기록은 버림
+        assert post_run(c, ended=False, wave=15, score=9999, game_secs=999.0, **kw).json()["ignored"]
+        runs = [x for x in c.get("/admin/runs", headers=A).json() if x["device"] == dev]
+        assert len(runs) == 1 and runs[0]["ended"] and runs[0]["wave"] == 12
+        st = c.get("/admin/api/stats", params={"map": "spiral"}, headers=A).json()
+        fire = next(x for x in st["picks"] if x["key"] == "elem:fire")
+        assert st["runs"] == 1 and fire["offered"] == 1 and st["src_runs"] == 1
+        # 끝난 판만 필터
+        post_run(c, device="dev-snap-bbbb", map="spiral", run="k2", ended=False, wave=5, score=500)
+        assert c.get("/admin/api/stats", params={"map": "spiral"}, headers=A).json()["runs"] == 2
+        assert c.get("/admin/api/stats", params={"map": "spiral", "ended_only": True}, headers=A).json()["runs"] == 1
+        # 한 번 검증에 걸린 판은 이후 정상 기록이 와도 무효
+        kb = dict(device="dev-snap-cccc", map="spiral", run="k3")
+        assert not post_run(c, ended=False, wave=5, score=10**12, **kb).json()["accepted"]
+        assert not post_run(c, ended=True, wave=8, score=100, **kb).json()["accepted"]
