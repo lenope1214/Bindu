@@ -45,7 +45,9 @@ func entries(c: String) -> Array:
 			for id in Pat.LINK_IDS:
 				out.append({"key": "link:" + id, "name": Pat.LINKS[id]["name"], "desc": Pat.LINKS[id]["desc"], "color": Color(0.55, 0.9, 1.0)})
 		"react":
-			for r in Elem.REACTIONS:
+			# 만나 본 반응을 먼저 (91개라 아직 못 만난 것 사이에서 찾기 어렵던 것), 그 안은 원래 순서
+			var seen: Array = Elem.REACTIONS.filter(func(r): return Meta.codex.has(r["id"]))
+			for r in seen + Elem.REACTIONS.filter(func(r): return not Meta.codex.has(r["id"])):
 				out.append({"key": "react:" + str(r["id"]), "name": r["name"], "color": r.get("color", Color.WHITE),
 					"sub": "%s + %s%s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], "" if Meta.codex.has(r["id"]) else "   · 아직 못 만남"],
 					"desc": "%s\n선호하면 이 반응을 만들 수 있는 속성 카드가 반짝여요" % r["desc"]})
