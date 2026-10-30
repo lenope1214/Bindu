@@ -67,7 +67,8 @@ func _initialize():
 		func(): _snap("skip_ready"); main._start_wave(),
 		func(): _snap("skip_wave"); main.skip_left = 0; main._start_perk(),
 		func(): _snap("perks"); main._toggle_pause(),
-		func(): _snap("pause"); main._toggle_pause(); main._game_over(),
+		func(): _snap("pause"); main._toggle_settings(),
+		func(): _snap("pause_settings"); main._toggle_settings(); main._toggle_pause(); main._game_over(),
 		func(): _snap("gameover"),
 	]
 
