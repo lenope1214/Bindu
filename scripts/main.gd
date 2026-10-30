@@ -2927,12 +2927,16 @@ func _draw_notes() -> void:
 			elif PatchNotes.vtuple(v) > cur_t:
 				tag = "  [color=#ffd873](새 버전)[/color]"
 			out.append("[b][font_size=19]v%s[/font_size][/b]  %s%s" % [v, _bb(n["title"]), tag])
-		for l: String in n["lines"]:
+		var lines: Array = n["lines"]
+		for j in lines.size():
+			var l: String = lines[j]
 			var s := l.strip_edges()
 			var sub := l.begins_with(" ")
 			if s.begins_with("- "):
 				s = s.substr(2)
-			out.append(("      ◦ " if sub else "  · ") + _bb(s))
+			# 아래에 들여 쓴 줄이 딸린 줄은 묶음 제목 (미배포 절처럼 여러 변경을 모은 절)
+			var group := not sub and j + 1 < lines.size() and (lines[j + 1] as String).begins_with(" ")
+			out.append(("      ◦ " if sub else "  · ") + ("[b]%s[/b]" % _bb(s) if group else _bb(s)))
 		out.append("")
 	notes_text.text = "\n".join(out)
 	match PatchNotes.source:
