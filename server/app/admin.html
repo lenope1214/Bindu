@@ -42,6 +42,7 @@
     <button data-t="patch">패치</button>
     <button data-t="release">새 버전</button>
     <button data-t="runs">판 기록</button>
+    <button data-t="logs">오류</button>
   </nav>
   <span style="flex:1"></span>
   <input id="token" type="password" placeholder="관리자 토큰" size="22">
@@ -112,6 +113,18 @@
   <div class="row"><label><input type="checkbox" id="runs-bad" checked> 검증 실패만</label><button class="act" id="load-runs">불러오기</button></div>
   <div class="tbl" id="t-runs"></div>
 </section>
+
+<section id="logs">
+  <p class="dim">게임에서 난 엔진·스크립트 오류입니다. 같은 오류(종류·파일·줄)끼리 묶었고, 30일 지나면 지워집니다. 줄을 누르면 최근 기록이 보입니다.</p>
+  <div class="row">
+    <input id="l-game" placeholder="게임 버전" size="12">
+    <select id="l-plat"><option value="">플랫폼 전체</option><option>windows</option><option>macos</option><option>linux</option><option>android</option><option>ios</option></select>
+    <select id="l-days"><option value="0">기간 전체</option><option value="1">1일</option><option value="7" selected>7일</option><option value="30">30일</option></select>
+    <button class="act" id="load-logs">불러오기</button>
+  </div>
+  <div class="tbl" id="t-logs"></div>
+  <h2 id="l-head"></h2><div class="tbl" id="t-log"></div>
+</section>
 </main>
 <script>
 const NAMES = {
@@ -141,7 +154,7 @@ async function api(path, opt = {}) {
 document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
   document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
   document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === b.dataset.t));
-  ({patch: loadPatches, release: loadReleases, runs: loadRuns})[b.dataset.t]?.();
+  ({patch: loadPatches, release: loadReleases, runs: loadRuns, logs: loadLogs})[b.dataset.t]?.();
 });
 
 // 표: cols = [[제목, 값 함수, 숫자?, 막대 최대값 함수?]]
@@ -220,6 +233,22 @@ async function loadRuns() {
 $("load-runs").onclick = loadRuns;
 window.hideRun = async (id, h) => { await api(`/admin/runs/${id}/hidden`, {method: "POST", body: JSON.stringify({hidden: h})}); loadRuns(); };
 window.banDev = async d => { if (!confirm("이 기기의 기록을 모두 숨기고 앞으로도 리더보드에서 뺄까요?")) return; await api("/admin/bans", {method: "POST", body: JSON.stringify({device_id: d})}); loadRuns(); };
+async function loadLogs() {
+  const q = new URLSearchParams({game: $("l-game").value.trim(), platform: $("l-plat").value, days: $("l-days").value});
+  const ls = await api("/admin/api/logs?" + q);
+  table($("t-logs"), ls, [["횟수", r => r.times, 1], ["기기", r => r.devices, 1], ["종류", r => esc(r.kind)],
+    ["오류", (r, raw) => raw ? r.message : `<a href="#" onclick="logDetail('${r.fp}');return false" style="color:var(--text)">${esc(r.message.slice(0, 90))}</a>`],
+    ["위치", r => esc(r.file ? `${r.file}:${r.line} ${r.func}` : "")], ["버전", r => esc(r.versions.join(", "))], ["플랫폼", r => esc(r.platforms.join(", "))],
+    ["마지막", r => r.last.slice(0, 16).replace("T", " ")]]);
+}
+$("load-logs").onclick = loadLogs;
+window.logDetail = async fp => {
+  const rs = await api(`/admin/api/logs/${fp}`);
+  $("l-head").textContent = rs.length ? rs[0].message.slice(0, 120) : "";
+  table($("t-log"), rs, [["날짜", r => r.created.slice(0, 16).replace("T", " ")], ["버전", r => `${esc(r.game)} p${r.patch}`], ["플랫폼", r => esc(`${r.platform} ${r.os}`)],
+    ["맵·규칙", r => esc(`${r.map} v${r.rules}`)], ["모드", r => esc(r.modes)], ["모양", r => esc(r.skin)], ["웨이브", r => r.wave, 1], ["횟수", r => r.count, 1], ["기기", r => r.device.slice(0, 8)],
+    ["백트레이스", (r, raw) => raw ? r.backtrace : `<pre style="margin:0;white-space:pre-wrap;max-width:520px">${esc(r.backtrace || "-")}</pre>`]]);
+};
 </script>
 </body>
 </html>

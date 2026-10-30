@@ -11,11 +11,11 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from . import config, signing, stats, validate
-from .db import Ban, Final, Patch, Pick, Release, Run, Season, get_db, init_db, now
+from .db import Ban, ClientLog, Final, Patch, Pick, Release, Run, Season, get_db, init_db, now
 
 @asynccontextmanager
 async def lifespan(_app):
@@ -190,6 +190,65 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), db
     if row.valid and season:
         rank = board_rank(db, run.map, run.rules, season, None, run.device)
     return {"id": row.id, "accepted": row.valid, "season": season, "rank": rank}
+
+
+class ErrIn(BaseModel):
+    kind: str = Field("error", max_length=16)
+    msg: str = Field("", max_length=1000)
+    file: str = Field("", max_length=200)
+    line: int = 0
+    fn: str = Field("", max_length=100)
+    bt: str = Field("", max_length=4000)
+    n: int = Field(1, ge=1, le=1_000_000)
+    map: str = Field("", max_length=32)
+    rules: int = 0
+    modes: str = Field("", max_length=200)
+    skin: str = Field("", max_length=32)
+    wave: int = 0
+
+
+class LogsIn(BaseModel):
+    device: str = Field(min_length=8, max_length=64)
+    platform: str = Field("", max_length=16)
+    os: str = Field("", max_length=64)
+    game: str = Field(max_length=32)
+    patch: int = 0
+    entries: list[ErrIn] = Field(max_length=20)
+
+
+def log_fp(kind: str, file: str, line: int, msg: str, bt: str) -> str:
+    # 엔진 위치 + 스크립트 쪽 첫 줄로 묶는다 (글에 숫자·이름이 섞여도 같은 오류). 둘 다 없으면 글로. scripts/errlog.gd와 같은 규칙
+    m = re.search(r"\[0\]([^\n]*)", bt)
+    top = m.group(1).strip() if m else ""
+    key = f"{kind}|{file}|{line}|{top}|{msg[:200] if not top and not file else ''}"
+    return hashlib.sha1(key.encode()).hexdigest()
+
+
+@app.post("/v1/logs")
+async def submit_logs(request: Request, x_bindu_mac: str = Header(default=""), db: Session = Depends(get_db)):
+    body = await request.body()
+    if len(body) > 128_000:
+        raise HTTPException(413, "too large")
+    if not signing.check_run_mac(body, x_bindu_mac):
+        raise HTTPException(403, "bad signature")
+    try:
+        req = LogsIn.model_validate_json(body)
+    except Exception as e:
+        raise HTTPException(422, str(e)[:300])
+    ip = signing.ip_hash(request.client.host if request.client else "")
+    t = now()
+    hour = t - timedelta(hours=1)
+    n_dev = db.scalar(select(func.count()).select_from(ClientLog).where(ClientLog.device_id == req.device, ClientLog.created_at > hour))
+    n_ip = db.scalar(select(func.count()).select_from(ClientLog).where(ClientLog.ip_hash == ip, ClientLog.created_at > hour))
+    if n_dev + len(req.entries) > config.LOG_PER_DEVICE_HOUR or n_ip + len(req.entries) > config.LOG_PER_IP_HOUR:
+        raise HTTPException(429, "too many")
+    for e in req.entries:
+        db.add(ClientLog(fp=log_fp(e.kind, e.file, e.line, e.msg, e.bt), device_id=req.device, ip_hash=ip, platform=req.platform, os=req.os,
+                         game_version=req.game, patch_id=req.patch, map=e.map, rules=e.rules, modes=e.modes, skin=e.skin, wave=e.wave,
+                         kind=e.kind, message=e.msg, file=e.file, line=e.line, func=e.fn, backtrace=e.bt, count=e.n))
+    db.execute(delete(ClientLog).where(ClientLog.created_at < t - timedelta(days=config.LOG_KEEP_DAYS)))
+    db.commit()
+    return {"ok": True, "saved": len(req.entries)}
 
 
 def _board(db: Session, map_id: str, rules: int, season: int, since):
@@ -402,6 +461,42 @@ def get_stats_csv(kind: str = "picks", rules: int = 0, map: str = "", game: str 
     data = stats.summary(db, stats.Filter(rules, map, game, patch, days, valid_only))
     return PlainTextResponse(stats.to_csv(data, kind), media_type="text/csv; charset=utf-8",
                              headers={"Content-Disposition": f'attachment; filename="bindu_{kind}.csv"'})
+
+
+def _log_filter(q, game: str, platform: str, days: int):
+    if game:
+        q = q.where(ClientLog.game_version == game)
+    if platform:
+        q = q.where(ClientLog.platform == platform)
+    if days > 0:
+        q = q.where(ClientLog.created_at > now() - timedelta(days=days))
+    return q
+
+
+@app.get("/admin/api/logs", dependencies=[Depends(require_admin)])
+def list_logs(game: str = "", platform: str = "", days: int = 0, limit: int = Query(100, le=500), db: Session = Depends(get_db)):
+    """같은 오류(fp)끼리 묶은 목록. 많이 난 것부터."""
+    q = select(ClientLog.fp, func.sum(ClientLog.count).label("times"), func.count(func.distinct(ClientLog.device_id)).label("devices"),
+               func.min(ClientLog.created_at).label("first"), func.max(ClientLog.created_at).label("last"), func.max(ClientLog.id).label("sample"))
+    q = _log_filter(q, game, platform, days).group_by(ClientLog.fp).order_by(func.sum(ClientLog.count).desc()).limit(limit)
+    out = []
+    for r in db.execute(q).all():
+        s = db.get(ClientLog, r.sample)
+        vq = _log_filter(select(ClientLog.game_version).where(ClientLog.fp == r.fp), game, platform, days).distinct()
+        pq = _log_filter(select(ClientLog.platform).where(ClientLog.fp == r.fp), game, platform, days).distinct()
+        out.append({"fp": r.fp, "times": int(r.times or 0), "devices": r.devices, "first": r.first.isoformat(), "last": r.last.isoformat(),
+                    "kind": s.kind, "message": s.message, "file": s.file, "line": s.line, "func": s.func,
+                    "versions": sorted(db.scalars(vq).all()), "platforms": sorted(db.scalars(pq).all())})
+    return out
+
+
+@app.get("/admin/api/logs/{fp}", dependencies=[Depends(require_admin)])
+def log_detail(fp: str, limit: int = Query(30, le=200), db: Session = Depends(get_db)):
+    """한 오류의 최근 기록: 그때의 버전·규칙·맵·모드·웨이브·백트레이스."""
+    rows = db.scalars(select(ClientLog).where(ClientLog.fp == fp).order_by(ClientLog.id.desc()).limit(limit)).all()
+    return [{"created": r.created_at.isoformat(), "device": r.device_id, "platform": r.platform, "os": r.os, "game": r.game_version,
+             "patch": r.patch_id, "map": r.map, "rules": r.rules, "modes": r.modes, "skin": r.skin, "wave": r.wave, "count": r.count,
+             "kind": r.kind, "message": r.message, "file": r.file, "line": r.line, "func": r.func, "backtrace": r.backtrace} for r in rows]
 
 
 @app.get("/admin", response_class=HTMLResponse)

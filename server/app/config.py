@@ -19,3 +19,7 @@ IP_SALT = _env("IP_SALT", "bindu")
 RUN_MIN_INTERVAL = float(_env("RUN_MIN_INTERVAL", "20"))
 # IP 하나가 한 시간에 보낼 수 있는 판 기록 수
 RUN_PER_IP_HOUR = int(_env("RUN_PER_IP_HOUR", "60"))
+# 오류 로그: 기기 하나·IP 하나가 한 시간에 보낼 수 있는 줄 수, 보관 일수
+LOG_PER_DEVICE_HOUR = int(_env("LOG_PER_DEVICE_HOUR", "100"))
+LOG_PER_IP_HOUR = int(_env("LOG_PER_IP_HOUR", "300"))
+LOG_KEEP_DAYS = int(_env("LOG_KEEP_DAYS", "30"))

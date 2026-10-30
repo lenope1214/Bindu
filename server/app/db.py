@@ -100,6 +100,32 @@ class Final(Base):
     share: Mapped[float] = mapped_column(Float, default=0.0)  # 그 오브젝트들이 낸 피해 몫 합
 
 
+class ClientLog(Base):
+    """게임이 보낸 오류 하나 (scripts/errlog.gd). fp가 같은 것끼리 관리 페이지에서 묶어 보여 준다."""
+    __tablename__ = "client_logs"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now, index=True)
+    fp: Mapped[str] = mapped_column(String(40), index=True)  # 종류·파일·줄·글 해시
+    device_id: Mapped[str] = mapped_column(String(64), index=True)
+    ip_hash: Mapped[str] = mapped_column(String(64), default="", index=True)
+    platform: Mapped[str] = mapped_column(String(16), default="")
+    os: Mapped[str] = mapped_column(String(64), default="")
+    game_version: Mapped[str] = mapped_column(String(32), index=True)
+    patch_id: Mapped[int] = mapped_column(Integer, default=0)
+    map: Mapped[str] = mapped_column(String(32), default="")
+    rules: Mapped[int] = mapped_column(Integer, default=0)
+    modes: Mapped[str] = mapped_column(String(200), default="")
+    skin: Mapped[str] = mapped_column(String(32), default="")
+    wave: Mapped[int] = mapped_column(Integer, default=0)
+    kind: Mapped[str] = mapped_column(String(16), default="error")  # error | warning | script | shader | printerr
+    message: Mapped[str] = mapped_column(Text, default="")
+    file: Mapped[str] = mapped_column(String(200), default="")
+    line: Mapped[int] = mapped_column(Integer, default=0)
+    func: Mapped[str] = mapped_column(String(100), default="")
+    backtrace: Mapped[str] = mapped_column(Text, default="")
+    count: Mapped[int] = mapped_column(Integer, default=1)  # 보내기 전 같은 오류가 난 횟수
+
+
 class Ban(Base):
     __tablename__ = "bans"
     device_id: Mapped[str] = mapped_column(String(64), primary_key=True)

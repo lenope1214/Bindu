@@ -137,3 +137,31 @@ def test_validate_bounds():
     assert validate.check(dict(run, modes=["three", "soft"])) == ""
     assert validate.modes_mul(["rush", "steel"]) == 1.3 * 1.3
     assert validate.modes_mul(["rush"], {"modes": {"rush": 1.5}}) == 1.5
+
+
+def post_logs(c, entries, device="dev-logs-aaaa"):
+    body = json.dumps({"device": device, "platform": "windows", "os": "Windows 11", "game": "0.4.51", "patch": 0, "entries": entries}).encode()
+    mac = hmac.new(b"hk", body, hashlib.sha256).hexdigest()
+    return c.post("/v1/logs", content=body, headers={"X-Bindu-Mac": mac, "Content-Type": "application/json"})
+
+
+def test_logs():
+    with TestClient(app) as c:
+        e = {"kind": "error", "msg": "Invalid polygon data, triangulation failed.", "file": "servers/rendering/renderer_canvas_cull.cpp", "line": 1500,
+             "fn": "canvas_item_add_polygon", "bt": "[0] _draw_body (res://scripts/tower.gd:848)", "n": 3, "map": "plain", "rules": 1, "skin": "star", "wave": 3}
+        assert post_logs(c, [e, dict(e, msg="other text same place", n=2)]).status_code == 200
+        assert post_logs(c, [dict(e, file="", line=0, msg="printerr thing", kind="printerr")], device="dev-logs-bbbb").status_code == 200
+        # 서명이 틀리면 거절
+        assert c.post("/v1/logs", content=b'{"device":"dev-logs-aaaa","game":"0","entries":[]}', headers={"X-Bindu-Mac": "x"}).status_code == 403
+        assert c.get("/admin/api/logs").status_code == 401
+        ls = c.get("/admin/api/logs", headers=A).json()
+        assert len(ls) == 2
+        top = ls[0]
+        assert top["times"] == 5 and top["devices"] == 1 and top["versions"] == ["0.4.51"] and top["file"].endswith("canvas_cull.cpp")
+        d = c.get(f"/admin/api/logs/{top['fp']}", headers=A).json()
+        assert len(d) == 2 and d[0]["skin"] == "star" and "tower.gd" in d[0]["backtrace"]
+        assert c.get("/admin/api/logs", headers=A, params={"platform": "macos"}).json() == []
+        # 한 시간 한도
+        many = [dict(e, line=i) for i in range(20)]
+        codes = [post_logs(c, many, device="dev-logs-cccc").status_code for _ in range(6)]
+        assert codes[:5] == [200] * 5 and codes[5] == 429

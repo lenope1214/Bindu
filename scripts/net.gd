@@ -11,11 +11,17 @@ signal seasons_loaded(list: Array)  # [{id, name, started}] 새 시즌부터. �
 const OUTBOX_PATH := "user://outbox.json"
 const OUTBOX_MAX := 30  # 오프라인으로 쌓아 둘 판 수
 const TIMEOUT := 10.0
+const LOGBOX_PATH := "user://logbox.json"
+const LOGBOX_MAX := 60  # 못 보내고 쌓아 둘 오류 수
+const LOG_EVERY := 30.0  # 오류를 서버로 보내는 최소 간격(초)
 
 static var info := {}  # 마지막 /v1/boot 응답
 static var boot_done := false  # 다시 시작(장면 새로 불러오기)해도 한 번만
 var sending := false
 var watch := ""  # 응답을 알려 줄 이번 판 기록
+var sending_logs := false
+var log_tick := 0.0
+var log_wait := 0.0  # 다음 오류 보내기까지 남은 초
 
 
 static func enabled() -> bool:
@@ -37,11 +43,60 @@ static func reachable() -> bool:
 
 
 func _ready() -> void:
+	if reachable():
+		ErrLog.install()
+		_update_ctx()
 	if reachable() and not boot_done:
 		boot_done = true
 		boot()
 	if enabled():
 		flush.call_deferred()
+
+
+## 1초마다 오류에 붙일 판 정보를 갱신하고, 새 오류는 파일에 쌓았다가 LOG_EVERY초마다 보낸다.
+func _process(delta: float) -> void:
+	if not reachable():
+		return
+	log_tick += delta
+	log_wait -= delta
+	if log_tick < 1.0:
+		return
+	log_tick = 0.0
+	_update_ctx()
+	var fresh := ErrLog.take()
+	if not fresh.is_empty():
+		var box := _load_json(LOGBOX_PATH)
+		box.append_array(fresh)
+		_save_json(LOGBOX_PATH, box.slice(-LOGBOX_MAX))
+	if log_wait <= 0.0 and enabled():
+		flush_logs()
+
+
+func _update_ctx() -> void:
+	var m := get_parent()
+	ErrLog.set_ctx({"map": Meta.map_id, "rules": Meta.rules, "modes": ",".join(Modes.on), "skin": Meta.tower_skin,
+		"wave": int(m.get("wave")) if m and m.get("wave") != null else 0})
+
+
+## 쌓인 오류를 한 번에 보낸다 (기록 보내기를 끄면 안 보냄).
+func flush_logs() -> void:
+	if sending_logs or not enabled():
+		return
+	var box := _load_json(LOGBOX_PATH)
+	if box.is_empty():
+		return
+	sending_logs = true
+	log_wait = LOG_EVERY
+	var part := box.slice(0, 20)
+	var body := JSON.stringify({"device": Meta.device_id, "platform": platform(), "os": OS.get_name() + " " + OS.get_version(),
+		"game": game_version(), "patch": Patch.id, "entries": part})
+	var mac := Crypto.new().hmac_digest(HashingContext.HASH_SHA256, OnlineConfig.RUN_HMAC_KEY.to_utf8_buffer(), body.to_utf8_buffer()).hex_encode()
+	var r := await _request(HTTPClient.METHOD_POST, "/v1/logs", body, PackedStringArray(["X-Bindu-Mac: " + mac]))
+	var code: int = r["code"]
+	if code != 0 and code != 429 and code < 500:
+		# 받았거나 영영 안 받을 것: 보낸 만큼 뺀다 (보내는 사이 새로 쌓인 것은 남김)
+		_save_json(LOGBOX_PATH, _load_json(LOGBOX_PATH).slice(part.size()))
+	sending_logs = false
 
 
 func _request(method: int, path: String, body := "", headers := PackedStringArray()) -> Dictionary:
@@ -131,14 +186,22 @@ func seasons() -> void:
 
 
 func _load_outbox() -> Array:
-	var f := FileAccess.open(OUTBOX_PATH, FileAccess.READ)
+	return _load_json(OUTBOX_PATH)
+
+
+func _save_outbox(box: Array) -> void:
+	_save_json(OUTBOX_PATH, box)
+
+
+static func _load_json(path: String) -> Array:
+	var f := FileAccess.open(path, FileAccess.READ)
 	if f == null:
 		return []
 	var j: Variant = JSON.parse_string(f.get_as_text())
 	return j if j is Array else []
 
 
-func _save_outbox(box: Array) -> void:
-	var f := FileAccess.open(OUTBOX_PATH, FileAccess.WRITE)
+static func _save_json(path: String, box: Array) -> void:
+	var f := FileAccess.open(path, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(box))
