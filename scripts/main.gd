@@ -3426,7 +3426,13 @@ func _toggle_records() -> void:
 		if Meta.codex.has(r["id"]):
 			found.append("%s(%s+%s)" % [r["name"], Elem.NAMES[r["a"]], Elem.NAMES[r["b"]]])
 	if not found.is_empty():
-		for l in _wrap_words(", ".join(found), 600.0, 15).split("\n"):
+		# 많이 찾아도 4줄까지 (다 찾으면 16줄이 넘어 창 전체가 읽을 수 없게 작아졌다). 나머지는 도감에서
+		var k := found.size()
+		var wl := _wrap_words(", ".join(found), 600.0, 15).split("\n")
+		while wl.size() > 4 and k > 1:
+			k -= 1
+			wl = _wrap_words(", ".join(found.slice(0, k)) + " 외 %d개" % (found.size() - k), 600.0, 15).split("\n")
+		for l in wl:
 			lines.append("  " + l)
 	records_panel.text = _kr_keep("\n".join(lines))
 
