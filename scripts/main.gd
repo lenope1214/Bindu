@@ -88,6 +88,7 @@ var core_flash := 0.0
 var danger_lv := 0  # 중앙 위험 단계: 0 보통, 1 체력 50% 이하, 2 25% 이하
 var wave_dmg := 0  # 이번 웨이브에 중앙이 잃은 체력
 var eclipse_flash := 0.0  # 일식 순간 화면 어둡게
+var eclipse_cd := 0.0  # 화면 전체 일식 연출 쉬는 시간(실제 시간). 오브젝트 여럿의 일식이 번갈아 화면을 깜빡이지 않게
 var core_disp := float(CORE_MAX_HP)  # 중앙 체력 표시(부드럽게 변함)
 var kills := 0
 var best_combo := 0
@@ -4326,6 +4327,7 @@ func _update_fx(delta: float) -> void:
 	combo_max_flash = maxf(combo_max_flash - delta, 0.0)
 	core_flash = maxf(core_flash - delta, 0.0)
 	eclipse_flash = maxf(eclipse_flash - delta, 0.0)
+	eclipse_cd = maxf(eclipse_cd - delta, 0.0)
 	camera.position = center()
 	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 14.0 * shake * (1.0 if Meta.shake_on else 0.0)
 	fx_layer.queue_redraw()
@@ -4517,6 +4519,16 @@ func _draw_core_skin(c: Vector2, col: Color, now: float) -> void:
 				]), Color(1.0, 0.85, 0.35, 0.85))
 			draw_circle(c, CORE_RADIUS * 0.7, Color(1.0, 0.9, 0.5).lerp(col, 0.4))
 
+## 일식 발동 때 화면 전체 연출(어둡게·큰 고리)을 이 오브젝트가 맡을지. 2.5초에 한 번만 맡기고 나머지는 오브젝트 둘레만 작게.
+## 연출만 고르고 피해·발동 시각은 바꾸지 않는다
+func eclipse_screen() -> bool:
+	if eclipse_cd > 0.0:
+		return false
+	eclipse_flash = 0.6
+	eclipse_cd = 2.5
+	return true
+
+
 func _draw_fx() -> void:
 	var vs := get_viewport_rect().size
 	for i in 6:
@@ -4529,7 +4541,10 @@ func _draw_fx() -> void:
 	if phase == Phase.GAMEOVER or title_label.visible:
 		fx_layer.draw_rect(get_viewport_rect(), Color(0, 0, 0, 0.6))
 	if eclipse_flash > 0.0:
-		fx_layer.draw_rect(get_viewport_rect(), Color(0.1, 0.0, 0.15, 0.5 * eclipse_flash / 0.6))
+		# 단번에 어두워지지 않게 0.1초 동안 천천히 어두워졌다가 풀린다
+		var ef := eclipse_flash / 0.6
+		var env := minf((1.0 - ef) / 0.15, 1.0) * ef
+		fx_layer.draw_rect(get_viewport_rect(), Color(0.1, 0.0, 0.15, 0.22 * env))
 	# 중앙 위험: 화면 테두리가 붉게 맥박친다 (25% 이하는 더 진하고 빠르게). 배속과 상관없이 계속 보인다
 	if danger_lv > 0 and phase != Phase.GAMEOVER and not title_label.visible:
 		var t := Time.get_ticks_msec() / 1000.0

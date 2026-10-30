@@ -575,8 +575,10 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 						o.add_chill(0.8 * de)
 			"eclipse":
 				if _ready_to(id, 6.0 / spd(l), de):
-					fx[id] = 0.8
-					main.eclipse_flash = 0.6
+					if main.eclipse_screen():
+						fx[id] = 0.8
+					else:
+						fx["eclipse_small"] = 0.5
 					for o in orbs:
 						hit(o, 3.0 * pw(l))
 						o.vuln(3.0)
@@ -1328,8 +1330,13 @@ func _draw_attack() -> void:
 				var f: float = fx.get("eclipse", 0.0)
 				if f > 0.0:
 					var k := 1.0 - f / 0.8
-					draw_arc(Vector2.ZERO, 40.0 + k * 1400.0, 0, TAU, 96, Color(r["color"], 1.0 - k), 12.0 * (1.0 - k) + 2.0)
-					draw_circle(Vector2.ZERO, RADIUS + 10.0, Color(0, 0, 0, 0.8 * (1.0 - k)))
+					draw_arc(Vector2.ZERO, 40.0 + k * 1400.0, 0, TAU, 96, Color(r["color"], 0.5 * (1.0 - k)), 6.0 * (1.0 - k) + 1.5)
+					draw_circle(Vector2.ZERO, RADIUS + 10.0, Color(0, 0, 0, 0.4 * (1.0 - k)))
+				# 다른 오브젝트가 방금 화면 연출을 했으면 이 오브젝트 둘레에만 작은 고리
+				var fs: float = fx.get("eclipse_small", 0.0)
+				if fs > 0.0:
+					var ks := 1.0 - fs / 0.5
+					draw_arc(Vector2.ZERO, RADIUS + 6.0 + ks * 60.0, 0, TAU, 48, Color(r["color"], 0.5 * (1.0 - ks)), 3.0)
 
 
 ## 물길 바닥: 공격 방향으로 흐르는 물.
