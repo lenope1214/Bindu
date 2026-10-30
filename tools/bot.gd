@@ -1,7 +1,8 @@
 extends SceneTree
 # 자동 플레이 봇: 반응 생기면 겹치기, 아니면 진입 방향을 가로지르게 새로 설치.
 # 사용: tools/run.sh bots (또는 godot --headless --fixed-fps 60 --path . -s tools/bot.gd -- <시드> [stack])
-# 환경 변수: RULES(규칙 버전) MODES(모드, 쉼표로) MAP(맵) FLIP=1(회랑에서 구체가 왼쪽에서) SPEED(배속) SMART=1(사람처럼 배치) GOD=<웨이브>(죽지 않고 그 웨이브까지, 멈춤 감시) BOT_PAT(공격방식 카드를 한 종류로)
+# 환경 변수: BOT_ELEM=<속성 번호>·BOT_PAT=<공격방식 id>·BOT_MOD=<강화 id>(그 종류 카드를 전부 이것으로 바꿈, 조합 효율 측정용) WLOG=1(GOD일 때 웨이브마다 오브젝트별 피해 TW 줄)
+# RULES(규칙 버전) MODES(모드, 쉼표로) MAP(맵) FLIP=1(회랑에서 구체가 왼쪽에서) SPEED(배속) SMART=1(사람처럼 배치) GOD=<웨이브>(죽지 않고 그 웨이브까지, 멈춤 감시)
 var main
 var frames := 0
 var stack_all := false
@@ -46,6 +47,9 @@ func _process(_d):
 		if main.phase == 0 and main.wave != god_w:
 			if god_w >= 0:
 				print("LEAK ms=", Time.get_ticks_msec(), " orbs=", main.live_orbs.size(), " w=", main.wave, " lost=", 99999 - main.core_hp, " n=", main.wave_size(main.wave), " towers=", main.towers.get_child_count())
+				if OS.get_environment("WLOG") != "":
+					for t in main.towers.get_children():
+						print("TW w=%d pat=%s plv=%d els=%s mods=%s dealt=%.0f rx=%.0f" % [main.wave, t.pattern, t.plv, JSON.stringify(t.elements), JSON.stringify(t.mods), t.dealt, t.rx_dealt])
 			god_w = main.wave
 			main.core_hp = 99999
 			main.core_max = 99999
@@ -94,11 +98,8 @@ func _process(_d):
 		adapt_w = main.wave
 		_rearrange()
 	if main.phase == 0 and main.offer.size() > 0 and not main.perk_mode:
+		_force_offer()
 		var offer = main.offer
-		# BOT_PAT=lob: 공격방식 카드를 모두 이 종류로 (공격방식별 효율 비교)
-		if OS.get_environment("BOT_PAT") != "":
-			for o in offer:
-				if o["type"] == "pat": o["id"] = OS.get_environment("BOT_PAT")
 		var ts = main.towers.get_children()
 		var pick = null
 		var target = null
@@ -261,3 +262,14 @@ func eff_lane(a):
 ## 사람처럼 배치(중앙 가까이에서 길목 바깥쪽을 겨눔). tools/run.sh는 기본으로 켬, SMART=0이면 예전 봇
 func _smart() -> bool:
 	return not OS.get_environment("SMART") in ["", "0"]
+
+
+## BOT_ELEM·BOT_PAT·BOT_MOD: 선택지의 그 종류 카드를 전부 정한 것으로 바꾼다 (축 하나만 고정해 효율 비교)
+func _force_offer():
+	for o in main.offer:
+		if o["type"] == "elem" and OS.get_environment("BOT_ELEM") != "":
+			o["e"] = int(OS.get_environment("BOT_ELEM"))
+		elif o["type"] == "pat" and OS.get_environment("BOT_PAT") != "":
+			o["id"] = OS.get_environment("BOT_PAT")
+		elif o["type"] == "mod" and OS.get_environment("BOT_MOD") != "":
+			o["id"] = OS.get_environment("BOT_MOD")
