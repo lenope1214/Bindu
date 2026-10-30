@@ -130,7 +130,7 @@ var hint: Label
 var ver_label: Label  # 왼쪽 아래 구석: 게임 버전 · 규칙 버전
 var toast: Label
 var toast_timer := 0.0
-var tip_hint_frame := -10  # 정보창이 안내 글과 겹친 마지막 프레임
+var tip_fade := {}  # 정보창과 겹친 UI 글 → 마지막으로 겹친 프레임
 var banner: Label
 var banner_t := 0.0
 var banner_queue: Array = []  # 앞 글자가 떠 있는 동안 들어온 글자 [글, 색]
@@ -4937,7 +4937,8 @@ func _roll_kind() -> int:
 
 func _process(delta: float) -> void:
 	key_t -= delta
-	hint.self_modulate.a = 0.12 if Engine.get_process_frames() - tip_hint_frame <= 2 else 1.0
+	for c in [hint, skip_badge]:
+		c.self_modulate.a = 0.12 if Engine.get_process_frames() - tip_fade.get(c, -10) <= 2 else 1.0
 	if touch_ui and key_t <= 0.0:
 		key_t = 0.2
 		_strip_key_hints()
@@ -5718,9 +5719,10 @@ func _draw_tooltip() -> void:
 		var above := t.position.y - 30.0 - h
 		p.y = above if above >= top else minf(t.position.y + 30.0, size.y - h - 8)
 	p = _avoid_cards(Rect2(p, Vector2(w + 16, h)), size)
-	# 왼쪽 아래 안내 글은 UI라 정보창 위에 그려져 글이 섞인다: 겹치는 동안 안내 글을 옅게
-	if hint.text != "" and Rect2(p, Vector2(w + 16, h)).intersects(get_canvas_transform().affine_inverse() * hint.get_global_rect()):
-		tip_hint_frame = Engine.get_process_frames()
+	# 아래 안내 글·넘기기 표시는 UI라 정보창 위에 그려져 글이 섞인다: 겹치는 동안 옅게
+	for c in [hint, skip_badge]:
+		if c.visible and c.text != "" and Rect2(p, Vector2(w + 16, h)).intersects(get_canvas_transform().affine_inverse() * c.get_global_rect()):
+			tip_fade[c] = Engine.get_process_frames()
 	fx_layer.draw_rect(Rect2(p, Vector2(w + 16, h)), Color(0.05, 0.06, 0.09, 0.92))
 	fx_layer.draw_rect(Rect2(p, Vector2(w + 16, h)), Color(1, 1, 1, 0.2), false, 1.0)
 	for i in lines.size():
