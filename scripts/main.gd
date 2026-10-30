@@ -3844,15 +3844,23 @@ func _draw_notes() -> void:
 				tag = "  [color=#ffd873](새 버전)[/color]"
 			out.append("[b][font_size=19]v%s[/font_size][/b]  %s%s" % [v, _bb(n["title"]), tag])
 		var lines: Array = n["lines"]
-		for j in lines.size():
-			var l: String = lines[j]
+		# 목록으로 넣어야 접힌 줄이 글머리표 뒤에 맞춰진다 (예전엔 창 왼쪽 끝으로 돌아가 읽기 어려웠다).
+		# 들여 쓴 줄은 바로 위 줄 안의 목록으로 (따로 목록을 열면 빈 줄이 끼었다)
+		var items: Array = []  # [윗줄, [들여 쓴 줄...]]
+		for l: String in lines:
 			var s := l.strip_edges()
-			var sub := l.begins_with(" ")
 			if s.begins_with("- "):
 				s = s.substr(2)
-			# 아래에 들여 쓴 줄이 딸린 줄은 묶음 제목 (여러 변경을 모은 절)
-			var group := not sub and j + 1 < lines.size() and (lines[j + 1] as String).begins_with(" ")
-			out.append(("      ◦ " if sub else "  · ") + ("[b]%s[/b]" % _bb(s) if group else _bb(s)))
+			if l.begins_with(" ") and not items.is_empty():
+				items[-1][1].append(_bb(s))
+			else:
+				items.append([_bb(s), []])
+		for it in items:
+			var subs: Array = it[1]
+			if subs.is_empty():
+				out.append("[ul bullet=·]%s[/ul]" % it[0])
+			else:
+				out.append("[ul bullet=·][b]%s[/b]\n[ul bullet=◦]%s[/ul][/ul]" % [it[0], "\n".join(subs)])
 		out.append("")
 	notes_text.text = _kr_keep("\n".join(out))
 	match PatchNotes.source:
