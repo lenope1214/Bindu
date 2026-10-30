@@ -137,7 +137,7 @@ class RunIn(BaseModel):
     towers: list[TowerIn] = []
     src: dict[str, float] = {}  # 피해 출처 몫 {키: 0~1} (피해 출처를 보내는 버전부터)
     log: list[LogIn] = []
-    run: str = Field("", pattern=r"^[A-Za-z0-9-]{0,40}$")  # 판 번호: 같은 판의 진행 기록을 한 줄로 (0.5.1부터)
+    run: str = Field("", pattern=r"^[A-Za-z0-9-]{0,40}$")  # 판 번호: 같은 판의 진행 기록을 한 줄로 (0.5.1 다음 버전부터)
     ended: bool = True  # False: 5웨이브마다 보내는 진행 중 기록
 
 
