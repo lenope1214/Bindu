@@ -24,6 +24,7 @@ def post_run(c, **kw):
            "perks": {"power": 1},
            "towers": [{"els": {"fire": 2, "wood": 1}, "pat": "spray", "plv": 1, "mods": {"rapid": 2}, "share": 0.7},
                       {"els": {"ice": 1}, "pat": "shot", "plv": 1, "mods": {}, "prism": 1, "share": 0.3}],
+           "src": {"elem:fire": 0.4, "pat:spray": 0.3, "rx:burning": 0.2, "mod:rapid": 0.1, "Bad Key": 0.5, "elem:ice": 2.0},
            "log": [{"w": 0, "k": "card", "o": ["elem:fire", "elem:ice", "elem:wood"], "p": "elem:fire"},
                    {"w": 2, "k": "card", "o": ["pat:spray", "mod:rapid", "elem:ice"], "p": ""},
                    {"w": 2, "k": "card", "o": ["pat:spray", "mod:rapid", "elem:ice"], "p": "pat:spray"},
@@ -103,6 +104,11 @@ def test_flow():
         assert c.get("/admin/api/stats", params={"valid_only": False}, headers=A).json()["runs"] == 6
         csv = c.get("/admin/api/stats.csv", params={"kind": "finals"}, headers=A).text
         assert "elem:fire" in csv
+        # 피해 출처: 이상한 키·1을 넘는 몫은 버린다
+        src = {x["key"]: x for x in s["srcs"]}
+        assert s["src_runs"] == 5 and set(src) == {"elem:fire", "pat:spray", "rx:burning", "mod:rapid"}
+        assert src["elem:fire"]["avg_share_all"] == 0.4 and src["rx:burning"]["runs"] == 5
+        assert "rx:burning" in c.get("/admin/api/stats.csv", params={"kind": "srcs"}, headers=A).text
         # 관리: 숨기기·차단
         bad = c.get("/admin/runs", params={"invalid": True}, headers=A).json()
         assert len(bad) == 1 and "cap" in bad[0]["reason"]

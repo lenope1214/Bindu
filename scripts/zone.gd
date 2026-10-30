@@ -12,6 +12,7 @@ var t := 0.0
 var tick := 0.0
 var hp := 1.0  # 바위 벽
 var dead := false
+var src := ""  # 피해 출처 (Tower.src 키, 비면 직접 타격)
 
 
 func setup(k: String, l: int, tower: Tower) -> void:
@@ -52,7 +53,7 @@ func affect(orbs: Array, delta: float) -> void:
 			"burn":
 				if inside:
 					_hurt(o, 2.5 * _p() * delta)
-					o.burn(1.0, 1.0, owner_tower, true)
+					o.burn(1.0, 1.0, owner_tower, true, src)
 			"vortex":
 				if inside:
 					o.push((position - o.position).limit_length(80.0 * delta))
@@ -62,7 +63,7 @@ func affect(orbs: Array, delta: float) -> void:
 					_hit(o, 2.0 * _p() * delta, delta * 3.0)
 			"cloud":
 				if inside:
-					o.poison(0.8 * level, 2.0, owner_tower, true)
+					o.poison(0.8 * level, 2.0, owner_tower, true, src)
 			"mine":
 				if inside and not dead:
 					_explode(orbs)
@@ -83,7 +84,7 @@ func _explode(orbs: Array) -> void:
 	for o in orbs:
 		if o.position.distance_to(position) < 80.0:
 			_hurt(o, 3.0 * _p())
-			o.poison(1.0 * level, 4.0, owner_tower, true)
+			o.poison(1.0 * level, 4.0, owner_tower, true, src)
 	# 터지는 모습만 잠깐 보여 주고 사라진다
 	kind = "boom"
 	radius = 80.0
@@ -92,6 +93,7 @@ func _explode(orbs: Array) -> void:
 	# 터진 자리에 독 안개가 잠깐 남는다
 	var cloud := Zone.new()
 	cloud.setup("cloud", level, owner_tower)
+	cloud.src = src
 	cloud.position = position
 	get_parent().add_child(cloud)
 
@@ -159,7 +161,9 @@ func _ground(c: Color, a: float, fill := 0.18) -> void:
 ## 공격방식 장판: 주인 오브젝트의 속성 부가효과까지 붙는다.
 func _hit(o: Orb, amount: float, k: float) -> void:
 	if is_instance_valid(owner_tower):
+		owner_tower.tag = src
 		owner_tower.hit(o, amount, k, {}, false)
+		owner_tower.tag = ""
 	else:
 		o.hurt(amount)
 
@@ -167,6 +171,6 @@ func _hit(o: Orb, amount: float, k: float) -> void:
 func _hurt(o: Orb, amount: float) -> void:
 	o.hurt(amount)
 	if is_instance_valid(owner_tower):
-		owner_tower.dealt += amount
+		owner_tower.credit(amount, src if src != "" else "hit")
 		if kind in ["burn", "mine", "boom"]:  # 장작 장판·독버섯은 반응 피해
 			owner_tower.rx_dealt += amount

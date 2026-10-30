@@ -24,6 +24,7 @@ var prisms := {}  # 지나온 프리즘 오브젝트
 var prism_els := {}  # 프리즘에서 묻은 속성
 var col := Color.WHITE
 var zap_t := 0.0  # 뇌우: 다음 낙뢰까지
+var src := ""  # 피해 출처 (Tower.src 키, 비면 직접 타격). 쏠 때 오브젝트의 tag를 이어받는다
 var ghost := ""  # 혼불(ghost)이 어느 반응에서 나왔는지: plague(중독), spirit(속박), styx, ""(넋)
 
 
@@ -31,6 +32,7 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 	kind = k
 	owner_tower = tower
 	level = l
+	src = tower.tag
 	col = tower.color()
 	if d == Vector2.ZERO:
 		d = tower.dir
@@ -108,8 +110,10 @@ func _strike(delta: float) -> void:
 		return
 	var o: Orb = cands.pick_random()
 	tw.in_rx = true
+	tw.tag = src
 	tw.hit(o, dmg)
 	tw.in_rx = false
+	tw.tag = ""
 	var top := position + Vector2(0, -24)
 	var pts := PackedVector2Array([top])
 	for i in 4:
@@ -173,6 +177,15 @@ func finished() -> bool:
 ## 구체에 닿았을 때. 발사체가 사라져야 하면 true.
 func on_hit(o: Orb, delta: float) -> bool:
 	var tw := owner_tower if is_instance_valid(owner_tower) else null
+	if tw == null:
+		return _on_hit(o, delta, null)
+	tw.tag = src
+	var r := _on_hit(o, delta, tw)
+	tw.tag = ""
+	return r
+
+
+func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 	if continuous:
 		if tw:
 			tw.in_rx = kind in ["log", "tornado", "mushroom"]

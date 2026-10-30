@@ -26,6 +26,10 @@ var t := 0.0
 var dealt := 0.0  # 이번(또는 지난) 웨이브에 준 피해
 var rx_dealt := 0.0  # 그중 특수 반응 피해 (측정·표시용)
 var run_dealt := 0.0  # 지난 웨이브들까지 합친 피해 (게임 오버 요약용)
+## 피해 출처 (DPS 표·판 기록 통계). 키: "hit"(직접 타격, breakdown()이 배율별로 나눔), elem:fire, rx:lava, mod:split, link:pincer ...
+var src := {}  # 이번(또는 지난) 웨이브, 날것
+var run_src := {}  # 지난 웨이브들까지, 나눈 값
+var tag := ""  # 지금 피해를 어느 출처로 셀지 (반응·반응 발사체·분열 파편). 비면 "hit"
 var recoil := 0.0  # 발사 반동
 var place_pop := 0.0  # 설치·겹치기 순간 커졌다 줄어드는 연출
 var rocks: Array = []
@@ -149,6 +153,86 @@ func dmg_k(rx: bool) -> float:
 		_dk_id = main.sim_id
 		_dk = [dmg_factor(false), dmg_factor(true)]
 	return _dk[1 if rx else 0]
+
+
+## 직접 더하는 피해 (반응 지속 피해·전류·울림 등). key: src 키
+func credit(d: float, key: String) -> void:
+	dealt += d
+	src[key] = src.get(key, 0.0) + d
+
+
+## 이번(또는 지난) 웨이브 피해를 출처별로. 직접 타격("hit")은 배율로 나눈다(추정):
+## 배율을 다 걷어 낸 기본 피해는 공격방식 몫, 배율이 늘린 나머지는 각 배율의 log 크기 비율로 나눈다
+## (순서와 상관없이 합이 맞는다). 웨이브 끝·표시할 때만 부른다.
+func breakdown() -> Dictionary:
+	var out := {}
+	for key in src:
+		if key != "hit":
+			out[key] = src[key]
+	var h: float = src.get("hit", 0.0)
+	if h <= 0.0:
+		return out
+	var fs := []  # [키, log 배율]
+	var tl := total_level()
+	if tl > 1:
+		var lf := log(1.0 + 0.35 * (tl - 1))
+		for e in elements:
+			fs.append([elem_key(e), lf * lv(e) / tl])
+	if lv(Elem.WOOD) > 0:
+		fs.append(["elem:wood", log(1.0 + 0.2 * lv(Elem.WOOD))])
+	if main and main.towers.get_child_count() > 1:
+		fs.append(["etc:crowd", log(1.0 + Rules.crowd * (main.towers.get_child_count() - 1))])
+	if reso > 0 and main:
+		var near := 0
+		for o in main.towers.get_children():
+			if o != self and o.position.distance_to(position) < 150.0:
+				near += 1
+		if near > 0:
+			fs.append(["link:reso", log(1.0 + 0.12 * reso * near)])
+	if m("pierce") > 0 and not pattern in Pat.PROJECTILE:
+		fs.append(["mod:pierce", log(1.0 + 0.06 * mf("pierce"))])
+	if m("bounce") > 0 and not pattern in Pat.PROJECTILE and pattern != "chain":
+		fs.append(["mod:bounce", log(1.0 + 0.04 * mf("bounce"))])
+	if m("size") > 0 and pattern in Pat.PROJECTILE:
+		fs.append(["mod:size", log(1.0 + 0.04 * mf("size"))])
+	if m("rapid") > 0:
+		fs.append(["mod:rapid", log(1.0 + 0.1 * mf("rapid"))])
+	if m("multi") > 0:
+		fs.append(["mod:multi", log((1 + mn("multi")) * multi_k())])
+	if dmg_mul * spd_mul > 1.0:
+		fs.append(["etc:perk", log(dmg_mul * spd_mul)])
+	var sum := 0.0
+	for f in fs:
+		if f[1] > 0.0:
+			sum += f[1]
+	var base := h / exp(sum)
+	var pk := "pat:" + pattern
+	out[pk] = out.get(pk, 0.0) + base
+	for f in fs:
+		if f[1] > 0.0:
+			out[f[0]] = out.get(f[0], 0.0) + (h - base) * f[1] / sum
+	return out
+
+
+## 웨이브가 바뀔 때: 지난 웨이브 출처를 판 누적에 넣고 비운다.
+func close_src() -> void:
+	var b := breakdown()
+	for key in b:
+		run_src[key] = run_src.get(key, 0.0) + b[key]
+	src.clear()
+
+
+## 판 전체 출처 (누적 + 이번 웨이브).
+func all_src() -> Dictionary:
+	var out := run_src.duplicate()
+	var b := breakdown()
+	for key in b:
+		out[key] = out.get(key, 0.0) + b[key]
+	return out
+
+
+static func elem_key(e: int) -> String:
+	return "elem:" + Patch.ELEM_KEYS[Elem.ALL.find(e)]
 
 
 ## 대표 색: 속성 색을 레벨 비율로 섞는다.
@@ -330,7 +414,8 @@ func spec() -> Dictionary:
 ## 이어하기 저장용.
 func to_save() -> Dictionary:
 	return {"elements": elements, "order": Array(order), "pattern": pattern, "plv": plv, "mods": mods,
-		"prism": prism, "reso": reso, "pincer": pincer, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt}
+		"prism": prism, "reso": reso, "pincer": pincer, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt,
+		"src": src, "run_src": run_src}
 
 
 ## 저장값으로 되살린다. 알 수 없는 속성·공격방식·강화나 형식이 다른 값은 버린다.
@@ -363,6 +448,17 @@ func load_save(d: Dictionary) -> void:
 	aim = dir
 	dealt = maxf(0.0, _float(d.get("dealt")))
 	run_dealt = maxf(0.0, _float(d.get("run_dealt")))
+	src = _src_dict(d.get("src"))
+	run_src = _src_dict(d.get("run_src"))
+
+
+static func _src_dict(v: Variant) -> Dictionary:
+	var out := {}
+	if v is Dictionary:
+		for key in v:
+			if key is String and key.length() < 40 and _float(v[key]) > 0.0:
+				out[key] = _float(v[key])
+	return out
 
 
 static func _int(v: Variant) -> int:
@@ -513,7 +609,7 @@ func _pincer(o: Orb) -> void:
 		f *= 0.25
 	var d := o.max_hp * f
 	o.hurt(d, false)
-	dealt += d
+	credit(d, "link:pincer")
 	if main:
 		main.popup(o.position, d, Color(1.0, 0.55, 0.85), true, "협공")
 		main.burst(o.position, Color(1.0, 0.55, 0.85), 8, 120.0)
@@ -524,6 +620,7 @@ func _reactions(orbs: Array, de: float, k: float) -> void:
 	in_rx = true
 	_reactions_inner(orbs, de, k)
 	in_rx = false
+	tag = ""
 
 
 func _reactions_inner(orbs: Array, de: float, k: float) -> void:
@@ -538,6 +635,7 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 	for r in reactions():
 		var l := mini(eff.get(r["a"], 1), eff.get(r["b"], 1))
 		var id: String = r["id"]
+		tag = "rx:" + id
 		match id:
 			"burning":
 				if _ready_to(id, 2.2 / spd(l), de):
@@ -872,13 +970,17 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 			els[e] = maxi(els.get(e, 0), extra[e])
 	var d := dmg * dmg_k(in_rx)
 	var crit := false
+	var lit := false  # 빛 치명타 (확정 치명타 반응은 반응 몫)
 	if force_crit or els.has(Elem.LIGHT) and randf() < minf(0.12 * els.get(Elem.LIGHT, 0), 0.6) * minf(k, 1.0):
 		d *= 2.0
 		crit = k >= 1.0
+		lit = not force_crit
 	if els.has(Elem.WOOD):
 		d *= 1.0 + 0.2 * els.get(Elem.WOOD, 0)
+	var mt := 0.0
 	if els.has(Elem.METAL):
-		d += 0.4 * els.get(Elem.METAL, 0) * k
+		mt = 0.4 * els.get(Elem.METAL, 0) * k
+		d += mt
 		o.stagger(4.0 * els.get(Elem.METAL, 0) * k)
 	var rm := o.resist_mul(els)
 	d *= rm
@@ -886,6 +988,17 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	dealt += d
 	if in_rx:
 		rx_dealt += d
+	# 출처: 금속 고정 피해·빛 치명타로 늘어난 절반은 그 속성, 나머지는 지금 출처
+	var key := tag if tag != "" else "hit"
+	var rest := d
+	if mt > 0.0:
+		mt *= rm
+		rest -= mt
+		src["elem:metal"] = src.get("elem:metal", 0.0) + mt
+	if lit:
+		rest *= 0.5
+		src["elem:light"] = src.get("elem:light", 0.0) + rest
+	src[key] = src.get(key, 0.0) + rest
 	_pincer(o)
 	if els.has(Elem.FIRE):
 		o.burn(0.8 * els.get(Elem.FIRE, 0) * rm, 2.0, self)
@@ -922,6 +1035,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	if can_split and m("split") > 0 and randf() < minf(0.6, 0.12 * mf("split")) * minf(k, 1.0):
 		for i in 2:
 			var p: Projectile = main.spawn_proj(self, "frag", plv, Vector2.from_angle(randf() * TAU))
+			p.src = "mod:split"
 			p.dmg *= 0.5
 			p.position = o.position
 			p.hit[o] = true

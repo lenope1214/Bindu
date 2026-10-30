@@ -100,6 +100,15 @@ class Final(Base):
     share: Mapped[float] = mapped_column(Float, default=0.0)  # 그 오브젝트들이 낸 피해 몫 합
 
 
+class SrcShare(Base):
+    """판 전체 피해 중 출처(속성·공격방식·강화·반응·연계)별 몫. 직접 타격 안의 배율 몫은 게임이 추정한 값."""
+    __tablename__ = "src_shares"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    run_id: Mapped[int] = mapped_column(ForeignKey("runs.id", ondelete="CASCADE"), index=True)
+    key: Mapped[str] = mapped_column(String(48), index=True)  # 예: elem:fire, pat:spray, mod:rapid, rx:lava, link:pincer, etc:crowd
+    share: Mapped[float] = mapped_column(Float, default=0.0)
+
+
 class ClientLog(Base):
     """게임이 보낸 오류 하나 (scripts/errlog.gd). fp가 같은 것끼리 관리 페이지에서 묶어 보여 준다."""
     __tablename__ = "client_logs"

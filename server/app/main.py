@@ -15,7 +15,7 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from . import config, signing, stats, validate
-from .db import Ban, ClientLog, Final, Patch, Pick, Release, Run, Season, get_db, init_db, now
+from .db import Ban, ClientLog, Final, Patch, Pick, Release, Run, Season, SrcShare, get_db, init_db, now
 
 @asynccontextmanager
 async def lifespan(_app):
@@ -134,6 +134,7 @@ class RunIn(BaseModel):
     real_secs: float = 0.0
     perks: dict[str, int] = {}
     towers: list[TowerIn] = []
+    src: dict[str, float] = {}  # 피해 출처 몫 {키: 0~1} (피해 출처를 보내는 버전부터)
     log: list[LogIn] = []
 
 
@@ -166,7 +167,7 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), db
     row = Run(device_id=run.device, nickname=nick, ip_hash=ip, platform=run.platform, game_version=run.game,
               patch_id=run.patch, season=season, map=run.map, rules=run.rules, wave=run.wave, score=run.score,
               kills=run.kills, best_combo=run.best_combo, game_secs=run.game_secs, real_secs=run.real_secs,
-              detail={"perks": run.perks, "modes": run.modes, "towers": [x.model_dump() for x in run.towers], "log": [x.model_dump() for x in run.log]},
+              detail={"perks": run.perks, "modes": run.modes, "towers": [x.model_dump() for x in run.towers], "src": run.src, "log": [x.model_dump() for x in run.log]},
               valid=reason == "", reason=reason,
               hidden=validate.easy(run.modes))  # 쉽게 모드 판은 통계에만 (리더보드 제외)
     db.add(row)
@@ -183,6 +184,9 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), db
         if not KEY_RE.match(key):
             continue
         db.add(Final(run_id=row.id, key=key, amount=amount, share=share))
+    for key, share in list(run.src.items())[:150]:
+        if KEY_RE.match(key) and 0.0 < share <= 1.0:
+            db.add(SrcShare(run_id=row.id, key=key[:48], share=share))
     # 닉네임을 바꾸면 예전 기록에도 새 이름이 보이게
     db.execute(update(Run).where(Run.device_id == run.device, Run.nickname != nick).values(nickname=nick))
     db.commit()

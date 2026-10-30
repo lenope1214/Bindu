@@ -37,6 +37,8 @@ var burn_src: Object = null  # 화상·중독을 건 오브젝트: 지속 피해
 var poison_src: Object = null
 var burn_rx := false  # 특수 반응이 건 것인지 (반응 피해 측정용)
 var poison_rx := false
+var burn_key := "elem:fire"  # 피해 출처 (Tower.src 키)
+var poison_key := "elem:poison"
 var vuln_t := 0.0
 var chill := 0.0
 var frozen_t := 0.0  # 빙결 표시
@@ -149,12 +151,12 @@ func step(delta: float) -> void:
 	if burn_t > 0.0:
 		burn_t -= delta
 		hurt(burn_dps * delta)
-		_credit(burn_src, burn_dps * delta, burn_rx)
+		_credit(burn_src, burn_dps * delta, burn_rx, burn_key)
 	if poison_t > 0.0:
 		poison_t -= delta
 		var pd := poison_dps * delta * (2.0 if swamp_t > 0.0 else 1.0)
 		hurt(pd)
-		_credit(poison_src, pd, poison_rx)
+		_credit(poison_src, pd, poison_rx, poison_key)
 	# 피해 숫자는 0.35초마다 묶어서 표시
 	pop_t -= delta
 	if pop_t <= 0.0 and dmg_acc >= 1.0 and main:
@@ -204,7 +206,7 @@ func _echo_release() -> void:
 	if d <= 0.0 or hp <= 0.0:
 		return
 	hurt(d)
-	_credit(echo_src, d, false)
+	_credit(echo_src, d, false, "elem:time")
 	if main and d >= 1.0:
 		main.popup(position, d, Elem.COLORS[Elem.TIME], true, "메아리")
 
@@ -293,28 +295,31 @@ func push(v: Vector2) -> void:
 
 ## src: 건 오브젝트. 형을 두지 않는다(이미 사라진 오브젝트가 넘어와도 오류 없게).
 ## rx: 특수 반응 고유의 화상·중독 (반응 공격에 맞아 생긴 속성 부가효과는 아님).
-func burn(dps: float, duration: float, src = null, rx := false) -> void:
+## key: 피해 출처를 정해 줄 때 (비면 반응이면 건 오브젝트의 tag, 아니면 속성)
+func burn(dps: float, duration: float, src = null, rx := false, key := "") -> void:
 	var cur := burn_dps if burn_t > 0.0 else 0.0
 	if is_instance_valid(src) and dps >= cur:
 		burn_src = src  # 가장 센 화상을 건 쪽
 		burn_rx = rx
+		burn_key = key if key != "" else src.tag if rx and src.tag != "" else "elem:fire"
 	burn_dps = maxf(cur, dps)
 	burn_t = maxf(burn_t, duration)
 
 
-func poison(dps: float, duration: float, src = null, rx := false) -> void:
+func poison(dps: float, duration: float, src = null, rx := false, key := "") -> void:
 	var cur := poison_dps if poison_t > 0.0 else 0.0
 	if is_instance_valid(src) and dps >= cur:
 		poison_src = src
 		poison_rx = rx
+		poison_key = key if key != "" else src.tag if rx and src.tag != "" else "elem:poison"
 	poison_dps = maxf(cur, dps)
 	poison_t = maxf(poison_t, duration)
 
 
 ## 지속 피해를 건 오브젝트의 피해 기록에 더한다 (표시용, 오브젝트가 사라졌으면 무시).
-func _credit(src, d: float, rx: bool) -> void:
+func _credit(src, d: float, rx: bool, key: String) -> void:
 	if is_instance_valid(src):
-		src.dealt += d
+		src.credit(d, key)
 		if rx:
 			src.rx_dealt += d
 

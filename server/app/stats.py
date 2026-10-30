@@ -7,7 +7,7 @@ from datetime import timedelta
 from sqlalchemy import and_, case, distinct, func, select
 from sqlalchemy.orm import Session
 
-from .db import Final, Pick, Run, now
+from .db import Final, Pick, Run, SrcShare, now
 
 ELEM_IDS = ["fire", "wood", "water", "electric", "wind", "ice", "earth", "dark", "light", "poison", "metal", "sound", "time", "soul"]
 
@@ -97,17 +97,27 @@ def summary(db: Session, f: Filter) -> dict:
                "avg_share": round(float(s or 0), 4), "avg_wave": round(float(w or 0), 2)} for k, n, a, s, w in frows]
     finals.sort(key=lambda x: -x["presence"])
 
+    # 피해 출처: 출처를 보낸 판들 기준 평균 몫 (없는 판은 0으로), 있던 판만의 평균 몫
+    n_src = db.scalar(select(func.count(distinct(SrcShare.run_id))).join(Run, Run.id == SrcShare.run_id).where(where)) or 0
+    srows = db.execute(
+        select(SrcShare.key, func.count(distinct(SrcShare.run_id)), func.sum(SrcShare.share), func.avg(SrcShare.share), func.avg(Run.wave))
+        .join(Run, Run.id == SrcShare.run_id).where(where).group_by(SrcShare.key)).all()
+    srcs = [{"key": k, "runs": n, "avg_share_all": round(float(s or 0) / n_src, 4) if n_src else 0.0,
+             "avg_share": round(float(a or 0), 4), "avg_wave": round(float(w or 0), 2)} for k, n, s, a, w in srows]
+    srcs.sort(key=lambda x: -x["avg_share_all"])
+
     by_rules = [{"rules": r, "runs": n, "avg_wave": round(float(w or 0), 2), "max_wave": mx}
                 for r, n, w, mx in db.execute(select(Run.rules, func.count(Run.id), func.avg(Run.wave), func.max(Run.wave))
                                               .where(where).group_by(Run.rules).order_by(Run.rules)).all()]
     waves = [{"wave": w, "runs": n} for w, n in db.execute(
         select(Run.wave, func.count(Run.id)).where(where).group_by(Run.wave).order_by(Run.wave)).all()]
     return {"runs": n_runs, "avg_wave": round(float(runs[1] or 0), 2), "max_wave": runs[2] or 0,
-            "avg_score": round(float(runs[3] or 0), 1), "by_rules": by_rules, "waves": waves, "picks": picks, "finals": finals}
+            "avg_score": round(float(runs[3] or 0), 1), "by_rules": by_rules, "waves": waves, "picks": picks, "finals": finals,
+            "src_runs": n_src, "srcs": srcs}
 
 
 def to_csv(data: dict, kind: str) -> str:
-    rows = data.get(kind if kind in ("picks", "finals", "by_rules", "waves") else "picks", [])
+    rows = data.get(kind if kind in ("picks", "finals", "srcs", "by_rules", "waves") else "picks", [])
     buf = io.StringIO()
     buf.write("﻿")  # 엑셀에서 한글이 깨지지 않게
     if rows:

@@ -744,7 +744,55 @@ func _dps_row(t: Tower, rank: int, total: float) -> Control:
 			l.custom_minimum_size.x = 150
 		row.add_child(l)
 	row.tooltip_text = "%s\n지난 웨이브 피해 %d · 초당 %.1f · 전체의 %d%%" % [t.title(), roundi(t.dealt), t.dealt / wave_time, roundi(share * 100.0)]
+	var b := t.breakdown()
+	if t.dealt > 0.0 and not b.is_empty():
+		row.tooltip_text += "\n\n피해 출처 (초당 · 이 오브젝트의 몫)"
+		for key in _src_top(b, 5):
+			row.tooltip_text += "\n  %s  %.1f · %d%%" % [src_name(key), b[key] / wave_time, roundi(b[key] / t.dealt * 100.0)]
+		if b.has("pat:" + t.pattern) and b.size() > 1:
+			row.tooltip_text += "\n(직접 타격 안의 배율 몫은 추정)"
 	return row
+
+
+## 판 전체 피해 출처 (모든 오브젝트 합).
+func _run_src() -> Dictionary:
+	var out := {}
+	for t in towers.get_children():
+		var a: Dictionary = t.all_src()
+		for key in a:
+			out[key] = out.get(key, 0.0) + a[key]
+	return out
+
+
+## 피해가 큰 출처 키 n개.
+func _src_top(d: Dictionary, n: int) -> Array:
+	var keys := d.keys()
+	keys.sort_custom(func(a, b): return d[a] > d[b])
+	return keys.slice(0, n)
+
+
+## 피해 출처 키 → 보이는 이름 (elem:fire → 불, rx:lava → 용암 벽).
+static func src_name(key: String) -> String:
+	var p := key.split(":")
+	if p.size() != 2:
+		return key
+	match p[0]:
+		"elem":
+			var i := Patch.ELEM_KEYS.find(p[1])
+			return Elem.NAMES[Elem.ALL[i]] if i >= 0 else p[1]
+		"pat":
+			return Pat.pname(p[1]) if Pat.PATTERNS.has(p[1]) else p[1]
+		"mod":
+			return Pat.MODS[p[1]]["name"] if Pat.MODS.has(p[1]) else p[1]
+		"link":
+			return Pat.LINKS[p[1]]["name"] if Pat.LINKS.has(p[1]) else p[1]
+		"rx":
+			for r in Elem.REACTIONS:
+				if r["id"] == p[1]:
+					return r["name"]
+		"etc":
+			return {"crowd": "무리(오브젝트 수)", "perk": "특성"}.get(p[1], p[1])
+	return p[1]
 
 
 ## 화면 가운데 크게 잠깐 뜨는 글자. 앞 글자가 아직 또렷하면 뒤에 세워 차례로 보여 준다
@@ -1757,6 +1805,7 @@ func _start_wave() -> void:
 		t.cd.clear()
 		t.fx.clear()
 		t.run_dealt += t.dealt
+		t.close_src()
 		t.dealt = 0.0
 		t.rx_dealt = 0.0
 		t.queue_redraw()  # 레벨 숫자는 쉬는 시간에만
@@ -1796,6 +1845,12 @@ func _game_over() -> void:
 			top = t
 	if top and total > 0.0 and towers.get_child_count() > 1:
 		mvp = "\n최다 피해: %s (%d%%)" % [top.title(), roundi((top.run_dealt + top.dealt) / total * 100.0)]
+	var rs := _run_src()
+	if total > 0.0 and not rs.is_empty():
+		var tops := PackedStringArray()
+		for key in _src_top(rs, 3):
+			tops.append("%s %d%%" % [src_name(key), roundi(rs[key] / total * 100.0)])
+		mvp += "\n피해 출처: " + ", ".join(tops)
 	var md := "" if Modes.on.is_empty() else "\n모드: %s · 점수 x%.2f%s" % [Modes.names(), Modes.mul(), "\n쉽게 모드: 최고 기록 따로, 리더보드 제외" if Modes.easy() else ""]
 	over_label.text = "%s (%s · %s)\n웨이브 %d · 점수 %s%s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\nR 또는 클릭: 다시 시작   Esc: 메뉴" % ["판 끝냄" if ended else "게임 오버", Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, md, num(kills), best_combo, towers.get_child_count(), mvp, ach]
 	over_label.visible = true
@@ -2732,11 +2787,17 @@ func _submit_run() -> void:
 			els[Patch.ELEM_KEYS[Elem.ALL.find(e)]] = t.elements[e]
 		list.append({"els": els, "pat": t.pattern, "plv": t.plv, "mods": t.mods, "prism": t.prism, "reso": t.reso,
 			"pincer": t.pincer, "share": (t.run_dealt + t.dealt) / total if total > 0.0 else 0.0})
+	# 피해 출처 몫 (속성·공격방식·강화·반응·연계별, 오브젝트를 합쳐서). 직접 타격 안의 배율 몫은 추정
+	var src := {}
+	var rs := _run_src()
+	for key in rs:
+		if total > 0.0 and rs[key] / total >= 0.0005:
+			src[key] = snappedf(rs[key] / total, 0.0001)
 	net.submit({
 		"device": Meta.device_id, "nick": Meta.nickname, "platform": Net.platform(), "game": Net.game_version(),
 		"patch": Patch.id, "map": Meta.map_id, "rules": Meta.rules, "modes": Array(Modes.on), "wave": wave, "score": score, "kills": kills,
 		"best_combo": best_combo, "game_secs": run_game, "real_secs": run_real, "perks": perks.duplicate(),
-		"towers": list, "log": run_log,
+		"towers": list, "src": src, "log": run_log,
 	})
 
 
@@ -3548,6 +3609,7 @@ func spawn_proj(t: Tower, kind: String, l: int, d := Vector2.ZERO) -> Projectile
 func spawn_zone(kind: String, l: int, pos: Vector2, t: Tower) -> Zone:
 	var z := Zone.new()
 	z.setup(kind, l, t)
+	z.src = t.tag if t else ""
 	z.position = pos
 	zones.add_child(z)
 	return z
@@ -3584,7 +3646,7 @@ func sound_pulse(o: Orb) -> void:
 		if other.hp > 0.0 and other.position.distance_to(o.position) < r + other.radius():
 			other.hurt(dmg)
 			if tw:
-				tw.dealt += dmg
+				tw.credit(dmg, "elem:sound")
 	if pulses.size() < 40:
 		pulses.append([o.position, r, 0.3])
 
@@ -3618,6 +3680,7 @@ func _soul_wisp(o: Orb) -> void:
 	g.hit[o] = true
 	g.dmg = 2.5 * Tower.pw(l)
 	g.ghost = "styx" if o.styx_t > 0.0 else ""
+	g.src = "rx:styx" if o.styx_t > 0.0 else "elem:soul"
 
 
 ## 전기 부가효과: 가까운 다른 구체로 전류가 튄다 (src: 쏜 오브젝트, 피해 기록용).
@@ -3633,7 +3696,7 @@ func arc(from: Orb, dmg: float, src: Tower = null) -> void:
 	if best:
 		best.hurt(dmg)
 		if src:
-			src.dealt += dmg
+			src.credit(dmg, "elem:electric")
 		if arcs.size() < 80:
 			arcs.append([from.position, best.position, 0.12])
 
@@ -4160,7 +4223,7 @@ func _resolve(delta: float) -> void:
 			if o.poison_t > 0.0:
 				for other in targets:
 					if other != o and other.position.distance_to(o.position) < 80.0:
-						other.poison(o.poison_dps, 3.0, o.poison_src, o.poison_rx)
+						other.poison(o.poison_dps, 3.0, o.poison_src, o.poison_rx, o.poison_key)
 			if o.curse_lv > 0:
 				_curse_burst(o)
 			if o.swamp_t > 0.0:
@@ -4210,7 +4273,7 @@ func _curse_burst(o: Orb) -> void:
 		if d < 100.0 + other.radius():
 			other.hurt(dmg)
 			if tw:
-				tw.dealt += dmg
+				tw.credit(dmg, "rx:curse")
 				tw.rx_dealt += dmg
 		if other.curse_lv == 0 and d < bd:
 			bd = d
@@ -4228,7 +4291,7 @@ func _curse_burst(o: Orb) -> void:
 func _swamp_burst(o: Orb) -> void:
 	for other in near(o.position, 90.0):
 		if other != o and other.hp > 0.0 and other.position.distance_to(o.position) < 90.0 + other.radius():
-			other.poison(1.5 * o.swamp_lv, 4.0, o.poison_src, true)
+			other.poison(1.5 * o.swamp_lv, 4.0, o.poison_src, true, "rx:swamp")
 	burst(o.position, Color(0.6, 0.85, 0.2), 12, 160.0)
 
 
@@ -4684,6 +4747,8 @@ func _draw_combo() -> void:
 ## 투척형 발사체가 착지했을 때.
 func _land(p: Projectile) -> void:
 	var tw: Tower = p.owner_tower if is_instance_valid(p.owner_tower) else null
+	if tw:
+		tw.tag = p.src  # 장판이 발사체의 출처를 이어받는다
 	match p.kind:
 		"log":
 			spawn_zone("burn", p.level, p.position, tw)
@@ -4696,6 +4761,8 @@ func _land(p: Projectile) -> void:
 			if tw:
 				tw.mines.erase(p)
 				tw.mines.append(z)
+	if tw:
+		tw.tag = ""
 
 
 ## 얼음 탄이 깨지며 파편 3개.
@@ -4706,6 +4773,7 @@ func _shatter(p: Projectile) -> void:
 		var f := spawn_proj(p.owner_tower, "frag", p.level, p.vel.normalized().rotated(a))
 		f.position = p.position + p.vel.normalized() * 14.0
 		f.hit = p.hit.duplicate()
+		f.src = p.src
 
 
 # ---------- 그리기 ----------
