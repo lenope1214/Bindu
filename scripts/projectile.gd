@@ -29,6 +29,13 @@ var form := false  # 공격방식이 쏜 탄: 형태 성질(Elem.TRAIT)이 붙�
 var ended := false  # 형태 성질 "끝" 효과를 이미 줬는지
 var path_acc := 0.0  # 지나온 길 (불씨·물길 70마다)
 var ghost := ""  # 혼불(ghost)이 어느 반응에서 나왔는지: plague(중독), spirit(속박), styx, ""(넋)
+var chase: Orb = null  # 유도·혼불이 쫓는 구체
+var chase_id := 0  # 그 구체 id (구체가 먼저 사라져도 오브젝트 쪽 수를 뺄 수 있게)
+var chase_prev := Vector2.ZERO  # 쫓는 구체의 지난 위치 (속도 어림)
+var chase_v := Vector2.ZERO
+var chase_t := 0.0  # 이번 확인 구간에서 쫓은 시간
+var chase_d0 := 0.0  # 확인 구간 시작 때 거리
+var gave_up := {}  # 못 따라잡아 포기한 구체 id
 
 
 func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
@@ -144,38 +151,110 @@ func _strike(delta: float) -> void:
 	tw.main.bolt(pts)
 
 
-## 유도: 앞쪽 가까운 구체 쪽으로 방향을 튼다.
+## 유도·혼불이 노릴 구체 고르기 (2026-10-30):
+## - 같은 오브젝트의 탄은 한 구체를 CHASE_MAX개까지만 쫓는다 (다 차 있으면 그중 가장 가까운 것)
+## - CHASE_CHECK초 쫓아도 거리가 줄지 않으면 그 구체는 포기한다 (빠른 구체를 끝없이 따라가지 않게)
+## - 구체가 갈 자리를 어림해 그쪽으로 튼다
+const CHASE_MAX := 2
+const CHASE_CHECK := 0.8
+const STEER_CONE := 1.6  # 유도 탄이 노리는 앞쪽 각도(라디안). 50도로 좁히면 덜 맞혀서 그대로 두고, 둘레를 도는 것은 포기 규칙으로 막는다
+const WISP_SEEK := 380.0
+const WISP_SEEK_HOMING := 0.3  # 혼불: 유도 하나마다 찾는 범위 +30%
+
+
+static func wisp_seek(h: float) -> float:
+	return WISP_SEEK * (1.0 + WISP_SEEK_HOMING * h)
+
+
+func _exit_tree() -> void:
+	_set_chase(null)
+
+
+func _set_chase(o: Orb) -> void:
+	var id2 := o.get_instance_id() if o != null else 0
+	if id2 == chase_id:
+		return
+	if is_instance_valid(owner_tower):
+		if chase_id != 0:
+			var n: int = owner_tower.chase_n.get(chase_id, 0) - 1
+			if n <= 0:
+				owner_tower.chase_n.erase(chase_id)
+			else:
+				owner_tower.chase_n[chase_id] = n
+		if id2 != 0:
+			owner_tower.chase_n[id2] = owner_tower.chase_n.get(id2, 0) + 1
+	chase = o
+	chase_id = id2
+	chase_t = 0.0
+	if o != null:
+		chase_prev = o.position
+		chase_v = Vector2.ZERO
+		chase_d0 = o.position.distance_to(position)
+
+
+func _can_chase(o: Orb, r: float, cone: float) -> bool:
+	if not is_instance_valid(o) or hit.has(o) or o.hp <= 0.0 or gave_up.has(o.get_instance_id()):
+		return false
+	var v: Vector2 = o.position - position
+	return v.length() < r and (cone <= 0.0 or absf(vel.angle_to(v)) < cone)
+
+
+## 쫓을 구체를 정해 그쪽(갈 자리)으로 최대 lim만큼 튼다. cone <= 0이면 각도 제한 없음.
+func _chase(delta: float, r: float, cone: float, lim: float) -> void:
+	var c: Orb = chase if is_instance_valid(chase) else null
+	if c != null and not _can_chase(c, r, cone):
+		c = null
+	if c != null:
+		chase_t += delta
+		if chase_t >= CHASE_CHECK:
+			var d: float = c.position.distance_to(position)
+			if d > chase_d0 * 0.9:
+				gave_up[c.get_instance_id()] = true
+				c = null
+			else:
+				chase_t = 0.0
+				chase_d0 = d
+	if c == null:
+		var best: Orb = null
+		var bd := INF
+		var full: Orb = null
+		var fd := INF
+		for o in owner_tower.main.near(position, r):
+			if not _can_chase(o, r, cone):
+				continue
+			var dd: float = o.position.distance_to(position)
+			if owner_tower.chase_n.get(o.get_instance_id(), 0) >= CHASE_MAX:
+				if dd < fd:
+					fd = dd
+					full = o
+			elif dd < bd:
+				bd = dd
+				best = o
+		c = best if best != null else full
+		if c == null:
+			_set_chase(null)
+			return
+	if c.get_instance_id() != chase_id:
+		_set_chase(c)
+	elif delta > 0.0:
+		chase_v = chase_v.lerp((c.position - chase_prev) / delta, 0.3)
+	chase_prev = c.position
+	var sp := maxf(vel.length(), 1.0)
+	var aim_at: Vector2 = c.position + chase_v * minf(c.position.distance_to(position) / sp, 1.0)
+	vel = vel.rotated(clampf(vel.angle_to(aim_at - position), -lim, lim))
+
+
+## 유도: 앞쪽 구체 쪽으로 방향을 튼다.
 func _steer(delta: float) -> void:
-	var best: Orb = null
-	var bd := 260.0
-	for o in owner_tower.main.near(position, bd):
-		if hit.has(o) or o.hp <= 0.0:
-			continue
-		var v: Vector2 = o.position - position
-		if v.length() < bd and absf(vel.angle_to(v)) < 1.6:
-			bd = v.length()
-			best = o
-	if best:
-		var a := clampf(vel.angle_to(best.position - position), -0.8 * homing * delta, 0.8 * homing * delta)
-		vel = vel.rotated(a)
+	_chase(delta, 260.0, STEER_CONE, 0.8 * homing * delta)
 
 
-## 혼불: 가장 가까운 구체를 쫓아간다 (유도 강화면 더 빨리 돈다).
+## 혼불: 구체를 쫓아간다. 유도 강화면 더 빨리 돌고 찾는 범위가 넓어진다.
 func _seek(delta: float) -> void:
 	if not is_instance_valid(owner_tower):
 		return
-	var best: Orb = null
-	var bd := 380.0
-	for o in owner_tower.main.near(position, bd):
-		if hit.has(o) or o.hp <= 0.0:
-			continue
-		var dd: float = o.position.distance_to(position)
-		if dd < bd:
-			bd = dd
-			best = o
-	if best:
-		var lim := (5.0 + 2.0 * homing) * delta
-		vel = vel.rotated(clampf(vel.angle_to(best.position - position), -lim, lim))
+	var r := wisp_seek(homing) if kind == "wisp" else WISP_SEEK
+	_chase(delta, r, 0.0, (5.0 + 2.0 * homing) * delta)
 
 
 ## 프리즘: 다른 오브젝트의 프리즘을 지나면 그 속성이 묻고 피해가 오른다.

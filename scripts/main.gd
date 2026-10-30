@@ -4468,10 +4468,14 @@ func _prof_add(part: String, since: int) -> int:
 	return now
 
 
-## 저주: 표식 구체가 죽으면 주변에 그 구체 최대 체력 비례 피해, 표식은 가까운 구체로 옮겨 간다.
+## 저주: 표식 구체가 죽으면 주변에 그 구체 최대 체력의 10% 피해(보스는 1/4), 표식은 가까운 구체로 옮겨 간다.
+## 2026-10-30 25% → 10%: 오브젝트 힘과 상관없이 후반 구체 체력만큼 커져 몰아 쌓은 판에서 피해의 2/3가 됐다.
+const CURSE_BURST := 0.10
+
+
 func _curse_burst(o: Orb) -> void:
 	var tw: Tower = o.curse_owner if is_instance_valid(o.curse_owner) else null
-	var dmg := 0.25 * o.max_hp * (1.0 + 0.2 * (o.curse_lv - 1))
+	var dmg := CURSE_BURST * o.max_hp * (1.0 + 0.2 * (o.curse_lv - 1)) * (0.25 if o.kind == Orb.Kind.BOSS else 1.0)
 	var next: Orb = null
 	var bd := 220.0
 	for other in near(o.position, bd):

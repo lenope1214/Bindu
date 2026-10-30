@@ -29,6 +29,7 @@ var rx_dealt := 0.0  # 그중 특수 반응 피해 (측정·표시용)
 var run_dealt := 0.0  # 지난 웨이브들까지 합친 피해 (게임 오버 요약용)
 ## 피해 출처 (DPS 표·판 기록 통계). 키: "hit"(직접 타격, breakdown()이 배율별로 나눔), elem:fire, rx:lava, mod:split, link:pincer ...
 var src := {}  # 이번(또는 지난) 웨이브, 날것
+var chase_n := {}  # 구체 id -> 이 오브젝트의 유도·혼불 탄 몇 개가 쫓는지 (Projectile._chase)
 var run_src := {}  # 지난 웨이브들까지, 나눈 값
 var tag := ""  # 지금 피해를 어느 출처로 셀지 (반응·반응 발사체·분열 파편). 비면 "hit"
 var recoil := 0.0  # 발사 반동
@@ -1872,7 +1873,9 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 			"clock":
 				_r_cone(ci, o, dd, 240.0 * reach(l) * s, 0.7, c)
 			"wisp":
-				ci.draw_arc(o, 380.0, 0, TAU, 64, Color(c.r, c.g, c.b, 0.5 * c.a), 1.5)
+				var hm: int = md.get("homing", 0)
+				var hf := 2.0 * (1.0 - pow(0.5, hm)) if Rules.mod_decay else float(hm)
+				ci.draw_arc(o, Projectile.wisp_seek(hf), 0, TAU, 64, Color(c.r, c.g, c.b, 0.5 * c.a), 1.5)
 			_:
 				_r_band(ci, o, dd, 0.0, far, 6.0 * s, c)
 	for r in Elem.reactions_with(els):
