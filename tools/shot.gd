@@ -50,7 +50,9 @@ func _initialize():
 			main.offer = [{"type": "pat", "id": Pat.PATTERN_IDS[2]}, {"type": "mod", "id": Pat.MOD_IDS[0]}, {"type": "cata", "id": "elem"}]
 			main._show_offer(),
 		func(): _snap("cards2"); main._set_cards_hidden(true),
-		func(): _snap("cards_hidden"); main._set_cards_hidden(false); main._start_perk(),
+		func(): _snap("cards_hidden"); main._set_cards_hidden(false); main._on_skip(),
+		func(): _snap("skip_ready"); main._start_wave(),
+		func(): _snap("skip_wave"); main.skip_left = 0; main._start_perk(),
 		func(): _snap("perks"); main._toggle_pause(),
 		func(): _snap("pause"); main._toggle_pause(); main._game_over(),
 		func(): _snap("gameover"),

@@ -122,6 +122,9 @@ var over_label: Label
 var legend: Label
 var bar_box: HBoxContainer  # 오른쪽 아래 버튼 줄
 var reroll_btn: Button
+var skip_btn: Button  # 웨이브 넘기기 (S)
+var skip_n_btn: Button  # 넘길 웨이브 수 바꾸기
+var skip_badge: Button  # 넘기는 중 표시, 누르면 멈추기
 var pause_btn: Button
 var speed_btn: Button
 var speed_pick: OptionButton
@@ -165,6 +168,15 @@ var perk_offer: Array = []
 var orb_speed_mul := 1.0
 var rerolls_left := 1
 var bonus_rerolls := 0
+# 웨이브 넘기기: 고르기를 미루고 웨이브를 연달아 진행한다. 미룬 고르기는 멈춘 쉬는 시간에 한꺼번에
+const SKIP_NS := [1, 3, 5, 10]
+var skip_left := 0  # 더 넘길 웨이브 수 (지금 웨이브 포함, 0이면 넘기는 중 아님)
+var skip_total := 0  # 이번에 넘기기로 한 웨이브 수 (표시용)
+var skip_stop := false  # 멈추기를 눌렀거나 중앙이 위험해짐: 이번 웨이브가 끝나면 멈춤
+var bank_picks: Array = []  # 미룬 고르기. 값은 쌓은 쉬는 시간의 웨이브 (속성 Lv2 확률을 그때 기준으로)
+var bank_rerolls := 0
+var bank_perks := 0  # 미룬 특성 고르기
+var rest_ready := false  # 이번 쉬는 시간의 다음 웨이브(방향·저항·보스)를 이미 뽑아 둠 (넘기다 쉬는 시간에 멈춘 때)
 var combo := 0
 var combo_t := 0.0
 const COMBO_KEEP := 3.0  # 이 게임 시간(배속과 상관없이) 안에 다음 처치가 나와야 콤보가 이어진다
@@ -467,6 +479,27 @@ func _build_ui() -> void:
 	reroll_btn.visible = false
 	root.add_child(reroll_btn)
 
+	skip_btn = Button.new()
+	skip_btn.set_anchors_preset(Control.PRESET_CENTER)
+	skip_btn.tooltip_text = "고르기를 미루고 웨이브를 연달아 진행합니다. 미룬 카드·새로고침·특성은 멈춘 뒤 한꺼번에 고릅니다\n중앙이 위험해지면(설정) 그 웨이브가 끝나고 멈춥니다"
+	skip_btn.pressed.connect(_on_skip)
+	skip_btn.visible = false
+	root.add_child(skip_btn)
+	skip_n_btn = Button.new()
+	skip_n_btn.set_anchors_preset(Control.PRESET_CENTER)
+	skip_n_btn.tooltip_text = "넘길 웨이브 수 바꾸기 (1·3·5·10)"
+	skip_n_btn.pressed.connect(_cycle_skip_n)
+	skip_n_btn.visible = false
+	root.add_child(skip_n_btn)
+	skip_badge = Button.new()
+	skip_badge.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	skip_badge.position = Vector2(-210, -146)  # 웨이브 시작 버튼 위
+	skip_badge.size = Vector2(420, 36)
+	skip_badge.add_theme_color_override("font_color", Color(0.75, 0.9, 1))
+	skip_badge.pressed.connect(_toggle_skip_stop)
+	skip_badge.visible = false
+	root.add_child(skip_badge)
+
 	hide_btn = Button.new()
 	hide_btn.focus_mode = Control.FOCUS_NONE
 	hide_btn.add_theme_font_size_override("font_size", 14)
@@ -550,7 +583,7 @@ func _build_ui() -> void:
 	cancel_btn.pressed.connect(_cancel_step)
 	cancel_btn.visible = false
 	root.add_child(cancel_btn)
-	for b in [pause_btn, speed_btn, reroll_btn, auto_btn, start_btn, mute_btn, cancel_btn, bar_btn]:
+	for b in [pause_btn, speed_btn, reroll_btn, skip_btn, skip_n_btn, skip_badge, auto_btn, start_btn, mute_btn, cancel_btn, bar_btn]:
 		b.focus_mode = Control.FOCUS_NONE
 	_update_auto_btn()
 	mute_btn.tooltip_text = "소리: " + ("끔" if sfx.muted else "켬") + " (M)"
@@ -993,6 +1026,7 @@ func _help_text() -> String:
 	return "\n".join([
 		"[조작]",
 		"1 / 2 / 3 또는 클릭: 선택지 고르기     Q: 선택지 새로고침     V: 선택지 내리고 필드 보기",
+		"S: 웨이브 넘기기 — 고르기를 미루고 웨이브 n개(1·3·5·10)를 연달아 진행, 멈추면 쌓인 특성·카드·새로고침을 한꺼번에 (넘기는 중 S: 멈추기)",
 		"속성 카드: 빈 곳에 설치(직선탄) → 클릭(또는 끌어서 놓기)으로 방향, Shift: 15도",
 		"속성 카드를 오브젝트 위에: 속성 겹치기 (%s)" % elems,
 		"공격방식·강화·연계 카드: 오브젝트 위에 놓기 (효과가 없는 강화는 못 넣음: 관통 연사·돌풍·철구에 관통·튕김, 벽에 유도, 벽·투척 장판에 분열)",
@@ -1064,19 +1098,144 @@ func _start_choose(new_round := true) -> void:
 		Meta.tutor_next = false  # 모두 열렸다: 다음 판부터는 처음부터 모두
 		_save_best()
 	if new_round:
-		_roll_lanes()
-		# 다음 웨이브 저항 속성: 12웨이브(버전 4는 8)부터 60% 확률
-		wave_resist = Elem.ALL.pick_random() if wave + 1 >= Rules.resist_from and randf() < 0.6 else -1
-		_plan_boss()
-		picks_left = maxi(2, Rules.picks) if wave <= 1 else Rules.picks  # 처음 두 번의 쉬는 시간은 2개씩 (모드 '세 장'이면 3개)
-		rerolls_left = Modes.rerolls(1 + bonus_rerolls + perks.get("reroll", 0) * int(_perk_val("reroll")))
-		bonus_rerolls = 0
+		_new_rest()
+		_take_bank()
 	phase = Phase.CHOOSE  # 웨이브를 막 끝낸 때도 카드 안내가 쉬는 시간 안내로 뜨게 (_open_choose가 다시 정함)
 	_make_choices()
 	_open_choose()
 	_save_run()
 	if new_round:
 		_rest_guides()
+
+
+## 새 쉬는 시간: 다음 웨이브(방향·저항·보스)를 뽑고 고르기·새로고침 수를 정한다.
+func _new_rest() -> void:
+	_roll_lanes()
+	# 다음 웨이브 저항 속성: 12웨이브(버전 4는 8)부터 60% 확률
+	wave_resist = Elem.ALL.pick_random() if wave + 1 >= Rules.resist_from and randf() < 0.6 else -1
+	_plan_boss()
+	picks_left = maxi(2, Rules.picks) if wave <= 1 else Rules.picks  # 처음 두 번의 쉬는 시간은 2개씩 (모드 '세 장'이면 3개)
+	rerolls_left = Modes.rerolls(1 + bonus_rerolls + perks.get("reroll", 0) * int(_perk_val("reroll")))
+	bonus_rerolls = 0
+
+
+# ---------- 웨이브 넘기기 ----------
+
+## 넘기기를 쓸 수 있나: 오브젝트가 있고, 첫 판이면 카드 종류가 다 열린 뒤.
+func _can_skip() -> bool:
+	return towers.get_child_count() > 0 and not (tutor and wave + 1 < TUTOR_OPEN.values().max()) and skip_left == 0
+
+
+## 선택지(또는 특성) 화면에서 넘기기: 이번 쉬는 시간의 고르기를 쌓아 두고 웨이브를 시작한다.
+func _on_skip() -> void:
+	if phase != Phase.CHOOSE or not _can_skip() or title_label.visible:
+		return
+	if perk_mode:
+		perk_mode = false
+		bank_perks += 1
+		if not rest_ready:
+			_new_rest()  # 특성 뒤에 올 카드 고르기도 같이 쌓는다
+			_take_bank()
+	skip_total = int(Meta.skip_n)
+	skip_left = skip_total
+	skip_stop = false
+	_bank_rest()
+	_show_toast("웨이브 %d개 넘기기: 고르기는 멈춘 뒤 한꺼번에 (S: 멈추기)" % skip_total)
+
+
+## 이번 쉬는 시간의 남은 고르기·새로고침을 쌓고 바로 다음 웨이브로 (1초 뒤 시작).
+## picks_left에는 이미 쌓인 고르기(bank_picks)도 들어 있다.
+func _bank_rest() -> void:
+	for i in picks_left - bank_picks.size():
+		bank_picks.append(wave)
+	picks_left = 0
+	bank_rerolls += rerolls_left
+	rerolls_left = 0
+	offer.clear()
+	for c in choice_box.get_children():
+		c.queue_free()
+	rest_ready = false
+	cards_hidden = false
+	_enter_ready()
+	countdown = 1.0
+
+
+## 넘기는 중에 웨이브가 끝났다: 고르지 않고 다음 쉬는 시간을 쌓는다.
+func _skip_rest() -> void:
+	if wave % 5 == 0:
+		bank_perks += 1
+	wave_active = false
+	_clear_shots()  # 쉬는 시간처럼 남은 탄·장판을 지운다
+	_new_rest()
+	_take_bank()
+	_update_preview()
+	_bank_rest()
+
+
+## 쌓아 둔 고르기·새로고침을 이번 쉬는 시간에 더한다.
+func _take_bank() -> void:
+	picks_left += bank_picks.size()
+	rerolls_left += bank_rerolls
+	bank_rerolls = 0
+
+
+## 넘기기를 끝내고 쌓인 것을 연다: 특성부터 하나씩, 그다음 카드.
+## now_rest: 이번 쉬는 시간의 다음 웨이브를 이미 뽑아 둔 채(넘기기 대기 중) 멈췄나.
+func _end_skip(now_rest: bool) -> void:
+	skip_left = 0
+	skip_stop = false
+	countdown = -1.0
+	start_btn.visible = false
+	if now_rest:
+		rest_ready = true
+		picks_left = 0
+		_take_bank()
+	if not now_rest and wave % 5 == 0:
+		_start_perk()  # 이번 쉬는 시간의 특성 (미룬 특성은 그 뒤에 이어서)
+	elif bank_perks > 0:
+		bank_perks -= 1
+		_start_perk()
+	else:
+		_start_choose(not now_rest)
+
+
+## 넘기는 중 멈추기: 웨이브 중이면 그 웨이브 뒤에, 다음 웨이브를 기다리는 중이면 바로.
+func _toggle_skip_stop() -> void:
+	if skip_left <= 0:
+		return
+	if phase == Phase.READY:
+		_end_skip(true)
+		return
+	skip_stop = not skip_stop
+	_show_toast("이번 웨이브가 끝나면 넘기기를 멈춰요" if skip_stop else "넘기기를 계속해요")
+
+
+func _cycle_skip_n() -> void:
+	var i := SKIP_NS.find(int(Meta.skip_n))
+	Meta.skip_n = SKIP_NS[(i + 1) % SKIP_NS.size()]
+	_save_best()
+
+
+## 넘기기 버튼·넘기는 중 표시 (매 프레임).
+func _update_skip_ui() -> void:
+	var show_btn := phase == Phase.CHOOSE and not cards_hidden and not title_label.visible and _can_skip() and not get_tree().paused
+	skip_btn.visible = show_btn
+	skip_n_btn.visible = show_btn
+	if show_btn:
+		var n := int(Meta.skip_n)
+		skip_btn.text = "웨이브 %d개 넘기기 (S) · 고르기 미루기" % n
+		skip_n_btn.text = "×%d ▸" % n
+	skip_badge.visible = skip_left > 0 and phase in [Phase.WAVE, Phase.READY] and not title_label.visible
+	if skip_badge.visible:
+		var done := skip_total - skip_left + 1
+		var cards := bank_picks.size()
+		var extra := " · 특성 %d" % bank_perks if bank_perks > 0 else ""
+		if skip_stop:
+			skip_badge.text = "이번 웨이브 뒤 멈춤 · 쌓인 카드 %d%s (S: 계속)" % [cards, extra]
+		elif phase == Phase.READY:
+			skip_badge.text = "넘기는 중 %d/%d · 쌓인 카드 %d%s (S: 지금 멈추고 고르기)" % [done, skip_total, cards, extra]
+		else:
+			skip_badge.text = "넘기는 중 %d/%d · 쌓인 카드 %d%s (S: 멈추기)" % [done, skip_total, cards, extra]
 
 
 ## 선택지 화면을 연다 (offer는 이미 정해져 있음).
@@ -1444,7 +1603,8 @@ func _wind_buffs() -> void:
 
 ## 속성 카드가 Lv2로 나올 확률 (행운 특성 포함).
 func _lv2_chance() -> float:
-	var lv2 := minf(Patch.num("cards", "lv2_base", 0.2) + Patch.num("cards", "lv2_wave", 0.02) * wave, Patch.num("cards", "lv2_max", 0.5))
+	var w: int = bank_picks[0] if not bank_picks.is_empty() else wave  # 미룬 고르기는 쌓은 때의 웨이브로 (미뤄서 Lv2가 더 잘 나오지 않게)
+	var lv2 := minf(Patch.num("cards", "lv2_base", 0.2) + Patch.num("cards", "lv2_wave", 0.02) * w, Patch.num("cards", "lv2_max", 0.5))
 	return lv2 + _perk_val("luck") * perks.get("luck", 0)
 
 
@@ -1517,7 +1677,11 @@ func _on_perk(pk: Dictionary) -> void:
 	_show_toast("특성: %s (%s)" % [pk["name"], _perk_desc(pk)])
 	for t in towers.get_children():
 		t.queue_redraw()
-	_start_choose()
+	if bank_perks > 0:
+		bank_perks -= 1  # 미룬 특성을 이어서
+		_start_perk()
+	else:
+		_start_choose(not rest_ready)
 
 
 ## 특성 수치 (온라인 패치 perks로 바뀔 수 있음). 설명 글도 같이 바꿔야 하면 perk_desc.
@@ -2022,7 +2186,10 @@ func _stat_key(card: Dictionary) -> String:
 
 ## 이번 선택지와 고른 카드(빈 사전: 새로고침으로 넘김)를 판 기록에 남긴다.
 func _log_offer(card: Dictionary) -> void:
-	run_log.append({"w": wave, "k": "card", "o": offer.map(_stat_key), "p": _stat_key(card) if not card.is_empty() else ""})
+	var e := {"w": wave, "k": "card", "o": offer.map(_stat_key), "p": _stat_key(card) if not card.is_empty() else ""}
+	if not bank_picks.is_empty():
+		e["bw"] = bank_picks[0]  # 넘기기로 미뤘던 고르기: 쌓은 쉬는 시간의 웨이브
+	run_log.append(e)
 
 
 func _place_hint() -> String:
@@ -2037,6 +2204,8 @@ func _after_place(card: Dictionary = {}) -> void:
 	_log_offer(picked if card.is_empty() else card)
 	_check_progress()
 	picks_left -= 1
+	if not bank_picks.is_empty():
+		bank_picks.pop_front()  # 미룬 고르기부터 쓴다
 	if picks_left > 0:
 		_start_choose(false)
 	else:
@@ -2114,6 +2283,7 @@ func _start_wave() -> void:
 	selected.clear()
 	start_btn.visible = false
 	wave += 1
+	rest_ready = false
 	phase = Phase.WAVE
 	wave_active = true
 	choice_box.visible = false
@@ -2303,6 +2473,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				_on_pick(offer[i])
 		elif event.keycode == KEY_Q and phase == Phase.CHOOSE and not perk_mode:
 			_on_reroll()
+		elif event.keycode == KEY_S and not event.ctrl_pressed and not event.meta_pressed and not title_label.visible:
+			if skip_left > 0:
+				_toggle_skip_stop()
+			elif phase == Phase.CHOOSE:
+				_on_skip()
 		elif event.keycode == KEY_V and phase == Phase.CHOOSE:
 			_set_cards_hidden(not cards_hidden)
 		elif event.keycode == KEY_D and phase in [Phase.CHOOSE, Phase.READY]:
@@ -2800,7 +2975,7 @@ func _build_menu(root: Control) -> void:
 			_save_best())
 		zrow.add_child(zb)
 	sv.add_child(zrow)
-	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 첫 글자)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"], ["효과 줄이기 (장판·터지는 효과를 옅게, 많을수록 더)", "fx_low"]]:
+	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 첫 글자)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"], ["웨이브 넘기기 중 중앙이 위험하면 멈춤 (체력 50%)", "skip_danger"], ["효과 줄이기 (장판·터지는 효과를 옅게, 많을수록 더)", "fx_low"]]:
 		var cb := CheckButton.new()
 		cb.text = spec[0]
 		var key: String = spec[1]
@@ -2810,6 +2985,7 @@ func _build_menu(root: Control) -> void:
 			"symbols_on": cb.button_pressed = Meta.symbols_on
 			"orb_hp_on": cb.button_pressed = Meta.orb_hp_on
 			"danger_slow": cb.button_pressed = Meta.danger_slow
+			"skip_danger": cb.button_pressed = Meta.skip_danger
 			"fx_low": cb.button_pressed = Meta.fx_low
 		cb.focus_mode = Control.FOCUS_NONE
 		cb.toggled.connect(func(on):
@@ -2818,6 +2994,7 @@ func _build_menu(root: Control) -> void:
 				"numbers_on": Meta.numbers_on = on
 				"orb_hp_on": Meta.orb_hp_on = on
 				"danger_slow": Meta.danger_slow = on
+				"skip_danger": Meta.skip_danger = on
 				"fx_low": Meta.fx_low = on
 				"symbols_on":
 					Meta.symbols_on = on
@@ -3622,6 +3799,7 @@ func _save_run() -> void:
 		"core_hp": core_hp, "core_max": core_max, "perks": perks.keys().map(func(k): return [k, perks[k]]), "orb_speed_mul": orb_speed_mul,
 		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
 		"rerolls_left": rerolls_left, "bonus_rerolls": bonus_rerolls, "picks_left": picks_left,
+		"skip_left": skip_left, "skip_total": skip_total, "skip_stop": skip_stop, "bank_picks": bank_picks, "bank_rerolls": bank_rerolls, "bank_perks": bank_perks, "rest_ready": rest_ready,
 		"lanes": Array(lanes), "wave_resist": wave_resist, "boss": boss_plan, "achievements": new_achievements,
 		"state": "perk" if perk_mode else ("ready" if phase == Phase.READY else "choose"),
 		"offer": offer, "perk_offer": perk_offer.map(func(pk): return pk["id"]), "towers": list,
@@ -3724,6 +3902,13 @@ func _continue_run() -> void:
 	rerolls_left = maxi(0, g.call("rerolls_left", 1))
 	bonus_rerolls = maxi(0, g.call("bonus_rerolls", 0))
 	picks_left = maxi(0, g.call("picks_left", 1))  # 특성 고르기 중에는 0
+	skip_left = maxi(0, int(g.call("skip_left", 0)))
+	skip_total = maxi(skip_left, int(g.call("skip_total", 0)))
+	skip_stop = g.call("skip_stop", false) == true
+	bank_picks = (g.call("bank_picks", []) as Array).filter(func(x): return x is int).map(func(x): return clampi(x, 0, wave))
+	bank_rerolls = maxi(0, int(g.call("bank_rerolls", 0)))
+	bank_perks = maxi(0, int(g.call("bank_perks", 0)))
+	rest_ready = g.call("rest_ready", false) == true
 	lanes.assign((g.call("lanes", []) as Array).filter(func(a): return a is float))
 	if lanes.is_empty():
 		_roll_lanes()
@@ -3784,6 +3969,8 @@ func _continue_run() -> void:
 			_clear_shots()
 			_update_preview()
 			_enter_ready()
+			if skip_left > 0:
+				countdown = 1.0  # 넘기는 중에 껐다: 이어서 넘긴다
 		_:
 			picks_left = maxi(1, picks_left)
 			offer = (g.call("offer", []) as Array).filter(_valid_card)
@@ -4349,6 +4536,7 @@ func _process(delta: float) -> void:
 	if boxing and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_finish_box()  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
 	hide_btn.visible = phase == Phase.CHOOSE and not title_label.visible
+	_update_skip_ui()
 	cancel_btn.visible = phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] and not title_label.visible and not get_tree().paused
 	hide_btn.text = ("▲ 선택지 보기" if cards_hidden else "▼ 필드 보기") + " (V)"
 	hide_btn.tooltip_text = "선택지를 다시 올린다" if cards_hidden else "선택지를 내리고 카드에 가려진 필드를 본다"
@@ -4368,7 +4556,7 @@ func _process(delta: float) -> void:
 	var floor_y := (hud.position.y + hud.size.y + 8.0) if hud.visible else 8.0
 	if dps_panel.visible and ui_root.size.x / 2.0 + cx - 365.0 < 320.0:
 		floor_y += 44.0 + 48.0 + 6.0  # 왼쪽 위 DPS 표(머리 + 2줄, 나머지는 굴려 봄)를 덮지 않게
-	var need := ch + 8.0 + 36.0
+	var need := ch + 8.0 + 36.0 + (42.0 if skip_btn.visible else 0.0)
 	var k := clampf((lim - floor_y) / need, 0.7, 1.0)
 	var ctop := maxf(minf(mid - 90.0, lim - need * k), floor_y)
 	choice_box.pivot_offset = Vector2(choice_box.size.x / 2.0, 0.0)
@@ -4387,6 +4575,15 @@ func _process(delta: float) -> void:
 	hide_btn.offset_right = hx + 130.0
 	hide_btn.offset_top = hy
 	hide_btn.offset_bottom = hy + (32.0 if cards_hidden else 36.0)
+	# 넘기기는 그 아래 한 줄: 버튼 + 넘길 웨이브 수
+	skip_btn.offset_left = cx - 305.0
+	skip_btn.offset_right = cx + 185.0
+	skip_btn.offset_top = by + 42.0
+	skip_btn.offset_bottom = by + 78.0
+	skip_n_btn.offset_left = cx + 195.0
+	skip_n_btn.offset_right = cx + 305.0
+	skip_n_btn.offset_top = by + 42.0
+	skip_n_btn.offset_bottom = by + 78.0
 	restart_armed = maxf(restart_armed - delta, 0.0)
 	end_armed = maxf(end_armed - delta, 0.0)
 	if not get_tree().paused and not title_label.visible and phase != Phase.GAMEOVER:
@@ -4476,6 +4673,12 @@ func _sim_step(delta: float) -> void:
 			core_hp = mini(core_hp + perks["regen"] * int(_perk_val("regen")), core_max)
 		if wave % 5 == 0:
 			_submit_run(false)  # 5웨이브마다 진행 중 기록 (중간에 꺼도 서버에 남게)
+		if skip_left > 1 and not skip_stop:
+			skip_left -= 1
+			_skip_rest()
+		elif skip_left > 0:
+			_end_skip(false)
+		elif wave % 5 == 0:
 			_start_perk()
 		else:
 			_start_choose()
@@ -4494,6 +4697,9 @@ func _check_danger() -> void:
 	if lv > danger_lv and core_hp > 0:
 		big_banner("중앙 위험! %d/%d" % [core_hp, core_max], Color(1, 0.3, 0.35) if lv == 2 else Color(1, 0.6, 0.3))
 		sfx.play("danger", 0.0)
+		if skip_left > 0 and not skip_stop and Meta.skip_danger:
+			skip_stop = true
+			_show_toast("중앙 위험: 이번 웨이브가 끝나면 넘기기를 멈춰요")
 		if Meta.danger_slow and game_speed > 1.0:
 			game_speed = 1.0
 			_update_speed_btn()
@@ -4970,7 +5176,7 @@ func _avoid_cards(r: Rect2, size: Vector2) -> Vector2:
 		return r.position
 	var inv := get_canvas_transform().affine_inverse()
 	var cr: Rect2 = inv * choice_box.get_global_rect()
-	for b in [reroll_btn, hide_btn]:
+	for b in [reroll_btn, hide_btn, skip_btn, skip_n_btn]:
 		if b.visible:
 			cr = cr.merge(inv * b.get_global_rect())
 	cr = cr.grow(6.0)

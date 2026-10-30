@@ -62,6 +62,8 @@ static var numbers_on := true
 static var symbols_on := true  # 속성 색 위에 첫 글자 표시 (색만으로 구분하기 어려울 때). 새 저장은 켬
 static var fx_low := false  # 효과 줄이기: 형태 성질·반응 장판과 터지는 효과를 옅게, 많이 겹칠수록 더 옅게 (기본 끔)
 static var fx_dps := 2  # 피해 몫이 작은 오브젝트의 탄·장판을 옅게: 0 그대로 · 1 조금 · 2 보통 · 3 많이 (아래 버튼 줄)
+static var skip_n := 3  # 웨이브 넘기기 한 번에 넘길 웨이브 수 (1·3·5·10)
+static var skip_danger := true  # 넘기는 중 중앙 체력이 50% 아래로 처음 떨어지면 그 웨이브 뒤 멈춤
 static var danger_slow := false  # 중앙 체력이 50%·25% 아래로 처음 떨어질 때 1배속으로 (기본 끔)
 static var orb_hp_on := false  # 모든 구체에 체력 숫자 (끄면 고리만, 보스·마우스를 올린 구체는 숫자도)
 static var online_on := true  # 판 기록 보내기 (리더보드·사용 통계). 끄면 아무것도 보내지 않음
@@ -156,6 +158,10 @@ static func load_into(cfg: ConfigFile) -> void:
 	symbols_on = val(cfg, "settings", "symbols", false)  # 예전 저장(키가 없던 v0.4.20 이전)은 그대로 끔
 	orb_hp_on = val(cfg, "settings", "orb_hp", false)
 	danger_slow = val(cfg, "settings", "danger_slow", false)
+	skip_n = val(cfg, "settings", "skip_n", 3)
+	if not skip_n in [1, 3, 5, 10]:
+		skip_n = 3
+	skip_danger = val(cfg, "settings", "skip_danger", true)
 	fx_low = val(cfg, "settings", "fx_low", false)
 	fx_dps = clampi(val(cfg, "settings", "fx_dps", 2), 0, 3)
 	online_on = val(cfg, "online", "on", true)
@@ -199,6 +205,8 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("settings", "symbols", symbols_on)
 	cfg.set_value("settings", "orb_hp", orb_hp_on)
 	cfg.set_value("settings", "danger_slow", danger_slow)
+	cfg.set_value("settings", "skip_n", skip_n)
+	cfg.set_value("settings", "skip_danger", skip_danger)
 	cfg.set_value("settings", "fx_low", fx_low)
 	cfg.set_value("settings", "fx_dps", fx_dps)
 	cfg.set_value("settings", "ui_scale", ui_scale)

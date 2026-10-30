@@ -16,6 +16,7 @@ func _initialize():
 var last_wave := -1
 var god_w := -1
 var picks_w := -1
+var skip_w := -1
 var dumped := false
 var modes_set := false
 
@@ -68,10 +69,19 @@ func _process(_d):
 		last_wave = main.wave
 		var info = []
 		for t in main.towers.get_children(): info.append("%s@%d,%d dir%.0f dealt%d" % [t.title(), t.position.x, t.position.y, rad_to_deg(t.dir.angle()), t.dealt])
-		print("W", main.wave, " core=", main.core_hp, " lanes=", main.lanes.map(func(a): return int(rad_to_deg(a))), " ", info)
+		print("W", main.wave, " picks=", main.picks_left, " rr=", main.rerolls_left, " perk=", main.perk_mode, " core=", main.core_hp, " lanes=", main.lanes.map(func(a): return int(rad_to_deg(a))), " ", info)
 	main.auto_start = true
 	main.game_speed = float(OS.get_environment("SPEED")) if OS.get_environment("SPEED") != "" else 1.0
 	if main.phase == 6: main._start_wave()
+	# SKIP=3: SKIP_FROM(기본 8)웨이브부터 웨이브 넘기기를 3개씩 쓰고, 멈추면 쌓인 것을 다 고른 뒤 다시 넘긴다
+	if not main.bank_picks.is_empty() or main.bank_perks > 0:
+		skip_w = main.wave  # 넘기기를 멈춘 쉬는 시간: 이번엔 다 고른다
+	if OS.get_environment("SKIP") != "" and main.phase == 0 and main.wave >= (int(OS.get_environment("SKIP_FROM")) if OS.get_environment("SKIP_FROM") != "" else 8) and main.wave != skip_w and main.bank_picks.is_empty() and main.bank_perks == 0 and main._can_skip():
+		skip_w = main.wave
+		Meta.skip_n = int(OS.get_environment("SKIP"))
+		main._on_skip()
+		if OS.get_environment("DIAG") != "": print("SKIP w=", main.wave, " bank=", main.bank_picks, " rr=", main.bank_rerolls)
+		return false
 	if main.perk_mode:
 		main._on_perk(main.perk_offer[randi() % 3])
 		return false
