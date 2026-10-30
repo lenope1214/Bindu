@@ -106,6 +106,7 @@ var banner: Label
 var banner_t := 0.0
 var banner_queue: Array = []  # 앞 글자가 떠 있는 동안 들어온 글자 [글, 색]
 var choice_box: HBoxContainer
+const CARD_MAX_H := 250.0  # 선택지 카드 최대 높이 (넘으면 글자를 줄인다)
 var over_label: Label
 var legend: Label
 var preview: Label
@@ -606,10 +607,14 @@ func _build_ui() -> void:
 
 	help_label = Label.new()
 	help_label.set_anchors_preset(Control.PRESET_CENTER)
-	help_label.position = Vector2(-440, -320)  # 가운데보다 조금 위: 아래 버튼 줄을 비운다
-	help_label.size = Vector2(880, 600)
+	# 긴 줄은 창 안에서 줄바꿈 (오른쪽 끝이 화면 밖으로 잘리던 것). 높이가 화면보다 크면 _fit_panels가 줄인다
+	help_label.offset_left = -520.0
+	help_label.offset_right = 520.0
+	help_label.offset_top = -300.0
+	help_label.offset_bottom = 300.0
+	help_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	help_label.grow_vertical = Control.GROW_DIRECTION_BOTH  # 줄이 늘어도 가운데에 (아래 버튼 줄을 덮지 않게)
-	help_label.add_theme_font_size_override("font_size", 16)
+	help_label.add_theme_font_size_override("font_size", 15)
 	var hsb := StyleBoxFlat.new()
 	hsb.bg_color = Color(0.05, 0.06, 0.09, 1.0)  # 뒤 카드·설명 글자가 비쳐 보이지 않게
 	hsb.set_border_width_all(1)
@@ -673,7 +678,7 @@ func _refresh_dps() -> void:
 	var bottom := preview.position.y if preview.visible else ui_root.size.y - 80.0
 	if choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and choice_box.get_rect().position.x < 320.0:
 		bottom = minf(bottom, choice_box.get_rect().position.y)  # 카드 왼쪽 끝을 덮지 않게 (넘치면 굴려 본다)
-	var room := maxf(72.0, bottom - top - 44.0)
+	var room := maxf(48.0, bottom - top - 44.0)
 	var list := towers.get_children()
 	list.sort_custom(func(a, b): return a.dealt > b.dealt)
 	var sig := "%s|%d|%d" % [dps_hidden, roundi(room), roundi(wave_time)]
@@ -810,13 +815,14 @@ func _apply_ui_scale() -> void:
 	ui_root.size = get_viewport_rect().size / s
 
 
-## 글자를 키우면(설정) 화면보다 커지는 창은 줄여서 맞춘다. 가운데 창이라 위아래 여백이 같고, 아래는 버튼 줄을 비운다.
+## 화면보다 커지는 창(줄이 많거나 글자를 키웠을 때)은 줄여서 맞춘다. 가운데 창이라 위아래 여백이 같고, 아래는 버튼 줄을 비운다.
 func _fit_panels() -> void:
 	for c: Control in [title_box, help_label, records_panel, settings_panel, notes_panel, modes_panel, codex_panel]:
 		if not c.is_visible_in_tree():
 			continue
 		var h: float = c.get_combined_minimum_size().y if c == title_box else c.size.y
-		var k := 1.0 if Meta.ui_scale <= 1.0 else minf(1.0, (ui_root.size.y - 100.0) / maxf(1.0, h))
+		# 글자 크기와 상관없이: 줄이 많으면 시작 화면 아래 버튼 줄·도움말·기록 창이 화면 밖으로 잘리던 것 (아래 구석 버전·소리 버튼 자리를 비운다)
+		var k := minf(1.0, (ui_root.size.y - (110.0 if c == title_box else 100.0)) / maxf(1.0, h))
 		c.pivot_offset = c.size / 2.0
 		c.scale = Vector2(k, k)
 
@@ -964,7 +970,7 @@ func _help_text() -> String:
 		"콤보: 1.5초 안에 다음 구체를 잡으면 이어져요 (어느 오브젝트가 잡든). 콤보마다 처치 점수 +10%, 콤보 20부터 x3. 오른쪽 위 상자에 배율과 남은 시간",
 		"보스 웨이브를 넘기면 특성(모든 오브젝트에 붙는 강화) 3개 중 1개 선택",
 		"공격방식은 직선탄일 때 한 번만 정할 수 있고, 같은 것을 넣으면 레벨업",
-		"속성을 많이 겹칠수록 피해는 늘고 공격 속도는 조금씩 느려집니다. 오브젝트가 많을수록 모든 오브젝트의 피해가 늘어요(오브젝트 수 보너스, 5개 +16% · 10개 +23%, 늘수록 덜 오름). %s" % mods,
+		"속성을 많이 겹칠수록 피해는 늘고 공격 속도는 조금씩 느려집니다. 오브젝트가 많을수록 모든 오브젝트의 피해가 늘어요(오브젝트 수 보너스, 5개 +16%% · 10개 +23%%, 늘수록 덜 오름). %s" % mods,
 		"감속은 최대 70%, 밀기는 조금씩만. 기절·속박·빙결은 연달아 걸릴수록 짧아지다가 잠깐 면역",
 		"화면 밖 구체는 맞지 않습니다. 시작 화면에서 규칙 버전(↑/↓)과 맵(←/→)을 바꿀 수 있어요",
 		"모드(첫 판 뒤): 어렵게 하면 점수 배율이 오르고, 쉽게 하면 내려가요 (쉽게 모드 판은 기록 따로)",
@@ -1207,10 +1213,8 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 		"link":
 			var id: String = card["id"]
 			b.text = "[%d] 연계: %s\n%s\n오브젝트 위에 놓기" % [idx, Pat.LINKS[id]["name"], Pat.LINKS[id]["desc"]]
-	b.text = _wrap_words(b.text, 220.0, 15)
-	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_fit_card_text(b, b.text, 15)
 	b.focus_mode = Control.FOCUS_NONE  # 다른 버튼처럼: Space·Enter가 카드를 고르지 않게
-	b.add_theme_font_size_override("font_size", 15)
 	b.add_theme_color_override("font_color", col)
 	b.add_theme_color_override("font_hover_color", col.lightened(0.3))
 	b.pressed.connect(_on_pick.bind(card))
@@ -1219,6 +1223,24 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 		b.mouse_entered.connect(func(): hover_elem = card["e"])
 		b.mouse_exited.connect(func(): hover_elem = -1)
 	return b
+
+
+## 카드 글이 카드 안에 들어가게: 줄 수가 CARD_MAX_H를 넘으면 글자를 한 단계씩 줄인다 (최소 13).
+## 카드 높이는 글에 맞춰 170~CARD_MAX_H. 넘친 글이 카드 밖·아래 버튼 위로 삐져나오던 것.
+func _fit_card_text(b: Button, text: String, fs: int) -> void:
+	var t := text
+	var h := 0.0
+	while true:
+		t = _wrap_words(text, 220.0, fs)
+		# 버튼이 실제로 그리는 폭(테두리 안 226)으로 다시 재서 줄 수를 센다
+		h = ui_font.get_multiline_string_size(t, HORIZONTAL_ALIGNMENT_CENTER, 226.0, fs).y + 14.0
+		if h <= CARD_MAX_H or fs <= 13:
+			break
+		fs -= 1
+	b.text = t
+	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	b.add_theme_font_size_override("font_size", fs)
+	b.custom_minimum_size = Vector2(230, clampf(h, 170.0, CARD_MAX_H))
 
 
 ## 도감에서 선호한 카드면 꼬리표 글: 카드 자체, 또는 속성 카드가 선호한 반응을 지금 오브젝트에 만들 수 있을 때. 아니면 "".
@@ -1387,9 +1409,7 @@ func _show_perks() -> void:
 		b.add_theme_stylebox_override("hover", sbh)
 		b.add_theme_stylebox_override("pressed", sbh)
 		var have: int = perks.get(pk["id"], 0)
-		b.text = _wrap_words("[%d] 특성: %s\n\n%s%s" % [i + 1, pk["name"], _perk_desc(pk), "\n\n(보유 %d)" % have if have > 0 else ""], 220.0, 17)
-		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		b.add_theme_font_size_override("font_size", 17)
+		_fit_card_text(b, "[%d] 특성: %s\n\n%s%s" % [i + 1, pk["name"], _perk_desc(pk), "\n\n(보유 %d)" % have if have > 0 else ""], 17)
 		b.add_theme_color_override("font_color", Color(1, 0.85, 0.45))
 		b.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
 		b.focus_mode = Control.FOCUS_NONE
@@ -2287,8 +2307,11 @@ func _build_menu(root: Control) -> void:
 	box.set_anchors_preset(Control.PRESET_CENTER)
 	box.position = Vector2(-330, -300)
 	box.size = Vector2(660, 600)
+	# 줄이 늘면(회랑 설명·규칙·모드·이어하기·새 버전 알림) 위아래로 같이 자라고, 화면보다 크면 _fit_panels가 줄인다
+	box.grow_vertical = Control.GROW_DIRECTION_BOTH
+	box.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	box.add_theme_constant_override("separation", 14)
+	box.add_theme_constant_override("separation", 10)
 	title_label.add_child(box)
 	title_box = box
 	var logo := Label.new()
@@ -2312,8 +2335,13 @@ func _build_menu(root: Control) -> void:
 	modes_btn.add_theme_font_size_override("font_size", 17)
 	modes_btn.pressed.connect(_toggle_modes)
 	box.add_child(modes_btn)
-	skin_label = _menu_row(box, func(): _cycle_skin("tower", -1), func(): _cycle_skin("tower", 1))
-	core_label = _menu_row(box, func(): _cycle_skin("core", -1), func(): _cycle_skin("core", 1))
+	# 오브젝트·중앙 모양은 한 줄에 나란히 (세로 자리 아끼기)
+	var skins := HBoxContainer.new()
+	skins.alignment = BoxContainer.ALIGNMENT_CENTER
+	skins.add_theme_constant_override("separation", 24)
+	box.add_child(skins)
+	skin_label = _menu_row(skins, func(): _cycle_skin("tower", -1), func(): _cycle_skin("tower", 1), 180.0)
+	core_label = _menu_row(skins, func(): _cycle_skin("core", -1), func(): _cycle_skin("core", 1), 180.0)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 10)
@@ -2550,7 +2578,7 @@ func _build_menu(root: Control) -> void:
 
 
 ## ◀ 글자 ▶ 한 줄.
-func _menu_row(box: VBoxContainer, prev: Callable, next: Callable) -> Label:
+func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0) -> Label:
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 12)
@@ -2562,7 +2590,7 @@ func _menu_row(box: VBoxContainer, prev: Callable, next: Callable) -> Label:
 	a.pressed.connect(prev)
 	row.add_child(a)
 	var l := Label.new()
-	l.custom_minimum_size = Vector2(480, 0)
+	l.custom_minimum_size = Vector2(w, 0)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	row.add_child(l)
@@ -2581,7 +2609,7 @@ func _refresh_menu() -> void:
 	map_label.text = "맵: %s  (←/→)\n%s\n최고 기록%s  웨이브 %d · 점수 %s" % [Meta.map_name(), m["desc"], " (쉽게 모드)" if Modes.easy() else "", best[0], num(best[1])]
 	flip_label.get_parent().visible = Meta.map_id == "line"
 	flip_label.text = "구체가 오는 쪽: %s  (F)" % ("왼쪽 → 문은 오른쪽 끝" if Meta.line_flip else "오른쪽 → 문은 왼쪽 끝")
-	rules_label.text = "규칙: %s%s  (↑/↓)\n%s" % [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 470.0, 18)]
+	rules_label.text = "규칙: %s%s  (↑/↓)\n%s" % [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 550.0, 18)]
 	rules_label.get_parent().visible = Meta.games > 0  # 규칙 버전 고르기는 첫 판을 끝낸 뒤에 (그 전엔 버전 1)
 	modes_btn.visible = Meta.games > 0  # 모드도
 	modes_btn.text = "모드 (시험): %s   ▶" % ("없음" if Modes.on.is_empty() else "%s · 점수 x%.2f" % [Modes.names(), Modes.mul()])
@@ -3933,8 +3961,8 @@ func _process(delta: float) -> void:
 	range_btn.text = "범위 끄기" if range_all else "범위 보기"
 	legend_btn.text = ("설명 보기" if legend_hidden else "설명 숨기기") + " (Tab)"
 	legend.visible = legend.visible and not legend_hidden
-	# 시작 화면 위에 설정·기록·도움말 창을 열면 뒤 메뉴 글자가 창 옆으로 삐져나와 보이지 않게 흐리게
-	title_label.modulate.a = 0.12 if settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible else 1.0
+	# 시작 화면 위에 설정·기록·도움말·패치노트 창을 열면 뒤 메뉴는 숨긴다 (흐리게만 하면 창 아래로 삐져나온 버튼 줄이 겹쳐 보이고 눌리던 것)
+	title_box.visible = not (settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible)
 	hud.visible = not title_label.visible  # 시작 화면엔 메뉴에 최고 기록이 따로 있다
 	# 시작 화면에서 일시정지·배속 버튼을 누르면 메뉴 위에 일시정지 창이 뜨던 문제
 	# 게임 중엔 펼쳤을 때만 보인다 (단축키 M·P·Space는 접어도 된다). 시작 화면엔 소리·자동 시작만
@@ -3966,20 +3994,39 @@ func _process(delta: float) -> void:
 	hide_btn.visible = phase == Phase.CHOOSE and not title_label.visible
 	cancel_btn.visible = phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] and not title_label.visible and not get_tree().paused
 	hide_btn.text = ("▲ 선택지 다시 보기" if cards_hidden else "▼ 선택지 내리고 필드 보기") + " (V)"
-	# 펼쳐 있으면 새로고침 버튼 아래, 내려 두면 화면 위쪽 가운데
+	# 펼쳐 있으면 카드 바로 아래 새로고침 버튼 옆, 내려 두면 화면 위쪽 가운데
 	hide_btn.set_anchors_preset(Control.PRESET_CENTER_TOP if cards_hidden else Control.PRESET_CENTER)
-	var hy := maxf(96.0, hud.position.y + hud.size.y + 8.0) if cards_hidden else 148.0  # 내려 둘 때는 점수 줄 아래
 	# 카드 줄은 오른쪽 설명을 피해 왼쪽으로 비켜 있다. 설명을 숨기면 가운데로, 버튼도 카드 가운데에 맞춘다
 	var cx := 0.0 if legend_hidden else -75.0
 	choice_box.offset_left = cx - 365.0
 	choice_box.offset_right = cx + 365.0
-	reroll_btn.offset_left = cx - 170.0
-	reroll_btn.offset_right = cx + 170.0
-	var hx := 0.0 if cards_hidden else cx
+	# 새로고침·내리기 버튼은 카드 바로 아래 한 줄에 (카드가 길어지면 버튼이 카드 글을 덮던 것).
+	# 카드+버튼 줄이 왼쪽 아래 다음 웨이브 안내에 닿으면 카드 줄을 위로 올리고, 그래도 모자라면(글자 크게) 0.7배까지 줄인다
+	var mid := ui_root.size.y / 2.0
+	var ch := choice_box.get_combined_minimum_size().y
+	var lim := (preview.position.y if preview.visible else ui_root.size.y - 60.0) - 6.0
+	var floor_y := (hud.position.y + hud.size.y + 8.0) if hud.visible else 8.0
+	if dps_panel.visible and ui_root.size.x / 2.0 + cx - 365.0 < 320.0:
+		floor_y += 44.0 + 48.0 + 6.0  # 왼쪽 위 DPS 표(머리 + 2줄, 나머지는 굴려 봄)를 덮지 않게
+	var need := ch + 8.0 + 36.0
+	var k := clampf((lim - floor_y) / need, 0.7, 1.0)
+	var ctop := maxf(minf(mid - 90.0, lim - need * k), floor_y)
+	choice_box.pivot_offset = Vector2(choice_box.size.x / 2.0, 0.0)
+	choice_box.scale = Vector2(k, k)
+	choice_box.offset_top = ctop - mid
+	choice_box.offset_bottom = choice_box.offset_top + ch
+	var by := choice_box.offset_top + ch * k + 8.0
+	var two := reroll_btn.visible
+	reroll_btn.offset_left = cx - 305.0
+	reroll_btn.offset_right = cx + 35.0
+	reroll_btn.offset_top = by
+	reroll_btn.offset_bottom = by + 36.0
+	var hx := 0.0 if cards_hidden else (cx + 175.0 if two else cx)
+	var hy := maxf(96.0, hud.position.y + hud.size.y + 8.0) if cards_hidden else by  # 내려 둘 때는 점수 줄 아래
 	hide_btn.offset_left = hx - 130.0
 	hide_btn.offset_right = hx + 130.0
 	hide_btn.offset_top = hy
-	hide_btn.offset_bottom = hy + 32.0
+	hide_btn.offset_bottom = hy + (32.0 if cards_hidden else 36.0)
 	restart_armed = maxf(restart_armed - delta, 0.0)
 	end_armed = maxf(end_armed - delta, 0.0)
 	if not get_tree().paused and not title_label.visible and phase != Phase.GAMEOVER:
