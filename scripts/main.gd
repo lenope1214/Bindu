@@ -2667,6 +2667,7 @@ func _build_menu(root: Control) -> void:
 	fs.focus_mode = Control.FOCUS_NONE
 	fs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fs.pressed.connect(_toggle_fullscreen)
+	fs.visible = not OS.has_feature("mobile")  # 폰·태블릿은 늘 전체 화면 (누르면 창 모드로 바뀌어 위아래 막대가 생길 수 있다)
 	brow.add_child(fs)
 	var close := Button.new()
 	close.text = "닫기"
@@ -3342,6 +3343,8 @@ func _refresh_modes() -> void:
 
 
 func _toggle_fullscreen() -> void:
+	if OS.has_feature("mobile"):
+		return
 	var full := DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if full else DisplayServer.WINDOW_MODE_FULLSCREEN)
 
