@@ -149,6 +149,10 @@ var rerolls_left := 1
 var bonus_rerolls := 0
 var combo := 0
 var combo_t := 0.0
+const COMBO_KEEP := 1.5  # 이 시간 안에 다음 처치가 나와야 콤보가 이어진다
+var combo_bonus := 0  # 이번 콤보로 더 얻은 점수 (배율 없이 받았을 점수와의 차이)
+var combo_end := [0, 0, 0.0]  # 끊긴 콤보 [콤보, 보너스, 남은 표시 시간]
+var combo_max_flash := 0.0  # 콤보 20(점수 x3)에 닿은 순간 반짝임
 var ui_font: Font
 var ui_root: Control  # UI 전체 (글자·버튼 크기 설정만큼 키운다)
 var perk_src := ""
@@ -900,6 +904,7 @@ func _help_text() -> String:
 		"중앙 체력 10. 구체가 닿으면 줄어듭니다",
 		"쉬는 시간마다 3개 중 1개를 고릅니다 (처음 두 번은 2번)" if Rules.picks == 1 else "쉬는 시간마다 3개 중 1개씩 %d번 고릅니다" % Rules.picks,
 		"5웨이브마다 보스. 처치하면 체력 +2, 새로고침 +1",
+		"콤보: 1.5초 안에 다음 구체를 잡으면 이어져요 (어느 오브젝트가 잡든). 콤보마다 처치 점수 +10%, 콤보 20부터 x3. 오른쪽 위 상자에 배율과 남은 시간",
 		"보스 웨이브를 넘기면 특성(모든 오브젝트에 붙는 강화) 3개 중 1개 선택",
 		"공격방식은 직선탄일 때 한 번만 정할 수 있고, 같은 것을 넣으면 레벨업",
 		"속성을 많이 겹칠수록 피해는 늘고 공격 속도는 조금씩 느려집니다. 오브젝트가 많을수록 모든 오브젝트의 피해가 늘어요(오브젝트 수 보너스). %s" % mods,
@@ -4075,16 +4080,24 @@ func _resolve(delta: float) -> void:
 	for o in live_orbs:
 		if o.hp <= 0.0:
 			sfx.play("kill", 0.15)
-			combo = combo + 1 if combo_t > 0.0 else 1
-			combo_t = 1.5
+			if combo_t <= 0.0:
+				combo = 0
+				combo_bonus = 0
+			combo += 1
+			combo_t = COMBO_KEEP
 			best_combo = maxi(best_combo, combo)
 			if combo >= 30:
 				_achieve("combo30")
 			# 모드가 늘린 체력·수는 빼고 매긴 뒤 모드 배율을 곱한다
-			var gain := int(o.max_hp * Modes.kill_k(o.kind == Orb.Kind.BOSS, o.minion) * 10 * (1.0 + 0.1 * mini(combo, 20)) * Modes.mul())
+			var base: float = o.max_hp * Modes.kill_k(o.kind == Orb.Kind.BOSS, o.minion) * 10 * Modes.mul()
+			var gain := int(base * combo_mul())
 			score += gain
-			if combo >= 3 and combo % 5 == 0:
-				popup(o.position + Vector2(0, -20), combo, Color(1, 0.7, 0.3), true, "콤보 %d!" % combo)
+			combo_bonus += gain - int(base)
+			if combo == 20:
+				combo_max_flash = 0.8
+				popup(o.position + Vector2(0, -20), combo, Color(1, 0.85, 0.2), true, "콤보 20! 점수 x3", 1.2)
+			elif combo >= 3 and combo % 5 == 0:
+				popup(o.position + Vector2(0, -20), combo, Color(1, 0.7, 0.3), true, "콤보 %d! 점수 x%.1f" % [combo, combo_mul()])
 			if o.splits:
 				for i in 2:
 					_spawn_child(o)
@@ -4221,7 +4234,12 @@ func _update_fx(delta: float) -> void:
 		q[3] -= delta
 	refracts = refracts.filter(func(q): return q[3] > 0.0)
 	shake = maxf(shake - delta, 0.0)
-	combo_t = maxf(combo_t - delta, 0.0)
+	if combo_t > 0.0:
+		combo_t = maxf(combo_t - delta, 0.0)
+		if combo_t <= 0.0 and combo >= 5:
+			combo_end = [combo, combo_bonus, 1.5]
+	combo_end[2] = maxf(combo_end[2] - delta, 0.0)
+	combo_max_flash = maxf(combo_max_flash - delta, 0.0)
 	core_flash = maxf(core_flash - delta, 0.0)
 	eclipse_flash = maxf(eclipse_flash - delta, 0.0)
 	camera.position = center()
@@ -4492,6 +4510,7 @@ func _draw_fx() -> void:
 		fx_layer.draw_string(f, p[0] + Vector2(1, 1), p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0, 0, 0, 0.7 * a))
 		fx_layer.draw_string(f, p[0], p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(p[3], a))
 	_draw_boss_bar()
+	_draw_combo()
 	_draw_tooltip()
 
 
@@ -4518,6 +4537,49 @@ func _draw_boss_bar() -> void:
 	var txt := "보스%s  %d / %d" % [" x%d" % n if n > 1 else "", ceili(hp), ceili(mx)]
 	fx_layer.draw_string(ui_font, p + Vector2(1, -3), txt, HORIZONTAL_ALIGNMENT_CENTER, w, 14, Color(0, 0, 0, 0.8))
 	fx_layer.draw_string(ui_font, p + Vector2(0, -4), txt, HORIZONTAL_ALIGNMENT_CENTER, w, 14, Color(1, 0.85, 0.88))
+
+
+## 콤보 점수 배율: 콤보마다 +10%, 콤보 20부터 x3.
+func combo_mul() -> float:
+	return 1.0 + 0.1 * mini(combo, 20)
+
+
+## 오른쪽 위(설명 버튼 아래) 콤보 상자: 콤보·점수 배율·남은 유지 시간·더 얻은 점수.
+## 콤보는 웨이브 중에만 쌓이고, 그때는 설명 글이 꺼져 있어 이 자리가 빈다.
+func _draw_combo() -> void:
+	if title_label.visible or phase == Phase.GAMEOVER:
+		return
+	var live := combo_t > 0.0 and combo >= 2
+	if not live and combo_end[2] <= 0.0:
+		return
+	var w := 180.0
+	var r := legend_btn.get_global_rect()
+	var p := Vector2(get_viewport_rect().size.x - 10.0 - w, r.end.y + 8.0) + camera.offset
+	if legend.visible:
+		p.y = legend.get_global_rect().end.y + 8.0 + camera.offset.y
+	if not live:
+		var a: float = clampf(combo_end[2] / 0.5, 0.0, 1.0)
+		fx_layer.draw_rect(Rect2(p, Vector2(w, 44)), Color(0, 0, 0, 0.55 * a))
+		fx_layer.draw_string(ui_font, p + Vector2(10, 19), "콤보 %d 끊김" % combo_end[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(1, 0.6, 0.5, a))
+		fx_layer.draw_string(ui_font, p + Vector2(10, 37), "콤보로 점수 +%s" % num(combo_end[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 0.9, 0.6, a))
+		return
+	var maxed := combo >= 20
+	var now := Time.get_ticks_msec() / 1000.0
+	var col := Color(1, 0.85, 0.2) if maxed else Color(1, 1, 1).lerp(Color(1, 0.6, 0.25), combo / 20.0)
+	fx_layer.draw_rect(Rect2(p, Vector2(w, 74)), Color(0, 0, 0, 0.6))
+	if maxed:
+		# x3: 금색 테두리가 맥박치고, 닿은 순간엔 크게 반짝인다
+		var glow := 0.45 + 0.25 * sin(now * 6.0) + combo_max_flash
+		fx_layer.draw_rect(Rect2(p, Vector2(w, 74)), Color(1, 0.85, 0.2, clampf(glow, 0.0, 1.0)), false, 2.0 + 3.0 * combo_max_flash)
+	fx_layer.draw_string(ui_font, p + Vector2(10, 26), "콤보 %d" % combo, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, col)
+	var mt := "최대 x3" if maxed else "점수 x%.1f" % combo_mul()
+	fx_layer.draw_string(ui_font, p + Vector2(0, 25), mt, HORIZONTAL_ALIGNMENT_RIGHT, w - 10.0, 16, col)
+	# 남은 유지 시간: 다 줄어들기 전에 다음 구체를 잡아야 이어진다
+	var k := combo_t / COMBO_KEEP
+	fx_layer.draw_rect(Rect2(p + Vector2(10, 34), Vector2(w - 20, 5)), Color(1, 1, 1, 0.15))
+	fx_layer.draw_rect(Rect2(p + Vector2(10, 34), Vector2((w - 20) * k, 5)), Color(1, 0.35, 0.3) if k < 0.35 else col)
+	fx_layer.draw_string(ui_font, p + Vector2(10, 53), "콤보로 점수 +%s" % num(combo_bonus), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 0.9, 0.6))
+	fx_layer.draw_string(ui_font, p + Vector2(10, 68), "%.1f초 안에 다음 처치로 유지" % COMBO_KEEP, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.55))
 
 
 ## 투척형 발사체가 착지했을 때.
