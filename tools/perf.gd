@@ -78,6 +78,8 @@ func _process(_d):
 		main.prof.clear()
 		last_us = now
 		return false
+	if f <= 120:
+		main.prof.clear()  # 잴 프레임만 더한다 (배속을 바꾼 직후 120프레임은 빼고)
 	if f > 120:
 		samples.append((now - last_us) / 1000.0)
 		counts += Vector3(main.live_orbs.size(), main.projectiles.get_child_count(), main.zones.get_child_count())
