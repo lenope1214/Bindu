@@ -4,6 +4,7 @@ extends Node2D
 enum Phase { CHOOSE, PLACE, AIM, WAVE, GAMEOVER, MOVE, READY }
 
 const CORE_RADIUS := 14.0
+const SPIRAL_SWIRL := 0.6  # 소용돌이 맵: 구체가 중앙 방향에서 비껴 도는 각도(라디안)
 const CORE_MAX_HP := 10
 const MERGE_DIST := 30.0
 const SAVE_PATH := "user://best.cfg"
@@ -48,6 +49,7 @@ var auto_start := false  # 끄면 설치 후 Space로 웨이브 시작
 var auto_btn: Button
 var start_btn: Button
 var cancel_btn: Button  # 옮기기·설치 중 화면 취소 (우클릭·Esc가 없는 터치 화면용)
+var boss_plan := {}  # 다음 보스: 쉬는 시간에 진입 각도·체력·속도·저항을 미리 정해 길과 정보를 정확히 보여 준다
 var touch_ui := false  # 마지막 입력이 터치였는지 (터치는 마우스를 올려 둘 수 없다)
 var offer: Array = []  # 이번 선택지 [카드, ...] 카드: {"type": "elem"|"pat"|"mod"|"link", ...}
 var picked := {}  # 고른 카드
@@ -607,6 +609,7 @@ func _start_choose(new_round := true) -> void:
 		_roll_lanes()
 		# 다음 웨이브 저항 속성: 12웨이브(버전 4는 8)부터 60% 확률
 		wave_resist = Elem.ALL.pick_random() if wave + 1 >= Rules.resist_from and randf() < 0.6 else -1
+		_plan_boss()
 		picks_left = 2 if wave <= 1 else Rules.picks  # 처음 두 번의 쉬는 시간은 2개씩
 		rerolls_left = 1 + bonus_rerolls + perks.get("reroll", 0)
 		bonus_rerolls = 0
@@ -1009,12 +1012,100 @@ func _update_preview() -> void:
 	if firsts.has(nw):
 		lines.append("처음 등장: " + firsts[nw])
 	if nw % 5 == 0:
-		lines.append("보스 등장! 중앙에 닿으면 체력 3 감소")
+		lines.append(_boss_text())
+	else:
+		var bw := ceili(nw / 5.0) * 5
+		lines.append("다음 보스: 웨이브 %d (%d웨이브 뒤)" % [bw, bw - wave])
 	if wave == 0:
 		lines.append("빨간 화살표 방향에서 구체가 와요. 길목을 가로지르게 설치하세요.")
 	# 자동 줄바꿈은 한글 낱말 중간에서도 끊으므로 띄어쓰기에서 직접 바꾼다
 	preview.text = _wrap_words("\n".join(lines), 610.0, 15)
 	preview.add_theme_color_override("font_color", Color(1, 0.75, 0.75) if nw % 5 == 0 else Color(1, 1, 1, 0.85))
+
+
+## 보스 길이(화면 밖 출발점부터 중앙까지)와 막지 않을 때 걸리는 시간.
+func _boss_eta() -> float:
+	var pts := _orb_path(boss_plan["a"])
+	var L := 0.0
+	for i in range(1, pts.size()):
+		L += pts[i - 1].distance_to(pts[i])
+	L -= CORE_RADIUS + 30.0  # 보스 반지름만큼 먼저 닿는다
+	return L / (boss_plan["spd"] * 0.45 * orb_speed_mul)
+
+
+## 다음 보스 안내 (쉬는 시간에 미리 뽑아 둔 그대로).
+func _boss_text() -> String:
+	if boss_plan.is_empty():
+		return "보스 등장! 중앙에 닿으면 체력 3 감소"
+	var sp := PackedStringArray(["보스: 체력 %s" % num(ceilf(boss_plan["hp"] * 12.0))])
+	if boss_plan["resist"] >= 0:
+		sp.append("%s 저항" % Elem.NAMES[boss_plan["resist"]])
+	if boss_plan["sturdy"]:
+		sp.append("굳셈")
+	sp.append("웨이브 마지막에 나옴")
+	sp.append("4초마다 빠른 부하")
+	return " · ".join(sp) + "\n보스 길: 화면의 굵은 분홍 선. 막지 않으면 나온 뒤 약 %d초에 중앙 (닿으면 체력 -3)" % roundi(_boss_eta())
+
+
+## 보스가 올 길: 쉬는 시간과, 보스 웨이브에서 보스가 나오기 전까지.
+func _draw_boss_path(now: float) -> void:
+	if boss_plan.is_empty() or title_label.visible or phase == Phase.GAMEOVER:
+		return
+	if phase == Phase.WAVE and boss_plan["wave"] != wave:
+		return
+	var col := Color(1, 0.35, 0.6)
+	var vr := get_viewport_rect()
+	var all := _orb_path(boss_plan["a"])
+	# 화면 안에 들어온 뒤부터 그린다 (직선은 화면 가장자리에서 자름)
+	var pts := PackedVector2Array()
+	if all.size() == 2:
+		pts.append(_edge_point(center(), Vector2.from_angle(boss_plan["a"])))
+		pts.append(all[1])
+	else:
+		for p in all:
+			if not pts.is_empty() or vr.has_point(p):
+				pts.append(p)
+	if pts.size() < 2:
+		return
+	var pulse := 0.75 + 0.25 * sin(now * 3.0)
+	draw_polyline(pts, Color(col, 0.16 * pulse), 14.0)
+	draw_polyline(pts, Color(col, 0.8 * pulse), 3.0)
+	# 보스가 오는 쪽으로 흐르는 화살 (길이 비율로 놓는다)
+	var lens: Array[float] = [0.0]
+	for i in range(1, pts.size()):
+		lens.append(lens[i - 1] + pts[i - 1].distance_to(pts[i]))
+	var total: float = lens[-1]
+	for k in 7:
+		var dpos := fmod(now * 0.12 + k / 7.0, 1.0) * (total - CORE_RADIUS - 20.0)
+		var j := 1
+		while j < pts.size() - 1 and lens[j] < dpos:
+			j += 1
+		var seg := pts[j] - pts[j - 1]
+		if seg.length() < 0.01:
+			continue
+		var d := seg.normalized()
+		var q := pts[j - 1] + d * (dpos - lens[j - 1])
+		draw_colored_polygon(PackedVector2Array([q + d * 9.0, q - d * 5.0 + d.orthogonal() * 7.0, q - d * 5.0 - d.orthogonal() * 7.0]), Color(col, 0.85))
+	# 들어오는 자리: 큰 고리 + 글자. 가장자리의 버튼·점수 줄에 가리지 않게 길을 따라 안쪽(110)에
+	var at := minf(110.0, total * 0.4)
+	var j2 := 1
+	while j2 < pts.size() - 1 and lens[j2] < at:
+		j2 += 1
+	var d2 := (pts[j2] - pts[j2 - 1]).normalized()
+	var m := pts[j2 - 1] + d2 * (at - lens[j2 - 1])
+	draw_arc(m, 20.0 + 3.0 * sin(now * 5.0), 0, TAU, 32, Color(col, 0.95), 3.0)
+	draw_circle(m, 9.0, Color(col, 0.9))
+	var label := "보스 · 웨이브 %d" % boss_plan["wave"]
+	var fs := 16
+	var w := ui_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	# 길 옆에 쓴다 (길 위에 쓰면 화살과 겹침): 중앙에서 먼 쪽 옆
+	var side := d2.orthogonal()
+	if side.dot(m - center()) < 0.0:
+		side = -side
+	var lp := m + side * 30.0 + Vector2(-w / 2.0 if absf(side.x) < 0.5 else (0.0 if side.x > 0.0 else -w), 6.0)
+	lp = lp.clamp(Vector2(8, 70), vr.size - Vector2(w + 8, 70))
+	draw_string_outline(ui_font, lp, label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0, 0, 0, 0.9))
+	draw_string(ui_font, lp, label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1, 0.75, 0.85))
 
 
 func _on_pick(card: Dictionary) -> void:
@@ -1913,7 +2004,7 @@ func _save_run() -> void:
 		"core_hp": core_hp, "core_max": core_max, "perks": perks.keys().map(func(k): return [k, perks[k]]), "orb_speed_mul": orb_speed_mul,
 		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
 		"rerolls_left": rerolls_left, "bonus_rerolls": bonus_rerolls, "picks_left": picks_left,
-		"lanes": Array(lanes), "wave_resist": wave_resist, "achievements": new_achievements,
+		"lanes": Array(lanes), "wave_resist": wave_resist, "boss": boss_plan, "achievements": new_achievements,
 		"state": "perk" if perk_mode else ("ready" if phase == Phase.READY else "choose"),
 		"offer": offer, "perk_offer": perk_offer.map(func(pk): return pk["id"]), "towers": list,
 	}
@@ -2010,6 +2101,13 @@ func _continue_run() -> void:
 	wave_resist = g.call("wave_resist", -1)
 	if not wave_resist in Elem.ALL:
 		wave_resist = -1
+	# 미리 뽑아 둔 보스 (없거나 형식이 다르면 새로 뽑음)
+	var bp: Variant = g.call("boss", {})
+	boss_plan = {}
+	if bp is Dictionary and bp.get("wave") is int and bp["wave"] == wave + 1 and bp.get("a") is float and bp.get("hp") is float and bp.get("spd") is float and bp.get("resist") is int and bp.get("sturdy") is bool:
+		boss_plan = {"wave": bp["wave"], "a": bp["a"], "hp": maxf(1.0, bp["hp"]), "spd": maxf(1.0, bp["spd"]), "resist": bp["resist"] if bp["resist"] in Elem.ALL else -1, "sturdy": bp["sturdy"]}
+	else:
+		_plan_boss()
 	new_achievements = (g.call("achievements", []) as Array).filter(func(a): return a is String)
 	# 오브젝트: 연결선은 저장 순서 번호로 다시 잇는다 (못 읽은 것은 null로 자리만 지킴)
 	var raw: Array = g.call("towers", [])
@@ -2297,34 +2395,69 @@ func arc(from: Orb, dmg: float, src: Tower = null) -> void:
 			arcs.append([from.position, best.position, 0.12])
 
 
-func _spawn_orb(kind := -1) -> void:
-	var o := Orb.new()
-	var size := get_viewport_rect().size
-	var r := size.length() / 2.0 + 30.0
-	var spread := minf(0.15 + 0.01 * wave, 0.4)
+## 구체 하나의 진입 각도·체력(종류 보정 전)·속도·저항·굳셈을 뽑는다.
+func _roll_orb(w: int) -> Dictionary:
+	var spread := minf(0.15 + 0.01 * w, 0.4)
 	if Meta.map_id == "cross":
 		spread = 0.06  # 십자로: 네 길 위로만 온다
 	var a: float = lanes.pick_random() + randf_range(-spread, spread)
-	o.position = center() + Vector2(cos(a), sin(a)) * r
-	o.target = center()
-	if kind < 0:
-		kind = _roll_kind()
-	o.main = self
-	var hp := (1.0 + floorf(wave * 0.7) + randi() % 2) * hp_growth(wave)
-	var spd := 36.0 + wave * 3.0 + randf() * 8.0
+	var hp := (1.0 + floorf(w * 0.7) + randi() % 2) * hp_growth(w)
 	match Meta.map_id:
-		"spiral":
-			o.swirl = 0.6
 		"cross":
 			hp = ceilf(hp * 1.6)
 		"storm":
 			hp = maxf(1.0, roundf(hp * 0.6))
-	o.setup(kind, roundf(hp), spd)
+	var spd := 36.0 + w * 3.0 + randf() * 8.0
 	# 저항·굳셈: 쉬는 시간에 미리 알려 준 대로
-	if wave_resist >= 0 and randf() < resist_share(wave):
-		o.resist_e = wave_resist
-	if randf() < sturdy_share(wave):
-		o.sturdy = true
+	var res := wave_resist if wave_resist >= 0 and randf() < resist_share(w) else -1
+	return {"a": a, "hp": roundf(hp), "spd": spd, "resist": res, "sturdy": randf() < sturdy_share(w)}
+
+
+## 다음 웨이브가 보스 웨이브면 보스를 미리 뽑아 둔다 (화면에 길·체력을 정확히 알려 주려고).
+func _plan_boss() -> void:
+	boss_plan = {}
+	if (wave + 1) % 5 == 0 and not lanes.is_empty():
+		boss_plan = _roll_orb(wave + 1)
+		boss_plan["wave"] = wave + 1
+
+
+## 구체가 나오는 거리 (화면 대각선 반 + 30, 화면 밖).
+func _spawn_radius() -> float:
+	return get_viewport_rect().size.length() / 2.0 + 30.0
+
+
+## 각도 a에서 나온 구체가 막히지 않을 때 지나가는 길 (소용돌이 맵은 나선, 구체 이동과 같은 식).
+func _orb_path(a: float) -> PackedVector2Array:
+	var c := center()
+	var p := c + Vector2.from_angle(a) * _spawn_radius()
+	if Meta.map_id != "spiral":
+		return PackedVector2Array([p, c])
+	var pts := PackedVector2Array([p])
+	for k in 600:
+		var to := c - p
+		if to.length() <= 60.0:
+			break
+		p += to.normalized().rotated(SPIRAL_SWIRL) * 4.0
+		if k % 3 == 2:
+			pts.append(p)
+	pts.append(p)
+	pts.append(c)
+	return pts
+
+
+func _spawn_orb(kind := -1, plan := {}) -> void:
+	var o := Orb.new()
+	var p: Dictionary = plan if not plan.is_empty() else _roll_orb(wave)
+	o.position = center() + Vector2.from_angle(p["a"]) * _spawn_radius()
+	o.target = center()
+	if kind < 0:
+		kind = _roll_kind()
+	o.main = self
+	if Meta.map_id == "spiral":
+		o.swirl = SPIRAL_SWIRL
+	o.setup(kind, p["hp"], p["spd"])
+	o.resist_e = p["resist"]
+	o.sturdy = p["sturdy"]
 	# A4·A5: 보호막(8웨이브~), 분열(10웨이브~)
 	if kind == Orb.Kind.NORMAL or kind == Orb.Kind.TANK:
 		if wave >= 8 and randf() < minf(0.1 + 0.01 * wave, 0.3):
@@ -2501,8 +2634,10 @@ func _sim_step(delta: float) -> void:
 			spawn_timer = spawn_interval * (0.5 if randf() < 0.2 and wave >= 4 else 1.0)
 			to_spawn -= 1
 			# 5웨이브마다 마지막에 보스
-			_spawn_orb(Orb.Kind.BOSS if to_spawn == 0 and wave % 5 == 0 else -1)
-			if to_spawn == 0 and wave % 5 == 0:
+			var boss := to_spawn == 0 and wave % 5 == 0
+			_spawn_orb(Orb.Kind.BOSS if boss else -1, boss_plan if boss and boss_plan.get("wave", -1) == wave else {})
+			if boss:
+				boss_plan = {}
 				big_banner("보스 등장!", Color(1, 0.35, 0.4))
 				sfx.play("boss", 0.0)
 
@@ -3030,9 +3165,20 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.6))
 
 	# 구체 진입 방향 표시
+	var vr := get_viewport_rect()
 	for a in lanes:
 		var d := Vector2(cos(a), sin(a))
-		var tip := _edge_point(c, d) - d * 18.0 - d * 6.0 * sin(now * 4.0)
+		var edge := _edge_point(c, d)
+		var path := PackedVector2Array()
+		if Meta.map_id == "spiral":
+			# 나선: 화면 밖에서 돌며 들어오므로, 실제로 화면에 들어오는 자리에 화살표를 둔다
+			for q in _orb_path(a):
+				if not path.is_empty() or vr.has_point(q):
+					path.append(q)
+			if path.size() >= 2:
+				edge = path[0]
+				d = (path[0] - path[1]).normalized()
+		var tip := edge - d * 18.0 - d * 6.0 * sin(now * 4.0)
 		var col := Color(1, 0.3, 0.35, 0.9 if phase != Phase.WAVE else 0.35)
 		draw_colored_polygon(PackedVector2Array([
 			tip - d * 22.0,
@@ -3040,16 +3186,9 @@ func _draw() -> void:
 			tip - d.orthogonal() * 12.0,
 		]), col)
 		if phase != Phase.WAVE and Meta.map_id == "spiral":
-			# 나선 경로 미리보기
-			var p := tip
-			var pts := PackedVector2Array([p])
-			for k in 80:
-				var to := c - p
-				if to.length() < 30.0:
-					break
-				p += to.normalized().rotated(0.75 if to.length() > 60.0 else 0.0) * 14.0
-				pts.append(p)
-			draw_polyline(pts, Color(col, 0.3), 1.5)
+			# 나선 경로 미리보기 (구체 이동과 같은 식)
+			if path.size() >= 2:
+				draw_polyline(path, Color(col, 0.3), 1.5)
 		elif phase != Phase.WAVE:
 			draw_dashed_line(c + d * 40.0, tip, Color(col, 0.25), 1.5, 8.0)
 			# 중앙 쪽으로 흘러가는 점
@@ -3058,6 +3197,7 @@ func _draw() -> void:
 				var f := fmod(now * 0.25 + k / 5.0, 1.0)
 				draw_circle(tip - d * f * (L - 40.0), 2.5, Color(col, 0.5 * (1.0 - f)))
 
+	_draw_boss_path(now)
 
 	# 연결선
 	for t in towers.get_children():
