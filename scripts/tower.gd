@@ -14,6 +14,7 @@ var pattern := Pat.DEFAULT
 var plv := 1  # 공격방식 레벨
 var mods := {}  # 강화 id -> 겹친 수
 var prism := 0
+var prism_flash := 0.0  # 탄이 지나간 순간 프리즘이 번쩍인다 (표시용)
 var pincer := 0  # 협공: 여러 오브젝트가 함께 맞힌 구체에 표식 폭발
 var reso := 0
 var eff := {}  # 지금 쓰는 속성 (매 프레임 갱신)
@@ -981,6 +982,9 @@ func _process(delta: float) -> void:
 	if place_pop > 0.0:
 		place_pop = maxf(place_pop - delta * 3.0, 0.0)
 		queue_redraw()
+	if prism_flash > 0.0:
+		prism_flash = maxf(prism_flash - delta * 4.0, 0.0)
+		queue_redraw()
 
 
 func _draw_body() -> void:
@@ -991,8 +995,10 @@ func _draw_body() -> void:
 	if prism > 0:
 		var hx := PackedVector2Array()
 		for i in 7:
-			hx.append(Vector2.from_angle(TAU * i / 6.0 + t) * (RADIUS + 6.0))
-		draw_polyline(hx, Color(0.8, 0.95, 1.0, 0.8), 2.0)
+			hx.append(Vector2.from_angle(TAU * i / 6.0 + t) * (RADIUS + 6.0 + 3.0 * prism_flash))
+		if prism_flash > 0.0:
+			draw_colored_polygon(hx.slice(0, 6), Color(1, 1, 1, 0.35 * prism_flash))
+		draw_polyline(hx, Color(0.8, 0.95, 1.0, 0.8).lerp(Color.WHITE, prism_flash), 2.0 + 2.0 * prism_flash)
 	if pincer > 0:
 		# 협공: 세 갈래 화살표가 안쪽을 겨눈다
 		for i in 3:

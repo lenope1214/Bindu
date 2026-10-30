@@ -162,6 +162,8 @@ func _check_prisms() -> void:
 				prism_els[e] = maxi(prism_els.get(e, 0), tw.elements[e])
 			col = col.lerp(tw.color(), 0.5)
 			owner_tower.main.burst(position, tw.color(), 4, 80.0)
+			owner_tower.main.refract(tw.position, vel.normalized(), tw.color())
+			tw.prism_flash = 1.0
 
 
 func finished() -> bool:
@@ -234,6 +236,14 @@ func _draw() -> void:
 	var n := d.orthogonal()
 	if not lob and kind != "gust":
 		draw_circle(Vector2.ZERO, radius * 2.2, Color(_trail_color(), 0.12))
+	if not prisms.is_empty():
+		# 프리즘을 지난 탄: 도는 육각 테두리 (지난 프리즘 수만큼 겹)
+		for j in mini(prisms.size(), 3):
+			var hx := PackedVector2Array()
+			var rr := radius * 1.6 + 5.0 + 4.0 * j
+			for i in 7:
+				hx.append(Vector2.from_angle(TAU * i / 6.0 + t * (6.0 if j % 2 == 0 else -6.0)) * rr)
+			draw_polyline(hx, Color(col.lerp(Color.WHITE, 0.6), 0.85 - 0.2 * j), 1.5)
 	match kind:
 		"thorn":
 			draw_colored_polygon(PackedVector2Array([d * 12, -d * 8 - n * 4, -d * 4, -d * 8 + n * 4]), col)

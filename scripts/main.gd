@@ -72,6 +72,7 @@ var zones: Node2D
 var arcs: Array = []  # 전류 이펙트 [시작, 끝, 남은 시간]
 var bolts: Array = []  # 연쇄 번개 [점 목록, 남은 시간]
 var pulses: Array = []  # 소리 울림 음파 [중심, 반지름, 남은 시간]
+var refracts: Array = []  # 프리즘 굴절 [중심, 탄 방향, 색, 남은 시간]
 var live_orbs: Array = []
 var targets: Array = []  # 화면 안에 들어온 구체 (공격 대상)
 var fx_layer: Node2D  # 피해 숫자·파편 (맨 위)
@@ -3552,6 +3553,12 @@ func sound_pulse(o: Orb) -> void:
 		pulses.append([o.position, r, 0.3])
 
 
+## 프리즘 굴절 표시: 탄이 프리즘을 지나면 육각형이 퍼지고, 탄 방향으로 무지개 빛살이 갈라진다.
+func refract(pos: Vector2, d: Vector2, col: Color) -> void:
+	if refracts.size() < 40:
+		refracts.append([pos, d, col, 0.35])
+
+
 ## 영혼: 넋이 걸린 채 죽은 구체에서 혼불 (망자의 강 안이면 반드시). 화면의 혼불은 30개까지.
 func _soul_wisp(o: Orb) -> void:
 	var tw: Tower = null
@@ -4210,6 +4217,9 @@ func _update_fx(delta: float) -> void:
 	for q in pulses:
 		q[2] -= delta
 	pulses = pulses.filter(func(q): return q[2] > 0.0)
+	for q in refracts:
+		q[3] -= delta
+	refracts = refracts.filter(func(q): return q[3] > 0.0)
 	shake = maxf(shake - delta, 0.0)
 	combo_t = maxf(combo_t - delta, 0.0)
 	core_flash = maxf(core_flash - delta, 0.0)
@@ -4438,6 +4448,21 @@ func _draw_fx() -> void:
 		var k: float = 1.0 - q[2] / 0.3
 		fx_layer.draw_arc(q[0], q[1] * (0.4 + 0.6 * k), 0, TAU, 32, Color(sc, 1.0 - k), 3.0)
 		fx_layer.draw_arc(q[0], q[1] * (0.2 + 0.5 * k), 0, TAU, 24, Color(sc, 0.6 * (1.0 - k)), 2.0)
+	for q in refracts:
+		var k: float = 1.0 - q[3] / 0.35
+		var al := 1.0 - k
+		var hx := PackedVector2Array()
+		for i in 7:
+			hx.append(q[0] + Vector2.from_angle(TAU * i / 6.0 + k) * (Tower.RADIUS + 6.0 + 22.0 * k))
+		fx_layer.draw_colored_polygon(hx.slice(0, 6), Color(q[2], 0.18 * al))
+		fx_layer.draw_polyline(hx, Color(q[2].lerp(Color.WHITE, 0.6), al), 3.5)
+		var dv: Vector2 = q[1]
+		for i in 6:
+			var dir := dv.rotated((i - 2.5) * 0.14)
+			var a: Vector2 = q[0] + dir * (Tower.RADIUS + 2.0)
+			var e: Vector2 = a + dir * (26.0 + 70.0 * k)
+			fx_layer.draw_line(a, e, Color.from_hsv(i / 6.0, 0.55, 1.0, 0.35 * al), 7.0)
+			fx_layer.draw_line(a, e, Color.from_hsv(i / 6.0, 0.45, 1.0, al), 2.5)
 	var ec: Color = Elem.COLORS[Elem.ELECTRIC]
 	for b in bolts:
 		var src: PackedVector2Array = b[0]
