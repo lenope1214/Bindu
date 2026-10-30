@@ -27,6 +27,7 @@ var t := 0.0
 var dealt := 0.0  # 이번(또는 지난) 웨이브에 준 피해
 var rx_dealt := 0.0  # 그중 특수 반응 피해 (측정·표시용)
 var trail_hit := {}  # 지나간 자리 장판: 구체 → 마지막으로 맞은 sim_id (띠가 겹쳐도 한 조각에 한 번)
+var fx_a := 1.0  # 이 오브젝트 탄·장판 진하기 (피해 몫이 작을수록 옅게, main._soften_fx)
 var run_dealt := 0.0  # 지난 웨이브들까지 합친 피해 (게임 오버 요약용)
 ## 피해 출처 (DPS 표·판 기록 통계). 키: "hit"(직접 타격, breakdown()이 배율별로 나눔), elem:fire, rx:lava, mod:split, link:pincer ...
 var src := {}  # 이번(또는 지난) 웨이브, 날것
