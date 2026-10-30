@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="Bindu"
-config/version="0.4.21"
+config/version="0.4.22"
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.7")
 config/icon="res://icon.svg"

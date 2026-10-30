@@ -895,13 +895,28 @@ func _roll_lanes() -> void:
 	if not lanes.is_empty() and randf() < 0.25:
 		lanes.remove_at(randi() % lanes.size())
 	while lanes.size() < n:
+		lanes.append(_free_lane())
+
+
+## 다른 방향과 0.8 이상 떨어진 새 방향. 자리가 모자라면 가장 넓은 틈의 가운데에 둔다
+## (6곳이 될 때 기존 방향이 고르게 퍼져 있으면 빈자리가 없어 게임이 멈추던 것).
+func _free_lane() -> float:
+	for i in 40:
 		var a := randf() * TAU
-		var ok := true
-		for b in lanes:
-			if absf(angle_difference(a, b)) < 0.8:
-				ok = false
-		if ok:
-			lanes.append(a)
+		if lanes.all(func(b): return absf(angle_difference(a, b)) >= 0.8):
+			return a
+	var ls: Array = lanes.map(func(b): return fposmod(b, TAU))
+	ls.sort()
+	var best := 0
+	var gap := 0.0
+	for i in ls.size():
+		var g := fposmod(ls[(i + 1) % ls.size()] - ls[i], TAU)
+		if g <= 0.0:
+			g = TAU  # 방향이 하나뿐일 때
+		if g > gap:
+			gap = g
+			best = i
+	return fposmod(ls[best] + gap / 2.0, TAU)
 
 
 ## 설치된 오브젝트에 겹쳤을 때 생기는 특수 반응 안내 문구들.
@@ -1952,6 +1967,8 @@ func _continue_run() -> void:
 			t = Tower.new()
 			t.main = self
 			t.load_save(d)
+			var fr := field_rect()
+			t.position = t.position.clamp(fr.position, fr.end)  # 손으로 고친 저장에서 화면 밖 위치
 			if t.order.is_empty():
 				t.free()
 				t = null
