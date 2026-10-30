@@ -2211,7 +2211,7 @@ func preview(card: Dictionary) -> Array:
 				out.append("%s Lv%d → Lv%d (추가 효과 강화)" % [Elem.NAMES[e], lv(e), lv(e) + n])
 			else:
 				out.append("%s + %s" % [title(), Elem.NAMES[e]])
-				out.append("모든 공격에 추가 효과: " + Elem.RIDER[e])
+				out.append("모든 공격에 추가 효과: " + Elem.rider(e))
 				out.append("형태 성질(시험): " + Elem.TRAIT[e])
 				var before := roundi((1.0 - 1.0 / tax()) * 100.0)
 				var after := roundi((1.0 - 1.0 / (tax() + tax_step)) * 100.0)

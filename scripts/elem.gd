@@ -82,10 +82,17 @@ const TRAIT := {
 	SOUL: "넋불: 끝 자리에서 확률로 혼불 (10%/Lv)",
 }
 
+## 부가효과 설명. 나무는 규칙마다 세는 최대 레벨(Rules wood_cap)이 달라 붙여 보여 준다
+static func rider(e: int) -> String:
+	if e == WOOD and Rules.t("wood_cap") < 50.0:
+		return RIDER[e].trim_suffix(")") + ", Lv%d까지)" % int(Rules.t("wood_cap"))
+	return RIDER[e]
+
+
 ## 부가효과: 같은 오브젝트의 모든 공격에 붙는다
 const RIDER := {
 	FIRE: "화상: 한동안 계속 피해",
-	WOOD: "가시 박힘: 받는 피해 +20% (레벨마다, Lv3까지)",
+	WOOD: "가시 박힘: 받는 피해 +20% (레벨마다)",
 	WATER: "감속 (느려짐)",
 	ELECTRIC: "주변 구체로 튀는 전류 (확률 30%)",
 	WIND: "둘레(240) 다른 오브젝트 공격 속도 +10%/레벨 (가장 큰 바람 하나만)",

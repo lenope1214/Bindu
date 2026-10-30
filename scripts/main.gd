@@ -1492,7 +1492,7 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 				b.text = "[%d] ★ 대격변: 공격방식 ★\n모든 오브젝트의 공격방식을\n직선탄을 뺀 무작위로 바꾼다\n고정·직선탄도 바뀜, 레벨 유지\n(희귀 1%%, 고르면 바로 발동)" % idx
 		"elem":
 			var e: int = card["e"]
-			b.text = "[%d] 속성: %s%s\n추가 효과: %s\n형태 성질: %s" % [idx, Elem.NAMES[e], " Lv2" if card["lv"] == 2 else "", Elem.RIDER[e], Elem.TRAIT[e]]
+			b.text = "[%d] 속성: %s%s\n추가 효과: %s\n형태 성질: %s" % [idx, Elem.NAMES[e], " Lv2" if card["lv"] == 2 else "", Elem.rider(e), Elem.TRAIT[e]]
 			foot = [["place_new", "새 오브젝트"], ["place_on", "겹치기" + (" %d종" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "")]]
 			var combos := _combos_for(e)
 			if not combos.is_empty():
@@ -5663,7 +5663,7 @@ func _draw_tooltip() -> void:
 	if not no.is_empty():
 		lines.append(["  못 넣는 강화(효과 없음): " + "·".join(no), Color(0.7, 0.7, 0.75)])
 	for e in t.order:
-		lines.append(["%s Lv%d: %s" % [Elem.NAMES[e], t.lv(e), Elem.RIDER[e]], Elem.COLORS[e]])
+		lines.append(["%s Lv%d: %s" % [Elem.NAMES[e], t.lv(e), Elem.rider(e)], Elem.COLORS[e]])
 	var ex := t.extras_text()
 	if ex != "":
 		lines.append(["강화·연계: " + ex, Color(1, 0.85, 0.45)])

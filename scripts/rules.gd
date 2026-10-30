@@ -38,7 +38,7 @@ static var rx_mul := RX_MUL  # 2026-10-30에 채운 반응 65개(RxMore)의 피�
 const RX_MUL := 0.5
 ## 조합 효율 측정(2026-10-30, docs/combo-efficiency)으로 고친 수치. 온라인 패치 rules의 같은 키로 덮어쓴다.
 const TUNE := {
-	"wood_cap": 3.0,  # 나무 부가효과(받는 피해 +20%/레벨)가 세는 최대 레벨 (예전 상한 없음)
+	"wood_cap": 3.0,  # 나무 부가효과(받는 피해 +20%/레벨)가 세는 최대 레벨 (예전 상한 없음. 규칙 1은 99 = 상한 없음, apply)
 	"clock_dmg": 0.9,  # 시계침 한 번 훑을 때 피해 (예전 1.2)
 	"vortex_speed": 90.0,  # 블랙홀 날아가는 속도 (예전 140)
 	"vortex_dmg": 1.5,  # 블랙홀 날아가는 동안 초당 피해, 다 줄면 2배 (예전 0.8)
@@ -85,6 +85,8 @@ static func apply(v: int) -> void:
 	rx_mul = RX_MUL
 	tune = TUNE.duplicate()
 	match version:
+		1:
+			tune["wood_cap"] = 99.0  # 같은 속성 레벨이 무제한인 규칙이라 상한을 두면 후반이 크게 어려워짐 (봇 81~100웨이브 누수 70% → 상한 3: 86%, 6·10: 80%)
 		2:
 			max_elems = 2
 			max_mod = 3
