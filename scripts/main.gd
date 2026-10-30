@@ -10,7 +10,6 @@ const SAVE_PATH := "user://best.cfg"
 const RUN_PATH := "user://run.cfg"  # 이어하기: 쉬는 시간마다 저장, 게임 오버면 지움
 const RUN_FORMAT := 1
 const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 위치·방향 변경"
-const PAUSE_TEXT := "일시정지\nP / Esc: 계속   R: 처음부터   M: 소리   O: 설정   F11: 전체 화면"
 const PLACE_HINT := "클릭: 설치 (오브젝트 위면 속성 겹치기)   오브젝트 꾹 누르기·끌기: 옮기기\n우클릭/Esc: 다시 고르기"
 
 var phase := Phase.CHOOSE
@@ -95,6 +94,7 @@ const SPEEDS := [2.0, 3.0, 4.0, 6.0, 8.0]
 var game_speed := 1.0  # 지금 배속
 var fast_speed := 2.0  # Space로 켜는 배속
 var paused_label: Label
+var pause_box: HBoxContainer  # 일시정지 창 아래 버튼 (계속·시작 화면·끄기)
 var legend_hidden := false
 var wave_resist := -1  # 다음 웨이브 저항 속성 (-1: 없음)
 var legend_btn: Button
@@ -368,13 +368,31 @@ func _build_ui() -> void:
 	paused_label.add_theme_font_size_override("font_size", 20)
 	paused_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	paused_label.add_theme_constant_override("outline_size", 5)
-	paused_label.text = PAUSE_TEXT
+	paused_label.text = _pause_text()
 	var psb := StyleBoxFlat.new()
 	psb.bg_color = Color(0.03, 0.04, 0.06, 0.85)
 	psb.set_corner_radius_all(8)
 	paused_label.add_theme_stylebox_override("normal", psb)
 	paused_label.visible = false
 	root.add_child(paused_label)
+	pause_box = HBoxContainer.new()
+	pause_box.set_anchors_preset(Control.PRESET_CENTER)
+	pause_box.position = Vector2(-350, -150)  # 글 아래 (_process에서 글 높이에 맞춤)
+	pause_box.size = Vector2(700, 44)
+	pause_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	pause_box.add_theme_constant_override("separation", 12)
+	var pspecs := [["계속 (P)", _toggle_pause], ["시작 화면으로 (T)", _leave.bind(false)]]
+	if OS.has_feature("pc"):
+		pspecs.append(["게임 끄기 (X)", _leave.bind(true)])  # 모바일은 운영체제가 앱을 닫는다
+	for spec in pspecs:
+		var b := Button.new()
+		b.text = spec[0]
+		b.custom_minimum_size = Vector2(170, 44)
+		b.focus_mode = Control.FOCUS_NONE
+		b.pressed.connect(spec[1])
+		pause_box.add_child(b)
+	pause_box.visible = false
+	root.add_child(pause_box)
 
 	preview = Label.new()
 	preview.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
@@ -536,7 +554,7 @@ func _help_text() -> String:
 		"쉬는 시간에 오브젝트 클릭: 위치·방향 다시 정하기",
 		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 몫 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
-		"P / Esc: 일시정지   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   F11: 전체 화면",
+		"P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   F11: 전체 화면",
 		"R: 다시 시작 (게임 오버 뒤, 또는 일시정지 중 두 번)",
 		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 이어하기(Enter)로 그 쉬는 시간부터 (새로 시작은 N 두 번)",
 		"",
@@ -1194,7 +1212,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				get_tree().reload_current_scene()
 			else:
 				restart_armed = 2.0
-				paused_label.text = PAUSE_TEXT + "\nR을 한 번 더 누르면 처음부터"
+				paused_label.text = _pause_text() + "\nR을 한 번 더 누르면 처음부터"
+		elif event.keycode == KEY_T and get_tree().paused:
+			_leave(false)
+		elif event.keycode == KEY_X and get_tree().paused and OS.has_feature("pc"):
+			_leave(true)
 		elif event.keycode == KEY_H:
 			help_label.visible = not help_label.visible
 		elif event.keycode == KEY_TAB:
@@ -2129,9 +2151,30 @@ func _toggle_pause() -> void:
 		return
 	get_tree().paused = not get_tree().paused
 	paused_label.visible = get_tree().paused
-	paused_label.text = PAUSE_TEXT
+	pause_box.visible = get_tree().paused
+	paused_label.text = _pause_text()
 	restart_armed = 0.0
 	pause_btn.text = "계속 (P)" if get_tree().paused else "일시정지 (P)"
+
+
+## 일시정지 글: 지금 나가면 어디서부터 이어지는지도 알려 준다.
+func _pause_text() -> String:
+	var keys := "일시정지\nP / Esc: 계속   T: 시작 화면%s   R: 처음부터\nM: 소리   O: 설정   F11: 전체 화면" % ("   X: 끄기" if OS.has_feature("pc") else "")
+	if phase == Phase.WAVE:
+		return keys + "\n지금 나가면 웨이브 %d 앞 쉬는 시간부터 이어집니다" % wave
+	return keys + "\n지금 나가도 이 쉬는 시간부터 이어서 할 수 있어요"
+
+
+## 일시정지에서 시작 화면으로 가거나 게임을 끈다. 쉬는 시간이면 지금 상태를 저장하고,
+## 웨이브 중이면 그 웨이브 앞 쉬는 시간의 저장이 남는다 (시작 화면의 이어하기).
+func _leave(quit_game: bool) -> void:
+	_save_run()
+	get_tree().paused = false
+	if quit_game:
+		get_tree().quit()
+		return
+	title_seen = false
+	get_tree().reload_current_scene()
 
 
 func _toggle_speed() -> void:
@@ -2363,6 +2406,8 @@ func _process(delta: float) -> void:
 	speed_btn.visible = not title_label.visible
 	speed_pick.visible = not title_label.visible
 	_update_hud()
+	if pause_box.visible:
+		pause_box.position.y = paused_label.position.y + paused_label.size.y + 10.0
 	queue_redraw()
 	if phase == Phase.MOVE and moving:
 		moving.position = get_global_mouse_position().clamp(field_rect().position, field_rect().end)
