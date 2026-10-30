@@ -191,6 +191,11 @@ var update_btn: Button  # 시작 화면: 새 버전 받기
 var updater: Updater  # Windows 게임 안 업데이트
 var notice_label: Label  # 시작 화면: 패치 공지
 var board_lines := {}  # 리더보드 창: period → 줄 목록
+var board_bar: HBoxContainer  # 리더보드 창 위쪽 필터 버튼 (맵·규칙 버전·시즌)
+var board_map := "plain"  # 리더보드 필터. 창을 열 때 지금 고른 맵·규칙 버전으로 시작
+var board_rules := 1
+var board_season := 0  # 0: 이번 시즌
+var board_seasons: Array = []  # 서버 시즌 목록 (새 시즌부터)
 static var title_seen := false  # 다시 시작하면 타이틀은 건너뛴다
 
 
@@ -235,6 +240,7 @@ func _ready() -> void:
 	net.booted.connect(_on_booted)
 	net.run_sent.connect(_on_run_sent)
 	net.board_loaded.connect(_on_board_loaded)
+	net.seasons_loaded.connect(_on_seasons_loaded)
 	updater = Updater.new()
 	add_child(updater)
 	updater.cleanup()
@@ -2089,6 +2095,18 @@ func _build_menu(root: Control) -> void:
 	records_panel.add_theme_stylebox_override("normal", rsb)
 	records_panel.visible = false
 	root.add_child(records_panel)
+	board_bar = HBoxContainer.new()
+	board_bar.add_theme_constant_override("separation", 10)
+	board_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	board_bar.visible = false
+	records_panel.add_child(board_bar)
+	for f in [_board_next_map, _board_next_rules, _board_next_season]:
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(266, 36)
+		b.focus_mode = Control.FOCUS_NONE
+		b.clip_text = true
+		b.pressed.connect(f)
+		board_bar.add_child(b)
 	_build_notes(root)
 	_build_modes(root, rsb)
 
@@ -2370,6 +2388,7 @@ func _cycle_skin(kind: String, d: int) -> void:
 
 func _toggle_records() -> void:
 	records_panel.visible = not records_panel.visible
+	board_bar.visible = false
 	if not records_panel.visible:
 		return
 	var lines := PackedStringArray(["[맵별 최고 기록 · %s]   (아무 곳이나 클릭: 닫기)" % Rules.NAMES[Meta.rules]])
@@ -2502,19 +2521,67 @@ func _on_run_sent(res: Dictionary) -> void:
 		over_label.text += "\n온라인 순위: %s%d위 (최고 점수 %s)" % [sname + " " if sname != "" else "", int(rk["rank"]), num(int(rk["score"]))]
 
 
-## 시작 화면 리더보드: 지금 고른 맵·규칙 버전의 이번 시즌 전체·이번 주 순위.
+## 시작 화면 리더보드: 위쪽 버튼으로 맵·규칙 버전·시즌을 골라 본다.
+## 처음엔 지금 고른 맵·규칙 버전의 이번 시즌 전체·이번 주 순위. 지난 시즌은 전체만.
 func _toggle_board() -> void:
 	records_panel.visible = not records_panel.visible
 	if not records_panel.visible:
+		board_bar.visible = false
 		return
+	board_map = Meta.map_id
+	board_rules = Meta.rules if Meta.rules in Rules.IDS else Rules.IDS[0]
+	board_season = 0
+	net.seasons()
+	_load_board()
+
+
+func _board_tag() -> String:
+	return "%s|%d|%d" % [board_map, board_rules, board_season]
+
+
+func _load_board() -> void:
 	board_lines = {}
 	_draw_board()
-	net.leaderboard(Meta.map_id, Meta.rules, "all")
-	net.leaderboard(Meta.map_id, Meta.rules, "week")
+	net.leaderboard(board_map, board_rules, "all", board_season, _board_tag())
+	if board_season == 0:
+		net.leaderboard(board_map, board_rules, "week", 0, _board_tag())
+
+
+func _board_next_map() -> void:
+	board_map = Meta.MAP_IDS[(Meta.MAP_IDS.find(board_map) + 1) % Meta.MAP_IDS.size()]
+	_load_board()
+
+
+func _board_next_rules() -> void:
+	board_rules = Rules.IDS[(Rules.IDS.find(board_rules) + 1) % Rules.IDS.size()]
+	_load_board()
+
+
+## 이번 시즌 → 지난 시즌들(최근부터) → 다시 이번 시즌. 목록의 첫 항목이 이번 시즌이다.
+func _board_next_season() -> void:
+	var ids := board_seasons.map(func(x): return int(x.get("id", 0)))
+	if ids.size() <= 1:
+		return
+	var i := 0 if board_season == 0 else ids.find(board_season)
+	board_season = 0 if i < 0 or i + 1 >= ids.size() else ids[i + 1]
+	_load_board()
+
+
+func _on_seasons_loaded(list: Array) -> void:
+	board_seasons = list.filter(func(x): return x is Dictionary)
+	if records_panel.visible and board_bar.visible:
+		_draw_board()
+
+
+func _season_name(id: int) -> String:
+	for x in board_seasons:
+		if int(x.get("id", 0)) == id:
+			return str(x.get("name", ""))
+	return "시즌 %d" % id
 
 
 func _on_board_loaded(d: Dictionary) -> void:
-	if not records_panel.visible or not records_panel.text.begins_with("[리더보드"):
+	if not records_panel.visible or not board_bar.visible or d.get("tag", "") != _board_tag():
 		return
 	var lines := PackedStringArray()
 	if d.has("error"):
@@ -2535,10 +2602,17 @@ func _on_board_loaded(d: Dictionary) -> void:
 
 
 func _draw_board() -> void:
-	var head := "[리더보드 · %s · %s%s]   (아무 곳이나 클릭: 닫기)" % [Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules],
-		" · " + board_lines["season"] if board_lines.get("season", "") != "" else ""]
-	var lines := PackedStringArray([head, ""])
-	for spec in [["all", "이번 시즌 전체"], ["week", "이번 주"]]:
+	var cur := "" if board_seasons.is_empty() else str(board_seasons[0].get("name", ""))
+	var sname := ("이번 시즌" + (" (%s)" % cur if cur != "" else "")) if board_season == 0 else _season_name(board_season)
+	var texts := ["맵: %s" % Meta.map_name(board_map), "규칙: %s" % Rules.NAMES[board_rules], "시즌: %s" % sname]
+	for i in 3:
+		var b: Button = board_bar.get_child(i)
+		b.text = texts[i] + ("  ▶" if i < 2 or board_seasons.size() > 1 else "")
+		b.disabled = i == 2 and board_seasons.size() <= 1
+	board_bar.visible = true
+	var lines := PackedStringArray(["[리더보드]   위 버튼을 누르면 맵·규칙 버전·시즌이 바뀝니다   (빈 곳 클릭: 닫기)", "", "", ""])
+	var specs := [["all", "이번 시즌 전체"], ["week", "이번 주"]] if board_season == 0 else [["all", sname + " 전체"]]
+	for spec in specs:
 		lines.append(spec[1])
 		lines.append_array(board_lines.get(spec[0], PackedStringArray(["  불러오는 중…"])))
 		lines.append("")
@@ -2547,6 +2621,8 @@ func _draw_board() -> void:
 	elif Meta.nickname == "":
 		lines.append("설정에서 닉네임을 정할 수 있어요")
 	records_panel.text = "\n".join(lines)
+	var lh := records_panel.get_line_height()
+	board_bar.position = Vector2(18, 18 + lh + (lh * 2.0 - 36.0) / 2.0 + 2.0)
 
 
 # ---------- 패치노트 ----------

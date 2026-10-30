@@ -6,6 +6,7 @@ extends Node
 signal booted(info: Dictionary)
 signal run_sent(res: Dictionary)  # 이번 판 기록의 서버 응답 {accepted, season, rank}
 signal board_loaded(res: Dictionary)  # 실패면 {"error": 이유}
+signal seasons_loaded(list: Array)  # [{id, name, started}] 새 시즌부터. 실패면 []
 
 const OUTBOX_PATH := "user://outbox.json"
 const OUTBOX_MAX := 30  # 오프라인으로 쌓아 둘 판 수
@@ -112,14 +113,21 @@ func flush() -> void:
 	sending = false
 
 
-func leaderboard(map_id: String, rules: int, period: String) -> void:
-	var r := await _request(HTTPClient.METHOD_GET, "/v1/leaderboard?map=%s&rules=%d&period=%s&limit=10&device=%s" % [map_id, rules, period, Meta.device_id])
+## season 0은 이번 시즌. 응답에 tag를 붙여 돌려준다 (필터를 바꾼 뒤 늦게 온 지난 응답을 버리게).
+func leaderboard(map_id: String, rules: int, period: String, season := 0, tag := "") -> void:
+	var r := await _request(HTTPClient.METHOD_GET, "/v1/leaderboard?map=%s&rules=%d&season=%d&period=%s&limit=10&device=%s" % [map_id, rules, season, period, Meta.device_id])
 	if r["code"] == 200 and r["data"] is Dictionary:
 		var d: Dictionary = r["data"]
 		d["period"] = period
+		d["tag"] = tag
 		board_loaded.emit(d)
 	else:
-		board_loaded.emit({"error": "연결 실패" if r["code"] == 0 else "서버 오류 %d" % r["code"], "period": period})
+		board_loaded.emit({"error": "연결 실패" if r["code"] == 0 else ("기록이 없는 시즌" if r["code"] == 404 else "서버 오류 %d" % r["code"]), "period": period, "tag": tag})
+
+
+func seasons() -> void:
+	var r := await _request(HTTPClient.METHOD_GET, "/v1/seasons")
+	seasons_loaded.emit(r["data"] if r["code"] == 200 and r["data"] is Array else [])
 
 
 func _load_outbox() -> Array:
