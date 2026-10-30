@@ -14,17 +14,29 @@ var counts := Vector3.ZERO
 var last_us := 0
 var goal := int(OS.get_environment("PERF_ORBS")) if OS.get_environment("PERF_ORBS") != "" else 250
 var warm := 0  # 구체가 쌓이기를 기다린 프레임
+var win := false  # 창 모드: 그리기 시간(CPU·GPU)도 재고, 끝에 층을 하나씩 숨겨 층별 그리기 비용을 잰다
+var vp: RID
+var rcpu := 0.0
+var rgpu := 0.0
+const HIDES := [[], ["Orbs"], ["Towers"], ["Projectiles", "Zones"], ["Fx"], ["Orbs", "Towers", "Projectiles", "Zones", "Fx"]]
+var hide_i := -1
 
 func _initialize():
 	seed(7)
 	if DisplayServer.get_name() != "headless":
+		win = true
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 		Engine.max_fps = 0
+		vp = root.get_viewport_rid()
+		RenderingServer.viewport_set_measure_render_time(vp, true)
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 
 
 func _setup() -> void:
+	if main.title_label.visible:  # 창 모드는 타이틀에서 시작한다: 헤드리스처럼 바로 판으로
+		main.title_label.visible = false
+		main._start_choose()
 	var c: Vector2 = main.center()
 	var n := 16
 	for i in n:
@@ -46,7 +58,7 @@ func _setup() -> void:
 	main.wave = 29
 	main._start_wave()
 	main.to_spawn = 400
-	main.spawn_interval = 0.05
+	main.spawn_interval = 0.02
 
 
 func _process(_d):
@@ -58,7 +70,7 @@ func _process(_d):
 		return false
 	main.core_hp = 99999
 	main.to_spawn = maxi(main.to_spawn, 50)  # 웨이브가 끝나지 않게
-	main.game_speed = speeds[stage]
+	main.game_speed = 1.0 if hide_i >= 0 else speeds[stage]
 	var now := Time.get_ticks_usec()
 	# 구체가 goal개 넘게 쌓일 때까지(최대 4000프레임) 기다린 뒤 잰다
 	if samples.is_empty() and main.live_orbs.size() < goal and warm < 4000:
@@ -69,15 +81,25 @@ func _process(_d):
 	if f > 120:
 		samples.append((now - last_us) / 1000.0)
 		counts += Vector3(main.live_orbs.size(), main.projectiles.get_child_count(), main.zones.get_child_count())
+		if win:
+			rcpu += RenderingServer.viewport_get_measured_render_time_cpu(vp) + RenderingServer.get_frame_setup_time_cpu()
+			rgpu += RenderingServer.viewport_get_measured_render_time_gpu(vp)
 	last_us = now
-	if samples.size() >= 600:
+	if samples.size() >= (300 if hide_i >= 0 else 600):
 		samples.sort()
 		var avg := 0.0
 		for s in samples:
 			avg += s
 		avg /= samples.size()
 		counts /= samples.size()
-		print("PERF x%d: 평균 %.2fms · 95%% %.2fms · 최대 %.2fms (구체 %d · 탄 %d · 장판 %d)" % [roundi(speeds[stage]), avg, samples[int(samples.size() * 0.95)], samples[-1], roundi(counts.x), roundi(counts.y), roundi(counts.z)])
+		var rt := " · 그리기 CPU %.2fms · GPU %.2fms" % [rcpu / samples.size(), rgpu / samples.size()] if win else ""
+		rcpu = 0.0
+		rgpu = 0.0
+		if hide_i >= 0:
+			print("PERF 그리기 x1 %s 숨김: 평균 %.2fms%s (구체 %d)" % [",".join(HIDES[hide_i]) if hide_i > 0 else "아무것도 안", avg, rt, roundi(counts.x)])
+			_next_hide()
+			return false
+		print("PERF x%d: 평균 %.2fms · 95%% %.2fms · 최대 %.2fms (구체 %d · 탄 %d · 장판 %d)%s" % [roundi(speeds[stage]), avg, samples[int(samples.size() * 0.95)], samples[-1], roundi(counts.x), roundi(counts.y), roundi(counts.z), rt])
 		var parts := PackedStringArray()
 		for k in main.prof:
 			parts.append("%s %.2f" % [k, main.prof[k] / 1000.0 / samples.size()])
@@ -87,5 +109,20 @@ func _process(_d):
 		stage += 1
 		f = 3
 		if stage >= speeds.size():
-			quit()
+			if win:
+				_next_hide()
+			else:
+				quit()
 	return false
+
+
+## 창 모드 끝: 층을 하나씩 숨기고 1배속으로 300프레임씩 (숨긴 층만큼 빠지는 시간 = 그 층 그리기 비용)
+func _next_hide() -> void:
+	samples.clear()
+	counts = Vector3.ZERO
+	hide_i += 1
+	if hide_i >= HIDES.size():
+		quit()
+		return
+	for n in ["Orbs", "Towers", "Projectiles", "Zones", "Fx"]:
+		main.get_node(n).visible = not n in HIDES[hide_i]

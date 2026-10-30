@@ -4334,14 +4334,14 @@ func near(p: Vector2, r: float) -> Array:
 ## 오브젝트 공격용: p에서 r 안에 있을 수 있는 구체를 targets 순서 그대로.
 ## 전체를 돌던 때와 맞히는 순서(그래서 치명타 등 난수 순서)가 같다.
 ## 공격 중에 바람에 밀린 만큼(한 조각에 밀림 여유 최대 40)도 빠지지 않게 여유를 둔다.
-## 구체가 적거나 범위가 넓어 칸이 구체보다 많으면 그냥 전체를 준다 (그쪽이 빠르다).
+## 구체가 적거나 범위가 넓어 칸 수가 구체의 1/3을 넘으면 그냥 전체를 준다 (칸 조회가 구체 확인보다 비싸다).
 func near_t(p: Vector2, r: float) -> Array:
 	var rr := r + 32.0 + 40.0
 	var x0 := floori((p.x - rr) / GRID)
 	var x1 := floori((p.x + rr) / GRID)
 	var y0 := floori((p.y - rr) / GRID)
 	var y1 := floori((p.y + rr) / GRID)
-	if (x1 - x0 + 1) * (y1 - y0 + 1) >= targets.size():
+	if (x1 - x0 + 1) * (y1 - y0 + 1) * 3 >= targets.size():
 		return targets
 	var idx := PackedInt32Array()
 	for x in range(x0, x1 + 1):
