@@ -18,7 +18,7 @@ INSTALL=()
 [[ -d android/build ]] || INSTALL=(--install-android-build-template)
 
 if [[ "${1:-}" == apk ]]; then
-  "$GODOT_BIN" --headless --path . "${INSTALL[@]}" --export-release "Android APK" "$PWD/Bindu.apk"
+  "$GODOT_BIN" --headless --path . ${INSTALL[@]+"${INSTALL[@]}"} --export-release "Android APK" "$PWD/Bindu.apk"
   [[ -f Bindu.apk ]] || { echo "빌드 실패: 위 로그를 확인해 주세요." >&2; exit 1; }
   echo "완료: $PWD/Bindu.apk — 설치: adb install -r Bindu.apk (또는 파일을 폰으로 옮겨 실행)"
   exit 0
@@ -30,7 +30,7 @@ echo "versionCode $CODE 빌드 중..."
 mkdir -p build/android
 # 게임 안 패치노트를 CHANGELOG.md에서 다시 만든다 (빌드에는 .md가 들어가지 않음)
 "$GODOT_BIN" --headless --path . --script tools/gen_patch_notes.gd || true
-"$GODOT_BIN" --headless --path . "${INSTALL[@]}" --export-release "Android" build/android/Bindu.aab
+"$GODOT_BIN" --headless --path . ${INSTALL[@]+"${INSTALL[@]}"} --export-release "Android" build/android/Bindu.aab
 
 [[ -f build/android/Bindu.aab ]] || { echo "빌드 실패: 위 로그를 확인해 주세요." >&2; exit 1; }
 mv -f build/android/Bindu.aab Bindu.aab
