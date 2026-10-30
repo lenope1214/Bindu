@@ -125,6 +125,8 @@ var paused_label: Label
 var pause_box: HBoxContainer  # 일시정지 창 아래 버튼 (계속·시작 화면·끄기)
 var pause_dim: ColorRect
 var legend_hidden := false
+var legend_rx_rows := 999  # 설명에 적을 반응 줄 수 상한 (화면에 맞춰 _process가 줄임)
+var legend_rows := 0  # 지금 설명에 적힌 반응 줄 수
 var bar_open := false  # 오른쪽 아래 설정 버튼(소리·자동 시작·일시정지·배속)을 펼쳤는지. 접으면 펼치기 버튼만 남는다
 var bar_btn: Button
 var tutor := false  # 이번 판이 첫 판 안내 판인지: 카드 종류를 웨이브마다 하나씩 연다 (TUTOR_OPEN)
@@ -853,6 +855,7 @@ static func src_name(key: String) -> String:
 ## 글자·버튼 크기: UI를 s배로 그리고, 배치는 화면을 s로 나눈 크기 안에서 한다 (앵커가 그대로 맞는다).
 func _apply_ui_scale() -> void:
 	var s: float = Meta.ui_scale
+	legend_rx_rows = 999  # 글자 크기가 바뀌면 설명 반응 줄 수를 다시 맞춘다
 	ui_root.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	ui_root.position = Vector2.ZERO
 	ui_root.scale = Vector2(s, s)
@@ -2754,14 +2757,25 @@ func _refresh_legend() -> void:
 	])
 	# 만들어 본 반응만 한 줄에 두 개씩, 나머지는 개수만 (? + ? 줄이 화면 아래 버튼까지 덮던 것. 도감과 같은 기록)
 	var rs: Array = Elem.REACTIONS.filter(func(r): return Meta.codex.has(r["id"]))
+	# 줄 수는 legend_rx_rows까지: 많이 찾으면 설명이 화면 아래 설정 버튼까지 덮던 것 (_process에서 맞춤)
+	var shown := 0
+	legend_rows = 0
 	for i in range(0, rs.size(), 2):
+		if legend_rows >= legend_rx_rows:
+			break
 		var row := PackedStringArray()
 		for r in rs.slice(i, i + 2):
 			row.append("%s+%s %s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["name"]])
 		lines.append("   ".join(row))
-	if rs.size() < Elem.REACTIONS.size():
-		lines.append("아직 못 만난 반응 %d개 (도감 K)" % (Elem.REACTIONS.size() - rs.size()))
+		shown += row.size()
+		legend_rows += 1
+	var left := Elem.REACTIONS.size() - rs.size()
+	if shown < rs.size():
+		lines.append("외 %d개%s (모두 도감 K)" % [rs.size() - shown, " · 못 만난 반응 %d개" % left if left > 0 else ""])
+	elif left > 0:
+		lines.append("아직 못 만난 반응 %d개 (도감 K)" % left)
 	legend.text = _kr_keep("\n".join(lines))
+	legend.size.y = 380.0  # Label은 글이 줄어도 저절로 작아지지 않는다 (글이 길면 다시 늘어남)
 
 
 ## 규칙 버전 바꾸기: 기록은 버전마다 따로.
@@ -4094,6 +4108,14 @@ func _process(delta: float) -> void:
 	range_btn.text = "범위 끄기" if range_all else "범위 보기"
 	legend_btn.text = ("설명 보기" if legend_hidden else "설명 숨기기") + " (Tab)"
 	legend.visible = legend.visible and not legend_hidden
+	if legend.visible:
+		# 설명 아래끝이 오른쪽 아래 설정 버튼(없으면 화면 끝)에 닿으면 반응 줄을 줄인다
+		var lim := minf(bar_btn.get_global_rect().position.y if bar_btn.visible else 1e9, get_viewport_rect().size.y) - 8.0
+		var over_px := legend.get_global_rect().end.y - lim
+		if over_px > 0.0 and legend_rows > 0:
+			var lh := legend.get_line_height() * ui_root.scale.y
+			legend_rx_rows = maxi(legend_rows - maxi(1, floori(over_px / (lh * 2.0))), 0)  # 반응 한 줄이 접혀 두 줄일 수 있어 덜 줄이고 다음 프레임에 더
+			_refresh_legend()
 	# 시작 화면 위에 설정·기록·도움말·패치노트 창을 열면 뒤 메뉴는 숨긴다 (흐리게만 하면 창 아래로 삐져나온 버튼 줄이 겹쳐 보이고 눌리던 것)
 	if help_label.visible and not help_scroll.visible:
 		help_scroll.scroll_vertical = 0  # 열 때마다 맨 위부터
