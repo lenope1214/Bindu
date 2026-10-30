@@ -95,6 +95,7 @@ var choice_box: HBoxContainer
 var over_label: Label
 var legend: Label
 var preview: Label
+var bar_box: HBoxContainer  # 오른쪽 아래 버튼 줄
 var reroll_btn: Button
 var pause_btn: Button
 var speed_btn: Button
@@ -287,6 +288,7 @@ func _build_ui() -> void:
 	hint.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	hint.position = Vector2(16, -66)
 	hint.size = Vector2(590, 44)  # 오른쪽 아래 설정 버튼 줄(펼쳤을 때 648)과 겹치지 않게
+	hint.grow_vertical = Control.GROW_DIRECTION_BEGIN  # 줄이 늘면 위로 (아래는 버전 표시)
 	hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.add_theme_font_size_override("font_size", 15)
@@ -399,6 +401,7 @@ func _build_ui() -> void:
 	bar.offset_bottom = -14.0
 	bar.add_theme_constant_override("separation", 8)
 	root.add_child(bar)
+	bar_box = bar
 	mute_btn = Button.new()
 	mute_btn.custom_minimum_size = Vector2(90, 36)
 	mute_btn.pressed.connect(_toggle_mute)
@@ -599,20 +602,22 @@ func _update_hud(force := false) -> void:
 		extra += "   무리 +%d%% (오브젝트 %d개)" % [roundi(Rules.crowd * (nt - 1) * 100), nt]
 	# 길어지면 오른쪽 위 설명 버튼과 겹치므로 둘째 줄로. 글자 모양 계산은 비싸서
 	# 길이나 덧붙인 내용이 바뀔 때만 다시 잰다 (점수 숫자만 바뀌면 폭은 거의 그대로)
+	# 오른쪽 위 버튼(설명 보기, 터치면 범위 보기) 앞까지. 글자를 키우면(설정) 화면이 좁아진 만큼 줄어든다
+	var hud_w := ui_root.size.x - (300.0 if range_btn.visible else 190.0)
 	if extra != "":
-		var key := "%d|%s" % [text.length(), extra]
+		var key := "%d|%s|%d" % [text.length(), extra, hud_w]
 		if key != hud_wrap_key:
 			hud_wrap_key = key
-			hud_wrap = ui_font.get_string_size(text + extra, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x > 1080.0
+			hud_wrap = ui_font.get_string_size(text + extra, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x > hud_w
 		if hud_wrap:
 			extra = "\n" + extra.strip_edges()
 	text += extra
 	if phase == Phase.WAVE:
 		text += "\n남은 구체 %d" % (to_spawn + _alive_count(orbs))
 	var pt := _perk_text()
-	if pt != perk_src:
-		perk_src = pt
-		perk_wrapped = _wrap_words(pt, 1080.0, 18)  # 특성이 많아도 오른쪽 위 버튼까지 뻗지 않게
+	if pt + str(hud_w) != perk_src:
+		perk_src = pt + str(hud_w)
+		perk_wrapped = _wrap_words(pt, hud_w, 18)  # 특성이 많아도 오른쪽 위 버튼까지 뻗지 않게
 	if pt != "":
 		text += "\n" + perk_wrapped
 	if hud.text != text:
@@ -945,7 +950,8 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 ## 고르기 안내. 이번 쉬는 시간에 더 고를 수가 있으면 첫 줄에 붙인다 (V 줄 끝에 붙어 내리기 횟수처럼 읽히던 것).
 func _choose_hint() -> String:
 	var left := " (%d개 남음)" % picks_left if picks_left > 1 else ""
-	return "선택지를 고르세요%s. 설치된 오브젝트를 클릭하면 위치·방향 변경\nV: 선택지 내리기" % left
+	# 선택지 내리기(V)는 카드 아래 버튼에 적혀 있다
+	return "선택지를 고르세요%s. 설치된 오브젝트를 클릭하면 위치·방향 변경" % left
 
 
 # ---------- 처음 안내 ----------
@@ -3045,7 +3051,18 @@ func _process(delta: float) -> void:
 			guide_lines.clear()
 			guide_t = 0.0
 	guide_label.visible = not guide_lines.is_empty() and not title_label.visible and phase != Phase.GAMEOVER and not get_tree().paused and not help_label.visible and not settings_panel.visible and not records_panel.visible
+	# 글자를 키운(설정) 좁은 화면에서 펼친 버튼 줄이 왼쪽 아래 안내 글에 닿으면 안내 글을 버튼 줄 앞까지로 줄인다.
+	# 줄이 늘면 위로 자라고, 다음 웨이브 미리보기는 그 위에 붙는다
+	var hw := 590.0
+	if pause_btn.visible:
+		hw = clampf(bar_box.get_rect().position.x - hint.position.x - 12.0, 240.0, 590.0)
+	if not is_equal_approx(hint.size.x, hw):
+		hint.size.x = hw
+	preview.position.y = hint.position.y - preview.size.y - 4.0
 	toast.position.y = maxf(100.0, hud.position.y + hud.size.y + 36.0)  # 점수 줄이 길어져도 보스 체력 막대 아래
+	# 안내·큰 글자도 점수 줄이 길어지거나 글자를 키우면(설정) 그 아래로 밀어 겹치지 않게
+	guide_label.position.y = maxf(140.0, toast.position.y + 40.0)
+	banner.position.y = maxf(ui_root.size.y / 2.0 - 140.0, hud.position.y + hud.size.y + 12.0)
 	banner_t -= delta
 	if banner_t <= 0.0 and not banner_queue.is_empty():
 		var nb: Array = banner_queue.pop_front()
