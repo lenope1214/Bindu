@@ -550,7 +550,8 @@ func add_link(id: String) -> String:
 			reso += 1
 		"pincer":
 			pincer += 1
-	return Pat.LINKS[id]["name"]
+	var n := link_lv(id)
+	return Pat.LINKS[id]["name"] + ("" if n <= 1 else " x%d (%s %s)" % [n, LINK_POWER[id], link_value(id, n)])
 
 
 ## 지금 쓰는 속성 (예전 연결선은 여기서 이어진 오브젝트 속성을 더했다).
@@ -1421,6 +1422,12 @@ func _draw_body() -> void:
 		if prism_flash > 0.0:
 			draw_colored_polygon(hx.slice(0, 6), Color(1, 1, 1, 0.35 * prism_flash))
 		draw_polyline(hx, Color(0.8, 0.95, 1.0, 0.8).lerp(Color.WHITE, prism_flash), 2.0 + 2.0 * prism_flash)
+		# 겹친 프리즘: 바깥으로 반대 방향으로 도는 육각 테두리를 하나씩 더 (최대 3겹)
+		for j in range(1, mini(prism, 3)):
+			var hx2 := PackedVector2Array()
+			for i in 7:
+				hx2.append(Vector2.from_angle(TAU * i / 6.0 + (t if j % 2 == 0 else -t)) * (RADIUS + 6.0 + 5.0 * j + 3.0 * prism_flash))
+			draw_polyline(hx2, Color(0.8, 0.95, 1.0, 0.6 - 0.15 * j).lerp(Color.WHITE, prism_flash), 1.5)
 	if pincer > 0:
 		# 협공: 세 갈래 화살표가 안쪽을 겨눈다
 		for i in 3:
@@ -1999,6 +2006,38 @@ func preview(card: Dictionary) -> Array:
 			out.append(Pat.MODS[id]["desc"])
 		"link":
 			var id: String = card["id"]
-			out.append(Pat.LINKS[id]["name"])
-			out.append(Pat.LINKS[id]["desc"])
+			var n := link_lv(id)
+			if n > 0:
+				out.append("%s x%d → x%d (이미 들어 있음, 겹쳐서 세짐)" % [Pat.LINKS[id]["name"], n, n + 1])
+				out.append("%s %s → %s" % [LINK_POWER[id], link_value(id, n), link_value(id, n + 1)])
+			else:
+				out.append(Pat.LINKS[id]["name"])
+				out.append(Pat.LINKS[id]["desc"])
 	return [out, sp]
+
+
+## 이 오브젝트에 든 연계 카드 수.
+func link_lv(id: String) -> int:
+	match id:
+		"prism":
+			return prism
+		"reso":
+			return reso
+		"pincer":
+			return pincer
+	return 0
+
+
+## 연계 카드를 n장 넣었을 때의 세기 (_check_prisms·dmg_factor·_pincer와 같은 식).
+const LINK_POWER := {"prism": "지나가는 탄 피해", "reso": "가까운 오브젝트 하나당 피해", "pincer": "폭발 피해: 구체 최대 체력의"}
+
+
+static func link_value(id: String, n: int) -> String:
+	match id:
+		"prism":
+			return "+%d%%" % (20 * n)
+		"reso":
+			return "+%d%%" % (12 * n)
+		"pincer":
+			return "%d%%" % roundi(Rules.pincer_frac * (1.0 + 0.5 * (n - 1)) * 100.0)
+	return ""
