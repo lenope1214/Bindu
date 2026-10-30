@@ -1128,17 +1128,28 @@ func _update_aim(orbs: Array, delta: float) -> void:
 		aim = dir
 		return
 	var limit := 0.1 * n
-	var best: Orb = null
-	var bd := 400.0
-	for o in main.near_t(position, bd):
+	# 가장 가까운 구체가 아니라 구체가 가장 많이 모인 쪽으로 (2026-10-30: 가까운 한 개를 따라가 무리 가운데를 벗어나
+	# 분사·음파·물줄기·레이저·시계침에서 유도가 피해를 0.65~0.86배로 깎던 것)
+	var angs := PackedFloat32Array()
+	for o in main.near_t(position, 400.0):
 		var v: Vector2 = o.position - position
-		if v.length() < bd and absf(dir.angle_to(v)) < limit + 0.4:
-			bd = v.length()
-			best = o
+		if v.length() < 400.0:
+			var a := dir.angle_to(v)
+			if absf(a) < limit + 0.4:
+				angs.append(a)
 	var want := dir
-	if best:
-		var a := clampf(dir.angle_to(best.position - position), -limit, limit)
-		want = dir.rotated(a)
+	if not angs.is_empty():
+		angs.sort()
+		var best_a := 0.0
+		var best_n := 0
+		var j := 0
+		for i in angs.size():  # 0.6라디안 창에 가장 많이 든 곳의 가운데
+			while angs[i] - angs[j] > 0.6:
+				j += 1
+			if i - j + 1 > best_n:
+				best_n = i - j + 1
+				best_a = (angs[i] + angs[j]) * 0.5
+		want = dir.rotated(clampf(best_a, -limit, limit))
 	aim = aim.slerp(want, minf(1.0, delta * 6.0)).normalized()
 
 
