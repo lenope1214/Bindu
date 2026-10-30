@@ -175,6 +175,7 @@ func range_text() -> String:
 	var l := plv
 	var s := sz()
 	match pattern:
+		"shot": return "%d (속성 레벨 합이 오를수록 멀리)" % roundi(shot_range(total_level(), mf("size")) * (1.0 + 0.12 * tk(Elem.WIND)))
 		"spray": return "%d" % roundi(200.0 * reach(l) * s)
 		"stream": return "%d" % roundi(260.0 * reach(l) * s)
 		"chain": return "%d (튀는 거리 %d)" % [roundi(280.0 * reach(l) * s), roundi(110.0 * s)]
@@ -267,6 +268,11 @@ static func spd(l: int) -> float:
 
 static func reach(l: int) -> float:
 	return (1.0 + 0.1 * (l - 1)) * reach_mul
+
+
+## 직선탄 사거리: 속성 레벨 합 n으로 늘어난다 (직선탄은 공격방식 레벨이 늘 1). 원거리 특성·크기 강화 포함, 바람(멀리)은 쏠 때 따로.
+static func shot_range(n: int, size_n: float) -> float:
+	return (400.0 + 50.0 * maxi(n - 1, 0)) * reach_mul * (1.0 + 0.12 * size_n)
 
 
 ## 크기 강화 배율.
@@ -1876,6 +1882,12 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 				var hm: int = md.get("homing", 0)
 				var hf := 2.0 * (1.0 - pow(0.5, hm)) if Rules.mod_decay else float(hm)
 				ci.draw_arc(o, Projectile.wisp_seek(hf), 0, TAU, 64, Color(c.r, c.g, c.b, 0.5 * c.a), 1.5)
+			"shot":
+				var tl := 0
+				for e in els:
+					tl += els[e]
+				var wr := 1.0 + 0.12 * mini(els.get(Elem.WIND, 0), 3) * Rules.trait_mul
+				_r_band(ci, o, dd, 0.0, shot_range(tl, md.get("size", 0)) * wr, 6.0 * s, c)
 			_:
 				_r_band(ci, o, dd, 0.0, far, 6.0 * s, c)
 	for r in Elem.reactions_with(els):

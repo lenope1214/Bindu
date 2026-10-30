@@ -50,7 +50,7 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 	var speed := 400.0
 	match k:
 		"shot":
-			speed = 440.0; dmg = 2.4 * p; radius = 6.0
+			speed = 440.0; dmg = 2.4 * p; radius = 6.0; max_travel = Tower.shot_range(tower.total_level(), tower.mf("size"))
 		"blob":
 			speed = 260.0; lob = true; max_travel = 180.0 * Tower.reach(l)
 		"thorn":
@@ -373,8 +373,9 @@ func _draw() -> void:
 			var s := radius * 1.4
 			draw_colored_polygon(PackedVector2Array([d * s, n * s * 0.5, -d * s, -n * s * 0.5]), col.lightened(0.3))
 		"shot":
-			draw_circle(Vector2.ZERO, radius, col)
-			draw_circle(-d * radius * 0.3, radius * 0.45, Color(1, 1, 1, 0.7))
+			var fade := clampf((max_travel - travel) / 40.0, 0.0, 1.0)  # 사거리 끝에서 흐려짐
+			draw_circle(Vector2.ZERO, radius, Color(col, col.a * fade))
+			draw_circle(-d * radius * 0.3, radius * 0.45, Color(1, 1, 1, 0.7 * fade))
 		"blob":
 			var s := 1.0 + sin(travel / max_travel * PI) * 0.8
 			draw_circle(Vector2.ZERO, 7.0 * s, col)
