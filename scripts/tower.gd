@@ -339,6 +339,9 @@ func dmg_factor(rx := false) -> float:
 		f *= 1.0 + 0.04 * mf("bounce")
 	if m("size") > 0 and pattern in Pat.PROJECTILE:
 		f *= 1.0 + 0.04 * mf("size")
+	# 정원 속성 숙련 (씨앗 나무를 쓰는 일반 판만)
+	if Garden.boosted:
+		f *= Garden.elem_mul(elements)
 	# 온라인 밸런스 패치: 공격방식·넣은 속성별 피해 배율
 	if not Patch.pat_mul.is_empty():
 		f *= Patch.pat_mul.get(pattern, 1.0)

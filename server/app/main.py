@@ -35,7 +35,7 @@ app.include_router(accounts.router)
 
 PLATFORMS = ["windows", "macos", "linux", "android", "ios"]
 # 패치 data에서 게임이 읽는 최상위 키 (scripts/patch.gd)
-PATCH_KEYS = {"rules", "rules_desc", "perks", "perk_desc", "cards", "elem_dmg", "pat_dmg", "modes", "message"}
+PATCH_KEYS = {"rules", "rules_desc", "perks", "perk_desc", "cards", "elem_dmg", "pat_dmg", "modes", "garden", "message"}
 
 
 @app.get("/health")
@@ -185,7 +185,7 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), au
                 patch_id=run.patch, season=season, map=run.map, rules=run.rules, wave=run.wave, score=run.score,
                 kills=run.kills, best_combo=run.best_combo, game_secs=run.game_secs, real_secs=run.real_secs,
                 detail={"perks": run.perks, "modes": run.modes, "towers": [x.model_dump() for x in run.towers], "src": run.src, "log": [x.model_dump() for x in run.log]},
-                valid=reason == "", reason=reason, run_key=run.run, ended=run.ended, updated_at=now())
+                valid=reason == "", reason=reason, run_key=run.run, ended=run.ended, updated_at=now(), grow="grow" in run.modes)
     if acct:
         vals["account_id"] = acct.id
     if row is None:
@@ -221,7 +221,7 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), au
     db.commit()
     rank = None
     if row.valid and season:
-        rank = board_rank(db, run.map, run.rules, season, None, acct.id if acct else run.device)
+        rank = board_rank(db, run.map, run.rules, season, None, acct.id if acct else run.device, "grow" in run.modes)
     return {"id": row.id, "accepted": row.valid, "season": season, "rank": rank}
 
 
@@ -289,9 +289,10 @@ def _who():
     return func.coalesce(Run.account_id, Run.device_id)
 
 
-def _board(db: Session, map_id: str, rules: int, season: int, since):
-    """계정(없으면 기기)마다 최고 기록 하나씩."""
-    conds = [Run.map == map_id, Run.rules == rules, Run.season == season, Run.valid.is_(True), Run.hidden.is_(False)]
+def _board(db: Session, map_id: str, rules: int, season: int, since, grow: bool = False):
+    """계정(없으면 기기)마다 최고 기록 하나씩. grow: 씨앗 나무를 쓴 '성장' 기록끼리."""
+    conds = [Run.map == map_id, Run.rules == rules, Run.season == season, Run.valid.is_(True), Run.hidden.is_(False),
+             Run.grow.is_(True) if grow else Run.grow.isnot(True)]
     if since is not None:
         conds.append(Run.created_at >= since)
     rn = func.row_number().over(partition_by=_who(), order_by=(Run.score.desc(), Run.wave.desc(), Run.id)).label("rn")
@@ -300,8 +301,8 @@ def _board(db: Session, map_id: str, rules: int, season: int, since):
     return sub
 
 
-def board_rank(db: Session, map_id: str, rules: int, season: int, since, who: str):
-    sub = _board(db, map_id, rules, season, since)
+def board_rank(db: Session, map_id: str, rules: int, season: int, since, who: str, grow: bool = False):
+    sub = _board(db, map_id, rules, season, since, grow)
     mine = db.execute(select(sub).where(sub.c.rn == 1, sub.c.who == who)).first()
     if not mine:
         return None
@@ -313,19 +314,19 @@ def board_rank(db: Session, map_id: str, rules: int, season: int, since, who: st
 
 @app.get("/v1/leaderboard")
 def leaderboard(map: str, rules: int, season: int = 0, period: str = "all", limit: int = Query(20, le=100),
-                device: str = "", authorization: str = Header(default=""), db: Session = Depends(get_db)):
+                device: str = "", grow: bool = False, authorization: str = Header(default=""), db: Session = Depends(get_db)):
     s = db.get(Season, season) if season else current_season(db)
     me_acct = accounts.optional(db, authorization)
     who = me_acct[0].id if me_acct else device
     if not s:
         raise HTTPException(404, "no season")
     since = now() - timedelta(days=7) if period == "week" else None
-    sub = _board(db, map, rules, s.id, since)
+    sub = _board(db, map, rules, s.id, since, grow)
     rows = db.execute(select(sub).where(sub.c.rn == 1).order_by(sub.c.score.desc(), sub.c.wave.desc(), sub.c.id).limit(limit)).all()
     total = db.scalar(select(func.count()).select_from(sub).where(sub.c.rn == 1))
     entries = [{"rank": i + 1, "nick": r.nickname, "wave": r.wave, "score": r.score, "game": r.game_version,
                 "date": kst_date(r.created_at), "me": bool(who) and r.who == who, "ended": r.ended} for i, r in enumerate(rows)]
-    me = board_rank(db, map, rules, s.id, since, who) if who else None
+    me = board_rank(db, map, rules, s.id, since, who, grow) if who else None
     return {"season": {"id": s.id, "name": s.name}, "period": period, "total": total, "entries": entries, "me": me}
 
 

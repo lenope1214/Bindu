@@ -114,6 +114,7 @@ main에 `server/` 변경이 올라오면 집 PC가 5분 안에 알아서 다시 
 | `elem_dmg` | 속성별 피해 배율. 오브젝트에 넣은 속성마다 곱함. 키: fire wood water electric wind ice earth dark light poison metal sound time soul |
 | `pat_dmg` | 공격방식별 피해 배율. 키: shot spray thorn stream chain gust shard wall vortex laser lob iron sonic clock wisp |
 | `modes` | 모드 점수 배율 (값이 배율 자체, 예 `{"rush": 1.4}`). 키: rush swarm steel glass narrow early angry stroll fort three soft ease. 서버 점수 상한도 같은 값을 씀 (`docs/modes.md`) |
+| `garden` | 정원 모드 경제 (값 자체). 키: `dew_kill`(처치 이슬 8) `dew_growth`(웨이브마다 이슬 x1.05) `hp_growth`(9웨이브부터 구체 체력 x1.10) `cost_new`(20) `cost_level`(10) `cost_elem`(40) `cost_pat`(100) `cost_mod`(60) `cost_link`(80) `offline`(꺼 둔 동안 0.5) |
 | `message` | 시작 화면 공지 |
 
 ## 리더보드와 시즌
@@ -123,6 +124,7 @@ main에 `server/` 변경이 올라오면 집 PC가 5분 안에 알아서 다시 
 - 판도가 바뀌는 패치는 올릴 때 "새 시즌 시작"을 켭니다. 그 패치를 받기 전의 게임으로 한 판은 시즌 0(리더보드 제외, 통계에는 들어감)이 됩니다.
 - 새 빌드로 판도가 바뀌면 패치 탭 아래 "새 빌드로 새 시즌 열기"에 그 게임 버전을 적습니다.
 - 지난 시즌 기록은 지우지 않습니다 (`/v1/leaderboard?season=N`).
+- 씨앗 나무(정원 모드)를 켠 판은 모드 목록에 `grow`가 붙어 '성장' 리더보드로 따로 갑니다 (`/v1/leaderboard?grow=true`). 안 붙은 판은 '순수'(기본). 정원 판 자체는 올리지 않습니다.
 
 ## 점수 검증
 

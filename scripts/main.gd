@@ -256,8 +256,23 @@ var board_bar: HBoxContainer  # 리더보드 창 위쪽 필터 버튼 (맵·규�
 var board_map := "plain"  # 리더보드 필터. 창을 열 때 지금 고른 맵·규칙 버전으로 시작
 var board_rules := 1
 var board_season := 0  # 0: 이번 시즌
+var board_grow := false  # 리더보드: 씨앗 나무를 쓴 '성장' 기록 (끄면 '순수')
 var board_seasons: Array = []  # 서버 시즌 목록 (새 시즌부터)
 static var title_seen := false  # 다시 시작하면 타이틀은 건너뛴다
+# 정원 모드 (Garden)
+var garden_cd := -1.0  # 다음 웨이브까지 남은 시간 (정원 쉬는 시간, 자동 진행)
+var garden_auto := true  # 정원: 쉬는 시간이 지나면 다음 웨이브를 저절로 (끄면 Space)
+var garden_perk_t := 0.0  # 정원 특성: 이 시간이 지나면 첫 번째를 고른다
+var garden_wave_dew := 0.0  # 이번 웨이브에 얻은 이슬
+var garden_kills0 := 0  # 이번 웨이브 시작 때 처치 수 (숙련)
+var rebirth_btn: Button
+var bonsai_btn: Button
+var rebirth_armed := 0.0
+var garden_btn: Button  # 시작 화면
+var tree_btn: Button
+var tree_panel: PanelContainer
+var tree_box: VBoxContainer
+static var garden_note := ""  # 장면을 다시 불러온 뒤 보여 줄 글 (환생)
 
 
 func _ready() -> void:
@@ -321,7 +336,9 @@ func _ready() -> void:
 	_on_booted(Net.info)  # 다시 시작했을 때: 이미 받아 둔 새 버전·공지
 	# 창 제목에도 한글 이름과 버전 (작업 표시줄에서 어떤 빌드인지 보이게)
 	get_window().title = "빈두 v%s" % ProjectSettings.get_setting("application/config/version", "?")
-	if title_seen or DisplayServer.get_name() == "headless":
+	if Garden.on:
+		_enter_garden()
+	elif title_seen or DisplayServer.get_name() == "headless":
 		_start_choose()
 	elif _old_run_version() != "":
 		_end_old_run(_old_run_version())
@@ -451,7 +468,7 @@ func _build_ui() -> void:
 	choice_box.set_anchors_preset(Control.PRESET_CENTER)
 	choice_box.position = Vector2(-440, -90)
 	choice_box.size = Vector2(730, 180)
-	choice_box.add_theme_constant_override("separation", 20)
+	choice_box.add_theme_constant_override("separation", 20)  # 정원 상점 4장은 166×4 + 20×3 = 724 (줄 폭 730)
 	choice_box.alignment = BoxContainer.ALIGNMENT_CENTER  # 카드가 2장일 때도 가운데
 	root.add_child(choice_box)
 
@@ -559,7 +576,7 @@ func _build_ui() -> void:
 	auto_btn = Button.new()
 	auto_btn.custom_minimum_size = Vector2(44, 36)
 	auto_btn.pressed.connect(_toggle_auto)
-	_icon_btn(auto_btn, func(): return ["auto", Color(0.5, 0.9, 0.6) if auto_start else Color(1, 1, 1, 0.35)])
+	_icon_btn(auto_btn, func(): return ["auto", Color(0.5, 0.9, 0.6) if (garden_auto if Garden.on else auto_start) else Color(1, 1, 1, 0.35)])
 	bar.add_child(auto_btn)
 	pause_btn = Button.new()
 	pause_btn.tooltip_text = "일시정지 (P)"
@@ -593,7 +610,27 @@ func _build_ui() -> void:
 	start_btn.add_theme_font_size_override("font_size", 20)
 	start_btn.pressed.connect(_start_wave_from_ready)
 	start_btn.visible = false
+	# 정원: 환생·분재 (쉬는 시간에 다음 웨이브 버튼 위)
+	rebirth_btn = Button.new()
+	rebirth_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	rebirth_btn.position = Vector2(-250, -152)
+	rebirth_btn.size = Vector2(240, 40)
+	rebirth_btn.add_theme_font_size_override("font_size", 16)
+	rebirth_btn.focus_mode = Control.FOCUS_NONE
+	rebirth_btn.pressed.connect(_rebirth)
+	rebirth_btn.visible = false
+	bonsai_btn = Button.new()
+	bonsai_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	bonsai_btn.position = Vector2(10, -152)
+	bonsai_btn.size = Vector2(240, 40)
+	bonsai_btn.add_theme_font_size_override("font_size", 16)
+	bonsai_btn.focus_mode = Control.FOCUS_NONE
+	bonsai_btn.tooltip_text = "선택한 오브젝트(없으면 가장 많이 때린 것)를 분재로: 씨앗 나무 분재를 열면 일반 판을 이 오브젝트로 시작"
+	bonsai_btn.pressed.connect(_set_bonsai)
+	bonsai_btn.visible = false
 	root.add_child(start_btn)
+	root.add_child(rebirth_btn)
+	root.add_child(bonsai_btn)
 	cancel_btn = Button.new()
 	cancel_btn.text = "취소 (Esc)" if OS.has_feature("pc") else "취소"
 	cancel_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
@@ -927,7 +964,7 @@ func _show_toast(t: String) -> void:
 ## 점수·남은 구체만 바뀐 때는 0.1초에 한 번만 다시 쓴다. 글자 모양 계산이 비싸 고배속에서 프레임마다 쓰면
 ## 그것만으로 프레임당 몇 ms (8배속 부하 측정). 웨이브·중앙 체력 등이 바뀌면 바로.
 func _update_hud(force := false) -> void:
-	var urgent := "%d|%d|%d|%d|%d|%d|%d|%d" % [wave, wave_dmg, core_hp, core_max, phase, towers.get_child_count(), selected.size(), perks.size()]
+	var urgent := "%d|%d|%d|%d|%d|%d|%d|%d|%d" % [wave, wave_dmg, core_hp, core_max, phase, towers.get_child_count(), selected.size(), perks.size(), int(Garden.dew) if Garden.on else 0]
 	if not force and urgent == hud_urgent and hud_cool > 0.0:
 		return
 	hud_urgent = urgent
@@ -936,13 +973,20 @@ func _update_hud(force := false) -> void:
 	var D := Color(1, 1, 1, 0.6)
 	var items: Array = []  # [아이콘, 아이콘 색, 글, 글 색, 말풍선 줄, 새 줄에서 시작?]
 	items.append(["wave", Color(0.5, 0.78, 1.0), str(wave), W, [["웨이브", W]], false])
-	items.append(["score", Color(1, 0.82, 0.35), num(score), W, [["점수", W]], false])
+	if Garden.on:
+		items.append(["score", Color(0.55, 1, 0.75), Garden.short(Garden.dew), Color(0.75, 1, 0.85), [["이슬 (상점에서 씀)", W], ["최근 초당 %.1f · 꺼 두면 그 절반" % Garden.rate, D]], false])
+	else:
+		items.append(["score", Color(1, 0.82, 0.35), num(score), W, [["점수", W]], false])
 	var ct := "%d/%d" % [maxi(core_hp, 0), core_max] + ("  -%d" % wave_dmg if wave_dmg > 0 else "")
 	var ctip := [["중앙 체력", W]]
 	if wave_dmg > 0:
 		ctip.append(["이번 웨이브 -%d" % wave_dmg, Color(1, 0.55, 0.55)])
 	items.append(["core", Color(1, 0.55, 0.6) if core_hp * 3 <= core_max else W, ct, Color(1, 0.6, 0.6) if wave_dmg > 0 else W, ctip, false])
-	items.append(["best", Color(1, 0.82, 0.35, 0.7), "%s · %d" % [num(best_score), best_wave], D, [["최고 기록: 점수 %s · 웨이브 %d" % [num(best_score), best_wave], W]], false])
+	if Garden.on:
+		var sd := Garden.seeds_for(Garden.best)
+		items.append(["best", Color(0.75, 1, 0.55, 0.8), "%d%s" % [Garden.best, "  씨앗 +%d" % sd if Garden.can_rebirth() else ""], D, [["이번 정원 최고 웨이브 %d" % Garden.best, W], ["환생: 최고 %d웨이브부터 (씨앗 = 최고 - %d)" % [Garden.REBIRTH_FROM, Garden.SEED_BASE], D]], false])
+	else:
+		items.append(["best", Color(1, 0.82, 0.35, 0.7), "%s · %d" % [num(best_score), best_wave], D, [["최고 기록: 점수 %s · 웨이브 %d" % [num(best_score), best_wave], W]], false])
 	if Meta.rules != 1:
 		items.append(["tag", D, Rules.NAMES[Meta.rules], D, [["규칙 버전", W]], false])
 	if not Modes.on.is_empty():
@@ -1108,12 +1152,16 @@ static func lanes_for(w: int) -> int:
 
 
 func _start_choose(new_round := true) -> void:
+	if Garden.on:
+		_garden_rest(new_round)
+		return
 	if new_round and wave == 0:
 		# 새 판. 헤드리스(봇·점검)는 늘 모두 열린 채로
 		tutor = Meta.tutor_next and DisplayServer.get_name() != "headless"
 		tutor_given = {}
 		start_modes()
 		run_id = _new_run_id()
+		_apply_tree()
 	if new_round and tutor and wave + 1 >= TUTOR_OPEN.values().max() and Meta.tutor_next:
 		Meta.tutor_next = false  # 모두 열렸다: 다음 판부터는 처음부터 모두
 		_save_best()
@@ -1135,6 +1183,8 @@ func _new_rest() -> void:
 	wave_resist = Elem.ALL.pick_random() if wave + 1 >= Rules.resist_from and randf() < 0.6 else -1
 	_plan_boss()
 	picks_left = maxi(2, Rules.picks) if wave <= 1 else Rules.picks  # 처음 두 번의 쉬는 시간은 2개씩 (모드 '세 장'이면 3개)
+	if wave == 0 and Garden.boosted and Garden.lv("leaf") >= 3:
+		picks_left += 1  # 씨앗 나무 잎 3: 첫 쉬는 시간 고르기 +1
 	rerolls_left = Modes.rerolls(1 + bonus_rerolls + perks.get("reroll", 0) * int(_perk_val("reroll")))
 	bonus_rerolls = 0
 
@@ -1143,6 +1193,8 @@ func _new_rest() -> void:
 
 ## 넘기기를 쓸 수 있나: 오브젝트가 있고, 첫 판이면 카드 종류가 다 열린 뒤.
 func _can_skip() -> bool:
+	if Garden.on:
+		return false
 	return towers.get_child_count() > 0 and not (tutor and wave + 1 < TUTOR_OPEN.values().max()) and skip_left == 0
 
 
@@ -1283,7 +1335,8 @@ func _clear_shots() -> void:
 func _make_choices() -> void:
 	offer.clear()
 	var guard := 0
-	while offer.size() < 3 and guard < 50:
+	var want := 4 if wave == 0 and Garden.boosted and Garden.lv("leaf") >= 2 else 3  # 씨앗 나무 잎 2: 첫 쉬는 시간 카드 4장
+	while offer.size() < want and guard < 50:
 		guard += 1
 		var card := _roll_card()
 		# 넣을 곳이 없는 공격방식·강화 카드는 내지 않는다
@@ -1403,7 +1456,7 @@ func _card_color(card: Dictionary) -> Color:
 func _card_button(card: Dictionary, idx: int) -> Button:
 	var col := _card_color(card)
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(230, 170)
+	b.custom_minimum_size = Vector2(230 if offer.size() <= 3 else 166, 170)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.1, 0.11, 0.15, 0.96)
 	sb.border_color = Color(col, 0.6)
@@ -1465,7 +1518,12 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 			var id: String = card["id"]
 			b.text = "[%d] 연계: %s\n%s" % [idx, Pat.LINKS[id]["name"], Pat.LINKS[id]["desc"]]
 			foot = [["place_on", "오브젝트 위에 놓기"]]
-	_fit_card_text(b, b.text, 15)
+	if Garden.on:
+		var pr := _garden_price_text(card)
+		b.text += "\n" + pr[0]
+		if not pr[1]:
+			col = col.darkened(0.45)
+	_fit_card_text(b, b.text, 15 if offer.size() <= 3 else 13)
 	if not foot.is_empty():
 		# 놓는 곳은 카드 아래 한 줄 아이콘으로 (예전엔 두 줄 글이 카드마다 되풀이됨)
 		for st: StyleBoxFlat in [sb, sbh]:
@@ -1487,8 +1545,13 @@ func _draw_card_foot(b: Button, foot: Array, col: Color) -> void:
 	var fs := 12
 	var c := Color(col, 0.75)
 	var w := 0.0
-	for f in foot:
-		w += 18.0 + ui_font.get_string_size(f[1], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 12.0
+	while true:  # 좁은 카드(정원 상점 4장)에서 넘치면 글자를 줄인다
+		w = 0.0
+		for f in foot:
+			w += 18.0 + ui_font.get_string_size(f[1], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 12.0
+		if w - 12.0 <= b.size.x - 10.0 or fs <= 9:
+			break
+		fs -= 1
 	var x := (b.size.x - w + 12.0) / 2.0
 	var y := b.size.y - 15.0
 	b.draw_line(Vector2(14.0, y - 11.0), Vector2(b.size.x - 14.0, y - 11.0), Color(col, 0.2), 1.0)
@@ -1503,17 +1566,18 @@ func _draw_card_foot(b: Button, foot: Array, col: Color) -> void:
 func _fit_card_text(b: Button, text: String, fs: int) -> void:
 	var t := text
 	var h := 0.0
+	var w := 230.0 if offer.size() <= 3 else 166.0  # 정원 상점은 4장
 	while true:
-		t = _wrap_words(text, 220.0, fs)
-		# 버튼이 실제로 그리는 폭(테두리 안 226)으로 다시 재서 줄 수를 센다
-		h = ui_font.get_multiline_string_size(t, HORIZONTAL_ALIGNMENT_CENTER, 226.0, fs).y + 14.0
+		t = _wrap_words(text, w - 10.0, fs)
+		# 버튼이 실제로 그리는 폭(테두리 안 w-4)으로 다시 재서 줄 수를 센다
+		h = ui_font.get_multiline_string_size(t, HORIZONTAL_ALIGNMENT_CENTER, w - 4.0, fs).y + 14.0
 		if h <= CARD_MAX_H or fs <= 13:
 			break
 		fs -= 1
 	b.text = t
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b.add_theme_font_size_override("font_size", fs)
-	b.custom_minimum_size = Vector2(230, clampf(h, 170.0, CARD_MAX_H))
+	b.custom_minimum_size = Vector2(w, clampf(h, 170.0, CARD_MAX_H))
 
 
 ## 도감에서 선호한 카드면 꼬리표 글: 카드 자체, 또는 속성 카드가 선호한 반응을 지금 오브젝트에 만들 수 있을 때. 아니면 "".
@@ -1542,6 +1606,8 @@ func _mark_fav(b: Button, sb: StyleBoxFlat, sbh: StyleBoxFlat, tag: String) -> v
 
 ## 남은 고르기 수는 카드 위 배지(_draw_info)에 있어서, 조작 안내만 처음 세 판에 띄운다.
 func _choose_hint() -> String:
+	if Garden.on:
+		return "상점: 카드를 사서 놓아요 (빈 곳: 새 오브젝트 · 오브젝트 위: 겹치기·넣기). 끌기: 옮기기"
 	if Meta.games >= 3:
 		return ""
 	# 선택지 내리기(V)는 카드 아래 버튼에 적혀 있다
@@ -1655,7 +1721,7 @@ func _start_perk() -> void:
 	# 더 골라도 거의 효과가 없는 특성은 빼고: 이미 거의 Lv2로 나오는 행운, 두 번 고른 조화(공속 감소 10% → 2.5%)
 	pool = pool.filter(func(pk): return not (pk["id"] == "luck" and _lv2_chance() >= 0.9 or pk["id"] == "harmony" and perks.get("harmony", 0) >= 2))
 	pool.shuffle()
-	perk_offer = pool.slice(0, 3)
+	perk_offer = pool.slice(0, 4 if Garden.boosted and Garden.lv("fruit") >= 1 else 3)  # 씨앗 나무 열매 1: 특성 선택지 4개
 	_show_perks()
 	big_banner("특성 선택", Color(1, 0.85, 0.45))
 	_save_run()
@@ -1702,17 +1768,9 @@ func _on_perk(pk: Dictionary) -> void:
 		return
 	perk_mode = false
 	var id: String = pk["id"]
-	perks[id] = perks.get(id, 0) + 1
-	run_log.append({"w": wave, "k": "perk", "o": perk_offer.map(func(x): return "perk:" + x["id"]), "p": "perk:" + id})
-	match id:
-		"power": Tower.dmg_mul += _perk_val("power")
-		"haste": Tower.spd_mul += _perk_val("haste")
-		"reach": Tower.reach_mul += _perk_val("reach")
-		"core":
-			core_max += int(_perk_val("core"))
-			core_hp = core_max
-		"slow": orb_speed_mul *= 1.0 - _perk_val("slow")
-		"harmony": Tower.tax_step *= _perk_val("harmony")
+	if not Garden.on:
+		run_log.append({"w": wave, "k": "perk", "o": perk_offer.map(func(x): return "perk:" + x["id"]), "p": "perk:" + id})
+	_grant_perk(id)
 	sfx.play("reaction", 0.0)
 	_show_toast("특성: %s (%s)" % [pk["name"], _perk_desc(pk)])
 	for t in towers.get_children():
@@ -1722,6 +1780,20 @@ func _on_perk(pk: Dictionary) -> void:
 		_start_perk()
 	else:
 		_start_choose(not rest_ready)
+
+
+## 특성 하나를 얻는다 (고르기·씨앗 나무 열매 2).
+func _grant_perk(id: String) -> void:
+	perks[id] = perks.get(id, 0) + 1
+	match id:
+		"power": Tower.dmg_mul += _perk_val("power")
+		"haste": Tower.spd_mul += _perk_val("haste")
+		"reach": Tower.reach_mul += _perk_val("reach")
+		"core":
+			core_max += int(_perk_val("core"))
+			core_hp = core_max
+		"slow": orb_speed_mul *= 1.0 - _perk_val("slow")
+		"harmony": Tower.tax_step *= _perk_val("harmony")
 
 
 ## 특성 수치 (온라인 패치 perks로 바뀔 수 있음). 설명 글도 같이 바꿔야 하면 perk_desc.
@@ -1748,6 +1820,13 @@ func _perk_text() -> String:
 func _on_reroll() -> void:
 	if phase != Phase.CHOOSE:
 		return
+	if Garden.on:
+		if perk_mode or not _garden_pay(Garden.REROLL_COST):
+			return
+		_garden_fill()
+		_show_offer()
+		_save_run()
+		return
 	if rerolls_left <= 0:
 		_show_toast("이번 쉬는 시간의 새로고침을 다 썼어요")  # Q를 눌러도 아무 일이 없던 것
 		return
@@ -1773,6 +1852,11 @@ func _set_cards_hidden(h: bool) -> void:
 
 
 func _update_reroll_btn() -> void:
+	if Garden.on:
+		reroll_btn.visible = not cards_hidden and not perk_mode
+		reroll_btn.text = "새로고침 %d이슬 (Q)" % Garden.REROLL_COST
+		reroll_btn.tooltip_text = "상점 카드 새로 뽑기"
+		return
 	reroll_btn.visible = rerolls_left > 0 and not cards_hidden  # 모드 '외길'은 늘 0
 	reroll_btn.text = "새로고침 %d (Q)" % rerolls_left
 	reroll_btn.tooltip_text = "선택지 새로고침 (Q): 이번 쉬는 시간에 %d번 남음" % rerolls_left
@@ -1784,6 +1868,13 @@ func _roll_lanes() -> void:
 	if Meta.map_id == "line":
 		# 회랑: 한쪽 끝 하나 (각도는 중앙 점에서 구체가 오는 쪽)
 		lanes = [PI if Meta.line_flip else 0.0]
+		return
+	if Garden.on:
+		# 정원: 방향이 옮겨 가지 않는다 (꺼 두고 맡겨도 되게). 늘어날 때마다 육각형 자리를 하나씩 채운다
+		var r0: float = lanes[0] if not lanes.is_empty() else randf() * TAU
+		lanes.clear()
+		for i in n:
+			lanes.append(r0 + Garden.LANE_ORDER[i])
 		return
 	if Meta.map_id == "cross":
 		# 십자로: 처음부터 네 방향 고정
@@ -2027,7 +2118,7 @@ func _draw_info() -> void:
 			Icons.chip(info, ui_font, r, "orb", Color(0.85, 0.85, 0.9, la), txt, Color(1, 0.5, 0.5, la), 16, Color(0.1, 0.02, 0.03, 0.85 * la), Color(1, 0.4, 0.4, 0.6 * la))
 			tip_rects.append([r, [["지난 웨이브에 이쪽에서 놓친 구체 %d개" % lm[1], Color(1, 0.6, 0.6)], [_leak_text(), Color(1, 1, 1, 0.7)]]])
 	# 남은 고르기: 카드 줄 왼쪽 위 모서리에 걸친 꼬리표
-	if phase == Phase.CHOOSE and choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and not get_tree().paused:
+	if phase == Phase.CHOOSE and choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and not get_tree().paused and not Garden.on:
 		var cb := ui_root.get_global_transform().affine_inverse() * choice_box.get_global_rect()
 		var first: Control = choice_box.get_child(0)
 		var fx := (ui_root.get_global_transform().affine_inverse() * first.get_global_rect()).position.x
@@ -2241,6 +2332,9 @@ func _place_hint() -> String:
 
 ## card: 이번에 넣은 카드 (대격변은 picked를 거치지 않아 따로 넘긴다).
 func _after_place(card: Dictionary = {}) -> void:
+	if Garden.on:
+		_garden_bought()
+		return
 	_log_offer(picked if card.is_empty() else card)
 	_check_progress()
 	picks_left -= 1
@@ -2266,7 +2360,7 @@ func _enter_ready() -> void:
 
 
 func _start_wave_from_ready() -> void:
-	if phase == Phase.READY:
+	if phase == Phase.READY or (Garden.on and phase == Phase.CHOOSE and not perk_mode):
 		_start_wave()
 
 
@@ -2290,6 +2384,13 @@ func _toggle_mute() -> void:
 
 
 func _toggle_auto() -> void:
+	if Garden.on:
+		garden_auto = not garden_auto
+		garden_cd = Garden.NEXT_DELAY if garden_auto else -1.0
+		_update_auto_btn()
+		_save_best()
+		_show_toast("정원 자동 진행: " + ("켬" if garden_auto else "끔 (Space로 다음 웨이브)"))
+		return
 	auto_start = not auto_start
 	_update_auto_btn()
 	_save_best()
@@ -2312,6 +2413,10 @@ func _toggle_bar() -> void:
 
 
 func _update_auto_btn() -> void:
+	if Garden.on:
+		auto_btn.tooltip_text = "정원 자동 진행: " + ("켬" if garden_auto else "끔") + " (쉬는 시간 %d초 뒤 다음 웨이브)" % int(Garden.NEXT_DELAY)
+		auto_btn.queue_redraw()
+		return
 	auto_btn.tooltip_text = "자동 시작: " + ("켬" if auto_start else "끔") + " (웨이브가 끝나고 고르기를 마치면 바로 다음 웨이브)"
 	auto_btn.queue_redraw()
 
@@ -2343,8 +2448,11 @@ func _start_wave() -> void:
 		guide_lines.clear()
 		guide_t = 0.0
 	for w in [10, 15, 20]:
-		if wave >= w:
+		if wave >= w and not Garden.on:
 			_achieve("wave%d" % w)
+	garden_wave_dew = 0.0
+	garden_kills0 = kills
+	garden_cd = -1.0
 	spawn_interval = maxf(0.35, 1.2 - wave * 0.06)
 	spawn_timer = 0.5
 	wave_time = 0.0
@@ -2444,7 +2552,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_ESCAPE and notes_panel.visible:
 			_close_notes()
 			return
-		if event.keycode == KEY_ESCAPE and (settings_panel.visible or records_panel.visible or help_label.visible or modes_panel.visible or codex_panel.visible):
+		if event.keycode == KEY_ESCAPE and (settings_panel.visible or records_panel.visible or help_label.visible or modes_panel.visible or codex_panel.visible or tree_panel.visible):
+			tree_panel.visible = false
 			settings_panel.visible = false
 			codex_panel.visible = false
 			modes_panel.visible = false
@@ -2457,6 +2566,9 @@ func _unhandled_input(event: InputEvent) -> void:
 					help_label.visible = not help_label.visible
 				KEY_K:
 					_toggle_codex()
+				KEY_G:
+					if garden_btn.visible:
+						_enter_garden()
 				KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
 					if continue_btn.visible:
 						_continue_run()
@@ -2537,6 +2649,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_start_wave()
 		elif event.keycode == KEY_SPACE and phase == Phase.WAVE:
 			_toggle_speed()
+		elif event.keycode == KEY_SPACE and phase == Phase.CHOOSE and Garden.on and not perk_mode:
+			_start_wave()
 		elif event.keycode == KEY_SPACE and phase == Phase.CHOOSE:
 			_show_toast(("특성을" if perk_mode else "선택지를") + " 먼저 고르세요 (1·2·3 또는 클릭)")
 		elif event.keycode == KEY_ESCAPE and (phase in [Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.DRAW] or press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
@@ -2646,6 +2760,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if picked["type"] != "elem":
 			_apply_card(target)
 			return
+		elif Garden.on and not _garden_can_new():
+			return
 		else:
 			place_pos = mpos
 			phase = Phase.AIM
@@ -2669,6 +2785,8 @@ func _place_on(target: Tower) -> void:
 		return
 	if not target.can_take(picked):
 		_show_toast(target.refuse_text(picked))
+		return
+	if not _garden_pay(Garden.cost_elem_on(target, picked["e"], towers.get_child_count())):
 		return
 	var msg: String = target.add(picked["e"], picked["lv"])
 	_show_toast(msg)
@@ -2826,6 +2944,8 @@ func _confirm_aim() -> void:
 		moving = null
 		_end_move()
 		return
+	if Garden.on and not _garden_pay(Garden.cost_new(towers.get_child_count())):
+		return
 	_place_tower(place_pos, d)
 	sfx.play("place")
 	_after_place()
@@ -2893,6 +3013,29 @@ func _build_menu(root: Control) -> void:
 		row.add_child(b)
 	row.get_child(0).add_theme_font_size_override("font_size", 20)
 	new_btn = row.get_child(0)
+	# 정원 모드와 씨앗 나무 (Garden)
+	var grow := HBoxContainer.new()
+	grow.alignment = BoxContainer.ALIGNMENT_CENTER
+	grow.add_theme_constant_override("separation", 10)
+	box.add_child(grow)
+	garden_btn = Button.new()
+	garden_btn.custom_minimum_size = Vector2(380, 44)
+	garden_btn.focus_mode = Control.FOCUS_NONE
+	garden_btn.clip_text = true
+	garden_btn.add_theme_font_size_override("font_size", 16)
+	garden_btn.add_theme_color_override("font_color", Color(0.6, 1, 0.7))
+	garden_btn.tooltip_text = "켜 두거나 꺼 두어도 자라는 끝없는 판. 최고 25웨이브부터 환생해 씨앗을 얻는다"
+	garden_btn.pressed.connect(_enter_garden)
+	grow.add_child(garden_btn)
+	tree_btn = Button.new()
+	tree_btn.custom_minimum_size = Vector2(240, 44)
+	tree_btn.focus_mode = Control.FOCUS_NONE
+	tree_btn.clip_text = true
+	tree_btn.add_theme_font_size_override("font_size", 16)
+	tree_btn.add_theme_color_override("font_color", Color(0.85, 1, 0.6))
+	tree_btn.tooltip_text = "씨앗으로 가지를 올리면 일반 판을 더 강하게 시작 (켜면 '성장' 기록)"
+	tree_btn.pressed.connect(_toggle_tree)
+	grow.add_child(tree_btn)
 	# 이어하기: 저장된 판이 있을 때만 (쉬는 시간마다 자동 저장)
 	continue_btn = Button.new()
 	continue_btn.custom_minimum_size = Vector2(630, 48)
@@ -2960,15 +3103,16 @@ func _build_menu(root: Control) -> void:
 	board_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	board_bar.visible = false
 	records_panel.add_child(board_bar)
-	for f in [_board_next_map, _board_next_rules, _board_next_season]:
+	for f in [_board_next_map, _board_next_rules, _board_next_season, _board_next_grow]:
 		var b := Button.new()
-		b.custom_minimum_size = Vector2(266, 36)
+		b.custom_minimum_size = Vector2(200, 36)
 		b.focus_mode = Control.FOCUS_NONE
 		b.clip_text = true
 		b.pressed.connect(f)
 		board_bar.add_child(b)
 	_build_notes(root)
 	_build_modes(root, rsb)
+	_build_tree(root, rsb)
 	codex_panel = Codex.new()
 	codex_panel.setup(PERKS, rsb.duplicate(), _save_best)
 	root.add_child(codex_panel)
@@ -3159,8 +3303,15 @@ func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0) ->
 
 func _refresh_menu() -> void:
 	var m: Dictionary = Meta.MAPS[Meta.map_id]
+	var keep := Garden.boosted
+	if title_label.visible and not Garden.on:
+		Garden.boosted = Garden.want_boost()  # 다음 판의 기록 키 (성장/순수)
 	var best := Meta.best_of(Meta.run_key())
-	map_label.text = "맵: %s  (←/→)\n%s\n최고 기록%s  웨이브 %d · 점수 %s" % [Meta.map_name(), m["desc"], " (쉽게 모드)" if Modes.easy() else "", best[0], num(best[1])]
+	var grow_tag := " · 성장" if Garden.boosted else ""
+	Garden.boosted = keep
+	garden_btn.get_parent().visible = Meta.games > 0 or Garden.seeds_total > 0  # 첫 판 뒤에
+	_refresh_garden_menu()
+	map_label.text = "맵: %s  (←/→)\n%s\n최고 기록%s  웨이브 %d · 점수 %s" % [Meta.map_name(), m["desc"], (" (쉽게 모드)" if Modes.easy() else "") + grow_tag, best[0], num(best[1])]
 	flip_label.get_parent().visible = Meta.map_id == "line"
 	flip_label.text = "구체가 오는 쪽: %s  (F)" % ("왼쪽 → 문은 오른쪽 끝" if Meta.line_flip else "오른쪽 → 문은 왼쪽 끝")
 	rules_label.text = "규칙: %s%s  (↑/↓)\n%s" % [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 550.0, 18)]
@@ -3473,7 +3624,7 @@ func _submit_run(done := true) -> void:
 			src[key] = snappedf(rs[key] / total, 0.0001)
 	net.submit({
 		"device": Meta.device_id, "nick": Meta.nickname, "platform": Net.platform(), "game": old_run_ver if old_run_ver != "" else Net.game_version(),
-		"patch": Patch.id, "map": Meta.map_id, "rules": Meta.rules, "modes": Array(Modes.on), "wave": wave, "score": score, "kills": kills,
+		"patch": Patch.id, "map": Meta.map_id, "rules": Meta.rules, "modes": Array(Modes.on) + (["grow"] if Garden.boosted else []), "wave": wave, "score": score, "kills": kills,
 		"best_combo": best_combo, "game_secs": run_game, "real_secs": run_real, "perks": perks.duplicate(),
 		"towers": list, "src": src, "log": run_log, "run": run_id, "ended": done,
 	})
@@ -3501,21 +3652,28 @@ func _toggle_board() -> void:
 		return
 	board_map = Meta.map_id
 	board_rules = Meta.rules if Meta.rules in Rules.IDS else Rules.IDS[0]
+	board_grow = Garden.want_boost()  # 다음 판과 같은 쪽 (씨앗 나무를 켰으면 성장)
 	board_season = 0
 	net.seasons()
 	_load_board()
 
 
 func _board_tag() -> String:
-	return "%s|%d|%d" % [board_map, board_rules, board_season]
+	return "%s|%d|%d|%s" % [board_map, board_rules, board_season, board_grow]
 
 
 func _load_board() -> void:
 	board_lines = {}
 	_draw_board()
-	net.leaderboard(board_map, board_rules, "all", board_season, _board_tag())
+	net.leaderboard(board_map, board_rules, "all", board_season, _board_tag(), board_grow)
 	if board_season == 0:
-		net.leaderboard(board_map, board_rules, "week", 0, _board_tag())
+		net.leaderboard(board_map, board_rules, "week", 0, _board_tag(), board_grow)
+
+
+## 순수(씨앗 나무 없이) ↔ 성장(씨앗 나무·숙련을 쓴 판) 기록.
+func _board_next_grow() -> void:
+	board_grow = not board_grow
+	_load_board()
 
 
 func _board_next_map() -> void:
@@ -3575,13 +3733,13 @@ func _on_board_loaded(d: Dictionary) -> void:
 func _draw_board() -> void:
 	var cur := "" if board_seasons.is_empty() else str(board_seasons[0].get("name", ""))
 	var sname := ("이번 시즌" + (" (%s)" % cur if cur != "" else "")) if board_season == 0 else _season_name(board_season)
-	var texts := ["맵: %s" % Meta.map_name(board_map), "규칙: %s" % Rules.NAMES[board_rules], "시즌: %s" % sname]
-	for i in 3:
+	var texts := ["맵: %s" % Meta.map_name(board_map), "규칙: %s" % Rules.NAMES[board_rules], "시즌: %s" % sname, "기록: %s" % ("성장 (씨앗 나무)" if board_grow else "순수")]
+	for i in 4:
 		var b: Button = board_bar.get_child(i)
-		b.text = texts[i] + ("  ▶" if i < 2 or board_seasons.size() > 1 else "")
+		b.text = texts[i] + ("  ▶" if i != 2 or board_seasons.size() > 1 else "")
 		b.disabled = i == 2 and board_seasons.size() <= 1
 	board_bar.visible = true
-	var lines := PackedStringArray(["[리더보드]   위 버튼을 누르면 맵·규칙 버전·시즌이 바뀝니다   (빈 곳 클릭: 닫기)", "", "", ""])
+	var lines := PackedStringArray(["[리더보드]   위 버튼을 누르면 맵·규칙 버전·시즌·순수/성장이 바뀝니다   (빈 곳 클릭: 닫기)", "", "", ""])
 	var specs := [["all", "이번 시즌 전체"], ["week", "이번 주"]] if board_season == 0 else [["all", sname + " 전체"]]
 	for spec in specs:
 		lines.append(spec[1])
@@ -3923,6 +4081,8 @@ func _hide_title() -> void:
 func _save_run() -> void:
 	if title_label.visible or not phase in [Phase.CHOOSE, Phase.READY] or press_t or dragging:
 		return
+	if Garden.on:
+		run_log.clear()  # 정원은 끝이 없어 선택 기록을 쌓지 않는다
 	var ts := towers.get_children()
 	var list: Array = []
 	for t in ts:
@@ -3939,13 +4099,19 @@ func _save_run() -> void:
 		"state": "perk" if perk_mode else ("ready" if phase == Phase.READY else "choose"),
 		"offer": offer, "perk_offer": perk_offer.map(func(pk): return pk["id"]), "towers": list,
 		"log": run_log, "game_secs": run_game, "real_secs": run_real, "run_id": run_id,
-		"tutor": tutor, "tutor_given": tutor_given.keys(),
+		"tutor": tutor, "tutor_given": tutor_given.keys(), "grow": Garden.boosted,
 	}
+	if Garden.on:
+		vals["garden"] = Garden.run_state()
 	var cfg := ConfigFile.new()
 	for k in vals:
 		cfg.set_value("run", k, vals[k])
-	cfg.save(RUN_PATH)
-	if run_id != moved_run:
+	cfg.save(_run_path())
+	if Garden.on:
+		Garden.has_run = true
+		Garden.run_wave = wave
+		Garden.run_dew = Garden.dew
+	elif run_id != moved_run:
 		# 같은 계정의 다른 기기에서 이어 할 수 있게 서버에도 (쉬는 시간마다, 끄면 마지막 것)
 		net.put_run(run_id, cfg.encode_to_text(), {"game": Net.game_version(), "platform": Net.platform(), "map": Meta.map_id,
 			"rules": Meta.rules, "wave": wave, "score": score})
@@ -3953,6 +4119,11 @@ func _save_run() -> void:
 
 ## drop: 서버의 같은 판도 지운다 (다른 기기가 가져가서 지우는 것이면 false).
 func _clear_run(drop := true) -> void:
+	if Garden.on:
+		if FileAccess.file_exists(Garden.RUN_PATH):
+			DirAccess.remove_absolute(Garden.RUN_PATH)
+		Garden.has_run = false
+		return
 	if FileAccess.file_exists(RUN_PATH):
 		var key := _local_run_key()
 		DirAccess.remove_absolute(RUN_PATH)
@@ -3961,9 +4132,9 @@ func _clear_run(drop := true) -> void:
 
 
 ## 저장된 판 요약 {wave, map, rules, cfg} (없거나 형식이 다르면 빈 사전).
-func _run_info() -> Dictionary:
+func _run_info(path := "") -> Dictionary:
 	var cfg := ConfigFile.new()
-	if cfg.load(RUN_PATH) != OK or Meta.val(cfg, "run", "format", 0) != RUN_FORMAT:
+	if cfg.load(path if path != "" else _run_path()) != OK or Meta.val(cfg, "run", "format", 0) != RUN_FORMAT:
 		return {}
 	var map: String = Meta.val(cfg, "run", "map", "")
 	var r: int = Meta.val(cfg, "run", "rules", 0)
@@ -4012,6 +4183,9 @@ func _continue_run() -> void:
 	Meta.line_flip = g.call("line_flip", Meta.line_flip)
 	Meta.rules = info["rules"]
 	Modes.set_on(g.call("modes", []))  # 그 판을 시작할 때 고른 모드 (시작 화면에서 지금 고른 것과 달라도)
+	Garden.boosted = g.call("grow", false) == true and not Garden.on
+	if Garden.on:
+		Garden.load_run(g.call("garden", {}))
 	_apply_rules()
 	_refresh_menu()
 	_save_best()
@@ -4161,6 +4335,8 @@ func _apply_card(target: Tower) -> void:
 			if not target.can_take(picked):
 				_show_toast(target.refuse_text(picked))
 				return
+			if not _garden_pay(Garden.cost_pat(target, picked["id"])):
+				return
 			var was: String = target.pattern
 			msg = target.set_pattern(picked["id"])
 			if picked["id"] == "path":
@@ -4182,8 +4358,12 @@ func _apply_card(target: Tower) -> void:
 			if not target.can_take(picked):
 				_show_toast(target.refuse_text(picked))
 				return
+			if not _garden_pay(Garden.cost_mod(target, picked["id"])):
+				return
 			msg = target.add_mod(picked["id"])
 		"link":
+			if not _garden_pay(Garden.cost_link(_garden_links())):
+				return
 			msg = target.add_link(picked["id"])
 	_show_toast(msg)
 	sfx.play("place")
@@ -4434,6 +4614,8 @@ func _toggle_pause() -> void:
 
 ## 일시정지 글: 지금 나가면 어디서부터 이어지는지도 알려 준다.
 func _pause_text() -> String:
+	if Garden.on:
+		return "일시정지 (정원)\nP / Esc: 계속   T: 시작 화면%s\nM: 소리   O: 설정   F11: 전체 화면\n정원은 쉬는 시간마다 저장되고, 꺼 둔 동안에도 이슬이 쌓여요 (최대 %d시간치)" % ["   X: 끄기" if OS.has_feature("pc") else "", int(Garden.OFFLINE_MAX / 3600.0)]
 	var keys := "일시정지\nP / Esc: 계속   E: 판 끝내기   T: 시작 화면%s   R: 처음부터\nM: 소리   O: 설정   F11: 전체 화면" % ("   X: 끄기" if OS.has_feature("pc") else "")
 	if phase == Phase.WAVE:
 		return keys + "\n지금 나가면 웨이브 %d 앞 쉬는 시간부터 이어집니다" % wave
@@ -4443,6 +4625,8 @@ func _pause_text() -> String:
 ## 일시정지에서 판 끝내기: 두 번 누르면 지금 점수로 게임 오버 (기록 저장·온라인 전송은 보통 게임 오버와 같다).
 ## 실수로 누르지 않게 처음 누르면 안내만 한다.
 func _end_run() -> void:
+	if Garden.on:
+		return  # 정원은 끝나지 않는다 (환생은 쉬는 시간 버튼)
 	if end_armed <= 0.0:
 		end_armed = 3.0
 		paused_label.text = _pause_text() + "\n판 끝내기를 한 번 더 누르면 지금 점수 %s로 끝냅니다 (기록·순위에 올라가요)" % num(score)
@@ -4460,6 +4644,8 @@ func _end_run() -> void:
 ## 웨이브 중이면 그 웨이브 앞 쉬는 시간의 저장이 남는다 (시작 화면의 이어하기).
 func _leave(quit_game: bool) -> void:
 	_save_run()
+	if Garden.on:
+		_exit_garden()
 	get_tree().paused = false
 	if quit_game:
 		get_tree().quit()
@@ -4649,6 +4835,8 @@ func _roll_orb(w: int) -> Dictionary:
 			hp = maxf(1.0, roundf(hp * 0.6))
 		"line":
 			hp *= LINE_HP
+	if Garden.on:
+		hp *= Garden.hp_k(w)
 	var spd := (30.0 + w * 3.0 + randf() * 8.0) * (LINE_SPD if Meta.map_id == "line" else 1.0)
 	# 저항·굳셈: 쉬는 시간에 미리 알려 준 대로
 	var res := wave_resist if wave_resist >= 0 and randf() < resist_share(w) else -1
@@ -4829,7 +5017,7 @@ func _process(delta: float) -> void:
 	legend_btn.text = ("설명 보기" if legend_hidden else "설명 숨기기") + " (Tab)"
 	legend.visible = legend.visible and not legend_hidden
 	# 시작 화면 위에 설정·기록·도움말·패치노트 창을 열면 뒤 메뉴는 숨긴다 (흐리게만 하면 창 아래로 삐져나온 버튼 줄이 겹쳐 보이고 눌리던 것)
-	title_box.visible = not (settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible)
+	title_box.visible = not (settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible or tree_panel.visible)
 	hud.visible = not title_label.visible  # 시작 화면엔 메뉴에 최고 기록이 따로 있다
 	# 시작 화면에서 일시정지·배속 버튼을 누르면 메뉴 위에 일시정지 창이 뜨던 문제
 	# 게임 중엔 펼쳤을 때만 보인다 (단축키 M·P·Space는 접어도 된다). 시작 화면엔 소리·자동 시작만
@@ -4873,6 +5061,10 @@ func _process(delta: float) -> void:
 	hide_btn.set_anchors_preset(Control.PRESET_CENTER_TOP if cards_hidden else Control.PRESET_CENTER)
 	# 카드 줄은 오른쪽 설명을 피해 왼쪽으로 비켜 있다. 설명을 숨기면 가운데로, 버튼도 카드 가운데에 맞춘다
 	var cx := 0.0 if legend_hidden else -75.0
+	# 정원 상점 4장이 오른쪽 설명 밑으로 들어가면(글자 크게) 쉬는 시간 동안 설명을 접고 가운데로
+	if Garden.on and legend.visible and phase == Phase.CHOOSE and offer.size() > 3 and ui_root.size.x / 2.0 + cx + 365.0 > legend.position.x - 8.0:
+		legend.visible = false
+		cx = 0.0
 	choice_box.offset_left = cx - 365.0
 	choice_box.offset_right = cx + 365.0
 	# 새로고침·내리기 버튼은 카드 바로 아래 한 줄에 (카드가 길어지면 버튼이 카드 글을 덮던 것).
@@ -4883,7 +5075,7 @@ func _process(delta: float) -> void:
 	var floor_y := (hud.position.y + hud.size.y + 8.0) if hud.visible else 8.0
 	if dps_panel.visible and ui_root.size.x / 2.0 + cx - 365.0 < 320.0:
 		floor_y += 44.0 + 48.0 + 6.0  # 왼쪽 위 DPS 표(머리 + 2줄, 나머지는 굴려 봄)를 덮지 않게
-	var need := ch + 8.0 + 36.0 + (42.0 if skip_btn.visible else 0.0)
+	var need := ch + 8.0 + 36.0 + (42.0 if skip_btn.visible else 0.0) + (84.0 if Garden.on else 0.0)
 	var k := clampf((lim - floor_y) / need, 0.7, 1.0)
 	var ctop := maxf(minf(mid - 90.0, lim - need * k), floor_y)
 	choice_box.pivot_offset = Vector2(choice_box.size.x / 2.0, 0.0)
@@ -4911,6 +5103,7 @@ func _process(delta: float) -> void:
 	skip_n_btn.offset_right = cx + 305.0
 	skip_n_btn.offset_top = by + 42.0
 	skip_n_btn.offset_bottom = by + 78.0
+	_garden_layout(cx, by)
 	restart_armed = maxf(restart_armed - delta, 0.0)
 	end_armed = maxf(end_armed - delta, 0.0)
 	if not get_tree().paused and not title_label.visible and phase != Phase.GAMEOVER:
@@ -4929,6 +5122,8 @@ func _process(delta: float) -> void:
 		start_btn.text = "%.1f초 뒤 시작 (Space: 바로)" % maxf(countdown, 0.0)
 		if countdown <= 0.0:
 			_start_wave()
+	if Garden.on:
+		_garden_ui(delta, reading)
 	if reading:
 		return
 	_update_fx(delta)
@@ -4981,8 +5176,12 @@ func _sim_step(delta: float) -> void:
 			combo_end = [combo, combo_bonus, 1.5]
 	_resolve(delta)
 
-	if core_hp <= 0:
+	if core_hp <= 0 and Garden.on:
+		_garden_retreat()
+	elif core_hp <= 0:
 		_game_over()
+	elif to_spawn == 0 and _alive_count(orbs) == 0 and Garden.on:
+		_garden_wave_done()
 	elif to_spawn == 0 and _alive_count(orbs) == 0:
 		combo_hold = true  # 쉬는 시간·카드 고르기 동안 콤보가 끊기지 않게
 		_log_wave()
@@ -5187,6 +5386,10 @@ func _resolve(delta: float) -> void:
 			if combo >= 30:
 				_achieve("combo30")
 			# 모드가 늘린 체력·수는 빼고 매긴 뒤 모드 배율을 곱한다
+			if Garden.on:
+				var gd := Garden.kill_dew(wave, o.kind == Orb.Kind.BOSS)
+				Garden.dew += gd
+				garden_wave_dew += gd
 			var base: float = o.max_hp * Modes.kill_k(o.kind == Orb.Kind.BOSS, o.minion) * 10 * Modes.mul()
 			var gain := int(base * combo_mul())
 			score += gain
@@ -5202,7 +5405,8 @@ func _resolve(delta: float) -> void:
 			if o.kind == Orb.Kind.BOSS:
 				core_hp = mini(core_hp + 2, core_max)
 				bonus_rerolls += 1
-				_achieve("boss")
+				if not Garden.on:
+					_achieve("boss")
 				_show_toast("보스 처치! 중앙 체력 +2" + ("" if Modes.has("narrow") else ", 새로고침 +1"))
 			burst(o.position, o.death_color(), 10 if o.kind != Orb.Kind.BOSS else 40, 180.0)
 			kills += 1
@@ -6082,6 +6286,10 @@ func _load_best() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(SAVE_PATH) == OK:
 		Meta.load_into(cfg)
+		Garden.load_into(cfg)
+		garden_auto = Meta.val(cfg, "option", "garden_auto", true)
+		if not Garden.on and not Garden.prev.is_empty():
+			Garden.restore_prev()  # 정원에서 게임을 끈 저장: 시작 화면 맵·규칙을 돌려 놓는다
 		var b := Meta.best_of(Meta.run_key())
 		best_wave = b[0]
 		best_score = b[1]
@@ -6099,10 +6307,483 @@ func _save_best() -> void:
 	var b := Meta.best_of(Meta.run_key())
 	if best_wave > b[0] or best_score > b[1]:
 		Meta.map_best[Meta.run_key()] = [maxi(best_wave, b[0]), maxi(best_score, b[1])]
-	Meta.save_into(cfg)
+	if Garden.on:
+		# 정원은 평원·버전 1로 돈다: 시작 화면에서 고른 맵·규칙은 그대로 저장
+		var cur := [Meta.map_id, Meta.rules, Meta.line_flip]
+		Meta.map_id = Garden.prev.get("map", Meta.map_id)
+		Meta.rules = Garden.prev.get("rules", Meta.rules)
+		Meta.line_flip = Garden.prev.get("line_flip", Meta.line_flip)
+		Meta.save_into(cfg)
+		Meta.map_id = cur[0]
+		Meta.rules = cur[1]
+		Meta.line_flip = cur[2]
+	else:
+		Meta.save_into(cfg)
+	Garden.save_into(cfg)
+	cfg.set_value("option", "garden_auto", garden_auto)
 	cfg.set_value("option", "auto_start", auto_start)
 	cfg.set_value("option", "legend_hidden", legend_hidden)
 	cfg.set_value("option", "bar_open", bar_open)
 	cfg.set_value("option", "muted", sfx.muted)
 	cfg.set_value("option", "fast_speed", fast_speed)
 	cfg.save(SAVE_PATH)
+
+
+# ---------- 정원 모드 (Garden) ----------
+
+func _run_path() -> String:
+	return Garden.RUN_PATH if Garden.on else RUN_PATH
+
+
+## 시작 화면 [정원]: 저장된 정원이 있으면 이어 하고(꺼 둔 동안의 이슬), 없으면 새 정원.
+func _enter_garden() -> void:
+	if not Garden.on:
+		Garden.prev = {"map": Meta.map_id, "rules": Meta.rules, "line_flip": Meta.line_flip}
+	Garden.on = true
+	Garden.boosted = false
+	Meta.map_id = "plain"
+	Meta.rules = 1
+	Modes.set_on([])
+	_apply_rules()
+	_hide_title()
+	tree_panel.visible = false
+	_update_auto_btn()
+	if not _run_info().is_empty():
+		_continue_run()
+		var off: Array = Garden.offline_gain()
+		if off[0] >= 1.0:
+			Garden.dew += off[0]
+			var h := int(off[1]) / 3600
+			var mi := (int(off[1]) % 3600) / 60
+			big_banner("꺼 둔 %s 동안 이슬 +%s" % ["%d시간 %d분" % [h, mi] if h > 0 else "%d분" % mi, Garden.short(off[0])], Color(0.6, 1, 0.75))
+			_save_run()
+	else:
+		Garden.reset_run()
+		wave = 0
+		lanes.clear()
+		_start_choose()
+		_guide("garden", "정원: 처치하면 이슬, 이슬로 상점 카드를 사요. 웨이브는 저절로 이어지고, 중앙이 무너지면 %d웨이브 물러나요. 최고 %d웨이브부터 환생해 씨앗을 얻어요" % [Garden.RETREAT, Garden.REBIRTH_FROM])
+	if garden_note != "":
+		big_banner(garden_note, Color(0.75, 1, 0.55))
+		garden_note = ""
+
+
+## 정원에서 시작 화면으로: 맵·규칙을 정원에 들어오기 전으로.
+func _exit_garden() -> void:
+	Garden.on = false
+	Garden.restore_prev()
+	Modes.set_on(Meta.modes if Meta.games > 0 else [])
+	_save_best()
+
+
+## 정원 쉬는 시간: 상점(카드 4장, 사는 만큼 고르기) + 몇 초 뒤 다음 웨이브.
+func _garden_rest(new_round: bool) -> void:
+	if new_round:
+		if wave == 0:
+			tutor = false
+			run_id = _new_run_id()
+		_new_rest()
+		rerolls_left = 0
+		_garden_fill()
+		garden_cd = Garden.NEXT_DELAY if garden_auto else -1.0
+	picks_left = 9999
+	phase = Phase.CHOOSE
+	_show_offer()
+	_open_choose()
+	_save_run()
+
+
+## 상점 카드: 속성 2장(하나는 이미 쓰는 속성에서) + 공격방식·강화·연계 2장.
+func _garden_fill() -> void:
+	offer.clear()
+	var used: Array = []
+	for t in towers.get_children():
+		for e in t.order:
+			if not e in used:
+				used.append(e)
+	var es: Array = Elem.ALL.duplicate()
+	es.shuffle()
+	if not used.is_empty():
+		var u: int = used.pick_random()
+		es.erase(u)
+		es.push_front(u)
+	for i in Garden.SHOP_ELEMS:
+		offer.append({"type": "elem", "e": es[i], "lv": 1})
+	var guard := 0
+	while offer.size() < Garden.SHOP_ELEMS + Garden.SHOP_OTHERS and guard < 60 and towers.get_child_count() > 0:
+		guard += 1
+		var cd := _roll_card()
+		if cd["type"] in ["elem", "cata"]:
+			continue
+		if cd["type"] in ["pat", "mod"] and not towers.get_children().any(func(t): return t.can_take(cd)):
+			continue
+		if offer.any(func(o): return _card_key(o) == _card_key(cd)):
+			continue
+		offer.append(cd)
+
+
+## 상점 카드 가격 줄 [글, 지금 살 수 있는지]: 넣을 곳에 따라 다르면 가장 싼 값.
+func _garden_price_text(card: Dictionary) -> Array:
+	var ts := towers.get_children()
+	var n := ts.size()
+	match card["type"]:
+		"elem":
+			var c := Garden.cost_new(n)
+			var t_new := "새로 %s" % Garden.short(c) if n < Garden.MAX_TOWERS else "새로 놓기: %d개 다 참" % Garden.MAX_TOWERS
+			var low := -1
+			for t in ts:
+				if t.can_take(card):
+					var x := Garden.cost_elem_on(t, card["e"], n)
+					low = x if low < 0 else mini(low, x)
+			var ok := (n < Garden.MAX_TOWERS and Garden.dew >= c) or (low >= 0 and Garden.dew >= low)
+			return ["이슬 %s%s" % [t_new, " · 겹치기 %s~" % Garden.short(low) if low >= 0 else ""], ok]
+		"pat", "mod":
+			var low := -1
+			for t in ts:
+				if t.can_take(card):
+					var x := Garden.cost_pat(t, card["id"]) if card["type"] == "pat" else Garden.cost_mod(t, card["id"])
+					low = x if low < 0 else mini(low, x)
+			return ["이슬 %s~" % Garden.short(low), low >= 0 and Garden.dew >= low]
+		"link":
+			var c := Garden.cost_link(_garden_links())
+			return ["이슬 %s" % Garden.short(c), Garden.dew >= c]
+	return ["", true]
+
+
+## 정원이면 이슬을 낸다 (모자라면 알리고 false). 정원이 아니면 늘 true.
+func _garden_pay(cost: int) -> bool:
+	if not Garden.on:
+		return true
+	if Garden.dew < cost:
+		_show_toast("이슬이 모자라요: %s 필요 (지금 %s)" % [Garden.short(cost), Garden.short(Garden.dew)])
+		return false
+	Garden.dew -= cost
+	popup(get_global_mouse_position() + Vector2(14, -18), 0.0, Color(0.6, 1, 0.75), false, "-%s 이슬" % Garden.short(cost), 1.0)
+	return true
+
+
+## 정원에 새 오브젝트를 놓을 수 있나 (개수·이슬).
+func _garden_can_new() -> bool:
+	var n := towers.get_child_count()
+	if n >= Garden.MAX_TOWERS:
+		_show_toast("정원 오브젝트는 %d개까지예요. 있는 오브젝트에 겹쳐 보세요" % Garden.MAX_TOWERS)
+		return false
+	if Garden.dew < Garden.cost_new(n):
+		_show_toast("이슬이 모자라요: 새 오브젝트 %s 필요 (지금 %s)" % [Garden.short(Garden.cost_new(n)), Garden.short(Garden.dew)])
+		return false
+	return true
+
+
+func _garden_links() -> int:
+	var n := 0
+	for t in towers.get_children():
+		n += t.prism + t.reso + t.pincer
+	return n
+
+
+## 상점에서 하나 샀다: 그 카드를 빼고(다 사면 새로 채움) 상점으로.
+func _garden_bought() -> void:
+	_check_progress()
+	var i := offer.find(picked)
+	if i >= 0:
+		offer.remove_at(i)
+	if offer.is_empty():
+		_garden_fill()
+	garden_cd = Garden.NEXT_DELAY if garden_auto else -1.0
+	_garden_rest(false)
+
+
+## 정원 웨이브를 막았다: 숙련·최고 기록·초당 이슬, 10웨이브마다 특성.
+func _garden_wave_done() -> void:
+	combo_hold = true
+	_log_wave()
+	var total := 0.0
+	for t in towers.get_children():
+		total += t.dealt
+	var kw := float(kills - garden_kills0)
+	if total > 0.0 and kw > 0.0:
+		for t in towers.get_children():
+			if t.dealt > 0.0 and not t.elements.is_empty():
+				for e in t.elements:
+					Garden.add_mastery(e, kw * t.dealt / total / t.elements.size())
+	Garden.best = maxi(Garden.best, wave)
+	Garden.best_ever = maxi(Garden.best_ever, wave)
+	var r := garden_wave_dew / maxf(1.0, wave_time + Garden.NEXT_DELAY)
+	Garden.rate = r if Garden.rate <= 0.0 else lerpf(Garden.rate, r, 0.3)
+	_show_toast("웨이브 %d · 이슬 +%s" % [wave, Garden.short(garden_wave_dew)])
+	sfx.play("clear", 0.0)
+	_show_mvp()
+	if perks.has("regen"):
+		core_hp = mini(core_hp + perks["regen"] * int(_perk_val("regen")), core_max)
+	if wave == Garden.REBIRTH_FROM and Garden.rebirths == 0:
+		_guide("rebirth", "환생할 수 있어요: 정원을 처음부터 하는 대신 씨앗(최고 웨이브 - %d)을 받아 씨앗 나무로 일반 판을 강하게 해요" % Garden.SEED_BASE)
+	_save_best()
+	if wave % Garden.PERK_EVERY == 0:
+		garden_perk_t = Garden.PERK_WAIT
+		_start_perk()
+	else:
+		_start_choose()
+
+
+## 중앙 점이 무너졌다: 게임 오버 대신 몇 웨이브 물러나 다시.
+func _garden_retreat() -> void:
+	var w0 := wave
+	var key := str(w0)
+	Garden.walls[key] = int(Garden.walls.get(key, 0)) + 1
+	_log_wave()
+	for o in orbs.get_children():
+		o.queue_free()
+	to_spawn = 0
+	wave_active = false
+	_clear_shots()
+	wave = maxi(0, wave - Garden.RETREAT)
+	core_hp = core_max
+	core_disp = float(core_hp)
+	danger_lv = 0
+	combo = 0
+	combo_t = 0.0
+	shake = maxf(shake, 1.5)
+	sfx.play("over", 0.0)
+	banner_queue.clear()  # 앞서 쌓인 '중앙 위험' 글이 물러난 뒤 카드 위에 뜨던 것
+	banner_t = 0.0
+	big_banner("중앙이 무너졌다 · 웨이브 %d부터 다시" % (wave + 1), Color(1, 0.5, 0.5))
+	if Garden.walls[key] >= 3:
+		var tip := " 환생하면 씨앗 +%d" % Garden.seeds_for(Garden.best) if Garden.can_rebirth() else ""
+		_show_toast("웨이브 %d에서 %d번 물러났어요: 구성을 바꿔 보세요.%s" % [w0, Garden.walls[key], tip])
+	_start_choose()
+
+
+## 환생: 정원을 처음부터, 씨앗 +(최고 웨이브 - 20). 두 번 눌러야.
+func _rebirth() -> void:
+	if not Garden.on or not Garden.can_rebirth() or phase != Phase.CHOOSE:
+		return
+	if rebirth_armed <= 0.0:
+		rebirth_armed = 3.0
+		return
+	var got := Garden.seeds_for(Garden.best)
+	Garden.seeds += got
+	Garden.seeds_total += got
+	Garden.rebirths += 1
+	_clear_run()
+	Garden.reset_run()
+	_save_best()
+	garden_note = "환생! 씨앗 +%d (모두 %d) · 이슬 획득 +%d%%" % [got, Garden.seeds, roundi(minf(1.0, Garden.REBIRTH_DEW * Garden.rebirths) * 100)]
+	get_tree().reload_current_scene()
+
+
+## 분재로 지정: 선택한 오브젝트, 없으면 이번(지난) 웨이브에 가장 많이 때린 것.
+func _set_bonsai() -> void:
+	var t: Tower = selected[0] if selected.size() == 1 else null
+	if t == null:
+		for x in towers.get_children():
+			if t == null or x.run_dealt + x.dealt > t.run_dealt + t.dealt:
+				t = x
+	if t == null:
+		return
+	Garden.bonsai = Garden.bonsai_of(t)
+	_save_best()
+	burst(t.position, Color(0.75, 1, 0.55), 20, 180.0)
+	_show_toast("분재: " + Garden.bonsai_text())
+
+
+## 정원 버튼·카운트다운 (매 프레임, 쉬는 시간).
+func _garden_ui(delta: float, reading: bool) -> void:
+	var rest := Garden.on and phase == Phase.CHOOSE and not title_label.visible and not get_tree().paused
+	rebirth_armed = maxf(rebirth_armed - delta, 0.0)
+	rebirth_btn.visible = rest and not perk_mode and Garden.can_rebirth()
+	if rebirth_btn.visible:
+		rebirth_btn.text = "한 번 더: 정원 처음부터" if rebirth_armed > 0.0 else "환생: 씨앗 +%d" % Garden.seeds_for(Garden.best)
+	bonsai_btn.visible = rest and not perk_mode and Garden.lv("bonsai") > 0 and towers.get_child_count() > 0
+	if bonsai_btn.visible:
+		bonsai_btn.text = "분재로 지정 (%s)" % ("선택한 것" if selected.size() == 1 else "최다 피해")
+	if not rest:
+		if Garden.on and phase != Phase.READY:
+			start_btn.visible = false  # 놓는 중·웨이브 중엔 카운트다운 버튼을 숨긴다 (놓는 동안 멈춰 있음)
+		return
+	if perk_mode:
+		start_btn.visible = false
+		garden_perk_t -= delta
+		if garden_perk_t <= 0.0 and not perk_offer.is_empty() and garden_auto:
+			_on_perk(perk_offer[0])
+		return
+	start_btn.visible = true
+	if garden_cd < 0.0:
+		start_btn.text = "다음 웨이브 (Space)"
+		return
+	var hc := get_viewport().gui_get_hovered_control()
+	var hovering := hc != null and (choice_box.is_ancestor_of(hc) or hc == reroll_btn or hc == rebirth_btn or hc == bonsai_btn)
+	if press_t or boxing or reading or hovering:
+		garden_cd = maxf(garden_cd, 1.5)
+	else:
+		garden_cd -= delta
+	start_btn.text = "%.1f초 뒤 다음 웨이브 (Space)" % maxf(garden_cd, 0.0)
+	if garden_cd <= 0.0:
+		_start_wave()
+
+
+## 정원 쉬는 시간: 다음 웨이브·환생·분재 버튼을 카드 줄 아래에 (화면 맨 아래 진입 표시와 겹치던 것).
+func _garden_layout(cx: float, by: float) -> void:
+	if not Garden.on:
+		if start_btn.anchor_top != 1.0:
+			start_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+			start_btn.position = Vector2(-110, -100)
+			start_btn.size = Vector2(220, 44)
+		return
+	var rows := [[start_btn, cx - 305.0, cx - 5.0, by + 42.0], [rebirth_btn, cx + 5.0, cx + 305.0, by + 42.0], [bonsai_btn, cx - 150.0, cx + 150.0, by + 84.0]]
+	if not rebirth_btn.visible:
+		rows[0][2] = cx + 305.0
+	for r in rows:
+		var b: Button = r[0]
+		b.set_anchors_preset(Control.PRESET_CENTER)
+		b.offset_left = r[1]
+		b.offset_right = r[2]
+		b.offset_top = r[3]
+		b.offset_bottom = r[3] + 36.0
+
+
+# ---------- 씨앗 나무 (일반 판) ----------
+
+## 새 일반 판: 씨앗 나무·숙련을 켰으면 시작 보너스 (기록은 '성장' ~grow로 따로).
+func _apply_tree() -> void:
+	Garden.boosted = Garden.want_boost()
+	if not Garden.boosted:
+		return
+	core_max += Garden.lv("root")
+	core_hp = core_max
+	core_disp = float(core_hp)
+	Tower.dmg_mul += 0.03 * Garden.lv("stem")
+	if Garden.lv("leaf") >= 1:
+		bonus_rerolls += 1
+	if Garden.lv("fruit") >= 2:
+		var pool: Array = PERKS.filter(func(pk): return not (pk["id"] == "reroll" and Modes.has("narrow")))
+		var pk: Dictionary = pool.pick_random()
+		_grant_perk(pk["id"])
+		_show_toast("씨앗 나무 열매: 특성 '%s'로 시작" % pk["name"])
+	call_deferred("_place_bonsai")
+
+
+## 분재 오브젝트를 첫 진입 방향을 겨눠 중앙 가까이에 놓는다.
+func _place_bonsai() -> void:
+	var b := Garden.bonsai
+	if Garden.lv("bonsai") <= 0 or b.is_empty() or wave != 0 or Garden.on:
+		return
+	var a: float = lanes[0] if not lanes.is_empty() else 0.0
+	var d := Vector2.from_angle(a)
+	var t := Tower.new()
+	t.main = self
+	t.add(b["e"], 2)
+	if b["pat"] != Pat.DEFAULT:
+		t.set_pattern(b["pat"])
+		for i in int(b["plv"]) - 1:
+			t.set_pattern(b["pat"])
+	for i in mini(Garden.lv("bonsai") - 1, b["mods"].size()):
+		t.add_mod(b["mods"][i])
+	t.dir = d
+	t.position = core() + d * 110.0
+	towers.add_child(t)
+	t.eff = t.eff_now()
+	burst(t.position, Color(0.75, 1, 0.55), 24, 200.0)
+	_show_toast("분재로 시작: " + Garden.bonsai_text())
+	_update_preview()
+
+
+func _build_tree(root: Control, sb: StyleBox) -> void:
+	tree_panel = PanelContainer.new()
+	tree_panel.set_anchors_preset(Control.PRESET_CENTER)
+	tree_panel.position = Vector2(-330, 0)
+	tree_panel.size = Vector2(660, 0)
+	tree_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	tree_panel.add_theme_stylebox_override("panel", sb.duplicate())
+	tree_panel.visible = false
+	root.add_child(tree_panel)
+	tree_box = VBoxContainer.new()
+	tree_box.add_theme_constant_override("separation", 8)
+	tree_panel.add_child(tree_box)
+
+
+func _toggle_tree() -> void:
+	tree_panel.visible = not tree_panel.visible
+	if tree_panel.visible:
+		_refresh_tree()
+
+
+## 씨앗 나무 창: 가지마다 단계·다음 비용 버튼, 일반 판 적용 켜기·끄기, 분재, 속성 숙련.
+func _refresh_tree() -> void:
+	for c in tree_box.get_children():
+		c.queue_free()
+	var head := Label.new()
+	head.text = "씨앗 나무 (Esc: 닫기)   씨앗 %d · 환생 %d번 · 정원 최고 웨이브 %d" % [Garden.seeds, Garden.rebirths, Garden.best_ever]
+	head.add_theme_font_size_override("font_size", 19)
+	tree_box.add_child(head)
+	var desc := Label.new()
+	desc.text = "정원에서 환생하면 씨앗(최고 웨이브 - %d)을 받아요. 가지를 올리면 일반 판을 더 강하게 시작해요.\n씨앗 나무를 쓴 판의 기록은 '성장'으로 따로 세고, 끄면 '순수' 기록이에요." % Garden.SEED_BASE
+	desc.add_theme_font_size_override("font_size", 14)
+	desc.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tree_box.add_child(desc)
+	for id in Garden.TREE_IDS:
+		var d: Dictionary = Garden.TREE[id]
+		var l := Garden.lv(id)
+		var c := Garden.next_cost(id)
+		var b := Button.new()
+		b.focus_mode = Control.FOCUS_NONE
+		b.custom_minimum_size = Vector2(620, 40)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.add_theme_font_size_override("font_size", 15)
+		var lvs: Array = d["lv"]
+		var now: String = lvs[0] if lvs.size() == 1 else ("—" if l == 0 else lvs[l - 1])
+		if lvs.size() == 1 and l > 0:
+			now = "%s x%d" % [lvs[0], l]
+		var nxt: String = "다 올림" if c < 0 else "다음: %s · 씨앗 %d" % [lvs[0] if lvs.size() == 1 else lvs[l], c]
+		b.text = "%s (%s) %d/%d   지금: %s   %s" % [d["name"], d["what"], l, Garden.max_lv(id), now, nxt]
+		b.disabled = c < 0 or Garden.seeds < c
+		b.pressed.connect(func():
+			if Garden.buy(id):
+				sfx.play("reaction", 0.0)
+				_save_best()
+				_refresh_tree()
+				_refresh_menu())
+		tree_box.add_child(b)
+	var on := CheckButton.new()
+	on.text = "일반 판에 씨앗 나무·숙련 쓰기 (끄면 '순수' 기록)"
+	on.button_pressed = Garden.tree_on
+	on.focus_mode = Control.FOCUS_NONE
+	on.toggled.connect(func(v):
+		Garden.tree_on = v
+		_save_best()
+		_refresh_menu())
+	tree_box.add_child(on)
+	var bl := Label.new()
+	bl.text = "분재: " + Garden.bonsai_text() + ("" if Garden.lv("bonsai") > 0 else "  (분재 가지를 올리면 써요)")
+	bl.add_theme_font_size_override("font_size", 14)
+	tree_box.add_child(bl)
+	var ms := PackedStringArray()
+	for e in Elem.ALL:
+		var key: String = Patch.ELEM_KEYS[Elem.ALL.find(e)]
+		var n := float(Garden.mastery.get(key, 0.0))
+		if n >= 1.0:
+			var nx := Garden.mastery_next(e)
+			ms.append("%s +%d%% (%s%s)" % [Elem.NAMES[e], roundi(Garden.mastery_bonus(e) * 100), Garden.short(n), "/" + Garden.short(nx) if nx > 0 else ""])
+	var ml := Label.new()
+	ml.text = "속성 숙련 (정원 처치 수 → 일반 판 그 속성 피해, 최대 +%d%%):\n%s" % [roundi(Garden.MASTERY_PER * Garden.MASTERY_STEPS.size() * 100), "아직 없음" if ms.is_empty() else " · ".join(ms)]
+	ml.add_theme_font_size_override("font_size", 14)
+	ml.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ml.custom_minimum_size.x = 620
+	tree_box.add_child(ml)
+	var close := Button.new()
+	close.text = "닫기"
+	close.focus_mode = Control.FOCUS_NONE
+	close.pressed.connect(_toggle_tree)
+	tree_box.add_child(close)
+
+
+## 시작 화면: 저장된 정원 요약.
+func _refresh_garden_menu() -> void:
+	var info := _run_info(Garden.RUN_PATH)
+	Garden.has_run = not info.is_empty()
+	if Garden.has_run:
+		Garden.run_wave = info["wave"]
+		var gd: Variant = Meta.val(info["cfg"], "run", "garden", {})
+		Garden.run_dew = float(gd.get("dew", 0.0)) if gd is Dictionary else 0.0
+	garden_btn.text = Garden.menu_text()
+	tree_btn.text = Garden.tree_btn_text()

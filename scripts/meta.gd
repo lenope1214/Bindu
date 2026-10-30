@@ -98,7 +98,7 @@ static func key(id: String = map_id, r: int = -1, old := false) -> String:
 
 ## 이번 판 기록 키: 쉽게 모드를 쓴 판은 따로 센다 (Modes).
 static func run_key(id: String = map_id) -> String:
-	return key(id) + (EASY_TAG if Modes.easy() else "")
+	return key(id) + (EASY_TAG if Modes.easy() else "") + (Garden.GROW_TAG if Garden.boosted else "")
 
 
 static func best_of(id: String) -> Array:

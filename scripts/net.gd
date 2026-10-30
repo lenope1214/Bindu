@@ -312,8 +312,8 @@ func flush() -> void:
 
 
 ## season 0은 이번 시즌. 응답에 tag를 붙여 돌려준다 (필터를 바꾼 뒤 늦게 온 지난 응답을 버리게).
-func leaderboard(map_id: String, rules: int, period: String, season := 0, tag := "") -> void:
-	var r := await _request(HTTPClient.METHOD_GET, "/v1/leaderboard?map=%s&rules=%d&season=%d&period=%s&limit=10&device=%s" % [map_id, rules, season, period, Meta.device_id], "", _auth_header())
+func leaderboard(map_id: String, rules: int, period: String, season := 0, tag := "", grow := false) -> void:
+	var r := await _request(HTTPClient.METHOD_GET, "/v1/leaderboard?map=%s&rules=%d&season=%d&period=%s&limit=10&device=%s%s" % [map_id, rules, season, period, Meta.device_id, "&grow=true" if grow else ""], "", _auth_header())
 	if r["code"] == 200 and r["data"] is Dictionary:
 		var d: Dictionary = r["data"]
 		d["period"] = period
