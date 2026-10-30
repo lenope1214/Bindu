@@ -57,6 +57,9 @@ static var volume := 1.0
 static var shake_on := true
 static var numbers_on := true
 static var symbols_on := false  # 속성 색 위에 첫 글자 표시 (색만으로 구분하기 어려울 때)
+static var online_on := true  # 판 기록 보내기 (리더보드·사용 통계). 끄면 아무것도 보내지 않음
+static var nickname := ""
+static var device_id := ""  # 이 기기의 무작위 id (개인정보 아님). 처음 켤 때 만든다
 static var loaded := false
 
 
@@ -120,6 +123,9 @@ static func load_into(cfg: ConfigFile) -> void:
 	shake_on = val(cfg, "settings", "shake", true)
 	numbers_on = val(cfg, "settings", "numbers", true)
 	symbols_on = val(cfg, "settings", "symbols", false)
+	online_on = val(cfg, "online", "on", true)
+	nickname = val(cfg, "online", "nickname", "")
+	device_id = val(cfg, "online", "device", "")
 	volume = clampf(volume, 0.0, 1.0)
 	# 예전 저장의 최고 기록은 평원 기록으로 옮긴다
 	if not map_best.has("plain") and cfg.has_section_key("best", "wave"):
@@ -145,3 +151,6 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("settings", "shake", shake_on)
 	cfg.set_value("settings", "numbers", numbers_on)
 	cfg.set_value("settings", "symbols", symbols_on)
+	cfg.set_value("online", "on", online_on)
+	cfg.set_value("online", "nickname", nickname)
+	cfg.set_value("online", "device", device_id)

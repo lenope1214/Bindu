@@ -1,0 +1,5 @@
+.env
+keys/
+*.db
+__pycache__/
+tests/

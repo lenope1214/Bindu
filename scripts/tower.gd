@@ -122,6 +122,12 @@ func dmg_factor(rx := false) -> float:
 		f *= 1.0 + 0.04 * mf("bounce")
 	if m("size") > 0 and pattern in Pat.PROJECTILE:
 		f *= 1.0 + 0.04 * mf("size")
+	# 온라인 밸런스 패치: 공격방식·넣은 속성별 피해 배율
+	if not Patch.pat_mul.is_empty():
+		f *= Patch.pat_mul.get(pattern, 1.0)
+	if not Patch.elem_mul.is_empty():
+		for e in elements:
+			f *= Patch.elem_mul.get(e, 1.0)
 	return f
 
 

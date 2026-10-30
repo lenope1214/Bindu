@@ -141,6 +141,14 @@ var new_achievements: Array = []  # 이번 판에 새로 달성한 업적 이름
 var help_label: Label
 var hover_elem := -1  # 마우스를 올린 선택지의 속성
 var wave_time := 0.0  # 이번 웨이브 경과 시간
+# 온라인 (Net·Patch): 판 기록·통계
+var net: Net
+var run_log: Array = []  # 선택지 기록 [{w, k: card|perk, o: 나온 것, p: 고른 것(새로고침이면 "")}]
+var run_game := 0.0  # 웨이브 진행 게임 시간 합
+var run_real := 0.0  # 실제로 플레이한 시간 (시작 화면·일시정지 빼고)
+var update_btn: Button  # 시작 화면: 새 버전 받기
+var notice_label: Label  # 시작 화면: 패치 공지
+var board_lines := {}  # 리더보드 창: period → 줄 목록
 static var title_seen := false  # 다시 시작하면 타이틀은 건너뛴다
 
 
@@ -153,6 +161,10 @@ func _ready() -> void:
 	sfx = Sfx.new()
 	add_child(sfx)
 	_load_best()
+	if Meta.device_id == "":
+		Meta.device_id = Crypto.new().generate_random_bytes(16).hex_encode()
+		_save_best()
+	Patch.load_cache()
 	_apply_rules()
 	zones = _layer("Zones")
 	towers = _layer("Towers")
@@ -172,6 +184,12 @@ func _ready() -> void:
 	_build_ui()
 	_apply_volume()
 	_update_speed_btn()
+	net = Net.new()
+	add_child(net)
+	net.booted.connect(_on_booted)
+	net.run_sent.connect(_on_run_sent)
+	net.board_loaded.connect(_on_board_loaded)
+	_on_booted(Net.info)  # 다시 시작했을 때: 이미 받아 둔 새 버전·공지
 	# 창 제목에도 한글 이름과 버전 (작업 표시줄에서 어떤 빌드인지 보이게)
 	get_window().title = "빈두 v%s" % ProjectSettings.get_setting("application/config/version", "?")
 	if title_seen or DisplayServer.get_name() == "headless":
@@ -529,6 +547,7 @@ static func sturdy_share(w: int) -> float:
 
 ## 고른 규칙 버전을 적용한다 (시작 화면에서 바꿀 때, 새 판마다).
 func _apply_rules() -> void:
+	Patch.commit()  # 받아 둔 온라인 패치는 새 판을 시작할 때 적용
 	Rules.apply(Meta.rules)
 	Tower.tax_step = Rules.tax_step
 	if legend:
@@ -593,7 +612,7 @@ func _start_choose(new_round := true) -> void:
 		# 다음 웨이브 저항 속성: 12웨이브(버전 4는 8)부터 60% 확률
 		wave_resist = Elem.ALL.pick_random() if wave + 1 >= Rules.resist_from and randf() < 0.6 else -1
 		picks_left = 2 if wave <= 1 else Rules.picks  # 처음 두 번의 쉬는 시간은 2개씩
-		rerolls_left = 1 + bonus_rerolls + perks.get("reroll", 0)
+		rerolls_left = 1 + bonus_rerolls + perks.get("reroll", 0) * int(_perk_val("reroll"))
 		bonus_rerolls = 0
 	_make_choices()
 	_open_choose()
@@ -659,20 +678,26 @@ func _card_key(card: Dictionary) -> String:
 ## 선택지 한 장: 속성 / 공격방식 / 강화 / 연계 중 하나.
 func _roll_card() -> Dictionary:
 	var n := towers.get_child_count()
+	var cata := Patch.num("cards", "cata", 0.01)
 	if n > 0 and wave > 0:
 		# 대격변: 각각 1%
 		var c := randf()
-		if c < 0.01:
+		if c < cata:
 			return {"type": "cata", "id": "elem"}
-		if c < 0.02:
+		if c < cata * 2.0:
 			return {"type": "cata", "id": "pat"}
-	var r := randf()
-	if n == 0 or wave == 0 or r < 0.42:
-		var lv := 2 if randf() < minf(0.2 + 0.02 * wave, 0.5) + 0.2 * perks.get("luck", 0) else 1
+	# 종류 비율 (온라인 패치 cards로 바뀔 수 있음): 속성 42%, 공격방식 25%, 강화 23%, 연계 10%
+	var we := Patch.num("cards", "elem", 0.42)
+	var wp := Patch.num("cards", "pat", 0.25)
+	var wm := Patch.num("cards", "mod", 0.23)
+	var r := randf() * (we + wp + wm + Patch.num("cards", "link", 0.10))
+	if n == 0 or wave == 0 or r < we:
+		var lv2 := minf(Patch.num("cards", "lv2_base", 0.2) + Patch.num("cards", "lv2_wave", 0.02) * wave, Patch.num("cards", "lv2_max", 0.5))
+		var lv := 2 if randf() < lv2 + _perk_val("luck") * perks.get("luck", 0) else 1
 		return {"type": "elem", "e": Elem.ALL.pick_random(), "lv": lv}
-	if r < 0.67:
+	if r < we + wp:
 		return {"type": "pat", "id": Pat.PATTERN_IDS.slice(1).pick_random()}
-	if r < 0.9:
+	if r < we + wp + wm:
 		return {"type": "mod", "id": Pat.MOD_IDS.pick_random()}
 	var ids: Array = Pat.LINK_IDS.duplicate() if n >= 2 else ["prism", "reso"]
 	return {"type": "link", "id": ids.pick_random()}
@@ -820,7 +845,7 @@ func _show_perks() -> void:
 		b.add_theme_stylebox_override("hover", sbh)
 		b.add_theme_stylebox_override("pressed", sbh)
 		var have: int = perks.get(pk["id"], 0)
-		b.text = _wrap_words("[%d] 특성: %s\n\n%s%s" % [i + 1, pk["name"], pk["desc"], "\n\n(보유 %d)" % have if have > 0 else ""], 220.0, 17)
+		b.text = _wrap_words("[%d] 특성: %s\n\n%s%s" % [i + 1, pk["name"], _perk_desc(pk), "\n\n(보유 %d)" % have if have > 0 else ""], 220.0, 17)
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		b.add_theme_font_size_override("font_size", 17)
 		b.add_theme_color_override("font_color", Color(1, 0.85, 0.45))
@@ -840,20 +865,33 @@ func _on_perk(pk: Dictionary) -> void:
 	perk_mode = false
 	var id: String = pk["id"]
 	perks[id] = perks.get(id, 0) + 1
+	run_log.append({"w": wave, "k": "perk", "o": perk_offer.map(func(x): return "perk:" + x["id"]), "p": "perk:" + id})
 	match id:
-		"power": Tower.dmg_mul += 0.15
-		"haste": Tower.spd_mul += 0.12
-		"reach": Tower.reach_mul += 0.12
+		"power": Tower.dmg_mul += _perk_val("power")
+		"haste": Tower.spd_mul += _perk_val("haste")
+		"reach": Tower.reach_mul += _perk_val("reach")
 		"core":
-			core_max += 3
+			core_max += int(_perk_val("core"))
 			core_hp = core_max
-		"slow": orb_speed_mul *= 0.92
-		"harmony": Tower.tax_step *= 0.5
+		"slow": orb_speed_mul *= 1.0 - _perk_val("slow")
+		"harmony": Tower.tax_step *= _perk_val("harmony")
 	sfx.play("reaction", 0.0)
-	_show_toast("특성: %s (%s)" % [pk["name"], pk["desc"]])
+	_show_toast("특성: %s (%s)" % [pk["name"], _perk_desc(pk)])
 	for t in towers.get_children():
 		t.queue_redraw()
 	_start_choose()
+
+
+## 특성 수치 (온라인 패치 perks로 바뀔 수 있음). 설명 글도 같이 바꿔야 하면 perk_desc.
+const PERK_VALS := {"power": 0.15, "haste": 0.12, "reach": 0.12, "core": 3, "reroll": 1, "luck": 0.2, "regen": 1, "slow": 0.08, "harmony": 0.5}
+
+
+func _perk_val(id: String) -> float:
+	return Patch.num("perks", id, PERK_VALS[id])
+
+
+func _perk_desc(pk: Dictionary) -> String:
+	return Patch.text("perk_desc", pk["id"], pk["desc"])
 
 
 func _perk_text() -> String:
@@ -872,6 +910,7 @@ func _on_reroll() -> void:
 		_show_toast("이번 쉬는 시간의 새로고침을 다 썼어요")  # Q를 눌러도 아무 일이 없던 것
 		return
 	rerolls_left -= 1
+	_log_offer({})
 	_make_choices()
 	_update_reroll_btn()
 	_save_run()
@@ -1031,7 +1070,19 @@ func _cataclysm(id: String) -> void:
 	shake = maxf(shake, 2.0)
 	sfx.play("boss")
 	big_banner("대격변! " + ("속성이 뒤섞였다" if id == "elem" else "공격방식이 뒤섞였다"), Color(1, 0.45, 0.9))
-	_after_place()
+	_after_place({"type": "cata", "id": id})
+
+
+## 통계용 카드 이름: elem:fire, pat:spray, mod:rapid, link:prism, cata:elem
+func _stat_key(card: Dictionary) -> String:
+	if card.get("type", "") == "elem":
+		return "elem:" + Patch.ELEM_KEYS[Elem.ALL.find(card["e"])]
+	return "%s:%s" % [card.get("type", ""), card.get("id", "")]
+
+
+## 이번 선택지와 고른 카드(빈 사전: 새로고침으로 넘김)를 판 기록에 남긴다.
+func _log_offer(card: Dictionary) -> void:
+	run_log.append({"w": wave, "k": "card", "o": offer.map(_stat_key), "p": _stat_key(card) if not card.is_empty() else ""})
 
 
 func _place_hint() -> String:
@@ -1044,7 +1095,9 @@ func _place_hint() -> String:
 	return "넣을 오브젝트를 클릭   꾹 누르기·끌기: 옮기기\n우클릭/Esc: 다시 고르기"
 
 
-func _after_place() -> void:
+## card: 이번에 넣은 카드 (대격변은 picked를 거치지 않아 따로 넘긴다).
+func _after_place(card: Dictionary = {}) -> void:
+	_log_offer(picked if card.is_empty() else card)
 	_check_progress()
 	picks_left -= 1
 	if picks_left > 0:
@@ -1157,6 +1210,7 @@ func _game_over() -> void:
 		mvp = "\n최다 피해: %s (%d%%)" % [top.title(), roundi((top.run_dealt + top.dealt) / total * 100.0)]
 	over_label.text = "게임 오버 (%s · %s)\n웨이브 %d · 점수 %s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\nR 또는 클릭: 다시 시작   Esc: 메뉴" % [Meta.MAPS[Meta.map_id]["name"], Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, num(kills), best_combo, towers.get_child_count(), mvp, ach]
 	over_label.visible = true
+	_submit_run()
 	sfx.play("over", 0.0)
 	reroll_btn.visible = false
 	choice_box.visible = false
@@ -1541,10 +1595,13 @@ func _build_menu(root: Control) -> void:
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 10)
 	box.add_child(row)
-	for spec in [["시작 (Enter)", _close_title], ["기록·업적", _toggle_records], ["설정 (O)", _toggle_settings], ["도움말 (H)", func(): help_label.visible = not help_label.visible]]:
+	var specs := [["시작 (Enter)", _close_title], ["기록·업적", _toggle_records], ["설정 (O)", _toggle_settings], ["도움말 (H)", func(): help_label.visible = not help_label.visible]]
+	if OnlineConfig.SERVER_URL != "":
+		specs.insert(2, ["리더보드", _toggle_board])
+	for spec in specs:
 		var b := Button.new()
 		b.text = spec[0]
-		b.custom_minimum_size = Vector2(150, 44)
+		b.custom_minimum_size = Vector2(150 if specs.size() <= 4 else 120, 44)
 		b.focus_mode = Control.FOCUS_NONE
 		b.pressed.connect(spec[1])
 		row.add_child(b)
@@ -1560,6 +1617,22 @@ func _build_menu(root: Control) -> void:
 	continue_btn.visible = false
 	box.add_child(continue_btn)
 	box.move_child(continue_btn, row.get_index())
+	# 온라인: 새 버전 알림, 패치 공지 (서버에서 받았을 때만 보임)
+	update_btn = Button.new()
+	update_btn.custom_minimum_size = Vector2(630, 40)
+	update_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	update_btn.focus_mode = Control.FOCUS_NONE
+	update_btn.add_theme_color_override("font_color", Color(1, 0.85, 0.45))
+	update_btn.visible = false
+	box.add_child(update_btn)
+	notice_label = Label.new()
+	notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	notice_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	notice_label.custom_minimum_size = Vector2(630, 0)
+	notice_label.add_theme_font_size_override("font_size", 16)
+	notice_label.add_theme_color_override("font_color", Color(0.75, 0.9, 1.0))
+	notice_label.visible = false
+	box.add_child(notice_label)
 
 	records_panel = Label.new()
 	records_panel.set_anchors_preset(Control.PRESET_CENTER)
@@ -1633,6 +1706,31 @@ func _build_menu(root: Control) -> void:
 						t.queue_redraw()
 			_save_best())
 		sv.add_child(cb)
+	if OnlineConfig.SERVER_URL != "":
+		var oc := CheckButton.new()
+		oc.text = "기록 보내기 (리더보드·사용 통계, 익명)"
+		oc.button_pressed = Meta.online_on
+		oc.focus_mode = Control.FOCUS_NONE
+		oc.toggled.connect(func(on):
+			Meta.online_on = on
+			_save_best())
+		sv.add_child(oc)
+		var nrow := HBoxContainer.new()
+		var nl := Label.new()
+		nl.text = "닉네임"
+		nl.custom_minimum_size = Vector2(120, 0)
+		nrow.add_child(nl)
+		var ne := LineEdit.new()
+		ne.max_length = 12
+		ne.placeholder_text = "비우면 익명"
+		ne.text = Meta.nickname
+		ne.custom_minimum_size = Vector2(240, 0)
+		ne.text_changed.connect(func(t):
+			Meta.nickname = t.strip_edges()
+			_save_best())
+		ne.text_submitted.connect(func(_t): ne.release_focus())
+		nrow.add_child(ne)
+		sv.add_child(nrow)
 	var fs := Button.new()
 	fs.text = "전체 화면 전환 (F11)"
 	fs.focus_mode = Control.FOCUS_NONE
@@ -1676,7 +1774,7 @@ func _refresh_menu() -> void:
 	var m: Dictionary = Meta.MAPS[Meta.map_id]
 	var best := Meta.best_of(Meta.key())
 	map_label.text = "맵: %s  (←/→)\n%s\n최고 기록  웨이브 %d · 점수 %s" % [m["name"], m["desc"], best[0], num(best[1])]
-	rules_label.text = "규칙: %s  (↑/↓)\n%s" % [Rules.NAMES[Meta.rules], _wrap_parts(Rules.DESCS[Meta.rules], " · ", 470.0, 18)]
+	rules_label.text = "규칙: %s  (↑/↓)\n%s" % [Rules.NAMES[Meta.rules], _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 470.0, 18)]
 	var ts: Dictionary = Meta.TOWER_SKINS[Meta.tower_skin]
 	skin_label.text = "오브젝트 모양: " + ts["name"]
 	var cs: Dictionary = Meta.CORE_SKINS[Meta.core_skin]
@@ -1798,6 +1896,112 @@ func _toggle_records() -> void:
 	records_panel.text = "\n".join(lines)
 
 
+# ---------- 온라인 ----------
+
+## 서버 응답(켤 때 한 번): 시작 화면이면 받은 패치를 바로 적용하고, 새 버전·공지를 띄운다.
+func _on_booted(info: Dictionary) -> void:
+	if info.is_empty() or update_btn == null:
+		return
+	if title_label.visible:
+		_apply_rules()
+		_refresh_menu()
+	var latest: Variant = info.get("latest")
+	if latest is Dictionary and str(latest.get("url", "")) != "":
+		var notes := str(latest.get("notes", ""))
+		update_btn.text = "새 버전 v%s 받기%s" % [latest.get("version", "?"), " · " + notes if notes != "" else ""]
+		for c in update_btn.pressed.get_connections():
+			update_btn.pressed.disconnect(c["callable"])
+		var url := str(latest["url"])
+		update_btn.pressed.connect(func(): OS.shell_open(url))
+		update_btn.visible = true
+	var msg := Patch.text("", "message", "")
+	notice_label.text = msg
+	notice_label.visible = msg != ""
+
+
+## 게임 오버: 판 기록(점수·특성·선택지·마지막 구성)을 서버로. 설정에서 끄면 보내지 않는다.
+func _submit_run() -> void:
+	if not Net.enabled():
+		return
+	var ts := towers.get_children()
+	var total := 0.0
+	for t in ts:
+		total += t.run_dealt + t.dealt
+	var list: Array = []
+	for t in ts:
+		var els := {}
+		for e in t.elements:
+			els[Patch.ELEM_KEYS[Elem.ALL.find(e)]] = t.elements[e]
+		list.append({"els": els, "pat": t.pattern, "plv": t.plv, "mods": t.mods, "prism": t.prism, "reso": t.reso,
+			"links": t.links.size(), "share": (t.run_dealt + t.dealt) / total if total > 0.0 else 0.0})
+	net.submit({
+		"device": Meta.device_id, "nick": Meta.nickname, "platform": Net.platform(), "game": Net.game_version(),
+		"patch": Patch.id, "map": Meta.map_id, "rules": Meta.rules, "wave": wave, "score": score, "kills": kills,
+		"best_combo": best_combo, "game_secs": run_game, "real_secs": run_real, "perks": perks.duplicate(),
+		"towers": list, "log": run_log,
+	})
+
+
+## 서버가 기록을 받으면 게임 오버 글 아래에 온라인 순위.
+func _on_run_sent(res: Dictionary) -> void:
+	if phase != Phase.GAMEOVER or not res.get("accepted", false):
+		return
+	var rk: Variant = res.get("rank")
+	if int(res.get("season", 0)) == 0:
+		over_label.text += "\n(지난 버전으로 한 판이라 이번 시즌 리더보드에는 들어가지 않아요)"
+	elif rk is Dictionary:
+		var season: Variant = Net.info.get("season")
+		var sname := str(season.get("name", "")) if season is Dictionary else ""
+		over_label.text += "\n온라인 순위: %s%d위 (최고 점수 %s)" % [sname + " " if sname != "" else "", int(rk["rank"]), num(int(rk["score"]))]
+
+
+## 시작 화면 리더보드: 지금 고른 맵·규칙 버전의 이번 시즌 전체·이번 주 순위.
+func _toggle_board() -> void:
+	records_panel.visible = not records_panel.visible
+	if not records_panel.visible:
+		return
+	board_lines = {}
+	_draw_board()
+	net.leaderboard(Meta.map_id, Meta.rules, "all")
+	net.leaderboard(Meta.map_id, Meta.rules, "week")
+
+
+func _on_board_loaded(d: Dictionary) -> void:
+	if not records_panel.visible or not records_panel.text.begins_with("[리더보드"):
+		return
+	var lines := PackedStringArray()
+	if d.has("error"):
+		lines.append("  " + str(d["error"]))
+	else:
+		board_lines["season"] = str(d.get("season", {}).get("name", ""))
+		var shown_me := false
+		for e in d.get("entries", []):
+			shown_me = shown_me or e.get("me", false)
+			lines.append("  %d. %s   웨이브 %d · 점수 %s%s" % [int(e["rank"]), e["nick"], int(e["wave"]), num(int(e["score"])), "   ◀ 나" if e.get("me", false) else ""])
+		if lines.is_empty():
+			lines.append("  아직 기록이 없어요")
+		var me: Variant = d.get("me")
+		if me is Dictionary and not shown_me:
+			lines.append("  …  내 순위 %d위 / %d명 · 점수 %s" % [int(me["rank"]), int(d.get("total", 0)), num(int(me["score"]))])
+	board_lines[d.get("period", "all")] = lines
+	_draw_board()
+
+
+func _draw_board() -> void:
+	var head := "[리더보드 · %s · %s%s]   (아무 곳이나 클릭: 닫기)" % [Meta.MAPS[Meta.map_id]["name"], Rules.NAMES[Meta.rules],
+		" · " + board_lines["season"] if board_lines.get("season", "") != "" else ""]
+	var lines := PackedStringArray([head, ""])
+	for spec in [["all", "이번 시즌 전체"], ["week", "이번 주"]]:
+		lines.append(spec[1])
+		lines.append_array(board_lines.get(spec[0], PackedStringArray(["  불러오는 중…"])))
+		lines.append("")
+	if not Meta.online_on:
+		lines.append("설정에서 '기록 보내기'를 켜면 내 기록도 올라갑니다")
+	elif Meta.nickname == "":
+		lines.append("설정에서 닉네임을 정할 수 있어요")
+	records_panel.text = "\n".join(lines)
+
+
 func _toggle_settings() -> void:
 	settings_panel.visible = not settings_panel.visible
 
@@ -1891,6 +2095,7 @@ func _save_run() -> void:
 		"lanes": Array(lanes), "wave_resist": wave_resist, "achievements": new_achievements,
 		"state": "perk" if perk_mode else ("ready" if phase == Phase.READY else "choose"),
 		"offer": offer, "perk_offer": perk_offer.map(func(pk): return pk["id"]), "towers": list,
+		"log": run_log, "game_secs": run_game, "real_secs": run_real,
 	}
 	var cfg := ConfigFile.new()
 	for k in vals:
@@ -1986,6 +2191,9 @@ func _continue_run() -> void:
 	if not wave_resist in Elem.ALL:
 		wave_resist = -1
 	new_achievements = (g.call("achievements", []) as Array).filter(func(a): return a is String)
+	run_log = (g.call("log", []) as Array).filter(func(e): return e is Dictionary)
+	run_game = maxf(0.0, g.call("game_secs", 0.0))
+	run_real = maxf(0.0, g.call("real_secs", 0.0))
 	# 오브젝트: 연결선은 저장 순서 번호로 다시 잇는다 (못 읽은 것은 null로 자리만 지킴)
 	var raw: Array = g.call("towers", [])
 	var made: Array = []
@@ -2285,7 +2493,7 @@ func _spawn_orb(kind := -1) -> void:
 	if kind < 0:
 		kind = _roll_kind()
 	o.main = self
-	var hp := (1.0 + floorf(wave * 0.7) + randi() % 2) * hp_growth(wave)
+	var hp := (1.0 + floorf(wave * 0.7) + randi() % 2) * hp_growth(wave) * Rules.orb_hp
 	var spd := 36.0 + wave * 3.0 + randf() * 8.0
 	match Meta.map_id:
 		"spiral":
@@ -2303,7 +2511,7 @@ func _spawn_orb(kind := -1) -> void:
 	# A4·A5: 보호막(8웨이브~), 분열(10웨이브~)
 	if kind == Orb.Kind.NORMAL or kind == Orb.Kind.TANK:
 		if wave >= 8 and randf() < minf(0.1 + 0.01 * wave, 0.3):
-			o.shield = (2.0 + wave * 0.3) * hp_growth(wave)
+			o.shield = (2.0 + wave * 0.3) * hp_growth(wave) * Rules.orb_hp
 		if wave >= 10 and randf() < 0.15:
 			o.splits = true
 	orbs.add_child(o)
@@ -2350,7 +2558,7 @@ func spawn_minion(boss: Orb) -> void:
 	o.main = self
 	o.position = boss.position
 	o.target = center()
-	o.setup(Orb.Kind.FAST, maxf(1.0, roundf(wave * 0.5 * hp_growth(wave))), 36.0 + wave * 3.0)
+	o.setup(Orb.Kind.FAST, maxf(1.0, roundf(wave * 0.5 * hp_growth(wave) * Rules.orb_hp)), 36.0 + wave * 3.0)
 	o.resist_e = boss.resist_e
 	orbs.add_child(o)
 
@@ -2431,6 +2639,8 @@ func _process(delta: float) -> void:
 	hide_btn.offset_top = hy
 	hide_btn.offset_bottom = hy + 32.0
 	restart_armed = maxf(restart_armed - delta, 0.0)
+	if not get_tree().paused and not title_label.visible and phase != Phase.GAMEOVER:
+		run_real += delta
 	if get_tree().paused:
 		fx_layer.queue_redraw()  # 멈춘 동안에도 오브젝트·구체 정보창은 마우스를 따라간다
 		return
@@ -2481,6 +2691,7 @@ func _sim_step(delta: float) -> void:
 				sfx.play("boss", 0.0)
 
 	wave_time += delta
+	run_game += delta
 	_resolve(delta)
 
 	if core_hp <= 0:
@@ -2497,7 +2708,7 @@ func _sim_step(delta: float) -> void:
 		sfx.play("clear", 0.0)
 		_show_mvp()
 		if perks.has("regen"):
-			core_hp = mini(core_hp + perks["regen"], core_max)
+			core_hp = mini(core_hp + perks["regen"] * int(_perk_val("regen")), core_max)
 		if wave % 5 == 0:
 			_start_perk()
 		else:
