@@ -1620,6 +1620,10 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# 글 입력 칸(닉네임)에 쓰는 중엔 단축키를 막는다. 한글 조합 중 키는 입력 칸이 받지 않고 넘겨서
+	# ㅐ(O)·ㅔ(P)·ㅡ(M) 같은 글자가 설정 닫기·일시정지·소리 끄기로 먹혔다. Esc는 그대로 창을 닫는다.
+	if event is InputEventKey and get_viewport().gui_get_focus_owner() is LineEdit and event.keycode != KEY_ESCAPE:
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_O:
 			_toggle_settings()
