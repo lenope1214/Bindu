@@ -80,7 +80,7 @@ func _initialize():
 			# 오브젝트 정보창 (마우스를 올렸을 때, 화면 오른쪽 아래 쪽 오브젝트라 창이 화면 끝에 닿는지)
 			var t: Node2D = main.towers.get_child(1)
 			Input.warp_mouse(t.get_global_transform_with_canvas().origin),
-		func(): _snap("tip"); main._set_cards_hidden(false); main._on_skip(),
+		func(): _snap("tip"); main.touch_ui = touch; main._set_cards_hidden(false); main._on_skip(),  # 마우스를 옮기면 touch_ui가 꺼진다
 		func(): _snap("skip_ready"); main._start_wave(),
 		func(): _snap("skip_wave"); main.skip_left = 0; main._start_perk(),
 		func(): _snap("perks"); main._toggle_pause(),

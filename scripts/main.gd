@@ -4557,6 +4557,8 @@ func _toggle_pause() -> void:
 ## 일시정지 글: 지금 나가면 어디서부터 이어지는지도 알려 준다.
 func _pause_text() -> String:
 	var keys := "일시정지\nP / Esc: 계속   E: 판 끝내기   T: 시작 화면%s   R: 처음부터\nM: 소리   O: 설정   F11: 전체 화면" % ("   X: 끄기" if OS.has_feature("pc") else "")
+	if touch_ui:
+		keys = "일시정지"  # 터치는 아래 버튼으로 (키 안내는 뺀다)
 	if phase == Phase.WAVE:
 		return keys + "\n지금 나가면 웨이브 %d 앞 쉬는 시간부터 이어집니다" % wave
 	return keys + "\n지금 나가도 이 쉬는 시간부터 이어서 할 수 있어요"
