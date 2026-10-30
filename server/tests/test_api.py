@@ -218,6 +218,13 @@ def test_privacy_page():
         assert '<a href="https://github.com/lenope1214/bindu/issues">' in r.text
 
 
+def test_home_page():
+    with TestClient(app) as c:
+        r = c.get("/")
+        assert r.status_code == 200
+        assert "<title>빈두 (Bindu)</title>" in r.text and 'href="https://bindu.anon-chat.kr/privacy"' in r.text
+
+
 def test_stats_min_wave():
     # 최소 웨이브 전에 끝난 판은 밸런스 통계에서 빠지고 이탈 통계로만, 기록은 남는다
     with TestClient(app) as c:

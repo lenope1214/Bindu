@@ -551,7 +551,7 @@ def admin_page():
     return (Path(__file__).parent / "admin.html").read_text(encoding="utf-8")
 
 
-def _md_html(md: str) -> str:
+def _md_html(md: str, title: str = "빈두 개인정보처리방침") -> str:
     """개인정보처리방침 같은 짧은 글용: 제목(#, ##)·목록(-)·문단만."""
     out, ul = [], False
     for line in md.splitlines():
@@ -575,8 +575,13 @@ def _md_html(md: str) -> str:
     if ul:
         out.append("</ul>")
     return ("<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-            "<title>빈두 개인정보처리방침</title><style>body{max-width:720px;margin:24px auto;padding:0 16px;font:16px/1.6 sans-serif;color:#222;background:#fff}"
+            "<title>" + title + "</title><style>body{max-width:720px;margin:24px auto;padding:0 16px;font:16px/1.6 sans-serif;color:#222;background:#fff}"
             "h1{font-size:1.5em}h2{font-size:1.15em;margin-top:1.6em}</style></head><body>" + "\n".join(out) + "</body></html>")
+
+
+@app.get("/", response_class=HTMLResponse)
+def home_page():
+    return _md_html((Path(__file__).parent / "home.md").read_text(encoding="utf-8"), "빈두 (Bindu)")
 
 
 @app.get("/privacy", response_class=HTMLResponse)

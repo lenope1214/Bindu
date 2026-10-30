@@ -51,8 +51,8 @@
         "Strategy"
       ],
       "ios_secondary": {
-        "value": null,
-        "status": "draft",
+        "value": "없음",
+        "status": "done",
         "suggest": "없음"
       },
       "status": "done"
@@ -100,8 +100,8 @@
       ]
     },
     "copyright": {
-      "value": null,
-      "status": "need",
+      "value": "2026 anon.chat.kr",
+      "status": "done",
       "public": true,
       "format": "2026 <이름 또는 활동명>",
       "used_by": [
@@ -122,18 +122,19 @@
     },
     "support": {
       "value": "https://github.com/lenope1214/bindu/issues",
-      "status": "draft",
+      "status": "done",
       "used_by": [
         "iOS 지원 URL(필수)"
       ]
     },
     "website": {
-      "value": "https://github.com/lenope1214/Bindu",
-      "status": "draft",
+      "value": "https://bindu.anon-chat.kr",
+      "status": "done",
       "used_by": [
         "Play 웹사이트",
         "iOS 마케팅 URL(선택)"
-      ]
+      ],
+      "source": "server/app/home.md (서버 / 페이지)"
     },
     "beta_feedback": {
       "value": "https://github.com/lenope1214/Bindu/issues",
@@ -162,17 +163,17 @@
     },
     "ios_subtitle": {
       "value": "속성 조합 로그라이크 디펜스",
-      "status": "draft",
+      "status": "done",
       "limit": "30자"
     },
     "ios_promotional_text": {
       "value": "웨이브마다 카드 한 장. 속성을 겹쳐 반응을 만들고 중앙의 점을 지키세요.",
-      "status": "draft",
+      "status": "done",
       "limit": "170자, 심사 없이 바꿀 수 있음"
     },
     "ios_keywords": {
       "value": "디펜스,타워디펜스,로그라이크,로그라이트,전략,카드,빌드,속성,웨이브,도형,오프라인,인디",
-      "status": "draft",
+      "status": "done",
       "limit": "100자, 쉼표 구분, 앱 이름 반복 불필요"
     },
     "release_notes": {
@@ -182,11 +183,11 @@
     "testflight": {
       "beta_description": {
         "value": "빈두 시험판입니다. 카드로 오브젝트를 키워 중앙의 점을 지키는 로그라이크 디펜스입니다.",
-        "status": "draft"
+        "status": "done"
       },
       "what_to_test": {
         "value": "한 판을 끝까지 해 보고 너무 어렵거나 쉬운 웨이브, 화면에서 글이 겹치거나 잘리는 곳, 멈춤·튕김을 알려 주세요.",
-        "status": "draft"
+        "status": "done"
       },
       "group": "외부 그룹(친구 테스트)"
     }
@@ -222,11 +223,11 @@
       "web_access": false
     },
     "play_iarc": {
-      "status": "need",
+      "status": "done",
       "note": "답은 위 사실대로 준비됨. 이메일+약관 동의 대기"
     },
     "ios_age_rating": {
-      "status": "draft",
+      "status": "done",
       "answers": {
         "cartoon_or_fantasy_violence": "드물게/약하게(Infrequent)",
         "realistic_violence": "없음",
@@ -287,22 +288,23 @@
       "status": "done"
     },
     "ios_app_privacy": {
-      "status": "draft"
+      "status": "done"
     },
     "pending_change": "다음 빌드에 플랫폼 간 이어하기(게임 진행 저장)가 들어가면 Play 데이터 보안·iOS 개인정보에 '게임 진행(Other User Content / 앱 활동 > 기타)' 추가 필요"
   },
   "ios_compliance": {
     "export_encryption": {
       "value": "HTTPS만 사용 → 면제(ITSAppUsesNonExemptEncryption=NO)",
-      "status": "draft"
+      "status": "done"
     },
     "third_party_content": {
       "value": "없음(그림·소리는 직접 만듦, 글꼴은 기기 시스템 글꼴)",
-      "status": "draft"
+      "status": "done"
     },
     "government_finance_health_news": {
       "value": "해당 없음",
       "status": "done"
     }
-  }
+  },
+  "approved": "2026-10-31 사용자 \"2026 anon.chat.kr로 수정 후 진행\" — 카드 1·2 값으로 제출 승인"
 }
