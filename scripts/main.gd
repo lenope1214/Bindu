@@ -1310,7 +1310,7 @@ func _open_choose() -> void:
 	cards_hidden = false
 	choice_box.visible = true
 	_update_reroll_btn()
-	hint.text = _choose_hint()
+	hint.text = _th(_choose_hint())
 
 
 ## 쉬는 시간이 되면 남은 탄·장판을 지운다.
@@ -1735,7 +1735,7 @@ func _show_perks() -> void:
 	cards_hidden = false
 	choice_box.visible = true
 	reroll_btn.visible = false
-	hint.text = "특성을 하나 고르세요. 이번 판 끝까지 유지됩니다"
+	hint.text = _th("특성을 하나 고르세요. 이번 판 끝까지 유지됩니다")
 
 
 func _on_perk(pk: Dictionary) -> void:
@@ -1997,6 +1997,15 @@ func _kh(t: String, tap := false) -> String:
 	if not touch_ui or not t.contains("("):
 		return t
 	return t.replace("(S: ", "(눌러서 ") if tap else key_re.sub(t, "", true)
+
+
+## 아래 안내 글을 터치에 맞게: 클릭 → 누르기, 우클릭/Esc → 취소 버튼, 키보드·Shift 안내는 뺀다
+func _th(t: String) -> String:
+	if not touch_ui:
+		return t
+	return t.replace("Space 또는 [웨이브 시작]", "[웨이브 시작]").replace(" (Shift: 15도 단위)", "") \
+		.replace("   오브젝트 우클릭한 채 끌기로도 바로 됨", "").replace("우클릭/Esc", "취소").replace("Esc/우클릭", "취소") \
+		.replace("클릭 또는", "누르기 또는").replace("오브젝트를 클릭", "오브젝트 누르기").replace("클릭", "누르기")
 
 
 ## 위쪽 가운데 글(알림·처음 안내)을 가운데에 두되, 오른쪽 설명이 떠 있으면 그 왼쪽까지만 (글자를 키우면 글 끝이 설명 밑에 깔리던 것).
@@ -2272,7 +2281,7 @@ func _on_pick(card: Dictionary) -> void:
 	choice_box.visible = false
 	reroll_btn.visible = false
 	phase = Phase.PLACE
-	hint.text = _place_hint()
+	hint.text = _th(_place_hint())
 
 
 ## 대격변: 고르는 즉시 모든 오브젝트에 발동.
@@ -2338,7 +2347,7 @@ func _enter_ready() -> void:
 	reroll_btn.visible = false
 	start_btn.visible = true
 	start_btn.text = "웨이브 시작 (Space)"
-	hint.text = READY_HINT if Meta.games < 3 else ""
+	hint.text = _th(READY_HINT if Meta.games < 3 else "")
 	_save_run()
 
 
@@ -2710,7 +2719,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			moving.position = mpos
 			phase = Phase.AIM
 			aim_start_ms = Time.get_ticks_msec()
-			hint.text = "클릭 또는 끌어서 놓기: 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 옮기기 취소"
+			hint.text = _th("클릭 또는 끌어서 놓기: 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 옮기기 취소")
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			_cancel_step()
 		return
@@ -2731,7 +2740,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			place_pos = mpos
 			phase = Phase.AIM
 			aim_start_ms = Time.get_ticks_msec()
-			hint.text = "클릭 또는 끌어서 놓기: 발사 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 위치 다시 고르기"
+			hint.text = _th("클릭 또는 끌어서 놓기: 발사 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 위치 다시 고르기")
 	elif phase == Phase.AIM:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			# 오브젝트 바로 위를 누르면 손을 뗄 때 정한다 (그 자리에서 바깥으로 끌어 조준)
@@ -2785,7 +2794,7 @@ func _update_press() -> void:
 		drag_origs = drag_group.map(func(t): return t.position)
 		for t in drag_group:
 			t.place_pop = 1.0
-		hint.text = "끌어서 옮기는 중%s: 놓으면 그 자리에 둠 (방향은 그대로)\n우클릭/Esc: 취소" % (" (%d개)" % drag_group.size() if drag_group.size() > 1 else "")
+		hint.text = _th("끌어서 옮기는 중%s: 놓으면 그 자리에 둠 (방향은 그대로)\n우클릭/Esc: 취소" % (" (%d개)" % drag_group.size() if drag_group.size() > 1 else ""))
 	if dragging:
 		# 창 밖으로 끌어도 무리 전체가 화면 안에 남도록 이동량을 자른다
 		var delta := mpos - press_pos
@@ -2884,13 +2893,13 @@ func _restore_hint() -> void:
 	selected = selected.filter(func(t): return is_instance_valid(t))
 	match phase:
 		Phase.PLACE:
-			hint.text = _place_hint()
+			hint.text = _th(_place_hint())
 		Phase.CHOOSE:
-			hint.text = _choose_hint()
+			hint.text = _th(_choose_hint())
 		Phase.READY:
-			hint.text = READY_HINT if Meta.games < 3 else ""
+			hint.text = _th(READY_HINT if Meta.games < 3 else "")
 	if not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY, Phase.PLACE]:
-		hint.text = "선택 %d개: 선택한 오브젝트 하나를 끌면 함께 이동\nShift/Ctrl+클릭: 더하기·빼기   Ctrl+A: 모두   Esc/우클릭: 선택 해제" % selected.size()
+		hint.text = ("선택 %d개: 선택한 오브젝트 하나를 끌면 함께 이동\n빈 곳 누르기: 선택 해제" if touch_ui else "선택 %d개: 선택한 오브젝트 하나를 끌면 함께 이동\nShift/Ctrl+클릭: 더하기·빼기   Ctrl+A: 모두   Esc/우클릭: 선택 해제") % selected.size()
 
 
 ## 방향 확정 (클릭, 또는 끌었다 놓기).
@@ -4307,7 +4316,7 @@ func _cancel_step() -> void:
 		return
 	if phase == Phase.AIM:
 		phase = Phase.PLACE
-		hint.text = PLACE_HINT
+		hint.text = _th(PLACE_HINT)
 	elif phase == Phase.PLACE:
 		_back_to_choose()
 
@@ -4317,7 +4326,7 @@ func _back_to_choose() -> void:
 	phase = Phase.CHOOSE
 	choice_box.visible = not cards_hidden
 	_update_reroll_btn()
-	hint.text = _choose_hint()
+	hint.text = _th(_choose_hint())
 	_save_run()
 
 
@@ -4347,9 +4356,9 @@ func _start_move(t: Tower) -> void:
 	choice_box.visible = false
 	reroll_btn.visible = false
 	if touch_ui:
-		hint.text = "쏠 쪽을 누르거나 끌어서 놓기: 방향 확정   취소: 그대로 두기"
+		hint.text = _th("쏠 쪽을 누르거나 끌어서 놓기: 방향 확정   취소: 그대로 두기")
 	else:
-		hint.text = "클릭 또는 끌어서 놓기: 방향 확정 (Shift: 15도 단위)   오브젝트 우클릭한 채 끌기로도 바로 됨\n우클릭/Esc: 그대로 두기"
+		hint.text = _th("클릭 또는 끌어서 놓기: 방향 확정 (Shift: 15도 단위)   오브젝트 우클릭한 채 끌기로도 바로 됨\n우클릭/Esc: 그대로 두기")
 
 
 ## 그린 궤적 길 그리기. q: 그릴 갈래 번호들, after: 카드로 들어왔으면 다 그린 뒤 고르기를 마친다.
@@ -4378,7 +4387,7 @@ func _draw_begin_branch() -> void:
 	var n := Pat.path_branches(draw_t.plv)
 	var head := "그린 궤적%s: " % (" %d/%d" % [draw_queue[0] + 1, n] if n > 1 else "")
 	# 화면 아래 취소 버튼과 겹치지 않게 짧게 (남은 길이·꺾기 수는 그리는 끝에 따로 보인다)
-	hint.text = head + "누른 채 끌어 길 그리기\n" + ("취소: 그대로 두기" if touch_ui else "우클릭/Esc: 그대로 두기")
+	hint.text = _th(head + "누른 채 끌어 길 그리기\n" + ("취소: 그대로 두기" if touch_ui else "우클릭/Esc: 그대로 두기"))
 
 
 func _draw_input(event: InputEvent) -> void:
