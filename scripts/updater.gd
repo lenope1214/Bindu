@@ -46,6 +46,8 @@ func cleanup() -> void:
 				left = true
 		if not left:
 			return
+		if not is_inside_tree():
+			return  # 장면을 다시 읽어 트리에서 빠진 뒤 (get_tree() null 오류)
 		await get_tree().create_timer(2.0).timeout
 
 
@@ -77,6 +79,8 @@ func start(latest: Dictionary) -> void:
 	while res[0] == -1:
 		var total := size if size > 0 else http.get_body_size()
 		progress.emit(float(http.get_downloaded_bytes()) / total if total > 0 else -1.0)
+		if not is_inside_tree():
+			return  # 장면을 다시 읽어 트리에서 빠진 뒤 (get_tree() null 오류)
 		await get_tree().create_timer(0.2).timeout
 	http.queue_free()
 	if res[0] != HTTPRequest.RESULT_SUCCESS or res[1] != 200:

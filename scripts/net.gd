@@ -166,6 +166,10 @@ func ensure_auth() -> bool:
 		return true
 	if authing:
 		while authing:
+			# 판이 끝나고 바로 시작 화면으로 가면(장면 다시 읽기) 이 노드는 트리에서 빠진 채 한 프레임 남는다.
+			# 그때 get_tree()가 null 오류를 냈다 (0.5.0 오류 로그 "data.tree is null")
+			if not is_inside_tree():
+				return false
 			await get_tree().process_frame
 		return Account.has_token()
 	authing = true
