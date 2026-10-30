@@ -1,4 +1,9 @@
 {$DOMAIN} {
 	encode gzip
+	# 빌드 파일 내려받기: server/downloads/ 에 넣은 파일 → https://도메인/download/파일이름
+	handle_path /download/* {
+		root * /srv/downloads
+		file_server
+	}
 	reverse_proxy api:8000
 }

@@ -35,6 +35,19 @@ docker compose up -d --build
 - **새 버전**: 플랫폼별 최신 버전과 받는 곳 URL. 게임이 시작 화면에 "새 버전 받기" 버튼을 띄움.
 - **판 기록**: 검증에 걸린 기록 보기, 리더보드에서 빼기, 기기 차단.
 
+## 빌드 내려받기 (새 버전 알림)
+
+`server/downloads/`에 빌드 파일을 넣으면 `https://도메인/download/파일이름`으로 받을 수 있습니다.
+이름은 `Bindu-windows.zip`, `Bindu-macos.zip`으로 고정해 두고 새 빌드마다 덮어쓰면 됩니다.
+관리 페이지 "새 버전" 탭에 플랫폼별 버전과 주소를 적습니다:
+
+| 플랫폼 | 주소 |
+|---|---|
+| windows | `https://bindu.anon-chat.kr/download/Bindu-windows.zip` |
+| macos | `https://bindu.anon-chat.kr/download/Bindu-macos.zip` |
+| android | `https://play.google.com/store/apps/details?id=kr.chat.anon.bindu` |
+| ios | App Store 등록 후 앱 페이지 주소 |
+
 ## 패치 JSON
 
 게임을 켤 때 받아서 **다음 판부터** 적용됩니다(판 도중에 수치가 바뀌지 않음). 오프라인이면 지난번에 받은 패치를 씁니다.
