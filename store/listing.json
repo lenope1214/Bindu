@@ -306,5 +306,34 @@
       "status": "done"
     }
   },
-  "approved": "2026-10-31 사용자 \"2026 anon.chat.kr로 수정 후 진행\" — 카드 1·2 값으로 제출 승인"
+  "approved": "2026-10-31 사용자 \"2026 anon.chat.kr로 수정 후 진행\" — 카드 1·2 값으로 제출 승인",
+  "submission": {
+    "_updated": "2026-10-31",
+    "play": {
+      "store_settings": "done(이메일·웹사이트)",
+      "ai_assets": "done(아이콘·그래픽만 AI)",
+      "closed_testing_countries": "전 세계 177개",
+      "content_rating": "need: IARC 약관 체크는 사용자가 직접",
+      "closed_testing_review": "대기(콘텐츠 등급 뒤)",
+      "production": "손대지 않음"
+    },
+    "ios": {
+      "app_name_in_asc": "Bindu (Play는 빈두)",
+      "age_rating": "9+ (브라질·베트남 12+)",
+      "app_privacy": "게시됨, 기기 ID 목적은 앱 기능만",
+      "availability": "무료 175개국",
+      "encryption": "빌드에 누락 표시 없음(면제 처리로 봄)",
+      "testflight": {
+        "build": 4,
+        "group": "Bindu tester - ext",
+        "beta_review": "승인됨",
+        "public_link": "https://testflight.apple.com/join/yGBT7x5m",
+        "notify_testers": "꺼 둠, 빌드 4 페이지에서 직접 공지"
+      },
+      "app_store_review": "제출 안 함(1.0 버전에 빌드 없음, 스크린샷 미확인, 심사 후 자동 출시로 설정돼 있음)",
+      "korea_grac": "대한민국 등급 칸 'RCN 추가' 비워 둠",
+      "eu_trader": "need: 사용자가 비즈니스에서 선택",
+      "paid_agreement": "done(사용자)"
+    }
+  }
 }
