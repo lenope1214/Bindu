@@ -14,6 +14,25 @@ RULE_DEFAULTS = {
     4: {"orb_mul": 1.4, "hp_growth": 1.08},
     5: {"orb_mul": 1.0, "hp_growth": 1.05},  # 폐기(2026-10-30). 예전 판 기록 검증용으로만 남김
 }
+# 모드 (modes.gd Modes.LIST): 점수 배율, 어렵게/쉽게, 반대 쌍. 배율은 패치 data.modes.<id>로 바뀐다.
+# 처치 점수는 모드 전 체력·수 기준으로 매기므로(Modes.kill_k) 점수 상한은 모드 배율만 곱한다.
+# 쉽게 모드를 하나라도 쓴 판은 기록은 받되(통계) 리더보드에서는 뺀다 (main.py submit_run).
+MODES = {
+    "rush": {"score": 1.30, "hard": True, "vs": "stroll"},
+    "swarm": {"score": 1.30, "hard": True, "vs": ""},
+    "steel": {"score": 1.30, "hard": True, "vs": "soft"},
+    "glass": {"score": 1.25, "hard": True, "vs": "fort"},
+    "narrow": {"score": 1.15, "hard": True, "vs": "ease"},
+    "early": {"score": 1.15, "hard": True, "vs": ""},
+    "angry": {"score": 1.25, "hard": True, "vs": ""},
+    "stroll": {"score": 0.70, "hard": False, "vs": "rush"},
+    "fort": {"score": 0.70, "hard": False, "vs": "glass"},
+    "three": {"score": 0.50, "hard": False, "vs": ""},
+    "soft": {"score": 0.70, "hard": False, "vs": "steel"},
+    "ease": {"score": 0.85, "hard": False, "vs": "narrow"},
+}
+MODE_SWARM = 1.25  # 물량: 웨이브 구체 수 (Modes.SWARM)
+MODE_MUL_MIN, MODE_MUL_MAX = 0.2, 2.5
 MAX_SPEED = 8.0  # 게임 최고 배속
 SLACK = 2.0  # 분열 조각·보스 부하·운까지 덮는 여유
 
@@ -39,6 +58,33 @@ def rule_values(rules: int, patch_data: dict | None) -> dict:
                 if isinstance(src.get(k), (int, float)):
                     vals[k] = float(src[k])
     return vals
+
+
+def modes_error(modes: list) -> str:
+    """모르는 모드, 겹친 것, 반대 쌍이 함께 있으면 이유."""
+    if len(set(modes)) != len(modes):
+        return "bad modes"
+    for m in modes:
+        if m not in MODES:
+            return "unknown modes"
+        if MODES[m]["vs"] in modes:
+            return "bad modes"
+    return ""
+
+
+def modes_mul(modes: list, patch_data: dict | None = None) -> float:
+    """Modes.mul: 고른 모드 배율의 곱 (패치 값이 있으면 그것)."""
+    pm = (patch_data or {}).get("modes") or {}
+    m = 1.0
+    for x in modes:
+        v = pm.get(x)
+        m *= float(v) if isinstance(v, (int, float)) else MODES[x]["score"]
+    return min(max(m, MODE_MUL_MIN), MODE_MUL_MAX)
+
+
+def easy(modes: list) -> bool:
+    """쉽게 모드를 하나라도 썼는지 (리더보드 제외)."""
+    return any(not MODES.get(m, {"hard": True})["hard"] for m in modes)
 
 
 def _roundi(x: float) -> int:
@@ -99,12 +145,18 @@ def check(run: dict, patch_data: dict | None = None) -> str:
         return "unknown rules"
     if not 0 <= wave <= 1000 or score < 0:
         return "out of range"
-    cap = max_score(wave, run["map"], run["rules"], patch_data)
+    modes = run.get("modes") or []
+    err = modes_error(modes)
+    if err:
+        return err
+    cap = int(max_score(wave, run["map"], run["rules"], patch_data) * max(1.0, modes_mul(modes, patch_data)))
     if score > cap:
         return f"score {score} > cap {cap}"
     v = rule_values(run["rules"], patch_data)
-    spawned = sum(spawn_count(w, run["map"], v["orb_mul"]) for w in range(1, wave + 1))
-    if run.get("kills", 0) > spawned * 3 + 200 * (wave // 5 + 1):
+    orb_mul = v["orb_mul"] * (MODE_SWARM if "swarm" in modes else 1.0)
+    spawned = sum(spawn_count(w, run["map"], orb_mul) for w in range(1, wave + 1))
+    minions = 400 if "angry" in modes else 200  # 성난 보스는 부하를 2배 자주 부른다
+    if run.get("kills", 0) > spawned * 3 + minions * (wave // 5 + 1):
         return "too many kills"
     need = min_game_secs(wave, run["map"], run["rules"], patch_data)
     if run.get("game_secs", 0.0) < need:

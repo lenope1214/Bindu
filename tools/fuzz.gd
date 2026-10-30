@@ -14,7 +14,10 @@ func _initialize():
 	var sd: int = int(a[0]) if a.size() > 0 else 1
 	Meta.rules = Rules.IDS[sd % Rules.IDS.size()]
 	Meta.map_id = Meta.MAP_IDS[(sd / 4) % Meta.MAP_IDS.size()]
+	# 모드도 시드마다 몇 개씩 (반대 쌍은 set_on이 거른다)
+	Modes.set_on(Modes.ORDER.filter(func(_m): return randf() < 0.25))
 	main._apply_rules()
+	main.start_modes()
 	main.lanes.clear()
 	main._roll_lanes()
 	# 짝수 시드는 첫 판(카드 단계별·처음 안내)으로. 헤드리스는 원래 첫 판 안내를 끈다
@@ -26,7 +29,7 @@ func _initialize():
 	main.ready.connect(func():
 		Meta.ui_scale = z
 		main._apply_ui_scale())
-	print("FUZZR rules=", Meta.rules, " map=", Meta.map_id, " tutor=", main.tutor, " ui=", z)
+	print("FUZZR rules=", Meta.rules, " map=", Meta.map_id, " tutor=", main.tutor, " ui=", z, " modes=", ",".join(Modes.on))
 func _mouse(pos: Vector2, btn: int, pressed: bool, shift := false):
 	var e := InputEventMouseButton.new()
 	e.position = pos; e.global_position = pos; e.button_index = btn; e.pressed = pressed; e.shift_pressed = shift

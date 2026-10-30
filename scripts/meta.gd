@@ -68,8 +68,10 @@ static var guide_seen := {}  # 이미 본 안내 id -> true
 static var tutor_next := true  # 다음 새 판은 카드 종류를 웨이브마다 하나씩 연다 (첫 판, 설정에서 다시 켬)
 static var notes_seen := ""  # 마지막으로 패치노트를 연 게임 버전 (다르면 시작 화면 버튼 강조)
 static var ui_scale := 1.0  # 글자·버튼 크기 (UI_SCALES 중 하나). 폰은 기본 1.3
+static var modes: Array = []  # 시작 화면에서 고른 모드 (Modes). 다음 판에도 남는다
 const UI_SCALES := [1.0, 1.15, 1.3]
 static var loaded := false
+const EASY_TAG := "~easy"  # 쉽게 모드를 쓴 판의 기록 키 끝 (run_key)
 static var line_flip := false  # 회랑 맵: false면 구체가 오른쪽에서 와서 왼쪽 끝 문으로, true면 반대
 
 
@@ -86,6 +88,11 @@ static func key(id: String = map_id, r: int = -1, old := false) -> String:
 	if old:
 		return id if r == 1 else "%s@v%d" % [id, r]
 	return "%s@v%d%s" % [id, r, Rules.REC_TAG]
+
+
+## 이번 판 기록 키: 쉽게 모드를 쓴 판은 따로 센다 (Modes).
+static func run_key(id: String = map_id) -> String:
+	return key(id) + (EASY_TAG if Modes.easy() else "")
 
 
 static func best_of(id: String) -> Array:
@@ -150,6 +157,7 @@ static func load_into(cfg: ConfigFile) -> void:
 	guide_seen = val(cfg, "guide", "seen", {})
 	tutor_next = val(cfg, "guide", "tutor", games == 0)  # 이미 해 본 저장은 단계별로 열지 않는다
 	notes_seen = val(cfg, "guide", "notes_seen", "")
+	modes = (val(cfg, "meta", "modes", []) as Array).filter(func(m): return Modes.LIST.has(m))
 	ui_scale = val(cfg, "settings", "ui_scale", 1.3 if OS.has_feature("mobile") else 1.0)
 	if not ui_scale in UI_SCALES:
 		ui_scale = 1.0
@@ -175,6 +183,7 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("meta", "codex", codex)
 	cfg.set_value("meta", "kills", total_kills)
 	cfg.set_value("meta", "games", games)
+	cfg.set_value("meta", "modes", modes)
 	cfg.set_value("settings", "volume", volume)
 	cfg.set_value("settings", "shake", shake_on)
 	cfg.set_value("settings", "numbers", numbers_on)

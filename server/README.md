@@ -101,11 +101,13 @@ docker compose up -d --build
 | `cards` | 카드 종류 비율(`elem`·`pat`·`mod`·`link`, 합이 1이 아니어도 됨), 대격변 확률 `cata`, Lv2 확률 `lv2_base + lv2_wave × 웨이브`(최대 `lv2_max`) |
 | `elem_dmg` | 속성별 피해 배율. 오브젝트에 넣은 속성마다 곱함. 키: fire wood water electric wind ice earth dark light poison metal |
 | `pat_dmg` | 공격방식별 피해 배율. 키: shot spray thorn stream chain gust shard wall vortex laser lob iron |
+| `modes` | 모드 점수 배율 (값이 배율 자체, 예 `{"rush": 1.4}`). 키: rush swarm steel glass narrow early angry stroll fort three soft ease. 서버 점수 상한도 같은 값을 씀 (`docs/modes.md`) |
 | `message` | 시작 화면 공지 |
 
 ## 리더보드와 시즌
 
 - 리더보드는 **맵 × 규칙 버전 × 시즌**으로 나뉘고, 기기마다 최고 기록 하나만 올라갑니다. 전체·이번 주(7일).
+- 모드: 어렵게 모드만 쓴 판은 배율을 곱한 점수로 같은 리더보드에 오릅니다(점수 상한도 배율만큼 올라감). 쉽게 모드를 하나라도 쓴 판은 통계에는 들어가고 리더보드에서는 빠집니다(`hidden`). 모르는 모드·반대 쌍이 든 판은 검증 실패.
 - 판도가 바뀌는 패치는 올릴 때 "새 시즌 시작"을 켭니다. 그 패치를 받기 전의 게임으로 한 판은 시즌 0(리더보드 제외, 통계에는 들어감)이 됩니다.
 - 새 빌드로 판도가 바뀌면 패치 탭 아래 "새 빌드로 새 시즌 열기"에 그 게임 버전을 적습니다.
 - 지난 시즌 기록은 지우지 않습니다 (`/v1/leaderboard?season=N`).

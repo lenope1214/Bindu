@@ -1,7 +1,7 @@
 extends SceneTree
 # 자동 플레이 봇: 반응 생기면 겹치기, 아니면 진입 방향을 가로지르게 새로 설치.
 # 사용: tools/run.sh bots (또는 godot --headless --fixed-fps 60 --path . -s tools/bot.gd -- <시드> [stack])
-# 환경 변수: RULES(규칙 버전) MAP(맵) FLIP=1(회랑에서 구체가 왼쪽에서) SPEED(배속) SMART=1(사람처럼 배치) GOD=<웨이브>(죽지 않고 그 웨이브까지, 멈춤 감시)
+# 환경 변수: RULES(규칙 버전) MODES(모드, 쉼표로) MAP(맵) FLIP=1(회랑에서 구체가 왼쪽에서) SPEED(배속) SMART=1(사람처럼 배치) GOD=<웨이브>(죽지 않고 그 웨이브까지, 멈춤 감시)
 var main
 var frames := 0
 var stack_all := false
@@ -17,6 +17,17 @@ var last_wave := -1
 var god_w := -1
 var picks_w := -1
 var dumped := false
+var modes_set := false
+
+
+## MODES=rush,steel: 첫 프레임에 모드를 켠다 (없으면 모두 끔: 시험 저장에 남은 모드가 섞이지 않게).
+func _set_modes():
+	modes_set = true
+	Modes.set_on(Array(OS.get_environment("MODES").split(",", false)))
+	main._apply_rules()
+	main.start_modes()
+	main.picks_left = maxi(2, Rules.picks)
+	main.rerolls_left = Modes.rerolls(1)
 var wave_ms := 0
 func _process(_d):
 	frames += 1
@@ -40,6 +51,8 @@ func _process(_d):
 		if main.wave >= int(OS.get_environment("GOD")):
 			print("RESULT wave=", main.wave, " score=", main.score)
 			return true
+	if not modes_set:
+		_set_modes()
 	if OS.get_environment("RULES") != "" and Meta.rules != int(OS.get_environment("RULES")):
 		Meta.rules = int(OS.get_environment("RULES"))
 		main._apply_rules()
@@ -185,7 +198,7 @@ func _process(_d):
 	if main.phase == 4 or frames > 60 * 60 * (int(OS.get_environment("MINS")) if OS.get_environment("MINS") != "" else 25) / main.game_speed:
 		var ts = []
 		for t in main.towers.get_children(): ts.append(t.title())
-		print("RESULT wave=", main.wave, " score=", main.score, " ", main._perk_text(), " towers=", ts)
+		print("RESULT wave=", main.wave, " score=", main.score, " mul=", Modes.mul(), " ", main._perk_text(), " towers=", ts)
 		# 죽음 기록: 웨이브마다 새어 든 구체 수·방향·종류 (tools/run.sh bots가 모아 보여 줌)
 		for e in (main.leak_log if "leak_log" in main else []):
 			if e["n"] > 0:

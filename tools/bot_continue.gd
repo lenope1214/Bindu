@@ -16,6 +16,17 @@ var last_wave := -1
 var god_w := -1
 var picks_w := -1
 var dumped := false
+var modes_set := false
+
+
+## MODES=rush,steel: 첫 프레임에 모드를 켠다 (없으면 모두 끔: 시험 저장에 남은 모드가 섞이지 않게).
+func _set_modes():
+	modes_set = true
+	Modes.set_on(Array(OS.get_environment("MODES").split(",", false)))
+	main._apply_rules()
+	main.start_modes()
+	main.picks_left = maxi(2, Rules.picks)
+	main.rerolls_left = Modes.rerolls(1)
 var cont_w := -1
 func _snap() -> String:
 	var parts := []
@@ -67,6 +78,8 @@ func _process(_d):
 		if main.wave >= int(OS.get_environment("GOD")):
 			print("RESULT wave=", main.wave, " score=", main.score)
 			return true
+	if not modes_set:
+		_set_modes()
 	if OS.get_environment("RULES") != "" and Meta.rules != int(OS.get_environment("RULES")):
 		Meta.rules = int(OS.get_environment("RULES"))
 		main._apply_rules()

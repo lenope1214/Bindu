@@ -66,11 +66,12 @@
   <h2>카드 선택률 (속성·공격방식·강화·연계)</h2><div class="tbl" id="t-card"></div>
   <h2>마지막 구성 (판이 끝났을 때 들어 있던 것)</h2><div class="tbl" id="t-final"></div>
   <h2>규칙 버전별</h2><div class="tbl" id="t-rules"></div>
+  <h2>모드별 (모드를 여러 개 켠 판은 각 모드에 한 번씩)</h2><div class="tbl" id="t-modes"></div>
   <h2>도달 웨이브 분포</h2><div class="tbl" id="t-waves"></div>
 </section>
 
 <section id="patch">
-  <p class="dim">게임이 켜질 때 받는 수치 덮어쓰기입니다. 쓸 수 있는 키: rules, rules_desc, perks, perk_desc, cards, elem_dmg, pat_dmg, message (server/README.md 참고).</p>
+  <p class="dim">게임이 켜질 때 받는 수치 덮어쓰기입니다. 쓸 수 있는 키: rules, rules_desc, perks, perk_desc, cards, elem_dmg, pat_dmg, modes, message (server/README.md 참고).</p>
   <textarea id="p-data">{
   "rules": {"all": {}, "1": {}},
   "perks": {},
@@ -118,6 +119,8 @@ const NAMES = {
   "pat:shot":"직선탄","pat:spray":"분사","pat:thorn":"관통 연사","pat:stream":"물줄기","pat:chain":"연쇄 번개","pat:gust":"돌풍","pat:shard":"파편탄","pat:wall":"벽","pat:vortex":"블랙홀","pat:laser":"레이저","pat:lob":"투척 장판","pat:iron":"철구",
   "mod:multi":"다중 발사","mod:split":"분열","mod:homing":"유도","mod:bounce":"튕김","mod:size":"크기","mod:rapid":"속사","mod:pierce":"관통",
   "link:link":"연결선","link:prism":"프리즘","link:reso":"공명","cata:elem":"대격변(속성)","cata:pat":"대격변(공격방식)",
+  "mode:none":"모드 없음","mode:rush":"질주","mode:swarm":"물량","mode:steel":"강철","mode:glass":"유리 중앙","mode:narrow":"외길","mode:early":"이른 위협","mode:angry":"성난 보스",
+  "mode:stroll":"산책","mode:fort":"든든한 중앙","mode:three":"세 장","mode:soft":"물렁","mode:ease":"여유",
   "perk:power":"화력","perk:haste":"속사(특성)","perk:reach":"원거리","perk:core":"단단한 중앙","perk:reroll":"넉넉한 선택","perk:luck":"행운","perk:regen":"회복","perk:slow":"끈적한 공간","perk:harmony":"조화",
 };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
@@ -171,6 +174,7 @@ $("load-stats").onclick = async () => {
   table($("t-perk"), d.picks.filter(r => r.kind === "perk"), pickCols);
   table($("t-card"), d.picks.filter(r => r.kind === "card"), pickCols);
   table($("t-final"), d.finals, [["이름", (r, raw) => raw ? r.key : nm(r.key)], ["판", r => r.runs, 1], ["들어 있던 비율", (r, raw) => raw ? r.presence : pct(r.presence), 1], ["", r => r.presence, 0, r => r.presence], ["평균 레벨", r => r.avg_amount, 1], ["평균 피해 몫", (r, raw) => raw ? r.avg_share : pct(r.avg_share), 1], ["평균 웨이브", r => r.avg_wave, 1]]);
+  table($("t-modes"), d.picks.filter(r => r.kind === "mode"), [["모드", (r, raw) => raw ? r.key : nm(r.key)], ["판", r => r.runs_picked, 1], ["평균 웨이브", r => r.avg_wave_picked, 1]]);
   table($("t-rules"), d.by_rules, [["규칙", r => r.rules, 1], ["판", r => r.runs, 1], ["평균 웨이브", r => r.avg_wave, 1], ["최고", r => r.max_wave, 1]]);
   const mx = Math.max(1, ...d.waves.map(w => w.runs));
   table($("t-waves"), d.waves, [["웨이브", r => r.wave, 1], ["판", r => r.runs, 1], ["", r => r.runs, 0, r => r.runs / mx]]);

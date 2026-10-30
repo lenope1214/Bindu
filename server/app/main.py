@@ -33,7 +33,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "P
 
 PLATFORMS = ["windows", "macos", "linux", "android", "ios"]
 # 패치 data에서 게임이 읽는 최상위 키 (scripts/patch.gd)
-PATCH_KEYS = {"rules", "rules_desc", "perks", "perk_desc", "cards", "elem_dmg", "pat_dmg", "message"}
+PATCH_KEYS = {"rules", "rules_desc", "perks", "perk_desc", "cards", "elem_dmg", "pat_dmg", "modes", "message"}
 
 
 @app.get("/health")
@@ -124,6 +124,7 @@ class RunIn(BaseModel):
     patch: int = 0
     map: str = Field(pattern=r"^[a-z]{1,16}$")
     rules: int
+    modes: list[str] = Field([], max_length=16)  # 고른 모드 (validate.MODES)
     wave: int
     score: int
     kills: int = 0
@@ -164,14 +165,19 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), db
     row = Run(device_id=run.device, nickname=nick, ip_hash=ip, platform=run.platform, game_version=run.game,
               patch_id=run.patch, season=season, map=run.map, rules=run.rules, wave=run.wave, score=run.score,
               kills=run.kills, best_combo=run.best_combo, game_secs=run.game_secs, real_secs=run.real_secs,
-              detail={"perks": run.perks, "towers": [x.model_dump() for x in run.towers], "log": [x.model_dump() for x in run.log]},
-              valid=reason == "", reason=reason)
+              detail={"perks": run.perks, "modes": run.modes, "towers": [x.model_dump() for x in run.towers], "log": [x.model_dump() for x in run.log]},
+              valid=reason == "", reason=reason,
+              hidden=validate.easy(run.modes))  # 쉽게 모드 판은 통계에만 (리더보드 제외)
     db.add(row)
     db.flush()
     for e in run.log[:2000]:
         kind = "perk" if e.k == "perk" else "card"
         for key in dict.fromkeys(k for k in e.o[:6] if KEY_RE.match(k)):  # 같은 선택지가 두 번 들어 있어도 한 번
             db.add(Pick(run_id=row.id, kind=kind, key=key[:48], picked=key == e.p, wave=e.w))
+    # 모드: 통계에서 모드별 평균 웨이브를 보려고 선택처럼 적는다 (모드 없는 판은 mode:none)
+    for m in dict.fromkeys(run.modes or ["none"]):
+        if KEY_RE.match(f"mode:{m}"):
+            db.add(Pick(run_id=row.id, kind="mode", key=f"mode:{m}", picked=True, wave=0))
     for key, (amount, share) in stats.finals_of(run.towers).items():
         if not KEY_RE.match(key):
             continue

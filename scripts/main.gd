@@ -170,6 +170,10 @@ var notes_btn: Button
 var notes: PatchNotes
 var notes_back := false  # 설정 창에서 열었으면 닫을 때 설정 창으로 돌아간다
 var settings_panel: PanelContainer
+var modes_panel: PanelContainer  # 모드 고르기 (시작 화면, 첫 판 뒤)
+var modes_btn: Button
+var modes_head: Label
+var modes_btns := {}  # 모드 id -> 켜고 끄는 버튼
 var new_achievements: Array = []  # 이번 판에 새로 달성한 업적 이름
 var help_label: Label
 var hover_elem := -1  # 마우스를 올린 선택지의 속성
@@ -204,6 +208,7 @@ func _ready() -> void:
 	Patch.load_cache()
 	if Meta.games == 0:
 		Meta.rules = 1  # 첫 판은 기본 규칙 (규칙 고르기는 첫 판 뒤에 보인다)
+	Modes.set_on(Meta.modes if Meta.games > 0 else [])  # 모드도 첫 판 뒤에 열린다
 	_apply_rules()
 	zones = _layer("Zones")
 	towers = _layer("Towers")
@@ -599,13 +604,20 @@ func _apply_ui_scale() -> void:
 
 ## 글자를 키우면(설정) 화면보다 커지는 창은 줄여서 맞춘다. 가운데 창이라 위아래 여백이 같고, 아래는 버튼 줄을 비운다.
 func _fit_panels() -> void:
-	for c: Control in [title_box, help_label, records_panel, settings_panel, notes_panel]:
+	for c: Control in [title_box, help_label, records_panel, settings_panel, notes_panel, modes_panel]:
 		if not c.is_visible_in_tree():
 			continue
 		var h: float = c.get_combined_minimum_size().y if c == title_box else c.size.y
 		var k := 1.0 if Meta.ui_scale <= 1.0 else minf(1.0, (ui_root.size.y - 100.0) / maxf(1.0, h))
 		c.pivot_offset = c.size / 2.0
 		c.scale = Vector2(k, k)
+
+
+## 새 판을 시작할 때 모드가 바꾸는 시작 값 (중앙 체력). 봇이 모드를 바꾼 뒤에도 부른다.
+func start_modes() -> void:
+	core_max = Modes.core_max(CORE_MAX_HP)
+	core_hp = core_max
+	core_disp = float(core_hp)
 
 
 func big_banner(t: String, col: Color) -> void:
@@ -636,6 +648,8 @@ func _update_hud(force := false) -> void:
 	var extra := ""
 	if Meta.rules != 1:
 		extra += "   [%s]" % Rules.NAMES[Meta.rules]
+	if not Modes.on.is_empty():
+		extra += "   [모드 x%.2f]" % Modes.mul()
 	if not selected.is_empty():
 		extra += "   선택 %d개" % selected.size()
 	var nt := towers.get_child_count()
@@ -699,6 +713,7 @@ static func sturdy_share(w: int) -> float:
 func _apply_rules() -> void:
 	Patch.commit()  # 받아 둔 온라인 패치는 새 판을 시작할 때 적용
 	Rules.apply(Meta.rules)
+	Modes.apply_rules()
 	Tower.tax_step = Rules.tax_step
 	if legend:
 		_refresh_legend()
@@ -738,6 +753,7 @@ func _help_text() -> String:
 		"속성을 많이 겹칠수록 피해는 늘고 공격 속도는 조금씩 느려집니다. %s" % mods,
 		"감속은 최대 70%, 밀기는 조금씩만, 기절·속박·빙결은 연달아 걸리면 짧아지다 잠깐 면역",
 		"화면 밖 구체는 맞지 않습니다. 시작 화면에서 규칙 버전(↑/↓)과 맵(←/→)을 바꿀 수 있어요",
+		"모드(첫 판 뒤): 어렵게 하면 점수 배율이 오르고, 쉽게 하면 내려가요 (쉽게 모드 판은 기록 따로)",
 	])
 
 
@@ -775,6 +791,7 @@ func _start_choose(new_round := true) -> void:
 		# 새 판. 헤드리스(봇·점검)는 늘 모두 열린 채로
 		tutor = Meta.tutor_next and DisplayServer.get_name() != "headless"
 		tutor_given = {}
+		start_modes()
 	if new_round and tutor and wave + 1 >= TUTOR_OPEN.values().max() and Meta.tutor_next:
 		Meta.tutor_next = false  # 모두 열렸다: 다음 판부터는 처음부터 모두
 		_save_best()
@@ -783,8 +800,8 @@ func _start_choose(new_round := true) -> void:
 		# 다음 웨이브 저항 속성: 12웨이브(버전 4는 8)부터 60% 확률
 		wave_resist = Elem.ALL.pick_random() if wave + 1 >= Rules.resist_from and randf() < 0.6 else -1
 		_plan_boss()
-		picks_left = 2 if wave <= 1 else Rules.picks  # 처음 두 번의 쉬는 시간은 2개씩
-		rerolls_left = 1 + bonus_rerolls + perks.get("reroll", 0) * int(_perk_val("reroll"))
+		picks_left = maxi(2, Rules.picks) if wave <= 1 else Rules.picks  # 처음 두 번의 쉬는 시간은 2개씩 (모드 '세 장'이면 3개)
+		rerolls_left = Modes.rerolls(1 + bonus_rerolls + perks.get("reroll", 0) * int(_perk_val("reroll")))
 		bonus_rerolls = 0
 	phase = Phase.CHOOSE  # 웨이브를 막 끝낸 때도 카드 안내가 쉬는 시간 안내로 뜨게 (_open_choose가 다시 정함)
 	_make_choices()
@@ -1080,6 +1097,8 @@ func _wrap_parts(text: String, sep: String, width: float, fs: int) -> String:
 ## 5웨이브마다: 특성 3개 중 1개.
 func _start_perk() -> void:
 	var pool: Array = PERKS.duplicate()
+	if Modes.has("narrow"):
+		pool = pool.filter(func(pk): return pk["id"] != "reroll")  # 외길: 새로고침이 없으니 쓸모없는 특성은 빼고
 	pool.shuffle()
 	perk_offer = pool.slice(0, 3)
 	_show_perks()
@@ -1196,7 +1215,7 @@ func _set_cards_hidden(h: bool) -> void:
 
 
 func _update_reroll_btn() -> void:
-	reroll_btn.visible = rerolls_left > 0 and not cards_hidden
+	reroll_btn.visible = rerolls_left > 0 and not cards_hidden  # 모드 '외길'은 늘 0
 	reroll_btn.text = "선택지 새로고침 (Q) · %d회 남음" % rerolls_left
 
 
@@ -1321,14 +1340,14 @@ func _boss_eta() -> float:
 	for i in range(1, pts.size()):
 		L += pts[i - 1].distance_to(pts[i])
 	L -= CORE_RADIUS + 30.0  # 보스 반지름만큼 먼저 닿는다
-	return L / (boss_plan["spd"] * 0.45 * orb_speed_mul)
+	return L / (boss_plan["spd"] * 0.45 * orb_speed_mul * Modes.speed())
 
 
 ## 다음 보스 안내 (쉬는 시간에 미리 뽑아 둔 그대로).
 func _boss_text() -> String:
 	if boss_plan.is_empty():
 		return "보스 등장! 중앙에 닿으면 체력 3 감소"
-	var sp := PackedStringArray(["보스: 체력 %s" % num(ceilf(boss_plan["hp"] * 12.0))])
+	var sp := PackedStringArray(["보스: 체력 %s" % num(ceilf(boss_plan["hp"] * 12.0 * Modes.boss_hp()))])
 	if boss_plan["resist"] >= 0:
 		sp.append("%s 저항" % Elem.NAMES[boss_plan["resist"]])
 	if boss_plan["sturdy"]:
@@ -1561,7 +1580,7 @@ func _game_over() -> void:
 	banner_queue.clear()  # 남은 가운데 글자가 게임 오버 글 위에 뜨지 않게 (새 업적은 아래 글에 나옴)
 	banner_t = minf(banner_t, 0.4)
 	# 기록은 지금 맵·규칙 버전의 저장값과 비교한다 (다른 키에서 남은 값이 섞이지 않게)
-	var prev := Meta.best_of(Meta.key())
+	var prev := Meta.best_of(Meta.run_key())
 	var record := "  최고 기록!" if score > prev[1] or wave > prev[0] else ""
 	best_score = maxi(score, prev[1])
 	best_wave = maxi(wave, prev[0])
@@ -1582,7 +1601,8 @@ func _game_over() -> void:
 			top = t
 	if top and total > 0.0 and towers.get_child_count() > 1:
 		mvp = "\n최다 피해: %s (%d%%)" % [top.title(), roundi((top.run_dealt + top.dealt) / total * 100.0)]
-	over_label.text = "게임 오버 (%s · %s)\n웨이브 %d · 점수 %s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\nR 또는 클릭: 다시 시작   Esc: 메뉴" % [Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, num(kills), best_combo, towers.get_child_count(), mvp, ach]
+	var md := "" if Modes.on.is_empty() else "\n모드: %s · 점수 x%.2f%s" % [Modes.names(), Modes.mul(), "\n쉽게 모드: 최고 기록 따로, 리더보드 제외" if Modes.easy() else ""]
+	over_label.text = "게임 오버 (%s · %s)\n웨이브 %d · 점수 %s%s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\nR 또는 클릭: 다시 시작   Esc: 메뉴" % [Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, md, num(kills), best_combo, towers.get_child_count(), mvp, ach]
 	over_label.visible = true
 	_submit_run()
 	sfx.play("over", 0.0)
@@ -1612,8 +1632,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_ESCAPE and notes_panel.visible:
 			_close_notes()
 			return
-		if event.keycode == KEY_ESCAPE and (settings_panel.visible or records_panel.visible or help_label.visible):
+		if event.keycode == KEY_ESCAPE and (settings_panel.visible or records_panel.visible or help_label.visible or modes_panel.visible):
 			settings_panel.visible = false
+			modes_panel.visible = false
 			records_panel.visible = false
 			help_label.visible = false
 			return
@@ -1986,6 +2007,13 @@ func _build_menu(root: Control) -> void:
 	map_label = _menu_row(box, func(): _cycle_map(-1), func(): _cycle_map(1))
 	flip_label = _menu_row(box, _toggle_flip, _toggle_flip)
 	rules_label = _menu_row(box, func(): _cycle_rules(-1), func(): _cycle_rules(1))
+	modes_btn = Button.new()
+	modes_btn.custom_minimum_size = Vector2(580, 40)
+	modes_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	modes_btn.focus_mode = Control.FOCUS_NONE
+	modes_btn.add_theme_font_size_override("font_size", 17)
+	modes_btn.pressed.connect(_toggle_modes)
+	box.add_child(modes_btn)
 	skin_label = _menu_row(box, func(): _cycle_skin("tower", -1), func(): _cycle_skin("tower", 1))
 	core_label = _menu_row(box, func(): _cycle_skin("core", -1), func(): _cycle_skin("core", 1))
 	var row := HBoxContainer.new()
@@ -2058,6 +2086,7 @@ func _build_menu(root: Control) -> void:
 	records_panel.visible = false
 	root.add_child(records_panel)
 	_build_notes(root)
+	_build_modes(root, rsb)
 
 	settings_panel = PanelContainer.new()
 	settings_panel.set_anchors_preset(Control.PRESET_CENTER)
@@ -2233,12 +2262,16 @@ func _menu_row(box: VBoxContainer, prev: Callable, next: Callable) -> Label:
 
 func _refresh_menu() -> void:
 	var m: Dictionary = Meta.MAPS[Meta.map_id]
-	var best := Meta.best_of(Meta.key())
-	map_label.text = "맵: %s  (←/→)\n%s\n최고 기록  웨이브 %d · 점수 %s" % [Meta.map_name(), m["desc"], best[0], num(best[1])]
+	var best := Meta.best_of(Meta.run_key())
+	map_label.text = "맵: %s  (←/→)\n%s\n최고 기록%s  웨이브 %d · 점수 %s" % [Meta.map_name(), m["desc"], " (쉽게 모드)" if Modes.easy() else "", best[0], num(best[1])]
 	flip_label.get_parent().visible = Meta.map_id == "line"
 	flip_label.text = "구체가 오는 쪽: %s  (F)" % ("왼쪽 → 문은 오른쪽 끝" if Meta.line_flip else "오른쪽 → 문은 왼쪽 끝")
 	rules_label.text = "규칙: %s%s  (↑/↓)\n%s" % [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 470.0, 18)]
 	rules_label.get_parent().visible = Meta.games > 0  # 규칙 버전 고르기는 첫 판을 끝낸 뒤에 (그 전엔 버전 1)
+	modes_btn.visible = Meta.games > 0  # 모드도
+	modes_btn.text = "모드 (시험): %s   ▶" % ("없음" if Modes.on.is_empty() else "%s · 점수 x%.2f" % [Modes.names(), Modes.mul()])
+	if modes_panel.visible:
+		_refresh_modes()
 	var ts: Dictionary = Meta.TOWER_SKINS[Meta.tower_skin]
 	skin_label.text = "오브젝트 모양: " + ts["name"]
 	var cs: Dictionary = Meta.CORE_SKINS[Meta.core_skin]
@@ -2338,7 +2371,8 @@ func _toggle_records() -> void:
 	var lines := PackedStringArray(["[맵별 최고 기록 · %s]   (아무 곳이나 클릭: 닫기)" % Rules.NAMES[Meta.rules]])
 	for id in Meta.MAP_IDS:
 		var b := Meta.best_of(Meta.key(id))
-		lines.append("  %s: 웨이브 %d · 점수 %s" % [Meta.map_name(id), b[0], num(b[1])])
+		var e := Meta.best_of(Meta.key(id) + Meta.EASY_TAG)  # 쉽게 모드를 쓴 판은 따로
+		lines.append("  %s: 웨이브 %d · 점수 %s%s" % [Meta.map_name(id), b[0], num(b[1]), "   (쉽게 모드: 웨이브 %d · 점수 %s)" % [e[0], num(e[1])] if e[0] > 0 else ""])
 	# 규칙 버전끼리 비교하기 쉽게: 지금 맵의 버전별 최고 웨이브
 	var vers := PackedStringArray()
 	for r in Rules.IDS:
@@ -2445,7 +2479,7 @@ func _submit_run() -> void:
 			"links": t.links.size(), "share": (t.run_dealt + t.dealt) / total if total > 0.0 else 0.0})
 	net.submit({
 		"device": Meta.device_id, "nick": Meta.nickname, "platform": Net.platform(), "game": Net.game_version(),
-		"patch": Patch.id, "map": Meta.map_id, "rules": Meta.rules, "wave": wave, "score": score, "kills": kills,
+		"patch": Patch.id, "map": Meta.map_id, "rules": Meta.rules, "modes": Array(Modes.on), "wave": wave, "score": score, "kills": kills,
 		"best_combo": best_combo, "game_secs": run_game, "real_secs": run_real, "perks": perks.duplicate(),
 		"towers": list, "log": run_log,
 	})
@@ -2656,6 +2690,107 @@ func _toggle_settings() -> void:
 	settings_panel.visible = not settings_panel.visible
 
 
+# ---------- 모드 ----------
+
+## 모드 창: 어렵게·쉽게 두 묶음. 누르면 켜고 끄며, 반대 모드는 저절로 꺼진다. 효과는 버튼에 바로 적는다 (터치는 마우스 올리기가 없음).
+func _build_modes(root: Control, sb: StyleBox) -> void:
+	modes_panel = PanelContainer.new()
+	modes_panel.set_anchors_preset(Control.PRESET_CENTER)
+	modes_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	modes_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	modes_panel.add_theme_stylebox_override("panel", sb.duplicate())
+	modes_panel.visible = false
+	root.add_child(modes_panel)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 8)
+	modes_panel.add_child(v)
+	var t := Label.new()
+	t.text = "모드 (시험)   (Esc: 닫기)"
+	t.add_theme_font_size_override("font_size", 22)
+	v.add_child(t)
+	modes_head = Label.new()
+	modes_head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	modes_head.custom_minimum_size = Vector2(620, 0)
+	modes_head.add_theme_font_size_override("font_size", 16)
+	v.add_child(modes_head)
+	for hard in [true, false]:
+		var l := Label.new()
+		l.text = "어렵게 (점수 올라감)" if hard else "쉽게 (점수 내려감 · 리더보드 제외 · 최고 기록 따로)"
+		l.add_theme_font_size_override("font_size", 17)
+		l.add_theme_color_override("font_color", Color(1, 0.65, 0.5) if hard else Color(0.6, 0.85, 1.0))
+		v.add_child(l)
+		var g := GridContainer.new()
+		g.columns = 2
+		g.add_theme_constant_override("h_separation", 8)
+		g.add_theme_constant_override("v_separation", 6)
+		v.add_child(g)
+		for id in Modes.ORDER:
+			if Modes.LIST[id]["hard"] != hard:
+				continue
+			var b := Button.new()
+			b.toggle_mode = true
+			b.focus_mode = Control.FOCUS_NONE
+			b.custom_minimum_size = Vector2(306, 54)
+			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			b.add_theme_font_size_override("font_size", 15)
+			b.add_theme_color_override("font_pressed_color", Color(1, 0.88, 0.45))
+			b.add_theme_color_override("font_hover_pressed_color", Color(1, 0.88, 0.45))
+			b.pressed.connect(func(): _toggle_mode(id))
+			g.add_child(b)
+			modes_btns[id] = b
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	v.add_child(row)
+	for spec in [["모두 끄기", _modes_off], ["닫기", _toggle_modes]]:
+		var b := Button.new()
+		b.text = spec[0]
+		b.focus_mode = Control.FOCUS_NONE
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.custom_minimum_size = Vector2(0, 40)
+		b.pressed.connect(spec[1])
+		row.add_child(b)
+
+
+func _toggle_modes() -> void:
+	modes_panel.visible = not modes_panel.visible
+	if modes_panel.visible:
+		_refresh_modes()
+
+
+func _modes_off() -> void:
+	Modes.on.clear()
+	_modes_changed()
+
+
+func _toggle_mode(id: String) -> void:
+	Modes.toggle(id)
+	_modes_changed()
+
+
+## 고른 모드를 저장하고 규칙·기록 표시를 다시 맞춘다 (시작 화면에서만 바뀐다).
+func _modes_changed() -> void:
+	Meta.modes = Array(Modes.on)
+	_apply_rules()
+	sfx.play("place")
+	_refresh_menu()
+	_save_best()
+	_refresh_modes()
+
+
+func _refresh_modes() -> void:
+	for id in modes_btns:
+		var b: Button = modes_btns[id]
+		var d: Dictionary = Modes.LIST[id]
+		b.set_pressed_no_signal(Modes.has(id))
+		b.text = "%s %s  %s\n   %s" % ["●" if Modes.has(id) else "○", d["name"], Modes.pct(Modes.score_of(id)), d["desc"]]
+	var head := "점수 x%.2f (%s)" % [Modes.mul(), Modes.pct(Modes.mul())] if not Modes.on.is_empty() else "고른 모드 없음"
+	if Modes.easy():
+		head += " · 쉽게 모드: 리더보드 제외, 최고 기록 따로"
+	else:
+		head += " · 여러 개를 고르면 배율을 곱해요 (x%.1f~x%.1f)" % [Modes.MUL_MIN, Modes.MUL_MAX]
+	modes_head.text = head
+
+
 func _toggle_fullscreen() -> void:
 	var full := DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if full else DisplayServer.WINDOW_MODE_FULLSCREEN)
@@ -2741,7 +2876,7 @@ func _save_run() -> void:
 		list.append(d)
 	var vals := {
 		"format": RUN_FORMAT, "version": ProjectSettings.get_setting("application/config/version", ""),
-		"map": Meta.map_id, "line_flip": Meta.line_flip, "rules": Meta.rules, "wave": wave, "score": score, "kills": kills, "best_combo": best_combo,
+		"map": Meta.map_id, "line_flip": Meta.line_flip, "rules": Meta.rules, "modes": Array(Modes.on), "wave": wave, "score": score, "kills": kills, "best_combo": best_combo,
 		"core_hp": core_hp, "core_max": core_max, "perks": perks.keys().map(func(k): return [k, perks[k]]), "orb_speed_mul": orb_speed_mul,
 		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
 		"rerolls_left": rerolls_left, "bonus_rerolls": bonus_rerolls, "picks_left": picks_left,
@@ -2811,6 +2946,7 @@ func _continue_run() -> void:
 	Meta.map_id = info["map"]
 	Meta.line_flip = g.call("line_flip", Meta.line_flip)
 	Meta.rules = info["rules"]
+	Modes.set_on(g.call("modes", []))  # 그 판을 시작할 때 고른 모드 (시작 화면에서 지금 고른 것과 달라도)
 	_apply_rules()
 	_refresh_menu()
 	_save_best()
@@ -3277,6 +3413,7 @@ func spawn_minion(boss: Orb) -> void:
 	o.target = boss.target
 	o.setup(Orb.Kind.FAST, maxf(1.0, roundf(wave * 0.5 * hp_growth(wave) * Rules.orb_hp)), 36.0 + wave * 3.0)
 	o.resist_e = boss.resist_e
+	o.minion = true
 	orbs.add_child(o)
 
 
@@ -3287,7 +3424,7 @@ func _spawn_child(parent: Orb) -> void:
 	o.position = parent.position + Vector2(randf_range(-14, 14), randf_range(-14, 14))
 	o.from_a = parent.from_a
 	o.target = parent.target
-	o.setup(Orb.Kind.NORMAL, maxf(1.0, ceilf(parent.max_hp * 0.4)), parent.speed * 1.1 / orb_speed_mul)
+	o.setup(Orb.Kind.NORMAL, maxf(1.0, ceilf(parent.max_hp * 0.4)), parent.speed * 1.1 / (orb_speed_mul * Modes.speed()))
 	o.resist_e = parent.resist_e
 	o.sturdy = parent.sturdy
 	orbs.add_child(o)
@@ -3318,7 +3455,7 @@ func _process(delta: float) -> void:
 		if guide_t <= 0.0:
 			guide_lines.clear()
 			guide_t = 0.0
-	guide_label.visible = not guide_lines.is_empty() and not title_label.visible and phase != Phase.GAMEOVER and not get_tree().paused and not help_label.visible and not settings_panel.visible and not records_panel.visible and not notes_panel.visible
+	guide_label.visible = not guide_lines.is_empty() and not title_label.visible and phase != Phase.GAMEOVER and not get_tree().paused and not help_label.visible and not settings_panel.visible and not records_panel.visible and not notes_panel.visible and not modes_panel.visible
 	# 글자를 키운(설정) 좁은 화면에서 펼친 버튼 줄이 왼쪽 아래 안내 글에 닿으면 안내 글을 버튼 줄 앞까지로 줄인다.
 	# 줄이 늘면 위로 자라고, 다음 웨이브 미리보기는 그 위에 붙는다
 	var hw := 590.0
@@ -3345,7 +3482,7 @@ func _process(delta: float) -> void:
 	legend_btn.text = ("설명 보기" if legend_hidden else "설명 숨기기") + " (Tab)"
 	legend.visible = legend.visible and not legend_hidden
 	# 시작 화면 위에 설정·기록·도움말 창을 열면 뒤 메뉴 글자가 창 옆으로 삐져나와 보이지 않게 흐리게
-	title_label.modulate.a = 0.12 if settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible else 1.0
+	title_label.modulate.a = 0.12 if settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible else 1.0
 	hud.visible = not title_label.visible  # 시작 화면엔 메뉴에 최고 기록이 따로 있다
 	# 시작 화면에서 일시정지·배속 버튼을 누르면 메뉴 위에 일시정지 창이 뜨던 문제
 	# 게임 중엔 펼쳤을 때만 보인다 (단축키 M·P·Space는 접어도 된다). 시작 화면엔 소리·자동 시작만
@@ -3454,10 +3591,10 @@ func _sim_step(delta: float) -> void:
 		_log_wave()
 		_achieve("first")
 		if wave >= 5:
-			Meta.map_best[Meta.key()] = [maxi(Meta.best_of(Meta.key())[0], wave), maxi(Meta.best_of(Meta.key())[1], score)]
+			Meta.map_best[Meta.run_key()] = [maxi(Meta.best_of(Meta.run_key())[0], wave), maxi(Meta.best_of(Meta.run_key())[1], score)]
 			if Meta.MAP_IDS.all(func(id): return id in Meta.TRIAL_MAPS or Meta.best_of(Meta.key(id))[0] >= 5):
 				_achieve("allmaps")
-		var bonus := wave * 20
+		var bonus := int(wave * 20 * Modes.mul())
 		score += bonus
 		_show_toast("웨이브 %d 클리어! +%d" % [wave, bonus])
 		sfx.play("clear", 0.0)
@@ -3604,7 +3741,8 @@ func _resolve(delta: float) -> void:
 			best_combo = maxi(best_combo, combo)
 			if combo >= 30:
 				_achieve("combo30")
-			var gain := int(o.max_hp * 10 * (1.0 + 0.1 * mini(combo, 20)))
+			# 모드가 늘린 체력·수는 빼고 매긴 뒤 모드 배율을 곱한다
+			var gain := int(o.max_hp * Modes.kill_k(o.kind == Orb.Kind.BOSS, o.minion) * 10 * (1.0 + 0.1 * mini(combo, 20)) * Modes.mul())
 			score += gain
 			if combo >= 3 and combo % 5 == 0:
 				popup(o.position + Vector2(0, -20), combo, Color(1, 0.7, 0.3), true, "콤보 %d!" % combo)
@@ -3615,7 +3753,7 @@ func _resolve(delta: float) -> void:
 				core_hp = mini(core_hp + 2, core_max)
 				bonus_rerolls += 1
 				_achieve("boss")
-				_show_toast("보스 처치! 중앙 체력 +2, 새로고침 +1")
+				_show_toast("보스 처치! 중앙 체력 +2" + ("" if Modes.has("narrow") else ", 새로고침 +1"))
 			burst(o.position, o.death_color(), 10 if o.kind != Orb.Kind.BOSS else 40, 180.0)
 			kills += 1
 			if o.kind == Orb.Kind.BOSS:
@@ -4284,7 +4422,7 @@ func _load_best() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(SAVE_PATH) == OK:
 		Meta.load_into(cfg)
-		var b := Meta.best_of(Meta.key())
+		var b := Meta.best_of(Meta.run_key())
 		best_wave = b[0]
 		best_score = b[1]
 		auto_start = Meta.val(cfg, "option", "auto_start", false)
@@ -4298,9 +4436,9 @@ func _load_best() -> void:
 
 func _save_best() -> void:
 	var cfg := ConfigFile.new()
-	var b := Meta.best_of(Meta.key())
+	var b := Meta.best_of(Meta.run_key())
 	if best_wave > b[0] or best_score > b[1]:
-		Meta.map_best[Meta.key()] = [maxi(best_wave, b[0]), maxi(best_score, b[1])]
+		Meta.map_best[Meta.run_key()] = [maxi(best_wave, b[0]), maxi(best_score, b[1])]
 	Meta.save_into(cfg)
 	cfg.set_value("option", "auto_start", auto_start)
 	cfg.set_value("option", "legend_hidden", legend_hidden)

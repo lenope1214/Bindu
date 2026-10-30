@@ -8,6 +8,7 @@
 #   elem                                   속성마다 직선탄 Lv2 하나가 30초간 준 피해/초
 #   perf                                   후반 부하(오브젝트 16개·구체 400개) 배속별 프레임당 계산 시간
 #   compare [기준=1] [새 규칙=3] [판 수=32] [stack]   같은 시드로 두 규칙을 돌려 차이와 판정 (새 규칙을 내기 전에)
+#   modes [규칙=1] [판 수=32] [모드...]   모드마다 같은 시드로 모드 없는 판과 비교: 웨이브 차이·점수 손익분기 배율
 # 환경 변수: SPEED(배속, 기본 4) SMART(기본 1: 사람처럼 중앙 가까이에서 길목을 겨눔, 0이면 예전 봇)
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -63,11 +64,18 @@ leaks() {
 # 봇 판들: run_bots <규칙> <판 수> <모드> <접두어> → <접두어>_<시드>.txt
 run_bots() {
 	for seed in $(seq 1 "$2"); do
-		RULES=$1 SPEED=${SPEED:-4} T 900 "$G" --headless --fixed-fps 60 --path . -s tools/bot.gd -- "$seed" $3 2>&1 | head -c 300000 > "$4_$seed.txt" &
+		MODES=${BOT_MODES:-} RULES=$1 SPEED=${SPEED:-4} T 900 "$G" --headless --fixed-fps 60 --path . -s tools/bot.gd -- "$seed" $3 2>&1 | head -c 300000 > "$4_$seed.txt" &
 		if (( seed % 8 == 0 )); then wait; fi
 	done
 	wait
 	grep -h "SCRIPT ERROR" -A2 "$4"_*.txt | head -6 || true
+}
+
+# 판마다 "웨이브 점수 배율전점수" (모드 배율 mul로 나눈 점수)
+scores() {
+	for f in "$@"; do
+		grep -h "^RESULT wave=" "$f" | head -1 | sed 's/RESULT wave=\([0-9]*\) score=\([0-9]*\) mul=\([0-9.]*\).*/\1 \2 \3/' | awk '{ printf "%d %d %.0f\n", $1, $2, $2 / ($3 > 0 ? $3 : 1) }'
+	done
 }
 
 # 중간값 평균 상위25%평균 (summary의 첫 줄에서)
@@ -107,6 +115,30 @@ case "$CMD" in
 			else if (mb - ma >= 3 || r > 1.25) print "판정: 쉬움 — 기준보다 많이 길다. 의도한 것인지 확인"
 			else print "판정: 비슷함 (봇 기준). 사람 시험판은 따로"
 		}'
+		rm -rf "$D"
+		;;
+	modes)
+		# 손익분기 배율 = 모드 없는 판 점수 ÷ 모드 판의 배율 전 점수. 이 배율이면 봇 실력에서 점수가 같다 (docs/modes.md)
+		R=${1:-1}; N=${2:-32}
+		shift 2 || shift $# || true
+		LIST=${*:-rush swarm steel glass narrow early angry stroll fort three soft ease}
+		D=$(copy_project "$$")
+		cd "$D"
+		BOT_MODES="" run_bots "$R" "$N" "" base
+		read -r mb eb tb <<< "$(med_mean base_*.txt)"
+		scores base_*.txt | sort -k2 -n | awk '{s+=$2; a[NR]=$2} END {print s/NR, a[int((NR+1)/2)]}' > base_score
+		echo "규칙 $R 모드 없음: 중간값 $mb · 평균 $eb · 점수 평균 $(cut -d' ' -f1 base_score | xargs printf '%.0f') · 점수 중간값 $(cut -d' ' -f2 base_score)"
+		for m in $LIST; do
+			BOT_MODES=$m run_bots "$R" "$N" "" "m_$m"
+			read -r mm em tm <<< "$(med_mean m_"$m"_*.txt)"
+			scores m_"$m"_*.txt | sort -k3 -n | awk -v m="$m" -v mb="$mb" -v eb="$eb" -v mm="$mm" -v em="$em" -v bs="$(cat base_score)" '
+				{s+=$3; a[NR]=$3}
+				END {
+					split(bs, b, " ")
+					med = a[int((NR+1)/2)]
+					printf "%-12s 웨이브 중간값 %+d · 평균 x%.2f · 손익분기 배율 평균 기준 x%.2f · 중간값 기준 x%.2f\n", m, mm - mb, em / eb, b[1] / (s / NR), b[2] / med
+				}'
+		done
 		rm -rf "$D"
 		;;
 	long|cont)

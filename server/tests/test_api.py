@@ -111,6 +111,18 @@ def test_flow():
         assert [e["score"] for e in lb["entries"]] == [3000]
         assert c.get("/admin").status_code == 200
 
+        # 모드: 쉽게 모드 판은 받지만 리더보드에는 없음, 반대 쌍·모르는 모드는 거부
+        r = post_run(c, device="dev-eeeeeeee", score=9000, patch=2, modes=["stroll"]).json()
+        assert r["accepted"] and r["rank"] is None
+        r = post_run(c, device="dev-ffffffff", score=9000, patch=2, modes=["rush", "steel"]).json()
+        assert r["accepted"] and r["rank"]["rank"] == 1
+        assert not post_run(c, device="dev-gggggggg", patch=2, modes=["rush", "stroll"]).json()["accepted"]
+        assert not post_run(c, device="dev-gggggggg", patch=2, modes=["bogus"]).json()["accepted"]
+        lb = c.get("/v1/leaderboard", params={"map": "plain", "rules": 1}).json()
+        assert [e["score"] for e in lb["entries"]] == [9000, 3000]
+        md = {x["key"]: x for x in c.get("/admin/api/stats", headers=A).json()["picks"] if x["kind"] == "mode"}
+        assert md["mode:stroll"]["runs_picked"] == 1 and md["mode:rush"]["runs_picked"] == 1 and md["mode:none"]["runs_picked"] >= 5
+
 
 def test_validate_bounds():
     # 실제 봇 기록 수준(웨이브 30, 점수 수십만)은 통과, 터무니없는 값은 걸림
@@ -118,3 +130,10 @@ def test_validate_bounds():
     assert validate.check(run) == ""
     assert "too fast" in validate.check(dict(run, game_secs=10))
     assert "cap" in validate.check(dict(run, score=10**10))
+    # 어렵게 모드는 배율만큼 상한이 올라가고, 쉽게 모드는 상한을 낮추지 않는다
+    cap = validate.max_score(30, "plain", 1)
+    assert "cap" in validate.check(dict(run, score=int(cap * 1.2)))
+    assert validate.check(dict(run, score=int(cap * 1.2), modes=["rush"])) == ""
+    assert validate.check(dict(run, modes=["three", "soft"])) == ""
+    assert validate.modes_mul(["rush", "steel"]) == 1.3 * 1.3
+    assert validate.modes_mul(["rush"], {"modes": {"rush": 1.5}}) == 1.5

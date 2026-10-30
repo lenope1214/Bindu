@@ -20,6 +20,7 @@ var splits := false  # 죽으면 작은 구체 2개
 var resist_e := -1  # 이 속성 피해를 덜 받는다 (부분 저항)
 var sturdy := false  # 굳셈: 밀기·감속·기절·냉기 효과 절반
 var minion_t := 4.0  # 보스: 부하 소환 주기
+var minion := false  # 보스가 부른 부하 (모드 '성난 보스'의 처치 점수 계산)
 var hp := 1.0
 var max_hp := 1.0
 var speed := 50.0
@@ -57,7 +58,7 @@ var from_a := 0.0  # 나온 방향(중앙 기준 각도): 누수 기록·표시�
 
 ## 보스 부하 소환 주기 (첫 부하는 나온 지 4초 뒤): 첫 보스는 7초, 웨이브마다 빨라져 13웨이브부터 4초.
 static func minion_every(w: int) -> float:
-	return clampf(9.0 - w * 0.4, 4.0, 7.0)
+	return clampf(9.0 - w * 0.4, 4.0, 7.0) / Modes.minion_rate()
 
 
 func radius() -> float:
@@ -80,10 +81,10 @@ func setup(k: int, base_hp: float, base_speed: float) -> void:
 		Kind.TANK:
 			max_hp = ceilf(base_hp * 2.5); speed = base_speed * 0.6
 		Kind.BOSS:
-			max_hp = ceilf(base_hp * 12.0); speed = base_speed * 0.45; core_dmg = 3
+			max_hp = ceilf(base_hp * 12.0 * Modes.boss_hp()); speed = base_speed * 0.45; core_dmg = 3
 	hp = max_hp
 	if main:
-		speed *= main.orb_speed_mul
+		speed *= main.orb_speed_mul * Modes.speed()
 	push_budget = _push_max()
 
 
