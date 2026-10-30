@@ -21,7 +21,12 @@ func _initialize():
 	main.tutor = sd % 2 == 0
 	Meta.guide_seen = {}
 	Meta.guide_on = true
-	print("FUZZR rules=", Meta.rules, " map=", Meta.map_id, " tutor=", main.tutor)
+	# 글자·버튼 크기도 시드마다 돌아가며 (창 맞추기·툴팁 크기 코드도 돌게)
+	var z: float = Meta.UI_SCALES[sd % Meta.UI_SCALES.size()]
+	main.ready.connect(func():
+		Meta.ui_scale = z
+		main._apply_ui_scale())
+	print("FUZZR rules=", Meta.rules, " map=", Meta.map_id, " tutor=", main.tutor, " ui=", z)
 func _mouse(pos: Vector2, btn: int, pressed: bool, shift := false):
 	var e := InputEventMouseButton.new()
 	e.position = pos; e.global_position = pos; e.button_index = btn; e.pressed = pressed; e.shift_pressed = shift

@@ -37,7 +37,10 @@ summary() {
 		{a[NR]=$1; s+=$1; h[$1]++}
 		END {
 			if (NR == 0) { print "결과 없음"; exit }
-			printf "n=%d 중간값=%s 평균=%.1f 최소=%s 최대=%s\n", NR, a[int((NR+1)/2)], s/NR, a[1], a[NR]
+			# 상위 25%: 잘 풀린 판의 평균 길이 (8판이면 흔들림이 커서 판정에는 쓰지 않고 참고로만)
+			q = int(NR * 3 / 4) + 1; t = 0
+			for (i = q; i <= NR; i++) t += a[i]
+			printf "n=%d 중간값=%s 평균=%.1f 최소=%s 최대=%s 상위25%%평균=%.1f\n", NR, a[int((NR+1)/2)], s/NR, a[1], a[NR], t/(NR-q+1)
 			printf "죽은 웨이브:"
 			for (w = a[1]; w <= a[NR]; w++) if (h[w] > 0) printf " %d웨이브x%d", w, h[w]
 			printf "\n"
@@ -67,9 +70,9 @@ run_bots() {
 	grep -h "SCRIPT ERROR" -A2 "$4"_*.txt | head -6 || true
 }
 
-# 중간값 평균 (summary의 첫 줄에서)
+# 중간값 평균 상위25%평균 (summary의 첫 줄에서)
 med_mean() {
-	summary "$@" | head -1 | sed 's/.*중간값=\([0-9]*\) 평균=\([0-9.]*\).*/\1 \2/'
+	summary "$@" | head -1 | sed 's/.*중간값=\([0-9]*\) 평균=\([0-9.]*\).*상위25%평균=\([0-9.]*\).*/\1 \2 \3/'
 }
 
 case "$CMD" in
@@ -94,11 +97,12 @@ case "$CMD" in
 		summary a_*.txt
 		echo "새 규칙 $B ${MODE:+($MODE)}:"
 		summary b_*.txt
-		read -r ma ea <<< "$(med_mean a_*.txt)"
-		read -r mb eb <<< "$(med_mean b_*.txt)"
-		awk -v ma="$ma" -v ea="$ea" -v mb="$mb" -v eb="$eb" 'BEGIN {
+		read -r ma ea ta <<< "$(med_mean a_*.txt)"
+		read -r mb eb tb <<< "$(med_mean b_*.txt)"
+		awk -v ma="$ma" -v ea="$ea" -v ta="$ta" -v mb="$mb" -v eb="$eb" -v tb="$tb" 'BEGIN {
 			r = (ea > 0) ? eb / ea : 1
-			printf "차이: 중간값 %+d · 평균 x%.2f\n", mb - ma, r
+			rt = (ta > 0) ? tb / ta : 1
+			printf "차이: 중간값 %+d · 평균 x%.2f · 상위 25%% x%.2f\n", mb - ma, r, rt
 			if (mb - ma <= -2 || r < 0.85) print "판정: 어려움 — 기준보다 많이 짧다. 사람 시험판·수치 조정 없이 내지 말 것"
 			else if (mb - ma >= 3 || r > 1.25) print "판정: 쉬움 — 기준보다 많이 길다. 의도한 것인지 확인"
 			else print "판정: 비슷함 (봇 기준). 사람 시험판은 따로"

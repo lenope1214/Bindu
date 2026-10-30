@@ -139,6 +139,7 @@ var bonus_rerolls := 0
 var combo := 0
 var combo_t := 0.0
 var ui_font: Font
+var ui_root: Control  # UI 전체 (글자·버튼 크기 설정만큼 키운다)
 var perk_src := ""
 var hud_wrap_key := ""
 var hud_wrap := false
@@ -146,6 +147,7 @@ var hud_cool := 0.0  # 점수 줄을 다시 쓰기까지 남은 시간 (점수·
 var hud_urgent := ""  # 바로 보여야 하는 값(웨이브·중앙 체력 등)이 바뀌었는지 비교용
 var perk_wrapped := ""
 var title_label: Control  # 메인 메뉴
+var title_box: VBoxContainer
 var continue_btn: Button  # 저장된 판이 있을 때만 보임
 var new_btn: Button
 var new_armed := 0.0  # 저장된 판이 있을 때 새로 시작은 두 번 눌러야 (실수로 지우지 않게)
@@ -205,6 +207,7 @@ func _ready() -> void:
 	for i in 140:
 		stars.append(Vector3(randf() * 1280.0, randf() * 720.0, randf_range(0.03, 0.12)))
 	_build_ui()
+	_apply_ui_scale()
 	_apply_volume()
 	_update_speed_btn()
 	net = Net.new()
@@ -264,6 +267,8 @@ func _build_ui() -> void:
 	theme.default_font_size = 18
 	root.theme = theme
 	layer.add_child(root)
+	ui_root = root
+	get_viewport().size_changed.connect(_apply_ui_scale)
 
 	hud = Label.new()
 	hud.position = Vector2(10, 6)
@@ -357,6 +362,12 @@ func _build_ui() -> void:
 	root.add_child(range_btn)
 	legend.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # 긴 줄이 화면 밖으로 잘리지 않게
 	legend.add_theme_font_size_override("font_size", 14)
+	# 옅은 바탕: 지나가는 구체 위에서도, 글자를 키워(설정) 카드와 겹칠 때도 읽히게
+	var lsb := StyleBoxFlat.new()
+	lsb.bg_color = Color(0.02, 0.03, 0.05, 0.85)
+	lsb.set_corner_radius_all(5)
+	lsb.set_content_margin_all(8)
+	legend.add_theme_stylebox_override("normal", lsb)
 	legend.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
 	_refresh_legend()
 	root.add_child(legend)
@@ -533,6 +544,26 @@ func _build_ui() -> void:
 
 ## 화면 가운데 크게 잠깐 뜨는 글자. 앞 글자가 아직 또렷하면 뒤에 세워 차례로 보여 준다
 ## (업적 직후 "웨이브 10"이 바로 덮어써 업적을 못 보던 것).
+## 글자·버튼 크기: UI를 s배로 그리고, 배치는 화면을 s로 나눈 크기 안에서 한다 (앵커가 그대로 맞는다).
+func _apply_ui_scale() -> void:
+	var s: float = Meta.ui_scale
+	ui_root.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	ui_root.position = Vector2.ZERO
+	ui_root.scale = Vector2(s, s)
+	ui_root.size = get_viewport_rect().size / s
+
+
+## 글자를 키우면(설정) 화면보다 커지는 창은 줄여서 맞춘다. 가운데 창이라 위아래 여백이 같고, 아래는 버튼 줄을 비운다.
+func _fit_panels() -> void:
+	for c: Control in [title_box, help_label, records_panel, settings_panel]:
+		if not c.is_visible_in_tree():
+			continue
+		var h: float = c.get_combined_minimum_size().y if c == title_box else c.size.y
+		var k := 1.0 if Meta.ui_scale <= 1.0 else minf(1.0, (ui_root.size.y - 100.0) / maxf(1.0, h))
+		c.pivot_offset = c.size / 2.0
+		c.scale = Vector2(k, k)
+
+
 func big_banner(t: String, col: Color) -> void:
 	if banner_t > 0.5:
 		if banner_queue.size() < 3:
@@ -1873,6 +1904,7 @@ func _build_menu(root: Control) -> void:
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_theme_constant_override("separation", 14)
 	title_label.add_child(box)
+	title_box = box
 	var logo := Label.new()
 	logo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	logo.add_theme_font_size_override("font_size", 72)
@@ -1985,6 +2017,27 @@ func _build_menu(root: Control) -> void:
 		_save_best())
 	vrow.add_child(slider)
 	sv.add_child(vrow)
+	var zrow := HBoxContainer.new()
+	zrow.add_theme_constant_override("separation", 6)
+	var zl := Label.new()
+	zl.text = "글자·버튼 크기"
+	zl.custom_minimum_size = Vector2(120, 0)
+	zrow.add_child(zl)
+	var zg := ButtonGroup.new()
+	for v in Meta.UI_SCALES:
+		var zb := Button.new()
+		zb.text = "%d%%" % roundi(v * 100.0)
+		zb.toggle_mode = true
+		zb.button_group = zg
+		zb.button_pressed = is_equal_approx(v, Meta.ui_scale)
+		zb.custom_minimum_size = Vector2(72, 30)
+		zb.focus_mode = Control.FOCUS_NONE
+		zb.pressed.connect(func():
+			Meta.ui_scale = v
+			_apply_ui_scale()
+			_save_best())
+		zrow.add_child(zb)
+	sv.add_child(zrow)
 	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 첫 글자)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"]]:
 		var cb := CheckButton.new()
 		cb.text = spec[0]
@@ -3025,7 +3078,10 @@ func _process(delta: float) -> void:
 	hud_cool -= delta
 	_update_hud()
 	if pause_box.visible:
+		# 글자를 키우면(설정) 가운데 기준 자리가 점수 줄에 닿는다: 점수 줄 아래로
+		paused_label.position.y = maxf(ui_root.size.y / 2.0 - 248.0, hud.get_rect().end.y + 8.0 if hud.visible else 8.0)
 		pause_box.position.y = paused_label.position.y + paused_label.size.y + 10.0
+	_fit_panels()
 	queue_redraw()
 	if phase == Phase.MOVE and moving:
 		moving.position = get_global_mouse_position().clamp(field_rect().position, field_rect().end)
@@ -3403,8 +3459,10 @@ func _draw_tooltip() -> void:
 	if t == null:
 		_draw_orb_tooltip()
 		return
-	var fs := 14
-	var maxw := minf(620.0, _right_limit() - 24.0)  # 이보다 긴 줄은 접는다 (속성이 많으면 화면 밖으로 나가던 것)
+	var z: float = Meta.ui_scale
+	var fs := roundi(14 * z)
+	var lh := 18.0 * z
+	var maxw := minf(620.0 * z, _right_limit() - 24.0)  # 이보다 긴 줄은 접는다 (속성이 많으면 화면 밖으로 나가던 것)
 	var lines: Array = []  # [글자, 색]
 	var head := t.title()
 	var tip := "(클릭: 옮기기 · 끌기: 바로 이동)" if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
@@ -3451,7 +3509,7 @@ func _draw_tooltip() -> void:
 			rows.append([row, l[1]])
 			w = maxf(w, ui_font.get_string_size(row, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
 	lines = rows
-	var h := lines.size() * 18.0 + 10.0
+	var h := lines.size() * lh + 10.0
 	var size := get_viewport_rect().size
 	var p := t.position + Vector2(28, -h / 2)
 	p.x = clampf(p.x, 8, _right_limit() - w - 16)
@@ -3465,7 +3523,7 @@ func _draw_tooltip() -> void:
 	fx_layer.draw_rect(Rect2(p, Vector2(w + 16, h)), Color(0.05, 0.06, 0.09, 0.92))
 	fx_layer.draw_rect(Rect2(p, Vector2(w + 16, h)), Color(1, 1, 1, 0.2), false, 1.0)
 	for i in lines.size():
-		fx_layer.draw_string(ui_font, p + Vector2(8, 20 + i * 18), lines[i][0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, lines[i][1])
+		fx_layer.draw_string(ui_font, p + Vector2(8, 6 + fs + i * lh), lines[i][0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, lines[i][1])
 
 
 ## 정보창을 놓을 수 있는 위쪽 끝: 점수 줄 아래 (점수 줄이 정보창 첫 줄을 덮던 것).
@@ -3535,12 +3593,14 @@ func _draw_orb_tooltip() -> void:
 		if o.resist_e >= 0: parts.append("%s 저항" % Elem.NAMES[o.resist_e])
 		if o.sturdy: parts.append("굳셈")
 		var txt := " · ".join(parts)
-		var w := ui_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
-		var p: Vector2 = o.position + Vector2(-w / 2 - 8, -o.radius() - 40)
+		var fs := roundi(14 * Meta.ui_scale)
+		var bh := fs + 10.0
+		var w := ui_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var p: Vector2 = o.position + Vector2(-w / 2 - 8, -o.radius() - 16 - bh)
 		p.x = clampf(p.x, 8, get_viewport_rect().size.x - w - 24)
 		p.y = maxf(p.y, _tip_top())
-		fx_layer.draw_rect(Rect2(p, Vector2(w + 16, 24)), Color(0.05, 0.06, 0.09, 0.9))
-		fx_layer.draw_string(ui_font, p + Vector2(8, 17), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
+		fx_layer.draw_rect(Rect2(p, Vector2(w + 16, bh)), Color(0.05, 0.06, 0.09, 0.9))
+		fx_layer.draw_string(ui_font, p + Vector2(8, fs + 3), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
 
 
 ## 중앙 점 스킨: 눈은 가장 가까운 구체를 본다, 태양은 빛살이 돈다.
