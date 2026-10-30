@@ -36,7 +36,8 @@ func entries(c: String) -> Array:
 		"pat":
 			for id in Pat.PATTERN_IDS:
 				if id != Pat.DEFAULT:  # 직선탄은 카드로 나오지 않는다
-					out.append({"key": "pat:" + id, "name": Pat.pname(id), "desc": Pat.PATTERNS[id]["desc"], "color": Pat.pcolor(id).lightened(0.15)})
+					var no := Pat.no_mods(id)
+					out.append({"key": "pat:" + id, "name": Pat.pname(id), "desc": Pat.PATTERNS[id]["desc"] + ("\n못 넣는 강화: " + "·".join(no) if not no.is_empty() else ""), "color": Pat.pcolor(id).lightened(0.15)})
 		"mod":
 			for id in Pat.MOD_IDS:
 				out.append({"key": "mod:" + id, "name": Pat.MODS[id]["name"], "desc": Pat.MODS[id]["desc"], "color": Color(1, 0.82, 0.4)})

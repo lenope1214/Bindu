@@ -302,10 +302,9 @@ const DECAY_FULL := 5
 
 ## 이 강화를 넣어도 효과가 없는 이유 (효과가 있으면 빈 문자열).
 func mod_useless(id: String) -> String:
-	if id in ["pierce", "bounce"] and pattern in ["thorn", "gust", "iron"]:
-		return "%s은(는) 원래 모두 뚫고 나가서 %s이(가) 효과가 없어요" % [Pat.pname(pattern), Pat.MODS[id]["name"]]
-	if id == "homing" and pattern == "wall":
-		return "벽은 정한 방향에만 세워져서 유도가 효과가 없어요"
+	var why := Pat.no_mod_why(pattern, id)
+	if not why.is_empty():
+		return why
 	if Rules.mod_decay and m(id) >= DECAY_FULL:
 		return "%s은(는) 효과가 거의 다 찼어요 (x%.2f / 최대 x2.00)" % [Pat.MODS[id]["name"], mf(id)]
 	return ""
@@ -319,6 +318,9 @@ func refuse_text(card: Dictionary) -> String:
 		"elem":
 			return "속성은 %d종까지예요. 빈 곳에 놓아 새 오브젝트로 만드세요" % Rules.max_elems
 		"pat":
+			var bad := pattern_blockers(card["id"])
+			if not bad.is_empty():
+				return "%s 강화가 들어 있어서 %s(으)로 바꿀 수 없어요 (효과가 없어져요)" % ["·".join(bad), Pat.pname(card["id"])]
 			return "이 오브젝트는 %s(으)로 정해져 있어요. 같은 공격방식만 넣을 수 있어요" % Pat.pname(pattern)
 		"mod":
 			var why := mod_useless(card["id"])
@@ -329,8 +331,18 @@ func refuse_text(card: Dictionary) -> String:
 
 
 ## 이 공격방식을 넣을 수 있는지: 직선탄은 한 번 교체 가능, 정해진 뒤에는 같은 것(레벨업)만.
+## 이미 든 강화가 그 공격방식에서 효과가 없어지면 바꿀 수 없다.
 func can_pattern(id: String) -> bool:
-	return pattern == Pat.DEFAULT or id == pattern
+	return (pattern == Pat.DEFAULT or id == pattern) and pattern_blockers(id).is_empty()
+
+
+## 이 공격방식으로 바꾸면 효과가 없어지는 이미 든 강화 이름들.
+func pattern_blockers(id: String) -> PackedStringArray:
+	var out := PackedStringArray()
+	for k in mods:
+		if m(k) > 0 and not Pat.mod_ok(id, k):
+			out.append(Pat.MODS[k]["name"])
+	return out
 
 
 ## 공격방식을 넣는다. 같은 것이면 레벨업, 직선탄이면 교체(이후 고정).
@@ -1825,7 +1837,10 @@ func preview(card: Dictionary) -> Array:
 			out.append("피해 x%.1f → x%.1f" % [dmg_factor(), dmg_factor() + 1.3 * 0.35 * n])
 		"pat":
 			var id: String = card["id"]
-			if not can_pattern(id):
+			if not can_pattern(id) and not pattern_blockers(id).is_empty():
+				out.append("넣을 수 없음")
+				out.append(refuse_text(card))
+			elif not can_pattern(id):
 				out.append("넣을 수 없음: 공격방식이 %s(으)로 정해져 있음" % Pat.pname(pattern))
 				out.append("같은 공격방식만 넣어 레벨업할 수 있어요")
 			elif id == pattern:
