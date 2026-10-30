@@ -61,10 +61,13 @@ static var loaded := false
 
 
 ## 기록 키: 버전 1은 맵 id 그대로(예전 기록 유지), 다른 버전은 따로 센다.
-static func key(id: String = map_id, r: int = -1) -> String:
+## 최고 기록 키. 2026-10-30에 고친 버전 1·3은 기록을 새로 시작한다 (old: 그 전 규칙의 키).
+static func key(id: String = map_id, r: int = -1, old := false) -> String:
 	if r < 0:
 		r = rules
-	return id if r == 1 else "%s@v%d" % [id, r]
+	if old:
+		return id if r == 1 else "%s@v%d" % [id, r]
+	return "%s@v%d%s" % [id, r, Rules.REC_TAG]
 
 
 static func best_of(id: String) -> Array:

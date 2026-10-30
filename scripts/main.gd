@@ -1887,6 +1887,14 @@ func _toggle_records() -> void:
 	for r in Rules.IDS:
 		vers.append("버전 %d: %d" % [r, Meta.best_of(Meta.key(Meta.map_id, r))[0]])
 	lines.append("  %s 버전별 최고 웨이브  %s" % [Meta.MAPS[Meta.map_id]["name"], " · ".join(vers)])
+	# 2026-10-30 이전 규칙(버전 1~5)의 기록은 따로 보관해 보여 준다
+	var olds := PackedStringArray()
+	for r in Rules.OLD_IDS:
+		var w: int = Meta.best_of(Meta.key(Meta.map_id, r, true))[0]
+		if w > 0:
+			olds.append("버전 %d: %d" % [r, w])
+	if not olds.is_empty():
+		lines.append("  이전 규칙 최고 웨이브  %s" % " · ".join(olds))
 	lines.append("  총 처치 %s · 플레이 %d판" % [num(Meta.total_kills), Meta.games])
 	lines.append("")
 	lines.append("[업적] %d / %d" % [Meta.achieved.size(), Meta.ACH_IDS.size()])
@@ -2026,8 +2034,10 @@ func _run_info() -> Dictionary:
 		return {}
 	var map: String = Meta.val(cfg, "run", "map", "")
 	var r: int = Meta.val(cfg, "run", "rules", 0)
-	if not map in Meta.MAP_IDS or not r in Rules.IDS:
+	if not map in Meta.MAP_IDS or not r in Rules.ALL_IDS:
 		return {}
+	if not r in Rules.IDS:
+		r = 1  # 고를 수 없게 된 버전(2·4·5)으로 저장된 판은 버전 1로 이어 한다
 	return {"wave": maxi(0, Meta.val(cfg, "run", "wave", 0)), "map": map, "rules": r, "cfg": cfg}
 
 
