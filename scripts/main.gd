@@ -4503,6 +4503,10 @@ func _draw_tooltip() -> void:
 	var lines: Array = []  # [글자, 색]
 	var head := t.title()
 	var tip := "(클릭: 방향 · 끌기: 옮기기)" if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
+	# Shift를 누르고 있으면 공격력·공격 속도·사거리 같은 수치를 자세히
+	var detail := Input.is_key_pressed(KEY_SHIFT) and not touch_move
+	if not touch_ui:
+		tip = (tip.trim_suffix(")") + " · " if tip != "" else "(") + ("Shift: 자세히)" if not detail else "Shift 떼기: 돌아가기)")
 	if touch_move:
 		tip = "(새 자리 누르기: 옮기기 · 취소: 그대로)"
 	if tip != "" and ui_font.get_string_size(head + "   " + tip, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= maxw:
@@ -4512,6 +4516,7 @@ func _draw_tooltip() -> void:
 			lines.append([row, Color.WHITE])
 		if tip != "":
 			lines.append([tip, Color(1, 1, 1, 0.6)])
+	var nhead := lines.size()
 	lines.append(["공격방식: %s Lv%d - %s" % [Pat.pname(t.pattern), t.plv, Pat.PATTERNS[t.pattern]["desc"]], Pat.pcolor(t.pattern).lightened(0.2)])
 	var no := Pat.no_mods(t.pattern)
 	if not no.is_empty():
@@ -4538,8 +4543,12 @@ func _draw_tooltip() -> void:
 	_wind_buffs()  # 쉬는 시간에 새로 놓은 오브젝트도 바로 보이게
 	if t.wind_buff > 0.0:
 		lines.append(["바람 버프: 공격 속도 +%d%%" % roundi(t.wind_buff * 100.0), Elem.COLORS[Elem.WIND]])
-	if t.order.size() > 1:
-		lines.append(["속성을 겹친 대가: 공격 속도 -%d%%" % roundi((1.0 - 1.0 / t.tax()) * 100.0), Color(1, 0.6, 0.6)])
+	lines.append([t.spd_line(), Color(0.6, 0.9, 1.0)])
+	var sp := t.spd_parts_text()
+	if sp != "":
+		lines.append(["  " + sp + " (모두 곱함)", Color(1, 1, 1, 0.65)])
+	if detail:
+		lines = lines.slice(0, nhead) + t.detail_lines()
 	var rows: Array = []
 	var w := 0.0
 	for l in lines:

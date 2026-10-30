@@ -109,6 +109,149 @@ const WIND_RANGE := 240.0
 const WIND_BUFF := 0.10
 
 
+## 공격 속도 배율: 특성 × 속사 × 바람 버프 ÷ 속성을 겹친 대가 (모두 곱한다). 특수 반응 공격도 이 배율.
+func spd_k() -> float:
+	return spd_mul * (1.0 + 0.1 * mf("rapid")) * (1.0 + wind_buff) / tax()
+
+
+## 공격방식 Lv1의 공격 간격(초). attack()과 같은 값. 분사는 계속 뿜어서 없음, 시계침은 한 번 훑는 시간.
+const BASE_IV := {"shot": 0.5, "thorn": 0.35, "gust": 1.5, "shard": 0.9, "iron": 1.5, "stream": 1.0, "chain": 1.3,
+	"wall": 4.0, "vortex": 5.0, "laser": 2.0, "lob": 2.0, "sonic": 1.0, "clock": 0.8, "wisp": 1.0}
+
+## 공격방식 한 번 맞힐 때의 기본 피해(Lv1, 배율 전)와 설명. projectile.gd·zone.gd·attack()과 같은 값.
+const BASE_HIT := {
+	"shot": [2.4, "한 발"], "thorn": [0.85, "한 발, 모두 뚫음"], "gust": [2.2, "한 번, 모두 뚫음"],
+	"shard": [3.0, "한 발, 파편 3개는 1.0씩"], "iron": [1.7, "한 발, 모두 뚫음"], "wisp": [4.0, "한 발"],
+	"chain": [2.2, "한 번 튈 때"], "laser": [3.4, "한 번, 모두 뚫음"], "sonic": [2.6, "가까이, 끝에서는 절반"],
+	"clock": [1.2, "한 번 훑을 때"], "vortex": [2.0, "터질 때, 날아가는 동안 초당 0.8~1.6"],
+	"lob": [2.0, "장판 안 초당, 3초"], "spray": [5.5, "초당, 계속 뿜음"], "stream": [3.0, "뿜는 동안 초당, 0.6초"],
+	"wall": [4.0, "벽에 막힌 동안 초당"],
+}
+
+
+## 공격 간격(초, 공격 속도 배율까지). 분사는 0.
+func attack_iv() -> float:
+	return BASE_IV.get(pattern, 0.0) / spd(plv) / spd_k()
+
+
+## 공격 속도 배율을 이루는 것들 [이름, 배율] (1이 아닌 것만).
+func spd_parts() -> Array:
+	var out := []
+	if order.size() > 1:
+		out.append(["속성 %d종" % order.size(), 1.0 / tax()])
+	if m("rapid") > 0:
+		out.append(["속사", 1.0 + 0.1 * mf("rapid")])
+	if wind_buff > 0.0:
+		out.append(["바람 버프", 1.0 + wind_buff])
+	if spd_mul != 1.0:
+		out.append(["특성", spd_mul])
+	return out
+
+
+## 오브젝트 정보 한 줄: 최종 공격 속도·간격.
+func spd_line() -> String:
+	var k := spd_k()
+	var pc := roundi((k - 1.0) * 100.0)
+	var s := "공격 속도 x%.2f (%s%d%%)" % [k, "+" if pc >= 0 else "", pc]
+	var iv := attack_iv()
+	if iv > 0.0:
+		s += " · %.2f초마다 (초당 %.2f번)" % [iv, 1.0 / iv]
+	else:
+		s += " · 계속 뿜음 (피해·추가 효과가 이만큼)"
+	return s
+
+
+## 공격 속도 배율 내역 ("속성 12종 ÷3.75 · 속사 x1.19"). 없으면 빈 문자열.
+func spd_parts_text() -> String:
+	var parts := PackedStringArray()
+	for p in spd_parts():
+		parts.append("%s %s%.2f" % [p[0], "÷" if p[1] < 1.0 else "x", 1.0 / p[1] if p[1] < 1.0 else p[1]])
+	return " · ".join(parts)
+
+
+## 사거리 (글자). draw_range·attack()과 같은 값.
+func range_text() -> String:
+	var l := plv
+	var s := sz()
+	match pattern:
+		"spray": return "%d" % roundi(200.0 * reach(l) * s)
+		"stream": return "%d" % roundi(260.0 * reach(l) * s)
+		"chain": return "%d (튀는 거리 %d)" % [roundi(280.0 * reach(l) * s), roundi(110.0 * s)]
+		"gust": return "%d" % roundi(420.0 * s)
+		"sonic": return "%d" % roundi(sonic_r(l))
+		"clock": return "%d" % roundi(240.0 * reach(l) * s)
+		"lob": return "%d에 떨어짐 (장판 반지름 %d)" % [roundi(180.0 * reach(l)), roundi((50.0 + 8.0 * (l - 1)) * s)]
+		"vortex": return "약 420 날아감 (반지름 %d)" % roundi((100.0 + 10.0 * (l - 1)) * s)
+		"wall": return "앞 %d~ (벽 %d개)" % [roundi(90.0 * reach(l)), 2 + roundi(mf("multi"))]
+		"wisp": return "900 (구체를 쫓아감)"
+		"shard": return "화면 끝까지 (파편 130)"
+	return "화면 끝까지"
+
+
+## Shift 상세 정보 [글자, 색].
+func detail_lines() -> Array:
+	var out := []
+	var dim := Color(1, 1, 1, 0.65)
+	var els: Dictionary = eff if not eff.is_empty() else elements
+	var bh: Array = BASE_HIT.get(pattern, [1.0, ""])
+	var f := dmg_k(false)
+	var one: float = bh[0] * pw(plv) * f
+	var shots := 1.0 + mf("multi")
+	var mk_on := m("multi") > 0 and not pattern in ["wall", "vortex", "lob"]  # 이 셋은 한 발 피해가 줄지 않는다
+	if mk_on:
+		one *= multi_k()
+	if pattern == "spray" or pattern == "stream":
+		one *= spd_k()  # 계속 뿜는 공격은 공격 속도만큼 초당 피해가 는다
+	var wood: float = 1.0 + 0.2 * els.get(Elem.WOOD, 0)
+	one *= wood
+	var metal: float = 0.4 * els.get(Elem.METAL, 0)
+	if pattern in ["spray", "stream", "lob", "wall"]:
+		metal *= 3.0 * (spd_k() if pattern in ["spray", "stream"] else 1.0)  # 계속 때리는 공격은 초당 (hit의 k = 조각 시간 x3)
+	out.append(["공격력: %.1f  (%s)" % [one + metal, bh[1]], Color(1, 0.9, 0.5)])
+	var parts := PackedStringArray(["기본 %.2f" % bh[0], "공격방식 Lv%d x%.2f" % [plv, pw(plv)], "피해 배율 x%.2f" % f])
+	if mk_on:
+		parts.append("다중 발사 한 발 x%.2f" % multi_k())
+	if wood > 1.0:
+		parts.append("나무 x%.2f" % wood)
+	if metal > 0.0:
+		parts.append("금속 +%.1f" % metal)
+	out.append(["  " + " · ".join(parts), dim])
+	var fp := PackedStringArray()
+	var tl := total_level()
+	fp.append("기본 x1.30")
+	if tl > 1:
+		fp.append("레벨 합 %d x%.2f" % [tl, 1.0 + 0.35 * (tl - 1)])
+	if main and main.towers.get_child_count() > 1:
+		fp.append("오브젝트 수 x%.2f" % (1.0 + Rules.crowd_bonus(main.towers.get_child_count())))
+	if dmg_mul != 1.0:
+		fp.append("특성 x%.2f" % dmg_mul)
+	out.append(["  피해 배율: " + " · ".join(fp) + " (공명·강화·패치 포함 x%.2f)" % f, dim])
+	if shots > 1.0:
+		out.append(["한 번에 %.2f개 (다중 발사)" % shots if pattern != "wall" else "벽 최대 %d개 (다중 발사)" % (2 + roundi(mf("multi"))), Color(1, 0.85, 0.45)])
+	out.append([spd_line(), Color(0.6, 0.9, 1.0)])
+	var sp := spd_parts_text()
+	if sp != "":
+		out.append(["  " + sp + " (모두 곱함)", dim])
+	if BASE_IV.has(pattern):
+		out.append(["  기본 간격 %.2f초 ÷ 공격방식 Lv%d x%.2f" % [BASE_IV[pattern], plv, spd(plv)], dim])
+	out.append(["사거리: " + range_text(), Color(0.75, 1, 0.75)])
+	var light: int = els.get(Elem.LIGHT, 0)
+	if light > 0:
+		out.append(["치명타: %d%% 확률로 피해 2배" % roundi(minf(0.12 * light, 0.6) * 100.0), Elem.COLORS[Elem.LIGHT]])
+	var mp := PackedStringArray()
+	if m("pierce") > 0:
+		mp.append("관통 %.2f개" % mf("pierce") if pattern in Pat.PROJECTILE else "관통 피해 x%.2f" % (1.0 + 0.06 * mf("pierce")))
+	if m("bounce") > 0:
+		mp.append("튕김 %.2f번" % mf("bounce") if pattern in Pat.PROJECTILE or pattern == "chain" else "튕김 피해 x%.2f" % (1.0 + 0.04 * mf("bounce")))
+	if m("split") > 0:
+		mp.append("분열 %d%%" % roundi(minf(0.6, 0.12 * mf("split")) * 100.0))
+	if m("size") > 0:
+		mp.append("크기 x%.2f" % sz())
+	if not mp.is_empty():
+		out.append(["강화: " + " · ".join(mp), Color(1, 0.85, 0.45)])
+	return out
+
+
 func wind_range() -> float:
 	return WIND_RANGE * reach_mul
 
@@ -537,15 +680,14 @@ func attack(delta: float, orbs: Array) -> void:
 	fe2 = maxf(fe2 - delta, 0.0)
 	_update_aim(orbs, delta)
 	# 속성을 많이 겹칠수록 공격이 느려진다(쌓기 대가), 속사 강화로 빨라진다
-	var de := delta * spd_mul * (1.0 + 0.1 * mf("rapid")) * (1.0 + wind_buff) / tax()
+	var de := delta * spd_k()
 	var k := de * 3.0  # 지속 공격의 부가효과 세기
 	var l := plv
 	var s := sz()
 	var mk := multi_k()
 	match pattern:
 		"shot", "thorn", "gust", "shard", "iron":
-			var iv: float = {"shot": 0.5, "thorn": 0.35, "gust": 1.5, "shard": 0.9, "iron": 1.5}[pattern]
-			if _ready_to("p", iv / spd(l), de):
+			if _ready_to("p", BASE_IV[pattern] / spd(l), de):
 				for d in dirs():
 					var pr: Projectile = main.spawn_proj(self, pattern, l, d)
 					pr.dmg *= mk  # 다중 발사: 한 발 피해 감소
