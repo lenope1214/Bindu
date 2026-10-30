@@ -2420,6 +2420,7 @@ func _game_over() -> void:
 	_log_wave()
 	phase = Phase.GAMEOVER
 	over_ms = Time.get_ticks_msec()
+	toast_timer = 0.0  # 넘기기 알림 등이 게임 오버 글 위에 남지 않게
 	wave_active = false
 	game_speed = 1.0
 	_update_speed_btn()
@@ -4885,6 +4886,15 @@ func _process(delta: float) -> void:
 	guide_label.position.y = maxf(140.0, toast.position.y + 40.0)
 	_beside_legend(toast, 600.0)
 	_beside_legend(guide_label, 0.0)
+	# 왼쪽 위 DPS 표를 펼쳐 두면 알림이 표 위에 겹치던 것 (글자 115% 이상·표가 길 때): 표 오른쪽에 자리가 있으면 그쪽, 없으면 표 아래로
+	if toast.visible and dps_panel.visible:
+		var dr := dps_panel.get_rect()
+		if toast.get_rect().intersects(dr):
+			var right := legend.get_rect().position.x - 8.0 if legend.visible else ui_root.size.x - 8.0
+			if right - dr.end.x - 8.0 >= toast.size.x:
+				toast.position.x = dr.end.x + 8.0 + (right - dr.end.x - 8.0 - toast.size.x) / 2.0
+			else:
+				toast.position.y = dr.end.y + 8.0
 	banner.position.y = maxf(ui_root.size.y / 2.0 - 140.0, hud.position.y + hud.size.y + 12.0)
 	banner_t -= delta
 	if banner_t <= 0.0 and not banner_queue.is_empty():
