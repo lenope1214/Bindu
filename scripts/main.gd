@@ -3068,10 +3068,7 @@ func _draw_notes() -> void:
 		var n: Dictionary = list[i]
 		var v: String = n["v"]
 		var tag := ""
-		if v == "" and n["title"].contains("미배포"):
-			# 아직 배포 전에 모아 두는 바뀐 점 (버전 번호는 배포할 때 붙인다)
-			out.append("[b][font_size=19]%s[/font_size][/b]  [color=#ffd873](다음 배포에 들어감)[/color]" % _bb(n["title"]))
-		elif v == "":
+		if v == "":
 			if not older:
 				older = true
 				out.append("[color=#8899aa][b]v0.4 이전 기록[/b][/color]")
@@ -3089,7 +3086,7 @@ func _draw_notes() -> void:
 			var sub := l.begins_with(" ")
 			if s.begins_with("- "):
 				s = s.substr(2)
-			# 아래에 들여 쓴 줄이 딸린 줄은 묶음 제목 (미배포 절처럼 여러 변경을 모은 절)
+			# 아래에 들여 쓴 줄이 딸린 줄은 묶음 제목 (여러 변경을 모은 절)
 			var group := not sub and j + 1 < lines.size() and (lines[j + 1] as String).begins_with(" ")
 			out.append(("      ◦ " if sub else "  · ") + ("[b]%s[/b]" % _bb(s) if group else _bb(s)))
 		out.append("")

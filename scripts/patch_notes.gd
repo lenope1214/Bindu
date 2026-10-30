@@ -19,6 +19,7 @@ static var fetched := false  # 다시 시작해도 한 번만
 
 ## CHANGELOG 글 → [{v: "0.4.39", title, lines: [..]}] (파일 순서 그대로, 옛것이 먼저).
 ## 버전이 없는 절(초기 기록)은 v가 빈 글자.
+## "다음 버전 (미배포)" 절은 배포 전 작업 기록이라 플레이어에게 보이지 않게 뺀다 (내장본·온라인본 모두).
 static func parse(text: String) -> Array:
 	var out: Array = []
 	var ver_re := RegEx.create_from_string("\\(v(\\d+\\.\\d+\\.\\d+)[^)]*\\)")
@@ -32,6 +33,8 @@ static func parse(text: String) -> Array:
 			if m:
 				title = (head.substr(0, m.get_start()) + head.substr(m.get_end())).strip_edges()
 			cur = {"v": m.get_string(1) if m else "", "title": title, "lines": []}
+			if m == null and title.contains("미배포"):
+				continue  # cur는 out에 넣지 않아 아래 줄들도 버려진다
 			out.append(cur)
 		elif not cur.is_empty() and line.strip_edges() != "" and not line.begins_with("#"):
 			cur["lines"].append(line.replace("`", "").replace("**", ""))
