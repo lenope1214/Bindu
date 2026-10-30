@@ -38,6 +38,17 @@ docker compose up -d --build
 
 로컬 시험(도메인 없이): `./setup.sh http://localhost:8000` 후 `docker compose up -d --build db api`.
 
+### 자동 배포 (집 PC)
+
+main에 `server/` 변경이 올라오면 집 PC가 5분 안에 알아서 다시 띄웁니다.
+
+- 켜기(관리자 PowerShell, 저장소 폴더에서 한 번): `powershell -ExecutionPolicy Bypass -File server\install-autodeploy.ps1`
+- 끄기: 같은 명령에 `-Remove`
+- 손으로 바로 배포: `powershell -ExecutionPolicy Bypass -File server\deploy.ps1 -Force`
+- 기록: `server\deploy.log`
+
+`deploy.ps1`이 하는 일: `git fetch` → `server/`가 바뀌었을 때만 fast-forward 후 `docker compose up -d --build`(이 폴더의 compose 프로젝트만, 다른 프로젝트는 그대로) → `http://127.0.0.1:HTTP_PORT/health`를 90초 확인 → 실패하면 이전 api 이미지로 되돌림(코드 폴더는 새 커밋 그대로, 고친 커밋을 push하면 다시 시도). 이 폴더에 로컬 커밋이나 겹치는 수정이 있으면 건드리지 않고 기록만 남깁니다. Docker Desktop이 켜져 있어야 합니다.
+
 ## 관리 페이지
 
 `https://도메인/admin` → 오른쪽 위에 `.env`의 `ADMIN_TOKEN`을 넣고 저장.
