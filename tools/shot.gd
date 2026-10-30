@@ -34,7 +34,16 @@ func _initialize():
 			main.notice_label.visible = true,
 		func(): _snap("title"); main._toggle_notes(),
 		func(): _snap("notes"); main._toggle_notes(); main._toggle_records(),
-		func(): _snap("records"); main._toggle_records(); main._toggle_settings(),
+		func():
+			_snap("records"); main._toggle_records(); main._toggle_board(),
+		func():
+			# 서버 없이 순위 10줄을 채워 본다 (연결 실패가 먼저 온 뒤에 덮어쓴다)
+			var es := []
+			for i in 10:
+				es.append({"rank": i + 1, "nick": "닉네임%d" % i, "wave": 40 - i, "score": 9000000 - i * 1000, "me": i == 3, "ended": i != 1})
+			main._on_board_loaded({"tag": main._board_tag(), "period": "all", "entries": es})
+			main._on_board_loaded({"tag": main._board_tag(), "period": "week", "entries": es.slice(0, 5)}),
+		func(): _snap("board"); main._toggle_board(); main._toggle_settings(),
 		func(): _snap("settings"); main._toggle_settings(); main._toggle_codex(),
 		func(): _snap("codex"); main.codex_panel.tabs[1].pressed.emit(),
 		func(): _snap("codex_pat"); main.codex_panel.tabs[4].pressed.emit(),

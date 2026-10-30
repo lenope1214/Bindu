@@ -3676,7 +3676,7 @@ func _draw_board() -> void:
 		b.text = texts[i] + ("  ▶" if i < 2 or board_seasons.size() > 1 else "")
 		b.disabled = i == 2 and board_seasons.size() <= 1
 	board_bar.visible = true
-	var lines := PackedStringArray(["[리더보드]   위 버튼을 누르면 맵·규칙 버전·시즌이 바뀝니다   (빈 곳 클릭: 닫기)", "", "", ""])
+	var lines := PackedStringArray(["[리더보드]   위 버튼을 누르면 맵·규칙 버전·시즌이 바뀝니다   (빈 곳 %s)" % ("누르면 닫기" if touch_ui else "클릭: 닫기"), "", "", ""])
 	var specs := [["all", "이번 시즌 전체"], ["week", "이번 주"]] if board_season == 0 else [["all", sname + " 전체"]]
 	for spec in specs:
 		lines.append(spec[1])
