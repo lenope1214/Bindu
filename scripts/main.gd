@@ -74,6 +74,8 @@ var leak_flash: Array = []  # 화면 가장자리 붉은 번짐 [자리, 남은 
 var boss_plan := {}  # 다음 보스: 쉬는 시간에 진입 각도·체력·속도·저항을 미리 정해 길과 정보를 정확히 보여 준다
 var touch_ui := false  # 마지막 입력이 터치였는지 (터치는 마우스를 올려 둘 수 없다)
 var help_touch := false  # 도움말 글을 터치용으로 썼는지
+var legend_rx_rows := 999  # 설명에 적을 반응 줄 수 상한 (화면에 맞춰 _process가 줄임)
+var legend_rows := 0  # 지금 설명에 적힌 반응 줄 수
 ## 터치 화면에선 버튼 글의 키 안내 "(Q)"·"(Space: 바로)"를 뺀다. "(S: 멈추기)"처럼 누르면 하는 일은 "(눌러서 멈추기)"로
 var key_re := RegEx.create_from_string(" ?\\((?:[KO] / )?(?:Q|V|S|D|E|F|K|O|H|M|N|P|T|Tab|Enter|Esc|F11|Space|←/→|↑/↓)(?:: [^)]*)?\\)")
 var key_t := 0.0
@@ -903,6 +905,7 @@ static func src_name(key: String) -> String:
 ## 글자·버튼 크기: UI를 s배로 그리고, 배치는 화면을 s로 나눈 크기 안에서 한다 (앵커가 그대로 맞는다).
 func _apply_ui_scale() -> void:
 	var s: float = Meta.ui_scale
+	legend_rx_rows = 999  # 글자 크기가 바뀌면 설명 반응 줄 수를 다시 맞춘다
 	ui_root.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	ui_root.position = Vector2.ZERO
 	ui_root.scale = Vector2(s, s)
@@ -3308,16 +3311,28 @@ func _refresh_legend() -> void:
 		"",
 		"[특수 반응] 두 속성이 함께 있으면 추가 공격 (발견 %d/%d)" % [Meta.codex.size(), Elem.REACTIONS.size()],
 	])
-	# 반응이 91개라 만들어 본 반응만 한 줄에 세 개씩 (나머지는 개수만, 도감과 같은 기록)
+	# 반응이 91개라 만들어 본 반응만 한 줄에 세 개씩 (나머지는 개수만, 도감과 같은 기록).
+	# 줄 수는 legend_rx_rows까지: 많이 찾으면 설명이 화면 아래 설정 버튼까지 덮던 것 (_process에서 맞춤)
 	var rs: Array = Elem.REACTIONS.filter(func(r): return Meta.codex.has(r["id"]))
+	var shown := 0
+	legend_rows = 0
 	for i in range(0, rs.size(), 3):
+		if legend_rows >= legend_rx_rows:
+			break
 		var row := PackedStringArray()
 		for r in rs.slice(i, i + 3):
 			row.append("%s+%s %s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["name"]])
 		lines.append("   ".join(row))
-	if rs.size() < Elem.REACTIONS.size():
-		lines.append("아직 못 만난 반응 %d개 (모든 두 속성 조합에 반응이 있어요, 도감%s)" % [Elem.REACTIONS.size() - rs.size(), "" if touch_ui else " K"])
+		shown += row.size()
+		legend_rows += 1
+	var k := "" if touch_ui else " K"
+	if shown < rs.size():
+		var left := Elem.REACTIONS.size() - rs.size()
+		lines.append("외 %d개%s (모두 도감%s)" % [rs.size() - shown, " · 못 만난 반응 %d개" % left if left > 0 else "", k])
+	elif rs.size() < Elem.REACTIONS.size():
+		lines.append("아직 못 만난 반응 %d개 (모든 두 속성 조합에 반응이 있어요, 도감%s)" % [Elem.REACTIONS.size() - rs.size(), k])
 	legend.text = _kr_keep("\n".join(lines))
+	legend.size.y = 380.0  # Label은 글이 줄어도 저절로 작아지지 않는다 (글이 길면 다시 늘어남)
 
 
 ## 규칙 버전 바꾸기: 기록은 버전마다 따로.
@@ -4949,6 +4964,14 @@ func _process(delta: float) -> void:
 	range_btn.text = "범위 끄기" if range_all else "범위 보기"
 	legend_btn.text = _kh(("설명 보기" if legend_hidden else "설명 숨기기") + " (Tab)")
 	legend.visible = legend.visible and not legend_hidden
+	if legend.visible:
+		# 설명 아래끝이 오른쪽 아래 설정 버튼(없으면 화면 끝)에 닿으면 반응 줄을 줄인다
+		var lim := minf(bar_btn.get_global_rect().position.y if bar_btn.visible else 1e9, get_viewport_rect().size.y) - 8.0
+		var over_px := legend.get_global_rect().end.y - lim
+		if over_px > 0.0 and legend_rows > 0:
+			var lh := legend.get_line_height() * ui_root.scale.y
+			legend_rx_rows = maxi(legend_rows - maxi(1, floori(over_px / (lh * 2.0))), 0)  # 반응 한 줄이 접혀 두 줄일 수 있어 덜 줄이고 다음 프레임에 더
+			_refresh_legend()
 	# 시작 화면 위에 설정·기록·도움말·패치노트 창을 열면 뒤 메뉴는 숨긴다 (흐리게만 하면 창 아래로 삐져나온 버튼 줄이 겹쳐 보이고 눌리던 것)
 	if help_label.visible and not help_scroll.visible:
 		help_scroll.scroll_vertical = 0  # 열 때마다 맨 위부터
