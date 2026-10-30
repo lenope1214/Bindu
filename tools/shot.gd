@@ -52,7 +52,8 @@ func _initialize():
 		func(): _snap("cards2"); main._set_cards_hidden(true),
 		func(): _snap("cards_hidden"); main._set_cards_hidden(false); main._start_perk(),
 		func(): _snap("perks"); main._toggle_pause(),
-		func(): _snap("pause"); main._toggle_pause(); main._game_over(),
+		func(): _snap("pause"); main._toggle_settings(),
+		func(): _snap("pause_settings"); main._toggle_settings(); main._toggle_pause(); main._game_over(),
 		func(): _snap("gameover"),
 	]
 

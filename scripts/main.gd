@@ -123,6 +123,7 @@ var game_speed := 1.0  # 지금 배속
 var fast_speed := 2.0  # Space로 켜는 배속
 var paused_label: Label
 var pause_box: HBoxContainer  # 일시정지 창 아래 버튼 (계속·시작 화면·끄기)
+var pause_dim: ColorRect
 var legend_hidden := false
 var bar_open := false  # 오른쪽 아래 설정 버튼(소리·자동 시작·일시정지·배속)을 펼쳤는지. 접으면 펼치기 버튼만 남는다
 var bar_btn: Button
@@ -541,7 +542,16 @@ func _build_ui() -> void:
 	_update_auto_btn()
 	mute_btn.text = "소리: " + ("끔" if sfx.muted else "켬") + " (M)"
 
+	# 일시정지 중엔 뒤 화면(카드·설명·큰 글)을 어둡게 덮고 그 위에 글·버튼 (카드가 일시정지 버튼 위에 그려져 겹치던 것)
+	pause_dim = ColorRect.new()
+	pause_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pause_dim.color = Color(0.02, 0.02, 0.04, 0.82)
+	pause_dim.mouse_filter = Control.MOUSE_FILTER_STOP  # 뒤 카드가 눌리지 않게
+	pause_dim.z_index = 20
+	pause_dim.visible = false
+	root.add_child(pause_dim)
 	paused_label = Label.new()
+	paused_label.z_index = 21
 	paused_label.set_anchors_preset(Control.PRESET_CENTER)
 	# 화면 위쪽에 두어 멈춘 채로 가운데 필드의 오브젝트·구체 정보를 볼 수 있게
 	paused_label.position = Vector2(-350, -248)  # 점수 줄·보스 막대 아래
@@ -559,6 +569,7 @@ func _build_ui() -> void:
 	paused_label.visible = false
 	root.add_child(paused_label)
 	pause_box = HBoxContainer.new()
+	pause_box.z_index = 21
 	pause_box.set_anchors_preset(Control.PRESET_CENTER)
 	pause_box.position = Vector2(-350, -150)  # 글 아래 (_process에서 글 높이에 맞춤)
 	pause_box.size = Vector2(700, 44)
@@ -4094,6 +4105,12 @@ func _process(delta: float) -> void:
 	speed_pick.visible = in_game and bar_open
 	hud_cool -= delta
 	_update_hud()
+	# 일시정지 위에 설정·도움말 등을 열면 그 창이 보이게 일시정지 글·버튼·어둠은 잠깐 숨긴다 (z가 높아 창을 덮으니)
+	var over := settings_panel.visible or help_label.visible or records_panel.visible or notes_panel.visible or codex_panel.visible
+	var show_pause := get_tree().paused and not over and not title_label.visible and phase != Phase.GAMEOVER
+	paused_label.visible = show_pause
+	pause_box.visible = show_pause
+	pause_dim.visible = show_pause
 	if pause_box.visible:
 		# 글자를 키우면(설정) 가운데 기준 자리가 점수 줄에 닿는다: 점수 줄 아래로
 		paused_label.position.y = maxf(ui_root.size.y / 2.0 - 248.0, hud.get_rect().end.y + 8.0 if hud.visible else 8.0)
