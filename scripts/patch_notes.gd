@@ -20,6 +20,15 @@ static var fetched := false  # 다시 시작해도 한 번만
 ## CHANGELOG 글 → [{v: "0.4.39", title, lines: [..]}] (파일 순서 그대로, 옛것이 먼저).
 ## 버전이 없는 절(초기 기록)은 v가 빈 글자.
 ## "다음 버전 (미배포)" 절은 배포 전 작업 기록이라 플레이어에게 보이지 않게 뺀다 (내장본·온라인본 모두).
+static var _kr_re := RegEx.create_from_string("([가-힣])(?=[가-힣])")
+
+
+## 한글 낱말이 글자 사이에서 끊기지 않게 (Godot은 한글을 글자마다 줄바꿈함, 언어 설정과 무관).
+## 붙은 한글 사이에 U+2060(안 보이는 글자)을 넣어 빈칸에서만 줄을 바꾼다. 줄바꿈하는 글에만 쓴다
+static func kr_keep(t: String) -> String:
+	return _kr_re.sub(t, "$1\u2060", true)
+
+
 static func parse(text: String) -> Array:
 	var out: Array = []
 	var ver_re := RegEx.create_from_string("\\(v(\\d+\\.\\d+\\.\\d+)[^)]*\\)")
