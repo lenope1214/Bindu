@@ -1934,7 +1934,7 @@ func _update_preview() -> void:
 	wave_info = info_l
 	wave_kinds = kinds
 	if wave == 0:
-		_guide("lanes", "빨간 화살표 쪽에서 구체가 와요. 옆 숫자는 그쪽에서 오는 구체 수(올리면 자세히). 길목을 가로지르게 설치하세요")
+		_guide("lanes", "빨간 화살표 쪽에서 구체가 와요. 옆 숫자는 그쪽에서 오는 구체 수(%s 자세히). 길목을 가로지르게 설치하세요" % ("누르면" if touch_ui else "올리면"))
 
 
 ## 다음 웨이브 구체를 진입 방향별로 고르게 나눈 수 (보스 제외). 화살표 배지와 실제 웨이브(lane_bag)가 같은 값을 쓴다.
