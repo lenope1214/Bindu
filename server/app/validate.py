@@ -10,7 +10,7 @@ RULE_DEFAULTS = {
     2: {"orb_mul": 1.0, "hp_growth": 1.05},
     3: {"orb_mul": 1.0, "hp_growth": 1.05},
     4: {"orb_mul": 1.4, "hp_growth": 1.08},
-    5: {"orb_mul": 1.0, "hp_growth": 1.05},
+    5: {"orb_mul": 1.0, "hp_growth": 1.05},  # 폐기(2026-10-30). 예전 판 기록 검증용으로만 남김
 }
 MAX_SPEED = 8.0  # 게임 최고 배속
 SLACK = 2.0  # 분열 조각·보스 부하·운까지 덮는 여유

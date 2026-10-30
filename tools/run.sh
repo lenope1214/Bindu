@@ -7,6 +7,7 @@
 #   fuzz [판 수=8] [프레임=9000]          무작위 클릭·끌기·키·터치 (스크립트 오류 찾기)
 #   elem                                   속성마다 직선탄 Lv2 하나가 30초간 준 피해/초
 #   perf                                   후반 부하(오브젝트 16개·구체 400개) 배속별 프레임당 계산 시간
+#   compare [기준=1] [새 규칙=3] [판 수=32] [stack]   같은 시드로 두 규칙을 돌려 차이와 판정 (새 규칙을 내기 전에)
 # 환경 변수: SPEED(배속, 기본 4) SMART(기본 1: 사람처럼 중앙 가까이에서 길목을 겨눔, 0이면 예전 봇)
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -56,20 +57,52 @@ leaks() {
 		}'
 }
 
+# 봇 판들: run_bots <규칙> <판 수> <모드> <접두어> → <접두어>_<시드>.txt
+run_bots() {
+	for seed in $(seq 1 "$2"); do
+		RULES=$1 SPEED=${SPEED:-4} T 900 "$G" --headless --fixed-fps 60 --path . -s tools/bot.gd -- "$seed" $3 2>&1 | head -c 300000 > "$4_$seed.txt" &
+		if (( seed % 8 == 0 )); then wait; fi
+	done
+	wait
+	grep -h "SCRIPT ERROR" -A2 "$4"_*.txt | head -6 || true
+}
+
+# 중간값 평균 (summary의 첫 줄에서)
+med_mean() {
+	summary "$@" | head -1 | sed 's/.*중간값=\([0-9]*\) 평균=\([0-9.]*\).*/\1 \2/'
+}
+
 case "$CMD" in
 	bots)
 		R=${1:-1}; N=${2:-32}; MODE=${3:-}
 		D=$(copy_project "$$")
 		cd "$D"
-		for seed in $(seq 1 "$N"); do
-			RULES=$R SPEED=${SPEED:-4} T 900 "$G" --headless --fixed-fps 60 --path . -s tools/bot.gd -- "$seed" $MODE 2>&1 | head -c 300000 > "b_$seed.txt" &
-			if (( seed % 8 == 0 )); then wait; fi
-		done
-		wait
-		grep -h "SCRIPT ERROR" -A2 b_*.txt | head -6 || true
+		run_bots "$R" "$N" "$MODE" b
 		echo "규칙 $R ${MODE:+($MODE)}:"
 		summary b_*.txt
 		leaks b_*.txt
+		rm -rf "$D"
+		;;
+	compare)
+		# 새 규칙 버전·모드를 내기 전 점검 (docs/rule-history.md의 절차). 같은 시드라 판마다 비교된다.
+		A=${1:-1}; B=${2:-3}; N=${3:-32}; MODE=${4:-}
+		D=$(copy_project "$$")
+		cd "$D"
+		run_bots "$A" "$N" "$MODE" a
+		run_bots "$B" "$N" "$MODE" b
+		echo "기준 규칙 $A ${MODE:+($MODE)}:"
+		summary a_*.txt
+		echo "새 규칙 $B ${MODE:+($MODE)}:"
+		summary b_*.txt
+		read -r ma ea <<< "$(med_mean a_*.txt)"
+		read -r mb eb <<< "$(med_mean b_*.txt)"
+		awk -v ma="$ma" -v ea="$ea" -v mb="$mb" -v eb="$eb" 'BEGIN {
+			r = (ea > 0) ? eb / ea : 1
+			printf "차이: 중간값 %+d · 평균 x%.2f\n", mb - ma, r
+			if (mb - ma <= -2 || r < 0.85) print "판정: 어려움 — 기준보다 많이 짧다. 사람 시험판·수치 조정 없이 내지 말 것"
+			else if (mb - ma >= 3 || r > 1.25) print "판정: 쉬움 — 기준보다 많이 길다. 의도한 것인지 확인"
+			else print "판정: 비슷함 (봇 기준). 사람 시험판은 따로"
+		}'
 		rm -rf "$D"
 		;;
 	long|cont)

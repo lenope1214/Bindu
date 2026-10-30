@@ -39,9 +39,6 @@ func _process(_d):
 			main.core_max = 99999
 		if main.wave >= int(OS.get_environment("GOD")):
 			print("RESULT wave=", main.wave, " score=", main.score)
-			if Rules.mod_slots:
-				for t in main.towers.get_children():
-					print("  SLOT ", t.title(), " | ", t.slots_text(), " | ", t.extras_text())
 			return true
 	if OS.get_environment("RULES") != "" and Meta.rules != int(OS.get_environment("RULES")):
 		Meta.rules = int(OS.get_environment("RULES"))
