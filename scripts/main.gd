@@ -2752,13 +2752,15 @@ func _refresh_legend() -> void:
 		"",
 		"[특수 반응] 두 속성이 함께 있으면 추가 공격 (발견 %d/%d)" % [Meta.codex.size(), Elem.REACTIONS.size()],
 	])
-	# 반응이 많아 한 줄에 두 개씩. 아직 만들어 보지 않은 반응은 ? + ? (도감과 같은 기록)
-	var rs: Array = Elem.REACTIONS
+	# 만들어 본 반응만 한 줄에 두 개씩, 나머지는 개수만 (? + ? 줄이 화면 아래 버튼까지 덮던 것. 도감과 같은 기록)
+	var rs: Array = Elem.REACTIONS.filter(func(r): return Meta.codex.has(r["id"]))
 	for i in range(0, rs.size(), 2):
 		var row := PackedStringArray()
 		for r in rs.slice(i, i + 2):
-			row.append("%s+%s %s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["name"]] if Meta.codex.has(r["id"]) else "? + ?")
+			row.append("%s+%s %s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["name"]])
 		lines.append("   ".join(row))
+	if rs.size() < Elem.REACTIONS.size():
+		lines.append("아직 못 만난 반응 %d개 (도감 K)" % (Elem.REACTIONS.size() - rs.size()))
 	legend.text = _kr_keep("\n".join(lines))
 
 
