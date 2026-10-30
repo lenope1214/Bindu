@@ -151,8 +151,10 @@ static func kill_dew(w: int, boss: bool) -> float:
 
 
 ## 정원 구체 체력 배율: 끝이 없는 판이라 8웨이브부터 웨이브마다 더 단단해져 막히는 곳(벽)이 생긴다.
+## 초반은 상점으로 하나씩 사 모으는 동안 물러나지 않게 무르게 시작해 12웨이브에 일반 판과 같아진다 (hp_early).
 static func hp_k(w: int) -> float:
-	return pow(k("hp_growth", 1.10), maxi(0, w - 8))
+	var early := lerpf(k("hp_early", 0.8), 1.0, clampf(w / 12.0, 0.0, 1.0))
+	return early * pow(k("hp_growth", 1.10), maxi(0, w - 8))
 
 
 static func start_dew() -> float:

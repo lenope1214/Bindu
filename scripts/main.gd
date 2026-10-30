@@ -6507,6 +6507,10 @@ func _garden_wave_done() -> void:
 				for e in t.elements:
 					Garden.add_mastery(e, kw * t.dealt / total / t.elements.size())
 	Garden.best = maxi(Garden.best, wave)
+	# 웨이브를 막으면 중앙 체력이 다 찬다: 놓친 구체가 쌓여 켜 둔 채 결국 물러나지 않게, 한 웨이브에 다 뚫릴 때만 물러남
+	if core_hp < core_max:
+		core_hp = core_max
+		danger_lv = 0
 	Garden.best_ever = maxi(Garden.best_ever, wave)
 	var r := garden_wave_dew / maxf(1.0, wave_time + Garden.NEXT_DELAY)
 	Garden.rate = r if Garden.rate <= 0.0 else lerpf(Garden.rate, r, 0.3)

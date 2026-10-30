@@ -38,8 +38,9 @@ func _towers_sig() -> Array:
 
 func _process(_d) -> bool:
 	f += 1
-	if step == 2 and main != null and is_instance_valid(main):
-		main.core_hp = main.core_max  # 웨이브 끝까지 (물러남은 따로 본다)
+	if step == 2 and main != null and is_instance_valid(main) and main.phase == 3:
+		main.core_hp = maxi(main.core_hp, 2)  # 웨이브 끝까지 (물러남은 따로 본다)
+
 	if f % 5 != 0:
 		return false
 	match step:
@@ -75,6 +76,7 @@ func _process(_d) -> bool:
 			var d0 := Garden.dew
 			main._start_wave()
 			print("  웨이브 시작 phase=", main.phase, " wave=", main.wave)
+			main.core_hp = main.core_max - 3  # 놓친 것처럼
 			main.game_speed = 8.0
 			snap["d0"] = d0
 			step = 2
@@ -83,6 +85,7 @@ func _process(_d) -> bool:
 				print("  웨이브 끝 wave=", main.wave, " hp=", main.core_hp, " walls=", Garden.walls)
 				_ok(main.wave == 4 and Garden.walls.is_empty(), "웨이브가 끝나면 다음 쉬는 시간 (웨이브 4)")
 				_ok(Garden.dew > float(snap["d0"]), "처치로 이슬이 늘어남 (%d → %d)" % [int(snap["d0"]), int(Garden.dew)])
+				_ok(main.core_hp == main.core_max, "웨이브를 막으면 중앙 체력이 다 참 (웨이브 중 7/10이었음)")
 				_ok(Garden.best >= 4, "이번 정원 최고 웨이브 갱신")
 				_ok(Garden.rate > 0.0, "이슬 속도 기록 (꺼 둔 동안 보상용)")
 				step = 3
