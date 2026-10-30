@@ -8,10 +8,14 @@ extends SceneTree
 #   SET=ep (속성×공격방식) | pm (공격방식×강화) | rx (특수 반응 = 두 속성) | lv (공격방식 레벨 성장)
 #   RULES=1|3  STAGE=early|mid|late (속성 Lv1/3/6, 공격방식 Lv1/2/4, 강화 0/2/5개)
 #   PART=i/n (i번째 조각만, 여러 프로세스로 나눠 돌리기)  SECS(기본 20)
+#   PARTNER=<공격방식> PPOS=0~3 (금속 파트너를 PPOS 자리에 같은 단계로 두고 파트너가 준 피해/초 pd를 같이 찍는다.
+#     끌기·늦추기 같은 군중 제어가 남을 얼마나 돕는지: 같은 단계 직선탄을 넣었을 때의 pd와 비교)
 var main
 const STAGES := {"early": [1, 1, 0], "mid": [3, 2, 2], "late": [6, 4, 5]}
 var secs := 20.0
 var base_travel := 0.0
+var partner := ""
+var stage_lv: Array = [1, 1, 0]
 
 
 func _initialize():
@@ -25,6 +29,8 @@ func _initialize():
 	secs = float(OS.get_environment("SECS")) if OS.get_environment("SECS") != "" else 20.0
 	var stage := OS.get_environment("STAGE") if OS.get_environment("STAGE") != "" else "mid"
 	var st: Array = STAGES[stage]
+	stage_lv = st
+	partner = OS.get_environment("PARTNER")
 	var set := OS.get_environment("SET") if OS.get_environment("SET") != "" else "ep"
 	var jobs := []
 	match set:
@@ -59,9 +65,9 @@ func _initialize():
 		var r = await _run(j)
 		var en := ",".join(j["els"].map(func(e): return Elem.NAMES[e]))
 		var md := ",".join(j["mods"].keys().map(func(k): return "%s%d" % [k, j["mods"][k]]))
-		print("COMBO set=%s rules=%d stage=%s pat=%s plv=%d els=%s lv=%d mods=%s rx=%s all=%.2f rxd=%.2f delay=%.2f" % [
+		print("COMBO set=%s rules=%d stage=%s pat=%s plv=%d els=%s lv=%d mods=%s rx=%s all=%.2f rxd=%.2f delay=%.2f pd=%.2f" % [
 			set, Meta.rules, stage, j["pat"], j["plv"], en, j["lv"], md if md != "" else "-", j.get("rx", "-"),
-			r["all"], r["rx"], r["travel"] / maxf(base_travel, 0.01)])
+			r["all"], r["rx"], r["travel"] / maxf(base_travel, 0.01), r["pd"]])
 	quit()
 
 
@@ -83,6 +89,8 @@ func _eff_lane(a: float) -> float:
 
 func _run(j: Dictionary) -> Dictionary:
 	seed(7)
+	var spawn_rng := RandomNumberGenerator.new()  # 구체 흐름은 오브젝트가 쓰는 무작위와 따로 (모든 조합이 같은 흐름을 받게)
+	spawn_rng.seed = 7
 	_clear()
 	main.wave = 20
 	main.phase = main.Phase.WAVE
@@ -109,6 +117,19 @@ func _run(j: Dictionary) -> Dictionary:
 				t.add_mod(mid)
 		t.dealt = 0.0
 		t.rx_dealt = 0.0
+	var pt = null
+	if partner != "":
+		main.picked = {"e": Elem.METAL, "lv": stage_lv[0]}  # 금속: 무작위가 없고 화상처럼 다른 오브젝트 상태를 덮어쓰지 않음
+		# PPOS: 0 옆(왼) 1 옆(오른) 2 나선 다음 자리(중앙 둘레 0.8라디안 뒤) 3 길목 바깥쪽(중앙에서 160)
+		var pp: Vector2 = [c + ld * 100.0 + ld.orthogonal() * 50.0, c + ld * 100.0 - ld.orthogonal() * 50.0,
+			c + ld.rotated(0.8) * 100.0, c + ld * 160.0][int(OS.get_environment("PPOS"))]
+		main._place_tower(pp, (pp - c).normalized())
+		pt = main.towers.get_child(main.towers.get_child_count() - 1)
+		if partner != "shot":
+			pt.set_pattern(partner)
+		while pt.plv < stage_lv[1]:
+			pt.set_pattern(partner)
+		pt.dealt = 0.0
 	var spawn_t := 0.0
 	var travel := 0.0
 	var crossed := 0
@@ -121,7 +142,7 @@ func _run(j: Dictionary) -> Dictionary:
 		if spawn_t <= 0 and f < frames - 60 * 8:
 			spawn_t = 1.0 / 3.0
 			var o = Orb.new(); o.main = main
-			var a := a0 + randf_range(-0.12, 0.12)
+			var a := a0 + spawn_rng.randf_range(-0.12, 0.12)
 			o.position = c + Vector2.from_angle(a) * main._spawn_radius()
 			o.from_a = a
 			o.target = c
@@ -142,4 +163,4 @@ func _run(j: Dictionary) -> Dictionary:
 			crossed += 1
 			travel += (frames - int(o.get_meta("born"))) / 60.0
 	var span := secs
-	return {"all": (t.dealt if t else 0.0) / span, "rx": (t.rx_dealt if t else 0.0) / span, "travel": travel / maxf(crossed, 1)}
+	return {"all": (t.dealt if t else 0.0) / span, "rx": (t.rx_dealt if t else 0.0) / span, "travel": travel / maxf(crossed, 1), "pd": (pt.dealt if pt else 0.0) / span}
