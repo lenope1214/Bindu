@@ -12,6 +12,7 @@
 #   compare [기준=1] [새 규칙=3] [판 수=32] [stack]   같은 시드로 두 규칙을 돌려 차이와 판정 (새 규칙을 내기 전에)
 #   tree [규칙=1] [판 수=32]               씨앗 나무 없음·절반·전부로 같은 시드 봇 (정원 모드 → 일반 판 강화 폭)
 #   garden [시드 수=3] [웨이브=40]          정원 봇: 물러남·도달 게임 시간·숙련 (garden_bot.gd)
+#   gcheck                                 정원 점검: 저장·이어하기·꺼 둔 동안 보상·물러남·환생·씨앗 나무 (garden_check.gd)
 #   modes [규칙=1] [판 수=32] [모드...]   모드마다 같은 시드로 모드 없는 판과 비교: 웨이브 차이·점수 손익분기 배율
 # 환경 변수: SPEED(배속, 기본 4) SMART(기본 1: 사람처럼 중앙 가까이에서 길목을 겨눔, 0이면 예전 봇)
 set -e
@@ -143,6 +144,13 @@ case "$CMD" in
 		done
 		wait
 		for seed in $(seq 1 "$N"); do echo "시드 $seed:"; grep -E "RETREAT|RESULT|SCRIPT ERROR" "g_$seed.txt" | tail -6; done
+		rm -rf "$D"
+		;;
+	gcheck)
+		# 정원 점검: 저장·이어하기·꺼 둔 동안 보상·물러남·환생·씨앗 나무·일반 판 보너스 (빈 기록으로)
+		D=$(copy_project "$$")
+		cd "$D"
+		T 600 "$G" --headless --fixed-fps 60 --path . -s tools/garden_check.gd 2>&1 | grep -E "^(ok|FAIL|RESULT|  )|SCRIPT ERROR" || true
 		rm -rf "$D"
 		;;
 	modes)

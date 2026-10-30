@@ -22,6 +22,7 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 | `pat_kill.gd` | 같은 방법(`HP=15` `RATE=1`): 체력 HP 구체가 정면으로 60초 올 때(lane). spiral은 비껴 도는 길이 오브젝트 앞을 지나지 않는 경우가 많아 참고만 | 공격방식별 처치율 |
 | `path_test.gd` | `godot --headless --path . -s tools/path_test.gd`: 그린 궤적 넣기·그리기(꺾기·길이 제한)·길 따라 맞히기·레벨업 길이와 갈래·4개 상한·유도 차단·저장·대격변·등장 비율 | 항목별 ok/FAIL, 실패가 있으면 끝 코드 1 |
 | `path_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/path_shot.gd -- <폴더> [글자 크기] [touch]`: 그린 궤적 카드·그리는 중·다 씀·쉬는 시간·마우스 올림·웨이브 중·새 갈래 스크린샷 | PNG |
+| `gcheck` | 정원 점검(`garden_check.gd`, 빈 기록으로): 상점 값 치르기·웨이브와 이슬·물러남(웨이브 0 아래로 안 감)·저장 뒤 이어하기·꺼 둔 동안 보상(50%, 8시간)·환생(두 번 누르기, 씨앗)·씨앗 나무 사기·숙련 단계·일반 판 보너스와 ~grow 기록 키 | 항목별 ok/FAIL |
 | `garden_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/garden_shot.gd -- <폴더> [글자 크기]`: 시작 화면 정원 줄·씨앗 나무 창·상점 4장·놓기·웨이브 중·물러난 뒤 스크린샷 | PNG |
 | `perf` | 후반 부하(오브젝트 16개, 속성 3종·강화 10개씩, 구체 400개)를 1·4·8배속으로 600프레임씩 | 프레임 시간 평균·95%·최대, 화면 위 구체·탄·장판 수 |
 

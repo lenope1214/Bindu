@@ -1428,7 +1428,7 @@ func _roll_card() -> Dictionary:
 	var wp := Patch.num("cards", "pat", 0.25) if _card_open("pat") else 0.0
 	var wm := Patch.num("cards", "mod", 0.23) if _card_open("mod") else 0.0
 	var r := randf() * (we + wp + wm + (Patch.num("cards", "link", 0.10) if _card_open("link") else 0.0))
-	if n == 0 or wave == 0 or r < we:
+	if n == 0 or (wave == 0 and not Garden.on) or r < we:  # 정원은 웨이브 0으로 물러나도 다른 카드가 나오게
 		var lv := 2 if randf() < _lv2_chance() else 1
 		return {"type": "elem", "e": Elem.ALL.pick_random(), "lv": lv}
 	if r < we + wp:
@@ -6379,7 +6379,7 @@ func _exit_garden() -> void:
 ## 정원 쉬는 시간: 상점(카드 4장, 사는 만큼 고르기) + 몇 초 뒤 다음 웨이브.
 func _garden_rest(new_round: bool) -> void:
 	if new_round:
-		if wave == 0:
+		if wave == 0 and towers.get_child_count() == 0:  # 웨이브 0으로 물러난 것은 같은 정원
 			tutor = false
 			run_id = _new_run_id()
 		_new_rest()
