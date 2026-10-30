@@ -104,8 +104,18 @@ func total_level() -> int:
 	return n
 
 
+## 반응이 91개라 매번 다 훑지 않고, 속성 종류가 바뀔 때만 다시 찾는다 (공격·그리기에서 조각마다 불렀다). 돌려준 배열은 고치지 말 것
+var _rx: Array = []
+var _rx_key := 0
+
+
 func reactions() -> Array:
-	return Elem.reactions_with(eff if not eff.is_empty() else elements)
+	var src: Dictionary = eff if not eff.is_empty() else elements
+	var key := hash(src.keys())
+	if key != _rx_key:
+		_rx_key = key
+		_rx = Elem.reactions_with(src)
+	return _rx
 
 
 # 특성(전역 강화) 배율. 새 판마다 main이 초기화한다.
@@ -1616,6 +1626,10 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 
+var _body: Array = []  # [점들, 색, 고리 모양이면 true]
+var _body_key := 0
+
+
 func _draw_body() -> void:
 	var s := 1.0 + 0.5 * place_pop
 	draw_set_transform(-dir * recoil * 5.0, 0.0, Vector2(s, s))
@@ -1654,29 +1668,41 @@ func _draw_body() -> void:
 	# 겹친 속성 비율대로 나눈 몸체 (모양은 메뉴에서 고른 스킨)
 	var total := total_level()
 	var skin := Meta.tower_skin
-	var a0 := -PI / 2
+	# 몸체 다각형은 속성·레벨·모양이 바뀔 때만 다시 만든다 (오브젝트마다 점 80개를 매 프레임 계산하던 것이 그리기 시간의 대부분)
+	var key := hash(skin)
 	for e in order:
-		var span := TAU * lv(e) / total
-		var steps := maxi(2, int(span / 0.08))
-		if skin == "ring":
-			var pts := PackedVector2Array()
-			for i in steps + 1:
-				pts.append(Vector2.from_angle(a0 + span * i / steps) * RADIUS * 0.8)
-			draw_polyline(pts, Elem.COLORS[e], RADIUS * 0.4)
-		elif order.size() == 1:
-			# 한 칸뿐이면 가운데 점·겹친 끝점 없이 외곽선만 (별 모양은 부채꼴이면 삼각분할이 실패해 투명해짐)
-			var pts := PackedVector2Array()
-			for i in steps:
-				var a := a0 + span * i / steps
-				pts.append(Vector2.from_angle(a) * _skin_r(skin, a))
-			draw_colored_polygon(pts, Elem.COLORS[e])
+		key = key * 31 + e * 1000 + lv(e)
+	if key != _body_key:
+		_body_key = key
+		_body.clear()
+		var a0 := -PI / 2
+		for e in order:
+			var span := TAU * lv(e) / total
+			var steps := maxi(2, int(span / 0.08))
+			if skin == "ring":
+				var pts := PackedVector2Array()
+				for i in steps + 1:
+					pts.append(Vector2.from_angle(a0 + span * i / steps) * RADIUS * 0.8)
+				_body.append([pts, Elem.COLORS[e], true])
+			elif order.size() == 1:
+				# 한 칸뿐이면 가운데 점·겹친 끝점 없이 외곽선만 (별 모양은 부채꼴이면 삼각분할이 실패해 투명해짐)
+				var pts := PackedVector2Array()
+				for i in steps:
+					var a := a0 + span * i / steps
+					pts.append(Vector2.from_angle(a) * _skin_r(skin, a))
+				_body.append([pts, Elem.COLORS[e], false])
+			else:
+				var pts := PackedVector2Array([Vector2.ZERO])
+				for i in steps + 1:
+					var a := a0 + span * i / steps
+					pts.append(Vector2.from_angle(a) * _skin_r(skin, a))
+				_body.append([pts, Elem.COLORS[e], false])
+			a0 += span
+	for b in _body:
+		if b[2]:
+			draw_polyline(b[0], b[1], RADIUS * 0.4)
 		else:
-			var pts := PackedVector2Array([Vector2.ZERO])
-			for i in steps + 1:
-				var a := a0 + span * i / steps
-				pts.append(Vector2.from_angle(a) * _skin_r(skin, a))
-			draw_colored_polygon(pts, Elem.COLORS[e])
-		a0 += span
+			draw_colored_polygon(b[0], b[1])
 	if skin == "gem":
 		draw_line(Vector2(0, -RADIUS * 1.15), Vector2(0, RADIUS * 1.15), Color(1, 1, 1, 0.35), 1.5)
 		draw_line(Vector2(-RADIUS * 0.85, 0), Vector2(RADIUS * 0.85, 0), Color(1, 1, 1, 0.35), 1.5)
