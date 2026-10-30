@@ -169,8 +169,23 @@ func can_take(card: Dictionary) -> bool:
 		"pat":
 			return can_pattern(card["id"])
 		"mod":
-			return m(card["id"]) < Rules.max_mod
+			return m(card["id"]) < Rules.max_mod and mod_useless(card["id"]).is_empty()
 	return true
+
+
+## 버전 3(쌓을수록 절반): 이만큼 쌓으면 효과가 최대의 97%라 더 넣어도 거의 늘지 않는다.
+const DECAY_FULL := 5
+
+
+## 이 강화를 넣어도 효과가 없는 이유 (효과가 있으면 빈 문자열).
+func mod_useless(id: String) -> String:
+	if id in ["pierce", "bounce"] and pattern in ["thorn", "gust", "iron"]:
+		return "%s은(는) 원래 모두 뚫고 나가서 %s이(가) 효과가 없어요" % [Pat.pname(pattern), Pat.MODS[id]["name"]]
+	if id == "homing" and pattern == "wall":
+		return "벽은 정한 방향에만 세워져서 유도가 효과가 없어요"
+	if Rules.mod_decay and m(id) >= DECAY_FULL:
+		return "%s은(는) 효과가 거의 다 찼어요 (x%.2f / 최대 x2.00)" % [Pat.MODS[id]["name"], mf(id)]
+	return ""
 
 
 ## 넣을 수 없는 이유 (넣을 수 있으면 빈 문자열).
@@ -183,6 +198,9 @@ func refuse_text(card: Dictionary) -> String:
 		"pat":
 			return "이 오브젝트는 %s(으)로 정해져 있어요. 같은 공격방식만 넣을 수 있어요" % Pat.pname(pattern)
 		"mod":
+			var why := mod_useless(card["id"])
+			if not why.is_empty():
+				return why
 			return "%s은(는) %d개까지 쌓을 수 있어요" % [Pat.MODS[card["id"]]["name"], Rules.max_mod]
 	return ""
 
@@ -392,7 +410,7 @@ func attack(delta: float, orbs: Array) -> void:
 				for d in dirs():
 					_line(orbs, d, 260.0 * reach(l) * s, 10.0 * s, func(o):
 						hit(o, 3.0 * pw(l) * de * mk, k)
-						o.push(d * 60.0 * de))
+						o.stagger(60.0 * de))
 		"chain":
 			if cd.get("p", 0.0) > 0.0:
 				cd["p"] -= de
@@ -540,7 +558,7 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 					fx[id] = 0.3
 					_line(orbs, rail_dir, 2000.0, 12.0, func(o):
 						hit(o, 6.0 * pw(l))
-						o.push(rail_dir * 25.0))
+						o.stagger(25.0))
 			"halo":
 				# 주위를 도는 빛 칼날: 닿으면 반드시 치명타 (같은 구체는 0.5초에 한 번)
 				for bp in halo_blades(l):
@@ -683,7 +701,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		d *= 1.0 + 0.2 * L.call(Elem.WOOD)
 	if els.has(Elem.METAL):
 		d += 0.4 * L.call(Elem.METAL) * k
-		o.push(dir * 4.0 * L.call(Elem.METAL) * k)
+		o.stagger(4.0 * L.call(Elem.METAL) * k)
 	var rm := o.resist_mul(els)
 	d *= rm
 	o.hurt(d, crit)

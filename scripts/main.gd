@@ -1074,8 +1074,7 @@ func _roll_card() -> Dictionary:
 	var wm := Patch.num("cards", "mod", 0.23) if _card_open("mod") else 0.0
 	var r := randf() * (we + wp + wm + (Patch.num("cards", "link", 0.10) if _card_open("link") else 0.0))
 	if n == 0 or wave == 0 or r < we:
-		var lv2 := minf(Patch.num("cards", "lv2_base", 0.2) + Patch.num("cards", "lv2_wave", 0.02) * wave, Patch.num("cards", "lv2_max", 0.5))
-		var lv := 2 if randf() < lv2 + _perk_val("luck") * perks.get("luck", 0) else 1
+		var lv := 2 if randf() < _lv2_chance() else 1
 		return {"type": "elem", "e": Elem.ALL.pick_random(), "lv": lv}
 	if r < we + wp:
 		return {"type": "pat", "id": Pat.PATTERN_IDS.slice(1).pick_random()}
@@ -1270,10 +1269,18 @@ func _wrap_parts(text: String, sep: String, width: float, fs: int) -> String:
 
 
 ## 5웨이브마다: 특성 3개 중 1개.
+## 속성 카드가 Lv2로 나올 확률 (행운 특성 포함).
+func _lv2_chance() -> float:
+	var lv2 := minf(Patch.num("cards", "lv2_base", 0.2) + Patch.num("cards", "lv2_wave", 0.02) * wave, Patch.num("cards", "lv2_max", 0.5))
+	return lv2 + _perk_val("luck") * perks.get("luck", 0)
+
+
 func _start_perk() -> void:
 	var pool: Array = PERKS.duplicate()
 	if Modes.has("narrow"):
 		pool = pool.filter(func(pk): return pk["id"] != "reroll")  # 외길: 새로고침이 없으니 쓸모없는 특성은 빼고
+	# 더 골라도 거의 효과가 없는 특성은 빼고: 이미 거의 Lv2로 나오는 행운, 두 번 고른 조화(공속 감소 10% → 2.5%)
+	pool = pool.filter(func(pk): return not (pk["id"] == "luck" and _lv2_chance() >= 0.9 or pk["id"] == "harmony" and perks.get("harmony", 0) >= 2))
 	pool.shuffle()
 	perk_offer = pool.slice(0, 3)
 	_show_perks()

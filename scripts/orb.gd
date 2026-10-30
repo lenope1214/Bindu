@@ -8,6 +8,7 @@ enum Kind { NORMAL, FAST, TANK, BOSS }
 const SLOW_FLOOR := 0.3  # 감속은 최대 70% (보스 50%)
 const PUSH_BUDGET := 40.0  # 중앙 반대쪽으로 한 번에 밀릴 수 있는 거리 (보스 15)
 const PUSH_REGEN := 0.15  # 밀림 여유가 초당 이동 속도의 15%씩 회복 (보스 5%): 최대로 느려져도(30%) 조금씩은 전진
+const STAGGER_MAX := 0.6  # 경직은 한 번에 이만큼(초)까지만 쌓인다
 const ROOT_DR := [1.0, 0.5, 0.25]  # 연달아 기절·속박·빙결: 지속시간 100% → 50% → 25%, 그다음 면역
 const ROOT_IMMUNE := 2.0
 const ROOT_DR_RESET := 4.0  # 이만큼 안 걸리면 처음부터
@@ -47,6 +48,7 @@ var pincer_cd := 0.0
 var curse_lv := 0  # 저주 표식 (죽으면 주변 피해, 표식이 옮겨 감)
 var curse_owner: Object = null
 var push_budget := PUSH_BUDGET
+var stagger_t := 0.0  # 경직(금속·철구·물줄기·레일건): 제자리에 멈춤
 var root_dr := 0  # 연달아 걸린 기절 횟수
 var root_dr_t := 0.0  # 마지막 기절 뒤 지난 시간
 var root_immune := 0.0  # 기절 면역 남은 시간
@@ -102,6 +104,7 @@ func step(delta: float) -> void:
 			main.spawn_minion(self)
 	slow_timer = maxf(slow_timer - delta, 0.0)
 	root_timer = maxf(root_timer - delta, 0.0)
+	stagger_t = maxf(stagger_t - delta, 0.0)
 	vuln_t = maxf(vuln_t - delta, 0.0)
 	flash = maxf(flash - delta, 0.0)
 	frozen_t = maxf(frozen_t - delta, 0.0)
@@ -129,7 +132,7 @@ func step(delta: float) -> void:
 		dmg_acc = 0.0
 		pop_t = 0.35
 	var mult := slow_factor if slow_timer > 0.0 else 1.0
-	if root_timer > 0.0:
+	if root_timer > 0.0 or stagger_t > 0.0:
 		mult = 0.0
 	if swirl != 0.0 and position.distance_to(target) > 60.0:
 		# 소용돌이 맵: 중앙을 향하되 옆으로 비껴 나선을 그린다
@@ -200,6 +203,18 @@ func root(duration: float, dr := true) -> bool:
 
 func _push_max() -> float:
 	return 15.0 if kind == Kind.BOSS else PUSH_BUDGET
+
+
+## 경직: 그만큼 밀려났다 다시 오는 시간만큼 제자리에 멈춘다(위치는 그대로라 사거리·장판을 벗어나지 않는다).
+## 밀기와 같은 밀림 여유를 쓰므로 계속 맞아도 앞으로는 나아간다.
+func stagger(dist: float) -> void:
+	if sturdy:
+		dist *= 0.5
+	var ok := minf(dist, push_budget)
+	if ok <= 0.0 or speed <= 0.0:
+		return
+	push_budget -= ok
+	stagger_t = minf(stagger_t + ok / speed, STAGGER_MAX)
 
 
 ## 밀기: 중앙 반대쪽으로 밀리는 만큼은 밀림 여유에서 빠진다(옆·안쪽은 그대로).
@@ -333,6 +348,9 @@ func _draw() -> void:
 			draw_line(Vector2.ZERO, Vector2(cos(a), sin(a)) * (r + 6.0), Color(1, 1, 1, 0.8), 2.0)
 	elif root_timer > 0.0:
 		draw_arc(Vector2.ZERO, r + 6.0, 0, TAU, 24, Elem.COLORS[Elem.EARTH], 3.0)
+	elif stagger_t > 0.0:
+		# 경직: 금속색 고리
+		draw_arc(Vector2.ZERO, r + 5.0, 0, TAU, 24, Elem.COLORS[Elem.METAL], 2.5)
 	elif root_immune > 0.0:
 		# 기절 면역: 옅은 흰 고리
 		draw_arc(Vector2.ZERO, r + 6.0, 0, TAU, 24, Color(1, 1, 1, 0.35), 1.5)

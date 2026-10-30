@@ -170,7 +170,7 @@ func on_hit(o: Orb, delta: float) -> bool:
 		"glob":
 			o.poison(1.2 * level, 5.0, tw)
 		"iron":
-			o.push(vel.normalized() * 30.0)
+			o.stagger(30.0)
 	if pierce:
 		return false
 	if pierce_left > 0:

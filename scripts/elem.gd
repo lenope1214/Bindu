@@ -42,7 +42,7 @@ static func draw_symbol(ci: CanvasItem, font: Font, c: Vector2, e: int, fs: int)
 const FORM := {
 	FIRE: "화염 방사 (부채꼴 지속 피해)",
 	WOOD: "관통 가시 연사",
-	WATER: "물줄기 (밀어내기)",
+	WATER: "물줄기 (경직)",
 	ELECTRIC: "연쇄 번개",
 	WIND: "돌풍 (옆으로 밀기)",
 	ICE: "얼음 탄 (맞으면 파편 3개)",
@@ -65,7 +65,7 @@ const RIDER := {
 	DARK: "2초간 받는 피해 +30%",
 	LIGHT: "치명타: 피해 2배 (레벨마다 확률 +12%, 최대 60%)",
 	POISON: "중독 (죽으면 주변에 전염)",
-	METAL: "추가 피해 + 넉백",
+	METAL: "추가 피해 + 경직 (제자리에 잠깐 멈춤)",
 }
 
 const REACTIONS := [
