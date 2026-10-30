@@ -1,0 +1,122 @@
+"""DB 테이블. PostgreSQL(운영)과 SQLite(테스트) 모두 동작."""
+from datetime import datetime, timezone
+
+from sqlalchemy import (JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, create_engine)
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+
+from . import config
+
+
+def now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class Patch(Base):
+    """JSON 데이터 패치. 활성화된 것 중 게임 버전 범위가 맞는 가장 최신 것을 내려 준다."""
+    __tablename__ = "patches"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    min_game: Mapped[str] = mapped_column(String(32), default="0.0.0")
+    max_game: Mapped[str] = mapped_column(String(32), default="")  # 빈 값: 상한 없음
+    data: Mapped[dict] = mapped_column(JSON)
+    payload: Mapped[str] = mapped_column(Text)  # 서명한 그대로의 JSON 글자
+    sig: Mapped[str] = mapped_column(Text)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    season: Mapped[int] = mapped_column(Integer, default=0)  # 이 패치를 올릴 때의 시즌
+
+
+class Season(Base):
+    """리더보드 시즌. 판도가 바뀌는 패치·빌드마다 새로 연다.
+    판 기록은 지금 시즌의 최소 게임 버전·패치를 맞춘 경우에만 그 시즌 리더보드에 들어간다."""
+    __tablename__ = "seasons"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(64), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
+    min_game: Mapped[str] = mapped_column(String(32), default="0.0.0")
+    min_patch: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class Release(Base):
+    """플랫폼별 최신 빌드 (새 버전 알림)."""
+    __tablename__ = "releases"
+    platform: Mapped[str] = mapped_column(String(16), primary_key=True)
+    version: Mapped[str] = mapped_column(String(32))
+    url: Mapped[str] = mapped_column(Text, default="")
+    notes: Mapped[str] = mapped_column(Text, default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now)
+
+
+class Run(Base):
+    """끝난 판 하나. 리더보드와 통계가 같은 기록을 쓴다."""
+    __tablename__ = "runs"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now, index=True)
+    device_id: Mapped[str] = mapped_column(String(64), index=True)
+    nickname: Mapped[str] = mapped_column(String(32), default="")
+    ip_hash: Mapped[str] = mapped_column(String(64), default="", index=True)
+    platform: Mapped[str] = mapped_column(String(16), default="")
+    game_version: Mapped[str] = mapped_column(String(32), index=True)
+    patch_id: Mapped[int] = mapped_column(Integer, default=0, index=True)
+    season: Mapped[int] = mapped_column(Integer, default=0, index=True)  # 0: 지난 버전으로 한 판 (리더보드 제외)
+    map: Mapped[str] = mapped_column(String(32), index=True)
+    rules: Mapped[int] = mapped_column(Integer, index=True)
+    wave: Mapped[int] = mapped_column(Integer)
+    score: Mapped[int] = mapped_column(Integer)
+    kills: Mapped[int] = mapped_column(Integer, default=0)
+    best_combo: Mapped[int] = mapped_column(Integer, default=0)
+    game_secs: Mapped[float] = mapped_column(Float, default=0.0)
+    real_secs: Mapped[float] = mapped_column(Float, default=0.0)
+    detail: Mapped[dict] = mapped_column(JSON, default=dict)  # 특성·오브젝트 구성·선택 기록 원본
+    valid: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    reason: Mapped[str] = mapped_column(Text, default="")  # 검증에 걸린 이유
+    hidden: Mapped[bool] = mapped_column(Boolean, default=False)  # 관리자가 리더보드에서 뺀 기록
+
+
+class Pick(Base):
+    """선택지 한 장: 나왔는지, 골랐는지. 통계용으로 판 정보를 같이 둔다."""
+    __tablename__ = "picks"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    run_id: Mapped[int] = mapped_column(ForeignKey("runs.id", ondelete="CASCADE"), index=True)
+    kind: Mapped[str] = mapped_column(String(8))  # card | perk
+    key: Mapped[str] = mapped_column(String(48), index=True)  # 예: elem:fire, pat:spray, mod:rapid, perk:power
+    picked: Mapped[bool] = mapped_column(Boolean)
+    wave: Mapped[int] = mapped_column(Integer)
+
+
+class Final(Base):
+    """판이 끝났을 때 오브젝트에 들어 있던 것 (속성·공격방식·강화·연계)."""
+    __tablename__ = "finals"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    run_id: Mapped[int] = mapped_column(ForeignKey("runs.id", ondelete="CASCADE"), index=True)
+    key: Mapped[str] = mapped_column(String(48), index=True)
+    amount: Mapped[int] = mapped_column(Integer, default=1)  # 레벨·겹친 수 합
+    share: Mapped[float] = mapped_column(Float, default=0.0)  # 그 오브젝트들이 낸 피해 몫 합
+
+
+class Ban(Base):
+    __tablename__ = "bans"
+    device_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
+    reason: Mapped[str] = mapped_column(Text, default="")
+
+
+_kw = {"connect_args": {"check_same_thread": False}} if config.DATABASE_URL.startswith("sqlite") else {"pool_pre_ping": True}
+engine = create_engine(config.DATABASE_URL, **_kw)
+SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
+
+
+def init_db() -> None:
+    Base.metadata.create_all(engine)
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

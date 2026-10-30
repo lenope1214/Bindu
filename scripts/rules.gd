@@ -30,6 +30,7 @@ static var picks := 2  # 쉬는 시간마다 고르는 수
 static var hp_growth := 1.05  # 11웨이브부터 웨이브마다 구체 체력 배율
 static var resist_from := 10  # 저항 구체가 나오는 웨이브
 static var sturdy_from := 13  # 굳센 구체가 나오는 웨이브
+static var orb_hp := 1.0  # 구체 체력 배율 (온라인 패치로만 바뀜)
 static var mod_slots := false  # 강화 칸: 속성이 정하는 칸 안에서만 강화를 넣는다 (버전 5)
 
 ## 강화 칸 (버전 5). 속성 칸: 혼자 내는 피해가 큰 속성일수록 작다 (2026-10-30 측정, 직선탄 Lv2 피해/초).
@@ -59,6 +60,7 @@ static func apply(v: int) -> void:
 	resist_from = 10
 	sturdy_from = 13
 	mod_slots = false
+	orb_hp = 1.0
 	match version:
 		2:
 			max_elems = 2
@@ -78,3 +80,28 @@ static func apply(v: int) -> void:
 			sturdy_from = 11
 		5:
 			mod_slots = true
+	_apply_patch(Patch.rules_for(version))
+
+
+## 온라인 패치(Patch)의 rules 덮어쓰기. 모르는 키·형식이 틀린 값은 무시.
+static func _apply_patch(p: Dictionary) -> void:
+	for k in p:
+		var v: Variant = p[k]
+		if k == "mod_decay":
+			if v is bool:
+				mod_decay = v
+			continue
+		if not (v is float or v is int):
+			continue
+		match k:
+			"max_elems": max_elems = maxi(1, int(v))
+			"max_mod": max_mod = maxi(1, int(v))
+			"picks": picks = maxi(1, int(v))
+			"resist_from": resist_from = int(v)
+			"sturdy_from": sturdy_from = int(v)
+			"crowd": crowd = float(v)
+			"link_range": link_range = float(v)
+			"orb_mul": orb_mul = maxf(0.1, float(v))
+			"tax_step": tax_step = float(v)
+			"hp_growth": hp_growth = maxf(1.0, float(v))
+			"orb_hp": orb_hp = maxf(0.1, float(v))

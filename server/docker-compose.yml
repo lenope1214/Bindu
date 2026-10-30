@@ -1,0 +1,55 @@
+# 빈두 서버: API + PostgreSQL + Caddy(HTTPS 자동 발급)
+#   처음: ./setup.sh https://도메인   → .env·keys/·../scripts/online_config.gd 생성
+#   실행: docker compose up -d --build
+#   로컬 시험(도메인 없이): docker compose up -d --build db api  → http://localhost:8000
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bindu
+      POSTGRES_USER: bindu
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run ./setup.sh first}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bindu"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://bindu:${POSTGRES_PASSWORD}@db:5432/bindu
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?run ./setup.sh first}
+      RUN_HMAC_KEY: ${RUN_HMAC_KEY}
+      IP_SALT: ${IP_SALT}
+      PATCH_KEY_PATH: /keys/patch_private.pem
+    volumes:
+      - ./keys:/keys:ro
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"  # 이 PC에서 직접 시험할 때만 (밖에서는 Caddy로)
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [api]
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./downloads:/srv/downloads:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

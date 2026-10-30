@@ -160,6 +160,15 @@ Godot 4.5+ (4.7.2에서 열기). 도형만 사용.
 - 변경 내역은 `CHANGELOG.md`.
 - 조정할 수치: `scripts/elem.gd`(속성·반응), `scripts/pattern.gd`(공격방식·강화·연계 정의), `scripts/tower.gd`의 `attack()`/`hit()`(공격·부가효과 수치), `projectile.gd`, `zone.gd`, `scripts/main.gd`의 `_start_wave`/`_spawn_orb`(난이도).
 
+## 온라인 (패치·리더보드·통계)
+서버는 `server/` (자세한 내용은 [server/README.md](server/README.md)).
+```
+cd server && ./setup.sh https://도메인 && docker compose up -d --build
+```
+- `setup.sh`가 만든 `scripts/online_config.gd`를 커밋해서 빌드에 넣으면 게임이 그 서버에 붙음. 비어 있으면 온라인 기능은 꺼짐.
+- 밸런스 수치는 `https://도메인/admin`의 패치 탭에서 JSON으로 바꾸면 다음 판부터 적용(새 빌드 불필요). 통계도 같은 페이지.
+- 게임의 웨이브·점수 공식을 바꾸면 `server/app/validate.py`도 맞춘다(점수 검증 상한).
+
 ## Windows exe 빌드 (Mac에서)
 Finder에서 `build_windows.command`를 더블클릭하거나 터미널에서 실행.
 ```
