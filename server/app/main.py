@@ -1,5 +1,7 @@
 """빈두 온라인 서버: JSON 데이터 패치, 새 버전 알림, 리더보드(시즌), 선택 통계."""
+import hashlib
 import json
+import urllib.request
 from contextlib import asynccontextmanager
 import re
 from datetime import timedelta
@@ -86,6 +88,9 @@ def boot(game: str, platform: str = "", patch: int = -1, db: Session = Depends(g
     r = db.get(Release, platform.lower()) if platform else None
     if r and validate.vtuple(r.version) > validate.vtuple(game):
         latest = {"version": r.version, "url": r.url, "notes": r.notes}
+        if r.sha256 and r.url:
+            # 게임 안 업데이트: 받은 파일이 이 해시와 맞을 때만 바꿔 끼운다 (서명은 패치와 같은 키)
+            latest.update(sha256=r.sha256, size=r.size, sig=signing.sign(release_payload(r.platform, r.version, r.url, r.sha256, r.size)))
     s = current_season(db)
     return {"patch": patch_out, "latest": latest, "season": {"id": s.id, "name": s.name} if s else None}
 
@@ -290,8 +295,30 @@ def create_season(body: SeasonIn, db: Session = Depends(get_db)):
 
 class ReleaseIn(BaseModel):
     version: str
-    url: str = ""
+    url: str = ""  # 비우면 지난번 주소 그대로
     notes: str = ""
+    sha256: str = ""  # 비우면 서버가 url 파일을 받아 직접 계산
+    size: int = 0
+
+
+RELEASE_MAX_BYTES = 400 * 1024 * 1024
+
+
+def release_payload(platform: str, version: str, url: str, sha256: str, size: int) -> str:
+    """게임(scripts/updater.gd)이 서명을 확인하는 문자열. 둘이 같아야 한다."""
+    return f"bindu-release|{platform}|{version}|{url}|{sha256}|{size}"
+
+
+def fetch_hash(url: str) -> tuple[str, int]:
+    h, n = hashlib.sha256(), 0
+    req = urllib.request.Request(url, headers={"User-Agent": "bindu-server"})
+    with urllib.request.urlopen(req, timeout=60) as f:
+        while chunk := f.read(1 << 20):
+            n += len(chunk)
+            if n > RELEASE_MAX_BYTES:
+                raise ValueError("파일이 너무 큼")
+            h.update(chunk)
+    return h.hexdigest(), n
 
 
 @app.put("/admin/releases/{platform}", dependencies=[Depends(require_admin)])
@@ -300,15 +327,25 @@ def set_release(platform: str, body: ReleaseIn, db: Session = Depends(get_db)):
     if platform not in PLATFORMS:
         raise HTTPException(422, f"platform: {PLATFORMS}")
     r = db.get(Release, platform) or Release(platform=platform)
-    r.version, r.url, r.notes = body.version, body.url, body.notes
+    url = body.url.strip() or (r.url or "")
+    sha, size = body.sha256.strip().lower(), body.size
+    if sha and not re.fullmatch(r"[0-9a-f]{64}", sha):
+        raise HTTPException(422, "sha256: 16진수 64자")
+    if not sha and url and platform == "windows":
+        try:
+            sha, size = fetch_hash(url)
+        except Exception as e:
+            raise HTTPException(422, f"url 파일을 받지 못함: {e}")
+    r.version, r.url, r.notes, r.sha256, r.size = body.version, url, body.notes, sha, size
     db.add(r)
     db.commit()
-    return {"platform": platform, "version": r.version}
+    return {"platform": platform, "version": r.version, "url": r.url, "sha256": r.sha256, "size": r.size}
 
 
 @app.get("/admin/releases", dependencies=[Depends(require_admin)])
 def list_releases(db: Session = Depends(get_db)):
-    return [{"platform": r.platform, "version": r.version, "url": r.url, "notes": r.notes} for r in db.scalars(select(Release))]
+    return [{"platform": r.platform, "version": r.version, "url": r.url, "notes": r.notes, "sha256": r.sha256, "size": r.size}
+            for r in db.scalars(select(Release))]
 
 
 @app.get("/admin/runs", dependencies=[Depends(require_admin)])

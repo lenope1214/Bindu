@@ -1,7 +1,7 @@
 """DB 테이블. PostgreSQL(운영)과 SQLite(테스트) 모두 동작."""
 from datetime import datetime, timezone
 
-from sqlalchemy import (JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, create_engine)
+from sqlalchemy import (JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, create_engine, inspect, text)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 from . import config
@@ -48,6 +48,8 @@ class Release(Base):
     version: Mapped[str] = mapped_column(String(32))
     url: Mapped[str] = mapped_column(Text, default="")
     notes: Mapped[str] = mapped_column(Text, default="")
+    sha256: Mapped[str] = mapped_column(String(64), default="")  # 받을 파일(zip) 해시: 게임 안 업데이트가 확인
+    size: Mapped[int] = mapped_column(Integer, default=0)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now)
 
 
@@ -112,6 +114,13 @@ SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 def init_db() -> None:
     Base.metadata.create_all(engine)
+    # create_all은 이미 있는 표에 열을 더하지 않는다: 나중에 생긴 열은 여기서
+    have = {c["name"] for c in inspect(engine).get_columns("releases")}
+    with engine.begin() as con:
+        if "sha256" not in have:
+            con.execute(text("ALTER TABLE releases ADD COLUMN sha256 VARCHAR(64) DEFAULT ''"))
+        if "size" not in have:
+            con.execute(text("ALTER TABLE releases ADD COLUMN size INTEGER DEFAULT 0"))
 
 
 def get_db():

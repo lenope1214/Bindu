@@ -51,9 +51,21 @@ def test_flow():
         assert c.get("/v1/boot", params={"game": "0.4.24"}).json()["patch"] == {"id": 0}  # 버전 범위 밖
         assert c.get("/v1/boot", params={"game": "0.4.25", "patch": 1}).json()["patch"] == {"id": 1, "same": True}
         # 새 버전 알림
-        c.put("/admin/releases/windows", json={"version": "0.5.0", "url": "https://x/y.zip"}, headers=A)
-        assert c.get("/v1/boot", params={"game": "0.4.25", "platform": "windows"}).json()["latest"]["version"] == "0.5.0"
+        c.put("/admin/releases/windows", json={"version": "0.5.0", "url": "https://x/y.zip", "sha256": "ab" * 32, "size": 9}, headers=A)
+        lt = c.get("/v1/boot", params={"game": "0.4.25", "platform": "windows"}).json()["latest"]
+        assert lt["version"] == "0.5.0" and lt["sha256"] == "ab" * 32
+        assert signing.verify(f"bindu-release|windows|0.5.0|https://x/y.zip|{'ab' * 32}|9", lt["sig"], PUB)
         assert c.get("/v1/boot", params={"game": "0.5.0", "platform": "windows"}).json()["latest"] is None
+        # 해시를 안 주면 서버가 파일을 받아 계산, 주소를 비우면 지난 주소 그대로
+        zp = os.path.join(TMP, "Bindu-windows.zip")
+        with open(zp, "wb") as f:
+            f.write(b"zipdata")
+        r = c.put("/admin/releases/windows", json={"version": "0.5.1", "url": "file://" + zp}, headers=A).json()
+        assert r["sha256"] == hashlib.sha256(b"zipdata").hexdigest() and r["size"] == 7
+        r = c.put("/admin/releases/windows", json={"version": "0.5.2", "url": ""}, headers=A).json()
+        assert r["url"] == "file://" + zp and r["sha256"] == hashlib.sha256(b"zipdata").hexdigest()
+        assert c.put("/admin/releases/windows", json={"version": "0.5.3", "url": "file:///nope.zip"}, headers=A).status_code == 422
+        assert c.put("/admin/releases/windows", json={"version": "0.5.3", "sha256": "zz"}, headers=A).status_code == 422
 
         # 판 기록: 서명 틀리면 거부
         assert c.post("/v1/runs", content=b"{}", headers={"X-Bindu-Mac": "00"}).status_code == 403

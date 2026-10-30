@@ -44,7 +44,7 @@ docker compose up -d --build
 
 - **통계**: 특성·카드별 나온 횟수, 선택률, 고른 판의 평균 도달 웨이브 / 판이 끝났을 때 들어 있던 속성·공격방식·강화·연계의 비율, 평균 레벨, 평균 피해 몫 / 규칙 버전별 평균 웨이브 / 웨이브 분포. 규칙·맵·게임 버전·패치·기간으로 거르고 CSV로 내려받기.
 - **패치**: JSON을 붙여 넣고 올리면 서버가 서명해서 배포. 켜기·끄기, 게임 버전 범위, "새 시즌 시작".
-- **새 버전**: 플랫폼별 최신 버전과 받는 곳 URL. 게임이 시작 화면에 "새 버전 받기" 버튼을 띄움.
+- **새 버전**: 플랫폼별 최신 버전과 받는 곳 URL. 게임이 시작 화면에 "새 버전 받기" 버튼을 띄움. Windows는 게임 안 업데이트(아래).
 - **판 기록**: 검증에 걸린 기록 보기, 리더보드에서 빼기, 기기 차단.
 
 ## 빌드 내려받기 (새 버전 알림)
@@ -59,6 +59,16 @@ docker compose up -d --build
 | macos | `https://bindu.anon-chat.kr/download/Bindu-macos.zip` |
 | android | `https://play.google.com/store/apps/details?id=kr.chat.anon.bindu` |
 | ios | App Store 등록 후 앱 페이지 주소 |
+
+### Windows 게임 안 업데이트
+
+`PUT /admin/releases/windows`에 `sha256`을 안 주면 서버가 그 URL의 zip을 받아 해시·크기를 계산해 저장합니다(못 받으면 422, 이전 값 그대로).
+`/v1/boot`는 `latest`에 `sha256`·`size`·`sig`(패치와 같은 키로 `bindu-release|플랫폼|버전|URL|해시|크기`에 서명)를 붙이고,
+게임(scripts/updater.gd)은 서명이 맞을 때만 [업데이트] 버튼을 띄워 zip을 받고 해시를 확인한 뒤 안의 exe로 바꿔 끼웁니다.
+
+- URL은 **버전이 든 주소**(`https://github.com/lenope1214/Bindu/releases/download/vX.Y.Z/Bindu-windows.zip`)를 쓰세요. `latest/download`나 `/download/` 덮어쓰기 주소는 서버 등록 전에 파일이 먼저 바뀌면 해시가 안 맞아 업데이트가 실패합니다(게임은 원래 버전 그대로 두고 [직접 받기]로 바꿈).
+- `url`을 비우면 지난번 주소를 그대로 쓰고 해시는 다시 계산합니다. zip을 새로 올렸으면 버전을 그대로 두고 다시 PUT하면 해시가 갱신됩니다.
+- 서명 호환 점검: `godot --headless --path . -s tools/update_check.gd -- 공개키.pem 서명 zip 해시 크기`
 
 ## 패치 JSON
 

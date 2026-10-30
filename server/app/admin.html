@@ -201,7 +201,7 @@ $("s-new").onclick = async () => {
   say(`${r.name} 시작`); loadPatches();
 };
 async function loadReleases() {
-  table($("t-releases"), await api("/admin/releases"), [["플랫폼", r => r.platform], ["버전", r => r.version], ["URL", r => esc(r.url)], ["설명", r => esc(r.notes)]]);
+  table($("t-releases"), await api("/admin/releases"), [["플랫폼", r => r.platform], ["버전", r => r.version], ["URL", r => esc(r.url)], ["설명", r => esc(r.notes)], ["해시", r => r.sha256 ? esc(r.sha256.slice(0, 12)) + "…" : "-"]]);
 }
 $("r-send").onclick = async () => {
   await api(`/admin/releases/${$("r-plat").value}`, {method: "PUT", body: JSON.stringify({version: $("r-ver").value.trim(), url: $("r-url").value.trim(), notes: $("r-notes").value})});

@@ -177,6 +177,7 @@ var run_log: Array = []  # 선택지 기록 [{w, k: card|perk, o: 나온 것, p:
 var run_game := 0.0  # 웨이브 진행 게임 시간 합
 var run_real := 0.0  # 실제로 플레이한 시간 (시작 화면·일시정지 빼고)
 var update_btn: Button  # 시작 화면: 새 버전 받기
+var updater: Updater  # Windows 게임 안 업데이트
 var notice_label: Label  # 시작 화면: 패치 공지
 var board_lines := {}  # 리더보드 창: period → 줄 목록
 static var title_seen := false  # 다시 시작하면 타이틀은 건너뛴다
@@ -222,6 +223,11 @@ func _ready() -> void:
 	net.booted.connect(_on_booted)
 	net.run_sent.connect(_on_run_sent)
 	net.board_loaded.connect(_on_board_loaded)
+	updater = Updater.new()
+	add_child(updater)
+	updater.cleanup()
+	updater.progress.connect(_on_update_progress)
+	updater.failed.connect(_on_update_failed)
 	notes = PatchNotes.new()
 	add_child(notes)
 	notes.loaded.connect(_draw_notes)
@@ -2335,17 +2341,43 @@ func _on_booted(info: Dictionary) -> void:
 		_apply_rules()
 		_refresh_menu()
 	var latest: Variant = info.get("latest")
-	if latest is Dictionary and str(latest.get("url", "")) != "":
+	if latest is Dictionary and str(latest.get("url", "")) != "" and not updater.busy:
 		var notes := str(latest.get("notes", ""))
-		update_btn.text = "새 버전 v%s 받기%s" % [latest.get("version", "?"), " · " + notes if notes != "" else ""]
-		for c in update_btn.pressed.get_connections():
-			update_btn.pressed.disconnect(c["callable"])
 		var url := str(latest["url"])
-		update_btn.pressed.connect(func(): OS.shell_open(url))
+		var auto := Updater.available(latest)
+		update_btn.text = "새 버전 v%s %s%s" % [latest.get("version", "?"), "업데이트" if auto else "받기", " · " + notes if notes != "" else ""]
+		update_btn.disabled = false
+		_set_update_action(func(): _start_update(latest) if auto else OS.shell_open(url))
 		update_btn.visible = true
 	var msg := Patch.text("", "message", "")
 	notice_label.text = msg
 	notice_label.visible = msg != ""
+
+
+func _set_update_action(f: Callable) -> void:
+	for c in update_btn.pressed.get_connections():
+		update_btn.pressed.disconnect(c["callable"])
+	update_btn.pressed.connect(f)
+
+
+## [업데이트]: 받는 동안 버튼이 진행률을 보여 주고, 다 되면 새 버전으로 다시 켜진다.
+func _start_update(latest: Dictionary) -> void:
+	update_btn.disabled = true
+	update_btn.text = "업데이트 받는 중..."
+	updater.start(latest)
+
+
+func _on_update_progress(ratio: float) -> void:
+	update_btn.text = "업데이트 받는 중 %d%%" % int(ratio * 100) if ratio >= 0.0 else "업데이트 받는 중..."
+
+
+## 실패하면 원래 버전 그대로: 버튼을 눌러 지금처럼 zip을 직접 받는다.
+func _on_update_failed(reason: String) -> void:
+	var latest: Variant = Net.info.get("latest")
+	var url := str(latest.get("url", "")) if latest is Dictionary else ""
+	update_btn.disabled = false
+	update_btn.text = "업데이트 실패: %s · 눌러서 직접 받기" % reason
+	_set_update_action(func(): OS.shell_open(url))
 
 
 ## 게임 오버: 판 기록(점수·특성·선택지·마지막 구성)을 서버로. 설정에서 끄면 보내지 않는다.

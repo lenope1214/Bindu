@@ -35,3 +35,13 @@ godot --headless --path . --script tools/gen_patch_notes.gd
 ```
 
 인터넷이 되면 게임이 GitHub main의 `CHANGELOG.md`를 받아 빌드보다 새 버전 노트도 보여 준다. 그래서 새 버전 절은 push할 때 플레이어가 읽을 수 있는 말로 쓴다.
+
+## 게임 안 업데이트
+
+Windows [업데이트] 버튼(scripts/updater.gd)이 서버 서명을 확인하고 zip에서 exe를 꺼낼 수 있는지 점검:
+
+```
+godot --headless --path . -s tools/update_check.gd -- 공개키.pem 서명 Bindu-windows.zip 해시 크기
+```
+
+서명은 `server/app/main.py`의 `release_payload("windows", "9.9.9", "https://github.com/lenope1214/Bindu/releases/download/v9.9.9/Bindu-windows.zip", 해시, 크기)`를 `signing.sign`한 값. 실제 바꿔 끼우기(실행 중인 exe 이름 바꾸기·다시 켜기)는 Windows에서만 확인할 수 있다.
