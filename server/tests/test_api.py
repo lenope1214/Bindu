@@ -204,3 +204,11 @@ def test_snapshots():
         kb = dict(device="dev-snap-cccc", map="spiral", run="k3")
         assert not post_run(c, ended=False, wave=5, score=10**12, **kb).json()["accepted"]
         assert not post_run(c, ended=True, wave=8, score=100, **kb).json()["accepted"]
+
+
+def test_privacy_page():
+    with TestClient(app) as c:
+        r = c.get("/privacy")
+        assert r.status_code == 200
+        assert "개인정보처리방침" in r.text and "<li>" in r.text
+        assert '<a href="https://github.com/lenope1214/bindu/issues">' in r.text

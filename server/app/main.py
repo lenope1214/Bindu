@@ -1,5 +1,6 @@
 """빈두 온라인 서버: JSON 데이터 패치, 새 버전 알림, 리더보드(시즌), 선택 통계."""
 import hashlib
+import html
 import json
 import urllib.request
 from contextlib import asynccontextmanager
@@ -523,6 +524,39 @@ def log_detail(fp: str, limit: int = Query(30, le=200), db: Session = Depends(ge
 @app.get("/admin", response_class=HTMLResponse)
 def admin_page():
     return (Path(__file__).parent / "admin.html").read_text(encoding="utf-8")
+
+
+def _md_html(md: str) -> str:
+    """개인정보처리방침 같은 짧은 글용: 제목(#, ##)·목록(-)·문단만."""
+    out, ul = [], False
+    for line in md.splitlines():
+        t = html.escape(line.strip())
+        if t.startswith("- "):
+            if not ul:
+                out.append("<ul>")
+                ul = True
+            item = re.sub(r"(https://[^ <]+)", r'<a href="\1">\1</a>', t[2:])
+            out.append(f"<li>{item}</li>")
+            continue
+        if ul:
+            out.append("</ul>")
+            ul = False
+        if t.startswith("## "):
+            out.append(f"<h2>{t[3:]}</h2>")
+        elif t.startswith("# "):
+            out.append(f"<h1>{t[2:]}</h1>")
+        elif t:
+            out.append(f"<p>{t}</p>")
+    if ul:
+        out.append("</ul>")
+    return ("<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+            "<title>빈두 개인정보처리방침</title><style>body{max-width:720px;margin:24px auto;padding:0 16px;font:16px/1.6 sans-serif;color:#222;background:#fff}"
+            "h1{font-size:1.5em}h2{font-size:1.15em;margin-top:1.6em}</style></head><body>" + "\n".join(out) + "</body></html>")
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+def privacy_page():
+    return _md_html((Path(__file__).parent / "privacy.md").read_text(encoding="utf-8"))
 
 
 def _404():
