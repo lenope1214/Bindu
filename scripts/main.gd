@@ -47,6 +47,8 @@ var move_return := Phase.CHOOSE  # 옮기기를 끝내면 돌아갈 단계
 var auto_start := false  # 끄면 설치 후 Space로 웨이브 시작
 var auto_btn: Button
 var start_btn: Button
+var cancel_btn: Button  # 옮기기·설치 중 화면 취소 (우클릭·Esc가 없는 터치 화면용)
+var touch_ui := false  # 마지막 입력이 터치였는지 (터치는 마우스를 올려 둘 수 없다)
 var offer: Array = []  # 이번 선택지 [카드, ...] 카드: {"type": "elem"|"pat"|"mod"|"link", ...}
 var picked := {}  # 고른 카드
 var link_a: Tower = null  # 연결선의 첫 오브젝트
@@ -353,7 +355,16 @@ func _build_ui() -> void:
 	start_btn.pressed.connect(_start_wave_from_ready)
 	start_btn.visible = false
 	root.add_child(start_btn)
-	for b in [pause_btn, speed_btn, reroll_btn, auto_btn, start_btn, mute_btn]:
+	cancel_btn = Button.new()
+	cancel_btn.text = "취소 (Esc)" if OS.has_feature("pc") else "취소"
+	cancel_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	cancel_btn.position = Vector2(-70, -100)  # 웨이브 시작 버튼 자리 (옮기기·설치 중엔 비어 있다)
+	cancel_btn.size = Vector2(140, 40)
+	cancel_btn.add_theme_font_size_override("font_size", 18)
+	cancel_btn.pressed.connect(_cancel_step)
+	cancel_btn.visible = false
+	root.add_child(cancel_btn)
+	for b in [pause_btn, speed_btn, reroll_btn, auto_btn, start_btn, mute_btn, cancel_btn]:
 		b.focus_mode = Control.FOCUS_NONE
 	_update_auto_btn()
 	mute_btn.text = "소리: " + ("끔" if sfx.muted else "켬") + " (M)"
@@ -1164,6 +1175,14 @@ func _game_over() -> void:
 
 
 # ---------- 입력 ----------
+
+## 터치인지 마우스인지 기억한다 (터치에서 흉내 낸 마우스 움직임은 장치 번호가 EMULATION).
+func _input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		touch_ui = true
+	elif event is InputEventMouseMotion and event.device != InputEvent.DEVICE_ID_EMULATION:
+		touch_ui = false
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -2143,7 +2162,7 @@ func _start_move(t: Tower) -> void:
 	phase = Phase.MOVE
 	choice_box.visible = false
 	reroll_btn.visible = false
-	hint.text = "클릭: 새 위치   우클릭/Esc: 옮기기 취소"
+	hint.text = "새 자리를 누르면 옮깁니다   취소: 그대로 두기" if touch_ui else "클릭: 새 위치   우클릭/Esc: 옮기기 취소"
 
 
 func _toggle_pause() -> void:
@@ -2415,6 +2434,7 @@ func _process(delta: float) -> void:
 	if boxing and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_finish_box()  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
 	hide_btn.visible = phase == Phase.CHOOSE and not title_label.visible
+	cancel_btn.visible = phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] and not title_label.visible and not get_tree().paused
 	hide_btn.text = ("▲ 선택지 다시 보기" if cards_hidden else "▼ 선택지 내리고 필드 보기") + " (V)"
 	# 펼쳐 있으면 새로고침 버튼 아래, 내려 두면 화면 위쪽 가운데
 	hide_btn.set_anchors_preset(Control.PRESET_CENTER_TOP if cards_hidden else Control.PRESET_CENTER)
@@ -2697,9 +2717,11 @@ func _update_fx(delta: float) -> void:
 
 ## 마우스를 올린 오브젝트의 정보.
 func _draw_tooltip() -> void:
-	if phase in [Phase.PLACE, Phase.GAMEOVER, Phase.MOVE, Phase.AIM] or title_label.visible or dragging or boxing:
+	# 터치는 마우스를 올려 둘 수 없으니, 눌러서 옮기기 시작한 오브젝트의 정보를 보여 준다
+	var touch_move := phase == Phase.MOVE and touch_ui and moving != null
+	if (phase in [Phase.PLACE, Phase.GAMEOVER, Phase.MOVE, Phase.AIM] and not touch_move) or title_label.visible or dragging or boxing:
 		return
-	var t := _tower_at(get_global_mouse_position())
+	var t := moving if touch_move else _tower_at(get_global_mouse_position())
 	if t == null:
 		_draw_orb_tooltip()
 		return
@@ -2708,6 +2730,8 @@ func _draw_tooltip() -> void:
 	var lines: Array = []  # [글자, 색]
 	var head := t.title()
 	var tip := "(클릭: 옮기기 · 끌기: 바로 이동)" if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
+	if touch_move:
+		tip = "(새 자리 누르기: 옮기기 · 취소: 그대로)"
 	if tip != "" and ui_font.get_string_size(head + "   " + tip, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= maxw:
 		lines.append([head + "   " + tip, Color.WHITE])
 	else:
@@ -2755,6 +2779,10 @@ func _draw_tooltip() -> void:
 	p.x = clampf(p.x, 8, _right_limit() - w - 16)
 	var top := _tip_top()
 	p.y = clampf(p.y, top if h <= size.y - top - 8.0 else 8.0, size.y - h - 8)
+	# 오른쪽 설명에 밀려 왼쪽으로 오면 오브젝트를 덮는다: 위나 아래로 비킨다
+	if Rect2(p, Vector2(w + 16, h)).intersects(Rect2(t.position - Vector2(26, 26), Vector2(52, 52))):
+		var above := t.position.y - 30.0 - h
+		p.y = above if above >= top else minf(t.position.y + 30.0, size.y - h - 8)
 	p = _avoid_cards(Rect2(p, Vector2(w + 16, h)), size)
 	fx_layer.draw_rect(Rect2(p, Vector2(w + 16, h)), Color(0.05, 0.06, 0.09, 0.92))
 	fx_layer.draw_rect(Rect2(p, Vector2(w + 16, h)), Color(1, 1, 1, 0.2), false, 1.0)
