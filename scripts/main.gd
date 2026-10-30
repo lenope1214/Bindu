@@ -515,8 +515,9 @@ func _build_ui() -> void:
 
 	help_label = Label.new()
 	help_label.set_anchors_preset(Control.PRESET_CENTER)
-	help_label.position = Vector2(-440, -300)
+	help_label.position = Vector2(-440, -320)  # 가운데보다 조금 위: 아래 버튼 줄을 비운다
 	help_label.size = Vector2(880, 600)
+	help_label.grow_vertical = Control.GROW_DIRECTION_BOTH  # 줄이 늘어도 가운데에 (아래 버튼 줄을 덮지 않게)
 	help_label.add_theme_font_size_override("font_size", 16)
 	var hsb := StyleBoxFlat.new()
 	hsb.bg_color = Color(0.05, 0.06, 0.09, 1.0)  # 뒤 카드·설명 글자가 비쳐 보이지 않게
@@ -648,7 +649,8 @@ func _help_text() -> String:
 		"P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   F11: 전체 화면",
 		"R: 다시 시작 (게임 오버 뒤, 또는 일시정지 중 두 번)",
 		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 이어하기(Enter)로 그 쉬는 시간부터 (새로 시작은 N 두 번)",
-		"첫 판은 카드가 단계별로 열려요(공격방식 3·강화 4·연계 6웨이브). 처음 생기는 일엔 위쪽에 한 줄 안내 (설정에서 끄기·다시 보기)",
+		"첫 판은 카드가 단계별로 열려요 (공격방식 3·강화 4·연계 6웨이브)",
+		"처음 생기는 일엔 위쪽에 한 줄 안내 (설정에서 끄기·처음부터 다시 보기)",
 		"",
 		"[규칙 · %s]" % Rules.NAMES[Rules.version],
 		"중앙 체력 10. 구체가 닿으면 줄어듭니다",
@@ -1951,13 +1953,14 @@ func _build_menu(root: Control) -> void:
 
 	settings_panel = PanelContainer.new()
 	settings_panel.set_anchors_preset(Control.PRESET_CENTER)
-	settings_panel.position = Vector2(-220, -150)
-	settings_panel.size = Vector2(440, 0)  # 내용 높이에 맞춤
+	settings_panel.position = Vector2(-240, 0)
+	settings_panel.size = Vector2(480, 0)
+	settings_panel.grow_vertical = Control.GROW_DIRECTION_BOTH  # 내용 높이에 맞춰 위아래로 자라 가운데에 (온라인 줄이 생기면 아래가 잘리던 것)
 	settings_panel.add_theme_stylebox_override("panel", rsb.duplicate())
 	settings_panel.visible = false
 	root.add_child(settings_panel)
 	var sv := VBoxContainer.new()
-	sv.add_theme_constant_override("separation", 12)
+	sv.add_theme_constant_override("separation", 8)
 	settings_panel.add_child(sv)
 	var st := Label.new()
 	st.text = "설정 (O / Esc: 닫기)"
@@ -2050,16 +2053,21 @@ func _build_menu(root: Control) -> void:
 		ne.text_submitted.connect(func(_t): ne.release_focus())
 		nrow.add_child(ne)
 		sv.add_child(nrow)
+	var brow := HBoxContainer.new()
+	brow.add_theme_constant_override("separation", 8)
 	var fs := Button.new()
 	fs.text = "전체 화면 전환 (F11)"
 	fs.focus_mode = Control.FOCUS_NONE
+	fs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fs.pressed.connect(_toggle_fullscreen)
-	sv.add_child(fs)
+	brow.add_child(fs)
 	var close := Button.new()
 	close.text = "닫기"
 	close.focus_mode = Control.FOCUS_NONE
+	close.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	close.pressed.connect(_toggle_settings)
-	sv.add_child(close)
+	brow.add_child(close)
+	sv.add_child(brow)
 	_refresh_menu()
 
 
