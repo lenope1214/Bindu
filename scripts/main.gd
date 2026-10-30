@@ -1164,6 +1164,8 @@ func _fav_tag(card: Dictionary) -> String:
 		return "★ 선호"
 	if card["type"] == "elem":
 		for t in towers.get_children():
+			if not t.can_take(card):
+				continue
 			for r in Elem.new_reactions(t.elements, card["e"]):
 				if Meta.favs.has("react:" + str(r["id"])):
 					return "★ 선호 반응: " + str(r["name"])
@@ -1442,7 +1444,10 @@ func _combos_for(e: int) -> PackedStringArray:
 	# 속성 이름을 늘어놓지 않고 짧게: 생길 반응 이름과 레벨업 가능한 곳 수만 (대상은 판에 표시)
 	var names := PackedStringArray()
 	var ups := 0
+	var card := {"type": "elem", "e": e}
 	for t in towers.get_children():
+		if not t.can_take(card):  # 속성 종류 상한으로 못 넣는 오브젝트는 셈에서 뺀다
+			continue
 		for r in Elem.new_reactions(t.elements, e):
 			if not names.has(r["name"]):
 				names.append(r["name"])
@@ -4534,7 +4539,10 @@ func _draw() -> void:
 	var mpos := get_global_mouse_position()
 	if phase == Phase.CHOOSE and hover_elem >= 0:
 		var pulse2 := 0.5 + 0.5 * sin(now * 6.7)
+		var hcard := {"type": "elem", "e": hover_elem}
 		for t in towers.get_children():
+			if not t.can_take(hcard):  # 속성 종류 상한에 걸려 못 넣는 오브젝트는 강조하지 않음
+				continue
 			var fresh := Elem.new_reactions(t.eff_now(), hover_elem)
 			if not fresh.is_empty():
 				draw_arc(t.position, Tower.RADIUS + 10.0 + pulse2 * 4.0, 0, TAU, 32, Color(fresh[0]["color"], 0.9), 3.0)
@@ -4545,6 +4553,8 @@ func _draw() -> void:
 		# 새 반응이 생기는 오브젝트 강조
 		if is_elem:
 			for t in towers.get_children():
+				if not t.can_take(picked):
+					continue
 				var fresh := Elem.new_reactions(t.eff_now(), picked["e"])
 				if not fresh.is_empty():
 					draw_arc(t.position, Tower.RADIUS + 10.0 + pulse * 4.0, 0, TAU, 32, Color(fresh[0]["color"], 0.9), 3.0)
