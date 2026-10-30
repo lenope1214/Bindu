@@ -52,6 +52,12 @@ var main: Node
 var dmg_acc := 0.0  # 피해 숫자 팝업용 누적
 var pop_t := 0.0
 var age := 0.0  # 등장 연출
+var from_a := 0.0  # 나온 방향(중앙 기준 각도): 누수 기록·표시용
+
+
+## 보스 부하 소환 주기 (첫 부하는 나온 지 4초 뒤): 첫 보스는 7초, 웨이브마다 빨라져 13웨이브부터 4초.
+static func minion_every(w: int) -> float:
+	return clampf(9.0 - w * 0.4, 4.0, 7.0)
 
 
 func radius() -> float:
@@ -88,7 +94,7 @@ func step(delta: float) -> void:
 	if kind == Kind.BOSS and main:
 		minion_t -= delta
 		if minion_t <= 0.0:
-			minion_t = 4.0
+			minion_t = minion_every(main.wave)
 			main.spawn_minion(self)
 	slow_timer = maxf(slow_timer - delta, 0.0)
 	root_timer = maxf(root_timer - delta, 0.0)
@@ -345,7 +351,9 @@ func _draw() -> void:
 	if slow_timer > 0.0: icons.append(Elem.COLORS[Elem.WATER])
 	for i in icons.size():
 		draw_circle(Vector2(-(icons.size() - 1) * 4.0 + i * 8.0, -r - 9.0), 3.0, icons[i])
-	var font := ThemeDB.fallback_font
-	var txt := str(ceili(hp))
-	var size := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_CENTER, -1, 12)
-	draw_string(font, Vector2(-size.x / 2, 4), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.1, 0.1, 0.15))
+	# 체력 숫자: 보스·마우스를 올린 구체·설정에서 켠 때만 (평소엔 위의 붉은 고리로 본다)
+	if kind == Kind.BOSS or Meta.orb_hp_on or (main and main.tip_orb == self):
+		var font := ThemeDB.fallback_font
+		var txt := str(ceili(hp))
+		var size := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_CENTER, -1, 12)
+		draw_string(font, Vector2(-size.x / 2, 4), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.1, 0.1, 0.15))

@@ -56,10 +56,14 @@ static var games := 0
 static var volume := 1.0
 static var shake_on := true
 static var numbers_on := true
-static var symbols_on := false  # 속성 색 위에 첫 글자 표시 (색만으로 구분하기 어려울 때)
+static var symbols_on := true  # 속성 색 위에 첫 글자 표시 (색만으로 구분하기 어려울 때). 새 저장은 켬
+static var orb_hp_on := false  # 모든 구체에 체력 숫자 (끄면 고리만, 보스·마우스를 올린 구체는 숫자도)
 static var online_on := true  # 판 기록 보내기 (리더보드·사용 통계). 끄면 아무것도 보내지 않음
 static var nickname := ""
 static var device_id := ""  # 이 기기의 무작위 id (개인정보 아님). 처음 켤 때 만든다
+static var guide_on := true  # 처음 생기는 일에 한 줄 안내 (설정에서 끔)
+static var guide_seen := {}  # 이미 본 안내 id -> true
+static var tutor_next := true  # 다음 새 판은 카드 종류를 웨이브마다 하나씩 연다 (첫 판, 설정에서 다시 켬)
 static var loaded := false
 
 
@@ -125,10 +129,14 @@ static func load_into(cfg: ConfigFile) -> void:
 	volume = val(cfg, "settings", "volume", 1.0)
 	shake_on = val(cfg, "settings", "shake", true)
 	numbers_on = val(cfg, "settings", "numbers", true)
-	symbols_on = val(cfg, "settings", "symbols", false)
+	symbols_on = val(cfg, "settings", "symbols", false)  # 예전 저장(키가 없던 v0.4.20 이전)은 그대로 끔
+	orb_hp_on = val(cfg, "settings", "orb_hp", false)
 	online_on = val(cfg, "online", "on", true)
 	nickname = val(cfg, "online", "nickname", "")
 	device_id = val(cfg, "online", "device", "")
+	guide_on = val(cfg, "guide", "on", true)
+	guide_seen = val(cfg, "guide", "seen", {})
+	tutor_next = val(cfg, "guide", "tutor", games == 0)  # 이미 해 본 저장은 단계별로 열지 않는다
 	volume = clampf(volume, 0.0, 1.0)
 	# 예전 저장의 최고 기록은 평원 기록으로 옮긴다
 	if not map_best.has("plain") and cfg.has_section_key("best", "wave"):
@@ -154,6 +162,10 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("settings", "shake", shake_on)
 	cfg.set_value("settings", "numbers", numbers_on)
 	cfg.set_value("settings", "symbols", symbols_on)
+	cfg.set_value("settings", "orb_hp", orb_hp_on)
 	cfg.set_value("online", "on", online_on)
 	cfg.set_value("online", "nickname", nickname)
 	cfg.set_value("online", "device", device_id)
+	cfg.set_value("guide", "on", guide_on)
+	cfg.set_value("guide", "seen", guide_seen)
+	cfg.set_value("guide", "tutor", tutor_next)

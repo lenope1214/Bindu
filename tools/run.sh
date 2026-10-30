@@ -6,9 +6,11 @@
 #   cont [규칙=1] [맵=plain] [웨이브=45]   4웨이브마다 끄고 이어하기 → 저장 전후가 다르면 DIFF
 #   fuzz [판 수=8] [프레임=9000]          무작위 클릭·끌기·키·터치 (스크립트 오류 찾기)
 #   elem                                   속성마다 직선탄 Lv2 하나가 30초간 준 피해/초
-# 환경 변수: SPEED(배속, 기본 4) SMART=1(사람처럼 배치) MAP(bots에서 맵 고정)
+#   perf                                   후반 부하(오브젝트 16개·구체 400개) 배속별 프레임당 계산 시간
+# 환경 변수: SPEED(배속, 기본 4) SMART(기본 1: 사람처럼 중앙 가까이에서 길목을 겨눔, 0이면 예전 봇)
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+export SMART=${SMART:-1}
 G=${GODOT:-godot}
 CMD=${1:-bots}
 shift || true
@@ -41,6 +43,19 @@ summary() {
 		}'
 }
 
+leaks() {
+	# 판마다 처음 누수가 난 웨이브, 웨이브별 누수 합계, 죽은 웨이브에서 새어 든 구체 종류(0 일반 1 빠른 2 단단한 3 보스)
+	for f in "$@"; do
+		d=$(grep -o "RESULT wave=[0-9]*" "$f" | head -1 | sed 's/RESULT wave=//')
+		grep "^LEAKS" "$f" | sed "s/^/$d /"
+	done | awk '
+		{ dw=$1; split($3, a, "="); w=a[2]; split($4, b, "="); n=b[2]; tot[w]+=n; if (w==dw) { died[w]++; match($0, /kinds=[^ ]*/); dk[w]=dk[w] " " substr($0, RSTART+6, RLENGTH-6) } }
+		END {
+			printf "웨이브별 누수 합계:"; for (w=1; w<=60; w++) if (tot[w]>0) printf " %d:%d", w, tot[w]; printf "\n"
+			for (w=1; w<=60; w++) if (died[w]>0) printf "  %d웨이브에서 죽은 판 %d개, 새어 든 종류:%s\n", w, died[w], dk[w]
+		}'
+}
+
 case "$CMD" in
 	bots)
 		R=${1:-1}; N=${2:-32}; MODE=${3:-}
@@ -54,6 +69,7 @@ case "$CMD" in
 		grep -h "SCRIPT ERROR" -A2 b_*.txt | head -6 || true
 		echo "규칙 $R ${MODE:+($MODE)}:"
 		summary b_*.txt
+		leaks b_*.txt
 		rm -rf "$D"
 		;;
 	long|cont)
@@ -88,8 +104,14 @@ case "$CMD" in
 		T 1800 "$G" --headless --fixed-fps 60 --path . -s tools/elem_dps.gd 2>&1 | grep -v "^$" | grep -vi "warning\|leaked\|alsa\|audio" || true
 		rm -rf "$D"
 		;;
+	perf)
+		D=$(copy_project "$$")
+		cd "$D"
+		T 900 "$G" --headless --fixed-fps 60 --path . -s tools/perf.gd 2>&1 | grep -E "PERF|SCRIPT ERROR" || true
+		rm -rf "$D"
+		;;
 	*)
-		sed -n '2,10p' "$0"
+		sed -n '2,11p' "$0"
 		exit 1
 		;;
 esac
