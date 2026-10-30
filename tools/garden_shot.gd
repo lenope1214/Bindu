@@ -1,5 +1,5 @@
 extends SceneTree
-## 정원 모드 화면 스크린샷: 시작 화면(정원·씨앗 나무 버튼), 씨앗 나무 창, 정원 상점, 웨이브 중, 환생 버튼, 꺼 둔 동안 보상.
+## 정원 모드 화면 스크린샷: 시작 화면(정원·씨앗 나무 버튼), 씨앗 나무 창, 정원 상점, 놓기, 웨이브 중, 물러난 뒤, 특성 4장(열매).
 ## 인자: 저장 폴더 [글자 크기]. 예) xvfb-run godot --rendering-driver opengl3 --path . -s tools/garden_shot.gd -- /tmp/shots
 var main
 var f := 0
@@ -61,6 +61,14 @@ func _initialize():
 		func(): pass,
 		func(): pass,
 		func(): _snap("g_after"),
+		func():
+			# 씨앗 나무 열매 1: 특성 4장
+			Garden.tree["fruit"] = 1
+			Garden.boosted = true
+			main.garden_perk_t = 30.0
+			main._start_perk(),
+		func(): pass,
+		func(): _snap("g_perk4"),
 	]
 
 

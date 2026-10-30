@@ -1563,10 +1563,10 @@ func _draw_card_foot(b: Button, foot: Array, col: Color) -> void:
 
 ## 카드 글이 카드 안에 들어가게: 줄 수가 CARD_MAX_H를 넘으면 글자를 한 단계씩 줄인다 (최소 13).
 ## 카드 높이는 글에 맞춰 170~CARD_MAX_H. 넘친 글이 카드 밖·아래 버튼 위로 삐져나오던 것.
-func _fit_card_text(b: Button, text: String, fs: int) -> void:
+func _fit_card_text(b: Button, text: String, fs: int, count := -1) -> void:
 	var t := text
 	var h := 0.0
-	var w := 230.0 if offer.size() <= 3 else 166.0  # 정원 상점은 4장
+	var w := 230.0 if (offer.size() if count < 0 else count) <= 3 else 166.0  # 정원 상점·씨앗 나무 열매 특성은 4장
 	while true:
 		t = _wrap_words(text, w - 10.0, fs)
 		# 버튼이 실제로 그리는 폭(테두리 안 w-4)으로 다시 재서 줄 수를 센다
@@ -1750,7 +1750,7 @@ func _show_perks() -> void:
 		b.add_theme_stylebox_override("hover", sbh)
 		b.add_theme_stylebox_override("pressed", sbh)
 		var have: int = perks.get(pk["id"], 0)
-		_fit_card_text(b, "[%d] 특성: %s\n\n%s%s" % [i + 1, pk["name"], _perk_desc(pk), "\n\n(보유 %d)" % have if have > 0 else ""], 17)
+		_fit_card_text(b, "[%d] 특성: %s\n\n%s%s" % [i + 1, pk["name"], _perk_desc(pk), "\n\n(보유 %d)" % have if have > 0 else ""], 17 if perk_offer.size() <= 3 else 15, perk_offer.size())
 		b.add_theme_color_override("font_color", Color(1, 0.85, 0.45))
 		b.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
 		b.focus_mode = Control.FOCUS_NONE
@@ -2617,7 +2617,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			help_label.visible = not help_label.visible
 		elif event.keycode == KEY_TAB:
 			_toggle_legend()
-		elif event.keycode in [KEY_1, KEY_2, KEY_3, KEY_KP_1, KEY_KP_2, KEY_KP_3] and phase == Phase.CHOOSE and help_label.visible == false:
+		elif event.keycode in [KEY_1, KEY_2, KEY_3, KEY_4, KEY_KP_1, KEY_KP_2, KEY_KP_3, KEY_KP_4] and phase == Phase.CHOOSE and help_label.visible == false:
 			var i: int = event.keycode - (KEY_KP_1 if event.keycode >= KEY_KP_1 else KEY_1)
 			if perk_mode:
 				if i < perk_offer.size():
@@ -5061,8 +5061,8 @@ func _process(delta: float) -> void:
 	hide_btn.set_anchors_preset(Control.PRESET_CENTER_TOP if cards_hidden else Control.PRESET_CENTER)
 	# 카드 줄은 오른쪽 설명을 피해 왼쪽으로 비켜 있다. 설명을 숨기면 가운데로, 버튼도 카드 가운데에 맞춘다
 	var cx := 0.0 if legend_hidden else -75.0
-	# 정원 상점 4장이 오른쪽 설명 밑으로 들어가면(글자 크게) 쉬는 시간 동안 설명을 접고 가운데로
-	if Garden.on and legend.visible and phase == Phase.CHOOSE and offer.size() > 3 and ui_root.size.x / 2.0 + cx + 365.0 > legend.position.x - 8.0:
+	# 카드 4장(정원 상점·열매 특성)이 오른쪽 설명 밑으로 들어가면(글자 크게) 쉬는 시간 동안 설명을 접고 가운데로
+	if legend.visible and phase == Phase.CHOOSE and choice_box.get_child_count() > 3 and ui_root.size.x / 2.0 + cx + 365.0 > legend.position.x - 8.0:
 		legend.visible = false
 		cx = 0.0
 	choice_box.offset_left = cx - 365.0
