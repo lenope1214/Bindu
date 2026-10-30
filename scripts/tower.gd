@@ -384,7 +384,7 @@ func attack(delta: float, orbs: Array) -> void:
 					pr.dmg *= mk  # 다중 발사: 한 발 피해 감소
 		"spray":
 			for d in dirs():
-				_cone(orbs, d, 150.0 * reach(l) * s, 0.35, func(o): hit(o, 4.2 * pw(l) * de * mk, k))
+				_cone(orbs, d, 200.0 * reach(l) * s, 0.35, func(o): hit(o, 5.5 * pw(l) * de * mk, k))
 		"stream":
 			if _ready_to("p", 1.0 / spd(l), de):
 				fx["stream"] = 0.6
@@ -927,7 +927,7 @@ func _draw_attack() -> void:
 	match pattern:
 		"spray":
 			for d in dirs():
-				_draw_puffs(d, 150.0 * reach(l) * s, 0.35, 34, 2.4, c.lightened(0.4), c, 3.0, 10.0)
+				_draw_puffs(d, 200.0 * reach(l) * s, 0.35, 34, 2.4, c.lightened(0.4), c, 3.0, 10.0)
 		"stream":
 			if fx.get("stream", 0.0) > 0.0:
 				for d in dirs():
@@ -1129,7 +1129,7 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 		var dd := d.rotated((i - (n - 1) / 2.0) * 0.22)
 		match sp["pat"]:
 			"spray":
-				_r_cone(ci, o, dd, 150.0 * reach(l) * s, 0.35, c)
+				_r_cone(ci, o, dd, 200.0 * reach(l) * s, 0.35, c)
 			"chain":
 				_r_cone(ci, o, dd, 280.0 * reach(l) * s, 0.5, c)
 			"stream":
