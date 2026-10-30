@@ -71,6 +71,7 @@ var projectiles: Node2D
 var zones: Node2D
 var arcs: Array = []  # 전류 이펙트 [시작, 끝, 남은 시간]
 var bolts: Array = []  # 연쇄 번개 [점 목록, 남은 시간]
+var pulses: Array = []  # 소리 울림 음파 [중심, 반지름, 남은 시간]
 var live_orbs: Array = []
 var targets: Array = []  # 화면 안에 들어온 구체 (공격 대상)
 var fx_layer: Node2D  # 피해 숫자·파편 (맨 위)
@@ -3536,6 +3537,46 @@ func bolt(pts: PackedVector2Array) -> void:
 		bolts.append([pts, 0.22])
 
 
+## 소리 울림: 울림이 3번 쌓인 구체 주변(자기 포함)에 음파 피해. 부가효과는 붙지 않는다.
+func sound_pulse(o: Orb) -> void:
+	var tw: Tower = o.tune_src if is_instance_valid(o.tune_src) else null
+	var l := maxi(o.tune_lv, 1)
+	var r := 70.0 + 10.0 * (l - 1)
+	var dmg := 1.2 * Tower.pw(l) * (tw.dmg_factor(true) if tw else 1.3)
+	for other in near(o.position, r + 30.0):
+		if other.hp > 0.0 and other.position.distance_to(o.position) < r + other.radius():
+			other.hurt(dmg)
+			if tw:
+				tw.dealt += dmg
+	if pulses.size() < 40:
+		pulses.append([o.position, r, 0.3])
+
+
+## 영혼: 넋이 걸린 채 죽은 구체에서 혼불 (망자의 강 안이면 반드시). 화면의 혼불은 30개까지.
+func _soul_wisp(o: Orb) -> void:
+	var tw: Tower = null
+	var l := 1
+	if o.styx_t > 0.0 and is_instance_valid(o.styx_src):
+		tw = o.styx_src
+		l = o.styx_lv
+	elif o.soul_t > 0.0 and is_instance_valid(o.soul_src) and randf() < minf(0.2 + 0.1 * o.soul_lv, 0.6):
+		tw = o.soul_src
+		l = o.soul_lv
+	if tw == null:
+		return
+	var n := 0
+	for p in projectiles.get_children():
+		if p.kind == "ghost":
+			n += 1
+	if n >= 30:
+		return
+	var g := spawn_proj(tw, "ghost", l, Vector2.from_angle(randf() * TAU))
+	g.position = o.position
+	g.hit[o] = true
+	g.dmg = 2.5 * Tower.pw(l)
+	g.ghost = "styx" if o.styx_t > 0.0 else ""
+
+
 ## 전기 부가효과: 가까운 다른 구체로 전류가 튄다 (src: 쏜 오브젝트, 피해 기록용).
 func arc(from: Orb, dmg: float, src: Tower = null) -> void:
 	var best: Orb = null
@@ -4057,6 +4098,8 @@ func _resolve(delta: float) -> void:
 				_curse_burst(o)
 			if o.swamp_t > 0.0:
 				_swamp_burst(o)
+			if o.soul_t > 0.0 or o.styx_t > 0.0:
+				_soul_wisp(o)
 			o.queue_free()
 			continue
 		if _reached_core(o):
@@ -4164,6 +4207,9 @@ func _update_fx(delta: float) -> void:
 	for b in bolts:
 		b[1] -= delta
 	bolts = bolts.filter(func(b): return b[1] > 0.0)
+	for q in pulses:
+		q[2] -= delta
+	pulses = pulses.filter(func(q): return q[2] > 0.0)
 	shake = maxf(shake - delta, 0.0)
 	combo_t = maxf(combo_t - delta, 0.0)
 	core_flash = maxf(core_flash - delta, 0.0)
@@ -4317,6 +4363,10 @@ func _draw_orb_tooltip() -> void:
 		if o.prison_t > 0.0: parts.append("감옥(받는 피해 +50%)")
 		if o.swamp_t > 0.0: parts.append("독늪(중독 2배)")
 		if o.curse_lv > 0: parts.append("저주")
+		if o.tune_t > 0.0: parts.append("울림 %d/3" % int(o.ring))
+		if o.echo_t > 0.0: parts.append("메아리 %d%%" % roundi(o.echo_frac * 100))
+		if o.soul_t > 0.0 or o.styx_t > 0.0: parts.append("넋")
+		if o.silence_t > 0.0: parts.append("침묵")
 		if o.resist_e >= 0: parts.append("%s 저항" % Elem.NAMES[o.resist_e])
 		if o.sturdy: parts.append("굳셈(밀기·감속·기절·냉기 절반)")
 		var txt := " · ".join(parts)
@@ -4383,6 +4433,11 @@ func _draw_fx() -> void:
 			fx_layer.draw_rect(Rect2(vs.x - w, 0, w, vs.y), col)
 	for a in arcs:
 		fx_layer.draw_line(a[0], a[1], Elem.COLORS[Elem.ELECTRIC], 2.0)
+	var sc: Color = Elem.COLORS[Elem.SOUND]
+	for q in pulses:
+		var k: float = 1.0 - q[2] / 0.3
+		fx_layer.draw_arc(q[0], q[1] * (0.4 + 0.6 * k), 0, TAU, 32, Color(sc, 1.0 - k), 3.0)
+		fx_layer.draw_arc(q[0], q[1] * (0.2 + 0.5 * k), 0, TAU, 24, Color(sc, 0.6 * (1.0 - k)), 2.0)
 	var ec: Color = Elem.COLORS[Elem.ELECTRIC]
 	for b in bolts:
 		var src: PackedVector2Array = b[0]

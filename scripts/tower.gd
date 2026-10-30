@@ -35,6 +35,10 @@ var halo_cd := {}  # 광륜: 구체별 다시 맞힐 때까지 남은 시간
 var vine_cd := {}  # 덩굴: 구체별 다시 묶을 때까지 남은 시간
 var zaps: Array = []  # 감전 물길: 이번에 전류가 꽂힌 자리(로컬)
 var prison_c := Vector2.ZERO  # 빙결 감옥 중심(로컬)
+var clock_ph := 0.0  # 시계침 위상
+var clock_hit := {}  # 시계침: 이번 한 번 훑는 동안 맞힌 구체
+var glint_d := Vector2.RIGHT  # 잔광: 1.2초 뒤 다시 쏠 방향
+var rewind_q: Array = []  # 되감기 번개: 1초 뒤 다시 칠 구체들
 var main: Node
 
 
@@ -439,6 +443,30 @@ func attack(delta: float, orbs: Array) -> void:
 			if _ready_to("p", 2.0 / spd(l), de):
 				for d in dirs():
 					main.spawn_proj(self, "blob", l, d)
+		"sonic":
+			# 부채꼴로 퍼지는 파동: 안의 구체를 모두 치고, 멀수록 약하다 (끝에서 50%)
+			if _ready_to("p", 1.0 / spd(l), de):
+				fx["sonic"] = 0.35
+				var R := sonic_r(l)
+				for d in dirs():
+					_cone(orbs, d, R, 0.5, func(o):
+						hit(o, 2.6 * pw(l) * mk * (1.0 - 0.5 * minf(o.position.distance_to(position) / R, 1.0))))
+		"clock":
+			# 바늘이 앞쪽 ±0.7라디안을 왕복한다. 한 번 훑을 때마다 같은 구체는 한 번씩
+			var was := cos(clock_ph) >= 0.0
+			clock_ph += de * spd(l) * TAU / 1.6
+			if (cos(clock_ph) >= 0.0) != was:
+				clock_hit.clear()
+			for d in dirs():
+				_line(orbs, d.rotated(clock_a()), 240.0 * reach(l) * s, 10.0 * s, func(o):
+					if not clock_hit.has(o):
+						clock_hit[o] = true
+						hit(o, 1.2 * pw(l) * mk))
+		"wisp":
+			if _ready_to("p", 1.0 / spd(l), de):
+				for d in dirs():
+					var pr: Projectile = main.spawn_proj(self, "wisp", l, d)
+					pr.dmg *= mk
 	_reactions(orbs, de, k)
 	queue_redraw()
 
@@ -617,6 +645,91 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 					if best and mine < l:
 						best.curse_lv = l
 						best.curse_owner = self
+			"bell":
+				# 종: 앞쪽 부채꼴에 울림 2번씩 (다음 한 번에 음파가 터진다)
+				if _ready_to(id, 3.5 / spd(l), de):
+					fx[id] = 0.4
+					_cone(orbs, dir, 260.0 * reach(l), 0.6, func(o):
+						hit(o, 2.5 * pw(l))  # 소리가 있어 여기서 울림 1번
+						_ring(o, 1.0))
+			"shatter":
+				# 파쇄: 파동이 냉기를 쌓고, 빙결된 구체는 깨지며 큰 피해·파편 3개
+				if _ready_to(id, 2.5 / spd(l), de):
+					fx[id] = 0.35
+					_cone(orbs, dir, 240.0 * reach(l), 0.5, func(o):
+						if o.frozen_t > 0.0:
+							o.frozen_t = 0.0
+							hit(o, 7.0 * pw(l))
+							main.burst(o.position, Elem.COLORS[Elem.ICE], 10, 160.0)
+							for i in 3:
+								var p: Projectile = main.spawn_proj(self, "frag", l, Vector2.from_angle(randf() * TAU))
+								p.position = o.position
+								p.hit[o] = true
+						else:
+							hit(o, 1.5 * pw(l))
+							o.add_chill(1.0))
+			"silence":
+				if _ready_to(id, 4.0 / spd(l), de):
+					fx[id] = 0.4
+					_cone(orbs, dir, 260.0 * reach(l), 0.6, func(o):
+						hit(o, 2.0 * pw(l))
+						o.silence_t = maxf(o.silence_t, 2.0))
+			"afterimage":
+				# 잔광: 광선, 1.2초 뒤 같은 방향으로 한 번 더
+				if _ready_to(id, 3.0 / spd(l), de):
+					fx[id] = 0.3
+					glint_d = dir
+					cd["afterimage2"] = 1.2
+					_line(orbs, dir, 2000.0, 12.0, func(o): hit(o, 3.0 * pw(l)))
+				var f2: float = cd.get("afterimage2", 0.0)
+				if f2 > 0.0:
+					cd["afterimage2"] = f2 - de
+					if cd["afterimage2"] <= 0.0:
+						fx["afterimage2"] = 0.3
+						_line(orbs, glint_d, 2000.0, 12.0, func(o): hit(o, 3.0 * pw(l)))
+			"rewind":
+				# 되감기 번개: 앞쪽 구체부터 연쇄, 1초 뒤 같은 구체들을 한 번 더
+				if not rewind_q.is_empty():
+					rewind_q[0] -= de
+					if rewind_q[0] <= 0.0:
+						var pts := PackedVector2Array([position])
+						for o in rewind_q[1]:
+							if is_instance_valid(o) and o.hp > 0.0:
+								pts.append(o.position)
+								hit(o, 2.0 * pw(l))
+						if pts.size() > 1:
+							main.bolt(pts)
+						rewind_q = []
+				elif _ready_to(id, 2.5 / spd(l), de):
+					var got := _chain_list(orbs, dir, 280.0 * reach(l), 3 + l)
+					if not got.is_empty():
+						var pts := PackedVector2Array([position])
+						for o in got:
+							pts.append(o.position)
+							hit(o, 2.0 * pw(l))
+						main.bolt(pts)
+						rewind_q = [1.0, got]
+			"hourglass":
+				# 모래시계 벽: 가로로 서는 모래 벽, 안에서는 메아리 50%
+				var w := wall_of(id, l)
+				_band(orbs, w[0], w[1], w[2], 14.0, func(o):
+					hit(o, 1.0 * pw(l) * de, k)
+					o.slow(0.4, 0.3)
+					o.echo(0.5, 2.0, self))
+			"styx":
+				# 망자의 강: 물길 안에서 죽으면 반드시 혼불
+				_band(orbs, position, dir, chan_len(l), chan_w(l), func(o):
+					hit(o, 1.0 * pw(l) * de, k)
+					o.slow(0.7, 0.3)
+					o.styx_t = 0.3
+					o.styx_lv = l
+					o.styx_src = self)
+			"plague", "spirit":
+				if _ready_to(id, (2.2 if id == "plague" else 2.5) / spd(l), de):
+					for a in [-0.35, 0.35]:
+						var pr: Projectile = main.spawn_proj(self, "ghost", l, dir.rotated(a))
+						pr.dmg = 2.4 * pw(l)
+						pr.ghost = id
 			"prison":
 				if _ready_to(id, 7.0 / spd(l), de):
 					fx[id] = 0.5
@@ -626,6 +739,54 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 							hit(o, 2.0 * pw(l))
 							o.root(1.5)
 							o.prison_t = 1.5
+
+
+## 음파 사거리.
+func sonic_r(l: int) -> float:
+	return 230.0 * reach(l) * sz()
+
+
+## 시계침 각도 (공격 방향 기준).
+func clock_a() -> float:
+	return sin(clock_ph) * 0.7
+
+
+## 앞쪽 가장 가까운 구체부터 n개를 잇는다 (되감기 번개).
+func _chain_list(orbs: Array, d: Vector2, rng: float, n: int) -> Array:
+	var first: Orb = null
+	var best := rng
+	for o in orbs:
+		var v: Vector2 = o.position - position
+		if v.length() < best and absf(d.angle_to(v)) < 0.5:
+			best = v.length()
+			first = o
+	if first == null:
+		return []
+	var out := [first]
+	var cur := first
+	while out.size() < n:
+		var nxt: Orb = null
+		var nd := 110.0
+		for o in orbs:
+			if not out.has(o) and o.position.distance_to(cur.position) < nd:
+				nd = o.position.distance_to(cur.position)
+				nxt = o
+		if nxt == null:
+			break
+		out.append(nxt)
+		cur = nxt
+	return out
+
+
+## 울림을 쌓는다. 3이 되면 그 구체 주변에 음파 (같은 구체는 1초에 한 번).
+func _ring(o: Orb, amount: float) -> void:
+	o.ring += amount
+	if o.ring < 3.0 or o.ring_cd > 0.0:
+		return
+	o.ring = 0.0
+	o.ring_cd = 1.0
+	if main:
+		main.sound_pulse(o)
 
 
 ## 물길: 공격 방향으로 흐르는 띠. 웨이브가 시작되면 물이 앞으로 흘러 나간다.
@@ -640,8 +801,8 @@ func chan_w(l: int) -> float:
 
 ## 가로 벽(용암·독늪): [시작점(전역), 방향, 길이]. 공격 방향과 수직으로 선다.
 func wall_of(id: String, l: int) -> Array:
-	var dist := (120.0 if id == "lava" else 170.0) * reach(l)
-	var half := (70.0 if id == "lava" else 80.0) + 10.0 * (l - 1)
+	var dist: float = {"lava": 120.0, "swamp": 170.0, "hourglass": 150.0}[id] * reach(l)
+	var half: float = {"lava": 70.0, "swamp": 80.0, "hourglass": 75.0}[id] + 10.0 * (l - 1)
 	var n := dir.orthogonal()
 	return [position + dir * dist - n * half, n, half * 2.0]
 
@@ -726,6 +887,21 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		o.vuln(2.0)
 	if els.has(Elem.ELECTRIC) and randf() < 0.3 * k:
 		main.arc(o, d * 0.5 * L.call(Elem.ELECTRIC), self)
+	if els.has(Elem.SOUND):
+		# 울림을 걸어 둔다: 3초 동안 어느 오브젝트에 맞아도 쌓인다
+		if o.tune_t <= 0.0 or L.call(Elem.SOUND) >= o.tune_lv:
+			o.tune_lv = L.call(Elem.SOUND)
+			o.tune_src = self
+		o.tune_t = 3.0
+	if o.tune_t > 0.0:
+		_ring(o, minf(k, 1.0))
+	if els.has(Elem.TIME):
+		o.echo(minf(0.15 + 0.05 * L.call(Elem.TIME), 0.4), 2.0, self)
+	if els.has(Elem.SOUL):
+		if o.soul_t <= 0.0 or L.call(Elem.SOUL) >= o.soul_lv:
+			o.soul_lv = L.call(Elem.SOUL)
+			o.soul_src = self
+		o.soul_t = 3.0
 	if can_split and m("split") > 0 and randf() < minf(0.6, 0.12 * mf("split")) * minf(k, 1.0):
 		for i in 2:
 			var p: Projectile = main.spawn_proj(self, "frag", plv, Vector2.from_angle(randf() * TAU))
@@ -939,6 +1115,15 @@ func _draw_barrel() -> void:
 		"thorn":
 			draw_line(b + d * RADIUS * 0.4, b + d * (RADIUS + 12.0), w, 2.0)
 			draw_line(b + d * RADIUS * 0.4 + n * 4, b + d * (RADIUS + 8.0) + n * 4, w, 2.0)
+		"sonic":
+			for i in 3:
+				draw_arc(b + d * (RADIUS - 4.0), 6.0 + i * 4.0, d.angle() - 0.6, d.angle() + 0.6, 8, w, 2.0)
+		"clock":
+			draw_line(b, b + d.rotated(clock_a()) * (RADIUS + 10.0), w, 2.5)
+			draw_circle(b, 3.0, w)
+		"wisp":
+			draw_circle(b + d * (RADIUS + 4.0), 4.0, w)
+			draw_circle(b + d * (RADIUS + 4.0) - d * 6.0, 2.5, Color(w, 0.6))
 		_:
 			draw_line(b + d * RADIUS * 0.4, b + d * (RADIUS + 10.0), w, 3.0)
 			if pattern == "shard":
@@ -966,12 +1151,28 @@ func _draw_attack() -> void:
 				else:
 					var ch: float = 1.0 - cd.get("p", 0.0) / (2.0 / spd(l))
 					draw_circle(d * (RADIUS + 4.0), 2.0 + 4.0 * ch, Color(c, 0.4 + 0.6 * ch))
+		"sonic":
+			var f: float = fx.get("sonic", 0.0)
+			if f > 0.0:
+				var k := 1.0 - f / 0.35
+				var R := sonic_r(l)
+				for d in dirs():
+					for i in 3:
+						var rr := R * clampf(k - i * 0.15, 0.05, 1.0)
+						draw_arc(Vector2.ZERO, rr, d.angle() - 0.5, d.angle() + 0.5, 16, Color(c.lightened(0.3), (1.0 - k) * (1.0 - i * 0.25)), 3.0)
+		"clock":
+			for d in dirs():
+				var hd: Vector2 = d.rotated(clock_a())
+				var L := 240.0 * reach(l) * s
+				draw_arc(Vector2.ZERO, L, d.angle() - 0.7, d.angle() + 0.7, 24, Color(c, 0.15), 2.0)
+				draw_line(hd * RADIUS, hd * L, Color(c, 0.85), 4.0 * s)
+				draw_line(hd * RADIUS, hd * L, Color(1, 1, 1, 0.5), 1.5)
 	# 물이 들어간 반응은 같은 물길 하나 위에 겹쳐 그린다
 	var rxs := reactions()
 	var chan := 0.0
 	var cw := 0.0
 	for r in rxs:
-		if r["id"] in ["steam", "vine", "shock"]:
+		if r["id"] in ["steam", "vine", "shock", "styx"]:
 			var rl0 := mini(eff.get(r["a"], 1), eff.get(r["b"], 1))
 			chan = maxf(chan, chan_len(rl0))
 			cw = maxf(cw, chan_w(rl0))
@@ -1012,6 +1213,38 @@ func _draw_attack() -> void:
 							pts.append(p0.lerp(zp, (s2 + 1) / 4.0) + Vector2(randf_range(-5, 5), randf_range(-5, 5)))
 						pts.append(zp)
 						draw_polyline(pts, Elem.COLORS[Elem.ELECTRIC], 2.5)
+			"bell", "shatter", "silence":
+				var f: float = fx.get(r["id"], 0.0)
+				if f > 0.0:
+					var k := 1.0 - f / 0.4
+					var R: float = {"bell": 260.0, "shatter": 240.0, "silence": 260.0}[r["id"]] * reach(rl)
+					var half := 0.5 if r["id"] == "shatter" else 0.6
+					for i in 3:
+						draw_arc(Vector2.ZERO, R * clampf(k - i * 0.12, 0.05, 1.0), dir.angle() - half, dir.angle() + half, 20, Color(r["color"], (1.0 - k) * 0.9), 4.0 - i)
+				if r["id"] == "bell":
+					draw_arc(dir * -4.0, 7.0, dir.angle() + 0.6, dir.angle() + TAU - 0.6, 12, Color(r["color"], 0.8), 2.5)
+			"afterimage":
+				for key in ["afterimage", "afterimage2"]:
+					var f: float = fx.get(key, 0.0)
+					if f > 0.0:
+						var d2 := dir if key == "afterimage" else glint_d
+						draw_line(d2 * RADIUS, d2 * 2000.0, Color(r["color"], f / 0.3 * (1.0 if key == "afterimage" else 0.6)), 9.0 * f / 0.3 + 2.0)
+				if cd.get("afterimage2", 0.0) > 0.0:
+					draw_line(glint_d * RADIUS, glint_d * 2000.0, Color(r["color"], 0.12), 1.5)
+			"styx":
+				var L := chan_len(rl)
+				for i in 6:
+					var f := fmod(t * 0.5 + i / 6.0, 1.0)
+					draw_circle(dir * L * f + n * sin(i * 2.3 + t) * chan_w(rl) * 0.5, 3.5, Color(r["color"].lightened(0.3), 0.7 * (1.0 - f)))
+			"hourglass":
+				var wl := wall_of("hourglass", rl)
+				var a: Vector2 = wl[0] - position
+				var b: Vector2 = a + wl[1] * wl[2]
+				var dn := dir * 14.0
+				draw_colored_polygon(PackedVector2Array([a - dn, b - dn, b + dn, a + dn]), Color(r["color"], 0.4))
+				for i in 10:
+					var f := fmod(t * 0.8 + i * 0.31, 1.0)
+					draw_circle(a.lerp(b, fmod(i * 0.47, 1.0)) - dn + dir * 28.0 * f, 1.8, Color(1.0, 0.9, 0.6, 1.0 - f))
 			"lava", "swamp":
 				var wl := wall_of(r["id"], rl)
 				var a: Vector2 = wl[0] - position
@@ -1174,6 +1407,12 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 				_r_circle(ci, o + dd * 180.0 * reach(l), (50.0 + 8.0 * (l - 1)) * s, c)
 			"iron":
 				_r_band(ci, o, dd, 0.0, far, 12.0 * s, c)
+			"sonic":
+				_r_cone(ci, o, dd, 230.0 * reach(l) * s, 0.5, c)
+			"clock":
+				_r_cone(ci, o, dd, 240.0 * reach(l) * s, 0.7, c)
+			"wisp":
+				ci.draw_arc(o, 380.0, 0, TAU, 64, Color(c.r, c.g, c.b, 0.5 * c.a), 1.5)
 			_:
 				_r_band(ci, o, dd, 0.0, far, 6.0 * s, c)
 	for r in Elem.reactions_with(els):
@@ -1184,8 +1423,20 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 		match r["id"]:
 			"burning":
 				_r_circle(ci, o + d * 180.0 * reach(rl), 50.0 + 8.0 * (rl - 1), rc)
-			"steam", "vine", "shock":
+			"steam", "vine", "shock", "styx":
 				_r_band(ci, o, d, 0.0, 260.0 * reach(rl), 20.0 + 3.0 * (rl - 1), rc)
+			"bell", "silence":
+				_r_cone(ci, o, d, 260.0 * reach(rl), 0.6, rc)
+			"shatter":
+				_r_cone(ci, o, d, 240.0 * reach(rl), 0.5, rc)
+			"afterimage":
+				_r_band(ci, o, d, 0.0, far, 12.0, rc)
+			"rewind":
+				_r_cone(ci, o, d, 280.0 * reach(rl), 0.5, rc)
+			"hourglass":
+				_r_wall(ci, o + d * 150.0 * reach(rl), d, 75.0 + 10.0 * (rl - 1), 14.0, rc)
+			"plague", "spirit":
+				ci.draw_arc(o, 380.0, 0, TAU, 64, Color(rc.r, rc.g, rc.b, 0.5 * rc.a), 1.5)
 			"firestorm":
 				_r_band(ci, o, d, 0.0, 380.0, 26.0, rc)
 			"blizzard":

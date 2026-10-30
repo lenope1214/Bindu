@@ -99,8 +99,8 @@ docker compose up -d --build
 | `perks` | 특성 수치: `power` 0.15, `haste` 0.12, `reach` 0.12, `core` 3, `reroll` 1, `luck` 0.2, `regen` 1, `slow` 0.08, `harmony` 0.5 |
 | `perk_desc` | 특성 카드 설명 (수치를 바꾸면 같이 바꾸기) |
 | `cards` | 카드 종류 비율(`elem`·`pat`·`mod`·`link`, 합이 1이 아니어도 됨), 대격변 확률 `cata`, Lv2 확률 `lv2_base + lv2_wave × 웨이브`(최대 `lv2_max`) |
-| `elem_dmg` | 속성별 피해 배율. 오브젝트에 넣은 속성마다 곱함. 키: fire wood water electric wind ice earth dark light poison metal |
-| `pat_dmg` | 공격방식별 피해 배율. 키: shot spray thorn stream chain gust shard wall vortex laser lob iron |
+| `elem_dmg` | 속성별 피해 배율. 오브젝트에 넣은 속성마다 곱함. 키: fire wood water electric wind ice earth dark light poison metal sound time soul |
+| `pat_dmg` | 공격방식별 피해 배율. 키: shot spray thorn stream chain gust shard wall vortex laser lob iron sonic clock wisp |
 | `modes` | 모드 점수 배율 (값이 배율 자체, 예 `{"rush": 1.4}`). 키: rush swarm steel glass narrow early angry stroll fort three soft ease. 서버 점수 상한도 같은 값을 씀 (`docs/modes.md`) |
 | `message` | 시작 화면 공지 |
 

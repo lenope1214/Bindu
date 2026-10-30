@@ -19,12 +19,15 @@ const PATTERNS := {
 	"laser": {"name": "레이저", "desc": "충전 후 화면 끝까지 관통", "from": Elem.LIGHT},
 	"lob": {"name": "투척 장판", "desc": "던진 자리에 속성 장판을 남긴다", "from": Elem.POISON},
 	"iron": {"name": "철구", "desc": "느리고 무거운 관통탄", "from": Elem.METAL},
+	"sonic": {"name": "음파", "desc": "부채꼴로 퍼지는 파동 (관통, 멀수록 약함)", "from": Elem.SOUND},
+	"clock": {"name": "시계침", "desc": "앞쪽을 바늘이 왕복하며 훑는다", "from": Elem.TIME},
+	"wisp": {"name": "혼불", "desc": "구체를 쫓아가는 혼불을 띄운다", "from": Elem.SOUL},
 }
 
-const PATTERN_IDS := ["shot", "spray", "thorn", "stream", "chain", "gust", "shard", "wall", "vortex", "laser", "lob", "iron"]
+const PATTERN_IDS := ["shot", "spray", "thorn", "stream", "chain", "gust", "shard", "wall", "vortex", "laser", "lob", "iron", "sonic", "clock", "wisp"]
 
 ## 투사체를 쏘는 공격방식 (유도·튕김·관통 강화가 그대로 적용)
-const PROJECTILE := ["shot", "thorn", "gust", "shard", "iron"]
+const PROJECTILE := ["shot", "thorn", "gust", "shard", "iron", "wisp"]
 
 ## "피해 +N%"의 공백은 줄바꿈하지 않는 공백(U+00A0): 카드에서 숫자만 다음 줄로 넘어가지 않게
 const MODS := {

@@ -47,6 +47,23 @@ var marks := {}  # 협공: 맞힌 오브젝트 id -> 맞은 시각(age)
 var pincer_cd := 0.0
 var curse_lv := 0  # 저주 표식 (죽으면 주변 피해, 표식이 옮겨 감)
 var curse_owner: Object = null
+var tune_t := 0.0  # 소리 울림: 남은 시간 동안 어느 오브젝트에 맞든 울림이 쌓인다
+var tune_lv := 1
+var tune_src: Object = null
+var ring := 0.0  # 쌓인 울림 (3이면 음파)
+var ring_cd := 0.0
+var echo_t := 0.0  # 시간 메아리: 남은 시간 동안 받은 피해를 기록했다가 끝나면 한 번 더 받는다
+var echo_frac := 0.0
+var echo_amt := 0.0
+var echo_cd := 0.0
+var echo_src: Object = null
+var soul_t := 0.0  # 영혼 넋: 남은 시간 안에 죽으면 확률로 혼불
+var soul_lv := 0
+var soul_src: Object = null
+var styx_t := 0.0  # 망자의 강 안: 죽으면 반드시 혼불
+var styx_lv := 1
+var styx_src: Object = null
+var silence_t := 0.0  # 침묵: 저항·굳셈이 꺼지고 보스 부하 소환이 멈춘다
 var push_budget := PUSH_BUDGET
 var stagger_t := 0.0  # 경직(금속·철구·물줄기·레일건): 제자리에 멈춤
 var root_dr := 0  # 연달아 걸린 기절 횟수
@@ -97,7 +114,7 @@ func step(delta: float) -> void:
 	age += delta
 	pincer_cd = maxf(pincer_cd - delta, 0.0)
 	# A6: 보스는 주기적으로 빠른 부하를 부른다
-	if kind == Kind.BOSS and main:
+	if kind == Kind.BOSS and main and silence_t <= 0.0:
 		minion_t -= delta
 		if minion_t <= 0.0:
 			minion_t = minion_every(main.wave)
@@ -110,6 +127,18 @@ func step(delta: float) -> void:
 	frozen_t = maxf(frozen_t - delta, 0.0)
 	swamp_t = maxf(swamp_t - delta, 0.0)
 	prison_t = maxf(prison_t - delta, 0.0)
+	tune_t = maxf(tune_t - delta, 0.0)
+	ring_cd = maxf(ring_cd - delta, 0.0)
+	soul_t = maxf(soul_t - delta, 0.0)
+	styx_t = maxf(styx_t - delta, 0.0)
+	silence_t = maxf(silence_t - delta, 0.0)
+	echo_cd = maxf(echo_cd - delta, 0.0)
+	if tune_t <= 0.0:
+		ring = 0.0
+	if echo_t > 0.0:
+		echo_t -= delta
+		if echo_t <= 0.0:
+			_echo_release()
 	push_budget = minf(push_budget + speed * (0.05 if kind == Kind.BOSS else PUSH_REGEN) * delta, _push_max())
 	root_immune = maxf(root_immune - delta, 0.0)
 	root_dr_t += delta
@@ -152,6 +181,8 @@ func hurt(amount: float, crit := false) -> void:
 			main.burst(position, Color(0.6, 0.9, 1.0), 8, 140.0)
 			main.sfx.play("shield", 0.0)
 	hp -= d
+	if echo_t > 0.0:
+		echo_amt += d * echo_frac
 	if amount > 0.3:
 		flash = 0.08
 	if crit and main:
@@ -163,9 +194,38 @@ func hurt(amount: float, crit := false) -> void:
 		dmg_acc += d
 
 
+## 메아리가 끝나면 기록해 둔 피해를 한 번에 (이 피해는 다시 기록하지 않는다).
+func _echo_release() -> void:
+	echo_t = 0.0
+	echo_cd = 0.5
+	var d := echo_amt
+	echo_amt = 0.0
+	if d <= 0.0 or hp <= 0.0:
+		return
+	hurt(d)
+	_credit(echo_src, d, false)
+	if main and d >= 1.0:
+		main.popup(position, d, Elem.COLORS[Elem.TIME], true, "메아리")
+
+
+## 시간 메아리를 건다. 이미 기록 중이면 더 큰 비율로만 바꾼다.
+func echo(frac: float, duration: float, src = null) -> void:
+	if echo_t > 0.0:
+		if frac > echo_frac:
+			echo_frac = frac
+			echo_src = src
+		return
+	if echo_cd > 0.0:
+		return
+	echo_t = duration
+	echo_frac = frac
+	echo_amt = 0.0
+	echo_src = src
+
+
 ## 저항 속성이 오브젝트 속성에서 차지하는 비율만큼 피해를 줄인다 (최대 60%).
 func resist_mul(els: Dictionary) -> float:
-	if resist_e < 0 or not els.has(resist_e):
+	if resist_e < 0 or not els.has(resist_e) or silence_t > 0.0:
 		return 1.0
 	var total := 0
 	for e in els:
@@ -174,7 +234,7 @@ func resist_mul(els: Dictionary) -> float:
 
 
 func slow(factor: float, duration: float) -> void:
-	if sturdy:
+	if sturdy and silence_t <= 0.0:
 		factor = lerpf(factor, 1.0, 0.5)
 		duration *= 0.5
 	factor = maxf(factor, 0.5 if kind == Kind.BOSS else SLOW_FLOOR)
@@ -184,7 +244,7 @@ func slow(factor: float, duration: float) -> void:
 
 ## 기절·속박·빙결. dr=false는 바위 벽처럼 몸으로 막는 경우(효율 감소 없음). 걸렸으면 true.
 func root(duration: float, dr := true) -> bool:
-	if sturdy:
+	if sturdy and silence_t <= 0.0:
 		duration *= 0.5
 	if kind == Kind.BOSS:
 		duration *= 0.5
@@ -219,7 +279,7 @@ func stagger(dist: float) -> void:
 
 ## 밀기: 중앙 반대쪽으로 밀리는 만큼은 밀림 여유에서 빠진다(옆·안쪽은 그대로).
 func push(v: Vector2) -> void:
-	if sturdy:
+	if sturdy and silence_t <= 0.0:
 		v *= 0.5
 	var away := (position - target).normalized()
 	var out := v.dot(away)
@@ -264,7 +324,7 @@ func vuln(duration: float) -> void:
 
 ## 냉기가 3 쌓이면 1초 빙결.
 func add_chill(amount: float) -> void:
-	if sturdy:
+	if sturdy and silence_t <= 0.0:
 		amount *= 0.5
 	chill += amount
 	slow(0.7, 0.5)
@@ -334,7 +394,7 @@ func _draw() -> void:
 		if Meta.symbols_on and main:
 			# 속성 기호(설정): 어느 속성에 강한지 글자로도
 			Elem.draw_symbol(self, main.ui_font, Vector2.from_angle(-PI / 4) * (r + 17.0), resist_e, 11)
-	if sturdy:
+	if sturdy and silence_t <= 0.0:
 		# 굳셈: 네 귀퉁이 쐐기 (네모 구체는 모서리가 r*1.41까지 나와 있어 그 바깥에)
 		var base := r * 1.45 if kind == Kind.TANK else r + 1.0
 		for i in 4:
@@ -359,6 +419,18 @@ func _draw() -> void:
 		for i in 8:
 			var a := TAU * i / 8
 			draw_line(Vector2(cos(a), sin(a)) * (r + 2.0), Vector2(cos(a), sin(a)) * (r + 10.0), Color(0.45, 0.5, 0.95, 0.9), 3.0)
+	if tune_t > 0.0:
+		# 울림: 쌓인 만큼 분홍 호
+		var rc: Color = Elem.COLORS[Elem.SOUND]
+		for i in 3:
+			var a0 := -PI / 2 + TAU * i / 3
+			draw_arc(Vector2.ZERO, r + 4.5, a0 + 0.25, a0 + TAU / 3 - 0.25, 8, Color(rc, 0.9 if i < int(ring) else 0.3), 2.0)
+	if echo_t > 0.0:
+		# 메아리: 금빛 시계 바늘
+		var tc: Color = Elem.COLORS[Elem.TIME]
+		draw_line(Vector2.ZERO, Vector2.from_angle(-PI / 2 + echo_t * PI) * (r - 2.0), tc, 2.0)
+	if silence_t > 0.0:
+		draw_line(Vector2(-r, -r) * 0.7, Vector2(r, r) * 0.7, Color(0.4, 0.3, 0.5, 0.8), 2.5)
 	if curse_lv > 0:
 		# 저주 표식: 머리 위에서 도는 보라색 눈
 		var cp := Vector2(0, -r - 18.0)

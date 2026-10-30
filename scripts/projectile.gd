@@ -24,6 +24,7 @@ var prisms := {}  # 지나온 프리즘 오브젝트
 var prism_els := {}  # 프리즘에서 묻은 속성
 var col := Color.WHITE
 var zap_t := 0.0  # 뇌우: 다음 낙뢰까지
+var ghost := ""  # 혼불(ghost)이 어느 반응에서 나왔는지: plague(중독), spirit(속박), styx, ""(넋)
 
 
 func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
@@ -62,6 +63,10 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 			speed = 220.0; lob = true; max_travel = randf_range(80.0, 240.0)
 		"storm":
 			speed = 75.0; lob = true; dmg = 2.0 * p; radius = 100.0; max_travel = 360.0 * Tower.reach(l)
+		"wisp":
+			speed = 210.0; dmg = 4.0 * p; radius = 7.0; max_travel = 900.0
+		"ghost":
+			speed = 230.0; dmg = 2.4 * p; radius = 7.0; max_travel = 900.0
 	if k in Pat.PROJECTILE:
 		radius *= tower.sz()
 		pierce_left = tower.mn("pierce")
@@ -77,7 +82,9 @@ func step(delta: float) -> void:
 		trail.append(position)
 		if trail.size() > 7:
 			trail.remove_at(0)
-	if homing > 0 and is_instance_valid(owner_tower):
+	if kind == "wisp" or kind == "ghost":
+		_seek(delta)
+	elif homing > 0 and is_instance_valid(owner_tower):
 		_steer(delta)
 	position += vel * delta
 	travel += vel.length() * delta
@@ -127,6 +134,24 @@ func _steer(delta: float) -> void:
 		vel = vel.rotated(a)
 
 
+## 혼불: 가장 가까운 구체를 쫓아간다 (유도 강화면 더 빨리 돈다).
+func _seek(delta: float) -> void:
+	if not is_instance_valid(owner_tower):
+		return
+	var best: Orb = null
+	var bd := 380.0
+	for o in owner_tower.main.near(position, bd):
+		if hit.has(o) or o.hp <= 0.0:
+			continue
+		var dd: float = o.position.distance_to(position)
+		if dd < bd:
+			bd = dd
+			best = o
+	if best:
+		var lim := (5.0 + 2.0 * homing) * delta
+		vel = vel.rotated(clampf(vel.angle_to(best.position - position), -lim, lim))
+
+
 ## 프리즘: 다른 오브젝트의 프리즘을 지나면 그 속성이 묻고 피해가 오른다.
 func _check_prisms() -> void:
 	for tw in owner_tower.main.prism_towers:
@@ -159,11 +184,16 @@ func on_hit(o: Orb, delta: float) -> bool:
 		return false
 	hit[o] = true
 	if tw:
-		tw.in_rx = kind in ["log", "tornado", "mushroom"]
+		tw.in_rx = kind in ["log", "tornado", "mushroom"] or ghost in ["plague", "spirit", "styx"]
 		tw.hit(o, dmg, 1.0, prism_els, kind != "frag")
 		tw.in_rx = false
 	else:
 		o.hurt(dmg)
+	match ghost:
+		"plague":
+			o.poison(1.5 * level, 4.0, tw, true)
+		"spirit":
+			o.root(0.7)
 	match kind:
 		"gust":
 			o.push(vel.normalized().orthogonal() * 20.0 * level)
@@ -247,6 +277,16 @@ func _draw() -> void:
 		"mushroom":
 			var s := 1.0 + sin(travel / max_travel * PI) * 0.8
 			_draw_mushroom(self, s)
+		"wisp", "ghost":
+			var gc: Color = Elem.COLORS[Elem.SOUL] if kind == "ghost" else col
+			if ghost == "plague":
+				gc = Elem.COLORS[Elem.POISON]
+			elif ghost == "spirit":
+				gc = Elem.COLORS[Elem.WOOD].lightened(0.3)
+			var fl := 1.0 + 0.15 * sin(t * 18.0)
+			draw_colored_polygon(PackedVector2Array([-d * radius * 2.6 * fl, n * radius * 0.9, d * radius, -n * radius * 0.9]), Color(gc, 0.45))
+			draw_circle(Vector2.ZERO, radius * fl, gc)
+			draw_circle(d * radius * 0.2, radius * 0.45, Color(1, 1, 1, 0.8))
 		"storm":
 			var fade := clampf((max_travel - travel) / 40.0, 0.0, 1.0)
 			draw_circle(Vector2(0, 30), radius * 0.9, Color(0.6, 0.65, 0.9, 0.06 * fade))
@@ -259,7 +299,8 @@ func _draw() -> void:
 
 func _trail_color() -> Color:
 	match kind:
-		"shot", "thorn", "shard", "frag", "iron", "blob": return col
+		"shot", "thorn", "shard", "frag", "iron", "blob", "wisp": return col
+		"ghost": return Elem.COLORS[Elem.SOUL]
 		"glob": return Elem.COLORS[Elem.POISON]
 	return Color.WHITE
 
