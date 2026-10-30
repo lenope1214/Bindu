@@ -697,6 +697,7 @@ func _build_ui() -> void:
 	# 도움말은 굴려 보는 창 안에 (줄이 많아 화면 높이에 맞춰 줄이면 글자를 읽을 수 없게 작아지던 것).
 	# 열고 닫는 것은 그대로 help_label.visible, 창(help_scroll)은 _process에서 따라간다
 	help_scroll = ScrollContainer.new()
+	help_scroll.z_index = 22  # 일시정지 어둠(z 20) 위에
 	help_scroll.set_anchors_preset(Control.PRESET_CENTER)
 	help_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	help_scroll.visible = false
@@ -3014,6 +3015,7 @@ func _build_menu(root: Control) -> void:
 	box.add_child(notice_label)
 
 	records_panel = Label.new()
+	records_panel.z_index = 22  # 일시정지 어둠(z 20) 위에
 	records_panel.set_anchors_preset(Control.PRESET_CENTER)
 	# 내용이 늘면 위아래로 같이 자라게 (아래로만 자라면 오른쪽 아래 소리 버튼을 덮음)
 	records_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
@@ -3047,10 +3049,12 @@ func _build_menu(root: Control) -> void:
 	_build_notes(root)
 	_build_modes(root, rsb)
 	codex_panel = Codex.new()
+	codex_panel.z_index = 22  # 일시정지 어둠(z 20) 위에
 	codex_panel.setup(PERKS, rsb.duplicate(), _save_best)
 	root.add_child(codex_panel)
 
 	settings_panel = PanelContainer.new()
+	settings_panel.z_index = 22  # 일시정지 어둠(z 20) 위에
 	settings_panel.set_anchors_preset(Control.PRESET_CENTER)
 	settings_panel.position = Vector2(-240, 0)
 	settings_panel.size = Vector2(480, 0)
@@ -3680,6 +3684,7 @@ func _draw_board() -> void:
 ## 버전별 패치노트 창: 길어서 굴려 보는 창. 바깥을 누르거나 Esc·N으로 닫는다.
 func _build_notes(root: Control) -> void:
 	notes_panel = PanelContainer.new()
+	notes_panel.z_index = 22  # 일시정지 어둠(z 20) 위에
 	notes_panel.set_anchors_preset(Control.PRESET_CENTER)
 	notes_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
 	notes_panel.offset_left = -430.0
@@ -4965,12 +4970,13 @@ func _process(delta: float) -> void:
 	fx_pick.visible = in_game and bar_open
 	hud_cool -= delta
 	_update_hud()
-	# 일시정지 위에 설정·도움말 등을 열면 그 창이 보이게 일시정지 글·버튼·어둠은 잠깐 숨긴다 (z가 높아 창을 덮으니)
+	# 일시정지 위에 설정·도움말 등을 열면 일시정지 글·버튼은 잠깐 숨기고, 어둠은 남겨 창이 그 위에 뜬다 (창 z 22 > 어둠 20)
 	var over := settings_panel.visible or help_label.visible or records_panel.visible or notes_panel.visible or codex_panel.visible
-	var show_pause := get_tree().paused and not over and not title_label.visible and phase != Phase.GAMEOVER
+	var dim := get_tree().paused and not title_label.visible and phase != Phase.GAMEOVER
+	var show_pause := dim and not over
 	paused_label.visible = show_pause
 	pause_box.visible = show_pause
-	pause_dim.visible = show_pause
+	pause_dim.visible = dim
 	if pause_box.visible:
 		# 글자를 키우면(설정) 가운데 기준 자리가 점수 줄에 닿는다: 점수 줄 아래로
 		paused_label.position.y = maxf(ui_root.size.y / 2.0 - 248.0, hud.get_rect().end.y + 8.0 if hud.visible else 8.0)
