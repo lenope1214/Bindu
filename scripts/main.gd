@@ -576,6 +576,10 @@ func _help_text() -> String:
 		"보스 웨이브를 넘기면 특성(전역 강화) 3개 중 1개 선택",
 		"공격방식은 직선탄일 때 한 번만 정할 수 있고, 같은 것을 넣으면 레벨업",
 		"속성을 많이 겹칠수록 피해는 늘고 공격 속도는 조금씩 느려집니다. %s" % mods,
+	] + ([
+		"강화 칸: 속성마다 칸이 있고(독·불·나무 1, 전기·빛·금속·어둠 2, 물·바람·얼음·땅 3) 2종을 섞으면 x1.5, 3종은 x2",
+		"   연결선으로 받은 속성은 칸 절반. 강화는 무게만큼 칸을 씁니다 (유도·크기·속사 1, 관통·튕김·분열 2, 다중 발사 3)",
+	] if Rules.mod_slots else []) + [
 		"감속은 최대 70%, 밀기는 조금씩만, 기절·속박·빙결은 연달아 걸리면 짧아지다 잠깐 면역",
 		"화면 밖 구체는 맞지 않습니다. 시작 화면에서 규칙 버전(↑/↓)과 맵(←/→)을 바꿀 수 있어요",
 	])
@@ -727,7 +731,7 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 				b.text = "[%d] ★ 대격변: 공격방식 ★\n모든 오브젝트의 공격방식을\n직선탄을 뺀 무작위로 바꾼다\n고정·직선탄도 바뀜, 레벨 유지\n(희귀 1%%, 고르면 바로 발동)" % idx
 		"elem":
 			var e: int = card["e"]
-			b.text = "[%d] 속성: %s%s\n부가: %s\n빈 곳: 새 오브젝트(직선탄)\n오브젝트 위: 겹치기%s" % [idx, Elem.NAMES[e], " Lv2" if card["lv"] == 2 else "", Elem.RIDER[e], " (%d종까지)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else ""]
+			b.text = "[%d] 속성: %s%s%s\n부가: %s\n빈 곳: 새 오브젝트(직선탄)\n오브젝트 위: 겹치기%s" % [idx, Elem.NAMES[e], " Lv2" if card["lv"] == 2 else "", " · 강화 칸 %d" % Rules.ELEM_SLOTS[e] if Rules.mod_slots else "", Elem.RIDER[e], " (%d종까지)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else ""]
 			var combos := _combos_for(e)
 			if not combos.is_empty():
 				b.text += "\n" + "\n".join(combos.slice(0, 2))
@@ -744,7 +748,7 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 				b.text += "\n" + fits[0]
 		"mod":
 			var id: String = card["id"]
-			b.text = "[%d] 강화: %s\n%s\n오브젝트 위에 놓기\n%s" % [idx, Pat.MODS[id]["name"], Pat.MODS[id]["desc"], "(종류별 %d개까지)" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "(쌓을수록 효과 절반씩)"]
+			b.text = "[%d] 강화: %s\n%s\n오브젝트 위에 놓기\n%s" % [idx, Pat.MODS[id]["name"], Pat.MODS[id]["desc"], ("(강화 칸 %d칸 씀 · 종류별 %d개까지)" % [Rules.MOD_WEIGHT[id], Rules.max_mod] if Rules.mod_slots else "(종류별 %d개까지)" % Rules.max_mod) if Rules.max_mod < Rules.NO_CAP else "(쌓을수록 효과 절반씩)"]
 		"link":
 			var id: String = card["id"]
 			b.text = "[%d] 연계: %s\n%s\n%s" % [idx, Pat.LINKS[id]["name"], Pat.LINKS[id]["desc"], "오브젝트 두 개를 차례로 클릭" if id == "link" else "오브젝트 위에 놓기"]
@@ -1717,6 +1721,8 @@ func _cycle_map(d: int) -> void:
 func _refresh_legend() -> void:
 	var cap_e := "한 오브젝트에 %d종까지(레벨은 무제한)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "종류 제한 없음, 종류마다 공격 속도 -%d%%" % roundi(Rules.tax_step * 100)
 	var cap_m := "종류별 %d개까지" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "제한 없음, 쌓을수록 효과 절반씩"
+	if Rules.mod_slots:
+		cap_m = "강화 칸 안에서 (속성이 칸을 줌, 섞을수록 x1.5·x2)"
 	var lines := PackedStringArray([
 		"[오브젝트] 공격방식 + 속성 + 강화 + 연계",
 		"· 새 오브젝트는 직선탄 + 속성 1개",
@@ -2745,6 +2751,8 @@ func _draw_tooltip() -> void:
 	var ex := t.extras_text()
 	if ex != "":
 		lines.append(["강화·연계: " + ex, Color(1, 0.85, 0.45)])
+	if Rules.mod_slots:
+		lines.append([t.slots_text(), Color(1, 0.55, 0.45) if t.slots_used() > t.slots() else Color(1, 0.85, 0.45)])
 	lines.append(["피해 배율 x%.2f" % t.dmg_factor(), Color(1, 1, 1, 0.8)])
 	var rxs := t.reactions()
 	if rxs.size() <= 5:

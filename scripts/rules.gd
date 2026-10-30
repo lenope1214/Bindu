@@ -1,14 +1,15 @@
 class_name Rules
 ## 규칙 버전: 시작 화면에서 골라 같은 게임을 다른 규칙으로 비교해 본다.
-## 1 기준(상한), 2 분산형, 3 자유 쌓기 + 대가, 4 빠른 템포.
+## 1 기준(상한), 2 분산형, 3 자유 쌓기 + 대가, 4 빠른 템포, 5 조합형(버전 1 + 강화 칸).
 
-const IDS := [1, 2, 3, 4]
-const NAMES := {1: "버전 1 · 기준", 2: "버전 2 · 분산형", 3: "버전 3 · 자유 쌓기", 4: "버전 4 · 빠른 템포"}
+const IDS := [1, 2, 3, 4, 5]
+const NAMES := {1: "버전 1 · 기준", 2: "버전 2 · 분산형", 3: "버전 3 · 자유 쌓기", 4: "버전 4 · 빠른 템포", 5: "버전 5 · 조합형"}
 const DESCS := {
 	1: "속성 3종 · 강화 종류별 5개 · 11웨이브부터 체력 +5%씩",
 	2: "속성 2종 · 강화 종류별 3개 · 무리 +6% · 연결 거리 420",
 	3: "상한 없음 · 속성 종류마다 공격 속도 -25% · 같은 강화는 쌓을수록 효과 절반씩",
 	4: "쉬는 시간마다 2장 · 체력 +8%씩 · 특수 구체 8웨이브부터 · 구체 1.4배",
+	5: "버전 1 + 강화 칸: 속성마다 칸 1~3, 2종 섞으면 x1.5 · 3종 x2 · 강화는 무게만큼 칸을 씀",
 }
 const NO_CAP := 99
 
@@ -24,6 +25,19 @@ static var picks := 1  # 3웨이브부터 쉬는 시간마다 고르는 수
 static var hp_growth := 1.05  # 11웨이브부터 웨이브마다 구체 체력 배율
 static var resist_from := 12  # 저항 구체가 나오는 웨이브
 static var sturdy_from := 15  # 굳센 구체가 나오는 웨이브
+static var mod_slots := false  # 강화 칸: 속성이 정하는 칸 안에서만 강화를 넣는다 (버전 5)
+
+## 강화 칸 (버전 5). 속성 칸: 혼자 내는 피해가 큰 속성일수록 작다 (2026-10-30 측정, 직선탄 Lv2 피해/초).
+const ELEM_SLOTS := {
+	Elem.POISON: 1, Elem.FIRE: 1, Elem.WOOD: 1,
+	Elem.ELECTRIC: 2, Elem.LIGHT: 2, Elem.METAL: 2, Elem.DARK: 2,
+	Elem.WATER: 3, Elem.WIND: 3, Elem.ICE: 3, Elem.EARTH: 3,
+}
+## 섞은 속성 종류 수에 따른 칸 배율
+const SLOT_MUL := [1.0, 1.0, 1.5, 2.0]
+## 강화 무게: 효과가 클수록 칸을 많이 쓴다
+const MOD_WEIGHT := {"homing": 1, "size": 1, "rapid": 1, "pierce": 2, "bounce": 2, "split": 2, "multi": 3}
+const LINK_SLOT := 0.5  # 연결선으로 나눠 받은 속성은 칸 절반
 
 
 static func apply(v: int) -> void:
@@ -39,6 +53,7 @@ static func apply(v: int) -> void:
 	hp_growth = 1.05
 	resist_from = 12
 	sturdy_from = 15
+	mod_slots = false
 	match version:
 		2:
 			max_elems = 2
@@ -56,3 +71,5 @@ static func apply(v: int) -> void:
 			hp_growth = 1.08
 			resist_from = 8
 			sturdy_from = 11
+		5:
+			mod_slots = true

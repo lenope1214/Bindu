@@ -3,7 +3,7 @@ extends Node2D
 ## 설치형 오브젝트. 설치 시 정한 방향으로 공격한다.
 ## - 공격방식(pattern): 형태. 하나만 갖고, 새 오브젝트는 직선탄.
 ## - 속성(elements): 효과. 모든 공격에 부가효과가 붙는다. 종류 수 상한은 Rules.max_elems.
-## - 강화(mods): 공격방식에 붙는 변형. 종류마다 Rules.max_mod개까지.
+## - 강화(mods): 공격방식에 붙는 변형. 종류마다 Rules.max_mod개까지. 버전 5는 속성이 정하는 강화 칸 안에서만.
 ## - 연계: 연결선(links), 프리즘, 공명.
 
 const RADIUS := 18.0
@@ -163,8 +163,51 @@ func can_take(card: Dictionary) -> bool:
 		"pat":
 			return can_pattern(card["id"])
 		"mod":
-			return m(card["id"]) < Rules.max_mod
+			return m(card["id"]) < Rules.max_mod and (not Rules.mod_slots or slots_used() + Rules.MOD_WEIGHT[card["id"]] <= slots())
 	return true
+
+
+## 강화 칸 (버전 5): (속성 칸 합 + 연결선으로 받은 속성 칸 절반) x 섞은 종류 배율, 소수는 버림.
+## els를 주면 그 속성 구성으로 계산한다 (속성 카드 미리보기).
+func slots(with: Variant = null) -> int:
+	var els: Array = order if with == null else with
+	var sum := 0.0
+	for e in els:
+		sum += Rules.ELEM_SLOTS[e]
+	var got := {}
+	for o in links:
+		if link_on(o):
+			for e in o.elements:
+				if not e in els:
+					got[e] = true
+	for e in got:
+		sum += Rules.ELEM_SLOTS[e] * Rules.LINK_SLOT
+	return floori(sum * Rules.SLOT_MUL[mini(els.size(), Rules.SLOT_MUL.size() - 1)] + 0.001)
+
+
+## 넣은 강화가 쓰는 칸. 대격변·연결선 끊김으로 칸이 줄면 넘칠 수 있다 (넣은 것은 그대로, 새로 못 넣음).
+func slots_used() -> int:
+	var n := 0
+	for id in mods:
+		n += mods[id] * Rules.MOD_WEIGHT[id]
+	return n
+
+
+## 정보창용: "강화 칸 3/7 (불1 + 나무1 + 연결 물1.5) x1.5"
+func slots_text() -> String:
+	var parts := PackedStringArray()
+	for e in order:
+		parts.append("%s%d" % [Elem.NAMES[e], Rules.ELEM_SLOTS[e]])
+	var got := {}
+	for o in links:
+		if link_on(o):
+			for e in o.elements:
+				if not e in order:
+					got[e] = true
+	for e in got:
+		parts.append("연결 %s%s" % [Elem.NAMES[e], str(Rules.ELEM_SLOTS[e] * Rules.LINK_SLOT).trim_suffix(".0")])
+	var mul: float = Rules.SLOT_MUL[mini(order.size(), Rules.SLOT_MUL.size() - 1)]
+	return "강화 칸 %d/%d (%s)%s" % [slots_used(), slots(), " + ".join(parts), "" if mul == 1.0 else " x%s" % str(mul).trim_suffix(".0")]
 
 
 ## 넣을 수 없는 이유 (넣을 수 있으면 빈 문자열).
@@ -177,6 +220,8 @@ func refuse_text(card: Dictionary) -> String:
 		"pat":
 			return "이 오브젝트는 %s(으)로 정해져 있어요. 같은 공격방식만 넣을 수 있어요" % Pat.pname(pattern)
 		"mod":
+			if m(card["id"]) < Rules.max_mod:
+				return "강화 칸이 모자라요 (%d/%d, %s는 %d칸). 속성을 섞으면 칸이 늘어요" % [slots_used(), slots(), Pat.MODS[card["id"]]["name"], Rules.MOD_WEIGHT[card["id"]]]
 			return "%s은(는) %d개까지 쌓을 수 있어요" % [Pat.MODS[card["id"]]["name"], Rules.max_mod]
 	return ""
 
@@ -1217,6 +1262,8 @@ func preview(card: Dictionary) -> Array:
 				var before := roundi((1.0 - 1.0 / tax()) * 100.0)
 				var after := roundi((1.0 - 1.0 / (tax() + tax_step)) * 100.0)
 				out.append("쌓기 대가: 공격 속도 -%d%% → -%d%%" % [before, after])
+				if Rules.mod_slots:
+					out.append("강화 칸 %d → %d" % [slots(), slots(order + [e])])
 			out.append("피해 x%.1f → x%.1f" % [dmg_factor(), dmg_factor() + 1.3 * 0.35 * n])
 		"pat":
 			var id: String = card["id"]
@@ -1237,6 +1284,8 @@ func preview(card: Dictionary) -> Array:
 			var id: String = card["id"]
 			sp["mods"][id] = m(id) + 1
 			out.append("%s %d → %d" % [Pat.MODS[id]["name"], m(id), m(id) + 1] + (" (최대 %d)" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "") + ("  효과 x%.2f → x%.2f" % [mf(id), 2.0 * (1.0 - pow(0.5, m(id) + 1))] if Rules.mod_decay else ""))
+			if Rules.mod_slots:
+				out.append("강화 칸 %d/%d → %d/%d (무게 %d)" % [slots_used(), slots(), slots_used() + Rules.MOD_WEIGHT[id], slots(), Rules.MOD_WEIGHT[id]])
 			out.append(Pat.MODS[id]["desc"])
 		"link":
 			var id: String = card["id"]
