@@ -4285,11 +4285,9 @@ func _draw_begin_branch() -> void:
 	draw_stop = ""
 	draw_skip = 0
 	var n := Pat.path_branches(draw_t.plv)
-	var head := "그린 궤적%s: " % (" 갈래 %d/%d" % [draw_queue[0] + 1, n] if n > 1 else "")
-	if touch_ui:
-		hint.text = head + "누른 채 끌어서 길 그리기 (오브젝트에서 시작, 길이 %d, 꺾기 %d번)\n취소: 이 길은 그대로" % [roundi(Pat.path_len(draw_t.plv)), Pat.PATH_BENDS]
-	else:
-		hint.text = head + "누른 채 끌어서 길 그리기 (오브젝트에서 시작, 길이 %d, 45도 넘게 꺾기 %d번)\n우클릭/Esc: 이 길은 그대로" % [roundi(Pat.path_len(draw_t.plv)), Pat.PATH_BENDS]
+	var head := "그린 궤적%s: " % (" %d/%d" % [draw_queue[0] + 1, n] if n > 1 else "")
+	# 화면 아래 취소 버튼과 겹치지 않게 짧게 (남은 길이·꺾기 수는 그리는 끝에 따로 보인다)
+	hint.text = head + "누른 채 끌어 길 그리기\n" + ("취소: 그대로 두기" if touch_ui else "우클릭/Esc: 그대로 두기")
 
 
 func _draw_input(event: InputEvent) -> void:
@@ -5432,7 +5430,7 @@ func _draw_tooltip() -> void:
 	var maxw := minf(620.0 * z, _right_limit() - 24.0)  # 이보다 긴 줄은 접는다 (속성이 많으면 화면 밖으로 나가던 것)
 	var lines: Array = []  # [글자, 색]
 	var head := t.title()
-	var tip := "(클릭: 방향 · 끌기: 옮기기)" if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
+	var tip := ("(클릭: 길 다시 그리기 · 끌기: 옮기기)" if t.pattern == "path" else "(클릭: 방향 · 끌기: 옮기기)") if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
 	# Shift를 누르고 있으면 공격력·공격 속도·사거리 같은 수치를 자세히
 	var detail := Input.is_key_pressed(KEY_SHIFT) and not touch_move
 	if not touch_ui:
