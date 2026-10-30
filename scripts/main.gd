@@ -2759,8 +2759,7 @@ func _refresh_legend() -> void:
 		for r in rs.slice(i, i + 2):
 			row.append("%s+%s %s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["name"]] if Meta.codex.has(r["id"]) else "? + ?")
 		lines.append("   ".join(row))
-	legend.text = _kr_keep("
-".join(lines))
+	legend.text = _kr_keep("\n".join(lines))
 
 
 ## 규칙 버전 바꾸기: 기록은 버전마다 따로.
