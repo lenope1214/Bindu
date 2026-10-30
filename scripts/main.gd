@@ -15,7 +15,7 @@ const MERGE_DIST := 30.0
 const SAVE_PATH := "user://best.cfg"
 const RUN_PATH := "user://run.cfg"  # 이어하기: 쉬는 시간마다 저장, 게임 오버면 지움
 const RUN_FORMAT := 1
-const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 위치·방향 변경"
+const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 방향 바꾸기   끌기: 옮기기"
 ## 첫 판: 카드 종류가 열리는 웨이브 (그 웨이브 앞 쉬는 시간부터 나온다). 속성은 처음부터
 const TUTOR_OPEN := {"pat": 3, "mod": 4, "link": 6, "cata": 6}
 const PLACE_HINT := "클릭: 설치 (오브젝트 위면 속성 겹치기)   오브젝트 꾹 누르기·끌기: 옮기기\n우클릭/Esc: 다시 고르기"
@@ -46,6 +46,7 @@ var drag_group: Array = []  # 함께 끄는 오브젝트들
 var drag_origs: Array = []  # 끌기 전 위치
 var selected: Array = []  # 여러 개 선택 (빈 곳을 끌어 상자로, Shift/Ctrl+클릭으로 더하고 빼기)
 var boxing := false  # 선택 상자를 끄는 중
+var aim_right := false  # 오브젝트를 우클릭한 채 끌어 방향을 정하는 중 (떼면 확정)
 var box_start := Vector2.ZERO
 var cards_hidden := false  # 선택지를 내려 필드를 보는 중
 var hide_btn: Button
@@ -891,7 +892,7 @@ func _help_text() -> String:
 		"공격방식·강화·연계 카드: 오브젝트 위에 놓기",
 		"오브젝트 끌기: 방향은 그대로 두고 옮기기 (카드를 고른 뒤에는 꾹 눌러서)",
 		"빈 곳 끌기 / Shift·Ctrl+클릭 / Ctrl+A(모두): 여러 개 선택 → 그중 하나를 끌면 함께 이동",
-		"쉬는 시간에 오브젝트 클릭: 위치·방향 다시 정하기",
+		"쉬는 시간에 오브젝트 클릭: 그 자리에서 방향 바꾸기 (우클릭한 채 끌면 한 번에)",
 		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 비율 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
 		"쉬는 시간 왼쪽 위 DPS 표: 지난 웨이브에 오브젝트마다 낸 DPS와 비율. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
@@ -1195,7 +1196,7 @@ func _mark_fav(b: Button, sb: StyleBoxFlat, sbh: StyleBoxFlat, tag: String) -> v
 func _choose_hint() -> String:
 	var left := " (%d개 남음)" % picks_left if picks_left > 1 else ""
 	# 선택지 내리기(V)는 카드 아래 버튼에 적혀 있다
-	return "선택지를 고르세요%s. 설치된 오브젝트를 클릭하면 위치·방향 변경" % left
+	return "선택지를 고르세요%s. 설치된 오브젝트 클릭: 방향 바꾸기 · 끌기: 옮기기" % left
 
 
 # ---------- 처음 안내 ----------
@@ -1924,6 +1925,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_pause()
 	if get_tree().paused:
 		return
+	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_RIGHT and aim_right:
+		aim_right = false
+		if phase == Phase.AIM:
+			if get_global_mouse_position().distance_to(place_pos) > 30.0:
+				_confirm_aim()
+			else:
+				_cancel_step()  # 거의 안 끌고 뗀 우클릭: 그대로 둔다
+		return
 	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		if press_t:
 			_release_press()
@@ -1940,6 +1949,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.button_index == MOUSE_BUTTON_RIGHT and (press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
 		_cancel_step()
 		return
+	# 오브젝트를 우클릭한 채 끌기: 그 자리에서 방향만 바꾸고, 떼면 확정
+	if event.button_index == MOUSE_BUTTON_RIGHT and phase in [Phase.CHOOSE, Phase.READY] and not perk_mode and not title_label.visible \
+			and not (settings_panel.visible or notes_panel.visible or codex_panel.visible or records_panel.visible or help_label.visible):
+		var rt := _tower_at(get_global_mouse_position())
+		if rt:
+			_start_move(rt)
+			aim_right = true
+			return
 	if notes_panel.visible:
 		_close_notes()
 		return
@@ -1964,7 +1981,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if phase in [Phase.CHOOSE, Phase.READY] and event.button_index == MOUSE_BUTTON_LEFT:
 		var t := _tower_at(mpos)
 		if t:
-			# 짧게 클릭: 옮기기(클릭으로 위치·방향), Shift/Ctrl+클릭: 선택에 더하기·빼기, 끌기: 바로 이동
+			# 짧게 클릭: 그 자리에서 방향 바꾸기, Shift/Ctrl+클릭: 선택에 더하기·빼기, 끌기: 바로 이동
 			_begin_press(t, mpos)
 		else:
 			# 빈 곳을 끌면 선택 상자
@@ -2009,8 +2026,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			hint.text = "클릭 또는 끌어서 놓기: 발사 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 위치 다시 고르기"
 	elif phase == Phase.AIM:
 		if event.button_index == MOUSE_BUTTON_LEFT:
-			_confirm_aim()
-		elif event.button_index == MOUSE_BUTTON_RIGHT:
+			# 오브젝트 바로 위를 누르면 손을 뗄 때 정한다 (그 자리에서 바깥으로 끌어 조준)
+			if mpos.distance_to(place_pos) >= MERGE_DIST:
+				_confirm_aim()
+		elif event.button_index == MOUSE_BUTTON_RIGHT and not aim_right:
 			_cancel_step()
 	elif phase == Phase.PLACE and event.button_index == MOUSE_BUTTON_RIGHT:
 		_cancel_step()
@@ -3401,24 +3420,32 @@ func _back_to_choose() -> void:
 	_save_run()
 
 
-## 쉬는 시간에 설치된 오브젝트를 클릭하면 위치·방향을 다시 정한다.
+## 방향 바꾸기를 끝내고 원래 단계로.
 func _end_move() -> void:
+	aim_right = false
 	if move_return == Phase.READY:
 		_enter_ready()
 	else:
 		_back_to_choose()
 
 
+## 쉬는 시간에 설치된 오브젝트를 클릭(또는 우클릭한 채 끌기)하면 그 자리에서 방향을 다시 정한다.
+## 옮기기는 끌기·꾹 누르기로 따로 한다 (예전엔 클릭 → 새 자리 → 방향, 방향만 바꿀 때도 제자리를 다시 눌러야 했다).
 func _start_move(t: Tower) -> void:
 	move_return = phase
 	start_btn.visible = false
 	moving = t
 	move_orig_pos = t.position
 	move_orig_dir = t.dir
-	phase = Phase.MOVE
+	place_pos = t.position
+	phase = Phase.AIM
+	aim_start_ms = Time.get_ticks_msec()
 	choice_box.visible = false
 	reroll_btn.visible = false
-	hint.text = "새 자리를 누르면 옮깁니다   취소: 그대로 두기" if touch_ui else "클릭: 새 위치   우클릭/Esc: 옮기기 취소"
+	if touch_ui:
+		hint.text = "쏠 쪽을 누르거나 끌어서 놓기: 방향 확정   취소: 그대로 두기"
+	else:
+		hint.text = "클릭 또는 끌어서 놓기: 방향 확정 (Shift: 15도 단위)   오브젝트 우클릭한 채 끌기로도 바로 됨\n우클릭/Esc: 그대로 두기"
 
 
 func _toggle_pause() -> void:
@@ -4323,7 +4350,7 @@ func _draw_tooltip() -> void:
 	var maxw := minf(620.0 * z, _right_limit() - 24.0)  # 이보다 긴 줄은 접는다 (속성이 많으면 화면 밖으로 나가던 것)
 	var lines: Array = []  # [글자, 색]
 	var head := t.title()
-	var tip := "(클릭: 옮기기 · 끌기: 바로 이동)" if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
+	var tip := "(클릭: 방향 · 끌기: 옮기기)" if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
 	if touch_move:
 		tip = "(새 자리 누르기: 옮기기 · 취소: 그대로)"
 	if tip != "" and ui_font.get_string_size(head + "   " + tip, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= maxw:
