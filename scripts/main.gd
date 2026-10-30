@@ -2491,6 +2491,7 @@ func _game_over() -> void:
 
 ## 터치인지 마우스인지 기억한다 (터치에서 흉내 낸 마우스 움직임은 장치 번호가 EMULATION).
 func _input(event: InputEvent) -> void:
+	var was_touch := touch_ui
 	if event is InputEventScreenTouch:
 		touch_ui = true
 		if event.pressed:
@@ -2505,6 +2506,8 @@ func _input(event: InputEvent) -> void:
 					break
 	elif event is InputEventMouseMotion and event.device != InputEvent.DEVICE_ID_EMULATION:
 		touch_ui = false
+	if touch_ui != was_touch and legend:
+		_refresh_legend()  # 설명의 키 안내(도감 K)를 터치·마우스에 맞게
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -3304,7 +3307,7 @@ func _refresh_legend() -> void:
 			row.append("%s+%s %s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["name"]])
 		lines.append("   ".join(row))
 	if rs.size() < Elem.REACTIONS.size():
-		lines.append("아직 못 만난 반응 %d개 (모든 두 속성 조합에 반응이 있어요, 도감 K)" % (Elem.REACTIONS.size() - rs.size()))
+		lines.append("아직 못 만난 반응 %d개 (모든 두 속성 조합에 반응이 있어요, 도감%s)" % [Elem.REACTIONS.size() - rs.size(), "" if touch_ui else " K"])
 	legend.text = _kr_keep("\n".join(lines))
 
 
@@ -3360,7 +3363,7 @@ func _toggle_records() -> void:
 	board_bar.visible = false
 	if not records_panel.visible:
 		return
-	var lines := PackedStringArray(["[맵별 최고 기록 · %s]   (아무 곳이나 클릭: 닫기)" % Rules.NAMES[Meta.rules]])
+	var lines := PackedStringArray(["[맵별 최고 기록 · %s]   (아무 곳이나 %s)" % [Rules.NAMES[Meta.rules], "누르면 닫기" if touch_ui else "클릭: 닫기"]])
 	for id in Meta.MAP_IDS:
 		var b := Meta.best_of(Meta.key(id))
 		var e := Meta.best_of(Meta.key(id) + Meta.EASY_TAG)  # 쉽게 모드를 쓴 판은 따로
@@ -3392,7 +3395,7 @@ func _toggle_records() -> void:
 				unlock = " → 중앙 모양 '%s'" % Meta.CORE_SKINS[sk]["name"]
 		lines.append("  %s %s - %s%s" % ["✓" if Meta.achieved.has(id) else "·", a["name"], a["desc"], unlock])
 	lines.append("")
-	lines.append("[반응 도감] %d / %d   (모든 반응·조합은 도감(K) 특수 반응 탭)" % [Meta.codex.size(), Elem.REACTIONS.size()])
+	lines.append("[반응 도감] %d / %d   (모든 반응·조합은 도감%s 특수 반응 탭)" % [Meta.codex.size(), Elem.REACTIONS.size(), "" if touch_ui else "(K)"])
 	# 찾은 반응만 이어 쓴다. 모르는 칸마다 ???를 쓰면 반응이 91개라 창이 화면 높이만큼 길어져 글자가 읽을 수 없게 작아졌다
 	var found := PackedStringArray()
 	for r in Elem.REACTIONS:
