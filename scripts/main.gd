@@ -73,6 +73,9 @@ var leak_log: Array = []  # 웨이브마다 누수 요약 (봇·통계·안내�
 var leak_flash: Array = []  # 화면 가장자리 붉은 번짐 [자리, 남은 시간]
 var boss_plan := {}  # 다음 보스: 쉬는 시간에 진입 각도·체력·속도·저항을 미리 정해 길과 정보를 정확히 보여 준다
 var touch_ui := false  # 마지막 입력이 터치였는지 (터치는 마우스를 올려 둘 수 없다)
+## 터치 화면에선 버튼 글의 키 안내 "(Q)"·"(Space: 바로)"를 뺀다. "(S: 멈추기)"처럼 누르면 하는 일은 "(눌러서 멈추기)"로
+var key_re := RegEx.create_from_string(" ?\\((?:Q|V|S|D|E|F|K|O|H|M|N|P|T|Tab|Enter|Esc|F11|Space)(?:: [^)]*)?\\)")
+var key_t := 0.0
 var offer: Array = []  # 이번 선택지 [카드, ...] 카드: {"type": "elem"|"pat"|"mod"|"link", ...}
 var picked := {}  # 고른 카드
 var place_pos := Vector2.ZERO
@@ -1165,7 +1168,7 @@ func _on_skip() -> void:
 	skip_left = skip_total
 	skip_stop = false
 	_bank_rest()
-	_show_toast("웨이브 %d개 넘기기: 고르기는 멈춘 뒤 한꺼번에 (S: 멈추기)" % skip_total)
+	_show_toast("웨이브 %d개 넘기기: 고르기는 멈춘 뒤 한꺼번에 (%s)" % [skip_total, "아래 표시를 누르면 멈춤" if touch_ui else "S: 멈추기"])
 
 
 ## 이번 쉬는 시간의 남은 고르기·새로고침을 쌓고 바로 다음 웨이브로 (1초 뒤 시작).
@@ -1248,7 +1251,7 @@ func _update_skip_ui() -> void:
 	skip_n_btn.visible = show_btn
 	if show_btn:
 		var n := int(Meta.skip_n)
-		skip_btn.text = "웨이브 %d개 넘기기 (S)" % n
+		skip_btn.text = _kh("웨이브 %d개 넘기기 (S)" % n)
 		skip_n_btn.text = "×%d ▸" % n
 	skip_badge.visible = skip_left > 0 and phase in [Phase.WAVE, Phase.READY] and not title_label.visible
 	if skip_badge.visible:
@@ -1256,11 +1259,11 @@ func _update_skip_ui() -> void:
 		var cards := bank_picks.size()
 		var extra := " · 특성 %d" % bank_perks if bank_perks > 0 else ""
 		if skip_stop:
-			skip_badge.text = "이번 웨이브 뒤 멈춤 · 쌓인 카드 %d%s (S: 계속)" % [cards, extra]
+			skip_badge.text = _kh("이번 웨이브 뒤 멈춤 · 쌓인 카드 %d%s (S: 계속)" % [cards, extra], true)
 		elif phase == Phase.READY:
-			skip_badge.text = "넘기는 중 %d/%d · 쌓인 카드 %d%s (S: 지금 멈추고 고르기)" % [done, skip_total, cards, extra]
+			skip_badge.text = _kh("넘기는 중 %d/%d · 쌓인 카드 %d%s (S: 지금 멈추고 고르기)" % [done, skip_total, cards, extra], true)
 		else:
-			skip_badge.text = "넘기는 중 %d/%d · 쌓인 카드 %d%s (S: 멈추기)" % [done, skip_total, cards, extra]
+			skip_badge.text = _kh("넘기는 중 %d/%d · 쌓인 카드 %d%s (S: 멈추기)" % [done, skip_total, cards, extra], true)
 
 
 ## 선택지 화면을 연다 (offer는 이미 정해져 있음).
@@ -1941,6 +1944,25 @@ func _lane_arrows() -> Array:
 				d = (path[0] - path[1]).normalized()
 		out.append([edge - d * 18.0, d, i])
 	return out
+
+
+func _strip_key_hints() -> void:
+	var nodes: Array = ui_root.find_children("*", "Button", true, false)
+	nodes.append_array([dps_head, flip_label])
+	for b in nodes:
+		if not is_instance_valid(b):
+			continue
+		var t0: String = b.text
+		var t1 := _kh(t0, b == skip_badge)
+		if t1 != t0:
+			b.text = t1
+
+
+## 매 프레임 쓰는 버튼 글은 쓸 때 바로 뺀다 (0.2초마다 빼도 같은 프레임에 다시 써져서 남았다)
+func _kh(t: String, tap := false) -> String:
+	if not touch_ui or not t.contains("("):
+		return t
+	return t.replace("(S: ", "(눌러서 ") if tap else key_re.sub(t, "", true)
 
 
 ## 위쪽 가운데 글(알림·처음 안내)을 가운데에 두되, 오른쪽 설명이 떠 있으면 그 왼쪽까지만 (글자를 키우면 글 끝이 설명 밑에 깔리던 것).
@@ -4817,6 +4839,10 @@ func _roll_kind() -> int:
 # ---------- 루프 ----------
 
 func _process(delta: float) -> void:
+	key_t -= delta
+	if touch_ui and key_t <= 0.0:
+		key_t = 0.2
+		_strip_key_hints()
 	var us := Time.get_ticks_usec() if prof_on else 0
 	if new_armed > 0.0:
 		new_armed -= delta
@@ -4853,7 +4879,7 @@ func _process(delta: float) -> void:
 	legend_btn.visible = legend.visible
 	range_btn.visible = touch_ui and not title_label.visible and phase != Phase.GAMEOVER
 	range_btn.text = "범위 끄기" if range_all else "범위 보기"
-	legend_btn.text = ("설명 보기" if legend_hidden else "설명 숨기기") + " (Tab)"
+	legend_btn.text = _kh(("설명 보기" if legend_hidden else "설명 숨기기") + " (Tab)")
 	legend.visible = legend.visible and not legend_hidden
 	# 시작 화면 위에 설정·기록·도움말·패치노트 창을 열면 뒤 메뉴는 숨긴다 (흐리게만 하면 창 아래로 삐져나온 버튼 줄이 겹쳐 보이고 눌리던 것)
 	if help_label.visible and not help_scroll.visible:
@@ -4903,7 +4929,7 @@ func _process(delta: float) -> void:
 	hide_btn.visible = phase == Phase.CHOOSE and not title_label.visible
 	_update_skip_ui()
 	cancel_btn.visible = phase in [Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.DRAW] and not title_label.visible and not get_tree().paused
-	hide_btn.text = ("▲ 선택지 보기" if cards_hidden else "▼ 필드 보기") + " (V)"
+	hide_btn.text = _kh(("▲ 선택지 보기" if cards_hidden else "▼ 필드 보기") + " (V)")
 	hide_btn.tooltip_text = "선택지를 다시 올린다" if cards_hidden else "선택지를 내리고 카드에 가려진 필드를 본다"
 	if speed_btn.visible:
 		speed_btn.queue_redraw()
@@ -4970,7 +4996,7 @@ func _process(delta: float) -> void:
 			countdown = maxf(countdown, 1.0)
 		else:
 			countdown -= delta
-		start_btn.text = "%.1f초 뒤 시작 (Space: 바로)" % maxf(countdown, 0.0)
+		start_btn.text = _kh("%.1f초 뒤 시작 (Space: 바로)" % maxf(countdown, 0.0))
 		if countdown <= 0.0:
 			_start_wave()
 	if reading:

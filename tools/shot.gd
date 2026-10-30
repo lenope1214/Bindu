@@ -1,10 +1,11 @@
 extends SceneTree
 ## 화면 배치 점검용 스크린샷: 시작 화면(줄이 가장 많을 때)·그 위 창들·카드·특성·일시정지·게임 오버.
-## 인자: 저장 폴더 [글자 크기]. 예) xvfb-run godot --path . -s tools/shot.gd -- /tmp/shots 1.3
+## 인자: 저장 폴더 [글자 크기] [touch]. 예) xvfb-run godot --path . -s tools/shot.gd -- /tmp/shots 1.3 touch
 var main
 var f := 0
 var out := "/tmp"
 var z := 1.0
+var touch := false  # 폰처럼 터치 화면 (범위 보기 버튼 등)
 var steps: Array = []
 
 
@@ -12,11 +13,13 @@ func _initialize():
 	var a := OS.get_cmdline_user_args()
 	if a.size() > 0: out = a[0]
 	if a.size() > 1: z = float(a[1])
+	touch = a.size() > 2 and a[2] == "touch"
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	steps = [
 		func():
 			Meta.ui_scale = z
+			main.touch_ui = touch
 			main._apply_ui_scale()
 			# 가장 긴 시작 화면: 회랑(좌우 줄)·규칙 3·모드 줄·이어하기·새 버전 알림·공지까지
 			Meta.games = 5
@@ -70,7 +73,7 @@ func _initialize():
 
 
 func _snap(n: String):
-	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s.png" % [n, z]))
+	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s.png" % [n, z, "_touch" if touch else ""]))
 	print("SHOT ", n)
 
 
