@@ -33,6 +33,8 @@ var caught := {}  # trail prison: 이미 가둔 구체 (띠 하나에 한 번)
 
 ## 효과 줄이기(설정)에서 옅게 그리는 장판: 형태 성질·반응·투척 장판. 블랙홀·바위 벽·턱·독버섯은 막거나 끌어서 그대로
 const SOFT := ["trail", "bog", "cloud", "boom", "ember", "rill", "frost", "fog", "tick"]
+## 모양이 바뀌지 않고 옅어지기만 하는 장판: 한 번 그리고 self_modulate로 옅게 (불씨·물길이 100개 가까이 깔려 매 프레임 다시 그리던 것). 바위 벽은 아예 그대로
+const STILL := ["ember", "rill", "frost", "fog", "ledge"]
 
 
 func setup(k: String, l: int, tower: Tower) -> void:
@@ -145,8 +147,12 @@ func affect(orbs: Array, delta: float) -> void:
 	t += delta
 	tick -= delta
 	for o in orbs:
-		var dist: float = o.position.distance_to(position)
-		var inside: bool = dist < radius + o.radius()
+		# 지나간 자리 장판(trail)은 trail_orbs가 이미 골랐다. 나머지는 모두 원 안의 구체에만 듣는다:
+		# 원 밖이면 match까지 가지 않는다 (불씨·물길이 한 번에 100개 가까이 깔려 장판 계산의 절반이던 것)
+		if kind != "trail":
+			var rr: float = radius + o.radius()
+			if o.position.distance_squared_to(position) >= rr * rr:
+				continue
 		match kind:
 			"trail" when sub.begins_with("rx:"):
 				RxMore.zone_hit(self, o, delta)
@@ -173,40 +179,33 @@ func affect(orbs: Array, delta: float) -> void:
 				else:
 					_hit(o, dps * _p() * delta, delta * 3.0)
 			"vortex":
-				if inside:
-					# 진행 방향에 수직으로만 끌어 길 위 한 줄로 모은다 (구체를 바깥으로 끌고 가지 않게)
-					var v: Vector2 = position - o.position
-					v -= dir * v.dot(dir)
-					o.push(v.limit_length(pull * delta))
-					# 작아질수록 세진다: 처음 0.8 → 다 줄면 1.6
-					var ramp := 1.0 + (1.0 - radius / r0) / 0.6 if r0 > 0.0 else 1.0
-					_hit(o, 0.8 * _p() * ramp * delta, delta * 3.0)
-					if o.hp <= 0.0 and not eaten_set.has(o):
-						eaten_set[o] = true
-						eaten += 1
+				# 진행 방향에 수직으로만 끌어 길 위 한 줄로 모은다 (구체를 바깥으로 끌고 가지 않게)
+				var v: Vector2 = position - o.position
+				v -= dir * v.dot(dir)
+				o.push(v.limit_length(pull * delta))
+				# 작아질수록 세진다: 처음 0.8 → 다 줄면 1.6
+				var ramp := 1.0 + (1.0 - radius / r0) / 0.6 if r0 > 0.0 else 1.0
+				_hit(o, 0.8 * _p() * ramp * delta, delta * 3.0)
+				if o.hp <= 0.0 and not eaten_set.has(o):
+					eaten_set[o] = true
+					eaten += 1
 			"ember":
-				if inside:
-					o.burn(0.4 * amt * _p(), 1.5, owner_tower, false, src)
+				o.burn(0.4 * amt * _p(), 1.5, owner_tower, false, src)
 			"rill":
-				if inside:
-					o.slow(0.7, 0.6)
+				o.slow(0.7, 0.6)
 			"frost":
-				if inside:
-					o.add_chill(0.5 * amt * delta)
+				o.add_chill(0.5 * amt * delta)
 			"fog":
-				if inside:
-					o.poison(0.4 * amt * _p(), 2.0, owner_tower, false, src)
+				o.poison(0.4 * amt * _p(), 2.0, owner_tower, false, src)
 			"ledge":
-				if inside:
-					var away: Vector2 = (o.position - position).normalized()
-					o.position = position + away * (radius + o.radius())
-					o.root(0.1, false)
+				var away: Vector2 = (o.position - position).normalized()
+				o.position = position + away * (radius + o.radius())
+				o.root(0.1, false)
 			"cloud":
-				if inside:
-					o.poison(0.8 * level, 2.0, owner_tower, true, src)
+				o.poison(0.8 * level, 2.0, owner_tower, true, src)
 			"bog":
 				# 독늪: 느려지고 중독 2배, 안에서 죽으면 독 폭발·늪이 번짐
-				if inside and is_instance_valid(owner_tower):
+				if is_instance_valid(owner_tower):
 					owner_tower.in_rx = true
 					_hit(o, 1.0 * _p() * delta, delta * 3.0)
 					owner_tower.in_rx = false
@@ -216,16 +215,15 @@ func affect(orbs: Array, delta: float) -> void:
 					o.swamp_lv = level
 					o.swamp_src = owner_tower
 			"mine":
-				if inside and not dead:
+				if not dead:
 					_explode(orbs)
 					return
 			"rock":
-				if inside:
-					var away: Vector2 = (o.position - position).normalized()
-					o.position = position + away * (radius + o.radius())
-					o.root(0.1, false)
-					_hit(o, 4.0 * Tower.pw(level) * delta, delta * 3.0)
-					hp -= 2.0 * delta
+				var away: Vector2 = (o.position - position).normalized()
+				o.position = position + away * (radius + o.radius())
+				o.root(0.1, false)
+				_hit(o, 4.0 * Tower.pw(level) * delta, delta * 3.0)
+				hp -= 2.0 * delta
 	if kind == "rock" and hp <= 0.0:
 		life = 0.0
 
@@ -278,7 +276,10 @@ func step(delta: float) -> void:
 	if life <= 0.0:
 		_end()
 		queue_free()
-	queue_redraw()
+	if kind in STILL:
+		self_modulate.a = clampf(life / max_life, 0.0, 1.0)  # 모양은 그대로, 옅어지기만: 다시 그리지 않는다
+	elif kind != "rock":
+		queue_redraw()
 
 
 ## 사라질 때: 블랙홀 붕괴, 째깍 폭발, 바위 벽 무너짐 → 형태 성질 "끝".
@@ -312,7 +313,7 @@ func _end() -> void:
 
 
 func _draw() -> void:
-	var a := clampf(life / max_life, 0.0, 1.0)
+	var a := 1.0 if kind in STILL else clampf(life / max_life, 0.0, 1.0)
 	match kind:
 		"trail":
 			_draw_trail()
