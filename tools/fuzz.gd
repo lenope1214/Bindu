@@ -4,7 +4,7 @@ var main
 var f := 0
 var n := 6000
 var held := false
-var keys := [KEY_1, KEY_2, KEY_3, KEY_Q, KEY_V, KEY_SPACE, KEY_ESCAPE, KEY_TAB, KEY_H, KEY_P, KEY_R, KEY_ENTER, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_O, KEY_M, KEY_SHIFT]
+var keys := [KEY_1, KEY_2, KEY_3, KEY_Q, KEY_V, KEY_SPACE, KEY_ESCAPE, KEY_TAB, KEY_H, KEY_P, KEY_E, KEY_R, KEY_ENTER, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_O, KEY_M, KEY_SHIFT]
 func _initialize():
 	var a := OS.get_cmdline_user_args()
 	seed(int(a[0]) if a.size() > 0 else 1)

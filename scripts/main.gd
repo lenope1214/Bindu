@@ -122,6 +122,8 @@ var wave_resist := -1  # 다음 웨이브 저항 속성 (-1: 없음)
 var legend_btn: Button
 var aim_start_ms := 0
 var restart_armed := 0.0  # 일시정지 중 R 두 번이면 처음부터
+var end_armed := 0.0  # 일시정지 중 판 끝내기 두 번이면 지금 점수로 게임 오버
+var ended := false  # 스스로 끝낸 판 (게임 오버 글 제목만 다름)
 var over_ms := 0  # 게임 오버 시각: 직후 클릭이 결과를 못 보고 넘기지 않게
 var countdown := -1.0  # 자동 시작까지 남은 시간
 # 특성: 5웨이브마다 고르는 전역 강화
@@ -524,7 +526,7 @@ func _build_ui() -> void:
 	pause_box.size = Vector2(700, 44)
 	pause_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	pause_box.add_theme_constant_override("separation", 12)
-	var pspecs := [["계속 (P)", _toggle_pause], ["시작 화면으로 (T)", _leave.bind(false)]]
+	var pspecs := [["계속 (P)", _toggle_pause], ["판 끝내기 (E)", _end_run], ["시작 화면으로 (T)", _leave.bind(false)]]
 	if OS.has_feature("pc"):
 		pspecs.append(["게임 끄기 (X)", _leave.bind(true)])  # 모바일은 운영체제가 앱을 닫는다
 	for spec in pspecs:
@@ -740,6 +742,7 @@ func _help_text() -> String:
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
 		"P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   F11: 전체 화면",
 		"R: 다시 시작 (게임 오버 뒤, 또는 일시정지 중 두 번)",
+		"E: 판 끝내기 (일시정지 중 두 번) — 지금 점수로 게임 오버, 기록·온라인 순위에 올라감",
 		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 이어하기(Enter)로 그 쉬는 시간부터 (새로 시작은 N 두 번)",
 		"첫 판은 카드가 단계별로 열려요 (공격방식 3·강화 4·연계 6웨이브)",
 		"처음 생기는 일엔 위쪽에 한 줄 안내 (설정에서 끄기·처음부터 다시 보기)",
@@ -1602,7 +1605,7 @@ func _game_over() -> void:
 	if top and total > 0.0 and towers.get_child_count() > 1:
 		mvp = "\n최다 피해: %s (%d%%)" % [top.title(), roundi((top.run_dealt + top.dealt) / total * 100.0)]
 	var md := "" if Modes.on.is_empty() else "\n모드: %s · 점수 x%.2f%s" % [Modes.names(), Modes.mul(), "\n쉽게 모드: 최고 기록 따로, 리더보드 제외" if Modes.easy() else ""]
-	over_label.text = "게임 오버 (%s · %s)\n웨이브 %d · 점수 %s%s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\nR 또는 클릭: 다시 시작   Esc: 메뉴" % [Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, md, num(kills), best_combo, towers.get_child_count(), mvp, ach]
+	over_label.text = "%s (%s · %s)\n웨이브 %d · 점수 %s%s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\nR 또는 클릭: 다시 시작   Esc: 메뉴" % ["판 끝냄" if ended else "게임 오버", Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, md, num(kills), best_combo, towers.get_child_count(), mvp, ach]
 	over_label.visible = true
 	_submit_run()
 	sfx.play("over", 0.0)
@@ -1680,6 +1683,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			else:
 				restart_armed = 2.0
 				paused_label.text = _pause_text() + "\nR을 한 번 더 누르면 처음부터"
+		elif event.keycode == KEY_E and get_tree().paused:
+			_end_run()
 		elif event.keycode == KEY_T and get_tree().paused:
 			_leave(false)
 		elif event.keycode == KEY_X and get_tree().paused and OS.has_feature("pc"):
@@ -3167,15 +3172,32 @@ func _toggle_pause() -> void:
 	pause_box.visible = get_tree().paused
 	paused_label.text = _pause_text()
 	restart_armed = 0.0
+	end_armed = 0.0
 	pause_btn.text = "계속 (P)" if get_tree().paused else "일시정지 (P)"
 
 
 ## 일시정지 글: 지금 나가면 어디서부터 이어지는지도 알려 준다.
 func _pause_text() -> String:
-	var keys := "일시정지\nP / Esc: 계속   T: 시작 화면%s   R: 처음부터\nM: 소리   O: 설정   F11: 전체 화면" % ("   X: 끄기" if OS.has_feature("pc") else "")
+	var keys := "일시정지\nP / Esc: 계속   E: 판 끝내기   T: 시작 화면%s   R: 처음부터\nM: 소리   O: 설정   F11: 전체 화면" % ("   X: 끄기" if OS.has_feature("pc") else "")
 	if phase == Phase.WAVE:
 		return keys + "\n지금 나가면 웨이브 %d 앞 쉬는 시간부터 이어집니다" % wave
 	return keys + "\n지금 나가도 이 쉬는 시간부터 이어서 할 수 있어요"
+
+
+## 일시정지에서 판 끝내기: 두 번 누르면 지금 점수로 게임 오버 (기록 저장·온라인 전송은 보통 게임 오버와 같다).
+## 실수로 누르지 않게 처음 누르면 안내만 한다.
+func _end_run() -> void:
+	if end_armed <= 0.0:
+		end_armed = 3.0
+		paused_label.text = _pause_text() + "\n판 끝내기를 한 번 더 누르면 지금 점수 %s로 끝냅니다 (기록·순위에 올라가요)" % num(score)
+		return
+	end_armed = 0.0
+	get_tree().paused = false
+	paused_label.visible = false
+	pause_box.visible = false
+	pause_btn.text = "일시정지 (P)"
+	ended = true
+	_game_over()
 
 
 ## 일시정지에서 시작 화면으로 가거나 게임을 끈다. 쉬는 시간이면 지금 상태를 저장하고,
@@ -3528,6 +3550,7 @@ func _process(delta: float) -> void:
 	hide_btn.offset_top = hy
 	hide_btn.offset_bottom = hy + 32.0
 	restart_armed = maxf(restart_armed - delta, 0.0)
+	end_armed = maxf(end_armed - delta, 0.0)
 	if not get_tree().paused and not title_label.visible and phase != Phase.GAMEOVER:
 		run_real += delta
 	if get_tree().paused:
