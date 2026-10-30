@@ -3108,6 +3108,7 @@ func _build_menu(root: Control) -> void:
 		b.custom_minimum_size = Vector2(200, 36)
 		b.focus_mode = Control.FOCUS_NONE
 		b.clip_text = true
+		b.add_theme_font_size_override("font_size", 15)  # 4칸이라 '규칙: 버전 3 · 자유 쌓기'가 잘리던 것
 		b.pressed.connect(f)
 		board_bar.add_child(b)
 	_build_notes(root)

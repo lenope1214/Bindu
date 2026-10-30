@@ -1,5 +1,5 @@
 extends SceneTree
-## 정원 모드 화면 스크린샷: 시작 화면(정원·씨앗 나무 버튼), 씨앗 나무 창, 정원 상점, 놓기, 웨이브 중, 물러난 뒤, 특성 4장(열매).
+## 정원 모드 화면 스크린샷: 시작 화면(정원·씨앗 나무 버튼), 씨앗 나무 창, 정원 상점, 놓기, 웨이브 중, 물러난 뒤, 특성 4장(열매), 리더보드(성장/순수 버튼).
 ## 인자: 저장 폴더 [글자 크기]. 예) xvfb-run godot --rendering-driver opengl3 --path . -s tools/garden_shot.gd -- /tmp/shots
 var main
 var f := 0
@@ -16,6 +16,7 @@ func _initialize():
 		DirAccess.remove_absolute(Garden.RUN_PATH)
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
+	current_scene = main
 	steps = [
 		func():
 			Meta.ui_scale = z
@@ -69,6 +70,15 @@ func _initialize():
 			main._start_perk(),
 		func(): pass,
 		func(): _snap("g_perk4"),
+		func():
+			main._on_perk(main.perk_offer[0])
+			main._leave(false),
+		func(): pass,
+		func():
+			main = current_scene
+			main._toggle_board(),
+		func(): pass,
+		func(): _snap("g_board"),
 	]
 
 
