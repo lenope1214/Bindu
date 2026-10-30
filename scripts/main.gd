@@ -1694,7 +1694,7 @@ func _wind_buffs() -> void:
 		var b := 0.0
 		for w in winds:
 			if w != t and w.position.distance_to(t.position) < w.wind_range():
-				b = maxf(b, Tower.WIND_BUFF * w.lv(Elem.WIND))
+				b = maxf(b, Rules.t("wind_buff") * w.lv(Elem.WIND))
 		t.wind_buff = b
 
 
