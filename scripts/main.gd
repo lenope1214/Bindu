@@ -768,6 +768,15 @@ func _refresh_dps() -> void:
 	if not on:
 		dps_focus = null
 		return
+	# 표 밑에 오브젝트가 있으면(위쪽 끝에 놓은 것) 마우스를 표에 올리지 않은 동안 옅게 해서 보이게
+	var pr := get_canvas_transform().affine_inverse() * dps_panel.get_global_rect()
+	var under := false
+	if not pr.has_point(get_global_mouse_position()):
+		for t in towers.get_children():
+			if pr.grow(14.0).has_point(t.position):
+				under = true
+				break
+	dps_panel.modulate.a = 0.4 if under else 1.0
 	# 점수 줄 아래, 왼쪽 아래 안내 글 위까지
 	var top := hud.position.y + hud.size.y + 8.0 if hud.visible else 8.0
 	dps_panel.position.y = top
