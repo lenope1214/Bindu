@@ -40,12 +40,12 @@ const MODS := {
 const MOD_IDS := ["multi", "split", "homing", "bounce", "size", "rapid", "pierce"]
 
 const LINKS := {
-	"link": {"name": "연결선", "desc": "두 오브젝트를 레이저로 잇고 속성을 서로 나눈다"},
+	"pincer": {"name": "협공", "desc": "3초 안에 다른 오브젝트도 맞힌 구체를 이 오브젝트가 맞히면 표식이 터져 최대 체력의 10% 피해"},
 	"prism": {"name": "프리즘", "desc": "다른 오브젝트의 탄이 지나가면 이 속성이 묻고 피해 +20%"},
 	"reso": {"name": "공명", "desc": "가까운(150) 오브젝트 하나당 피해 +12%"},
 }
 
-const LINK_IDS := ["link", "prism", "reso"]
+const LINK_IDS := ["pincer", "prism", "reso"]
 
 
 static func pname(id: String) -> String:

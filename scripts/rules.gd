@@ -24,7 +24,7 @@ static var version := 1
 static var max_elems := 3  # 한 오브젝트에 넣을 수 있는 속성 종류 (레벨은 무제한)
 static var max_mod := 5  # 강화 종류마다 쌓을 수 있는 수
 static var crowd := 0.04  # 오브젝트 하나당 전체 피해 보너스
-static var link_range := 420.0
+static var pincer_frac := 0.10  # 협공 표식 폭발: 구체 최대 체력 대비
 static var orb_mul := 1.0  # 웨이브 구체 수 배율
 static var tax_step := 0.15  # 속성 종류 하나당 공격 속도 감소
 static var mod_decay := false  # 같은 강화를 쌓을수록 효과가 절반씩 (1, 1.5, 1.75, ...)
@@ -40,7 +40,7 @@ static func apply(v: int) -> void:
 	max_elems = 3
 	max_mod = 5
 	crowd = 0.04
-	link_range = 420.0
+	pincer_frac = 0.10
 	orb_mul = 1.0
 	tax_step = 0.15
 	mod_decay = false
@@ -54,7 +54,6 @@ static func apply(v: int) -> void:
 			max_elems = 2
 			max_mod = 3
 			crowd = 0.06
-			link_range = 420.0
 		3:
 			max_elems = NO_CAP
 			max_mod = NO_CAP
@@ -86,7 +85,7 @@ static func _apply_patch(p: Dictionary) -> void:
 			"resist_from": resist_from = int(v)
 			"sturdy_from": sturdy_from = int(v)
 			"crowd": crowd = float(v)
-			"link_range": link_range = float(v)
+			"pincer_frac": pincer_frac = float(v)
 			"orb_mul": orb_mul = maxf(0.1, float(v))
 			"tax_step": tax_step = float(v)
 			"hp_growth": hp_growth = maxf(1.0, float(v))

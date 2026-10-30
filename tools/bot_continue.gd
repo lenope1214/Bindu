@@ -31,7 +31,7 @@ var cont_w := -1
 func _snap() -> String:
 	var parts := []
 	for t in main.towers.get_children():
-		parts.append("%s|%s|%.0f,%.0f|%.2f|L%d" % [t.title(), t.extras_text(), t.position.x, t.position.y, t.dir.angle(), t.links.size()])
+		parts.append("%s|%s|%.0f,%.0f|%.2f" % [t.title(), t.extras_text(), t.position.x, t.position.y, t.dir.angle()])
 	parts.append("w=%d s=%d k=%d core=%d/%d perks=%s rr=%d picks=%d lanes=%d resist=%d dmg=%.2f spd=%.2f tax=%.3f perk=%s" % [main.wave, main.score, main.kills, main.core_hp, main.core_max, main.perks, main.rerolls_left, main.picks_left, main.lanes.size(), main.wave_resist, Tower.dmg_mul, Tower.spd_mul, Tower.tax_step, main.perk_mode])
 	if not main.perk_mode:
 		parts.append(str(main.offer.map(func(c): return main._card_key(c))))
@@ -136,22 +136,12 @@ func _process(_d):
 		# 3) 강화는 가장 강한 오브젝트에
 		if pick == null and ts.size() > 0:
 			for o in offer:
-				if o["type"] == "mod" or (o["type"] == "link" and o["id"] != "link"):
+				if o["type"] == "mod" or o["type"] == "link":
 					pick = o
 					target = ts[0]
 					for t in ts:
 						if t.total_level() > target.total_level(): target = t
 					break
-		if pick == null and ts.size() >= 2:
-			for o in offer:
-				if o["type"] == "link" and o["id"] == "link":
-					var best = null
-					for a in ts:
-						for b in ts:
-							if a != b and not a.links.has(b) and a.position.distance_to(b.position) < Rules.link_range:
-								best = [a, b]
-					if best:
-						main._on_pick(o); main._apply_card(best[0]); main._apply_card(best[1]); return false
 		if pick == null:
 			for o in offer:
 				if o["type"] == "elem": pick = o; break
@@ -174,7 +164,7 @@ func _process(_d):
 		if pick["type"] != "elem":
 			if target == null: target = ts[0] if ts.size() > 0 else null
 			if pick["type"] == "pat" and target and not target.can_pattern(pick["id"]): target = null
-			if target == null or (pick["type"] == "link" and pick["id"] == "link"):
+			if target == null:
 				main._back_to_choose(); main._on_reroll()
 				if main.phase == 0 and main.rerolls_left <= 0 and main.offer == offer:
 					main.picks_left = 1; main._after_place()

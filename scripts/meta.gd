@@ -38,7 +38,7 @@ const ACHIEVEMENTS := {
 	"boss": {"name": "보스 사냥", "desc": "보스 처치"},
 	"codex5": {"name": "연금술사", "desc": "특수 반응 5종 발견 (도감)"},
 	"codex9": {"name": "현자", "desc": "특수 반응 모두 발견"},
-	"links3": {"name": "연결망", "desc": "한 판에 연결선 3개"},
+	"links3": {"name": "협공진", "desc": "한 판에 협공 오브젝트 3개"},
 	"stack5": {"name": "무지개", "desc": "오브젝트 하나에 속성 5종"},
 	"combo30": {"name": "연쇄 폭발", "desc": "콤보 30"},
 	"allmaps": {"name": "여행자", "desc": "모든 맵에서 웨이브 5 도달"},

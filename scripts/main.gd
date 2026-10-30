@@ -63,7 +63,6 @@ var boss_plan := {}  # 다음 보스: 쉬는 시간에 진입 각도·체력·�
 var touch_ui := false  # 마지막 입력이 터치였는지 (터치는 마우스를 올려 둘 수 없다)
 var offer: Array = []  # 이번 선택지 [카드, ...] 카드: {"type": "elem"|"pat"|"mod"|"link", ...}
 var picked := {}  # 고른 카드
-var link_a: Tower = null  # 연결선의 첫 오브젝트
 var place_pos := Vector2.ZERO
 
 var towers: Node2D
@@ -883,7 +882,7 @@ func _tutor_card(k: String) -> Dictionary:
 	match k:
 		"pat": ids = Pat.PATTERN_IDS.slice(1)
 		"mod": ids = Pat.MOD_IDS.duplicate()
-		"link": ids = ["link"] if towers.get_child_count() >= 2 else ["prism", "reso"]
+		"link": ids = ["pincer"] if towers.get_child_count() >= 2 else ["prism", "reso"]
 	ids.shuffle()
 	for id in ids:
 		var cd := {"type": k, "id": id}
@@ -996,7 +995,7 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 			b.text = "[%d] 강화: %s\n%s\n오브젝트 위에 놓기\n%s" % [idx, Pat.MODS[id]["name"], Pat.MODS[id]["desc"], "(종류별 %d개까지)" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "(쌓을수록 효과 절반씩)"]
 		"link":
 			var id: String = card["id"]
-			b.text = "[%d] 연계: %s\n%s\n%s" % [idx, Pat.LINKS[id]["name"], Pat.LINKS[id]["desc"], "오브젝트 두 개를 차례로 클릭" if id == "link" else "오브젝트 위에 놓기"]
+			b.text = "[%d] 연계: %s\n%s\n오브젝트 위에 놓기" % [idx, Pat.LINKS[id]["name"], Pat.LINKS[id]["desc"]]
 	b.text = _wrap_words(b.text, 220.0, 15)
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b.focus_mode = Control.FOCUS_NONE  # 다른 버튼처럼: Space·Enter가 카드를 고르지 않게
@@ -1063,7 +1062,7 @@ func _card_guides() -> void:
 		var cap := "같은 강화는 %d개까지 쌓여요" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "쌓을수록 효과가 절반씩 줄어요"
 		_guide("mod", "새 카드 · 강화: 오브젝트 위에 놓아 공격을 바꿔요(빠르게·크게·관통 등). " + cap)
 	if "link" in types:
-		_guide("link", "새 카드 · 연계: 연결선은 두 오브젝트를 이어 속성을 나눠 쓰게 하고, 프리즘·공명은 오브젝트 위에 놓아 주변을 도와요")
+		_guide("link", "새 카드 · 연계: 오브젝트 위에 놓아 주변과 함께 싸워요. 협공은 여러 오브젝트가 같이 맞힌 구체를 터뜨려요")
 
 
 ## 띄어쓰기 단위로 줄을 나눈다. Godot 자동 줄바꿈은 한글을 음절마다 끊어 "형\n태"처럼 단어가 잘린다.
@@ -1429,7 +1428,6 @@ func _on_pick(card: Dictionary) -> void:
 		_cataclysm(card["id"])
 		return
 	picked = card
-	link_a = null
 	hover_elem = -1
 	choice_box.visible = false
 	reroll_btn.visible = false
@@ -1472,9 +1470,6 @@ func _place_hint() -> String:
 	match picked.get("type", "elem"):
 		"elem":
 			return PLACE_HINT
-		"link":
-			if picked["id"] == "link":
-				return ("연결할 두 번째 오브젝트 클릭 (%d 이내)" % int(Rules.link_range) if link_a else "연결할 첫 오브젝트 클릭") + "   꾹 누르기·끌기: 옮기기\n우클릭/Esc: 다시 고르기"
 	return "넣을 오브젝트를 클릭   꾹 누르기·끌기: 옮기기\n우클릭/Esc: 다시 고르기"
 
 
@@ -2481,7 +2476,7 @@ func _submit_run() -> void:
 		for e in t.elements:
 			els[Patch.ELEM_KEYS[Elem.ALL.find(e)]] = t.elements[e]
 		list.append({"els": els, "pat": t.pattern, "plv": t.plv, "mods": t.mods, "prism": t.prism, "reso": t.reso,
-			"links": t.links.size(), "share": (t.run_dealt + t.dealt) / total if total > 0.0 else 0.0})
+			"pincer": t.pincer, "share": (t.run_dealt + t.dealt) / total if total > 0.0 else 0.0})
 	net.submit({
 		"device": Meta.device_id, "nick": Meta.nickname, "platform": Net.platform(), "game": Net.game_version(),
 		"patch": Patch.id, "map": Meta.map_id, "rules": Meta.rules, "modes": Array(Modes.on), "wave": wave, "score": score, "kills": kills,
@@ -2824,9 +2819,9 @@ func _achieve(id: String) -> void:
 
 ## 설치 후 확인하는 업적·도감.
 func _check_progress() -> void:
-	var links := 0
+	var pincers := 0
 	for t in towers.get_children():
-		links += t.links.size()
+		pincers += 1 if t.pincer > 0 else 0
 		if t.order.size() >= 5:
 			_achieve("stack5")
 		for r in t.reactions():
@@ -2835,7 +2830,7 @@ func _check_progress() -> void:
 				_save_best()
 				_refresh_legend()
 				_guide("react", "특수 반응 · %s(%s+%s): %s. 발견한 반응은 오른쪽 설명에 채워져요" % [r["name"], Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["desc"]])
-	if links / 2 >= 3:
+	if pincers >= 3:
 		_achieve("links3")
 	if Meta.codex.size() >= 5:
 		_achieve("codex5")
@@ -2872,13 +2867,7 @@ func _save_run() -> void:
 	var ts := towers.get_children()
 	var list: Array = []
 	for t in ts:
-		var d: Dictionary = t.to_save()
-		var li: Array = []
-		for o in t.links:
-			if is_instance_valid(o) and ts.has(o):
-				li.append(ts.find(o))
-		d["links"] = li
-		list.append(d)
+		list.append(t.to_save())
 	var vals := {
 		"format": RUN_FORMAT, "version": ProjectSettings.get_setting("application/config/version", ""),
 		"map": Meta.map_id, "line_flip": Meta.line_flip, "rules": Meta.rules, "modes": Array(Modes.on), "wave": wave, "score": score, "kills": kills, "best_combo": best_combo,
@@ -3021,14 +3010,7 @@ func _continue_run() -> void:
 			else:
 				towers.add_child(t)
 		made.append(t)
-	for i in made.size():
-		var li: Variant = raw[i].get("links", []) if made[i] else []
-		if li is Array:
-			for j in li:
-				if j is int and j >= 0 and j < made.size() and j != i and made[j] and not made[i].links.has(made[j]):
-					made[i].links.append(made[j])
-					if not made[j].links.has(made[i]):
-						made[j].links.append(made[i])
+	# 예전 저장의 연결선("links")은 없어진 카드라 읽지 않는다
 	for t in towers.get_children():
 		t.eff = t.eff_now()
 	match g.call("state", "choose"):
@@ -3075,29 +3057,7 @@ func _apply_card(target: Tower) -> void:
 				return
 			msg = target.add_mod(picked["id"])
 		"link":
-			if picked["id"] == "link":
-				if link_a == null:
-					link_a = target
-					sfx.play("place")
-					hint.text = _place_hint()
-					return
-				if target == link_a:
-					return
-				if target.position.distance_to(link_a.position) > Rules.link_range:
-					_show_toast("너무 멀어요 (%d 이내)" % int(Rules.link_range))
-					return
-				if link_a.links.has(target):
-					_show_toast("이미 연결되어 있어요")
-					return
-				var before := Elem.reactions_with(link_a.eff_now()).size() + Elem.reactions_with(target.eff_now()).size()
-				msg = link_a.add_link("link", target)
-				link_a.eff = link_a.eff_now()
-				target.eff = target.eff_now()
-				if link_a.reactions().size() + target.reactions().size() > before:
-					msg += " (속성 공유로 반응 발동)"
-				link_a = null
-			else:
-				msg = target.add_link(picked["id"])
+			msg = target.add_link(picked["id"])
 	_show_toast(msg)
 	sfx.play("place")
 	burst(target.position, _card_color(picked), 16, 160.0)
@@ -3128,11 +3088,7 @@ func _cancel_step() -> void:
 		phase = Phase.PLACE
 		hint.text = PLACE_HINT
 	elif phase == Phase.PLACE:
-		if link_a:
-			link_a = null
-			hint.text = _place_hint()
-		else:
-			_back_to_choose()
+		_back_to_choose()
 
 
 ## 선택지를 그대로 둔 채 오브젝트 고르기로 돌아간다.
@@ -4256,19 +4212,6 @@ func _draw() -> void:
 		for k in 4:
 			draw_circle(lf[0], 40.0 + k * 34.0, Color(1, 0.15, 0.2, 0.16 * f * (1.0 - k * 0.22)))
 
-	# 연결선
-	for t in towers.get_children():
-		for o in t.links:
-			if is_instance_valid(o) and t.get_instance_id() < o.get_instance_id():
-				if not t.link_on(o):
-					# 거리를 넘으면 끊김: 흐린 점선
-					draw_dashed_line(t.position, o.position, Color(1, 0.4, 0.4, 0.5), 2.0, 10.0)
-					continue
-				var lc: Color = t.color().lerp(o.color(), 0.5)
-				var flick := 0.7 + 0.3 * sin(now * 12.0 + t.position.x)
-				draw_line(t.position, o.position, Color(lc, 0.25 * flick), 12.0)
-				draw_line(t.position, o.position, Color(lc, 0.9 * flick), 3.0)
-				draw_line(t.position, o.position, Color(1, 1, 1, 0.6 * flick), 1.0)
 	var mpos := get_global_mouse_position()
 	if phase == Phase.CHOOSE and hover_elem >= 0:
 		var pulse2 := 0.5 + 0.5 * sin(now * 6.7)
@@ -4294,14 +4237,6 @@ func _draw() -> void:
 				else:
 					draw_line(t.position + Vector2(-8, -8), t.position + Vector2(8, 8), Color(1, 0.3, 0.3, 0.7), 3.0)
 					draw_line(t.position + Vector2(8, -8), t.position + Vector2(-8, 8), Color(1, 0.3, 0.3, 0.7), 3.0)
-		if link_a:
-			draw_arc(link_a.position, Rules.link_range, 0, TAU, 64, Color(col, 0.35), 1.5)
-			var to := press_t.position if dragging and press_t != link_a else mpos
-			if link_a.position.distance_to(to) <= Rules.link_range:
-				draw_line(link_a.position, to, Color(col, 0.7), 3.0)
-			else:
-				draw_dashed_line(link_a.position, to, Color(1, 0.4, 0.4, 0.8), 3.0, 10.0)
-				draw_string(ui_font, to + Vector2(-30, Tower.RADIUS + 36), "너무 멂", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 0.5, 0.5))
 		var target := _tower_at(mpos)
 		if target:
 			var pv: Array = target.preview(picked)
@@ -4353,14 +4288,6 @@ func _draw() -> void:
 		if _bad_spot(mover, movers) != "":
 			# 여기 놓으면 되돌아간다는 표시 (중앙에 너무 가깝거나 다른 오브젝트와 겹침)
 			draw_arc(mover.position, Tower.RADIUS + 10.0, 0, TAU, 32, Color(1, 0.25, 0.25, 0.75 + 0.25 * sin(Time.get_ticks_msec() / 90.0)), 4.0)
-		for o in mover.links:
-			if is_instance_valid(o) and not o in movers:
-				var ok: bool = mover.position.distance_to(o.position) <= Rules.link_range
-				draw_arc(o.position, Rules.link_range, 0, TAU, 64, Color(1, 1, 1, 0.15) if ok else Color(1, 0.4, 0.4, 0.35), 1.5)
-				if ok:
-					draw_line(mover.position, o.position, Color(0.6, 1, 1, 0.6), 2.0)
-				else:
-					draw_dashed_line(mover.position, o.position, Color(1, 0.4, 0.4, 0.7), 2.0, 10.0)
 	if (Input.is_key_pressed(KEY_ALT) or range_all) and not title_label.visible:
 		# Alt를 누르고 있는 동안: 모든 오브젝트의 공격 범위와 이번(지난) 웨이브 피해 몫 (약한 오브젝트 찾기)
 		var total := 0.0

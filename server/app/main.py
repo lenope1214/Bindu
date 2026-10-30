@@ -102,7 +102,8 @@ class TowerIn(BaseModel):
     mods: dict[str, int] = {}
     prism: int = 0
     reso: int = 0
-    links: int = 0
+    links: int = 0  # 예전 연결선 (v0.4.45부터 없음)
+    pincer: int = 0
     share: float = 0.0
 
 

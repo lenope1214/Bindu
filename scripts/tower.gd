@@ -4,7 +4,7 @@ extends Node2D
 ## - 공격방식(pattern): 형태. 하나만 갖고, 새 오브젝트는 직선탄.
 ## - 속성(elements): 효과. 모든 공격에 부가효과가 붙는다. 종류 수 상한은 Rules.max_elems.
 ## - 강화(mods): 공격방식에 붙는 변형. 종류마다 Rules.max_mod개까지.
-## - 연계: 연결선(links), 프리즘, 공명.
+## - 연계: 협공, 프리즘, 공명.
 
 const RADIUS := 18.0
 
@@ -13,10 +13,10 @@ var order: Array[int] = []  # 넣은 순서
 var pattern := Pat.DEFAULT
 var plv := 1  # 공격방식 레벨
 var mods := {}  # 강화 id -> 겹친 수
-var links: Array = []  # 연결선으로 이어진 오브젝트
 var prism := 0
+var pincer := 0  # 협공: 여러 오브젝트가 함께 맞힌 구체에 표식 폭발
 var reso := 0
-var eff := {}  # 연결선으로 나눠 받은 속성까지 합친 속성 (매 프레임 갱신)
+var eff := {}  # 지금 쓰는 속성 (매 프레임 갱신)
 var dir := Vector2.RIGHT
 var aim := Vector2.RIGHT  # 유도 강화로 살짝 돈 실제 공격 방향
 var cd := {}  # 공격별 쿨다운
@@ -244,7 +244,7 @@ func add_mod(id: String) -> String:
 	return "%s %d" % [Pat.MODS[id]["name"], m(id)]
 
 
-func add_link(id: String, other: Tower = null) -> String:
+func add_link(id: String) -> String:
 	place_pop = 1.0
 	queue_redraw()
 	match id:
@@ -252,27 +252,14 @@ func add_link(id: String, other: Tower = null) -> String:
 			prism += 1
 		"reso":
 			reso += 1
-		"link":
-			if other and not links.has(other):
-				links.append(other)
-				other.links.append(self)
-				other.place_pop = 1.0
+		"pincer":
+			pincer += 1
 	return Pat.LINKS[id]["name"]
 
 
-## 연결선이 지금 작동하는지: 옮겨서 거리(Rules.link_range)를 넘으면 끊긴 상태.
-func link_on(o) -> bool:
-	return is_instance_valid(o) and position.distance_to(o.position) <= Rules.link_range
-
-
-## 연결된 오브젝트의 속성까지 합친 속성 (레벨은 큰 쪽).
+## 지금 쓰는 속성 (예전 연결선은 여기서 이어진 오브젝트 속성을 더했다).
 func eff_now() -> Dictionary:
-	var d := elements.duplicate()
-	for o in links:
-		if link_on(o):
-			for e in o.elements:
-				d[e] = maxi(d.get(e, 0), o.elements[e])
-	return d
+	return elements.duplicate()
 
 
 func title() -> String:
@@ -292,8 +279,8 @@ func extras_text() -> String:
 		parts.append("프리즘" + ("" if prism == 1 else " x%d" % prism))
 	if reso > 0:
 		parts.append("공명" + ("" if reso == 1 else " x%d" % reso))
-	if not links.is_empty():
-		parts.append("연결 %d" % links.size())
+	if pincer > 0:
+		parts.append("협공" + ("" if pincer == 1 else " x%d" % pincer))
 	return ", ".join(parts)
 
 
@@ -302,10 +289,10 @@ func spec() -> Dictionary:
 	return {"els": elements, "pat": pattern, "plv": plv, "mods": mods}
 
 
-## 이어하기 저장용 (연결선은 main이 오브젝트 번호로 따로 저장).
+## 이어하기 저장용.
 func to_save() -> Dictionary:
 	return {"elements": elements, "order": Array(order), "pattern": pattern, "plv": plv, "mods": mods,
-		"prism": prism, "reso": reso, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt}
+		"prism": prism, "reso": reso, "pincer": pincer, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt}
 
 
 ## 저장값으로 되살린다. 알 수 없는 속성·공격방식·강화나 형식이 다른 값은 버린다.
@@ -328,6 +315,7 @@ func load_save(d: Dictionary) -> void:
 				mods[id] = _int(ms[id])
 	prism = maxi(0, _int(d.get("prism")))
 	reso = maxi(0, _int(d.get("reso")))
+	pincer = maxi(0, _int(d.get("pincer")))
 	var pos: Variant = d.get("pos")
 	if pos is Vector2:
 		position = pos
@@ -434,14 +422,39 @@ func attack(delta: float, orbs: Array) -> void:
 				for d in dirs():
 					main.spawn_proj(self, "blob", l, d)
 	_reactions(orbs, de, k)
-	# 연결선: 두 오브젝트 사이 레이저 (한쪽만 계산)
-	for o in links:
-		if link_on(o) and get_instance_id() < o.get_instance_id():
-			for orb in orbs:
-				var q := Geometry2D.get_closest_point_to_segment(orb.position, position, o.position)
-				if q.distance_to(orb.position) < 8.0 + orb.radius():
-					hit(orb, 2.0 * pw(1) * delta, delta * 3.0)
 	queue_redraw()
+
+
+## 협공: 맞힌 오브젝트를 구체에 표시해 두고, 협공이 있는 오브젝트가 맞힐 때
+## 최근 PINCER_T초 안에 서로 다른 오브젝트 PINCER_N개 이상에게 맞았으면 표식이 터진다.
+const PINCER_N := 2
+const PINCER_T := 3.0
+const PINCER_CD := 1.5  # 한 구체가 다시 터질 때까지
+
+
+func _pincer(o: Orb) -> void:
+	o.marks[get_instance_id()] = o.age
+	if pincer <= 0 or o.pincer_cd > 0.0 or o.hp <= 0.0:
+		return
+	var n := 0
+	for id in o.marks.keys():
+		if o.age - o.marks[id] <= PINCER_T:
+			n += 1
+		else:
+			o.marks.erase(id)
+	if n < PINCER_N:
+		return
+	o.pincer_cd = PINCER_CD
+	# 최대 체력 비례 (협공을 겹치면 +50%씩, 3개를 넘는 오브젝트 하나당 +25%, 보스는 1/4)
+	var f := Rules.pincer_frac * (1.0 + 0.5 * (pincer - 1)) * (1.0 + 0.25 * (n - PINCER_N))
+	if o.kind == Orb.Kind.BOSS:
+		f *= 0.25
+	var d := o.max_hp * f
+	o.hurt(d, false)
+	dealt += d
+	if main:
+		main.popup(o.position, d, Color(1.0, 0.55, 0.85), true, "협공")
+		main.burst(o.position, Color(1.0, 0.55, 0.85), 8, 120.0)
 
 
 ## 특수 반응: 두 속성이 함께 있으면 공격방식과 별개로 추가 공격.
@@ -677,6 +690,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	dealt += d
 	if in_rx:
 		rx_dealt += d
+	_pincer(o)
 	if els.has(Elem.FIRE):
 		o.burn(0.8 * L.call(Elem.FIRE) * rm, 2.0, self)
 	if els.has(Elem.POISON):
@@ -785,6 +799,14 @@ func _draw_body() -> void:
 		for i in 7:
 			hx.append(Vector2.from_angle(TAU * i / 6.0 + t) * (RADIUS + 6.0))
 		draw_polyline(hx, Color(0.8, 0.95, 1.0, 0.8), 2.0)
+	if pincer > 0:
+		# 협공: 세 갈래 화살표가 안쪽을 겨눈다
+		for i in 3:
+			var a := TAU * i / 3.0 - t * 0.8
+			var p := Vector2.from_angle(a) * (RADIUS + 10.0)
+			var tip := Vector2.from_angle(a) * (RADIUS + 3.0)
+			var side := Vector2.from_angle(a).orthogonal() * 4.0
+			draw_colored_polygon(PackedVector2Array([tip, p + side, p - side]), Color(1.0, 0.55, 0.85, 0.85))
 	if reso > 0:
 		var pulse := fmod(Time.get_ticks_msec() / 1000.0, 1.0)
 		draw_arc(Vector2.ZERO, RADIUS + 4.0 + pulse * 14.0, 0, TAU, 32, Color(1, 0.85, 0.5, 0.6 * (1.0 - pulse)), 2.0)

@@ -42,6 +42,8 @@ var frozen_t := 0.0  # 빙결 표시
 var swamp_t := 0.0  # 독늪 안: 중독 2배, 죽으면 독 폭발
 var swamp_lv := 1
 var prison_t := 0.0  # 빙결 감옥: 받는 피해 +50%
+var marks := {}  # 협공: 맞힌 오브젝트 id -> 맞은 시각(age)
+var pincer_cd := 0.0
 var curse_lv := 0  # 저주 표식 (죽으면 주변 피해, 표식이 옮겨 감)
 var curse_owner: Object = null
 var push_budget := PUSH_BUDGET
@@ -91,6 +93,7 @@ func setup(k: int, base_hp: float, base_speed: float) -> void:
 ## main이 웨이브 중 호출한다(배속이면 한 프레임에 여러 번).
 func step(delta: float) -> void:
 	age += delta
+	pincer_cd = maxf(pincer_cd - delta, 0.0)
 	# A6: 보스는 주기적으로 빠른 부하를 부른다
 	if kind == Kind.BOSS and main:
 		minion_t -= delta
