@@ -2759,7 +2759,8 @@ func _refresh_legend() -> void:
 		for r in rs.slice(i, i + 2):
 			row.append("%s+%s %s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["name"]] if Meta.codex.has(r["id"]) else "? + ?")
 		lines.append("   ".join(row))
-	legend.text = "\n".join(lines)
+	legend.text = _kr_keep("
+".join(lines))
 
 
 ## 규칙 버전 바꾸기: 기록은 버전마다 따로.
@@ -2855,7 +2856,7 @@ func _toggle_records() -> void:
 	if not found.is_empty():
 		for l in _wrap_words(", ".join(found), 600.0, 15).split("\n"):
 			lines.append("  " + l)
-	records_panel.text = "\n".join(lines)
+	records_panel.text = _kr_keep("\n".join(lines))
 
 
 # ---------- 온라인 ----------
@@ -2879,7 +2880,7 @@ func _on_booted(info: Dictionary) -> void:
 	elif not updater.busy:
 		update_btn.visible = false  # 다시 물어보니 새 버전이 없음 (서버에서 내림)
 	var msg := Patch.text("", "message", "")
-	notice_label.text = msg
+	notice_label.text = _kr_keep(msg)
 	notice_label.visible = msg != ""
 
 
@@ -3055,7 +3056,7 @@ func _draw_board() -> void:
 		lines.append("설정에서 '기록 보내기'를 켜면 내 기록도 올라갑니다")
 	elif Meta.nickname == "":
 		lines.append("설정에서 닉네임을 정할 수 있어요")
-	records_panel.text = "\n".join(lines)
+	records_panel.text = _kr_keep("\n".join(lines))
 	var lh := records_panel.get_line_height()
 	board_bar.position = Vector2(18, 18 + lh + (lh * 2.0 - 36.0) / 2.0 + 2.0)
 
@@ -3141,10 +3142,8 @@ func _close_notes() -> void:
 	notes_back = false
 
 
-var _kr_re := RegEx.create_from_string("([가-힣])(?=[가-힣])")
-# 한글 낱말이 글자 사이에서 끊기지 않게 (빈칸에서만 줄바꿈). U+2060은 안 보이는 글자
 func _kr_keep(t: String) -> String:
-	return _kr_re.sub(t, "$1\u2060", true)
+	return PatchNotes.kr_keep(t)
 
 func _draw_notes() -> void:
 	if notes_panel == null or not notes_panel.visible:
@@ -3312,7 +3311,7 @@ func _refresh_modes() -> void:
 		head += " · 쉽게 모드: 리더보드 제외, 최고 기록 따로"
 	else:
 		head += " · 여러 개를 고르면 배율을 곱해요 (x%.1f~x%.1f)" % [Modes.MUL_MIN, Modes.MUL_MAX]
-	modes_head.text = head
+	modes_head.text = _kr_keep(head)
 
 
 func _toggle_fullscreen() -> void:

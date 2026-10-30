@@ -172,7 +172,7 @@ func _row(x: Dictionary) -> Control:
 	n.add_theme_color_override("font_color", x["color"])
 	v.add_child(n)
 	var d := Label.new()
-	d.text = x["desc"]
+	d.text = PatchNotes.kr_keep(x["desc"])
 	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	d.custom_minimum_size = Vector2(700, 0)
 	d.add_theme_font_size_override("font_size", 14)
