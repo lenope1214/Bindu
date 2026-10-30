@@ -4,7 +4,7 @@ extends Node
 
 const RATE := 22050
 const VOICES := 14
-const IMPORTANT := ["boss", "over", "wave", "clear", "core"]  # 잦은 타격음에 밀려 끊기지 않게 따로 재생
+const IMPORTANT := ["boss", "over", "wave", "clear", "core", "danger"]  # 잦은 타격음에 밀려 끊기지 않게 따로 재생
 
 var sounds := {}  # 이름 -> AudioStreamWAV
 var players: Array[AudioStreamPlayer] = []
@@ -36,6 +36,7 @@ func _ready() -> void:
 	sounds["wave"] = _synth([[660.0, 660.0, 0.1], [880.0, 880.0, 0.16]], "sine", 0.0, 0.35)
 	sounds["reaction"] = _synth([[523.0, 523.0, 0.08], [659.0, 659.0, 0.08], [784.0, 784.0, 0.08], [1046.0, 1046.0, 0.18]], "square", 0.0, 0.25)
 	sounds["clear"] = _synth([[784.0, 784.0, 0.09], [1046.0, 1046.0, 0.2]], "sine", 0.0, 0.3)
+	sounds["danger"] = _synth([[880.0, 880.0, 0.12], [587.0, 587.0, 0.12], [880.0, 880.0, 0.12], [587.0, 587.0, 0.2]], "square", 0.0, 0.3)
 	sounds["over"] = _synth([[392.0, 392.0, 0.2], [311.0, 311.0, 0.2], [262.0, 200.0, 0.5]], "saw", 0.0, 0.35)
 	for i in VOICES:
 		var p := AudioStreamPlayer.new()

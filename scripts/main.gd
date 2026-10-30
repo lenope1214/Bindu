@@ -79,6 +79,8 @@ var particles: Array = []  # [위치, 속도, 남은 시간, 색, 크기]
 var camera: Camera2D
 var shake := 0.0
 var core_flash := 0.0
+var danger_lv := 0  # 중앙 위험 단계: 0 보통, 1 체력 50% 이하, 2 25% 이하
+var wave_dmg := 0  # 이번 웨이브에 중앙이 잃은 체력
 var eclipse_flash := 0.0  # 일식 순간 화면 어둡게
 var core_disp := float(CORE_MAX_HP)  # 중앙 체력 표시(부드럽게 변함)
 var kills := 0
@@ -626,6 +628,8 @@ func start_modes() -> void:
 	core_max = Modes.core_max(CORE_MAX_HP)
 	core_hp = core_max
 	core_disp = float(core_hp)
+	danger_lv = 0
+	wave_dmg = 0
 
 
 func big_banner(t: String, col: Color) -> void:
@@ -646,13 +650,13 @@ func _show_toast(t: String) -> void:
 ## 점수·남은 구체만 바뀐 때는 0.1초에 한 번만 다시 쓴다. 글자 모양 계산이 비싸 고배속에서 프레임마다 쓰면
 ## 그것만으로 프레임당 몇 ms (8배속 부하 측정). 웨이브·중앙 체력 등이 바뀌면 바로.
 func _update_hud(force := false) -> void:
-	var urgent := "%d|%d|%d|%d|%d|%d|%d" % [wave, core_hp, core_max, phase, towers.get_child_count(), selected.size(), perks.size()]
+	var urgent := "%d|%d|%d|%d|%d|%d|%d|%d" % [wave, wave_dmg, core_hp, core_max, phase, towers.get_child_count(), selected.size(), perks.size()]
 	if not force and urgent == hud_urgent and hud_cool > 0.0:
 		return
 	hud_urgent = urgent
 	hud_cool = 0.1
-	var text := "웨이브 %d   점수 %s   중앙 %d/%d   최고 %s (웨이브 %d)" % [
-		wave, num(score), maxi(core_hp, 0), core_max, num(best_score), best_wave]
+	var text := "웨이브 %d   점수 %s   중앙 %d/%d%s   최고 %s (웨이브 %d)" % [
+		wave, num(score), maxi(core_hp, 0), core_max, " (이번 웨이브 -%d)" % wave_dmg if wave_dmg > 0 else "", num(best_score), best_wave]
 	var extra := ""
 	if Meta.rules != 1:
 		extra += "   [%s]" % Rules.NAMES[Meta.rules]
@@ -1579,6 +1583,7 @@ func _start_wave() -> void:
 	reroll_btn.visible = false
 	to_spawn = spawn_count(wave)
 	wave_leaks.clear()
+	wave_dmg = 0
 	if guide_t < 0.0:
 		guide_lines.clear()
 		guide_t = 0.0
@@ -2200,7 +2205,7 @@ func _build_menu(root: Control) -> void:
 			_save_best())
 		zrow.add_child(zb)
 	sv.add_child(zrow)
-	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 첫 글자)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"]]:
+	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 첫 글자)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"]]:
 		var cb := CheckButton.new()
 		cb.text = spec[0]
 		var key: String = spec[1]
@@ -2209,12 +2214,14 @@ func _build_menu(root: Control) -> void:
 			"numbers_on": cb.button_pressed = Meta.numbers_on
 			"symbols_on": cb.button_pressed = Meta.symbols_on
 			"orb_hp_on": cb.button_pressed = Meta.orb_hp_on
+			"danger_slow": cb.button_pressed = Meta.danger_slow
 		cb.focus_mode = Control.FOCUS_NONE
 		cb.toggled.connect(func(on):
 			match key:
 				"shake_on": Meta.shake_on = on
 				"numbers_on": Meta.numbers_on = on
 				"orb_hp_on": Meta.orb_hp_on = on
+				"danger_slow": Meta.danger_slow = on
 				"symbols_on":
 					Meta.symbols_on = on
 					for t in towers.get_children():
@@ -3077,6 +3084,7 @@ func _continue_run() -> void:
 	best_combo = maxi(0, g.call("best_combo", 0))
 	core_max = maxi(1, g.call("core_max", CORE_MAX_HP))
 	core_hp = clampi(g.call("core_hp", core_max), 1, core_max)
+	danger_lv = _danger_of(core_hp)
 	core_disp = float(core_hp)
 	# 특성은 고른 순서대로 [id, 횟수] 목록 (사전으로 저장하면 이름순으로 바뀌어 점수 줄 순서가 달라짐)
 	perks = {}
@@ -3712,6 +3720,26 @@ func _sim_step(delta: float) -> void:
 			_start_choose()
 
 
+## 중앙 체력 비율로 위험 단계를 정한다. 단계가 올라가는 순간에만 큰 글·경고음 (설정에 따라 1배속).
+## 회복해서 단계가 내려가면 다시 떨어질 때 또 알린다.
+func _danger_of(hp: int) -> int:
+	if hp <= 0 or hp * 4 <= core_max:
+		return 2
+	return 1 if hp * 2 <= core_max else 0
+
+
+func _check_danger() -> void:
+	var lv := _danger_of(core_hp)
+	if lv > danger_lv and core_hp > 0:
+		big_banner("중앙 위험! %d/%d" % [core_hp, core_max], Color(1, 0.3, 0.35) if lv == 2 else Color(1, 0.6, 0.3))
+		sfx.play("danger", 0.0)
+		if Meta.danger_slow and game_speed > 1.0:
+			game_speed = 1.0
+			_update_speed_btn()
+			_show_toast("중앙 위험: 1배속으로 바꿨어요 (Space로 다시 빠르게)")
+	danger_lv = lv
+
+
 ## 구체가 중앙 점에 닿았나. 회랑 맵은 끝의 문(세로선)에 닿으면.
 func _reached_core(o: Orb) -> bool:
 	if Meta.map_id == "line":
@@ -3880,6 +3908,9 @@ func _resolve(delta: float) -> void:
 			core_flash = 0.4
 			burst(o.position if Meta.map_id == "line" else center(), Color(1, 0.3, 0.35), 18, 220.0)
 			_show_toast("중앙 피격! %d/%d" % [maxi(core_hp, 0), core_max])
+			wave_dmg += o.core_dmg
+			popup((o.position if Meta.map_id == "line" else center()) + Vector2(0, -CORE_RADIUS - 24.0), o.core_dmg, Color(1, 0.3, 0.35), true, "-%d" % o.core_dmg, 1.2)
+			_check_danger()
 			_record_leak(o)
 			o.queue_free()
 			continue
@@ -3959,6 +3990,7 @@ func near(p: Vector2, r: float) -> Array:
 
 
 func _update_fx(delta: float) -> void:
+	danger_lv = mini(danger_lv, _danger_of(core_hp))
 	for lf in leak_flash:
 		lf[1] -= delta
 	leak_flash = leak_flash.filter(func(lf): return lf[1] > 0.0)
@@ -4176,6 +4208,19 @@ func _draw_fx() -> void:
 		fx_layer.draw_rect(get_viewport_rect(), Color(0, 0, 0, 0.6))
 	if eclipse_flash > 0.0:
 		fx_layer.draw_rect(get_viewport_rect(), Color(0.1, 0.0, 0.15, 0.5 * eclipse_flash / 0.6))
+	# 중앙 위험: 화면 테두리가 붉게 맥박친다 (25% 이하는 더 진하고 빠르게). 배속과 상관없이 계속 보인다
+	if danger_lv > 0 and phase != Phase.GAMEOVER and not title_label.visible:
+		var t := Time.get_ticks_msec() / 1000.0
+		var beat := 0.5 + 0.5 * sin(t * (3.0 if danger_lv == 1 else 7.0))
+		var a := (0.05 + 0.05 * beat) if danger_lv == 1 else (0.09 + 0.09 * beat)
+		var dc := Color(1, 0.6, 0.25) if danger_lv == 1 else Color(1, 0.15, 0.2)
+		for i in 6:
+			var w := 10.0 * (6 - i)
+			var col := Color(dc, a)
+			fx_layer.draw_rect(Rect2(0, 0, vs.x, w), col)
+			fx_layer.draw_rect(Rect2(0, vs.y - w, vs.x, w), col)
+			fx_layer.draw_rect(Rect2(0, 0, w, vs.y), col)
+			fx_layer.draw_rect(Rect2(vs.x - w, 0, w, vs.y), col)
 	for a in arcs:
 		fx_layer.draw_line(a[0], a[1], Elem.COLORS[Elem.ELECTRIC], 2.0)
 	var ec: Color = Elem.COLORS[Elem.ELECTRIC]
