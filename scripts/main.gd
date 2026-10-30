@@ -81,6 +81,7 @@ var sim_id := 0  # 계산 조각 번호: 조각 안에서 변하지 않는 값(�
 var prof_on := false  # tools/perf.gd: 부분별 계산 시간 기록
 var prof := {}
 var fx_layer: Node2D  # 피해 숫자·파편 (맨 위)
+var fx_k := 1.0  # 터지는 효과 진하기 (효과 줄이기 설정이면 0.5)
 var popups: Array = []  # [위치, 글자, 남은 시간, 색, 큰 글씨]
 var particles: Array = []  # [위치, 속도, 남은 시간, 색, 크기]
 var camera: Camera2D
@@ -109,7 +110,9 @@ var choice_box: HBoxContainer
 const CARD_MAX_H := 250.0  # 선택지 카드 최대 높이 (넘으면 글자를 줄인다)
 var over_label: Label
 var legend: Label
-var preview: Label
+var preview: Label  # 다음 웨이브 안내 (짧게: 구체 수·방향·보스)
+var preview_more: Label  # 마우스를 올리면(터치는 누르면) 위에 펼치는 자세한 안내
+var preview_full := false
 var bar_box: HBoxContainer  # 오른쪽 아래 버튼 줄
 var reroll_btn: Button
 var pause_btn: Button
@@ -582,7 +585,28 @@ func _build_ui() -> void:
 	# 줄이 늘면 위로 자란다 (아래 안내 문구를 덮지 않게). 줄바꿈은 _update_preview에서 띄어쓰기 단위로
 	preview.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	preview.add_theme_font_size_override("font_size", 15)
+	preview.mouse_filter = Control.MOUSE_FILTER_PASS
+	preview.mouse_entered.connect(func(): _set_preview_full(true))
+	preview.mouse_exited.connect(func(): _set_preview_full(false))
+	preview.gui_input.connect(func(ev):
+		if ev is InputEventScreenTouch and ev.pressed:
+			_set_preview_full(not preview_full))
 	root.add_child(preview)
+	preview_more = Label.new()
+	preview_more.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	preview_more.position = Vector2(16, -214)
+	preview_more.size = Vector2(620, 0)
+	preview_more.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	preview_more.add_theme_font_size_override("font_size", 15)
+	var pm_bg := StyleBoxFlat.new()
+	pm_bg.bg_color = Color(0.05, 0.06, 0.1, 0.94)
+	pm_bg.set_corner_radius_all(6)
+	pm_bg.set_content_margin_all(8)
+	preview_more.add_theme_stylebox_override("normal", pm_bg)
+	preview_more.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	preview_more.z_index = 5  # 카드 위에 뜬다 (펼쳐도 카드 자리는 짧은 안내 기준이라 움직이지 않음)
+	preview_more.visible = false
+	root.add_child(preview_more)
 
 	banner = Label.new()
 	banner.set_anchors_preset(Control.PRESET_CENTER)
@@ -1580,7 +1604,9 @@ func _els_name(t: Tower) -> String:
 ## 다음 웨이브 안내.
 func _update_preview() -> void:
 	var nw := wave + 1
+	# 짧은 안내(늘 보임): 놓친 구체 · 구체 수·방향 · 처음 등장 · 보스. 나머지는 마우스를 올리면 펼친다
 	var lines := PackedStringArray()
+	var more := PackedStringArray()
 	var lk := _leak_text()
 	if lk != "":
 		lines.append(lk)
@@ -1595,7 +1621,7 @@ func _update_preview() -> void:
 	if nw >= 12:
 		mix.append("분열")
 	if not mix.is_empty():
-		lines.append("섞여 나옴: " + ", ".join(mix))
+		more.append("섞여 나옴: " + ", ".join(mix))
 	var sp := PackedStringArray()
 	if wave_resist >= 0:
 		sp.append("%s 저항 구체 %d%%" % [Elem.NAMES[wave_resist], roundi(resist_share(nw) * 100)])
@@ -1604,22 +1630,37 @@ func _update_preview() -> void:
 	if nw > 10:
 		sp.append("구체 체력 x%.1f" % hp_growth(nw))
 	if not sp.is_empty():
-		lines.append("특수 구체: " + " · ".join(sp))
+		more.append("특수 구체: " + " · ".join(sp))
 	var firsts := {4: "빠른 구체", 7: "단단한 구체", 8: "보호막 두른 구체(먼저 보호막을 깎아야 함)", 12: "분열 구체(터지면 둘로 나뉨)", 11: "이제부터 구체 체력이 웨이브마다 %d%%씩 곱으로 늘어남" % roundi((Rules.hp_growth - 1.0) * 100)}
 	for f in [[Rules.resist_from, "저항 구체(같은 색 점선 고리: 그 속성 피해를 덜 받음. 오브젝트에서 그 속성이 차지하는 만큼, 최대 60%)"], [Rules.sturdy_from, "굳센 구체(회색 쐐기: 밀기·감속·기절·냉기 절반)"]]:
 		firsts[f[0]] = (firsts[f[0]] + ", " if firsts.has(f[0]) else "") + f[1]
 	if firsts.has(nw):
 		lines.append("처음 등장: " + firsts[nw])
 	if nw % 5 == 0:
-		lines.append(_boss_text())
+		if boss_plan.is_empty():
+			lines.append(_boss_text())
+		else:
+			lines.append("보스: 체력 %s · 막지 않으면 나온 뒤 약 %d초에 중앙 (체력 -3)" % [num(ceilf(boss_plan["hp"] * 12.0 * Modes.boss_hp())), roundi(_boss_eta())])
+			more.append(_boss_text())
 	else:
 		var bw := ceili(nw / 5.0) * 5
 		lines.append("다음 보스: 웨이브 %d (%d웨이브 뒤)" % [bw, bw - wave])
 	if wave == 0:
 		lines.append("빨간 화살표 방향에서 구체가 와요. 길목을 가로지르게 설치하세요.")
+	if not more.is_empty():
+		lines[lines.size() - 1] += "   ▲ %s 자세히" % ("누르면" if touch_ui else "올리면")
 	# 자동 줄바꿈은 한글 낱말 중간에서도 끊으므로 띄어쓰기에서 직접 바꾼다
 	preview.text = _wrap_words("\n".join(lines), 610.0, 15)
+	preview.size.y = 0.0  # 줄이 줄면 높이도 줄인다 (위 카드·DPS 표 자리가 넓어짐)
 	preview.add_theme_color_override("font_color", Color(1, 0.75, 0.75) if nw % 5 == 0 else Color(1, 1, 1, 0.85))
+	preview_more.text = _wrap_words("\n".join(more), 600.0, 15)
+	preview_more.size.y = 0.0
+	if more.is_empty():
+		preview_full = false
+
+
+func _set_preview_full(on: bool) -> void:
+	preview_full = on and preview_more.text != ""
 
 
 ## 보스 길이(화면 밖 출발점부터 중앙까지)와 막지 않을 때 걸리는 시간.
@@ -1643,7 +1684,31 @@ func _boss_text() -> String:
 		sp.append("굳셈(밀기·감속·기절·냉기 절반)")
 	sp.append("웨이브 마지막에 나옴")
 	sp.append("%d초마다 빠른 부하 구체를 부름" % roundi(Orb.minion_every(boss_plan["wave"])))
-	return " · ".join(sp) + "\n보스 길: 화면의 굵은 분홍 선. 막지 않으면 나온 뒤 약 %d초에 중앙 (닿으면 체력 -3)" % roundi(_boss_eta())
+	return " · ".join(sp) + "\n보스 길: 화면의 분홍 선(흐르는 화살). 막지 않으면 나온 뒤 약 %d초에 중앙 (닿으면 체력 -3)" % roundi(_boss_eta())
+
+
+## 바람 버프 둘레: 늘 그리면 바람 오브젝트마다 큰 원이 겹쳐 어지러워서,
+## 바람 오브젝트에 마우스를 올렸을 때(그 둘레), 버프 받는 오브젝트에 올렸을 때(버프를 주는 둘레),
+## 오브젝트를 옮기는 중일 때(모든 둘레)만 그린다.
+func _draw_wind_rings() -> void:
+	if title_label.visible or phase == Phase.GAMEOVER:
+		return
+	var winds := towers.get_children().filter(func(t): return t.lv(Elem.WIND) > 0)
+	if winds.is_empty():
+		return
+	var show: Array = []
+	if moving != null or dragging or phase in [Phase.PLACE, Phase.MOVE]:
+		show = winds
+	else:
+		var h := _tower_at(get_global_mouse_position())
+		if h != null:
+			for w in winds:
+				if w == h or w.position.distance_to(h.position) <= w.wind_range():
+					show.append(w)
+	var sp := fmod(Time.get_ticks_msec() / 1000.0 * 0.5, 1.0)
+	var wc: Color = Elem.COLORS[Elem.WIND]
+	for w in show:
+		draw_arc(w.position, w.wind_range(), sp * TAU, sp * TAU + TAU * 0.85, 48, Color(wc, 0.35), 1.5)
 
 
 ## 보스가 올 길: 쉬는 시간과, 보스 웨이브에서 보스가 나오기 전까지.
@@ -1670,15 +1735,14 @@ func _draw_boss_path(now: float) -> void:
 	if pts.size() < 2:
 		return
 	var pulse := 0.75 + 0.25 * sin(now * 3.0)
-	draw_polyline(pts, Color(col, 0.16 * pulse), 14.0)
-	draw_polyline(pts, Color(col, 0.8 * pulse), 3.0)
+	draw_polyline(pts, Color(col, 0.6 * pulse), 2.5)
 	# 보스가 오는 쪽으로 흐르는 화살 (길이 비율로 놓는다)
 	var lens: Array[float] = [0.0]
 	for i in range(1, pts.size()):
 		lens.append(lens[i - 1] + pts[i - 1].distance_to(pts[i]))
 	var total: float = lens[-1]
-	for k in 7:
-		var dpos := fmod(now * 0.12 + k / 7.0, 1.0) * (total - CORE_RADIUS - 20.0)
+	for k in 3:
+		var dpos := fmod(now * 0.12 + k / 3.0, 1.0) * (total - CORE_RADIUS - 20.0)
 		var j := 1
 		while j < pts.size() - 1 and lens[j] < dpos:
 			j += 1
@@ -2496,7 +2560,7 @@ func _build_menu(root: Control) -> void:
 			_save_best())
 		zrow.add_child(zb)
 	sv.add_child(zrow)
-	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 첫 글자)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"]]:
+	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 첫 글자)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"], ["효과 줄이기 (장판·터지는 효과를 옅게, 많을수록 더)", "fx_low"]]:
 		var cb := CheckButton.new()
 		cb.text = spec[0]
 		var key: String = spec[1]
@@ -2506,6 +2570,7 @@ func _build_menu(root: Control) -> void:
 			"symbols_on": cb.button_pressed = Meta.symbols_on
 			"orb_hp_on": cb.button_pressed = Meta.orb_hp_on
 			"danger_slow": cb.button_pressed = Meta.danger_slow
+			"fx_low": cb.button_pressed = Meta.fx_low
 		cb.focus_mode = Control.FOCUS_NONE
 		cb.toggled.connect(func(on):
 			match key:
@@ -2513,6 +2578,7 @@ func _build_menu(root: Control) -> void:
 				"numbers_on": Meta.numbers_on = on
 				"orb_hp_on": Meta.orb_hp_on = on
 				"danger_slow": Meta.danger_slow = on
+				"fx_low": Meta.fx_low = on
 				"symbols_on":
 					Meta.symbols_on = on
 					for t in towers.get_children():
@@ -3991,6 +4057,7 @@ func _process(delta: float) -> void:
 	if not is_equal_approx(hint.size.x, hw):
 		hint.size.x = hw
 	preview.position.y = hint.position.y - preview.size.y - 4.0
+	preview_more.position.y = preview.position.y - preview_more.size.y - 2.0
 	toast.position.y = maxf(100.0, hud.position.y + hud.size.y + 36.0)  # 점수 줄이 길어져도 보스 체력 막대 아래
 	# 안내·큰 글자도 점수 줄이 길어지거나 글자를 키우면(설정) 그 아래로 밀어 겹치지 않게
 	guide_label.position.y = maxf(140.0, toast.position.y + 40.0)
@@ -4003,6 +4070,7 @@ func _process(delta: float) -> void:
 	banner.modulate.a = clampf(banner_t / 0.4, 0.0, 1.0)
 	legend.visible = phase in [Phase.CHOOSE, Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.READY] and not title_label.visible
 	preview.visible = legend.visible
+	preview_more.visible = preview.visible and preview_full
 	legend_btn.visible = legend.visible
 	range_btn.visible = touch_ui and not title_label.visible and phase != Phase.GAMEOVER
 	range_btn.text = "범위 끄기" if range_all else "범위 보기"
@@ -4032,6 +4100,7 @@ func _process(delta: float) -> void:
 		pause_box.position.y = paused_label.position.y + paused_label.size.y + 10.0
 	_fit_panels()
 	_refresh_dps()
+	_soften_fx()
 	queue_redraw()
 	if phase == Phase.MOVE and moving:
 		moving.position = get_global_mouse_position().clamp(field_rect().position, field_rect().end)
@@ -4745,6 +4814,17 @@ func eclipse_screen() -> bool:
 	return true
 
 
+## 효과 줄이기(설정): 장판은 절반 진하기, 25개를 넘게 겹치면 그만큼 더 옅게 (최소 20%). 터지는 효과는 절반.
+func _soften_fx() -> void:
+	fx_k = 0.5 if Meta.fx_low else 1.0
+	var soft := zones.get_children().filter(func(z): return z.kind in Zone.SOFT)
+	var a := 1.0
+	if Meta.fx_low:
+		a = maxf(0.2, 0.5 * minf(1.0, 25.0 / maxf(soft.size(), 1.0)))
+	for z in soft:
+		z.modulate.a = a
+
+
 func _draw_fx() -> void:
 	var vs := get_viewport_rect().size
 	for i in 6:
@@ -4775,15 +4855,15 @@ func _draw_fx() -> void:
 			fx_layer.draw_rect(Rect2(0, 0, w, vs.y), col)
 			fx_layer.draw_rect(Rect2(vs.x - w, 0, w, vs.y), col)
 	for a in arcs:
-		fx_layer.draw_line(a[0], a[1], Elem.COLORS[Elem.ELECTRIC], 2.0)
+		fx_layer.draw_line(a[0], a[1], Color(Elem.COLORS[Elem.ELECTRIC], fx_k), 2.0)
 	var sc: Color = Elem.COLORS[Elem.SOUND]
 	for q in pulses:
 		var k: float = 1.0 - q[2] / 0.3
-		fx_layer.draw_arc(q[0], q[1] * (0.4 + 0.6 * k), 0, TAU, 32, Color(sc, 1.0 - k), 3.0)
-		fx_layer.draw_arc(q[0], q[1] * (0.2 + 0.5 * k), 0, TAU, 24, Color(sc, 0.6 * (1.0 - k)), 2.0)
+		fx_layer.draw_arc(q[0], q[1] * (0.4 + 0.6 * k), 0, TAU, 32, Color(sc, (1.0 - k) * fx_k), 3.0)
+		fx_layer.draw_arc(q[0], q[1] * (0.2 + 0.5 * k), 0, TAU, 24, Color(sc, 0.6 * (1.0 - k) * fx_k), 2.0)
 	for q in refracts:
 		var k: float = 1.0 - q[3] / 0.35
-		var al := 1.0 - k
+		var al := (1.0 - k) * fx_k
 		var hx := PackedVector2Array()
 		for i in 7:
 			hx.append(q[0] + Vector2.from_angle(TAU * i / 6.0 + k) * (Tower.RADIUS + 6.0 + 22.0 * k))
@@ -4797,7 +4877,7 @@ func _draw_fx() -> void:
 			fx_layer.draw_line(a, e, Color.from_hsv(i / 6.0, 0.55, 1.0, 0.35 * al), 7.0)
 			fx_layer.draw_line(a, e, Color.from_hsv(i / 6.0, 0.45, 1.0, al), 2.5)
 	for q in beams:
-		var bk: float = q[3] / 0.2
+		var bk: float = q[3] / 0.2 * fx_k
 		fx_layer.draw_line(q[0], q[1], Color(q[2], 0.35 * bk), 9.0)
 		fx_layer.draw_line(q[0], q[1], Color(q[2], 0.9 * bk), 3.0)
 	var ec: Color = Elem.COLORS[Elem.ELECTRIC]
@@ -4813,14 +4893,14 @@ func _draw_fx() -> void:
 					p += (e - a).orthogonal().normalized() * randf_range(-7, 7)
 				pts.append(p)
 		pts.append(src[-1])
-		var al := clampf(b[1] / 0.22, 0.0, 1.0)
+		var al := clampf(b[1] / 0.22, 0.0, 1.0) * fx_k
 		fx_layer.draw_polyline(pts, Color(ec, 0.35 * al), 9.0)
 		fx_layer.draw_polyline(pts, Color(ec, al), 3.5)
 		fx_layer.draw_polyline(pts, Color(1, 1, 1, al), 1.2)
 		for q in src.slice(1):
 			fx_layer.draw_circle(q, 6.0, Color(ec, 0.5 * al))
 	for p in particles:
-		fx_layer.draw_circle(p[0], p[4] * clampf(p[2] / 0.4, 0.2, 1.0), p[3])
+		fx_layer.draw_circle(p[0], p[4] * clampf(p[2] / 0.4, 0.2, 1.0), Color(p[3], p[3].a * fx_k))
 	for p in popups:
 		var size := 22 if p[4] else 14
 		var a := clampf(p[2] / 0.3, 0.0, 1.0)
@@ -4947,8 +5027,9 @@ func _draw() -> void:
 	if Meta.map_id == "line":
 		_draw_line_map(size, mp, now)
 	else:
+		var rc: Color = mp["ring"]
 		for i in range(1, 5):
-			draw_arc(c, i * 110.0, 0, TAU, 64, mp["ring"], 1.0)
+			draw_arc(c, i * 110.0, 0, TAU, 64, Color(rc, rc.a * 0.5), 1.0)  # 오브젝트·효과가 많아지면 거슬려 옅게
 	# 중앙 점: 체력이 줄수록 붉어지고, 맞으면 번쩍인다
 	core_disp = lerpf(core_disp, float(maxi(core_hp, 0)), 0.1)
 	var frac := core_disp / core_max
@@ -4996,14 +5077,14 @@ func _draw() -> void:
 			if path.size() >= 2:
 				draw_polyline(path, Color(col, 0.3), 1.5)
 		elif phase != Phase.WAVE:
-			draw_dashed_line(c + d * 40.0, tip, Color(col, 0.25), 1.5, 8.0)
-			# 중앙 쪽으로 흘러가는 점
+			# 중앙 쪽으로 흘러가는 점 (점선은 진입 방향이 늘면 화면을 가로질러 어지러워 뺐다)
 			var L := (tip - c).length()
 			for k in 5:
 				var f := fmod(now * 0.25 + k / 5.0, 1.0)
 				draw_circle(tip - d * f * (L - 40.0), 2.5, Color(col, 0.5 * (1.0 - f)))
 
 	_draw_boss_path(now)
+	_draw_wind_rings()
 	# 누수: 구체가 들어온 화면 가장자리가 붉게 번진다 (어느 길목이 뚫렸는지)
 	for lf in leak_flash:
 		var f: float = lf[1] / 1.2

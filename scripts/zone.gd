@@ -24,6 +24,9 @@ var path_acc := 0.0
 var eaten := 0  # 블랙홀 안에서 죽은 구체 수: 하나마다 더 작아지고 터질 때 세짐
 var eaten_set := {}
 
+## 효과 줄이기(설정)에서 옅게 그리는 장판: 형태 성질·반응·투척 장판. 블랙홀·바위 벽·턱·독버섯은 막거나 끌어서 그대로
+const SOFT := ["burn", "puddle", "cloud", "boom", "ember", "rill", "frost", "fog", "tick"]
+
 
 func setup(k: String, l: int, tower: Tower) -> void:
 	kind = k

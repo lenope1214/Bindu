@@ -1429,10 +1429,7 @@ func _draw_body() -> void:
 			var tip := Vector2.from_angle(a) * (RADIUS + 3.0)
 			var side := Vector2.from_angle(a).orthogonal() * 4.0
 			draw_colored_polygon(PackedVector2Array([tip, p + side, p - side]), Color(1.0, 0.55, 0.85, 0.85))
-	if lv(Elem.WIND) > 0:
-		# 바람: 공격 속도를 올려 주는 둘레
-		var sp := fmod(Time.get_ticks_msec() / 1000.0 * 0.5, 1.0)
-		draw_arc(Vector2.ZERO, wind_range(), sp * TAU, sp * TAU + TAU * 0.85, 48, Color(Elem.COLORS[Elem.WIND], 0.22), 1.5)
+	# 바람 버프 둘레는 main._draw_wind_rings (마우스를 올리거나 옮길 때만)
 	if wind_buff > 0.0:
 		# 바람 버프를 받는 중: 작은 바람 꼬리 둘
 		for i in 2:
