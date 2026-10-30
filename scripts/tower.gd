@@ -42,7 +42,7 @@ var vine_cd := {}  # 덩굴: 구체별 다시 묶을 때까지 남은 시간
 var zaps: Array = []  # 감전 물길: 이번에 전류가 꽂힌 자리(로컬)
 var prison_c := Vector2.ZERO  # 빙결 감옥 중심(로컬)
 var clock_ph := 0.0  # 시계침 위상
-var clock_hit := {}  # 시계침: 이번 한 번 훑는 동안 맞힌 구체
+var clock_hit := {}  # 시계침: 이번 한 번 훑는 동안 맞힌 구체 ([바늘 번호, 구체] -> true, 다중 발사 바늘은 따로 센다)
 var glint_d := Vector2.RIGHT  # 잔광: 1.2초 뒤 다시 쏠 방향
 var rewind_q: Array = []  # 되감기 번개: 1초 뒤 다시 칠 구체들
 var in_form := false  # 지금 형태 성질 효과를 주는 중인지 (자람·무게 보너스를 다시 받지 않게)
@@ -750,10 +750,12 @@ func attack(delta: float, orbs: Array) -> void:
 			clock_ph += de * spd(l) * TAU / 1.6
 			if (cos(clock_ph) >= 0.0) != was:
 				clock_hit.clear()
-			for d in dirs():
-				_line(orbs, d.rotated(clock_a()), 240.0 * reach(l) * s, 10.0 * s, func(o):
-					if not clock_hit.has(o):
-						clock_hit[o] = true
+			var ds := dirs()
+			for i in ds.size():
+				_line(orbs, ds[i].rotated(clock_a()), 240.0 * reach(l) * s, 10.0 * s, func(o):
+					var key := [i, o]
+					if not clock_hit.has(key):
+						clock_hit[key] = true
 						hit(o, 1.2 * pw(l) * mk))
 		"wisp":
 			if _ready_to("p", 1.0 / spd(l), de):
