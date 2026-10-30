@@ -4363,7 +4363,7 @@ func _resolve(delta: float) -> void:
 	# 바닥 효과
 	for z in zones.get_children():
 		if not z.is_queued_for_deletion():
-			z.affect(near(z.position, z.radius if z.kind != "mine" else 80.0), delta)
+			z.affect(z.trail_orbs(self) if z.kind == "trail" else near(z.position, z.radius if z.kind != "mine" else 80.0), delta)
 	if prof_on:
 		us = _prof_add("장판", us)
 
@@ -4991,13 +4991,6 @@ func _land(p: Projectile) -> void:
 	if tw:
 		tw.tag = p.src  # 장판이 발사체의 출처를 이어받는다
 	match p.kind:
-		"log":
-			spawn_zone("burn", p.level, p.position, tw)
-		"blob":
-			var z := spawn_zone("puddle", p.level, p.position, tw)
-			# 물 형태 성질(흐름): 장판이 공격 방향으로 흐른다
-			if tw and p.form and tw.tk(Elem.WATER) > 0.0:
-				z.vel = p.vel.normalized() * 30.0
 		"mushroom":
 			var z := spawn_zone("mine", p.level, p.position, tw)
 			if tw:

@@ -68,7 +68,7 @@ const FORM := {
 const TRAIT := {
 	FIRE: "불씨: 날아가는 공격이 지나간 길과 끝 자리에 불씨 (1초, 화상)",
 	WOOD: "자람: 오브젝트에서 멀리 맞힐수록 피해 증가 (100마다 +4%/Lv, 최대 +20%) · 블랙홀은 덜 줄어듦",
-	WATER: "흐름: 지나간 길과 끝 자리에 물길 (감속) · 투척 장판이 공격 방향으로 흐름",
+	WATER: "흐름: 지나간 길과 끝 자리에 물길 (감속)",
 	ELECTRIC: "튐: 끝에서 가까운 구체 하나에 번개",
 	WIND: "멀리: 날아가는 공격의 속도·거리 +12%/Lv · 블랙홀은 덜 줄어듦",
 	ICE: "서리: 끝 자리에 서리 (1초, 냉기)",
@@ -101,7 +101,7 @@ const RIDER := {
 }
 
 const REACTIONS := [
-	{"id": "burning", "a": FIRE, "b": WOOD, "name": "장작 장판", "desc": "장작 투척, 불타는 장판", "color": Color(1.0, 0.62, 0.1)},
+	{"id": "burning", "a": FIRE, "b": WOOD, "name": "장작 장판", "desc": "장작이 굴러간 자리에 불 장판", "color": Color(1.0, 0.62, 0.1)},
 	{"id": "steam", "a": FIRE, "b": WATER, "name": "증기", "desc": "물길 위 증기가 그 줄의 구체를 느리게 하고 받는 피해 +30%", "color": Color(0.85, 0.88, 0.94)},
 	{"id": "vine", "a": WATER, "b": WOOD, "name": "덩굴", "desc": "물길 따라 자란 덩굴이 지나가는 구체를 묶음", "color": Color(0.16, 0.58, 0.3)},
 	{"id": "shock", "a": WATER, "b": ELECTRIC, "name": "감전 물길", "desc": "공격 방향으로 흐르는 물길에 전기가 흘러 지나가는 구체에 피해", "color": Color(0.55, 0.85, 1.0)},

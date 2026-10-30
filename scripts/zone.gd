@@ -1,6 +1,7 @@
 class_name Zone
 extends Node2D
-## 바닥에 남는 효과(장판, 블랙홀, 지뢰, 바위 벽, 형태 성질 장판). kind로 구분한다.
+## 바닥에 남는 효과(지나간 자리 장판, 블랙홀, 지뢰, 바위 벽, 형태 성질 장판). kind로 구분한다.
+## 지나간 자리 장판(trail)은 탄 하나가 지나온 점들을 들고, 점마다 life만큼 남는다. sub: puddle(투척 장판)·burn(장작).
 ## 블랙홀은 앞으로 날아가며 줄어든다(launch). 형태 성질 장판(ember·rill·frost·ledge·fog·tick)의 세기는 amt.
 
 var kind := "burn"
@@ -23,9 +24,14 @@ var pull := 80.0  # 블랙홀 끌기 (초당)
 var path_acc := 0.0
 var eaten := 0  # 블랙홀 안에서 죽은 구체 수: 하나마다 더 작아지고 터질 때 세짐
 var eaten_set := {}
+var sub := ""  # trail: puddle·burn
+var pts := PackedVector2Array()  # trail: 지나온 점 (오래된 것부터)
+var born := PackedFloat32Array()  # trail: 점이 생긴 시각 (t)
+var feeding := true  # trail: 탄이 아직 날아가며 점을 더하는 중
+var dps := 0.0  # trail: 안에 있는 구체에 초당 피해 (레벨 배율 전)
 
 ## 효과 줄이기(설정)에서 옅게 그리는 장판: 형태 성질·반응·투척 장판. 블랙홀·바위 벽·턱·독버섯은 막거나 끌어서 그대로
-const SOFT := ["burn", "puddle", "cloud", "boom", "ember", "rill", "frost", "fog", "tick"]
+const SOFT := ["trail", "cloud", "boom", "ember", "rill", "frost", "fog", "tick"]
 
 
 func setup(k: String, l: int, tower: Tower) -> void:
@@ -33,8 +39,6 @@ func setup(k: String, l: int, tower: Tower) -> void:
 	level = l
 	owner_tower = tower
 	match k:
-		"burn":
-			radius = 50.0 + 8.0 * (l - 1); max_life = 4.0
 		"vortex":
 			radius = 100.0 + 10.0 * (l - 1); max_life = 3.0
 		"ember", "rill":
@@ -53,12 +57,57 @@ func setup(k: String, l: int, tower: Tower) -> void:
 			radius = 60.0; max_life = 2.0
 		"rock":
 			radius = 28.0; max_life = 12.0; hp = 10.0 * l
-		"puddle":
-			radius = 50.0 + 8.0 * (l - 1); max_life = 3.0
 	# 공격방식이 만든 장판은 크기 강화를 받는다
-	if k in ["rock", "vortex", "puddle"] and is_instance_valid(tower):
+	if k in ["rock", "vortex"] and is_instance_valid(tower):
 		radius *= tower.sz()
 	life = max_life
+
+
+## 지나간 자리 장판: s = puddle(투척 장판, 공격방식) / burn(장작 반응). 탄이 add_pt로 점을 더한다.
+func trail(s: String) -> void:
+	sub = s
+	if s == "burn":
+		radius = Tower.BURN_R + Tower.BURN_R_LV * (level - 1); max_life = Tower.BURN_LIFE; dps = Tower.BURN_DPS
+	else:
+		radius = Tower.lob_r(level); max_life = Tower.LOB_LIFE; dps = Tower.LOB_DPS
+		if is_instance_valid(owner_tower):
+			radius *= owner_tower.sz()
+	life = max_life
+	position = Vector2.ZERO
+
+
+func add_pt(p: Vector2) -> void:
+	pts.append(p)
+	born.append(t)
+	life = max_life
+
+
+## 지나간 자리 장판 안의 구체. 점들이 걸친 격자 칸을 한 번씩만 모아 그 안의 구체를 점과 비교한다.
+func trail_orbs(main) -> Array:
+	var out: Array = []
+	if pts.is_empty():
+		return out
+	var g: float = main.GRID
+	var pad := radius + 32.0
+	var cells := {}
+	for p in pts:
+		for x in range(floori((p.x - pad) / g), floori((p.x + pad) / g) + 1):
+			for y in range(floori((p.y - pad) / g), floori((p.y + pad) / g) + 1):
+				cells[Vector2i(x, y)] = true
+	for key in cells:
+		var cell = main.grid.get(key)
+		if not cell:
+			continue
+		for o in cell:
+			if not is_instance_valid(o) or o.is_queued_for_deletion():
+				continue
+			var rr: float = radius + o.radius()
+			rr *= rr
+			for p in pts:
+				if o.position.distance_squared_to(p) < rr:
+					out.append(o)
+					break
+	return out
 
 
 ## 블랙홀: 방향 d로 날아간다. 바람(멀리)은 빠르고 멀리, 나무(자람)·바람은 덜 줄고, 어둠(끌기)은 크고 세게.
@@ -85,10 +134,18 @@ func affect(orbs: Array, delta: float) -> void:
 		var dist: float = o.position.distance_to(position)
 		var inside: bool = dist < radius + o.radius()
 		match kind:
-			"burn":
-				if inside:
-					_hurt(o, 2.5 * _p() * delta)
+			"trail":
+				# 오브젝트 하나의 띠가 겹쳐도 한 구체는 한 조각에 한 번만
+				if not is_instance_valid(owner_tower) or owner_tower.trail_hit.get(o, -1) == owner_tower.main.sim_id:
+					continue
+				if owner_tower.trail_hit.size() > 300:
+					owner_tower.trail_hit.clear()  # 죽은 구체가 쌓이지 않게 (한 조각의 중복만 막으면 됨)
+				owner_tower.trail_hit[o] = owner_tower.main.sim_id
+				if sub == "burn":
+					_hurt(o, dps * _p() * delta)
 					o.burn(1.0, 1.0, owner_tower, true, src)
+				else:
+					_hit(o, dps * _p() * delta, delta * 3.0)
 			"vortex":
 				if inside:
 					# 진행 방향에 수직으로만 끌어 길 위 한 줄로 모은다 (구체를 바깥으로 끌고 가지 않게)
@@ -118,9 +175,6 @@ func affect(orbs: Array, delta: float) -> void:
 					var away: Vector2 = (o.position - position).normalized()
 					o.position = position + away * (radius + o.radius())
 					o.root(0.1, false)
-			"puddle":
-				if inside:
-					_hit(o, 2.0 * _p() * delta, delta * 3.0)
 			"cloud":
 				if inside:
 					o.poison(0.8 * level, 2.0, owner_tower, true, src)
@@ -160,6 +214,19 @@ func _explode(orbs: Array) -> void:
 
 ## main이 웨이브 중 호출한다(배속이면 한 프레임에 여러 번).
 func step(delta: float) -> void:
+	if kind == "trail":
+		t += delta
+		# 다 사라진 앞쪽 점은 버린다
+		var drop := 0
+		while drop < pts.size() and t - born[drop] >= max_life:
+			drop += 1
+		if drop > 0:
+			pts = pts.slice(drop)
+			born = born.slice(drop)
+		if pts.is_empty() and not feeding:
+			queue_free()
+		queue_redraw()
+		return
 	life -= delta
 	if vel != Vector2.ZERO:
 		position += vel * delta
@@ -210,21 +277,8 @@ func _end() -> void:
 func _draw() -> void:
 	var a := clampf(life / max_life, 0.0, 1.0)
 	match kind:
-		"burn":
-			_ground(Color(1.0, 0.62, 0.1), a)
-			for i in 14:
-				var ang := i * 2.4
-				var rr := radius * fmod(i * 0.37, 1.0)
-				var f := fmod(t * 1.6 + i * 0.13, 1.0)
-				var p := Vector2(cos(ang), sin(ang)) * rr + Vector2(0, -f * 14.0)
-				draw_circle(p, (1.0 - f) * 6.0, Color(Elem.COLORS[Elem.FIRE].lerp(Color(1, 0.9, 0.3), f), a * (1.0 - f)))
-		"puddle":
-			var pc: Color = owner_tower.color() if is_instance_valid(owner_tower) else Color(0.7, 0.9, 0.3)
-			_ground(pc, a, 0.25)
-			for i in 6:
-				var f := fmod(t * 0.9 + i * 0.37, 1.0)
-				var p := Vector2(cos(i * 2.3), sin(i * 2.3)) * radius * fmod(i * 0.61, 0.85)
-				draw_arc(p, 2.0 + f * 7.0, 0, TAU, 12, Color(pc.lightened(0.3), a * (1.0 - f)), 1.5)
+		"trail":
+			_draw_trail()
 		"vortex":
 			draw_circle(Vector2.ZERO, radius, Color(Elem.COLORS[Elem.DARK], 0.12 * a))
 			for i in 4:
@@ -269,6 +323,31 @@ func _draw() -> void:
 			draw_polyline(pts, Color(0.35, 0.25, 0.15), 2.0)
 
 
+## 지나간 자리 장판: 점을 잇는 굵은 띠 (오래된 쪽일수록 옅게). 불은 작은 불꽃, 투척 장판은 거품.
+func _draw_trail() -> void:
+	if pts.size() == 0:
+		return
+	var c: Color = Color(1.0, 0.62, 0.1) if sub == "burn" else (owner_tower.color() if is_instance_valid(owner_tower) else Color(0.7, 0.9, 0.3))
+	var fill := 0.22 if sub == "burn" else 0.25
+	var cols := PackedColorArray()
+	for i in pts.size():
+		cols.append(Color(c, fill * clampf(1.0 - (t - born[i]) / max_life, 0.0, 1.0)))
+	if pts.size() == 1:
+		draw_circle(pts[0], radius, cols[0])
+	else:
+		draw_polyline_colors(pts, cols, radius * 2.0)
+		draw_circle(pts[0], radius, cols[0])
+		draw_circle(pts[pts.size() - 1], radius, cols[pts.size() - 1])
+	for i in range(0, pts.size(), 2):
+		var a := clampf(1.0 - (t - born[i]) / max_life, 0.0, 1.0)
+		var f := fmod(t * (1.6 if sub == "burn" else 0.9) + i * 0.37, 1.0)
+		var p := pts[i] + Vector2(cos(i * 2.3), sin(i * 2.3)) * radius * fmod(i * 0.61, 0.7)
+		if sub == "burn":
+			draw_circle(p + Vector2(0, -f * 12.0), (1.0 - f) * 5.0, Color(Elem.COLORS[Elem.FIRE].lerp(Color(1, 0.9, 0.3), f), a * (1.0 - f)))
+		else:
+			draw_arc(p, 2.0 + f * 6.0, 0, TAU, 10, Color(c.lightened(0.3), a * (1.0 - f)), 1.5)
+
+
 func _ground(c: Color, a: float, fill := 0.18) -> void:
 	draw_circle(Vector2.ZERO, radius, Color(c, fill * a))
 	draw_arc(Vector2.ZERO, radius, 0, TAU, 48, Color(c, 0.6 * a), 2.0)
@@ -288,5 +367,5 @@ func _hurt(o: Orb, amount: float) -> void:
 	o.hurt(amount)
 	if is_instance_valid(owner_tower):
 		owner_tower.credit(amount, src if src != "" else "hit")
-		if kind in ["burn", "mine", "boom"]:  # 장작 장판·독버섯은 반응 피해
+		if kind in ["trail", "mine", "boom"]:  # 장작 장판(trail은 불만 _hurt)·독버섯은 반응 피해
 			owner_tower.rx_dealt += amount

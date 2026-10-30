@@ -26,6 +26,7 @@ var fx := {}  # 공격별 이펙트 남은 시간
 var t := 0.0
 var dealt := 0.0  # 이번(또는 지난) 웨이브에 준 피해
 var rx_dealt := 0.0  # 그중 특수 반응 피해 (측정·표시용)
+var trail_hit := {}  # 지나간 자리 장판: 구체 → 마지막으로 맞은 sim_id (띠가 겹쳐도 한 조각에 한 번)
 var run_dealt := 0.0  # 지난 웨이브들까지 합친 피해 (게임 오버 요약용)
 ## 피해 출처 (DPS 표·판 기록 통계). 키: "hit"(직접 타격, breakdown()이 배율별로 나눔), elem:fire, rx:lava, mod:split, link:pincer ...
 var src := {}  # 이번(또는 지난) 웨이브, 날것
@@ -115,9 +116,30 @@ func spd_k() -> float:
 	return spd_mul * (1.0 + 0.1 * mf("rapid")) * (1.0 + wind_buff) / tax()
 
 
+## 투척 장판: 느린 탄이 날아간 길에 띠 장판이 남는다 (Zone.trail). 던지는 간격, 날아가는 거리(Lv1, reach 배율),
+## 띠 반지름(Lv1, 레벨마다 +), 점마다 남는 시간, 띠 안의 구체에 초당 피해(Lv1).
+const LOB_IV := 1.6
+const LOB_RANGE := 420.0
+const LOB_R := 30.0
+const LOB_R_LV := 3.0
+const LOB_LIFE := 2.5
+const LOB_DPS := 3.4
+## 장작 반응(불+나무): 굴러간 길에 불 장판. 반응 피해라 _hurt + 화상.
+const BURN_IV := 2.2
+const BURN_RANGE := 320.0
+const BURN_R := 32.0
+const BURN_R_LV := 3.0
+const BURN_LIFE := 3.0
+const BURN_DPS := 4.5
+
+
+static func lob_r(l: int) -> float:
+	return LOB_R + LOB_R_LV * (l - 1)
+
+
 ## 공격방식 Lv1의 공격 간격(초). attack()과 같은 값. 분사는 계속 뿜어서 없음, 시계침은 한 번 훑는 시간.
 const BASE_IV := {"shot": 0.5, "thorn": 0.35, "gust": 1.5, "shard": 0.9, "iron": 1.5, "stream": 1.0, "chain": 1.3,
-	"wall": 4.0, "vortex": 5.0, "laser": 2.0, "lob": 2.0, "sonic": 1.0, "clock": 0.8, "wisp": 1.0}
+	"wall": 4.0, "vortex": 5.0, "laser": 2.0, "lob": LOB_IV, "sonic": 1.0, "clock": 0.8, "wisp": 1.0}
 
 ## 공격방식 한 번 맞힐 때의 기본 피해(Lv1, 배율 전)와 설명. projectile.gd·zone.gd·attack()과 같은 값.
 const BASE_HIT := {
@@ -125,7 +147,7 @@ const BASE_HIT := {
 	"shard": [3.0, "한 발, 파편 3개는 1.0씩"], "iron": [1.7, "한 발, 모두 뚫음"], "wisp": [4.0, "한 발"],
 	"chain": [2.2, "한 번 튈 때"], "laser": [3.4, "한 번, 모두 뚫음"], "sonic": [2.6, "가까이, 끝에서는 절반"],
 	"clock": [1.2, "한 번 훑을 때"], "vortex": [2.0, "터질 때, 날아가는 동안 초당 0.8~1.6"],
-	"lob": [2.0, "장판 안 초당, 3초"], "spray": [5.5, "초당, 계속 뿜음"], "stream": [3.0, "뿜는 동안 초당, 0.6초"],
+	"lob": [LOB_DPS, "지나간 띠 안 초당, 2.5초 남음"], "spray": [5.5, "초당, 계속 뿜음"], "stream": [3.0, "뿜는 동안 초당, 0.6초"],
 	"wall": [4.0, "벽에 막힌 동안 초당"],
 }
 
@@ -182,7 +204,7 @@ func range_text() -> String:
 		"gust": return "%d" % roundi(420.0 * s)
 		"sonic": return "%d" % roundi(sonic_r(l))
 		"clock": return "%d" % roundi(240.0 * reach(l) * s)
-		"lob": return "%d에 떨어짐 (장판 반지름 %d)" % [roundi(180.0 * reach(l)), roundi((50.0 + 8.0 * (l - 1)) * s)]
+		"lob": return "%d 날아감 (지나간 띠 반지름 %d)" % [roundi(LOB_RANGE * reach(l)), roundi(lob_r(l) * s)]
 		"vortex": return "약 420 날아감 (반지름 %d)" % roundi((100.0 + 10.0 * (l - 1)) * s)
 		"wall": return "앞 %d~ (벽 %d개)" % [roundi(90.0 * reach(l)), 2 + roundi(mf("multi"))]
 		"wisp": return "900 (구체를 쫓아감)"
@@ -740,7 +762,7 @@ func attack(delta: float, orbs: Array) -> void:
 				for d in dirs():
 					_line(orbs, d, 2000.0, 14.0 * s, func(o): hit(o, 3.4 * pw(l) * mk))
 		"lob":
-			if _ready_to("p", 2.0 / spd(l), de):
+			if _ready_to("p", LOB_IV / spd(l), de):
 				for d in dirs():
 					main.spawn_proj(self, "blob", l, d).form_init()
 		"sonic":
@@ -830,7 +852,7 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 		tag = "rx:" + id
 		match id:
 			"burning":
-				if _ready_to(id, 2.2 / spd(l), de):
+				if _ready_to(id, BURN_IV / spd(l), de):
 					main.spawn_proj(self, "log", l, dir)
 			"steam":
 				# 물길 위로 증기: 띠 전체 감속·약화
@@ -1871,7 +1893,7 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 				vp.append(vp[0])
 				ci.draw_polyline(vp, Color(c.r, c.g, c.b, 0.6 * c.a), 1.5)
 			"lob":
-				_r_circle(ci, o + dd * 180.0 * reach(l), (50.0 + 8.0 * (l - 1)) * s, c)
+				_r_band(ci, o, dd, 0.0, LOB_RANGE * reach(l), lob_r(l) * s, c)
 			"iron":
 				_r_band(ci, o, dd, 0.0, far, 12.0 * s, c)
 			"sonic":
@@ -1897,7 +1919,7 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 			rc.a = 0.35
 		match r["id"]:
 			"burning":
-				_r_circle(ci, o + d * 180.0 * reach(rl), 50.0 + 8.0 * (rl - 1), rc)
+				_r_band(ci, o, d, 0.0, BURN_RANGE * reach(rl), BURN_R + BURN_R_LV * (rl - 1), rc)
 			"steam", "vine", "shock", "styx":
 				_r_band(ci, o, d, 0.0, 260.0 * reach(rl), 20.0 + 3.0 * (rl - 1), rc)
 			"bell", "silence":

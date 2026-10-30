@@ -1,7 +1,7 @@
 extends SceneTree
 # 자동 플레이 봇: 반응 생기면 겹치기, 아니면 진입 방향을 가로지르게 새로 설치.
 # 사용: tools/run.sh bots (또는 godot --headless --fixed-fps 60 --path . -s tools/bot.gd -- <시드> [stack])
-# 환경 변수: RULES(규칙 버전) MODES(모드, 쉼표로) MAP(맵) FLIP=1(회랑에서 구체가 왼쪽에서) SPEED(배속) SMART=1(사람처럼 배치) GOD=<웨이브>(죽지 않고 그 웨이브까지, 멈춤 감시)
+# 환경 변수: RULES(규칙 버전) MODES(모드, 쉼표로) MAP(맵) FLIP=1(회랑에서 구체가 왼쪽에서) SPEED(배속) SMART=1(사람처럼 배치) GOD=<웨이브>(죽지 않고 그 웨이브까지, 멈춤 감시) BOT_PAT(공격방식 카드를 한 종류로)
 var main
 var frames := 0
 var stack_all := false
@@ -84,6 +84,10 @@ func _process(_d):
 		_rearrange()
 	if main.phase == 0 and main.offer.size() > 0 and not main.perk_mode:
 		var offer = main.offer
+		# BOT_PAT=lob: 공격방식 카드를 모두 이 종류로 (공격방식별 효율 비교)
+		if OS.get_environment("BOT_PAT") != "":
+			for o in offer:
+				if o["type"] == "pat": o["id"] = OS.get_environment("BOT_PAT")
 		var ts = main.towers.get_children()
 		var pick = null
 		var target = null

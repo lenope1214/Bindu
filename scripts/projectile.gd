@@ -1,7 +1,7 @@
 class_name Projectile
 extends Node2D
 ## 오브젝트가 쏘는 발사체. kind로 종류를 구분한다.
-## lob(투척형)은 구체와 부딪히지 않고 max_travel만큼 날아가 착지한다.
+## lob(투척형)은 구체와 부딪히지 않고 max_travel만큼 날아간다. 투척 장판(blob)·장작(log)은 지나간 길에 장판(Zone.trail)을 남긴다.
 
 var kind := "thorn"
 var owner_tower: Tower
@@ -28,6 +28,8 @@ var src := ""  # 피해 출처 (Tower.src 키, 비면 직접 타격). 쏠 때 �
 var form := false  # 공격방식이 쏜 탄: 형태 성질(Elem.TRAIT)이 붙는다
 var ended := false  # 형태 성질 "끝" 효과를 이미 줬는지
 var path_acc := 0.0  # 지나온 길 (불씨·물길 70마다)
+var zone: Zone  # 지나간 자리 장판 (blob·log)
+var seg_acc := 0.0  # 장판 점 사이 거리
 var ghost := ""  # 혼불(ghost)이 어느 반응에서 나왔는지: plague(중독), spirit(속박), styx, ""(넋)
 var chase: Orb = null  # 유도·혼불이 쫓는 구체
 var chase_id := 0  # 그 구체 id (구체가 먼저 사라져도 오브젝트 쪽 수를 뺄 수 있게)
@@ -52,7 +54,8 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 		"shot":
 			speed = 440.0; dmg = 2.4 * p; radius = 6.0; max_travel = Tower.shot_range(tower.total_level(), tower.mf("size"))
 		"blob":
-			speed = 260.0; lob = true; max_travel = 180.0 * Tower.reach(l)
+			speed = 260.0; lob = true; max_travel = Tower.LOB_RANGE * Tower.reach(l)
+			homing = tower.mf("homing")  # 휜 길 그대로 장판이 깔린다
 		"thorn":
 			speed = 460.0; dmg = 0.85 * p; pierce = true
 		"gust":
@@ -66,7 +69,7 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 		"iron":
 			speed = 200.0; dmg = 1.7 * p; radius = 12.0; pierce = true
 		"log":
-			speed = 260.0; lob = true; max_travel = 180.0 * Tower.reach(l)
+			speed = 240.0; lob = true; max_travel = Tower.BURN_RANGE * Tower.reach(l)
 		"tornado":
 			speed = 110.0; dmg = 1.2 * p; radius = 26.0; continuous = true; max_travel = 380.0
 		"mushroom":
@@ -84,6 +87,10 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 		homing = tower.mf("homing")
 	vel = d * speed
 	position = tower.position + d * Tower.RADIUS
+	if k in ["blob", "log"]:
+		zone = tower.main.spawn_zone("trail", l, position, tower)
+		zone.trail("puddle" if k == "blob" else "burn")
+		zone.add_pt(position)
 
 
 ## 공격방식 탄으로 표시하고 바람 형태 성질(멀리)을 붙인다.
@@ -114,6 +121,11 @@ func step(delta: float) -> void:
 		_steer(delta)
 	position += vel * delta
 	travel += vel.length() * delta
+	if zone and is_instance_valid(zone):
+		seg_acc += vel.length() * delta
+		if seg_acc >= zone.radius * 0.8:
+			seg_acc = 0.0
+			zone.add_pt(position)
 	if form and is_instance_valid(owner_tower):
 		path_acc += vel.length() * delta
 		if path_acc >= 70.0:
@@ -168,6 +180,9 @@ static func wisp_seek(h: float) -> float:
 
 func _exit_tree() -> void:
 	_set_chase(null)
+	# 지나간 자리 장판은 더 자라지 않고 남은 점이 사라질 때까지 둔다
+	if zone and is_instance_valid(zone):
+		zone.feeding = false
 
 
 func _set_chase(o: Orb) -> void:
