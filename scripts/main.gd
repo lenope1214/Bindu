@@ -199,6 +199,7 @@ var modes_head: Label
 var modes_btns := {}  # 모드 id -> 켜고 끄는 버튼
 var new_achievements: Array = []  # 이번 판에 새로 달성한 업적 이름
 var help_label: Label
+var help_scroll: ScrollContainer
 var hover_elem := -1  # 마우스를 올린 선택지의 속성
 var tip_orb: Node = null  # 마우스를 올린 구체 (그 구체만 체력 숫자를 보인다)
 var range_all := false  # 터치 화면 [범위 보기]: Alt를 누른 것처럼 모든 오브젝트 범위·피해 몫
@@ -646,15 +647,16 @@ func _build_ui() -> void:
 	_build_dps(root)
 	_build_menu(root)
 
+	# 도움말은 굴려 보는 창 안에 (줄이 많아 화면 높이에 맞춰 줄이면 글자를 읽을 수 없게 작아지던 것).
+	# 열고 닫는 것은 그대로 help_label.visible, 창(help_scroll)은 _process에서 따라간다
+	help_scroll = ScrollContainer.new()
+	help_scroll.set_anchors_preset(Control.PRESET_CENTER)
+	help_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	help_scroll.visible = false
 	help_label = Label.new()
-	help_label.set_anchors_preset(Control.PRESET_CENTER)
-	# 긴 줄은 창 안에서 줄바꿈 (오른쪽 끝이 화면 밖으로 잘리던 것). 높이가 화면보다 크면 _fit_panels가 줄인다
-	help_label.offset_left = -520.0
-	help_label.offset_right = 520.0
-	help_label.offset_top = -300.0
-	help_label.offset_bottom = 300.0
+	# 긴 줄은 창 안에서 줄바꿈 (오른쪽 끝이 화면 밖으로 잘리던 것)
 	help_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	help_label.grow_vertical = Control.GROW_DIRECTION_BOTH  # 줄이 늘어도 가운데에 (아래 버튼 줄을 덮지 않게)
+	help_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	help_label.add_theme_font_size_override("font_size", 15)
 	var hsb := StyleBoxFlat.new()
 	hsb.bg_color = Color(0.05, 0.06, 0.09, 1.0)  # 뒤 카드·설명 글자가 비쳐 보이지 않게
@@ -662,10 +664,11 @@ func _build_ui() -> void:
 	hsb.border_color = Color(1, 1, 1, 0.25)
 	hsb.set_content_margin_all(18)
 	hsb.set_corner_radius_all(6)
-	help_label.add_theme_stylebox_override("normal", hsb)
+	help_scroll.add_theme_stylebox_override("panel", hsb)
 	help_label.text = _help_text()
 	help_label.visible = false
-	root.add_child(help_label)
+	help_scroll.add_child(help_label)
+	root.add_child(help_scroll)
 
 
 ## 쉬는 시간 왼쪽 위: 지난 웨이브 오브젝트별 DPS 표 (줄은 _refresh_dps가 채운다).
@@ -858,7 +861,7 @@ func _apply_ui_scale() -> void:
 
 ## 화면보다 커지는 창(줄이 많거나 글자를 키웠을 때)은 줄여서 맞춘다. 가운데 창이라 위아래 여백이 같고, 아래는 버튼 줄을 비운다.
 func _fit_panels() -> void:
-	for c: Control in [title_box, help_label, records_panel, settings_panel, notes_panel, modes_panel, codex_panel]:
+	for c: Control in [title_box, help_scroll, records_panel, settings_panel, notes_panel, modes_panel, codex_panel]:
 		if not c.is_visible_in_tree():
 			continue
 		var h: float = c.get_combined_minimum_size().y if c == title_box else c.size.y
@@ -2843,16 +2846,15 @@ func _toggle_records() -> void:
 				unlock = " → 중앙 모양 '%s'" % Meta.CORE_SKINS[sk]["name"]
 		lines.append("  %s %s - %s%s" % ["✓" if Meta.achieved.has(id) else "·", a["name"], a["desc"], unlock])
 	lines.append("")
-	lines.append("[반응 도감] %d / %d" % [Meta.codex.size(), Elem.REACTIONS.size()])
-	var row := PackedStringArray()
+	lines.append("[반응 도감] %d / %d   (모든 반응·조합은 도감(K) 특수 반응 탭)" % [Meta.codex.size(), Elem.REACTIONS.size()])
+	# 찾은 반응만 이어 쓴다. 모르는 칸마다 ???를 쓰면 반응이 91개라 창이 화면 높이만큼 길어져 글자가 읽을 수 없게 작아졌다
+	var found := PackedStringArray()
 	for r in Elem.REACTIONS:
 		if Meta.codex.has(r["id"]):
-			row.append("%s(%s+%s)" % [r["name"], Elem.NAMES[r["a"]], Elem.NAMES[r["b"]]])
-		else:
-			row.append("???")
-	# 반응이 17개라 다섯 개씩 끊어 화면 밖으로 넘치지 않게
-	for i in range(0, row.size(), 5):
-		lines.append("  " + ", ".join(row.slice(i, i + 5)))
+			found.append("%s(%s+%s)" % [r["name"], Elem.NAMES[r["a"]], Elem.NAMES[r["b"]]])
+	if not found.is_empty():
+		for l in _wrap_words(", ".join(found), 600.0, 15).split("\n"):
+			lines.append("  " + l)
 	records_panel.text = "\n".join(lines)
 
 
@@ -4088,6 +4090,17 @@ func _process(delta: float) -> void:
 	legend_btn.text = ("설명 보기" if legend_hidden else "설명 숨기기") + " (Tab)"
 	legend.visible = legend.visible and not legend_hidden
 	# 시작 화면 위에 설정·기록·도움말·패치노트 창을 열면 뒤 메뉴는 숨긴다 (흐리게만 하면 창 아래로 삐져나온 버튼 줄이 겹쳐 보이고 눌리던 것)
+	if help_label.visible and not help_scroll.visible:
+		help_scroll.scroll_vertical = 0  # 열 때마다 맨 위부터
+	help_scroll.visible = help_label.visible
+	if help_scroll.visible:
+		var hw2 := minf(1040.0, ui_root.size.x - 40.0)  # 글자를 키우면 화면 폭보다 넓어지던 것
+		help_scroll.offset_left = -hw2 / 2.0
+		help_scroll.offset_right = hw2 / 2.0
+		help_label.custom_minimum_size.x = hw2 - 36.0 - 12.0  # 안쪽 여백 + 굴림 막대
+		var hh := minf(help_label.get_combined_minimum_size().y + 36.0, ui_root.size.y - 100.0)
+		help_scroll.offset_top = -hh / 2.0
+		help_scroll.offset_bottom = hh / 2.0
 	title_box.visible = not (settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible)
 	hud.visible = not title_label.visible  # 시작 화면엔 메뉴에 최고 기록이 따로 있다
 	# 시작 화면에서 일시정지·배속 버튼을 누르면 메뉴 위에 일시정지 창이 뜨던 문제
