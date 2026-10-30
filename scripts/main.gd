@@ -185,6 +185,14 @@ var tip_orb: Node = null  # 마우스를 올린 구체 (그 구체만 체력 숫
 var range_all := false  # 터치 화면 [범위 보기]: Alt를 누른 것처럼 모든 오브젝트 범위·피해 몫
 var range_btn: Button
 var wave_time := 0.0  # 이번 웨이브 경과 시간
+# 쉬는 시간 오브젝트별 DPS 표: 줄에 마우스를 올리면 그 오브젝트를 필드에서 짚어 준다
+var dps_panel: PanelContainer
+var dps_head: Button
+var dps_scroll: ScrollContainer
+var dps_list: VBoxContainer
+var dps_sig := ""  # 표를 다시 만들지 정하는 요약 (오브젝트·피해가 바뀔 때만)
+var dps_focus: Tower = null  # 표에서 마우스를 올린 오브젝트
+var dps_hidden := false  # D: 표 접기
 # 온라인 (Net·Patch): 판 기록·통계
 var net: Net
 var run_log: Array = []  # 선택지 기록 [{w, k: card|perk, o: 나온 것, p: 고른 것(새로고침이면 "")}]
@@ -581,6 +589,7 @@ func _build_ui() -> void:
 	over_label.visible = false
 	root.add_child(over_label)
 
+	_build_dps(root)
 	_build_menu(root)
 
 	help_label = Label.new()
@@ -599,6 +608,132 @@ func _build_ui() -> void:
 	help_label.text = _help_text()
 	help_label.visible = false
 	root.add_child(help_label)
+
+
+## 쉬는 시간 왼쪽 위: 지난 웨이브 오브젝트별 DPS 표 (줄은 _refresh_dps가 채운다).
+func _build_dps(root: Control) -> void:
+	dps_panel = PanelContainer.new()
+	dps_panel.position = Vector2(10, 60)
+	dps_panel.custom_minimum_size.x = 300
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.02, 0.03, 0.05, 0.85)
+	sb.set_corner_radius_all(5)
+	sb.set_content_margin_all(6)
+	dps_panel.add_theme_stylebox_override("panel", sb)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 4)
+	dps_panel.add_child(box)
+	dps_head = Button.new()
+	dps_head.flat = true
+	dps_head.focus_mode = Control.FOCUS_NONE
+	dps_head.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	dps_head.add_theme_font_size_override("font_size", 14)
+	dps_head.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
+	dps_head.pressed.connect(_toggle_dps)
+	box.add_child(dps_head)
+	dps_scroll = ScrollContainer.new()
+	dps_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	box.add_child(dps_scroll)
+	dps_list = VBoxContainer.new()
+	dps_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dps_list.add_theme_constant_override("separation", 2)
+	dps_scroll.add_child(dps_list)
+	dps_panel.visible = false
+	root.add_child(dps_panel)
+
+
+func _toggle_dps() -> void:
+	dps_hidden = not dps_hidden
+	dps_sig = ""
+
+
+## 표를 보일지, 보이면 오브젝트·피해가 바뀌었을 때만 줄을 다시 만든다 (매 프레임 만들면 마우스 올림이 끊긴다).
+func _refresh_dps() -> void:
+	var on := phase in [Phase.CHOOSE, Phase.READY] and not title_label.visible and wave_time > 1.0 and towers.get_child_count() > 0 \
+		and not get_tree().paused and not help_label.visible and not settings_panel.visible and not records_panel.visible and not notes_panel.visible and not modes_panel.visible
+	dps_panel.visible = on
+	if not on:
+		dps_focus = null
+		return
+	# 점수 줄 아래, 왼쪽 아래 미리보기 위까지
+	var top := hud.position.y + hud.size.y + 8.0 if hud.visible else 8.0
+	dps_panel.position.y = top
+	var bottom := preview.position.y if preview.visible else ui_root.size.y - 80.0
+	if choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and choice_box.get_rect().position.x < 320.0:
+		bottom = minf(bottom, choice_box.get_rect().position.y)  # 카드 왼쪽 끝을 덮지 않게 (넘치면 굴려 본다)
+	var room := maxf(72.0, bottom - top - 44.0)
+	var list := towers.get_children()
+	list.sort_custom(func(a, b): return a.dealt > b.dealt)
+	var sig := "%s|%d|%d" % [dps_hidden, roundi(room), roundi(wave_time)]
+	for t in list:
+		sig += "|%d:%s:%d" % [t.get_instance_id(), t.title(), roundi(t.dealt)]
+	if sig == dps_sig:
+		return
+	dps_sig = sig
+	dps_head.text = ("▶" if dps_hidden else "▼") + " 지난 웨이브 DPS (D)"
+	for c in dps_list.get_children():
+		c.queue_free()
+	dps_scroll.visible = not dps_hidden
+	if dps_hidden:
+		dps_focus = null
+		dps_panel.size = Vector2.ZERO
+		return
+	var total := 0.0
+	for t in list:
+		total += t.dealt
+	for i in list.size():
+		dps_list.add_child(_dps_row(list[i], i + 1, total))
+	var rows := list.size() * 24.0
+	dps_scroll.custom_minimum_size.y = minf(rows, room)
+	dps_panel.size = Vector2.ZERO  # 줄이 줄면 판도 줄인다
+	if dps_focus != null and not is_instance_valid(dps_focus):
+		dps_focus = null
+
+
+## 표 한 줄: 순위 · 색 · 이름 · 초당 피해 · 몫. 뒤에 몫만큼 막대.
+func _dps_row(t: Tower, rank: int, total: float) -> Control:
+	var share := t.dealt / total if total > 0.0 else 0.0
+	var row := HBoxContainer.new()
+	row.custom_minimum_size = Vector2(0, 22)
+	row.mouse_filter = Control.MOUSE_FILTER_STOP
+	row.add_theme_constant_override("separation", 6)
+	var col := t.color()
+	row.draw.connect(func():
+		var hot := dps_focus == t
+		row.draw_rect(Rect2(Vector2.ZERO, row.size), Color(1, 1, 1, 0.14 if hot else 0.04))
+		row.draw_rect(Rect2(Vector2.ZERO, Vector2(row.size.x * share, row.size.y)), Color(col, 0.28))
+		if hot:
+			row.draw_rect(Rect2(Vector2.ZERO, row.size), Color(1, 0.9, 0.5, 0.9), false, 1.0))
+	row.mouse_entered.connect(func():
+		dps_focus = t
+		for r in dps_list.get_children():
+			r.queue_redraw())
+	row.mouse_exited.connect(func():
+		if dps_focus == t:
+			dps_focus = null
+		row.queue_redraw())
+	var cells := [["%d" % rank, 18, HORIZONTAL_ALIGNMENT_RIGHT, Color(1, 1, 1, 0.55)],
+		[t.title(), 0, HORIZONTAL_ALIGNMENT_LEFT, col.lightened(0.35)],
+		["%.1f" % (t.dealt / wave_time), 52, HORIZONTAL_ALIGNMENT_RIGHT, Color(1, 0.9, 0.5)],
+		["%d%%" % roundi(share * 100.0), 36, HORIZONTAL_ALIGNMENT_RIGHT, Color(1, 1, 1, 0.7)]]
+	for c in cells:
+		var l := Label.new()
+		l.text = c[0]
+		l.horizontal_alignment = c[2]
+		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		l.add_theme_font_size_override("font_size", 13)
+		l.add_theme_color_override("font_color", c[3])
+		if c[1] > 0:
+			l.custom_minimum_size.x = c[1]
+		else:
+			l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			l.clip_text = true
+			l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			l.custom_minimum_size.x = 150
+		row.add_child(l)
+	row.tooltip_text = "%s\n지난 웨이브 피해 %d · 초당 %.1f · 전체의 %d%%" % [t.title(), roundi(t.dealt), t.dealt / wave_time, roundi(share * 100.0)]
+	return row
 
 
 ## 화면 가운데 크게 잠깐 뜨는 글자. 앞 글자가 아직 또렷하면 뒤에 세워 차례로 보여 준다
@@ -749,6 +884,7 @@ func _help_text() -> String:
 		"빈 곳 끌기 / Shift·Ctrl+클릭 / Ctrl+A(모두): 여러 개 선택 → 그중 하나를 끌면 함께 이동",
 		"쉬는 시간에 오브젝트 클릭: 위치·방향 다시 정하기",
 		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 몫 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
+		"쉬는 시간 왼쪽 위 DPS 표: 지난 웨이브 오브젝트별 초당 피해·몫. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
 		"P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
 		"R: 다시 시작 (게임 오버 뒤, 또는 일시정지 중 두 번)",
@@ -1743,6 +1879,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_on_reroll()
 		elif event.keycode == KEY_V and phase == Phase.CHOOSE:
 			_set_cards_hidden(not cards_hidden)
+		elif event.keycode == KEY_D and phase in [Phase.CHOOSE, Phase.READY]:
+			_toggle_dps()
 		elif event.keycode == KEY_A and (event.ctrl_pressed or event.meta_pressed) and phase in [Phase.CHOOSE, Phase.READY] and not perk_mode:
 			# 모두 선택: 한꺼번에 옮길 때
 			selected = towers.get_children()
@@ -2775,7 +2913,10 @@ func _draw_notes() -> void:
 		var n: Dictionary = list[i]
 		var v: String = n["v"]
 		var tag := ""
-		if v == "":
+		if v == "" and n["title"].contains("미배포"):
+			# 아직 배포 전에 모아 두는 바뀐 점 (버전 번호는 배포할 때 붙인다)
+			out.append("[b][font_size=19]%s[/font_size][/b]  [color=#ffd873](다음 배포에 들어감)[/color]" % _bb(n["title"]))
+		elif v == "":
 			if not older:
 				older = true
 				out.append("[color=#8899aa][b]v0.4 이전 기록[/b][/color]")
@@ -3616,6 +3757,7 @@ func _process(delta: float) -> void:
 		paused_label.position.y = maxf(ui_root.size.y / 2.0 - 248.0, hud.get_rect().end.y + 8.0 if hud.visible else 8.0)
 		pause_box.position.y = paused_label.position.y + paused_label.size.y + 10.0
 	_fit_panels()
+	_refresh_dps()
 	queue_redraw()
 	if phase == Phase.MOVE and moving:
 		moving.position = get_global_mouse_position().clamp(field_rect().position, field_rect().end)
@@ -4022,6 +4164,8 @@ func _draw_tooltip() -> void:
 	var touch_move := phase == Phase.MOVE and touch_ui and moving != null
 	if (phase in [Phase.PLACE, Phase.GAMEOVER, Phase.MOVE, Phase.AIM] and not touch_move) or title_label.visible or dragging or boxing:
 		return
+	if dps_panel.visible and dps_panel.get_global_rect().has_point(dps_panel.get_global_mouse_position()):
+		return  # DPS 표 위: 표 뒤에 가린 오브젝트 정보창이 뜨지 않게
 	var t := moving if touch_move else _tower_at(get_global_mouse_position())
 	if t == null:
 		_draw_orb_tooltip()
@@ -4480,6 +4624,14 @@ func _draw() -> void:
 		var hov := _tower_at(mpos)
 		if hov:
 			Tower.draw_range(self, hov.position, hov.dir, hov.spec())
+	if dps_panel.visible and is_instance_valid(dps_focus):
+		# DPS 표에서 고른 오브젝트: 범위와 깜빡이는 고리, 위에서 가리키는 화살표
+		var fp := dps_focus.position
+		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 120.0)
+		Tower.draw_range(self, fp, dps_focus.dir, dps_focus.spec())
+		draw_arc(fp, Tower.RADIUS + 8.0 + pulse * 6.0, 0, TAU, 40, Color(1, 0.9, 0.5, 0.95), 3.0)
+		var ay := fp.y - Tower.RADIUS - 22.0 - pulse * 6.0
+		draw_colored_polygon(PackedVector2Array([Vector2(fp.x, ay + 12), Vector2(fp.x - 9, ay), Vector2(fp.x + 9, ay)]), Color(1, 0.9, 0.5))
 	# 여러 개 선택: 하늘색 점선 고리, 선택 상자
 	for t in selected:
 		if is_instance_valid(t):
