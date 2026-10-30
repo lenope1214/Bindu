@@ -1863,7 +1863,7 @@ func _save_run() -> void:
 	var vals := {
 		"format": RUN_FORMAT, "version": ProjectSettings.get_setting("application/config/version", ""),
 		"map": Meta.map_id, "rules": Meta.rules, "wave": wave, "score": score, "kills": kills, "best_combo": best_combo,
-		"core_hp": core_hp, "core_max": core_max, "perks": perks, "orb_speed_mul": orb_speed_mul,
+		"core_hp": core_hp, "core_max": core_max, "perks": perks.keys().map(func(k): return [k, perks[k]]), "orb_speed_mul": orb_speed_mul,
 		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
 		"rerolls_left": rerolls_left, "bonus_rerolls": bonus_rerolls, "picks_left": picks_left,
 		"lanes": Array(lanes), "wave_resist": wave_resist, "achievements": new_achievements,
@@ -1938,11 +1938,17 @@ func _continue_run() -> void:
 	core_max = maxi(1, g.call("core_max", CORE_MAX_HP))
 	core_hp = clampi(g.call("core_hp", core_max), 1, core_max)
 	core_disp = float(core_hp)
+	# 특성은 고른 순서대로 [id, 횟수] 목록 (사전으로 저장하면 이름순으로 바뀌어 점수 줄 순서가 달라짐)
 	perks = {}
-	var pk_saved: Dictionary = g.call("perks", {})
-	for pk in PERKS:
-		if pk_saved.get(pk["id"]) is int and pk_saved[pk["id"]] > 0:
-			perks[pk["id"]] = pk_saved[pk["id"]]
+	var pk_saved: Variant = cfg.get_value("run", "perks", [])
+	var pairs: Array = []
+	if pk_saved is Array:
+		pairs = pk_saved
+	elif pk_saved is Dictionary:  # v0.4.21~24 저장
+		pairs = pk_saved.keys().map(func(k): return [k, pk_saved[k]])
+	for pr in pairs:
+		if pr is Array and pr.size() == 2 and PERKS.any(func(pk): return pk["id"] == pr[0]) and pr[1] is int and pr[1] > 0:
+			perks[pr[0]] = pr[1]
 	orb_speed_mul = clampf(g.call("orb_speed_mul", 1.0), 0.05, 1.0)
 	Tower.dmg_mul = maxf(1.0, g.call("dmg_mul", 1.0))
 	Tower.spd_mul = maxf(1.0, g.call("spd_mul", 1.0))
@@ -1950,7 +1956,7 @@ func _continue_run() -> void:
 	Tower.tax_step = clampf(g.call("tax_step", Rules.tax_step), 0.0, Rules.tax_step)
 	rerolls_left = maxi(0, g.call("rerolls_left", 1))
 	bonus_rerolls = maxi(0, g.call("bonus_rerolls", 0))
-	picks_left = maxi(1, g.call("picks_left", 1))
+	picks_left = maxi(0, g.call("picks_left", 1))  # 특성 고르기 중에는 0
 	lanes.assign((g.call("lanes", []) as Array).filter(func(a): return a is float))
 	if lanes.is_empty():
 		_roll_lanes()
@@ -2001,6 +2007,7 @@ func _continue_run() -> void:
 			_update_preview()
 			_enter_ready()
 		_:
+			picks_left = maxi(1, picks_left)
 			offer = (g.call("offer", []) as Array).filter(_valid_card)
 			if offer.is_empty():
 				_make_choices()
