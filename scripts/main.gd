@@ -684,11 +684,12 @@ func _build_ui() -> void:
 	over_label.set_anchors_preset(Control.PRESET_CENTER)
 	over_label.position = Vector2(-450, -150)
 	over_label.size = Vector2(900, 300)
-	# 글줄이 900보다 길어져도 가운데를 지키며 양쪽으로 자란다
+	# 줄이 늘어도 가운데를 지키며 위아래로 자란다
 	over_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	over_label.grow_vertical = Control.GROW_DIRECTION_BOTH
 	over_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	over_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	over_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # 최다 피해 오브젝트 이름 등이 길면 화면 밖으로 나가던 것: 900 안에서 접는다
 	over_label.add_theme_font_size_override("font_size", 26)
 	over_label.visible = false
 	root.add_child(over_label)
@@ -2490,7 +2491,7 @@ func _game_over() -> void:
 			tops.append("%s %d%%" % [src_name(key), roundi(rs[key] / total * 100.0)])
 		mvp += "\n피해 출처: " + ", ".join(tops)
 	var md := "" if Modes.on.is_empty() else "\n모드: %s · 점수 x%.2f%s" % [Modes.names(), Modes.mul(), "\n쉽게 모드: 최고 기록 따로, 리더보드 제외" if Modes.easy() else ""]
-	over_label.text = "%s · %s · %s\n웨이브 %d · 점수 %s%s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\n%s" % ["판 끝냄" if ended else "게임 오버", Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, md, num(kills), best_combo, towers.get_child_count(), mvp, ach, "눌러서 시작 화면으로" if touch_ui else "클릭·R·Esc: 시작 화면으로"]
+	over_label.text = _kr_keep("%s · %s · %s\n웨이브 %d · 점수 %s%s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\n%s" % ["판 끝냄" if ended else "게임 오버", Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, md, num(kills), best_combo, towers.get_child_count(), mvp, ach, "눌러서 시작 화면으로" if touch_ui else "클릭·R·Esc: 시작 화면으로"])
 	over_label.visible = true
 	_submit_run()
 	sfx.play("over", 0.0)
@@ -3601,7 +3602,7 @@ func _on_run_sent(res: Dictionary) -> void:
 		return
 	var rk: Variant = res.get("rank")
 	if int(res.get("season", 0)) == 0:
-		over_label.text += "\n(지난 버전으로 한 판이라 이번 시즌 리더보드에는 들어가지 않아요)"
+		over_label.text += _kr_keep("\n(지난 버전으로 한 판이라 이번 시즌 리더보드에는 들어가지 않아요)")
 	elif rk is Dictionary:
 		var season: Variant = Net.info.get("season")
 		var sname := str(season.get("name", "")) if season is Dictionary else ""
@@ -4268,7 +4269,7 @@ func _end_old_run(v: String) -> void:
 	perk_mode = false
 	ended = true
 	_game_over()
-	over_label.text = "v%s에서 하던 판은 새 버전(v%s)에서 이어 할 수 없어 지금 점수로 끝냈어요\n" % [v, Net.game_version()] + over_label.text
+	over_label.text = _kr_keep("v%s에서 하던 판은 새 버전(v%s)에서 이어 할 수 없어 지금 점수로 끝냈어요\n" % [v, Net.game_version()]) + over_label.text
 
 
 ## 공격방식·강화·연계 카드를 오브젝트에 넣는다.
