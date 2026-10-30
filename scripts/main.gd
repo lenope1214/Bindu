@@ -2645,8 +2645,18 @@ func _draw_tooltip() -> void:
 	if t == null:
 		_draw_orb_tooltip()
 		return
+	var fs := 14
+	var maxw := minf(620.0, _right_limit() - 24.0)  # 이보다 긴 줄은 접는다 (속성이 많으면 화면 밖으로 나가던 것)
 	var lines: Array = []  # [글자, 색]
-	lines.append([t.title() + ("   (클릭: 옮기기 · 끌기: 바로 이동)" if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""), Color.WHITE])
+	var head := t.title()
+	var tip := "(클릭: 옮기기 · 끌기: 바로 이동)" if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
+	if tip != "" and ui_font.get_string_size(head + "   " + tip, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= maxw:
+		lines.append([head + "   " + tip, Color.WHITE])
+	else:
+		for row in _wrap_parts(head, "·", maxw, fs).split("\n"):
+			lines.append([row, Color.WHITE])
+		if tip != "":
+			lines.append([tip, Color(1, 1, 1, 0.6)])
 	lines.append(["공격방식: %s Lv%d - %s" % [Pat.pname(t.pattern), t.plv, Pat.PATTERNS[t.pattern]["desc"]], Pat.pcolor(t.pattern).lightened(0.2)])
 	for e in t.order:
 		lines.append(["%s Lv%d: %s" % [Elem.NAMES[e], t.lv(e), Elem.RIDER[e]], Elem.COLORS[e]])
@@ -2654,8 +2664,13 @@ func _draw_tooltip() -> void:
 	if ex != "":
 		lines.append(["강화·연계: " + ex, Color(1, 0.85, 0.45)])
 	lines.append(["피해 배율 x%.2f" % t.dmg_factor(), Color(1, 1, 1, 0.8)])
-	for r in t.reactions():
-		lines.append(["반응 %s: %s" % [r["name"], r["desc"]], r["color"]])
+	var rxs := t.reactions()
+	if rxs.size() <= 5:
+		for r in rxs:
+			lines.append(["반응 %s: %s" % [r["name"], r["desc"]], r["color"]])
+	else:
+		# 반응이 많으면 이름만 (설명까지 쓰면 화면 높이를 넘음)
+		lines.append(["반응 %d개: %s" % [rxs.size(), ", ".join(rxs.map(func(r): return r["name"]))], Color(1, 0.8, 0.95)])
 	if wave_time > 1.0:
 		var total := 0.0
 		for o in towers.get_children():
@@ -2664,20 +2679,36 @@ func _draw_tooltip() -> void:
 		lines.append(["%s 피해 %d (초당 %.1f%s)" % ["이번 웨이브" if phase == Phase.WAVE else "지난 웨이브", roundi(t.dealt), t.dealt / wave_time, share], Color(1, 0.9, 0.5)])
 	if t.order.size() > 1:
 		lines.append(["쌓기 대가: 공격 속도 -%d%%" % roundi((1.0 - 1.0 / t.tax()) * 100.0), Color(1, 0.6, 0.6)])
-	var fs := 14
+	var rows: Array = []
 	var w := 0.0
 	for l in lines:
-		w = maxf(w, ui_font.get_string_size(l[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+		var lw := ui_font.get_string_size(l[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		if lw <= maxw:
+			rows.append(l)
+			w = maxf(w, lw)
+			continue
+		for row in _wrap_words(l[0], maxw, fs).split("\n"):
+			rows.append([row, l[1]])
+			w = maxf(w, ui_font.get_string_size(row, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+	lines = rows
 	var h := lines.size() * 18.0 + 10.0
 	var size := get_viewport_rect().size
 	var p := t.position + Vector2(28, -h / 2)
 	p.x = clampf(p.x, 8, _right_limit() - w - 16)
-	p.y = clampf(p.y, 8, size.y - h - 8)
+	var top := _tip_top()
+	p.y = clampf(p.y, top if h <= size.y - top - 8.0 else 8.0, size.y - h - 8)
 	p = _avoid_cards(Rect2(p, Vector2(w + 16, h)), size)
 	fx_layer.draw_rect(Rect2(p, Vector2(w + 16, h)), Color(0.05, 0.06, 0.09, 0.92))
 	fx_layer.draw_rect(Rect2(p, Vector2(w + 16, h)), Color(1, 1, 1, 0.2), false, 1.0)
 	for i in lines.size():
 		fx_layer.draw_string(ui_font, p + Vector2(8, 20 + i * 18), lines[i][0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, lines[i][1])
+
+
+## 정보창을 놓을 수 있는 위쪽 끝: 점수 줄 아래 (점수 줄이 정보창 첫 줄을 덮던 것).
+func _tip_top() -> float:
+	if not hud.visible:
+		return 8.0
+	return (get_canvas_transform().affine_inverse() * hud.get_global_rect()).end.y + 6.0
 
 
 ## 글자를 놓을 수 있는 오른쪽 끝: 오른쪽 설명이 떠 있으면 그 앞까지 (설명이 글자를 가린다).
@@ -2742,7 +2773,7 @@ func _draw_orb_tooltip() -> void:
 		var w := ui_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
 		var p: Vector2 = o.position + Vector2(-w / 2 - 8, -o.radius() - 40)
 		p.x = clampf(p.x, 8, get_viewport_rect().size.x - w - 24)
-		p.y = maxf(p.y, 8)
+		p.y = maxf(p.y, _tip_top())
 		fx_layer.draw_rect(Rect2(p, Vector2(w + 16, 24)), Color(0.05, 0.06, 0.09, 0.9))
 		fx_layer.draw_string(ui_font, p + Vector2(8, 17), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color.WHITE)
 
