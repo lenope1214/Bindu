@@ -17,6 +17,8 @@ echo "versionCode $CODE 빌드 중..."
 
 mkdir -p build/android
 "$GODOT_BIN" --headless --path . --import >/dev/null 2>&1 || true
+# 게임 안 패치노트를 CHANGELOG.md에서 다시 만든다 (빌드에는 .md가 들어가지 않음)
+"$GODOT_BIN" --headless --path . --script tools/gen_patch_notes.gd || true
 INSTALL=()
 [[ -d android/build ]] || INSTALL=(--install-android-build-template)
 "$GODOT_BIN" --headless --path . "${INSTALL[@]}" --export-release "Android" build/android/Bindu.aab

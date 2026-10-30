@@ -83,6 +83,8 @@ fi
 mkdir -p "$(dirname "$OUT")"
 # 리소스 임포트·스크립트 목록 갱신 (새 스크립트가 추가돼도 바로 실행되도록 매번)
 "$GODOT_BIN" --headless --path "$PROJECT_DIR" --import >/dev/null 2>&1 || true
+# 게임 안 패치노트를 CHANGELOG.md에서 다시 만든다 (빌드에는 .md가 들어가지 않음)
+"$GODOT_BIN" --headless --path "$PROJECT_DIR" --script tools/gen_patch_notes.gd || true
 "$GODOT_BIN" --headless --path "$PROJECT_DIR" $MODE "$PRESET" "$OUT"
 
 if [[ ! -f "$OUT" ]]; then

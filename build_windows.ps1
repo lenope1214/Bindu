@@ -98,6 +98,8 @@ New-Item -ItemType Directory -Path (Split-Path $Out) -Force | Out-Null
 # 리소스 임포트·스크립트 목록 갱신 (새 스크립트가 추가돼도 바로 실행되도록 매번)
 $ErrorActionPreference = "Continue"
 & $Godot --headless --path $ProjectDir --import *> $null
+# 게임 안 패치노트를 CHANGELOG.md에서 다시 만든다 (빌드에는 .md가 들어가지 않음)
+& $Godot --headless --path $ProjectDir --script tools/gen_patch_notes.gd
 & $Godot --headless --path $ProjectDir $Mode $Preset $Out
 $ErrorActionPreference = "Stop"
 if (-not (Test-Path $Out)) {

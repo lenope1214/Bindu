@@ -157,6 +157,12 @@ var rules_label: Label
 var skin_label: Label
 var core_label: Label
 var records_panel: Label
+var notes_panel: PanelContainer  # 패치노트 (시작 화면·설정)
+var notes_text: RichTextLabel
+var notes_status: Label
+var notes_btn: Button
+var notes: PatchNotes
+var notes_back := false  # 설정 창에서 열었으면 닫을 때 설정 창으로 돌아간다
 var settings_panel: PanelContainer
 var new_achievements: Array = []  # 이번 판에 새로 달성한 업적 이름
 var help_label: Label
@@ -216,6 +222,12 @@ func _ready() -> void:
 	net.booted.connect(_on_booted)
 	net.run_sent.connect(_on_run_sent)
 	net.board_loaded.connect(_on_board_loaded)
+	notes = PatchNotes.new()
+	add_child(notes)
+	notes.loaded.connect(_draw_notes)
+	if Meta.notes_seen == "" and Meta.games == 0:
+		Meta.notes_seen = Net.game_version()  # 처음 하는 사람에게는 '새 소식' 표시를 하지 않는다
+	_refresh_notes_btn()
 	_on_booted(Net.info)  # 다시 시작했을 때: 이미 받아 둔 새 버전·공지
 	# 창 제목에도 한글 이름과 버전 (작업 표시줄에서 어떤 빌드인지 보이게)
 	get_window().title = "빈두 v%s" % ProjectSettings.get_setting("application/config/version", "?")
@@ -558,7 +570,7 @@ func _apply_ui_scale() -> void:
 
 ## 글자를 키우면(설정) 화면보다 커지는 창은 줄여서 맞춘다. 가운데 창이라 위아래 여백이 같고, 아래는 버튼 줄을 비운다.
 func _fit_panels() -> void:
-	for c: Control in [title_box, help_label, records_panel, settings_panel]:
+	for c: Control in [title_box, help_label, records_panel, settings_panel, notes_panel]:
 		if not c.is_visible_in_tree():
 			continue
 		var h: float = c.get_combined_minimum_size().y if c == title_box else c.size.y
@@ -1556,6 +1568,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_O:
 			_toggle_settings()
 			return
+		if event.keycode == KEY_N and (title_label.visible or settings_panel.visible or notes_panel.visible):
+			_toggle_notes()
+			return
+		if event.keycode == KEY_ESCAPE and notes_panel.visible:
+			_close_notes()
+			return
 		if event.keycode == KEY_ESCAPE and (settings_panel.visible or records_panel.visible or help_label.visible):
 			settings_panel.visible = false
 			records_panel.visible = false
@@ -1656,6 +1674,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.button_index == MOUSE_BUTTON_RIGHT and (press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
 		_cancel_step()
+		return
+	if notes_panel.visible:
+		_close_notes()
 		return
 	if records_panel.visible:
 		records_panel.visible = false
@@ -1960,6 +1981,13 @@ func _build_menu(root: Control) -> void:
 	update_btn.add_theme_color_override("font_color", Color(1, 0.85, 0.45))
 	update_btn.visible = false
 	box.add_child(update_btn)
+	notes_btn = Button.new()
+	notes_btn.custom_minimum_size = Vector2(320, 36)
+	notes_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	notes_btn.focus_mode = Control.FOCUS_NONE
+	notes_btn.pressed.connect(_toggle_notes)
+	box.add_child(notes_btn)
+	box.move_child(notes_btn, update_btn.get_index())
 	notice_label = Label.new()
 	notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	notice_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -1988,6 +2016,7 @@ func _build_menu(root: Control) -> void:
 	records_panel.add_theme_stylebox_override("normal", rsb)
 	records_panel.visible = false
 	root.add_child(records_panel)
+	_build_notes(root)
 
 	settings_panel = PanelContainer.new()
 	settings_panel.set_anchors_preset(Control.PRESET_CENTER)
@@ -2112,6 +2141,11 @@ func _build_menu(root: Control) -> void:
 		ne.text_submitted.connect(func(_t): ne.release_focus())
 		nrow.add_child(ne)
 		sv.add_child(nrow)
+	var nb := Button.new()
+	nb.text = "패치노트 (N)"
+	nb.focus_mode = Control.FOCUS_NONE
+	nb.pressed.connect(_toggle_notes)
+	sv.add_child(nb)
 	var brow := HBoxContainer.new()
 	brow.add_theme_constant_override("separation", 8)
 	var fs := Button.new()
@@ -2397,6 +2431,147 @@ func _draw_board() -> void:
 	records_panel.text = "\n".join(lines)
 
 
+# ---------- 패치노트 ----------
+
+## 버전별 패치노트 창: 길어서 굴려 보는 창. 바깥을 누르거나 Esc·N으로 닫는다.
+func _build_notes(root: Control) -> void:
+	notes_panel = PanelContainer.new()
+	notes_panel.set_anchors_preset(Control.PRESET_CENTER)
+	notes_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	notes_panel.offset_left = -430.0
+	notes_panel.offset_right = 430.0
+	notes_panel.offset_top = -300.0
+	notes_panel.offset_bottom = 270.0
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.05, 0.06, 0.09, 1.0)
+	sb.set_border_width_all(1)
+	sb.border_color = Color(1, 1, 1, 0.25)
+	sb.set_content_margin_all(18)
+	sb.set_corner_radius_all(6)
+	notes_panel.add_theme_stylebox_override("panel", sb)
+	notes_panel.visible = false
+	root.add_child(notes_panel)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 8)
+	notes_panel.add_child(v)
+	var head := HBoxContainer.new()
+	v.add_child(head)
+	var t := Label.new()
+	t.text = "패치노트"
+	t.add_theme_font_size_override("font_size", 22)
+	head.add_child(t)
+	notes_status = Label.new()
+	notes_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	notes_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	notes_status.add_theme_font_size_override("font_size", 13)
+	notes_status.add_theme_color_override("font_color", Color(1, 1, 1, 0.5))
+	head.add_child(notes_status)
+	var sc := ScrollContainer.new()
+	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	v.add_child(sc)
+	notes_text = RichTextLabel.new()
+	notes_text.bbcode_enabled = true
+	notes_text.fit_content = true
+	notes_text.scroll_active = false
+	notes_text.mouse_filter = Control.MOUSE_FILTER_PASS  # 터치로 끌면 위의 ScrollContainer가 굴린다
+	notes_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	notes_text.add_theme_font_size_override("normal_font_size", 15)
+	notes_text.add_theme_font_size_override("bold_font_size", 15)
+	sc.add_child(notes_text)
+	var close := Button.new()
+	close.text = "닫기"
+	close.focus_mode = Control.FOCUS_NONE
+	close.custom_minimum_size = Vector2(0, 40)
+	close.pressed.connect(_close_notes)
+	v.add_child(close)
+
+
+func _toggle_notes() -> void:
+	if notes_panel.visible:
+		_close_notes()
+		return
+	notes_panel.visible = true
+	notes_back = settings_panel.visible
+	settings_panel.visible = false
+	records_panel.visible = false
+	help_label.visible = false
+	if Meta.notes_seen != Net.game_version():
+		Meta.notes_seen = Net.game_version()
+		_save_best()
+		_refresh_notes_btn()
+	_draw_notes()
+	(notes_text.get_parent() as ScrollContainer).scroll_vertical = 0
+	notes.fetch()
+
+
+func _close_notes() -> void:
+	notes_panel.visible = false
+	if notes_back:
+		settings_panel.visible = true
+	notes_back = false
+
+
+func _draw_notes() -> void:
+	if notes_panel == null or not notes_panel.visible:
+		return
+	var cur := Net.game_version()
+	var cur_t := PatchNotes.vtuple(cur)
+	var out := PackedStringArray()
+	# 서버가 알려 준 새 버전 (스토어·다운로드 주소가 있는 것)
+	var latest: Variant = Net.info.get("latest")
+	if latest is Dictionary and str(latest.get("version", "")) != "":
+		var ln := str(latest.get("notes", ""))
+		out.append("[color=#ffd873]새 버전 v%s가 나왔어요. 시작 화면의 [받기]로 받을 수 있어요.%s[/color]\n" % [_bb(str(latest["version"])), ("\n" + _bb(ln)) if ln != "" else ""])
+	var list := PatchNotes.notes()
+	var older := false
+	for i in range(list.size() - 1, -1, -1):
+		var n: Dictionary = list[i]
+		var v: String = n["v"]
+		var tag := ""
+		if v == "":
+			if not older:
+				older = true
+				out.append("[color=#8899aa][b]v0.4 이전 기록[/b][/color]")
+			out.append("[b]%s[/b]" % _bb(n["title"]))
+		else:
+			if v == cur:
+				tag = "  [color=#8fd18f](지금 버전)[/color]"
+			elif PatchNotes.vtuple(v) > cur_t:
+				tag = "  [color=#ffd873](새 버전)[/color]"
+			out.append("[b][font_size=19]v%s[/font_size][/b]  %s%s" % [v, _bb(n["title"]), tag])
+		for l: String in n["lines"]:
+			var s := l.strip_edges()
+			var sub := l.begins_with(" ")
+			if s.begins_with("- "):
+				s = s.substr(2)
+			out.append(("      ◦ " if sub else "  · ") + _bb(s))
+		out.append("")
+	notes_text.text = "\n".join(out)
+	match PatchNotes.source:
+		"online":
+			notes_status.text = "최신 (인터넷)"
+		"cache":
+			notes_status.text = "불러오는 중…" if PatchNotes.fetching else "지난번에 받은 노트"
+		_:
+			notes_status.text = "불러오는 중…" if PatchNotes.fetching else "이 빌드에 든 노트"
+
+
+## RichTextLabel에 그대로 보이게 [ 를 바꾼다 (노트의 "[받기]" 같은 글자가 태그로 읽히지 않게).
+static func _bb(t: String) -> String:
+	return t.replace("[", "[lb]")
+
+
+## 시작 화면 [패치노트] 버튼: 이 버전 노트를 아직 안 봤으면 강조.
+func _refresh_notes_btn() -> void:
+	if notes_btn == null:
+		return
+	var cur := Net.game_version()
+	var fresh := Meta.notes_seen != cur and PatchNotes.has_version(cur)
+	notes_btn.text = "패치노트 · v%s%s" % [cur, " 새로 바뀐 것" if fresh else ""]
+	notes_btn.add_theme_color_override("font_color", Color(1, 0.85, 0.45) if fresh else Color(1, 1, 1, 0.8))
+
+
 func _toggle_settings() -> void:
 	settings_panel.visible = not settings_panel.visible
 
@@ -2464,6 +2639,7 @@ func _hide_title() -> void:
 	help_label.visible = false
 	records_panel.visible = false
 	settings_panel.visible = false
+	notes_panel.visible = false
 	title_seen = true
 
 
@@ -3050,7 +3226,7 @@ func _process(delta: float) -> void:
 		if guide_t <= 0.0:
 			guide_lines.clear()
 			guide_t = 0.0
-	guide_label.visible = not guide_lines.is_empty() and not title_label.visible and phase != Phase.GAMEOVER and not get_tree().paused and not help_label.visible and not settings_panel.visible and not records_panel.visible
+	guide_label.visible = not guide_lines.is_empty() and not title_label.visible and phase != Phase.GAMEOVER and not get_tree().paused and not help_label.visible and not settings_panel.visible and not records_panel.visible and not notes_panel.visible
 	# 글자를 키운(설정) 좁은 화면에서 펼친 버튼 줄이 왼쪽 아래 안내 글에 닿으면 안내 글을 버튼 줄 앞까지로 줄인다.
 	# 줄이 늘면 위로 자라고, 다음 웨이브 미리보기는 그 위에 붙는다
 	var hw := 590.0
@@ -3077,7 +3253,7 @@ func _process(delta: float) -> void:
 	legend_btn.text = ("설명 보기" if legend_hidden else "설명 숨기기") + " (Tab)"
 	legend.visible = legend.visible and not legend_hidden
 	# 시작 화면 위에 설정·기록·도움말 창을 열면 뒤 메뉴 글자가 창 옆으로 삐져나와 보이지 않게 흐리게
-	title_label.modulate.a = 0.12 if settings_panel.visible or records_panel.visible or help_label.visible else 1.0
+	title_label.modulate.a = 0.12 if settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible else 1.0
 	hud.visible = not title_label.visible  # 시작 화면엔 메뉴에 최고 기록이 따로 있다
 	# 시작 화면에서 일시정지·배속 버튼을 누르면 메뉴 위에 일시정지 창이 뜨던 문제
 	# 게임 중엔 펼쳤을 때만 보인다 (단축키 M·P·Space는 접어도 된다). 시작 화면엔 소리·자동 시작만
@@ -3129,7 +3305,7 @@ func _process(delta: float) -> void:
 		fx_layer.queue_redraw()  # 멈춘 동안에도 오브젝트·구체 정보창은 마우스를 따라간다
 		return
 	# 도움말·설정 창을 보는 동안은 게임이 멈춘다 (읽는 사이 구체가 중앙에 닿거나 웨이브가 시작되지 않게)
-	var reading := (help_label.visible or settings_panel.visible or records_panel.visible) and not title_label.visible
+	var reading := (help_label.visible or settings_panel.visible or records_panel.visible or notes_panel.visible) and not title_label.visible
 	if countdown >= 0.0 and phase == Phase.READY:
 		# 오브젝트를 끌거나 상자로 고르는 동안은 자동 시작을 멈춘다 (시작하면 끌던 것이 되돌아감)
 		if press_t or boxing or reading:
