@@ -32,7 +32,7 @@ func entries(c: String) -> Array:
 			for e in Elem.ALL:
 				var ps := Elem.partners(e)
 				out.append({"key": card_key({"type": "elem", "e": e}), "name": Elem.NAMES[e], "color": Elem.COLORS[e],
-					"desc": "공격: %s\n추가 효과: %s%s" % [Elem.FORM.get(e, "-"), Elem.RIDER.get(e, "-"), "\n반응: " + ", ".join(ps) if not ps.is_empty() else ""]})
+					"desc": "공격: %s\n추가 효과: %s\n형태 성질(시험): %s%s" % [Elem.FORM.get(e, "-"), Elem.RIDER.get(e, "-"), Elem.TRAIT.get(e, "-"), "\n반응: " + ", ".join(ps) if not ps.is_empty() else ""]})
 		"pat":
 			for id in Pat.PATTERN_IDS:
 				if id != Pat.DEFAULT:  # 직선탄은 카드로 나오지 않는다

@@ -25,6 +25,9 @@ var prism_els := {}  # 프리즘에서 묻은 속성
 var col := Color.WHITE
 var zap_t := 0.0  # 뇌우: 다음 낙뢰까지
 var src := ""  # 피해 출처 (Tower.src 키, 비면 직접 타격). 쏠 때 오브젝트의 tag를 이어받는다
+var form := false  # 공격방식이 쏜 탄: 형태 성질(Elem.TRAIT)이 붙는다
+var ended := false  # 형태 성질 "끝" 효과를 이미 줬는지
+var path_acc := 0.0  # 지나온 길 (불씨·물길 70마다)
 var ghost := ""  # 혼불(ghost)이 어느 반응에서 나왔는지: plague(중독), spirit(속박), styx, ""(넋)
 
 
@@ -51,8 +54,6 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 			speed = 380.0; dmg = 3.0 * p; radius = 7.0
 		"frag":
 			speed = 380.0; dmg = 1.0 * p; radius = 4.0; max_travel = 130.0
-		"dark":
-			speed = 170.0; lob = true; max_travel = 170.0 * Tower.reach(l)
 		"glob":
 			speed = 300.0; dmg = 0.6 * p; radius = 7.0
 		"iron":
@@ -78,6 +79,22 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 	position = tower.position + d * Tower.RADIUS
 
 
+## 공격방식 탄으로 표시하고 바람 형태 성질(멀리)을 붙인다.
+func form_init() -> void:
+	form = true
+	var w := 1.0 + 0.12 * owner_tower.tk(Elem.WIND)
+	vel *= w
+	if max_travel < 2000.0:
+		max_travel *= w
+
+
+## 형태 성질 "끝" 효과 (탄 하나에 한 번).
+func end_form() -> void:
+	if form and not ended and is_instance_valid(owner_tower):
+		ended = true
+		owner_tower.form_end(position, vel)
+
+
 ## main이 웨이브 중 호출한다(배속이면 한 프레임에 여러 번).
 func step(delta: float) -> void:
 	if not lob and kind != "gust" and kind != "tornado":
@@ -90,6 +107,11 @@ func step(delta: float) -> void:
 		_steer(delta)
 	position += vel * delta
 	travel += vel.length() * delta
+	if form and is_instance_valid(owner_tower):
+		path_acc += vel.length() * delta
+		if path_acc >= 70.0:
+			path_acc -= 70.0
+			owner_tower.form_path(position)
 	if is_instance_valid(owner_tower) and not lob and kind != "tornado":
 		_check_prisms()
 	t += delta
@@ -204,6 +226,9 @@ func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 		tw.in_rx = false
 	else:
 		o.hurt(dmg)
+	# 관통·튕김 탄은 처음 맞힌 자리가 "끝"
+	if pierce or pierce_left > 0 or bounces > 0:
+		end_form()
 	match ghost:
 		"plague":
 			o.poison(1.5 * level, 4.0, tw, true)
@@ -236,6 +261,7 @@ func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 			vel = (best.position - position).normalized() * vel.length()
 			travel = 0.0
 			return false
+	end_form()
 	return true
 
 
@@ -274,9 +300,6 @@ func _draw() -> void:
 			var s := 1.0 + sin(travel / max_travel * PI) * 0.8
 			draw_circle(Vector2.ZERO, 7.0 * s, col)
 			draw_circle(Vector2(-2, -2) * s, 2.0 * s, Color(1, 1, 1, 0.6))
-		"dark":
-			draw_circle(Vector2.ZERO, 9.0, Color(0.05, 0.0, 0.1))
-			draw_arc(Vector2.ZERO, 11.0, 0, TAU, 20, Elem.COLORS[Elem.DARK], 2.0)
 		"glob":
 			draw_circle(Vector2.ZERO, radius, Elem.COLORS[Elem.POISON])
 			draw_circle(Vector2(-2, -2), 2.0, Color(1, 1, 1, 0.6))

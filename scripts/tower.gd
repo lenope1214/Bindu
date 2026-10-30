@@ -45,6 +45,10 @@ var clock_ph := 0.0  # 시계침 위상
 var clock_hit := {}  # 시계침: 이번 한 번 훑는 동안 맞힌 구체
 var glint_d := Vector2.RIGHT  # 잔광: 1.2초 뒤 다시 쏠 방향
 var rewind_q: Array = []  # 되감기 번개: 1초 뒤 다시 칠 구체들
+var in_form := false  # 지금 형태 성질 효과를 주는 중인지 (자람·무게 보너스를 다시 받지 않게)
+var fe_cd := 0.0  # 형태 성질 "끝" 효과 다시 쓸 때까지 (날아가는 공격)
+var fe2 := 0.0  # 계속 공격하는 형태의 "끝" 효과 다시 쓸 때까지
+var chain_end := Vector2.ZERO  # 연쇄 번개가 마지막으로 친 자리
 var main: Node
 
 
@@ -70,6 +74,11 @@ func mf(id: String) -> float:
 func mn(id: String) -> int:
 	var f := mf(id)
 	return int(f) + (1 if randf() < f - int(f) else 0)
+
+
+## 형태 성질 세기: 속성 레벨, Lv3까지만 (몰아 넣기보다 나눠 넣기가 이득). Elem.TRAIT
+func tk(e: int) -> float:
+	return mini((eff if not eff.is_empty() else elements).get(e, 0), 3) * Rules.trait_mul
 
 
 func total_level() -> int:
@@ -512,6 +521,8 @@ func attack(delta: float, orbs: Array) -> void:
 	for k in fx.keys():
 		fx[k] = maxf(fx[k] - delta, 0.0)
 	recoil = maxf(recoil - delta * 6.0, 0.0)
+	fe_cd = maxf(fe_cd - delta, 0.0)
+	fe2 = maxf(fe2 - delta, 0.0)
 	_update_aim(orbs, delta)
 	# 속성을 많이 겹칠수록 공격이 느려진다(쌓기 대가), 속사 강화로 빨라진다
 	var de := delta * spd_mul * (1.0 + 0.1 * mf("rapid")) * (1.0 + wind_buff) / tax()
@@ -526,6 +537,7 @@ func attack(delta: float, orbs: Array) -> void:
 				for d in dirs():
 					var pr: Projectile = main.spawn_proj(self, pattern, l, d)
 					pr.dmg *= mk  # 다중 발사: 한 발 피해 감소
+					pr.form_init()
 		"spray":
 			for d in dirs():
 				_cone(orbs, d, 200.0 * reach(l) * s, 0.35, func(o): hit(o, 5.5 * pw(l) * de * mk, k))
@@ -548,14 +560,18 @@ func attack(delta: float, orbs: Array) -> void:
 				if fired:
 					cd["p"] = 1.3 / spd(l)
 					recoil = 1.0
+					if fe2 <= 0.0:
+						fe2 = 2.0
+						form_end(chain_end, aim, true)
 		"wall":
 			rocks = rocks.filter(func(r): return is_instance_valid(r))
 			if _ready_to("p", 4.0 / spd(l), de) and rocks.size() < 2 + roundi(mf("multi")):
 				main.spawn_rock(self, l)
 		"vortex":
-			if _ready_to("p", 4.5 / spd(l), de):
+			# 앞으로 날아가며 작아지는 블랙홀 (Zone.launch)
+			if _ready_to("p", 5.0 / spd(l), de):
 				for d in dirs():
-					main.spawn_proj(self, "dark", l, d)
+					main.spawn_zone("vortex", l, position + d * RADIUS, self).launch(d)
 		"laser":
 			if _ready_to("p", 2.0 / spd(l), de):
 				fx["laser"] = 0.3
@@ -564,7 +580,7 @@ func attack(delta: float, orbs: Array) -> void:
 		"lob":
 			if _ready_to("p", 2.0 / spd(l), de):
 				for d in dirs():
-					main.spawn_proj(self, "blob", l, d)
+					main.spawn_proj(self, "blob", l, d).form_init()
 		"sonic":
 			# 부채꼴로 퍼지는 파동: 안의 구체를 모두 치고, 멀수록 약하다 (끝에서 50%)
 			if _ready_to("p", 1.0 / spd(l), de):
@@ -589,6 +605,8 @@ func attack(delta: float, orbs: Array) -> void:
 				for d in dirs():
 					var pr: Projectile = main.spawn_proj(self, "wisp", l, d)
 					pr.dmg *= mk
+					pr.form_init()
+	_cont_end(orbs, l, s)
 	_reactions(orbs, de, k)
 	queue_redraw()
 
@@ -992,6 +1010,12 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		mt = 0.4 * els.get(Elem.METAL, 0) * k
 		d += mt
 		o.stagger(4.0 * els.get(Elem.METAL, 0) * k)
+	# 형태 성질 자람·무게: 공격방식 공격만 (반응·형태 성질 효과 제외)
+	if not in_rx and not in_form:
+		if els.has(Elem.WOOD):
+			d *= 1.0 + minf(0.04 * tk(Elem.WOOD) * o.position.distance_to(position) / 100.0, 0.2)
+		if els.has(Elem.METAL):
+			o.stagger(o.speed * 0.1 * tk(Elem.METAL) * minf(k, 1.0))
 	var rm := o.resist_mul(els)
 	d *= rm
 	o.hurt(d, crit)
@@ -1048,6 +1072,112 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 			p.hit[o] = true
 
 
+# ---------- 형태 성질 (Elem.TRAIT) ----------
+
+## 계속 공격하는 형태: 2초에 한 번 사거리 끝에서 "끝" 효과 (사거리 안에 구체가 있을 때).
+func _cont_end(orbs: Array, l: int, s: float) -> void:
+	if fe2 > 0.0 or orbs.is_empty():
+		return
+	var rng := 0.0
+	var d := aim
+	match pattern:
+		"spray": rng = 200.0 * reach(l) * s
+		"stream": rng = 260.0 * reach(l) * s
+		"laser": rng = 400.0
+		"sonic": rng = sonic_r(l)
+		"clock":
+			rng = 240.0 * reach(l) * s
+			d = aim.rotated(clock_a())
+		_: return
+	if not orbs.any(func(o): return o.position.distance_to(position) < rng):
+		return
+	fe2 = 2.0
+	form_end(position + d * rng, d, true)
+
+
+## 공격이 끝난 자리 pos(방향 d)에서 속성마다 형태 성질. big: 날아가는 공격의 재사용 대기(1.5초)를 무시.
+func form_end(pos: Vector2, d: Vector2, big := false) -> void:
+	if not main or not pos.is_finite():
+		return
+	if not big:
+		if fe_cd > 0.0:
+			return
+		fe_cd = 1.5
+	d = d.normalized() if d.length_squared() > 0.0001 else aim
+	var p := pw(plv)
+	var old_tag := tag
+	in_form = true
+	for e in (eff if not eff.is_empty() else elements):
+		var a := tk(e)
+		if a <= 0.0:
+			continue
+		tag = trait_tag(e)
+		match e:
+			Elem.FIRE: _fz("ember", pos, a)
+			Elem.WATER: _fz("rill", pos, a)
+			Elem.ICE: _fz("frost", pos, a)
+			Elem.EARTH: _fz("ledge", pos, a)
+			Elem.POISON: _fz("fog", pos, a)
+			Elem.TIME: _fz("tick", pos, a)
+			Elem.ELECTRIC:
+				var best: Orb = null
+				var bd := 120.0
+				for o in main.near(pos, bd):
+					if o.hp > 0.0 and o.position.distance_to(pos) < bd:
+						bd = o.position.distance_to(pos)
+						best = o
+				if best:
+					hit(best, 0.45 * p * a, 0.5)
+					main.bolt(PackedVector2Array([pos, best.position]))
+			Elem.DARK:
+				for o in main.near(pos, 60.0):
+					if o.position.distance_to(pos) < 60.0 + o.radius():
+						o.push((pos - o.position).limit_length(10.0 * a))
+			Elem.LIGHT:
+				var to := pos + d * 200.0
+				for o in main.near(pos + d * 100.0, 110.0):
+					if o.hp > 0.0 and Geometry2D.get_closest_point_to_segment(o.position, pos, to).distance_to(o.position) < 8.0 + o.radius():
+						hit(o, 0.3 * p * a, 0.5)
+				main.beam(pos, to, Elem.COLORS[Elem.LIGHT])
+			Elem.SOUND:
+				for o in main.near(pos, 50.0):
+					if o.hp > 0.0 and o.position.distance_to(pos) < 50.0 + o.radius():
+						hit(o, 0.25 * p * a, 0.3)
+				if main.pulses.size() < 40:
+					main.pulses.append([pos, 50.0, 0.3])
+			Elem.SOUL:
+				if randf() < 0.1 * a:
+					main.form_ghost(self, pos, 1.5 * p)
+	in_form = false
+	tag = old_tag
+
+
+## 피해 출처 키 (main.src_name이 "형태 성질 불"처럼 보여 준다).
+static func trait_tag(e: int) -> String:
+	return "trait:" + Patch.ELEM_KEYS[Elem.ALL.find(e)]
+
+
+## 날아가는 공격이 지나간 길 (70마다): 불씨·물길.
+func form_path(pos: Vector2) -> void:
+	var old_tag := tag
+	var a := tk(Elem.FIRE)
+	if a > 0.0:
+		tag = trait_tag(Elem.FIRE)
+		_fz("ember", pos, a)
+	a = tk(Elem.WATER)
+	if a > 0.0:
+		tag = trait_tag(Elem.WATER)
+		_fz("rill", pos, a)
+	tag = old_tag
+
+
+## 형태 성질 장판. 화면의 장판이 많으면 건너뛴다 (후반 부하).
+func _fz(kind: String, pos: Vector2, a: float) -> void:
+	if main.zones.get_child_count() >= 160:
+		return
+	main.spawn_zone(kind, plv, pos, self).amt = a
+
+
 ## d 방향 부채꼴 안의 구체에 효과.
 func _cone(_orbs: Array, d: Vector2, rng: float, half: float, f: Callable) -> void:
 	for o in main.near_t(position, rng):
@@ -1102,6 +1232,7 @@ func _chain(orbs: Array, d: Vector2, l: int, used: Dictionary) -> bool:
 		if nxt == null:
 			break
 		cur = nxt
+	chain_end = cur.position
 	# 번개는 구체·블랙홀에 가려지지 않게 맨 위 층(main)에 그린다
 	main.bolt(pts)
 	return true
@@ -1559,7 +1690,19 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 					for k in 2 + md.get("multi", 0):
 						_r_circle(ci, (o + d * (90.0 + 60.0 * k) * reach(l)).clamp(inner.position, inner.end), 28.0 * s, c)
 			"vortex":
-				_r_circle(ci, o + dd * 170.0 * reach(l), (90.0 + 10.0 * (l - 1)) * s, c)
+				# 앞으로 날아가며 줄어드는 띠 (Zone.launch와 같은 계산)
+				var wk := 1.0 + 0.12 * mini(els.get(Elem.WIND, 0), 3) * Rules.trait_mul
+				var dk := 1.0 + 0.15 * mini(els.get(Elem.DARK, 0), 3) * Rules.trait_mul
+				var shr := maxf(0.3, 1.0 - 0.15 * (mini(els.get(Elem.WOOD, 0), 3) + mini(els.get(Elem.WIND, 0), 3)) * Rules.trait_mul)
+				var r0 := (100.0 + 10.0 * (l - 1)) * s * dk
+				var nn := dd.orthogonal()
+				var a0 := o + dd * RADIUS
+				var b0 := a0 + dd * 420.0 * wk
+				var r1 := r0 * (1.0 - 0.6 * shr)
+				var vp := PackedVector2Array([a0 + nn * r0, b0 + nn * r1, b0 - nn * r1, a0 - nn * r0])
+				ci.draw_colored_polygon(vp, Color(c.r, c.g, c.b, 0.14 * c.a))
+				vp.append(vp[0])
+				ci.draw_polyline(vp, Color(c.r, c.g, c.b, 0.6 * c.a), 1.5)
 			"lob":
 				_r_circle(ci, o + dd * 180.0 * reach(l), (50.0 + 8.0 * (l - 1)) * s, c)
 			"iron":
@@ -1675,6 +1818,7 @@ func preview(card: Dictionary) -> Array:
 			else:
 				out.append("%s + %s" % [title(), Elem.NAMES[e]])
 				out.append("모든 공격에 추가 효과: " + Elem.RIDER[e])
+				out.append("형태 성질(시험): " + Elem.TRAIT[e])
 				var before := roundi((1.0 - 1.0 / tax()) * 100.0)
 				var after := roundi((1.0 - 1.0 / (tax() + tax_step)) * 100.0)
 				out.append("속성을 겹친 대가: 공격 속도 -%d%% → -%d%%" % [before, after])

@@ -15,7 +15,7 @@ const PATTERNS := {
 	"gust": {"name": "돌풍", "desc": "넓은 바람이 지나가며 옆으로 민다", "from": Elem.WIND},
 	"shard": {"name": "파편탄", "desc": "맞으면 파편 3개로 갈라진다", "from": Elem.ICE},
 	"wall": {"name": "벽", "desc": "앞에 바위 벽을 세워 막는다", "from": Elem.EARTH},
-	"vortex": {"name": "블랙홀", "desc": "던진 자리에 구체를 빨아들인다", "from": Elem.DARK},
+	"vortex": {"name": "블랙홀", "desc": "앞으로 날아가며 양옆 구체를 길 위로 끌어모은다. 점점 작아지며 세지다 끝에서 터진다. 구체를 먹을수록 빨리 작아지고 세게 터진다", "from": Elem.DARK},
 	"laser": {"name": "레이저", "desc": "충전 후 화면 끝까지 관통", "from": Elem.LIGHT},
 	"lob": {"name": "투척 장판", "desc": "던진 자리에 속성 장판을 남긴다", "from": Elem.POISON},
 	"iron": {"name": "철구", "desc": "느리고 무거운 관통탄", "from": Elem.METAL},
@@ -25,6 +25,9 @@ const PATTERNS := {
 }
 
 const PATTERN_IDS := ["shot", "spray", "thorn", "stream", "chain", "gust", "shard", "wall", "vortex", "laser", "lob", "iron", "sonic", "clock", "wisp"]
+
+## 날아가는 공격방식 (바람 형태 성질 "멀리"가 붙는다)
+const FLYING := ["shot", "thorn", "gust", "shard", "iron", "wisp", "lob", "vortex"]
 
 ## 투사체를 쏘는 공격방식 (유도·튕김·관통 강화가 그대로 적용)
 const PROJECTILE := ["shot", "thorn", "gust", "shard", "iron", "wisp"]

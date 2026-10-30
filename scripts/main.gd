@@ -74,6 +74,7 @@ var arcs: Array = []  # 전류 이펙트 [시작, 끝, 남은 시간]
 var bolts: Array = []  # 연쇄 번개 [점 목록, 남은 시간]
 var pulses: Array = []  # 소리 울림 음파 [중심, 반지름, 남은 시간]
 var refracts: Array = []  # 프리즘 굴절 [중심, 탄 방향, 색, 남은 시간]
+var beams: Array = []  # 빛줄기 [시작, 끝, 색, 남은 시간]
 var live_orbs: Array = []
 var targets: Array = []  # 화면 안에 들어온 구체 (공격 대상)
 var sim_id := 0  # 계산 조각 번호: 조각 안에서 변하지 않는 값(오브젝트 피해 배율)을 조각마다 한 번만 계산
@@ -790,6 +791,9 @@ static func src_name(key: String) -> String:
 			for r in Elem.REACTIONS:
 				if r["id"] == p[1]:
 					return r["name"]
+		"trait":
+			var j := Patch.ELEM_KEYS.find(p[1])
+			return "형태 성질 " + (Elem.NAMES[Elem.ALL[j]] if j >= 0 else p[1])
 		"etc":
 			return {"crowd": "무리(오브젝트 수)", "perk": "특성"}.get(p[1], p[1])
 	return p[1]
@@ -1182,7 +1186,7 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 				b.text = "[%d] ★ 대격변: 공격방식 ★\n모든 오브젝트의 공격방식을\n직선탄을 뺀 무작위로 바꾼다\n고정·직선탄도 바뀜, 레벨 유지\n(희귀 1%%, 고르면 바로 발동)" % idx
 		"elem":
 			var e: int = card["e"]
-			b.text = "[%d] 속성: %s%s\n추가 효과: %s\n빈 곳: 새 오브젝트(직선탄)\n오브젝트 위: 속성 겹치기%s" % [idx, Elem.NAMES[e], " Lv2" if card["lv"] == 2 else "", Elem.RIDER[e], " (%d종까지)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else ""]
+			b.text = "[%d] 속성: %s%s\n추가 효과: %s\n형태 성질: %s\n빈 곳: 새 오브젝트(직선탄)\n오브젝트 위: 속성 겹치기%s" % [idx, Elem.NAMES[e], " Lv2" if card["lv"] == 2 else "", Elem.RIDER[e], Elem.TRAIT[e], " (%d종까지)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else ""]
 			var combos := _combos_for(e)
 			if not combos.is_empty():
 				b.text += "\n" + "\n".join(combos.slice(0, 2))
@@ -3695,6 +3699,25 @@ func _soul_wisp(o: Orb) -> void:
 	g.src = "rx:styx" if o.styx_t > 0.0 else "elem:soul"
 
 
+## 영혼 형태 성질(넋불): 공격 끝 자리에서 혼불. 화면의 혼불은 30개까지 (_soul_wisp와 같이 셈).
+func form_ghost(tw: Tower, pos: Vector2, dmg: float) -> void:
+	var n := 0
+	for p in projectiles.get_children():
+		if p.kind == "ghost":
+			n += 1
+	if n >= 30:
+		return
+	var g := spawn_proj(tw, "ghost", tw.plv, Vector2.from_angle(randf() * TAU))
+	g.position = pos
+	g.dmg = dmg
+
+
+## 빛 형태 성질(빛줄기) 표시: 잠깐 빛나는 직선.
+func beam(a: Vector2, b: Vector2, c: Color) -> void:
+	if beams.size() < 40:
+		beams.append([a, b, c, 0.2])
+
+
 ## 전기 부가효과: 가까운 다른 구체로 전류가 튄다 (src: 쏜 오브젝트, 피해 기록용).
 func arc(from: Orb, dmg: float, src: Tower = null) -> void:
 	var best: Orb = null
@@ -4183,6 +4206,7 @@ func _resolve(delta: float) -> void:
 			continue
 		if p.finished():
 			_land(p)
+			p.end_form()
 			p.queue_free()
 			continue
 		if p.lob:
@@ -4394,6 +4418,9 @@ func _update_fx(delta: float) -> void:
 	for q in refracts:
 		q[3] -= delta
 	refracts = refracts.filter(func(q): return q[3] > 0.0)
+	for q in beams:
+		q[3] -= delta
+	beams = beams.filter(func(q): return q[3] > 0.0)
 	shake = maxf(shake - delta, 0.0)
 	if combo_t > 0.0:
 		combo_t = maxf(combo_t - delta, 0.0)
@@ -4659,6 +4686,10 @@ func _draw_fx() -> void:
 			var e: Vector2 = a + dir * (26.0 + 70.0 * k)
 			fx_layer.draw_line(a, e, Color.from_hsv(i / 6.0, 0.55, 1.0, 0.35 * al), 7.0)
 			fx_layer.draw_line(a, e, Color.from_hsv(i / 6.0, 0.45, 1.0, al), 2.5)
+	for q in beams:
+		var bk: float = q[3] / 0.2
+		fx_layer.draw_line(q[0], q[1], Color(q[2], 0.35 * bk), 9.0)
+		fx_layer.draw_line(q[0], q[1], Color(q[2], 0.9 * bk), 3.0)
 	var ec: Color = Elem.COLORS[Elem.ELECTRIC]
 	for b in bolts:
 		var src: PackedVector2Array = b[0]
@@ -4768,10 +4799,11 @@ func _land(p: Projectile) -> void:
 	match p.kind:
 		"log":
 			spawn_zone("burn", p.level, p.position, tw)
-		"dark":
-			spawn_zone("vortex", p.level, p.position, tw)
 		"blob":
-			spawn_zone("puddle", p.level, p.position, tw)
+			var z := spawn_zone("puddle", p.level, p.position, tw)
+			# 물 형태 성질(흐름): 장판이 공격 방향으로 흐른다
+			if tw and p.form and tw.tk(Elem.WATER) > 0.0:
+				z.vel = p.vel.normalized() * 30.0
 		"mushroom":
 			var z := spawn_zone("mine", p.level, p.position, tw)
 			if tw:
