@@ -5818,6 +5818,15 @@ func _draw_orb_tooltip() -> void:
 		if o.silence_t > 0.0: parts.append("침묵")
 		if o.resist_e >= 0: parts.append("%s 저항" % Elem.NAMES[o.resist_e])
 		if o.sturdy: parts.append("굳셈(밀기·감속·기절·냉기 절반)")
+		if o.lava_t > 0.0: parts.append("용암(%.1f초 뒤 폭발)" % o.lava_t)
+		if o.seed_n > 0: parts.append("씨앗 %d" % o.seed_n)
+		if not o.amp.is_empty():
+			# 반응이 건 받는 피해 증가 (녹·씨앗·검은 물 등, 곱해서 하나로)
+			var k := 1.0
+			for v in o.amp.values():
+				k *= 1.0 + v[0]
+			if k > 1.005:
+				parts.append("반응 약화(받는 피해 +%d%%)" % roundi((k - 1.0) * 100.0))
 		var fs := roundi(14 * Meta.ui_scale)
 		# 상태가 많으면(보스·후반) 한 줄이 화면·오른쪽 설명 밖으로 나간다: 들어가는 만큼씩 줄을 나눈다
 		var maxw := minf(_right_limit() - 32.0, 620.0 * Meta.ui_scale)
