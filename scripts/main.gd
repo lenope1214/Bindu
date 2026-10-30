@@ -1223,7 +1223,7 @@ func _update_skip_ui() -> void:
 	skip_n_btn.visible = show_btn
 	if show_btn:
 		var n := int(Meta.skip_n)
-		skip_btn.text = "웨이브 %d개 넘기기 (S) · 고르기 미루기" % n
+		skip_btn.text = "웨이브 %d개 넘기기 (S)" % n
 		skip_n_btn.text = "×%d ▸" % n
 	skip_badge.visible = skip_left > 0 and phase in [Phase.WAVE, Phase.READY] and not title_label.visible
 	if skip_badge.visible:
