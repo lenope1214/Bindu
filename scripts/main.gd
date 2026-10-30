@@ -5616,6 +5616,7 @@ func _draw_tooltip() -> void:
 	var tip := ("(클릭: 길 다시 그리기 · 끌기: 옮기기)" if t.pattern == "path" else "(클릭: 방향 · 끌기: 옮기기)") if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
 	# Shift를 누르고 있으면 공격력·공격 속도·사거리 같은 수치를 자세히
 	var detail := Input.is_key_pressed(KEY_SHIFT) and not touch_move
+	tip = _th(tip)
 	if not touch_ui:
 		tip = (tip.trim_suffix(")") + " · " if tip != "" else "(") + ("Shift: 자세히)" if not detail else "Shift 떼기: 돌아가기)")
 	if touch_move:
