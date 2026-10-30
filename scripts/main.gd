@@ -157,7 +157,8 @@ var rerolls_left := 1
 var bonus_rerolls := 0
 var combo := 0
 var combo_t := 0.0
-const COMBO_KEEP := 1.5  # 이 시간 안에 다음 처치가 나와야 콤보가 이어진다
+const COMBO_KEEP := 3.0  # 이 게임 시간(배속과 상관없이) 안에 다음 처치가 나와야 콤보가 이어진다
+var combo_hold := false  # 웨이브가 끝나면 남은 유지 시간을 멈춰 두고, 다음 웨이브 첫 처치에서 푼다
 var combo_bonus := 0  # 이번 콤보로 더 얻은 점수 (배율 없이 받았을 점수와의 차이)
 var combo_end := [0, 0, 0.0]  # 끊긴 콤보 [콤보, 보너스, 남은 표시 시간]
 var combo_max_flash := 0.0  # 콤보 20(점수 x3)에 닿은 순간 반짝임
@@ -971,7 +972,7 @@ func _help_text() -> String:
 		"중앙 체력 10. 구체가 닿으면 줄어듭니다",
 		"쉬는 시간마다 3개 중 1개를 고릅니다 (처음 두 번은 2번)" if Rules.picks == 1 else "쉬는 시간마다 3개 중 1개씩 %d번 고릅니다" % Rules.picks,
 		"5웨이브마다 보스. 처치하면 체력 +2, 새로고침 +1",
-		"콤보: 1.5초 안에 다음 구체를 잡으면 이어져요 (어느 오브젝트가 잡든). 콤보마다 처치 점수 +10%, 콤보 20부터 x3. 오른쪽 위 상자에 배율과 남은 시간",
+		"콤보: 게임 시간 3초 안에 다음 구체를 잡으면 이어져요 (어느 오브젝트가 잡든, 배속과 상관없이). 쉬는 시간엔 멈춰서 다음 웨이브로 이어져요. 콤보마다 처치 점수 +10%, 콤보 20부터 x3. 오른쪽 위 상자에 배율과 남은 시간",
 		"보스 웨이브를 넘기면 특성(모든 오브젝트에 붙는 강화) 3개 중 1개 선택",
 		"공격방식은 직선탄일 때 한 번만 정할 수 있고, 같은 것을 넣으면 레벨업",
 		"속성을 많이 겹칠수록 피해는 늘고 공격 속도는 조금씩 느려집니다. 오브젝트가 많을수록 모든 오브젝트의 피해가 늘어요(오브젝트 수 보너스, 5개 +16%% · 10개 +23%%, 늘수록 덜 오름). %s" % mods,
@@ -3304,6 +3305,7 @@ func _save_run() -> void:
 	var vals := {
 		"format": RUN_FORMAT, "version": ProjectSettings.get_setting("application/config/version", ""),
 		"map": Meta.map_id, "line_flip": Meta.line_flip, "rules": Meta.rules, "modes": Array(Modes.on), "wave": wave, "score": score, "kills": kills, "best_combo": best_combo,
+		"combo": combo, "combo_t": combo_t, "combo_bonus": combo_bonus,
 		"core_hp": core_hp, "core_max": core_max, "perks": perks.keys().map(func(k): return [k, perks[k]]), "orb_speed_mul": orb_speed_mul,
 		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
 		"rerolls_left": rerolls_left, "bonus_rerolls": bonus_rerolls, "picks_left": picks_left,
@@ -3382,6 +3384,10 @@ func _continue_run() -> void:
 	score = maxi(0, g.call("score", 0))
 	kills = maxi(0, g.call("kills", 0))
 	best_combo = maxi(0, g.call("best_combo", 0))
+	combo = clampi(g.call("combo", 0), 0, best_combo)
+	combo_t = clampf(g.call("combo_t", 0.0), 0.0, COMBO_KEEP) if combo > 0 else 0.0
+	combo_bonus = maxi(0, g.call("combo_bonus", 0))
+	combo_hold = combo_t > 0.0
 	core_max = maxi(1, g.call("core_max", CORE_MAX_HP))
 	core_hp = clampi(g.call("core_hp", core_max), 1, core_max)
 	danger_lv = _danger_of(core_hp)
@@ -4121,11 +4127,17 @@ func _sim_step(delta: float) -> void:
 
 	wave_time += delta
 	run_game += delta
+	# 콤보 유지 시간은 게임 시간으로 잰다: 배속을 올려도 점수가 달라지지 않는다
+	if combo_t > 0.0 and not combo_hold:
+		combo_t = maxf(combo_t - delta, 0.0)
+		if combo_t <= 0.0 and combo >= 5:
+			combo_end = [combo, combo_bonus, 1.5]
 	_resolve(delta)
 
 	if core_hp <= 0:
 		_game_over()
 	elif to_spawn == 0 and _alive_count(orbs) == 0:
+		combo_hold = true  # 쉬는 시간·카드 고르기 동안 콤보가 끊기지 않게
 		_log_wave()
 		_achieve("first")
 		if wave >= 5:
@@ -4305,6 +4317,7 @@ func _resolve(delta: float) -> void:
 	for o in live_orbs:
 		if o.hp <= 0.0:
 			sfx.play("kill", 0.15)
+			combo_hold = false
 			if combo_t <= 0.0:
 				combo = 0
 				combo_bonus = 0
@@ -4500,10 +4513,6 @@ func _update_fx(delta: float) -> void:
 		q[3] -= delta
 	beams = beams.filter(func(q): return q[3] > 0.0)
 	shake = maxf(shake - delta, 0.0)
-	if combo_t > 0.0:
-		combo_t = maxf(combo_t - delta, 0.0)
-		if combo_t <= 0.0 and combo >= 5:
-			combo_end = [combo, combo_bonus, 1.5]
 	combo_end[2] = maxf(combo_end[2] - delta, 0.0)
 	combo_max_flash = maxf(combo_max_flash - delta, 0.0)
 	core_flash = maxf(core_flash - delta, 0.0)
@@ -4844,11 +4853,11 @@ func combo_mul() -> float:
 
 
 ## 오른쪽 위(설명 버튼 아래) 콤보 상자: 콤보·점수 배율·남은 유지 시간·더 얻은 점수.
-## 콤보는 웨이브 중에만 쌓이고, 그때는 설명 글이 꺼져 있어 이 자리가 빈다.
+## 콤보는 웨이브 중에만 쌓이고(쉬는 시간엔 멈춰 다음 웨이브로 이어짐), 웨이브 중엔 설명 글이 꺼져 있어 이 자리가 빈다.
 func _draw_combo() -> void:
 	if title_label.visible or phase == Phase.GAMEOVER:
 		return
-	var live := combo_t > 0.0 and combo >= 2
+	var live := combo_t > 0.0 and combo >= 2 and phase == Phase.WAVE  # 쉬는 시간엔 그 자리에 설명 글이 뜬다
 	if not live and combo_end[2] <= 0.0:
 		return
 	var w := 180.0
@@ -4878,7 +4887,7 @@ func _draw_combo() -> void:
 	fx_layer.draw_rect(Rect2(p + Vector2(10, 34), Vector2(w - 20, 5)), Color(1, 1, 1, 0.15))
 	fx_layer.draw_rect(Rect2(p + Vector2(10, 34), Vector2((w - 20) * k, 5)), Color(1, 0.35, 0.3) if k < 0.35 else col)
 	fx_layer.draw_string(ui_font, p + Vector2(10, 53), "콤보로 점수 +%s" % num(combo_bonus), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 0.9, 0.6))
-	fx_layer.draw_string(ui_font, p + Vector2(10, 68), "%.1f초 안에 다음 처치로 유지" % COMBO_KEEP, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.55))
+	fx_layer.draw_string(ui_font, p + Vector2(10, 68), "%d초 안에 다음 처치로 유지" % roundi(COMBO_KEEP), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.55))
 
 
 ## 투척형 발사체가 착지했을 때.
