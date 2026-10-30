@@ -670,7 +670,7 @@ func _refresh_dps() -> void:
 	if sig == dps_sig:
 		return
 	dps_sig = sig
-	dps_head.text = ("▶" if dps_hidden else "▼") + " 지난 웨이브 초당 피해 (D)"
+	dps_head.text = ("▶" if dps_hidden else "▼") + " 지난 웨이브 DPS (D)"
 	for c in dps_list.get_children():
 		c.queue_free()
 	dps_scroll.visible = not dps_hidden
@@ -884,7 +884,7 @@ func _help_text() -> String:
 		"빈 곳 끌기 / Shift·Ctrl+클릭 / Ctrl+A(모두): 여러 개 선택 → 그중 하나를 끌면 함께 이동",
 		"쉬는 시간에 오브젝트 클릭: 위치·방향 다시 정하기",
 		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 비율 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
-		"쉬는 시간 왼쪽 위 초당 피해 표: 지난 웨이브에 오브젝트마다 낸 초당 피해와 비율. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기",
+		"쉬는 시간 왼쪽 위 DPS 표: 지난 웨이브에 오브젝트마다 낸 DPS와 비율. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
 		"P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
 		"R: 다시 시작 (게임 오버 뒤, 또는 일시정지 중 두 번)",
@@ -901,7 +901,7 @@ func _help_text() -> String:
 		"보스 웨이브를 넘기면 특성(모든 오브젝트에 붙는 강화) 3개 중 1개 선택",
 		"공격방식은 직선탄일 때 한 번만 정할 수 있고, 같은 것을 넣으면 레벨업",
 		"속성을 많이 겹칠수록 피해는 늘고 공격 속도는 조금씩 느려집니다. 오브젝트가 많을수록 모든 오브젝트의 피해가 늘어요(오브젝트 수 보너스). %s" % mods,
-		"감속은 최대 70%, 밀기는 조금씩만. 기절·속박·빙결은 연달아 걸릴수록 짧아지고, 그다음엔 잠깐 걸리지 않아요",
+		"감속은 최대 70%, 밀기는 조금씩만. 기절·속박·빙결은 연달아 걸릴수록 짧아지다가 잠깐 면역",
 		"화면 밖 구체는 맞지 않습니다. 시작 화면에서 규칙 버전(↑/↓)과 맵(←/→)을 바꿀 수 있어요",
 		"모드(첫 판 뒤): 어렵게 하면 점수 배율이 오르고, 쉽게 하면 내려가요 (쉽게 모드 판은 기록 따로)",
 	])
@@ -4303,7 +4303,7 @@ func _draw_orb_tooltip() -> void:
 		if o.splits: parts.append("분열")
 		if o.burn_t > 0.0: parts.append("화상")
 		if o.poison_t > 0.0: parts.append("중독")
-		if o.root_immune > 0.0: parts.append("잠깐 기절 안 걸림")
+		if o.root_immune > 0.0: parts.append("기절 면역")
 		if o.vuln_t > 0.0: parts.append("약화(받는 피해 +30%)")
 		if o.slow_timer > 0.0: parts.append("감속")
 		if o.frozen_t > 0.0: parts.append("빙결")
