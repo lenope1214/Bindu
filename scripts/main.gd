@@ -3808,7 +3808,7 @@ func sound_pulse(o: Orb) -> void:
 		pulses.append([o.position, r, 0.3])
 
 
-## 프리즘 굴절 표시: 탄이 프리즘을 지나면 육각형이 퍼지고, 탄 방향으로 무지개 빛살이 갈라진다.
+## 프리즘 굴절 표시: 탄이 프리즘을 지나면 육각형이 퍼진다.
 func refract(pos: Vector2, d: Vector2, col: Color) -> void:
 	if refracts.size() < 40:
 		refracts.append([pos, d, col, 0.35])
@@ -4873,13 +4873,6 @@ func _draw_fx() -> void:
 			hx.append(q[0] + Vector2.from_angle(TAU * i / 6.0 + k) * (Tower.RADIUS + 6.0 + 22.0 * k))
 		fx_layer.draw_colored_polygon(hx.slice(0, 6), Color(q[2], 0.18 * al))
 		fx_layer.draw_polyline(hx, Color(q[2].lerp(Color.WHITE, 0.6), al), 3.5)
-		var dv: Vector2 = q[1]
-		for i in 6:
-			var dir := dv.rotated((i - 2.5) * 0.14)
-			var a: Vector2 = q[0] + dir * (Tower.RADIUS + 2.0)
-			var e: Vector2 = a + dir * (26.0 + 70.0 * k)
-			fx_layer.draw_line(a, e, Color.from_hsv(i / 6.0, 0.55, 1.0, 0.35 * al), 7.0)
-			fx_layer.draw_line(a, e, Color.from_hsv(i / 6.0, 0.45, 1.0, al), 2.5)
 	for q in beams:
 		var bk: float = q[3] / 0.2 * fx_k
 		fx_layer.draw_line(q[0], q[1], Color(q[2], 0.35 * bk), 9.0)

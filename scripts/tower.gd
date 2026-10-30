@@ -566,7 +566,36 @@ func add_mod(id: String) -> String:
 	mods[id] = m(id) + 1
 	place_pop = 1.0
 	queue_redraw()
-	return "%s %d" % [Pat.MODS[id]["name"], m(id)]
+	return "%s %d (%s)" % [Pat.MODS[id]["name"], m(id), mod_effect(id)]
+
+
+## 지금 든 강화의 효과량 (detail_lines·dmg_factor·multi_k 등과 같은 식). 공격방식마다 다르다.
+func mod_effect(id: String) -> String:
+	var f := mf(id)
+	match id:
+		"multi":
+			if pattern == "wall":
+				return "벽 최대 %d개" % (2 + roundi(f))
+			if pattern in ["vortex", "lob"]:
+				return "한 번에 %.2f개" % (1.0 + f)
+			return "한 번에 %.2f개 (한 발 피해 %d%%)" % [1.0 + f, roundi(multi_k() * 100.0)]
+		"split":
+			return "파편 확률 %d%%" % roundi(minf(0.6, 0.12 * f) * 100.0)
+		"homing":
+			return "휘는 힘 x%.2f" % f
+		"bounce":
+			if pattern in Pat.PROJECTILE or pattern == "chain":
+				return "튕김 %.2f번" % f
+			return "피해 +%d%%" % roundi(0.04 * f * 100.0)
+		"size":
+			return "크기·범위·사거리 +%d%%" % roundi((sz() - 1.0) * 100.0) + (" · 피해 +%d%%" % roundi(0.04 * f * 100.0) if pattern in Pat.PROJECTILE else "")
+		"rapid":
+			return "공격 속도 +%d%%" % roundi(0.1 * f * 100.0)
+		"pierce":
+			if pattern in Pat.PROJECTILE:
+				return "%.2f개 더 뚫음" % f
+			return "피해 +%d%%" % roundi(0.06 * f * 100.0)
+	return ""
 
 
 func add_link(id: String) -> String:
@@ -2041,8 +2070,16 @@ func preview(card: Dictionary) -> Array:
 		"mod":
 			var id: String = card["id"]
 			sp["mods"][id] = m(id) + 1
-			out.append("%s %d → %d" % [Pat.MODS[id]["name"], m(id), m(id) + 1] + (" (최대 %d)" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "") + ("  효과 x%.2f → x%.2f" % [mf(id), 2.0 * (1.0 - pow(0.5, m(id) + 1))] if Rules.mod_decay else ""))
-			out.append(Pat.MODS[id]["desc"])
+			out.append("%s %d → %d" % [Pat.MODS[id]["name"], m(id), m(id) + 1] + (" (최대 %d)" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "") + ("  효과 x%.2f → x%.2f" % [mf(id), 2.0 * (1.0 - pow(0.5, m(id) + 1))] if Rules.mod_decay else "") + ("  (이미 들어 있음, 겹쳐서 세짐)" if m(id) > 0 else ""))
+			var before := mod_effect(id) if m(id) > 0 else "없음"
+			mods[id] = m(id) + 1
+			var after := mod_effect(id)
+			mods[id] -= 1
+			if mods[id] == 0:
+				mods.erase(id)
+			out.append("%s → %s" % [before, after])
+			if m(id) == 0:
+				out.append(Pat.MODS[id]["desc"])
 		"link":
 			var id: String = card["id"]
 			var n := link_lv(id)
