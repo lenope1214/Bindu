@@ -2189,7 +2189,13 @@ func spawn_rock(t: Tower, l: int) -> void:
 	if t.rocks.size() >= 2 + roundi(t.mf("multi")):
 		return
 	var dist := 90.0 + 60.0 * t.rocks.size()
-	t.rocks.append(spawn_zone("rock", l, t.position + t.dir * dist * Tower.reach(l), t))
+	# 바위는 화면 가장자리에서 100 안쪽에만 선다: 가장자리에 서면 막힌 구체가 화면 끝에 붙어
+	# 다른 오브젝트가 닿지 않는 곳에서 버티고 웨이브가 끝나지 않던 것 (폭풍 맵 66웨이브에서 4분 넘게)
+	var inner := get_viewport_rect().grow(-100.0)
+	var p := (t.position + t.dir * dist * Tower.reach(l)).clamp(inner.position, inner.end)
+	if t.rocks.any(func(r): return r.position.distance_to(p) < 40.0):
+		return  # 가장자리에 밀려 같은 자리에 겹치는 바위는 세우지 않는다
+	t.rocks.append(spawn_zone("rock", l, p, t))
 
 
 ## 연쇄 번개 표시 (맨 위 층).

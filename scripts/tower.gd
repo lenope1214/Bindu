@@ -1112,8 +1112,9 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 				_r_band(ci, o, dd, 0.0, far, 14.0 * s, c)
 			"wall":
 				if i == 0:
+					var inner := ci.get_viewport_rect().grow(-100.0)  # main.spawn_rock처럼 가장자리 안쪽
 					for k in 2 + md.get("multi", 0):
-						_r_circle(ci, o + d * (90.0 + 60.0 * k) * reach(l), 28.0 * s, c)
+						_r_circle(ci, (o + d * (90.0 + 60.0 * k) * reach(l)).clamp(inner.position, inner.end), 28.0 * s, c)
 			"vortex":
 				_r_circle(ci, o + dd * 170.0 * reach(l), (90.0 + 10.0 * (l - 1)) * s, c)
 			"lob":
