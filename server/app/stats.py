@@ -7,6 +7,7 @@ from datetime import timedelta
 from sqlalchemy import and_, case, distinct, func, select
 from sqlalchemy.orm import Session
 
+from . import config
 from .db import Final, Pick, Run, SrcShare, now
 
 ELEM_IDS = ["fire", "wood", "water", "electric", "wind", "ice", "earth", "dark", "light", "poison", "metal", "sound", "time", "soul"]
@@ -46,6 +47,10 @@ class Filter:
     days: int = 0
     valid_only: bool = True
     ended_only: bool = False  # 진행 중 판(5웨이브마다 온 기록)은 빼고
+    min_wave: int = -1  # 밸런스 통계에 넣을 최소 도달 웨이브. -1이면 config.STATS_MIN_WAVE
+
+    def cut(self) -> int:
+        return config.STATS_MIN_WAVE if self.min_wave < 0 else self.min_wave
 
     def conds(self):
         c = []
@@ -67,8 +72,11 @@ class Filter:
 
 
 def summary(db: Session, f: Filter) -> dict:
-    conds = f.conds()
-    where = and_(*conds) if conds else True
+    base = f.conds()
+    cut = f.cut()
+    every = and_(*base) if base else True
+    # 밸런스 통계는 cut 웨이브 이상 간 판만, 그 아래는 이탈 통계로만
+    where = and_(*base, Run.wave >= cut)
     runs = db.execute(select(func.count(Run.id), func.avg(Run.wave), func.max(Run.wave), func.avg(Run.score)).where(where)).one()
 
     # 선택지: 나온 횟수, 고른 횟수, 고른 판들의 평균 도달 웨이브
@@ -112,15 +120,24 @@ def summary(db: Session, f: Filter) -> dict:
     by_rules = [{"rules": r, "runs": n, "avg_wave": round(float(w or 0), 2), "max_wave": mx}
                 for r, n, w, mx in db.execute(select(Run.rules, func.count(Run.id), func.avg(Run.wave), func.max(Run.wave))
                                               .where(where).group_by(Run.rules).order_by(Run.rules)).all()]
+    # 웨이브 분포는 이탈까지 보려고 모든 판
     waves = [{"wave": w, "runs": n} for w, n in db.execute(
-        select(Run.wave, func.count(Run.id)).where(where).group_by(Run.wave).order_by(Run.wave)).all()]
+        select(Run.wave, func.count(Run.id)).where(every).group_by(Run.wave).order_by(Run.wave)).all()]
+    total = sum(w["runs"] for w in waves)
+    early = [w for w in waves if w["wave"] < cut]
+    n_early = sum(w["runs"] for w in early)
+    dropout = {"min_wave": cut, "runs_all": total, "runs": n_early, "rate": round(n_early / total, 4) if total else 0.0,
+               "players": db.scalar(select(func.count(distinct(Run.device_id))).where(every, Run.wave < cut)) or 0,
+               "waves": [{**w, "rate": round(w["runs"] / n_early, 4)} for w in early]}
     return {"runs": n_runs, "avg_wave": round(float(runs[1] or 0), 2), "max_wave": runs[2] or 0,
             "avg_score": round(float(runs[3] or 0), 1), "by_rules": by_rules, "waves": waves, "picks": picks, "finals": finals,
-            "src_runs": n_src, "srcs": srcs}
+            "src_runs": n_src, "srcs": srcs, "dropout": dropout}
 
 
 def to_csv(data: dict, kind: str) -> str:
-    rows = data.get(kind if kind in ("picks", "finals", "srcs", "by_rules", "waves") else "picks", [])
+    if kind == "dropout":
+        data = {"dropout": data["dropout"]["waves"]}
+    rows = data.get(kind if kind in ("picks", "finals", "srcs", "by_rules", "waves", "dropout") else "picks", [])
     buf = io.StringIO()
     buf.write("﻿")  # 엑셀에서 한글이 깨지지 않게
     if rows:

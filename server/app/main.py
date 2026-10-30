@@ -473,14 +473,14 @@ def ban(body: BanIn, db: Session = Depends(get_db)):
 
 @app.get("/admin/api/stats", dependencies=[Depends(require_admin)])
 def get_stats(rules: int = 0, map: str = "", game: str = "", patch: int = -1, days: int = 0, valid_only: bool = True,
-              ended_only: bool = False, db: Session = Depends(get_db)):
-    return stats.summary(db, stats.Filter(rules, map, game, patch, days, valid_only, ended_only))
+              ended_only: bool = False, min_wave: int = -1, db: Session = Depends(get_db)):
+    return stats.summary(db, stats.Filter(rules, map, game, patch, days, valid_only, ended_only, min_wave))
 
 
 @app.get("/admin/api/stats.csv", dependencies=[Depends(require_admin)], response_class=PlainTextResponse)
 def get_stats_csv(kind: str = "picks", rules: int = 0, map: str = "", game: str = "", patch: int = -1, days: int = 0,
-                  valid_only: bool = True, ended_only: bool = False, db: Session = Depends(get_db)):
-    data = stats.summary(db, stats.Filter(rules, map, game, patch, days, valid_only, ended_only))
+                  valid_only: bool = True, ended_only: bool = False, min_wave: int = -1, db: Session = Depends(get_db)):
+    data = stats.summary(db, stats.Filter(rules, map, game, patch, days, valid_only, ended_only, min_wave))
     return PlainTextResponse(stats.to_csv(data, kind), media_type="text/csv; charset=utf-8",
                              headers={"Content-Disposition": f'attachment; filename="bindu_{kind}.csv"'})
 

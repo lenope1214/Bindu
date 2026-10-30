@@ -59,12 +59,15 @@
     <select id="f-days"><option value="0">기간 전체</option><option value="1">1일</option><option value="7">7일</option><option value="30">30일</option></select>
     <label class="dim"><input type="checkbox" id="f-all"> 검증 실패 포함</label>
     <label class="dim" title="5웨이브마다 온 진행 중 기록은 빼고"><input type="checkbox" id="f-ended"> 끝난 판만</label>
+    <input id="f-minw" placeholder="최소 웨이브 (빈칸: 서버 기본)" size="20" title="이 웨이브에 못 미친 판은 아래 밸런스 표에서 빼고 이탈 통계로만">
     <button class="act" id="load-stats">불러오기</button>
     <button class="sub" data-csv="picks">선택 CSV</button>
     <button class="sub" data-csv="finals">구성 CSV</button>
     <button class="sub" data-csv="srcs">피해 출처 CSV</button>
+    <button class="sub" data-csv="dropout">이탈 CSV</button>
   </div>
   <div class="cards" id="summary"></div>
+  <p class="dim" id="cut-note"></p>
   <h2>특성 선택률</h2><div class="tbl" id="t-perk"></div>
   <h2>카드 선택률 (속성·공격방식·강화·연계)</h2><div class="tbl" id="t-card"></div>
   <h2>마지막 구성 (판이 끝났을 때 들어 있던 것)</h2><div class="tbl" id="t-final"></div>
@@ -73,7 +76,8 @@
   <div class="tbl" id="t-src"></div>
   <h2>규칙 버전별</h2><div class="tbl" id="t-rules"></div>
   <h2>모드별 (모드를 여러 개 켠 판은 각 모드에 한 번씩)</h2><div class="tbl" id="t-modes"></div>
-  <h2>도달 웨이브 분포</h2><div class="tbl" id="t-waves"></div>
+  <h2>이탈 (최소 웨이브 전에 끝난 판, 밸런스 표에는 없음)</h2><div class="cards" id="drop-sum"></div><div class="tbl" id="t-drop"></div>
+  <h2>도달 웨이브 분포 (모든 판)</h2><div class="tbl" id="t-waves"></div>
 </section>
 
 <section id="patch">
@@ -185,6 +189,7 @@ function table(el, rows, cols) {
 }
 function query() {
   const q = new URLSearchParams({rules: $("f-rules").value, map: $("f-map").value, game: $("f-game").value.trim(), days: $("f-days").value, valid_only: !$("f-all").checked, ended_only: $("f-ended").checked});
+  const mw = $("f-minw").value.trim(); if (mw !== "") q.set("min_wave", mw);
   const p = $("f-patch").value.trim(); if (p !== "") q.set("patch", p);
   return q.toString();
 }
@@ -199,6 +204,11 @@ $("load-stats").onclick = async () => {
   table($("t-src"), d.srcs || [], [["이름", (r, raw) => raw ? r.key : nm(r.key)], ["판", r => r.runs, 1], ["평균 몫 (모든 판)", (r, raw) => raw ? r.avg_share_all : pct(r.avg_share_all), 1], ["", r => r.avg_share_all, 0, r => r.avg_share_all * 4], ["있던 판의 평균 몫", (r, raw) => raw ? r.avg_share : pct(r.avg_share), 1], ["평균 웨이브", r => r.avg_wave, 1]]);
   table($("t-modes"), d.picks.filter(r => r.kind === "mode"), [["모드", (r, raw) => raw ? r.key : nm(r.key)], ["판", r => r.runs_picked, 1], ["평균 웨이브", r => r.avg_wave_picked, 1]]);
   table($("t-rules"), d.by_rules, [["규칙", r => r.rules, 1], ["판", r => r.runs, 1], ["평균 웨이브", r => r.avg_wave, 1], ["최고", r => r.max_wave, 1]]);
+  const dr = d.dropout || {min_wave: 0, runs_all: d.runs, runs: 0, rate: 0, players: 0, waves: []};
+  $("cut-note").textContent = `위 숫자와 아래 표(선택률·구성·피해 출처·규칙·모드)는 ${dr.min_wave}웨이브 이상 간 판만 (전체 ${dr.runs_all}판 중 ${d.runs}판).`;
+  $("drop-sum").innerHTML = [["이탈 판", dr.runs], ["전체 중 비율", pct(dr.rate)], ["이탈한 기기", dr.players]]
+    .map(([a, b]) => `<div class="card"><span>${a}</span><b>${b}</b></div>`).join("");
+  table($("t-drop"), dr.waves, [["끝난 웨이브", r => r.wave, 1], ["판", r => r.runs, 1], ["이탈 중 비율", (r, raw) => raw ? r.rate : pct(r.rate), 1], ["", r => r.rate, 0, r => r.rate]]);
   const mx = Math.max(1, ...d.waves.map(w => w.runs));
   table($("t-waves"), d.waves, [["웨이브", r => r.wave, 1], ["판", r => r.runs, 1], ["", r => r.runs, 0, r => r.runs / mx]]);
 };

@@ -212,3 +212,24 @@ def test_privacy_page():
         assert r.status_code == 200
         assert "개인정보처리방침" in r.text and "<li>" in r.text
         assert '<a href="https://github.com/lenope1214/bindu/issues">' in r.text
+
+
+def test_stats_min_wave():
+    # 최소 웨이브 전에 끝난 판은 밸런스 통계에서 빠지고 이탈 통계로만, 기록은 남는다
+    with TestClient(app) as c:
+        kw = dict(map="storm", game="0.5.9")
+        post_run(c, device="dev-mw-aaaa", wave=8, **kw)
+        post_run(c, device="dev-mw-bbbb", wave=2, score=200, **kw)
+        post_run(c, device="dev-mw-cccc", wave=0, score=0, **kw)
+        post_run(c, device="dev-mw-cccc", wave=2, score=210, **kw)
+        q = {"map": "storm", "game": "0.5.9"}
+        st = c.get("/admin/api/stats", params=q, headers=A).json()
+        assert st["runs"] == 1 and st["avg_wave"] == 8 and st["src_runs"] == 1
+        assert next(x for x in st["picks"] if x["key"] == "elem:fire")["offered"] == 1
+        assert sum(w["runs"] for w in st["waves"]) == 4
+        dr = st["dropout"]
+        assert dr["min_wave"] == 5 and dr["runs_all"] == 4 and dr["runs"] == 3 and dr["rate"] == 0.75 and dr["players"] == 2
+        assert [(w["wave"], w["runs"]) for w in dr["waves"]] == [(0, 1), (2, 2)]
+        assert c.get("/admin/api/stats", params={**q, "min_wave": 0}, headers=A).json()["runs"] == 4
+        assert "wave" in c.get("/admin/api/stats.csv", params={**q, "kind": "dropout"}, headers=A).text
+        assert len([x for x in c.get("/admin/runs", params={"limit": 500}, headers=A).json() if x["device"].startswith("dev-mw")]) == 4
