@@ -68,6 +68,7 @@ static func _add(kind: String, msg: String, file: String, line: int, fn: String,
 	var e: Variant = _seen.get(fp)
 	if e != null:
 		e["n"] += 1
+		e.merge(_ctx, true)  # 판 정보는 마지막으로 났을 때 것으로 (처음 것만 남으면 시작 화면의 웨이브 0으로 보인다)
 		if not _fresh.has(e):
 			_fresh.append(e)
 	elif _seen.size() < MAX_PER_SESSION:

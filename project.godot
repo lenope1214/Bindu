@@ -23,6 +23,10 @@ config/macos_native_icon="res://icons/icon_mac_1024.png"
 config/windows_native_icon="res://icons/icon.ico"
 config/quit_on_go_back=false
 
+[debug]
+
+settings/gdscript/always_track_call_stacks=true
+
 [display]
 
 window/size/viewport_width=1280
