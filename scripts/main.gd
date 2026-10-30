@@ -1676,6 +1676,12 @@ func _update_preview() -> void:
 		preview_full = false
 
 
+## 장면 다시 읽기. 한 프레임에 입력이 여럿 오면 두 번째는 current_scene이 이미 비어 오류가 난다.
+func _reload() -> void:
+	if is_inside_tree() and get_tree().current_scene != null:
+		get_tree().reload_current_scene()
+
+
 func _set_preview_full(on: bool) -> void:
 	preview_full = on and preview_more.text != ""
 
@@ -2050,14 +2056,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_ESCAPE and phase == Phase.GAMEOVER:
 			if Time.get_ticks_msec() - over_ms > 800:
 				title_seen = false
-				get_tree().reload_current_scene()
+				_reload()
 			return
 		if event.keycode == KEY_F11:
 			_toggle_fullscreen()
 		elif event.keycode == KEY_R and get_tree().paused:
 			if restart_armed > 0.0:
 				get_tree().paused = false
-				get_tree().reload_current_scene()
+				_reload()
 			else:
 				restart_armed = 2.0
 				paused_label.text = _pause_text() + "\nR을 한 번 더 누르면 처음부터"
@@ -2091,7 +2097,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_R and phase == Phase.GAMEOVER:
 			if Time.get_ticks_msec() - over_ms > 800:
 				title_seen = false
-				get_tree().reload_current_scene()
+				_reload()
 		elif event.keycode == KEY_M:
 			_toggle_mute()
 		elif event.keycode == KEY_SPACE and phase == Phase.READY:
@@ -2158,7 +2164,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if phase == Phase.GAMEOVER and event.button_index == MOUSE_BUTTON_LEFT:
 		if Time.get_ticks_msec() - over_ms > 800:
 			title_seen = false
-			get_tree().reload_current_scene()
+			_reload()
 		return
 	var mpos := get_global_mouse_position()
 	if perk_mode:
@@ -3750,7 +3756,7 @@ func _leave(quit_game: bool) -> void:
 		get_tree().quit()
 		return
 	title_seen = false
-	get_tree().reload_current_scene()
+	_reload()
 
 
 func _toggle_speed() -> void:
