@@ -17,6 +17,7 @@ var prism := 0
 var prism_flash := 0.0  # 탄이 지나간 순간 프리즘이 번쩍인다 (표시용)
 var pincer := 0  # 협공: 여러 오브젝트가 함께 맞힌 구체에 표식 폭발
 var reso := 0
+var wind_buff := 0.0  # 둘레 바람 오브젝트가 주는 공격 속도 (main이 매 계산마다 정함)
 var eff := {}  # 지금 쓰는 속성 (매 프레임 갱신)
 var dir := Vector2.RIGHT
 var aim := Vector2.RIGHT  # 유도 강화로 살짝 돈 실제 공격 방향
@@ -92,6 +93,15 @@ static var tax_step := 0.1
 ## 쌓기 대가: 속성 종류 하나 늘 때마다 공격 속도 감소 (기본 15%, 버전 3은 25%).
 func tax() -> float:
 	return 1.0 + tax_step * (order.size() - 1)
+
+
+## 바람 속성: 이 거리 안의 다른 오브젝트 공격 속도 +10%/바람 레벨. 한 오브젝트에는 가장 큰 바람 하나만.
+const WIND_RANGE := 240.0
+const WIND_BUFF := 0.10
+
+
+func wind_range() -> float:
+	return WIND_RANGE * reach_mul
 
 
 static func pw(l: int) -> float:
@@ -504,7 +514,7 @@ func attack(delta: float, orbs: Array) -> void:
 	recoil = maxf(recoil - delta * 6.0, 0.0)
 	_update_aim(orbs, delta)
 	# 속성을 많이 겹칠수록 공격이 느려진다(쌓기 대가), 속사 강화로 빨라진다
-	var de := delta * spd_mul * (1.0 + 0.1 * mf("rapid")) / tax()
+	var de := delta * spd_mul * (1.0 + 0.1 * mf("rapid")) * (1.0 + wind_buff) / tax()
 	var k := de * 3.0  # 지속 공격의 부가효과 세기
 	var l := plv
 	var s := sz()
@@ -1008,9 +1018,6 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		o.add_chill(0.6 * k * els.get(Elem.ICE, 0))
 	if els.has(Elem.WATER):
 		o.slow(0.8, 0.8)
-	if els.has(Elem.WIND):
-		# 중앙 반대쪽으로 밀어낸다
-		o.push((o.position - o.target).normalized() * 7.0 * els.get(Elem.WIND, 0) * k)
 	if els.has(Elem.EARTH) and randf() < minf(0.2 * els.get(Elem.EARTH, 0), 0.7) * k:
 		o.root(0.8)
 	if els.has(Elem.DARK):
@@ -1137,6 +1144,15 @@ func _draw_body() -> void:
 			var tip := Vector2.from_angle(a) * (RADIUS + 3.0)
 			var side := Vector2.from_angle(a).orthogonal() * 4.0
 			draw_colored_polygon(PackedVector2Array([tip, p + side, p - side]), Color(1.0, 0.55, 0.85, 0.85))
+	if lv(Elem.WIND) > 0:
+		# 바람: 공격 속도를 올려 주는 둘레
+		var sp := fmod(Time.get_ticks_msec() / 1000.0 * 0.5, 1.0)
+		draw_arc(Vector2.ZERO, wind_range(), sp * TAU, sp * TAU + TAU * 0.85, 48, Color(Elem.COLORS[Elem.WIND], 0.22), 1.5)
+	if wind_buff > 0.0:
+		# 바람 버프를 받는 중: 작은 바람 꼬리 둘
+		for i in 2:
+			var a := Time.get_ticks_msec() / 300.0 + PI * i
+			draw_arc(Vector2.ZERO, RADIUS + 7.0, a, a + 0.9, 8, Color(Elem.COLORS[Elem.WIND], 0.85), 2.0)
 	if reso > 0:
 		var pulse := fmod(Time.get_ticks_msec() / 1000.0, 1.0)
 		draw_arc(Vector2.ZERO, RADIUS + 4.0 + pulse * 14.0, 0, TAU, 32, Color(1, 0.85, 0.5, 0.6 * (1.0 - pulse)), 2.0)

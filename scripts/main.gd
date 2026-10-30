@@ -1329,6 +1329,18 @@ func _wrap_parts(text: String, sep: String, width: float, fs: int) -> String:
 
 
 ## 5웨이브마다: 특성 3개 중 1개.
+## 바람 속성 오브젝트 둘레의 다른 오브젝트 공격 속도를 정한다 (가장 큰 바람 하나만).
+func _wind_buffs() -> void:
+	var ts := towers.get_children()
+	var winds := ts.filter(func(w): return w.lv(Elem.WIND) > 0 and not w.is_queued_for_deletion())
+	for t in ts:
+		var b := 0.0
+		for w in winds:
+			if w != t and w.position.distance_to(t.position) < w.wind_range():
+				b = maxf(b, Tower.WIND_BUFF * w.lv(Elem.WIND))
+		t.wind_buff = b
+
+
 ## 속성 카드가 Lv2로 나올 확률 (행운 특성 포함).
 func _lv2_chance() -> float:
 	var lv2 := minf(Patch.num("cards", "lv2_base", 0.2) + Patch.num("cards", "lv2_wave", 0.02) * wave, Patch.num("cards", "lv2_max", 0.5))
@@ -4145,6 +4157,7 @@ func _resolve(delta: float) -> void:
 
 	_build_grid()
 	prism_towers = towers.get_children().filter(func(t): return t.prism > 0)
+	_wind_buffs()
 	if prof_on:
 		us = _prof_add("목록·격자", us)
 	# 오브젝트 공격
@@ -4445,6 +4458,9 @@ func _draw_tooltip() -> void:
 			total += o.dealt
 		var share := " · 전체의 %d%%" % roundi(t.dealt / total * 100.0) if total > 0.0 and towers.get_child_count() > 1 else ""
 		lines.append(["%s 피해 %d (초당 %.1f%s)" % ["이번 웨이브" if phase == Phase.WAVE else "지난 웨이브", roundi(t.dealt), t.dealt / wave_time, share], Color(1, 0.9, 0.5)])
+	_wind_buffs()  # 쉬는 시간에 새로 놓은 오브젝트도 바로 보이게
+	if t.wind_buff > 0.0:
+		lines.append(["바람 버프: 공격 속도 +%d%%" % roundi(t.wind_buff * 100.0), Elem.COLORS[Elem.WIND]])
 	if t.order.size() > 1:
 		lines.append(["속성을 겹친 대가: 공격 속도 -%d%%" % roundi((1.0 - 1.0 / t.tax()) * 100.0), Color(1, 0.6, 0.6)])
 	var rows: Array = []
