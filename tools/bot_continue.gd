@@ -94,6 +94,7 @@ func _process(_d):
 		print("W", main.wave, " core=", main.core_hp, " lanes=", main.lanes.map(func(a): return int(rad_to_deg(a))), " ", info)
 	main.auto_start = true
 	main.game_speed = float(OS.get_environment("SPEED")) if OS.get_environment("SPEED") != "" else 1.0
+	if main.phase == 7: main._cancel_step()  # 그린 궤적: 봇은 길을 못 그려 곧은 기본 길 그대로
 	if main.phase == 6: main._start_wave()
 	if main.perk_mode:
 		main._on_perk(main.perk_offer[randi() % 3])

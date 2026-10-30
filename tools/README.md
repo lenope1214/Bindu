@@ -18,6 +18,7 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 | `modes` | `modes [규칙=1] [판 수=32] [모드...]`: 모드마다 같은 시드로 모드 없는 판과 비교 (모드를 쉼표로 이으면 함께 켬). 봇에 모드를 켜려면 환경 변수 `MODES=rush,steel` | 모드별 웨이브 중간값·평균 차이와 점수 손익분기 배율 (`docs/modes.md`) |
 | `pat_dps.gd` | `godot --headless --fixed-fps 60 --path . -s tools/pat_dps.gd` (`PAT=lob,shot` `PLV=3` `ELEM=<번호>`): 공격방식마다 오브젝트 하나(속성 Lv1) 앞을 죽지 않는 무리가 30초 가로지를 때(cross)·정면으로 올 때(head) | 공격방식별 피해/초 |
 | `pat_kill.gd` | 같은 방법(`HP=15` `RATE=1`): 체력 HP 구체가 정면으로 60초 올 때(lane). spiral은 비껴 도는 길이 오브젝트 앞을 지나지 않는 경우가 많아 참고만 | 공격방식별 처치율 |
+| `path_test.gd` | `godot --headless --path . -s tools/path_test.gd`: 그린 궤적 넣기·그리기(꺾기·길이 제한)·길 따라 맞히기·레벨업 길이와 갈래·4개 상한·유도 차단·저장·대격변·등장 비율 | 항목별 ok/FAIL, 실패가 있으면 끝 코드 1 |
 | `perf` | 후반 부하(오브젝트 16개, 속성 3종·강화 10개씩, 구체 400개)를 1·4·8배속으로 600프레임씩 | 프레임 시간 평균·95%·최대, 화면 위 구체·탄·장판 수 |
 
 환경 변수: `SPEED`(배속, bots 4·long 8), `SMART`(기본 1: 사람처럼 중앙 가까이에서 길목 바깥쪽을 겨눠 배치, `SMART=0`은 예전 봇). `SKIP=n`: `SKIP_FROM`(기본 8)웨이브부터 웨이브 넘기기를 n개씩 쓰고, 멈추면 쌓인 것을 다 고른 뒤 다시 넘긴다.

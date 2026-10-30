@@ -38,6 +38,11 @@ var chase_v := Vector2.ZERO
 var chase_t := 0.0  # 이번 확인 구간에서 쫓은 시간
 var chase_d0 := 0.0  # 확인 구간 시작 때 거리
 var gave_up := {}  # 못 따라잡아 포기한 구체 id
+var route := PackedVector2Array()  # 그린 궤적: 따라갈 길 (전역 좌표)
+var route_on := false  # 길 위를 가는 중 (튕기면 길을 벗어나 곧게)
+var route_seg := 0  # 지금 지나는 선분
+var route_acc := 0.0  # 그 선분 시작까지의 거리
+var route_speed := 440.0
 
 
 func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
@@ -53,6 +58,8 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 	match k:
 		"shot":
 			speed = 440.0; dmg = 2.4 * p; radius = 6.0; max_travel = Tower.shot_range(tower.total_level(), tower.mf("size"))
+		"path":
+			speed = 440.0; dmg = 2.4 * p; radius = 6.0
 		"blob":
 			speed = 260.0; lob = true; max_travel = Tower.LOB_RANGE * Tower.reach(l)
 			homing = tower.mf("homing")  # 휜 길 그대로 장판이 깔린다
@@ -95,12 +102,24 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 		zone.add_pt(position)
 
 
-## 공격방식 탄으로 표시하고 바람 형태 성질(멀리)을 붙인다.
+## 그린 궤적: 이 길을 따라가고 길 끝에서 사라진다.
+func set_route(g: PackedVector2Array) -> void:
+	route = g
+	route_on = g.size() >= 2
+	route_seg = 0
+	route_acc = 0.0
+	route_speed = vel.length()
+	max_travel = Tower.poly_len(g)
+	position = g[0]
+
+
+## 공격방식 탄으로 표시하고 바람 형태 성질(멀리)을 붙인다. 그린 궤적은 길이가 정해져 있어 빨라지기만 한다.
 func form_init() -> void:
 	form = true
 	var w := 1.0 + 0.12 * owner_tower.tk(Elem.WIND)
 	vel *= w
-	if max_travel < 2000.0:
+	route_speed *= w
+	if max_travel < 2000.0 and not route_on:
 		max_travel *= w
 
 
@@ -121,8 +140,11 @@ func step(delta: float) -> void:
 		_seek(delta)
 	elif homing > 0 and is_instance_valid(owner_tower):
 		_steer(delta)
-	position += vel * delta
-	travel += vel.length() * delta
+	if route_on:
+		_follow_route(delta)
+	else:
+		position += vel * delta
+		travel += vel.length() * delta
 	if zone and is_instance_valid(zone):
 		seg_acc += vel.length() * delta
 		if seg_acc >= zone.radius * 0.8:
@@ -141,6 +163,21 @@ func step(delta: float) -> void:
 	if kind == "storm":
 		_strike(delta)
 	queue_redraw()
+
+
+## 그린 길을 따라 route_speed만큼 간다. vel은 이번 조각에 실제로 움직인 만큼 (main의 충돌 판정이 쓴다).
+func _follow_route(delta: float) -> void:
+	travel = minf(travel + route_speed * delta, max_travel)
+	while route_seg < route.size() - 2 and route_acc + route[route_seg].distance_to(route[route_seg + 1]) < travel:
+		route_acc += route[route_seg].distance_to(route[route_seg + 1])
+		route_seg += 1
+	var a := route[route_seg]
+	var b := route[route_seg + 1]
+	var sl := a.distance_to(b)
+	var np := a.lerp(b, clampf((travel - route_acc) / sl, 0.0, 1.0) if sl > 0.0 else 1.0)
+	if delta > 0.0 and np != position:
+		vel = (np - position) / delta
+	position = np
 
 
 ## 뇌우: 구름 아래(radius 안) 구체 하나에 0.35초마다 낙뢰.
@@ -370,6 +407,11 @@ func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 		if best:
 			bounces -= 1
 			dmg *= 0.4  # 튕긴 탄은 피해 40%
+			if route_on:
+				# 그린 궤적은 튕기면 길을 벗어나 곧게 날아간다
+				route_on = false
+				vel = vel.normalized() * route_speed
+				max_travel = 400.0
 			vel = (best.position - position).normalized() * vel.length()
 			travel = 0.0
 			return false
@@ -405,7 +447,7 @@ func _draw() -> void:
 		"shard", "frag":
 			var s := radius * 1.4
 			draw_colored_polygon(PackedVector2Array([d * s, n * s * 0.5, -d * s, -n * s * 0.5]), col.lightened(0.3))
-		"shot":
+		"shot", "path":
 			var fade := clampf((max_travel - travel) / 40.0, 0.0, 1.0)  # 사거리 끝에서 흐려짐
 			draw_circle(Vector2.ZERO, radius, Color(col, col.a * fade))
 			draw_circle(-d * radius * 0.3, radius * 0.45, Color(1, 1, 1, 0.7 * fade))
@@ -464,7 +506,7 @@ func _draw() -> void:
 
 func _trail_color() -> Color:
 	match kind:
-		"shot", "thorn", "shard", "frag", "iron", "blob", "wisp": return col
+		"shot", "path", "thorn", "shard", "frag", "iron", "blob", "wisp": return col
 		"ghost": return Elem.COLORS[Elem.SOUL]
 		"glob": return Elem.COLORS[Elem.POISON]
 	return Color.WHITE

@@ -1,7 +1,7 @@
 extends Node2D
 ## 게임 진행: 웨이브, 오브젝트 선택·설치, 충돌, 점수.
 
-enum Phase { CHOOSE, PLACE, AIM, WAVE, GAMEOVER, MOVE, READY }
+enum Phase { CHOOSE, PLACE, AIM, WAVE, GAMEOVER, MOVE, READY, DRAW }
 
 const CORE_RADIUS := 14.0
 const LINE_INSET := 90.0  # 회랑 맵: 문(중앙 점)이 화면 끝에서 떨어진 거리
@@ -53,6 +53,17 @@ var hide_btn: Button
 var move_orig_pos := Vector2.ZERO
 var move_orig_dir := Vector2.RIGHT
 var move_return := Phase.CHOOSE  # 옮기기를 끝내면 돌아갈 단계
+# 그린 궤적 그리기 (Phase.DRAW)
+var draw_t: Tower = null
+var draw_queue: Array = []  # 그릴 갈래 번호들 (앞에서부터)
+var draw_after := false  # 카드로 들어왔으면 다 그린 뒤 _after_place
+var draw_pts := PackedVector2Array()  # 지금 그리는 길 (전역, 첫 점 = 오브젝트)
+var draw_on := false  # 누른 채 그리는 중
+var draw_len := 0.0
+var draw_bends := 0
+var draw_bend_pts := PackedVector2Array()
+var draw_stop := ""  # 더 그릴 수 없는 까닭 (길이·꺾기를 다 씀)
+var draw_skip := 0  # 방금 꺾임으로 센 뒤 다시 세지 않을 조각 수
 var auto_start := false  # 끄면 설치 후 Space로 웨이브 시작
 var auto_btn: Button
 var start_btn: Button
@@ -1346,6 +1357,11 @@ func _card_key(card: Dictionary) -> String:
 ## 선택지 한 장: 속성 / 공격방식 / 강화 / 연계 중 하나.
 func _roll_card() -> Dictionary:
 	var n := towers.get_child_count()
+	if n > 0 and wave > 0 and _card_open("pat") and _path_takers():
+		# 그린 궤적: 카드당 0.7%, 이 판에 궤적이 있으면 1.2% (여러 번 나와야 쓸모 있는 공격)
+		var has := towers.get_children().any(func(t): return t.pattern == "path")
+		if randf() < (Patch.num("cards", "path_again", Pat.PATH_CHANCE_AGAIN) if has else Patch.num("cards", "path", Pat.PATH_CHANCE)):
+			return {"type": "pat", "id": "path"}
 	var cata := Patch.num("cards", "cata", 0.01)
 	if n > 0 and wave > 0 and _card_open("cata"):
 		# 대격변: 각각 1%
@@ -1370,6 +1386,11 @@ func _roll_card() -> Dictionary:
 	return {"type": "link", "id": ids.pick_random()}
 
 
+## 그린 궤적 카드를 넣을 오브젝트가 있는지 (궤적 레벨업, 또는 4개 미만일 때 직선탄).
+func _path_takers() -> bool:
+	return towers.get_children().any(func(t): return t.can_pattern("path"))
+
+
 func _card_color(card: Dictionary) -> Color:
 	match card["type"]:
 		"elem": return Elem.COLORS[card["e"]]
@@ -1390,6 +1411,13 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 	sb.set_corner_radius_all(6)
 	var sbh := sb.duplicate()
 	sbh.bg_color = Color(0.16, 0.17, 0.22, 0.98)
+	if card["type"] == "pat" and card["id"] == "path":
+		sb.bg_color = Color(0.2, 0.16, 0.05, 0.97)
+		sb.set_border_width_all(4)
+		sb.border_color = col
+		sbh.bg_color = Color(0.3, 0.24, 0.08, 0.98)
+		sbh.set_border_width_all(4)
+		sbh.border_color = col.lightened(0.3)
 	if card["type"] == "cata":
 		sb.bg_color = Color(0.2, 0.06, 0.2, 0.97)
 		sb.set_border_width_all(4)
@@ -1416,7 +1444,10 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 				b.text += "\n" + "\n".join(combos.slice(0, 2))
 		"pat":
 			var id: String = card["id"]
-			b.text = "[%d] 공격방식: %s\n%s" % [idx, Pat.pname(id), Pat.PATTERNS[id]["desc"]]
+			if id == "path":
+				b.text = "[%d] ★ 공격방식: 그린 궤적 (시험) ★\n탄이 직접 그린 길을 따라간다\n길이 400→500→600, 그 뒤 갈래 +1\n꺾기 %d번 · 오브젝트 %d개까지\n(희귀, 유도 못 넣음)" % [idx, Pat.PATH_BENDS, Pat.PATH_MAX]
+			else:
+				b.text = "[%d] 공격방식: %s\n%s" % [idx, Pat.pname(id), Pat.PATTERNS[id]["desc"]]
 			foot = [["place_on", "직선탄에: 고정 · 같은 것에: Lv+"]]
 			var fits := PackedStringArray()
 			for t in towers.get_children():
@@ -2508,11 +2539,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_speed()
 		elif event.keycode == KEY_SPACE and phase == Phase.CHOOSE:
 			_show_toast(("특성을" if perk_mode else "선택지를") + " 먼저 고르세요 (1·2·3 또는 클릭)")
-		elif event.keycode == KEY_ESCAPE and (phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] or press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
+		elif event.keycode == KEY_ESCAPE and (phase in [Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.DRAW] or press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
 			_cancel_step()
 		elif event.keycode == KEY_P or event.keycode == KEY_ESCAPE:
 			_toggle_pause()
 	if get_tree().paused:
+		return
+	if phase == Phase.DRAW:
+		_draw_input(event)
 		return
 	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_RIGHT and aim_right:
 		aim_right = false
@@ -2547,7 +2581,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		var rt := _tower_at(get_global_mouse_position())
 		if rt:
 			_start_move(rt)
-			aim_right = true
+			aim_right = phase == Phase.AIM
 			return
 	if notes_panel.visible:
 		_close_notes()
@@ -3958,7 +3992,7 @@ func _valid_card(cd: Variant) -> bool:
 		return false
 	match cd.get("type"):
 		"elem": return cd.get("e") in Elem.ALL and cd.get("lv") is int
-		"pat": return cd.get("id") in Pat.PATTERN_IDS
+		"pat": return cd.get("id") in Pat.ALL_IDS
 		"mod": return Pat.MODS.has(cd.get("id"))
 		"link": return Pat.LINKS.has(cd.get("id"))
 		"cata": return cd.get("id") in ["elem", "pat"]
@@ -4127,7 +4161,23 @@ func _apply_card(target: Tower) -> void:
 			if not target.can_take(picked):
 				_show_toast(target.refuse_text(picked))
 				return
+			var was: String = target.pattern
 			msg = target.set_pattern(picked["id"])
+			if picked["id"] == "path":
+				# 처음 넣거나 길이가 늘면 길을 다시 그리고, 갈래가 늘면 새 갈래를 그린다
+				var q: Array = []
+				if was != "path" or Pat.path_len(target.plv) > Pat.path_len(target.plv - 1):
+					q = [0]
+				else:
+					var nb := target.add_branch()
+					if nb >= 0:
+						q = [nb]
+				if not q.is_empty():
+					_show_toast(msg)
+					sfx.play("place")
+					burst(target.position, _card_color(picked), 16, 160.0)
+					_start_draw(target, q, true)
+					return
 		"mod":
 			if not target.can_take(picked):
 				_show_toast(target.refuse_text(picked))
@@ -4143,6 +4193,9 @@ func _apply_card(target: Tower) -> void:
 
 ## 우클릭·Esc: 방향 고르기 → 위치 고르기 → 오브젝트 고르기 순으로 한 단계 되돌린다.
 func _cancel_step() -> void:
+	if phase == Phase.DRAW:
+		_draw_next()  # 이 갈래는 그대로 두고 다음으로
+		return
 	if press_t:
 		_drop_press()
 		_restore_hint()
@@ -4189,6 +4242,9 @@ func _end_move() -> void:
 ## 쉬는 시간에 설치된 오브젝트를 클릭(또는 우클릭한 채 끌기)하면 그 자리에서 방향을 다시 정한다.
 ## 옮기기는 끌기·꾹 누르기로 따로 한다 (예전엔 클릭 → 새 자리 → 방향, 방향만 바꿀 때도 제자리를 다시 눌러야 했다).
 func _start_move(t: Tower) -> void:
+	if t.pattern == "path":
+		_start_draw(t, range(t.paths.size()), false)  # 그린 궤적은 방향 대신 길을 다시 그린다
+		return
 	move_return = phase
 	start_btn.visible = false
 	moving = t
@@ -4203,6 +4259,167 @@ func _start_move(t: Tower) -> void:
 		hint.text = "쏠 쪽을 누르거나 끌어서 놓기: 방향 확정   취소: 그대로 두기"
 	else:
 		hint.text = "클릭 또는 끌어서 놓기: 방향 확정 (Shift: 15도 단위)   오브젝트 우클릭한 채 끌기로도 바로 됨\n우클릭/Esc: 그대로 두기"
+
+
+## 그린 궤적 길 그리기. q: 그릴 갈래 번호들, after: 카드로 들어왔으면 다 그린 뒤 고르기를 마친다.
+func _start_draw(t: Tower, q: Array, after: bool) -> void:
+	if not after:
+		move_return = phase
+	draw_t = t
+	draw_queue = q.duplicate()
+	draw_after = after
+	phase = Phase.DRAW
+	selected.clear()
+	choice_box.visible = false
+	reroll_btn.visible = false
+	start_btn.visible = false
+	_draw_begin_branch()
+
+
+func _draw_begin_branch() -> void:
+	draw_on = false
+	draw_pts = PackedVector2Array()
+	draw_len = 0.0
+	draw_bends = 0
+	draw_bend_pts = PackedVector2Array()
+	draw_stop = ""
+	draw_skip = 0
+	var n := Pat.path_branches(draw_t.plv)
+	var head := "그린 궤적%s: " % (" 갈래 %d/%d" % [draw_queue[0] + 1, n] if n > 1 else "")
+	if touch_ui:
+		hint.text = head + "누른 채 끌어서 길 그리기 (오브젝트에서 시작, 길이 %d, 꺾기 %d번)\n취소: 이 길은 그대로" % [roundi(Pat.path_len(draw_t.plv)), Pat.PATH_BENDS]
+	else:
+		hint.text = head + "누른 채 끌어서 길 그리기 (오브젝트에서 시작, 길이 %d, 45도 넘게 꺾기 %d번)\n우클릭/Esc: 이 길은 그대로" % [roundi(Pat.path_len(draw_t.plv)), Pat.PATH_BENDS]
+
+
+func _draw_input(event: InputEvent) -> void:
+	if not event is InputEventMouseButton:
+		return
+	if event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_draw_begin_branch()
+			draw_on = true
+			draw_pts.append(draw_t.position)
+		elif draw_on:
+			draw_on = false
+			_draw_commit()
+	elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+		_cancel_step()
+
+
+## 누른 채 끄는 동안: 마우스 쪽으로 DRAW_STEP마다 점을 잇는다 (길이·꺾기 수를 넘으면 멈춤).
+const DRAW_STEP := 16.0
+const DRAW_MIN := 48.0  # 이보다 짧으면 그리지 않은 것으로
+
+
+func _update_draw() -> void:
+	if phase != Phase.DRAW or not draw_on:
+		return
+	if not is_instance_valid(draw_t):
+		_draw_done()
+		return
+	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		draw_on = false  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
+		_draw_commit()
+		return
+	_draw_extend(get_global_mouse_position().clamp(field_rect().position, field_rect().end))
+
+
+func _draw_extend(p: Vector2) -> void:
+	var L := Pat.path_len(draw_t.plv)
+	while draw_stop == "" and draw_pts[draw_pts.size() - 1].distance_to(p) >= DRAW_STEP:
+		var last := draw_pts[draw_pts.size() - 1]
+		var room := L - draw_len
+		if room < 1.0:
+			draw_stop = "길이를 다 썼어요"
+			break
+		var nxt := last + (p - last).normalized() * minf(DRAW_STEP, room)
+		var n := draw_pts.size()
+		# 세 조각 전 방향과 45도 넘게 다르면 꺾임 하나 (완만한 곡선은 세지 않음)
+		if n >= 4 and draw_skip <= 0:
+			var ref := draw_pts[n - 3] - draw_pts[n - 4]
+			if absf(ref.angle_to(nxt - last)) > Pat.PATH_BEND_ANGLE:
+				if draw_bends >= Pat.PATH_BENDS:
+					draw_stop = "꺾기를 다 썼어요"
+					break
+				draw_bends += 1
+				draw_bend_pts.append(last)
+				draw_skip = 3
+		draw_skip -= 1
+		draw_len += last.distance_to(nxt)
+		draw_pts.append(nxt)
+
+
+## 다 그린 길을 오브젝트에 넣는다 (짧으면 다시 그리게 한다).
+func _draw_commit() -> void:
+	if draw_len < DRAW_MIN:
+		draw_pts = PackedVector2Array()
+		_show_toast("조금 더 길게 그려 주세요")
+		return
+	var t := draw_t
+	var br: int = draw_queue[0]
+	var loc := PackedVector2Array()
+	for q in draw_pts:
+		loc.append(q - t.position)
+	while t.paths.size() <= br:
+		t.paths.append(t.straight_path(t.dir))
+	t.paths[br] = loc
+	if br == 0:
+		t.dir = (loc[1] - loc[0]).normalized()
+		t.aim = t.dir
+	t.place_pop = 1.0
+	t.queue_redraw()
+	sfx.play("place")
+	_draw_next()
+
+
+func _draw_next() -> void:
+	draw_on = false
+	if not draw_queue.is_empty():
+		draw_queue.pop_front()
+	if draw_queue.is_empty() or not is_instance_valid(draw_t):
+		_draw_done()
+	else:
+		_draw_begin_branch()
+
+
+func _draw_done() -> void:
+	draw_t = null
+	draw_pts = PackedVector2Array()
+	if draw_after:
+		draw_after = false
+		_after_place()
+	elif move_return == Phase.READY:
+		_enter_ready()
+	else:
+		_back_to_choose()
+
+
+## 그리는 중인 길과 남은 길이·꺾기 (터치면 손가락에 가리지 않게 위쪽에 글).
+func _draw_path_edit() -> void:
+	var t := draw_t
+	var c := t.color()
+	var br: int = draw_queue[0] if not draw_queue.is_empty() else 0
+	var L := Pat.path_len(t.plv)
+	draw_arc(t.position, L, 0, TAU, 96, Color(c, 0.12), 1.0)  # 곧게 그리면 닿는 곳
+	for i in t.paths.size():
+		var g := PackedVector2Array()
+		for q in t.paths[i]:
+			g.append(t.position + q)
+		if g.size() >= 2:
+			draw_polyline(g, Color(c, 0.2 if i == br else 0.4), 2.0)
+	if draw_pts.size() >= 2:
+		draw_polyline(draw_pts, Color(c.lightened(0.3), 0.95), 3.0)
+	for q in draw_bend_pts:
+		draw_arc(q, 6.0, 0, TAU, 16, Color(1, 0.8, 0.4, 0.9), 2.0)
+	var tip := draw_pts[draw_pts.size() - 1] if not draw_pts.is_empty() else get_global_mouse_position()
+	var txt := "남은 길이 %d · 꺾기 %d/%d" % [roundi(maxf(L - draw_len, 0.0)), draw_bends, Pat.PATH_BENDS]
+	if draw_stop != "":
+		txt += " · " + draw_stop
+	var at := tip + (Vector2(-70, -70) if touch_ui else Vector2(14, -14))
+	at = at.clamp(Vector2(4, 20), get_viewport_rect().size - Vector2(240, 8))
+	draw_string(ui_font, at + Vector2(1, 1), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color.BLACK)
+	draw_string(ui_font, at, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1, 0.6, 0.5) if draw_stop != "" else Color(1, 0.95, 0.75))
 
 
 func _toggle_pause() -> void:
@@ -4644,11 +4861,12 @@ func _process(delta: float) -> void:
 	if phase == Phase.MOVE and moving:
 		moving.position = get_global_mouse_position().clamp(field_rect().position, field_rect().end)
 	_update_press()
+	_update_draw()
 	if boxing and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_finish_box()  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
 	hide_btn.visible = phase == Phase.CHOOSE and not title_label.visible
 	_update_skip_ui()
-	cancel_btn.visible = phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] and not title_label.visible and not get_tree().paused
+	cancel_btn.visible = phase in [Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.DRAW] and not title_label.visible and not get_tree().paused
 	hide_btn.text = ("▲ 선택지 보기" if cards_hidden else "▼ 필드 보기") + " (V)"
 	hide_btn.tooltip_text = "선택지를 다시 올린다" if cards_hidden else "선택지를 내리고 카드에 가려진 필드를 본다"
 	if speed_btn.visible:
@@ -5200,7 +5418,7 @@ func _draw_tooltip() -> void:
 	tip_orb = null
 	# 터치는 마우스를 올려 둘 수 없으니, 눌러서 옮기기 시작한 오브젝트의 정보를 보여 준다
 	var touch_move := phase == Phase.MOVE and touch_ui and moving != null
-	if (phase in [Phase.PLACE, Phase.GAMEOVER, Phase.MOVE, Phase.AIM] and not touch_move) or title_label.visible or dragging or boxing:
+	if (phase in [Phase.PLACE, Phase.GAMEOVER, Phase.MOVE, Phase.AIM, Phase.DRAW] and not touch_move) or title_label.visible or dragging or boxing:
 		return
 	if dps_panel.visible and dps_panel.get_global_rect().has_point(dps_panel.get_global_mouse_position()):
 		return  # DPS 표 위: 표 뒤에 가린 오브젝트 정보창이 뜨지 않게
@@ -5761,6 +5979,8 @@ func _draw() -> void:
 				moving.dir = d
 				moving.queue_redraw()
 			draw_line(place_pos, place_pos + d * (Tower.RADIUS + 14.0), Color.WHITE, 3.0)
+	elif phase == Phase.DRAW and is_instance_valid(draw_t):
+		_draw_path_edit()
 	# 마우스를 올린 오브젝트의 공격 범위
 	if phase == Phase.MOVE and moving:
 		Tower.draw_range(self, mpos, moving.dir, moving.spec())
