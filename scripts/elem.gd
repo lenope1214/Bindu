@@ -55,36 +55,36 @@ const FORM := {
 
 ## 부가효과: 같은 오브젝트의 모든 공격에 붙는다
 const RIDER := {
-	FIRE: "화상 지속 피해",
-	WOOD: "가시 박힘: 피해 20% 증가",
-	WATER: "감속",
+	FIRE: "화상: 한동안 계속 피해",
+	WOOD: "가시 박힘: 받는 피해 +20% (레벨마다)",
+	WATER: "감속 (느려짐)",
 	ELECTRIC: "주변 구체로 튀는 전류 (확률 30%)",
 	WIND: "중앙 반대쪽으로 밀어내기",
-	ICE: "냉기 누적 시 빙결",
-	EARTH: "기절 (확률 20%씩)",
+	ICE: "냉기가 쌓이면 빙결 (잠깐 멈춤)",
+	EARTH: "기절 (레벨마다 확률 +20%, 최대 70%)",
 	DARK: "2초간 받는 피해 +30%",
-	LIGHT: "치명타 2배 (확률 12%씩)",
+	LIGHT: "치명타: 피해 2배 (레벨마다 확률 +12%, 최대 60%)",
 	POISON: "중독 (죽으면 주변에 전염)",
 	METAL: "추가 피해 + 넉백",
 }
 
 const REACTIONS := [
 	{"id": "burning", "a": FIRE, "b": WOOD, "name": "장작 장판", "desc": "장작 투척, 불타는 장판", "color": Color(1.0, 0.62, 0.1)},
-	{"id": "steam", "a": FIRE, "b": WATER, "name": "증기", "desc": "물길 위 증기가 띠 전체를 감속·약화", "color": Color(0.85, 0.88, 0.94)},
+	{"id": "steam", "a": FIRE, "b": WATER, "name": "증기", "desc": "물길 위 증기가 그 줄의 구체를 느리게 하고 받는 피해 +30%", "color": Color(0.85, 0.88, 0.94)},
 	{"id": "vine", "a": WATER, "b": WOOD, "name": "덩굴", "desc": "물길 따라 자란 덩굴이 지나가는 구체를 묶음", "color": Color(0.16, 0.58, 0.3)},
-	{"id": "shock", "a": WATER, "b": ELECTRIC, "name": "감전 물길", "desc": "공격 방향으로 흐르는 물길에 전류", "color": Color(0.55, 0.85, 1.0)},
+	{"id": "shock", "a": WATER, "b": ELECTRIC, "name": "감전 물길", "desc": "공격 방향으로 흐르는 물길에 전기가 흘러 지나가는 구체에 피해", "color": Color(0.55, 0.85, 1.0)},
 	{"id": "firestorm", "a": FIRE, "b": WIND, "name": "화염 회오리", "desc": "불타는 회오리가 전진", "color": Color(1.0, 0.5, 0.15)},
-	{"id": "blizzard", "a": ICE, "b": WIND, "name": "눈보라", "desc": "주변 원형 감속·냉기", "color": Color(0.85, 0.95, 1.0)},
-	{"id": "eclipse", "a": DARK, "b": LIGHT, "name": "일식", "desc": "주기적으로 화면 전체 피해", "color": Color(0.95, 0.75, 1.0)},
+	{"id": "blizzard", "a": ICE, "b": WIND, "name": "눈보라", "desc": "주변 원 안의 구체를 느리게 하고 냉기를 쌓음", "color": Color(0.85, 0.95, 1.0)},
+	{"id": "eclipse", "a": DARK, "b": LIGHT, "name": "일식", "desc": "몇 초마다 화면 안 모든 구체에 피해", "color": Color(0.95, 0.75, 1.0)},
 	{"id": "lava", "a": EARTH, "b": FIRE, "name": "용암 벽", "desc": "앞쪽에 가로로 서는 불타는 벽, 지나가면 크게 느려지고 탐", "color": Color(0.95, 0.3, 0.05)},
 	{"id": "mushroom", "a": POISON, "b": WOOD, "name": "독버섯 지뢰", "desc": "밟으면 터지는 독버섯", "color": Color(0.8, 0.5, 0.95)},
 	{"id": "railgun", "a": METAL, "b": ELECTRIC, "name": "레일건", "desc": "체력이 가장 많은 구체를 조준해 화면 끝까지 관통 일격", "color": Color(0.7, 0.95, 1.0)},
 	{"id": "halo", "a": METAL, "b": LIGHT, "name": "광륜", "desc": "주위를 도는 빛 칼날, 닿으면 반드시 치명타", "color": Color(1.0, 0.95, 0.6)},
-	{"id": "quake", "a": METAL, "b": EARTH, "name": "지진", "desc": "주기적으로 주변 모두 피해·기절", "color": Color(0.75, 0.6, 0.45)},
+	{"id": "quake", "a": METAL, "b": EARTH, "name": "지진", "desc": "몇 초마다 주변 구체 모두에 피해를 주고 기절시킴", "color": Color(0.75, 0.6, 0.45)},
 	{"id": "storm", "a": ELECTRIC, "b": WIND, "name": "뇌우", "desc": "번개 구름이 앞으로 떠가며 낙뢰", "color": Color(0.75, 0.8, 1.0)},
 	{"id": "aurora", "a": ICE, "b": LIGHT, "name": "오로라", "desc": "5갈래 빛줄기, 냉기가 크게 쌓임", "color": Color(0.5, 1.0, 0.8)},
 	{"id": "swamp", "a": EARTH, "b": POISON, "name": "독늪", "desc": "가로로 깔리는 독 진흙, 안에서 중독 2배·죽으면 독 폭발", "color": Color(0.5, 0.6, 0.2)},
-	{"id": "curse", "a": DARK, "b": POISON, "name": "저주", "desc": "표식 구체는 계속 피해, 죽으면 주변에 큰 피해·표식이 옮겨 감", "color": Color(0.6, 0.2, 0.7)},
+	{"id": "curse", "a": DARK, "b": POISON, "name": "저주", "desc": "저주 걸린 구체는 계속 피해를 받고, 죽으면 주변에 큰 피해를 주며 저주가 옆 구체로 옮겨 감", "color": Color(0.6, 0.2, 0.7)},
 	{"id": "prison", "a": ICE, "b": DARK, "name": "빙결 감옥", "desc": "앞쪽 원 안 구체를 멈추고 받는 피해 +50%", "color": Color(0.45, 0.5, 0.95)},
 ]
 

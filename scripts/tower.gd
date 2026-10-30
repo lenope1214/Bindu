@@ -179,7 +179,7 @@ func refuse_text(card: Dictionary) -> String:
 		return ""
 	match card["type"]:
 		"elem":
-			return "속성은 %d종까지예요. 빈 곳에 새 오브젝트로 놓거나 연결선으로 나누세요" % Rules.max_elems
+			return "속성은 %d종까지예요. 빈 곳에 놓아 새 오브젝트로 만드세요" % Rules.max_elems
 		"pat":
 			return "이 오브젝트는 %s(으)로 정해져 있어요. 같은 공격방식만 넣을 수 있어요" % Pat.pname(pattern)
 		"mod":
@@ -1238,13 +1238,13 @@ func preview(card: Dictionary) -> Array:
 			var n: int = card["lv"]
 			sp["els"][e] = lv(e) + n
 			if elements.has(e):
-				out.append("%s Lv%d → Lv%d (부가효과 강화)" % [Elem.NAMES[e], lv(e), lv(e) + n])
+				out.append("%s Lv%d → Lv%d (추가 효과 강화)" % [Elem.NAMES[e], lv(e), lv(e) + n])
 			else:
 				out.append("%s + %s" % [title(), Elem.NAMES[e]])
-				out.append("모든 공격에 부가효과: " + Elem.RIDER[e])
+				out.append("모든 공격에 추가 효과: " + Elem.RIDER[e])
 				var before := roundi((1.0 - 1.0 / tax()) * 100.0)
 				var after := roundi((1.0 - 1.0 / (tax() + tax_step)) * 100.0)
-				out.append("쌓기 대가: 공격 속도 -%d%% → -%d%%" % [before, after])
+				out.append("속성을 겹친 대가: 공격 속도 -%d%% → -%d%%" % [before, after])
 			out.append("피해 x%.1f → x%.1f" % [dmg_factor(), dmg_factor() + 1.3 * 0.35 * n])
 		"pat":
 			var id: String = card["id"]

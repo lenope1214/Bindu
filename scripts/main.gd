@@ -670,7 +670,7 @@ func _refresh_dps() -> void:
 	if sig == dps_sig:
 		return
 	dps_sig = sig
-	dps_head.text = ("▶" if dps_hidden else "▼") + " 지난 웨이브 DPS (D)"
+	dps_head.text = ("▶" if dps_hidden else "▼") + " 지난 웨이브 초당 피해 (D)"
 	for c in dps_list.get_children():
 		c.queue_free()
 	dps_scroll.visible = not dps_hidden
@@ -801,7 +801,7 @@ func _update_hud(force := false) -> void:
 		extra += "   선택 %d개" % selected.size()
 	var nt := towers.get_child_count()
 	if nt > 1:
-		extra += "   무리 +%d%% (오브젝트 %d개)" % [roundi(Rules.crowd * (nt - 1) * 100), nt]
+		extra += "   오브젝트 수 보너스: 피해 +%d%% (%d개)" % [roundi(Rules.crowd * (nt - 1) * 100), nt]
 	# 길어지면 오른쪽 위 설명 버튼과 겹치므로 둘째 줄로. 글자 모양 계산은 비싸서
 	# 길이나 덧붙인 내용이 바뀔 때만 다시 잰다 (점수 숫자만 바뀌면 폭은 거의 그대로)
 	# 오른쪽 위 버튼(설명 보기, 터치면 범위 보기) 앞까지. 글자를 키우면(설정) 화면이 좁아진 만큼 줄어든다
@@ -879,12 +879,12 @@ func _help_text() -> String:
 		"1 / 2 / 3 또는 클릭: 선택지 고르기     Q: 선택지 새로고침     V: 선택지 내리고 필드 보기",
 		"속성 카드: 빈 곳에 설치(직선탄) → 클릭(또는 끌어서 놓기)으로 방향, Shift: 15도",
 		"속성 카드를 오브젝트 위에: 속성 겹치기 (%s)" % elems,
-		"공격방식·강화·연계 카드: 오브젝트 위에 놓기 (연결선은 두 개 차례로)",
+		"공격방식·강화·연계 카드: 오브젝트 위에 놓기",
 		"오브젝트 끌기: 방향은 그대로 두고 옮기기 (카드를 고른 뒤에는 꾹 눌러서)",
 		"빈 곳 끌기 / Shift·Ctrl+클릭 / Ctrl+A(모두): 여러 개 선택 → 그중 하나를 끌면 함께 이동",
 		"쉬는 시간에 오브젝트 클릭: 위치·방향 다시 정하기",
-		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 몫 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
-		"쉬는 시간 왼쪽 위 DPS 표: 지난 웨이브 오브젝트별 초당 피해·몫. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기",
+		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 비율 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
+		"쉬는 시간 왼쪽 위 초당 피해 표: 지난 웨이브에 오브젝트마다 낸 초당 피해와 비율. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
 		"P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
 		"R: 다시 시작 (게임 오버 뒤, 또는 일시정지 중 두 번)",
@@ -898,10 +898,10 @@ func _help_text() -> String:
 		"중앙 체력 10. 구체가 닿으면 줄어듭니다",
 		"쉬는 시간마다 3개 중 1개를 고릅니다 (처음 두 번은 2번)" if Rules.picks == 1 else "쉬는 시간마다 3개 중 1개씩 %d번 고릅니다" % Rules.picks,
 		"5웨이브마다 보스. 처치하면 체력 +2, 새로고침 +1",
-		"보스 웨이브를 넘기면 특성(전역 강화) 3개 중 1개 선택",
+		"보스 웨이브를 넘기면 특성(모든 오브젝트에 붙는 강화) 3개 중 1개 선택",
 		"공격방식은 직선탄일 때 한 번만 정할 수 있고, 같은 것을 넣으면 레벨업",
-		"속성을 많이 겹칠수록 피해는 늘고 공격 속도는 조금씩 느려집니다. %s" % mods,
-		"감속은 최대 70%, 밀기는 조금씩만, 기절·속박·빙결은 연달아 걸리면 짧아지다 잠깐 면역",
+		"속성을 많이 겹칠수록 피해는 늘고 공격 속도는 조금씩 느려집니다. 오브젝트가 많을수록 모든 오브젝트의 피해가 늘어요(오브젝트 수 보너스). %s" % mods,
+		"감속은 최대 70%, 밀기는 조금씩만. 기절·속박·빙결은 연달아 걸릴수록 짧아지고, 그다음엔 잠깐 걸리지 않아요",
 		"화면 밖 구체는 맞지 않습니다. 시작 화면에서 규칙 버전(↑/↓)과 맵(←/→)을 바꿀 수 있어요",
 		"모드(첫 판 뒤): 어렵게 하면 점수 배율이 오르고, 쉽게 하면 내려가요 (쉽게 모드 판은 기록 따로)",
 	])
@@ -1123,7 +1123,7 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 				b.text = "[%d] ★ 대격변: 공격방식 ★\n모든 오브젝트의 공격방식을\n직선탄을 뺀 무작위로 바꾼다\n고정·직선탄도 바뀜, 레벨 유지\n(희귀 1%%, 고르면 바로 발동)" % idx
 		"elem":
 			var e: int = card["e"]
-			b.text = "[%d] 속성: %s%s\n부가: %s\n빈 곳: 새 오브젝트(직선탄)\n오브젝트 위: 겹치기%s" % [idx, Elem.NAMES[e], " Lv2" if card["lv"] == 2 else "", Elem.RIDER[e], " (%d종까지)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else ""]
+			b.text = "[%d] 속성: %s%s\n추가 효과: %s\n빈 곳: 새 오브젝트(직선탄)\n오브젝트 위: 속성 겹치기%s" % [idx, Elem.NAMES[e], " Lv2" if card["lv"] == 2 else "", Elem.RIDER[e], " (%d종까지)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else ""]
 			var combos := _combos_for(e)
 			if not combos.is_empty():
 				b.text += "\n" + "\n".join(combos.slice(0, 2))
@@ -1217,7 +1217,7 @@ func _rest_guides() -> void:
 	if wave == 0:
 		_guide("start", "빨간 화살표가 구체가 들어오는 길목이에요. 속성 카드를 고른 뒤 길목 쪽 빈 곳을 눌러 놓고, 한 번 더 눌러 쏠 방향을 정하세요")
 	elif towers.get_child_count() > 0:
-		_guide("stack", "속성 카드를 오브젝트 위에 놓으면 겹쳐져요. 같은 속성은 레벨업, 다른 속성은 부가효과가 더해지고, 맞는 두 속성이 만나면 특수 반응이 생겨요")
+		_guide("stack", "속성 카드를 오브젝트 위에 놓으면 겹쳐져요. 같은 속성은 레벨업, 다른 속성은 추가 효과가 더해지고, 맞는 두 속성이 만나면 특수 반응이 생겨요")
 	if not boss_plan.is_empty() and boss_plan["wave"] == wave + 1:
 		_guide("boss", "다음 웨이브 끝에 보스가 와요. 분홍 선이 실제로 지나갈 길이에요. 중앙에 닿으면 3 피해, 웨이브를 넘기면 특성을 하나 골라요")
 	if wave_resist >= 0:
@@ -1488,15 +1488,15 @@ func _update_preview() -> void:
 		lines.append("섞여 나옴: " + ", ".join(mix))
 	var sp := PackedStringArray()
 	if wave_resist >= 0:
-		sp.append("%s 저항 %d%%" % [Elem.NAMES[wave_resist], roundi(resist_share(nw) * 100)])
+		sp.append("%s 저항 구체 %d%%" % [Elem.NAMES[wave_resist], roundi(resist_share(nw) * 100)])
 	if sturdy_share(nw) > 0.0:
-		sp.append("굳셈 %d%%" % roundi(sturdy_share(nw) * 100))
+		sp.append("굳센 구체 %d%%" % roundi(sturdy_share(nw) * 100))
 	if nw > 10:
-		sp.append("체력 x%.1f" % hp_growth(nw))
+		sp.append("구체 체력 x%.1f" % hp_growth(nw))
 	if not sp.is_empty():
-		lines.append("특수: " + " · ".join(sp))
+		lines.append("특수 구체: " + " · ".join(sp))
 	var firsts := {4: "빠른 구체", 7: "단단한 구체", 8: "보호막 두른 구체(먼저 보호막을 깎아야 함)", 12: "분열 구체(터지면 둘로 나뉨)", 11: "이제부터 구체 체력이 웨이브마다 %d%%씩 곱으로 늘어남" % roundi((Rules.hp_growth - 1.0) * 100)}
-	for f in [[Rules.resist_from, "저항 구체(같은 색 점선 고리: 그 속성 비중만큼 피해 최대 60% 감소)"], [Rules.sturdy_from, "굳센 구체(회색 쐐기: 밀기·감속·기절·냉기 절반)"]]:
+	for f in [[Rules.resist_from, "저항 구체(같은 색 점선 고리: 그 속성 피해를 덜 받음. 오브젝트에서 그 속성이 차지하는 만큼, 최대 60%)"], [Rules.sturdy_from, "굳센 구체(회색 쐐기: 밀기·감속·기절·냉기 절반)"]]:
 		firsts[f[0]] = (firsts[f[0]] + ", " if firsts.has(f[0]) else "") + f[1]
 	if firsts.has(nw):
 		lines.append("처음 등장: " + firsts[nw])
@@ -1530,9 +1530,9 @@ func _boss_text() -> String:
 	if boss_plan["resist"] >= 0:
 		sp.append("%s 저항" % Elem.NAMES[boss_plan["resist"]])
 	if boss_plan["sturdy"]:
-		sp.append("굳셈")
+		sp.append("굳셈(밀기·감속·기절·냉기 절반)")
 	sp.append("웨이브 마지막에 나옴")
-	sp.append("%d초마다 빠른 부하" % roundi(Orb.minion_every(boss_plan["wave"])))
+	sp.append("%d초마다 빠른 부하 구체를 부름" % roundi(Orb.minion_every(boss_plan["wave"])))
 	return " · ".join(sp) + "\n보스 길: 화면의 굵은 분홍 선. 막지 않으면 나온 뒤 약 %d초에 중앙 (닿으면 체력 -3)" % roundi(_boss_eta())
 
 
@@ -2516,11 +2516,11 @@ func _refresh_legend() -> void:
 		"· 새 오브젝트는 직선탄 + 속성 1개",
 		"· 공격방식: 직선탄에만 넣을 수 있고 이후 고정,",
 		"   같은 공격방식을 넣으면 레벨업",
-		"· 속성: 모든 공격에 부가효과,",
+		"· 속성: 모든 공격에 추가 효과,",
 		"   " + cap_e,
 		"· 강화: 공격방식을 변형,",
 		"   " + cap_m,
-		"· 연계: 연결선·프리즘·공명",
+		"· 연계: 협공·프리즘·공명 (주변 오브젝트와 함께)",
 		"",
 		"[특수 반응] 두 속성이 함께 있으면 추가 공격 (발견 %d/%d)" % [Meta.codex.size(), Elem.REACTIONS.size()],
 	])
@@ -3963,7 +3963,7 @@ func _leak_text() -> String:
 	var ks := PackedStringArray()
 	for k in e["kinds"]:
 		ks.append("%s %d" % [names.get(k, "?"), e["kinds"][k]])
-	return "지난 웨이브 누수: %s (%s, 중앙 -%d)" % [" · ".join(parts), ", ".join(ks), e["dmg"]]
+	return "지난 웨이브에 놓친 구체: %s (%s, 중앙 체력 -%d)" % [" · ".join(parts), ", ".join(ks), e["dmg"]]
 
 
 func _alive_count(n: Node) -> int:
@@ -4216,7 +4216,7 @@ func _draw_tooltip() -> void:
 		var share := " · 전체의 %d%%" % roundi(t.dealt / total * 100.0) if total > 0.0 and towers.get_child_count() > 1 else ""
 		lines.append(["%s 피해 %d (초당 %.1f%s)" % ["이번 웨이브" if phase == Phase.WAVE else "지난 웨이브", roundi(t.dealt), t.dealt / wave_time, share], Color(1, 0.9, 0.5)])
 	if t.order.size() > 1:
-		lines.append(["쌓기 대가: 공격 속도 -%d%%" % roundi((1.0 - 1.0 / t.tax()) * 100.0), Color(1, 0.6, 0.6)])
+		lines.append(["속성을 겹친 대가: 공격 속도 -%d%%" % roundi((1.0 - 1.0 / t.tax()) * 100.0), Color(1, 0.6, 0.6)])
 	var rows: Array = []
 	var w := 0.0
 	for l in lines:
@@ -4303,15 +4303,15 @@ func _draw_orb_tooltip() -> void:
 		if o.splits: parts.append("분열")
 		if o.burn_t > 0.0: parts.append("화상")
 		if o.poison_t > 0.0: parts.append("중독")
-		if o.root_immune > 0.0: parts.append("기절 면역")
-		if o.vuln_t > 0.0: parts.append("약화")
+		if o.root_immune > 0.0: parts.append("잠깐 기절 안 걸림")
+		if o.vuln_t > 0.0: parts.append("약화(받는 피해 +30%)")
 		if o.slow_timer > 0.0: parts.append("감속")
 		if o.frozen_t > 0.0: parts.append("빙결")
 		if o.prison_t > 0.0: parts.append("감옥(받는 피해 +50%)")
 		if o.swamp_t > 0.0: parts.append("독늪(중독 2배)")
 		if o.curse_lv > 0: parts.append("저주")
 		if o.resist_e >= 0: parts.append("%s 저항" % Elem.NAMES[o.resist_e])
-		if o.sturdy: parts.append("굳셈")
+		if o.sturdy: parts.append("굳셈(밀기·감속·기절·냉기 절반)")
 		var txt := " · ".join(parts)
 		var fs := roundi(14 * Meta.ui_scale)
 		var bh := fs + 10.0

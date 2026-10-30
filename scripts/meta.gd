@@ -5,7 +5,7 @@ const SAVE_PATH := "user://best.cfg"
 
 const MAPS := {
 	"plain": {"name": "평원", "desc": "기본 맵. 진입 방향이 웨이브마다 조금씩 늘어난다", "bg": Color(0.07, 0.08, 0.11), "ring": Color(1, 1, 1, 0.04)},
-	"spiral": {"name": "소용돌이", "desc": "구체가 나선을 그리며 들어온다.\n들어오는 방향과 맞는 방향이 다르다", "bg": Color(0.08, 0.06, 0.12), "ring": Color(0.8, 0.6, 1, 0.06)},
+	"spiral": {"name": "소용돌이", "desc": "구체가 나선을 그리며 들어온다.\n화면에 들어오는 곳과 중앙에 다가오는 방향이 다르다", "bg": Color(0.08, 0.06, 0.12), "ring": Color(0.8, 0.6, 1, 0.06)},
 	"cross": {"name": "십자로", "desc": "처음부터 네 갈래 길.\n구체가 길 위로만 오지만 많고 단단하다", "bg": Color(0.06, 0.09, 0.08), "ring": Color(0.6, 1, 0.8, 0.05)},
 	"storm": {"name": "폭풍", "desc": "진입 방향이 웨이브마다 전부 바뀐다.\n대신 구체가 약하다", "bg": Color(0.1, 0.07, 0.06), "ring": Color(1, 0.7, 0.5, 0.05)},
 	"line": {"name": "회랑", "desc": "가로로 긴 길 하나. 구체가 한쪽 끝에서만 와서\n반대쪽 끝의 문으로 간다. 길이 긴 대신 구체가 많고 빠르고 단단하다", "bg": Color(0.07, 0.07, 0.1), "ring": Color(0.75, 0.8, 1, 0.07)},
@@ -38,9 +38,9 @@ const ACHIEVEMENTS := {
 	"boss": {"name": "보스 사냥", "desc": "보스 처치"},
 	"codex5": {"name": "연금술사", "desc": "특수 반응 5종 발견 (도감)"},
 	"codex9": {"name": "현자", "desc": "특수 반응 모두 발견"},
-	"links3": {"name": "협공진", "desc": "한 판에 협공 오브젝트 3개"},
+	"links3": {"name": "협공진", "desc": "한 판에 협공을 넣은 오브젝트 3개"},
 	"stack5": {"name": "무지개", "desc": "오브젝트 하나에 속성 5종"},
-	"combo30": {"name": "연쇄 폭발", "desc": "콤보 30"},
+	"combo30": {"name": "연쇄 폭발", "desc": "콤보 30 달성"},
 	"allmaps": {"name": "여행자", "desc": "모든 맵에서 웨이브 5 도달"},
 }
 const ACH_IDS := ["first", "wave10", "wave15", "wave20", "boss", "codex5", "codex9", "links3", "stack5", "combo30", "allmaps"]
