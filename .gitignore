@@ -7,6 +7,7 @@ build/
 *.zip
 *.aab
 *.apk
+*.ipa
 android/build/
 # 서명 키·비밀번호 (절대 올리지 않음)
 keystore/
