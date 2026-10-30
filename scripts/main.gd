@@ -3219,13 +3219,15 @@ func _refresh_legend() -> void:
 		"",
 		"[특수 반응] 두 속성이 함께 있으면 추가 공격 (발견 %d/%d)" % [Meta.codex.size(), Elem.REACTIONS.size()],
 	])
-	# 반응이 많아 한 줄에 두 개씩. 아직 만들어 보지 않은 반응은 ? + ? (도감과 같은 기록)
-	var rs: Array = Elem.REACTIONS
-	for i in range(0, rs.size(), 2):
+	# 반응이 91개라 만들어 본 반응만 한 줄에 세 개씩 (나머지는 개수만, 도감과 같은 기록)
+	var rs: Array = Elem.REACTIONS.filter(func(r): return Meta.codex.has(r["id"]))
+	for i in range(0, rs.size(), 3):
 		var row := PackedStringArray()
-		for r in rs.slice(i, i + 2):
-			row.append("%s+%s %s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["name"]] if Meta.codex.has(r["id"]) else "? + ?")
+		for r in rs.slice(i, i + 3):
+			row.append("%s+%s %s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["name"]])
 		lines.append("   ".join(row))
+	if rs.size() < Elem.REACTIONS.size():
+		lines.append("아직 못 만난 반응 %d개 (모든 두 속성 조합에 반응이 있어요, 도감 K)" % (Elem.REACTIONS.size() - rs.size()))
 	legend.text = "\n".join(lines)
 
 
@@ -4558,12 +4560,15 @@ func sound_pulse(o: Orb) -> void:
 	var tw: Tower = o.tune_src if is_instance_valid(o.tune_src) else null
 	var l := maxi(o.tune_lv, 1)
 	var r := 70.0 + 10.0 * (l - 1)
-	var dmg := 1.2 * Tower.pw(l) * (tw.dmg_k(true) if tw else 1.3)
+	var dmg := 1.2 * Tower.pw(l) * (tw.dmg_k(true) if tw else 1.3) * (1.5 if o.loud_t > 0.0 else 1.0)
+	var tox: Tower = o.toxring_src if o.toxring_t > 0.0 and is_instance_valid(o.toxring_src) else null
 	for other in near(o.position, r + 30.0):
 		if other.hp > 0.0 and other.position.distance_to(o.position) < r + other.radius():
 			other.hurt(dmg)
 			if tw:
 				tw.credit(dmg, "elem:sound")
+			if tox:
+				other.poison(1.2 * o.toxring_lv * Rules.rx_mul, 3.0, tox, true, "rx:toxecho")
 	if pulses.size() < 40:
 		pulses.append([o.position, r, 0.3])
 
@@ -5235,6 +5240,8 @@ func _resolve(delta: float) -> void:
 				bs.spawn_bog(o.position, o.bog_lv if o.bog_t > 0.0 else o.swamp_lv)
 			if o.soul_t > 0.0 or o.styx_t > 0.0:
 				_soul_wisp(o)
+			if not o.dfx.is_empty():
+				RxMore.on_death(o)
 			o.queue_free()
 			continue
 		if _reached_core(o):

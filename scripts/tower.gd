@@ -53,6 +53,14 @@ var in_form := false  # 지금 형태 성질 효과를 주는 중인지 (자람�
 var fe_cd := 0.0  # 형태 성질 "끝" 효과 다시 쓸 때까지 (날아가는 공격)
 var fe2 := 0.0  # 계속 공격하는 형태의 "끝" 효과 다시 쓸 때까지
 var chain_end := Vector2.ZERO  # 연쇄 번개가 마지막으로 친 자리
+## 2026-10-30에 채운 반응들 (RxMore)
+var later: Array = []  # [남은 초, Callable]: 잠시 뒤 한 번 더 (시간 반응 등)
+var rxfx: Array = []  # 즉시 효과 표시 (광선·파동)
+var rxs := {}  # 반응별 상태 (전도 덩굴 대상, 진자 쿨다운)
+var rx_trail_hit := {}  # 반응 띠 sub → {구체: sim_id} (같은 반응 띠가 겹쳐도 한 조각에 한 번)
+var pend_ph := 0.0  # 진자 위상
+var photo_t := 0.0  # 광합성: 공격 속도 증가 남은 시간
+var photo_k := 0.0
 var main: Node
 ## 그린 궤적: 갈래마다 오브젝트 기준 점 목록 (첫 점은 오브젝트 자리). 오브젝트를 옮기면 같이 옮겨진다.
 var paths: Array = []
@@ -119,7 +127,7 @@ const WIND_BUFF := 0.10
 
 ## 공격 속도 배율: 특성 × 속사 × 바람 버프 ÷ 속성을 겹친 대가 (모두 곱한다). 특수 반응 공격도 이 배율.
 func spd_k() -> float:
-	return spd_mul * (1.0 + 0.1 * mf("rapid")) * (1.0 + wind_buff) / tax()
+	return spd_mul * (1.0 + 0.1 * mf("rapid")) * (1.0 + wind_buff) * (1.0 + (photo_k if photo_t > 0.0 else 0.0)) / tax()
 
 
 ## 투척 장판: 느린 탄이 날아간 길에 띠 장판이 남는다 (Zone.trail). 던지는 간격, 날아가는 거리(Lv1, reach 배율),
@@ -976,6 +984,7 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 		vine_cd[key] -= de
 		if vine_cd[key] <= 0.0 or not is_instance_valid(key):
 			vine_cd.erase(key)
+	RxMore.pre(self, de)
 	for r in reactions():
 		var l := mini(eff.get(r["a"], 1), eff.get(r["b"], 1))
 		var id: String = r["id"]
@@ -1170,6 +1179,8 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 			"prison":
 				if _ready_to(id, PRISON_IV / spd(l), de):
 					main.spawn_proj(self, "icebolt", l, dir)
+			_:
+				RxMore.tick(self, id, l, orbs, de, k)
 
 
 ## 음파 사거리.
@@ -1329,7 +1340,10 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	var d := dmg * dmg_k(in_rx)
 	var crit := false
 	var lit := false  # 빛 치명타 (확정 치명타 반응은 반응 몫)
-	if force_crit or els.has(Elem.LIGHT) and randf() < minf(0.12 * els.get(Elem.LIGHT, 0), 0.6) * minf(k, 1.0):
+	var cc := minf(0.12 * els.get(Elem.LIGHT, 0), 0.6) if els.has(Elem.LIGHT) else 0.0
+	if o.lucky_t > 0.0:
+		cc += 0.3  # 무지개 물길 위
+	if force_crit or cc > 0.0 and randf() < cc * minf(k, 1.0):
 		d *= 2.0
 		crit = k >= 1.0
 		lit = not force_crit
@@ -1372,7 +1386,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		o.add_chill(0.6 * k * els.get(Elem.ICE, 0))
 	if els.has(Elem.WATER):
 		o.slow(0.8, 0.8)
-	if els.has(Elem.EARTH) and randf() < minf(0.2 * els.get(Elem.EARTH, 0), 0.7) * k:
+	if els.has(Elem.EARTH) and randf() < minf(0.2 * els.get(Elem.EARTH, 0), 0.7) * k * (2.0 if o.mud_t > 0.0 else 1.0):
 		o.root(0.8)
 	if els.has(Elem.DARK):
 		o.vuln(2.0)
@@ -1915,6 +1929,7 @@ func _draw_attack() -> void:
 				if fs > 0.0:
 					var ks := 1.0 - fs / 0.5
 					draw_arc(Vector2.ZERO, RADIUS + 6.0 + ks * 60.0, 0, TAU, 48, Color(r["color"], 0.5 * (1.0 - ks)), 3.0)
+	RxMore.draw_tower(self)
 
 
 ## 물길 바닥: 공격 방향으로 흐르는 물.
@@ -2090,6 +2105,8 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 				_r_band(ci, o, d, 0.0, MUSH_RANGE * reach(rl), 14.0, rc)
 			"eclipse":
 				ci.draw_rect(ci.get_viewport_rect(), Color(rc.r, rc.g, rc.b, 0.05 * rc.a))
+			_:
+				RxMore.range_preview(ci, o, d, r["id"], rl, rc)
 
 
 static func _r_cone(ci: CanvasItem, o: Vector2, d: Vector2, rng: float, half: float, c: Color) -> void:

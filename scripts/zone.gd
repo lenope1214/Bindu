@@ -81,6 +81,15 @@ func trail(s: String) -> void:
 	position = Vector2.ZERO
 
 
+## 반응 띠 (RxMore 물결·균열): 지나간 자리에 life초 남는다.
+func trail_rx(id: String, r: float, sec: float) -> void:
+	sub = "rx:" + id
+	radius = r
+	max_life = sec
+	life = sec
+	position = Vector2.ZERO
+
+
 func add_pt(p: Vector2) -> void:
 	pts.append(p)
 	born.append(t)
@@ -139,6 +148,8 @@ func affect(orbs: Array, delta: float) -> void:
 		var dist: float = o.position.distance_to(position)
 		var inside: bool = dist < radius + o.radius()
 		match kind:
+			"trail" when sub.begins_with("rx:"):
+				RxMore.zone_hit(self, o, delta)
 			"trail" when sub == "prison":
 				# 띠에 처음 닿은 구체를 가둔다 (예전 앞쪽 원과 같은 세기)
 				if caught.has(o) or not is_instance_valid(owner_tower):
@@ -360,7 +371,7 @@ func _draw() -> void:
 func _draw_trail() -> void:
 	if pts.size() == 0:
 		return
-	var c: Color = Color(1.0, 0.62, 0.1) if sub == "burn" else Color(0.45, 0.5, 0.95) if sub == "prison" else (owner_tower.color() if is_instance_valid(owner_tower) else Color(0.7, 0.9, 0.3))
+	var c: Color = RxMore.strip_color(sub) if sub.begins_with("rx:") else Color(1.0, 0.62, 0.1) if sub == "burn" else Color(0.45, 0.5, 0.95) if sub == "prison" else (owner_tower.color() if is_instance_valid(owner_tower) else Color(0.7, 0.9, 0.3))
 	var fill := 0.22 if sub == "burn" else 0.3 if sub == "prison" else 0.25
 	var cols := PackedColorArray()
 	for i in pts.size():
@@ -379,6 +390,8 @@ func _draw_trail() -> void:
 			# 얼음 가시
 			var d2 := Vector2.from_angle(i * 1.7)
 			draw_line(pts[i] + d2 * radius * 0.4, pts[i] + d2 * radius * 0.9, Color(0.8, 0.85, 1.0, a), 2.5)
+		elif sub.begins_with("rx:"):
+			draw_circle(p, (1.0 - f) * 4.0 + 1.0, Color(c.lightened(0.35), a * (1.0 - f)))
 		elif sub == "burn":
 			draw_circle(p + Vector2(0, -f * 12.0), (1.0 - f) * 5.0, Color(Elem.COLORS[Elem.FIRE].lerp(Color(1, 0.9, 0.3), f), a * (1.0 - f)))
 		else:

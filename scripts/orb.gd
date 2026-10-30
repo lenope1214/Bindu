@@ -76,6 +76,23 @@ var soul_src: Object = null
 var styx_t := 0.0  # 망자의 강 안: 죽으면 반드시 혼불
 var styx_lv := 1
 var styx_src: Object = null
+## 2026-10-30에 채운 반응들 (RxMore)
+var amp := {}  # 반응 키 → [받는 피해 증가, 남은 시간]
+var dfx := {}  # 반응 id → [오브젝트, 레벨, 이 나이까지]: 그 전에 죽으면 RxMore.on_death
+var seed_n := 0  # 씨앗 바람: 박힌 씨앗 수, seed_t가 0이 되면 싹이 터진다
+var seed_t := 0.0
+var seed_lv := 1
+var seed_src: Object = null
+var rust_n := 0  # 부식 중첩
+var lucky_t := 0.0  # 무지개: 치명타 확률 +30%
+var mud_t := 0.0  # 진흙: 땅 기절 확률 2배
+var glacier_t := 0.0  # 빙하 물결: 빙결 1.5배
+var loud_t := 0.0  # 울림 균열: 음파 피해 +50%
+var smog_t := 0.0  # 독연기: 화상도 걸려 있으면 중독 2배
+var frostpo_t := 0.0  # 냉독침: 빙결된 동안 중독 2배
+var toxring_t := 0.0  # 독 메아리: 울림 음파가 터지면 주변에 중독
+var toxring_lv := 1
+var toxring_src: Object = null
 var silence_t := 0.0  # 침묵: 저항·굳셈이 꺼지고 보스 부하 소환이 멈춘다
 var push_budget := PUSH_BUDGET
 var stagger_t := 0.0  # 경직(금속·철구·물줄기·레일건): 제자리에 멈춤
@@ -160,6 +177,24 @@ func step(delta: float) -> void:
 	soul_t = maxf(soul_t - delta, 0.0)
 	styx_t = maxf(styx_t - delta, 0.0)
 	silence_t = maxf(silence_t - delta, 0.0)
+	if not amp.is_empty():
+		for key in amp.keys():
+			amp[key][1] -= delta
+			if amp[key][1] <= 0.0:
+				amp.erase(key)
+				if key == "rust":
+					rust_n = 0
+	lucky_t = maxf(lucky_t - delta, 0.0)
+	mud_t = maxf(mud_t - delta, 0.0)
+	glacier_t = maxf(glacier_t - delta, 0.0)
+	loud_t = maxf(loud_t - delta, 0.0)
+	smog_t = maxf(smog_t - delta, 0.0)
+	frostpo_t = maxf(frostpo_t - delta, 0.0)
+	toxring_t = maxf(toxring_t - delta, 0.0)
+	if seed_n > 0:
+		seed_t -= delta
+		if seed_t <= 0.0:
+			RxMore.sprout(self)
 	echo_cd = maxf(echo_cd - delta, 0.0)
 	if tune_t <= 0.0:
 		ring = 0.0
@@ -180,6 +215,8 @@ func step(delta: float) -> void:
 	if poison_t > 0.0:
 		poison_t -= delta
 		var pd := poison_dps * delta * (2.0 if swamp_t > 0.0 else 1.0)
+		if smog_t > 0.0 and burn_t > 0.0 or frostpo_t > 0.0 and frozen_t > 0.0:
+			pd *= 2.0
 		hurt(pd)
 		_credit(poison_src, pd, poison_rx, poison_key)
 	# 피해 숫자는 0.35초마다 묶어서 표시
@@ -201,6 +238,9 @@ func step(delta: float) -> void:
 
 func hurt(amount: float, crit := false) -> void:
 	var d := amount * (1.5 if prison_t > 0.0 else 1.3 if vuln_t > 0.0 else 1.0)
+	if not amp.is_empty():
+		for v in amp.values():
+			d *= 1.0 + v[0]
 	if shield > 0.0:
 		var absorbed := minf(shield, d)
 		shield -= absorbed
@@ -368,7 +408,7 @@ func add_chill(amount: float) -> void:
 	slow(0.7, 0.5)
 	if chill >= 3.0:
 		chill = 0.0
-		if root(1.0):
+		if root(1.5 if glacier_t > 0.0 else 1.0):
 			frozen_t = root_timer
 
 

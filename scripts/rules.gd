@@ -34,6 +34,8 @@ static var resist_from := 10  # 저항 구체가 나오는 웨이브
 static var sturdy_from := 13  # 굳센 구체가 나오는 웨이브
 static var orb_hp := 1.0  # 구체 체력 배율 (온라인 패치로만 바뀜)
 static var trait_mul := 1.0  # 속성 형태 성질 세기 (Elem.TRAIT)
+static var rx_mul := RX_MUL  # 2026-10-30에 채운 반응 65개(RxMore)의 피해·지속 피해 배율
+const RX_MUL := 0.5
 
 
 ## 오브젝트 수 보너스(모든 오브젝트 피해에 더하는 몫). 2026-10-30 직선(하나당 +4%, 10개 +36%)이 후반에 과해
@@ -57,6 +59,7 @@ static func apply(v: int) -> void:
 	sturdy_from = 13
 	orb_hp = 1.0
 	trait_mul = 1.0
+	rx_mul = RX_MUL
 	match version:
 		2:
 			max_elems = 2
@@ -99,3 +102,4 @@ static func _apply_patch(p: Dictionary) -> void:
 			"hp_growth": hp_growth = maxf(1.0, float(v))
 			"orb_hp": orb_hp = maxf(0.1, float(v))
 			"trait_mul": trait_mul = maxf(0.0, float(v))
+			"rx_mul": rx_mul = maxf(0.0, float(v))

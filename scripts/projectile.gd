@@ -43,6 +43,9 @@ var route_on := false  # 길 위를 가는 중 (튕기면 길을 벗어나 곧�
 var route_seg := 0  # 지금 지나는 선분
 var route_acc := 0.0  # 그 선분 시작까지의 거리
 var route_speed := 440.0
+var rx := ""  # kind "rx": 2026-10-30에 채운 반응 발사체 (RxMore)
+var look := ""  # 그 모양
+var rxd := {}  # 그 반응 상태 (부메랑·커지기 등)
 
 
 func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
@@ -132,7 +135,7 @@ func end_form() -> void:
 
 ## main이 웨이브 중 호출한다(배속이면 한 프레임에 여러 번).
 func step(delta: float) -> void:
-	if not lob and kind != "gust" and kind != "tornado":
+	if not lob and kind != "gust" and kind != "tornado" and not (kind == "rx" and radius > 12.0):
 		trail.append(position)
 		if trail.size() > 7:
 			trail.remove_at(0)
@@ -162,6 +165,8 @@ func step(delta: float) -> void:
 	t += delta
 	if kind == "storm":
 		_strike(delta)
+	elif kind == "rx":
+		RxMore.proj_step(self, delta)
 	queue_redraw()
 
 
@@ -357,6 +362,13 @@ func on_hit(o: Orb, delta: float) -> bool:
 
 
 func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
+	if tw and (kind == "rx" or ghost in RxMore.GHOSTS):
+		tw.in_rx = true
+		var gone := RxMore.proj_hit(self, o, delta, tw) if kind == "rx" else RxMore.ghost_hit(self, o, tw)
+		tw.in_rx = false
+		return gone
+	if kind == "rx":
+		return false
 	if continuous:
 		if tw:
 			tw.in_rx = kind in ["log", "tornado", "mushroom"]
@@ -370,7 +382,7 @@ func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 		return false
 	hit[o] = true
 	if tw:
-		tw.in_rx = kind in ["log", "tornado", "mushroom"] or ghost in ["plague", "spirit", "styx"]
+		tw.in_rx = kind in ["log", "tornado", "mushroom"] or ghost in ["plague", "spirit", "styx"] or src.begins_with("rx:")
 		tw.hit(o, dmg, 1.0, prism_els, kind != "frag")
 		tw.in_rx = false
 	else:
@@ -427,7 +439,7 @@ func _draw() -> void:
 			draw_line(trail[i] - position, trail[i + 1] - position, Color(col, 0.5 * a), radius * a * 1.4)
 	var d := vel.normalized()
 	var n := d.orthogonal()
-	if not lob and kind != "gust":
+	if not lob and kind != "gust" and kind != "rx":
 		draw_circle(Vector2.ZERO, radius * 2.2, Color(_trail_color(), 0.12))
 	if not prisms.is_empty():
 		# 프리즘을 지난 탄: 도는 육각 테두리 (지난 프리즘 수만큼 겹)
@@ -437,6 +449,9 @@ func _draw() -> void:
 			for i in 7:
 				hx.append(Vector2.from_angle(TAU * i / 6.0 + t * (6.0 if j % 2 == 0 else -6.0)) * rr)
 			draw_polyline(hx, Color(col.lerp(Color.WHITE, 0.6), 0.85 - 0.2 * j), 1.5)
+	if kind == "rx":
+		RxMore.draw_proj(self)
+		return
 	match kind:
 		"thorn":
 			draw_colored_polygon(PackedVector2Array([d * 12, -d * 8 - n * 4, -d * 4, -d * 8 + n * 4]), col)
@@ -490,6 +505,8 @@ func _draw() -> void:
 				gc = Elem.COLORS[Elem.POISON]
 			elif ghost == "spirit":
 				gc = Elem.COLORS[Elem.WOOD].lightened(0.3)
+			elif ghost in RxMore.GHOSTS:
+				gc = RxMore.color(ghost if ghost != "samsara2" else "samsara")
 			var fl := 1.0 + 0.15 * sin(t * 18.0)
 			draw_colored_polygon(PackedVector2Array([-d * radius * 2.6 * fl, n * radius * 0.9, d * radius, -n * radius * 0.9]), Color(gc, 0.45))
 			draw_circle(Vector2.ZERO, radius * fl, gc)
@@ -506,7 +523,7 @@ func _draw() -> void:
 
 func _trail_color() -> Color:
 	match kind:
-		"shot", "path", "thorn", "shard", "frag", "iron", "blob", "wisp": return col
+		"shot", "path", "thorn", "shard", "frag", "iron", "blob", "wisp", "rx": return col
 		"ghost": return Elem.COLORS[Elem.SOUL]
 		"glob": return Elem.COLORS[Elem.POISON]
 	return Color.WHITE
