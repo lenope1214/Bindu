@@ -1,7 +1,8 @@
 """처음 한 번: 비밀값(.env), 패치 서명 키, 게임 쪽 설정(scripts/online_config.gd)을 만든다.
 이미 있는 .env·키는 덮어쓰지 않는다 (키를 바꾸면 이미 배포한 게임이 패치를 거부함).
 
-    ./setup.sh https://bindu.example.com
+    ./setup.sh https://bindu.example.com                 (Mac·Linux)
+    server\\setup.ps1 https://bindu.example.com -Tunnel   (Windows, Cloudflare Tunnel)
 """
 import argparse
 import os
@@ -31,6 +32,7 @@ def read_env() -> dict:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("url", help="게임이 접속할 서버 주소, 예: https://bindu.example.com (로컬 시험: http://localhost:8000)")
+    ap.add_argument("--tunnel", action="store_true", help="Cloudflare Tunnel 뒤에서 실행 (Caddy는 80 포트 HTTP만, 인증서는 Cloudflare가)")
     args = ap.parse_args()
     url = args.url.rstrip("/")
     env = read_env()
@@ -45,6 +47,10 @@ def main() -> None:
     added = [k for k in defaults if k not in env]
     for k in added:
         env[k] = defaults[k]
+    if args.tunnel:
+        env["DOMAIN"] = ":80"
+    elif env.get("DOMAIN") == ":80":
+        env["DOMAIN"] = defaults["DOMAIN"]
     with open(ENV, "w", encoding="utf-8") as f:
         f.write("# tools/setup.py가 만든 비밀값. git에 올리지 않는다.\n")
         for k, v in env.items():

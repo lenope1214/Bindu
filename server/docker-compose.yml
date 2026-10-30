@@ -32,7 +32,7 @@ services:
     volumes:
       - ./keys:/keys:ro
     ports:
-      - "8000:8000"
+      - "127.0.0.1:${API_PORT:-8000}:8000"  # 이 PC에서 직접 시험할 때만 (밖에서는 Caddy로)
 
   caddy:
     image: caddy:2-alpine
@@ -41,8 +41,8 @@ services:
     environment:
       DOMAIN: ${DOMAIN:-localhost}
     ports:
-      - "80:80"
-      - "443:443"
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./downloads:/srv/downloads:ro

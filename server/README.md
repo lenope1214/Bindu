@@ -9,7 +9,7 @@ FastAPI + PostgreSQL, Caddy가 HTTPS 인증서를 자동으로 받습니다.
 
 ```sh
 git clone https://github.com/lenope1214/Bindu && cd Bindu/server
-./setup.sh https://bindu.example.com     # 비밀값·서명 키·게임 접속 설정 생성 (한 번만)
+./setup.sh https://bindu.example.com     # 비밀값·서명 키·게임 접속 설정 생성 (한 번만, Windows는 setup.ps1)
 docker compose up -d --build
 ```
 
@@ -23,6 +23,18 @@ docker compose up -d --build
 
 이미 있는 `.env`·키는 덮어쓰지 않으니 다시 실행해도 됩니다(주소만 바꿀 때).
 `scripts/online_config.gd`의 `SERVER_URL`이 비어 있으면 게임의 온라인 기능은 모두 꺼집니다.
+
+### 집 PC(Windows) + Cloudflare Tunnel
+
+공유기 포트를 열지 않고, IP가 바뀌어도 동작합니다. PC가 켜져 있어야 접속됩니다.
+
+1. Docker Desktop 설치·실행.
+2. 저장소 폴더에서 `powershell -ExecutionPolicy Bypass -File server\setup.ps1 https://bindu.anon-chat.kr -Tunnel`
+3. `cd server` 후 `docker compose up -d --build` (Caddy가 80 포트 HTTP로만 받음). 80·8000을 다른 프로그램이 쓰고 있으면 `server/.env`에 `HTTP_PORT=8080`, `API_PORT=8001`처럼 적고 5번의 Service도 그 포트로.
+4. Cloudflare 대시보드 → Zero Trust → Networks → Tunnels → Create a tunnel → Cloudflared → 이름 `bindu` → Windows 설치 명령을 관리자 PowerShell에 붙여 넣기.
+5. 같은 화면 Public hostname: Subdomain `bindu`, Domain `anon-chat.kr`, Service `HTTP` / `localhost:80`. DNS 레코드는 Cloudflare가 자동으로 만듦.
+6. 브라우저에서 `https://bindu.anon-chat.kr/health`가 `{"ok":true}`이면 성공.
+7. 만들어진 `scripts/online_config.gd`를 커밋·push하고 게임을 다시 빌드.
 
 로컬 시험(도메인 없이): `./setup.sh http://localhost:8000` 후 `docker compose up -d --build db api`.
 
