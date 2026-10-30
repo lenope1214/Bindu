@@ -35,7 +35,11 @@ func _initialize():
 		func(): _snap("settings"); main._toggle_settings(); main._toggle_codex(),
 		func(): _snap("codex"); main._toggle_codex(); main._toggle_modes(),
 		func(): _snap("modes"); main._toggle_modes(); main.help_label.visible = true,
-		func(): _snap("help"); main.help_label.visible = false; main.continue_btn.visible = false; main._close_title(),
+		func():
+			_snap("help"); main.help_label.visible = false; main.continue_btn.visible = false
+			main.remote_btn.text = "다른 기기에서 하던 판 이어하기   웨이브 29부터 · 소용돌이"
+			main.remote_btn.visible = true,
+		func(): _snap("title_remote"); main.remote_btn.visible = false; main._close_title(),
 		func():
 			for i in 6:
 				main.picked = {"e": Elem.ALL[i], "lv": 2}

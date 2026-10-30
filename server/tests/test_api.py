@@ -18,7 +18,7 @@ PUB = signing.generate_keypair(os.environ["PATCH_KEY_PATH"])
 A = {"Authorization": "Bearer adm"}
 
 
-def post_run(c, **kw):
+def run_body(**kw) -> bytes:
     run = {"device": "dev-aaaaaaaa", "nick": "bok", "platform": "windows", "game": "0.4.25", "patch": 0, "map": "plain", "rules": 1,
            "wave": 8, "score": 3000, "kills": 80, "best_combo": 10, "game_secs": 400.0, "real_secs": 200.0,
            "perks": {"power": 1},
@@ -30,9 +30,13 @@ def post_run(c, **kw):
                    {"w": 2, "k": "card", "o": ["pat:spray", "mod:rapid", "elem:ice"], "p": "pat:spray"},
                    {"w": 5, "k": "perk", "o": ["perk:power", "perk:luck", "perk:core"], "p": "perk:power"}]}
     run.update(kw)
-    body = json.dumps(run).encode()
+    return json.dumps(run).encode()
+
+
+def post_run(c, headers=None, **kw):
+    body = run_body(**kw)
     mac = hmac.new(b"hk", body, hashlib.sha256).hexdigest()
-    return c.post("/v1/runs", content=body, headers={"X-Bindu-Mac": mac, "Content-Type": "application/json"})
+    return c.post("/v1/runs", content=body, headers={"X-Bindu-Mac": mac, "Content-Type": "application/json", **(headers or {})})
 
 
 def test_flow():

@@ -118,7 +118,7 @@ main에 `server/` 변경이 올라오면 집 PC가 5분 안에 알아서 다시 
 
 ## 리더보드와 시즌
 
-- 리더보드는 **맵 × 규칙 버전 × 시즌**으로 나뉘고, 기기마다 최고 기록 하나만 올라갑니다. 전체·이번 주(7일).
+- 리더보드는 **맵 × 규칙 버전 × 시즌**으로 나뉘고, 계정마다(계정이 없는 예전 기록은 기기마다) 최고 기록 하나만 올라갑니다. 전체·이번 주(7일).
 - 모드: 어렵게 모드만 쓴 판은 배율을 곱한 점수로 같은 리더보드에 오릅니다(점수 상한도 배율만큼 올라감). 쉽게 모드를 하나라도 쓴 판은 통계에는 들어가고 리더보드에서는 빠집니다(`hidden`). 모르는 모드·반대 쌍이 든 판은 검증 실패.
 - 판도가 바뀌는 패치는 올릴 때 "새 시즌 시작"을 켭니다. 그 패치를 받기 전의 게임으로 한 판은 시즌 0(리더보드 제외, 통계에는 들어감)이 됩니다.
 - 새 빌드로 판도가 바뀌면 패치 탭 아래 "새 빌드로 새 시즌 열기"에 그 게임 버전을 적습니다.
@@ -141,6 +141,25 @@ IP는 저장하지 않고 소금 친 해시만 둡니다(빈도 제한용). 게�
 게임은 판마다 판 번호(`run`)를 만들어 이어하기 저장에 넣고, 5·10·15… 웨이브를 막을 때마다 그때까지의 기록을 `ended: false`로, 게임 오버 때 `ended: true`로 보냅니다. 서버는 같은 기기·판 번호면 한 줄을 고치고(선택·구성·피해 출처 표는 갈아 끼움), 웨이브가 오르지 않은 진행 기록이나 끝난 판에 온 기록은 `ignored`로 버립니다. 기기당 간격(`RUN_MIN_INTERVAL`)·IP당 시간 한도(`RUN_PER_IP_HOUR`)는 새 줄에만 걸립니다. 한 번 검증에 걸린 판은 이후 기록이 정상이어도 무효로 남습니다.
 진행 중 판도 리더보드에 지금까지 점수로 오르고(`ended: false`, 게임은 "▶ 진행 중" 표시), 관리 페이지 통계의 "끝난 판만"으로 뺄 수 있습니다. `/v1/boot`가 `snap: true`를 줄 때만 게임이 진행 기록을 보내서, 이 서버로 바꾸기 전에는 지금처럼 게임 오버 때만 보냅니다(outbox에는 판마다 최신 기록 하나만 남김).
 
+## 계정과 진행 저장 (0.5.3)
+
+어느 기기(Windows·Mac·iOS·Android)에서든 같은 진행을 이어 가려고 **계정**과 **로그인 수단**을 나눴습니다 (`app/accounts.py`).
+
+- `accounts`: 플레이어. `identities`: 로그인 수단 (`device` = 기기 id + 비밀값 해시, 나중에 `google`·`apple`). (provider, subject)는 계정 하나에만.
+- 게임은 처음 켤 때 기기 비밀값(32바이트, `user://account.cfg`)을 만들고 `POST /v1/auth/device`로 **익명 계정**을 받습니다. 그 기기가 예전에 남긴 판 기록은 이때 계정으로 묶입니다. 같은 기기 id에 다른 비밀값이 오면 403(`device_taken`): 저장 파일을 복사해 온 경우라 게임이 새 기기 id를 만듭니다.
+- 토큰: `계정.기기.만료.HMAC`, `AUTH_SECRET`(비면 `ADMIN_TOKEN`에서 만듦)으로 서명, `AUTH_TOKEN_DAYS`(30)일. 키를 바꾸면 게임은 401을 받고 기기 인증으로 다시 받습니다.
+- 진행(`saves`, `app/progress.py` 형식 1): 맵별 최고 기록·업적·도감·본 안내·처치/판 수(기기별 칸)·선택(맵·규칙·모드·모양·선호 표시·닉네임). 소리·글자 크기 같은 설정은 기기별이라 넣지 않습니다. **덮어쓰지 않고 합칩니다**: 업적·도감 합집합, 최고 기록 키마다 큰 값, 처치·판 수 기기마다 큰 값, 선택은 늦게 고친 쪽. 순서와 상관없이 결과가 같아서 충돌을 묻지 않습니다. 게임(`scripts/progress.gd`)과 서버가 같은 규칙. **클라우드 진행은 리더보드에 쓰지 않습니다** (리더보드는 검증한 판 기록만).
+- 진행 중 판(`run_saves`): 쉬는 시간마다 이어하기 저장(run.cfg 글)을 올립니다. 같은 계정의 다른 기기는 시작 화면에 "다른 기기에서 하던 판 이어하기"가 뜨고(같은 게임 버전만, 그 기기에 하던 판이 없을 때), 가져가면(`claim`) 한 판을 그 기기만 이어 합니다. 원래 기기는 다음에 올릴 때 409를 받고 그 판을 지웁니다. 계정당 5판, 30일.
+- 소셜 연결(`POST /v1/auth/link`): 처음 보는 소셜이면 지금 계정에 붙이고, 다른 계정에 이미 붙어 있으면 **지금 계정을 그 계정에 합칩니다**(진행 합치기, 판 기록·진행 중 판·로그인 수단을 옮김, 없어진 계정은 `merged_into`). Google·Apple ID 토큰(RS256)은 공개키(JWKS)로 서명·iss·aud·만료를 확인합니다. `GOOGLE_CLIENT_IDS`·`APPLE_CLIENT_IDS`를 비워 두면 501(`provider_not_configured`). 게임 쪽 로그인 화면은 아직 없습니다.
+- 차단: 기기를 차단하면 그 기기가 붙은 계정째로.
+- `DELETE /v1/account`: 진행·진행 중 판·로그인 수단을 지우고 판 기록은 이름을 지워 리더보드에서 뺀 채 통계로만 남깁니다 (Apple 심사: 로그인을 넣으면 계정 삭제가 필요).
+- 마이그레이션: 새 표는 켤 때 만들고, `runs.account_id`는 빈 값 허용 열로 더합니다. 예전 게임(토큰 없음)은 그대로 기기 기록. 예전 서버 이미지로 되돌려도 새 표·열을 안 쓸 뿐이라 다시 올리면 이어집니다. 올리기 전에 아래 백업을 한 번.
+
+### 소셜 로그인을 붙일 때 남은 일
+1. Google Cloud·Apple Developer에서 클라이언트 id를 만들고 `.env`의 `GOOGLE_CLIENT_IDS`·`APPLE_CLIENT_IDS`에 (쉼표로 여러 개: Android·iOS·웹).
+2. 게임: 플랫폼마다 로그인 플러그인(Android Credential Manager, iOS Sign in with Apple, Windows·Mac 브라우저 로그인)으로 ID 토큰을 받아 `POST /v1/auth/link {provider, credential}` → 응답의 토큰을 `Account.take`. 설정에 연결·해제·계정 지우기 버튼.
+3. iOS에 Google 로그인을 넣으면 Sign in with Apple도 같이 (App Store 4.8).
+
 ## 오류 로그
 
 게임(scripts/errlog.gd, Godot 4.5+ `OS.add_logger`)이 엔진 오류·스크립트 오류·경고·printerr을 백트레이스와 같이 모읍니다. 한 번 켤 때 서로 다른 오류 20개까지, 같은 오류는 횟수만 셉니다. 오류마다 그때의 맵·규칙 버전·모드·웨이브·오브젝트 모양을, 보낼 때 게임 버전·패치·플랫폼·OS·기기 id를 붙입니다. `user://logbox.json`에 쌓았다가 30초마다 보내고, "기록 보내기"를 끄면 보내지 않습니다.
@@ -152,7 +171,13 @@ IP는 저장하지 않고 소금 친 해시만 둡니다(빈도 제한용). 게�
 |---|---|
 | `GET /v1/boot?game=&platform=&patch=` | 맞는 패치(서명 포함), 새 버전, 지금 시즌 |
 | `POST /v1/runs` | 판 기록 (헤더 `X-Bindu-Mac`: 본문 HMAC-SHA256). `run`·`ended`가 있으면 같은 판을 한 줄로 고침 |
-| `GET /v1/leaderboard?map=&rules=&season=&period=all\|week&device=` | 순위 |
+| `GET /v1/leaderboard?map=&rules=&season=&period=all\|week&device=` | 순위 (토큰이 있으면 "나"는 계정 기준) |
+| `POST /v1/auth/device` | `{device, secret, nick}` → `{token, expires, account, nick, linked, new}` |
+| `GET /v1/me` | 계정·붙은 수단 (헤더 `Authorization: Bearer 토큰`, 아래 모두 같음) |
+| `GET`·`PUT /v1/save` | 진행 받기 / `{data}` 올리면 서버 것과 합쳐 `{rev, data}` |
+| `GET /v1/save/runs`, `PUT`·`DELETE /v1/save/runs/{run}`, `POST /v1/save/runs/{run}/claim` | 진행 중 판 목록·올리기·지우기·가져오기 (다른 기기가 가진 판은 409) |
+| `POST /v1/auth/link`, `DELETE /v1/auth/link/{provider}` | 소셜 연결·해제 (`provider`: google·apple) |
+| `DELETE /v1/account` | 계정 지우기 |
 | `GET /v1/seasons` | 시즌 목록 |
 | `POST /v1/logs` | 게임 오류 (헤더 `X-Bindu-Mac`, 한 번에 20개까지, 기기당 시간당 100줄·IP당 300줄, 30일 보관) |
 | `GET /privacy` | 개인정보처리방침 (`app/privacy.md`) |
@@ -167,5 +192,7 @@ pytest -q
 ```
 
 게임 쪽 점검(서명·HMAC·패치 적용, 서버 없이): 저장소 루트에서 `godot --headless --path . -s tools/online_check.gd`.
+
+계정·진행 맞추기(로컬 서버 + 두 기기): `AUTH_TEST_PROVIDER=1`로 uvicorn을 띄우고, `SERVER_URL`을 그 주소로 바꾼 사본 두 개(config/name이 달라야 user:// 폴더가 다름)에서 `tools/sync_check.gd`를 `a1` → `b` → `a2` 순서로 (창이 있어야 Net이 켜져서 xvfb-run). 자세한 건 스크립트 머리말.
 
 백업: `docker compose exec db pg_dump -U bindu bindu > backup.sql`, 그리고 `server/keys/`.

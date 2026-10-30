@@ -138,11 +138,7 @@ static func discover(rid: String) -> bool:
 
 static func load_into(cfg: ConfigFile) -> void:
 	map_id = val(cfg, "meta", "map", "plain")
-	if not map_id in MAP_IDS:
-		map_id = "plain"
 	rules = val(cfg, "meta", "rules", 1)
-	if not rules in Rules.IDS:
-		rules = 1
 	tower_skin = val(cfg, "meta", "tower_skin", "circle")
 	core_skin = val(cfg, "meta", "core_skin", "dot")
 	line_flip = val(cfg, "meta", "line_flip", false)
@@ -171,7 +167,7 @@ static func load_into(cfg: ConfigFile) -> void:
 	guide_seen = val(cfg, "guide", "seen", {})
 	tutor_next = val(cfg, "guide", "tutor", games == 0)  # 이미 해 본 저장은 단계별로 열지 않는다
 	notes_seen = val(cfg, "guide", "notes_seen", "")
-	modes = (val(cfg, "meta", "modes", []) as Array).filter(func(m): return Modes.LIST.has(m))
+	modes = val(cfg, "meta", "modes", [])
 	ui_scale = val(cfg, "settings", "ui_scale", 1.3 if OS.has_feature("mobile") else 1.0)
 	if not ui_scale in UI_SCALES:
 		ui_scale = 1.0
@@ -179,11 +175,22 @@ static func load_into(cfg: ConfigFile) -> void:
 	# 예전 저장의 최고 기록은 평원 기록으로 옮긴다
 	if not map_best.has("plain") and cfg.has_section_key("best", "wave"):
 		map_best["plain"] = [cfg.get_value("best", "wave", 0), cfg.get_value("best", "score", 0)]
+	Progress.load_into(cfg)
+	fix()
+	loaded = true
+
+
+## 고를 수 없는 값(없는 맵·규칙·모드, 해금 안 된 모양)은 기본값으로. 불러올 때와 다른 기기 진행을 합친 뒤.
+static func fix() -> void:
+	if not map_id in MAP_IDS:
+		map_id = "plain"
+	if not rules in Rules.IDS:
+		rules = 1
+	modes = modes.filter(func(m): return Modes.LIST.has(m))
 	if not TOWER_SKINS.has(tower_skin) or not unlocked(TOWER_SKINS[tower_skin]["need"]):
 		tower_skin = "circle"
 	if not CORE_SKINS.has(core_skin) or not unlocked(CORE_SKINS[core_skin]["need"]):
 		core_skin = "dot"
-	loaded = true
 
 
 static func save_into(cfg: ConfigFile) -> void:
@@ -217,3 +224,4 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("guide", "seen", guide_seen)
 	cfg.set_value("guide", "tutor", tutor_next)
 	cfg.set_value("guide", "notes_seen", notes_seen)
+	Progress.save_into(cfg)

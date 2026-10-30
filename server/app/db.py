@@ -1,7 +1,8 @@
 """DB 테이블. PostgreSQL(운영)과 SQLite(테스트) 모두 동작."""
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import (JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, create_engine, inspect, text)
+from sqlalchemy import (JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine, inspect,
+                        text)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 from . import config
@@ -89,6 +90,8 @@ class Run(Base):
     run_key: Mapped[str] = mapped_column(String(40), default="", index=True)
     ended: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now)
+    # 계정 (0.5.3부터). 비면 예전 기록·토큰 없는 게임: 리더보드는 기기 id로 묶는다
+    account_id: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
 
 
 class Pick(Base):
@@ -147,6 +150,59 @@ class ClientLog(Base):
     count: Mapped[int] = mapped_column(Integer, default=1)  # 보내기 전 같은 오류가 난 횟수
 
 
+class Account(Base):
+    """플레이어 하나. 기기·소셜 로그인(Identity) 여러 개가 붙는다. 처음 켜면 기기 하나로 익명 계정이 생긴다."""
+    __tablename__ = "accounts"
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
+    nickname: Mapped[str] = mapped_column(String(32), default="")
+    merged_into: Mapped[str | None] = mapped_column(String(32), nullable=True)  # 다른 계정에 합쳐져 없어졌으면 그 계정
+    banned: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class Identity(Base):
+    """로그인 수단. device(기기 id + 비밀값 해시), 나중에 google·apple 등. (provider, subject)는 계정 하나에만."""
+    __tablename__ = "identities"
+    __table_args__ = (UniqueConstraint("provider", "subject", name="uq_identity"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    provider: Mapped[str] = mapped_column(String(16))
+    subject: Mapped[str] = mapped_column(String(128))
+    account_id: Mapped[str] = mapped_column(String(32), index=True)
+    secret_hash: Mapped[str] = mapped_column(String(64), default="")  # device만
+    ip_hash: Mapped[str] = mapped_column(String(64), default="", index=True)  # 만든 곳 (새 계정 수 제한)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
+    last_seen: Mapped[datetime] = mapped_column(DateTime, default=now)
+
+
+class Save(Base):
+    """계정 진행 저장 (progress.py 형식). 기기마다 다른 설정은 넣지 않는다."""
+    __tablename__ = "saves"
+    account_id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    format: Mapped[int] = mapped_column(Integer, default=1)
+    rev: Mapped[int] = mapped_column(Integer, default=0)
+    data: Mapped[dict] = mapped_column(JSON, default=dict)
+    device: Mapped[str] = mapped_column(String(64), default="")  # 마지막으로 올린 기기
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now)
+
+
+class RunSave(Base):
+    """진행 중 판(이어하기 저장) 하나. 한 판은 holder 기기 하나만 이어 한다: 다른 기기가 가져가면 holder가 바뀐다."""
+    __tablename__ = "run_saves"
+    __table_args__ = (UniqueConstraint("account_id", "run_key", name="uq_run_save"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    account_id: Mapped[str] = mapped_column(String(32), index=True)
+    run_key: Mapped[str] = mapped_column(String(40))
+    holder: Mapped[str] = mapped_column(String(64), default="")
+    game_version: Mapped[str] = mapped_column(String(32), default="")
+    platform: Mapped[str] = mapped_column(String(16), default="")
+    map: Mapped[str] = mapped_column(String(32), default="")
+    rules: Mapped[int] = mapped_column(Integer, default=0)
+    wave: Mapped[int] = mapped_column(Integer, default=0)
+    score: Mapped[int] = mapped_column(Integer, default=0)
+    data: Mapped[str] = mapped_column(Text, default="")  # run.cfg 글 그대로
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now)
+
+
 class Ban(Base):
     __tablename__ = "bans"
     device_id: Mapped[str] = mapped_column(String(64), primary_key=True)
@@ -172,6 +228,9 @@ def init_db() -> None:
             con.execute(text("ALTER TABLE runs ADD COLUMN ended BOOLEAN DEFAULT TRUE"))
         if "updated_at" not in have_runs:
             con.execute(text("ALTER TABLE runs ADD COLUMN updated_at TIMESTAMP"))
+        if "account_id" not in have_runs:
+            con.execute(text("ALTER TABLE runs ADD COLUMN account_id VARCHAR(32)"))
+            con.execute(text("CREATE INDEX IF NOT EXISTS ix_runs_account_id ON runs (account_id)"))
         if "sha256" not in have:
             con.execute(text("ALTER TABLE releases ADD COLUMN sha256 VARCHAR(64) DEFAULT ''"))
         if "size" not in have:

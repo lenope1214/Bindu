@@ -192,6 +192,10 @@ var hud_urgent := ""  # 바로 보여야 하는 값(웨이브·중앙 체력 등
 var title_label: Control  # 메인 메뉴
 var title_box: VBoxContainer
 var continue_btn: Button  # 저장된 판이 있을 때만 보임
+var account_label: Label  # 설정: 계정 상태 한 줄
+var remote_btn: Button  # 같은 계정의 다른 기기에서 하던 판이 있고, 이 기기에 하던 판이 없을 때만
+var remote_run := ""  # remote_btn이 가져올 판
+var moved_run := ""  # 다른 기기가 가져간 판: 이 기기에서 계속 해도 서버에는 더 올리지 않는다
 var new_btn: Button
 var new_armed := 0.0  # 저장된 판이 있을 때 새로 시작은 두 번 눌러야 (실수로 지우지 않게)
 var map_label: Label
@@ -287,6 +291,11 @@ func _ready() -> void:
 	net.run_sent.connect(_on_run_sent)
 	net.board_loaded.connect(_on_board_loaded)
 	net.seasons_loaded.connect(_on_seasons_loaded)
+	net.progress_synced.connect(_on_progress_synced)
+	net.device_changed.connect(_save_best)
+	net.runs_listed.connect(_on_runs_listed)
+	net.run_claimed.connect(_on_run_claimed)
+	net.run_moved.connect(_on_run_moved)
 	updater = Updater.new()
 	add_child(updater)
 	updater.cleanup()
@@ -2341,6 +2350,7 @@ func _game_over() -> void:
 		Meta.tutor_next = false
 	_save_best()
 	_clear_run()
+	net.sync()
 	var ach := "\n새 업적: " + ", ".join(new_achievements) if not new_achievements.is_empty() else ""
 	# 판 전체에서 가장 많이 때린 오브젝트
 	var mvp := ""
@@ -2859,6 +2869,15 @@ func _build_menu(root: Control) -> void:
 	continue_btn.visible = false
 	box.add_child(continue_btn)
 	box.move_child(continue_btn, row.get_index())
+	remote_btn = Button.new()
+	remote_btn.custom_minimum_size = Vector2(630, 44)
+	remote_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	remote_btn.focus_mode = Control.FOCUS_NONE
+	remote_btn.add_theme_font_size_override("font_size", 17)
+	remote_btn.pressed.connect(_claim_remote_run)
+	remote_btn.visible = false
+	box.add_child(remote_btn)
+	box.move_child(remote_btn, row.get_index())
 	# 온라인: 새 버전 알림, 패치 공지 (서버에서 받았을 때만 보임)
 	update_btn = Button.new()
 	update_btn.custom_minimum_size = Vector2(630, 40)
@@ -3049,6 +3068,12 @@ func _build_menu(root: Control) -> void:
 		ne.text_submitted.connect(func(_t): ne.release_focus())
 		nrow.add_child(ne)
 		sv.add_child(nrow)
+		account_label = Label.new()
+		account_label.add_theme_font_size_override("font_size", 14)
+		account_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
+		account_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		account_label.text = Account.label()
+		sv.add_child(account_label)
 	var nb := Button.new()
 	nb.text = "패치노트 (N)"
 	nb.focus_mode = Control.FOCUS_NONE
@@ -3285,6 +3310,79 @@ func _on_booted(info: Dictionary) -> void:
 	var msg := Patch.text("", "message", "")
 	notice_label.text = msg
 	notice_label.visible = msg != ""
+	if Net.acct_ok():
+		net.sync()  # 진행을 계정 것과 합친다 (다른 기기에서 한 것)
+		if title_label.visible:
+			net.list_runs()
+
+
+## 다른 기기 진행과 합쳐졌다: 저장하고 시작 화면 글(최고 기록·해금)을 다시 쓴다.
+func _on_progress_synced() -> void:
+	var b := Meta.best_of(Meta.run_key())
+	best_wave = maxi(best_wave, b[0])
+	best_score = maxi(best_score, b[1])
+	_save_best()
+	if title_label.visible:
+		Modes.set_on(Meta.modes if Meta.games > 0 else [])
+		_apply_rules()
+		_refresh_menu()
+
+
+## 계정의 진행 중 판 목록: 이 기기 판을 다른 기기가 가져갔으면 지우고, 이 기기에 판이 없으면 다른 기기 판을 이어 하게.
+func _on_runs_listed(list: Array) -> void:
+	var local := _local_run_key()
+	remote_run = ""
+	for e in list:
+		if not e is Dictionary:
+			continue
+		if str(e.get("run", "")) == local and local != "" and not e.get("mine", true):
+			_on_run_moved(local)
+			local = ""
+	if local == "" and not FileAccess.file_exists(RUN_PATH):
+		for e in list:
+			if e is Dictionary and not e.get("mine", true) and str(e.get("game", "")) == Net.game_version() and str(e.get("map", "")) in Meta.MAP_IDS:
+				remote_run = str(e["run"])
+				remote_btn.text = "다른 기기에서 하던 판 이어하기   웨이브 %d부터 · %s" % [int(e.get("wave", 0)) + 1, Meta.MAPS[str(e["map"])]["name"]]
+				break
+	remote_btn.visible = remote_run != "" and title_label.visible
+	remote_btn.disabled = false
+
+
+func _claim_remote_run() -> void:
+	if remote_run == "":
+		return
+	remote_btn.disabled = true
+	remote_btn.text = "가져오는 중..."
+	net.claim_run(remote_run)
+
+
+func _on_run_claimed(d: Dictionary) -> void:
+	remote_btn.visible = false
+	var cfg := ConfigFile.new()
+	if d.is_empty() or cfg.parse(str(d.get("data", ""))) != OK or Meta.val(cfg, "run", "format", 0) != RUN_FORMAT:
+		_show_toast("다른 기기의 판을 가져오지 못했어요")
+		return
+	cfg.save(RUN_PATH)
+	moved_run = ""
+	_refresh_continue()
+	if title_label.visible and continue_btn.visible:
+		_continue_run()
+
+
+## 다른 기기가 이 판을 가져갔다: 시작 화면이면 이어하기를 지우고, 하는 중이면 계속 하되 서버에는 더 올리지 않는다.
+func _on_run_moved(key: String) -> void:
+	if title_label.visible and _local_run_key() == key:
+		_clear_run(false)
+		_refresh_continue()
+		_show_toast("하던 판은 다른 기기에서 이어 하고 있어요")
+	elif run_id == key and moved_run != key:
+		moved_run = key
+		_show_toast("이 판을 다른 기기에서 이어 하고 있어요. 여기서 계속 해도 다른 기기로는 넘어가지 않아요")
+
+
+func _local_run_key() -> String:
+	var cfg := ConfigFile.new()
+	return str(Meta.val(cfg, "run", "run_id", "")) if cfg.load(RUN_PATH) == OK else ""
 
 
 func _set_update_action(f: Callable) -> void:
@@ -3611,6 +3709,8 @@ func _refresh_notes_btn() -> void:
 
 func _toggle_settings() -> void:
 	settings_panel.visible = not settings_panel.visible
+	if account_label:
+		account_label.text = Account.label()
 
 
 # ---------- 모드 ----------
@@ -3779,6 +3879,7 @@ func _hide_title() -> void:
 	settings_panel.visible = false
 	notes_panel.visible = false
 	codex_panel.visible = false
+	remote_btn.visible = false
 	title_seen = true
 
 
@@ -3810,11 +3911,19 @@ func _save_run() -> void:
 	for k in vals:
 		cfg.set_value("run", k, vals[k])
 	cfg.save(RUN_PATH)
+	if run_id != moved_run:
+		# 같은 계정의 다른 기기에서 이어 할 수 있게 서버에도 (쉬는 시간마다, 끄면 마지막 것)
+		net.put_run(run_id, cfg.encode_to_text(), {"game": Net.game_version(), "platform": Net.platform(), "map": Meta.map_id,
+			"rules": Meta.rules, "wave": wave, "score": score})
 
 
-func _clear_run() -> void:
+## drop: 서버의 같은 판도 지운다 (다른 기기가 가져가서 지우는 것이면 false).
+func _clear_run(drop := true) -> void:
 	if FileAccess.file_exists(RUN_PATH):
+		var key := _local_run_key()
 		DirAccess.remove_absolute(RUN_PATH)
+		if drop and key != "" and key != moved_run:
+			net.drop_run(key)
 
 
 ## 저장된 판 요약 {wave, map, rules, cfg} (없거나 형식이 다르면 빈 사전).
@@ -3835,6 +3944,8 @@ func _run_info() -> Dictionary:
 func _refresh_continue() -> void:
 	var info := _run_info()
 	continue_btn.visible = not info.is_empty()
+	if continue_btn.visible:
+		remote_btn.visible = false
 	new_armed = 0.0
 	new_btn.text = "새로 시작 (N)" if continue_btn.visible else "시작 (Enter)"
 	if continue_btn.visible:

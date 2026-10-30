@@ -15,8 +15,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
-from . import config, signing, stats, validate
-from .db import Ban, ClientLog, Final, Patch, Pick, Release, Run, Season, SrcShare, get_db, init_db, kst_date, now
+from . import accounts, config, signing, stats, validate
+from .db import Ban, ClientLog, Final, Identity, Patch, Pick, Release, Run, Season, SrcShare, get_db, init_db, kst_date, now
 
 @asynccontextmanager
 async def lifespan(_app):
@@ -30,7 +30,8 @@ async def lifespan(_app):
 
 
 app = FastAPI(title="Bindu server", version="1.0", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "PUT"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["*"])
+app.include_router(accounts.router)
 
 PLATFORMS = ["windows", "macos", "linux", "android", "ios"]
 # 패치 data에서 게임이 읽는 최상위 키 (scripts/patch.gd)
@@ -94,7 +95,8 @@ def boot(game: str, platform: str = "", patch: int = -1, db: Session = Depends(g
             latest.update(sha256=r.sha256, size=r.size, sig=signing.sign(release_payload(r.platform, r.version, r.url, r.sha256, r.size)))
     s = current_season(db)
     # snap: 진행 중 판 기록(run·ended)을 받아 한 줄로 고칠 수 있는 서버. 게임은 이게 있을 때만 5웨이브마다 보낸다
-    return {"patch": patch_out, "latest": latest, "season": {"id": s.id, "name": s.name} if s else None, "snap": True}
+    # acct: 계정·진행 저장 API가 있는 서버 (0.5.3). 게임은 이게 있을 때만 기기 인증·진행 맞추기를 한다
+    return {"patch": patch_out, "latest": latest, "season": {"id": s.id, "name": s.name} if s else None, "snap": True, "acct": True}
 
 
 class TowerIn(BaseModel):
@@ -143,7 +145,8 @@ class RunIn(BaseModel):
 
 
 @app.post("/v1/runs")
-async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), db: Session = Depends(get_db)):
+async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), authorization: str = Header(default=""),
+                     db: Session = Depends(get_db)):
     body = await request.body()
     if len(body) > 256_000:
         raise HTTPException(413, "too large")
@@ -154,6 +157,9 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), db
     except Exception as e:
         raise HTTPException(422, str(e)[:300])
     ip = signing.ip_hash(request.client.host if request.client else "")
+    # 계정 토큰이 있고 같은 기기면 계정 기록으로 (없으면 예전처럼 기기 기록)
+    me = accounts.optional(db, authorization)
+    acct = me[0] if me and me[1] == run.device else None
     # 진행 중 판을 다시 보낸 것: 같은 줄을 고친다 (웨이브가 올라갔거나 판이 끝났을 때만)
     row = db.scalars(select(Run).where(Run.device_id == run.device, Run.run_key == run.run).limit(1)).first() if run.run else None
     if row is not None and (row.ended or (not run.ended and run.wave <= row.wave)):
@@ -169,7 +175,7 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), db
 
     p = db.get(Patch, run.patch) if run.patch > 0 else None
     reason = validate.check(run.model_dump(), p.data if p else None)
-    if not reason and db.get(Ban, run.device):
+    if not reason and (db.get(Ban, run.device) or (acct and acct.banned)):
         reason = "banned"
     if not reason and row is not None and not row.valid:
         reason = row.reason  # 한 번 검증에 걸린 판은 계속 뺀다
@@ -180,6 +186,8 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), db
                 kills=run.kills, best_combo=run.best_combo, game_secs=run.game_secs, real_secs=run.real_secs,
                 detail={"perks": run.perks, "modes": run.modes, "towers": [x.model_dump() for x in run.towers], "src": run.src, "log": [x.model_dump() for x in run.log]},
                 valid=reason == "", reason=reason, run_key=run.run, ended=run.ended, updated_at=now())
+    if acct:
+        vals["account_id"] = acct.id
     if row is None:
         row = Run(hidden=validate.easy(run.modes), **vals)  # 쉽게 모드 판은 통계에만 (리더보드 제외)
         db.add(row)
@@ -207,10 +215,13 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), db
             db.add(SrcShare(run_id=row.id, key=key[:48], share=share))
     # 닉네임을 바꾸면 예전 기록에도 새 이름이 보이게
     db.execute(update(Run).where(Run.device_id == run.device, Run.nickname != nick).values(nickname=nick))
+    if acct:
+        acct.nickname = nick
+        db.execute(update(Run).where(Run.account_id == acct.id, Run.nickname != nick).values(nickname=nick))
     db.commit()
     rank = None
     if row.valid and season:
-        rank = board_rank(db, run.map, run.rules, season, None, run.device)
+        rank = board_rank(db, run.map, run.rules, season, None, acct.id if acct else run.device)
     return {"id": row.id, "accepted": row.valid, "season": season, "rank": rank}
 
 
@@ -273,19 +284,25 @@ async def submit_logs(request: Request, x_bindu_mac: str = Header(default=""), d
     return {"ok": True, "saved": len(req.entries)}
 
 
+def _who():
+    """리더보드 한 줄의 주인: 계정이 있으면 계정, 없으면(예전 기록) 기기."""
+    return func.coalesce(Run.account_id, Run.device_id)
+
+
 def _board(db: Session, map_id: str, rules: int, season: int, since):
-    """기기마다 최고 기록 하나씩."""
+    """계정(없으면 기기)마다 최고 기록 하나씩."""
     conds = [Run.map == map_id, Run.rules == rules, Run.season == season, Run.valid.is_(True), Run.hidden.is_(False)]
     if since is not None:
         conds.append(Run.created_at >= since)
-    rn = func.row_number().over(partition_by=Run.device_id, order_by=(Run.score.desc(), Run.wave.desc(), Run.id)).label("rn")
-    sub = select(Run.id, Run.device_id, Run.nickname, Run.wave, Run.score, Run.game_version, Run.created_at, Run.ended, rn).where(*conds).subquery()
+    rn = func.row_number().over(partition_by=_who(), order_by=(Run.score.desc(), Run.wave.desc(), Run.id)).label("rn")
+    sub = select(Run.id, _who().label("who"), Run.nickname, Run.wave, Run.score, Run.game_version, Run.created_at, Run.ended,
+                 rn).where(*conds).subquery()
     return sub
 
 
-def board_rank(db: Session, map_id: str, rules: int, season: int, since, device: str):
+def board_rank(db: Session, map_id: str, rules: int, season: int, since, who: str):
     sub = _board(db, map_id, rules, season, since)
-    mine = db.execute(select(sub).where(sub.c.rn == 1, sub.c.device_id == device)).first()
+    mine = db.execute(select(sub).where(sub.c.rn == 1, sub.c.who == who)).first()
     if not mine:
         return None
     ahead = db.scalar(select(func.count()).select_from(sub).where(
@@ -296,8 +313,10 @@ def board_rank(db: Session, map_id: str, rules: int, season: int, since, device:
 
 @app.get("/v1/leaderboard")
 def leaderboard(map: str, rules: int, season: int = 0, period: str = "all", limit: int = Query(20, le=100),
-                device: str = "", db: Session = Depends(get_db)):
+                device: str = "", authorization: str = Header(default=""), db: Session = Depends(get_db)):
     s = db.get(Season, season) if season else current_season(db)
+    me_acct = accounts.optional(db, authorization)
+    who = me_acct[0].id if me_acct else device
     if not s:
         raise HTTPException(404, "no season")
     since = now() - timedelta(days=7) if period == "week" else None
@@ -305,8 +324,8 @@ def leaderboard(map: str, rules: int, season: int = 0, period: str = "all", limi
     rows = db.execute(select(sub).where(sub.c.rn == 1).order_by(sub.c.score.desc(), sub.c.wave.desc(), sub.c.id).limit(limit)).all()
     total = db.scalar(select(func.count()).select_from(sub).where(sub.c.rn == 1))
     entries = [{"rank": i + 1, "nick": r.nickname, "wave": r.wave, "score": r.score, "game": r.game_version,
-                "date": kst_date(r.created_at), "me": r.device_id == device, "ended": r.ended} for i, r in enumerate(rows)]
-    me = board_rank(db, map, rules, s.id, since, device) if device else None
+                "date": kst_date(r.created_at), "me": bool(who) and r.who == who, "ended": r.ended} for i, r in enumerate(rows)]
+    me = board_rank(db, map, rules, s.id, since, who) if who else None
     return {"season": {"id": s.id, "name": s.name}, "period": period, "total": total, "entries": entries, "me": me}
 
 
@@ -441,7 +460,7 @@ def list_runs(invalid: bool = False, limit: int = Query(50, le=500), db: Session
     q = select(Run).order_by(Run.id.desc()).limit(limit)
     if invalid:
         q = q.where(Run.valid.is_(False))
-    return [{"id": r.id, "created": r.created_at.isoformat(), "device": r.device_id, "nick": r.nickname, "game": r.game_version,
+    return [{"id": r.id, "created": r.created_at.isoformat(), "device": r.device_id, "account": r.account_id or "", "nick": r.nickname, "game": r.game_version,
              "patch": r.patch_id, "season": r.season, "map": r.map, "rules": r.rules, "wave": r.wave, "score": r.score,
              "valid": r.valid, "reason": r.reason, "hidden": r.hidden, "ended": r.ended} for r in db.scalars(q)]
 
@@ -467,6 +486,12 @@ class BanIn(BaseModel):
 def ban(body: BanIn, db: Session = Depends(get_db)):
     db.merge(Ban(device_id=body.device_id, reason=body.reason))
     db.execute(update(Run).where(Run.device_id == body.device_id).values(hidden=True))
+    # 계정이 있는 기기면 계정째로 (그 계정에 붙은 다른 기기·소셜도)
+    idt = db.scalars(select(Identity).where(Identity.provider == "device", Identity.subject == body.device_id)).first()
+    a = accounts.resolve(db, idt.account_id) if idt else None
+    if a:
+        a.banned = True
+        db.execute(update(Run).where(Run.account_id == a.id).values(hidden=True))
     db.commit()
     return {"banned": body.device_id}
 

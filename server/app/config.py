@@ -25,3 +25,13 @@ LOG_PER_IP_HOUR = int(_env("LOG_PER_IP_HOUR", "300"))
 LOG_KEEP_DAYS = int(_env("LOG_KEEP_DAYS", "30"))
 # 통계: 이 웨이브에 못 미친 판은 밸런스 통계(선택률·구성·피해 몫 등)에서 빼고 이탈 통계로만 센다 (기록은 그대로 둠)
 STATS_MIN_WAVE = int(_env("STATS_MIN_WAVE", "5"))
+# 계정 토큰 서명 키. 비우면 ADMIN_TOKEN에서 만든다 (예전 .env 그대로 써도 되게)
+AUTH_SECRET = _env("AUTH_SECRET")
+AUTH_TOKEN_DAYS = int(_env("AUTH_TOKEN_DAYS", "30"))
+# IP 하나가 한 시간에 새로 만들 수 있는 계정 수
+AUTH_NEW_PER_IP_HOUR = int(_env("AUTH_NEW_PER_IP_HOUR", "20"))
+# 소셜 로그인: 받을 클라이언트 id (쉼표로 여러 개). 비면 그 수단은 아직 안 받음
+GOOGLE_CLIENT_IDS = [x for x in _env("GOOGLE_CLIENT_IDS").split(",") if x.strip()]
+APPLE_CLIENT_IDS = [x for x in _env("APPLE_CLIENT_IDS").split(",") if x.strip()]
+# 시험용 가짜 로그인 수단 (credential을 그대로 subject로). 운영에서는 끈다
+AUTH_TEST_PROVIDER = _env("AUTH_TEST_PROVIDER") == "1"

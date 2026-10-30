@@ -42,6 +42,7 @@ def main() -> None:
         "ADMIN_TOKEN": secrets.token_urlsafe(24),
         "RUN_HMAC_KEY": secrets.token_urlsafe(24),
         "IP_SALT": secrets.token_urlsafe(12),
+        "AUTH_SECRET": secrets.token_urlsafe(32),
         "POSTGRES_PASSWORD": secrets.token_urlsafe(18),
     }
     added = [k for k in defaults if k not in env]

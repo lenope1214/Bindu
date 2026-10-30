@@ -7,6 +7,11 @@ signal booted(info: Dictionary)
 signal run_sent(res: Dictionary)  # 이번 판 기록의 서버 응답 {accepted, season, rank}
 signal board_loaded(res: Dictionary)  # 실패면 {"error": 이유}
 signal seasons_loaded(list: Array)  # [{id, name, started}] 새 시즌부터. 실패면 []
+signal progress_synced  # 서버 진행과 합쳐 Meta가 바뀜 (저장·화면 새로 고침)
+signal device_changed  # 서버가 이 기기 id를 다른 기기 것으로 알고 있어 새 id를 만듦 (저장)
+signal runs_listed(list: Array)  # 계정의 진행 중 판 [{run, mine, game, platform, map, rules, wave, score, updated}]
+signal run_claimed(d: Dictionary)  # 가져온 판 {run, data, …}. 실패면 {}
+signal run_moved(run_key: String)  # 이 기기의 이어하기를 다른 기기가 가져감
 
 const OUTBOX_PATH := "user://outbox.json"
 const OUTBOX_MAX := 30  # 오프라인으로 쌓아 둘 판 수
@@ -22,6 +27,8 @@ const RECHECK_MS := 30000
 var booting := false
 var sending := false
 var watch := ""  # 응답을 알려 줄 이번 판 기록
+var authing := false
+var syncing := false
 var sending_logs := false
 var log_tick := 0.0
 var log_wait := 0.0  # 다음 오류 보내기까지 남은 초
@@ -46,6 +53,7 @@ static func reachable() -> bool:
 
 
 func _ready() -> void:
+	Account.load_file()
 	if reachable():
 		ErrLog.install()
 		_update_ctx()
@@ -146,6 +154,113 @@ func boot() -> void:
 		flush()  # 서버가 진행 중 기록을 받는다는 걸 알았으니 쌓아 둔 진행 기록도
 
 
+## 계정·진행 저장 API가 있는 서버인지 (0.5.3). 예전 서버면 기기 인증·진행 맞추기를 하지 않는다.
+static func acct_ok() -> bool:
+	return info.get("acct", false) == true
+
+
+## 서버 토큰이 없거나 곧 만료되면 기기 id + 비밀값으로 받는다. 처음이면 서버가 익명 계정을 만든다.
+func ensure_auth() -> bool:
+	Account.load_file()
+	if Account.has_token():
+		return true
+	if authing:
+		while authing:
+			await get_tree().process_frame
+		return Account.has_token()
+	authing = true
+	var ok := false
+	for i in 2:
+		var body := JSON.stringify({"device": Meta.device_id, "secret": Account.secret, "nick": Meta.nickname})
+		var r := await _request(HTTPClient.METHOD_POST, "/v1/auth/device", body)
+		if r["code"] == 200 and r["data"] is Dictionary:
+			Account.take(r["data"])
+			ok = true
+			break
+		if r["code"] != 403:
+			break
+		# 이 기기 id는 다른 비밀값으로 이미 등록됨 (저장 파일을 다른 기기에서 복사해 옴): 새 기기로 등록
+		Meta.device_id = Crypto.new().generate_random_bytes(16).hex_encode()
+		device_changed.emit()
+	authing = false
+	return ok
+
+
+## 토큰을 붙여 보낸다. 토큰이 무효(서버 키가 바뀜·계정 지움)면 한 번 다시 받아 보낸다.
+func _authed(method: int, path: String, body := "") -> Dictionary:
+	if not await ensure_auth():
+		return {"code": 0, "data": null}
+	var r := await _request(method, path, body, PackedStringArray(["Authorization: Bearer " + Account.token]))
+	if r["code"] == 401:
+		Account.forget_token()
+		if not await ensure_auth():
+			return r
+		r = await _request(method, path, body, PackedStringArray(["Authorization: Bearer " + Account.token]))
+	return r
+
+
+static func _auth_header() -> PackedStringArray:
+	return PackedStringArray(["Authorization: Bearer " + Account.token]) if Account.has_token() else PackedStringArray()
+
+
+## 진행을 서버 것과 합친다: 이 기기 진행을 올리면 서버가 합친 결과를 돌려준다 (덮어쓰지 않음, progress.gd).
+func sync() -> void:
+	if syncing or not enabled() or not acct_ok():
+		return
+	syncing = true
+	await _flush_drops()
+	var r := await _authed(HTTPClient.METHOD_PUT, "/v1/save", JSON.stringify({"data": Progress.build()}))
+	syncing = false
+	if r["code"] == 200 and r["data"] is Dictionary and r["data"].get("data") is Dictionary:
+		Progress.apply(r["data"]["data"])
+		progress_synced.emit()
+
+
+## 쉬는 시간마다: 이어하기 저장을 서버에도. 다른 기기가 이 판을 가져갔으면 run_moved.
+func put_run(run_key: String, text: String, about: Dictionary) -> void:
+	if run_key == "" or not enabled() or not acct_ok():
+		return
+	var body := about.duplicate()
+	body["data"] = text
+	var r := await _authed(HTTPClient.METHOD_PUT, "/v1/save/runs/" + run_key, JSON.stringify(body))
+	if r["code"] == 409:
+		run_moved.emit(run_key)
+
+
+## 판이 끝났거나 새로 시작해 이어하기를 지웠을 때. 오프라인이면 기억해 뒀다 다음에 지운다.
+func drop_run(run_key: String) -> void:
+	if run_key == "" or not enabled():
+		return
+	Account.load_file()
+	if not run_key in Account.drops:
+		Account.drops.append(run_key)
+		Account.save_file()
+	if acct_ok() and not syncing:
+		await _flush_drops()
+
+
+func _flush_drops() -> void:
+	for key in Account.drops.duplicate():
+		var r := await _authed(HTTPClient.METHOD_DELETE, "/v1/save/runs/" + str(key))
+		if r["code"] == 0 or r["code"] == 429 or r["code"] >= 500:
+			break
+		Account.drops.erase(key)  # 지웠거나 이미 다른 기기가 가져감(409)
+	Account.save_file()
+
+
+func list_runs() -> void:
+	if not enabled() or not acct_ok():
+		return
+	var r := await _authed(HTTPClient.METHOD_GET, "/v1/save/runs")
+	if r["code"] == 200 and r["data"] is Array:
+		runs_listed.emit(r["data"])
+
+
+func claim_run(run_key: String) -> void:
+	var r := await _authed(HTTPClient.METHOD_POST, "/v1/save/runs/%s/claim" % run_key)
+	run_claimed.emit(r["data"] if r["code"] == 200 and r["data"] is Dictionary else {})
+
+
 ## 서버가 진행 중 판 기록(5웨이브마다)을 한 줄로 고칠 수 있는지. 모르는(예전) 서버에 보내면 판 하나가 여러 줄이 된다.
 static func snap_ok() -> bool:
 	return info.get("snap", false) == true
@@ -181,7 +296,10 @@ func flush() -> void:
 		var rec: Dictionary = box[0]
 		var body := JSON.stringify(rec)
 		var mac := Crypto.new().hmac_digest(HashingContext.HASH_SHA256, OnlineConfig.RUN_HMAC_KEY.to_utf8_buffer(), body.to_utf8_buffer()).hex_encode()
-		var r := await _request(HTTPClient.METHOD_POST, "/v1/runs", body, PackedStringArray(["X-Bindu-Mac: " + mac]))
+		var h := PackedStringArray(["X-Bindu-Mac: " + mac])
+		if str(rec.get("device", "")) == Meta.device_id:
+			h.append_array(_auth_header())  # 계정 기록으로 (다른 기기 id로 남은 예전 기록은 기기 기록 그대로)
+		var r := await _request(HTTPClient.METHOD_POST, "/v1/runs", body, h)
 		var code: int = r["code"]
 		if code == 0 or code == 429 or code >= 500:
 			break  # 오프라인·서버 문제·너무 잦음: 다음에 다시
@@ -195,7 +313,7 @@ func flush() -> void:
 
 ## season 0은 이번 시즌. 응답에 tag를 붙여 돌려준다 (필터를 바꾼 뒤 늦게 온 지난 응답을 버리게).
 func leaderboard(map_id: String, rules: int, period: String, season := 0, tag := "") -> void:
-	var r := await _request(HTTPClient.METHOD_GET, "/v1/leaderboard?map=%s&rules=%d&season=%d&period=%s&limit=10&device=%s" % [map_id, rules, season, period, Meta.device_id])
+	var r := await _request(HTTPClient.METHOD_GET, "/v1/leaderboard?map=%s&rules=%d&season=%d&period=%s&limit=10&device=%s" % [map_id, rules, season, period, Meta.device_id], "", _auth_header())
 	if r["code"] == 200 and r["data"] is Dictionary:
 		var d: Dictionary = r["data"]
 		d["period"] = period

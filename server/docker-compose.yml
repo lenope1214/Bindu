@@ -29,6 +29,10 @@ services:
       RUN_HMAC_KEY: ${RUN_HMAC_KEY}
       IP_SALT: ${IP_SALT}
       PATCH_KEY_PATH: /keys/patch_private.pem
+      # 계정 토큰 서명 키 (비면 ADMIN_TOKEN에서 만듦). 소셜 로그인 클라이언트 id는 붙일 때 채운다
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      GOOGLE_CLIENT_IDS: ${GOOGLE_CLIENT_IDS:-}
+      APPLE_CLIENT_IDS: ${APPLE_CLIENT_IDS:-}
     volumes:
       - ./keys:/keys:ro
     ports:
