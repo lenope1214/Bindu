@@ -840,6 +840,13 @@ func _draw_body() -> void:
 			for i in steps + 1:
 				pts.append(Vector2.from_angle(a0 + span * i / steps) * RADIUS * 0.8)
 			draw_polyline(pts, Elem.COLORS[e], RADIUS * 0.4)
+		elif order.size() == 1:
+			# 한 칸뿐이면 가운데 점·겹친 끝점 없이 외곽선만 (별 모양은 부채꼴이면 삼각분할이 실패해 투명해짐)
+			var pts := PackedVector2Array()
+			for i in steps:
+				var a := a0 + span * i / steps
+				pts.append(Vector2.from_angle(a) * _skin_r(skin, a))
+			draw_colored_polygon(pts, Elem.COLORS[e])
 		else:
 			var pts := PackedVector2Array([Vector2.ZERO])
 			for i in steps + 1:
