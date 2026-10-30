@@ -66,7 +66,12 @@ func _initialize():
 			Meta.guide_seen.erase("start")
 			main._guide("start", "빨간 화살표가 구체가 들어오는 길목이에요. 속성 카드를 고른 뒤 길목 쪽 빈 곳을 눌러 놓고, 한 번 더 눌러 쏠 방향을 정하세요"),
 		func(): _snap("cards_guide"); main.guide_lines.clear(); main._set_cards_hidden(true),
-		func(): _snap("cards_hidden"); main._set_cards_hidden(false); main._on_skip(),
+		func():
+			_snap("cards_hidden")
+			# 오브젝트 정보창 (마우스를 올렸을 때, 화면 오른쪽 아래 쪽 오브젝트라 창이 화면 끝에 닿는지)
+			var t: Node2D = main.towers.get_child(1)
+			Input.warp_mouse(t.get_global_transform_with_canvas().origin),
+		func(): _snap("tip"); main._set_cards_hidden(false); main._on_skip(),
 		func(): _snap("skip_ready"); main._start_wave(),
 		func(): _snap("skip_wave"); main.skip_left = 0; main._start_perk(),
 		func(): _snap("perks"); main._toggle_pause(),
