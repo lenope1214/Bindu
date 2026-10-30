@@ -237,7 +237,7 @@ func step(delta: float) -> void:
 
 
 ## 구체는 위치가 바뀌어도 다시 그릴 필요가 없다(노드 위치로 옮겨진다). 모양을 바꾸는 상태가 달라졌을 때만 다시 그린다.
-## 후반 구체 300개를 매 프레임 다시 그리던 것이 그리기 비용의 대부분이었다. 도는 연출(보스·보호막·저항·저주·메아리·등장)은 매 프레임.
+## 후반 구체 300개를 매 프레임 다시 그리던 것이 그리기 비용의 대부분이었다. 보스·등장 연출은 매 프레임.
 var _sig := -1
 var _sig_frame := -1
 
@@ -247,19 +247,27 @@ func _redraw_if_changed() -> void:
 	if fr == _sig_frame:
 		return  # 배속이면 한 프레임에 step이 여러 번: 한 번만 본다
 	_sig_frame = fr
-	if kind == Kind.BOSS or shield > 0.0 or resist_e >= 0 or curse_lv > 0 or echo_t > 0.0 or age < 0.3:
+	if kind == Kind.BOSS or age < 0.3:
 		queue_redraw()
 		_sig = -1
 		return
 	var state := 1 if frozen_t > 0.0 else 2 if root_timer > 0.0 else 3 if stagger_t > 0.0 else 4 if root_immune > 0.0 else 0
+	# 체력 고리는 24칸으로 그려 48단계면 충분하다
 	var sg := int(flash > 0.0) | int(poison_t > 0.0) << 1 | int(burn_t > 0.0) << 2 | int(vuln_t > 0.0) << 3 \
 		| int(slow_timer > 0.0) << 4 | int(sturdy and silence_t <= 0.0) << 5 | int(prison_t > 0.0) << 6 | int(silence_t > 0.0) << 7 \
-		| state << 8 | (int(ring) + 1 if tune_t > 0.0 else 0) << 11 | roundi(clampf(hp / max_hp, 0.0, 1.0) * 96.0) << 14 \
+		| state << 8 | (int(ring) + 1 if tune_t > 0.0 else 0) << 11 | roundi(clampf(hp / max_hp, 0.0, 1.0) * 48.0) << 14 \
 		| int(radius()) << 22
 	if kind == Kind.FAST:
 		sg |= posmod(roundi((target - position).angle() / TAU * 90.0), 90) << 30
-	if kind == Kind.BOSS or Meta.orb_hp_on or (main and main.tip_orb == self):
+	if Meta.orb_hp_on or (main and main.tip_orb == self):
 		sg |= (ceili(hp) + 1) << 37
+	# 천천히 도는 표시는 초당 16~30번만 다시 그린다 (보호막 육각·저항 점선·저주 눈·메아리 바늘. 후반엔 구체 절반이 이것들이라 매 프레임 다시 그렸다)
+	var spin := 0
+	if shield > 0.0: spin += roundi(age * 20.0)
+	if resist_e >= 0: spin += roundi(age * 16.0) << 16
+	if curse_lv > 0: spin += roundi(age * 30.0) << 32
+	if echo_t > 0.0: spin += (roundi(echo_t * 10.0) + 1) << 48
+	sg ^= spin * 1000003
 	if sg != _sig:
 		_sig = sg
 		queue_redraw()
