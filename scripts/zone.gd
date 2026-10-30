@@ -1,7 +1,7 @@
 class_name Zone
 extends Node2D
 ## 바닥에 남는 효과(지나간 자리 장판, 블랙홀, 지뢰, 바위 벽, 형태 성질 장판). kind로 구분한다.
-## 지나간 자리 장판(trail)은 탄 하나가 지나온 점들을 들고, 점마다 life만큼 남는다. sub: puddle(투척 장판)·burn(장작).
+## 지나간 자리 장판(trail)은 탄 하나가 지나온 점들을 들고, 점마다 life만큼 남는다. sub: puddle(투척 장판)·burn(장작)·prison(빙결 감옥).
 ## 블랙홀은 앞으로 날아가며 줄어든다(launch). 형태 성질 장판(ember·rill·frost·ledge·fog·tick)의 세기는 amt.
 
 var kind := "burn"
@@ -29,6 +29,7 @@ var pts := PackedVector2Array()  # trail: 지나온 점 (오래된 것부터)
 var born := PackedFloat32Array()  # trail: 점이 생긴 시각 (t)
 var feeding := true  # trail: 탄이 아직 날아가며 점을 더하는 중
 var dps := 0.0  # trail: 안에 있는 구체에 초당 피해 (레벨 배율 전)
+var caught := {}  # trail prison: 이미 가둔 구체 (띠 하나에 한 번)
 
 ## 효과 줄이기(설정)에서 옅게 그리는 장판: 형태 성질·반응·투척 장판. 블랙홀·바위 벽·턱·독버섯은 막거나 끌어서 그대로
 const SOFT := ["trail", "cloud", "boom", "ember", "rill", "frost", "fog", "tick"]
@@ -68,6 +69,8 @@ func trail(s: String) -> void:
 	sub = s
 	if s == "burn":
 		radius = Tower.BURN_R + Tower.BURN_R_LV * (level - 1); max_life = Tower.BURN_LIFE; dps = Tower.BURN_DPS
+	elif s == "prison":
+		radius = Tower.PRISON_R + Tower.PRISON_R_LV * (level - 1); max_life = Tower.PRISON_LIFE
 	else:
 		radius = Tower.lob_r(level); max_life = Tower.LOB_LIFE; dps = Tower.LOB_DPS
 		if is_instance_valid(owner_tower):
@@ -134,6 +137,16 @@ func affect(orbs: Array, delta: float) -> void:
 		var dist: float = o.position.distance_to(position)
 		var inside: bool = dist < radius + o.radius()
 		match kind:
+			"trail" when sub == "prison":
+				# 띠에 처음 닿은 구체를 가둔다 (예전 앞쪽 원과 같은 세기)
+				if caught.has(o) or not is_instance_valid(owner_tower):
+					continue
+				caught[o] = true
+				owner_tower.in_rx = true
+				_hit(o, 2.0 * _p(), 1.0)
+				owner_tower.in_rx = false
+				o.root(1.5)
+				o.prison_t = 1.5
 			"trail":
 				# 오브젝트 하나의 띠가 겹쳐도 한 구체는 한 조각에 한 번만
 				if not is_instance_valid(owner_tower) or owner_tower.trail_hit.get(o, -1) == owner_tower.main.sim_id:
@@ -327,8 +340,8 @@ func _draw() -> void:
 func _draw_trail() -> void:
 	if pts.size() == 0:
 		return
-	var c: Color = Color(1.0, 0.62, 0.1) if sub == "burn" else (owner_tower.color() if is_instance_valid(owner_tower) else Color(0.7, 0.9, 0.3))
-	var fill := 0.22 if sub == "burn" else 0.25
+	var c: Color = Color(1.0, 0.62, 0.1) if sub == "burn" else Color(0.45, 0.5, 0.95) if sub == "prison" else (owner_tower.color() if is_instance_valid(owner_tower) else Color(0.7, 0.9, 0.3))
+	var fill := 0.22 if sub == "burn" else 0.3 if sub == "prison" else 0.25
 	var cols := PackedColorArray()
 	for i in pts.size():
 		cols.append(Color(c, fill * clampf(1.0 - (t - born[i]) / max_life, 0.0, 1.0)))
@@ -342,7 +355,11 @@ func _draw_trail() -> void:
 		var a := clampf(1.0 - (t - born[i]) / max_life, 0.0, 1.0)
 		var f := fmod(t * (1.6 if sub == "burn" else 0.9) + i * 0.37, 1.0)
 		var p := pts[i] + Vector2(cos(i * 2.3), sin(i * 2.3)) * radius * fmod(i * 0.61, 0.7)
-		if sub == "burn":
+		if sub == "prison":
+			# 얼음 가시
+			var d2 := Vector2.from_angle(i * 1.7)
+			draw_line(pts[i] + d2 * radius * 0.4, pts[i] + d2 * radius * 0.9, Color(0.8, 0.85, 1.0, a), 2.5)
+		elif sub == "burn":
 			draw_circle(p + Vector2(0, -f * 12.0), (1.0 - f) * 5.0, Color(Elem.COLORS[Elem.FIRE].lerp(Color(1, 0.9, 0.3), f), a * (1.0 - f)))
 		else:
 			draw_arc(p, 2.0 + f * 6.0, 0, TAU, 10, Color(c.lightened(0.3), a * (1.0 - f)), 1.5)

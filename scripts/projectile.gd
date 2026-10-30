@@ -73,7 +73,9 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 		"tornado":
 			speed = 110.0; dmg = 1.2 * p; radius = 26.0; continuous = true; max_travel = 380.0
 		"mushroom":
-			speed = 220.0; lob = true; max_travel = randf_range(80.0, 240.0)
+			speed = 220.0; lob = true; max_travel = Tower.MUSH_RANGE * Tower.reach(l)
+		"icebolt":
+			speed = 300.0; lob = true; max_travel = Tower.PRISON_RANGE * Tower.reach(l)
 		"storm":
 			speed = 75.0; lob = true; dmg = 2.0 * p; radius = 100.0; max_travel = 360.0 * Tower.reach(l)
 		"wisp":
@@ -87,9 +89,9 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 		homing = tower.mf("homing")
 	vel = d * speed
 	position = tower.position + d * Tower.RADIUS
-	if k in ["blob", "log"]:
+	if k in ["blob", "log", "icebolt"]:
 		zone = tower.main.spawn_zone("trail", l, position, tower)
-		zone.trail("puddle" if k == "blob" else "burn")
+		zone.trail({"blob": "puddle", "log": "burn", "icebolt": "prison"}[k])
 		zone.add_pt(position)
 
 
@@ -126,6 +128,8 @@ func step(delta: float) -> void:
 		if seg_acc >= zone.radius * 0.8:
 			seg_acc = 0.0
 			zone.add_pt(position)
+	if kind == "mushroom":
+		_drop_mines(vel.length() * delta)
 	if form and is_instance_valid(owner_tower):
 		path_acc += vel.length() * delta
 		if path_acc >= 70.0:
@@ -286,6 +290,20 @@ func _check_prisms() -> void:
 			tw.prism_flash = 1.0
 
 
+## 독버섯: 굴러가며 MUSH_GAP마다 지뢰 (마지막 하나는 멈춘 자리에, main._land).
+func _drop_mines(dist: float) -> void:
+	seg_acc += dist
+	if seg_acc < Tower.MUSH_GAP or travel >= max_travel or not is_instance_valid(owner_tower):
+		return
+	seg_acc -= Tower.MUSH_GAP
+	var tw := owner_tower
+	if tw.mines.size() >= 4 + level:
+		return
+	tw.tag = src
+	tw.mines.append(tw.main.spawn_zone("mine", level, position, tw))
+	tw.tag = ""
+
+
 func finished() -> bool:
 	return travel >= max_travel
 
@@ -418,6 +436,12 @@ func _draw() -> void:
 		"mushroom":
 			var s := 1.0 + sin(travel / max_travel * PI) * 0.8
 			_draw_mushroom(self, s)
+		"icebolt":
+			var ic := Color(0.45, 0.5, 0.95)
+			draw_circle(Vector2.ZERO, 9.0, ic)
+			for i in 6:
+				var d2 := Vector2.from_angle(TAU * i / 6.0 + t * 3.0)
+				draw_line(d2 * 6.0, d2 * 13.0, Color(0.8, 0.85, 1.0), 2.0)
 		"wisp", "ghost":
 			var gc: Color = Elem.COLORS[Elem.SOUL] if kind == "ghost" else col
 			if ghost == "plague":

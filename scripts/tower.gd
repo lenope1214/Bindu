@@ -42,7 +42,6 @@ var rail_dir := Vector2.RIGHT  # 레일건이 마지막으로 쏜 방향
 var halo_cd := {}  # 광륜: 구체별 다시 맞힐 때까지 남은 시간
 var vine_cd := {}  # 덩굴: 구체별 다시 묶을 때까지 남은 시간
 var zaps: Array = []  # 감전 물길: 이번에 전류가 꽂힌 자리(로컬)
-var prison_c := Vector2.ZERO  # 빙결 감옥 중심(로컬)
 var clock_ph := 0.0  # 시계침 위상
 var clock_hit := {}  # 시계침: 이번 한 번 훑는 동안 맞힌 구체 ([바늘 번호, 구체] -> true, 다중 발사 바늘은 따로 센다)
 var glint_d := Vector2.RIGHT  # 잔광: 1.2초 뒤 다시 쏠 방향
@@ -124,6 +123,16 @@ const LOB_R := 30.0
 const LOB_R_LV := 3.0
 const LOB_LIFE := 2.5
 const LOB_DPS := 3.4
+## 빙결 감옥(얼음+어둠): 얼음 덩이가 날아간 길에 얼음 띠. 띠에 처음 닿은 구체를 멈추고 받는 피해 +50%.
+const PRISON_IV := 7.0
+const PRISON_RANGE := 300.0
+const PRISON_R := 44.0
+const PRISON_R_LV := 4.0
+const PRISON_LIFE := 1.2
+## 독버섯(독+나무): 버섯이 굴러가며 MUSH_GAP마다 지뢰를 떨군다 (오브젝트당 4+레벨 개까지).
+const MUSH_IV := 2.5
+const MUSH_RANGE := 270.0
+const MUSH_GAP := 90.0
 ## 장작 반응(불+나무): 굴러간 길에 불 장판. 반응 피해라 _hurt + 화상.
 const BURN_IV := 2.2
 const BURN_RANGE := 320.0
@@ -932,7 +941,7 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 					o.burn(1.0 * l, 1.5, self, true))
 			"mushroom":
 				mines = mines.filter(func(mm): return is_instance_valid(mm))
-				if _ready_to(id, 2.0 / spd(l), de) and mines.size() < 4 + l:
+				if _ready_to(id, MUSH_IV / spd(l), de) and mines.size() < 4 + l:
 					main.spawn_proj(self, "mushroom", l, dir)
 			"railgun":
 				# 체력이 가장 많은 구체를 조준해 화면 끝까지 관통
@@ -1090,14 +1099,8 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 						pr.dmg = 2.4 * pw(l)
 						pr.ghost = id
 			"prison":
-				if _ready_to(id, 7.0 / spd(l), de):
-					fx[id] = 0.5
-					prison_c = dir * 150.0 * reach(l)
-					for o in main.near_t(position + prison_c, 90.0 + 8.0 * (l - 1)):
-						if o.position.distance_to(position + prison_c) < 90.0 + 8.0 * (l - 1) + o.radius():
-							hit(o, 2.0 * pw(l))
-							o.root(1.5)
-							o.prison_t = 1.5
+				if _ready_to(id, PRISON_IV / spd(l), de):
+					main.spawn_proj(self, "icebolt", l, dir)
 
 
 ## 음파 사거리.
@@ -1790,14 +1793,6 @@ func _draw_attack() -> void:
 					for i in 5:
 						var d2 := dir.rotated((i - 2) * 0.22)
 						draw_line(d2 * RADIUS, d2 * 300.0 * reach(rl), Color(cols[i], f / 0.35 * 0.8), 6.0 * f / 0.35 + 1.5)
-			"prison":
-				var f: float = fx.get("prison", 0.0)
-				if f > 0.0:
-					var rad := 90.0 + 8.0 * (rl - 1)
-					draw_circle(prison_c, rad, Color(r["color"], 0.25 * f / 0.5))
-					for i in 10:
-						var d2 := Vector2.from_angle(TAU * i / 10)
-						draw_line(prison_c + d2 * rad * 0.6, prison_c + d2 * rad, Color(0.8, 0.85, 1.0, f / 0.5), 3.0)
 			"blizzard":
 				var rad := 130.0 * reach(rl)
 				draw_circle(Vector2.ZERO, rad, Color(r["color"], 0.08))
@@ -1984,9 +1979,9 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 			"curse":
 				ci.draw_arc(o, 320.0 * reach(rl), 0, TAU, 64, Color(rc.r, rc.g, rc.b, 0.5 * rc.a), 1.5)
 			"prison":
-				_r_circle(ci, o + d * 150.0 * reach(rl), 90.0 + 8.0 * (rl - 1), rc)
+				_r_band(ci, o, d, 0.0, PRISON_RANGE * reach(rl), PRISON_R + PRISON_R_LV * (rl - 1), rc)
 			"mushroom":
-				_r_band(ci, o, d, 80.0, 240.0, 14.0, rc)
+				_r_band(ci, o, d, 0.0, MUSH_RANGE * reach(rl), 14.0, rc)
 			"eclipse":
 				ci.draw_rect(ci.get_viewport_rect(), Color(rc.r, rc.g, rc.b, 0.05 * rc.a))
 
