@@ -36,7 +36,10 @@ func _initialize():
 		func(): _snap("notes"); main._toggle_notes(); main._toggle_records(),
 		func(): _snap("records"); main._toggle_records(); main._toggle_settings(),
 		func(): _snap("settings"); main._toggle_settings(); main._toggle_codex(),
-		func(): _snap("codex"); main._toggle_codex(); main._toggle_modes(),
+		func(): _snap("codex"); main.codex_panel.tabs[1].pressed.emit(),
+		func(): _snap("codex_pat"); main.codex_panel.tabs[4].pressed.emit(),
+		func(): _snap("codex_rx"); main.codex_panel.tabs[5].pressed.emit(),
+		func(): _snap("codex_perk"); main._toggle_codex(); main._toggle_modes(),
 		func(): _snap("modes"); main._toggle_modes(); main.help_label.visible = true,
 		func():
 			_snap("help"); main.help_label.visible = false; main.continue_btn.visible = false
