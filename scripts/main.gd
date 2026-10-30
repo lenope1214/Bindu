@@ -180,6 +180,7 @@ const PERKS := [
 	{"id": "regen", "name": "회복", "desc": "웨이브를 마칠 때마다 중앙 체력 +1"},
 	{"id": "slow", "name": "끈적한 공간", "desc": "모든 구체 이동 속도 -8%"},
 	{"id": "harmony", "name": "조화", "desc": "속성을 여러 종류 겹쳐 생기는 공격 속도 감소가 절반으로"},
+	{"id": "coin", "name": "운명의 동전", "desc": "동전을 던지고 특성 3개를 새로 받아요. 앞면: 고른 특성이 두 번 적용. 뒷면: 한 번 적용 + 이번 쉬는 시간 새로고침 +2 (시험)"},
 ]
 var perks := {}  # id → 고른 횟수
 var perk_mode := false
@@ -195,6 +196,7 @@ var skip_stop := false  # 멈추기를 눌렀거나 중앙이 위험해짐: 이�
 var bank_picks: Array = []  # 미룬 고르기. 값은 쌓은 쉬는 시간의 웨이브 (속성 Lv2 확률을 그때 기준으로)
 var bank_rerolls := 0
 var bank_perks := 0  # 미룬 특성 고르기
+var coin_next := ""  # 운명의 동전을 던진 뒤 다음 특성: "double"(앞면) | "reroll"(뒷면) | ""
 var rest_ready := false  # 이번 쉬는 시간의 다음 웨이브(방향·저항·보스)를 이미 뽑아 둠 (넘기다 쉬는 시간에 멈춘 때)
 var combo := 0
 var combo_t := 0.0
@@ -1706,13 +1708,16 @@ func _lv2_chance() -> float:
 func _start_perk() -> void:
 	var pool: Array = PERKS.duplicate()
 	if Modes.has("narrow"):
-		pool = pool.filter(func(pk): return pk["id"] != "reroll")  # 외길: 새로고침이 없으니 쓸모없는 특성은 빼고
+		pool = pool.filter(func(pk): return not pk["id"] in ["reroll", "coin"])  # 외길: 새로고침이 없으니 쓸모없는 특성은 빼고 (동전 뒷면도 새로고침)
+	if coin_next != "":
+		pool = pool.filter(func(pk): return pk["id"] != "coin")  # 던진 동전의 결과를 받을 차례
 	# 더 골라도 거의 효과가 없는 특성은 빼고: 이미 거의 Lv2로 나오는 행운, 두 번 고른 조화(공속 감소 10% → 2.5%)
 	pool = pool.filter(func(pk): return not (pk["id"] == "luck" and _lv2_chance() >= 0.9 or pk["id"] == "harmony" and perks.get("harmony", 0) >= 2))
 	pool.shuffle()
 	perk_offer = pool.slice(0, 3)
 	_show_perks()
-	big_banner("특성 선택", Color(1, 0.85, 0.45))
+	if coin_next == "":
+		big_banner("특성 선택", Color(1, 0.85, 0.45))
 	_save_run()
 
 
@@ -1739,7 +1744,8 @@ func _show_perks() -> void:
 		b.add_theme_stylebox_override("hover", sbh)
 		b.add_theme_stylebox_override("pressed", sbh)
 		var have: int = perks.get(pk["id"], 0)
-		_fit_card_text(b, "[%d] 특성: %s\n\n%s%s" % [i + 1, pk["name"], _perk_desc(pk), "\n\n(보유 %d)" % have if have > 0 else ""], 17)
+		var coin: String = {"double": "\n\n동전 앞면: 두 번 적용", "reroll": "\n\n동전 뒷면: + 새로고침 %d" % int(_perk_val("coin"))}.get(coin_next, "")
+		_fit_card_text(b, "[%d] 특성: %s\n\n%s%s%s" % [i + 1, pk["name"], _perk_desc(pk), "\n\n(보유 %d)" % have if have > 0 else "", coin], 17)
 		b.add_theme_color_override("font_color", Color(1, 0.85, 0.45))
 		b.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
 		b.focus_mode = Control.FOCUS_NONE
@@ -1749,7 +1755,10 @@ func _show_perks() -> void:
 	cards_hidden = false
 	choice_box.visible = true
 	reroll_btn.visible = false
-	hint.text = _th("특성을 하나 고르세요. 이번 판 끝까지 유지됩니다")
+	match coin_next:
+		"double": hint.text = _th("동전 앞면! 고르는 특성이 두 번 적용돼요")
+		"reroll": hint.text = _th("동전 뒷면! 고르는 특성에 더해 이번 쉬는 시간 새로고침 +%d" % int(_perk_val("coin")))
+		_: hint.text = _th("특성을 하나 고르세요. 이번 판 끝까지 유지됩니다")
 
 
 func _on_perk(pk: Dictionary) -> void:
@@ -1759,17 +1768,26 @@ func _on_perk(pk: Dictionary) -> void:
 	var id: String = pk["id"]
 	perks[id] = perks.get(id, 0) + 1
 	run_log.append({"w": wave, "k": "perk", "o": perk_offer.map(func(x): return "perk:" + x["id"]), "p": "perk:" + id})
-	match id:
-		"power": Tower.dmg_mul += _perk_val("power")
-		"haste": Tower.spd_mul += _perk_val("haste")
-		"reach": Tower.reach_mul += _perk_val("reach")
-		"core":
-			core_max += int(_perk_val("core"))
-			core_hp = core_max
-		"slow": orb_speed_mul *= 1.0 - _perk_val("slow")
-		"harmony": Tower.tax_step *= _perk_val("harmony")
+	if id == "coin":
+		# 운명의 동전: 지금 던지고 특성 3개를 새로 받는다 (뒷면도 보통 특성 하나보다 조금 낫게)
+		coin_next = "double" if randf() < 0.5 else "reroll"
+		sfx.play("crit")
+		_start_perk()
+		big_banner("동전 앞면!" if coin_next == "double" else "동전 뒷면!", Color(1, 0.85, 0.3))
+		return
+	_apply_perk(id)
+	var note := ""
+	match coin_next:
+		"double":
+			perks[id] += 1
+			_apply_perk(id)
+			note = " · 동전 앞면: 두 번"
+		"reroll":
+			rerolls_left += int(_perk_val("coin"))
+			note = " · 동전 뒷면: 새로고침 +%d" % int(_perk_val("coin"))
+	coin_next = ""
 	sfx.play("reaction", 0.0)
-	_show_toast("특성: %s (%s)" % [pk["name"], _perk_desc(pk)])
+	_show_toast("특성: %s (%s)%s" % [pk["name"], _perk_desc(pk), note])
 	for t in towers.get_children():
 		t.queue_redraw()
 	if bank_perks > 0:
@@ -1779,8 +1797,20 @@ func _on_perk(pk: Dictionary) -> void:
 		_start_choose(not rest_ready)
 
 
-## 특성 수치 (온라인 패치 perks로 바뀔 수 있음). 설명 글도 같이 바꿔야 하면 perk_desc.
-const PERK_VALS := {"power": 0.15, "haste": 0.12, "reach": 0.12, "core": 3, "reroll": 1, "luck": 0.2, "regen": 1, "slow": 0.08, "harmony": 0.5}
+func _apply_perk(id: String) -> void:
+	match id:
+		"power": Tower.dmg_mul += _perk_val("power")
+		"haste": Tower.spd_mul += _perk_val("haste")
+		"reach": Tower.reach_mul += _perk_val("reach")
+		"core":
+			core_max += int(_perk_val("core"))
+			core_hp = core_max
+		"slow": orb_speed_mul *= 1.0 - _perk_val("slow")
+		"harmony": Tower.tax_step *= _perk_val("harmony")
+
+
+## 특성 수치 (온라인 패치 perks로 바뀔 수 있음). 설명 글도 같이 바꿔야 하면 perk_desc. coin: 동전 뒷면 새로고침 수
+const PERK_VALS := {"power": 0.15, "haste": 0.12, "reach": 0.12, "core": 3, "reroll": 1, "luck": 0.2, "regen": 1, "slow": 0.08, "harmony": 0.5, "coin": 2}
 
 
 func _perk_val(id: String) -> float:
@@ -4083,7 +4113,7 @@ func _save_run() -> void:
 		"core_hp": core_hp, "core_max": core_max, "perks": perks.keys().map(func(k): return [k, perks[k]]), "orb_speed_mul": orb_speed_mul,
 		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
 		"rerolls_left": rerolls_left, "bonus_rerolls": bonus_rerolls, "picks_left": picks_left,
-		"skip_left": skip_left, "skip_total": skip_total, "skip_stop": skip_stop, "bank_picks": bank_picks, "bank_rerolls": bank_rerolls, "bank_perks": bank_perks, "rest_ready": rest_ready,
+		"skip_left": skip_left, "skip_total": skip_total, "skip_stop": skip_stop, "bank_picks": bank_picks, "bank_rerolls": bank_rerolls, "bank_perks": bank_perks, "coin_next": coin_next, "rest_ready": rest_ready,
 		"lanes": Array(lanes), "wave_resist": wave_resist, "boss": boss_plan, "achievements": new_achievements,
 		"state": "perk" if perk_mode else ("ready" if phase == Phase.READY else "choose"),
 		"offer": offer, "perk_offer": perk_offer.map(func(pk): return pk["id"]), "towers": list,
@@ -4202,6 +4232,9 @@ func _continue_run() -> void:
 	bank_picks = (g.call("bank_picks", []) as Array).filter(func(x): return x is int).map(func(x): return clampi(x, 0, wave))
 	bank_rerolls = maxi(0, int(g.call("bank_rerolls", 0)))
 	bank_perks = maxi(0, int(g.call("bank_perks", 0)))
+	coin_next = str(g.call("coin_next", ""))
+	if not coin_next in ["double", "reroll"]:
+		coin_next = ""
 	rest_ready = g.call("rest_ready", false) == true
 	lanes.assign((g.call("lanes", []) as Array).filter(func(a): return a is float))
 	if lanes.is_empty():

@@ -66,6 +66,9 @@ var photo_k := 0.0
 var main: Node
 ## 그린 궤적: 갈래마다 오브젝트 기준 점 목록 (첫 점은 오브젝트 자리). 오브젝트를 옮기면 같이 옮겨진다.
 var paths: Array = []
+var dice_x := 1.0  # 주사위 강화: 다음 공격까지 직접 피해에 곱하는 배율 (roll_dice)
+var dice_miss := 0  # 마지막 대박(6) 뒤로 굴린 수
+var dice_t := 0.0  # 계속 공격하는 형태: 다음에 굴릴 때까지 남은 초
 var path_i := 0  # 다음 탄이 갈 갈래
 var path_q: Array = []  # 다중 발사: 같은 길로 조금 늦게 나갈 탄까지 남은 시간
 
@@ -312,6 +315,8 @@ func detail_lines() -> Array:
 		mp.append("분열 %d%%" % roundi(minf(0.6, 0.12 * mf("split")) * 100.0))
 	if m("size") > 0:
 		mp.append("크기 x%.2f" % sz())
+	if m("dice") > 0:
+		mp.append("주사위 %d개 · 대박까지 최대 %d번" % [dice_n(), maxi(1, dice_pity() - dice_miss)])
 	if not mp.is_empty():
 		out.append(["강화: " + " · ".join(mp), Color(1, 0.85, 0.45)])
 	return out
@@ -674,6 +679,8 @@ func mod_effect(id: String) -> String:
 			if pattern in Pat.PROJECTILE:
 				return "%.2f개 더 뚫음" % f
 			return "피해 +%d%%" % roundi(0.06 * f * 100.0)
+		"dice":
+			return "주사위 %d개 · 대박 %d%% · 평균 피해 +%d%% · %d번 안에 대박" % [dice_n(), roundi((1.0 - pow(5.0 / 6.0, dice_n())) * 100.0), roundi((dice_avg() - 1.0) * 100.0), dice_pity()]
 	return ""
 
 
@@ -801,9 +808,53 @@ func _ready_to(key, interval: float, delta: float) -> bool:
 	if v <= 0.0:
 		cd[key] = interval
 		recoil = 1.0
+		if key == "p":
+			roll_dice()
 		return true
 	cd[key] = v
 	return false
+
+
+## 주사위를 시간으로 굴리는 계속 공격 (그 밖의 공격은 쏠 때마다 _ready_to·연쇄 번개에서 굴린다)
+const DICE_TIMED := ["spray", "clock"]
+const DICE_PITY := [8, 7, 6, 5, 4]  # 장 수별: 이만큼 굴리는 동안 6이 없으면 다음은 6
+
+
+## 주사위 강화: 굴려서 다음 공격까지 이 오브젝트의 직접 피해 배율을 정한다.
+## 장 수만큼(3개까지) 굴려 높은 눈. 1~3은 그대로라 넣어서 약해지는 일은 없다.
+func roll_dice() -> void:
+	if m("dice") <= 0:
+		dice_x = 1.0
+		return
+	var best := 1
+	for i in dice_n():
+		best = maxi(best, randi_range(1, 6))
+	dice_miss += 1
+	if best < 6 and dice_miss >= dice_pity():
+		best = 6
+	if best == 6:
+		dice_miss = 0
+		dice_x = Rules.t("dice_top")
+		if main:
+			main.burst(position, Color(1, 0.85, 0.3), 6, 90.0)
+	else:
+		dice_x = Rules.t("dice_mid") if best >= 4 else 1.0
+
+
+func dice_n() -> int:
+	return mini(m("dice"), 3)
+
+
+func dice_pity() -> int:
+	return DICE_PITY[clampi(m("dice"), 1, DICE_PITY.size()) - 1]
+
+
+## 평균 배율 (대박 보장은 빼고 계산, 설명용)
+func dice_avg() -> float:
+	var n := dice_n()
+	var lo := pow(0.5, n)  # 모두 3 이하
+	var mid := pow(5.0 / 6.0, n)  # 모두 5 이하
+	return lo + (mid - lo) * Rules.t("dice_mid") + (1.0 - mid) * Rules.t("dice_top")
 
 
 ## 다중 발사 방향들 (가운데 기준 0.22라디안 간격).
@@ -840,6 +891,11 @@ func attack(delta: float, orbs: Array) -> void:
 	var l := plv
 	var s := sz()
 	var mk := multi_k()
+	if pattern in DICE_TIMED and m("dice") > 0:
+		dice_t -= de
+		if dice_t <= 0.0:
+			dice_t = 1.0
+			roll_dice()
 	match pattern:
 		"shot", "thorn", "gust", "shard", "iron":
 			if _ready_to("p", BASE_IV[pattern] / spd(l), de):
@@ -868,6 +924,7 @@ func attack(delta: float, orbs: Array) -> void:
 					fired = _chain(orbs, d, l, used) or fired
 				if fired:
 					cd["p"] = 1.3 / spd(l)
+					roll_dice()
 					recoil = 1.0
 					if fe2 <= 0.0:
 						fe2 = 2.0
@@ -1381,7 +1438,9 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		for e in extra:
 			els[e] = maxi(els.get(e, 0), extra[e])
 	var d := dmg * dmg_k(in_rx)
-	var crit := false
+	var dx := dice_x if not in_rx else 1.0  # 주사위: 반응 피해에는 안 곱한다
+	d *= dx
+	var crit := dx >= Rules.t("dice_top") and k >= 1.0  # 대박은 치명타처럼 금색 숫자
 	var lit := false  # 빛 치명타 (확정 치명타 반응은 반응 몫)
 	var cc := minf(0.12 * els.get(Elem.LIGHT, 0), 0.6) if els.has(Elem.LIGHT) else 0.0
 	if o.lucky_t > 0.0:
@@ -1416,6 +1475,10 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		mt *= rm
 		rest -= mt
 		src["elem:metal"] = src.get("elem:metal", 0.0) + mt
+	if dx > 1.0:
+		var dd := rest * (1.0 - 1.0 / dx)
+		rest -= dd
+		src["mod:dice"] = src.get("mod:dice", 0.0) + dd
 	if lit:
 		rest *= 0.5
 		src["elem:light"] = src.get("elem:light", 0.0) + rest
