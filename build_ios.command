@@ -2,6 +2,7 @@
 # Bindu App Store용 IPA 빌드 (macOS: Finder에서 더블클릭 또는 터미널 실행)
 #
 # 결과: 프로젝트 폴더에 Bindu.ipa (App Store Connect 업로드용, Transporter 앱으로 올림)
+# TestFlight에 바로 올리기: ./build_ios.command upload (Xcode에 로그인된 Apple ID 사용)
 # 빌드가 끝나면 export_presets.cfg의 iOS application/version(빌드 번호)을 1 올려 둔다.
 # 사전 준비: Xcode > Settings > Accounts에 Apple ID(팀 4472Q8S8CD) 로그인. 서명은 Xcode 자동 서명.
 set -euo pipefail
@@ -13,6 +14,8 @@ echo "iOS 빌드 번호 $VER 빌드 중..."
 
 rm -rf build/ios && mkdir -p build/ios
 "$GODOT_BIN" --headless --path . --import >/dev/null 2>&1 || true
+# 게임 안 패치노트를 CHANGELOG.md에서 다시 만든다 (빌드에는 .md가 들어가지 않음)
+"$GODOT_BIN" --headless --path . --script tools/gen_patch_notes.gd || true
 "$GODOT_BIN" --headless --path . --export-release "iOS" build/ios/Bindu.xcodeproj
 
 xcodebuild -project build/ios/Bindu.xcodeproj -scheme Bindu -configuration Release \
@@ -26,11 +29,18 @@ cat > build/ios/ExportOptions.plist <<PLIST
   <key>method</key><string>app-store-connect</string>
   <key>teamID</key><string>4472Q8S8CD</string>
   <key>signingStyle</key><string>automatic</string>
+  <key>destination</key><string>$([[ "${1:-}" == upload ]] && echo upload || echo export)</string>
 </dict></plist>
 PLIST
 xcodebuild -exportArchive -archivePath build/ios/Bindu.xcarchive \
   -exportOptionsPlist build/ios/ExportOptions.plist -exportPath build/ios/out -allowProvisioningUpdates
 
+if [[ "${1:-}" == upload ]]; then
+  rm -rf build/ios
+  sed -i '' "/^name=\"iOS\"/,\$ s/^application\/version=\"$VER\"$/application\/version=\"$((VER + 1))\"/" export_presets.cfg
+  echo "업로드 완료: 빌드 번호 $VER — App Store Connect 처리 후 TestFlight에 나타남 (보통 5~30분)"
+  exit 0
+fi
 [[ -f build/ios/out/Bindu.ipa ]] || { echo "빌드 실패: 위 로그를 확인해 주세요." >&2; exit 1; }
 mv -f build/ios/out/Bindu.ipa Bindu.ipa
 rm -rf build/ios
