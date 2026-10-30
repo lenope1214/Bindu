@@ -15,7 +15,7 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from . import config, signing, stats, validate
-from .db import Ban, ClientLog, Final, Patch, Pick, Release, Run, Season, SrcShare, get_db, init_db, now
+from .db import Ban, ClientLog, Final, Patch, Pick, Release, Run, Season, SrcShare, get_db, init_db, kst_date, now
 
 @asynccontextmanager
 async def lifespan(_app):
@@ -304,14 +304,14 @@ def leaderboard(map: str, rules: int, season: int = 0, period: str = "all", limi
     rows = db.execute(select(sub).where(sub.c.rn == 1).order_by(sub.c.score.desc(), sub.c.wave.desc(), sub.c.id).limit(limit)).all()
     total = db.scalar(select(func.count()).select_from(sub).where(sub.c.rn == 1))
     entries = [{"rank": i + 1, "nick": r.nickname, "wave": r.wave, "score": r.score, "game": r.game_version,
-                "date": r.created_at.strftime("%Y-%m-%d"), "me": r.device_id == device, "ended": r.ended} for i, r in enumerate(rows)]
+                "date": kst_date(r.created_at), "me": r.device_id == device, "ended": r.ended} for i, r in enumerate(rows)]
     me = board_rank(db, map, rules, s.id, since, device) if device else None
     return {"season": {"id": s.id, "name": s.name}, "period": period, "total": total, "entries": entries, "me": me}
 
 
 @app.get("/v1/seasons")
 def seasons(db: Session = Depends(get_db)):
-    return [{"id": s.id, "name": s.name, "started": s.created_at.strftime("%Y-%m-%d")} for s in db.scalars(select(Season).order_by(Season.id.desc()))]
+    return [{"id": s.id, "name": s.name, "started": kst_date(s.created_at)} for s in db.scalars(select(Season).order_by(Season.id.desc()))]
 
 
 # ---------- 관리자 ----------

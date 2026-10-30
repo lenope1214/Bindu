@@ -151,6 +151,8 @@ let token = "";
 try { token = localStorage.getItem("bindu_admin") || ""; } catch (e) {}
 $("token").value = token;
 $("save-token").onclick = () => { token = $("token").value.trim(); try { localStorage.setItem("bindu_admin", token); } catch (e) {} say("저장됨"); };
+// 서버는 UTC(시간대 표시 없음)로 보낸다. 화면에는 한국 시간(UTC+9)으로.
+function kst(s) { const d = new Date(Date.parse(s.slice(0, 19) + "Z") + 9 * 3600e3); return d.toISOString().slice(0, 16).replace("T", " "); }
 function say(t) { $("msg").textContent = t; setTimeout(() => { if ($("msg").textContent === t) $("msg").textContent = ""; }, 4000); }
 async function api(path, opt = {}) {
   opt.headers = Object.assign({"Authorization": "Bearer " + token, "Content-Type": "application/json"}, opt.headers || {});
@@ -209,7 +211,7 @@ document.querySelectorAll("[data-csv]").forEach(b => b.onclick = async () => {
 
 async function loadPatches() {
   const ps = await api("/admin/patches");
-  table($("t-patches"), ps, [["번호", r => r.id, 1], ["날짜", r => r.created.slice(0, 16).replace("T", " ")], ["메모", r => esc(r.notes)], ["게임 버전", r => `${r.min_game} ~ ${r.max_game || ""}`], ["시즌", r => r.season, 1],
+  table($("t-patches"), ps, [["번호", r => r.id, 1], ["날짜", r => kst(r.created)], ["메모", r => esc(r.notes)], ["게임 버전", r => `${r.min_game} ~ ${r.max_game || ""}`], ["시즌", r => r.season, 1],
     ["상태", (r, raw) => raw ? +r.active : `<button class="sub" onclick="togglePatch(${r.id}, ${!r.active})">${r.active ? "켜짐 → 끄기" : "꺼짐 → 켜기"}</button>`]]);
   const ss = await (await fetch("/v1/seasons")).json();
   table($("t-seasons"), ss, [["번호", r => r.id, 1], ["이름", r => esc(r.name)], ["시작", r => r.started]]);
@@ -234,7 +236,7 @@ $("r-send").onclick = async () => {
 };
 async function loadRuns() {
   const rs = await api(`/admin/runs?limit=200&invalid=${$("runs-bad").checked}`);
-  table($("t-runs"), rs, [["번호", r => r.id, 1], ["날짜", r => r.created.slice(0, 16).replace("T", " ")], ["닉네임", r => esc(r.nick)], ["기기", r => r.device.slice(0, 8)], ["버전", r => `${r.game} p${r.patch} s${r.season}`],
+  table($("t-runs"), rs, [["번호", r => r.id, 1], ["날짜", r => kst(r.created)], ["닉네임", r => esc(r.nick)], ["기기", r => r.device.slice(0, 8)], ["버전", r => `${r.game} p${r.patch} s${r.season}`],
     ["맵·규칙", r => `${r.map} v${r.rules}`], ["웨이브", r => r.wave, 1], ["점수", (r, raw) => raw ? r.score : r.score.toLocaleString(), 1], ["상태", r => r.ended ? "끝남" : "진행 중"], ["검증", r => r.valid ? "통과" : `<span class="bad">${esc(r.reason)}</span>`],
     ["", (r, raw) => raw ? 0 : `<button class="sub" onclick="hideRun(${r.id}, ${!r.hidden})">${r.hidden ? "다시 보이기" : "리더보드에서 빼기"}</button> <button class="sub" onclick="banDev('${r.device}')">기기 차단</button>`]]);
 }
@@ -247,13 +249,13 @@ async function loadLogs() {
   table($("t-logs"), ls, [["횟수", r => r.times, 1], ["기기", r => r.devices, 1], ["종류", r => esc(r.kind)],
     ["오류", (r, raw) => raw ? r.message : `<a href="#" onclick="logDetail('${r.fp}');return false" style="color:var(--text)">${esc(r.message.slice(0, 90))}</a>`],
     ["위치", r => esc(r.file ? `${r.file}:${r.line} ${r.func}` : "")], ["버전", r => esc(r.versions.join(", "))], ["플랫폼", r => esc(r.platforms.join(", "))],
-    ["마지막", r => r.last.slice(0, 16).replace("T", " ")]]);
+    ["마지막", r => kst(r.last)]]);
 }
 $("load-logs").onclick = loadLogs;
 window.logDetail = async fp => {
   const rs = await api(`/admin/api/logs/${fp}`);
   $("l-head").textContent = rs.length ? rs[0].message.slice(0, 120) : "";
-  table($("t-log"), rs, [["날짜", r => r.created.slice(0, 16).replace("T", " ")], ["버전", r => `${esc(r.game)} p${r.patch}`], ["플랫폼", r => esc(`${r.platform} ${r.os}`)],
+  table($("t-log"), rs, [["날짜", r => kst(r.created)], ["버전", r => `${esc(r.game)} p${r.patch}`], ["플랫폼", r => esc(`${r.platform} ${r.os}`)],
     ["맵·규칙", r => esc(`${r.map} v${r.rules}`)], ["모드", r => esc(r.modes)], ["모양", r => esc(r.skin)], ["웨이브", r => r.wave, 1], ["횟수", r => r.count, 1], ["기기", r => r.device.slice(0, 8)],
     ["백트레이스", (r, raw) => raw ? r.backtrace : `<pre style="margin:0;white-space:pre-wrap;max-width:520px">${esc(r.backtrace || "-")}</pre>`]]);
 };

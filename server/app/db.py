@@ -1,5 +1,5 @@
 """DB 테이블. PostgreSQL(운영)과 SQLite(테스트) 모두 동작."""
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import (JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, create_engine, inspect, text)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
@@ -9,6 +9,14 @@ from . import config
 
 def now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+KST = timezone(timedelta(hours=9))
+
+
+def kst_date(t: datetime) -> str:
+    """저장은 UTC(tz 없음), 사람에게 보이는 날짜는 한국 시간."""
+    return t.replace(tzinfo=timezone.utc).astimezone(KST).strftime("%Y-%m-%d")
 
 
 class Base(DeclarativeBase):
