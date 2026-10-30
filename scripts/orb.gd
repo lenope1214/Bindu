@@ -143,22 +143,22 @@ func setup(k: int, base_hp: float, base_speed: float) -> void:
 ## main이 웨이브 중 호출한다(배속이면 한 프레임에 여러 번).
 func step(delta: float) -> void:
 	age += delta
-	pincer_cd = maxf(pincer_cd - delta, 0.0)
+	if pincer_cd > 0.0: pincer_cd = maxf(pincer_cd - delta, 0.0)
 	# A6: 보스는 주기적으로 빠른 부하를 부른다
 	if kind == Kind.BOSS and main and silence_t <= 0.0:
 		minion_t -= delta
 		if minion_t <= 0.0:
 			minion_t = minion_every(main.wave)
 			main.spawn_minion(self)
-	slow_timer = maxf(slow_timer - delta, 0.0)
-	root_timer = maxf(root_timer - delta, 0.0)
-	stagger_t = maxf(stagger_t - delta, 0.0)
-	vuln_t = maxf(vuln_t - delta, 0.0)
-	flash = maxf(flash - delta, 0.0)
-	frozen_t = maxf(frozen_t - delta, 0.0)
-	swamp_t = maxf(swamp_t - delta, 0.0)
-	bog_t = maxf(bog_t - delta, 0.0)
-	sand_cd = maxf(sand_cd - delta, 0.0)
+	if slow_timer > 0.0: slow_timer = maxf(slow_timer - delta, 0.0)
+	if root_timer > 0.0: root_timer = maxf(root_timer - delta, 0.0)
+	if stagger_t > 0.0: stagger_t = maxf(stagger_t - delta, 0.0)
+	if vuln_t > 0.0: vuln_t = maxf(vuln_t - delta, 0.0)
+	if flash > 0.0: flash = maxf(flash - delta, 0.0)
+	if frozen_t > 0.0: frozen_t = maxf(frozen_t - delta, 0.0)
+	if swamp_t > 0.0: swamp_t = maxf(swamp_t - delta, 0.0)
+	if bog_t > 0.0: bog_t = maxf(bog_t - delta, 0.0)
+	if sand_cd > 0.0: sand_cd = maxf(sand_cd - delta, 0.0)
 	if lava_t > 0.0:
 		lava_t -= delta
 		if lava_t <= 0.0 and main:
@@ -171,12 +171,12 @@ func step(delta: float) -> void:
 		else:
 			hist[hist_i] = position
 			hist_i = (hist_i + 1) % 4
-	prison_t = maxf(prison_t - delta, 0.0)
-	tune_t = maxf(tune_t - delta, 0.0)
-	ring_cd = maxf(ring_cd - delta, 0.0)
-	soul_t = maxf(soul_t - delta, 0.0)
-	styx_t = maxf(styx_t - delta, 0.0)
-	silence_t = maxf(silence_t - delta, 0.0)
+	if prison_t > 0.0: prison_t = maxf(prison_t - delta, 0.0)
+	if tune_t > 0.0: tune_t = maxf(tune_t - delta, 0.0)
+	if ring_cd > 0.0: ring_cd = maxf(ring_cd - delta, 0.0)
+	if soul_t > 0.0: soul_t = maxf(soul_t - delta, 0.0)
+	if styx_t > 0.0: styx_t = maxf(styx_t - delta, 0.0)
+	if silence_t > 0.0: silence_t = maxf(silence_t - delta, 0.0)
 	if not amp.is_empty():
 		for key in amp.keys():
 			amp[key][1] -= delta
@@ -184,18 +184,18 @@ func step(delta: float) -> void:
 				amp.erase(key)
 				if key == "rust":
 					rust_n = 0
-	lucky_t = maxf(lucky_t - delta, 0.0)
-	mud_t = maxf(mud_t - delta, 0.0)
-	glacier_t = maxf(glacier_t - delta, 0.0)
-	loud_t = maxf(loud_t - delta, 0.0)
-	smog_t = maxf(smog_t - delta, 0.0)
-	frostpo_t = maxf(frostpo_t - delta, 0.0)
-	toxring_t = maxf(toxring_t - delta, 0.0)
+	if lucky_t > 0.0: lucky_t = maxf(lucky_t - delta, 0.0)
+	if mud_t > 0.0: mud_t = maxf(mud_t - delta, 0.0)
+	if glacier_t > 0.0: glacier_t = maxf(glacier_t - delta, 0.0)
+	if loud_t > 0.0: loud_t = maxf(loud_t - delta, 0.0)
+	if smog_t > 0.0: smog_t = maxf(smog_t - delta, 0.0)
+	if frostpo_t > 0.0: frostpo_t = maxf(frostpo_t - delta, 0.0)
+	if toxring_t > 0.0: toxring_t = maxf(toxring_t - delta, 0.0)
 	if seed_n > 0:
 		seed_t -= delta
 		if seed_t <= 0.0:
 			RxMore.sprout(self)
-	echo_cd = maxf(echo_cd - delta, 0.0)
+	if echo_cd > 0.0: echo_cd = maxf(echo_cd - delta, 0.0)
 	if tune_t <= 0.0:
 		ring = 0.0
 	if echo_t > 0.0:
@@ -203,7 +203,7 @@ func step(delta: float) -> void:
 		if echo_t <= 0.0:
 			_echo_release()
 	push_budget = minf(push_budget + speed * (0.05 if kind == Kind.BOSS else PUSH_REGEN) * delta, _push_max())
-	root_immune = maxf(root_immune - delta, 0.0)
+	if root_immune > 0.0: root_immune = maxf(root_immune - delta, 0.0)
 	root_dr_t += delta
 	if root_dr_t > ROOT_DR_RESET:
 		root_dr = 0
