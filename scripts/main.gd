@@ -5818,15 +5818,27 @@ func _draw_orb_tooltip() -> void:
 		if o.silence_t > 0.0: parts.append("침묵")
 		if o.resist_e >= 0: parts.append("%s 저항" % Elem.NAMES[o.resist_e])
 		if o.sturdy: parts.append("굳셈(밀기·감속·기절·냉기 절반)")
-		var txt := " · ".join(parts)
 		var fs := roundi(14 * Meta.ui_scale)
-		var bh := fs + 10.0
-		var w := ui_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		# 상태가 많으면(보스·후반) 한 줄이 화면·오른쪽 설명 밖으로 나간다: 들어가는 만큼씩 줄을 나눈다
+		var maxw := minf(_right_limit() - 32.0, 620.0 * Meta.ui_scale)
+		var rows: Array[String] = [""]
+		for part in parts:
+			var cand: String = part if rows[-1] == "" else rows[-1] + " · " + part
+			if rows[-1] != "" and ui_font.get_string_size(cand, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > maxw:
+				rows.append(part)
+			else:
+				rows[-1] = cand
+		var w := 0.0
+		for r in rows:
+			w = maxf(w, ui_font.get_string_size(r, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+		var lh := fs + 6.0
+		var bh := lh * rows.size() + 4.0
 		var p: Vector2 = o.position + Vector2(-w / 2 - 8, -o.radius() - 16 - bh)
-		p.x = clampf(p.x, 8, get_viewport_rect().size.x - w - 24)
+		p.x = clampf(p.x, 8, maxf(8.0, _right_limit() - w - 16))
 		p.y = maxf(p.y, _tip_top())
 		fx_layer.draw_rect(Rect2(p, Vector2(w + 16, bh)), Color(0.05, 0.06, 0.09, 0.9))
-		fx_layer.draw_string(ui_font, p + Vector2(8, fs + 3), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+		for i in rows.size():
+			fx_layer.draw_string(ui_font, p + Vector2(8, fs + 3 + lh * i), rows[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
 
 
 ## 중앙 점 스킨: 눈은 가장 가까운 구체를 본다, 태양은 빛살이 돈다.

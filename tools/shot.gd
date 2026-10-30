@@ -82,7 +82,8 @@ func _initialize():
 			Input.warp_mouse(t.get_global_transform_with_canvas().origin),
 		func(): _snap("tip"); main.touch_ui = touch; main._set_cards_hidden(false); main._on_skip(),  # 마우스를 옮기면 touch_ui가 꺼진다
 		func(): _snap("skip_ready"); main._start_wave(),
-		func(): _snap("skip_wave"); main.skip_left = 0; main._start_perk(),
+		func(): _snap("skip_wave"); _orb_tip(),
+		func(): _snap("orb_tip"); main.touch_ui = touch; main.skip_left = 0; main._start_perk(),
 		func(): _snap("perks"); main._toggle_pause(),
 		func(): _snap("pause"); main._toggle_settings(),
 		func(): _snap("pause_settings"); main._toggle_settings(); main._toggle_pause(); main._game_over(),
@@ -104,3 +105,15 @@ func _process(_d) -> bool:
 		else:
 			quit()
 	return false
+
+
+## 상태가 많은 구체에 마우스를 올린다 (구체 정보창이 한 줄로 화면 밖까지 나가지 않는지)
+func _orb_tip() -> void:
+	if main.orbs.get_child_count() == 0:
+		main._spawn_orb(2)  # 단단한 구체
+	var o = main.orbs.get_child(0)
+	o.position = main.get_canvas_transform().affine_inverse() * Vector2(760, 440)  # 막 나온 구체는 화면 끝이라 가운데로
+	o.shield = 30.0; o.splits = true; o.burn_t = 2.0; o.poison_t = 2.0; o.vuln_t = 2.0; o.slow_timer = 2.0
+	o.prison_t = 2.0; o.swamp_t = 2.0; o.curse_lv = 1; o.silence_t = 2.0; o.resist_e = 0; o.sturdy = true
+	o.root_timer = 30.0  # 제자리에
+	Input.warp_mouse(o.get_global_transform_with_canvas().origin)
