@@ -11,6 +11,8 @@ const SAVE_PATH := "user://best.cfg"
 const RUN_PATH := "user://run.cfg"  # 이어하기: 쉬는 시간마다 저장, 게임 오버면 지움
 const RUN_FORMAT := 1
 const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 위치·방향 변경"
+## 첫 판: 카드 종류가 열리는 웨이브 (그 웨이브 앞 쉬는 시간부터 나온다). 속성은 처음부터
+const TUTOR_OPEN := {"pat": 3, "mod": 4, "link": 6, "cata": 6}
 const PLACE_HINT := "클릭: 설치 (오브젝트 위면 속성 겹치기)   오브젝트 꾹 누르기·끌기: 옮기기\n우클릭/Esc: 다시 고르기"
 
 var phase := Phase.CHOOSE
@@ -105,6 +107,11 @@ var pause_box: HBoxContainer  # 일시정지 창 아래 버튼 (계속·시작 �
 var legend_hidden := false
 var bar_open := false  # 오른쪽 아래 설정 버튼(소리·자동 시작·일시정지·배속)을 펼쳤는지. 접으면 펼치기 버튼만 남는다
 var bar_btn: Button
+var tutor := false  # 이번 판이 첫 판 안내 판인지: 카드 종류를 웨이브마다 하나씩 연다 (TUTOR_OPEN)
+var tutor_given := {}  # 첫 판에 새로 연 카드 종류를 선택지에 한 번 넣었는지 (종류 -> true)
+var guide_label: Label  # 처음 생기는 일 한 줄 안내 (위쪽 가운데)
+var guide_lines: Array[String] = []
+var guide_t := 0.0  # 남은 시간. 음수면 웨이브가 시작될 때까지
 var wave_resist := -1  # 다음 웨이브 저항 속성 (-1: 없음)
 var legend_btn: Button
 var aim_start_ms := 0
@@ -174,6 +181,8 @@ func _ready() -> void:
 		Meta.device_id = Crypto.new().generate_random_bytes(16).hex_encode()
 		_save_best()
 	Patch.load_cache()
+	if Meta.games == 0:
+		Meta.rules = 1  # 첫 판은 기본 규칙 (규칙 고르기는 첫 판 뒤에 보인다)
 	_apply_rules()
 	zones = _layer("Zones")
 	towers = _layer("Towers")
@@ -292,6 +301,24 @@ func _build_ui() -> void:
 	toast.add_theme_color_override("font_outline_color", Color.BLACK)
 	toast.add_theme_constant_override("outline_size", 5)
 	root.add_child(toast)
+
+	guide_label = Label.new()
+	guide_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	# 토스트 아래, 선택지 카드 위. 오른쪽 설명(x 950~)과 겹치지 않게 폭 600
+	guide_label.position = Vector2(-300, 140)
+	guide_label.size = Vector2(600, 0)
+	guide_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	guide_label.add_theme_font_size_override("font_size", 16)
+	guide_label.add_theme_color_override("font_color", Color(1, 0.93, 0.7))
+	var gsb := StyleBoxFlat.new()
+	gsb.bg_color = Color(0.08, 0.07, 0.04, 0.9)
+	gsb.border_color = Color(1, 0.82, 0.4, 0.7)
+	gsb.set_border_width_all(1)
+	gsb.set_corner_radius_all(6)
+	gsb.set_content_margin_all(10)
+	guide_label.add_theme_stylebox_override("normal", gsb)
+	guide_label.visible = false
+	root.add_child(guide_label)
 
 	choice_box = HBoxContainer.new()
 	choice_box.set_anchors_preset(Control.PRESET_CENTER)
@@ -599,6 +626,7 @@ func _help_text() -> String:
 		"P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   F11: 전체 화면",
 		"R: 다시 시작 (게임 오버 뒤, 또는 일시정지 중 두 번)",
 		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 이어하기(Enter)로 그 쉬는 시간부터 (새로 시작은 N 두 번)",
+		"첫 판은 카드가 단계별로 열려요(공격방식 3·강화 4·연계 6웨이브). 처음 생기는 일엔 위쪽에 한 줄 안내 (설정에서 끄기·다시 보기)",
 		"",
 		"[규칙 · %s]" % Rules.NAMES[Rules.version],
 		"중앙 체력 10. 구체가 닿으면 줄어듭니다",
@@ -644,6 +672,13 @@ static func lanes_for(w: int) -> int:
 
 
 func _start_choose(new_round := true) -> void:
+	if new_round and wave == 0:
+		# 새 판. 헤드리스(봇·점검)는 늘 모두 열린 채로
+		tutor = Meta.tutor_next and DisplayServer.get_name() != "headless"
+		tutor_given = {}
+	if new_round and tutor and wave + 1 >= TUTOR_OPEN.values().max() and Meta.tutor_next:
+		Meta.tutor_next = false  # 모두 열렸다: 다음 판부터는 처음부터 모두
+		_save_best()
 	if new_round:
 		_roll_lanes()
 		# 다음 웨이브 저항 속성: 12웨이브(버전 4는 8)부터 60% 확률
@@ -652,9 +687,12 @@ func _start_choose(new_round := true) -> void:
 		picks_left = 2 if wave <= 1 else Rules.picks  # 처음 두 번의 쉬는 시간은 2개씩
 		rerolls_left = 1 + bonus_rerolls + perks.get("reroll", 0) * int(_perk_val("reroll"))
 		bonus_rerolls = 0
+	phase = Phase.CHOOSE  # 웨이브를 막 끝낸 때도 카드 안내가 쉬는 시간 안내로 뜨게 (_open_choose가 다시 정함)
 	_make_choices()
 	_open_choose()
 	_save_run()
+	if new_round:
+		_rest_guides()
 
 
 ## 선택지 화면을 연다 (offer는 이미 정해져 있음).
@@ -697,7 +735,47 @@ func _make_choices() -> void:
 	# 속성 카드(새 오브젝트를 놓을 수 있는 카드)는 최소 1장
 	if not offer.any(func(cd): return cd["type"] == "elem"):
 		offer[randi() % offer.size()] = {"type": "elem", "e": Elem.ALL.pick_random(), "lv": 1}
+	if tutor:
+		_tutor_offer()
 	_show_offer()
+	_card_guides()
+
+
+## 첫 판: 이번 웨이브에 새로 열린 카드 종류를 처음 한 번은 선택지에 꼭 넣는다 (속성 카드 하나는 남김).
+func _tutor_offer() -> void:
+	for k in ["pat", "mod", "link"]:
+		if wave + 1 < TUTOR_OPEN[k] or tutor_given.has(k):
+			continue
+		if not offer.any(func(cd): return cd["type"] == k):
+			var cd := _tutor_card(k)
+			if cd.is_empty():
+				continue
+			var elems := offer.filter(func(c): return c["type"] == "elem").size()
+			for i in range(offer.size() - 1, -1, -1):
+				if offer[i]["type"] != "elem" or elems > 1:
+					offer[i] = cd
+					break
+		tutor_given[k] = true
+
+
+## 넣을 곳이 있는 그 종류 카드 한 장 (없으면 빈 사전).
+func _tutor_card(k: String) -> Dictionary:
+	var ids: Array = []
+	match k:
+		"pat": ids = Pat.PATTERN_IDS.slice(1)
+		"mod": ids = Pat.MOD_IDS.duplicate()
+		"link": ids = ["link"] if towers.get_child_count() >= 2 else ["prism", "reso"]
+	ids.shuffle()
+	for id in ids:
+		var cd := {"type": k, "id": id}
+		if k == "link" or towers.get_children().any(func(t): return t.can_take(cd)):
+			return cd
+	return {}
+
+
+## 첫 판에는 아직 안 열린 카드 종류.
+func _card_open(k: String) -> bool:
+	return not tutor or wave + 1 >= TUTOR_OPEN[k]
 
 
 ## 선택지 카드 버튼을 offer대로 다시 만든다.
@@ -717,7 +795,7 @@ func _card_key(card: Dictionary) -> String:
 func _roll_card() -> Dictionary:
 	var n := towers.get_child_count()
 	var cata := Patch.num("cards", "cata", 0.01)
-	if n > 0 and wave > 0:
+	if n > 0 and wave > 0 and _card_open("cata"):
 		# 대격변: 각각 1%
 		var c := randf()
 		if c < cata:
@@ -726,9 +804,9 @@ func _roll_card() -> Dictionary:
 			return {"type": "cata", "id": "pat"}
 	# 종류 비율 (온라인 패치 cards로 바뀔 수 있음): 속성 42%, 공격방식 25%, 강화 23%, 연계 10%
 	var we := Patch.num("cards", "elem", 0.42)
-	var wp := Patch.num("cards", "pat", 0.25)
-	var wm := Patch.num("cards", "mod", 0.23)
-	var r := randf() * (we + wp + wm + Patch.num("cards", "link", 0.10))
+	var wp := Patch.num("cards", "pat", 0.25) if _card_open("pat") else 0.0
+	var wm := Patch.num("cards", "mod", 0.23) if _card_open("mod") else 0.0
+	var r := randf() * (we + wp + wm + (Patch.num("cards", "link", 0.10) if _card_open("link") else 0.0))
 	if n == 0 or wave == 0 or r < we:
 		var lv2 := minf(Patch.num("cards", "lv2_base", 0.2) + Patch.num("cards", "lv2_wave", 0.02) * wave, Patch.num("cards", "lv2_max", 0.5))
 		var lv := 2 if randf() < lv2 + _perk_val("luck") * perks.get("luck", 0) else 1
@@ -817,6 +895,55 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 func _choose_hint() -> String:
 	var left := " (%d개 남음)" % picks_left if picks_left > 1 else ""
 	return "선택지를 고르세요%s. 설치된 오브젝트를 클릭하면 위치·방향 변경\nV: 선택지 내리기" % left
+
+
+# ---------- 처음 안내 ----------
+
+## 처음 생기는 일에 한 줄 안내. 안내마다 한 번만(Meta.guide_seen), 설정에서 끌 수 있다.
+## 쉬는 시간 안내는 웨이브가 시작될 때까지, 웨이브 중 안내는 8초 보인다(쉬는 시간 안내가 붙으면 함께 남음). 많아야 3개.
+func _guide(id: String, text: String) -> void:
+	if not Meta.guide_on or Meta.guide_seen.has(id) or title_label.visible:
+		return
+	var first := Meta.guide_seen.is_empty()
+	Meta.guide_seen[id] = true
+	_save_best()
+	guide_lines.append(text)
+	if first:
+		guide_lines.append("이런 안내는 처음 한 번만 나와요. 설정(O)에서 끌 수 있어요")
+	while guide_lines.size() > 3:
+		guide_lines.pop_front()
+	guide_t = 8.0 if phase == Phase.WAVE else -1.0
+	var out := PackedStringArray()
+	for g in guide_lines:
+		out.append(_wrap_words(g, 570.0, 16))
+	guide_label.text = "\n".join(out)
+	guide_label.reset_size()
+
+
+## 쉬는 시간이 열릴 때: 길목·겹치기·보스·저항·굳센 구체 안내.
+func _rest_guides() -> void:
+	if wave == 0:
+		_guide("start", "빨간 화살표가 구체가 들어오는 길목이에요. 속성 카드를 고른 뒤 길목 쪽 빈 곳을 눌러 놓고, 한 번 더 눌러 쏠 방향을 정하세요")
+	elif towers.get_child_count() > 0:
+		_guide("stack", "속성 카드를 오브젝트 위에 놓으면 겹쳐져요. 같은 속성은 레벨업, 다른 속성은 부가효과가 더해지고, 맞는 두 속성이 만나면 특수 반응이 생겨요")
+	if not boss_plan.is_empty() and boss_plan["wave"] == wave + 1:
+		_guide("boss", "다음 웨이브 끝에 보스가 와요. 분홍 선이 실제로 지나갈 길이에요. 중앙에 닿으면 3 피해, 웨이브를 넘기면 특성을 하나 골라요")
+	if wave_resist >= 0:
+		_guide("resist", "저항 구체(점선 고리)가 섞여 와요. 다음 웨이브는 %s 속성 피해를 덜 받으니 다른 속성 오브젝트도 길목에 두세요" % Elem.NAMES[wave_resist])
+	if wave + 1 >= Rules.sturdy_from:
+		_guide("sturdy", "굳센 구체(회색 쐐기)가 섞여 와요. 밀기·감속·기절·냉기가 절반만 들으니 피해로 잡아야 해요")
+
+
+## 선택지에 처음 나온 카드 종류 안내.
+func _card_guides() -> void:
+	var types := offer.map(func(cd): return cd["type"])
+	if "pat" in types:
+		_guide("pat", "새 카드 · 공격방식: 직선탄 오브젝트에 넣으면 공격 모양이 바뀌고 그 뒤로 고정돼요. 같은 공격방식을 넣으면 레벨업")
+	if "mod" in types:
+		var cap := "같은 강화는 %d개까지 쌓여요" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "쌓을수록 효과가 절반씩 줄어요"
+		_guide("mod", "새 카드 · 강화: 오브젝트 위에 놓아 공격을 바꿔요(빠르게·크게·관통 등). " + cap)
+	if "link" in types:
+		_guide("link", "새 카드 · 연계: 연결선은 두 오브젝트를 이어 속성을 나눠 쓰게 하고, 프리즘·공명은 오브젝트 위에 놓아 주변을 도와요")
 
 
 ## 띄어쓰기 단위로 줄을 나눈다. Godot 자동 줄바꿈은 한글을 음절마다 끊어 "형\n태"처럼 단어가 잘린다.
@@ -1103,7 +1230,7 @@ func _boss_text() -> String:
 	if boss_plan["sturdy"]:
 		sp.append("굳셈")
 	sp.append("웨이브 마지막에 나옴")
-	sp.append("4초마다 빠른 부하")
+	sp.append("%d초마다 빠른 부하" % roundi(Orb.minion_every(boss_plan["wave"])))
 	return " · ".join(sp) + "\n보스 길: 화면의 굵은 분홍 선. 막지 않으면 나온 뒤 약 %d초에 중앙 (닿으면 체력 -3)" % roundi(_boss_eta())
 
 
@@ -1296,6 +1423,9 @@ func _start_wave() -> void:
 	reroll_btn.visible = false
 	to_spawn = spawn_count(wave)
 	wave_leaks.clear()
+	if guide_t < 0.0:
+		guide_lines.clear()
+		guide_t = 0.0
 	for w in [10, 15, 20]:
 		if wave >= w:
 			_achieve("wave%d" % w)
@@ -1329,6 +1459,8 @@ func _game_over() -> void:
 	best_wave = maxi(wave, prev[0])
 	Meta.total_kills += kills
 	Meta.games += 1
+	if tutor:
+		Meta.tutor_next = false
 	_save_best()
 	_clear_run()
 	var ach := "\n새 업적: " + ", ".join(new_achievements) if not new_achievements.is_empty() else ""
@@ -1387,9 +1519,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				KEY_RIGHT:
 					_cycle_map(1)
 				KEY_UP:
-					_cycle_rules(-1)
+					if Meta.games > 0:
+						_cycle_rules(-1)
 				KEY_DOWN:
-					_cycle_rules(1)
+					if Meta.games > 0:
+						_cycle_rules(1)
 				KEY_F11:
 					_toggle_fullscreen()
 				KEY_M:
@@ -1848,6 +1982,28 @@ func _build_menu(root: Control) -> void:
 						t.queue_redraw()
 			_save_best())
 		sv.add_child(cb)
+	var gc := CheckButton.new()
+	gc.text = "처음 안내 보기 (처음 생기는 일에 한 줄 설명)"
+	gc.button_pressed = Meta.guide_on
+	gc.focus_mode = Control.FOCUS_NONE
+	gc.toggled.connect(func(on):
+		Meta.guide_on = on
+		if not on:
+			guide_lines.clear()
+		_save_best())
+	sv.add_child(gc)
+	var gr := Button.new()
+	gr.text = "안내 처음부터 다시 보기"
+	gr.tooltip_text = "본 안내를 지우고, 다음 새 판은 첫 판처럼 카드 종류를 웨이브마다 하나씩 엽니다"
+	gr.focus_mode = Control.FOCUS_NONE
+	gr.pressed.connect(func():
+		Meta.guide_seen = {}
+		Meta.guide_on = true
+		Meta.tutor_next = true
+		gc.set_pressed_no_signal(true)
+		_save_best()
+		_show_toast("다음 새 판부터 안내를 처음부터 보여 줘요"))
+	sv.add_child(gr)
 	if OnlineConfig.SERVER_URL != "":
 		var oc := CheckButton.new()
 		oc.text = "기록 보내기 (리더보드·사용 통계, 익명)"
@@ -1917,6 +2073,7 @@ func _refresh_menu() -> void:
 	var best := Meta.best_of(Meta.key())
 	map_label.text = "맵: %s  (←/→)\n%s\n최고 기록  웨이브 %d · 점수 %s" % [m["name"], m["desc"], best[0], num(best[1])]
 	rules_label.text = "규칙: %s  (↑/↓)\n%s" % [Rules.NAMES[Meta.rules], _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 470.0, 18)]
+	rules_label.get_parent().visible = Meta.games > 0  # 규칙 버전 고르기는 첫 판을 끝낸 뒤에 (그 전엔 버전 1)
 	var ts: Dictionary = Meta.TOWER_SKINS[Meta.tower_skin]
 	skin_label.text = "오브젝트 모양: " + ts["name"]
 	var cs: Dictionary = Meta.CORE_SKINS[Meta.core_skin]
@@ -1951,14 +2108,14 @@ func _refresh_legend() -> void:
 		"   " + cap_m,
 		"· 연계: 연결선·프리즘·공명",
 		"",
-		"[특수 반응] 두 속성이 함께 있으면 추가 공격",
+		"[특수 반응] 두 속성이 함께 있으면 추가 공격 (발견 %d/%d)" % [Meta.codex.size(), Elem.REACTIONS.size()],
 	])
-	# 반응이 많아 한 줄에 두 개씩
+	# 반응이 많아 한 줄에 두 개씩. 아직 만들어 보지 않은 반응은 ? + ? (도감과 같은 기록)
 	var rs: Array = Elem.REACTIONS
 	for i in range(0, rs.size(), 2):
 		var row := PackedStringArray()
 		for r in rs.slice(i, i + 2):
-			row.append("%s+%s %s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["name"]])
+			row.append("%s+%s %s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["name"]] if Meta.codex.has(r["id"]) else "? + ?")
 		lines.append("   ".join(row))
 	legend.text = "\n".join(lines)
 
@@ -2195,6 +2352,8 @@ func _check_progress() -> void:
 			if Meta.discover(r["id"]):
 				_show_toast("반응 도감에 추가: " + r["name"])
 				_save_best()
+				_refresh_legend()
+				_guide("react", "특수 반응 · %s(%s+%s): %s. 발견한 반응은 오른쪽 설명에 채워져요" % [r["name"], Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["desc"]])
 	if links / 2 >= 3:
 		_achieve("links3")
 	if Meta.codex.size() >= 5:
@@ -2248,6 +2407,7 @@ func _save_run() -> void:
 		"state": "perk" if perk_mode else ("ready" if phase == Phase.READY else "choose"),
 		"offer": offer, "perk_offer": perk_offer.map(func(pk): return pk["id"]), "towers": list,
 		"log": run_log, "game_secs": run_game, "real_secs": run_real,
+		"tutor": tutor, "tutor_given": tutor_given.keys(),
 	}
 	var cfg := ConfigFile.new()
 	for k in vals:
@@ -2355,6 +2515,11 @@ func _continue_run() -> void:
 	run_log = (g.call("log", []) as Array).filter(func(e): return e is Dictionary)
 	run_game = maxf(0.0, g.call("game_secs", 0.0))
 	run_real = maxf(0.0, g.call("real_secs", 0.0))
+	tutor = g.call("tutor", false)
+	tutor_given = {}
+	for k in g.call("tutor_given", []):
+		if k in TUTOR_OPEN:
+			tutor_given[k] = true
 	# 오브젝트: 연결선은 저장 순서 번호로 다시 잇는다 (못 읽은 것은 null로 자리만 지킴)
 	var raw: Array = g.call("towers", [])
 	var made: Array = []
@@ -2794,6 +2959,12 @@ func _process(delta: float) -> void:
 			new_btn.text = "새로 시작 (N)"
 	toast_timer -= delta
 	toast.visible = toast_timer > 0.0
+	if guide_t > 0.0 and not get_tree().paused:
+		guide_t -= delta
+		if guide_t <= 0.0:
+			guide_lines.clear()
+			guide_t = 0.0
+	guide_label.visible = not guide_lines.is_empty() and not title_label.visible and phase != Phase.GAMEOVER and not get_tree().paused and not help_label.visible and not settings_panel.visible and not records_panel.visible
 	toast.position.y = maxf(100.0, hud.position.y + hud.size.y + 36.0)  # 점수 줄이 길어져도 보스 체력 막대 아래
 	banner_t -= delta
 	if banner_t <= 0.0 and not banner_queue.is_empty():
@@ -2932,6 +3103,7 @@ func _sim_step(delta: float) -> void:
 func _record_leak(o: Orb) -> void:
 	wave_leaks.append([_lane_of(o.from_a), o.kind, o.core_dmg])
 	leak_flash.append([_entry_point(o.from_a), 1.2])
+	_guide("leak", "구체가 중앙에 닿았어요. 붉게 번쩍인 가장자리 쪽 길목이 비어 있어요. 쉬는 시간에 그쪽으로 오브젝트를 옮기거나 새로 놓으세요")
 
 
 ## 각도 a에서 가장 가까운 진입 방향 번호 (없으면 -1).

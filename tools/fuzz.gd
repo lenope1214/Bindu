@@ -17,7 +17,11 @@ func _initialize():
 	main._apply_rules()
 	main.lanes.clear()
 	main._roll_lanes()
-	print("FUZZR rules=", Meta.rules, " map=", Meta.map_id)
+	# 짝수 시드는 첫 판(카드 단계별·처음 안내)으로. 헤드리스는 원래 첫 판 안내를 끈다
+	main.tutor = sd % 2 == 0
+	Meta.guide_seen = {}
+	Meta.guide_on = true
+	print("FUZZR rules=", Meta.rules, " map=", Meta.map_id, " tutor=", main.tutor)
 func _mouse(pos: Vector2, btn: int, pressed: bool, shift := false):
 	var e := InputEventMouseButton.new()
 	e.position = pos; e.global_position = pos; e.button_index = btn; e.pressed = pressed; e.shift_pressed = shift

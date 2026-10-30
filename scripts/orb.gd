@@ -55,6 +55,11 @@ var age := 0.0  # 등장 연출
 var from_a := 0.0  # 나온 방향(중앙 기준 각도): 누수 기록·표시용
 
 
+## 보스 부하 소환 주기 (첫 부하는 나온 지 4초 뒤): 첫 보스는 7초, 웨이브마다 빨라져 13웨이브부터 4초.
+static func minion_every(w: int) -> float:
+	return clampf(9.0 - w * 0.4, 4.0, 7.0)
+
+
 func radius() -> float:
 	match kind:
 		Kind.FAST:
@@ -89,8 +94,7 @@ func step(delta: float) -> void:
 	if kind == Kind.BOSS and main:
 		minion_t -= delta
 		if minion_t <= 0.0:
-			# 첫 보스는 7초, 이후 웨이브마다 빨라져 13웨이브부터 4초마다
-			minion_t = clampf(9.0 - main.wave * 0.4, 4.0, 7.0)
+			minion_t = minion_every(main.wave)
 			main.spawn_minion(self)
 	slow_timer = maxf(slow_timer - delta, 0.0)
 	root_timer = maxf(root_timer - delta, 0.0)
