@@ -3327,7 +3327,7 @@ func _refresh_legend() -> void:
 		"   " + cap_m,
 		"· 연계: 협공·프리즘·공명 (주변 오브젝트와 함께)",
 		"",
-		"[특수 반응] 두 속성이 함께 있으면 추가 공격 (발견 %d/%d)" % [Meta.codex.size(), Elem.REACTIONS.size()],
+		"[특수 반응] 두 속성이 함께 있으면 추가 공격 (발견\u00a0%d/%d)" % [Meta.codex.size(), Elem.REACTIONS.size()],
 	])
 	# 반응이 91개라 만들어 본 반응만 한 줄에 세 개씩 (나머지는 개수만, 도감과 같은 기록).
 	# 줄 수는 legend_rx_rows까지: 많이 찾으면 설명이 화면 아래 설정 버튼까지 덮던 것 (_process에서 맞춤)
