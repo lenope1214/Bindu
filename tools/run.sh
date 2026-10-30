@@ -6,6 +6,7 @@
 #   cont [규칙=1] [맵=plain] [웨이브=45]   4웨이브마다 끄고 이어하기 → 저장 전후가 다르면 DIFF
 #   fuzz [판 수=8] [프레임=9000]          무작위 클릭·끌기·키·터치 (스크립트 오류 찾기)
 #   elem                                   속성마다 직선탄 Lv2 하나가 30초간 준 피해/초
+#   perf                                   후반 부하(오브젝트 16개·구체 400개) 배속별 프레임당 계산 시간
 # 환경 변수: SPEED(배속, 기본 4) SMART(기본 1: 사람처럼 중앙 가까이에서 길목을 겨눔, 0이면 예전 봇)
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -103,8 +104,14 @@ case "$CMD" in
 		T 1800 "$G" --headless --fixed-fps 60 --path . -s tools/elem_dps.gd 2>&1 | grep -v "^$" | grep -vi "warning\|leaked\|alsa\|audio" || true
 		rm -rf "$D"
 		;;
+	perf)
+		D=$(copy_project "$$")
+		cd "$D"
+		T 900 "$G" --headless --fixed-fps 60 --path . -s tools/perf.gd 2>&1 | grep -E "PERF|SCRIPT ERROR" || true
+		rm -rf "$D"
+		;;
 	*)
-		sed -n '2,10p' "$0"
+		sed -n '2,11p' "$0"
 		exit 1
 		;;
 esac

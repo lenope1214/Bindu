@@ -142,6 +142,8 @@ var ui_font: Font
 var perk_src := ""
 var hud_wrap_key := ""
 var hud_wrap := false
+var hud_cool := 0.0  # 점수 줄을 다시 쓰기까지 남은 시간 (점수·남은 구체만 바뀔 때)
+var hud_urgent := ""  # 바로 보여야 하는 값(웨이브·중앙 체력 등)이 바뀌었는지 비교용
 var perk_wrapped := ""
 var title_label: Control  # 메인 메뉴
 var continue_btn: Button  # 저장된 판이 있을 때만 보임
@@ -545,7 +547,14 @@ func _show_toast(t: String) -> void:
 	toast_timer = 2.0
 
 
-func _update_hud() -> void:
+## 점수·남은 구체만 바뀐 때는 0.1초에 한 번만 다시 쓴다. 글자 모양 계산이 비싸 고배속에서 프레임마다 쓰면
+## 그것만으로 프레임당 몇 ms (8배속 부하 측정). 웨이브·중앙 체력 등이 바뀌면 바로.
+func _update_hud(force := false) -> void:
+	var urgent := "%d|%d|%d|%d|%d|%d|%d" % [wave, core_hp, core_max, phase, towers.get_child_count(), selected.size(), perks.size()]
+	if not force and urgent == hud_urgent and hud_cool > 0.0:
+		return
+	hud_urgent = urgent
+	hud_cool = 0.1
 	var text := "웨이브 %d   점수 %s   중앙 %d/%d   최고 %s (웨이브 %d)" % [
 		wave, num(score), maxi(core_hp, 0), core_max, num(best_score), best_wave]
 	var extra := ""
@@ -2144,7 +2153,7 @@ func _cycle_rules(d: int) -> void:
 	sfx.play("place")
 	_refresh_menu()
 	_save_best()
-	_update_hud()
+	_update_hud(true)
 
 
 ## 잠긴 스킨은 건너뛰고, 잠긴 것이 있으면 해금 조건을 알려 준다.
@@ -3011,6 +3020,7 @@ func _process(delta: float) -> void:
 	pause_btn.visible = in_game and bar_open
 	speed_btn.visible = in_game and bar_open
 	speed_pick.visible = in_game and bar_open
+	hud_cool -= delta
 	_update_hud()
 	if pause_box.visible:
 		pause_box.position.y = paused_label.position.y + paused_label.size.y + 10.0
