@@ -1,5 +1,5 @@
 class_name Meta
-## 게임 밖 요소: 맵, 스킨, 업적, 반응 도감, 기록, 설정. 저장은 user://best.cfg.
+## 게임 밖 요소: 맵, 스킨, 업적, 반응 도감, 선호 표시, 기록, 설정. 저장은 user://best.cfg.
 
 const SAVE_PATH := "user://best.cfg"
 
@@ -53,6 +53,7 @@ static var core_skin := "dot"
 static var map_best := {}  # 맵 id -> [웨이브, 점수]
 static var achieved := {}  # 업적 id -> true
 static var codex := {}  # 발견한 반응 id -> true
+static var favs := {}  # 도감에서 선호 표시한 항목 (Codex.card_key 등) -> true
 static var total_kills := 0
 static var games := 0
 static var volume := 1.0
@@ -143,6 +144,7 @@ static func load_into(cfg: ConfigFile) -> void:
 	map_best = val(cfg, "meta", "map_best", {})
 	achieved = val(cfg, "meta", "achieved", {})
 	codex = val(cfg, "meta", "codex", {})
+	favs = val(cfg, "meta", "favs", {})
 	total_kills = val(cfg, "meta", "kills", 0)
 	games = val(cfg, "meta", "games", 0)
 	volume = val(cfg, "settings", "volume", 1.0)
@@ -181,6 +183,7 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("meta", "map_best", map_best)
 	cfg.set_value("meta", "achieved", achieved)
 	cfg.set_value("meta", "codex", codex)
+	cfg.set_value("meta", "favs", favs)
 	cfg.set_value("meta", "kills", total_kills)
 	cfg.set_value("meta", "games", games)
 	cfg.set_value("meta", "modes", modes)

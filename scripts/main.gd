@@ -172,6 +172,7 @@ var notes: PatchNotes
 var notes_back := false  # 설정 창에서 열었으면 닫을 때 설정 창으로 돌아간다
 var settings_panel: PanelContainer
 var modes_panel: PanelContainer  # 모드 고르기 (시작 화면, 첫 판 뒤)
+var codex_panel: Codex  # 도감·선호 표시 (시작 화면, K)
 var modes_btn: Button
 var modes_head: Label
 var modes_btns := {}  # 모드 id -> 켜고 끄는 버튼
@@ -611,7 +612,7 @@ func _apply_ui_scale() -> void:
 
 ## 글자를 키우면(설정) 화면보다 커지는 창은 줄여서 맞춘다. 가운데 창이라 위아래 여백이 같고, 아래는 버튼 줄을 비운다.
 func _fit_panels() -> void:
-	for c: Control in [title_box, help_label, records_panel, settings_panel, notes_panel, modes_panel]:
+	for c: Control in [title_box, help_label, records_panel, settings_panel, notes_panel, modes_panel, codex_panel]:
 		if not c.is_visible_in_tree():
 			continue
 		var h: float = c.get_combined_minimum_size().y if c == title_box else c.size.y
@@ -745,12 +746,13 @@ func _help_text() -> String:
 		"쉬는 시간에 오브젝트 클릭: 위치·방향 다시 정하기",
 		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 몫 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
-		"P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   F11: 전체 화면",
+		"P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
 		"R: 다시 시작 (게임 오버 뒤, 또는 일시정지 중 두 번)",
 		"E: 판 끝내기 (일시정지 중 두 번) — 지금 점수로 게임 오버, 기록·온라인 순위에 올라감",
 		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 이어하기(Enter)로 그 쉬는 시간부터 (새로 시작은 N 두 번)",
 		"첫 판은 카드가 단계별로 열려요 (공격방식 3·강화 4·연계 6웨이브)",
 		"처음 생기는 일엔 위쪽에 한 줄 안내 (설정에서 끄기·처음부터 다시 보기)",
+		"도감(시작 화면)에서 ☆로 선호 표시: 그 카드·반응이 선택지에 나오면 반짝여요",
 		"",
 		"[규칙 · %s]" % Rules.NAMES[Rules.version],
 		"중앙 체력 10. 구체가 닿으면 줄어듭니다",
@@ -1009,10 +1011,33 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 	b.add_theme_color_override("font_color", col)
 	b.add_theme_color_override("font_hover_color", col.lightened(0.3))
 	b.pressed.connect(_on_pick.bind(card))
+	_mark_fav(b, sb, sbh, _fav_tag(card))
 	if card["type"] == "elem":
 		b.mouse_entered.connect(func(): hover_elem = card["e"])
 		b.mouse_exited.connect(func(): hover_elem = -1)
 	return b
+
+
+## 도감에서 선호한 카드면 꼬리표 글: 카드 자체, 또는 속성 카드가 선호한 반응을 지금 오브젝트에 만들 수 있을 때. 아니면 "".
+func _fav_tag(card: Dictionary) -> String:
+	if Meta.favs.has(Codex.card_key(card)):
+		return "★ 선호"
+	if card["type"] == "elem":
+		for t in towers.get_children():
+			for r in Elem.new_reactions(t.elements, card["e"]):
+				if Meta.favs.has("react:" + str(r["id"])):
+					return "★ 선호 반응: " + str(r["name"])
+	return ""
+
+
+## 선호 카드 강조: 금색 테두리와 반짝임(Codex.Sparkle)을 얹는다.
+func _mark_fav(b: Button, sb: StyleBoxFlat, sbh: StyleBoxFlat, tag: String) -> void:
+	if tag == "":
+		return
+	for s: StyleBoxFlat in [sb, sbh]:
+		s.border_color = Codex.FAV_COLOR
+		s.set_border_width_all(maxi(s.border_width_left, 3))
+	b.add_child(Codex.Sparkle.new(tag))
 
 
 ## 고르기 안내. 이번 쉬는 시간에 더 고를 수가 있으면 첫 줄에 붙인다 (V 줄 끝에 붙어 내리기 횟수처럼 읽히던 것).
@@ -1144,6 +1169,7 @@ func _show_perks() -> void:
 		b.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
 		b.focus_mode = Control.FOCUS_NONE
 		b.pressed.connect(_on_perk.bind(pk))
+		_mark_fav(b, sb, sbh, "★ 선호" if Meta.favs.has("perk:" + str(pk["id"])) else "")
 		choice_box.add_child(b)
 	cards_hidden = false
 	choice_box.visible = true
@@ -1640,8 +1666,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_ESCAPE and notes_panel.visible:
 			_close_notes()
 			return
-		if event.keycode == KEY_ESCAPE and (settings_panel.visible or records_panel.visible or help_label.visible or modes_panel.visible):
+		if event.keycode == KEY_ESCAPE and (settings_panel.visible or records_panel.visible or help_label.visible or modes_panel.visible or codex_panel.visible):
 			settings_panel.visible = false
+			codex_panel.visible = false
 			modes_panel.visible = false
 			records_panel.visible = false
 			help_label.visible = false
@@ -1650,6 +1677,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			match event.keycode:
 				KEY_H:
 					help_label.visible = not help_label.visible
+				KEY_K:
+					_toggle_codex()
 				KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
 					if continue_btn.visible:
 						_continue_run()
@@ -1748,6 +1777,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if notes_panel.visible:
 		_close_notes()
+		return
+	if codex_panel.visible:
+		codex_panel.visible = false
 		return
 	if records_panel.visible:
 		records_panel.visible = false
@@ -2030,13 +2062,13 @@ func _build_menu(root: Control) -> void:
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 10)
 	box.add_child(row)
-	var specs := [["시작 (Enter)", _close_title], ["기록·업적", _toggle_records], ["설정 (O)", _toggle_settings], ["도움말 (H)", func(): help_label.visible = not help_label.visible]]
+	var specs := [["시작 (Enter)", _close_title], ["기록·업적", _toggle_records], ["도감 (K)", _toggle_codex], ["설정 (O)", _toggle_settings], ["도움말 (H)", func(): help_label.visible = not help_label.visible]]
 	if OnlineConfig.SERVER_URL != "":
 		specs.insert(2, ["리더보드", _toggle_board])
 	for spec in specs:
 		var b := Button.new()
 		b.text = spec[0]
-		b.custom_minimum_size = Vector2(150 if specs.size() <= 4 else 120, 44)
+		b.custom_minimum_size = Vector2(150 if specs.size() <= 4 else 120 if specs.size() == 5 else 100, 44)
 		b.focus_mode = Control.FOCUS_NONE
 		b.pressed.connect(spec[1])
 		row.add_child(b)
@@ -2109,6 +2141,9 @@ func _build_menu(root: Control) -> void:
 		board_bar.add_child(b)
 	_build_notes(root)
 	_build_modes(root, rsb)
+	codex_panel = Codex.new()
+	codex_panel.setup(PERKS, rsb.duplicate(), _save_best)
+	root.add_child(codex_panel)
 
 	settings_panel = PanelContainer.new()
 	settings_panel.set_anchors_preset(Control.PRESET_CENTER)
@@ -2384,6 +2419,16 @@ func _cycle_skin(kind: String, d: int) -> void:
 	_save_best()
 	for t in towers.get_children():
 		t.queue_redraw()
+
+
+func _toggle_codex() -> void:
+	if not codex_panel.visible:
+		settings_panel.visible = false
+		records_panel.visible = false
+		help_label.visible = false
+		notes_panel.visible = false
+		modes_panel.visible = false
+	codex_panel.toggle()
 
 
 func _toggle_records() -> void:
@@ -2935,6 +2980,7 @@ func _hide_title() -> void:
 	records_panel.visible = false
 	settings_panel.visible = false
 	notes_panel.visible = false
+	codex_panel.visible = false
 	title_seen = true
 
 
@@ -3513,7 +3559,7 @@ func _process(delta: float) -> void:
 		if guide_t <= 0.0:
 			guide_lines.clear()
 			guide_t = 0.0
-	guide_label.visible = not guide_lines.is_empty() and not title_label.visible and phase != Phase.GAMEOVER and not get_tree().paused and not help_label.visible and not settings_panel.visible and not records_panel.visible and not notes_panel.visible and not modes_panel.visible
+	guide_label.visible = not guide_lines.is_empty() and not title_label.visible and phase != Phase.GAMEOVER and not get_tree().paused and not help_label.visible and not settings_panel.visible and not records_panel.visible and not notes_panel.visible and not modes_panel.visible and not codex_panel.visible
 	# 글자를 키운(설정) 좁은 화면에서 펼친 버튼 줄이 왼쪽 아래 안내 글에 닿으면 안내 글을 버튼 줄 앞까지로 줄인다.
 	# 줄이 늘면 위로 자라고, 다음 웨이브 미리보기는 그 위에 붙는다
 	var hw := 590.0
@@ -3540,7 +3586,7 @@ func _process(delta: float) -> void:
 	legend_btn.text = ("설명 보기" if legend_hidden else "설명 숨기기") + " (Tab)"
 	legend.visible = legend.visible and not legend_hidden
 	# 시작 화면 위에 설정·기록·도움말 창을 열면 뒤 메뉴 글자가 창 옆으로 삐져나와 보이지 않게 흐리게
-	title_label.modulate.a = 0.12 if settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible else 1.0
+	title_label.modulate.a = 0.12 if settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible else 1.0
 	hud.visible = not title_label.visible  # 시작 화면엔 메뉴에 최고 기록이 따로 있다
 	# 시작 화면에서 일시정지·배속 버튼을 누르면 메뉴 위에 일시정지 창이 뜨던 문제
 	# 게임 중엔 펼쳤을 때만 보인다 (단축키 M·P·Space는 접어도 된다). 시작 화면엔 소리·자동 시작만
