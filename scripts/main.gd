@@ -751,6 +751,8 @@ func _refresh_dps() -> void:
 	var bottom := _bottom_free()
 	if choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and choice_box.get_rect().position.x < 320.0:
 		bottom = minf(bottom, choice_box.get_rect().position.y - 24.0)  # 카드 왼쪽 끝·고르기 꼬리표를 덮지 않게 (넘치면 굴려 본다)
+	if guide_label.visible and guide_label.get_rect().position.x < 320.0:
+		bottom = minf(bottom, guide_label.position.y - 4.0)  # 처음 안내 글 위까지만
 	var room := maxf(48.0, bottom - top - 44.0)
 	var list := towers.get_children()
 	list.sort_custom(func(a, b): return a.dealt > b.dealt)
@@ -1938,6 +1940,17 @@ func _lane_arrows() -> Array:
 	return out
 
 
+## 위쪽 가운데 글(알림·처음 안내)을 가운데에 두되, 오른쪽 설명이 떠 있으면 그 왼쪽까지만 (글자를 키우면 글 끝이 설명 밑에 깔리던 것).
+## 글이 정한 폭보다 길면 Label이 오른쪽으로만 늘어나 가운데에서 벗어나던 것도 함께 맞춘다.
+func _beside_legend(c: Control, min_w: float) -> void:
+	var w := maxf(min_w, c.get_combined_minimum_size().x)
+	var x := (ui_root.size.x - w) / 2.0
+	if legend.visible:
+		x = minf(x, legend.get_rect().position.x - 8.0 - w)
+	c.position.x = maxf(x, 8.0)
+	c.size.x = w
+
+
 ## 오른쪽 설명이 떠 있으면 배지를 그 왼쪽으로 비킨다 (설명 글 위에 겹치던 것).
 ## 아래에 자리가 있으면 설명 아래로, 없으면 왼쪽으로.
 func _off_legend(r: Rect2) -> Rect2:
@@ -2032,7 +2045,7 @@ func _draw_info() -> void:
 			Icons.chip(info, ui_font, r, "orb", Color(0.85, 0.85, 0.9, la), txt, Color(1, 0.5, 0.5, la), 16, Color(0.1, 0.02, 0.03, 0.85 * la), Color(1, 0.4, 0.4, 0.6 * la))
 			tip_rects.append([r, [["지난 웨이브에 이쪽에서 놓친 구체 %d개" % lm[1], Color(1, 0.6, 0.6)], [_leak_text(), Color(1, 1, 1, 0.7)]]])
 	# 남은 고르기: 카드 줄 왼쪽 위 모서리에 걸친 꼬리표
-	if phase == Phase.CHOOSE and choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and not get_tree().paused:
+	if phase == Phase.CHOOSE and not perk_mode and choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and not get_tree().paused:
 		var cb := ui_root.get_global_transform().affine_inverse() * choice_box.get_global_rect()
 		var first: Control = choice_box.get_child(0)
 		var fx := (ui_root.get_global_transform().affine_inverse() * first.get_global_rect()).position.x
@@ -4825,6 +4838,8 @@ func _process(delta: float) -> void:
 	toast.position.y = maxf(100.0, hud.position.y + hud.size.y + 36.0)  # 점수 줄이 길어져도 보스 체력 막대 아래
 	# 안내·큰 글자도 점수 줄이 길어지거나 글자를 키우면(설정) 그 아래로 밀어 겹치지 않게
 	guide_label.position.y = maxf(140.0, toast.position.y + 40.0)
+	_beside_legend(toast, 600.0)
+	_beside_legend(guide_label, 0.0)
 	banner.position.y = maxf(ui_root.size.y / 2.0 - 140.0, hud.position.y + hud.size.y + 12.0)
 	banner_t -= delta
 	if banner_t <= 0.0 and not banner_queue.is_empty():
