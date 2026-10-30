@@ -94,7 +94,7 @@ docker compose up -d --build
 
 | 키 | 뜻 (기본값) |
 |---|---|
-| `rules.all` / `rules."N"` | 규칙 버전 N 값 덮어쓰기. `all`이 먼저, 버전별이 나중. `max_elems`, `max_mod`, `crowd`, `pincer_frac`(협공 폭발, 최대 체력 대비 0.10), `orb_mul`, `tax_step`, `mod_decay`(true/false), `picks`, `hp_growth`, `resist_from`, `sturdy_from`, `orb_hp`(구체 체력 배율 1.0) |
+| `rules.all` / `rules."N"` | 규칙 버전 N 값 덮어쓰기. `all`이 먼저, 버전별이 나중. `max_elems`, `max_mod`, `crowd_log`(오브젝트 수 보너스 계수 0.10: 피해 x(1 + 값 x ln(오브젝트 수)). 예전 `crowd`는 무시), `pincer_frac`(협공 폭발, 최대 체력 대비 0.10), `orb_mul`, `tax_step`, `mod_decay`(true/false), `picks`, `hp_growth`, `resist_from`, `sturdy_from`, `orb_hp`(구체 체력 배율 1.0) |
 | `rules_desc."N"` | 시작 화면 규칙 설명 |
 | `perks` | 특성 수치: `power` 0.15, `haste` 0.12, `reach` 0.12, `core` 3, `reroll` 1, `luck` 0.2, `regen` 1, `slow` 0.08, `harmony` 0.5 |
 | `perk_desc` | 특성 카드 설명 (수치를 바꾸면 같이 바꾸기) |

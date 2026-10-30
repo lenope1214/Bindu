@@ -116,9 +116,9 @@ func sz() -> float:
 ## 한 오브젝트에 몰아 넣으면 반응 수 x 레벨 합으로 곱이 되던 문제를 막는다.
 func dmg_factor(rx := false) -> float:
 	var f := 1.3 * (1.0 if rx else 1.0 + 0.35 * (total_level() - 1))
-	# 무리: 설치된 오브젝트가 많을수록 모두 강해진다 (하나당 +3%, 버전 2는 +6%)
+	# 오브젝트 수 보너스: 설치된 오브젝트가 많을수록 모두 강해진다 (늘수록 덜 오름, Rules.crowd_bonus)
 	if main:
-		f *= 1.0 + Rules.crowd * (main.towers.get_child_count() - 1)
+		f *= 1.0 + Rules.crowd_bonus(main.towers.get_child_count())
 	if reso > 0 and main:
 		var near := 0
 		for o in main.towers.get_children():
@@ -181,7 +181,7 @@ func breakdown() -> Dictionary:
 	if lv(Elem.WOOD) > 0:
 		fs.append(["elem:wood", log(1.0 + 0.2 * lv(Elem.WOOD))])
 	if main and main.towers.get_child_count() > 1:
-		fs.append(["etc:crowd", log(1.0 + Rules.crowd * (main.towers.get_child_count() - 1))])
+		fs.append(["etc:crowd", log(1.0 + Rules.crowd_bonus(main.towers.get_child_count()))])
 	if reso > 0 and main:
 		var near := 0
 		for o in main.towers.get_children():
