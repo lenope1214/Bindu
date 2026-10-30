@@ -25,3 +25,13 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 `perf`는 헤드리스라 실제 화면 그리기 비용은 빠지고, 이 컨테이너처럼 한글 글꼴이 없는 환경에서는 글자 모양 계산이 실제보다 훨씬 비싸게 나온다. 같은 기계에서 고치기 전후를 번갈아 두 번 이상 돌려 비교할 것(한 번은 ±3ms 흔들림).
 
 `compare`의 "비슷함"은 봇 기준일 뿐이다. 버전 5(강화 칸)는 봇으로 중간값 -1·평균 x0.91(비슷함)이었지만 사람에겐 너무 어려워 폐기했다. 새 규칙은 [docs/rule-history.md](../docs/rule-history.md)의 절차대로 사람 시험판까지 거친다.
+
+## 패치노트
+
+게임 안 패치노트는 `CHANGELOG.md`의 `## 제목 (vX.Y.Z)` 절을 그대로 쓴다. 빌드에는 .md가 들어가지 않아 `tools/gen_patch_notes.gd`가 `scripts/patch_notes_data.gd`를 만든다(빌드 스크립트가 내보내기 전에 자동으로 돌림). CHANGELOG를 고친 뒤 직접 돌리려면:
+
+```
+godot --headless --path . --script tools/gen_patch_notes.gd
+```
+
+인터넷이 되면 게임이 GitHub main의 `CHANGELOG.md`를 받아 빌드보다 새 버전 노트도 보여 준다. 그래서 새 버전 절은 push할 때 플레이어가 읽을 수 있는 말로 쓴다.

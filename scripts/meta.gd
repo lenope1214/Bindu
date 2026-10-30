@@ -64,6 +64,7 @@ static var device_id := ""  # 이 기기의 무작위 id (개인정보 아님). 
 static var guide_on := true  # 처음 생기는 일에 한 줄 안내 (설정에서 끔)
 static var guide_seen := {}  # 이미 본 안내 id -> true
 static var tutor_next := true  # 다음 새 판은 카드 종류를 웨이브마다 하나씩 연다 (첫 판, 설정에서 다시 켬)
+static var notes_seen := ""  # 마지막으로 패치노트를 연 게임 버전 (다르면 시작 화면 버튼 강조)
 static var ui_scale := 1.0  # 글자·버튼 크기 (UI_SCALES 중 하나). 폰은 기본 1.3
 const UI_SCALES := [1.0, 1.15, 1.3]
 static var loaded := false
@@ -139,6 +140,7 @@ static func load_into(cfg: ConfigFile) -> void:
 	guide_on = val(cfg, "guide", "on", true)
 	guide_seen = val(cfg, "guide", "seen", {})
 	tutor_next = val(cfg, "guide", "tutor", games == 0)  # 이미 해 본 저장은 단계별로 열지 않는다
+	notes_seen = val(cfg, "guide", "notes_seen", "")
 	ui_scale = val(cfg, "settings", "ui_scale", 1.3 if OS.has_feature("mobile") else 1.0)
 	if not ui_scale in UI_SCALES:
 		ui_scale = 1.0
@@ -175,3 +177,4 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("guide", "on", guide_on)
 	cfg.set_value("guide", "seen", guide_seen)
 	cfg.set_value("guide", "tutor", tutor_next)
+	cfg.set_value("guide", "notes_seen", notes_seen)
