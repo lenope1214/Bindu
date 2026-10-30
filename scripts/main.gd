@@ -711,7 +711,7 @@ func _build_ui() -> void:
 	hsb.set_content_margin_all(18)
 	hsb.set_corner_radius_all(6)
 	help_scroll.add_theme_stylebox_override("panel", hsb)
-	help_label.text = _help_text()
+	help_label.text = _kr_keep(_help_text())
 	help_label.visible = false
 	help_scroll.add_child(help_label)
 	root.add_child(help_scroll)
@@ -1055,7 +1055,7 @@ func _apply_rules() -> void:
 	if ver_label:
 		ver_label.text = _ver_text()
 	if help_label:
-		help_label.text = _help_text()
+		help_label.text = _kr_keep(_help_text())
 
 
 ## 도움말: 상한·장수는 고른 규칙 버전에 따라 다르다.
@@ -3732,6 +3732,11 @@ func _close_notes() -> void:
 	notes_back = false
 
 
+var _kr_re := RegEx.create_from_string("([가-힣])(?=[가-힣])")
+# 한글 낱말이 글자 사이에서 끊기지 않게 (빈칸에서만 줄바꿈). U+2060은 안 보이는 글자
+func _kr_keep(t: String) -> String:
+	return _kr_re.sub(t, "$1\u2060", true)
+
 func _draw_notes() -> void:
 	if notes_panel == null or not notes_panel.visible:
 		return
@@ -3771,7 +3776,7 @@ func _draw_notes() -> void:
 			var group := not sub and j + 1 < lines.size() and (lines[j + 1] as String).begins_with(" ")
 			out.append(("      ◦ " if sub else "  · ") + ("[b]%s[/b]" % _bb(s) if group else _bb(s)))
 		out.append("")
-	notes_text.text = "\n".join(out)
+	notes_text.text = _kr_keep("\n".join(out))
 	match PatchNotes.source:
 		"online":
 			notes_status.text = "최신 (인터넷)"
