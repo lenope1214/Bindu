@@ -750,7 +750,7 @@ func _refresh_dps() -> void:
 	dps_panel.position.y = top
 	var bottom := _bottom_free()
 	if choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and choice_box.get_rect().position.x < 320.0:
-		bottom = minf(bottom, choice_box.get_rect().position.y)  # 카드 왼쪽 끝을 덮지 않게 (넘치면 굴려 본다)
+		bottom = minf(bottom, choice_box.get_rect().position.y - 24.0)  # 카드 왼쪽 끝·고르기 꼬리표를 덮지 않게 (넘치면 굴려 본다)
 	var room := maxf(48.0, bottom - top - 44.0)
 	var list := towers.get_children()
 	list.sort_custom(func(a, b): return a.dealt > b.dealt)
@@ -1987,7 +1987,10 @@ func _draw_info() -> void:
 			r.position = r.position.clamp(Vector2(8.0, top), Vector2(size.x - w - 8.0, lo - 30.0))
 			r = _off_legend(r)
 			badges.append(r)
-			var al := 0.3 if cards_r.has_area() and r.intersects(cards_r) else 1.0
+			# 카드 위에 걸친 배지는 그리지 않는다 (옅게 그려도 카드 글을 가렸고, 마우스를 올리면 말풍선이 카드를 덮었다). 카드를 내리면(V) 보인다
+			if cards_r.has_area() and r.intersects(cards_r):
+				continue
+			var al := 1.0
 			var sb := StyleBoxFlat.new()
 			sb.bg_color = Color(0.16, 0.04, 0.06, 0.88 * al)
 			sb.border_color = Color(1, 0.35, 0.4, 0.9 * al)
@@ -2023,7 +2026,9 @@ func _draw_info() -> void:
 			for br in badges:
 				if r.intersects(br.grow(4.0)):
 					r.position = Vector2(br.position.x, br.end.y + 6.0)  # 같은 방향 배지 바로 아래
-			var la := 0.3 if cards_r.has_area() and r.intersects(cards_r) else 1.0
+			if cards_r.has_area() and r.intersects(cards_r):
+				continue
+			var la := 1.0
 			Icons.chip(info, ui_font, r, "orb", Color(0.85, 0.85, 0.9, la), txt, Color(1, 0.5, 0.5, la), 16, Color(0.1, 0.02, 0.03, 0.85 * la), Color(1, 0.4, 0.4, 0.6 * la))
 			tip_rects.append([r, [["지난 웨이브에 이쪽에서 놓친 구체 %d개" % lm[1], Color(1, 0.6, 0.6)], [_leak_text(), Color(1, 1, 1, 0.7)]]])
 	# 남은 고르기: 카드 줄 왼쪽 위 모서리에 걸친 꼬리표
@@ -4873,8 +4878,9 @@ func _process(delta: float) -> void:
 	hide_btn.set_anchors_preset(Control.PRESET_CENTER_TOP if cards_hidden else Control.PRESET_CENTER)
 	# 카드 줄은 오른쪽 설명을 피해 왼쪽으로 비켜 있다. 설명을 숨기면 가운데로, 버튼도 카드 가운데에 맞춘다
 	var cx := 0.0 if legend_hidden else -75.0
-	choice_box.offset_left = cx - 365.0
-	choice_box.offset_right = cx + 365.0
+	# 글자를 키우면(설정) 카드 줄 오른쪽이 설명 밑으로 들어가던 것: 설명 왼쪽까지 들어가게 왼쪽으로 옮기고, 모자라면 줄인다
+	var room := (legend.get_rect().position.x - 8.0) if legend.visible else ui_root.size.x - 8.0
+	var kw := minf((room - 8.0) / 730.0, 1.0)
 	# 새로고침·내리기 버튼은 카드 바로 아래 한 줄에 (카드가 길어지면 버튼이 카드 글을 덮던 것).
 	# 카드+버튼 줄이 왼쪽 아래 안내 글에 닿으면 카드 줄을 위로 올리고, 그래도 모자라면(글자 크게) 0.7배까지 줄인다
 	var mid := ui_root.size.y / 2.0
@@ -4883,8 +4889,13 @@ func _process(delta: float) -> void:
 	var floor_y := (hud.position.y + hud.size.y + 8.0) if hud.visible else 8.0
 	if dps_panel.visible and ui_root.size.x / 2.0 + cx - 365.0 < 320.0:
 		floor_y += 44.0 + 48.0 + 6.0  # 왼쪽 위 DPS 표(머리 + 2줄, 나머지는 굴려 봄)를 덮지 않게
+	if guide_label.visible:
+		floor_y = maxf(floor_y, guide_label.position.y + guide_label.size.y + 26.0)  # 처음 안내 글이 카드 글 뒤로 겹치던 것 (고르기 꼬리표 자리 포함)
 	var need := ch + 8.0 + 36.0 + (42.0 if skip_btn.visible else 0.0)
-	var k := clampf((lim - floor_y) / need, 0.7, 1.0)
+	var k := clampf(minf((lim - floor_y) / need, kw), 0.7, 1.0)
+	cx = minf(cx, room - 365.0 * k - ui_root.size.x / 2.0)
+	choice_box.offset_left = cx - 365.0
+	choice_box.offset_right = cx + 365.0
 	var ctop := maxf(minf(mid - 90.0, lim - need * k), floor_y)
 	choice_box.pivot_offset = Vector2(choice_box.size.x / 2.0, 0.0)
 	choice_box.scale = Vector2(k, k)

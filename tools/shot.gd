@@ -53,7 +53,13 @@ func _initialize():
 			_snap("cards")
 			main.offer = [{"type": "pat", "id": Pat.PATTERN_IDS[2]}, {"type": "mod", "id": Pat.MOD_IDS[0]}, {"type": "cata", "id": "elem"}]
 			main._show_offer(),
-		func(): _snap("cards2"); main._set_cards_hidden(true),
+		func():
+			_snap("cards2")
+			# 첫 판처럼 처음 안내가 떠 있을 때 (안내 글과 카드 줄이 겹치지 않는지)
+			main.guide_lines.clear()
+			Meta.guide_seen.erase("start")
+			main._guide("start", "빨간 화살표가 구체가 들어오는 길목이에요. 속성 카드를 고른 뒤 길목 쪽 빈 곳을 눌러 놓고, 한 번 더 눌러 쏠 방향을 정하세요"),
+		func(): _snap("cards_guide"); main.guide_lines.clear(); main._set_cards_hidden(true),
 		func(): _snap("cards_hidden"); main._set_cards_hidden(false); main._on_skip(),
 		func(): _snap("skip_ready"); main._start_wave(),
 		func(): _snap("skip_wave"); main.skip_left = 0; main._start_perk(),
