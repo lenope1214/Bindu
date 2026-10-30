@@ -687,7 +687,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		o.slow(0.8, 0.8)
 	if els.has(Elem.WIND):
 		# 중앙 반대쪽으로 밀어낸다
-		o.push((o.position - main.center()).normalized() * 7.0 * L.call(Elem.WIND) * k)
+		o.push((o.position - o.target).normalized() * 7.0 * L.call(Elem.WIND) * k)
 	if els.has(Elem.EARTH) and randf() < minf(0.2 * L.call(Elem.EARTH), 0.7) * k:
 		o.root(0.8)
 	if els.has(Elem.DARK):

@@ -1,7 +1,7 @@
 extends SceneTree
 # 자동 플레이 봇: 반응 생기면 겹치기, 아니면 진입 방향을 가로지르게 새로 설치.
 # 사용: tools/run.sh bots (또는 godot --headless --fixed-fps 60 --path . -s tools/bot.gd -- <시드> [stack])
-# 환경 변수: RULES(규칙 버전) MAP(맵) SPEED(배속) SMART=1(사람처럼 배치) GOD=<웨이브>(죽지 않고 그 웨이브까지, 멈춤 감시)
+# 환경 변수: RULES(규칙 버전) MAP(맵) FLIP=1(회랑에서 구체가 왼쪽에서) SPEED(배속) SMART=1(사람처럼 배치) GOD=<웨이브>(죽지 않고 그 웨이브까지, 멈춤 감시)
 var main
 var frames := 0
 var stack_all := false
@@ -26,7 +26,7 @@ func _process(_d):
 		dumped = true
 		print("STUCK real=", Time.get_ticks_msec() - wave_ms, " wave=", main.wave, " t=", main.wave_time, " to_spawn=", main.to_spawn, " alive=", main.orbs.get_child_count(), " proj=", main.projectiles.get_child_count(), " zones=", main.zones.get_child_count())
 		for o in main.orbs.get_children():
-			print("  ORB kind=", o.kind, " pos=", o.position, " d=", o.position.distance_to(main.center()), " hp=", o.hp, "/", o.max_hp, " sh=", o.shield, " spd=", o.speed, " slow=", o.slow_factor, " root=", o.root_timer, " frozen=", o.frozen_t, " prison=", o.prison_t, " push=", o.push_budget, " q=", o.is_queued_for_deletion(), " target=", o.target, " age=", o.age, " resist=", o.resist_e, " sturdy=", o.sturdy)
+			print("  ORB kind=", o.kind, " pos=", o.position, " d=", o.position.distance_to(main.core()), " hp=", o.hp, "/", o.max_hp, " sh=", o.shield, " spd=", o.speed, " slow=", o.slow_factor, " root=", o.root_timer, " frozen=", o.frozen_t, " prison=", o.prison_t, " push=", o.push_budget, " q=", o.is_queued_for_deletion(), " target=", o.target, " age=", o.age, " resist=", o.resist_e, " sturdy=", o.sturdy)
 		for t in main.towers.get_children():
 			print("  TW ", t.title(), " @", t.position, " ", t.extras_text(), " rx=", t.reactions().map(func(r): return r["name"]))
 		quit()
@@ -43,6 +43,10 @@ func _process(_d):
 	if OS.get_environment("RULES") != "" and Meta.rules != int(OS.get_environment("RULES")):
 		Meta.rules = int(OS.get_environment("RULES"))
 		main._apply_rules()
+	if Meta.line_flip != (OS.get_environment("FLIP") != ""):
+		Meta.line_flip = not Meta.line_flip  # 회랑: 구체가 왼쪽에서
+		main.lanes.clear()
+		main._roll_lanes()
 	if OS.get_environment("MAP") != "" and Meta.map_id != OS.get_environment("MAP"):
 		Meta.map_id = OS.get_environment("MAP")
 		main.lanes.clear()
@@ -75,7 +79,9 @@ func _process(_d):
 		for cand0 in main.lanes:
 			var cand = eff_lane(cand0)
 			if not ts.any(func(t): return serves(t, cand)): uncovered = true
-		if uncovered or ts.size() < main.lanes.size() + 1:
+		# 회랑: 방향은 하나지만 사람처럼 길을 따라 여러 개를 나눠 놓는다 (평원에서 방향 수만큼 놓는 것과 같은 수)
+		var want = (main.lanes_for(main.wave + 1) if Meta.map_id == "line" else main.lanes.size()) + 1
+		if uncovered or ts.size() < want:
 			for o in offer:
 				if o["type"] == "elem": pick = o; break
 		# 1) 반응이 생기는 속성 겹치기
@@ -147,7 +153,7 @@ func _process(_d):
 			main._show_toast(target.add(pick["e"], pick["lv"]))
 			main._after_place()
 		else:
-			var c = main.center()
+			var c = main.core()
 			# 오브젝트가 가장 적은 진입 방향에 설치
 			var la = eff_lane(main.lanes[0])
 			var fewest = 999
@@ -161,7 +167,13 @@ func _process(_d):
 			var ld = Vector2(cos(la), sin(la))
 			var side = (1 if lane_i % 2 == 0 else -1) * (0.15 if Meta.map_id == "cross" else 1.0)
 			var p
-			if _smart():
+			if Meta.map_id == "line":
+				# 회랑: 공격 방향이 고정이라 사람처럼 길 위·아래 가장자리에서 길을 가로질러 겨눈다
+				var k = ts.size()
+				var ud = 1 if k % 2 == 0 else -1
+				p = c + ld * (130 + 95 * (k / 2)) + Vector2(0, ud * (main.LINE_HALF + 30))
+				main._place_tower(p, Vector2(0, -ud))
+			elif _smart():
 				# 사람처럼: 중앙 가까이에서 진입 방향 그대로 겨눈다
 				p = c + ld * (90 + 25 * (lane_i % 3)) + ld.orthogonal() * 22 * side
 				main._place_tower(p, ld)
@@ -184,14 +196,16 @@ func _process(_d):
 var adapt_w := -1
 ## 오브젝트가 길목 a를 지키는지: 길목 선 가까이(120)에 있고, 길목 바깥쪽을 겨눔
 func serves(t, a) -> bool:
-	var c = main.center()
+	if Meta.map_id == "line":
+		return true
+	var c = main.core()
 	var ld = Vector2(cos(a), sin(a))
-	var far = c + ld * 600
+	var far = c + ld * (1200 if Meta.map_id == "line" else 600)
 	var q = Geometry2D.get_closest_point_to_segment(t.position, c, far)
 	return t.position.distance_to(q) < 120 and absf(angle_difference(t.dir.angle(), (far - t.position).angle())) < 0.35
 
 func _rearrange():
-	var c = main.center()
+	var c = main.core()
 	var ls = main.lanes.map(func(a): return eff_lane(a))
 	for t in main.towers.get_children():
 		if ls.any(func(a): return serves(t, a)):
@@ -220,7 +234,7 @@ func _rearrange():
 # 소용돌이 맵: 구체가 반지름 r을 지날 때의 각도
 func eff_lane(a):
 	if Meta.map_id != "spiral": return a
-	var c = main.center()
+	var c = main.core()
 	var p = c + Vector2(cos(a), sin(a)) * 650
 	while p.distance_to(c) > 170:
 		p += (c - p).normalized().rotated(0.6) * 4.0

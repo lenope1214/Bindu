@@ -2,7 +2,9 @@
 게임 공식이 바뀌면 여기도 맞춘다 (wave_size, spawn_count, hp_growth, _spawn_orb, 처치 점수)."""
 import math
 
-MAPS = ["plain", "spiral", "cross", "storm"]
+MAPS = ["plain", "spiral", "cross", "storm", "line"]
+MAP_ORBS = {"cross": 1.5, "line": 1.6}  # main.gd spawn_count 맵 배율
+MAP_HP = {"cross": 1.6, "line": 2.4}  # main.gd _roll_orb 맵 체력 배율
 RULES = list(range(1, 10))  # 새 규칙 버전이 늘어도 받는다 (기본값은 버전 1)
 # 규칙 버전별 기본값 (rules.gd Rules.apply)
 RULE_DEFAULTS = {
@@ -56,16 +58,16 @@ def wave_size(w: int) -> int:
 
 
 def spawn_count(w: int, map_id: str, orb_mul: float) -> int:
-    """main.gd spawn_count: 새 진입 방향이 열리는 웨이브는 80%, 십자로는 1.5배."""
+    """main.gd spawn_count: 새 진입 방향이 열리는 웨이브는 80%(십자로·회랑 제외), 십자로 1.5배, 회랑 1.4배."""
     n = _roundi(wave_size(w) * orb_mul)
-    if map_id != "cross" and lanes_for(w) > lanes_for(w - 1):
+    if map_id not in MAP_ORBS and lanes_for(w) > lanes_for(w - 1):
         n = _roundi(n * 0.8)
-    return _roundi(n * 1.5) if map_id == "cross" else n
+    return _roundi(n * MAP_ORBS[map_id]) if map_id in MAP_ORBS else n
 
 
 def max_score(wave: int, map_id: str, rules: int, patch_data: dict | None = None) -> int:
     v = rule_values(rules, patch_data)
-    hp_map = 1.6 if map_id == "cross" else 1.0
+    hp_map = MAP_HP.get(map_id, 1.0)
     total = 0.0
     for w in range(1, wave + 1):
         g = 1.0 if w <= 10 else v["hp_growth"] ** (w - 10)

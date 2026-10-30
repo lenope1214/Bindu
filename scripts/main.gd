@@ -4,6 +4,11 @@ extends Node2D
 enum Phase { CHOOSE, PLACE, AIM, WAVE, GAMEOVER, MOVE, READY }
 
 const CORE_RADIUS := 14.0
+const LINE_INSET := 90.0  # 회랑 맵: 문(중앙 점)이 화면 끝에서 떨어진 거리
+const LINE_HALF := 180.0  # 회랑 맵: 길 폭의 반
+const LINE_ORBS := 1.6  # 회랑 맵: 구체 수 배율 (방향이 하나고 길이 길어서). 봇 32판으로 평원에 맞춤 (2026-10-30)
+const LINE_HP := 2.4  # 회랑 맵: 구체 체력 배율
+const LINE_SPD := 1.6  # 회랑 맵: 구체 속도 배율 (길이 길어 오래 맞는 만큼)
 const SPIRAL_SWIRL := 0.6  # 소용돌이 맵: 구체가 중앙 방향에서 비껴 도는 각도(라디안)
 const CORE_MAX_HP := 10
 const MERGE_DIST := 30.0
@@ -153,6 +158,7 @@ var continue_btn: Button  # 저장된 판이 있을 때만 보임
 var new_btn: Button
 var new_armed := 0.0  # 저장된 판이 있을 때 새로 시작은 두 번 눌러야 (실수로 지우지 않게)
 var map_label: Label
+var flip_label: Label  # 회랑 맵: 구체가 오는 쪽 (회랑일 때만 보임)
 var rules_label: Label
 var skin_label: Label
 var core_label: Label
@@ -268,6 +274,23 @@ func _layer(n: String) -> Node2D:
 
 func center() -> Vector2:
 	return get_viewport_rect().size / 2.0
+
+
+## 지키는 중앙 점. 회랑 맵은 화면 가운데가 아니라 구체가 오는 반대쪽 끝(문 가운데).
+func core() -> Vector2:
+	var c := center()
+	if Meta.map_id == "line":
+		c.x = get_viewport_rect().size.x - LINE_INSET if Meta.line_flip else LINE_INSET
+	return c
+
+
+## 회랑 맵: 높이 y(길 가운데 기준)에서 구체가 나오는 자리와 닿는 문 자리.
+func _line_start(y: float) -> Vector2:
+	return Vector2(-30.0 if Meta.line_flip else get_viewport_rect().size.x + 30.0, center().y + y)
+
+
+func _line_end(y: float) -> Vector2:
+	return Vector2(core().x, center().y + y)
 
 
 # ---------- UI ----------
@@ -732,10 +755,12 @@ static func wave_size(w: int) -> int:
 static func spawn_count(w: int) -> int:
 	var n := roundi(wave_size(w) * Rules.orb_mul)
 	# 새 진입 방향이 열리는 웨이브는 구체를 조금 덜 (새 길목을 막을 시간)
-	if Meta.map_id != "cross" and lanes_for(w) > lanes_for(w - 1):
+	if not Meta.map_id in ["cross", "line"] and lanes_for(w) > lanes_for(w - 1):
 		n = roundi(n * 0.8)
 	if Meta.map_id == "cross":
 		n = roundi(n * 1.5)
+	elif Meta.map_id == "line":
+		n = roundi(n * LINE_ORBS)
 	return n
 
 
@@ -1178,6 +1203,10 @@ func _update_reroll_btn() -> void:
 ## 진입 방향은 웨이브마다 조금씩 늘고, 가끔 하나가 옮겨 간다.
 func _roll_lanes() -> void:
 	var n := lanes_for(wave + 1)
+	if Meta.map_id == "line":
+		# 회랑: 한쪽 끝 하나 (각도는 중앙 점에서 구체가 오는 쪽)
+		lanes = [PI if Meta.line_flip else 0.0]
+		return
 	if Meta.map_id == "cross":
 		# 십자로: 처음부터 네 방향 고정
 		if lanes.size() != 4:
@@ -1287,7 +1316,7 @@ func _update_preview() -> void:
 
 ## 보스 길이(화면 밖 출발점부터 중앙까지)와 막지 않을 때 걸리는 시간.
 func _boss_eta() -> float:
-	var pts := _orb_path(boss_plan["a"])
+	var pts := _orb_path(boss_plan["a"], boss_plan.get("y", 0.0))
 	var L := 0.0
 	for i in range(1, pts.size()):
 		L += pts[i - 1].distance_to(pts[i])
@@ -1317,10 +1346,13 @@ func _draw_boss_path(now: float) -> void:
 		return
 	var col := Color(1, 0.35, 0.6)
 	var vr := get_viewport_rect()
-	var all := _orb_path(boss_plan["a"])
+	var all := _orb_path(boss_plan["a"], boss_plan.get("y", 0.0))
 	# 화면 안에 들어온 뒤부터 그린다 (직선은 화면 가장자리에서 자름)
 	var pts := PackedVector2Array()
-	if all.size() == 2:
+	if Meta.map_id == "line":
+		pts.append(Vector2(clampf(all[0].x, 0.0, vr.size.x), all[0].y))
+		pts.append(all[1])
+	elif all.size() == 2:
 		pts.append(_edge_point(center(), Vector2.from_angle(boss_plan["a"])))
 		pts.append(all[1])
 	else:
@@ -1362,7 +1394,7 @@ func _draw_boss_path(now: float) -> void:
 	var w := ui_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	# 길 옆에 쓴다 (길 위에 쓰면 화살과 겹침): 중앙에서 먼 쪽 옆
 	var side := d2.orthogonal()
-	if side.dot(m - center()) < 0.0:
+	if side.dot(m - core()) < 0.0:
 		side = -side
 	var lp := m + side * 30.0 + Vector2(-w / 2.0 if absf(side.x) < 0.5 else (0.0 if side.x > 0.0 else -w), 6.0)
 	lp = lp.clamp(Vector2(8, 70), vr.size - Vector2(w + 8, 70))
@@ -1550,7 +1582,7 @@ func _game_over() -> void:
 			top = t
 	if top and total > 0.0 and towers.get_child_count() > 1:
 		mvp = "\n최다 피해: %s (%d%%)" % [top.title(), roundi((top.run_dealt + top.dealt) / total * 100.0)]
-	over_label.text = "게임 오버 (%s · %s)\n웨이브 %d · 점수 %s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\nR 또는 클릭: 다시 시작   Esc: 메뉴" % [Meta.MAPS[Meta.map_id]["name"], Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, num(kills), best_combo, towers.get_child_count(), mvp, ach]
+	over_label.text = "게임 오버 (%s · %s)\n웨이브 %d · 점수 %s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\nR 또는 클릭: 다시 시작   Esc: 메뉴" % [Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, num(kills), best_combo, towers.get_child_count(), mvp, ach]
 	over_label.visible = true
 	_submit_run()
 	sfx.play("over", 0.0)
@@ -1600,6 +1632,8 @@ func _unhandled_input(event: InputEvent) -> void:
 					_cycle_map(-1)
 				KEY_RIGHT:
 					_cycle_map(1)
+				KEY_F:
+					_toggle_flip()
 				KEY_UP:
 					if Meta.games > 0:
 						_cycle_rules(-1)
@@ -1712,7 +1746,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if phase == Phase.MOVE:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			mpos = mpos.clamp(field_rect().position, field_rect().end)
-			if mpos.distance_to(center()) < 50.0:
+			if mpos.distance_to(core()) < 50.0:
 				_show_toast("중앙 점에 너무 가까워요")
 				return
 			var other := _tower_at(mpos, moving)
@@ -1734,7 +1768,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_begin_press(target, mpos)
 			return
 		mpos = mpos.clamp(field_rect().position, field_rect().end)
-		if mpos.distance_to(center()) < 50.0:
+		if mpos.distance_to(core()) < 50.0:
 			_show_toast("중앙 점에 너무 가까워요")
 			return
 		if picked["type"] != "elem":
@@ -1853,7 +1887,7 @@ func _release_press() -> void:
 
 ## 옮기는 자리에 놓을 수 없으면 그 이유 (movers: 함께 움직이는 것들끼리는 겹쳐도 됨).
 func _bad_spot(o: Tower, movers: Array) -> String:
-	if o.position.distance_to(center()) < 50.0:
+	if o.position.distance_to(core()) < 50.0:
 		return "중앙 점에 너무 가까워요"
 	for other in towers.get_children():
 		if not other in movers and other.position.distance_to(o.position) < MERGE_DIST:
@@ -1950,6 +1984,7 @@ func _build_menu(root: Control) -> void:
 	desc.text = "밖에서 몰려오는 구체를 막아 중앙 점을 지키세요\n공격방식·속성·강화·연계를 조합해 오브젝트를 키우세요"
 	box.add_child(desc)
 	map_label = _menu_row(box, func(): _cycle_map(-1), func(): _cycle_map(1))
+	flip_label = _menu_row(box, _toggle_flip, _toggle_flip)
 	rules_label = _menu_row(box, func(): _cycle_rules(-1), func(): _cycle_rules(1))
 	skin_label = _menu_row(box, func(): _cycle_skin("tower", -1), func(): _cycle_skin("tower", 1))
 	core_label = _menu_row(box, func(): _cycle_skin("core", -1), func(): _cycle_skin("core", 1))
@@ -2199,7 +2234,9 @@ func _menu_row(box: VBoxContainer, prev: Callable, next: Callable) -> Label:
 func _refresh_menu() -> void:
 	var m: Dictionary = Meta.MAPS[Meta.map_id]
 	var best := Meta.best_of(Meta.key())
-	map_label.text = "맵: %s  (←/→)\n%s\n최고 기록  웨이브 %d · 점수 %s" % [m["name"], m["desc"], best[0], num(best[1])]
+	map_label.text = "맵: %s  (←/→)\n%s\n최고 기록  웨이브 %d · 점수 %s" % [Meta.map_name(), m["desc"], best[0], num(best[1])]
+	flip_label.get_parent().visible = Meta.map_id == "line"
+	flip_label.text = "구체가 오는 쪽: %s  (F)" % ("왼쪽 → 문은 오른쪽 끝" if Meta.line_flip else "오른쪽 → 문은 왼쪽 끝")
 	rules_label.text = "규칙: %s%s  (↑/↓)\n%s" % [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 470.0, 18)]
 	rules_label.get_parent().visible = Meta.games > 0  # 규칙 버전 고르기는 첫 판을 끝낸 뒤에 (그 전엔 버전 1)
 	var ts: Dictionary = Meta.TOWER_SKINS[Meta.tower_skin]
@@ -2208,6 +2245,17 @@ func _refresh_menu() -> void:
 	core_label.text = "중앙 모양: " + cs["name"]
 	best_wave = best[0]
 	best_score = best[1]
+
+
+## 회랑 맵: 구체가 오는 쪽(좌우)을 바꾼다. 기록은 나누지 않는다 (좌우만 바뀐 같은 판).
+func _toggle_flip() -> void:
+	if Meta.map_id != "line":
+		return
+	Meta.line_flip = not Meta.line_flip
+	sfx.play("place")
+	_refresh_menu()
+	_save_best()
+	queue_redraw()
 
 
 func _cycle_map(d: int) -> void:
@@ -2290,12 +2338,12 @@ func _toggle_records() -> void:
 	var lines := PackedStringArray(["[맵별 최고 기록 · %s]   (아무 곳이나 클릭: 닫기)" % Rules.NAMES[Meta.rules]])
 	for id in Meta.MAP_IDS:
 		var b := Meta.best_of(Meta.key(id))
-		lines.append("  %s: 웨이브 %d · 점수 %s" % [Meta.MAPS[id]["name"], b[0], num(b[1])])
+		lines.append("  %s: 웨이브 %d · 점수 %s" % [Meta.map_name(id), b[0], num(b[1])])
 	# 규칙 버전끼리 비교하기 쉽게: 지금 맵의 버전별 최고 웨이브
 	var vers := PackedStringArray()
 	for r in Rules.IDS:
 		vers.append("버전 %d: %d" % [r, Meta.best_of(Meta.key(Meta.map_id, r))[0]])
-	lines.append("  %s 버전별 최고 웨이브  %s" % [Meta.MAPS[Meta.map_id]["name"], " · ".join(vers)])
+	lines.append("  %s 버전별 최고 웨이브  %s" % [Meta.map_name(Meta.map_id), " · ".join(vers)])
 	# 2026-10-30 이전 규칙(버전 1~5)의 기록은 따로 보관해 보여 준다
 	var olds := PackedStringArray()
 	for r in Rules.OLD_IDS:
@@ -2449,7 +2497,7 @@ func _on_board_loaded(d: Dictionary) -> void:
 
 
 func _draw_board() -> void:
-	var head := "[리더보드 · %s · %s%s]   (아무 곳이나 클릭: 닫기)" % [Meta.MAPS[Meta.map_id]["name"], Rules.NAMES[Meta.rules],
+	var head := "[리더보드 · %s · %s%s]   (아무 곳이나 클릭: 닫기)" % [Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules],
 		" · " + board_lines["season"] if board_lines.get("season", "") != "" else ""]
 	var lines := PackedStringArray([head, ""])
 	for spec in [["all", "이번 시즌 전체"], ["week", "이번 주"]]:
@@ -2693,7 +2741,7 @@ func _save_run() -> void:
 		list.append(d)
 	var vals := {
 		"format": RUN_FORMAT, "version": ProjectSettings.get_setting("application/config/version", ""),
-		"map": Meta.map_id, "rules": Meta.rules, "wave": wave, "score": score, "kills": kills, "best_combo": best_combo,
+		"map": Meta.map_id, "line_flip": Meta.line_flip, "rules": Meta.rules, "wave": wave, "score": score, "kills": kills, "best_combo": best_combo,
 		"core_hp": core_hp, "core_max": core_max, "perks": perks.keys().map(func(k): return [k, perks[k]]), "orb_speed_mul": orb_speed_mul,
 		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
 		"rerolls_left": rerolls_left, "bonus_rerolls": bonus_rerolls, "picks_left": picks_left,
@@ -2761,6 +2809,7 @@ func _continue_run() -> void:
 	var cfg: ConfigFile = info["cfg"]
 	var g := func(k: String, d: Variant) -> Variant: return Meta.val(cfg, "run", k, d)
 	Meta.map_id = info["map"]
+	Meta.line_flip = g.call("line_flip", Meta.line_flip)
 	Meta.rules = info["rules"]
 	_apply_rules()
 	_refresh_menu()
@@ -2802,7 +2851,7 @@ func _continue_run() -> void:
 	var bp: Variant = g.call("boss", {})
 	boss_plan = {}
 	if bp is Dictionary and bp.get("wave") is int and bp["wave"] == wave + 1 and bp.get("a") is float and bp.get("hp") is float and bp.get("spd") is float and bp.get("resist") is int and bp.get("sturdy") is bool:
-		boss_plan = {"wave": bp["wave"], "a": bp["a"], "hp": maxf(1.0, bp["hp"]), "spd": maxf(1.0, bp["spd"]), "resist": bp["resist"] if bp["resist"] in Elem.ALL else -1, "sturdy": bp["sturdy"]}
+		boss_plan = {"wave": bp["wave"], "a": bp["a"], "hp": maxf(1.0, bp["hp"]), "spd": maxf(1.0, bp["spd"]), "resist": bp["resist"] if bp["resist"] in Elem.ALL else -1, "sturdy": bp["sturdy"], "y": clampf(float(bp.get("y", 0.0)), -LINE_HALF, LINE_HALF)}
 	else:
 		_plan_boss()
 	new_achievements = (g.call("achievements", []) as Array).filter(func(a): return a is String)
@@ -3105,6 +3154,8 @@ func _roll_orb(w: int) -> Dictionary:
 	var spread := minf(0.15 + 0.01 * w, 0.4)
 	if Meta.map_id == "cross":
 		spread = 0.06  # 십자로: 네 길 위로만 온다
+	elif Meta.map_id == "line":
+		spread = 0.0  # 회랑: 방향은 하나, 대신 높이가 길 폭 안에서 갈린다
 	var a: float = lanes.pick_random() + randf_range(-spread, spread)
 	var hp := (1.0 + floorf(w * 0.7) + randi() % 2) * hp_growth(w) * Rules.orb_hp
 	match Meta.map_id:
@@ -3112,10 +3163,13 @@ func _roll_orb(w: int) -> Dictionary:
 			hp = ceilf(hp * 1.6)
 		"storm":
 			hp = maxf(1.0, roundf(hp * 0.6))
-	var spd := 30.0 + w * 3.0 + randf() * 8.0
+		"line":
+			hp *= LINE_HP
+	var spd := (30.0 + w * 3.0 + randf() * 8.0) * (LINE_SPD if Meta.map_id == "line" else 1.0)
 	# 저항·굳셈: 쉬는 시간에 미리 알려 준 대로
 	var res := wave_resist if wave_resist >= 0 and randf() < resist_share(w) else -1
-	return {"a": a, "hp": roundf(hp), "spd": spd, "resist": res, "sturdy": randf() < sturdy_share(w)}
+	var y := randf_range(-LINE_HALF + 20.0, LINE_HALF - 20.0) if Meta.map_id == "line" else 0.0
+	return {"a": a, "y": y, "hp": roundf(hp), "spd": spd, "resist": res, "sturdy": randf() < sturdy_share(w)}
 
 
 ## 다음 웨이브가 보스 웨이브면 보스를 미리 뽑아 둔다 (화면에 길·체력을 정확히 알려 주려고).
@@ -3132,7 +3186,10 @@ func _spawn_radius() -> float:
 
 
 ## 각도 a에서 나온 구체가 막히지 않을 때 지나가는 길 (소용돌이 맵은 나선, 구체 이동과 같은 식).
-func _orb_path(a: float) -> PackedVector2Array:
+## y: 회랑 맵에서 구체가 나오는 높이.
+func _orb_path(a: float, y := 0.0) -> PackedVector2Array:
+	if Meta.map_id == "line":
+		return PackedVector2Array([_line_start(y), _line_end(y)])
 	var c := center()
 	var p := c + Vector2.from_angle(a) * _spawn_radius()
 	if Meta.map_id != "spiral":
@@ -3156,6 +3213,9 @@ func _spawn_orb(kind := -1, plan := {}) -> void:
 	o.position = center() + Vector2.from_angle(p["a"]) * _spawn_radius()
 	o.from_a = p["a"]
 	o.target = center()
+	if Meta.map_id == "line":
+		o.position = _line_start(p.get("y", 0.0))
+		o.target = _line_end(p.get("y", 0.0))
 	if kind < 0:
 		kind = _roll_kind()
 	o.main = self
@@ -3214,7 +3274,7 @@ func spawn_minion(boss: Orb) -> void:
 	o.main = self
 	o.position = boss.position
 	o.from_a = boss.from_a
-	o.target = center()
+	o.target = boss.target
 	o.setup(Orb.Kind.FAST, maxf(1.0, roundf(wave * 0.5 * hp_growth(wave) * Rules.orb_hp)), 36.0 + wave * 3.0)
 	o.resist_e = boss.resist_e
 	orbs.add_child(o)
@@ -3226,7 +3286,7 @@ func _spawn_child(parent: Orb) -> void:
 	o.main = self
 	o.position = parent.position + Vector2(randf_range(-14, 14), randf_range(-14, 14))
 	o.from_a = parent.from_a
-	o.target = center()
+	o.target = parent.target
 	o.setup(Orb.Kind.NORMAL, maxf(1.0, ceilf(parent.max_hp * 0.4)), parent.speed * 1.1 / orb_speed_mul)
 	o.resist_e = parent.resist_e
 	o.sturdy = parent.sturdy
@@ -3395,7 +3455,7 @@ func _sim_step(delta: float) -> void:
 		_achieve("first")
 		if wave >= 5:
 			Meta.map_best[Meta.key()] = [maxi(Meta.best_of(Meta.key())[0], wave), maxi(Meta.best_of(Meta.key())[1], score)]
-			if Meta.MAP_IDS.all(func(id): return Meta.best_of(Meta.key(id))[0] >= 5):
+			if Meta.MAP_IDS.all(func(id): return id in Meta.TRIAL_MAPS or Meta.best_of(Meta.key(id))[0] >= 5):
 				_achieve("allmaps")
 		var bonus := wave * 20
 		score += bonus
@@ -3410,10 +3470,17 @@ func _sim_step(delta: float) -> void:
 			_start_choose()
 
 
+## 구체가 중앙 점에 닿았나. 회랑 맵은 끝의 문(세로선)에 닿으면.
+func _reached_core(o: Orb) -> bool:
+	if Meta.map_id == "line":
+		return absf(o.position.x - core().x) < CORE_RADIUS + o.radius()
+	return o.position.distance_to(center()) < CORE_RADIUS + o.radius()
+
+
 ## 중앙에 닿은 구체를 기록하고, 그 구체가 들어온 화면 가장자리를 붉게 번지게 한다.
 func _record_leak(o: Orb) -> void:
 	wave_leaks.append([_lane_of(o.from_a), o.kind, o.core_dmg])
-	leak_flash.append([_entry_point(o.from_a), 1.2])
+	leak_flash.append([Vector2(core().x, o.position.y) if Meta.map_id == "line" else _entry_point(o.from_a), 1.2])
 	_guide("leak", "구체가 중앙에 닿았어요. 붉게 번쩍인 가장자리 쪽 길목이 비어 있어요. 쉬는 시간에 그쪽으로 오브젝트를 옮기거나 새로 놓으세요")
 
 
@@ -3563,12 +3630,12 @@ func _resolve(delta: float) -> void:
 				_swamp_burst(o)
 			o.queue_free()
 			continue
-		if o.position.distance_to(center()) < CORE_RADIUS + o.radius():
+		if _reached_core(o):
 			core_hp -= o.core_dmg
 			sfx.play("core", 0.0)
 			shake = 0.25 + 0.1 * o.core_dmg
 			core_flash = 0.4
-			burst(center(), Color(1, 0.3, 0.35), 18, 220.0)
+			burst(o.position if Meta.map_id == "line" else center(), Color(1, 0.3, 0.35), 18, 220.0)
 			_show_toast("중앙 피격! %d/%d" % [maxi(core_hp, 0), core_max])
 			_record_leak(o)
 			o.queue_free()
@@ -3958,12 +4025,15 @@ func _draw() -> void:
 	var size := get_viewport_rect().size
 	var mp: Dictionary = Meta.MAPS[Meta.map_id]
 	draw_rect(Rect2(Vector2.ZERO, size), mp["bg"])
-	var c := center()
+	var c := core()
 	var now := Time.get_ticks_msec() / 1000.0
 	for st in stars:
 		draw_circle(Vector2(st.x, st.y), 1.2, Color(1, 1, 1, st.z * (0.7 + 0.3 * sin(now * 1.3 + st.x))))
-	for i in range(1, 5):
-		draw_arc(c, i * 110.0, 0, TAU, 64, mp["ring"], 1.0)
+	if Meta.map_id == "line":
+		_draw_line_map(size, mp, now)
+	else:
+		for i in range(1, 5):
+			draw_arc(c, i * 110.0, 0, TAU, 64, mp["ring"], 1.0)
 	# 중앙 점: 체력이 줄수록 붉어지고, 맞으면 번쩍인다
 	core_disp = lerpf(core_disp, float(maxi(core_hp, 0)), 0.1)
 	var frac := core_disp / core_max
@@ -3987,7 +4057,7 @@ func _draw() -> void:
 
 	# 구체 진입 방향 표시
 	var vr := get_viewport_rect()
-	for a in lanes:
+	for a in ([] if Meta.map_id == "line" else lanes):
 		var d := Vector2(cos(a), sin(a))
 		var edge := _edge_point(c, d)
 		var path := PackedVector2Array()
@@ -4161,6 +4231,33 @@ func _draw() -> void:
 		var r := Rect2(box_start, mpos - box_start).abs()
 		draw_rect(r, Color(0.5, 0.9, 1.0, 0.08))
 		draw_rect(r, Color(0.5, 0.9, 1.0, 0.8), false, 1.5)
+
+
+## 회랑 맵: 길(띠)·끝의 문·구체가 오는 쪽 화살표.
+func _draw_line_map(size: Vector2, mp: Dictionary, now: float) -> void:
+	var cy := size.y / 2.0
+	var gx := core().x
+	var from_right := not Meta.line_flip
+	draw_rect(Rect2(0, cy - LINE_HALF, size.x, LINE_HALF * 2.0), Color(1, 1, 1, 0.025))
+	for e in [-1.0, 1.0]:
+		draw_line(Vector2(0, cy + e * LINE_HALF), Vector2(size.x, cy + e * LINE_HALF), Color(mp["ring"], 0.25), 2.0)
+	# 길 바닥의 흐르는 줄무늬 (구체가 가는 방향)
+	var dirx := -1.0 if from_right else 1.0
+	for k in 12:
+		var x := fposmod(k * size.x / 12.0 + dirx * now * 30.0, size.x)
+		draw_line(Vector2(x, cy - LINE_HALF + 6.0), Vector2(x, cy + LINE_HALF - 6.0), mp["ring"], 1.0)
+	# 문: 닿으면 중앙 체력이 깎이는 세로선
+	var gcol := Color(1, 0.4, 0.45, 0.5 + 0.2 * sin(now * 3.0) + 0.3 * core_flash)
+	draw_line(Vector2(gx, cy - LINE_HALF), Vector2(gx, cy + LINE_HALF), gcol, 3.0)
+	for e in [-1.0, 1.0]:
+		draw_rect(Rect2(gx - 6.0, cy + e * LINE_HALF - 6.0, 12.0, 12.0), gcol)
+	# 구체가 오는 쪽: 화면 끝의 화살표 3개
+	var col := Color(1, 0.3, 0.35, 0.9 if phase != Phase.WAVE else 0.35)
+	var ex := size.x - 18.0 if from_right else 18.0
+	var d := Vector2(dirx, 0)
+	for yy in [-LINE_HALF * 0.6, 0.0, LINE_HALF * 0.6]:
+		var tip := Vector2(ex, cy + yy) + d * (6.0 * sin(now * 4.0))
+		draw_colored_polygon(PackedVector2Array([tip + d * 22.0, tip + Vector2(0, 12), tip - Vector2(0, 12)]), col)
 
 
 ## 방향 고르기. Shift를 누르면 15도 단위로 맞춘다.

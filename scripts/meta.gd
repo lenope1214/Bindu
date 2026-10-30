@@ -8,8 +8,10 @@ const MAPS := {
 	"spiral": {"name": "소용돌이", "desc": "구체가 나선을 그리며 들어온다.\n들어오는 방향과 맞는 방향이 다르다", "bg": Color(0.08, 0.06, 0.12), "ring": Color(0.8, 0.6, 1, 0.06)},
 	"cross": {"name": "십자로", "desc": "처음부터 네 갈래 길.\n구체가 길 위로만 오지만 많고 단단하다", "bg": Color(0.06, 0.09, 0.08), "ring": Color(0.6, 1, 0.8, 0.05)},
 	"storm": {"name": "폭풍", "desc": "진입 방향이 웨이브마다 전부 바뀐다.\n대신 구체가 약하다", "bg": Color(0.1, 0.07, 0.06), "ring": Color(1, 0.7, 0.5, 0.05)},
+	"line": {"name": "회랑", "desc": "가로로 긴 길 하나. 구체가 한쪽 끝에서만 와서\n반대쪽 끝의 문으로 간다. 길이 긴 대신 구체가 많고 빠르고 단단하다", "bg": Color(0.07, 0.07, 0.1), "ring": Color(0.75, 0.8, 1, 0.07)},
 }
-const MAP_IDS := ["plain", "spiral", "cross", "storm"]
+const MAP_IDS := ["plain", "spiral", "cross", "storm", "line"]
+const TRIAL_MAPS := ["line"]  # 새 맵은 사람 시험판·통계를 볼 때까지 "(시험)" (docs/rule-history.md). 업적 "모든 맵"에서도 뺀다
 
 ## 오브젝트 몸체 모양. need: 해금 조건(업적 id), 없으면 처음부터
 const TOWER_SKINS := {
@@ -68,6 +70,12 @@ static var notes_seen := ""  # 마지막으로 패치노트를 연 게임 버전
 static var ui_scale := 1.0  # 글자·버튼 크기 (UI_SCALES 중 하나). 폰은 기본 1.3
 const UI_SCALES := [1.0, 1.15, 1.3]
 static var loaded := false
+static var line_flip := false  # 회랑 맵: false면 구체가 오른쪽에서 와서 왼쪽 끝 문으로, true면 반대
+
+
+## 시작 화면·결과에 쓰는 맵 이름 (시험 중인 맵은 "(시험)").
+static func map_name(id: String = map_id) -> String:
+	return MAPS[id]["name"] + (" (시험)" if id in TRIAL_MAPS else "")
 
 
 ## 기록 키: 버전 1은 맵 id 그대로(예전 기록 유지), 다른 버전은 따로 센다.
@@ -124,6 +132,7 @@ static func load_into(cfg: ConfigFile) -> void:
 		rules = 1
 	tower_skin = val(cfg, "meta", "tower_skin", "circle")
 	core_skin = val(cfg, "meta", "core_skin", "dot")
+	line_flip = val(cfg, "meta", "line_flip", false)
 	map_best = val(cfg, "meta", "map_best", {})
 	achieved = val(cfg, "meta", "achieved", {})
 	codex = val(cfg, "meta", "codex", {})
@@ -160,6 +169,7 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("meta", "rules", rules)
 	cfg.set_value("meta", "tower_skin", tower_skin)
 	cfg.set_value("meta", "core_skin", core_skin)
+	cfg.set_value("meta", "line_flip", line_flip)
 	cfg.set_value("meta", "map_best", map_best)
 	cfg.set_value("meta", "achieved", achieved)
 	cfg.set_value("meta", "codex", codex)
