@@ -85,7 +85,7 @@ const TRAIT := {
 ## 부가효과: 같은 오브젝트의 모든 공격에 붙는다
 const RIDER := {
 	FIRE: "화상: 한동안 계속 피해",
-	WOOD: "가시 박힘: 받는 피해 +20% (레벨마다)",
+	WOOD: "가시 박힘: 받는 피해 +20% (레벨마다, Lv3까지)",
 	WATER: "감속 (느려짐)",
 	ELECTRIC: "주변 구체로 튀는 전류 (확률 30%)",
 	WIND: "둘레(240) 다른 오브젝트 공격 속도 +10%/레벨 (가장 큰 바람 하나만)",
@@ -152,7 +152,7 @@ const REACTIONS := [
 	{"id": "ground", "a": EARTH, "b": ELECTRIC, "name": "전류 균열", "desc": "균열이 남긴 띠에서 0.5초마다 전류, 가끔 기절", "color": Color(0.85, 0.8, 0.4)},
 	{"id": "shadowcrack", "a": EARTH, "b": DARK, "name": "그림자 균열", "desc": "균열이 남긴 그림자 띠: 받는 피해 +40%·감속", "color": Color(0.45, 0.35, 0.55)},
 	{"id": "crystal", "a": EARTH, "b": LIGHT, "name": "수정 균열", "desc": "균열이 남긴 수정 띠 위 피해는 반드시 치명타", "color": Color(0.85, 0.95, 1.0)},
-	{"id": "rumble", "a": EARTH, "b": SOUND, "name": "울림 균열", "desc": "균열이 남긴 띠: 울림이 쌓이고 음파 피해 +50%", "color": Color(0.8, 0.6, 0.55)},
+	{"id": "rumble", "a": EARTH, "b": SOUND, "name": "울림 균열", "desc": "균열이 남긴 띠: 울림이 쌓이고 음파 피해 +20%", "color": Color(0.8, 0.6, 0.55)},
 	{"id": "tomb", "a": EARTH, "b": SOUL, "name": "무덤 균열", "desc": "균열이 남긴 띠에서 죽으면 혼불 2개", "color": Color(0.6, 0.55, 0.75)},
 	{"id": "smog", "a": POISON, "b": FIRE, "name": "독연기", "desc": "느리게 떠가는 연기, 화상과 중독을 같이 걸고 둘 다 걸리면 중독 2배", "color": Color(0.7, 0.65, 0.3)},
 	{"id": "foulwater", "a": POISON, "b": WATER, "name": "오염 물결", "desc": "물결이 남긴 물길에서 중독, 안에서 죽으면 중독이 주변으로 퍼짐", "color": Color(0.5, 0.75, 0.45)},

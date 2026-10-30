@@ -4654,14 +4654,15 @@ func spawn_rock(t: Tower, l: int) -> void:
 	t.rocks = t.rocks.filter(func(r): return is_instance_valid(r) and not r.is_queued_for_deletion())
 	if t.rocks.size() >= 2 + roundi(t.mf("multi")):
 		return
-	var dist := 90.0 + 60.0 * t.rocks.size()
 	# 바위는 화면 가장자리에서 100 안쪽에만 선다: 가장자리에 서면 막힌 구체가 화면 끝에 붙어
 	# 다른 오브젝트가 닿지 않는 곳에서 버티고 웨이브가 끝나지 않던 것 (폭풍 맵 66웨이브에서 4분 넘게)
 	var inner := get_viewport_rect().grow(-100.0)
-	var p := (t.position + t.dir * dist * Tower.reach(l)).clamp(inner.position, inner.end)
-	if t.rocks.any(func(r): return r.position.distance_to(p) < 40.0):
-		return  # 가장자리에 밀려 같은 자리에 겹치는 바위는 세우지 않는다
-	t.rocks.append(spawn_zone("rock", l, p, t))
+	# 빈 자리 중 앞쪽부터 (Tower.rock_slot). 가장자리에 밀려 같은 자리에 겹치는 바위는 세우지 않는다
+	for k in 2 + roundi(t.mf("multi")):
+		var p := (t.position + Tower.rock_slot(t.dir, k, l)).clamp(inner.position, inner.end)
+		if not t.rocks.any(func(r): return r.position.distance_to(p) < 40.0):
+			t.rocks.append(spawn_zone("rock", l, p, t))
+			return
 
 
 ## 연쇄 번개 표시 (맨 위 층).
@@ -4675,7 +4676,7 @@ func sound_pulse(o: Orb) -> void:
 	var tw: Tower = o.tune_src if is_instance_valid(o.tune_src) else null
 	var l := maxi(o.tune_lv, 1)
 	var r := 70.0 + 10.0 * (l - 1)
-	var dmg := 1.2 * Tower.pw(l) * (tw.dmg_k(true) if tw else 1.3) * (1.5 if o.loud_t > 0.0 else 1.0)
+	var dmg := Rules.t("sound_pulse") * Tower.pw(l) * (tw.dmg_k(true) if tw else 1.3) * (Rules.t("loud_mul") if o.loud_t > 0.0 else 1.0)
 	var tox: Tower = o.toxring_src if o.toxring_t > 0.0 and is_instance_valid(o.toxring_src) else null
 	for other in near(o.position, r + 30.0):
 		if other.hp > 0.0 and other.position.distance_to(o.position) < r + other.radius():

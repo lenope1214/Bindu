@@ -44,6 +44,8 @@ var halo_cd := {}  # 광륜: 구체별 다시 맞힐 때까지 남은 시간
 var vine_cd := {}  # 덩굴: 구체별 다시 묶을 때까지 남은 시간
 var zaps: Array = []  # 감전 물길: 이번에 전류가 꽂힌 자리(로컬)
 var clock_ph := 0.0  # 시계침 위상
+var ring_t0 := 0.0  # 울림 음파 초당 상한: 이번 1초 구간 시작
+var ring_n := 0  # 그 구간에 터뜨린 수
 var clock_hit := {}  # 시계침: 이번 한 번 훑는 동안 맞힌 구체 ([바늘 번호, 구체] -> true, 다중 발사 바늘은 따로 센다)
 var glint_d := Vector2.RIGHT  # 잔광: 1.2초 뒤 다시 쏠 방향
 var rewind_q: Array = []  # 되감기 번개: 1초 뒤 다시 칠 구체들
@@ -180,9 +182,9 @@ const BASE_HIT := {
 	"shot": [2.4, "한 발"], "thorn": [0.85, "한 발, 모두 뚫음"], "gust": [2.2, "한 번, 모두 뚫음"],
 	"shard": [3.0, "한 발, 파편 3개는 1.0씩"], "iron": [1.7, "한 발, 모두 뚫음"], "wisp": [4.0, "한 발"], "path": [2.4, "한 발"],
 	"chain": [2.2, "한 번 튈 때"], "laser": [3.4, "한 번, 모두 뚫음"], "sonic": [2.6, "가까이, 끝에서는 절반"],
-	"clock": [1.2, "한 번 훑을 때"], "vortex": [2.0, "터질 때, 날아가는 동안 초당 0.8~1.6"],
+	"clock": [0.9, "한 번 훑을 때"], "vortex": [3.0, "터질 때, 날아가는 동안 초당 1.5~3.0"],
 	"lob": [LOB_DPS, "지나간 띠 안 초당, 2.5초 남음"], "spray": [5.5, "초당, 계속 뿜음"], "stream": [3.0, "뿜는 동안 초당, 0.6초"],
-	"wall": [4.0, "벽에 막힌 동안 초당"],
+	"wall": [3.0, "벽에 막힌 동안 초당"],
 }
 
 
@@ -253,6 +255,10 @@ func detail_lines() -> Array:
 	var dim := Color(1, 1, 1, 0.65)
 	var els: Dictionary = eff if not eff.is_empty() else elements
 	var bh: Array = BASE_HIT.get(pattern, [1.0, ""])
+	match pattern:  # Rules.tune(온라인 패치)로 바뀌는 값
+		"clock": bh = [Rules.t("clock_dmg"), bh[1]]
+		"wall": bh = [Rules.t("wall_dmg"), bh[1]]
+		"vortex": bh = [Rules.t("vortex_end"), "터질 때, 날아가는 동안 초당 %.1f~%.1f" % [Rules.t("vortex_dmg"), 2.0 * Rules.t("vortex_dmg")]]
 	var f := dmg_k(false)
 	var one: float = bh[0] * pw(plv) * f
 	var shots := 1.0 + mf("multi")
@@ -261,7 +267,7 @@ func detail_lines() -> Array:
 		one *= multi_k()
 	if pattern == "spray" or pattern == "stream":
 		one *= spd_k()  # 계속 뿜는 공격은 공격 속도만큼 초당 피해가 는다
-	var wood: float = 1.0 + 0.2 * els.get(Elem.WOOD, 0)
+	var wood: float = 1.0 + 0.2 * mini(els.get(Elem.WOOD, 0), int(Rules.t("wood_cap")))
 	one *= wood
 	var metal: float = 0.4 * els.get(Elem.METAL, 0)
 	if pattern in ["spray", "stream", "lob", "wall"]:
@@ -405,7 +411,7 @@ func breakdown() -> Dictionary:
 		for e in elements:
 			fs.append([elem_key(e), lf * lv(e) / tl])
 	if lv(Elem.WOOD) > 0:
-		fs.append(["elem:wood", log(1.0 + 0.2 * lv(Elem.WOOD))])
+		fs.append(["elem:wood", log(1.0 + 0.2 * mini(lv(Elem.WOOD), int(Rules.t("wood_cap"))))])
 	if main and main.towers.get_child_count() > 1:
 		fs.append(["etc:crowd", log(1.0 + Rules.crowd_bonus(main.towers.get_child_count()))])
 	if reso > 0 and main:
@@ -904,7 +910,7 @@ func attack(delta: float, orbs: Array) -> void:
 					var key := [i, o]
 					if not clock_hit.has(key):
 						clock_hit[key] = true
-						hit(o, 1.2 * pw(l) * mk))
+						hit(o, Rules.t("clock_dmg") * pw(l) * mk))
 		"wisp":
 			if _ready_to("p", 1.0 / spd(l), de):
 				for d in dirs():
@@ -1175,7 +1181,7 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 			"styx":
 				# 망자의 강: 물길 안에서 죽으면 반드시 혼불
 				_band(orbs, position, dir, chan_len(l), chan_w(l), func(o):
-					hit(o, 1.0 * pw(l) * de, k)
+					hit(o, Rules.t("styx_dmg") * pw(l) * de, k)
 					o.slow(0.7, 0.3)
 					o.styx_t = 0.3
 					o.styx_lv = l
@@ -1187,10 +1193,18 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 						pr.dmg = 2.4 * pw(l)
 						pr.ghost = id
 			"prison":
-				if _ready_to(id, PRISON_IV / spd(l), de):
+				if _ready_to(id, Rules.t("prison_iv") / spd(l), de):
 					main.spawn_proj(self, "icebolt", l, dir)
 			_:
 				RxMore.tick(self, id, l, orbs, de, k)
+
+
+## 벽 바위 k번째 자리(오브젝트 기준). 처음 두 개는 앞으로 한 줄(90·150), 다중 발사로 늘어난 바위는 그 사이 양옆에 번갈아
+## (2026-10-30: 앞으로만 늘어서면 맨 앞 바위에 막힌 구체가 옆으로 비껴 나가 다중 발사가 피해를 0.65~0.76배로 깎던 것)
+static func rock_slot(d: Vector2, k: int, l: int) -> Vector2:
+	if k < 2:
+		return d * (90.0 + 60.0 * k) * reach(l)
+	return d * 120.0 * reach(l) + d.orthogonal() * 56.0 * (1 + (k - 2) / 2) * (1.0 if k % 2 == 0 else -1.0)
 
 
 ## 음파 사거리.
@@ -1235,8 +1249,16 @@ func _ring(o: Orb, amount: float) -> void:
 	o.ring += amount
 	if o.ring < 3.0 or o.ring_cd > 0.0:
 		return
+	# 오브젝트 하나가 터뜨리는 울림 음파는 초당 sound_rate번까지 (2026-10-30: 빽빽한 무리에서 구체마다 터진
+	# 음파가 서로를 다 맞혀 계속 때리는 공격·울림 균열과 섞이면 3~6배이던 것). 모자라면 울림을 그대로 쌓아 둔다
+	if t - ring_t0 >= 1.0:
+		ring_t0 = t
+		ring_n = 0
+	if ring_n >= int(Rules.t("sound_rate")):
+		return
+	ring_n += 1
 	o.ring = 0.0
-	o.ring_cd = 1.0
+	o.ring_cd = Rules.t("sound_cd")
 	if main:
 		main.sound_pulse(o)
 
@@ -1322,17 +1344,28 @@ func _update_aim(orbs: Array, delta: float) -> void:
 		aim = dir
 		return
 	var limit := 0.1 * n
-	var best: Orb = null
-	var bd := 400.0
-	for o in main.near_t(position, bd):
+	# 가장 가까운 구체가 아니라 구체가 가장 많이 모인 쪽으로 (2026-10-30: 가까운 한 개를 따라가 무리 가운데를 벗어나
+	# 분사·음파·물줄기·레이저·시계침에서 유도가 피해를 0.65~0.86배로 깎던 것)
+	var angs := PackedFloat32Array()
+	for o in main.near_t(position, 400.0):
 		var v: Vector2 = o.position - position
-		if v.length() < bd and absf(dir.angle_to(v)) < limit + 0.4:
-			bd = v.length()
-			best = o
+		if v.length() < 400.0:
+			var a := dir.angle_to(v)
+			if absf(a) < limit + 0.4:
+				angs.append(a)
 	var want := dir
-	if best:
-		var a := clampf(dir.angle_to(best.position - position), -limit, limit)
-		want = dir.rotated(a)
+	if not angs.is_empty():
+		angs.sort()
+		var best_a := 0.0
+		var best_n := 0
+		var j := 0
+		for i in angs.size():  # 0.6라디안 창에 가장 많이 든 곳의 가운데
+			while angs[i] - angs[j] > 0.6:
+				j += 1
+			if i - j + 1 > best_n:
+				best_n = i - j + 1
+				best_a = (angs[i] + angs[j]) * 0.5
+		want = dir.rotated(clampf(best_a, -limit, limit))
 	aim = aim.slerp(want, minf(1.0, delta * 6.0)).normalized()
 
 
@@ -1358,7 +1391,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		crit = k >= 1.0
 		lit = not force_crit
 	if els.has(Elem.WOOD):
-		d *= 1.0 + 0.2 * els.get(Elem.WOOD, 0)
+		d *= 1.0 + 0.2 * mini(els.get(Elem.WOOD, 0), int(Rules.t("wood_cap")))
 	var mt := 0.0
 	if els.has(Elem.METAL):
 		mt = 0.4 * els.get(Elem.METAL, 0) * k
@@ -2046,7 +2079,7 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 				if i == 0:
 					var inner := ci.get_viewport_rect().grow(-100.0)  # main.spawn_rock처럼 가장자리 안쪽
 					for k in 2 + md.get("multi", 0):
-						_r_circle(ci, (o + d * (90.0 + 60.0 * k) * reach(l)).clamp(inner.position, inner.end), 28.0 * s, c)
+						_r_circle(ci, (o + rock_slot(d, k, l)).clamp(inner.position, inner.end), 28.0 * s, c)
 			"vortex":
 				# 앞으로 날아가며 줄어드는 띠 (Zone.launch와 같은 계산)
 				var wk := 1.0 + 0.12 * mini(els.get(Elem.WIND, 0), 3) * Rules.trait_mul

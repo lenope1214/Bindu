@@ -810,7 +810,7 @@ static func zone_hit(z: Zone, o: Orb, delta: float) -> void:
 				o.stagger(8.0)
 		"ripple":
 			tw.hit(o, 0.6 * p * delta, k)
-			tw._ring(o, delta)
+			tw._ring(o, delta * Rules.t("strip_ring"))
 		"backflow":
 			o.slow(0.7, 0.3)
 		"icecrack":
@@ -839,7 +839,7 @@ static func zone_hit(z: Zone, o: Orb, delta: float) -> void:
 			tw.hit(o, 1.2 * p * delta, k, {}, true, true)
 		"rumble":
 			tw.hit(o, 1.0 * p * delta, k)
-			tw._ring(o, delta)
+			tw._ring(o, delta * Rules.t("strip_ring"))
 			o.loud_t = 0.5
 		"tomb":
 			tw.hit(o, 1.5 * p * delta, k)

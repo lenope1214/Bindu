@@ -397,7 +397,7 @@ func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 			o.root(0.7)
 	match kind:
 		"gust":
-			o.push(vel.normalized().orthogonal() * 20.0 * level)
+			o.push(vel.normalized().orthogonal() * 20.0 * minf(level, Rules.t("gust_push_lv")))
 		"glob":
 			o.poison(1.2 * level, 5.0, tw)
 		"iron":

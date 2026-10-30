@@ -36,6 +36,29 @@ static var orb_hp := 1.0  # 구체 체력 배율 (온라인 패치로만 바뀜)
 static var trait_mul := 1.0  # 속성 형태 성질 세기 (Elem.TRAIT)
 static var rx_mul := RX_MUL  # 2026-10-30에 채운 반응 65개(RxMore)의 피해·지속 피해 배율
 const RX_MUL := 0.5
+## 조합 효율 측정(2026-10-30, docs/combo-efficiency)으로 고친 수치. 온라인 패치 rules의 같은 키로 덮어쓴다.
+const TUNE := {
+	"wood_cap": 3.0,  # 나무 부가효과(받는 피해 +20%/레벨)가 세는 최대 레벨 (예전 상한 없음)
+	"clock_dmg": 0.9,  # 시계침 한 번 훑을 때 피해 (예전 1.2)
+	"vortex_speed": 90.0,  # 블랙홀 날아가는 속도 (예전 140)
+	"vortex_dmg": 1.5,  # 블랙홀 날아가는 동안 초당 피해, 다 줄면 2배 (예전 0.8)
+	"vortex_end": 3.0,  # 블랙홀 붕괴 피해 (예전 2.0)
+	"gust_push_lv": 2.0,  # 돌풍 옆으로 미는 힘이 세는 최대 레벨 (예전 상한 없음: 밀어낸 구체를 다음 돌풍이 못 맞힘)
+	"sound_cd": 1.0,  # 소리 울림 음파: 같은 구체에 다시 터질 때까지
+	"sound_pulse": 1.2,  # 소리 울림 음파 피해
+	"sound_rate": 3.0,  # 오브젝트 하나가 터뜨리는 울림 음파 초당 최대 (예전 상한 없음: 많이 맞히는 공격방식과 섞이면 3~6배)
+	"loud_mul": 1.2,  # 울림 균열 위 구체의 음파 피해 배율 (예전 1.5)
+	"strip_ring": 0.2,  # 땅+소리 울림 균열·물+소리 메아리 물결 띠가 쌓는 울림 (예전 1.0, 반응 중앙값의 4~8배이던 것)
+	"prison_iv": 5.0,  # 빙결 감옥 얼음 덩이 간격 (예전 7초)
+	"prison_dmg": 3.0,  # 빙결 감옥 가둘 때 피해 (예전 2.0)
+	"styx_dmg": 1.5,  # 망자의 강 물길 초당 피해 (예전 1.0)
+	"wall_dmg": 3.0,  # 벽 바위에 막힌 동안 초당 피해 (예전 4.0, 빈 앞자리를 다시 채우게 고치며 낮춤)
+}
+static var tune := TUNE.duplicate()
+
+
+static func t(k: String) -> float:
+	return tune[k]
 
 
 ## 오브젝트 수 보너스(모든 오브젝트 피해에 더하는 몫). 2026-10-30 직선(하나당 +4%, 10개 +36%)이 후반에 과해
@@ -60,6 +83,7 @@ static func apply(v: int) -> void:
 	orb_hp = 1.0
 	trait_mul = 1.0
 	rx_mul = RX_MUL
+	tune = TUNE.duplicate()
 	match version:
 		2:
 			max_elems = 2
@@ -88,6 +112,9 @@ static func _apply_patch(p: Dictionary) -> void:
 				mod_decay = v
 			continue
 		if not (v is float or v is int):
+			continue
+		if TUNE.has(k):
+			tune[k] = maxf(0.0, float(v))
 			continue
 		match k:
 			"max_elems": max_elems = maxi(1, int(v))

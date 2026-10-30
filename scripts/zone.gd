@@ -130,7 +130,7 @@ func trail_orbs(main) -> Array:
 func launch(d: Vector2) -> void:
 	dir = d
 	var tw := owner_tower
-	vel = d * 140.0 * (1.0 + 0.12 * tw.tk(Elem.WIND))
+	vel = d * Rules.t("vortex_speed") * (1.0 + 0.12 * tw.tk(Elem.WIND))
 	shrink = maxf(0.3, 1.0 - 0.15 * (tw.tk(Elem.WOOD) + tw.tk(Elem.WIND)))
 	var dk := 1.0 + 0.15 * tw.tk(Elem.DARK)
 	pull = 80.0 * dk
@@ -162,7 +162,7 @@ func affect(orbs: Array, delta: float) -> void:
 					continue
 				caught[o] = true
 				owner_tower.in_rx = true
-				_hit(o, 2.0 * _p(), 1.0)
+				_hit(o, Rules.t("prison_dmg") * _p(), 1.0)
 				owner_tower.in_rx = false
 				o.root(1.5)
 				o.prison_t = 1.5
@@ -183,9 +183,9 @@ func affect(orbs: Array, delta: float) -> void:
 				var v: Vector2 = position - o.position
 				v -= dir * v.dot(dir)
 				o.push(v.limit_length(pull * delta))
-				# 작아질수록 세진다: 처음 0.8 → 다 줄면 1.6
+				# 작아질수록 세진다: 처음 vortex_dmg(1.2) → 다 줄면 2배
 				var ramp := 1.0 + (1.0 - radius / r0) / 0.6 if r0 > 0.0 else 1.0
-				_hit(o, 0.8 * _p() * ramp * delta, delta * 3.0)
+				_hit(o, Rules.t("vortex_dmg") * _p() * ramp * delta, delta * 3.0)
 				if o.hp <= 0.0 and not eaten_set.has(o):
 					eaten_set[o] = true
 					eaten += 1
@@ -222,7 +222,7 @@ func affect(orbs: Array, delta: float) -> void:
 				var away: Vector2 = (o.position - position).normalized()
 				o.position = position + away * (radius + o.radius())
 				o.root(0.1, false)
-				_hit(o, 4.0 * Tower.pw(level) * delta, delta * 3.0)
+				_hit(o, Rules.t("wall_dmg") * Tower.pw(level) * delta, delta * 3.0)
 				hp -= 2.0 * delta
 	if kind == "rock" and hp <= 0.0:
 		life = 0.0
@@ -294,7 +294,7 @@ func _end() -> void:
 				return
 			for o in tw.main.near(position, radius + 30.0):
 				if o.hp > 0.0 and o.position.distance_to(position) < radius + o.radius():
-					tw.hit(o, 2.0 * _p() * (1.0 + minf(0.1 * eaten, 0.5)))
+					tw.hit(o, Rules.t("vortex_end") * _p() * (1.0 + minf(0.1 * eaten, 0.5)))
 					if tw.tk(Elem.METAL) > 0.0:
 						o.stagger(o.speed * 0.2 * tw.tk(Elem.METAL))
 			tw.main.burst(position, Elem.COLORS[Elem.DARK], 10, 120.0)
