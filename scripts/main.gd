@@ -134,6 +134,7 @@ var aim_start_ms := 0
 var restart_armed := 0.0  # 일시정지 중 R 두 번이면 처음부터
 var end_armed := 0.0  # 일시정지 중 판 끝내기 두 번이면 지금 점수로 게임 오버
 var ended := false  # 스스로 끝낸 판 (게임 오버 글 제목만 다름)
+var old_run_ver := ""  # 지난 게임 버전에서 저장된 판을 끝낼 때 그 버전 (기록은 그 버전으로 보냄)
 var over_ms := 0  # 게임 오버 시각: 직후 클릭이 결과를 못 보고 넘기지 않게
 var countdown := -1.0  # 자동 시작까지 남은 시간
 # 특성: 5웨이브마다 고르는 전역 강화
@@ -281,6 +282,8 @@ func _ready() -> void:
 	get_window().title = "빈두 v%s" % ProjectSettings.get_setting("application/config/version", "?")
 	if title_seen or DisplayServer.get_name() == "headless":
 		_start_choose()
+	elif _old_run_version() != "":
+		_end_old_run(_old_run_version())
 	else:
 		title_label.visible = true
 		_refresh_continue()
@@ -956,7 +959,7 @@ func _help_text() -> String:
 		"쉬는 시간 왼쪽 위 DPS 표: 지난 웨이브에 오브젝트마다 낸 DPS와 비율. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
 		"P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
-		"R: 다시 시작 (게임 오버 뒤, 또는 일시정지 중 두 번)",
+		"R: 처음부터 (일시정지 중 두 번) · 게임 오버 뒤 클릭·R·Esc: 시작 화면",
 		"E: 판 끝내기 (일시정지 중 두 번) — 지금 점수로 게임 오버, 기록·온라인 순위에 올라감",
 		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 이어하기(Enter)로 그 쉬는 시간부터 (새로 시작은 N 두 번)",
 		"첫 판은 카드가 단계별로 열려요 (공격방식 3·강화 4·연계 6웨이브)",
@@ -1888,7 +1891,7 @@ func _game_over() -> void:
 			tops.append("%s %d%%" % [src_name(key), roundi(rs[key] / total * 100.0)])
 		mvp += "\n피해 출처: " + ", ".join(tops)
 	var md := "" if Modes.on.is_empty() else "\n모드: %s · 점수 x%.2f%s" % [Modes.names(), Modes.mul(), "\n쉽게 모드: 최고 기록 따로, 리더보드 제외" if Modes.easy() else ""]
-	over_label.text = "%s (%s · %s)\n웨이브 %d · 점수 %s%s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\nR 또는 클릭: 다시 시작   Esc: 메뉴" % ["판 끝냄" if ended else "게임 오버", Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, md, num(kills), best_combo, towers.get_child_count(), mvp, ach]
+	over_label.text = "%s (%s · %s)\n웨이브 %d · 점수 %s%s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\n클릭·R·Esc: 시작 화면으로" % ["판 끝냄" if ended else "게임 오버", Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, md, num(kills), best_combo, towers.get_child_count(), mvp, ach]
 	over_label.visible = true
 	_submit_run()
 	sfx.play("over", 0.0)
@@ -2002,6 +2005,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_restore_hint()
 		elif event.keycode == KEY_R and phase == Phase.GAMEOVER:
 			if Time.get_ticks_msec() - over_ms > 800:
+				title_seen = false
 				get_tree().reload_current_scene()
 		elif event.keycode == KEY_M:
 			_toggle_mute()
@@ -2065,6 +2069,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if phase == Phase.GAMEOVER and event.button_index == MOUSE_BUTTON_LEFT:
 		if Time.get_ticks_msec() - over_ms > 800:
+			title_seen = false
 			get_tree().reload_current_scene()
 		return
 	var mpos := get_global_mouse_position()
@@ -2838,7 +2843,7 @@ func _submit_run() -> void:
 		if total > 0.0 and rs[key] / total >= 0.0005:
 			src[key] = snappedf(rs[key] / total, 0.0001)
 	net.submit({
-		"device": Meta.device_id, "nick": Meta.nickname, "platform": Net.platform(), "game": Net.game_version(),
+		"device": Meta.device_id, "nick": Meta.nickname, "platform": Net.platform(), "game": old_run_ver if old_run_ver != "" else Net.game_version(),
 		"patch": Patch.id, "map": Meta.map_id, "rules": Meta.rules, "modes": Array(Modes.on), "wave": wave, "score": score, "kills": kills,
 		"best_combo": best_combo, "game_secs": run_game, "real_secs": run_real, "perks": perks.duplicate(),
 		"towers": list, "src": src, "log": run_log,
@@ -3462,7 +3467,30 @@ func _continue_run() -> void:
 			else:
 				_show_offer()
 			_open_choose()
-	_show_toast("웨이브 %d 앞 쉬는 시간부터 이어서 합니다" % (wave + 1))
+	if old_run_ver == "":
+		_show_toast("웨이브 %d 앞 쉬는 시간부터 이어서 합니다" % (wave + 1))
+
+
+## 저장된 판이 지난 게임 버전에서 저장됐으면 그 버전 (같은 버전이거나 저장이 없으면 "").
+func _old_run_version() -> String:
+	var info := _run_info()
+	if info.is_empty():
+		return ""
+	var v := str(Meta.val(info["cfg"], "run", "version", ""))
+	if v == Net.game_version():
+		return ""
+	return v if v != "" else "?"
+
+
+## 게임 버전이 바뀌면 지난 버전의 판은 이어 하지 않는다: 그 판을 불러와 지금 점수로 끝낸다
+## (판 끝내기와 같이 기록 저장·온라인 전송, 저장은 지움). 결과를 보여 주고 클릭하면 시작 화면.
+func _end_old_run(v: String) -> void:
+	old_run_ver = v
+	_continue_run()
+	perk_mode = false
+	ended = true
+	_game_over()
+	over_label.text = "v%s에서 하던 판은 새 버전(v%s)에서 이어 할 수 없어 지금 점수로 끝냈어요\n" % [v, Net.game_version()] + over_label.text
 
 
 ## 공격방식·강화·연계 카드를 오브젝트에 넣는다.
