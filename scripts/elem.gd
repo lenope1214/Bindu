@@ -43,7 +43,7 @@ static func draw_symbol(ci: CanvasItem, font: Font, c: Vector2, e: int, fs: int)
 	ci.draw_string(font, p, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
 
 
-## 고유 공격
+## 속성과 같은 색의 공격방식 (도감 설명용. 규칙 1·3에서 속성은 공격 모양을 바꾸지 않고, 공격방식은 따로 카드로 얻는다)
 const FORM := {
 	FIRE: "화염 방사 (부채꼴 지속 피해)",
 	WOOD: "관통 가시 연사",
