@@ -75,6 +75,9 @@ var pulses: Array = []  # 소리 울림 음파 [중심, 반지름, 남은 시간
 var refracts: Array = []  # 프리즘 굴절 [중심, 탄 방향, 색, 남은 시간]
 var live_orbs: Array = []
 var targets: Array = []  # 화면 안에 들어온 구체 (공격 대상)
+var sim_id := 0  # 계산 조각 번호: 조각 안에서 변하지 않는 값(오브젝트 피해 배율)을 조각마다 한 번만 계산
+var prof_on := false  # tools/perf.gd: 부분별 계산 시간 기록
+var prof := {}
 var fx_layer: Node2D  # 피해 숫자·파편 (맨 위)
 var popups: Array = []  # [위치, 글자, 남은 시간, 색, 큰 글씨]
 var particles: Array = []  # [위치, 속도, 남은 시간, 색, 크기]
@@ -3548,7 +3551,7 @@ func sound_pulse(o: Orb) -> void:
 	var tw: Tower = o.tune_src if is_instance_valid(o.tune_src) else null
 	var l := maxi(o.tune_lv, 1)
 	var r := 70.0 + 10.0 * (l - 1)
-	var dmg := 1.2 * Tower.pw(l) * (tw.dmg_factor(true) if tw else 1.3)
+	var dmg := 1.2 * Tower.pw(l) * (tw.dmg_k(true) if tw else 1.3)
 	for other in near(o.position, r + 30.0):
 		if other.hp > 0.0 and other.position.distance_to(o.position) < r + other.radius():
 			other.hurt(dmg)
@@ -3766,6 +3769,7 @@ func _roll_kind() -> int:
 # ---------- 루프 ----------
 
 func _process(delta: float) -> void:
+	var us := Time.get_ticks_usec() if prof_on else 0
 	if new_armed > 0.0:
 		new_armed -= delta
 		if new_armed <= 0.0:
@@ -3873,6 +3877,8 @@ func _process(delta: float) -> void:
 	_update_fx(delta)
 	if phase != Phase.WAVE:
 		return
+	if prof_on:
+		_prof_add("UI·효과", us)
 	# 배속: 한 프레임을 1배속 크기의 조각으로 나눠 여러 번 계산한다.
 	# 공격 주기·충돌이 배속과 상관없이 1배속과 같게 나온다.
 	var steps := ceili(game_speed)
@@ -3886,10 +3892,14 @@ func _process(delta: float) -> void:
 
 ## 게임 시간 dt만큼 진행 (구체·발사체·장판 이동 → 판정 → 웨이브 종료 확인).
 func _sim_step(delta: float) -> void:
+	sim_id += 1
+	var us := Time.get_ticks_usec() if prof_on else 0
 	for layer in [orbs, projectiles, zones]:
 		for n in layer.get_children():
 			if not n.is_queued_for_deletion():
 				n.step(delta)
+	if prof_on:
+		_prof_add("이동", us)
 
 	if to_spawn > 0:
 		spawn_timer -= delta
@@ -4035,6 +4045,7 @@ func _alive_count(n: Node) -> int:
 
 
 func _resolve(delta: float) -> void:
+	var us := Time.get_ticks_usec() if prof_on else 0
 	var rect := get_viewport_rect().grow(40.0)
 	live_orbs = orbs.get_children().filter(func(o): return not o.is_queued_for_deletion())
 	# 공격은 화면에 보이기 시작한 구체에만 닿는다 (가장자리가 화면 안으로 들어온 구체)
@@ -4043,15 +4054,21 @@ func _resolve(delta: float) -> void:
 
 	_build_grid()
 	prism_towers = towers.get_children().filter(func(t): return t.prism > 0)
+	if prof_on:
+		us = _prof_add("목록·격자", us)
 	# 오브젝트 공격
 	for t in towers.get_children():
 		if not t.is_queued_for_deletion():
 			t.attack(delta, targets)
+	if prof_on:
+		us = _prof_add("오브젝트 공격", us)
 
 	# 바닥 효과
 	for z in zones.get_children():
 		if not z.is_queued_for_deletion():
 			z.affect(near(z.position, z.radius if z.kind != "mine" else 80.0), delta)
+	if prof_on:
+		us = _prof_add("장판", us)
 
 	# 발사체
 	for p in projectiles.get_children():
@@ -4075,6 +4092,8 @@ func _resolve(delta: float) -> void:
 						_shatter(p)
 					p.queue_free()
 					break
+	if prof_on:
+		us = _prof_add("발사체 판정", us)
 
 	# 구체 처치 / 중앙 도달
 	for o in live_orbs:
@@ -4139,6 +4158,15 @@ func _resolve(delta: float) -> void:
 	for a in arcs:
 		a[2] -= delta
 	arcs = arcs.filter(func(a): return a[2] > 0.0)
+	if prof_on:
+		_prof_add("처치·나머지", us)
+
+
+## 부분별 계산 시간(µs)을 더하고 지금 시각을 돌려준다.
+func _prof_add(part: String, since: int) -> int:
+	var now := Time.get_ticks_usec()
+	prof[part] = prof.get(part, 0) + now - since
+	return now
 
 
 ## 저주: 표식 구체가 죽으면 주변에 그 구체 최대 체력 비례 피해, 표식은 가까운 구체로 옮겨 간다.
@@ -4183,7 +4211,9 @@ var grid := {}
 
 func _build_grid() -> void:
 	grid.clear()
-	for o in targets:
+	for i in targets.size():
+		var o: Orb = targets[i]
+		o.ti = i
 		var k := Vector2i(floori(o.position.x / GRID), floori(o.position.y / GRID))
 		if grid.has(k):
 			grid[k].append(o)
@@ -4207,6 +4237,33 @@ func near(p: Vector2, r: float) -> Array:
 				for o in cell:
 					if is_instance_valid(o) and not o.is_queued_for_deletion():
 						out.append(o)
+	return out
+
+
+## 오브젝트 공격용: p에서 r 안에 있을 수 있는 구체를 targets 순서 그대로.
+## 전체를 돌던 때와 맞히는 순서(그래서 치명타 등 난수 순서)가 같다.
+## 공격 중에 바람에 밀린 만큼(한 조각에 밀림 여유 최대 40)도 빠지지 않게 여유를 둔다.
+## 구체가 적거나 범위가 넓어 칸이 구체보다 많으면 그냥 전체를 준다 (그쪽이 빠르다).
+func near_t(p: Vector2, r: float) -> Array:
+	var rr := r + 32.0 + 40.0
+	var x0 := floori((p.x - rr) / GRID)
+	var x1 := floori((p.x + rr) / GRID)
+	var y0 := floori((p.y - rr) / GRID)
+	var y1 := floori((p.y + rr) / GRID)
+	if (x1 - x0 + 1) * (y1 - y0 + 1) >= targets.size():
+		return targets
+	var idx := PackedInt32Array()
+	for x in range(x0, x1 + 1):
+		for y in range(y0, y1 + 1):
+			var cell = grid.get(Vector2i(x, y))
+			if cell:
+				for o in cell:
+					idx.append(o.ti)
+	idx.sort()
+	var out: Array = []
+	out.resize(idx.size())
+	for i in idx.size():
+		out[i] = targets[idx[i]]
 	return out
 
 

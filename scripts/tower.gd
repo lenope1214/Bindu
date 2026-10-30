@@ -136,6 +136,21 @@ func dmg_factor(rx := false) -> float:
 	return f
 
 
+## hit용 피해 배율. 한 계산 조각 안에서는 변하지 않으니 조각마다 한 번만 계산한다
+## (지속 공격은 조각마다 구체마다 hit을 부르고, 공명은 오브젝트 전체를 돈다).
+var _dk := [0.0, 0.0]
+var _dk_id := -1
+
+
+func dmg_k(rx: bool) -> float:
+	if main == null:
+		return dmg_factor(rx)
+	if _dk_id != main.sim_id:
+		_dk_id = main.sim_id
+		_dk = [dmg_factor(false), dmg_factor(true)]
+	return _dk[1 if rx else 0]
+
+
 ## 대표 색: 속성 색을 레벨 비율로 섞는다.
 func color() -> Color:
 	if order.is_empty():
@@ -553,7 +568,7 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 				if _ready_to(id, 2.5 / spd(l), de):
 					main.spawn_proj(self, "tornado", l, dir)
 			"blizzard":
-				for o in orbs:
+				for o in main.near_t(position, 130.0 * reach(l)):
 					if o.position.distance_to(position) < 130.0 * reach(l):
 						hit(o, 1.0 * pw(l) * de, k)
 						o.slow(0.45, 0.3)
@@ -598,7 +613,7 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 			"quake":
 				if _ready_to(id, 3.5 / spd(l), de):
 					fx[id] = 0.4
-					for o in orbs:
+					for o in main.near_t(position, 150.0 * reach(l)):
 						if o.position.distance_to(position) < 150.0 * reach(l) + o.radius():
 							hit(o, 2.5 * pw(l))
 							o.root(0.8)
@@ -735,7 +750,7 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 				if _ready_to(id, 7.0 / spd(l), de):
 					fx[id] = 0.5
 					prison_c = dir * 150.0 * reach(l)
-					for o in orbs:
+					for o in main.near_t(position + prison_c, 90.0 + 8.0 * (l - 1)):
 						if o.position.distance_to(position + prison_c) < 90.0 + 8.0 * (l - 1) + o.radius():
 							hit(o, 2.0 * pw(l))
 							o.root(1.5)
@@ -756,7 +771,7 @@ func clock_a() -> float:
 func _chain_list(orbs: Array, d: Vector2, rng: float, n: int) -> Array:
 	var first: Orb = null
 	var best := rng
-	for o in orbs:
+	for o in main.near_t(position, rng):
 		var v: Vector2 = o.position - position
 		if v.length() < best and absf(d.angle_to(v)) < 0.5:
 			best = v.length()
@@ -768,7 +783,7 @@ func _chain_list(orbs: Array, d: Vector2, rng: float, n: int) -> Array:
 	while out.size() < n:
 		var nxt: Orb = null
 		var nd := 110.0
-		for o in orbs:
+		for o in main.near_t(cur.position, nd):
 			if not out.has(o) and o.position.distance_to(cur.position) < nd:
 				nd = o.position.distance_to(cur.position)
 				nxt = o
@@ -830,7 +845,7 @@ func _update_aim(orbs: Array, delta: float) -> void:
 	var limit := 0.1 * n
 	var best: Orb = null
 	var bd := 400.0
-	for o in orbs:
+	for o in main.near_t(position, bd):
 		var v: Vector2 = o.position - position
 		if v.length() < bd and absf(dir.angle_to(v)) < limit + 0.4:
 			bd = v.length()
@@ -853,17 +868,16 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		els = els.duplicate()
 		for e in extra:
 			els[e] = maxi(els.get(e, 0), extra[e])
-	var L := func(e: int) -> int: return els.get(e, 0)
-	var d := dmg * dmg_factor(in_rx)
+	var d := dmg * dmg_k(in_rx)
 	var crit := false
-	if force_crit or els.has(Elem.LIGHT) and randf() < minf(0.12 * L.call(Elem.LIGHT), 0.6) * minf(k, 1.0):
+	if force_crit or els.has(Elem.LIGHT) and randf() < minf(0.12 * els.get(Elem.LIGHT, 0), 0.6) * minf(k, 1.0):
 		d *= 2.0
 		crit = k >= 1.0
 	if els.has(Elem.WOOD):
-		d *= 1.0 + 0.2 * L.call(Elem.WOOD)
+		d *= 1.0 + 0.2 * els.get(Elem.WOOD, 0)
 	if els.has(Elem.METAL):
-		d += 0.4 * L.call(Elem.METAL) * k
-		o.stagger(4.0 * L.call(Elem.METAL) * k)
+		d += 0.4 * els.get(Elem.METAL, 0) * k
+		o.stagger(4.0 * els.get(Elem.METAL, 0) * k)
 	var rm := o.resist_mul(els)
 	d *= rm
 	o.hurt(d, crit)
@@ -872,35 +886,35 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		rx_dealt += d
 	_pincer(o)
 	if els.has(Elem.FIRE):
-		o.burn(0.8 * L.call(Elem.FIRE) * rm, 2.0, self)
+		o.burn(0.8 * els.get(Elem.FIRE, 0) * rm, 2.0, self)
 	if els.has(Elem.POISON):
-		o.poison(0.5 * L.call(Elem.POISON) * rm, 4.0, self)
+		o.poison(0.5 * els.get(Elem.POISON, 0) * rm, 4.0, self)
 	if els.has(Elem.ICE):
-		o.add_chill(0.6 * k * L.call(Elem.ICE))
+		o.add_chill(0.6 * k * els.get(Elem.ICE, 0))
 	if els.has(Elem.WATER):
 		o.slow(0.8, 0.8)
 	if els.has(Elem.WIND):
 		# 중앙 반대쪽으로 밀어낸다
-		o.push((o.position - o.target).normalized() * 7.0 * L.call(Elem.WIND) * k)
-	if els.has(Elem.EARTH) and randf() < minf(0.2 * L.call(Elem.EARTH), 0.7) * k:
+		o.push((o.position - o.target).normalized() * 7.0 * els.get(Elem.WIND, 0) * k)
+	if els.has(Elem.EARTH) and randf() < minf(0.2 * els.get(Elem.EARTH, 0), 0.7) * k:
 		o.root(0.8)
 	if els.has(Elem.DARK):
 		o.vuln(2.0)
 	if els.has(Elem.ELECTRIC) and randf() < 0.3 * k:
-		main.arc(o, d * 0.5 * L.call(Elem.ELECTRIC), self)
+		main.arc(o, d * 0.5 * els.get(Elem.ELECTRIC, 0), self)
 	if els.has(Elem.SOUND):
 		# 울림을 걸어 둔다: 3초 동안 어느 오브젝트에 맞아도 쌓인다
-		if o.tune_t <= 0.0 or L.call(Elem.SOUND) >= o.tune_lv:
-			o.tune_lv = L.call(Elem.SOUND)
+		if o.tune_t <= 0.0 or els.get(Elem.SOUND, 0) >= o.tune_lv:
+			o.tune_lv = els.get(Elem.SOUND, 0)
 			o.tune_src = self
 		o.tune_t = 3.0
 	if o.tune_t > 0.0:
 		_ring(o, minf(k, 1.0))
 	if els.has(Elem.TIME):
-		o.echo(minf(0.15 + 0.05 * L.call(Elem.TIME), 0.4), 2.0, self)
+		o.echo(minf(0.15 + 0.05 * els.get(Elem.TIME, 0), 0.4), 2.0, self)
 	if els.has(Elem.SOUL):
-		if o.soul_t <= 0.0 or L.call(Elem.SOUL) >= o.soul_lv:
-			o.soul_lv = L.call(Elem.SOUL)
+		if o.soul_t <= 0.0 or els.get(Elem.SOUL, 0) >= o.soul_lv:
+			o.soul_lv = els.get(Elem.SOUL, 0)
 			o.soul_src = self
 		o.soul_t = 3.0
 	if can_split and m("split") > 0 and randf() < minf(0.6, 0.12 * mf("split")) * minf(k, 1.0):
@@ -912,16 +926,16 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 
 
 ## d 방향 부채꼴 안의 구체에 효과.
-func _cone(orbs: Array, d: Vector2, rng: float, half: float, f: Callable) -> void:
-	for o in orbs:
+func _cone(_orbs: Array, d: Vector2, rng: float, half: float, f: Callable) -> void:
+	for o in main.near_t(position, rng):
 		var v: Vector2 = o.position - position
 		if v.length() < rng + o.radius() and absf(d.angle_to(v)) < half:
 			f.call(o)
 
 
 ## from에서 d 방향 띠(길이 length, 반폭 half_w) 안의 구체에 효과.
-func _band(orbs: Array, from: Vector2, d: Vector2, length: float, half_w: float, f: Callable) -> void:
-	for o in orbs:
+func _band(_orbs: Array, from: Vector2, d: Vector2, length: float, half_w: float, f: Callable) -> void:
+	for o in main.near_t(from + d * length * 0.5, length * 0.5 + half_w + 32.0):
 		var v: Vector2 = o.position - from
 		var along := v.dot(d)
 		if along > -o.radius() and along < length + o.radius() and absf(v.cross(d)) < half_w + o.radius():
@@ -929,8 +943,8 @@ func _band(orbs: Array, from: Vector2, d: Vector2, length: float, half_w: float,
 
 
 ## d 방향 직선 위의 구체에 효과.
-func _line(orbs: Array, d: Vector2, length: float, width: float, f: Callable) -> void:
-	for o in orbs:
+func _line(_orbs: Array, d: Vector2, length: float, width: float, f: Callable) -> void:
+	for o in main.near_t(position + d * length * 0.5, length * 0.5 + width):
 		var v: Vector2 = o.position - position
 		var along := v.dot(d)
 		if along > 0.0 and along < length and absf(v.cross(d)) < width + o.radius():
@@ -941,7 +955,7 @@ func _line(orbs: Array, d: Vector2, length: float, width: float, f: Callable) ->
 func _chain(orbs: Array, d: Vector2, l: int, used: Dictionary) -> bool:
 	var first: Orb = null
 	var best := 280.0 * reach(l) * sz()
-	for o in orbs:
+	for o in main.near_t(position, best):
 		var v: Vector2 = o.position - position
 		if not used.has(o) and v.length() < best and absf(d.angle_to(v)) < 0.5:
 			best = v.length()
@@ -958,7 +972,7 @@ func _chain(orbs: Array, d: Vector2, l: int, used: Dictionary) -> bool:
 		hit(cur, 2.2 * pw(l) * multi_k())
 		var nxt: Orb = null
 		var nd := 110.0 * sz()
-		for o in orbs:
+		for o in main.near_t(cur.position, nd):
 			if not hitset.has(o) and o.position.distance_to(cur.position) < nd:
 				nd = o.position.distance_to(cur.position)
 				nxt = o

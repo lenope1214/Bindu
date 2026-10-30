@@ -7,7 +7,8 @@
 #   fuzz [판 수=8] [프레임=9000]          무작위 클릭·끌기·키·터치 (스크립트 오류 찾기)
 #   elem                                   속성마다 직선탄 Lv2 하나가 30초간 준 피해/초
 #   rx                                     특수 반응마다 두 속성 Lv1 직선탄 하나가 구체 무리에 준 반응 피해/초 (RX=id,id로 골라 보기)
-#   perf                                   후반 부하(오브젝트 16개·구체 400개) 배속별 프레임당 계산 시간
+#   perf                                   후반 부하(오브젝트 16개·구체 250개+) 배속별 프레임당 계산 시간·부분별 시간
+#   perfwin                                perf를 창을 띄워 실행 (그리기 비용 포함, 수직 동기 끔)
 #   compare [기준=1] [새 규칙=3] [판 수=32] [stack]   같은 시드로 두 규칙을 돌려 차이와 판정 (새 규칙을 내기 전에)
 #   modes [규칙=1] [판 수=32] [모드...]   모드마다 같은 시드로 모드 없는 판과 비교: 웨이브 차이·점수 손익분기 배율
 # 환경 변수: SPEED(배속, 기본 4) SMART(기본 1: 사람처럼 중앙 가까이에서 길목을 겨눔, 0이면 예전 봇)
@@ -184,6 +185,12 @@ case "$CMD" in
 		D=$(copy_project "$$")
 		cd "$D"
 		T 900 "$G" --headless --fixed-fps 60 --path . -s tools/perf.gd 2>&1 | grep -E "PERF|SCRIPT ERROR" || true
+		rm -rf "$D"
+		;;
+	perfwin)
+		D=$(copy_project "$$")
+		cd "$D"
+		T 900 "$G" --fixed-fps 60 --path . -s tools/perf.gd 2>&1 | grep -E "PERF|SCRIPT ERROR" || true
 		rm -rf "$D"
 		;;
 	*)

@@ -74,6 +74,7 @@ var main: Node
 var dmg_acc := 0.0  # 피해 숫자 팝업용 누적
 var pop_t := 0.0
 var age := 0.0  # 등장 연출
+var ti := 0  # main.targets 안 순서 (격자 조회 결과를 원래 순서로 맞출 때)
 var from_a := 0.0  # 나온 방향(중앙 기준 각도): 누수 기록·표시용
 
 

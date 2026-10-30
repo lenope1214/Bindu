@@ -1,8 +1,10 @@
 extends SceneTree
-## 후반 부하 측정: 오브젝트 16개(공격방식·속성 3종·강화 10개씩)와 구체 400개로 30웨이브를 돌려
-## 배속마다 프레임 시간(헤드리스는 기다리지 않고 바로 다음 프레임을 돌리므로 프레임 사이 시간 = 한 프레임 비용)과
-## 화면 위 구체·탄 수를 찍는다.
-## 사용: tools/run.sh perf  (헤드리스라 그리기 비용은 빠짐. 그리기까지 보려면 창을 띄워 직접 실행)
+## 후반 부하 측정: 오브젝트 16개(공격방식·속성 3종·강화 10개씩)로 30웨이브를 돌려
+## 배속마다 프레임 시간(기다리지 않고 바로 다음 프레임을 돌리므로 프레임 사이 시간 = 한 프레임 비용)과
+## 화면 위 구체·탄 수를 찍는다. 구체 체력을 크게 올려 화면 구체가 PERF_ORBS(기본 250)개 넘게 쌓인 뒤부터 잰다
+## (예전엔 바로 죽어 60~90개만 남아 후반 부하가 나오지 않았다).
+## 이어서 부분별(이동·목록·오브젝트 공격·장판·발사체 판정·처치·UI·효과) 계산 시간을 프레임당 ms로 찍는다.
+## 사용: tools/run.sh perf (헤드리스, 그리기 비용 빠짐) / tools/run.sh perfwin (창을 띄워 그리기까지, 수직 동기 끔)
 var main
 var f := 0
 var stage := 0
@@ -10,9 +12,14 @@ var speeds := [1.0, 4.0, 8.0]
 var samples: Array = []
 var counts := Vector3.ZERO
 var last_us := 0
+var goal := int(OS.get_environment("PERF_ORBS")) if OS.get_environment("PERF_ORBS") != "" else 250
+var warm := 0  # 구체가 쌓이기를 기다린 프레임
 
 func _initialize():
 	seed(7)
+	if DisplayServer.get_name() != "headless":
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+		Engine.max_fps = 0
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 
@@ -34,6 +41,8 @@ func _setup() -> void:
 		t.eff = t.eff_now()
 	main.core_hp = 99999
 	main.core_max = 99999
+	main.prof_on = true
+	Rules.orb_hp = 40.0  # 잘 죽지 않게: 구체 수를 후반처럼 쌓는다
 	main.wave = 29
 	main._start_wave()
 	main.to_spawn = 400
@@ -51,7 +60,13 @@ func _process(_d):
 	main.to_spawn = maxi(main.to_spawn, 50)  # 웨이브가 끝나지 않게
 	main.game_speed = speeds[stage]
 	var now := Time.get_ticks_usec()
-	if f > 120:  # 구체가 화면에 들어올 때까지 기다린 뒤 잰다
+	# 구체가 goal개 넘게 쌓일 때까지(최대 4000프레임) 기다린 뒤 잰다
+	if samples.is_empty() and main.live_orbs.size() < goal and warm < 4000:
+		warm += 1
+		main.prof.clear()
+		last_us = now
+		return false
+	if f > 120:
 		samples.append((now - last_us) / 1000.0)
 		counts += Vector3(main.live_orbs.size(), main.projectiles.get_child_count(), main.zones.get_child_count())
 	last_us = now
@@ -63,6 +78,10 @@ func _process(_d):
 		avg /= samples.size()
 		counts /= samples.size()
 		print("PERF x%d: 평균 %.2fms · 95%% %.2fms · 최대 %.2fms (구체 %d · 탄 %d · 장판 %d)" % [roundi(speeds[stage]), avg, samples[int(samples.size() * 0.95)], samples[-1], roundi(counts.x), roundi(counts.y), roundi(counts.z)])
+		var parts := PackedStringArray()
+		for k in main.prof:
+			parts.append("%s %.2f" % [k, main.prof[k] / 1000.0 / samples.size()])
+		print("PERF x%d 부분(ms/프레임): %s" % [roundi(speeds[stage]), " · ".join(parts)])
 		samples.clear()
 		counts = Vector3.ZERO
 		stage += 1
