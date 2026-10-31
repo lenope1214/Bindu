@@ -203,9 +203,18 @@ const PERKS := [
 	{"id": "slow", "name": "끈적한 공간", "desc": "모든 구체 이동 속도 -8%"},
 	{"id": "harmony", "name": "조화", "desc": "속성을 여러 종류 겹쳐 생기는 공격 속도 감소가 절반으로"},
 	{"id": "coin", "name": "운명의 동전", "desc": "동전을 던지고 특성 3개를 새로 받아요. 앞면: 고른 특성이 두 번 적용. 뒷면: 한 번 적용 + 이번 쉬는 시간 새로고침 +2"},
+	{"id": "shield", "name": "실드", "desc": "웨이브를 시작할 때마다 중앙 실드 1칸 (겹치면 +1, 최대 3). 맞으면 체력 대신 실드가 깎이고, 다음 웨이브로 넘어가지 않아요"},
+	{"id": "rampart", "name": "성벽", "desc": "웨이브마다 중앙 앞에 바위 벽: 다가온 구체를 한 번 밀어내고 한 조각씩 부서져요. 조각 수 = 벽 오브젝트 레벨 합 + 1 (겹치면 +1, 최대 4)"},
+	{"id": "riposte", "name": "반격 파동", "desc": "중앙이 맞을 때마다(실드 포함) 파동이 퍼져 가까운 구체를 밀어내고 피해 (겹치면 피해 +50%)"},
+	{"id": "overflow", "name": "넘친 회복", "desc": "체력이 가득할 때 받은 회복(회복 특성·보스 처치)은 실드로 쌓여요 (최대 2, 웨이브가 지나도 남음)"},
 ]
 var perks := {}  # id → 고른 횟수
 var regen_acc := 0.0  # 회복 특성의 1이 안 되는 나머지 (다음 웨이브로)
+var shield := 0  # 실드 특성: 이번 웨이브 실드 (웨이브 시작마다 다시 참)
+var shield_keep := 0  # 넘친 회복 특성: 남는 실드 (이어하기에 저장)
+var rampart_left := 0  # 성벽 특성: 이번 웨이브에 남은 벽 조각
+var riposte_cd := 0.0
+var core_fx: Array = []  # 중앙 반격 파동 [중심, 반지름, 남은 시간]
 var perk_mode := false
 var perk_offer: Array = []
 var orb_speed_mul := 1.0
@@ -2544,6 +2553,10 @@ func _start_perk() -> void:
 		pool = pool.filter(func(pk): return pk["id"] != "coin")  # 던진 동전의 결과를 받을 차례
 	# 더 골라도 거의 효과가 없는 특성은 빼고: 이미 거의 Lv2로 나오는 행운, 두 번 고른 조화(공속 감소 10% → 2.5%)
 	pool = pool.filter(func(pk): return not (pk["id"] == "luck" and _lv2_chance() >= 0.9 or pk["id"] == "harmony" and perks.get("harmony", 0) >= 2))
+	# 넣어도 효과가 없는 중앙 특성은 빼고: 벽 오브젝트가 없을 때 성벽, 이미 최대인 실드·성벽
+	pool = pool.filter(func(pk): return not (pk["id"] == "rampart" and (not _has_wall() or _rampart_n() >= int(_perk_val("rampart_max")))
+		or pk["id"] == "shield" and _shield_wave() >= int(_perk_val("shield_max"))
+		or pk["id"] == "overflow" and perks.has("overflow")))
 	pool.shuffle()
 	perk_offer = pool.slice(0, 4 if Garden.boosted and Garden.lv("fruit") >= 1 else 3)  # 씨앗 나무 열매 1: 특성 선택지 4개
 	_show_perks()
@@ -2812,7 +2825,75 @@ func _apply_perk(id: String) -> void:
 
 
 ## 특성 수치 (온라인 패치 perks로 바뀔 수 있음). 설명 글도 같이 바꿔야 하면 perk_desc. coin: 동전 뒷면 새로고침 수
-const PERK_VALS := {"power": 0.15, "haste": 0.12, "reach": 0.12, "core": 3, "reroll": 1, "luck": 0.2, "regen": 1, "regen_more": 0.5, "slow": 0.08, "harmony": 0.5, "coin": 2}
+const PERK_VALS := {"power": 0.15, "haste": 0.12, "reach": 0.12, "core": 3, "reroll": 1, "luck": 0.2, "regen": 1, "regen_more": 0.5, "slow": 0.08, "harmony": 0.5, "coin": 2,
+	"shield": 1, "shield_max": 3, "shield_all": 4, "rampart": 1, "rampart_max": 4, "rampart_push": 140, "riposte": 0.6, "riposte_more": 0.5, "riposte_r": 160, "overflow": 2}
+const RAMPART_R := 56.0  # 성벽이 서는 중앙에서의 거리
+const FX_RIPOSTE := 0.35
+
+
+## 실드 특성이 웨이브 시작마다 채우는 실드.
+func _shield_wave() -> int:
+	return mini(perks.get("shield", 0) * int(_perk_val("shield")), int(_perk_val("shield_max")))
+
+
+## 넘친 회복으로 남길 수 있는 실드 (모든 실드 합이 shield_all을 넘지 않게).
+func _keep_cap() -> int:
+	if not perks.has("overflow"):
+		return 0
+	return maxi(0, mini(int(_perk_val("overflow")), int(_perk_val("shield_all")) - _shield_wave()))
+
+
+## 중앙 체력 회복. 넘친 회복 특성이 있으면 가득 차서 넘친 만큼 실드로.
+func _heal_core(n: int) -> void:
+	var room := maxi(core_max - core_hp, 0)
+	core_hp += mini(n, room)
+	var over := mini(n - room, _keep_cap() - shield_keep)
+	if over > 0:
+		shield_keep += over
+		popup(core() + Vector2(0, -CORE_RADIUS - 24.0), over, Color(0.55, 0.85, 1.0), true, "실드 +%d" % over, 1.0)
+
+
+## 성벽 조각 수: 벽 공격방식 오브젝트의 레벨 합 + 고른 횟수.
+func _rampart_n() -> int:
+	var n: int = perks.get("rampart", 0)
+	if n == 0:
+		return 0
+	for t in _my_towers():
+		if t.pattern == "wall":
+			n += t.plv
+	return mini(n * int(_perk_val("rampart")), int(_perk_val("rampart_max")))
+
+
+func _has_wall() -> bool:
+	return _my_towers().any(func(t): return t.pattern == "wall")
+
+
+## 실드가 먼저 막는다 (이번 웨이브 실드 → 남는 실드). 막은 양을 돌려준다.
+func _shield_absorb(dmg: int) -> int:
+	var a := mini(shield, dmg)
+	shield -= a
+	var b := mini(shield_keep, dmg - a)
+	shield_keep -= b
+	return a + b
+
+
+## 반격 파동: 중앙 근처 구체를 밀어내고 피해 (보통 구체 체력의 riposte배, 겹치면 하나당 +riposte_more).
+func _riposte(p: Vector2) -> void:
+	if riposte_cd > 0.0:
+		return
+	riposte_cd = 0.25
+	var r := _perk_val("riposte_r")
+	var base: float = (1.0 + floorf(wave * 0.7)) * hp_growth(wave) * Rules.orb_hp * Vary.hp_k()
+	var dmg: float = base * _perk_val("riposte") * (1.0 + _perk_val("riposte_more") * (perks.get("riposte", 1) - 1))
+	for o in near(p, r):
+		if o.hp <= 0.0 or o.ghost:
+			continue
+		var d: float = o.position.distance_to(p)
+		if d < r + o.radius():
+			o.hurt(dmg)
+			o.push((o.position - p).normalized() * 60.0 if d > 0.1 else Vector2.ZERO)
+	if core_fx.size() < 20:
+		core_fx.append([p, r, FX_RIPOSTE])
 
 
 ## 회복 특성이 이번 웨이브에 채우는 체력. 처음 고른 것은 regen(1), 겹친 것은 하나당 regen_more(0.5)이고, 1이 안 되는 나머지는 다음 웨이브로 넘긴다.
@@ -3626,6 +3707,8 @@ func _start_wave() -> void:
 	wave_leaks.clear()
 	leak_marks.clear()
 	wave_dmg = 0
+	shield = _shield_wave()
+	rampart_left = _rampart_n()
 	if guide_t < 0.0:
 		guide_lines.clear()
 		guide_t = 0.0
@@ -5846,7 +5929,7 @@ func _save_run() -> void:
 		"format": RUN_FORMAT, "version": ProjectSettings.get_setting("application/config/version", ""),
 		"map": Meta.map_id, "line_flip": Meta.line_flip, "rules": Meta.rules, "modes": Array(Modes.on), "wave": wave, "score": score, "kills": kills, "best_combo": best_combo,
 		"combo": combo, "combo_t": combo_t, "combo_bonus": combo_bonus,
-		"core_hp": core_hp, "core_max": core_max, "perks": perks.keys().map(func(k): return [k, perks[k]]), "regen_acc": regen_acc, "orb_speed_mul": orb_speed_mul,
+		"core_hp": core_hp, "core_max": core_max, "perks": perks.keys().map(func(k): return [k, perks[k]]), "regen_acc": regen_acc, "shield_keep": shield_keep, "orb_speed_mul": orb_speed_mul,
 		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
 		"rerolls_left": rerolls_left, "bonus_rerolls": bonus_rerolls, "picks_left": picks_left,
 		"vary": Vary.save(), "skip_left": skip_left, "skip_total": skip_total, "skip_stop": skip_stop, "bank_picks": bank_picks, "bank_rerolls": bank_rerolls, "bank_perks": bank_perks, "coin_next": coin_next, "rest_ready": rest_ready,
@@ -5971,6 +6054,7 @@ func _continue_run() -> void:
 		if pr is Array and pr.size() == 2 and PERKS.any(func(pk): return pk["id"] == pr[0]) and pr[1] is int and pr[1] > 0:
 			perks[pr[0]] = pr[1]
 	regen_acc = clampf(float(g.call("regen_acc", 0.0)), 0.0, 0.999)
+	shield_keep = clampi(int(g.call("shield_keep", 0)), 0, 4)
 	orb_speed_mul = clampf(g.call("orb_speed_mul", 1.0), 0.05, 1.0)
 	Tower.dmg_mul = maxf(1.0, g.call("dmg_mul", 1.0))
 	Tower.spd_mul = maxf(1.0, g.call("spd_mul", 1.0))
@@ -7113,7 +7197,7 @@ func _sim_step(delta: float) -> void:
 		sfx.play("clear", 0.0)
 		_show_mvp()
 		if perks.has("regen"):
-			core_hp = mini(core_hp + _regen_take(), core_max)
+			_heal_core(_regen_take())
 		if wave % 5 == 0:
 			_submit_run(false)  # 5웨이브마다 진행 중 기록 (중간에 꺼도 서버에 남게)
 		_mp_wave_cleared()
@@ -7152,6 +7236,13 @@ func _check_danger() -> void:
 
 
 ## 구체가 중앙 점에 닿았나. 회랑 맵은 끝의 문(세로선)에 닿으면.
+## 구체가 중앙에서 r 안에 들어왔나 (회랑 맵은 문까지의 가로 거리).
+func _near_core(o: Orb, r: float) -> bool:
+	if Meta.map_id == "line":
+		return absf(o.position.x - core().x) < r + o.radius()
+	return o.position.distance_to(center()) < r + o.radius()
+
+
 func _reached_core(o: Orb) -> bool:
 	if Meta.map_id == "line":
 		return absf(o.position.x - core().x) < CORE_RADIUS + o.radius()
@@ -7325,7 +7416,7 @@ func _resolve(delta: float) -> void:
 				for i in 2:
 					_spawn_child(o)
 			if o.kind == Orb.Kind.BOSS:
-				core_hp = mini(core_hp + 2, core_max)
+				_heal_core(2)
 				bonus_rerolls += 1
 				if not Garden.on:
 					_achieve("boss")
@@ -7354,16 +7445,34 @@ func _resolve(delta: float) -> void:
 				RxMore.on_death(o)
 			o.queue_free()
 			continue
+		if rampart_left > 0 and not o.walled and not o.ghost and _near_core(o, RAMPART_R):
+			# 성벽: 구체 하나당 한 번 밀어내고 한 조각 부서진다
+			o.walled = true
+			rampart_left -= 1
+			o.position += (o.position - o.target).normalized() * _perk_val("rampart_push") * (0.5 if o.kind == Orb.Kind.BOSS else 1.0)
+			burst(o.position, Color(0.75, 0.6, 0.45), 12, 160.0)
+			sfx.play("hit", 0.0)
 		if _reached_core(o):
-			core_hp -= o.core_dmg
+			var hit_p: Vector2 = o.position if Meta.map_id == "line" else center()
+			var dmg: int = o.core_dmg - _shield_absorb(o.core_dmg)
+			if perks.has("riposte"):
+				_riposte(hit_p)
+			if dmg <= 0:
+				sfx.play("shield", 0.0)
+				burst(hit_p, Color(0.55, 0.85, 1.0), 14, 200.0)
+				popup(hit_p + Vector2(0, -CORE_RADIUS - 24.0), 0, Color(0.55, 0.85, 1.0), true, "실드", 0.9)
+				_record_leak(o)
+				o.queue_free()
+				continue
+			core_hp -= dmg
 			sfx.play("core", 0.0)
-			shake = 0.25 + 0.1 * o.core_dmg
+			shake = 0.25 + 0.1 * dmg
 			core_flash = 0.4
-			burst(o.position if Meta.map_id == "line" else center(), Color(1, 0.3, 0.35), 18, 220.0)
+			burst(hit_p, Color(1, 0.3, 0.35), 18, 220.0)
 			_show_toast("중앙 피격! %d/%d" % [maxi(core_hp, 0), core_max])
-			wave_dmg += o.core_dmg
-			Ach.on_core_hit(o.core_dmg)
-			popup((o.position if Meta.map_id == "line" else center()) + Vector2(0, -CORE_RADIUS - 24.0), o.core_dmg, Color(1, 0.3, 0.35), true, "-%d" % o.core_dmg, 1.2)
+			wave_dmg += dmg
+			Ach.on_core_hit(dmg)
+			popup(hit_p + Vector2(0, -CORE_RADIUS - 24.0), dmg, Color(1, 0.3, 0.35), true, "-%d" % dmg, 1.2)
 			_check_danger()
 			_record_leak(o)
 			o.queue_free()
@@ -7537,6 +7646,10 @@ func _update_fx(delta: float) -> void:
 	combo_end[2] = maxf(combo_end[2] - delta, 0.0)
 	combo_max_flash = maxf(combo_max_flash - delta, 0.0)
 	core_flash = maxf(core_flash - delta, 0.0)
+	riposte_cd = maxf(riposte_cd - delta, 0.0)
+	for q in core_fx:
+		q[2] -= delta
+	core_fx = core_fx.filter(func(q): return q[2] > 0.0)
 	eclipse_flash = maxf(eclipse_flash - delta, 0.0)
 	eclipse_cd = maxf(eclipse_cd - delta, 0.0)
 	if view_zoom > 1.0 and (title_label.visible or phase == Phase.GAMEOVER):
@@ -8162,6 +8275,7 @@ func _draw() -> void:
 		draw_circle(c, CORE_RADIUS + 6.0 + i * 7.0 + beat * 4.0, Color(core_col, 0.05 + 0.25 * core_flash))
 	draw_circle(c, CORE_RADIUS, core_col.lerp(Color.WHITE, core_flash * 2.0))
 	_draw_core_skin(c, core_col, now)
+	_draw_core_guard(c, now)
 	# 체력이 줄면 금이 간다
 	var cracks := core_max - maxi(core_hp, 0)
 	for i in mini(cracks, 8):
@@ -8339,6 +8453,32 @@ func _draw() -> void:
 
 
 ## 회랑 맵: 길(띠)·끝의 문·구체가 오는 쪽 화살표.
+## 중앙 특성 표시: 실드(파란 고리, 칸마다 한 줄), 성벽(진입 방향마다 바위 벽, 남은 조각만큼 두껍게), 반격 파동.
+func _draw_core_guard(c: Vector2, now: float) -> void:
+	var sh := shield + shield_keep
+	for i in sh:
+		var col := Color(0.55, 0.85, 1.0, 0.75) if i < shield else Color(0.75, 0.95, 1.0, 0.75)
+		draw_arc(c, CORE_RADIUS + 5.0 + i * 4.0, 0, TAU, 40, Color(col, col.a * (0.75 + 0.25 * sin(now * 3.0 + i))), 2.0)
+	if rampart_left > 0 and phase == Phase.WAVE:
+		var wcol := Color(0.75, 0.6, 0.45, 0.9)
+		var half := 22.0
+		if Meta.map_id == "line":
+			var dx := -RAMPART_R if Meta.line_flip else RAMPART_R
+			for k in rampart_left:
+				var x := c.x + dx + signf(dx) * k * 5.0
+				draw_line(Vector2(x, c.y - 260.0), Vector2(x, c.y + 260.0), wcol, 4.0)
+		else:
+			for a in lanes:
+				var dir := Vector2.from_angle(a)
+				var side := dir.orthogonal() * half
+				for k in rampart_left:
+					var m := c + dir * (RAMPART_R + k * 5.0)
+					draw_line(m - side, m + side, wcol, 4.0)
+	for q in core_fx:
+		var k: float = 1.0 - q[2] / FX_RIPOSTE
+		draw_arc(q[0], q[1] * (0.3 + 0.7 * k), 0, TAU, 48, Color(1.0, 0.85, 0.5, 1.0 - k), 4.0)
+
+
 func _draw_line_map(size: Vector2, mp: Dictionary, now: float) -> void:
 	var cy := size.y / 2.0
 	var gx := core().x

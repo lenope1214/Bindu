@@ -33,6 +33,10 @@ func _fresh(w := 5) -> void:
 	Tower.tax_step = Rules.tax_step
 	main.perks = {}
 	main.regen_acc = 0.0
+	main.shield = 0
+	main.shield_keep = 0
+	main.rampart_left = 0
+	main.riposte_cd = 0.0
 	main.perk_mode = false
 	main.coin_next = ""
 	main.orb_speed_mul = 1.0
@@ -493,7 +497,7 @@ func _score_core() -> void:
 func _perks() -> void:
 	_fresh()
 	var ids: Array = main.PERKS.map(func(p): return p["id"])
-	ok("PERK-02", ids.size() == 10 and ids.has("coin"), "특성 10종 (%s)" % ",".join(ids))
+	ok("PERK-02", ids.size() == 14 and ids.has("coin") and ids.has("shield") and ids.has("rampart") and ids.has("riposte") and ids.has("overflow"), "특성 14종 (%s)" % ",".join(ids))
 	main._apply_perk("power")
 	main._apply_perk("haste")
 	main._apply_perk("reach")
@@ -565,6 +569,73 @@ func _perks() -> void:
 	main.coin_anim = false
 	main.coin_next = ""
 	main.perk_mode = false
+
+
+	_core_guard()
+
+
+## 중앙 특성: 실드·성벽·반격 파동·넘친 회복
+func _core_guard() -> void:
+	_fresh()
+	main.wave_active = true
+	main.phase = main.Phase.WAVE
+	main.perks = {"shield": 5}
+	var cap: int = main._shield_wave()
+	main.perks = {"shield": 1}
+	main.shield = main._shield_wave()
+	_orb(main.center(), 5.0)
+	main._resolve(1.0 / 60.0)
+	var hp1: int = main.core_hp
+	var sh1: int = main.shield
+	_orb(main.center(), 5.0)
+	main._resolve(1.0 / 60.0)
+	ok("PERK-08", cap == 3 and hp1 == main.CORE_MAX_HP and sh1 == 0 and main.core_hp == main.CORE_MAX_HP - 1,
+		"실드: 웨이브마다 1칸(겹치면 +1, 최대 3), 맞으면 체력 대신 실드가 깎임 (최대 %d, 막은 뒤 체력 %d, 다음 %d)" % [cap, hp1, main.core_hp])
+
+	_fresh()
+	main.wave_active = true
+	main.phase = main.Phase.WAVE
+	var no_wall: bool = not main._has_wall()
+	var t := _tower(main.center() + Vector2(0, 200))
+	t.set_pattern("wall")
+	main.perks = {"rampart": 1}
+	main.rampart_left = main._rampart_n()
+	var n0: int = main.rampart_left
+	var o := _orb(main.center() + Vector2(main.RAMPART_R, 0), 5.0)
+	main._resolve(1.0 / 60.0)
+	var pushed: bool = o.position.distance_to(main.center()) > main.RAMPART_R + 100.0 and o.walled
+	o.position = main.center() + Vector2(main.RAMPART_R, 0)
+	main._resolve(1.0 / 60.0)  # 한 번 밀린 구체는 다시 막지 않음
+	ok("PERK-09", no_wall and n0 == 2 and pushed and main.rampart_left == 1 and main.core_hp == main.CORE_MAX_HP,
+		"성벽: 벽 오브젝트가 있어야 나옴, 조각 = 벽 레벨 합 + 1, 다가온 구체를 한 번 밀어내고 한 조각 부서짐 (조각 %d → %d)" % [n0, main.rampart_left])
+
+	_fresh()
+	main.wave_active = true
+	main.phase = main.Phase.WAVE
+	main.perks = {"riposte": 1}
+	_orb(main.center(), 5.0)
+	var far := _orb(main.center() + Vector2(100, 0), 1000000.0)
+	main._resolve(1.0 / 60.0)
+	ok("PERK-10", far.hp < 1000000.0 and far.position.distance_to(main.center()) > 100.0 and main.core_hp == main.CORE_MAX_HP - 1,
+		"반격 파동: 중앙이 맞으면 가까운 구체에 피해·밀어내기")
+
+	_fresh()
+	main.perks = {"overflow": 1}
+	main._heal_core(1)
+	var k1: int = main.shield_keep
+	main._heal_core(5)
+	var k2: int = main.shield_keep
+	main.core_hp = main.CORE_MAX_HP - 1
+	main.shield_keep = 0
+	main._heal_core(2)
+	var part: Array = [main.core_hp, main.shield_keep]
+	main.perks = {"overflow": 1, "shield": 3}
+	main.shield_keep = 0
+	main._heal_core(3)
+	ok("PERK-11", k1 == 1 and k2 == 2 and part == [main.CORE_MAX_HP, 1] and main.shield_keep == 1,
+		"넘친 회복: 체력이 가득할 때 회복은 실드로(최대 2, 모든 실드 합 4) (%d %d %s %d)" % [k1, k2, part, main.shield_keep])
+	main.perks = {}
+	main.shield_keep = 0
 
 
 # ---------- 규칙·모드 ----------
