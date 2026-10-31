@@ -43,6 +43,7 @@ var recoil := 0.0  # 발사 반동
 var place_pop := 0.0  # 설치·겹치기 순간 커졌다 줄어드는 연출
 var rocks: Array = []
 var mines: Array = []
+var wisps: Array = []  # 떠 있는 목줄 혼불
 var in_rx := false  # 지금 특수 반응 공격 중인지 (hit 피해 계산용)
 var rail_dir := Vector2.RIGHT  # 레일건이 마지막으로 쏜 방향
 var halo_cd := {}  # 광륜: 구체별 다시 맞힐 때까지 남은 시간
@@ -215,17 +216,22 @@ static func lob_r(l: int) -> float:
 
 ## 공격방식 Lv1의 공격 간격(초). attack()과 같은 값. 분사는 계속 뿜어서 없음, 시계침은 한 번 훑는 시간.
 const BASE_IV := {"shot": 0.5, "thorn": 0.35, "gust": 1.5, "shard": 0.9, "iron": 1.5, "stream": 1.0, "chain": 1.3,
-	"wall": 4.0, "vortex": 5.0, "laser": 2.0, "lob": LOB_IV, "sonic": 1.0, "clock": 0.8, "wisp": 1.0, "path": 0.5}
+	"wall": 4.0, "vortex": 5.0, "laser": 2.0, "lob": LOB_IV, "sonic": 1.0, "clock": 0.8, "wisp": 0.6, "path": 0.5}
 
 ## 공격방식 한 번 맞힐 때의 기본 피해(Lv1, 배율 전)와 설명. projectile.gd·zone.gd·attack()과 같은 값.
 const BASE_HIT := {
 	"shot": [2.4, "한 발"], "thorn": [0.85, "한 발, 모두 뚫음"], "gust": [2.2, "한 번, 모두 뚫음"],
-	"shard": [3.0, "한 발, 파편 3개는 1.0씩"], "iron": [1.7, "한 발, 모두 뚫음"], "wisp": [4.0, "한 발"], "path": [2.4, "한 발"],
+	"shard": [3.0, "한 발, 파편 3개는 1.0씩"], "iron": [1.7, "한 발, 모두 뚫음"], "wisp": [Projectile.WISP_DMG, "혼불마다 공격 간격에 한 번"], "path": [2.4, "한 발"],
 	"chain": [2.2, "한 번 튈 때"], "laser": [3.4, "한 번, 모두 뚫음"], "sonic": [2.6, "가까이, 끝에서는 절반"],
 	"clock": [0.9, "한 번 훑을 때"], "vortex": [3.0, "터질 때, 날아가는 동안 초당 1.5~3.0"],
 	"lob": [LOB_DPS, "지나간 띠 안 초당, 2.5초 남음"], "spray": [5.5, "초당, 계속 뿜음"], "stream": [3.0, "뿜는 동안 초당, 0.6초"],
 	"wall": [3.0, "벽에 막힌 동안 초당"],
 }
+
+
+## 목줄 혼불이 한꺼번에 떠 있는 수: 2 + 다중 발사.
+func wisp_cap() -> int:
+	return 2 + roundi(mf("multi"))
 
 
 ## 공격 간격(초, 공격 속도 배율까지). 분사는 0.
@@ -301,7 +307,7 @@ func range_text() -> String:
 		"lob": return "%d 날아감 (지나간 띠 반지름 %d)" % [roundi(LOB_RANGE * rr(l)), roundi(lob_r(l) * s)]
 		"vortex": return "약 %d 날아감 (반지름 %d)" % [roundi(420.0 * Rules.t("range_vortex")), roundi((100.0 + 10.0 * (l - 1)) * s)]
 		"wall": return "앞 %d~ (벽 %d개)" % [roundi(90.0 * rr(l)), 2 + roundi(mf("multi"))]
-		"wisp": return "%d (구체를 쫓아감)" % roundi(900.0 * Rules.t("range_wisp"))
+		"wisp": return "목줄 %d (혼불 %d개가 오브젝트 둘레를 지키며 쫓아감)" % [roundi(Projectile.wisp_leash(mf("homing"), rr(l))), wisp_cap()]
 		"path": return "그린 길 최대 %d (갈래 %d/%d)" % [roundi(Pat.path_len(plv)), paths.size(), Pat.path_branches(plv)]
 		"shard": return "화면 끝까지 (파편 130)" if m("homing") == 0 else "%d (유도, 파편 130)" % roundi(Projectile.HOMING_TRAVEL)
 	if m("homing") > 0 and pattern in Pat.PROJECTILE:
@@ -740,10 +746,14 @@ func _mod_effect(id: String) -> String:
 				return "벽 최대 %d개" % (2 + roundi(f))
 			if pattern in ["vortex", "lob"]:
 				return "한 번에 %.2f개" % (1.0 + f)
+			if pattern == "wisp":
+				return "혼불 %d개 (하나 피해 %d%%)" % [wisp_cap(), roundi(multi_k() * (1.0 + f) * 2.0 / wisp_cap() * 100.0)]
 			return "한 번에 %.2f개 (한 발 피해 %d%%)" % [1.0 + f, roundi(multi_k() * 100.0)]
 		"split":
 			return "파편 확률 %d%%" % roundi(split_ch() * 100.0)
 		"homing":
+			if pattern == "wisp":
+				return "목줄 +%d%% · 휘는 힘 x%.2f" % [roundi(Projectile.WISP_LEASH_HOMING * f * 100.0), f]
 			return "휘는 힘 x%.2f" % f
 		"bounce":
 			if pattern in Pat.PROJECTILE or pattern == "chain":
@@ -1085,11 +1095,14 @@ func attack(delta: float, orbs: Array) -> void:
 						clock_hit[key] = true
 						hit(o, Rules.t("clock_dmg") * pw(l) * mk))
 		"wisp":
-			if _ready_to("p", 1.0 / spd(l), dp):
-				for d in dirs():
-					var pr: Projectile = main.spawn_proj(self, "wisp", l, d)
-					pr.dmg *= mk
-					pr.form_init()
+			wisps = wisps.filter(func(w): return is_instance_valid(w) and not w.is_queued_for_deletion())
+			var cap := wisp_cap()
+			if wisps.size() < cap and _ready_to("p", Projectile.WISP_RESPAWN / spd(l), dp):
+				var pr: Projectile = main.spawn_proj(self, "wisp", l, aim.rotated(randf_range(-0.8, 0.8)))
+				# 다중 발사: 혼불 수가 늘고, 모두 합친 세기는 다른 공격방식의 다중 발사와 같게 ((1 + 다중) x 한 발 배율)
+				pr.dmg *= mk * (1.0 + mf("multi")) * 2.0 / cap
+				pr.form_init()
+				wisps.append(pr)
 		"path":
 			# 갈래를 번갈아 쓰고, 다중 발사는 같은 길로 조금씩 늦게 나간다
 			for i in range(path_q.size() - 1, -1, -1):
@@ -2328,7 +2341,8 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 			"wisp":
 				var hm: int = md.get("homing", 0)
 				var hf := 2.0 * (1.0 - pow(0.5, hm)) if Rules.mod_decay else float(hm)
-				ci.draw_arc(o, Projectile.wisp_seek(hf), 0, TAU, 64, Color(c.r, c.g, c.b, 0.5 * c.a), 1.5)
+				if i == 0:
+					ci.draw_arc(o, Projectile.wisp_leash(hf, pr), 0, TAU, 64, Color(c.r, c.g, c.b, 0.5 * c.a), 1.5)
 			"shot":
 				var tl := 0
 				for e in els:
