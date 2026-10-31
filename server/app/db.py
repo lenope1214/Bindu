@@ -129,6 +129,19 @@ class SrcShare(Base):
     share: Mapped[float] = mapped_column(Float, default=0.0)
 
 
+class Leak(Base):
+    """웨이브 하나 동안 구체가 중앙에 닿은 기록. kind "all"은 그 웨이브 합계(닿지 않은 웨이브도 n 0으로), 나머지는 구체 종류별."""
+    __tablename__ = "leaks"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    run_id: Mapped[int] = mapped_column(ForeignKey("runs.id", ondelete="CASCADE"), index=True)
+    wave: Mapped[int] = mapped_column(Integer, index=True)
+    kind: Mapped[str] = mapped_column(String(8), default="all", index=True)  # all | normal | fast | tank | boss
+    n: Mapped[int] = mapped_column(Integer, default=0)  # 닿은 구체 수
+    dmg: Mapped[int] = mapped_column(Integer, default=0)  # 구체가 준 피해 (실드에 막힌 것 포함)
+    lost: Mapped[int] = mapped_column(Integer, default=0)  # 실제로 깎인 중앙 체력 (all 줄만)
+    hp: Mapped[int] = mapped_column(Integer, default=0)  # 웨이브가 끝났을 때 중앙 체력 (all 줄만)
+
+
 class ClientLog(Base):
     """게임이 보낸 오류 하나 (scripts/errlog.gd). fp가 같은 것끼리 관리 페이지에서 묶어 보여 준다."""
     __tablename__ = "client_logs"

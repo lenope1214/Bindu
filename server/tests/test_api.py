@@ -282,3 +282,31 @@ def test_easy_board():
         easy = c.get("/v1/leaderboard", params={"map": "storm", "rules": 1, "easy": True}).json()["entries"]
         assert [e["score"] for e in pure] == [3000]
         assert [e["score"] for e in easy] == [7000, 6500]
+
+
+def test_leaks():
+    # 웨이브별 중앙 피해: 진행 기록을 다시 받으면 갈아 끼우고, 웨이브별·종류별로 모아 본다
+    with TestClient(app) as c:
+        kw = dict(map="cross", game="0.6.1", run="lk-1", device="dev-leak-aaaa")
+        l1 = [{"w": 1, "n": 0, "dmg": 0, "lost": 0, "hp": 10, "kinds": {}, "kdmg": {}},
+              {"w": 2, "n": 2, "dmg": 4, "lost": 3, "hp": 7, "kinds": {"normal": 1, "boss": 1, "Bad": 5}, "kdmg": {"normal": 1, "boss": 3}}]
+        assert post_run(c, ended=False, wave=5, leaks=l1, **kw).json()["accepted"]
+        l2 = l1 + [{"w": 6, "n": 1, "dmg": 1, "lost": 1, "hp": 6, "kinds": {"fast": 1}, "kdmg": {"fast": 1}},
+                   {"w": 6, "n": 9, "dmg": 9, "lost": 9, "hp": 0, "kinds": {}, "kdmg": {}}]
+        post_run(c, ended=True, wave=6, leaks=l2, **kw)
+        post_run(c, map="cross", game="0.6.1", device="dev-leak-bbbb", wave=6,
+                 leaks=[{"w": 2, "n": 0, "dmg": 0, "lost": 0, "hp": 10}])
+        post_run(c, map="cross", game="0.6.1", device="dev-leak-cccc", wave=6)  # 예전 버전: 기록 없음
+        st = c.get("/admin/api/stats", params={"map": "cross", "game": "0.6.1"}, headers=A).json()
+        assert st["leak_runs"] == 2
+        w = {x["wave"]: x for x in st["leak_waves"]}
+        assert sorted(w) == [1, 2, 6]
+        assert w[2]["runs"] == 2 and w[2]["hit_runs"] == 1 and w[2]["hit_rate"] == 0.5 and w[2]["avg_dmg"] == 2 and w[2]["avg_lost"] == 1.5
+        assert w[6]["runs"] == 1 and w[6]["avg_n"] == 1  # 같은 웨이브가 두 번 오면 처음 것만
+        k = {x["kind"]: x for x in st["leak_kinds"]}
+        assert set(k) == {"normal", "boss", "fast"} and k["boss"]["dmg"] == 3 and k["fast"]["n"] == 1
+        assert "hit_rate" in c.get("/admin/api/stats.csv", params={"map": "cross", "kind": "leak_waves"}, headers=A).text
+        run = next(x for x in c.get("/admin/runs", params={"limit": 500}, headers=A).json() if x["device"] == "dev-leak-aaaa")
+        assert run["wave"] == 6
+        # 너무 큰 값은 거부
+        assert post_run(c, map="cross", device="dev-leak-dddd", leaks=[{"w": 1, "n": -1}]).status_code == 422

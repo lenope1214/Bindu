@@ -8,7 +8,7 @@ from sqlalchemy import and_, case, distinct, func, select
 from sqlalchemy.orm import Session
 
 from . import config
-from .db import Final, Pick, Run, SrcShare, now
+from .db import Final, Leak, Pick, Run, SrcShare, now
 
 ELEM_IDS = ["fire", "wood", "water", "electric", "wind", "ice", "earth", "dark", "light", "poison", "metal", "sound", "time", "soul", "star"]
 
@@ -119,6 +119,8 @@ def summary(db: Session, f: Filter) -> dict:
              "avg_share": round(float(a or 0), 4), "avg_wave": round(float(w or 0), 2)} for k, n, s, a, w in srows]
     srcs.sort(key=lambda x: -x["avg_share_all"])
 
+    leak_runs, leak_waves, leak_kinds = leaks(db, where)
+
     by_rules = [{"rules": r, "runs": n, "avg_wave": round(float(w or 0), 2), "max_wave": mx}
                 for r, n, w, mx in db.execute(select(Run.rules, func.count(Run.id), func.avg(Run.wave), func.max(Run.wave))
                                               .where(where).group_by(Run.rules).order_by(Run.rules)).all()]
@@ -133,13 +135,34 @@ def summary(db: Session, f: Filter) -> dict:
                "waves": [{**w, "rate": round(w["runs"] / n_early, 4)} for w in early]}
     return {"runs": n_runs, "avg_wave": round(float(runs[1] or 0), 2), "max_wave": runs[2] or 0,
             "avg_score": round(float(runs[3] or 0), 1), "by_rules": by_rules, "waves": waves, "picks": picks, "finals": finals,
-            "src_runs": n_src, "srcs": srcs, "dropout": dropout}
+            "src_runs": n_src, "srcs": srcs, "dropout": dropout,
+            "leak_runs": leak_runs, "leak_waves": leak_waves, "leak_kinds": leak_kinds}
+
+
+def leaks(db: Session, where):
+    """구체가 중앙에 닿은 기록: 웨이브별(그 웨이브를 치른 판 중 닿은 판 비율·평균 수·평균 피해) + 구체 종류별."""
+    n_runs = db.scalar(select(func.count(distinct(Leak.run_id))).join(Run, Run.id == Leak.run_id).where(where, Leak.kind == "all")) or 0
+    hit = func.sum(case((Leak.n > 0, 1), else_=0))
+    rows = db.execute(
+        select(Leak.wave, func.count(Leak.id), hit, func.avg(Leak.n), func.avg(Leak.dmg), func.avg(Leak.lost), func.avg(Leak.hp))
+        .join(Run, Run.id == Leak.run_id).where(where, Leak.kind == "all").group_by(Leak.wave).order_by(Leak.wave)).all()
+    waves = [{"wave": w, "runs": n, "hit_runs": int(h or 0), "hit_rate": round((h or 0) / n, 4) if n else 0.0,
+              "avg_n": round(float(an or 0), 3), "avg_dmg": round(float(ad or 0), 3), "avg_lost": round(float(al or 0), 3),
+              "avg_hp": round(float(hp or 0), 2)} for w, n, h, an, ad, al, hp in rows]
+    total_n = sum(x["avg_n"] * x["runs"] for x in waves) or 0
+    krows = db.execute(
+        select(Leak.kind, func.sum(Leak.n), func.sum(Leak.dmg), func.count(distinct(Leak.run_id)))
+        .join(Run, Run.id == Leak.run_id).where(where, Leak.kind != "all").group_by(Leak.kind)).all()
+    kinds = [{"kind": k, "n": int(n or 0), "dmg": int(d or 0), "runs": r, "share": round((n or 0) / total_n, 4) if total_n else 0.0}
+             for k, n, d, r in krows]
+    kinds.sort(key=lambda x: -x["n"])
+    return n_runs, waves, kinds
 
 
 def to_csv(data: dict, kind: str) -> str:
     if kind == "dropout":
         data = {"dropout": data["dropout"]["waves"]}
-    rows = data.get(kind if kind in ("picks", "finals", "srcs", "by_rules", "waves", "dropout") else "picks", [])
+    rows = data.get(kind if kind in ("picks", "finals", "srcs", "by_rules", "waves", "dropout", "leak_waves", "leak_kinds") else "picks", [])
     buf = io.StringIO()
     buf.write("﻿")  # 엑셀에서 한글이 깨지지 않게
     if rows:

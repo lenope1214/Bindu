@@ -16,7 +16,7 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from . import accounts, config, signing, stats, validate, votes
-from .db import Ban, ClientLog, Final, Identity, Patch, Pick, Release, Run, Season, SrcShare, get_db, init_db, kst_date, now
+from .db import Ban, ClientLog, Final, Identity, Leak, Patch, Pick, Release, Run, Season, SrcShare, get_db, init_db, kst_date, now
 
 @asynccontextmanager
 async def lifespan(_app):
@@ -41,7 +41,7 @@ PATCH_KEYS = {"rules", "rules_desc", "perks", "perk_desc", "cards", "elem_dmg", 
 
 
 # 자동 배포 확인용: 서버 코드를 고쳐 배포할 때 바꾸면 /health로 새 이미지가 떴는지 밖에서 볼 수 있다
-SERVER_REV = "2026-10-31.8"
+SERVER_REV = "2026-10-31.9"
 
 
 @app.get("/health")
@@ -126,6 +126,17 @@ class LogIn(BaseModel):
     p: str = ""  # 고른 것 (빈 글자: 새로고침으로 넘김)
 
 
+class LeakIn(BaseModel):
+    w: int = Field(0, ge=0, le=100000)
+    n: int = Field(0, ge=0, le=100000)  # 닿은 구체 수
+    dmg: int = Field(0, ge=0, le=10_000_000)  # 구체가 준 피해 (실드에 막힌 것 포함)
+    lost: int = Field(0, ge=0, le=10_000_000)  # 실제로 깎인 중앙 체력
+    hp: int = Field(0, ge=-1000, le=100000)  # 웨이브가 끝났을 때 중앙 체력
+    kinds: dict[str, int] = {}  # 구체 종류별 닿은 수 {normal, fast, tank, boss}
+    kdmg: dict[str, int] = {}  # 구체 종류별 피해
+
+
+LEAK_KINDS = ("normal", "fast", "tank", "boss")
 KEY_RE = re.compile(r"^[a-z]+:[a-z0-9_]{1,40}$")
 
 
@@ -149,6 +160,7 @@ class RunIn(BaseModel):
     towers: list[TowerIn] = []
     src: dict[str, float] = {}  # 피해 출처 몫 {키: 0~1} (피해 출처를 보내는 버전부터)
     log: list[LogIn] = []
+    leaks: list[LeakIn] = Field([], max_length=400)  # 웨이브별 중앙 피해 (0.6.0 다음 버전부터)
     run: str = Field("", pattern=r"^[A-Za-z0-9-]{0,40}$")  # 판 번호: 같은 판의 진행 기록을 한 줄로 (0.5.1 다음 버전부터)
     ended: bool = True  # False: 5웨이브마다 보내는 진행 중 기록
     vary: dict = {}  # 판마다 다른 흐름 (봉인·지금 이벤트·적응 저항, 0.6.0 시험). detail.vary로 남긴다
@@ -194,7 +206,8 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), au
     vals = dict(device_id=run.device, nickname=nick, ip_hash=ip, platform=run.platform, game_version=run.game,
                 patch_id=run.patch, season=season, map=run.map, rules=run.rules, wave=run.wave, score=run.score,
                 kills=run.kills, best_combo=run.best_combo, game_secs=run.game_secs, real_secs=run.real_secs,
-                detail={"perks": run.perks, "modes": run.modes, "towers": [x.model_dump() for x in run.towers], "src": run.src, "log": [x.model_dump() for x in run.log], "vary": run.vary},
+                detail={"perks": run.perks, "modes": run.modes, "towers": [x.model_dump() for x in run.towers], "src": run.src, "log": [x.model_dump() for x in run.log], "vary": run.vary,
+                        "leaks": [x.model_dump() for x in run.leaks]},
                 valid=reason == "", reason=reason, run_key=run.run, ended=run.ended, updated_at=now(), title=run.title, grow="grow" in run.modes)
     if acct:
         vals["account_id"] = acct.id
@@ -206,7 +219,7 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), au
         for k, v in vals.items():
             setattr(row, k, v)
         # 선택·구성·피해 출처는 지금까지 전체를 다시 받았으니 갈아 끼운다 (두 번 세지 않게)
-        for tbl in (Pick, Final, SrcShare):
+        for tbl in (Pick, Final, SrcShare, Leak):
             db.execute(delete(tbl).where(tbl.run_id == row.id))
     for e in run.log[:2000]:
         kind = "perk" if e.k == "perk" else "card"
@@ -223,6 +236,15 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), au
     for key, share in list(run.src.items())[:150]:
         if KEY_RE.match(key) and 0.0 < share <= 1.0:
             db.add(SrcShare(run_id=row.id, key=key[:48], share=share))
+    seen: set = set()
+    for lk in run.leaks:
+        if lk.w in seen:  # 같은 웨이브가 두 번 오면 처음 것만
+            continue
+        seen.add(lk.w)
+        db.add(Leak(run_id=row.id, wave=lk.w, kind="all", n=lk.n, dmg=lk.dmg, lost=lk.lost, hp=lk.hp))
+        for k in LEAK_KINDS:
+            if lk.kinds.get(k, 0) > 0:
+                db.add(Leak(run_id=row.id, wave=lk.w, kind=k, n=min(lk.kinds[k], 100000), dmg=max(0, min(lk.kdmg.get(k, 0), 10_000_000))))
     # 닉네임을 바꾸면 예전 기록에도 새 이름이 보이게
     db.execute(update(Run).where(Run.device_id == run.device, (Run.nickname != nick) | (Run.title != run.title)).values(nickname=nick, title=run.title))
     if acct:

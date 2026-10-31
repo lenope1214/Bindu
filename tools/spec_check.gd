@@ -592,6 +592,25 @@ func _score_core() -> void:
 	main._resolve(1.0 / 60.0)
 	ok("CORE-01", after_n == 9 and main.core_hp == 6 and main.wave_leaks.size() == 2, "구체가 중앙에 닿으면 -1, 보스 -3, 누수 기록")
 
+	# 웨이브별 중앙 피해: 실드에 막힌 것도 닿은 수·피해엔 들어가고 깎인 체력엔 안 들어감, 판 기록(leaks)·이어하기 저장
+	main.leak_log.clear()
+	main.shield = 1
+	_orb(main.center(), 5.0, Orb.Kind.FAST)
+	main._resolve(1.0 / 60.0)
+	main._log_wave()
+	var recs: Array = main._leak_records()
+	var lr: Dictionary = recs[-1] if recs.size() == 1 else {}
+	var lk_ok: bool = lr.get("w") == main.wave and lr.get("n") == 3 and lr.get("dmg") == 5 and lr.get("lost") == 4 and lr.get("hp") == 6 \
+		and lr.get("kinds") == {"normal": 1, "boss": 1, "fast": 1} and lr.get("kdmg", {}).get("boss") == 3
+	main.phase = main.Phase.CHOOSE
+	main.perk_mode = false
+	main._save_run()
+	main.leak_log.clear()
+	main._continue_run()
+	ok("ONLINE-05", lk_ok and JSON.stringify(main._leak_records(), "", true) == JSON.stringify(recs, "", true), "웨이브별 중앙 피해 기록(닿은 수·피해·깎인 체력·종류별) → 판 기록 leaks, 이어하기 뒤에도 그대로")
+	main._clear_run()
+	main.shield = 0
+
 	# 웨이브 클리어: 보너스 점수, 5웨이브마다 특성, 아니면 카드
 	_clear()
 	main.wave = 4

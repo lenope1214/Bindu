@@ -84,7 +84,7 @@ var tip_detail := false  # 터치로 [자세히]를 켰는지 (정보창이 사�
 var tip_frame := -10  # 오브젝트 정보창을 마지막으로 그린 프레임
 var touch_tip_t := 0.0  # 터치: 누른 뒤 정보창을 보여 줄 남은 시간 (손을 뗀 자리에 정보창이 계속 남아 전장을 가리던 것)
 const TOUCH_TIP_SEC := 3.0
-var wave_leaks: Array = []  # 이번 웨이브에 중앙에 닿은 구체 [나온 방향 번호, 종류, 피해]
+var wave_leaks: Array = []  # 이번 웨이브에 중앙에 닿은 구체 [나온 방향 번호, 종류, 피해, 실제로 깎인 체력(실드에 막히면 0)]
 var leak_log: Array = []  # 웨이브마다 누수 요약 (봇·통계·안내용)
 var leak_flash: Array = []  # 화면 가장자리 붉은 번짐 [자리, 남은 시간]
 var boss_plan := {}  # 다음 보스: 쉬는 시간에 진입 각도·체력·속도·저항을 미리 정해 길과 정보를 정확히 보여 준다
@@ -5854,7 +5854,7 @@ func _submit_run(done := true) -> void:
 		"device": Meta.device_id, "nick": Meta.nickname, "title": Meta.title, "platform": Net.platform(), "game": old_run_ver if old_run_ver != "" else Net.game_version(),
 		"patch": Patch.id, "map": Meta.map_id, "rules": Meta.rules, "modes": Array(Modes.on) + (["grow"] if Garden.boosted else []), "wave": wave, "score": score, "kills": kills,
 		"best_combo": best_combo, "game_secs": run_game, "real_secs": run_real, "perks": perks.duplicate(),
-		"towers": list, "src": src, "log": run_log, "vary": Vary.record(), "run": run_id, "ended": done,
+		"towers": list, "src": src, "log": run_log, "leaks": _leak_records(), "vary": Vary.record(), "run": run_id, "ended": done,
 	})
 
 
@@ -6567,7 +6567,7 @@ func _save_run() -> void:
 		"lanes": Array(lanes), "wave_resist": wave_resist, "boss": boss_plan, "achievements": new_achievements, "ach_run": Ach.run,
 		"state": "perk" if perk_mode else ("ready" if phase == Phase.READY else "choose"),
 		"offer": offer, "perk_offer": perk_offer.map(func(pk): return pk["id"]), "towers": list,
-		"log": run_log, "game_secs": run_game, "real_secs": run_real, "run_id": run_id,
+		"log": run_log, "leaks": leak_log, "game_secs": run_game, "real_secs": run_real, "run_id": run_id,
 		"tutor": tutor, "tutor_given": tutor_given.keys(), "grow": Garden.boosted,
 	}
 	if Garden.on:
@@ -6724,6 +6724,7 @@ func _continue_run() -> void:
 	new_achievements = (g.call("achievements", []) as Array).filter(func(a): return a is String)
 	Ach.load_run(cfg.get_value("run", "ach_run", {}))
 	run_log = (g.call("log", []) as Array).filter(func(e): return e is Dictionary)
+	leak_log = (g.call("leaks", []) as Array).filter(func(e): return e is Dictionary and e.has("w") and e.has("n") and e.has("dmg") and e.has("kinds"))
 	run_game = maxf(0.0, g.call("game_secs", 0.0))
 	run_real = maxf(0.0, g.call("real_secs", 0.0))
 	run_id = str(g.call("run_id", ""))
@@ -7950,8 +7951,8 @@ func _reached_core(o: Orb) -> bool:
 
 
 ## 중앙에 닿은 구체를 기록하고, 그 구체가 들어온 화면 가장자리를 붉게 번지게 한다.
-func _record_leak(o: Orb) -> void:
-	wave_leaks.append([_lane_of(o.from_a), o.kind, o.core_dmg])
+func _record_leak(o: Orb, hp_lost: int) -> void:
+	wave_leaks.append([_lane_of(o.from_a), o.kind, o.core_dmg, hp_lost])
 	leak_flash.append([Vector2(core().x, o.position.y) if Meta.map_id == "line" else _entry_point(o.from_a), 1.2])
 	_guide("leak", "구체가 중앙에 닿았어요. 붉게 번쩍인 가장자리 쪽 길목이 비어 있어요. 쉬는 시간에 그쪽으로 오브젝트를 옮기거나 새로 놓으세요")
 
@@ -7989,18 +7990,22 @@ func _log_wave() -> void:
 		return
 	var by_lane := {}
 	var kinds := {}
+	var kdmg := {}
 	var dmg := 0
+	var lost := 0
 	for l in wave_leaks:
 		by_lane[l[0]] = by_lane.get(l[0], 0) + 1
 		kinds[l[1]] = kinds.get(l[1], 0) + 1
+		kdmg[l[1]] = kdmg.get(l[1], 0) + l[2]
 		dmg += l[2]
+		lost += l[3] if l.size() > 3 else l[2]
 	var dirs := {}
 	leak_marks.clear()
 	for i in by_lane:
 		dirs[compass(lanes[i]) if i >= 0 and i < lanes.size() else "?"] = by_lane[i]
 		if i >= 0 and i < lanes.size():
 			leak_marks.append([lanes[i], by_lane[i]])
-	leak_log.append({"w": wave, "n": wave_leaks.size(), "dmg": dmg, "dirs": dirs, "kinds": kinds, "towers": towers.get_child_count(), "lanes": lanes.size(), "core": core_hp})
+	leak_log.append({"w": wave, "n": wave_leaks.size(), "dmg": dmg, "lost": lost, "dirs": dirs, "kinds": kinds, "kdmg": kdmg, "towers": towers.get_child_count(), "lanes": lanes.size(), "core": core_hp})
 	if leak_log.size() > 200:
 		leak_log.pop_front()
 
@@ -8018,6 +8023,24 @@ func _leak_text() -> String:
 	for k in e["kinds"]:
 		ks.append("%s %d" % [names.get(k, "?"), e["kinds"][k]])
 	return "지난 웨이브에 놓친 구체: %s (%s, 중앙 체력 -%d)" % [" · ".join(parts), ", ".join(ks), e["dmg"]]
+
+
+const LEAK_KIND_KEYS := {Orb.Kind.NORMAL: "normal", Orb.Kind.FAST: "fast", Orb.Kind.TANK: "tank", Orb.Kind.BOSS: "boss"}
+
+
+## 서버로 보낼 웨이브별 중앙 피해 기록: 웨이브마다 닿은 구체 수·구체가 준 피해·실제로 깎인 체력(실드 뺀 값)·웨이브 끝 체력·종류별 수와 피해.
+## 닿지 않은 웨이브도 n 0으로 들어간다 (웨이브별 비율을 낼 수 있게).
+func _leak_records() -> Array:
+	var out: Array = []
+	for e in leak_log:
+		var kinds := {}
+		var kdmg := {}
+		for k in e.get("kinds", {}):
+			kinds[LEAK_KIND_KEYS.get(int(k), "other")] = int(e["kinds"][k])
+		for k in e.get("kdmg", {}):
+			kdmg[LEAK_KIND_KEYS.get(int(k), "other")] = int(e["kdmg"][k])
+		out.append({"w": int(e["w"]), "n": int(e["n"]), "dmg": int(e["dmg"]), "lost": int(e.get("lost", e["dmg"])), "hp": int(e.get("core", 0)), "kinds": kinds, "kdmg": kdmg})
+	return out
 
 
 func _alive_count(n: Node) -> int:
@@ -8165,7 +8188,7 @@ func _resolve(delta: float) -> void:
 				sfx.play("shield", 0.0)
 				burst(hit_p, Color(0.55, 0.85, 1.0), 14, 200.0)
 				popup(hit_p + Vector2(0, -CORE_RADIUS - 24.0), 0, Color(0.55, 0.85, 1.0), true, "실드", 0.9)
-				_record_leak(o)
+				_record_leak(o, 0)
 				o.queue_free()
 				continue
 			if Garden.on:
@@ -8176,7 +8199,7 @@ func _resolve(delta: float) -> void:
 				popup(hit_p + Vector2(0, -CORE_RADIUS - 24.0), dmg, Color(0.9, 0.7, 0.45), true, "시듦 +%d" % dmg, 1.0)
 				if Garden.wither >= Garden.WITHER_MAX:
 					core_hp = 0  # 아래 웨이브 끝 검사가 한 단계 내려 준다
-				_record_leak(o)
+				_record_leak(o, dmg)
 				o.queue_free()
 				continue
 			core_hp -= dmg
@@ -8189,7 +8212,7 @@ func _resolve(delta: float) -> void:
 			Ach.on_core_hit(dmg)
 			popup(hit_p + Vector2(0, -CORE_RADIUS - 24.0), dmg, Color(1, 0.3, 0.35), true, "-%d" % dmg, 1.2)
 			_check_danger()
-			_record_leak(o)
+			_record_leak(o, dmg)
 			o.queue_free()
 			continue
 
