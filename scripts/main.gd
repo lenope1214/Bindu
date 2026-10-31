@@ -7,7 +7,8 @@ const CORE_RADIUS := 14.0
 const LINE_INSET := 90.0  # 회랑 맵: 문(중앙 점)이 화면 끝에서 떨어진 거리
 const LINE_HALF := 180.0  # 회랑 맵: 길 폭의 반
 const LINE_ORBS := 1.6  # 회랑 맵: 구체 수 배율 (방향이 하나고 길이 길어서). 봇 32판으로 평원에 맞춤 (2026-10-30)
-const LINE_HP := 2.4  # 회랑 맵: 구체 체력 배율
+const CROSS_HP := 5.6  # 십자로 맵: 구체 체력 배율 (1.6 → 5.6, 2026-10-31 맵 난이도 맞추기: 봇 중간값 44 → 17). 서버 validate.py MAP_HP와 같이
+const LINE_HP := 4.8  # 회랑 맵: 구체 체력 배율 (2.4 → 4.8, 2026-10-31 맵 난이도 맞추기: 봇 중간값 35 → 16, 다른 맵 16~17)
 const LINE_SPD := 1.6  # 회랑 맵: 구체 속도 배율 (길이 길어 오래 맞는 만큼)
 const SPIRAL_SWIRL := 0.6  # 소용돌이 맵: 구체가 중앙 방향에서 비껴 도는 각도(라디안)
 const MAP_AFF_COLOR := Color(0.55, 0.95, 0.85)  # 맵 친화 카드 표시 (MapRule)
@@ -7327,7 +7328,7 @@ func _roll_orb(w: int) -> Dictionary:
 	var hp := (1.0 + floorf(w * 0.7) + wi() % 2) * hp_growth(w) * Rules.orb_hp
 	match Meta.map_id:
 		"cross":
-			hp = ceilf(hp * 1.6)
+			hp = ceilf(hp * CROSS_HP)
 		"storm":
 			hp = maxf(1.0, roundf(hp * 0.6))
 		"line":

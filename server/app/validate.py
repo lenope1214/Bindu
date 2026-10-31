@@ -4,7 +4,7 @@ import math
 
 MAPS = ["plain", "spiral", "cross", "storm", "line"]
 MAP_ORBS = {"cross": 1.5, "line": 1.6}  # main.gd spawn_count 맵 배율
-MAP_HP = {"cross": 1.6, "line": 2.4}  # main.gd _roll_orb 맵 체력 배율
+MAP_HP = {"cross": 5.6, "line": 4.8}  # main.gd _roll_orb 맵 체력 배율
 RULES = list(range(1, 10))  # 새 규칙 버전이 늘어도 받는다 (기본값은 버전 1)
 # 규칙 버전별 기본값 (rules.gd Rules.apply)
 RULE_DEFAULTS = {
