@@ -57,14 +57,14 @@ const PROJECTILE := ["shot", "thorn", "gust", "shard", "iron", "wisp", "path"]
 
 ## "피해 +N%"의 공백은 줄바꿈하지 않는 공백(U+00A0): 카드에서 숫자만 다음 줄로 넘어가지 않게
 const MODS := {
-	"multi": {"name": "다중 발사", "desc": "공격이 1개 더 나간다 (하나하나는 피해 55%, 많이 쌓을수록 조금씩 줄어듦)"},
-	"split": {"name": "분열", "desc": "맞은 구체에서 약한 파편 2개가 튄다 (1개마다 확률 +12%, 최대 60%). 벽·투척 장판에는 못 넣음"},
+	"multi": {"name": "다중 발사", "desc": "공격이 1개 더 나간다 (하나하나는 피해 {multi_dmg%}%, 많이 쌓을수록 조금씩 줄어듦)"},
+	"split": {"name": "분열", "desc": "맞은 구체에서 약한 파편 2개가 튄다 (1개마다 확률 +{split_ch%}%, 최대 {split_max%}%). 벽·투척 장판에는 못 넣음"},
 	"homing": {"name": "유도", "desc": "탄이 구체 쪽으로 천천히 휜다. 범위 공격은 구체 쪽으로 조금 돈다. 한 구체는 탄 2개까지만 쫓고, 못 따라잡으면 다른 구체로. 혼불은 찾는 범위 +30%. 벽·그린 궤적에는 못 넣음"},
-	"bounce": {"name": "튕김", "desc": "탄이 가까운 구체로 튄다(튕긴 탄 피해 40%). 번개는 1번 더 튄다. 그 밖의 공격은 피해 +4%"},
-	"size": {"name": "크기", "desc": "탄 크기·범위·사거리 +12% (탄을 쏘는 공격은 피해도 +4%)"},
-	"rapid": {"name": "속사", "desc": "공격 속도 +10%"},
-	"pierce": {"name": "관통", "desc": "탄이 1개 더 뚫는다(뚫을 때마다 피해 절반). 그 밖의 공격은 피해 +6%"},
-	"dice": {"name": "주사위", "desc": "공격할 때마다 주사위: 4~5는 피해 x1.3, 6은 x2.2 대박 (다음 공격까지). 1~3은 그대로. 더 넣으면 주사위가 늘어 높은 눈을 쓴다(3개까지). 대박은 8번 안에 꼭. 반응 피해 제외 (시험)"},
+	"bounce": {"name": "튕김", "desc": "탄이 가까운 구체로 튄다(튕긴 탄 피해 {bounce_hit%}%). 번개는 1번 더 튄다. 그 밖의 공격은 피해 +{bounce_dmg%}%"},
+	"size": {"name": "크기", "desc": "탄 크기·범위·사거리 +{size_k%}% (탄을 쏘는 공격은 피해도 +{size_dmg%}%)"},
+	"rapid": {"name": "속사", "desc": "공격 속도 +{rapid_k%}%"},
+	"pierce": {"name": "관통", "desc": "탄이 1개 더 뚫는다(뚫을 때마다 피해 x{pierce_hit}). 그 밖의 공격은 피해 +{pierce_dmg%}%"},
+	"dice": {"name": "주사위", "desc": "공격할 때마다 주사위: 4~5는 피해 x{dice_mid}, 6은 x{dice_top} 대박 (다음 공격까지). 1~3은 그대로. 더 넣으면 주사위가 늘어 높은 눈을 쓴다(3개까지). 대박은 8번 안에 꼭. 반응 피해 제외 (시험)"},
 }
 
 const MOD_IDS := ["multi", "split", "homing", "bounce", "size", "rapid", "pierce", "dice"]
@@ -139,21 +139,34 @@ static func no_mods(pat: String) -> PackedStringArray:
 	return out
 
 const LINKS := {
-	"pincer": {"name": "협공", "desc": "다른 오브젝트가 맞힌 구체를 3초 안에 이 오브젝트도 맞히면 터져서 그 구체 최대 체력의 10% 피해"},
-	"prism": {"name": "프리즘", "desc": "다른 오브젝트의 탄이 지나가면 이 속성이 묻고 피해 +20%"},
-	"reso": {"name": "공명", "desc": "가까이(거리 150 안) 있는 다른 오브젝트 하나당 피해 +12%"},
+	"pincer": {"name": "협공", "desc": "다른 오브젝트가 맞힌 구체를 {pincer_t}초 안에 이 오브젝트도 맞히면 터져서 그 구체 최대 체력의 10% 피해"},
+	"prism": {"name": "프리즘", "desc": "다른 오브젝트의 탄이 지나가면 이 속성이 묻고 피해 +{prism_dmg%}%"},
+	"reso": {"name": "공명", "desc": "가까이(거리 {reso_r} 안) 있는 다른 오브젝트 하나당 피해 +{reso_k%}%"},
 }
 
 const LINK_IDS := ["pincer", "prism", "reso"]
 
 ## 발동: 기본 공격과 별개로, 조건이 맞을 때 추가로 터지는 공격 (Tower.trigs). 겹치면 세진다.
 const TRIGS := {
-	"echo": {"name": "여진", "desc": "이 오브젝트가 맞혀 구체를 잡으면 그 자리에서 작은 탄 3개가 사방으로 (0.5초에 한 번)"},
-	"vanguard": {"name": "선봉", "desc": "웨이브마다 처음 구체를 맞힌 순간부터 5초 동안 공격 속도 x2"},
+	"echo": {"name": "여진", "desc": "이 오브젝트가 맞혀 구체를 잡으면 그 자리에서 작은 탄 {echo_n}개가 사방으로 ({echo_cd}초에 한 번)"},
+	"vanguard": {"name": "선봉", "desc": "웨이브마다 처음 구체를 맞힌 순간부터 {van_t}초 동안 공격 속도 x{van_spd}"},
 }
 
 const TRIG_IDS := ["echo", "vanguard"]
 const TRIG_COLOR := Color(1.0, 0.55, 0.45)
+
+
+## 강화·연계·발동 설명 (글 안의 {키}는 지금 수치, Rules.fmt)
+static func mdesc(id: String) -> String:
+	return Rules.fmt(MODS[id]["desc"])
+
+
+static func ldesc(id: String) -> String:
+	return Rules.fmt(LINKS[id]["desc"])
+
+
+static func tdesc(id: String) -> String:
+	return Rules.fmt(TRIGS[id]["desc"])
 
 
 static func pname(id: String) -> String:

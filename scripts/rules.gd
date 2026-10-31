@@ -59,11 +59,198 @@ const TUNE := {
 	"dice_mid": 1.3,  # 주사위 강화 4~5 배율 (2026-10-30 도박 특성, 시험)
 	"dice_top": 2.2,  # 주사위 강화 6(대박) 배율  # 벽 바위에 막힌 동안 초당 피해 (예전 4.0, 빈 앞자리를 다시 채우게 고치며 낮춤)
 }
-static var tune := TUNE.duplicate()
+
+## 오브젝트·강화·속성·연계·발동 수치 (2026-10-31 사용자 요청 "공격력·사거리·공격속도 등 모든 옵션을 서버에서 임의 수정").
+## 온라인 패치 rules의 같은 키로 덮어쓴다 (TUNE과 같은 길). 값은 지금 게임과 같다. 키 설명은 server/README.md.
+const STAT := {
+	# 공격방식 레벨·피해 배율
+	"lv_dmg": 0.5,  # 공격방식 레벨마다 피해 +
+	"lv_spd": 0.2,  # 공격방식 레벨마다 공격 속도 +
+	"lv_reach": 0.1,  # 공격방식 레벨마다 사거리 +
+	"dmg_base": 1.3,  # 모든 오브젝트 기본 피해 배율
+	"dmg_sum": 0.35,  # 속성 레벨 합 1 늘 때마다 피해 + (반응 제외)
+	"shot_range": 400.0,  # 직선탄 사거리
+	"shot_range_lv": 50.0,  # 속성 레벨 합 1 늘 때마다 직선탄 사거리 +
+	# 강화
+	"multi_dmg": 0.55,  # 다중 발사 한 발 피해 (1개)
+	"multi_decay": 0.15,  # 다중 발사 더 쌓을 때마다 한 발 피해 나누는 몫
+	"multi_angle": 0.22,  # 다중 발사 탄 사이 각도(라디안)
+	"split_ch": 0.12,  # 분열 1개마다 파편 확률
+	"split_max": 0.6,  # 분열 확률 최대
+	"split_dmg": 0.5,  # 분열 파편 피해 (파편 기본의 배)
+	"size_k": 0.12,  # 크기 1개마다 크기·범위·사거리 +
+	"size_dmg": 0.04,  # 크기 1개마다 탄 쏘는 공격 피해 +
+	"rapid_k": 0.1,  # 속사 1개마다 공격 속도 +
+	"pierce_hit": 0.5,  # 관통: 뚫고 나간 탄 피해 배율
+	"pierce_dmg": 0.06,  # 관통: 탄이 아닌 공격 피해 +
+	"bounce_hit": 0.4,  # 튕김: 튕긴 탄 피해 배율
+	"bounce_dmg": 0.04,  # 튕김: 탄·번개가 아닌 공격 피해 +
+	"homing_k": 0.8,  # 유도: 휘는 힘
+	# 속성 부가효과
+	"fire_dps": 0.8, "fire_t": 2.0,  # 화상 초당 피해/레벨, 시간
+	"poison_dps": 0.5, "poison_t": 4.0,  # 중독 초당 피해/레벨, 시간
+	"wood_dmg": 0.2,  # 가시: 주는 피해 +/레벨
+	"water_slow": 0.8, "water_t": 0.8,  # 감속 배율(낮을수록 느림), 시간
+	"elec_ch": 0.3, "elec_dmg": 0.5,  # 전류 확률, 피해(맞힌 피해 대비/레벨)
+	"wind_range": 240.0,  # 바람 버프 둘레 (버프 세기는 wind_buff)
+	"ice_chill": 0.6,  # 냉기 쌓는 양/레벨
+	"earth_ch": 0.2, "earth_max": 0.7, "earth_t": 0.8,  # 기절 확률/레벨, 최대, 시간
+	"dark_vuln": 0.3, "dark_t": 2.0,  # 받는 피해 +, 시간
+	"light_ch": 0.12, "light_max": 0.6, "light_mul": 2.0,  # 치명타 확률/레벨, 최대, 배율
+	"metal_dmg": 0.4, "metal_stagger": 4.0,  # 추가 피해/레벨, 경직
+	"sound_t": 3.0,  # 울림 지속
+	"time_base": 0.15, "time_lv": 0.05, "time_max": 0.4, "time_t": 2.0,  # 메아리 비율 기본, +/레벨, 최대, 시간
+	"soul_t": 3.0, "soul_base": 0.2, "soul_lv": 0.1, "soul_max": 0.6,  # 넋 시간, 혼불 확률 기본, +/레벨, 최대
+	# 연계
+	"reso_k": 0.12, "reso_r": 150.0,  # 공명: 가까운 오브젝트 하나당 피해 +, 거리
+	"prism_dmg": 0.2,  # 프리즘: 지나간 탄 피해 +
+	"pincer_t": 3.0, "pincer_cd": 1.5,  # 협공: 함께 맞힌 시간, 한 구체 다시 터질 때까지 (폭발 세기는 pincer_frac)
+	# 발동
+	"trig_max": 5.0,  # 발동 카드 종류마다 최대
+	"echo_n": 3.0, "echo_dmg": 0.8, "echo_cd": 0.5,  # 여진 탄 수(+1/장), 탄 피해, 다시 터질 때까지
+	"van_spd": 2.0, "van_t": 5.0, "van_t_add": 2.5,  # 선봉 공격 속도 배율, 지속, +/장
+}
+
+
+## TUNE + STAT + 공격방식마다 dmg_/spd_/range_<id>(배율 1) + 반응마다 rxd_<id>(피해 배율 1).
+static func defaults() -> Dictionary:
+	var d := TUNE.merged(STAT)
+	for id in Pat.ALL_IDS:
+		for p in ["dmg_", "spd_", "range_"]:
+			d[p + id] = 1.0
+	for r in Elem.REACTIONS:
+		d["rxd_" + r["id"]] = 1.0
+	return d
+
+
+static var DEFAULTS := defaults()
+static var tune := DEFAULTS.duplicate()
+## 자주 읽는 값(맞힐 때마다 등)은 tune 사전 대신 이 변수로 읽는다 (apply 끝에 _cache). 사전 찾기가 한 번 맞힐 때 열 번 넘게 돌아 후반 렉이 늘던 것
+static var lv_dmg: float = STAT["lv_dmg"]
+static var lv_spd: float = STAT["lv_spd"]
+static var lv_reach: float = STAT["lv_reach"]
+static var rapid_k: float = STAT["rapid_k"]
+static var size_k: float = STAT["size_k"]
+static var size_dmg: float = STAT["size_dmg"]
+static var fire_dps: float = STAT["fire_dps"]
+static var fire_t: float = STAT["fire_t"]
+static var poison_dps: float = STAT["poison_dps"]
+static var poison_t: float = STAT["poison_t"]
+static var ice_chill: float = STAT["ice_chill"]
+static var water_slow: float = STAT["water_slow"]
+static var water_t: float = STAT["water_t"]
+static var earth_ch: float = STAT["earth_ch"]
+static var earth_max: float = STAT["earth_max"]
+static var earth_t: float = STAT["earth_t"]
+static var dark_t: float = STAT["dark_t"]
+static var dark_vuln: float = STAT["dark_vuln"]
+static var light_ch: float = STAT["light_ch"]
+static var light_max: float = STAT["light_max"]
+static var light_mul: float = STAT["light_mul"]
+static var elec_ch: float = STAT["elec_ch"]
+static var elec_dmg: float = STAT["elec_dmg"]
+static var wood_dmg: float = STAT["wood_dmg"]
+static var metal_dmg: float = STAT["metal_dmg"]
+static var metal_stagger: float = STAT["metal_stagger"]
+static var sound_t: float = STAT["sound_t"]
+static var time_base: float = STAT["time_base"]
+static var time_lv: float = STAT["time_lv"]
+static var time_max: float = STAT["time_max"]
+static var time_t: float = STAT["time_t"]
+static var soul_t: float = STAT["soul_t"]
+static var split_ch: float = STAT["split_ch"]
+static var split_max: float = STAT["split_max"]
+static var multi_dmg: float = STAT["multi_dmg"]
+static var multi_decay: float = STAT["multi_decay"]
+static var multi_angle: float = STAT["multi_angle"]
+static var wood_cap: float = TUNE["wood_cap"]
+static var dice_top: float = TUNE["dice_top"]
+static var pierce_hit: float = STAT["pierce_hit"]
+static var bounce_hit: float = STAT["bounce_hit"]
+static var homing_k: float = STAT["homing_k"]
+static var prism_dmg: float = STAT["prism_dmg"]
+static var pincer_t: float = STAT["pincer_t"]
+static var rxd := {}  # "rx:<반응 id>" → 피해 배율 (1이 아닌 것만)
+
+
+static func _cache() -> void:
+	lv_dmg = tune["lv_dmg"]
+	lv_spd = tune["lv_spd"]
+	lv_reach = tune["lv_reach"]
+	rapid_k = tune["rapid_k"]
+	size_k = tune["size_k"]
+	size_dmg = tune["size_dmg"]
+	fire_dps = tune["fire_dps"]
+	fire_t = tune["fire_t"]
+	poison_dps = tune["poison_dps"]
+	poison_t = tune["poison_t"]
+	ice_chill = tune["ice_chill"]
+	water_slow = tune["water_slow"]
+	water_t = tune["water_t"]
+	earth_ch = tune["earth_ch"]
+	earth_max = tune["earth_max"]
+	earth_t = tune["earth_t"]
+	dark_t = tune["dark_t"]
+	dark_vuln = tune["dark_vuln"]
+	light_ch = tune["light_ch"]
+	light_max = tune["light_max"]
+	light_mul = tune["light_mul"]
+	elec_ch = tune["elec_ch"]
+	elec_dmg = tune["elec_dmg"]
+	wood_dmg = tune["wood_dmg"]
+	metal_dmg = tune["metal_dmg"]
+	metal_stagger = tune["metal_stagger"]
+	sound_t = tune["sound_t"]
+	time_base = tune["time_base"]
+	time_lv = tune["time_lv"]
+	time_max = tune["time_max"]
+	time_t = tune["time_t"]
+	soul_t = tune["soul_t"]
+	split_ch = tune["split_ch"]
+	split_max = tune["split_max"]
+	multi_dmg = tune["multi_dmg"]
+	multi_decay = tune["multi_decay"]
+	multi_angle = tune["multi_angle"]
+	wood_cap = tune["wood_cap"]
+	dice_top = tune["dice_top"]
+	pierce_hit = tune["pierce_hit"]
+	bounce_hit = tune["bounce_hit"]
+	homing_k = tune["homing_k"]
+	prism_dmg = tune["prism_dmg"]
+	pincer_t = tune["pincer_t"]
+	rxd.clear()
+	for r in Elem.REACTIONS:
+		var v: float = tune["rxd_" + r["id"]]
+		if v != 1.0:
+			rxd["rx:" + r["id"]] = v
 
 
 static func t(k: String) -> float:
 	return tune[k]
+
+
+## 설명 글의 {키}를 지금 값으로: {키%}는 퍼센트(0.12 → 12), {키}는 숫자(정수면 소수점 없이).
+static func fmt(s: String) -> String:
+	if not "{" in s:
+		return s
+	var out := ""
+	var i := 0
+	while true:
+		var a := s.find("{", i)
+		var b := s.find("}", a + 1) if a >= 0 else -1
+		if a < 0 or b < 0:
+			break
+		out += s.substr(i, a - i)
+		var k := s.substr(a + 1, b - a - 1)
+		var pc := k.ends_with("%")
+		k = k.trim_suffix("%")
+		if tune.has(k):
+			var v: float = tune[k] * (100.0 if pc else 1.0)
+			out += str(roundi(v)) if absf(v - roundf(v)) < 0.005 else ("%.2f" % v).rstrip("0")
+		else:
+			out += s.substr(a, b - a + 1)
+		i = b + 1
+	return out + s.substr(i)
 
 
 ## 오브젝트 수 보너스(모든 오브젝트 피해에 더하는 몫). 2026-10-30 직선(하나당 +4%, 10개 +36%)이 후반에 과해
@@ -88,7 +275,7 @@ static func apply(v: int) -> void:
 	orb_hp = 1.0
 	trait_mul = 1.0
 	rx_mul = RX_MUL
-	tune = TUNE.duplicate()
+	tune = DEFAULTS.duplicate()
 	match version:
 		1:
 			tune["wood_cap"] = 99.0  # 같은 속성 레벨이 무제한인 규칙이라 상한을 두면 후반이 크게 어려워짐 (봇 81~100웨이브 누수 70% → 상한 3: 86%, 6·10: 80%)
@@ -108,6 +295,7 @@ static func apply(v: int) -> void:
 			resist_from = 8
 			sturdy_from = 11
 	_apply_patch(Patch.rules_for(version))
+	_cache()
 
 
 ## 온라인 패치(Patch)의 rules 덮어쓰기. 모르는 키·형식이 틀린 값은 무시.
@@ -120,7 +308,7 @@ static func _apply_patch(p: Dictionary) -> void:
 			continue
 		if not (v is float or v is int):
 			continue
-		if TUNE.has(k):
+		if DEFAULTS.has(k):
 			tune[k] = maxf(0.0, float(v))
 			continue
 		match k:

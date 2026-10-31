@@ -276,7 +276,7 @@ func _redraw_if_changed() -> void:
 ## 받는 피해 배율(약점·감옥·증폭)까지 곱한 피해를 돌려준다. 때린 쪽은 이 값을 자기 피해로 센다 (2026-10-31: 예전엔 배율 전 값을 세서
 ## 어둠 "받는 피해 +30%"·씨앗 바람 등 증폭이 어느 피해 기록에도 안 잡혔다).
 func hurt(amount: float, crit := false) -> float:
-	var d := amount * (1.5 if prison_t > 0.0 else 1.3 if vuln_t > 0.0 else 1.0)
+	var d := amount * (1.5 if prison_t > 0.0 else 1.0 + Rules.dark_vuln if vuln_t > 0.0 else 1.0)
 	if not amp.is_empty():
 		for v in amp.values():
 			d *= 1.0 + v[0]

@@ -64,12 +64,12 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 		"path":
 			speed = 440.0; dmg = 2.4 * p; radius = 6.0
 		"blob":
-			speed = 260.0; lob = true; max_travel = Tower.LOB_RANGE * Tower.reach(l)
+			speed = 260.0; lob = true; max_travel = Tower.LOB_RANGE * Tower.rr_of("lob", l)
 			homing = tower.mf("homing")  # 휜 길 그대로 장판이 깔린다
 		"thorn":
 			speed = 460.0; dmg = 0.85 * p; pierce = true
 		"gust":
-			speed = 300.0; dmg = 2.2 * p; radius = 34.0; pierce = true; max_travel = 420.0
+			speed = 300.0; dmg = 2.2 * p; radius = 34.0; pierce = true; max_travel = 420.0 * Rules.t("range_gust")
 		"shard":
 			speed = 380.0; dmg = 3.0 * p; radius = 7.0
 		"frag":
@@ -89,7 +89,7 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 		"storm":
 			speed = 75.0; lob = true; dmg = 2.0 * p; radius = 100.0; max_travel = 360.0 * Tower.reach(l)
 		"wisp":
-			speed = 210.0; dmg = 4.0 * p; radius = 7.0; max_travel = 900.0
+			speed = 210.0; dmg = 4.0 * p; radius = 7.0; max_travel = 900.0 * Rules.t("range_wisp")
 		"ghost":
 			speed = 230.0; dmg = 2.4 * p; radius = 7.0; max_travel = 900.0
 	if k in Pat.PROJECTILE:
@@ -221,7 +221,7 @@ const WISP_SEEK_HOMING := 0.3  # 혼불: 유도 하나마다 찾는 범위 +30%
 
 
 static func wisp_seek(h: float) -> float:
-	return WISP_SEEK * (1.0 + WISP_SEEK_HOMING * h)
+	return WISP_SEEK * (1.0 + WISP_SEEK_HOMING * h) * Rules.t("range_wisp")
 
 
 func _exit_tree() -> void:
@@ -307,7 +307,7 @@ func _chase(delta: float, r: float, cone: float, lim: float) -> void:
 
 ## 유도: 앞쪽 구체 쪽으로 방향을 튼다.
 func _steer(delta: float) -> void:
-	_chase(delta, 260.0, STEER_CONE, 0.8 * homing * delta)
+	_chase(delta, 260.0, STEER_CONE, Rules.homing_k * homing * delta)
 
 
 ## 혼불: 구체를 쫓아간다. 유도 강화면 더 빨리 돌고 찾는 범위가 넓어진다.
@@ -323,7 +323,7 @@ func _check_prisms() -> void:
 	for tw in owner_tower.main.prism_towers:
 		if tw != owner_tower and not prisms.has(tw) and tw.position.distance_to(position) < Tower.RADIUS + 10.0 + radius:
 			prisms[tw] = true
-			dmg *= 1.0 + 0.2 * tw.prism
+			dmg *= 1.0 + Rules.prism_dmg * tw.prism
 			for e in tw.elements:
 				prism_els[e] = maxi(prism_els.get(e, 0), tw.elements[e])
 			col = col.lerp(tw.color(), 0.5)
@@ -406,7 +406,7 @@ func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 		return false
 	if pierce_left > 0:
 		pierce_left -= 1
-		dmg *= 0.5  # 뚫고 나간 탄은 피해 절반
+		dmg *= Rules.pierce_hit  # 뚫고 나간 탄은 피해 절반
 		return false
 	if bounces > 0 and tw:
 		# 튕김: 아직 안 맞힌 가장 가까운 구체 쪽으로
@@ -418,7 +418,7 @@ func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 				best = other
 		if best:
 			bounces -= 1
-			dmg *= 0.4  # 튕긴 탄은 피해 40%
+			dmg *= Rules.bounce_hit  # 튕긴 탄은 피해 40%
 			if route_on:
 				# 그린 궤적은 튕기면 길을 벗어나 곧게 날아간다
 				route_on = false

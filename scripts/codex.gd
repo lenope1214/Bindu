@@ -40,13 +40,13 @@ func entries(c: String) -> Array:
 					out.append({"key": "pat:" + id, "name": Pat.pname(id), "desc": Pat.PATTERNS[id]["desc"] + ("\n못 넣는 강화: " + "·".join(no) if not no.is_empty() else ""), "color": Pat.pcolor(id).lightened(0.15)})
 		"mod":
 			for id in Pat.MOD_IDS:
-				out.append({"key": "mod:" + id, "name": Pat.MODS[id]["name"], "desc": Pat.MODS[id]["desc"], "color": Color(1, 0.82, 0.4)})
+				out.append({"key": "mod:" + id, "name": Pat.MODS[id]["name"], "desc": Pat.mdesc(id), "color": Color(1, 0.82, 0.4)})
 		"link":
 			for id in Pat.LINK_IDS:
-				out.append({"key": "link:" + id, "name": Pat.LINKS[id]["name"], "desc": Pat.LINKS[id]["desc"], "color": Color(0.55, 0.9, 1.0)})
+				out.append({"key": "link:" + id, "name": Pat.LINKS[id]["name"], "desc": Pat.ldesc(id), "color": Color(0.55, 0.9, 1.0)})
 		"trig":
 			for id in Pat.TRIG_IDS:
-				out.append({"key": "trig:" + id, "name": Pat.TRIGS[id]["name"], "desc": Pat.TRIGS[id]["desc"], "color": Pat.TRIG_COLOR})
+				out.append({"key": "trig:" + id, "name": Pat.TRIGS[id]["name"], "desc": Pat.tdesc(id), "color": Pat.TRIG_COLOR})
 		"react":
 			# 만나 본 반응을 먼저 (91개라 아직 못 만난 것 사이에서 찾기 어렵던 것), 그 안은 원래 순서
 			var seen: Array = Elem.REACTIONS.filter(func(r): return Meta.codex.has(r["id"]))

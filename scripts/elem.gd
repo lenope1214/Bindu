@@ -84,27 +84,27 @@ const TRAIT := {
 
 ## 부가효과 설명. 나무는 규칙마다 세는 최대 레벨(Rules wood_cap)이 달라 붙여 보여 준다
 static func rider(e: int) -> String:
-	if e == WOOD and Rules.t("wood_cap") < 50.0:
-		return RIDER[e].trim_suffix(")") + ", Lv%d까지)" % int(Rules.t("wood_cap"))
-	return RIDER[e]
+	if e == WOOD and Rules.wood_cap < 50.0:
+		return Rules.fmt(RIDER[e]).trim_suffix(")") + ", Lv%d까지)" % int(Rules.wood_cap)
+	return Rules.fmt(RIDER[e])
 
 
 ## 부가효과: 같은 오브젝트의 모든 공격에 붙는다
 const RIDER := {
 	FIRE: "화상: 한동안 계속 피해",
-	WOOD: "가시: 이 오브젝트가 주는 피해 +20% (레벨마다)",
+	WOOD: "가시: 이 오브젝트가 주는 피해 +{wood_dmg%}% (레벨마다)",
 	WATER: "감속 (느려짐)",
-	ELECTRIC: "주변 구체로 튀는 전류 (확률 30%)",
-	WIND: "둘레(240) 다른 오브젝트 공격 속도 +8%/레벨 (가장 큰 바람 하나만)",
+	ELECTRIC: "주변 구체로 튀는 전류 (확률 {elec_ch%}%)",
+	WIND: "둘레({wind_range}) 다른 오브젝트 공격 속도 +{wind_buff%}%/레벨 (가장 큰 바람 하나만)",
 	ICE: "냉기가 쌓이면 빙결 (잠깐 멈춤)",
-	EARTH: "기절 (레벨마다 확률 +20%, 최대 70%)",
-	DARK: "2초간 받는 피해 +30%",
-	LIGHT: "치명타: 피해 2배 (레벨마다 확률 +12%, 최대 60%)",
+	EARTH: "기절 (레벨마다 확률 +{earth_ch%}%, 최대 {earth_max%}%)",
+	DARK: "{dark_t}초간 받는 피해 +{dark_vuln%}%",
+	LIGHT: "치명타: 피해 {light_mul}배 (레벨마다 확률 +{light_ch%}%, 최대 {light_max%}%)",
 	POISON: "중독 (죽으면 주변에 전염)",
 	METAL: "추가 피해 + 경직 (제자리에 잠깐 멈춤)",
-	SOUND: "울림: 3초간 어느 오브젝트에 맞든 3번째마다 주변에 음파",
-	TIME: "메아리: 2초간 받은 피해의 일부를 한 번 더 받음",
-	SOUL: "넋: 3초 안에 죽으면 확률로 혼불이 나와 다른 구체를 쫓음",
+	SOUND: "울림: {sound_t}초간 어느 오브젝트에 맞든 3번째마다 주변에 음파",
+	TIME: "메아리: {time_t}초간 받은 피해의 일부를 한 번 더 받음",
+	SOUL: "넋: {soul_t}초 안에 죽으면 확률로 혼불이 나와 다른 구체를 쫓음",
 }
 
 const REACTIONS := [

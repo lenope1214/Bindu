@@ -1536,15 +1536,15 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 				b.text += "\n" + fits[0]
 		"mod":
 			var id: String = card["id"]
-			b.text = "[%d] 강화: %s\n%s" % [idx, Pat.MODS[id]["name"], Pat.MODS[id]["desc"]]
+			b.text = "[%d] 강화: %s\n%s" % [idx, Pat.MODS[id]["name"], Pat.mdesc(id)]
 			foot = [["place_on", "위에 놓기 · " + ("종류별 %d개" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "쌓을수록 절반")]]
 		"link":
 			var id: String = card["id"]
-			b.text = "[%d] 연계: %s\n%s" % [idx, Pat.LINKS[id]["name"], Pat.LINKS[id]["desc"]]
+			b.text = "[%d] 연계: %s\n%s" % [idx, Pat.LINKS[id]["name"], Pat.ldesc(id)]
 			foot = [["place_on", "오브젝트 위에 놓기"]]
 		"trig":
 			var id: String = card["id"]
-			b.text = "[%d] 발동: %s\n%s" % [idx, Pat.TRIGS[id]["name"], Pat.TRIGS[id]["desc"]]
+			b.text = "[%d] 발동: %s\n%s" % [idx, Pat.TRIGS[id]["name"], Pat.tdesc(id)]
 			foot = [["place_on", "위에 놓기 · 종류별 5개"]]
 	_fit_card_text(b, b.text, 15)
 	if not foot.is_empty():
@@ -4812,7 +4812,7 @@ func _soul_wisp(o: Orb) -> void:
 	if o.styx_t > 0.0 and is_instance_valid(o.styx_src):
 		tw = o.styx_src
 		l = o.styx_lv
-	elif o.soul_t > 0.0 and is_instance_valid(o.soul_src) and randf() < minf(0.2 + 0.1 * o.soul_lv, 0.6):
+	elif o.soul_t > 0.0 and is_instance_valid(o.soul_src) and randf() < minf(Rules.t("soul_base") + Rules.t("soul_lv") * o.soul_lv, Rules.t("soul_max")):
 		tw = o.soul_src
 		l = o.soul_lv
 	if tw == null:

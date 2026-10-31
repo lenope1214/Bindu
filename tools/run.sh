@@ -225,6 +225,10 @@ case "$CMD" in
 		(cd "$D" && T 120 "$G" --headless --path . -s tools/online_check.gd > online.txt 2>&1)
 		grep -q "결과: 모두 통과" "$D/online.txt" && echo "online 통과" || { grep -E "실패|SCRIPT ERROR" "$D/online.txt" | head -5; bad="$bad online"; }
 		rm -rf "$D"
+		D=$(copy_project "$$")
+		(cd "$D" && T 120 "$G" --headless --path . -s tools/patch_keys_check.gd > pk.txt 2>&1)
+		grep -q "^PATCHCHECK ok" "$D/pk.txt" && echo "patch keys 통과" || { grep -E "^FAIL|SCRIPT ERROR" "$D/pk.txt" | head -5; bad="$bad patchkeys"; }
+		rm -rf "$D"
 		if python3 -c "import fastapi, pytest, httpx" > /dev/null 2>&1; then
 			(cd "$ROOT/server" && python3 -m pytest -q 2>&1 | tail -1) | tee /tmp/bindu_check_server.txt
 			grep -qE "failed|error" /tmp/bindu_check_server.txt && bad="$bad server"

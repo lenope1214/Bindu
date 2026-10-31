@@ -130,7 +130,7 @@ func trail_orbs(main) -> Array:
 func launch(d: Vector2) -> void:
 	dir = d
 	var tw := owner_tower
-	vel = d * Rules.t("vortex_speed") * (1.0 + 0.12 * tw.tk(Elem.WIND))
+	vel = d * Rules.t("vortex_speed") * (1.0 + 0.12 * tw.tk(Elem.WIND)) * Rules.t("range_vortex")  # 사거리 배율은 속도로 (지속 시간은 그대로)
 	shrink = maxf(0.3, 1.0 - 0.15 * (tw.tk(Elem.WOOD) + tw.tk(Elem.WIND)))
 	pull = 80.0
 	r0 = radius
