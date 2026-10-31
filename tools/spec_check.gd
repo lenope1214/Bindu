@@ -428,6 +428,16 @@ func _stars() -> void:
 	st._supernova(big)
 	ok("STAR-03", st.star_sum == 0.0 and hp0 - big.hp >= pool * 0.99 and st.src.has("elem:star") and big.burn_t > 0.0,
 		"초신성: 별빛 x3 (%.0f 중 %.0f), 행성 효과" % [pool, hp0 - big.hp])
+	# 초신성 그림은 웨이브가 끝나도(쉬는 시간·카드 선택) 0.6초 뒤 사라진다 (예전엔 attack이 안 불려 다음 웨이브까지 남음)
+	var fx_on := st.nova_fx > 0.0
+	st.fx["laser"] = 0.3
+	var ph0 = main.phase
+	main.phase = main.Phase.CHOOSE
+	for i in 50:
+		main._process(0.016)
+	main.phase = ph0
+	ok("STAR-06", fx_on and st.nova_fx == 0.0 and st.fx["laser"] == 0.0,
+		"웨이브 밖에서도 초신성·공격 그림 사라짐 (%.2f)" % st.nova_fx)
 
 	# 행성 제한: 같은 행성은 하나, 행성은 3개까지
 	var s2 := _tower(c + Vector2(100, -150), Elem.STAR)

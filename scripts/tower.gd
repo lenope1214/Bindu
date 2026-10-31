@@ -1182,6 +1182,26 @@ func multi_k() -> float:
 
 
 ## main이 웨이브 중 매 계산마다 호출한다.
+## 웨이브 밖(쉬는 시간·카드 선택)에는 attack이 안 불려 그림 효과 시간이 멈춘다.
+## 마지막 구체를 초신성·레이저 등으로 잡으면 그 효과가 다음 웨이브까지 남았다 (2026-10-31 회색 원 버그). main이 웨이브 밖에서 부른다.
+func fade_fx(delta: float) -> void:
+	var any := nova_fx > 0.0 or not feed_fx.is_empty() or recoil > 0.0 or burst_t > 0.0
+	for k in fx.keys():
+		if fx[k] > 0.0:
+			fx[k] = maxf(fx[k] - delta, 0.0)
+			any = true
+	if not any:
+		return
+	recoil = maxf(recoil - delta * 6.0, 0.0)
+	burst_t = maxf(burst_t - delta, 0.0)
+	nova_fx = maxf(nova_fx - delta, 0.0)
+	for f in feed_fx.keys():
+		feed_fx[f] -= delta
+		if not is_instance_valid(f) or feed_fx[f] <= 0.0:
+			feed_fx.erase(f)
+	queue_redraw()
+
+
 func attack(delta: float, orbs: Array) -> void:
 	t += delta
 	eff = eff_now()

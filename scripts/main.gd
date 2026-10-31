@@ -7747,6 +7747,8 @@ func _process(delta: float) -> void:
 		return
 	_update_fx(delta)
 	if phase != Phase.WAVE:
+		for t in towers.get_children():
+			t.fade_fx(delta)
 		return
 	if prof_on:
 		_prof_add("UI·효과", us)
