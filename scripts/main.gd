@@ -18,7 +18,7 @@ const RUN_FORMAT := 1
 const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 방향 바꾸기   끌기: 옮기기"
 ## 첫 판: 카드 종류가 열리는 웨이브 (그 웨이브 앞 쉬는 시간부터 나온다). 속성은 처음부터
 const TUTOR_OPEN := {"pat": 3, "mod": 4, "trig": 5, "link": 6, "cata": 6}
-const PLACE_HINT := "클릭: 설치 (오브젝트 위면 속성 겹치기)   오브젝트 꾹 누르기·끌기: 옮기기\n우클릭/Esc: 다시 고르기"
+const PLACE_HINT := "클릭: 설치 (오브젝트 위면 속성 겹치기)   오브젝트 꾹 누르기·끌기: 옮기기\n우클릭/Esc: 카드 다시 선택"
 
 var phase := Phase.CHOOSE
 var wave := 0
@@ -226,7 +226,7 @@ var perk_offer: Array = []
 var orb_speed_mul := 1.0
 var rerolls_left := 1
 var bonus_rerolls := 0
-# 웨이브 넘기기: 고르기를 미루고 웨이브를 연달아 진행한다. 미룬 고르기는 멈춘 쉬는 시간에 한꺼번에
+# 웨이브 넘기기: 카드 선택을 미루고 웨이브를 연달아 진행한다. 미룬 고르기는 멈춘 쉬는 시간에 한꺼번에
 const SKIP_NS := [1, 3, 5, 10]
 var skip_left := 0  # 더 넘길 웨이브 수 (지금 웨이브 포함, 0이면 넘기는 중 아님)
 var skip_total := 0  # 이번에 넘기기로 한 웨이브 수 (표시용)
@@ -784,7 +784,7 @@ func _build_ui() -> void:
 
 	skip_btn = Button.new()
 	skip_btn.set_anchors_preset(Control.PRESET_CENTER)
-	skip_btn.tooltip_text = "고르기를 미루고 웨이브를 연달아 진행합니다. 미룬 카드·새로고침·특성은 멈춘 뒤 한꺼번에 고릅니다\n중앙이 위험해지면(설정) 그 웨이브가 끝나고 멈춥니다"
+	skip_btn.tooltip_text = "카드 선택을 미루고 웨이브를 연달아 진행합니다. 미룬 카드·새로고침·특성은 멈춘 뒤 한꺼번에 고릅니다\n중앙이 위험해지면(설정) 그 웨이브가 끝나고 멈춥니다"
 	skip_btn.pressed.connect(_on_skip)
 	_icon_btn(skip_btn, func(): return ["skip", Color(0.75, 0.9, 1.0)])
 	_keycap(skip_btn, "S")
@@ -1563,8 +1563,8 @@ func _help_text() -> String:
 	var mods := "강화는 종류마다 %d개까지" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "강화는 제한 없이 쌓이지만 쌓을수록 효과가 절반씩"
 	var keys := [
 		"[조작]",
-		"1 / 2 / 3 또는 클릭: 선택지 고르기     Q: 선택지 새로고침     V: 선택지 내리고 필드 보기",
-		"S: 웨이브 넘기기 — 고르기를 미루고 웨이브 n개(1·3·5·10)를 연달아 진행, 멈추면 쌓인 특성·카드·새로고침을 한꺼번에 (넘기는 중 S: 멈추기)",
+		"1 / 2 / 3 또는 클릭: 카드 선택     Q: 선택지 새로고침     V: 선택지 내리고 필드 보기",
+		"S: 웨이브 넘기기 — 카드 선택을 미루고 웨이브 n개(1·3·5·10)를 연달아 진행, 멈추면 쌓인 특성·카드·새로고침을 한꺼번에 (넘기는 중 S: 멈추기)",
 		"속성 카드: 빈 곳에 설치(직선탄) → 클릭(또는 끌어서 놓기)으로 방향, Shift: 15도",
 		"속성 카드를 오브젝트 위에: 속성 겹치기 (%s)" % elems,
 		"공격방식·강화·연계 카드: 오브젝트 위에 놓기 (효과가 없는 강화는 못 넣음: 관통 연사·돌풍·철구에 관통·튕김, 벽에 유도, 벽·투척 장판에 분열)",
@@ -1586,8 +1586,8 @@ func _help_text() -> String:
 	# 폰·태블릿: 키보드·마우스 안내 대신 버튼·누르기로
 	var touch := [
 		"[조작 · 터치]",
-		"카드 누르기: 선택지 고르기   [새로고침]: 선택지 바꾸기   [필드 보기]: 카드를 내리고 필드 보기",
-		"[웨이브 n개 넘기기]: 고르기를 미루고 웨이브 n개(1·3·5·10)를 연달아 진행, 멈추면 쌓인 특성·카드·새로고침을 한꺼번에 (넘기는 중 아래 표시를 누르면 멈춤)",
+		"카드 누르기: 카드 선택   [새로고침]: 선택지 바꾸기   [필드 보기]: 카드를 내리고 필드 보기",
+		"[웨이브 n개 넘기기]: 카드 선택을 미루고 웨이브 n개(1·3·5·10)를 연달아 진행, 멈추면 쌓인 특성·카드·새로고침을 한꺼번에 (넘기는 중 아래 표시를 누르면 멈춤)",
 		"속성 카드: 빈 곳을 눌러 설치(직선탄) → 쏠 쪽을 누르거나 끌어서 놓아 방향",
 		"속성 카드를 오브젝트 위에: 속성 겹치기 (%s)" % elems,
 		"공격방식·강화·연계 카드: 오브젝트를 눌러 넣기 (효과가 없는 강화는 못 넣음: 관통 연사·돌풍·철구에 관통·튕김, 벽에 유도, 벽·투척 장판에 분열)",
@@ -1733,7 +1733,7 @@ func _on_skip() -> void:
 	skip_left = skip_total
 	skip_stop = false
 	_bank_rest()
-	_show_toast("웨이브 %d개 넘기기: 고르기는 멈춘 뒤 한꺼번에 (%s)" % [skip_total, "아래 표시를 누르면 멈춤" if touch_ui else "S: 멈추기"])
+	_show_toast("웨이브 %d개 넘기기: 카드 선택은 멈춘 뒤 한꺼번에 (%s)" % [skip_total, "아래 표시를 누르면 멈춤" if touch_ui else "S: 멈추기"])
 
 
 ## 이번 쉬는 시간의 남은 고르기·새로고침을 쌓고 바로 다음 웨이브로 (1초 뒤 시작).
@@ -1820,7 +1820,7 @@ func _update_skip_ui() -> void:
 	hint.visible = not (show_btn and hint.get_global_rect().intersects(skip_btn.get_global_rect()))
 	if show_btn:
 		var n := int(Meta.skip_n)
-		skip_btn.tooltip_text = "웨이브 %d개 넘기기 (S)\n고르기를 미루고 웨이브를 연달아 진행합니다. 미룬 카드·새로고침·특성은 멈춘 뒤 한꺼번에 고릅니다\n중앙이 위험해지면(설정) 그 웨이브가 끝나고 멈춥니다" % n
+		skip_btn.tooltip_text = "웨이브 %d개 넘기기 (S)\n카드 선택을 미루고 웨이브를 연달아 진행합니다. 미룬 카드·새로고침·특성은 멈춘 뒤 한꺼번에 고릅니다\n중앙이 위험해지면(설정) 그 웨이브가 끝나고 멈춥니다" % n
 		skip_n_btn.text = "×%d ▸" % n
 	skip_badge.visible = skip_left > 0 and phase in [Phase.WAVE, Phase.READY] and not title_label.visible
 	if skip_badge.visible:
@@ -1830,7 +1830,7 @@ func _update_skip_ui() -> void:
 		if skip_stop:
 			skip_badge.text = _kh("이번 웨이브 뒤 멈춤 · 쌓인 카드 %d%s (S: 계속)" % [cards, extra], true)
 		elif phase == Phase.READY:
-			skip_badge.text = _kh("넘기는 중 %d/%d · 쌓인 카드 %d%s (S: 지금 멈추고 고르기)" % [done, skip_total, cards, extra], true)
+			skip_badge.text = _kh("넘기는 중 %d/%d · 쌓인 카드 %d%s (S: 지금 멈추고 선택)" % [done, skip_total, cards, extra], true)
 		else:
 			skip_badge.text = _kh("넘기는 중 %d/%d · 쌓인 카드 %d%s (S: 멈추기)" % [done, skip_total, cards, extra], true)
 
@@ -2462,7 +2462,7 @@ func _choose_hint() -> String:
 		return ""
 	# 선택지 내리기(V)는 카드 아래 버튼에 적혀 있다
 	if touch_ui:
-		return "카드를 한 번 누르면 미리보기, 한 번 더 누르거나 [적용]으로 고르기. 설치된 오브젝트 누르기: 방향 바꾸기 · 끌기: 옮기기"
+		return "카드를 한 번 누르면 미리보기, 한 번 더 누르거나 [적용]으로 선택. 설치된 오브젝트 누르기: 방향 바꾸기 · 끌기: 옮기기"
 	return "선택지를 고르세요. 설치된 오브젝트 클릭: 방향 바꾸기 · 끌기: 옮기기"
 
 
@@ -3487,16 +3487,21 @@ func _draw_info() -> void:
 			var la := 1.0
 			Icons.chip(info, ui_font, r, "orb", Color(0.85, 0.85, 0.9, la), txt, Color(1, 0.5, 0.5, la), 16, Color(0.1, 0.02, 0.03, 0.85 * la), Color(1, 0.4, 0.4, 0.6 * la))
 			tip_rects.append([r, [["지난 웨이브에 이쪽에서 놓친 구체 %d개" % lm[1], Color(1, 0.6, 0.6)], [_leak_text(), Color(1, 1, 1, 0.7)]]])
-	# 남은 고르기: 카드 줄 왼쪽 위 모서리에 걸친 꼬리표
+	# 남은 선택 수: 카드 줄 위 가운데 꼬리표 (2026-10-31: 왼쪽 모서리 "고르기 N"이 뜻이 어렵고 눈에 덜 띄던 것)
 	if phase == Phase.CHOOSE and not perk_mode and choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and not get_tree().paused and not Garden.on:
-		var cb := ui_root.get_global_transform().affine_inverse() * choice_box.get_global_rect()
-		var first: Control = choice_box.get_child(0)
-		var fx := (ui_root.get_global_transform().affine_inverse() * first.get_global_rect()).position.x
-		var txt := "고르기 %d" % picks_left
-		var w := Icons.chip_w(ui_font, txt, 15, false)
-		var r := Rect2(fx + 10.0, cb.position.y - 21.0, w, 24.0)
-		Icons.chip(info, ui_font, r, "", Color.WHITE, txt, Color(1, 0.88, 0.5), 15, Color(0.12, 0.1, 0.04, 0.97), Color(1, 0.82, 0.4, 0.8))
-		tip_rects.append([r, [["이번 쉬는 시간에 %d장 더 고를 수 있어요" % picks_left, Color(1, 0.9, 0.6)]]])
+		var inv := ui_root.get_global_transform().affine_inverse()
+		var cb := inv * choice_box.get_global_rect()
+		var x0 := (inv * (choice_box.get_child(0) as Control).get_global_rect()).position.x
+		var x1 := (inv * (choice_box.get_child(choice_box.get_child_count() - 1) as Control).get_global_rect()).end.x
+		var txt := "선택 %d번 남음" % picks_left
+		var w := Icons.chip_w(ui_font, txt, 16, false)
+		var r := Rect2((x0 + x1 - w) / 2.0, cb.position.y - 23.0, w, 26.0)
+		if apply_btn.visible:  # 폰: 가운데 카드를 눌러 [적용]이 꼬리표 자리에 오면 그 왼쪽으로
+			var ar := inv * apply_btn.get_global_rect()
+			if ar.grow(4.0).intersects(r):
+				r.position.x = ar.position.x - w - 8.0
+		Icons.chip(info, ui_font, r, "", Color.WHITE, txt, Color(1, 0.88, 0.5), 16, Color(0.12, 0.1, 0.04, 0.97), Color(1, 0.82, 0.4, 0.8))
+		tip_rects.append([r, [["이번 쉬는 시간에 카드를 %d장 더 선택할 수 있어요" % picks_left, Color(1, 0.9, 0.6)]]])
 	_draw_card_full()
 	# 말풍선: 마우스를 올린 칩·배지 (터치는 누른 것)
 	var m := info.get_local_mouse_position()
@@ -3755,7 +3760,7 @@ func _place_hint() -> String:
 	match picked.get("type", "elem"):
 		"elem":
 			return PLACE_HINT
-	return "넣을 오브젝트를 클릭   꾹 누르기·끌기: 옮기기\n우클릭/Esc: 다시 고르기"
+	return "넣을 오브젝트를 클릭   꾹 누르기·끌기: 옮기기\n우클릭/Esc: 카드 다시 선택"
 
 
 ## card: 이번에 넣은 카드 (대격변은 picked를 거치지 않아 따로 넘긴다).
@@ -3867,7 +3872,7 @@ func _update_auto_btn() -> void:
 		auto_btn.tooltip_text = "정원 자동 진행: " + ("켬" if garden_auto else "끔") + " (쉬는 시간 %d초 뒤 다음 웨이브)" % int(Garden.NEXT_DELAY)
 		auto_btn.queue_redraw()
 		return
-	auto_btn.tooltip_text = "자동 시작: " + ("켬" if auto_start else "끔") + " (웨이브가 끝나고 고르기를 마치면 바로 다음 웨이브)"
+	auto_btn.tooltip_text = "자동 시작: " + ("켬" if auto_start else "끔") + " (웨이브가 끝나고 카드 선택을 마치면 바로 다음 웨이브)"
 	auto_btn.queue_redraw()
 
 
@@ -4430,7 +4435,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			place_pos = mpos
 			phase = Phase.AIM
 			aim_start_ms = Time.get_ticks_msec()
-			hint.text = _th("클릭 또는 끌어서 놓기: 발사 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 위치 다시 고르기")
+			hint.text = _th("클릭 또는 끌어서 놓기: 발사 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 위치 다시 정하기")
 	elif phase == Phase.AIM:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			# 오브젝트 바로 위를 누르면 손을 뗄 때 정한다 (그 자리에서 바깥으로 끌어 조준)
@@ -4696,7 +4701,7 @@ func _build_menu(root: Control) -> void:
 	mv.add_child(msub)
 	modes_label.set_meta("sub", msub)
 	var marrow := Label.new()
-	marrow.text = "고르기 ▶"
+	marrow.text = "바꾸기 ▶"
 	marrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	marrow.custom_minimum_size = Vector2(90, 0)
 	marrow.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
@@ -10661,7 +10666,7 @@ func _garden_panel_tick(_delta: float) -> void:
 	for id in gp_tabs:
 		gp_tabs[id].set_pressed_no_signal(id == gp_tab)
 	if Garden.hero_free and Garden.hero_e < 0:
-		gp_tabs["hero"].text = "영웅 (고르기!)"
+		gp_tabs["hero"].text = "영웅 (속성 정하기!)"
 	else:
 		gp_tabs["hero"].text = "영웅"
 	var can := phase == Phase.CHOOSE and not perk_mode
