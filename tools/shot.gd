@@ -66,6 +66,12 @@ func _initialize():
 			main._open_choose(),
 		func():
 			_snap("cards")
+			# 폰: 한 번 누른 카드 (미리보기·다른 카드 옅게·[적용])
+			main.touch_ui = true
+			main._on_card_tap(main.offer[0], 0),
+		func():
+			_snap("cards_tap")
+			main.touch_ui = touch
 			main.offer = [{"type": "pat", "id": Pat.PATTERN_IDS[2]}, {"type": "mod", "id": Pat.MOD_IDS[0]}, {"type": "cata", "id": "elem"}]
 			main._show_offer(),
 		func():

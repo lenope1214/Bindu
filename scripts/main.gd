@@ -140,6 +140,8 @@ var over_label: Label
 var legend: Label
 var bar_box: HBoxContainer  # 오른쪽 아래 버튼 줄
 var reroll_btn: Button
+var apply_btn: Button  # 폰: 한 번 누른 카드 아래의 [적용]
+var tap_sel := -1  # 폰: 한 번 눌러 미리보기 중인 카드 번호 (0부터). 같은 카드를 한 번 더 누르거나 [적용]을 누르면 고른다
 var skip_btn: Button  # 웨이브 넘기기 (S)
 var skip_n_btn: Button  # 넘길 웨이브 수 바꾸기
 var skip_badge: Button  # 넘기는 중 표시, 누르면 멈추기
@@ -520,6 +522,24 @@ func _build_ui() -> void:
 	reroll_btn.pressed.connect(_on_reroll)
 	reroll_btn.visible = false
 	root.add_child(reroll_btn)
+
+	apply_btn = Button.new()
+	apply_btn.text = "적용"
+	apply_btn.focus_mode = Control.FOCUS_NONE
+	apply_btn.add_theme_font_size_override("font_size", 17)
+	# 카드 글 위에 걸치므로 꽉 찬 바탕 (다른 버튼처럼 옅으면 카드 글과 섞인다)
+	for st in ["normal", "hover", "pressed"]:
+		var asb := StyleBoxFlat.new()
+		asb.bg_color = Color(1.0, 0.82, 0.4) if st == "normal" else Color(1.0, 0.9, 0.6)
+		asb.set_corner_radius_all(6)
+		apply_btn.add_theme_stylebox_override(st, asb)
+	for fc in ["font_color", "font_hover_color", "font_pressed_color"]:
+		apply_btn.add_theme_color_override(fc, Color(0.12, 0.09, 0.02))
+	apply_btn.pressed.connect(func():
+		if tap_sel >= 0 and tap_sel < offer.size():
+			_on_pick(offer[tap_sel]))
+	apply_btn.visible = false
+	root.add_child(apply_btn)
 
 	skip_btn = Button.new()
 	skip_btn.set_anchors_preset(Control.PRESET_CENTER)
@@ -1416,6 +1436,7 @@ func _card_open(k: String) -> bool:
 
 ## 선택지 카드 버튼을 offer대로 다시 만든다.
 func _show_offer() -> void:
+	tap_sel = -1
 	for c in choice_box.get_children():
 		c.queue_free()
 	for i in offer.size():
@@ -1556,11 +1577,14 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 	b.focus_mode = Control.FOCUS_NONE  # 다른 버튼처럼: Space·Enter가 카드를 고르지 않게
 	b.add_theme_color_override("font_color", col)
 	b.add_theme_color_override("font_hover_color", col.lightened(0.3))
-	b.pressed.connect(_on_pick.bind(card))
+	b.pressed.connect(_on_card_tap.bind(card, idx - 1))
 	_mark_fav(b, sb, sbh, _fav_tag(card))
 	if card["type"] == "elem":
-		b.mouse_entered.connect(func(): hover_elem = card["e"])
-		b.mouse_exited.connect(func(): hover_elem = -1)
+		# 터치는 누르는 순간 마우스가 들어와 미리보기가 보이기도 전에 골라졌다: 터치는 한 번 누르기(_on_card_tap)로 미리보기
+		b.mouse_entered.connect(func():
+			if not touch_ui: hover_elem = card["e"])
+		b.mouse_exited.connect(func():
+			if not touch_ui: hover_elem = -1)
 	return b
 
 
@@ -1626,6 +1650,8 @@ func _choose_hint() -> String:
 	if Meta.games >= 3:
 		return ""
 	# 선택지 내리기(V)는 카드 아래 버튼에 적혀 있다
+	if touch_ui:
+		return "카드를 한 번 누르면 미리보기, 한 번 더 누르거나 [적용]으로 고르기. 설치된 오브젝트 누르기: 방향 바꾸기 · 끌기: 옮기기"
 	return "선택지를 고르세요. 설치된 오브젝트 클릭: 방향 바꾸기 · 끌기: 옮기기"
 
 
@@ -1877,6 +1903,7 @@ func _set_cards_hidden(h: bool) -> void:
 	cards_hidden = h
 	choice_box.visible = not h
 	hover_elem = -1
+	_tap_hover()  # 다시 올리면 터치로 고르던 카드 미리보기도 다시
 	if perk_mode:
 		reroll_btn.visible = false
 	else:
@@ -2348,7 +2375,42 @@ func _draw_boss_path(now: float) -> void:
 	draw_string(ui_font, lp, label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1, 0.75, 0.85))
 
 
+## 폰 [적용] 버튼: 미리보기 중인 카드 오른쪽 위 모서리에 걸친다 (왼쪽 위는 고르기 꼬리표, 카드 아래는 새로고침 줄)
+func _place_apply_btn() -> void:
+	var cs := choice_box.get_children() if choice_box else []
+	var on := touch_ui and phase == Phase.CHOOSE and not perk_mode and choice_box.visible and not cards_hidden \
+		and tap_sel >= 0 and tap_sel < cs.size() and not cs[tap_sel].is_queued_for_deletion() and not get_tree().paused
+	apply_btn.visible = on
+	if not on:
+		return
+	var r: Rect2 = ui_root.get_global_transform().affine_inverse() * cs[tap_sel].get_global_rect()
+	var w := minf(120.0, r.size.x * 0.5)
+	apply_btn.size = Vector2(w, 34.0)
+	apply_btn.position = Vector2(r.end.x - w - 10.0, r.position.y - 24.0)
+
+
+## 카드 누르기. 마우스는 바로 고르고(올리면 미리보기), 터치는 한 번 누르면 미리보기(다른 카드는 옅게, 아래에 [적용]),
+## 같은 카드를 한 번 더 누르거나 [적용]을 누르면 고른다.
+func _on_card_tap(card: Dictionary, i: int) -> void:
+	if not touch_ui or tap_sel == i:
+		_on_pick(card)
+		return
+	tap_sel = i
+	_tap_hover()
+
+
+## 터치로 고른(미리보기 중인) 카드의 속성 미리보기와 카드 진하기.
+func _tap_hover() -> void:
+	if tap_sel >= 0 and tap_sel < offer.size() and not cards_hidden:
+		hover_elem = offer[tap_sel]["e"] if offer[tap_sel]["type"] == "elem" else -1
+	var cs := choice_box.get_children()
+	for k in cs.size():
+		cs[k].modulate.a = 0.55 if tap_sel >= 0 and k != tap_sel else 1.0
+
+
 func _on_pick(card: Dictionary) -> void:
+	tap_sel = -1
+	_tap_hover()
 	if card["type"] == "cata":
 		_cataclysm(card["id"])
 		return
@@ -5037,6 +5099,7 @@ func _roll_kind() -> int:
 
 func _process(delta: float) -> void:
 	key_t -= delta
+	_place_apply_btn()
 	for c in [hint, skip_badge]:
 		c.self_modulate.a = 0.12 if Engine.get_process_frames() - tip_fade.get(c, -10) <= 2 else 1.0
 	if touch_ui and key_t <= 0.0:
