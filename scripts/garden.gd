@@ -23,15 +23,16 @@ const LANE_ORDER := [0.0, PI, PI / 3.0, PI * 4.0 / 3.0, PI * 2.0 / 3.0, PI * 5.0
 
 ## 씨앗 나무: 가지마다 단계별 씨앗 비용과 단계별 설명
 const TREE := {
-	"root": {"name": "뿌리", "what": "생존", "cost": [3, 5, 8, 12, 18], "lv": ["중앙 점 체력 +1"]},
-	"stem": {"name": "줄기", "what": "화력", "cost": [4, 6, 9, 13, 18], "lv": ["모든 피해 +3%"]},
+	# 일반 판 효과는 최대한 약하게 (2026-10-31 사용자: 방치형이 일반 판에 과하게 영향 주지 않게)
+	"root": {"name": "뿌리", "what": "생존", "cost": [3, 6], "lv": ["중앙 점 체력 +1"]},
+	"stem": {"name": "줄기", "what": "화력", "cost": [4, 6, 9, 13, 18], "lv": ["모든 피해 +0.5%"]},
 	"leaf": {"name": "잎", "what": "선택", "cost": [10, 15, 25], "lv": ["새로고침 +1 (첫 쉬는 시간)", "첫 쉬는 시간 카드 4장", "첫 쉬는 시간 고르기 +1"]},
 	"fruit": {"name": "열매", "what": "특성", "cost": [20, 35], "lv": ["특성 선택지 4개", "판 시작에 특성 1개 무작위"]},
-	"bonsai": {"name": "분재", "what": "정원 가져가기", "cost": [30, 45, 60], "lv": ["분재 오브젝트를 속성 Lv2·공격방식 그대로 놓고 시작", "분재에 강화 1개 더", "분재에 강화 1개 더"]},
+	"bonsai": {"name": "분재", "what": "정원 가져가기", "cost": [30, 50], "lv": ["분재 오브젝트를 속성 Lv1·공격방식 1단계로 놓고 시작", "분재에 강화 1개"]},
 }
 const TREE_IDS := ["root", "stem", "leaf", "fruit", "bonsai"]
 const MASTERY_STEPS := [1000, 5000, 20000, 50000, 100000]  # 숙련 단계를 넘는 처치 수
-const MASTERY_PER := 0.02  # 단계마다 그 속성 피해 +2% (최대 +10%)
+const MASTERY_PER := 0.006  # 단계마다 그 속성 피해 +0.6% (최대 +3%, 패치 키 mastery_per)
 
 # ---------- 저장되는 값 (best.cfg [garden]) ----------
 static var seeds := 0
@@ -119,7 +120,7 @@ static func mastery_lv(e: int) -> int:
 
 
 static func mastery_bonus(e: int) -> float:
-	return MASTERY_PER * mastery_lv(e)
+	return k("mastery_per", MASTERY_PER) * mastery_lv(e)
 
 
 static func mastery_next(e: int) -> int:
@@ -296,7 +297,7 @@ static func _valid_bonsai(b: Variant) -> Dictionary:
 	if not b is Dictionary or not b.get("e") in Elem.ALL or not b.get("pat") in Pat.ALL_IDS or b.get("pat") == "path":
 		return {}
 	var mods: Array = (b.get("mods", []) as Array).filter(func(m): return Pat.MODS.has(m))
-	return {"e": b["e"], "pat": b["pat"], "plv": clampi(int(b.get("plv", 1)), 1, 3), "mods": mods.slice(0, 2)}
+	return {"e": b["e"], "pat": b["pat"], "plv": clampi(int(b.get("plv", 1)), 1, 3), "mods": mods.slice(0, 1)}
 
 
 ## 정원 오브젝트를 분재로 (속성은 가장 높은 레벨, 강화는 많이 넣은 순 2개까지).
@@ -313,7 +314,7 @@ static func bonsai_of(t: Tower) -> Dictionary:
 static func bonsai_text() -> String:
 	if bonsai.is_empty():
 		return "없음 (정원 오브젝트를 누르고 [분재로 지정])"
-	var s := "%s · %s Lv%d" % [Elem.NAMES[bonsai["e"]], Pat.pname(bonsai["pat"]), bonsai["plv"]]
+	var s := "%s · %s" % [Elem.NAMES[bonsai["e"]], Pat.pname(bonsai["pat"])]  # 일반 판엔 속성 Lv1·공격방식 1단계로
 	var ms: Array = bonsai["mods"]
 	if not ms.is_empty():
 		s += " · 강화 " + ", ".join(ms.map(func(m): return Pat.MODS[m]["name"]))

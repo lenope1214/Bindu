@@ -10072,7 +10072,7 @@ func _apply_tree() -> void:
 	core_max += Garden.lv("root")
 	core_hp = core_max
 	core_disp = float(core_hp)
-	Tower.dmg_mul += 0.03 * Garden.lv("stem")
+	Tower.dmg_mul += Garden.k("stem_per", 0.005) * Garden.lv("stem")
 	if Garden.lv("leaf") >= 1:
 		bonus_rerolls += 1
 	if Garden.lv("fruit") >= 2:
@@ -10092,11 +10092,9 @@ func _place_bonsai() -> void:
 	var d := Vector2.from_angle(a)
 	var t := Tower.new()
 	t.main = self
-	t.add(b["e"], 2)
+	t.add(b["e"], 1)
 	if b["pat"] != Pat.DEFAULT:
-		t.set_pattern(b["pat"])
-		for i in int(b["plv"]) - 1:
-			t.set_pattern(b["pat"])
+		t.set_pattern(b["pat"])  # 공격방식 1단계만 (레벨은 안 가져감)
 	for i in mini(Garden.lv("bonsai") - 1, b["mods"].size()):
 		t.add_mod(b["mods"][i])
 	t.dir = d
@@ -10186,7 +10184,7 @@ func _refresh_tree() -> void:
 			var nx := Garden.mastery_next(e)
 			ms.append("%s +%d%% (%s%s)" % [Elem.NAMES[e], roundi(Garden.mastery_bonus(e) * 100), Garden.short(n), "/" + Garden.short(nx) if nx > 0 else ""])
 	var ml := Label.new()
-	ml.text = "속성 숙련 (정원 처치 수 → 일반 판 그 속성 피해, 최대 +%d%%):\n%s" % [roundi(Garden.MASTERY_PER * Garden.MASTERY_STEPS.size() * 100), "아직 없음" if ms.is_empty() else " · ".join(ms)]
+	ml.text = "속성 숙련 (정원 처치 수 → 일반 판 그 속성 피해, 최대 +%d%%):\n%s" % [roundi(Garden.k("mastery_per", Garden.MASTERY_PER) * Garden.MASTERY_STEPS.size() * 100), "아직 없음" if ms.is_empty() else " · ".join(ms)]
 	ml.add_theme_font_size_override("font_size", 14)
 	ml.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ml.custom_minimum_size.x = 620

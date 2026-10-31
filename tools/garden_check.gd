@@ -150,6 +150,7 @@ func _process(_d) -> bool:
 			_ok(not Garden.buy("fruit") and Garden.seeds == 17, "씨앗이 모자라면 못 삼")
 			Garden.mastery["fire"] = 6000.0
 			_ok(Garden.mastery_lv(Elem.FIRE) == 2, "불 숙련 6000 → 2단계")
+			_ok(Garden.max_lv("root") == 2 and Garden.max_lv("bonsai") == 2 and absf(Garden.mastery_bonus(Elem.FIRE) - 0.012) < 0.0001, "약한 씨앗 나무: 뿌리·분재 2단계, 숙련 2단계 = +1.2%")
 			# 일반 판으로
 			main._leave(false)
 			step = 8

@@ -263,6 +263,9 @@ case "$CMD" in
 		(cd "$D" && T 120 "$G" --headless --path . -s tools/patch_keys_check.gd > pk.txt 2>&1)
 		grep -q "^PATCHCHECK ok" "$D/pk.txt" && echo "patch keys 통과" || { grep -E "^FAIL|SCRIPT ERROR" "$D/pk.txt" | head -5; bad="$bad patchkeys"; }
 		rm -rf "$D"
+		GC=$("$0" gcheck)
+		echo "$GC" | grep -E "^FAIL|SCRIPT ERROR" | head -5
+		echo "$GC" | grep -q "RESULT fails=0" && echo "gcheck 통과" || bad="$bad gcheck"
 		if python3 -c "import fastapi, pytest, httpx" > /dev/null 2>&1; then
 			(cd "$ROOT/server" && python3 -m pytest -q 2>&1 | tail -1) | tee /tmp/bindu_check_server.txt
 			grep -qE "failed|error" /tmp/bindu_check_server.txt && bad="$bad server"
