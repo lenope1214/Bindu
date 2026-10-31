@@ -1,7 +1,7 @@
 extends SceneTree
 # 공격방식별 처치율: 중앙 왼쪽 150에서 바깥을 겨눈 오브젝트 하나(속성 ELEM Lv1, 공격방식 Lv PLV) 앞으로
 # 체력 HP(기본 30)인 구체가 초당 RATE(기본 1)개씩 60초간 중앙을 향해 온다. lane: 곧게, spiral: 소용돌이처럼 비껴 돎.
-# 처치한 비율(%)을 본다. PAT=lob,shot 으로 골라 보기.
+# 처치한 비율(%)을 본다. PAT=lob,shot 으로 골라 보기. TRIG=echo:1,vanguard:2 처럼 발동 카드를 넣어 비교.
 var main
 func _initialize():
 	main = load("res://main.tscn").instantiate()
@@ -36,6 +36,10 @@ func _initialize():
 				var t = main.towers.get_child(0)
 				for i in plv:
 					t.set_pattern(p)
+				for tg in OS.get_environment("TRIG").split(",", false):
+					for i in int(tg.get_slice(":", 1)):
+						t.add_trig(tg.get_slice(":", 0))
+				t.wave_begin()
 				var live := {}
 				var spawn_t := 0.0
 				for f in 60 * 60:

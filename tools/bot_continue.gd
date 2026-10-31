@@ -137,7 +137,7 @@ func _process(_d):
 		# 3) 강화는 가장 강한 오브젝트에
 		if pick == null and ts.size() > 0:
 			for o in offer:
-				if o["type"] == "mod" or o["type"] == "link":
+				if o["type"] in ["mod", "link", "trig"]:
 					pick = o
 					target = ts[0]
 					for t in ts:

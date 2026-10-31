@@ -108,6 +108,7 @@ class TowerIn(BaseModel):
     reso: int = 0
     links: int = 0  # 예전 연결선 (v0.4.45부터 없음)
     pincer: int = 0
+    trigs: dict[str, int] = {}  # 발동 (0.5.3)
     share: float = 0.0
 
 

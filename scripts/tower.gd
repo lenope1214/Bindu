@@ -5,6 +5,7 @@ extends Node2D
 ## - 속성(elements): 효과. 모든 공격에 부가효과가 붙는다. 종류 수 상한은 Rules.max_elems.
 ## - 강화(mods): 공격방식에 붙는 변형. 종류마다 Rules.max_mod개까지.
 ## - 연계: 협공, 프리즘, 공명.
+## - 발동(trigs): 조건이 맞을 때 추가로 터지는 공격 (여진, 선봉).
 
 const RADIUS := 18.0
 
@@ -17,6 +18,10 @@ var prism := 0
 var prism_flash := 0.0  # 탄이 지나간 순간 프리즘이 번쩍인다 (표시용)
 var pincer := 0  # 협공: 여러 오브젝트가 함께 맞힌 구체에 표식 폭발
 var reso := 0
+var trigs := {}  # 발동 id -> 겹친 수
+var echo_cd := 0.0  # 여진: 다시 터질 때까지
+var van_ready := false  # 선봉: 이번 웨이브에 아직 안 켜짐 (웨이브 시작 때 켜고, 처음 맞히면 발동)
+var van_t := 0.0  # 선봉: 공격 속도 x2 남은 시간
 var wind_buff := 0.0  # 둘레 바람 오브젝트가 주는 공격 속도 (main이 매 계산마다 정함)
 var eff := {}  # 지금 쓰는 속성 (매 프레임 갱신)
 var dir := Vector2.RIGHT
@@ -142,7 +147,39 @@ const SHADE_T := 3.0  # 어둠 형태 성질 그림자 표식 시간 (2026-10-31
 
 ## 공격 속도 배율: 특성 × 속사 × 바람 버프 ÷ 속성을 겹친 대가 (모두 곱한다). 특수 반응 공격도 이 배율.
 func spd_k() -> float:
-	return spd_mul * (1.0 + 0.1 * mf("rapid")) * (1.0 + wind_buff) * (1.0 + (photo_k if photo_t > 0.0 else 0.0)) / tax()
+	return spd_mul * (1.0 + 0.1 * mf("rapid")) * (1.0 + wind_buff) * (1.0 + (photo_k if photo_t > 0.0 else 0.0)) * van_k() / tax()
+
+
+## 선봉이 켜져 있으면 공격 속도 배율.
+func van_k() -> float:
+	return VAN_SPD if van_t > 0.0 else 1.0
+
+
+## 발동 카드 수.
+func tg(id: String) -> int:
+	return trigs.get(id, 0)
+
+
+## 여진(echo): 탄 수 3(+1/장), 탄 피해(파편 기본의 배), 다시 터질 때까지.
+## 선봉: 공격 속도 배율, 지속 5초(+2.5초/장).
+const TRIG_MAX := 5  # 발동 카드는 종류마다 5장까지 (선봉을 끝없이 쌓으면 웨이브 내내 x2)
+const ECHO_N := 3
+const ECHO_DMG := 0.8
+const ECHO_CD := 0.5
+const VAN_SPD := 2.0
+const VAN_T := 5.0
+const VAN_T_ADD := 2.5
+
+
+static func van_time(n: int) -> float:
+	return VAN_T + VAN_T_ADD * (n - 1)
+
+
+## 웨이브 시작 (main._start_wave).
+func wave_begin() -> void:
+	van_ready = tg("vanguard") > 0
+	van_t = 0.0
+	echo_cd = 0.0
 
 
 ## 투척 장판: 느린 탄이 날아간 길에 띠 장판이 남는다 (Zone.trail). 던지는 간격, 날아가는 거리(Lv1, reach 배율),
@@ -207,6 +244,8 @@ func spd_parts() -> Array:
 		out.append(["바람 버프", 1.0 + wind_buff])
 	if spd_mul != 1.0:
 		out.append(["특성", spd_mul])
+	if van_t > 0.0:
+		out.append(["선봉", VAN_SPD])
 	return out
 
 
@@ -515,6 +554,8 @@ func can_take(card: Dictionary) -> bool:
 			return can_pattern(card["id"])
 		"mod":
 			return m(card["id"]) < Rules.max_mod and mod_useless(card["id"]).is_empty()
+		"trig":
+			return tg(card["id"]) < TRIG_MAX
 	return true
 
 
@@ -551,6 +592,8 @@ func refuse_text(card: Dictionary) -> String:
 			if not why.is_empty():
 				return why
 			return "%s은(는) %d개까지 쌓을 수 있어요" % [Pat.MODS[card["id"]]["name"], Rules.max_mod]
+		"trig":
+			return "%s은(는) %d개까지 쌓을 수 있어요" % [Pat.TRIGS[card["id"]]["name"], TRIG_MAX]
 	return ""
 
 
@@ -710,6 +753,24 @@ func add_link(id: String) -> String:
 	return Pat.LINKS[id]["name"] + ("" if n <= 1 else " x%d (%s %s)" % [n, LINK_POWER[id], link_value(id, n)])
 
 
+func add_trig(id: String) -> String:
+	place_pop = 1.0
+	queue_redraw()
+	trigs[id] = tg(id) + 1
+	var n := tg(id)
+	return Pat.TRIGS[id]["name"] + ("" if n <= 1 else " x%d (%s)" % [n, trig_value(id, n)])
+
+
+## 발동 카드를 n장 넣었을 때의 세기 (hit의 여진·선봉과 같은 식).
+static func trig_value(id: String, n: int) -> String:
+	match id:
+		"echo":
+			return "탄 %d개" % (ECHO_N + n - 1)
+		"vanguard":
+			return "%.1f초" % van_time(n)
+	return ""
+
+
 ## 지금 쓰는 속성 (예전 연결선은 여기서 이어진 오브젝트 속성을 더했다).
 func eff_now() -> Dictionary:
 	return elements.duplicate()
@@ -734,6 +795,9 @@ func extras_text() -> String:
 		parts.append("공명" + ("" if reso == 1 else " x%d" % reso))
 	if pincer > 0:
 		parts.append("협공" + ("" if pincer == 1 else " x%d" % pincer))
+	for id in Pat.TRIG_IDS:
+		if tg(id) > 0:
+			parts.append(Pat.TRIGS[id]["name"] + ("" if tg(id) == 1 else " x%d" % tg(id)))
 	return ", ".join(parts)
 
 
@@ -745,7 +809,7 @@ func spec() -> Dictionary:
 ## 이어하기 저장용.
 func to_save() -> Dictionary:
 	return {"elements": elements, "order": Array(order), "pattern": pattern, "plv": plv, "mods": mods,
-		"prism": prism, "reso": reso, "pincer": pincer, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt,
+		"prism": prism, "reso": reso, "pincer": pincer, "trigs": trigs, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt,
 		"src": src, "run_src": run_src, "paths": paths.map(func(p): return Array(p))}
 
 
@@ -770,6 +834,11 @@ func load_save(d: Dictionary) -> void:
 	prism = maxi(0, _int(d.get("prism")))
 	reso = maxi(0, _int(d.get("reso")))
 	pincer = maxi(0, _int(d.get("pincer")))
+	var tgs: Variant = d.get("trigs", {})
+	if tgs is Dictionary:
+		for id in tgs:
+			if Pat.TRIGS.has(id) and _int(tgs[id]) > 0:
+				trigs[id] = _int(tgs[id])
 	var pos: Variant = d.get("pos")
 	if pos is Vector2:
 		position = pos
@@ -904,6 +973,8 @@ func attack(delta: float, orbs: Array) -> void:
 	recoil = maxf(recoil - delta * 6.0, 0.0)
 	fe_cd = maxf(fe_cd - delta, 0.0)
 	fe2 = maxf(fe2 - delta, 0.0)
+	echo_cd = maxf(echo_cd - delta, 0.0)
+	van_t = maxf(van_t - delta, 0.0)
 	_update_aim(orbs, delta)
 	# 속성을 많이 겹칠수록 공격이 느려진다(쌓기 대가), 속사 강화로 빨라진다
 	var de := delta * spd_k()
@@ -1504,6 +1575,11 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		src["elem:light"] = src.get("elem:light", 0.0) + rest
 	src[key] = src.get(key, 0.0) + rest
 	_pincer(o)
+	if van_ready and not in_rx:
+		van_ready = false
+		van_t = van_time(tg("vanguard"))
+	if o.hp <= 0.0 and echo_cd <= 0.0 and tg("echo") > 0:
+		_echo(o)
 	if els.has(Elem.FIRE):
 		o.burn(0.8 * els.get(Elem.FIRE, 0) * rm, 2.0, self)
 	if els.has(Elem.POISON):
@@ -1542,6 +1618,19 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 			p.dmg *= 0.5
 			p.position = o.position
 			p.hit[o] = true
+
+
+## 여진: 잡은 구체 자리에서 작은 탄이 고르게 사방으로 (쏘는 방향은 판마다 조금씩 돈다).
+func _echo(o: Orb) -> void:
+	echo_cd = ECHO_CD
+	var n := ECHO_N + tg("echo") - 1
+	var a0 := randf() * TAU
+	for i in n:
+		var p: Projectile = main.spawn_proj(self, "frag", plv, Vector2.from_angle(a0 + TAU * i / n))
+		p.src = "trig:echo"
+		p.dmg *= ECHO_DMG
+		p.position = o.position
+		p.hit[o] = true
 
 
 # ---------- 형태 성질 (Elem.TRAIT) ----------
@@ -1772,6 +1861,10 @@ func _draw_body() -> void:
 			var tip := Vector2.from_angle(a) * (RADIUS + 3.0)
 			var side := Vector2.from_angle(a).orthogonal() * 4.0
 			draw_colored_polygon(PackedVector2Array([tip, p + side, p - side]), Color(1.0, 0.55, 0.85, 0.85))
+	if van_t > 0.0:
+		# 선봉: 켜져 있는 동안 남은 시간만큼 줄어드는 고리
+		var f := van_t / van_time(tg("vanguard"))
+		draw_arc(Vector2.ZERO, RADIUS + 6.0, -PI / 2.0, -PI / 2.0 + TAU * f, 24, Color(Pat.TRIG_COLOR, 0.9), 3.0)
 	# 바람 버프 둘레는 main._draw_wind_rings (마우스를 올리거나 옮길 때만)
 	if wind_buff > 0.0:
 		# 바람 버프를 받는 중: 작은 바람 꼬리 둘
@@ -2276,11 +2369,11 @@ static func _r_circle(ci: CanvasItem, p: Vector2, r: float, c: Color) -> void:
 
 
 ## 선택지 하나를 이 오브젝트에 넣었을 때 바뀌는 점(미리보기 문구)과, 넣은 뒤의 spec.
-## card: {"type": "elem"|"pat"|"mod"|"link", ...}
+## card: {"type": "elem"|"pat"|"mod"|"link"|"trig", ...}
 func preview(card: Dictionary) -> Array:
 	var out := PackedStringArray()
 	var sp := spec().duplicate(true)
-	if card["type"] in ["elem", "mod"] and not can_take(card):
+	if card["type"] in ["elem", "mod", "trig"] and not can_take(card):
 		out.append("넣을 수 없음")
 		out.append(refuse_text(card))
 		return [out, sp]
@@ -2348,6 +2441,15 @@ func preview(card: Dictionary) -> Array:
 			else:
 				out.append(Pat.LINKS[id]["name"])
 				out.append(Pat.LINKS[id]["desc"])
+		"trig":
+			var id: String = card["id"]
+			var n := tg(id)
+			if n > 0:
+				out.append("%s x%d → x%d (이미 들어 있음, 겹쳐서 세짐)" % [Pat.TRIGS[id]["name"], n, n + 1])
+				out.append("%s → %s" % [trig_value(id, n), trig_value(id, n + 1)])
+			else:
+				out.append(Pat.TRIGS[id]["name"])
+				out.append(Pat.TRIGS[id]["desc"])
 	return [out, sp]
 
 

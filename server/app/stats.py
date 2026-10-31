@@ -35,6 +35,8 @@ def finals_of(towers) -> dict:
             add("link:link", t.links, t.share)
         if t.pincer:
             add("link:pincer", t.pincer, t.share)
+        for g, n in t.trigs.items():
+            add(f"trig:{g}", n, t.share)
     return {k[:48]: v for k, v in out.items()}
 
 

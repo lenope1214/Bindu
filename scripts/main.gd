@@ -17,7 +17,7 @@ const RUN_PATH := "user://run.cfg"  # 이어하기: 쉬는 시간마다 저장, 
 const RUN_FORMAT := 1
 const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 방향 바꾸기   끌기: 옮기기"
 ## 첫 판: 카드 종류가 열리는 웨이브 (그 웨이브 앞 쉬는 시간부터 나온다). 속성은 처음부터
-const TUTOR_OPEN := {"pat": 3, "mod": 4, "link": 6, "cata": 6}
+const TUTOR_OPEN := {"pat": 3, "mod": 4, "trig": 5, "link": 6, "cata": 6}
 const PLACE_HINT := "클릭: 설치 (오브젝트 위면 속성 겹치기)   오브젝트 꾹 누르기·끌기: 옮기기\n우클릭/Esc: 다시 고르기"
 
 var phase := Phase.CHOOSE
@@ -79,7 +79,7 @@ var legend_rows := 0  # 지금 설명에 적힌 반응 줄 수
 ## 터치 화면에선 버튼 글의 키 안내 "(Q)"·"(Space: 바로)"를 뺀다. "(S: 멈추기)"처럼 누르면 하는 일은 "(눌러서 멈추기)"로
 var key_re := RegEx.create_from_string(" ?\\((?:[KO] / )?(?:Q|V|S|D|E|F|K|O|H|M|N|P|T|Tab|Enter|Esc|F11|Space|←/→|↑/↓)(?:: [^)]*)?\\)")
 var key_t := 0.0
-var offer: Array = []  # 이번 선택지 [카드, ...] 카드: {"type": "elem"|"pat"|"mod"|"link", ...}
+var offer: Array = []  # 이번 선택지 [카드, ...] 카드: {"type": "elem"|"pat"|"mod"|"link"|"trig", ...}
 var picked := {}  # 고른 카드
 var place_pos := Vector2.ZERO
 
@@ -912,6 +912,8 @@ static func src_name(key: String) -> String:
 			return Pat.MODS[p[1]]["name"] if Pat.MODS.has(p[1]) else p[1]
 		"link":
 			return Pat.LINKS[p[1]]["name"] if Pat.LINKS.has(p[1]) else p[1]
+		"trig":
+			return Pat.TRIGS[p[1]]["name"] if Pat.TRIGS.has(p[1]) else p[1]
 		"rx":
 			for r in Elem.REACTIONS:
 				if r["id"] == p[1]:
@@ -1357,7 +1359,7 @@ func _make_choices() -> void:
 		guard += 1
 		var card := _roll_card()
 		# 넣을 곳이 없는 공격방식·강화 카드는 내지 않는다
-		if card["type"] in ["pat", "mod"] and not towers.get_children().any(func(t): return t.can_take(card)):
+		if card["type"] in ["pat", "mod", "trig"] and not towers.get_children().any(func(t): return t.can_take(card)):
 			continue
 		# 같은 속성은 레벨만 다르게 두 장 나오지 않게: 높은 레벨 한 장만 남긴다
 		var same := offer.filter(func(cd): return _card_key(cd) == _card_key(card))
@@ -1376,7 +1378,7 @@ func _make_choices() -> void:
 
 ## 첫 판: 이번 웨이브에 새로 열린 카드 종류를 처음 한 번은 선택지에 꼭 넣는다 (속성 카드 하나는 남김).
 func _tutor_offer() -> void:
-	for k in ["pat", "mod", "link"]:
+	for k in ["pat", "mod", "trig", "link"]:
 		if wave + 1 < TUTOR_OPEN[k] or tutor_given.has(k):
 			continue
 		if not offer.any(func(cd): return cd["type"] == k):
@@ -1398,6 +1400,7 @@ func _tutor_card(k: String) -> Dictionary:
 		"pat": ids = Pat.PATTERN_IDS.slice(1)
 		"mod": ids = Pat.MOD_IDS.duplicate()
 		"link": ids = ["pincer"] if towers.get_child_count() >= 2 else ["prism", "reso"]
+		"trig": ids = Pat.TRIG_IDS.duplicate()
 	ids.shuffle()
 	for id in ids:
 		var cd := {"type": k, "id": id}
@@ -1440,11 +1443,12 @@ func _roll_card() -> Dictionary:
 			return {"type": "cata", "id": "elem"}
 		if c < cata * 2.0:
 			return {"type": "cata", "id": "pat"}
-	# 종류 비율 (온라인 패치 cards로 바뀔 수 있음): 속성 42%, 공격방식 25%, 강화 23%, 연계 10%
+	# 종류 비율 (온라인 패치 cards로 바뀔 수 있음): 속성 42%, 공격방식 25%, 강화 23%, 연계 10%, 발동 8% (합으로 나눔)
 	var we := Patch.num("cards", "elem", 0.42)
 	var wp := Patch.num("cards", "pat", 0.25) if _card_open("pat") else 0.0
 	var wm := Patch.num("cards", "mod", 0.23) if _card_open("mod") else 0.0
-	var r := randf() * (we + wp + wm + (Patch.num("cards", "link", 0.10) if _card_open("link") else 0.0))
+	var wt := Patch.num("cards", "trig", 0.08) if _card_open("trig") else 0.0
+	var r := randf() * (we + wp + wm + wt + (Patch.num("cards", "link", 0.10) if _card_open("link") else 0.0))
 	if n == 0 or wave == 0 or r < we:
 		var lv := 2 if randf() < _lv2_chance() else 1
 		return {"type": "elem", "e": Elem.ALL.pick_random(), "lv": lv}
@@ -1452,6 +1456,8 @@ func _roll_card() -> Dictionary:
 		return {"type": "pat", "id": Pat.PATTERN_IDS.slice(1).pick_random()}
 	if r < we + wp + wm:
 		return {"type": "mod", "id": Pat.MOD_IDS.pick_random()}
+	if r < we + wp + wm + wt:
+		return {"type": "trig", "id": Pat.TRIG_IDS.pick_random()}
 	var ids: Array = Pat.LINK_IDS.duplicate() if n >= 2 else ["prism", "reso"]
 	return {"type": "link", "id": ids.pick_random()}
 
@@ -1467,6 +1473,7 @@ func _card_color(card: Dictionary) -> Color:
 		"pat": return Pat.pcolor(card["id"]).lightened(0.15)
 		"mod": return Color(1, 0.82, 0.4)
 		"cata": return Color(1, 0.45, 0.9)
+		"trig": return Pat.TRIG_COLOR
 	return Color(0.55, 0.9, 1.0)
 
 
@@ -1535,6 +1542,10 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 			var id: String = card["id"]
 			b.text = "[%d] 연계: %s\n%s" % [idx, Pat.LINKS[id]["name"], Pat.LINKS[id]["desc"]]
 			foot = [["place_on", "오브젝트 위에 놓기"]]
+		"trig":
+			var id: String = card["id"]
+			b.text = "[%d] 발동: %s\n%s" % [idx, Pat.TRIGS[id]["name"], Pat.TRIGS[id]["desc"]]
+			foot = [["place_on", "위에 놓기 · 종류별 5개"]]
 	_fit_card_text(b, b.text, 15)
 	if not foot.is_empty():
 		# 놓는 곳은 카드 아래 한 줄 아이콘으로 (예전엔 두 줄 글이 카드마다 되풀이됨)
@@ -1665,6 +1676,8 @@ func _card_guides() -> void:
 		_guide("mod", "새 카드 · 강화: 오브젝트 위에 놓아 공격을 바꿔요(빠르게·크게·관통 등). " + cap)
 	if "link" in types:
 		_guide("link", "새 카드 · 연계: 오브젝트 위에 놓아 주변과 함께 싸워요. 협공은 여러 오브젝트가 같이 맞힌 구체를 터뜨려요")
+	if "trig" in types:
+		_guide("trig", "새 카드 · 발동: 오브젝트 위에 놓으면 조건이 맞을 때 공격이 더 나가요. 여진은 잡은 자리에서 탄이 터지고, 선봉은 웨이브 첫 타격부터 빨라져요")
 
 
 ## 띄어쓰기 단위로 줄을 나눈다. Godot 자동 줄바꿈은 한글을 음절마다 끊어 "형\n태"처럼 단어가 잘린다.
@@ -2502,6 +2515,7 @@ func _start_wave() -> void:
 		t.fx.clear()
 		t.run_dealt += t.dealt
 		t.close_src()
+		t.wave_begin()
 		t.dealt = 0.0
 		t.rx_dealt = 0.0
 		t.queue_redraw()  # 레벨 숫자는 쉬는 시간에만
@@ -3360,7 +3374,7 @@ func _refresh_legend() -> void:
 	var cap_e := "한 오브젝트에 %d종까지(레벨은 무제한)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "종류 제한 없음, 종류마다 공격 속도 -%d%%" % roundi(Rules.tax_step * 100)
 	var cap_m := "종류별 %d개까지" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "제한 없음, 쌓을수록 효과 절반씩"
 	var lines := PackedStringArray([
-		"[오브젝트] 공격방식 + 속성 + 강화 + 연계",
+		"[오브젝트] 공격방식·속성·강화·연계·발동",
 		"· 새 오브젝트는 직선탄 + 속성 1개",
 		"· 공격방식: 직선탄에만 넣을 수 있고 이후 고정,",
 		"   같은 공격방식을 넣으면 레벨업",
@@ -3369,6 +3383,7 @@ func _refresh_legend() -> void:
 		"· 강화: 공격방식을 변형,",
 		"   " + cap_m,
 		"· 연계: 협공·프리즘·공명 (주변 오브젝트와 함께)",
+		"· 발동: 여진·선봉 (조건이 맞으면 추가 공격)",
 		"",
 		"[특수 반응] 두 속성이 함께 있으면 추가 공격 (발견\u00a0%d/%d)" % [Meta.codex.size(), Elem.REACTIONS.size()],
 	])
@@ -3641,7 +3656,7 @@ func _submit_run(done := true) -> void:
 		for e in t.elements:
 			els[Patch.ELEM_KEYS[Elem.ALL.find(e)]] = t.elements[e]
 		list.append({"els": els, "pat": t.pattern, "plv": t.plv, "mods": t.mods, "prism": t.prism, "reso": t.reso,
-			"pincer": t.pincer, "share": (t.run_dealt + t.dealt) / total if total > 0.0 else 0.0})
+			"pincer": t.pincer, "trigs": t.trigs, "share": (t.run_dealt + t.dealt) / total if total > 0.0 else 0.0})
 	# 피해 출처 몫 (속성·공격방식·강화·반응·연계별, 오브젝트를 합쳐서). 직접 타격 안의 배율 몫은 추정
 	var src := {}
 	var rs := _run_src()
@@ -4187,6 +4202,7 @@ func _valid_card(cd: Variant) -> bool:
 		"pat": return cd.get("id") in Pat.ALL_IDS
 		"mod": return Pat.MODS.has(cd.get("id"))
 		"link": return Pat.LINKS.has(cd.get("id"))
+		"trig": return Pat.TRIGS.has(cd.get("id"))
 		"cata": return cd.get("id") in ["elem", "pat"]
 	return false
 
@@ -4380,6 +4396,11 @@ func _apply_card(target: Tower) -> void:
 			msg = target.add_mod(picked["id"])
 		"link":
 			msg = target.add_link(picked["id"])
+		"trig":
+			if not target.can_take(picked):
+				_show_toast(target.refuse_text(picked))
+				return
+			msg = target.add_trig(picked["id"])
 	_show_toast(msg)
 	sfx.play("place")
 	burst(target.position, _card_color(picked), 16, 160.0)
@@ -6284,7 +6305,7 @@ func _draw() -> void:
 				var fresh := Elem.new_reactions(t.eff_now(), picked["e"])
 				if not fresh.is_empty():
 					draw_arc(t.position, Tower.RADIUS + 10.0 + pulse * 4.0, 0, TAU, 32, Color(fresh[0]["color"], 0.9), 3.0)
-		if picked["type"] in ["pat", "mod", "elem"]:
+		if picked["type"] in ["pat", "mod", "elem", "trig"]:
 			for t in towers.get_children():
 				if t.can_take(picked):
 					if picked["type"] != "elem":

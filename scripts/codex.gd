@@ -5,7 +5,7 @@ extends PanelContainer
 ## ★로 선호 표시(Meta.favs) → 판 중 선택지에 나오면 카드가 반짝인다 (Sparkle).
 
 const CATS := [
-	["elem", "속성"], ["pat", "공격방식"], ["mod", "강화"], ["link", "연계"], ["react", "특수 반응"], ["perk", "특성"],
+	["elem", "속성"], ["pat", "공격방식"], ["mod", "강화"], ["link", "연계"], ["trig", "발동"], ["react", "특수 반응"], ["perk", "특성"],
 ]
 const FAV_COLOR := Color(1, 0.86, 0.35)
 
@@ -44,6 +44,9 @@ func entries(c: String) -> Array:
 		"link":
 			for id in Pat.LINK_IDS:
 				out.append({"key": "link:" + id, "name": Pat.LINKS[id]["name"], "desc": Pat.LINKS[id]["desc"], "color": Color(0.55, 0.9, 1.0)})
+		"trig":
+			for id in Pat.TRIG_IDS:
+				out.append({"key": "trig:" + id, "name": Pat.TRIGS[id]["name"], "desc": Pat.TRIGS[id]["desc"], "color": Pat.TRIG_COLOR})
 		"react":
 			# 만나 본 반응을 먼저 (91개라 아직 못 만난 것 사이에서 찾기 어렵던 것), 그 안은 원래 순서
 			var seen: Array = Elem.REACTIONS.filter(func(r): return Meta.codex.has(r["id"]))

@@ -146,6 +146,15 @@ const LINKS := {
 
 const LINK_IDS := ["pincer", "prism", "reso"]
 
+## 발동: 기본 공격과 별개로, 조건이 맞을 때 추가로 터지는 공격 (Tower.trigs). 겹치면 세진다.
+const TRIGS := {
+	"echo": {"name": "여진", "desc": "이 오브젝트가 맞혀 구체를 잡으면 그 자리에서 작은 탄 3개가 사방으로 (0.5초에 한 번)"},
+	"vanguard": {"name": "선봉", "desc": "웨이브마다 처음 구체를 맞힌 순간부터 5초 동안 공격 속도 x2"},
+}
+
+const TRIG_IDS := ["echo", "vanguard"]
+const TRIG_COLOR := Color(1.0, 0.55, 0.45)
+
 
 static func pname(id: String) -> String:
 	return PATTERNS[id]["name"]

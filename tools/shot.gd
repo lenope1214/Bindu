@@ -61,7 +61,7 @@ func _initialize():
 				main._place_tower(main.core() + Vector2.from_angle(i * 1.0) * 160.0, Vector2.RIGHT)
 			main.wave = 27
 			main.wave_time = 30.0
-			main.offer = [{"type": "elem", "e": Elem.WOOD, "lv": 2}, {"type": "elem", "e": Elem.WATER, "lv": 2}, {"type": "link", "id": "prism"}]
+			main.offer = [{"type": "elem", "e": Elem.WOOD, "lv": 2}, {"type": "trig", "id": "echo"}, {"type": "link", "id": "prism"}]
 			main._show_offer()
 			main._open_choose(),
 		func():
