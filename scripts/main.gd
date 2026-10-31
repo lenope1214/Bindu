@@ -596,11 +596,13 @@ func _build_ui() -> void:
 	mute_btn = Button.new()
 	mute_btn.custom_minimum_size = Vector2(44, 36)
 	mute_btn.pressed.connect(_toggle_mute)
+	mute_btn.pressed.connect(_icon_toast.bind(mute_btn))
 	_icon_btn(mute_btn, func(): return ["mute" if sfx.muted else "sound", Color(1, 1, 1, 0.9)])
 	bar.add_child(mute_btn)
 	auto_btn = Button.new()
 	auto_btn.custom_minimum_size = Vector2(44, 36)
 	auto_btn.pressed.connect(_toggle_auto)
+	auto_btn.pressed.connect(_icon_toast.bind(auto_btn))
 	_icon_btn(auto_btn, func(): return ["auto", Color(0.5, 0.9, 0.6) if auto_start else Color(1, 1, 1, 0.35)])
 	bar.add_child(auto_btn)
 	pause_btn = Button.new()
@@ -953,9 +955,33 @@ func _apply_ui_scale() -> void:
 	var s: float = Meta.ui_scale
 	legend_rx_rows = 999  # 글자 크기가 바뀌면 설명 반응 줄 수를 다시 맞춘다
 	ui_root.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	ui_root.position = Vector2.ZERO
+	# 폰: 노치·둥근 모서리·홈 막대 자리(안전 영역 밖)는 비운다 (화면비를 넓힌 뒤 가장자리 UI가 노치 밑에 깔릴 수 있다)
+	var pad := _safe_pad()
+	ui_root.position = Vector2(pad.position.x, pad.position.y)
 	ui_root.scale = Vector2(s, s)
-	ui_root.size = get_viewport_rect().size / s
+	ui_root.size = (get_viewport_rect().size - Vector2(pad.position.x + pad.size.x, pad.position.y + pad.size.y)) / s
+	if pause_dim:
+		# 일시정지 어둠은 안전 영역 밖까지 덮는다
+		pause_dim.offset_left = -pad.position.x / s
+		pause_dim.offset_top = -pad.position.y / s
+		pause_dim.offset_right = pad.size.x / s
+		pause_dim.offset_bottom = pad.size.y / s
+
+
+## 안전 영역 밖 여백 (화면 좌표, position = 왼쪽·위, size = 오른쪽·아래). 폰·태블릿만.
+func _safe_pad() -> Rect2:
+	if not OS.has_feature("mobile") or DisplayServer.get_name() == "headless":
+		return Rect2()
+	var win := Vector2(DisplayServer.window_get_size())
+	var safe := Rect2(DisplayServer.get_display_safe_area())
+	if win.x <= 0.0 or win.y <= 0.0 or safe.size.x <= 0.0 or safe.size.y <= 0.0:
+		return Rect2()
+	var k := get_viewport_rect().size / win  # 화면 픽셀 → 뷰포트 좌표
+	var l := clampf(safe.position.x, 0.0, win.x * 0.15) * k.x
+	var t := clampf(safe.position.y, 0.0, win.y * 0.15) * k.y
+	var r := clampf(win.x - safe.end.x, 0.0, win.x * 0.15) * k.x
+	var b := clampf(win.y - safe.end.y, 0.0, win.y * 0.15) * k.y
+	return Rect2(l, t, r, b)
 
 
 ## 화면보다 커지는 창(줄이 많거나 글자를 키웠을 때)은 줄여서 맞춘다. 가운데 창이라 위아래 여백이 같고, 아래는 버튼 줄을 비운다.
@@ -2504,6 +2530,12 @@ func _icon_btn(b: Button, icon: Callable) -> void:
 			var tw := b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x
 			x = (b.size.x - tw) / 2.0 - 13.0
 		Icons.draw(b, ic[0], Vector2(x, b.size.y / 2.0), 8.5, ic[1]))
+
+
+## 터치는 말풍선(tooltip)을 볼 수 없어 글 없는 아이콘 버튼이 무엇을 바꿨는지 몰랐다: 누르면 이름·상태를 잠깐 띄운다.
+func _icon_toast(b: Button) -> void:
+	if touch_ui and b.tooltip_text != "":
+		_show_toast(_kh(b.tooltip_text.get_slice("\n", 0)))
 
 
 func _toggle_mute() -> void:
