@@ -139,6 +139,8 @@ def test_validate_bounds():
     run = {"map": "plain", "rules": 1, "wave": 30, "score": 400_000, "kills": 1500, "game_secs": 3000, "real_secs": 600}
     assert validate.check(run) == ""
     assert "too fast" in validate.check(dict(run, game_secs=10))
+    # 시간 기준은 20웨이브까지만: 38웨이브 판도 20웨이브치 시간(약 96초)만 넘으면 통과
+    assert validate.check(dict(run, wave=38, kills=3000, score=1000, game_secs=200, real_secs=100)) == ""
     assert "cap" in validate.check(dict(run, score=10**10))
     # 어렵게 모드는 배율만큼 상한이 올라가고, 쉽게 모드는 상한을 낮추지 않는다
     cap = validate.max_score(30, "plain", 1)

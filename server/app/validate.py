@@ -36,6 +36,7 @@ MODES = {
 MODE_SWARM = 1.25  # 물량: 웨이브 구체 수 (Modes.SWARM)
 MODE_MUL_MIN, MODE_MUL_MAX = 0.2, 2.5
 MAX_SPEED = 8.0  # 게임 최고 배속
+TIME_CHECK_WAVE = 20  # 기록 등록 시간 기준: 이 웨이브까지의 최소 시간 (2026-10-31 사용자 결정, 예전엔 도달 웨이브 전체)
 SLACK = 2.0  # 분열 조각·보스 부하·운까지 덮는 여유
 
 
@@ -160,7 +161,8 @@ def check(run: dict, patch_data: dict | None = None) -> str:
     minions = 400 if "angry" in modes else 200  # 성난 보스는 부하를 2배 자주 부른다
     if run.get("kills", 0) > spawned * 3 + minions * (wave // 5 + 1):
         return "too many kills"
-    need = min_game_secs(wave, run["map"], run["rules"], patch_data)
+    # 시간 검사는 TIME_CHECK_WAVE(20)웨이브까지 걸리는 시간만 요구한다 (더 간 판에 더 긴 시간을 요구하지 않음)
+    need = min_game_secs(min(wave, TIME_CHECK_WAVE), run["map"], run["rules"], patch_data)
     if run.get("game_secs", 0.0) < need:
         return f"too fast (game {run.get('game_secs', 0.0):.0f}s < {need:.0f}s)"
     if run.get("real_secs", 0.0) < need / MAX_SPEED:

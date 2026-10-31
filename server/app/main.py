@@ -39,7 +39,7 @@ PATCH_KEYS = {"rules", "rules_desc", "perks", "perk_desc", "cards", "elem_dmg", 
 
 
 # 자동 배포 확인용: 서버 코드를 고쳐 배포할 때 바꾸면 /health로 새 이미지가 떴는지 밖에서 볼 수 있다
-SERVER_REV = "2026-10-31.3"
+SERVER_REV = "2026-10-31.4"
 
 
 @app.get("/health")
@@ -183,8 +183,8 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), au
     reason = validate.check(run.model_dump(), p.data if p else None)
     if not reason and (db.get(Ban, run.device) or (acct and acct.banned)):
         reason = "banned"
-    if not reason and row is not None and not row.valid:
-        reason = row.reason  # 한 번 검증에 걸린 판은 계속 뺀다
+    if not reason and row is not None and not row.valid and not row.reason.startswith("too fast"):
+        reason = row.reason  # 한 번 검증에 걸린 판은 계속 뺀다 (시간 기준은 20웨이브로 바뀌어 다시 본다)
     nick = clean_nick(run.nick, run.device)
     season = season_for(db, run.game, run.patch)
     vals = dict(device_id=run.device, nickname=nick, ip_hash=ip, platform=run.platform, game_version=run.game,
