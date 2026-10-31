@@ -155,6 +155,12 @@ IP는 저장하지 않고 소금 친 해시만 둡니다(빈도 제한용). 게�
 - `DELETE /v1/account`: 진행·진행 중 판·로그인 수단을 지우고 판 기록은 이름을 지워 리더보드에서 뺀 채 통계로만 남깁니다 (Apple 심사: 로그인을 넣으면 계정 삭제가 필요).
 - 마이그레이션: 새 표는 켤 때 만들고, `runs.account_id`는 빈 값 허용 열로 더합니다. 예전 게임(토큰 없음)은 그대로 기기 기록. 예전 서버 이미지로 되돌려도 새 표·열을 안 쓸 뿐이라 다시 올리면 이어집니다. 올리기 전에 아래 백업을 한 번.
 
+### 업적·도감 수집 (0.5.5)
+- 진행에 `tally` 칸 `{기기 id: {키: 수}}`: 게임 `scripts/ach.gd`의 누적 수. `pick:<통계 키>`는 카드·특성을 고른 횟수(도감 수집), `rx_kills`·`boss_kills`는 누적, `max:...`는 한 판 최고값. 기기·키마다 큰 값으로 합치고 게임이 보여 줄 때 기기끼리 더합니다(`max:`는 가장 큰 값). 형식 번호는 그대로 1 (칸만 추가: 예전 게임은 `tally`를 안 보내고, 예전 서버는 버림).
+- 지난 기록 채우기: `PUT /v1/save` 때 올린 기기의 `past-<기기 id>` 칸이 없으면 그 기기가 0.5.5 전 버전으로 남긴 판 기록(`picks`)으로 카드 고른 횟수를 한 번 채웁니다 (`accounts.past_picks`).
+- 칭호: 진행 `lww.title`(업적 id), 판 기록 `title` → `runs.title` 열(켤 때 ALTER로 더함). 닉네임처럼 바꾸면 지난 기록에도. 리더보드 줄마다 `title`.
+- `GET /v1/ach_rates`: 업적 보유율 `{players, rates: {id: 0~1}}`. 계정 진행 중 `STATS_MIN_WAVE`(5) 웨이브 이상 기록이 있는 것만 분모, 10분마다 다시 셉니다.
+
 ### 소셜 로그인을 붙일 때 남은 일
 1. Google Cloud·Apple Developer에서 클라이언트 id를 만들고 `.env`의 `GOOGLE_CLIENT_IDS`·`APPLE_CLIENT_IDS`에 (쉼표로 여러 개: Android·iOS·웹).
 2. 게임: 플랫폼마다 로그인 플러그인(Android Credential Manager, iOS Sign in with Apple, Windows·Mac 브라우저 로그인)으로 ID 토큰을 받아 `POST /v1/auth/link {provider, credential}` → 응답의 토큰을 `Account.take`. 설정에 연결·해제·계정 지우기 버튼.
@@ -172,6 +178,7 @@ IP는 저장하지 않고 소금 친 해시만 둡니다(빈도 제한용). 게�
 | `GET /v1/boot?game=&platform=&patch=` | 맞는 패치(서명 포함), 새 버전, 지금 시즌 |
 | `POST /v1/runs` | 판 기록 (헤더 `X-Bindu-Mac`: 본문 HMAC-SHA256). `run`·`ended`가 있으면 같은 판을 한 줄로 고침 |
 | `GET /v1/leaderboard?map=&rules=&season=&period=all\|week&device=` | 순위 (토큰이 있으면 "나"는 계정 기준) |
+| `GET /v1/ach_rates` | 업적 보유율 (0.5.5) |
 | `POST /v1/auth/device` | `{device, secret, nick}` → `{token, expires, account, nick, linked, new}` |
 | `GET /v1/me` | 계정·붙은 수단 (헤더 `Authorization: Bearer 토큰`, 아래 모두 같음) |
 | `GET`·`PUT /v1/save` | 진행 받기 / `{data}` 올리면 서버 것과 합쳐 `{rev, data}` |

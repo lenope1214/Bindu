@@ -1,16 +1,19 @@
 class_name Codex
 extends PanelContainer
 ## 도감: 카드로 나오는 속성·공격방식·강화·연계와 특수 반응·특성을 모아 본다 (시작 화면, K).
+## 한 번이라도 고른 카드는 "수집" (Ach.picks, 계정 진행 저장으로 기기끼리 합침). 마지막 탭은 업적 (Ach.LIST).
 ## 목록은 Elem·Pat·특성 정의에서 바로 만들어서 새 속성·카드가 생기면 저절로 들어간다.
 ## ★로 선호 표시(Meta.favs) → 판 중 선택지에 나오면 카드가 반짝인다 (Sparkle).
 
 const CATS := [
-	["elem", "속성"], ["pat", "공격방식"], ["mod", "강화"], ["link", "연계"], ["react", "특수 반응"], ["perk", "특성"],
+	["elem", "속성"], ["pat", "공격방식"], ["mod", "강화"], ["link", "연계"], ["react", "특수 반응"], ["perk", "특성"], ["ach", "업적"],
 ]
+## 업적 보유율 {id: 0~1} (서버 /v1/ach_rates, main이 넣는다. 비면 안 보임)
+static var rates := {}
 const FAV_COLOR := Color(1, 0.86, 0.35)
 
 var perks: Array = []  # main.PERKS
-var on_change: Callable  # 선호를 바꾸면 저장
+var on_change: Callable  # 선호·칭호를 바꾸면 저장
 var cat := "elem"
 var list: VBoxContainer
 var count_label: Label
@@ -54,7 +57,50 @@ func entries(c: String) -> Array:
 		"perk":
 			for pk in perks:
 				out.append({"key": "perk:" + str(pk["id"]), "name": pk["name"], "desc": pk["desc"], "color": FAV_COLOR})
+		"ach":
+			for g in Ach.GROUPS:
+				out.append({"head": g})
+				for a in Ach.LIST:
+					if a["group"] == g:
+						out.append(_ach_entry(a))
+	if c in ["elem", "pat", "mod", "link", "perk"]:
+		for x in out:
+			var n := Ach.picks(stat_key(x["key"]))
+			x["sub"] = ("✓ 수집 · %d번 고름" % n) if n > 0 else "· 아직 안 골라 봄"
+			x["got"] = n > 0
+			if n == 0:
+				x["color"] = Color(x["color"], 0.5)
 	return out
+
+
+## 도감 키 → 통계 키 (속성만 이름 대신 영문 키: elem:불 → elem:fire).
+static func stat_key(key: String) -> String:
+	if key.begins_with("elem:"):
+		for e in Elem.ALL:
+			if str(Elem.NAMES[e]) == key.substr(5):
+				return "elem:" + Patch.ELEM_KEYS[Elem.ALL.find(e)]
+	return key
+
+
+static func _ach_entry(a: Dictionary) -> Dictionary:
+	var id: String = a["id"]
+	var done := Meta.achieved.has(id)
+	var hide := Ach.hidden(a)
+	var t: Dictionary = Ach.TIERS[a["tier"]]
+	var rw := PackedStringArray()
+	for sk in Meta.TOWER_SKIN_IDS:
+		if Meta.TOWER_SKINS[sk]["need"] == id:
+			rw.append("오브젝트 모양 '%s'" % Meta.TOWER_SKINS[sk]["name"])
+	for sk in Meta.CORE_SKIN_IDS:
+		if Meta.CORE_SKINS[sk]["need"] == id:
+			rw.append("중앙 모양 '%s'" % Meta.CORE_SKINS[sk]["name"])
+	if Ach.can_title(id):
+		rw.append("칭호")
+	var g := Ach.goal(a)
+	var cur := g if done else (Ach.value(a["stat"]) if a["stat"] != "" else 0)
+	return {"key": "ach:" + id, "id": id, "name": a["name"], "tier": t["name"], "tier_color": t["color"], "done": done,
+		"desc": "???" if hide else a["desc"], "cur": mini(cur, g), "goal": g, "bar": a["stat"] != "" and not hide,
+		"reward": ", ".join(rw), "rate": rates.get(id, -1.0), "color": t["color"] if done else Color(1, 1, 1, 0.85)}
 
 
 func setup(perk_list: Array, sb: StyleBox, changed: Callable) -> void:
@@ -104,7 +150,8 @@ func setup(perk_list: Array, sb: StyleBox, changed: Callable) -> void:
 		b.set_meta("cat", spec[0])
 		b.pressed.connect(func():
 			cat = spec[0]
-			_draw_list())
+			_draw_list()
+			(list.get_parent() as ScrollContainer).scroll_vertical = 0)
 		row.add_child(b)
 		tabs.append(b)
 	var sc := ScrollContainer.new()
@@ -142,6 +189,14 @@ func _draw_list() -> void:
 
 
 func _row(x: Dictionary) -> Control:
+	if x.has("head"):
+		var hl := Label.new()
+		hl.text = x["head"]
+		hl.add_theme_font_size_override("font_size", 16)
+		hl.add_theme_color_override("font_color", Color(0.6, 0.85, 1.0))
+		return hl
+	if x.has("goal"):
+		return _ach_row(x)
 	var h := HBoxContainer.new()
 	h.add_theme_constant_override("separation", 10)
 	var star := Button.new()
@@ -184,15 +239,123 @@ func _row(x: Dictionary) -> Control:
 	return h
 
 
+func _ach_row(x: Dictionary) -> Control:
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 10)
+	var done: bool = x["done"]
+	var mark := Label.new()
+	mark.text = "✓" if done else "·"
+	mark.custom_minimum_size = Vector2(44, 0)
+	mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mark.add_theme_font_size_override("font_size", 22)
+	mark.add_theme_color_override("font_color", x["tier_color"] if done else Color(1, 1, 1, 0.4))
+	h.add_child(mark)
+	var v := VBoxContainer.new()
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.add_theme_constant_override("separation", 2)
+	h.add_child(v)
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", 8)
+	v.add_child(top)
+	var tier := Label.new()
+	tier.text = "[%s]" % x["tier"]
+	tier.add_theme_font_size_override("font_size", 14)
+	tier.add_theme_color_override("font_color", x["tier_color"])
+	top.add_child(tier)
+	var n := Label.new()
+	n.text = x["name"]
+	n.add_theme_font_size_override("font_size", 17)
+	n.add_theme_color_override("font_color", x["color"])
+	top.add_child(n)
+	var extra := Label.new()
+	var bits := PackedStringArray()
+	if x["reward"] != "":
+		bits.append("보상: " + x["reward"])
+	if x["rate"] >= 0.0:
+		bits.append("보유 %s%%" % ("%.1f" % (x["rate"] * 100.0) if x["rate"] < 0.1 else str(roundi(x["rate"] * 100.0))))
+	extra.text = "   ".join(bits)
+	extra.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	extra.add_theme_font_size_override("font_size", 13)
+	extra.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
+	top.add_child(extra)
+	if done and Ach.can_title(x["id"]):
+		var tb := Button.new()
+		var on: bool = Meta.title == x["id"]
+		tb.text = "칭호 해제" if on else "칭호로"
+		tb.focus_mode = Control.FOCUS_NONE
+		tb.add_theme_font_size_override("font_size", 13)
+		tb.pressed.connect(func():
+			Meta.title = "" if Meta.title == x["id"] else x["id"]
+			if on_change.is_valid():
+				on_change.call()
+			_draw_list())
+		top.add_child(tb)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	v.add_child(row)
+	var d := Label.new()
+	d.text = x["desc"]
+	d.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	d.add_theme_font_size_override("font_size", 14)
+	d.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
+	row.add_child(d)
+	if x["bar"] and x["goal"] > 1:
+		var bar := ProgressBar.new()
+		bar.custom_minimum_size = Vector2(160, 12)
+		bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		bar.show_percentage = false
+		bar.max_value = x["goal"]
+		bar.value = x["cur"]
+		row.add_child(bar)
+	var c := Label.new()
+	c.text = ("%s / %s" % [_num(x["cur"]), _num(x["goal"])]) if x["bar"] and x["goal"] > 1 else ("달성" if done else "")
+	c.custom_minimum_size = Vector2(130, 0)
+	c.add_theme_font_size_override("font_size", 14)
+	c.add_theme_color_override("font_color", x["tier_color"] if done else Color(1, 1, 1, 0.7))
+	row.add_child(c)
+	return h
+
+
+static func _num(n: int) -> String:
+	var s := str(n)
+	var out := ""
+	while s.length() > 3:
+		out = "," + s.substr(s.length() - 3) + out
+		s = s.substr(0, s.length() - 3)
+	return s + out
+
+
 ## 별을 누를 때는 목록은 두고 탭 숫자만 고친다 (목록을 다시 만들면 굴린 자리가 맨 위로 감).
 func _draw_tabs() -> void:
 	var total := 0
 	for b in tabs:
 		var c: String = b.get_meta("cat")
-		var n := entries(c).filter(func(x): return Meta.favs.has(x["key"])).size()
+		var es := entries(c)
+		var n := es.filter(func(x): return Meta.favs.has(x.get("key", ""))).size()
 		total += n
-		b.text = CATS.filter(func(s): return s[0] == c)[0][1] + (" ★%d" % n if n > 0 else "")
-	count_label.text = "선호 %d개" % total if total > 0 else ""
+		var nm: String = CATS.filter(func(s): return s[0] == c)[0][1]
+		var got: int
+		var all: int
+		if c == "ach":
+			got = Meta.achieved.size()
+			all = Ach.LIST.size()
+		elif c == "react":
+			got = es.filter(func(x): return Meta.codex.has(str(x["key"]).substr(6))).size()
+			all = es.size()
+		else:
+			got = es.filter(func(x): return x.get("got", false)).size()
+			all = es.size()
+		b.text = "%s %d/%d" % [nm, got, all] + (" ★%d" % n if n > 0 else "")
+	var tl := ""
+	if Meta.title != "":
+		tl = "칭호: " + Meta.ACHIEVEMENTS[Meta.title]["name"]
+	var parts := PackedStringArray()
+	if tl != "":
+		parts.append(tl)
+	if total > 0:
+		parts.append("선호 %d개" % total)
+	count_label.text = "   ".join(parts)
 
 
 ## 선호 카드 반짝임: 카드 위에 얹어 테두리 빛·도는 별·"★ 선호" 꼬리표를 그린다 (누르기는 아래 카드가 받음).

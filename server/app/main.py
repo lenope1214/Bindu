@@ -124,6 +124,7 @@ KEY_RE = re.compile(r"^[a-z]+:[a-z0-9_]{1,40}$")
 class RunIn(BaseModel):
     device: str = Field(pattern=r"^[A-Za-z0-9-]{8,64}$")
     nick: str = Field("", max_length=64)
+    title: str = Field("", pattern=r"^[a-z0-9_]{0,24}$")  # 고른 칭호 (업적 id)
     platform: str = Field("", pattern=r"^[a-z]{0,16}$")
     game: str = Field(pattern=r"^[0-9.]{1,16}$")
     patch: int = 0
@@ -185,7 +186,7 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), au
                 patch_id=run.patch, season=season, map=run.map, rules=run.rules, wave=run.wave, score=run.score,
                 kills=run.kills, best_combo=run.best_combo, game_secs=run.game_secs, real_secs=run.real_secs,
                 detail={"perks": run.perks, "modes": run.modes, "towers": [x.model_dump() for x in run.towers], "src": run.src, "log": [x.model_dump() for x in run.log]},
-                valid=reason == "", reason=reason, run_key=run.run, ended=run.ended, updated_at=now())
+                valid=reason == "", reason=reason, run_key=run.run, ended=run.ended, updated_at=now(), title=run.title)
     if acct:
         vals["account_id"] = acct.id
     if row is None:
@@ -214,10 +215,10 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), au
         if KEY_RE.match(key) and 0.0 < share <= 1.0:
             db.add(SrcShare(run_id=row.id, key=key[:48], share=share))
     # 닉네임을 바꾸면 예전 기록에도 새 이름이 보이게
-    db.execute(update(Run).where(Run.device_id == run.device, Run.nickname != nick).values(nickname=nick))
+    db.execute(update(Run).where(Run.device_id == run.device, (Run.nickname != nick) | (Run.title != run.title)).values(nickname=nick, title=run.title))
     if acct:
         acct.nickname = nick
-        db.execute(update(Run).where(Run.account_id == acct.id, Run.nickname != nick).values(nickname=nick))
+        db.execute(update(Run).where(Run.account_id == acct.id, (Run.nickname != nick) | (Run.title != run.title)).values(nickname=nick, title=run.title))
     db.commit()
     rank = None
     if row.valid and season:
@@ -295,7 +296,7 @@ def _board(db: Session, map_id: str, rules: int, season: int, since):
     if since is not None:
         conds.append(Run.created_at >= since)
     rn = func.row_number().over(partition_by=_who(), order_by=(Run.score.desc(), Run.wave.desc(), Run.id)).label("rn")
-    sub = select(Run.id, _who().label("who"), Run.nickname, Run.wave, Run.score, Run.game_version, Run.created_at, Run.ended,
+    sub = select(Run.id, _who().label("who"), Run.nickname, Run.title, Run.wave, Run.score, Run.game_version, Run.created_at, Run.ended,
                  rn).where(*conds).subquery()
     return sub
 
@@ -324,9 +325,35 @@ def leaderboard(map: str, rules: int, season: int = 0, period: str = "all", limi
     rows = db.execute(select(sub).where(sub.c.rn == 1).order_by(sub.c.score.desc(), sub.c.wave.desc(), sub.c.id).limit(limit)).all()
     total = db.scalar(select(func.count()).select_from(sub).where(sub.c.rn == 1))
     entries = [{"rank": i + 1, "nick": r.nickname, "wave": r.wave, "score": r.score, "game": r.game_version,
-                "date": kst_date(r.created_at), "me": bool(who) and r.who == who, "ended": r.ended} for i, r in enumerate(rows)]
+                "date": kst_date(r.created_at), "me": bool(who) and r.who == who, "ended": r.ended, "title": r.title or ""}
+               for i, r in enumerate(rows)]
     me = board_rank(db, map, rules, s.id, since, who) if who else None
     return {"season": {"id": s.id, "name": s.name}, "period": period, "total": total, "entries": entries, "me": me}
+
+
+_rates: dict = {"t": 0.0, "data": None}
+
+
+@app.get("/v1/ach_rates")
+def ach_rates(db: Session = Depends(get_db)):
+    """업적 보유율: 계정 진행 저장 중 5웨이브(STATS_MIN_WAVE) 이상 해 본 플레이어 가운데 그 업적을 가진 비율. 10분마다 다시 센다."""
+    import time
+    if _rates["data"] is None or time.time() - _rates["t"] > 600:
+        from .db import Save
+        players = 0
+        have: dict[str, int] = {}
+        for (data,) in db.execute(select(Save.data)):
+            if not isinstance(data, dict):
+                continue
+            best = data.get("best", {})
+            if not any(isinstance(v, list) and v and isinstance(v[0], int) and v[0] >= config.STATS_MIN_WAVE for v in best.values()):
+                continue
+            players += 1
+            for a in set(data.get("ach", [])):
+                have[a] = have.get(a, 0) + 1
+        _rates["data"] = {"players": players, "rates": {k: round(n / players, 4) for k, n in have.items()} if players else {}}
+        _rates["t"] = time.time()
+    return _rates["data"]
 
 
 @app.get("/v1/seasons")

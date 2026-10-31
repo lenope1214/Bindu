@@ -57,7 +57,9 @@ func _run() -> void:
 	_check("서버가 계정 API를 알림", Net.acct_ok())
 	match role:
 		"a1":
-			Meta.achieved = {"first": true, "wave10": true}
+			Meta.achieved = {"first": true, "wave10": true, "wave15": true}
+			Meta.tally = {"pick:elem:fire": 3, "max:wave": 12}
+			Meta.title = "wave15"
 			Meta.map_best = {"plain@v1r2": [10, 3000]}
 			Meta.total_kills = 100
 			Meta.games = 3
@@ -74,6 +76,7 @@ func _run() -> void:
 			print("ACCOUNT " + Account.id)
 		"b":
 			Meta.achieved = {"first": true, "boss": true}
+			Meta.tally = {"pick:elem:fire": 1, "pick:pat:spray": 2, "max:wave": 20}
 			Meta.codex = {"steam": true}
 			Meta.map_best = {"plain@v1r2": [12, 2500]}
 			Meta.total_kills = 40
@@ -89,9 +92,11 @@ func _run() -> void:
 			_check("최고 기록 키마다 큰 값", Meta.map_best["plain@v1r2"] == [12, 3000])
 			_check("처치·판 수 합계", Meta.total_kills == 140 and Meta.games == 5)
 			_check("선호 표시·닉네임", Meta.favs.has("elem:불") and Meta.nickname == "피시")
+			_check("수집 누적은 기기끼리 더함·최고값은 큰 값", Ach.picks("elem:fire") == 4 and Ach.picks("pat:spray") == 2 and Ach.total("max:wave") == 20)
+			_check("칭호", Meta.title == "wave15")
 			# 다시 맞춰도 늘지 않는다 (두 번 세지 않음)
 			await _sync()
-			_check("다시 맞춰도 그대로", Meta.total_kills == 140 and Meta.games == 5)
+			_check("다시 맞춰도 그대로", Meta.total_kills == 140 and Meta.games == 5 and Ach.picks("elem:fire") == 4)
 			net.list_runs()
 			var list: Array = await net.runs_listed
 			_check("A의 진행 중 판이 보임", list.size() == 1 and list[0]["run"] == "run-sync-1" and not list[0]["mine"] and int(list[0]["wave"]) == 7)
@@ -107,6 +112,7 @@ func _run() -> void:
 			await _sync()
 			_check("A가 B 진행을 받음", Meta.achieved.has("boss") and Meta.total_kills == 150 and Meta.games == 6)
 			_check("나중에 바꾼 모양", Meta.tower_skin == "circle")
+			_check("A가 B의 수집을 받음", Ach.picks("elem:fire") == 4 and Ach.picks("pat:spray") == 2 and int(Meta.tally["pick:elem:fire"]) == 3)
 			var moved := [""]
 			net.run_moved.connect(func(k): moved[0] = k)
 			net.put_run("run-sync-1", "x", {"game": Net.game_version(), "platform": "linux", "map": "line", "rules": 1, "wave": 8, "score": 1})

@@ -11,6 +11,7 @@ signal progress_synced  # 서버 진행과 합쳐 Meta가 바뀜 (저장·화면
 signal device_changed  # 서버가 이 기기 id를 다른 기기 것으로 알고 있어 새 id를 만듦 (저장)
 signal runs_listed(list: Array)  # 계정의 진행 중 판 [{run, mine, game, platform, map, rules, wave, score, updated}]
 signal run_claimed(d: Dictionary)  # 가져온 판 {run, data, …}. 실패면 {}
+signal rates_loaded  # 업적 보유율을 받음 (Codex.rates)
 signal run_moved(run_key: String)  # 이 기기의 이어하기를 다른 기기가 가져감
 
 const OUTBOX_PATH := "user://outbox.json"
@@ -31,6 +32,7 @@ var authing := false
 var syncing := false
 var sending_logs := false
 var log_tick := 0.0
+var rates_t := 0  # 다음 업적 보유율을 받을 수 있는 때 (ms)
 var log_wait := 0.0  # 다음 오류 보내기까지 남은 초
 
 
@@ -325,6 +327,17 @@ func leaderboard(map_id: String, rules: int, period: String, season := 0, tag :=
 		board_loaded.emit(d)
 	else:
 		board_loaded.emit({"error": "연결 실패" if r["code"] == 0 else ("기록이 없는 시즌" if r["code"] == 404 else "서버 오류 %d" % r["code"]), "period": period, "tag": tag})
+
+
+## 업적 보유율 (서버 /v1/ach_rates, 0.5.5 서버부터). 받으면 Codex.rates에 넣고 열려 있는 도감을 다시 그린다.
+func ach_rates() -> void:
+	if not enabled() or rates_t > Time.get_ticks_msec():
+		return
+	rates_t = Time.get_ticks_msec() + 600000  # 10분에 한 번
+	var r := await _request(HTTPClient.METHOD_GET, "/v1/ach_rates")
+	if r["code"] == 200 and r["data"] is Dictionary and r["data"].get("rates") is Dictionary:
+		Codex.rates = r["data"]["rates"]
+		rates_loaded.emit()
 
 
 func seasons() -> void:

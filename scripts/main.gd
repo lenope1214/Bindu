@@ -238,6 +238,7 @@ var modes_btn: Button
 var modes_head: Label
 var modes_btns := {}  # 모드 id -> 켜고 끄는 버튼
 var new_achievements: Array = []  # 이번 판에 새로 달성한 업적 이름
+var ach_dirty := false  # 이번 프레임에 처치가 있었다: 업적 조건을 한 번 본다
 var help_label: Label
 var help_scroll: ScrollContainer
 var hover_elem := -1  # 마우스를 올린 선택지의 속성
@@ -279,6 +280,8 @@ func _ready() -> void:
 	Tower.reach_mul = 1.0
 	sfx = Sfx.new()
 	add_child(sfx)
+	Ach.perk_ids = PERKS.map(func(pk): return pk["id"])
+	Ach.new_run()
 	_load_best()
 	if Meta.device_id == "":
 		Meta.device_id = Crypto.new().generate_random_bytes(16).hex_encode()
@@ -305,6 +308,7 @@ func _ready() -> void:
 		stars.append(Vector3(randf() * 1280.0, randf() * 720.0, randf_range(0.03, 0.12)))
 	_build_ui()
 	_apply_ui_scale()
+	_ach_catch_up()
 	_apply_volume()
 	_update_speed_btn()
 	net = Net.new()
@@ -318,6 +322,7 @@ func _ready() -> void:
 	net.runs_listed.connect(_on_runs_listed)
 	net.run_claimed.connect(_on_run_claimed)
 	net.run_moved.connect(_on_run_moved)
+	net.rates_loaded.connect(func(): if codex_panel.visible: codex_panel._draw_list())
 	updater = Updater.new()
 	add_child(updater)
 	updater.cleanup()
@@ -1171,6 +1176,7 @@ func _start_choose(new_round := true) -> void:
 		tutor_given = {}
 		start_modes()
 		run_id = _new_run_id()
+		Ach.new_run()
 	if new_round and tutor and wave + 1 >= TUTOR_OPEN.values().max() and Meta.tutor_next:
 		Meta.tutor_next = false  # 모두 열렸다: 다음 판부터는 처음부터 모두
 		_save_best()
@@ -1259,6 +1265,8 @@ func _take_bank() -> void:
 ## 넘기기를 끝내고 쌓인 것을 연다: 특성부터 하나씩, 그다음 카드.
 ## now_rest: 이번 쉬는 시간의 다음 웨이브를 이미 뽑아 둔 채(넘기기 대기 중) 멈췄나.
 func _end_skip(now_rest: bool) -> void:
+	if not now_rest and not skip_stop:
+		Ach.on_skip_done(skip_total)  # 멈추지 않고 끝까지 넘김
 	skip_left = 0
 	skip_stop = false
 	countdown = -1.0
@@ -1768,9 +1776,12 @@ func _on_perk(pk: Dictionary) -> void:
 	var id: String = pk["id"]
 	perks[id] = perks.get(id, 0) + 1
 	run_log.append({"w": wave, "k": "perk", "o": perk_offer.map(func(x): return "perk:" + x["id"]), "p": "perk:" + id})
+	Ach.on_pick("perk:" + id)
 	if id == "coin":
 		# 운명의 동전: 지금 던지고 특성 3개를 새로 받는다 (뒷면도 보통 특성 하나보다 조금 낫게)
 		coin_next = "double" if randf() < 0.5 else "reroll"
+		Ach.on_coin(coin_next == "double")
+		_ach_check()
 		sfx.play("crit")
 		_start_perk()
 		big_banner("동전 앞면!" if coin_next == "double" else "동전 뒷면!", Color(1, 0.85, 0.3))
@@ -1837,6 +1848,7 @@ func _on_reroll() -> void:
 		_show_toast("이번 쉬는 시간의 새로고침을 다 썼어요")  # Q를 눌러도 아무 일이 없던 것
 		return
 	rerolls_left -= 1
+	Ach.on_reroll()
 	_log_offer({})
 	_make_choices()
 	_update_reroll_btn()
@@ -2378,6 +2390,7 @@ func _place_hint() -> String:
 ## card: 이번에 넣은 카드 (대격변은 picked를 거치지 않아 따로 넘긴다).
 func _after_place(card: Dictionary = {}) -> void:
 	_log_offer(picked if card.is_empty() else card)
+	Ach.on_pick(_stat_key(picked if card.is_empty() else card))
 	_check_progress()
 	picks_left -= 1
 	if not bank_picks.is_empty():
@@ -2481,6 +2494,8 @@ func _start_wave() -> void:
 	for w in [10, 15, 20]:
 		if wave >= w:
 			_achieve("wave%d" % w)
+	Ach.on_wave_start(wave, towers.get_children(), Meta.map_id)
+	_ach_check()
 	spawn_interval = maxf(0.35, 1.2 - wave * 0.06)
 	spawn_timer = 0.5
 	wave_time = 0.0
@@ -2514,6 +2529,8 @@ func _game_over() -> void:
 	best_wave = maxi(wave, prev[0])
 	Meta.total_kills += kills
 	Meta.games += 1
+	Ach.live_kills = 0
+	_ach_check()
 	if tutor:
 		Meta.tutor_next = false
 	_save_best()
@@ -3428,6 +3445,8 @@ func _toggle_codex() -> void:
 		notes_panel.visible = false
 		modes_panel.visible = false
 	codex_panel.toggle()
+	if codex_panel.visible:
+		net.ach_rates()
 
 
 func _toggle_records() -> void:
@@ -3455,17 +3474,14 @@ func _toggle_records() -> void:
 		lines.append("  이전 규칙 최고 웨이브  %s" % " · ".join(olds))
 	lines.append("  총 처치 %s · 플레이 %d판" % [num(Meta.total_kills), Meta.games])
 	lines.append("")
-	lines.append("[업적] %d / %d" % [Meta.achieved.size(), Meta.ACH_IDS.size()])
-	for id in Meta.ACH_IDS:
-		var a: Dictionary = Meta.ACHIEVEMENTS[id]
-		var unlock := ""
-		for sk in Meta.TOWER_SKIN_IDS:
-			if Meta.TOWER_SKINS[sk]["need"] == id:
-				unlock = " → 오브젝트 모양 '%s'" % Meta.TOWER_SKINS[sk]["name"]
-		for sk in Meta.CORE_SKIN_IDS:
-			if Meta.CORE_SKINS[sk]["need"] == id:
-				unlock = " → 중앙 모양 '%s'" % Meta.CORE_SKINS[sk]["name"]
-		lines.append("  %s %s - %s%s" % ["✓" if Meta.achieved.has(id) else "·", a["name"], a["desc"], unlock])
+	# 업적은 도감 업적 탭에 진행 막대와 함께 (55개라 여기에 다 쓰면 창이 넘친다). 등급마다 수만
+	var tiers := PackedStringArray()
+	for tid in Ach.TIER_IDS:
+		var of_t := Ach.LIST.filter(func(a): return a["tier"] == tid)
+		tiers.append("%s %d/%d" % [Ach.TIERS[tid]["name"], of_t.filter(func(a): return Meta.achieved.has(a["id"])).size(), of_t.size()])
+	lines.append("[업적] %d / %d   %s   (도감%s 업적 탭)" % [Meta.achieved.size(), Ach.LIST.size(), " · ".join(tiers), "" if touch_ui else "(K)"])
+	if Meta.title != "":
+		lines.append("  칭호: " + Meta.ACHIEVEMENTS[Meta.title]["name"])
 	lines.append("")
 	lines.append("[반응 도감] %d / %d   (모든 반응·조합은 도감%s 특수 반응 탭)" % [Meta.codex.size(), Elem.REACTIONS.size(), "" if touch_ui else "(K)"])
 	# 찾은 반응만 이어 쓴다. 모르는 칸마다 ???를 쓰면 반응이 91개라 창이 화면 높이만큼 길어져 글자가 읽을 수 없게 작아졌다
@@ -3519,6 +3535,7 @@ func _on_progress_synced() -> void:
 	var b := Meta.best_of(Meta.run_key())
 	best_wave = maxi(best_wave, b[0])
 	best_score = maxi(best_score, b[1])
+	_ach_catch_up()
 	_save_best()
 	if title_label.visible:
 		Modes.set_on(Meta.modes if Meta.games > 0 else [])
@@ -3636,7 +3653,7 @@ func _submit_run(done := true) -> void:
 		if total > 0.0 and rs[key] / total >= 0.0005:
 			src[key] = snappedf(rs[key] / total, 0.0001)
 	net.submit({
-		"device": Meta.device_id, "nick": Meta.nickname, "platform": Net.platform(), "game": old_run_ver if old_run_ver != "" else Net.game_version(),
+		"device": Meta.device_id, "nick": Meta.nickname, "title": Meta.title, "platform": Net.platform(), "game": old_run_ver if old_run_ver != "" else Net.game_version(),
 		"patch": Patch.id, "map": Meta.map_id, "rules": Meta.rules, "modes": Array(Modes.on), "wave": wave, "score": score, "kills": kills,
 		"best_combo": best_combo, "game_secs": run_game, "real_secs": run_real, "perks": perks.duplicate(),
 		"towers": list, "src": src, "log": run_log, "run": run_id, "ended": done,
@@ -3726,7 +3743,9 @@ func _on_board_loaded(d: Dictionary) -> void:
 		var shown_me := false
 		for e in d.get("entries", []):
 			shown_me = shown_me or e.get("me", false)
-			lines.append("  %d. %s   웨이브 %d · 점수 %s%s" % [int(e["rank"]), e["nick"], int(e["wave"]), num(int(e["score"])), ("   ◀ 나" if e.get("me", false) else "") + ("   ▶ 진행 중" if not e.get("ended", true) else "")])
+			var tt := str(e.get("title", ""))
+			var nick := str(e["nick"]) + (" 「%s」" % Meta.ACHIEVEMENTS[tt]["name"] if Meta.ACHIEVEMENTS.has(tt) else "")
+			lines.append("  %d. %s   웨이브 %d · 점수 %s%s" % [int(e["rank"]), nick, int(e["wave"]), num(int(e["score"])), ("   ◀ 나" if e.get("me", false) else "") + ("   ▶ 진행 중" if not e.get("ended", true) else "")])
 		if lines.is_empty():
 			lines.append("  아직 기록이 없어요")
 		var me: Variant = d.get("me")
@@ -4053,6 +4072,23 @@ func _achieve(id: String) -> void:
 	_save_best()
 
 
+## 조건을 넘긴 업적을 준다 (Ach.LIST).
+func _ach_check() -> void:
+	for id in Ach.newly_met():
+		_achieve(id)
+
+
+## 이전 기록·다른 기기 진행으로 이미 넘긴 업적은 배너 없이 한꺼번에 (불러올 때·진행 맞춘 뒤).
+func _ach_catch_up() -> void:
+	var got := Ach.newly_met()
+	if got.is_empty():
+		return
+	for id in got:
+		Meta.achieve(id)
+	if is_inside_tree() and hint:
+		_show_toast("업적 %d개 달성: %s" % [got.size(), ", ".join(got.map(func(id): return Meta.ACHIEVEMENTS[id]["name"]))])
+
+
 ## 설치 후 확인하는 업적·도감.
 func _check_progress() -> void:
 	var pincers := 0
@@ -4060,7 +4096,9 @@ func _check_progress() -> void:
 		pincers += 1 if t.pincer > 0 else 0
 		if t.order.size() >= 5:
 			_achieve("stack5")
-		for r in t.reactions():
+		var rs: Array = t.reactions()
+		Ach.on_reactions(rs.map(func(r): return r["id"]))
+		for r in rs:
 			if Meta.discover(r["id"]):
 				_show_toast("반응 도감에 추가: " + r["name"])
 				_save_best()
@@ -4068,10 +4106,7 @@ func _check_progress() -> void:
 				_guide("react", "특수 반응 · %s(%s+%s): %s. 발견한 반응은 오른쪽 설명에 채워져요" % [r["name"], Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["desc"]])
 	if pincers >= 3:
 		_achieve("links3")
-	if Meta.codex.size() >= 5:
-		_achieve("codex5")
-	if Meta.codex.size() >= Elem.REACTIONS.size():
-		_achieve("codex9")
+	_ach_check()
 
 
 func _close_title() -> void:
@@ -4114,7 +4149,7 @@ func _save_run() -> void:
 		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
 		"rerolls_left": rerolls_left, "bonus_rerolls": bonus_rerolls, "picks_left": picks_left,
 		"skip_left": skip_left, "skip_total": skip_total, "skip_stop": skip_stop, "bank_picks": bank_picks, "bank_rerolls": bank_rerolls, "bank_perks": bank_perks, "coin_next": coin_next, "rest_ready": rest_ready,
-		"lanes": Array(lanes), "wave_resist": wave_resist, "boss": boss_plan, "achievements": new_achievements,
+		"lanes": Array(lanes), "wave_resist": wave_resist, "boss": boss_plan, "achievements": new_achievements, "ach_run": Ach.run,
 		"state": "perk" if perk_mode else ("ready" if phase == Phase.READY else "choose"),
 		"offer": offer, "perk_offer": perk_offer.map(func(pk): return pk["id"]), "towers": list,
 		"log": run_log, "game_secs": run_game, "real_secs": run_real, "run_id": run_id,
@@ -4250,6 +4285,7 @@ func _continue_run() -> void:
 	else:
 		_plan_boss()
 	new_achievements = (g.call("achievements", []) as Array).filter(func(a): return a is String)
+	Ach.load_run(cfg.get_value("run", "ach_run", {}))
 	run_log = (g.call("log", []) as Array).filter(func(e): return e is Dictionary)
 	run_game = maxf(0.0, g.call("game_secs", 0.0))
 	run_real = maxf(0.0, g.call("real_secs", 0.0))
@@ -4896,6 +4932,7 @@ func _orb_path(a: float, y := 0.0) -> PackedVector2Array:
 func _spawn_orb(kind := -1, plan := {}) -> void:
 	var o := Orb.new()
 	var p: Dictionary = plan if not plan.is_empty() else _roll_orb(wave)
+	o.born = run_game
 	o.position = center() + Vector2.from_angle(p["a"]) * _spawn_radius()
 	o.from_a = p["a"]
 	o.target = center()
@@ -5244,6 +5281,8 @@ func _sim_step(delta: float) -> void:
 		combo_hold = true  # 쉬는 시간·카드 고르기 동안 콤보가 끊기지 않게
 		_log_wave()
 		_achieve("first")
+		Ach.on_wave_clear(wave, wave_dmg, core_hp, core_max)
+		_ach_check()
 		if wave >= 5:
 			Meta.map_best[Meta.run_key()] = [maxi(Meta.best_of(Meta.run_key())[0], wave), maxi(Meta.best_of(Meta.run_key())[1], score)]
 			if Meta.MAP_IDS.all(func(id): return id in Meta.TRIAL_MAPS or Meta.best_of(Meta.key(id))[0] >= 5):
@@ -5443,6 +5482,8 @@ func _resolve(delta: float) -> void:
 			combo += 1
 			combo_t = COMBO_KEEP
 			best_combo = maxi(best_combo, combo)
+			Ach.on_kill(o, run_game, combo)
+			ach_dirty = true
 			if combo >= 30:
 				_achieve("combo30")
 			# 모드가 늘린 체력·수는 빼고 매긴 뒤 모드 배율을 곱한다
@@ -5495,12 +5536,16 @@ func _resolve(delta: float) -> void:
 			burst(o.position if Meta.map_id == "line" else center(), Color(1, 0.3, 0.35), 18, 220.0)
 			_show_toast("중앙 피격! %d/%d" % [maxi(core_hp, 0), core_max])
 			wave_dmg += o.core_dmg
+			Ach.on_core_hit(o.core_dmg)
 			popup((o.position if Meta.map_id == "line" else center()) + Vector2(0, -CORE_RADIUS - 24.0), o.core_dmg, Color(1, 0.3, 0.35), true, "-%d" % o.core_dmg, 1.2)
 			_check_danger()
 			_record_leak(o)
 			o.queue_free()
 			continue
 
+	if ach_dirty:
+		ach_dirty = false
+		_ach_check()
 	for a in arcs:
 		a[2] -= delta
 	arcs = arcs.filter(func(a): return a[2] > 0.0)
@@ -5531,6 +5576,7 @@ func _curse_burst(o: Orb) -> void:
 		var d: float = other.position.distance_to(o.position)
 		if d < 100.0 + other.radius():
 			var got: float = other.hurt(dmg)
+			other.last_rx = true
 			if tw:
 				tw.credit(got, "rx:curse")
 				tw.rx_dealt += got
@@ -5923,6 +5969,27 @@ func _draw_core_skin(c: Vector2, col: Color, now: float) -> void:
 					c + d.rotated(-0.18) * (CORE_RADIUS - 1.0),
 				]), Color(1.0, 0.85, 0.35, 0.85))
 			draw_circle(c, CORE_RADIUS * 0.7, Color(1.0, 0.9, 0.5).lerp(col, 0.4))
+		"crown":
+			# 왕관 (보스 사냥꾼): 위로 솟은 다섯 뾰족
+			var w := CORE_RADIUS * 0.8
+			var pts := PackedVector2Array([c + Vector2(-w, w * 0.45), c + Vector2(w, w * 0.45)])
+			for i in 5:
+				var x := w - i * w * 0.5
+				pts.append(c + Vector2(x, -w * (0.75 if i % 2 == 0 else 0.25)))
+				if i < 4:
+					pts.append(c + Vector2(x - w * 0.25, w * 0.05))
+			draw_colored_polygon(pts, Color(1.0, 0.82, 0.3).lerp(col, 0.25))
+			for i in 3:
+				draw_circle(c + Vector2(-w + i * w, -w * 0.75), 2.5, Color(1, 0.4, 0.45))
+		"galaxy":
+			# 은하 (신화 업적 '빈두'): 도는 나선 팔 두 개
+			draw_circle(c, CORE_RADIUS * 0.35, Color(1, 0.95, 0.85))
+			for arm in 2:
+				for i in 14:
+					var t := i / 14.0
+					var a := now * 0.8 + arm * PI + t * 3.2
+					var d := CORE_RADIUS * (0.3 + 0.75 * t)
+					draw_circle(c + Vector2.from_angle(a) * d, 2.6 * (1.0 - t * 0.6), Color.from_hsv(fmod(0.6 + t * 0.4 + now * 0.05, 1.0), 0.55, 1.0, 0.9 - t * 0.5))
 
 ## 일식 발동 때 화면 전체 연출(어둡게·큰 고리)을 이 오브젝트가 맡을지. 2.5초에 한 번만 맡기고 나머지는 오브젝트 둘레만 작게.
 ## 연출만 고르고 피해·발동 시각은 바꾸지 않는다

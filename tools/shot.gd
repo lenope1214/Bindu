@@ -48,7 +48,24 @@ func _initialize():
 		func(): _snap("codex"); main.codex_panel.tabs[1].pressed.emit(),
 		func(): _snap("codex_pat"); main.codex_panel.tabs[4].pressed.emit(),
 		func(): _snap("codex_rx"); main.codex_panel.tabs[5].pressed.emit(),
-		func(): _snap("codex_perk"); main._toggle_codex(); main._toggle_modes(),
+		func():
+			_snap("codex_perk")
+			# 업적 탭: 진행 막대·등급·칭호 버튼·숨긴 신화가 보이게 몇 개 채운다
+			Meta.total_kills = 6342
+			Meta.tally["max:wave"] = 27
+			Meta.tally["max:burst"] = 22
+			Meta.tally["boss_kills"] = 11
+			for id in ["first", "wave10", "wave15", "boss", "rxk500", "calm10"]:
+				Meta.achieved[id] = true
+			Meta.title = "calm10"
+			for i in 9:
+				Meta.tally["pick:elem:" + Patch.ELEM_KEYS[i]] = 2 + i * 3
+			for id in Pat.PATTERN_IDS.slice(1, 6):
+				Meta.tally["pick:pat:" + id] = 3
+			main.codex_panel.tabs[6].pressed.emit(),
+		func(): _snap("codex_ach"); (main.codex_panel.list.get_parent() as ScrollContainer).scroll_vertical = 100000,
+		func(): _snap("codex_ach_end"); main.codex_panel.tabs[0].pressed.emit(),
+		func(): _snap("codex_elem"); main._toggle_codex(); main._toggle_modes(),
 		func(): _snap("modes"); main._toggle_modes(); main.help_label.visible = true,
 		func():
 			_snap("help"); main.help_label.visible = false; main.continue_btn.visible = false

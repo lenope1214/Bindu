@@ -416,6 +416,7 @@ func _hit(o: Orb, amount: float, k: float) -> void:
 
 func _hurt(o: Orb, amount: float) -> void:
 	amount = o.hurt(amount)
+	o.last_rx = kind in ["trail", "mine", "boom"] or src.begins_with("rx:")
 	if is_instance_valid(owner_tower):
 		owner_tower.credit(amount, src if src != "" else "hit")
 		if kind in ["trail", "mine", "boom"]:  # 장작 장판(trail은 불만 _hurt)·독버섯은 반응 피해
