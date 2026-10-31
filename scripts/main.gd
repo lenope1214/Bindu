@@ -72,7 +72,7 @@ var wave_leaks: Array = []  # 이번 웨이브에 중앙에 닿은 구체 [나�
 var leak_log: Array = []  # 웨이브마다 누수 요약 (봇·통계·안내용)
 var leak_flash: Array = []  # 화면 가장자리 붉은 번짐 [자리, 남은 시간]
 var boss_plan := {}  # 다음 보스: 쉬는 시간에 진입 각도·체력·속도·저항을 미리 정해 길과 정보를 정확히 보여 준다
-var touch_ui := false  # 마지막 입력이 터치였는지 (터치는 마우스를 올려 둘 수 없다)
+var touch_ui := OS.has_feature("mobile")  # 마지막 입력이 터치였는지 (터치는 마우스를 올려 둘 수 없다). 폰·태블릿은 첫 터치 전 첫 화면부터 터치용 글
 var help_touch := false  # 도움말 글을 터치용으로 썼는지
 var legend_rx_rows := 999  # 설명에 적을 반응 줄 수 상한 (화면에 맞춰 _process가 줄임)
 var legend_rows := 0  # 지금 설명에 적힌 반응 줄 수
@@ -152,7 +152,7 @@ var fast_speed := 2.0  # Space로 켜는 배속
 var paused_label: Label
 var pause_box: HBoxContainer  # 일시정지 창 아래 버튼 (계속·시작 화면·끄기)
 var pause_dim: ColorRect
-var legend_hidden := false
+var legend_hidden := OS.has_feature("mobile")  # 폰·태블릿은 필드가 좁아 접어 두고 시작 (버튼으로 열면 저장)
 var bar_open := false  # 오른쪽 아래 설정 버튼(소리·자동 시작·일시정지·배속)을 펼쳤는지. 접으면 펼치기 버튼만 남는다
 var bar_btn: Button
 var tutor := false  # 이번 판이 첫 판 안내 판인지: 카드 종류를 웨이브마다 하나씩 연다 (TUTOR_OPEN)
@@ -252,7 +252,7 @@ var dps_scroll: ScrollContainer
 var dps_list: VBoxContainer
 var dps_sig := ""  # 표를 다시 만들지 정하는 요약 (오브젝트·피해가 바뀔 때만)
 var dps_focus: Tower = null  # 표에서 마우스를 올린 오브젝트
-var dps_hidden := false  # D: 표 접기
+var dps_hidden := OS.has_feature("mobile")  # D: 표 접기. 폰·태블릿은 접어 두고 시작
 # 온라인 (Net·Patch): 판 기록·통계
 var net: Net
 var run_id := ""  # 판 번호: 5웨이브마다 보내는 진행 기록과 끝 기록을 서버에서 한 줄로 (이어하기에 저장)
@@ -302,7 +302,7 @@ func _ready() -> void:
 	camera.position = center()
 	add_child(camera)
 	for i in 140:
-		stars.append(Vector3(randf() * 1280.0, randf() * 720.0, randf_range(0.03, 0.12)))
+		stars.append(Vector3(randf() * Meta.FIELD.x, randf() * Meta.FIELD.y, randf_range(0.03, 0.12)))
 	_build_ui()
 	_apply_ui_scale()
 	_apply_volume()
@@ -365,20 +365,31 @@ func _layer(n: String) -> Node2D:
 
 
 func center() -> Vector2:
-	return get_viewport_rect().size / 2.0
+	return Meta.FIELD / 2.0
+
+
+## 전장: 구체가 나오고 공격이 닿고 오브젝트를 놓는 곳. 화면비와 상관없이 늘 Meta.FIELD 크기 (기기마다 난이도·순위가 같게).
+func arena() -> Rect2:
+	return Rect2(Vector2.ZERO, Meta.FIELD)
+
+
+## 지금 화면에 보이는 월드 영역. 화면이 16:9보다 길면(폰) 전장 양옆까지, 4:3이면(태블릿) 위아래까지 보인다.
+func view_rect() -> Rect2:
+	var vs := get_viewport_rect().size
+	return Rect2((Meta.FIELD - vs) / 2.0, vs)
 
 
 ## 지키는 중앙 점. 회랑 맵은 화면 가운데가 아니라 구체가 오는 반대쪽 끝(문 가운데).
 func core() -> Vector2:
 	var c := center()
 	if Meta.map_id == "line":
-		c.x = get_viewport_rect().size.x - LINE_INSET if Meta.line_flip else LINE_INSET
+		c.x = Meta.FIELD.x - LINE_INSET if Meta.line_flip else LINE_INSET
 	return c
 
 
 ## 회랑 맵: 높이 y(길 가운데 기준)에서 구체가 나오는 자리와 닿는 문 자리.
 func _line_start(y: float) -> Vector2:
-	return Vector2(-30.0 if Meta.line_flip else get_viewport_rect().size.x + 30.0, center().y + y)
+	return Vector2(-30.0 if Meta.line_flip else Meta.FIELD.x + 30.0, center().y + y)
 
 
 func _line_end(y: float) -> Vector2:
@@ -1298,6 +1309,8 @@ func _update_skip_ui() -> void:
 	var show_btn := phase == Phase.CHOOSE and not cards_hidden and not title_label.visible and _can_skip() and not get_tree().paused
 	skip_btn.visible = show_btn
 	skip_n_btn.visible = show_btn
+	# 글자를 키우면(폰 기본) 카드 아래 버튼 줄이 왼쪽 아래 안내 글까지 내려와 겹친다. 카드를 고르라는 글이라 겹칠 때만 숨긴다
+	hint.visible = not (show_btn and hint.get_global_rect().intersects(skip_btn.get_global_rect()))
 	if show_btn:
 		var n := int(Meta.skip_n)
 		skip_btn.text = _kh("웨이브 %d개 넘기기 (S)" % n)
@@ -1617,7 +1630,7 @@ func _guide(id: String, text: String) -> void:
 	_save_best()
 	guide_lines.append(text)
 	if first:
-		guide_lines.append("이런 안내는 처음 한 번만 나와요. 설정(O)에서 끌 수 있어요")
+		guide_lines.append(_kh("이런 안내는 처음 한 번만 나와요. 설정(O)에서 끌 수 있어요"))
 	while guide_lines.size() > 3:
 		guide_lines.pop_front()
 	guide_t = 8.0 if phase == Phase.WAVE else -1.0
@@ -2010,10 +2023,10 @@ func _lane_arrows() -> Array:
 	if Meta.map_id == "line":
 		var from_right := not Meta.line_flip
 		var d := Vector2(-1.0 if from_right else 1.0, 0)
-		out.append([Vector2(get_viewport_rect().size.x - 18.0 if from_right else 18.0, get_viewport_rect().size.y / 2.0), d, 0])
+		out.append([Vector2(Meta.FIELD.x - 18.0 if from_right else 18.0, Meta.FIELD.y / 2.0), d, 0])
 		return out
 	var c := center()
-	var vr := get_viewport_rect()
+	var vr := arena()
 	for i in lanes.size():
 		var d := Vector2.from_angle(lanes[i])
 		var edge := _edge_point(c, d)
@@ -2266,7 +2279,7 @@ func _draw_boss_path(now: float) -> void:
 	if phase == Phase.WAVE and boss_plan["wave"] != wave:
 		return
 	var col := Color(1, 0.35, 0.6)
-	var vr := get_viewport_rect()
+	var vr := arena()
 	var all := _orb_path(boss_plan["a"], boss_plan.get("y", 0.0))
 	# 화면 안에 들어온 뒤부터 그린다 (직선은 화면 가장자리에서 자름)
 	var pts := PackedVector2Array()
@@ -4597,7 +4610,7 @@ func _draw_path_edit() -> void:
 	if draw_stop != "":
 		txt += " · " + draw_stop
 	var at := tip + (Vector2(-70, -70) if touch_ui else Vector2(14, -14))
-	at = at.clamp(Vector2(4, 20), get_viewport_rect().size - Vector2(240, 8))
+	at = at.clamp(view_rect().position + Vector2(4, 20), view_rect().end - Vector2(240, 8))
 	draw_string(ui_font, at + Vector2(1, 1), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color.BLACK)
 	draw_string(ui_font, at, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1, 0.6, 0.5) if draw_stop != "" else Color(1, 0.95, 0.75))
 
@@ -4732,7 +4745,7 @@ func spawn_rock(t: Tower, l: int) -> void:
 		return
 	# 바위는 화면 가장자리에서 100 안쪽에만 선다: 가장자리에 서면 막힌 구체가 화면 끝에 붙어
 	# 다른 오브젝트가 닿지 않는 곳에서 버티고 웨이브가 끝나지 않던 것 (폭풍 맵 66웨이브에서 4분 넘게)
-	var inner := get_viewport_rect().grow(-100.0)
+	var inner := arena().grow(-100.0)
 	# 빈 자리 중 앞쪽부터 (Tower.rock_slot). 가장자리에 밀려 같은 자리에 겹치는 바위는 세우지 않는다
 	for k in 2 + roundi(t.mf("multi")):
 		var p := (t.position + Tower.rock_slot(t.dir, k, l)).clamp(inner.position, inner.end)
@@ -4868,7 +4881,7 @@ func _plan_boss() -> void:
 
 ## 구체가 나오는 거리 (화면 대각선 반 + 30, 화면 밖).
 func _spawn_radius() -> float:
-	return get_viewport_rect().size.length() / 2.0 + 30.0
+	return Meta.FIELD.length() / 2.0 + 30.0
 
 
 ## 각도 a에서 나온 구체가 막히지 않을 때 지나가는 길 (소용돌이 맵은 나선, 구체 이동과 같은 식).
@@ -5320,7 +5333,7 @@ func _lane_of(a: float) -> int:
 ## 각도 a에서 나온 구체가 화면에 들어오는 자리 (소용돌이 맵은 나선을 따라).
 func _entry_point(a: float) -> Vector2:
 	if Meta.map_id == "spiral":
-		var vr := get_viewport_rect()
+		var vr := arena()
 		for q in _orb_path(a):
 			if vr.has_point(q):
 				return q
@@ -5379,10 +5392,10 @@ func _alive_count(n: Node) -> int:
 
 func _resolve(delta: float) -> void:
 	var us := Time.get_ticks_usec() if prof_on else 0
-	var rect := get_viewport_rect().grow(40.0)
+	var rect := arena().grow(40.0)
 	live_orbs = orbs.get_children().filter(func(o): return not o.is_queued_for_deletion())
-	# 공격은 화면에 보이기 시작한 구체에만 닿는다 (가장자리가 화면 안으로 들어온 구체)
-	var screen := get_viewport_rect()
+	# 공격은 전장에 들어오기 시작한 구체에만 닿는다 (가장자리가 전장 안으로 들어온 구체. 폰처럼 화면이 넓어도 전장 밖 구체는 안 맞는다)
+	var screen := arena()
 	targets = live_orbs.filter(func(o): return screen.grow(o.radius()).has_point(o.position))
 
 	_build_grid()
@@ -5589,9 +5602,9 @@ func _build_grid() -> void:
 			grid[k] = [o]
 
 
-## 오브젝트를 놓을 수 있는 화면 안쪽 영역 (가장자리에서 몸 반지름만큼 안).
+## 오브젝트를 놓을 수 있는 전장 안쪽 영역 (가장자리에서 몸 반지름만큼 안).
 func field_rect() -> Rect2:
-	return get_viewport_rect().grow(-(Tower.RADIUS + 6.0))
+	return arena().grow(-(Tower.RADIUS + 6.0))
 
 
 ## p에서 r(+가장 큰 구체 반지름) 안에 있을 수 있는 구체들.
@@ -5739,9 +5752,9 @@ func _draw_tooltip() -> void:
 		lines.append(["  " + sp + " (모두 곱함)", Color(1, 1, 1, 0.65)])
 	if detail:
 		lines = lines.slice(0, nhead) + t.detail_lines()
-	elif _tip_rows(lines, maxw, fs) * lh + 10.0 > get_viewport_rect().size.y - _tip_top() - 8.0:
+	elif _tip_rows(lines, maxw, fs) * lh + 10.0 > view_rect().end.y - _tip_top() - 8.0:
 		# 속성·반응이 아주 많으면 화면 높이를 넘어 위가 잘렸다: 반응 이름은 두 줄까지, 그래도 넘치면 속성 효과를 한 줄로
-		var avail := floori((get_viewport_rect().size.y - _tip_top() - 18.0) / lh)
+		var avail := floori((view_rect().end.y - _tip_top() - 18.0) / lh)
 		for i in lines.size():
 			if (lines[i][0] as String).begins_with("반응 %d개: " % rxs.size()):
 				var names: Array = rxs.map(func(r): return r["name"])
@@ -5769,11 +5782,12 @@ func _draw_tooltip() -> void:
 			w = maxf(w, ui_font.get_string_size(row, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
 	lines = rows
 	var h := lines.size() * lh + 10.0
-	var size := get_viewport_rect().size
+	var vw := view_rect()
+	var size := vw.end  # 화면 오른쪽 아래 끝 (월드 좌표. 폰은 전장 밖 양옆까지)
 	var p := t.position + Vector2(28, -h / 2)
-	p.x = clampf(p.x, 8, _right_limit() - w - 16)
+	p.x = clampf(p.x, vw.position.x + 8, _right_limit() - w - 16)
 	var top := _tip_top()
-	p.y = clampf(p.y, top if h <= size.y - top - 8.0 else 8.0, size.y - h - 8)
+	p.y = clampf(p.y, top if h <= size.y - top - 8.0 else vw.position.y + 8.0, size.y - h - 8)
 	# 오른쪽 설명에 밀려 왼쪽으로 오면 오브젝트를 덮는다: 위나 아래로 비킨다
 	if Rect2(p, Vector2(w + 16, h)).intersects(Rect2(t.position - Vector2(26, 26), Vector2(52, 52))):
 		var above := t.position.y - 30.0 - h
@@ -5806,7 +5820,7 @@ func _tip_top() -> float:
 
 ## 글자를 놓을 수 있는 오른쪽 끝: 오른쪽 설명이 떠 있으면 그 앞까지 (설명이 글자를 가린다).
 func _right_limit() -> float:
-	var r := get_viewport_rect().size.x - 8.0
+	var r := view_rect().end.x - 8.0
 	if legend.visible:
 		r = minf(r, (get_canvas_transform().affine_inverse() * legend.get_global_rect()).position.x - 8.0)
 	return r
@@ -5826,7 +5840,7 @@ func _avoid_cards(r: Rect2, size: Vector2) -> Vector2:
 		return r.position
 	var up := cr.position.y - r.size.y
 	var down := cr.end.y
-	if up >= 8.0 and (r.get_center().y < cr.get_center().y or down + r.size.y > size.y - 8.0):
+	if up >= view_rect().position.y + 8.0 and (r.get_center().y < cr.get_center().y or down + r.size.y > size.y - 8.0):
 		return Vector2(r.position.x, up)
 	if down + r.size.y <= size.y - 8.0:
 		return Vector2(r.position.x, down)
@@ -5892,7 +5906,7 @@ func _draw_orb_tooltip() -> void:
 		var lh := fs + 6.0
 		var bh := lh * rows.size() + 4.0
 		var p: Vector2 = o.position + Vector2(-w / 2 - 8, -o.radius() - 16 - bh)
-		p.x = clampf(p.x, 8, maxf(8.0, _right_limit() - w - 16))
+		p.x = clampf(p.x, view_rect().position.x + 8.0, maxf(view_rect().position.x + 8.0, _right_limit() - w - 16))
 		p.y = maxf(p.y, _tip_top())
 		fx_layer.draw_rect(Rect2(p, Vector2(w + 16, bh)), Color(0.05, 0.06, 0.09, 0.9))
 		for i in rows.size():
@@ -5967,22 +5981,40 @@ func _soften_fx() -> void:
 			p.modulate.a = pa
 
 
+## 전장 밖(폰의 양옆·태블릿의 위아래)은 어둡게 덮고 경계선을 긋는다. 그쪽 구체는 아직 맞지 않고 오브젝트도 놓을 수 없다.
+func _draw_margins(vw: Rect2) -> void:
+	var ar := arena()
+	if vw.size.x <= ar.size.x + 1.0 and vw.size.y <= ar.size.y + 1.0:
+		return
+	var col := Color(0, 0, 0, 0.45)
+	if vw.position.x < ar.position.x:
+		fx_layer.draw_rect(Rect2(vw.position.x, vw.position.y, ar.position.x - vw.position.x, vw.size.y), col)
+		fx_layer.draw_rect(Rect2(ar.end.x, vw.position.y, vw.end.x - ar.end.x, vw.size.y), col)
+	if vw.position.y < ar.position.y:
+		fx_layer.draw_rect(Rect2(ar.position.x, vw.position.y, ar.size.x, ar.position.y - vw.position.y), col)
+		fx_layer.draw_rect(Rect2(ar.position.x, ar.end.y, ar.size.x, vw.end.y - ar.end.y), col)
+	fx_layer.draw_rect(ar, Color(1, 1, 1, 0.08), false, 1.0)
+
+
 func _draw_fx() -> void:
-	var vs := get_viewport_rect().size
+	var vw := view_rect()
+	var o := vw.position
+	var vs := vw.size
+	_draw_margins(vw)
 	for i in 6:
 		var w := 14.0 * (6 - i)
 		var col := Color(0, 0, 0, 0.05)
-		fx_layer.draw_rect(Rect2(0, 0, vs.x, w), col)
-		fx_layer.draw_rect(Rect2(0, vs.y - w, vs.x, w), col)
-		fx_layer.draw_rect(Rect2(0, 0, w, vs.y), col)
-		fx_layer.draw_rect(Rect2(vs.x - w, 0, w, vs.y), col)
+		fx_layer.draw_rect(Rect2(o.x, o.y, vs.x, w), col)
+		fx_layer.draw_rect(Rect2(o.x, o.y + vs.y - w, vs.x, w), col)
+		fx_layer.draw_rect(Rect2(o.x, o.y, w, vs.y), col)
+		fx_layer.draw_rect(Rect2(o.x + vs.x - w, o.y, w, vs.y), col)
 	if phase == Phase.GAMEOVER or title_label.visible:
-		fx_layer.draw_rect(get_viewport_rect(), Color(0, 0, 0, 0.6))
+		fx_layer.draw_rect(vw, Color(0, 0, 0, 0.6))
 	if eclipse_flash > 0.0:
 		# 단번에 어두워지지 않게 0.1초 동안 천천히 어두워졌다가 풀린다
 		var ef := eclipse_flash / 0.6
 		var env := minf((1.0 - ef) / 0.15, 1.0) * ef
-		fx_layer.draw_rect(get_viewport_rect(), Color(0.1, 0.0, 0.15, 0.22 * env))
+		fx_layer.draw_rect(vw, Color(0.1, 0.0, 0.15, 0.22 * env))
 	# 중앙 위험: 화면 테두리가 붉게 맥박친다 (25% 이하는 더 진하고 빠르게). 배속과 상관없이 계속 보인다
 	if danger_lv > 0 and phase != Phase.GAMEOVER and not title_label.visible:
 		var t := Time.get_ticks_msec() / 1000.0
@@ -5992,10 +6024,10 @@ func _draw_fx() -> void:
 		for i in 6:
 			var w := 10.0 * (6 - i)
 			var col := Color(dc, a)
-			fx_layer.draw_rect(Rect2(0, 0, vs.x, w), col)
-			fx_layer.draw_rect(Rect2(0, vs.y - w, vs.x, w), col)
-			fx_layer.draw_rect(Rect2(0, 0, w, vs.y), col)
-			fx_layer.draw_rect(Rect2(vs.x - w, 0, w, vs.y), col)
+			fx_layer.draw_rect(Rect2(o.x, o.y, vs.x, w), col)
+			fx_layer.draw_rect(Rect2(o.x, o.y + vs.y - w, vs.x, w), col)
+			fx_layer.draw_rect(Rect2(o.x, o.y, w, vs.y), col)
+			fx_layer.draw_rect(Rect2(o.x + vs.x - w, o.y, w, vs.y), col)
 	for a in arcs:
 		fx_layer.draw_line(a[0], a[1], Color(Elem.COLORS[Elem.ELECTRIC], fx_k), 2.0)
 	var sc: Color = Elem.COLORS[Elem.SOUND]
@@ -6064,7 +6096,7 @@ func _draw_boss_bar() -> void:
 		return
 	var w := 300.0
 	# 위쪽 점수 줄(바탕 상자) 바로 아래. 특성 줄이 늘면 같이 내려간다
-	var p := Vector2(center().x - w / 2.0, hud.position.y + hud.size.y + 20.0) + camera.offset
+	var p := Vector2(center().x - w / 2.0, view_rect().position.y + hud.position.y + hud.size.y + 20.0) + camera.offset
 	fx_layer.draw_rect(Rect2(p, Vector2(w, 10)), Color(0, 0, 0, 0.6))
 	fx_layer.draw_rect(Rect2(p, Vector2(w * clampf(hp / mx, 0.0, 1.0), 10)), Color(1, 0.3, 0.4))
 	fx_layer.draw_rect(Rect2(p, Vector2(w, 10)), Color(1, 1, 1, 0.3), false, 1.0)
@@ -6088,9 +6120,9 @@ func _draw_combo() -> void:
 		return
 	var w := 180.0
 	var r := legend_btn.get_global_rect()
-	var p := Vector2(get_viewport_rect().size.x - 10.0 - w, r.end.y + 8.0) + camera.offset
+	var p := view_rect().position + Vector2(get_viewport_rect().size.x - 10.0 - w, r.end.y + 8.0) + camera.offset
 	if legend.visible:
-		p.y = legend.get_global_rect().end.y + 8.0 + camera.offset.y
+		p.y = view_rect().position.y + legend.get_global_rect().end.y + 8.0 + camera.offset.y
 	if not live:
 		var a: float = clampf(combo_end[2] / 0.5, 0.0, 1.0)
 		fx_layer.draw_rect(Rect2(p, Vector2(w, 44)), Color(0, 0, 0, 0.55 * a))
@@ -6145,13 +6177,24 @@ func _shatter(p: Projectile) -> void:
 # ---------- 그리기 ----------
 
 func _draw() -> void:
-	var size := get_viewport_rect().size
+	var size := Meta.FIELD
+	var vw := view_rect()
 	var mp: Dictionary = Meta.MAPS[Meta.map_id]
-	draw_rect(Rect2(Vector2.ZERO, size), mp["bg"])
+	draw_rect(vw, mp["bg"])
 	var c := core()
 	var now := Time.get_ticks_msec() / 1000.0
+	# 전장 바깥(폰의 양옆·태블릿의 위아래)은 같은 별을 이어 붙여 채운다
+	var tiles: Array[Vector2] = [Vector2.ZERO]
+	if vw.position.x < 0.0:
+		tiles.append_array([Vector2(-size.x, 0), Vector2(size.x, 0)])
+	if vw.position.y < 0.0:
+		tiles.append_array([Vector2(0, -size.y), Vector2(0, size.y)])
 	for st in stars:
-		draw_circle(Vector2(st.x, st.y), 1.2, Color(1, 1, 1, st.z * (0.7 + 0.3 * sin(now * 1.3 + st.x))))
+		var col := Color(1, 1, 1, st.z * (0.7 + 0.3 * sin(now * 1.3 + st.x)))
+		for tl in tiles:
+			var sp := Vector2(st.x, st.y) + tl
+			if tl == Vector2.ZERO or vw.has_point(sp):
+				draw_circle(sp, 1.2, col)
 	if Meta.map_id == "line":
 		_draw_line_map(size, mp, now)
 	else:
@@ -6177,10 +6220,10 @@ func _draw() -> void:
 	draw_arc(c, CORE_RADIUS + 5.0, -PI / 2, -PI / 2 + TAU * frac, 32, Color(1, 1, 1, 0.6), 2.0)
 	if title_label.visible:
 		# 시작 화면: 중앙 점(체력 고리 포함)이 메뉴 글자 뒤로 비치지 않게 배경을 어둡게
-		draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.6))
+		draw_rect(vw, Color(0, 0, 0, 0.6))
 
 	# 구체 진입 방향 표시
-	var vr := get_viewport_rect()
+	var vr := arena()
 	for a in ([] if Meta.map_id == "line" else lanes):
 		var d := Vector2(cos(a), sin(a))
 		var edge := _edge_point(c, d)
@@ -6348,9 +6391,10 @@ func _draw_line_map(size: Vector2, mp: Dictionary, now: float) -> void:
 	var cy := size.y / 2.0
 	var gx := core().x
 	var from_right := not Meta.line_flip
-	draw_rect(Rect2(0, cy - LINE_HALF, size.x, LINE_HALF * 2.0), Color(1, 1, 1, 0.025))
+	var vw := view_rect()  # 길 바닥은 화면 끝까지 (전장 밖 양옆에서 끊기지 않게)
+	draw_rect(Rect2(vw.position.x, cy - LINE_HALF, vw.size.x, LINE_HALF * 2.0), Color(1, 1, 1, 0.025))
 	for e in [-1.0, 1.0]:
-		draw_line(Vector2(0, cy + e * LINE_HALF), Vector2(size.x, cy + e * LINE_HALF), Color(mp["ring"], 0.25), 2.0)
+		draw_line(Vector2(vw.position.x, cy + e * LINE_HALF), Vector2(vw.end.x, cy + e * LINE_HALF), Color(mp["ring"], 0.25), 2.0)
 	# 길 바닥의 흐르는 줄무늬 (구체가 가는 방향)
 	var dirx := -1.0 if from_right else 1.0
 	for k in 12:
@@ -6398,7 +6442,7 @@ func _load_best() -> void:
 		best_wave = b[0]
 		best_score = b[1]
 		auto_start = Meta.val(cfg, "option", "auto_start", false)
-		legend_hidden = Meta.val(cfg, "option", "legend_hidden", false)
+		legend_hidden = Meta.val(cfg, "option", "legend_hidden", legend_hidden)
 		bar_open = Meta.val(cfg, "option", "bar_open", false)
 		sfx.muted = Meta.val(cfg, "option", "muted", false)
 		fast_speed = Meta.val(cfg, "option", "fast_speed", 2.0)
