@@ -14,6 +14,11 @@ func _initialize():
 	if a.size() > 1: z = float(a[1])
 	if FileAccess.file_exists(Garden.RUN_PATH):
 		DirAccess.remove_absolute(Garden.RUN_PATH)
+	Tutorial.load_file()  # 튜토리얼 창이 화면을 가리지 않게 (본 것으로 저장)
+	Tutorial.done = true
+	for tp in Tutorial.TOPICS:
+		Tutorial.seen[tp["id"]] = true
+	Tutorial.save_file()
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	current_scene = main
