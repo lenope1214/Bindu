@@ -74,8 +74,8 @@ var draw_skip := 0  # 방금 꺾임으로 센 뒤 다시 세지 않을 조각 �
 var auto_start := false  # 끄면 설치 후 Space로 웨이브 시작
 var auto_btn: Button
 var start_btn: Button
-var draw_ok_btn: Button  # 터치: 다 그린 길 [확정] (손을 떼자마자 넣으면 삐끗한 길을 되돌릴 수 없었다)
-var draw_wait := false  # 터치: 손을 뗀 뒤 [확정]을 기다리는 중
+var draw_ok_btn: Button  # 다 그린 길 [적용] (손을 떼자마자 넣으면 삐끗한 길을 되돌릴 수 없었다, PC·터치 같음)
+var draw_wait := false  # 손을 뗀 뒤 [적용]/[취소]를 기다리는 중
 var draw_aim := Vector2.ZERO  # 터치: 손가락 떨림을 줄인 그리기 목표점
 var cancel_btn: Button  # 옮기기·설치 중 화면 취소 (우클릭·Esc가 없는 터치 화면용)
 var detail_btn: Button  # 터치: 오브젝트 정보창 [자세히] (Shift 대신)
@@ -980,7 +980,7 @@ func _build_ui() -> void:
 	cancel_btn.visible = false
 	root.add_child(cancel_btn)
 	draw_ok_btn = Button.new()
-	draw_ok_btn.text = "확정"
+	draw_ok_btn.text = "적용 (Enter)" if OS.has_feature("pc") else "적용"
 	draw_ok_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	draw_ok_btn.position = Vector2(-70.0 + 150.0, -100.0)  # 취소 오른쪽
 	draw_ok_btn.size = Vector2(140, 40)
@@ -4417,6 +4417,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			_start_wave()
 		elif event.keycode == KEY_SPACE and phase == Phase.CHOOSE:
 			_show_toast(("특성을" if perk_mode else "선택지를") + " 먼저 고르세요 (1·2·3 또는 클릭)")
+		elif event.keycode in [KEY_ENTER, KEY_KP_ENTER] and phase == Phase.DRAW and draw_wait:
+			draw_wait = false
+			_draw_commit()
 		elif event.keycode == KEY_ESCAPE and (phase in [Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.DRAW] or press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
 			_cancel_step()
 		elif event.keycode == KEY_P or event.keycode == KEY_ESCAPE:
@@ -7005,13 +7008,15 @@ func _update_draw() -> void:
 	_draw_extend(draw_aim.clamp(field_rect().position, field_rect().end))
 
 
-## 손을 뗐을 때: 마우스는 바로 넣고, 터치는 길을 남겨 둔 채 [확정]을 기다린다 (다시 누른 채 끌면 새로 그림).
+## 손을 뗐을 때: 길을 남겨 둔 채 [적용]/[취소]를 기다린다 (다시 누른 채 끌면 새로 그림).
+## 예전엔 마우스만 떼자마자 넣어서, 이미 그린 오브젝트를 다시 그리다 손을 떼면 되돌릴 수 없었다.
 func _draw_release() -> void:
 	draw_on = false
-	if touch_ui and draw_len >= DRAW_MIN:
-		_draw_extend(get_global_mouse_position().clamp(field_rect().position, field_rect().end))  # 떨림 줄이기로 덜 따라간 끝까지
+	if draw_len >= DRAW_MIN:
+		if touch_ui:
+			_draw_extend(get_global_mouse_position().clamp(field_rect().position, field_rect().end))  # 떨림 줄이기로 덜 따라간 끝까지
 		draw_wait = true
-		hint.text = "[확정]으로 넣기 · 다시 누른 채 끌면 새로 그리기\n취소: 그대로 두기"
+		hint.text = "[적용]으로 넣기 · 다시 누른 채 끌면 새로 그리기\n" + ("취소: 그대로 두기" if touch_ui else "Enter: 적용   우클릭/Esc: 그대로 두기")
 		return
 	_draw_commit()
 
@@ -7583,7 +7588,7 @@ func _process(delta: float) -> void:
 	var hw := 590.0
 	if pause_btn.visible:
 		hw = clampf(bar_box.get_rect().position.x - hint.position.x - 12.0, 240.0, 590.0)
-	# 아래 가운데 버튼([웨이브 시작]·[취소]·[자세히]·[확정])에도 닿지 않게 (글이 길면 버튼 밑으로 지나갔다)
+	# 아래 가운데 버튼([웨이브 시작]·[취소]·[자세히]·[적용])에도 닿지 않게 (글이 길면 버튼 밑으로 지나갔다)
 	var hb := hint.get_rect().end.y
 	for b: Control in [start_btn, cancel_btn, detail_btn, draw_ok_btn, skip_badge]:
 		if b != null and b.visible:

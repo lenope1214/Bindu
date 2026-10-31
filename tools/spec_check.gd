@@ -1106,7 +1106,7 @@ func _meta_misc() -> void:
 	ok("UI-14", tap1 and tap2 and tap3 and mouse1, "터치 카드: 한 번 누르면 미리보기·다른 카드 누르면 바꿈·한 번 더 누르면 고름, 마우스는 바로 고름")
 	main.phase = main.Phase.CHOOSE
 
-	# 그린 궤적 터치: 손을 떼면 [확정]을 기다리고, 누르면 넣는다 (마우스는 떼자마자)
+	# 그린 궤적: 손을 떼면 [적용]을 기다리고, 누르면 넣는다 (터치·마우스 같음). 마우스는 Enter로도, 취소하면 원래 길
 	_fresh(3)
 	var pt := _tower(main.center() + Vector2(-200, 0))
 	main.touch_ui = true
@@ -1120,7 +1120,25 @@ func _meta_misc() -> void:
 	main.draw_ok_btn.pressed.emit()
 	var done: bool = not main.draw_wait and pt.paths.size() > before and main.phase != main.Phase.DRAW
 	main.touch_ui = false
-	ok("PATH-02", waiting and done, "그린 궤적 터치: 손을 떼면 길을 남겨 두고 [확정]을 누르면 넣음")
+	# 마우스: 이미 그린 길을 다시 그리다 떼도 바로 안 들어감 → 취소하면 원래 길, Enter면 넣음
+	var old0: PackedVector2Array = pt.paths[0].duplicate()
+	main._start_draw(pt, [0], false)
+	main.draw_on = true
+	main.draw_pts = PackedVector2Array([pt.position, pt.position + Vector2(0, 60), pt.position + Vector2(0, 120)])
+	main.draw_len = 120.0
+	main._draw_release()
+	var m_wait: bool = main.draw_wait and main.phase == main.Phase.DRAW and pt.paths[0] == old0
+	main._cancel_step()
+	var m_cancel: bool = main.phase != main.Phase.DRAW and pt.paths[0] == old0
+	main._start_draw(pt, [0], false)
+	main.draw_on = true
+	main.draw_pts = PackedVector2Array([pt.position, pt.position + Vector2(0, 60), pt.position + Vector2(0, 120)])
+	main.draw_len = 120.0
+	main._draw_release()
+	var ke := InputEventKey.new(); ke.keycode = KEY_ENTER; ke.pressed = true
+	main._unhandled_input(ke)
+	var m_enter: bool = main.phase != main.Phase.DRAW and pt.paths[0] != old0
+	ok("PATH-02", waiting and done and m_wait and m_cancel and m_enter, "그린 궤적: 손을 떼면 길을 남겨 두고 [적용]을 누르면 넣음, [취소]면 원래 길 (터치 %s/%s, 마우스 대기 %s·취소 %s·Enter %s)" % [waiting, done, m_wait, m_cancel, m_enter])
 
 	# 전장 확대: 두 손가락 벌리기로 확대, 그동안 누르기는 게임에 안 넘어감, 다 떼면 풀림. [확대 풀기]로 1배
 	_fresh(3)

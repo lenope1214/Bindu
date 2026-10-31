@@ -1,5 +1,5 @@
 extends SceneTree
-## 그린 궤적 화면 스크린샷: 카드·그리는 중(꺾기·길이 다 씀)·쉬는 시간 길·웨이브 중 탄·레벨업 미리보기.
+## 그린 궤적 화면 스크린샷: 카드·그리는 중(꺾기·길이 다 씀)·떼고 [적용] 기다림·쉬는 시간 길·웨이브 중 탄·레벨업 미리보기.
 ## 인자: 저장 폴더 [글자 크기] [touch]. 예) xvfb-run godot --path . -s tools/path_shot.gd -- /tmp/shots 1.3
 var main
 var f := 0
@@ -58,7 +58,10 @@ func _initialize():
 			_drag(tp + Vector2(240, 140), tp + Vector2(240, 400)),
 		func():
 			_snap("path_draw_full")
-			main._draw_commit(),
+			main._draw_release(),  # 손을 뗌: [적용]/[취소]를 기다림
+		func():
+			_snap("path_wait")
+			main.draw_ok_btn.pressed.emit(),
 		func():
 			_snap("path_rest")
 			root.get_viewport().warp_mouse(root.get_viewport().get_canvas_transform() * t.position),
@@ -91,6 +94,8 @@ func _snap(n: String):
 
 func _process(_d) -> bool:
 	f += 1
+	if main.tut.visible:
+		main.tut.close()  # 처음 켠 기기면 그때그때 뜨는 튜토리얼이 화면을 가린다
 	if f % 15 == 5:
 		var i := f / 15
 		if i < steps.size():
