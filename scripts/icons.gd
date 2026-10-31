@@ -81,6 +81,23 @@ static func draw(ci: CanvasItem, id: String, c: Vector2, s: float, col: Color) -
 		"devour":
 			ci.draw_circle(c, s * 0.8, Color(0.85, 0.85, 0.9))
 			ci.draw_arc(c, s * 0.9, 0.5, TAU - 0.5, 16, Color(0.85, 0.3, 0.4), maxf(2.0, s * 0.28))
+		"build":
+			# 이번 판 주력: 높이가 다른 막대 셋
+			for k in 3:
+				var h: float = s * [1.6, 1.0, 0.6][k]
+				ci.draw_rect(Rect2(c + Vector2(-s * 0.9 + k * s * 0.65, s * 0.8 - h), Vector2(s * 0.45, h)), col)
+		# 방해 구체 (orb.gd _draw_jam과 같게)
+		"shade":
+			ci.draw_circle(c, s * 0.95, Color(0.55, 0.4, 0.8, 0.35))
+			ci.draw_circle(c, s * 0.55, Color(0.85, 0.85, 0.9))
+			ci.draw_circle(c, s * 0.3, Color(0.2, 0.12, 0.3))
+		"leech":
+			ci.draw_circle(c, s * 0.8, Color(0.85, 0.85, 0.9))
+			for sx in [-1.0, 1.0]:
+				ci.draw_colored_polygon(PackedVector2Array([c + Vector2(sx * s * 0.5, -s * 0.2), c + Vector2(sx * s * 0.12, -s * 0.2), c + Vector2(sx * s * 0.3, s * 0.55)]), Color(0.3, 0.75, 0.4))
+		"seeker":
+			ci.draw_circle(c, s * 0.7, Color(0.85, 0.85, 0.9))
+			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(s * 1.15, 0), c + Vector2(s * 0.6, -s * 0.4), c + Vector2(s * 0.6, s * 0.4)]), Color(1.0, 0.35, 0.3))
 		# 버튼
 		"sound", "mute":
 			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-s, -s * 0.35), c + Vector2(-s * 0.45, -s * 0.35), c + Vector2(s * 0.15, -s * 0.9), c + Vector2(s * 0.15, s * 0.9), c + Vector2(-s * 0.45, s * 0.35), c + Vector2(-s, s * 0.35)]), col)

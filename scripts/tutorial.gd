@@ -9,7 +9,7 @@ const FIRST := ["goal", "place", "cards", "stack"]
 ## 처음 생기는 일(main._tut_event id, 대개 _guide id와 같음) → 항목
 const ON_EVENT := {
 	"stack": "stack", "react": "stack", "pat": "pat", "mod": "mod", "trig": "trig", "link": "link",
-	"boss": "boss", "resist": "orbs", "sturdy": "orbs", "over": "score", "ach": "codex", "continue": "save", "mp": "mp",
+	"boss": "boss", "resist": "orbs", "sturdy": "orbs", "jam": "orbs", "skill": "skill", "ley": "skill", "over": "score", "ach": "codex", "continue": "save", "mp": "mp",
 }
 ## 항목: id, name, pages [{pic, pc, touch(없으면 pc)}]. 글은 PC·터치를 따로 (터치엔 키·클릭 말이 없게, spec TUT-02)
 const TOPICS := [
@@ -61,6 +61,13 @@ const TOPICS := [
 	{"id": "orbs", "name": "특수 구체", "pages": [
 		{"pic": "orb_kinds", "pc": "빠른 구체(4웨이브), 단단한 구체(7), 보호막 구체(8, 피해를 먼저 흡수), 분열 구체(12, 잡으면 쪼개짐)가 차례로 나와요."},
 		{"pic": "orb_resist", "pc": "저항 구체(점선 고리)는 그 웨이브 저항 속성 피해를 덜 받고, 굳센 구체(회색 쐐기)는 밀기·감속·기절이 절반만 들어요. 다음 웨이브 예고에서 미리 보여요."},
+		{"pic": "orb_jam", "pc": "방해 구체: 그림자(20웨이브)는 지나가며 둘레 오브젝트를 잠깐 멈추고, 흡수(30)는 맞힌 오브젝트의 공격 속도를 빼앗고, 표적(40)은 가까운 오브젝트로 와서 멈춰요. 침묵이면 못 해요."},
+	]},
+	{"id": "skill", "name": "중앙 기술·기맥", "pages": [
+		{"pic": "skill", "pc": "웨이브 중에 아래 기술 버튼(1·2 키)을 누르고 쓸 곳을 클릭해요. 집중: 오브젝트 하나 공격 속도 2배. 붙잡기: 둘레 구체를 잠깐 멈춤. 낙인: 둘레 구체가 받는 피해 +30%.",
+			"touch": "웨이브 중에 아래 기술 버튼을 누르고 쓸 곳을 눌러요. 집중: 오브젝트 하나 공격 속도 2배. 붙잡기: 둘레 구체를 잠깐 멈춤. 낙인: 둘레 구체가 받는 피해 +30%."},
+		{"pic": "skill_set", "pc": "일반 판 준비 화면에서 기술 두 개 묶음을 골라요. 쓰고 나면 몇 초 뒤에 다시 쓸 수 있고, 웨이브를 시작하면 다시 차요. 설정에서 자동 사용을 켤 수 있어요."},
+		{"pic": "ley", "pc": "판마다 전장에 청록 고리(기맥) 세 곳이 생겨요. 그 위에 놓은 오브젝트는 피해 +15%예요. 자리마다 가장 가까운 오브젝트 하나만 받아요."},
 	]},
 	{"id": "score", "name": "점수·콤보·규칙·모드", "pages": [
 		{"pic": "combo", "pc": "구체를 잡으면 점수가 올라요. 3초 안에 다음 구체를 잡으면 콤보가 이어져 처치 점수가 10%씩 늘고, 콤보 20부터는 3배예요."},
@@ -829,6 +836,69 @@ func _pic_orb_kinds() -> void:
 				_orb(p + Vector2(6, 0) * _s, 8, Color(0.6, 0.9, 0.5))
 		_txt(P(90 + i * 125, 170), names[i], 15)
 		_txt(P(90 + i * 125, 195), ["4웨이브", "7웨이브", "8웨이브", "12웨이브"][i], 12, DIM)
+
+
+func _pic_orb_jam() -> void:
+	var names := ["그림자", "흡수", "표적"]
+	var cols := [Color(0.55, 0.4, 0.8), Color(0.45, 0.95, 0.5), Color(1.0, 0.35, 0.3)]
+	for i in 3:
+		var tp := P(110 + i * 170, 70)
+		_tower(tp, [_ec(Elem.FIRE)], Vector2.DOWN)
+		var k := _ph(3.0)
+		var op := P(110 + i * 170, 170 - k * 60)
+		_orb(op, 9)
+		match i:
+			0:
+				pic.draw_circle(op, 45 * _s, Color(cols[0], 0.12))
+				pic.draw_arc(op, 45 * _s, 0, TAU, 32, Color(cols[0], 0.5), 1.5 * _s)
+			1:
+				pic.draw_arc(op, 12 * _s, 0, TAU, 20, cols[1], 2 * _s)
+				for j in mini(int(k * 5.0), 5):
+					pic.draw_circle(tp + Vector2((j - 2) * 6, 26) * _s, 2.5 * _s, cols[1])
+			2:
+				pic.draw_colored_polygon(PackedVector2Array([op + Vector2(0, -18) * _s, op + Vector2(-5, -10) * _s, op + Vector2(5, -10) * _s]), cols[2])
+		if i != 1 and k > 0.6:
+			pic.draw_line(tp + Vector2(-12, 0) * _s, tp + Vector2(12, 0) * _s, Color(0.75, 0.6, 1.0), 4 * _s)
+		_txt(P(110 + i * 170, 215), names[i], 15, cols[i])
+
+
+func _pic_skill() -> void:
+	var c := P(470, 120)
+	_core(c)
+	var tp := P(180, 80)
+	_tower(tp, [_ec(Elem.LIGHT)], Vector2.RIGHT, Skill.COLORS["focus"])
+	pic.draw_arc(tp, 26 * _s, -PI / 2, -PI / 2 + TAU * (1.0 - _ph(3.0)), 24, Skill.COLORS["focus"], 4 * _s)
+	_txt(P(180, 130), "집중", 15, Skill.COLORS["focus"])
+	var hp := P(330, 150)
+	pic.draw_circle(hp, 46 * _s, Color(Skill.COLORS["hold"], 0.12))
+	pic.draw_arc(hp, 46 * _s, 0, TAU, 40, Skill.COLORS["hold"], 2 * _s)
+	for j in 3:
+		_orb(hp + Vector2.from_angle(j * 2.1) * 22 * _s, 7)
+	_txt(P(330, 215), "붙잡기 · 낙인", 15, Skill.COLORS["hold"])
+
+
+func _pic_ley() -> void:
+	var col := Color(0.55, 0.95, 0.95)
+	for i in 3:
+		var p := P(130 + i * 160, 100 + (i % 2) * 40)
+		pic.draw_circle(p, 34 * _s, Color(col, 0.12))
+		for k in 6:
+			var a0 := TAU * k / 6.0 + t * 0.4
+			pic.draw_arc(p, 34 * _s, a0, a0 + 0.6, 6, Color(col, 0.7), 2 * _s)
+		if i == 1:
+			_tower(p, [_ec(Elem.SOUL)], Vector2.UP)
+			_txt(p + Vector2(0, 52) * _s, "피해 +15%", 14, col)
+	_txt(P(320, 215), "기맥: 판마다 자리가 바뀜", 14, DIM)
+
+
+func _pic_skill_set() -> void:
+	for i in 2:
+		var r := Rect2(P(150 + i * 190, 90), Vector2(170, 50) * _s)
+		var id: String = ["focus", "brand"][i]
+		pic.draw_rect(r, Color(0.06, 0.07, 0.1))
+		pic.draw_rect(r, Skill.COLORS[id], false, 2 * _s)
+		_txt(r.get_center() + Vector2(0, -4) * _s, Skill.NAMES[id], 18, Skill.COLORS[id])
+	_txt(P(320, 180), "준비 화면에서 묶음 고르기 · 웨이브마다 다시 참", 14, DIM)
 
 
 func _pic_orb_resist() -> void:

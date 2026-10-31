@@ -219,9 +219,18 @@ const PERKS := [
 	{"id": "shield", "name": "실드", "desc": "웨이브를 시작할 때마다 중앙 실드 1칸 (겹치면 +1, 최대 3). 맞으면 체력 대신 실드가 깎이고, 다음 웨이브로 넘어가지 않아요"},
 	{"id": "rampart", "name": "성벽", "desc": "웨이브마다 중앙 앞에 바위 벽: 다가온 구체를 한 번 밀어내고 한 조각씩 부서져요. 조각 수 = 벽 오브젝트 레벨 합 + 1 (겹치면 +1, 최대 4)"},
 	{"id": "riposte", "name": "반격 파동", "desc": "중앙이 맞을 때마다(실드 포함) 파동이 퍼져 가까운 구체를 밀어내고 피해 (겹치면 피해 +50%)"},
+	{"id": "quick", "name": "빠른 손", "desc": "중앙 기술을 다시 쓰기까지 -20% (겹치면 곱)"},
 	{"id": "overflow", "name": "넘친 회복", "desc": "체력이 가득할 때 받은 회복은 실드로 쌓여요 (회복 특성·보스 처치, 최대 2, 웨이브가 지나도 남음)"},
 ]
 var perks := {}  # id → 고른 횟수
+# 중앙 기술 (Skill): 이번 판 기술 두 개, 다시 쓰기까지 남은 게임 시간, 누를 자리를 기다리는 기술, 효과 그림 [자리, 반지름, 남은 시간, 색]
+var skill_ids: Array = []
+var skill_set := 0
+var skill_cd := {}
+var skill_arm := ""
+var skill_fx: Array = []
+var skill_btns: Array = []
+var skill_used := 0  # 이번 판에 쓴 수 (판 기록)
 var regen_acc := 0.0  # 회복 특성의 1이 안 되는 나머지 (다음 웨이브로)
 var shield := 0  # 실드 특성: 이번 웨이브 실드 (웨이브 시작마다 다시 참)
 var shield_keep := 0  # 넘친 회복 특성: 남는 실드 (이어하기에 저장)
@@ -279,6 +288,7 @@ var new_armed := 0.0  # 저장된 판이 있을 때 새로 시작은 두 번 눌
 var map_label: Label
 var flip_label: Label  # 회랑 맵: 구체가 오는 쪽 (회랑일 때만 보임)
 var rules_label: Label
+var skill_label: Label  # 준비 화면 중앙 기술 묶음
 var skin_label: Label
 var core_label: Label
 var records_panel: Label
@@ -975,6 +985,7 @@ func _build_ui() -> void:
 	bonsai_btn.pressed.connect(_set_bonsai)
 	bonsai_btn.visible = false
 	root.add_child(start_btn)
+	_make_skill_btns(root)
 	root.add_child(rebirth_btn)
 	root.add_child(bonsai_btn)
 	cancel_btn = Button.new()
@@ -1403,6 +1414,50 @@ func _run_src() -> Dictionary:
 	return out
 
 
+# ---------- 빌드 읽기 (2026-10-31 "디펜스 한계 개선 E") ----------
+## 이번 판 주력: 판 누적 피해 출처 상위 [키, 몫]. 직접 타격(hit)·무리 보너스 같은 공통 몫은 뺀다.
+## 쉬는 시간이 열릴 때만 다시 센다(build_cache) — 점수 줄·카드가 매 프레임 읽는다.
+const BUILD_COLOR := Color(0.55, 0.95, 0.95)
+const BUILD_MIN := 0.08  # 이 몫 아래면 주력으로 치지 않음
+var build_cache: Array = []
+
+
+func build_top(n: int) -> Array:
+	var d := _run_src()
+	var tot := 0.0
+	for k in d:
+		tot += d[k]
+	if tot <= 0.0:
+		return []
+	var keys := d.keys().filter(func(k): return k != "hit" and not str(k).begins_with("etc:"))
+	keys.sort_custom(func(a, b): return d[a] > d[b])
+	return keys.slice(0, n).map(func(k): return [k, d[k] / tot])
+
+
+func _refresh_build() -> void:
+	build_cache = build_top(5) if wave >= 3 else []
+
+
+## 카드가 주력(상위 2, 몫 8% 이상) 출처를 키우면 그 이름, 아니면 "". 반응 출처는 그 반응의 두 속성 카드.
+func core_fit(card: Dictionary) -> String:
+	for it in build_cache.slice(0, 2):
+		if it[1] < BUILD_MIN:
+			continue
+		var k: String = it[0]
+		match card["type"]:
+			"elem":
+				if k == Tower.elem_key(card["e"]):
+					return src_name(k)
+				if k.begins_with("rx:"):
+					for r in Elem.REACTIONS:
+						if str(r["id"]) == k.substr(3) and card["e"] in [r["a"], r["b"]]:
+							return src_name(k)
+			"pat", "mod", "link", "trig":
+				if k == "%s:%s" % [card["type"], card.get("id", "")]:
+					return src_name(k)
+	return ""
+
+
 ## 피해가 큰 출처 키 n개.
 func _src_top(d: Dictionary, n: int) -> Array:
 	var keys := d.keys()
@@ -1435,7 +1490,7 @@ static func src_name(key: String) -> String:
 			var j := Patch.ELEM_KEYS.find(p[1])
 			return "형태 성질 " + (Elem.NAMES[Elem.ALL[j]] if j >= 0 else p[1])
 		"etc":
-			return {"crowd": "무리(오브젝트 수)", "perk": "특성"}.get(p[1], p[1])
+			return {"crowd": "무리(오브젝트 수)", "perk": "특성", "ley": "기맥"}.get(p[1], p[1])
 	return p[1]
 
 
@@ -1572,6 +1627,13 @@ func _update_hud(force := false) -> void:
 		var mc := MAP_AFF_COLOR
 		var rt := MapRule.rule_text()
 		items.append(["tag", mc, rt.get_slice(":", 0), mc, [["맵 규칙 (시험)", W], [rt, W], ["친화 카드 (자주 나옴, 속성·공격방식 피해 +%d%%): %s" % [roundi(Rules.t("map_aff_dmg") * 100), MapRule.aff_text()], D]], false])
+	if not build_cache.is_empty() and build_cache[0][1] >= BUILD_MIN:
+		# 이번 판 주력: 피해 출처 1위와 몫, 말풍선에 상위 5
+		var bl: Array = [["이번 판 주력 (판 누적 피해 출처)", W]]
+		for it in build_cache:
+			bl.append(["%s %d%%" % [src_name(it[0]), roundi(it[1] * 100)], D])
+		bl.append(["주력을 키우는 카드에는 ◎ 표시", BUILD_COLOR])
+		items.append(["build", BUILD_COLOR, "%s %d%%" % [src_name(build_cache[0][0]), roundi(build_cache[0][1] * 100)], Color(0.8, 1, 1), bl, false])
 	var nt := towers.get_child_count()
 	if nt > 1:
 		var cb := roundi(Rules.crowd_bonus(nt) * MapRule.crowd_k() * 100)
@@ -1801,6 +1863,8 @@ func _start_choose(new_round := true) -> void:
 		run_id = _new_run_id()
 		Ach.new_run()
 		_apply_tree()
+		_skills_new_run(Meta.skill_set)
+		_ley_new_run()
 	if new_round and tutor and wave + 1 >= TUTOR_OPEN.values().max() and Meta.tutor_next:
 		Meta.tutor_next = false  # 모두 열렸다: 다음 판부터는 처음부터 모두
 		_save_best()
@@ -1817,6 +1881,7 @@ func _start_choose(new_round := true) -> void:
 
 ## 새 쉬는 시간: 다음 웨이브(방향·저항·보스)를 뽑고 고르기·새로고침 수를 정한다.
 func _new_rest() -> void:
+	_refresh_build()
 	if mp_seed != 0:
 		wrng.seed = hash([mp_seed, wave])  # 대결: 모두 같은 웨이브 (방향·저항·보스·구체)
 	if mp_ghost:
@@ -2174,6 +2239,9 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 	if cc["tip"] != "" and not Meta.card_detail:
 		b.tooltip_text = cc["tip"]
 	b.set_meta("full", _card_full(card))
+	var fit := core_fit(card)
+	if fit != "":
+		rows.append({"t": "◎ 주력 %s 강화" % fit, "fs": 12, "c": BUILD_COLOR})
 	if MapRule.card_aff(card):
 		var dmg_up: bool = card["type"] in ["elem", "pat"]
 		rows.append({"t": "◆ %s 친화%s" % [Meta.MAPS[Meta.map_id]["name"], " · 피해 +%d%%" % roundi(Rules.t("map_aff_dmg") * 100) if dmg_up else ""], "fs": 12, "c": MAP_AFF_COLOR})
@@ -2701,6 +2769,10 @@ func _rest_guides() -> void:
 		_guide("boss", "다음 웨이브 끝에 보스가 와요. 분홍 선이 실제로 지나갈 길이에요. 중앙에 닿으면 3 피해, 웨이브를 넘기면 특성을 하나 골라요")
 	if wave_resist >= 0:
 		_guide("resist", "저항 구체(점선 고리)가 섞여 와요. 다음 웨이브는 %s 속성 피해를 덜 받으니 다른 속성 오브젝트도 길목에 두세요" % Elem.NAMES[wave_resist])
+	if not ley.is_empty():
+		_guide("ley", "청록 고리는 기맥이에요. 그 위에 놓은 오브젝트는 피해 +%d%% (자리마다 가장 가까운 하나)" % roundi(Rules.t("ley_dmg") * 100))
+	if jams_on() and wave + 1 >= jam_from("shade"):
+		_guide("jam", "방해 구체가 섞여 와요. 그림자·표적은 오브젝트를 잠깐 멈추고, 흡수는 공격 속도를 빼앗아요. 오브젝트를 여러 곳에 나눠 두면 덜 막혀요")
 	if wave + 1 >= Rules.sturdy_from:
 		_guide("sturdy", "굳센 구체(회색 쐐기)가 섞여 와요. 밀기·감속·기절·냉기가 절반만 들으니 피해로 잡아야 해요")
 
@@ -2781,7 +2853,8 @@ func _start_perk() -> void:
 	# 넣어도 효과가 없는 중앙 특성은 빼고: 벽 오브젝트가 없을 때 성벽, 이미 최대인 실드·성벽
 	pool = pool.filter(func(pk): return not (pk["id"] == "rampart" and (not _has_wall() or _rampart_n() >= int(_perk_val("rampart_max")))
 		or pk["id"] == "shield" and _shield_wave() >= int(_perk_val("shield_max"))
-		or pk["id"] == "overflow" and perks.has("overflow")))
+		or pk["id"] == "overflow" and perks.has("overflow")
+		or pk["id"] == "quick" and (skill_ids.is_empty() or perks.get("quick", 0) >= 3)))
 	pool.shuffle()
 	perk_offer = pool.slice(0, 4 if Garden.boosted and Garden.lv("fruit") >= 1 else 3)  # 씨앗 나무 열매 1: 특성 선택지 4개
 	_show_perks()
@@ -3315,6 +3388,13 @@ func _update_preview() -> void:
 			kinds.append([id, body, nw == lf])
 			if nw == lf:
 				firsts[lf] = (firsts[lf] + ", " if firsts.has(lf) else "") + LATE_DESC[id]
+	for id in JAM_IDS:
+		var jf := jam_from(id)
+		if nw >= jf and jams_on():
+			mix.append(JAM_NAMES[id] + " %d%%" % roundi(jam_share(id, nw) * 100))
+			kinds.append([id, body, nw == jf])
+			if nw == jf:
+				firsts[jf] = (firsts[jf] + ", " if firsts.has(jf) else "") + JAM_DESC[id]
 	if not mix.is_empty():
 		info_l.append(["섞여 나옴: " + ", ".join(mix), W])
 	var sp := PackedStringArray()
@@ -4095,6 +4175,11 @@ func _start_wave() -> void:
 	wave_leaks.clear()
 	leak_marks.clear()
 	wave_dmg = 0
+	jam_any = false
+	skill_cd = {}  # 중앙 기술은 웨이브마다 다시 찬다
+	skill_arm = ""
+	if not skill_ids.is_empty():
+		_guide("skill", "아래 기술 버튼%s을 누르고 쓸 곳을 누르면 웨이브 중에 도울 수 있어요. 웨이브마다 다시 차요" % ("" if touch_ui else "(1·2 키)"))
 	shield = _shield_wave()
 	rampart_left = _rampart_n()
 	if guide_t < 0.0:
@@ -4468,6 +4553,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_leave(false)
 		elif event.keycode == KEY_X and get_tree().paused and OS.has_feature("pc"):
 			_leave(true)
+		elif event.keycode in [KEY_1, KEY_2, KEY_KP_1, KEY_KP_2] and phase == Phase.WAVE and not skill_ids.is_empty():
+			_arm_skill(event.keycode - (KEY_KP_1 if event.keycode >= KEY_KP_1 else KEY_1))
+		elif event.keycode == KEY_ESCAPE and skill_arm != "":
+			skill_arm = ""
 		elif event.keycode == KEY_H:
 			help_label.visible = not help_label.visible
 		elif event.keycode == KEY_TAB:
@@ -4583,6 +4672,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	var mpos := get_global_mouse_position()
 	if perk_mode:
+		return
+	if phase == Phase.WAVE and skill_arm != "":
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			_use_skill(skill_arm, mpos)
+		else:
+			skill_arm = ""
 		return
 	if phase in [Phase.CHOOSE, Phase.READY] and event.button_index == MOUSE_BUTTON_LEFT:
 		var t := _tower_at(mpos)
@@ -4919,6 +5014,7 @@ func _build_menu(root: Control) -> void:
 	map_label = _prep_row(prep_box, "맵", func(): _cycle_map(-1), func(): _cycle_map(1))
 	flip_label = _prep_row(prep_box, "오는 쪽", _toggle_flip, _toggle_flip)
 	rules_label = _prep_row(prep_box, "규칙", func(): _cycle_rules(-1), func(): _cycle_rules(1))
+	skill_label = _prep_row(prep_box, "중앙 기술", func(): _cycle_skill(-1), func(): _cycle_skill(1))
 	# 모드: 여러 개를 켜고 끄는 창이라 화살표 대신 줄 전체가 [모드] 창을 연다
 	modes_btn = Button.new()
 	modes_btn.custom_minimum_size = Vector2(PREP_W, 64 if _phone() else 56)
@@ -5221,7 +5317,7 @@ func _build_menu(root: Control) -> void:
 		grid.add_theme_constant_override("v_separation", 4)
 		sv.add_child(grid)
 		cbox = grid
-	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 속성 그림)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"], ["웨이브 넘기기 중 중앙이 위험하면 멈춤 (체력 50%)", "skip_danger"], ["효과 줄이기 (장판·터지는 효과를 옅게, 많을수록 더)", "fx_low"]]:
+	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 속성 그림)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"], ["웨이브 넘기기 중 중앙이 위험하면 멈춤 (체력 50%)", "skip_danger"], ["중앙 기술 자동 사용 (구체가 몰린 곳에)", "skill_auto"], ["효과 줄이기 (장판·터지는 효과를 옅게, 많을수록 더)", "fx_low"]]:
 		var cb := CheckButton.new()
 		cb.text = spec[0]
 		var key: String = spec[1]
@@ -5232,6 +5328,7 @@ func _build_menu(root: Control) -> void:
 			"orb_hp_on": cb.button_pressed = Meta.orb_hp_on
 			"danger_slow": cb.button_pressed = Meta.danger_slow
 			"skip_danger": cb.button_pressed = Meta.skip_danger
+			"skill_auto": cb.button_pressed = Meta.skill_auto
 			"fx_low": cb.button_pressed = Meta.fx_low
 		cb.focus_mode = Control.FOCUS_NONE
 		cb.toggled.connect(func(on):
@@ -5241,6 +5338,7 @@ func _build_menu(root: Control) -> void:
 				"orb_hp_on": Meta.orb_hp_on = on
 				"danger_slow": Meta.danger_slow = on
 				"skip_danger": Meta.skip_danger = on
+				"skill_auto": Meta.skill_auto = on
 				"fx_low": Meta.fx_low = on
 				"symbols_on":
 					Meta.symbols_on = on
@@ -5578,6 +5676,10 @@ func _refresh_menu() -> void:
 	_prep_set(rules_label, _kh("%s%s  %s" % ra.slice(0, 3)), "" if _phone() else ra[3].replace("\n", " · "))
 	rules_label.get_meta("row").visible = Meta.games > 0  # 규칙 버전 고르기는 첫 판을 끝낸 뒤에 (그 전엔 버전 1)
 	modes_btn.visible = Meta.games > 0  # 모드도
+	var sk := Skill.set_ids(Meta.skill_set)
+	_prep_set(skill_label, Skill.combo_name(Meta.skill_set) + ("  (눌러서 바꾸기)" if touch_ui else ""),
+		"" if _phone() else "웨이브 중 %s · %s" % ["%s: %s" % [Skill.NAMES[sk[0]], Skill.desc(sk[0])], "%s: %s" % [Skill.NAMES[sk[1]], Skill.desc(sk[1])]])
+	skill_label.get_meta("row").visible = Rules.t("skill_on") > 0.0
 	_prep_set(modes_label, "없음" if Modes.on.is_empty() else Modes.names(), "판을 어렵게·쉽게 바꾸는 규칙 · 점수 배율이 붙어요" if Modes.on.is_empty() else "점수 x%.2f" % Modes.mul())
 	if modes_panel.visible:
 		_refresh_modes()
@@ -5671,6 +5773,13 @@ func _refresh_legend() -> void:
 
 
 ## 규칙 버전 바꾸기: 기록은 버전마다 따로.
+func _cycle_skill(d: int) -> void:
+	Meta.skill_set = posmod(Meta.skill_set + d, Skill.SETS.size())
+	sfx.play("place")
+	_refresh_menu()
+	_save_best()
+
+
 func _cycle_rules(d: int) -> void:
 	var i := Rules.IDS.find(Meta.rules)
 	Meta.rules = Rules.IDS[(i + d + Rules.IDS.size()) % Rules.IDS.size()]
@@ -6664,7 +6773,7 @@ func _save_run() -> void:
 		"state": "perk" if perk_mode else ("ready" if phase == Phase.READY else "choose"),
 		"offer": offer, "perk_offer": perk_offer.map(func(pk): return pk["id"]), "towers": list,
 		"log": run_log, "leaks": leak_log, "game_secs": run_game, "real_secs": run_real, "run_id": run_id,
-		"tutor": tutor, "tutor_given": tutor_given.keys(), "grow": Garden.boosted,
+		"tutor": tutor, "tutor_given": tutor_given.keys(), "grow": Garden.boosted, "skill_set": skill_set, "skill_used": skill_used, "ley": ley.map(func(p): return [p.x, p.y]),
 	}
 	if Garden.on:
 		vals["garden"] = Garden.run_state()
@@ -6810,6 +6919,13 @@ func _continue_run() -> void:
 	if not wave_resist in Elem.ALL:
 		wave_resist = -1
 	Vary.load_from(g.call("vary", {}))
+	_skills_new_run(int(g.call("skill_set", 0)))
+	ley = []
+	if leys_on():
+		for q in g.call("ley", []):
+			if q is Array and q.size() == 2 and (q[0] is float or q[0] is int) and (q[1] is float or q[1] is int):
+				ley.append(Vector2(q[0], q[1]).clamp(field_rect().position, field_rect().end))
+	skill_used = maxi(0, int(g.call("skill_used", 0)))
 	# 미리 뽑아 둔 보스 (없거나 형식이 다르면 새로 뽑음)
 	var bp: Variant = g.call("boss", {})
 	boss_plan = {}
@@ -6857,6 +6973,7 @@ func _continue_run() -> void:
 		_grow_rebuild()  # 키우기형: 오브젝트는 칸에서 다시 만든다
 	for t in towers.get_children():
 		t.eff = t.eff_now()
+	_refresh_build()
 	match g.call("state", "choose"):
 		"perk":
 			perk_offer = []
@@ -7277,6 +7394,218 @@ func _leave(quit_game: bool) -> void:
 	_reload()
 
 
+# ---------- 기맥 (2026-10-31 "디펜스 한계 개선 F") ----------
+## 판마다 전장에 기맥 자리 ley_n개가 생긴다(판 번호로 정해 이어하기도 같음). 자리마다 ley_r 안 가장 가까운 오브젝트 하나가 피해 +ley_dmg.
+var ley: Array = []  # 기맥 자리 (전장 좌표)
+
+
+func leys_on() -> bool:
+	return Rules.t("ley_on") > 0.0 and mp_mode == "" and not Garden.on and OS.get_environment("LEY") != "0"  # 봇 비교용: LEY=0이면 끔
+
+
+## 새 판: 중앙에서 150~360, 가장자리에서 90 넘게, 서로 220 넘게 떨어진 자리. 회랑은 문에서 150 넘게.
+func _ley_new_run() -> void:
+	ley = []
+	if not leys_on():
+		return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(run_id + "ley")
+	var fr := field_rect().grow(-90.0)
+	var c := core()
+	var n := int(Rules.t("ley_n"))
+	for tries in 400:
+		if ley.size() >= n:
+			break
+		var p := Vector2(rng.randf_range(fr.position.x, fr.end.x), rng.randf_range(fr.position.y, fr.end.y))
+		if Meta.map_id == "line":
+			p.y = c.y + rng.randf_range(-LINE_HALF + 50.0, LINE_HALF - 50.0)  # 회랑: 길 안에만
+		var d := absf(p.x - c.x) if Meta.map_id == "line" else p.distance_to(c)
+		if d < 150.0 or (Meta.map_id != "line" and d > 360.0):
+			continue
+		if ley.any(func(q): return q.distance_to(p) < 220.0):
+			continue
+		ley.append(p)
+
+
+## 이 오브젝트가 기맥 위인가: 어느 자리에서 ley_r 안이고, 그 자리에 가장 가까운 오브젝트.
+## 한 시뮬 단계 안에서는 맞을 때마다 다시 세지 않는다(ley_memo: sim_id → 결과).
+var ley_memo := {}
+var ley_memo_id := -1
+
+
+func on_ley(t: Node) -> bool:
+	if ley.is_empty():
+		return false
+	if phase == Phase.WAVE:
+		if ley_memo_id != sim_id:
+			ley_memo_id = sim_id
+			ley_memo = {}
+		var id := t.get_instance_id()
+		if not ley_memo.has(id):
+			ley_memo[id] = _on_ley(t)
+		return ley_memo[id]
+	return _on_ley(t)
+
+
+func _on_ley(t: Node) -> bool:
+	var r := Rules.t("ley_r")
+	for p in ley:
+		if t.position.distance_to(p) >= r:
+			continue
+		var mine := true
+		for o in towers.get_children():
+			if o != t and o.position.distance_to(p) < t.position.distance_to(p):
+				mine = false
+				break
+		if mine:
+			return true
+	return false
+
+
+func _draw_ley() -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	var r := Rules.t("ley_r")
+	for p in ley:
+		var used := false
+		for t in towers.get_children():
+			if t.position.distance_to(p) < r:
+				used = true
+				break
+		var a := 0.5 + 0.2 * sin(now * 2.0 + p.x * 0.01)
+		draw_circle(p, r, Color(BUILD_COLOR, 0.08 if not used else 0.16))
+		for k in 6:
+			var a0 := TAU * k / 6.0 + now * 0.4
+			draw_arc(p, r, a0, a0 + 0.6, 6, Color(BUILD_COLOR, a if not used else 0.9), 2.0)
+		draw_circle(p, 3.0, Color(BUILD_COLOR, a))
+
+
+# ---------- 중앙 기술 (Skill) ----------
+
+var auto_skills := false  # 봇·점검: 설정과 상관없이 자동 사용
+
+
+## 이번 판에 중앙 기술을 쓰는가 (멀티플레이·정원·온라인 패치 skill_on 0이면 없음).
+func skills_on() -> bool:
+	return Rules.t("skill_on") > 0.0 and mp_mode == "" and not Garden.on and OS.get_environment("SKILL") != "0"  # 봇 비교용: SKILL=0이면 끔
+
+
+func _skills_new_run(set_i: int) -> void:
+	skill_set = clampi(set_i, 0, Skill.SETS.size() - 1)
+	skill_ids = Skill.set_ids(skill_set).duplicate() if skills_on() else []
+	skill_cd = {}
+	skill_arm = ""
+	skill_used = 0
+
+
+func skill_left(id: String) -> float:
+	return skill_cd.get(id, 0.0)
+
+
+func _skill_tick(delta: float) -> void:
+	if skill_ids.is_empty() or mp_ghost:
+		return
+	for id in skill_cd.keys():
+		skill_cd[id] = maxf(skill_cd[id] - delta, 0.0)
+	if Meta.skill_auto or auto_skills:
+		for id in skill_ids:
+			if skill_left(id) <= 0.0 and id != skill_arm:
+				var p: Variant = Skill.auto_target(self, id)
+				if p != null:
+					_use_skill(id, p)
+
+
+## 기술 버튼(1·2 키): 쓸 곳을 누르기를 기다린다. 다시 누르면 취소.
+func _arm_skill(i: int) -> void:
+	if phase != Phase.WAVE or i < 0 or i >= skill_ids.size():
+		return
+	var id: String = skill_ids[i]
+	if skill_left(id) > 0.0:
+		_show_toast("%s: %d초 뒤에 다시 쓸 수 있어요" % [Skill.NAMES[id], ceili(skill_left(id))])
+		return
+	skill_arm = "" if skill_arm == id else id
+	if skill_arm != "":
+		_show_toast(("%s: 쓸 곳을 누르세요" if touch_ui else "%s: 쓸 곳을 클릭 (우클릭·Esc 취소)") % Skill.NAMES[id])
+
+
+## p에 기술을 쓴다. 닿는 것이 없으면 쓰지 않는다 (누른 기술이면 이유를 알림).
+func _use_skill(id: String, p: Vector2) -> bool:
+	if phase != Phase.WAVE or skill_left(id) > 0.0 or not id in skill_ids:
+		return false
+	if not Skill.use(self, id, p):
+		if skill_arm == id:
+			_show_toast("집중: 오브젝트 위를 누르세요" if id == "focus" else "%s: 둘레에 구체가 없어요" % Skill.NAMES[id])
+		return false
+	skill_cd[id] = Skill.cd_full(id, perks.get("quick", 0))
+	skill_used += 1
+	if skill_arm == id:
+		skill_arm = ""
+	sfx.play("place")
+	return true
+
+
+## 기술 버튼: 웨이브 중에만, 다시 쓰기까지 남은 초를 글로.
+func _skill_ui() -> void:
+	var show := phase == Phase.WAVE and not skill_ids.is_empty() and not title_label.visible
+	for i in skill_btns.size():
+		var b: Button = skill_btns[i]
+		b.visible = show and i < skill_ids.size()
+		if not b.visible:
+			continue
+		var id: String = skill_ids[i]
+		var left := skill_left(id)
+		var txt: String = Skill.NAMES[id] if left <= 0.0 else "%s %d초" % [Skill.NAMES[id], ceili(left)]
+		if b.text != txt:
+			b.text = txt
+		var col: Color = Skill.COLORS[id]
+		b.modulate = Color(1, 1, 1, 1) if left <= 0.0 else Color(1, 1, 1, 0.55)
+		b.add_theme_color_override("font_color", col if left <= 0.0 else Color(1, 1, 1, 0.8))
+		b.tooltip_text = "%s (%d): %s · 다시 쓰기 %d초" % [Skill.NAMES[id], i + 1, Skill.desc(id), roundi(Skill.cd_full(id, perks.get("quick", 0)))]
+		var armed := skill_arm == id
+		if b.get_meta("armed", false) != armed:
+			b.set_meta("armed", armed)
+			var sb := StyleBoxFlat.new()
+			sb.bg_color = Color(col, 0.35) if armed else Color(0.06, 0.07, 0.1, 0.85)
+			sb.border_color = col
+			sb.set_border_width_all(3 if armed else 2)
+			sb.set_corner_radius_all(10)
+			for st in ["normal", "hover", "pressed"]:
+				b.add_theme_stylebox_override(st, sb)
+
+
+func _make_skill_btns(root: Control) -> void:
+	for i in 2:
+		var b := Button.new()
+		b.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+		b.position = Vector2(-176 + i * 186, -104)
+		b.size = Vector2(166, 50)
+		b.add_theme_font_size_override("font_size", 20)
+		b.focus_mode = Control.FOCUS_NONE
+		b.visible = false
+		b.pressed.connect(_arm_skill.bind(i))
+		root.add_child(b)
+		_keycap(b, str(i + 1))
+		skill_btns.append(b)
+
+
+## 기술 효과·고른 기술의 범위 (fx_layer, 전장 좌표).
+func _draw_skill_fx() -> void:
+	for q in skill_fx:
+		var k: float = 1.0 - q[2] / 0.5
+		fx_layer.draw_arc(q[0], q[1] * (0.6 + 0.4 * k), 0, TAU, 48, Color(q[3], 0.9 * (1.0 - k)), 4.0)
+	if skill_arm != "" and phase == Phase.WAVE:
+		var mp := get_global_mouse_position()
+		var col: Color = Skill.COLORS[skill_arm]
+		if skill_arm == "focus":
+			var t := Skill.focus_tower(self, mp)
+			if t:
+				fx_layer.draw_arc(t.position, Tower.RADIUS + 12.0, 0, TAU, 28, col, 3.0)
+			fx_layer.draw_arc(mp, Skill.PICK_R, 0, TAU, 32, Color(col, 0.35), 1.5)
+		else:
+			var r := Skill.radius(skill_arm)
+			fx_layer.draw_circle(mp, r, Color(col, 0.12))
+			fx_layer.draw_arc(mp, r, 0, TAU, 48, Color(col, 0.8), 2.0)
+
+
 func _toggle_speed() -> void:
 	# Space·버튼: 1배속 ↔ 고른 배속 (정원은 x2 고정, 바꾸지 않음)
 	if Garden.on:
@@ -7565,6 +7894,8 @@ func _spawn_orb(kind := -1, plan := {}) -> void:
 		o.splits = true  # 이벤트 증식
 	if kind != Orb.Kind.BOSS:
 		_late_trait(o, p)
+		if o.late == "":
+			_jam_trait(o)
 	orbs.add_child(o)
 
 
@@ -7633,6 +7964,97 @@ func _late_trait(o: Orb, p: Dictionary) -> void:
 	o.max_hp = ceilf(o.max_hp * hk)
 	o.hp = o.max_hp
 	o.speed *= sk
+
+
+# ---------- 방해 구체 (Orb.jam, 2026-10-31 "디펜스 한계 개선 B") ----------
+## 오브젝트를 잠깐 멈추거나 느리게만 한다(오브젝트 체력은 없음). 예고는 쉬는 시간 웨이브 안내, 침묵이면 효과가 멈춘다.
+const JAM_IDS := ["shade", "leech", "seeker"]
+const JAM_NAMES := {"shade": "그림자 구체", "leech": "흡수 구체", "seeker": "표적 구체"}
+const JAM_DESC := {"shade": "그림자 구체(보라 둘레: 지나가며 둘레 오브젝트 공격을 잠깐 멈춤. 침묵이면 못 함)", "leech": "흡수 구체(초록 송곳니: 맞힌 오브젝트 공격 속도를 빼앗고, 잡으면 둘레가 풀림)", "seeker": "표적 구체(붉은 화살촉: 가장 가까운 오브젝트로 와서 닿으면 그 오브젝트를 멈추고 사라짐, 중앙 피해 없음)"}
+var jam_any := false  # 이번 웨이브에 방해 구체가 나왔나 (없으면 매 조각 검사를 건너뜀)
+
+
+static func jam_from(id: String) -> int:
+	return int(Rules.t("jam_%s_from" % id))
+
+
+static func jam_share(id: String, w: int) -> float:
+	var f := jam_from(id)
+	if w < f:
+		return 0.0
+	return minf(Rules.t("jam_share") + Rules.t("jam_share_step") * floorf((w - f) / 10.0), Rules.t("jam_share_max"))
+
+
+func jams_on() -> bool:
+	return Rules.t("jam_on") > 0.0 and mp_mode == "" and not Garden.on and OS.get_environment("JAM") != "0"  # 봇 비교용: JAM=0이면 끔
+
+
+func _jam_trait(o: Orb) -> void:
+	if not jams_on() or mp_ghost:
+		return
+	var x := wf()
+	for k in JAM_IDS:
+		var sh := jam_share(k, wave)
+		if sh <= 0.0:
+			continue
+		if x < sh:
+			o.jam = k
+			break
+		x -= sh
+	if o.jam == "":
+		return
+	jam_any = true
+	if o.jam == "seeker":
+		o.speed *= Rules.t("jam_seek_spd")
+		var best: Tower = null
+		var bd := INF
+		for t in towers.get_children():
+			var d: float = t.position.distance_to(o.position)
+			if d < bd:
+				bd = d
+				best = t
+		if best:
+			o.jam_tower = best
+			o.jam_home = o.target
+			o.target = best.position
+			o.swirl = 0.0  # 곧장 온다
+
+
+## 계산 조각마다: 그림자는 둘레 오브젝트를 멈추고, 표적은 닿으면 멈추고 사라진다.
+func _jam_tick() -> void:
+	if not jam_any:
+		return
+	for o in live_orbs:
+		if o.jam == "" or o.hp <= 0.0 or o.is_queued_for_deletion():
+			continue
+		if o.silence_t > 0.0:
+			continue
+		match o.jam:
+			"shade":
+				var r := Rules.t("jam_shade_r") + Tower.RADIUS
+				for t in towers.get_children():
+					if t.position.distance_to(o.position) < r:
+						t.jam(Rules.t("jam_shade_t"))
+			"seeker":
+				var t: Object = o.jam_tower
+				if not is_instance_valid(t):
+					o.jam = ""
+					o.target = o.jam_home
+					continue
+				if t.position.distance_to(o.position) < Tower.RADIUS + o.radius() + 4.0:
+					t.jam(Rules.t("jam_seek_t"))
+					burst(o.position, Color(1.0, 0.35, 0.3), 12, 160.0)
+					o.queue_free()
+
+
+## 흡수 구체가 죽으면 둘레 오브젝트가 빼앗긴 공격 속도를 돌려받는다.
+func _jam_death(o: Orb) -> void:
+	if o.jam != "leech":
+		return
+	for t in towers.get_children():
+		if t.position.distance_to(o.position) < Rules.t("jam_leech_free"):
+			t.leech_n = 0
+			t.leech_t = 0.0
 
 
 ## 피해 숫자 팝업.
@@ -7963,6 +8385,7 @@ func _process(delta: float) -> void:
 		hide_btn.offset_top = hy
 		hide_btn.offset_bottom = hy + 32.0
 	_garden_layout(cx, by)
+	_skill_ui()
 	restart_armed = maxf(restart_armed - delta, 0.0)
 	end_armed = maxf(end_armed - delta, 0.0)
 	if not get_tree().paused and not title_label.visible and phase != Phase.GAMEOVER:
@@ -8034,12 +8457,14 @@ func _sim_step(delta: float) -> void:
 	wave_time += delta
 	run_game += delta
 	_dps_sample(delta)
+	_skill_tick(delta)
 	# 콤보 유지 시간은 게임 시간으로 잰다: 배속을 올려도 점수가 달라지지 않는다
 	if combo_t > 0.0 and not combo_hold:
 		combo_t = maxf(combo_t - delta, 0.0)
 		if combo_t <= 0.0 and combo >= 5:
 			combo_end = [combo, combo_bonus, 1.5]
 	_resolve(delta)
+	_jam_tick()
 
 	if mp_ghost:
 		return  # 협동 참가자: 웨이브 끝·게임 오버는 호스트가 알려 준다
@@ -8278,6 +8703,7 @@ func _resolve(delta: float) -> void:
 		if o.hp <= 0.0:
 			if o.shade_t > 0.0:
 				_pass_shade(o)
+			_jam_death(o)
 			sfx.play("kill", 0.15)
 			combo_hold = false
 			if combo_t <= 0.0:
@@ -8556,6 +8982,9 @@ func _update_fx(delta: float) -> void:
 	for q in core_fx:
 		q[2] -= delta
 	core_fx = core_fx.filter(func(q): return q[2] > 0.0)
+	for q in skill_fx:
+		q[2] -= delta
+	skill_fx = skill_fx.filter(func(q): return q[2] > 0.0)
 	eclipse_flash = maxf(eclipse_flash - delta, 0.0)
 	eclipse_cd = maxf(eclipse_cd - delta, 0.0)
 	if view_zoom > 1.0 and (title_label.visible or phase == Phase.GAMEOVER):
@@ -8805,6 +9234,8 @@ func _draw_orb_tooltip() -> void:
 		var parts := PackedStringArray([kinds[o.kind], "체력 %d/%d" % [ceili(o.hp), roundi(o.max_hp)]])
 		if o.shield > 0.0: parts.append("보호막 %d" % ceili(o.shield))
 		if o.splits: parts.append("분열")
+		if o.jam != "": parts.append(JAM_NAMES[o.jam])
+		if o.amp.has("brand"): parts.append("낙인(받는 피해 +%d%%)" % roundi(Rules.t("skill_brand_amp") * 100))
 		if o.burn_t > 0.0: parts.append("화상")
 		if o.poison_t > 0.0: parts.append("중독")
 		if o.root_immune > 0.0: parts.append("기절 면역")
@@ -8962,6 +9393,7 @@ func _draw_fx() -> void:
 	var vs := vw.size
 	_draw_margins(vw)
 	_draw_place_note(fx_layer)
+	_draw_skill_fx()
 	for i in 6:
 		var w := 14.0 * (6 - i)
 		var col := Color(0, 0, 0, 0.05)
@@ -9459,6 +9891,7 @@ func _draw_core_guard(c: Vector2, now: float) -> void:
 				for k in rampart_left:
 					var m := c + dir * (RAMPART_R + k * 5.0)
 					draw_line(m - side, m + side, wcol, 4.0)
+	_draw_ley()
 	for q in core_fx:
 		var k: float = 1.0 - q[2] / FX_RIPOSTE
 		draw_arc(q[0], q[1] * (0.3 + 0.7 * k), 0, TAU, 48, Color(1.0, 0.85, 0.5, 1.0 - k), 4.0)

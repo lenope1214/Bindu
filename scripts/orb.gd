@@ -24,6 +24,9 @@ var sturdy := false  # 굳셈: 밀기·감속·기절·냉기 효과 절반
 var minion_t := 4.0  # 보스: 부하 소환 주기
 ## 후반 구체 (2026-10-31): 깜빡(blink)·갑옷(armor)·치유(mender)·흐림(phase)·포식(devour). 한 구체에 하나. main._late_trait
 var late := ""
+var jam := ""  # 방해 구체 (20~40웨이브~, Main._jam_trait): shade 그림자 · leech 흡수 · seeker 표적
+var jam_tower: Object = null  # 표적 구체가 쫓는 오브젝트
+var jam_home := Vector2.ZERO  # 표적 구체가 원래 가던 곳 (쫓던 오브젝트가 없어지면 그쪽으로)
 var late_t := 0.0  # 깜빡: 다음 순간이동까지 / 치유: 다음 맥동까지 / 흐림: 주기 안 시각 / 포식: 다음 삼키기 검사까지
 var armor := 0.0  # 갑옷: 한 번 맞을 때 빼는 피해 (맞을수록 깨짐)
 var armor_hits := 0.0
@@ -299,6 +302,8 @@ func _redraw_if_changed() -> void:
 	if late != "":
 		spin += roundi(age * 20.0) << 8
 	sg ^= spin * 1000003
+	if amp.has("brand"):
+		sg ^= 0x5bd1e995
 	if sg != _sig:
 		_sig = sg
 		queue_redraw()
@@ -686,12 +691,20 @@ func _draw() -> void:
 		var cc := Color(0.75, 0.3, 0.9)
 		draw_arc(cp, 7.0, age * 3.0, age * 3.0 + TAU * 0.75, 12, cc, 2.0)
 		draw_circle(cp, 2.5, cc)
+	if jam != "":
+		_draw_jam(r)
 	# 상태 표시 점: 화상·중독·약화·감속
 	var icons: Array = []
 	if burn_t > 0.0: icons.append(Elem.COLORS[Elem.FIRE])
 	if poison_t > 0.0: icons.append(Elem.COLORS[Elem.POISON])
 	if vuln_t > 0.0: icons.append(Elem.COLORS[Elem.DARK])
 	if slow_timer > 0.0: icons.append(Elem.COLORS[Elem.WATER])
+	if amp.has("brand"):
+		# 중앙 기술 낙인: 붉은 과녁
+		draw_arc(Vector2.ZERO, r + 5.0, 0, TAU, 20, Color(1.0, 0.45, 0.55, 0.9), 2.0)
+		for k in 4:
+			var d := Vector2.from_angle(k * PI / 2.0)
+			draw_line(d * (r + 2.0), d * (r + 9.0), Color(1.0, 0.45, 0.55, 0.9), 2.0)
 	for i in icons.size():
 		draw_circle(Vector2(-(icons.size() - 1) * 4.0 + i * 8.0, -r - 9.0), 3.0, icons[i])
 	# 체력 숫자: 보스·마우스를 올린 구체·설정에서 켠 때만 (평소엔 위의 붉은 고리로 본다)
@@ -700,6 +713,27 @@ func _draw() -> void:
 		var txt := str(ceili(hp))
 		var size := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_CENTER, -1, 12)
 		draw_string(font, Vector2(-size.x / 2, 4), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.1, 0.1, 0.15))
+
+
+## 방해 구체 표시: 그림자는 닿는 거리 옅은 보라 원, 흡수는 초록 송곳니, 표적은 쫓는 오브젝트 쪽 붉은 화살촉.
+func _draw_jam(r: float) -> void:
+	match jam:
+		"shade":
+			var col := Color(0.55, 0.4, 0.8)
+			draw_circle(Vector2.ZERO, Rules.t("jam_shade_r"), Color(col, 0.07))
+			draw_arc(Vector2.ZERO, Rules.t("jam_shade_r"), 0, TAU, 40, Color(col, 0.3), 1.5)
+			draw_circle(Vector2.ZERO, r * 0.55, Color(0.2, 0.12, 0.3, 0.9))
+		"leech":
+			var g := Color(0.45, 0.95, 0.5)
+			for sx in [-1.0, 1.0]:
+				draw_colored_polygon(PackedVector2Array([Vector2(sx * r * 0.55, -r * 0.2), Vector2(sx * r * 0.15, -r * 0.2), Vector2(sx * r * 0.35, r * 0.55)]), g)
+			draw_arc(Vector2.ZERO, r + 3.0, 0, TAU, 20, Color(g, 0.7), 1.5)
+		"seeker":
+			var col := Color(1.0, 0.35, 0.3)
+			var d := (target - position).normalized() if target.distance_to(position) > 1.0 else Vector2.RIGHT
+			var tip := d * (r + 9.0)
+			draw_colored_polygon(PackedVector2Array([tip, d * (r + 1.0) + d.orthogonal() * 5.0, d * (r + 1.0) - d.orthogonal() * 5.0]), col)
+			draw_arc(Vector2.ZERO, r * 0.5, 0, TAU, 16, col, 2.0)
 
 
 ## 후반 구체 표시: 예고(깜빡 점·치유 불빛·흐림 물결·포식 입)가 행동보다 먼저 보인다.

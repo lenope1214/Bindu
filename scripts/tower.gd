@@ -22,6 +22,11 @@ var trigs := {}  # 발동 id -> 겹친 수
 var echo_cd := 0.0  # 여진: 다시 터질 때까지
 var van_ready := false  # 선봉: 이번 웨이브에 아직 안 켜짐 (웨이브 시작 때 켜고, 처음 맞히면 발동)
 var van_t := 0.0  # 선봉: 공격 속도 x2 남은 시간
+var focus_t := 0.0  # 중앙 기술 집중: 공격 속도 배율 남은 시간 (Skill)
+var jam_t := 0.0  # 방해 구체(그림자·표적)가 멈춘 남은 시간: 공격하지 않는다
+var jam_imm := 0.0  # 멈춤이 풀린 뒤 다시 멈추지 않는 시간
+var leech_n := 0  # 흡수 구체에게 빼앗긴 공격 속도 겹침 (하나에 Rules jam_leech)
+var leech_t := 0.0  # 그 겹침이 풀릴 때까지
 var charge := 0.0  # 축적: 모은 처치 (웨이브가 넘어가도 유지)
 var third_n := 0  # 삼연: 지금까지 쏜 공격 수
 var fire_boost := 1.0  # 지금 나가는 공격의 발동 배율 (축적·삼연, attack() 한 번 안에서만)
@@ -170,7 +175,34 @@ const SHADE_T := 3.0  # 어둠 형태 성질 그림자 표식 시간 (2026-10-31
 
 ## 공격 속도 배율: 특성 × 속사 × 바람 버프 ÷ 속성을 겹친 대가 (모두 곱한다). 특수 반응 공격도 이 배율.
 func spd_k() -> float:
-	return spd_mul * (1.0 + Rules.rapid_k * mf("rapid")) * (1.0 + wind_buff) * (1.0 + (photo_k if photo_t > 0.0 else 0.0)) * van_k() / tax()
+	return spd_mul * (1.0 + Rules.rapid_k * mf("rapid")) * (1.0 + wind_buff) * (1.0 + (photo_k if photo_t > 0.0 else 0.0)) * van_k() * skill_k() / tax()
+
+
+## 중앙 기술 집중·흡수 구체가 바꾼 공격 속도 배율.
+func skill_k() -> float:
+	var k := Rules.t("skill_focus_spd") if focus_t > 0.0 else 1.0
+	if leech_n > 0:
+		k *= maxf(0.1, 1.0 - Rules.t("jam_leech") * leech_n)
+	return k
+
+
+## 방해 구체가 이 오브젝트를 멈춘다 (풀린 뒤 jam_imm 동안은 다시 안 멈춤). 멈췄으면 true.
+func jam(sec: float) -> bool:
+	if jam_t > 0.0 or jam_imm > 0.0:
+		return false
+	jam_t = sec
+	jam_imm = sec + Rules.t("jam_imm")
+	if main:
+		main.burst(position, Color(0.55, 0.45, 0.7), 10, 120.0)
+	return true
+
+
+## 흡수 구체를 맞혔다: 공격 속도 하나 더 빼앗김.
+func leech() -> void:
+	if leech_t > Rules.t("jam_leech_t") - 0.5:
+		return  # 0.5초에 한 겹만 (계속 뿜는 공격이 한 번에 다 빼앗기지 않게)
+	leech_n = mini(leech_n + 1, int(Rules.t("jam_leech_max")))
+	leech_t = Rules.t("jam_leech_t")
 
 
 ## 선봉이 켜져 있으면 공격 속도 배율.
@@ -294,6 +326,11 @@ func wave_begin() -> void:
 	van_ready = tg("vanguard") > 0
 	van_t = 0.0
 	echo_cd = 0.0
+	focus_t = 0.0
+	jam_t = 0.0
+	jam_imm = 0.0
+	leech_n = 0
+	leech_t = 0.0
 
 
 ## 투척 장판: 느린 탄이 날아간 길에 띠 장판이 남는다 (Zone.trail). 던지는 간격, 날아가는 거리(Lv1, reach 배율),
@@ -379,6 +416,10 @@ func spd_parts() -> Array:
 		out.append(["특성", spd_mul])
 	if van_t > 0.0:
 		out.append(["선봉", Rules.t("van_spd")])
+	if focus_t > 0.0:
+		out.append(["집중", Rules.t("skill_focus_spd")])
+	if leech_n > 0:
+		out.append(["흡수당함", maxf(0.1, 1.0 - Rules.t("jam_leech") * leech_n)])
 	if Rules.t("spd_" + pattern) != 1.0:
 		out.append(["공격방식 보정", Rules.t("spd_" + pattern)])
 	return out
@@ -469,6 +510,8 @@ func detail_lines() -> Array:
 		fp.append("오브젝트 수 x%.2f" % (1.0 + Rules.crowd_bonus(main.towers.get_child_count())))
 	if dmg_mul != 1.0:
 		fp.append("특성 x%.2f" % dmg_mul)
+	if main and main.on_ley(self):
+		fp.append("기맥 x%.2f" % (1.0 + Rules.t("ley_dmg")))
 	out.append(["  피해 배율: " + " · ".join(fp) + " (공명·강화·패치 포함 x%.2f)" % f, dim])
 	if shots > 1.0:
 		out.append(["한 번에 %.2f개 (다중 발사)" % shots if pattern != "wall" else "벽 최대 %d개 (다중 발사)" % (2 + roundi(mf("multi"))), Color(1, 0.85, 0.45)])
@@ -566,6 +609,8 @@ func dmg_factor(rx := false) -> float:
 	f *= MapRule.tower_mul(elements, pattern)  # 맵 친화 속성·공격방식
 	if main and on_lane():
 		f *= 1.0 + Rules.t("map_cross_dmg")  # 십자로: 길목에서 길 따라 겨눔
+	if main and main.on_ley(self):
+		f *= 1.0 + Rules.t("ley_dmg")  # 기맥 위
 	return f
 
 
@@ -635,6 +680,8 @@ func breakdown() -> Dictionary:
 		fs.append(["mod:multi", log((1 + mn("multi")) * multi_k())])
 	if dmg_mul * spd_mul > 1.0:
 		fs.append(["etc:perk", log(dmg_mul * spd_mul)])
+	if main and main.on_ley(self):
+		fs.append(["etc:ley", log(1.0 + Rules.t("ley_dmg"))])
 	for id in mods:  # 강화 보정표로 늘어난 몫은 그 강화로 (줄어든 몫은 0 이하라 아래에서 빠짐)
 		fs.append(["mod:" + id, log(Pat.mod_fix(pattern, id, mf(id)))])
 	var sum := 0.0
@@ -1191,6 +1238,13 @@ func multi_k() -> float:
 ## 웨이브 밖(쉬는 시간·카드 선택)에는 attack이 안 불려 그림 효과 시간이 멈춘다.
 ## 마지막 구체를 초신성·레이저 등으로 잡으면 그 효과가 다음 웨이브까지 남았다 (2026-10-31 회색 원 버그). main이 웨이브 밖에서 부른다.
 func fade_fx(delta: float) -> void:
+	if jam_t > 0.0 or focus_t > 0.0 or leech_n > 0:
+		# 웨이브가 끝나면 집중·방해 표시는 바로 지운다 (쉬는 시간에 멈춘 것처럼 보이지 않게)
+		jam_t = 0.0
+		focus_t = 0.0
+		leech_n = 0
+		leech_t = 0.0
+		queue_redraw()
 	var any := nova_fx > 0.0 or not feed_fx.is_empty() or recoil > 0.0 or burst_t > 0.0
 	for k in fx.keys():
 		if fx[k] > 0.0:
@@ -1222,9 +1276,20 @@ func attack(delta: float, orbs: Array) -> void:
 	fe2 = maxf(fe2 - delta, 0.0)
 	echo_cd = maxf(echo_cd - delta, 0.0)
 	van_t = maxf(van_t - delta, 0.0)
+	focus_t = maxf(focus_t - delta, 0.0)
+	jam_imm = maxf(jam_imm - delta, 0.0)
+	if leech_t > 0.0:
+		leech_t -= delta
+		if leech_t <= 0.0:
+			leech_n = 0
 	answer_cd = maxf(answer_cd - delta, 0.0)
 	notify_cd = maxf(notify_cd - delta, 0.0)
 	burst_t = maxf(burst_t - delta, 0.0)
+	if jam_t > 0.0:
+		# 방해 구체에 멈춤: 공격하지 않는다 (이미 날아간 탄·장판은 그대로)
+		jam_t = maxf(jam_t - delta, 0.0)
+		queue_redraw()
+		return
 	_update_aim(orbs, delta)
 	# 속성을 많이 겹칠수록 공격이 느려진다(쌓기 대가), 속사 강화로 빨라진다
 	var de := delta * spd_k()
@@ -1846,6 +1911,8 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 			o.stagger(o.speed * 0.1 * tk(Elem.METAL) * minf(k, 1.0))
 	if o.late != "" and not in_rx and not in_zone:
 		d = o.late_direct(d, k)  # 후반 구체 갑옷·흐림: 직접 맞힌 공격만
+	if o.jam == "leech" and not in_rx and o.silence_t <= 0.0:
+		leech()  # 흡수 구체: 맞힌 오브젝트 공격 속도를 빼앗는다 (침묵이면 못 함)
 	var rm := o.resist_mul(els)
 	d *= rm
 	d = o.hurt(d, crit)  # 받는 피해 배율(약점 등)까지 곱한 값
@@ -2463,6 +2530,18 @@ func _draw_body() -> void:
 			var tip := Vector2.from_angle(a) * (RADIUS + 3.0)
 			var side := Vector2.from_angle(a).orthogonal() * 4.0
 			draw_colored_polygon(PackedVector2Array([tip, p + side, p - side]), Color(1.0, 0.55, 0.85, 0.85))
+	if focus_t > 0.0:
+		# 중앙 기술 집중: 남은 시간만큼 줄어드는 금색 두꺼운 고리
+		var ff := focus_t / maxf(Rules.t("skill_focus_t"), 0.01)
+		draw_arc(Vector2.ZERO, RADIUS + 9.0, -PI / 2.0, -PI / 2.0 + TAU * ff, 28, Color(Skill.COLORS["focus"], 0.95), 4.0)
+	if jam_t > 0.0:
+		# 방해 구체에 멈춤: 어두운 막 + 가로 막대
+		draw_circle(Vector2.ZERO, RADIUS + 3.0, Color(0.05, 0.03, 0.1, 0.6))
+		draw_line(Vector2(-RADIUS * 0.7, 0), Vector2(RADIUS * 0.7, 0), Color(0.75, 0.6, 1.0, 0.95), 4.0)
+	elif leech_n > 0:
+		# 흡수당함: 겹친 만큼 초록 점
+		for i in leech_n:
+			draw_circle(Vector2.from_angle(PI / 2.0 + (i - (leech_n - 1) / 2.0) * 0.35) * (RADIUS + 7.0), 2.5, Color(0.45, 0.95, 0.5, 0.95))
 	if van_t > 0.0:
 		# 선봉: 켜져 있는 동안 남은 시간만큼 줄어드는 고리
 		var f := van_t / van_time(tg("vanguard"))

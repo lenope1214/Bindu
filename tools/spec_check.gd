@@ -23,6 +23,7 @@ func _clear() -> void:
 
 func _fresh(w := 5) -> void:
 	_clear()
+	main.ley = []  # 기맥은 _ley_build()에서만
 	Modes.set_on([])
 	Meta.rules = 1
 	Meta.map_id = "plain"
@@ -545,6 +546,9 @@ func _orbs_cc() -> void:
 	ok("ORB-02", is_equal_approx(sh.hp, 8.0) and sh.shield == 0.0, "보호막이 피해를 먼저 흡수")
 	_late_orbs()
 	_late_curve()
+	_jam_orbs()
+	_skills()
+	_ley_build()
 	_clear()
 
 
@@ -649,7 +653,7 @@ func _score_core() -> void:
 func _perks() -> void:
 	_fresh()
 	var ids: Array = main.PERKS.map(func(p): return p["id"])
-	ok("PERK-02", ids.size() == 14 and ids.has("coin") and ids.has("shield") and ids.has("rampart") and ids.has("riposte") and ids.has("overflow"), "특성 14종 (%s)" % ",".join(ids))
+	ok("PERK-02", ids.size() == 15 and ids.has("quick") and ids.has("coin") and ids.has("shield") and ids.has("rampart") and ids.has("riposte") and ids.has("overflow"), "특성 15종 (%s)" % ",".join(ids))
 	main._apply_perk("power")
 	main._apply_perk("haste")
 	main._apply_perk("reach")
@@ -1517,7 +1521,7 @@ func _tutorial() -> void:
 	var prog := JSON.stringify(Progress.build())
 	ok("TUT-01", Tutorial.PATH == "user://device.cfg" and first and showed and after and not best.has_section("tutorial") and not prog.contains("tutorial"),
 		"첫 진입 %s, 건너뛰기 %s, 닫은 뒤 다시 안 뜸 %s, best.cfg·계정 진행엔 없음" % [first, showed, after])
-	# TUT-02: 항목 14개, id 겹침 없음, 장마다 그림 함수, 터치 글엔 키·클릭 말 없음, 모든 항목이 첫 진입이나 처음 나올 때로 뜸
+	# TUT-02: 항목 15개, id 겹침 없음, 장마다 그림 함수, 터치 글엔 키·클릭 말 없음, 모든 항목이 첫 진입이나 처음 나올 때로 뜸
 	var ids := {}
 	var bad := []
 	for tp in Tutorial.TOPICS:
@@ -1536,7 +1540,7 @@ func _tutorial() -> void:
 	for v in Tutorial.ON_EVENT.values():
 		if not ids.has(v):
 			bad.append("모르는 항목 " + v)
-	ok("TUT-02", Tutorial.TOPICS.size() == 14 and ids.size() == 14 and bad.is_empty(), "항목 %d개, 문제 %s" % [ids.size(), str(bad)])
+	ok("TUT-02", Tutorial.TOPICS.size() == 15 and ids.size() == 15 and bad.is_empty(), "항목 %d개, 문제 %s" % [ids.size(), str(bad)])
 	# TUT-03: 처음 생긴 일이면 한 번만 줄에 넣고, 안내 끄기·멀티·이미 본 항목은 넣지 않음. 띄우면 본 것으로, 판을 멈췄으면 닫을 때 다시 진행
 	Tutorial.seen = {}
 	main.tut_queue.clear()
@@ -1567,7 +1571,7 @@ func _tutorial() -> void:
 	var resumed: bool = not main.tut.visible and not paused and not main.tut_paused
 	paused = false
 	ok("TUT-03", once and via_guide and skipped and marked and resumed, "한 번만 %s, _guide에서 %s, 끄기·멀티·본 것 빼기 %s, 본 것 표시 %s, 닫으면 판 진행 %s" % [once, via_guide, skipped, marked, resumed])
-	# TUT-04: 시작 화면·일시정지의 [튜토리얼] 버튼, 목록 14개 + 전체 보기, ✓, 항목 → 카드 → 목록으로, 전체 보기 → 도움말
+	# TUT-04: 시작 화면·일시정지의 [튜토리얼] 버튼, 목록 15개 + 전체 보기, ✓, 항목 → 카드 → 목록으로, 전체 보기 → 도움말
 	var title_btn := false
 	for b in main.title_box.find_children("*", "Button", true, false):
 		if (b as Button).pressed.is_connected(main._open_tut_list):
@@ -1579,13 +1583,13 @@ func _tutorial() -> void:
 	Tutorial.seen = {"goal": true}
 	main._open_tut_list()
 	var g: GridContainer = main.tut.grid
-	var listed: bool = main.tut.mode == "list" and g.get_child_count() == 15 and (g.get_child(0) as Button).text.ends_with("✓") and not (g.get_child(1) as Button).text.ends_with("✓")
+	var listed: bool = main.tut.mode == "list" and g.get_child_count() == 16 and (g.get_child(0) as Button).text.ends_with("✓") and not (g.get_child(1) as Button).text.ends_with("✓")
 	(g.get_child(4) as Button).pressed.emit()
 	var opened: bool = main.tut.mode == "pages" and main.tut.cur_topic()["id"] == Tutorial.TOPICS[4]["id"]
 	for i in 5:
 		main.tut._next()
 	var back: bool = main.tut.visible and main.tut.mode == "list"
-	(main.tut.grid.get_child(14) as Button).pressed.emit()
+	(main.tut.grid.get_child(15) as Button).pressed.emit()
 	var helped: bool = not main.tut.visible and main.help_label.visible
 	main.help_label.visible = false
 	ok("TUT-04", title_btn and pause_btn and listed and opened and back and helped, "시작 화면 %s, 일시정지 %s, 목록 %s, 항목 열기 %s, 목록으로 %s, 전체 보기 %s" % [title_btn, pause_btn, listed, opened, back, helped])
@@ -1735,6 +1739,217 @@ func _late_orbs() -> void:
 	main.wave = 5
 	ok("ORB-03", froms == [100, 175, 250, 350, 500] and share_ok and held and jumped and armor_ok and heal_ok and phase_ok and dev_ok and fresh,
 		"후반 구체: 등장 %s 비율 %s 깜빡 %s/%s 갑옷 %s(%.1f·%.1f·%.1f) 치유 %s(%.1f·%.1f) 흐림 %s 포식 %s 안내 %s" % [str(froms), share_ok, held, jumped, armor_ok, d1, d2, d3, heal_ok, n1.hp, n2.hp, phase_ok, dev_ok, fresh])
+
+
+## 방해 구체 (JAM-01~04)
+func _jam_orbs() -> void:
+	_fresh(25)
+	var c: Vector2 = main.center()
+	var froms := [main.jam_from("shade"), main.jam_from("leech"), main.jam_from("seeker")]
+	var share_ok: bool = main.jam_share("shade", 19) == 0.0 and is_equal_approx(main.jam_share("shade", 20), 0.05) and is_equal_approx(main.jam_share("shade", 40), 0.07) and is_equal_approx(main.jam_share("shade", 300), 0.12)
+	main.mp_mode = "vs"
+	var mp_off: bool = not main.jams_on()
+	main.mp_mode = ""
+	var fresh := false
+	main.wave = 19
+	main._update_preview()
+	fresh = main.wave_kinds.any(func(k): return k[0] == "shade" and k[2])
+	main.wave = 25
+	ok("JAM-01", froms == [20, 30, 40] and share_ok and mp_off and main.jams_on() and fresh, "등장 %s 비율 %s 멀티 끔 %s 안내 NEW %s" % [str(froms), share_ok, mp_off, fresh])
+	# 그림자: 80 안 오브젝트 1.5초 멈춤, 풀린 뒤 4초 면역, 침묵이면 못 함
+	var t := _tower(c + Vector2(-200, 0), Elem.FIRE)
+	var far := _tower(c + Vector2(200, 0), Elem.FIRE)
+	var sh := _orb(c + Vector2(-200, 60), 50.0)
+	sh.jam = "shade"
+	main.jam_any = true
+	main._resolve(0.0)
+	main._jam_tick()
+	var stopped := is_equal_approx(t.jam_t, 1.5) and far.jam_t == 0.0
+	t.jam_t = 0.0
+	main._jam_tick()
+	var imm := t.jam_t == 0.0 and t.jam_imm > 0.0
+	t.jam_imm = 0.0
+	sh.silence_t = 2.0
+	main._jam_tick()
+	var quiet := t.jam_t == 0.0
+	# 멈춘 동안 공격하지 않는다 (직선탄이 안 나감)
+	t.jam_t = 1.0
+	t.dir = Vector2.DOWN
+	var np: int = main.projectiles.get_child_count()
+	t.attack(0.5, main.targets)
+	var no_shot: bool = main.projectiles.get_child_count() == np and is_equal_approx(t.jam_t, 0.5)
+	ok("JAM-02", stopped and imm and quiet and no_shot, "그림자: 멈춤 %s 면역 %s 침묵 %s 멈춘 동안 공격 없음 %s" % [stopped, imm, quiet, no_shot])
+	# 흡수: 맞힐 때마다 공격 속도 -5%(0.5초에 한 겹, 최대 5), 잡으면 300 안 오브젝트 풀림
+	sh.free()
+	t.jam_t = 0.0
+	var lc := _orb(c + Vector2(-200, 40), 1000.0)
+	lc.jam = "leech"
+	var k0 := t.spd_k()
+	t.hit(lc, 1.0)
+	t.hit(lc, 1.0)
+	var one := t.leech_n == 1 and is_equal_approx(t.spd_k(), k0 * 0.95)
+	for i in 10:
+		t.leech_t = 0.0
+		t.hit(lc, 1.0)
+	var cap := t.leech_n == 5
+	main._jam_death(lc)
+	var freed := t.leech_n == 0
+	ok("JAM-03", one and cap and freed, "흡수: 한 겹 %s 최대 5 %s 잡으면 풀림 %s" % [one, cap, freed])
+	# 표적: 가장 가까운 오브젝트를 쫓고, 닿으면 그 오브젝트 3초 멈춤·사라짐
+	lc.free()
+	t.jam_imm = 0.0
+	t.jam_t = 0.0
+	main.wave = 45
+	var sk: Orb = null
+	for i in 400:
+		var o := Orb.new()
+		o.main = main
+		o.position = c + Vector2(-500, 0)
+		o.target = c
+		o.setup(Orb.Kind.NORMAL, 5.0, 40.0)
+		main._jam_trait(o)
+		if o.jam == "seeker":
+			sk = o
+			break
+		o.free()
+	var aimed: bool = sk != null and sk.jam_tower == t and sk.target == t.position
+	var hit_ok := false
+	if sk:
+		main.orbs.add_child(sk)
+		sk.position = t.position + Vector2(10, 0)
+		main._resolve(0.0)
+		main._jam_tick()
+		hit_ok = is_equal_approx(t.jam_t, 3.0) and sk.is_queued_for_deletion()
+	main.wave = 25
+	ok("JAM-04", aimed and hit_ok, "표적: 가까운 오브젝트 쫓음 %s 닿으면 멈춤·사라짐 %s" % [aimed, hit_ok])
+	main.jam_any = false
+	_clear()
+
+
+## 중앙 기술 (SKILL-01~05)
+func _skills() -> void:
+	_fresh(12)
+	var c: Vector2 = main.center()
+	main._skills_new_run(1)
+	var set_ok: bool = main.skill_ids == ["focus", "brand"] and Skill.SETS.size() == 3
+	main.mp_mode = "coop"
+	main._skills_new_run(0)
+	var mp_off: bool = main.skill_ids.is_empty()
+	main.mp_mode = ""
+	main._skills_new_run(0)
+	ok("SKILL-01", set_ok and mp_off and main.skill_ids == ["focus", "hold"], "묶음 3개 중 고른 둘 %s, 멀티는 없음 %s" % [set_ok, mp_off])
+	main.phase = main.Phase.WAVE
+	var t := _tower(c + Vector2(-150, 0), Elem.FIRE)
+	var k0 := t.spd_k()
+	var used: bool = main._use_skill("focus", t.position + Vector2(20, 10))
+	var fast := is_equal_approx(t.spd_k(), k0 * 2.0) and is_equal_approx(t.focus_t, 6.0)
+	var cd_ok: bool = is_equal_approx(main.skill_left("focus"), 25.0) and not main._use_skill("focus", t.position)
+	var miss: bool = not main._use_skill("hold", c + Vector2(400, 300)) and main.skill_left("hold") == 0.0
+	main._skill_tick(10.0)
+	var ticked: bool = is_equal_approx(main.skill_left("focus"), 15.0)
+	ok("SKILL-02", used and fast and cd_ok and miss and ticked, "집중: 공속 x2 6초 %s, 다시 쓰기 25초 %s, 빈 곳엔 안 씀 %s, 게임 시간으로 줄어듦 %s" % [fast, cd_ok, miss, ticked])
+	var a := _orb(c + Vector2(200, 0), 50.0)
+	var b := _orb(c + Vector2(260, 40), 50.0)
+	var boss := _orb(c + Vector2(180, -60), 50.0, Orb.Kind.BOSS)
+	var out := _orb(c + Vector2(200, 200), 50.0)
+	main._resolve(0.0)
+	var held: bool = main._use_skill("hold", c + Vector2(210, 0))
+	var hold_ok: bool = held and is_equal_approx(a.root_timer, 2.0) and is_equal_approx(b.root_timer, 2.0) and is_equal_approx(boss.root_timer, 1.0) and out.root_timer == 0.0 and is_equal_approx(main.skill_left("hold"), 30.0)
+	ok("SKILL-03", hold_ok, "붙잡기: 120 안 2초(보스 1초), 밖은 그대로, 다시 쓰기 30초")
+	main._skills_new_run(2)
+	main.phase = main.Phase.WAVE
+	main._use_skill("brand", c + Vector2(210, 0))
+	var hp0 := a.hp
+	a.hurt(10.0)
+	var brand_ok: bool = a.amp.has("brand") and is_equal_approx(hp0 - a.hp, 13.0) and not out.amp.has("brand")
+	ok("SKILL-04", brand_ok, "낙인: 150 안 구체 받는 피해 +30%% (%.1f)" % [hp0 - a.hp])
+	# 빠른 손 -20%(겹치면 곱), 자동 사용은 몰린 곳에
+	main.perks = {"quick": 2}
+	var q_ok := is_equal_approx(Skill.cd_full("brand", 2), 20.0 * 0.64)
+	main.skill_cd = {}
+	main.auto_skills = true
+	for o in [a, b, boss, out]:
+		o.amp.clear()
+		o.root_timer = 0.0
+		o.root_immune = 0.0
+		o.root_dr = 0
+	main._resolve(0.0)
+	main._skill_tick(0.01)
+	var auto_ok: bool = main.skill_left("hold") > 0.0 and main.skill_left("brand") > 0.0 and a.amp.has("brand") and is_equal_approx(main.skill_left("brand"), 12.8)
+	main.auto_skills = false
+	main.perks = {}
+	main.phase = main.Phase.CHOOSE
+	main._skills_new_run(0)
+	ok("SKILL-05", q_ok and auto_ok, "빠른 손 2번 x0.64 %s, 자동 사용 %s" % [q_ok, auto_ok])
+	_clear()
+
+
+## 기맥·빌드 읽기 (LEY-01..03, BUILD-01..02)
+func _ley_build() -> void:
+	_fresh(12)
+	var c: Vector2 = main.center()
+	main.run_id = "spec-ley"
+	main._ley_new_run()
+	var a: Array = main.ley.duplicate()
+	main._ley_new_run()
+	var same: bool = a == main.ley
+	var fr: Rect2 = main.field_rect().grow(-90.0)
+	var cons := a.size() == 3
+	for i in a.size():
+		var d: float = a[i].distance_to(main.core())
+		cons = cons and fr.has_point(a[i]) and d >= 150.0 and d <= 360.0
+		for j in i:
+			cons = cons and a[i].distance_to(a[j]) >= 220.0
+	main.run_id = "spec-ley-2"
+	main._ley_new_run()
+	var differs: bool = main.ley != a
+	ok("LEY-01", same and cons and differs, "판 번호로 정해지는 3곳 %s, 가장자리 90·중앙 150~360·서로 220 %s, 판마다 다름 %s" % [same, cons, differs])
+	main.ley = [c + Vector2(200, 0)]
+	var t1 := _tower(c + Vector2(210, 0), Elem.FIRE)
+	var t2 := _tower(c + Vector2(225, 0), Elem.FIRE)
+	var t3 := _tower(c + Vector2(-200, 0), Elem.FIRE)
+	main.phase = main.Phase.CHOOSE
+	var one: bool = main.on_ley(t1) and not main.on_ley(t2) and not main.on_ley(t3)
+	var f_on := t1.dmg_factor()
+	main.ley = []
+	var k := f_on / t1.dmg_factor()
+	ok("LEY-02", one and is_equal_approx(k, 1.15), "자리마다 가장 가까운 하나만 %s, 피해 x%.2f" % [one, k])
+	main.ley = []
+	main.run_id = "spec-ley"
+	main._ley_new_run()
+	var save_ok := true
+	var saved: Array = main.ley.map(func(q): return [q.x, q.y])
+	var back: Array = saved.map(func(q): return Vector2(q[0], q[1]))
+	save_ok = back == main.ley
+	Rules.tune["ley_on"] = 0.0
+	main._ley_new_run()
+	var off: bool = main.ley.is_empty()
+	Rules.tune.erase("ley_on")
+	ok("LEY-03", save_ok and off, "이어하기 저장 [x,y] %s, ley_on 0이면 없음 %s" % [save_ok, off])
+	main.ley = []
+	# 빌드 읽기
+	t1.run_src = {"hit": 900.0, "elem:fire": 500.0, "rx:lava": 300.0, "etc:crowd": 200.0}
+	t3.run_src = {"pat:spray": 150.0, "mod:split": 50.0}
+	t2.run_src = {}
+	for t in [t1, t2, t3]:
+		t.src = {}
+	main.wave = 12
+	main._refresh_build()
+	var top: Array = main.build_cache
+	var top_ok: bool = top.size() >= 3 and top[0][0] == "elem:fire" and top[1][0] == "rx:lava" and not top.any(func(it): return it[0] == "hit" or str(it[0]).begins_with("etc:"))
+	ok("BUILD-01", top_ok, "주력 순서(직접 타격·공통 몫 뺌) %s" % [top.map(func(it): return it[0])])
+	var f_fire: String = main.core_fit({"type": "elem", "e": Elem.FIRE, "lv": 1})
+	var rx_ok := true
+	for r in Elem.REACTIONS:
+		if str(r["id"]) == "lava":
+			var other: int = r["b"] if r["a"] == Elem.FIRE else r["a"]
+			rx_ok = main.core_fit({"type": "elem", "e": other, "lv": 1}) != ""
+	var no_pat: bool = main.core_fit({"type": "pat", "id": "spray"}) == ""
+	main.wave = 2
+	main._refresh_build()
+	var early: bool = main.build_cache.is_empty()
+	ok("BUILD-02", f_fire != "" and rx_ok and no_pat and early, "주력 카드 ◎: 속성 %s, 반응의 다른 속성 %s, 3위 아래는 없음 %s, 3웨이브 전엔 안 셈 %s" % [f_fire != "", rx_ok, no_pat, early])
+	_clear()
 
 
 ## 후반 곡선 (WAVE-12)

@@ -62,6 +62,8 @@ static var fx_low := false  # 효과 줄이기: 형태 성질·반응 장판과 
 static var fx_dps := 2  # 피해 몫이 작은 오브젝트의 탄·장판을 옅게: 0 그대로 · 1 조금 · 2 보통 · 3 많이 (아래 버튼 줄)
 static var dps_fold := OS.has_feature("mobile")  # 왼쪽 위 DPS 표 접기 (D·표 제목). 폰·태블릿은 접어 두고 시작, 바꾸면 저장
 static var skip_n := 3  # 웨이브 넘기기 한 번에 넘길 웨이브 수 (1·3·5·10)
+static var skill_set := 0  # 중앙 기술 묶음 (Skill.SETS 번호, 일반 판 준비 화면)
+static var skill_auto := false  # 중앙 기술 자동 사용 (설정)
 static var skip_danger := true  # 넘기는 중 중앙 체력이 50% 아래로 처음 떨어지면 그 웨이브 뒤 멈춤
 static var danger_slow := false  # 중앙 체력이 50%·25% 아래로 처음 떨어질 때 1배속으로 (기본 끔)
 static var orb_hp_on := false  # 모든 구체에 체력 숫자 (끄면 고리만, 보스·마우스를 올린 구체는 숫자도)
@@ -163,6 +165,8 @@ static func load_into(cfg: ConfigFile) -> void:
 	if not skip_n in [1, 3, 5, 10]:
 		skip_n = 3
 	skip_danger = val(cfg, "settings", "skip_danger", true)
+	skill_set = clampi(int(val(cfg, "settings", "skill_set", 0)), 0, 2)
+	skill_auto = val(cfg, "settings", "skill_auto", false) == true
 	fx_low = val(cfg, "settings", "fx_low", false)
 	card_detail = val(cfg, "settings", "card_detail", false)
 	fx_dps = clampi(val(cfg, "settings", "fx_dps", 2), 0, 3)
@@ -226,6 +230,8 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("settings", "danger_slow", danger_slow)
 	cfg.set_value("settings", "skip_n", skip_n)
 	cfg.set_value("settings", "skip_danger", skip_danger)
+	cfg.set_value("settings", "skill_set", skill_set)
+	cfg.set_value("settings", "skill_auto", skill_auto)
 	cfg.set_value("settings", "fx_low", fx_low)
 	cfg.set_value("settings", "card_detail", card_detail)
 	cfg.set_value("settings", "fx_dps", fx_dps)

@@ -102,6 +102,22 @@ const TUNE := {
 	"late_heal_iv": 2.5, "late_heal_r": 120.0, "late_heal": 0.06, "late_heal_max": 4.0,  # 치유: 간격·반경·최대 체력 대비 회복·웨이브당 최대 수
 	"late_phase_on": 2.5, "late_phase_off": 1.5, "late_phase_dmg": 0.3,  # 흐림: 실체·흐림 시간, 흐릴 때 직접 피해 배율
 	"late_devour_n": 2.0, "late_devour_take": 0.5, "late_devour_core": 5.0,  # 포식: 웨이브당 수, 삼킨 체력 비율, 중앙 피해 최대
+	# 중앙 기술 (2026-10-31 사용자 "디펜스 한계 개선 A", Skill): 웨이브 중에 쓰는 기술 2칸, 쿨다운은 게임 시간(웨이브 시작마다 다시 참)
+	"skill_on": 1.0,  # 0이면 기술 버튼이 안 나옴
+	"skill_focus_t": 6.0, "skill_focus_spd": 2.0, "skill_focus_cd": 25.0,  # 집중: 오브젝트 하나 공격 속도 배율·지속·다시 쓰기
+	"skill_hold_r": 120.0, "skill_hold_t": 2.0, "skill_hold_cd": 30.0,  # 붙잡기: 반경 안 구체 멈춤(기절 한계·보스 절반 따름)
+	"skill_brand_r": 150.0, "skill_brand_amp": 0.3, "skill_brand_t": 5.0, "skill_brand_cd": 20.0,  # 낙인: 반경 안 구체 받는 피해 +
+	"skill_cool_perk": 0.2,  # 특성 '빠른 손': 겹칠 때마다 다시 쓰기 시간 x(1-값)
+	# 방해 구체 (2026-10-31 "디펜스 한계 개선 B", Orb.jam): 오브젝트를 잠깐 멈추거나 느리게만 (오브젝트 체력은 없음)
+	"jam_on": 1.0,
+	"jam_shade_from": 20.0, "jam_leech_from": 30.0, "jam_seeker_from": 40.0,  # 등장 웨이브 (그림자·흡수·표적)
+	"jam_share": 0.05, "jam_share_step": 0.01, "jam_share_max": 0.12,  # 종류마다 처음 비율, 10웨이브마다 +, 최대
+	"jam_shade_r": 80.0, "jam_shade_t": 1.5,  # 그림자: 지나가며 이 거리 안 오브젝트 공격 멈춤 시간
+	"jam_imm": 4.0,  # 멈춤이 풀린 뒤 같은 오브젝트가 다시 멈추지 않는 시간
+	"jam_leech": 0.05, "jam_leech_max": 5.0, "jam_leech_t": 4.0, "jam_leech_free": 300.0,  # 흡수: 맞힐 때마다 공격 속도 -, 최대 겹침, 유지, 죽으면 이 거리 안 오브젝트 풀림
+	"jam_seek_t": 3.0, "jam_seek_spd": 1.15,  # 표적: 가장 가까운 오브젝트로 와서 닿으면 그 오브젝트 멈춤 시간, 속도 배율
+	# 기맥 (2026-10-31 "디펜스 한계 개선 F", main.ley): 판마다 전장에 생기는 자리, 그 위 오브젝트 피해 +
+	"ley_on": 1.0, "ley_n": 3.0, "ley_r": 40.0, "ley_dmg": 0.15,
 }
 
 ## 오브젝트·강화·속성·연계·발동 수치 (2026-10-31 사용자 요청 "공격력·사거리·공격속도 등 모든 옵션을 서버에서 임의 수정").

@@ -2,6 +2,7 @@ extends SceneTree
 # 자동 플레이 봇: 반응 생기면 겹치기, 아니면 진입 방향을 가로지르게 새로 설치.
 # 사용: tools/run.sh bots (또는 godot --headless --fixed-fps 60 --path . -s tools/bot.gd -- <시드> [stack])
 # 환경 변수: TREE(half|full: 씨앗 나무) BOT_ELEM=<속성 번호>·BOT_PAT=<공격방식 id>·BOT_MOD=<강화 id>(그 종류 카드를 전부 이것으로 바꿈, 조합 효율 측정용) WLOG=1(GOD일 때 웨이브마다 오브젝트별 피해 TW 줄)
+# SKILL=0(중앙 기술 끔, 기본은 자동 사용) SKILLSET=0|1|2(기술 묶음) JAM=0(방해 구체 끔) LEY=0(기맥 끔)
 # RULES(규칙 버전) MODES(모드, 쉼표로) MAP(맵) FLIP=1(회랑에서 구체가 왼쪽에서) SPEED(배속) SMART=1(사람처럼 배치) GOD=<웨이브>(죽지 않고 그 웨이브까지, 멈춤 감시)
 var main
 var frames := 0
@@ -25,6 +26,9 @@ var modes_set := false
 ## MODES=rush,steel: 첫 프레임에 모드를 켠다 (없으면 모두 끔: 시험 저장에 남은 모드가 섞이지 않게).
 func _set_modes():
 	modes_set = true
+	# 중앙 기술: 봇은 자동으로 쓴다 (SKILL=0이면 기술 없이, SKILLSET=0|1|2 묶음)
+	main.auto_skills = OS.get_environment("SKILL") != "0"
+	Meta.skill_set = int(OS.get_environment("SKILLSET")) if OS.get_environment("SKILLSET") != "" else 0
 	Modes.set_on(Array(OS.get_environment("MODES").split(",", false)))
 	main._apply_rules()
 	main.start_modes()
@@ -229,7 +233,7 @@ func _process(_d):
 	if main.phase == 4 or frames > 60 * 60 * (int(OS.get_environment("MINS")) if OS.get_environment("MINS") != "" else 25) / main.game_speed:
 		var ts = []
 		for t in main.towers.get_children(): ts.append(t.title())
-		print("RESULT wave=", main.wave, " score=", main.score, " mul=", Modes.mul(), " ", main._perk_text(), " towers=", ts)
+		print("RESULT wave=", main.wave, " score=", main.score, " mul=", Modes.mul(), " skills=", main.skill_used, " ", main._perk_text(), " towers=", ts)
 		# 죽음 기록: 웨이브마다 새어 든 구체 수·방향·종류 (tools/run.sh bots가 모아 보여 줌)
 		for e in (main.leak_log if "leak_log" in main else []):
 			if e["n"] > 0:

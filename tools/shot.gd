@@ -93,6 +93,10 @@ func _initialize():
 				main._place_tower(main.core() + Vector2.from_angle(i * 1.0) * 160.0, Vector2.RIGHT)
 			main.wave = 27
 			main.wave_time = 30.0
+			main._skills_new_run(1)
+			main.run_id = "shot"
+			main._ley_new_run()
+			main.build_cache = [["elem:wood", 0.34], ["rx:lava", 0.18], ["pat:spray", 0.12]]
 			main.offer = [{"type": "elem", "e": Elem.WOOD, "lv": 2}, {"type": "trig", "id": "echo"}, {"type": "link", "id": "prism"}]
 			main._show_offer()
 			main._open_choose(),
@@ -169,8 +173,10 @@ func _initialize():
 				main.dps_hist[t.get_instance_id()] = [0.0, 40.0 * k]
 				t.dealt = 60.0 * k
 				k *= 1.7
-			main.dps_sig = "",
-		func(): _snap("wave_dps"); main.dps_hidden = Meta.dps_fold; _orb_tip(),
+			main.dps_sig = ""
+			main._arm_skill(1)
+			Input.warp_mouse(main.get_global_transform_with_canvas() * (main.core() + Vector2(200, 60))),
+		func(): _snap("wave_dps"); main.skill_arm = ""; main.dps_hidden = Meta.dps_fold; _orb_tip(),
 		func(): _snap("orb_tip"); main.touch_ui = touch; main.skip_left = 0; Input.warp_mouse(Vector2(5, 360)); main._start_perk(),
 		func():
 			_snap("perks")
