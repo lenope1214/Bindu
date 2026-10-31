@@ -71,7 +71,7 @@ func _open(w: WebSocketPeer) -> void:
 			code = ""
 			for i in 6:
 				code += Mp.CODE_CHARS[randi() % Mp.CODE_CHARS.length()]
-		rooms[code] = {"mode": q.get("mode", "vs"), "v": q.get("v", ""), "next": 1, "locked": false, "members": {}}
+		rooms[code] = {"mode": q.get("mode", "vs"), "v": q.get("v", ""), "next": 1, "locked": false, "members": {}, "toks": {}}
 	else:
 		code = str(q.get("code", ""))
 		if not rooms.has(code):
@@ -83,24 +83,41 @@ func _open(w: WebSocketPeer) -> void:
 			_send(s, {"t": "err", "code": "version", "host_v": r["v"]})
 			w.close()
 			return
-		if r["locked"]:
+		var back := int(r["toks"].get(str(q.get("tok", "")), 0))  # 협동 재접속 (Worker와 같은 규칙)
+		if back > 1 and r["mode"] == "coop":
+			s["id"] = back
+			if r["members"].has(back):
+				var old: Dictionary = r["members"][back]
+				old["old"] = true
+				old["ws"].close()
+		elif r["locked"]:
 			_send(s, {"t": "err", "code": "started"})
 			w.close()
 			return
-		if r["members"].size() >= MAX:
+		elif r["members"].size() >= MAX:
 			_send(s, {"t": "err", "code": "full"})
 			w.close()
 			return
 	var room: Dictionary = rooms[code]
 	s["room"] = code
-	s["id"] = room["next"]
-	room["next"] += 1
+	if s["id"] == 0:
+		s["id"] = room["next"]
+		room["next"] += 1
+	var tk := ""
+	for k in room["toks"]:
+		if room["toks"][k] == s["id"]:
+			tk = k
+	if tk == "":
+		tk = "%d-%d" % [s["id"], randi()]
+		room["toks"][tk] = s["id"]
 	var list: Array = []
 	for id in room["members"]:
+		if id == s["id"]:
+			continue
 		list.append({"id": id, "name": room["members"][id]["name"]})
 		_send(room["members"][id], {"t": "join", "id": s["id"], "name": s["name"]})
 	room["members"][s["id"]] = s
-	_send(s, {"t": "room", "code": code, "id": s["id"], "mode": room["mode"], "ice": [], "peers": list})
+	_send(s, {"t": "room", "code": code, "id": s["id"], "mode": room["mode"], "ice": [], "peers": list, "tok": tk})
 
 
 func _msg(s: Dictionary, j: Dictionary) -> void:
@@ -119,7 +136,7 @@ func _msg(s: Dictionary, j: Dictionary) -> void:
 
 func _close(s: Dictionary) -> void:
 	socks.erase(s)
-	if not rooms.has(s["room"]):
+	if not rooms.has(s["room"]) or s.get("old", false):
 		return
 	var room: Dictionary = rooms[s["room"]]
 	room["members"].erase(s["id"])

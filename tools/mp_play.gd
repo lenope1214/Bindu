@@ -1,6 +1,8 @@
 extends "res://tools/bot.gd"
 ## 멀티플레이 자동 판: 두(이상) 프로세스가 로컬 중개 서버로 방을 만들고 들어가 봇으로 판을 한다.
 ## 환경 변수: BINDU_MP_URL(중개 서버) MP_ROLE=host|join MP_MODE=vs|coop MP_FILE(방 코드를 주고받는 파일) MP_WAVES(이 웨이브에서 끝, 기본 8)
+## 끊김 시험: MP_BLIP_AT=N 참가자가 웨이브 N에서 연결을 끊음 (협동은 같은 판에 다시 붙음, 대결은 패배),
+##   MP_DROP_AT=N 참가자 프로세스가 웨이브 N에서 꺼짐 → MP_REJOIN=1로 새로 띄운 참가자가 같은 코드로 들어와 이어 함.
 ## 출력: 웨이브마다 "MPW 역할 w=.. lanes=.. n=.. res=.. boss=.."(대결은 역할끼리 같아야 함),
 ##       끝에 "MPPLAY 역할 mode=.. wave=.. score=.. towers=.. mine=.. ghosts=.."
 
@@ -13,6 +15,7 @@ var tt := 0.0
 var max_w := 8
 var seen_w := -1
 var placed := 0
+var blipped := false
 
 
 func _initialize():
@@ -55,6 +58,17 @@ func _process(d):
 			started = true
 			print("MPPLAY started ", role, " id=", main.mp.my_id, " mode=", main.mp_mode)
 		return false
+	if role != "host" and main.mp_mode != "":
+		var blip := int(OS.get_environment("MP_BLIP_AT")) if OS.get_environment("MP_BLIP_AT") != "" else -1
+		var drop := int(OS.get_environment("MP_DROP_AT")) if OS.get_environment("MP_DROP_AT") != "" else -1
+		if not blipped and blip > 0 and main.wave >= blip:
+			blipped = true
+			print("MPBLIP ", role, " w=", main.wave)
+			main.mp._fail("시험 끊김")
+		if drop > 0 and main.wave >= drop:
+			print("MPDROP ", role, " w=", main.wave)
+			quit(0)
+			return true
 	if main.phase == 3 and main.wave != seen_w:
 		seen_w = main.wave
 		print("MPW %s w=%d lanes=%s n=%d res=%d extra=%d ghosts=%d towers=%d" % [role, main.wave, main.lanes.map(func(a): return snappedf(a, 0.001)), main.to_spawn + main.mp_extra_left, main.wave_resist, main.mp_extra_left, main.mp_ghosts.size(), main.towers.get_child_count()])

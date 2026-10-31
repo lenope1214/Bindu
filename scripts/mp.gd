@@ -8,6 +8,7 @@ signal room_ready  # 방이 생겼거나 방에 들어감 (code·my_id·mode가 
 signal peers_changed  # 들어오고 나간 사람·연결 상태
 signal packet(from: int, msg: Dictionary)
 signal failed(reason: String)  # 방 만들기·참가 실패 또는 연결이 끊김 (방이 끝남)
+signal peer_up(id: int)  # 상대와 WebRTC가 이어짐 (협동 호스트: 다시 들어온 사람에게 상태를 보냄)
 signal ping_changed  # 핑(왕복 ms)이 새로 잼
 signal status_changed  # 중개 서버의 멀티플레이 스위치(GET /status)를 새로 받음
 
@@ -28,6 +29,12 @@ var host_name := ""
 var ice: Array = STUN
 var peers := {}  # id -> {"name", "pf", "conn", "ok"(WebRTC 연결됨), "t"(연결 시작 시각), "lc"/"rc"(주고받은 후보 종류 수)}
 var my_name := ""
+## 협동 재접속: 방에 들어가면 Worker가 주는 표(tok). 판이 시작된 협동 방도 이 표로 원래 자리에 다시 들어간다.
+## 게임을 껐다 켜도 되게 파일에도 둔다 (6시간 지나면 버림, Worker 방도 그쯤 지워짐).
+const REJOIN_PATH := "user://mp_rejoin.json"
+const REJOIN_KEEP_S := 6 * 3600
+var tok := ""
+var last_err := ""  # 중개 서버가 마지막으로 보낸 거절 (nocode 등). 끊긴 뒤에도 남아 협동 재접속이 방이 없어졌는지 안다
 var ping := {}  # id -> 왕복 ms. 호스트는 참가자마다, 참가자는 호스트(1)와 다른 참가자(호스트가 잰 값)
 var _ping_t := 0.0
 const PING_EVERY := 1.0
@@ -187,10 +194,36 @@ func host(m: String, name: String) -> void:
 func join(c: String, name: String) -> void:
 	_reset()
 	my_name = name
-	_open("op=join&code=%s" % clean_code(c))
+	var cc := clean_code(c)
+	var rj := saved_rejoin()
+	var t: String = rj.get("tok", "") if rj.get("code", "") == cc else ""
+	_open("op=join&code=%s%s" % [cc, "&tok=" + t.uri_encode() if t != "" else ""])
+
+
+## 저장해 둔 협동 재접속 표 {code, tok, t} (없거나 오래됐으면 빈 사전)
+static func saved_rejoin() -> Dictionary:
+	if not FileAccess.file_exists(REJOIN_PATH):
+		return {}
+	var j: Variant = JSON.parse_string(FileAccess.get_file_as_string(REJOIN_PATH))
+	if not j is Dictionary or Time.get_unix_time_from_system() - float(j.get("t", 0)) > REJOIN_KEEP_S:
+		return {}
+	return j
+
+
+## 협동 판을 시작할 때 (참가자) 표를 남기고, 판이 끝나면 지운다.
+func save_rejoin(on: bool) -> void:
+	if not on or tok == "" or code == "":
+		if FileAccess.file_exists(REJOIN_PATH):
+			DirAccess.remove_absolute(REJOIN_PATH)
+		return
+	var f := FileAccess.open(REJOIN_PATH, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify({"code": code, "tok": tok, "t": Time.get_unix_time_from_system()}))
+		f.close()
 
 
 func _open(q: String) -> void:
+	last_err = ""
 	var base := url().replace("https://", "wss://").replace("http://", "ws://").trim_suffix("/")
 	var full := "%s/ws?%s&v=%s&name=%s" % [base, q, Net.game_version().uri_encode(), (pf_code() + "|" + my_name.left(12)).uri_encode()]
 	if ws.connect_to_url(full) != OK:
@@ -223,6 +256,7 @@ func _reset() -> void:
 			multiplayer.multiplayer_peer = null
 	rtc = null
 	code = ""
+	tok = ""
 	my_id = 0
 	started = false
 	join_wait = -1.0
@@ -308,6 +342,7 @@ func _on_signal(j: Dictionary) -> void:
 		"room":
 			code = str(j.get("code", ""))
 			my_id = int(j.get("id", 0))
+			tok = str(j.get("tok", ""))
 			joined_ms = Time.get_ticks_msec()
 			mode = str(j.get("mode", mode))
 			var ic: Variant = j.get("ice")
@@ -332,6 +367,8 @@ func _on_signal(j: Dictionary) -> void:
 		"join":
 			var id := int(j.get("id", 0))
 			if id > 1:
+				if peers.has(id):
+					_on_peer_down(id)  # 같은 자리로 다시 들어옴 (협동 재접속): 예전 연결부터 정리
 				var nm := split_name(str(j.get("name", "")))
 				peers[id] = {"name": nm[0], "pf": nm[1], "conn": null, "ok": false}
 				if is_host():
@@ -348,6 +385,7 @@ func _on_signal(j: Dictionary) -> void:
 			if not started:
 				_fail("호스트가 방을 닫았습니다")
 		"err":
+			last_err = str(j.get("code", ""))
 			if str(j.get("code", "")) == "off":
 				sw_on = false
 				sw_msg = str(j.get("msg", ""))
@@ -438,6 +476,7 @@ func _on_peer_up(id: int) -> void:
 	if id == 1:
 		join_wait = -1.0
 	peers_changed.emit()
+	peer_up.emit(id)
 
 
 func _on_peer_down(id: int) -> void:
@@ -452,9 +491,9 @@ func _drop(id: int) -> void:
 	ping.erase(id)
 	if not peers.has(id):
 		return
+	peers.erase(id)  # 먼저 지운다: remove_peer가 peer_disconnected를 바로 내도 다시 들어오지 않게
 	if rtc and rtc.has_peer(id):
 		rtc.remove_peer(id)
-	peers.erase(id)
 	peers_changed.emit()
 
 

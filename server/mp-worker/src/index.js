@@ -102,36 +102,56 @@ export class Room {
     const name = (url.searchParams.get("name") || "").slice(0, 16);
     const v = (url.searchParams.get("v") || "").slice(0, 20);
     let meta = await this.ctx.storage.get("meta");
+    const tok = (url.searchParams.get("tok") || "").slice(0, 40);
+    let id = 0;
     if (op === "host") {
       if (meta) return new Response("taken", { status: 409 });
       const mode = url.searchParams.get("mode") === "coop" ? "coop" : "vs";
-      meta = { code: url.searchParams.get("code"), mode, v, next: 1, locked: false, created: Date.now(), ice: await iceServers(this.env) };
+      meta = { code: url.searchParams.get("code"), mode, v, next: 1, locked: false, created: Date.now(), ice: await iceServers(this.env), toks: {} };
     } else {
       if (!meta) return errSocket("nocode");
       if (meta.v !== v) return errSocket("version", { host_v: meta.v });
-      if (meta.locked) return errSocket("started");
-      if (this.members().length >= MAX_PLAYERS) return errSocket("full");
+      // 협동 재접속: 받아 둔 표로 원래 자리(id)에. 시작한 방이어도 된다. 대결은 끊기면 패배라 다시 못 들어온다.
+      const back = meta.toks && tok ? meta.toks[tok] : 0;
+      if (back > 1 && meta.mode === "coop") {
+        id = back;
+        for (const ws of this.ctx.getWebSockets()) {
+          const a = ws.deserializeAttachment();
+          if (a && a.id === id) {
+            // 아직 안 닫힌 예전 연결: 나갔다고 알리지 않게 표시하고 닫는다
+            ws.serializeAttachment({ ...a, old: true });
+            try { ws.close(1000, "replaced"); } catch {}
+          }
+        }
+      } else {
+        if (meta.locked) return errSocket("started");
+        if (this.members().length >= MAX_PLAYERS) return errSocket("full");
+      }
     }
-    const id = meta.next;
-    meta.next += 1;
+    if (!id) {
+      id = meta.next;
+      meta.next += 1;
+    }
+    const myTok = Object.keys(meta.toks || {}).find((k) => meta.toks[k] === id) || crypto.randomUUID();
+    meta.toks = { ...(meta.toks || {}), [myTok]: id };
     await this.ctx.storage.put("meta", meta);
-    // 1시간 뒤 방 정리 (판은 WebRTC로 계속되고, 여기는 들어오기·연결 맺기에만 쓰인다)
-    await this.ctx.storage.setAlarm(Date.now() + 3600 * 1000);
+    // 방 정리: 대기 중엔 1시간, 시작한 방은 6시간 (협동 재접속에 쓰임. 판은 WebRTC로 계속되고 여기는 연결 맺기에만)
+    await this.ctx.storage.setAlarm(Date.now() + (meta.locked ? 6 : 1) * 3600 * 1000);
     // 대시보드 Workers Logs(wrangler.toml observability)에 남는 방 기록. 이름은 "플랫폼 글자|닉네임"
     console.log(JSON.stringify({ ev: op === "host" ? "host" : "join", code: meta.code, mode: meta.mode, v, id, name,
-      ice: meta.ice.map((x) => x.urls.length).join("+"), turn: meta.ice.some((x) => x.credential) }));
+      ice: meta.ice.map((x) => x.urls.length).join("+"), turn: meta.ice.some((x) => x.credential), rejoin: meta.locked }));
 
     const [client, server] = Object.values(new WebSocketPair());
-    const peers = this.members().map((m) => ({ id: m.id, name: m.name }));
+    const peers = this.members().filter((m) => m.id !== id).map((m) => ({ id: m.id, name: m.name }));
     for (const ws of this.ctx.getWebSockets()) this.sendTo(ws, { t: "join", id, name });
     this.ctx.acceptWebSocket(server);
     server.serializeAttachment({ id, name });
-    server.send(JSON.stringify({ t: "room", code: meta.code, id, mode: meta.mode, ice: meta.ice, peers }));
+    server.send(JSON.stringify({ t: "room", code: meta.code, id, mode: meta.mode, ice: meta.ice, peers, tok: myTok }));
     return new Response(null, { status: 101, webSocket: client });
   }
 
   members() {
-    return this.ctx.getWebSockets().map((ws) => ws.deserializeAttachment()).filter(Boolean);
+    return this.ctx.getWebSockets().map((ws) => ws.deserializeAttachment()).filter((a) => a && !a.old);
   }
 
   sendTo(ws, obj) {
@@ -164,13 +184,14 @@ export class Room {
       if (meta) {
         meta.locked = true;
         await this.ctx.storage.put("meta", meta);
+        await this.ctx.storage.setAlarm(Date.now() + 6 * 3600 * 1000);
       }
     }
   }
 
   async webSocketClose(ws) {
     const me = ws.deserializeAttachment();
-    if (!me) return;
+    if (!me || me.old) return;
     const rest = this.ctx.getWebSockets().filter((o) => o !== ws);
     if (me.id === 1) {
       // 호스트가 나가면 방이 끝난다

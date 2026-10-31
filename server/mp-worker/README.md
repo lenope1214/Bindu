@@ -49,4 +49,5 @@
 - 서버 → 게임: `room`(code, id, mode, ice, peers) · `join`(id, name) · `leave`(id) · `sig`(from, d) · `closed`(호스트가 나감) · `err`(code: nocode/full/version/started/off, off면 msg)
 - 게임 → 서버: `sig`(to, d) · `lock`(호스트만, 판 시작 = 더 못 들어옴) · `log`(msg, 연결 실패 진단)
 - 이름은 `플랫폼 글자|닉네임` (w·m·i·a·l, 닉네임 12자)
-- 방은 최대 4명, 만든 지 1시간이 지나면 지운다. 버전이 호스트와 다르면 못 들어온다.
+- 협동 재접속: `room`에 `tok`(자리 표)을 준다. 잠긴(시작한) 협동 방도 `/ws?op=join&code=..&tok=..`이면 원래 id로 들이고, 아직 안 닫힌 예전 연결은 조용히 닫는다. 대결은 다시 못 들어온다.
+- 방은 최대 4명, 대기 중 1시간·시작한 방 6시간이 지나면 지운다. 버전이 호스트와 다르면 못 들어온다.

@@ -346,6 +346,11 @@ var mp_orb_n := 0
 var mp_tw_n := 0
 var mp_tw_sig := ""
 var mp_snap_t := 0.0
+var mp_start := {}  # 판을 시작한 "start" 메시지 (협동 호스트가 다시 들어온 사람에게 다시 보냄)
+var mp_code_last := ""  # 이번 판 방 코드 (끊기면 Mp가 code를 비우므로 따로)
+var mp_rejoin_until := 0  # 협동 참가자 재접속: 이 시각(ms)까지 다시 붙어 본다 (0이면 안 하는 중)
+var mp_rejoin_wait := 0.0  # 다음 재시도까지
+const MP_REJOIN_S := 30
 var mp_rank := ""  # 대결: 게임 오버 글에 붙일 순위
 var run_id := ""  # 판 번호: 5웨이브마다 보내는 진행 기록과 끝 기록을 서버에서 한 줄로 (이어하기에 저장)
 var run_log: Array = []  # 선택지 기록 [{w, k: card|perk, o: 나온 것, p: 고른 것(새로고침이면 "")}]
@@ -456,6 +461,7 @@ func _ready() -> void:
 	mp.packet.connect(_mp_packet)
 	mp.status_changed.connect(_mp_apply_switch)
 	mp.ping_changed.connect(_mp_refresh_pings)
+	mp.peer_up.connect(_mp_peer_up)
 	mp.check_status()
 	_mp_refresh_lobby(false)
 	net.booted.connect(_on_booted)
@@ -1241,6 +1247,8 @@ func _dps_name(t: Tower, col: Color) -> Control:
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.clip_contents = true
 	c.draw.connect(func():
+		if not is_instance_valid(t):
+			return  # 표가 다시 만들어지기 전에 오브젝트가 없어짐 (협동 재접속 등)
 		var y := c.size.y / 2.0
 		Glyph.pat(c, t.pattern, Vector2(10, y), 8.0, col.lightened(0.5))
 		var x := 22.0
@@ -9036,6 +9044,11 @@ func _toggle_mp_lobby() -> void:
 	mp_panel.visible = not mp_panel.visible
 	if mp_panel.visible:
 		mp.check_status()
+		var rj := Mp.saved_rejoin()
+		if not rj.is_empty() and not mp.active() and mp_mode == "":
+			# 껐다 켠 협동 참가자: 코드를 채워 두고 [참가]로 원래 자리에
+			mp_code_edit.text = str(rj.get("code", ""))
+			mp_status.text = "하던 협동 판이 있어요. [참가]를 누르면 다시 들어가요"
 	if mp_panel.visible and Meta.guide_on and not Tutorial.seen.has("mp") and DisplayServer.get_name() != "headless":
 		_open_tut(["mp"])  # 멀티 창 위에 바로
 	if not mp_panel.visible and mp_mode == "":
@@ -9107,7 +9120,21 @@ func _mp_failed(reason: String) -> void:
 		return
 	# 판 중에 끊김
 	if mp_mode == "coop" and mp_ghost and phase != Phase.GAMEOVER:
-		mp_rank = reason
+		# 협동 참가자: 같은 방에 다시 붙어 본다. 방이 없어졌으면(호스트가 나감) 바로 끝
+		var room_gone: bool = mp.last_err in ["nocode", "started"]
+		if mp_rejoin_until == 0 and not room_gone:
+			mp_rejoin_until = Time.get_ticks_msec() + MP_REJOIN_S * 1000
+			_show_toast("연결이 끊겼어요. 다시 접속하는 중…")
+		if not room_gone and Time.get_ticks_msec() < mp_rejoin_until:
+			mp_rejoin_wait = 2.0
+			return
+		mp_rejoin_until = 0
+		mp_rank = "호스트가 나가 판이 끝났어요" if room_gone else reason
+		core_hp = 0
+		_game_over()
+	elif mp_mode == "vs" and not mp.is_host() and phase != Phase.GAMEOVER:
+		# 대결 참가자: 호스트와 끊기면 이 판은 끝 (끊긴 사람은 패배)
+		mp_rank = "연결이 끊겨 판이 끝났어요 (끊기면 패배)"
 		core_hp = 0
 		_game_over()
 	else:
@@ -9355,7 +9382,10 @@ func _mp_start() -> void:
 
 func _mp_begin(msg: Dictionary) -> void:
 	mp.started = true
+	mp_start = msg.duplicate(true)
+	mp_code_last = mp.code
 	mp_mode = str(msg.get("mode", "vs"))
+	mp.save_rejoin(mp_mode == "coop" and not mp.is_host())  # 협동 참가자만 다시 들어올 수 있다
 	var m := str(msg.get("map", "plain"))
 	Meta.map_id = m if m in Meta.MAP_IDS else "plain"
 	Meta.line_flip = msg.get("flip", false) == true
@@ -9390,13 +9420,21 @@ func _mp_packet(from: int, msg: Dictionary) -> void:
 		if from == 1 and mp_mode == "" and mp.active():
 			_mp_begin(msg)
 		return
+	if t == "re":
+		if from == 1 and not mp.is_host() and mp.active():
+			_mp_resync(msg)
+		return
 	if mp_mode == "":
 		return
 	match t:
 		"gone":
 			if mp_others.has(from):
 				mp_others[from]["gone"] = true
-				_show_toast("%s 연결이 끊겼어요" % _mp_name(from))
+				if mp_mode == "vs" and mp_others[from]["alive"]:
+					mp_others[from]["alive"] = false  # 대결은 끊기면 패배 (다시 못 들어옴)
+					_show_toast("%s 연결이 끊겨 탈락했어요" % _mp_name(from))
+				else:
+					_show_toast("%s 연결이 끊겼어요%s" % [_mp_name(from), " (같은 방 코드로 다시 들어올 수 있어요)" if mp_mode == "coop" else ""])
 			mp_ready.erase(from)
 			if mp_mode == "coop" and mp.is_host():
 				_mp_try_go()
@@ -9468,6 +9506,99 @@ func _mp_packet(from: int, msg: Dictionary) -> void:
 				_game_over()
 
 
+## 협동 호스트: 끊겼던 참가자가 같은 자리로 다시 이어짐 → 지금 판 상태를 통째로 보낸다.
+func _mp_peer_up(id: int) -> void:
+	if mp_mode != "coop" or not mp.is_host() or not mp_others.has(id) or phase == Phase.GAMEOVER:
+		return
+	mp_others[id]["gone"] = false
+	var st := mp_start.duplicate(true)
+	st["t"] = "re"
+	var ids: Array = [1] + mp_others.keys()
+	var names := {1: mp.my_name}
+	for k in mp_others:
+		names[k] = mp_others[k]["name"]
+	st["ids"] = ids
+	st["names"] = names
+	var tw := {}
+	for t in towers.get_children():
+		if t.is_queued_for_deletion():
+			continue
+		if not tw.has(t.owner_id):
+			tw[t.owner_id] = []
+		tw[t.owner_id].append(t.mp_state())
+	st.merge({"w": wave, "ph": "wave" if phase == Phase.WAVE else "rest", "sc": score, "k": kills, "hp": core_hp, "mx": core_max,
+		"perks": perks.duplicate(), "tw": tw, "next": {"t": "next", "w": wave, "lanes": Array(lanes), "res": wave_resist, "boss": boss_plan}}, true)
+	mp.send(st, id)
+	_show_toast("%s 다시 들어왔어요" % _mp_name(id))
+
+
+## 협동 참가자: 호스트가 보낸 판 상태로 맞춘다 (끊겼다 다시 붙음, 또는 게임을 껐다 켜고 같은 코드로 들어옴).
+## 쉬는 시간이면 카드 고르기 없이 웨이브 기다림으로 (다시 들어와 카드를 더 받지 않게).
+func _mp_resync(msg: Dictionary) -> void:
+	var fresh := mp_mode == ""
+	mp_rejoin_until = 0
+	mp_rejoin_wait = 0.0
+	for t in towers.get_children():
+		towers.remove_child(t)
+		t.queue_free()
+	selected.clear()
+	for o in orbs.get_children():
+		o.queue_free()
+	mp_ghosts.clear()
+	if fresh:
+		_mp_begin(msg)
+		for id in msg.get("perks", {}):
+			for i in int(msg["perks"][id]):
+				if PERKS.any(func(pk): return pk["id"] == id):
+					perks[id] = perks.get(id, 0) + 1
+					_apply_perk(id)
+	else:
+		mp.started = true
+		mp_code_last = mp.code
+		mp.save_rejoin(true)
+		for id in mp_others:
+			mp_others[id]["gone"] = false
+	score = int(msg.get("sc", 0))
+	kills = int(msg.get("k", 0))
+	core_max = int(msg.get("mx", core_max))
+	core_hp = int(msg.get("hp", core_hp))
+	var tw: Dictionary = msg.get("tw", {})
+	mp_tw_n = 0
+	for owner in tw:
+		for d in tw[owner]:
+			if not d is Dictionary:
+				continue
+			var t := Tower.new()
+			t.main = self
+			t.owner_id = int(owner)
+			t.net_id = int(d.get("nid", 0))
+			t.mp_apply(d)
+			if t.order.is_empty():
+				t.free()
+				continue
+			towers.add_child(t)
+			if t.owner_id == mp.my_id:
+				mp_tw_n = maxi(mp_tw_n, t.net_id % 100000)
+	mp_tw_sig = ""
+	_end_ghost_rest()
+	mp_next = msg.get("next", {})
+	if str(msg.get("ph", "rest")) == "wave":
+		wave = int(msg.get("w", 1)) - 1
+		mp_next["w"] = wave  # 호스트가 지금 웨이브 진입 방향을 보냈다 (평소 next는 쉬는 시간에 지난 웨이브 번호로)
+		_mp_ghost_rest()
+		mp_wave_go = true
+		_start_wave()
+		mp_wave_go = false
+	else:
+		wave = int(msg.get("w", 0))
+		_mp_ghost_rest()
+		_enter_ready()
+		_update_preview()
+	mp_i_ready = false
+	_refresh_dps()
+	_show_toast("다시 들어왔어요 (웨이브 %d)" % maxi(wave, 1))
+
+
 func _perk_name(id: String) -> String:
 	for pk in PERKS:
 		if pk["id"] == id:
@@ -9484,6 +9615,10 @@ func _mp_send_perk(id: String) -> void:
 func _mp_tick(delta: float) -> void:
 	if mp_mode == "":
 		return
+	if mp_rejoin_wait > 0.0:
+		mp_rejoin_wait -= delta
+		if mp_rejoin_wait <= 0.0:
+			mp.join(mp_code_last, _mp_my_name())
 	mp_tick_t += delta
 	mp_snap_t += delta
 	if mp_mode == "vs" and mp_tick_t >= 0.5:
@@ -9518,6 +9653,8 @@ func _mp_tick(delta: float) -> void:
 			for id in mp_others:
 				parts.append("%s%s" % [_mp_name(id), " (끊김)" if mp_others[id]["gone"] else _mp_bar_ping(id)])
 			mp_bar.text = "협동 · 나(%s) + %s" % ["호스트" if mp.is_host() else "참가", ", ".join(parts)]
+			if mp_rejoin_until > 0:
+				mp_bar.text = "협동 · 다시 접속하는 중… %d초" % maxi(0, (mp_rejoin_until - Time.get_ticks_msec()) / 1000)
 			mp_bar.add_theme_color_override("font_color", Mp.owner_color(mp.my_id))
 
 
@@ -9577,6 +9714,7 @@ func _mp_over() -> void:
 			ls.append("%s W%d%s" % [_mp_name(r[0]), r[1], " (진행 중)" if r.size() > 3 and r[3] else ""])
 		mp_rank = "대결 %d위 / %d명 · %s" % [place, mp_others.size() + 1, " · ".join(ls)]
 	elif mp_mode == "coop":
+		mp.save_rejoin(false)
 		if mp.is_host():
 			mp.send({"t": "over", "w": wave, "sc": score, "k": kills})
 		if mp_rank == "":
