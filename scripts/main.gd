@@ -371,6 +371,12 @@ var rebirth_btn: Button
 var bonsai_btn: Button
 var rebirth_armed := 0.0
 var garden_btn: Button  # 시작 화면
+var home_box: VBoxContainer  # 시작 화면 첫 화면: 이어하기·큰 타일(일반 판·정원·멀티)·그림 버튼 줄
+var prep_box: VBoxContainer  # [일반 판]을 누르면: 맵·규칙·모드 + 시작 (Esc 뒤로)
+var prep_title: Label
+var normal_info: Label  # 일반 판 타일의 맵·최고 기록 줄
+var garden_info: Label
+var prep := false
 var tree_btn: Button
 var tree_panel: PanelContainer
 var tree_box: VBoxContainer
@@ -4029,23 +4035,29 @@ func _unhandled_input(event: InputEvent) -> void:
 					if garden_btn.visible:
 						_enter_garden()
 				KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
-					if continue_btn.visible:
+					if prep:
+						_close_title()
+					elif continue_btn.visible:
 						_continue_run()
 					else:
-						_close_title()
-				KEY_N:
-					_close_title()
+						_set_prep(true)
+				KEY_ESCAPE:
+					if prep:
+						_set_prep(false)
 				KEY_LEFT:
-					_cycle_map(-1)
+					if prep:
+						_cycle_map(-1)
 				KEY_RIGHT:
-					_cycle_map(1)
+					if prep:
+						_cycle_map(1)
 				KEY_F:
-					_toggle_flip()
+					if prep:
+						_toggle_flip()
 				KEY_UP:
-					if Meta.games > 0:
+					if prep and Meta.games > 0:
 						_cycle_rules(-1)
 				KEY_DOWN:
-					if Meta.games > 0:
+					if prep and Meta.games > 0:
 						_cycle_rules(1)
 				KEY_F11:
 					_toggle_fullscreen()
@@ -4446,41 +4458,75 @@ func _build_menu(root: Control) -> void:
 	desc.text = "밖에서 몰려오는 구체를 막아 중앙 점을 지키세요\n공격방식·속성·강화·연계를 조합해 오브젝트를 키우세요"
 	desc.visible = not _phone()  # 폰: 줄을 줄여야 시작 화면을 덜 줄여서 버튼이 손가락 크기로 남는다
 	box.add_child(desc)
-	map_label = _menu_row(box, func(): _cycle_map(-1), func(): _cycle_map(1))
-	flip_label = _menu_row(box, _toggle_flip, _toggle_flip)
-	rules_label = _menu_row(box, func(): _cycle_rules(-1), func(): _cycle_rules(1))
+	# [일반 판]을 누르면 나오는 준비 화면 (맵·오는 쪽·규칙·모드 + 시작)
+	prep_title = Label.new()
+	prep_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prep_title.add_theme_font_size_override("font_size", 30)
+	prep_title.text = "일반 판"
+	prep_title.visible = false
+	box.add_child(prep_title)
+	prep_box = VBoxContainer.new()
+	prep_box.add_theme_constant_override("separation", 10)
+	prep_box.visible = false
+	box.add_child(prep_box)
+	home_box = VBoxContainer.new()
+	home_box.add_theme_constant_override("separation", 10)
+	box.add_child(home_box)
+	map_label = _menu_row(prep_box, func(): _cycle_map(-1), func(): _cycle_map(1))
+	flip_label = _menu_row(prep_box, _toggle_flip, _toggle_flip)
+	rules_label = _menu_row(prep_box, func(): _cycle_rules(-1), func(): _cycle_rules(1))
 	modes_btn = Button.new()
 	modes_btn.custom_minimum_size = Vector2(580, 56 if _phone() else 40)
 	modes_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	modes_btn.focus_mode = Control.FOCUS_NONE
 	modes_btn.add_theme_font_size_override("font_size", 17)
 	modes_btn.pressed.connect(_toggle_modes)
-	box.add_child(modes_btn)
-	# 오브젝트·중앙 모양은 한 줄에 나란히 (세로 자리 아끼기)
-	var skins := HBoxContainer.new()
-	skins.alignment = BoxContainer.ALIGNMENT_CENTER
-	skins.add_theme_constant_override("separation", 24)
-	box.add_child(skins)
-	skin_label = _menu_row(skins, func(): _cycle_skin("tower", -1), func(): _cycle_skin("tower", 1), 180.0)
-	core_label = _menu_row(skins, func(): _cycle_skin("core", -1), func(): _cycle_skin("core", 1), 180.0)
+	prep_box.add_child(modes_btn)
+	new_btn = Button.new()
+	new_btn.custom_minimum_size = Vector2(630, 64 if _phone() else 56)
+	new_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	new_btn.focus_mode = Control.FOCUS_NONE
+	new_btn.add_theme_font_size_override("font_size", 22)
+	new_btn.pressed.connect(_close_title)
+	prep_box.add_child(new_btn)
+	_icon_btn(new_btn, func(): return ["play", Color(1, 0.9, 0.6)])
+	_keycap(new_btn, "Enter")
+	var back := Button.new()
+	back.text = "◀ 뒤로 (Esc)"
+	back.custom_minimum_size = Vector2(200, 52 if _phone() else 38)
+	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	back.focus_mode = Control.FOCUS_NONE
+	back.pressed.connect(func(): _set_prep(false))
+	prep_box.add_child(back)
+	# 첫 화면: 큰 타일 셋 (일반 판 · 정원 · 멀티플레이)
+	var tiles := HBoxContainer.new()
+	tiles.alignment = BoxContainer.ALIGNMENT_CENTER
+	tiles.add_theme_constant_override("separation", 16)
+	home_box.add_child(tiles)
+	var normal_tile := Button.new()
+	normal_tile.pressed.connect(func(): _set_prep(true))
+	normal_info = _tile(normal_tile, "일반 판", Color(0.55, 0.78, 1.0), func(): return "" if continue_btn.visible else "Enter")
+	tiles.add_child(normal_tile)
+	var gcol := VBoxContainer.new()
+	gcol.add_theme_constant_override("separation", 6)
+	tiles.add_child(gcol)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 10)
-	box.add_child(row)
-	# 시작 말고는 그림 + 짧은 이름 (단축키는 모서리 작은 키, 긴 이름은 말풍선)
-	var specs := [["시작", _close_title, "", ""], ["기록", _toggle_records, "records", "", "기록·업적"], ["도감", _toggle_codex, "book", "K", "도감 (K)"], ["설정", _toggle_settings, "gear", "O", "설정 (O)"], ["튜토리얼", _open_tut_list, "help", "H", "튜토리얼 (H)"]]
+	home_box.add_child(row)
+	# 그림 + 짧은 이름 (단축키는 모서리 작은 키, 긴 이름은 말풍선)
+	var specs := [["기록", _toggle_records, "records", "", "기록·업적"], ["도감", _toggle_codex, "book", "K", "도감 (K)"], ["설정", _toggle_settings, "gear", "O", "설정 (O)"], ["튜토리얼", _open_tut_list, "help", "H", "튜토리얼 (H)"]]
 	if OnlineConfig.SERVER_URL != "":
 		specs.insert(2, ["순위", _toggle_board, "rank", "", "리더보드"])
 		specs.insert(4, ["투표", _toggle_vote, "vote", "V", "다음 패치 투표 (V)"])
+	# 게임 끄기: PC만 (iOS·Android는 앱이 스스로 끄지 않는다)
+	if OS.has_feature("pc"):
+		specs.append(["종료", func(): get_tree().quit(), "power", "", "게임 종료"])
 	for spec in specs:
 		var b := Button.new()
 		b.focus_mode = Control.FOCUS_NONE
 		b.pressed.connect(spec[1])
 		row.add_child(b)
-		if spec[2] == "":
-			b.text = spec[0]
-			b.custom_minimum_size = Vector2(170, 60 if _phone() else 54)
-			continue
 		b.custom_minimum_size = Vector2(78, 64 if _phone() else 54)
 		b.tooltip_text = spec[4]
 		if spec[2] == "vote":
@@ -4488,26 +4534,15 @@ func _build_menu(root: Control) -> void:
 			b.visible = Net.vote_ok()
 		_menu_glyph(b, spec[2], spec[0])
 		_keycap(b, spec[3])
-	row.get_child(0).add_theme_font_size_override("font_size", 20)
-	new_btn = row.get_child(0)
-	_icon_btn(new_btn, func(): return ["play", Color(1, 0.9, 0.6)])
-	_keycap(new_btn, func(): return "N" if continue_btn.visible else "Enter")
-	# 정원 모드와 씨앗 나무 (Garden)
-	var grow := HBoxContainer.new()
-	grow.alignment = BoxContainer.ALIGNMENT_CENTER
-	grow.add_theme_constant_override("separation", 10)
-	box.add_child(grow)
+	# 정원 모드 타일 + 그 아래 씨앗 나무 (Garden)
+	var grow := gcol
 	garden_btn = Button.new()
-	garden_btn.custom_minimum_size = Vector2(380, 44)
-	garden_btn.focus_mode = Control.FOCUS_NONE
-	garden_btn.clip_text = true
-	garden_btn.add_theme_font_size_override("font_size", 16)
-	garden_btn.add_theme_color_override("font_color", Color(0.6, 1, 0.7))
+	garden_info = _tile(garden_btn, "정원", Color(0.5, 0.95, 0.6), "G")
 	garden_btn.tooltip_text = "켜 두거나 꺼 두어도 자라는 끝없는 판. 최고 25웨이브부터 환생해 씨앗을 얻는다"
 	garden_btn.pressed.connect(_enter_garden)
 	grow.add_child(garden_btn)
 	tree_btn = Button.new()
-	tree_btn.custom_minimum_size = Vector2(240, 44)
+	tree_btn.custom_minimum_size = Vector2(_tile_w(), 40 if _phone() else 34)
 	tree_btn.focus_mode = Control.FOCUS_NONE
 	tree_btn.clip_text = true
 	tree_btn.add_theme_font_size_override("font_size", 16)
@@ -4523,8 +4558,8 @@ func _build_menu(root: Control) -> void:
 	continue_btn.add_theme_font_size_override("font_size", 19)
 	continue_btn.pressed.connect(_continue_run)
 	continue_btn.visible = false
-	box.add_child(continue_btn)
-	box.move_child(continue_btn, row.get_index())
+	home_box.add_child(continue_btn)
+	home_box.move_child(continue_btn, 0)
 	remote_btn = Button.new()
 	remote_btn.custom_minimum_size = Vector2(630, 56 if _phone() else 44)
 	remote_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -4532,21 +4567,15 @@ func _build_menu(root: Control) -> void:
 	remote_btn.add_theme_font_size_override("font_size", 17)
 	remote_btn.pressed.connect(_claim_remote_run)
 	remote_btn.visible = false
-	box.add_child(remote_btn)
-	box.move_child(remote_btn, row.get_index())
+	home_box.add_child(remote_btn)
+	home_box.move_child(remote_btn, 1)
 	# 멀티플레이: 중개 서버 주소가 있고 WebRTC 확장이 읽힌 기기에서만
 	mp_btn = Button.new()
-	mp_btn.text = "멀티플레이 (대결·협동)"
-	_icon_btn(mp_btn, func(): return ["multi", Color(1, 1, 1, 0.85)])
-	mp_btn.custom_minimum_size = Vector2(630, 42)
-	mp_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	mp_btn.focus_mode = Control.FOCUS_NONE
-	mp_btn.add_theme_font_size_override("font_size", 18)
+	_tile(mp_btn, "멀티플레이", Color(0.8, 0.62, 1.0), "").text = "친구와 대결 · 협동\n방 만들기 · 코드로 참가"
 	mp_btn.pressed.connect(_toggle_mp_lobby)
 	# Windows는 exe 안 dll을 풀어 읽어서 실패할 수 있다: 버튼은 두고 방을 만들 때 까닭을 보여 준다
 	mp_btn.visible = _mp_btn_shown()
-	box.add_child(mp_btn)
-	box.move_child(mp_btn, row.get_index() + 1)
+	tiles.add_child(mp_btn)
 	_build_mp_lobby(root)
 	# 온라인: 새 버전 알림, 패치 공지 (서버에서 받았을 때만 보임)
 	update_btn = Button.new()
@@ -4555,15 +4584,15 @@ func _build_menu(root: Control) -> void:
 	update_btn.focus_mode = Control.FOCUS_NONE
 	update_btn.add_theme_color_override("font_color", Color(1, 0.85, 0.45))
 	update_btn.visible = false
-	box.add_child(update_btn)
+	home_box.add_child(update_btn)
 	notes_btn = Button.new()
 	notes_btn.custom_minimum_size = Vector2(320, 52 if _phone() else 36)
 	_icon_btn(notes_btn, func(): return ["notes", Color(1, 1, 1, 0.8)])
 	notes_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	notes_btn.focus_mode = Control.FOCUS_NONE
 	notes_btn.pressed.connect(_toggle_notes)
-	box.add_child(notes_btn)
-	box.move_child(notes_btn, update_btn.get_index())
+	home_box.add_child(notes_btn)
+	home_box.move_child(notes_btn, update_btn.get_index())
 	notice_label = Label.new()
 	notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	notice_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -4571,7 +4600,7 @@ func _build_menu(root: Control) -> void:
 	notice_label.add_theme_font_size_override("font_size", 16)
 	notice_label.add_theme_color_override("font_color", Color(0.75, 0.9, 1.0))
 	notice_label.visible = false
-	box.add_child(notice_label)
+	home_box.add_child(notice_label)
 
 	records_panel = Label.new()
 	records_panel.z_index = 22  # 일시정지 어둠(z 20) 위에
@@ -4682,6 +4711,9 @@ func _build_menu(root: Control) -> void:
 			_save_best())
 		zrow.add_child(zb)
 	sv.add_child(zrow)
+	# 오브젝트·중앙 모양 (예전엔 시작 화면에 있었다)
+	skin_label = _menu_row(sv, func(): _cycle_skin("tower", -1), func(): _cycle_skin("tower", 1), sw - 160.0)
+	core_label = _menu_row(sv, func(): _cycle_skin("core", -1), func(): _cycle_skin("core", 1), sw - 160.0)
 	var cbox: Container = sv
 	if _phone():
 		var grid := GridContainer.new()
@@ -4803,6 +4835,57 @@ func _build_menu(root: Control) -> void:
 
 
 ## ◀ 글자 ▶ 한 줄.
+## 시작 화면 큰 타일: 버튼 위에 이름(색)과 설명 줄. 설명 Label을 돌려준다.
+func _tile(b: Button, title: String, col: Color, key: Variant) -> Label:
+	b.text = ""
+	b.custom_minimum_size = Vector2(_tile_w(), 170 if _phone() else 150)
+	b.focus_mode = Control.FOCUS_NONE
+	b.clip_contents = true
+	for st in ["normal", "hover", "pressed"]:
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.07, 0.09, 0.12) if st == "normal" else Color(0.1, 0.13, 0.17)
+		sb.set_border_width_all(2)
+		sb.border_color = Color(col, 0.55 if st == "normal" else 0.95)
+		sb.set_corner_radius_all(12)
+		b.add_theme_stylebox_override(st, sb)
+	var v := VBoxContainer.new()
+	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_theme_constant_override("separation", 6)
+	b.add_child(v)
+	v.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 16)
+	var n := Label.new()
+	n.text = title
+	n.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	n.add_theme_font_size_override("font_size", 26)
+	n.add_theme_color_override("font_color", col)
+	v.add_child(n)
+	var info := Label.new()
+	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.add_theme_font_size_override("font_size", 15)
+	info.add_theme_color_override("font_color", Color(1, 1, 1, 0.72))
+	info.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	v.add_child(info)
+	_keycap(b, key)
+	return info
+
+
+func _tile_w() -> float:
+	return 230.0 if _phone() else 210.0
+
+
+## 시작 화면: 첫 화면(큰 타일) ↔ 일반 판 준비 화면.
+func _set_prep(on: bool) -> void:
+	prep = on
+	prep_title.visible = on
+	prep_box.visible = on
+	home_box.visible = not on
+	new_armed = 0.0
+	new_btn.text = "새로 시작" if continue_btn.visible else "시작"
+	sfx.play("place")
+	_refresh_menu()
+
+
 func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0) -> Label:
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -4864,6 +4947,7 @@ func _refresh_menu() -> void:
 	core_label.text = "중앙 모양: " + cs["name"]
 	best_wave = best[0]
 	best_score = best[1]
+	normal_info.text = "맵·규칙·모드를 골라 한 판\n%s · %s\n최고 웨이브 %d" % [Meta.map_name(), Rules.NAMES[Meta.rules], best[0]]
 
 
 ## 회랑 맵: 구체가 오는 쪽(좌우)을 바꾼다. 기록은 나누지 않는다 (좌우만 바뀐 같은 판).
@@ -9883,5 +9967,5 @@ func _refresh_garden_menu() -> void:
 		Garden.run_wave = info["wave"]
 		var gd: Variant = Meta.val(info["cfg"], "run", "garden", {})
 		Garden.run_dew = float(gd.get("dew", 0.0)) if gd is Dictionary else 0.0
-	garden_btn.text = Garden.menu_text()
+	garden_info.text = Garden.menu_text()
 	tree_btn.text = Garden.tree_btn_text()

@@ -911,6 +911,16 @@ func _meta_misc() -> void:
 	ec.free()
 	pc.free()
 
+	# 시작 화면: 첫 화면은 큰 타일(일반 판·정원·멀티) + 그림 버튼 줄(PC는 종료), [일반 판] → 준비 화면(맵·규칙·모드·시작), 모양은 설정 창
+	var home0: bool = main.home_box.visible and not main.prep_box.visible
+	var tiles_ok: bool = main.home_box.is_ancestor_of(main.garden_btn) and main.home_box.is_ancestor_of(main.mp_btn) and not main.home_box.is_ancestor_of(main.map_label)
+	main._set_prep(true)
+	var prep1: bool = main.prep_box.visible and not main.home_box.visible and main.prep_box.is_ancestor_of(main.map_label) and main.prep_box.is_ancestor_of(main.new_btn) and main.prep_box.is_ancestor_of(main.modes_btn)
+	main._set_prep(false)
+	var skins_set: bool = main.settings_panel.is_ancestor_of(main.skin_label) and main.settings_panel.is_ancestor_of(main.core_label)
+	var quit_btn: bool = main.home_box.find_children("*", "Button", true, false).any(func(b): return b.tooltip_text == "게임 종료") == OS.has_feature("pc")
+	ok("UI-21", home0 and tiles_ok and prep1 and main.home_box.visible and skins_set and quit_btn, "첫 화면 %s·타일 %s, 준비 화면 %s, 모양은 설정 %s, 종료(PC만) %s" % [home0, tiles_ok, prep1, skins_set, quit_btn])
+
 	# 카드 설명 세 단계: 기본 간소화(속성은 효과 이름만, 괄호 덧붙임 뺌) → [자세히] 전체 → 자세히 + 올리기 창(반응 설명까지)
 	var was_d := Meta.card_detail
 	Meta.card_detail = false

@@ -22,7 +22,7 @@ func _initialize():
 			Meta.ui_scale = z
 			main.touch_ui = touch
 			main._apply_ui_scale()
-			# 가장 긴 시작 화면: 회랑(좌우 줄)·규칙 3·모드 줄·이어하기·새 버전 알림·공지까지
+			# 가장 긴 시작 화면: 이어하기·새 버전 알림·공지까지, 준비 화면(title_prep)은 회랑(좌우 줄)·규칙 3·모드 줄
 			Meta.games = 5
 			Meta.rules = 3
 			Meta.map_id = "line"
@@ -33,7 +33,8 @@ func _initialize():
 			main.update_btn.visible = true
 			main.notice_label.text = "공지: 시즌 2가 시작됐어요"
 			main.notice_label.visible = true,
-		func(): _snap("title"); main._toggle_notes(),
+		func(): _snap("title"); main._set_prep(true),
+		func(): _snap("title_prep"); main._set_prep(false); main._toggle_notes(),
 		func(): _snap("notes"); main._toggle_notes(); main._toggle_records(),
 		func():
 			_snap("records"); main._toggle_records(); main._toggle_board(),

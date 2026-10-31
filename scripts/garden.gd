@@ -323,8 +323,8 @@ static func bonsai_text() -> String:
 ## 시작 화면 [정원] 버튼 글.
 static func menu_text() -> String:
 	if has_run:
-		return "정원 이어하기 (G) · 웨이브 %d · 이슬 %s" % [run_wave, short(run_dew)]
-	return "정원 (G) · 꺼 두어도 자라는 끝없는 판"
+		return "이어하기\n웨이브 %d · 이슬 %s" % [run_wave, short(run_dew)]
+	return "꺼 두어도 자라는\n끝없는 판"
 
 
 static func tree_btn_text() -> String:
