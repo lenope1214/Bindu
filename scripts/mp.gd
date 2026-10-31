@@ -8,6 +8,7 @@ signal room_ready  # 방이 생겼거나 방에 들어감 (code·my_id·mode가 
 signal peers_changed  # 들어오고 나간 사람·연결 상태
 signal packet(from: int, msg: Dictionary)
 signal failed(reason: String)  # 방 만들기·참가 실패 또는 연결이 끊김 (방이 끝남)
+signal ping_changed  # 핑(왕복 ms)이 새로 잼
 signal status_changed  # 중개 서버의 멀티플레이 스위치(GET /status)를 새로 받음
 
 const MAX_PLAYERS := 4
@@ -27,6 +28,10 @@ var host_name := ""
 var ice: Array = STUN
 var peers := {}  # id -> {"name", "pf", "conn", "ok"(WebRTC 연결됨), "t"(연결 시작 시각), "lc"/"rc"(주고받은 후보 종류 수)}
 var my_name := ""
+var ping := {}  # id -> 왕복 ms. 호스트는 참가자마다, 참가자는 호스트(1)와 다른 참가자(호스트가 잰 값)
+var _ping_t := 0.0
+const PING_EVERY := 1.0
+var joined_ms := 0  # 방 정보를 받은 때 (참가자: 호스트와 연결 기다린 시간 표시)
 var diag_sent := {}  # id -> true (연결 실패 진단을 한 번만 남긴다)
 var started := false  # 판을 시작함 (더는 들어올 수 없음)
 var join_wait := -1.0
@@ -157,6 +162,16 @@ func is_host() -> bool:
 	return my_id == 1
 
 
+## 중개 서버에 붙는 중 (방 정보를 아직 못 받음)
+func busy() -> bool:
+	return my_id == 0 and ws.get_ready_state() in [WebSocketPeer.STATE_CONNECTING, WebSocketPeer.STATE_OPEN]
+
+
+## 참가자: 방에는 들어왔는데 호스트와 WebRTC가 아직 안 이어짐
+func waiting_host() -> bool:
+	return my_id > 1 and not peers.get(1, {}).get("ok", false)
+
+
 func active() -> bool:
 	return my_id > 0
 
@@ -200,6 +215,7 @@ func _reset() -> void:
 		if peers[id].get("conn"):
 			peers[id]["conn"].close()
 	peers.clear()
+	ping.clear()
 	diag_sent.clear()
 	if rtc:
 		rtc.close()
@@ -257,6 +273,10 @@ func _process(delta: float) -> void:
 		_fail("중개 서버에 연결하지 못했습니다")
 	if rtc:
 		rtc.poll()
+		_ping_t += delta
+		if _ping_t >= PING_EVERY:
+			_ping_t = 0.0
+			_send_pings()
 	if join_wait > 0.0:
 		join_wait -= delta
 		if join_wait <= 0.0 and not peers.get(1, {}).get("ok", false):
@@ -288,6 +308,7 @@ func _on_signal(j: Dictionary) -> void:
 		"room":
 			code = str(j.get("code", ""))
 			my_id = int(j.get("id", 0))
+			joined_ms = Time.get_ticks_msec()
 			mode = str(j.get("mode", mode))
 			var ic: Variant = j.get("ice")
 			if ic is Array and not ic.is_empty():
@@ -428,6 +449,7 @@ func _on_peer_down(id: int) -> void:
 
 
 func _drop(id: int) -> void:
+	ping.erase(id)
 	if not peers.has(id):
 		return
 	if rtc and rtc.has_peer(id):
@@ -476,11 +498,47 @@ func send(msg: Dictionary, to := 0, reliable := true) -> void:
 		sm.send_bytes(b, 1, m, ch)
 
 
+## 핑: 연결된 상대에게 시각을 보내고 되돌아오면 왕복 시간. 호스트는 잰 값 표를 참가자에게도 돌려
+## (참가자끼리는 직접 안 이어져서 호스트와의 핑을 보여 준다). 게임 메시지(packet)로는 안 나간다.
+func _send_pings() -> void:
+	if my_id == 0 or not multiplayer is SceneMultiplayer:
+		return
+	var sm := multiplayer as SceneMultiplayer
+	var ping_b := var_to_bytes({"t": "_ping", "ts": Time.get_ticks_msec()})
+	var ids := connected_ids() if is_host() else ([1] if peers.get(1, {}).get("ok", false) else [])
+	for id in ids:
+		sm.send_bytes(ping_b, id, MultiplayerPeer.TRANSFER_MODE_UNRELIABLE, 0)
+	if is_host() and not ids.is_empty():
+		var tb := var_to_bytes({"t": "_pings", "p": ping.duplicate()})
+		for id in ids:
+			sm.send_bytes(tb, id, MultiplayerPeer.TRANSFER_MODE_UNRELIABLE, 0)
+
+
+func _on_ping_msg(id: int, msg: Dictionary) -> bool:
+	match str(msg.get("t", "")):
+		"_ping":
+			(multiplayer as SceneMultiplayer).send_bytes(var_to_bytes({"t": "_pong", "ts": msg.get("ts", 0)}), id, MultiplayerPeer.TRANSFER_MODE_UNRELIABLE, 0)
+		"_pong":
+			ping[id] = maxi(0, Time.get_ticks_msec() - int(msg.get("ts", 0)))
+			ping_changed.emit()
+		"_pings":
+			if id == 1 and msg.get("p") is Dictionary:
+				for k in msg["p"]:
+					if int(k) != my_id and int(k) != 1:
+						ping[int(k)] = int(msg["p"][k])
+				ping_changed.emit()
+		_:
+			return false
+	return true
+
+
 func _on_bytes(id: int, b: PackedByteArray) -> void:
 	var v: Variant = bytes_to_var(b)
 	if not v is Dictionary:
 		return
 	var msg: Dictionary = v
+	if _on_ping_msg(id, msg):
+		return
 	if is_host() and id != 1:
 		msg["f"] = id  # 보낸 사람은 연결로 정한다 (참가자가 다른 id를 사칭하지 못하게)
 		var to := int(msg.get("to", 0))

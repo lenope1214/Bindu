@@ -307,7 +307,12 @@ var mp_code_edit: LineEdit
 var mp_start_btn: Button
 var mp_host_box: HBoxContainer
 var mp_join_box: HBoxContainer
-var mp_room_box: VBoxContainer  # 방 코드·복사 + 사람 줄(플랫폼 그림·닉네임)
+var mp_room_box: VBoxContainer  # 방 코드·복사 + 사람 줄(플랫폼 그림·닉네임·핑)
+var mp_load_row: HBoxContainer  # 방 만들기·들어가기·호스트와 연결 중: 도는 고리 + 글
+var mp_load_label: Label
+var mp_load_msg := ""
+var mp_close_btn: Button
+var mp_ping_labels := {}  # id -> 사람 줄 끝 핑 Label (핑이 바뀌면 줄을 다시 안 만들고 글만)
 var mp_btn: Button  # 시작 화면의 [멀티플레이]
 var mp_bar: Label  # 게임 중 위쪽 가운데: 다른 플레이어 상태
 var mp_mode := ""  # "" 혼자 | "vs" 대결 | "coop" 협동 (판을 시작하면 정해짐)
@@ -414,6 +419,7 @@ func _ready() -> void:
 	mp.failed.connect(_mp_failed)
 	mp.packet.connect(_mp_packet)
 	mp.status_changed.connect(_mp_apply_switch)
+	mp.ping_changed.connect(_mp_refresh_pings)
 	mp.check_status()
 	_mp_refresh_lobby(false)
 	net.booted.connect(_on_booted)
@@ -6800,6 +6806,7 @@ func _roll_kind() -> int:
 
 func _process(delta: float) -> void:
 	key_t -= delta
+	_mp_lobby_tick()
 	_mp_tick(delta)
 	if coin_stage > 0 and not get_tree().paused:
 		_coin_step(delta)
@@ -8564,6 +8571,16 @@ func _build_mp_lobby(root: Control) -> void:
 	mp_room_box.add_theme_constant_override("separation", 6)
 	mp_room_box.visible = false
 	box.add_child(mp_room_box)
+	mp_load_row = HBoxContainer.new()
+	mp_load_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	mp_load_row.add_theme_constant_override("separation", 12)
+	mp_load_row.custom_minimum_size = Vector2(0, 64)
+	mp_load_row.visible = false
+	box.add_child(mp_load_row)
+	mp_load_row.add_child(_mp_spinner(15.0))
+	mp_load_label = Label.new()
+	mp_load_label.add_theme_font_size_override("font_size", 20)
+	mp_load_row.add_child(mp_load_label)
 	mp_status = Label.new()
 	mp_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mp_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -8580,12 +8597,12 @@ func _build_mp_lobby(root: Control) -> void:
 	mp_start_btn.focus_mode = Control.FOCUS_NONE
 	mp_start_btn.pressed.connect(_mp_start)
 	row.add_child(mp_start_btn)
-	var lb := Button.new()
-	lb.text = "닫기"
-	lb.custom_minimum_size = Vector2(200, 46)
-	lb.focus_mode = Control.FOCUS_NONE
-	lb.pressed.connect(_toggle_mp_lobby)
-	row.add_child(lb)
+	mp_close_btn = Button.new()
+	mp_close_btn.text = "닫기"
+	mp_close_btn.custom_minimum_size = Vector2(200, 46)
+	mp_close_btn.focus_mode = Control.FOCUS_NONE
+	mp_close_btn.pressed.connect(_toggle_mp_lobby)
+	row.add_child(mp_close_btn)
 	mp_bar = Label.new()  # 점수 줄 바로 아래 (_mp_tick이 자리를 맞춘다)
 	mp_bar.add_theme_font_size_override("font_size", 15)
 	mp_bar.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
@@ -8644,8 +8661,10 @@ func _mp_blocked() -> bool:
 func _mp_host(m: String) -> void:
 	if _mp_blocked():
 		return
-	mp_status.text = "방을 만드는 중…"
+	mp_status.text = ""
+	mp_load_msg = "방을 만드는 중"
 	mp.host(m, _mp_my_name())
+	_mp_refresh_lobby()
 
 
 func _mp_join() -> void:
@@ -8655,8 +8674,10 @@ func _mp_join() -> void:
 		return
 	if _mp_blocked():
 		return
-	mp_status.text = "방에 들어가는 중…"
+	mp_status.text = ""
+	mp_load_msg = "방에 들어가는 중"
 	mp.join(c, _mp_my_name())
+	_mp_refresh_lobby()
 
 
 func _mp_failed(reason: String) -> void:
@@ -8679,17 +8700,25 @@ func _mp_refresh_lobby(keep_status := true) -> void:
 	if mp_panel == null or mp == null:
 		return
 	var in_room := mp.active()
-	mp_host_box.visible = not in_room
-	mp_join_box.visible = not in_room
+	var busy := mp.busy()
+	var wait_host := mp.waiting_host()
+	mp_host_box.visible = not in_room and not busy
+	mp_join_box.visible = not in_room and not busy
 	mp_room_box.visible = in_room
+	mp_load_row.visible = busy or wait_host
+	mp_close_btn.text = "나가기" if in_room or busy else "닫기"
+	_mp_lobby_tick()
 	for ch in mp_room_box.get_children():
 		mp_room_box.remove_child(ch)
 		ch.queue_free()
+	mp_ping_labels.clear()
 	mp_start_btn.visible = in_room and mp.is_host()
 	var ready := mp.connected_ids().size()
 	mp_start_btn.disabled = ready < 1
 	if not in_room:
-		if not keep_status and mp_status.text == "":
+		if busy:
+			mp_status.text = ""
+		elif not keep_status and mp_status.text == "":
 			mp_status.text = "방을 만들거나 친구에게 받은 방 코드로 들어가세요"
 		return
 	var code_row := HBoxContainer.new()
@@ -8708,18 +8737,30 @@ func _mp_refresh_lobby(keep_status := true) -> void:
 		DisplayServer.clipboard_set(mp.code)
 		cb.text = "복사됨")
 	code_row.add_child(cb)
+	var cnt := Label.new()
+	cnt.text = "%d/%d명" % [mp.names().size(), Mp.MAX_PLAYERS]
+	cnt.add_theme_font_size_override("font_size", 16)
+	cnt.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
+	code_row.add_child(cnt)
+	if wait_host:
+		# 참가자: 호스트와 이어지기 전엔 사람 줄 대신 도는 고리만 (이어지면 peers_changed로 다시 그림)
+		mp_status.text = ""
+		return
 	for n in mp.names():
-		var st := "" if n[0] == mp.my_id or n[2] else ("  (연결 안 됨)" if n[4] else "  (연결 중…)")
-		var nm: String = _mp_name(n[0]) if n[0] != mp.my_id else (n[1] if n[1] != "" else "닉네임 없음")
-		mp_room_box.add_child(_mp_member_row(n[3], n[0] == 1, nm + (" (나)" if n[0] == mp.my_id else "") + st))
+		var id: int = n[0]
+		var me := id == mp.my_id
+		var nm: String = _mp_name(id) if not me else (n[1] if n[1] != "" else "닉네임 없음")
+		var st := "" if me or n[2] else ("연결 안 됨" if n[4] else "연결 중")
+		mp_room_box.add_child(_mp_member_row(id, n[3], id == 1, nm + (" (나)" if me else ""), st))
+	_mp_refresh_pings()
 	if mp.is_host():
-		mp_status.text = "친구에게 방 코드를 알려 주세요. 연결되면 [시작] (최대 %d명)" % Mp.MAX_PLAYERS
+		mp_status.text = "친구에게 방 코드를 알려 주세요. 연결되면 [시작]" if ready < 1 else "모두 연결되면 [시작]"
 	else:
 		mp_status.text = "호스트가 시작하기를 기다리는 중"
 
 
-## 로비 사람 한 줄: [플랫폼 그림] ★(호스트) 닉네임 (상태)
-func _mp_member_row(pf: String, host: bool, text: String) -> HBoxContainer:
+## 로비 사람 한 줄: [플랫폼 그림] ★(호스트) 닉네임 [연결 중 고리·상태 | 핑]
+func _mp_member_row(id: int, pf: String, host: bool, text: String, state: String) -> HBoxContainer:
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 8)
@@ -8732,7 +8773,66 @@ func _mp_member_row(pf: String, host: bool, text: String) -> HBoxContainer:
 	l.text = ("★ " if host else "") + text
 	l.add_theme_font_size_override("font_size", 20)
 	row.add_child(l)
+	if state == "연결 중":
+		row.add_child(_mp_spinner(8.0))
+	if state != "":
+		var sl := Label.new()
+		sl.text = state
+		sl.add_theme_font_size_override("font_size", 16)
+		sl.add_theme_color_override("font_color", Color(1, 0.45, 0.4) if state == "연결 안 됨" else Color(1, 1, 1, 0.55))
+		row.add_child(sl)
+	elif id != mp.my_id:
+		var pl := Label.new()
+		pl.add_theme_font_size_override("font_size", 16)
+		pl.tooltip_text = "왕복 지연 (호스트와의 연결 기준)"
+		row.add_child(pl)
+		mp_ping_labels[id] = pl
 	return row
+
+
+## 핑 글과 색: 80ms 아래 초록, 150ms 아래 노랑, 그 위 빨강. 아직 못 쟀으면 "…ms".
+func _mp_ping_text(id: int) -> Array:
+	if not mp.ping.has(id):
+		return ["…ms", Color(1, 1, 1, 0.4)]
+	var ms: int = mp.ping[id]
+	return ["%dms" % ms, Color(0.5, 1, 0.55) if ms < 80 else (Color(1, 0.85, 0.35) if ms < 150 else Color(1, 0.45, 0.4))]
+
+
+func _mp_refresh_pings() -> void:
+	for id in mp_ping_labels:
+		var l: Label = mp_ping_labels[id]
+		if is_instance_valid(l):
+			var t := _mp_ping_text(id)
+			l.text = t[0]
+			l.add_theme_color_override("font_color", t[1])
+
+
+## 도는 고리 (기다리는 동안). 다시 그리기는 _mp_lobby_tick이 group "mp_spin"으로.
+func _mp_spinner(r: float) -> Control:
+	var c := Control.new()
+	c.custom_minimum_size = Vector2(r * 2.0 + 6.0, r * 2.0 + 6.0)
+	c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	c.add_to_group("mp_spin")
+	c.draw.connect(func():
+		var a := Time.get_ticks_msec() * 0.006
+		var w := maxf(2.0, r * 0.22)
+		c.draw_arc(c.size * 0.5, r, 0.0, TAU, 32, Color(1, 1, 1, 0.12), w, true)
+		c.draw_arc(c.size * 0.5, r, a, a + PI * 1.3, 24, Color(0.6, 0.9, 1.0), w, true))
+	return c
+
+
+## 매 프레임 (창이 열려 있을 때): 고리를 돌리고 기다린 초를 갱신.
+func _mp_lobby_tick() -> void:
+	if mp_panel == null or not mp_panel.visible:
+		return
+	get_tree().call_group("mp_spin", "queue_redraw")
+	if not mp_load_row.visible:
+		return
+	if mp.waiting_host():
+		var t := (Time.get_ticks_msec() - mp.joined_ms) / 1000.0
+		mp_load_label.text = "호스트와 연결하는 중  %d초" % int(t)
+	else:
+		mp_load_label.text = mp_load_msg + ".".repeat(1 + int(Time.get_ticks_msec() / 400.0) % 3)
 
 
 ## 호스트 [시작]: 씨앗·맵·규칙을 정해 모두에게 보내고 함께 시작한다.
@@ -8909,13 +9009,17 @@ func _mp_tick(delta: float) -> void:
 				elif not o["alive"]:
 					parts.append("%s 탈락 W%d" % [nm, o["w"]])
 				else:
-					parts.append("%s W%d ♥%d/%d %s점" % [nm, o["w"], o["hp"], o["mx"], num(o["sc"])])
+					parts.append("%s W%d ♥%d/%d %s점%s" % [nm, o["w"], o["hp"], o["mx"], num(o["sc"]), _mp_bar_ping(id)])
 			mp_bar.text = "대결 · " + "   |   ".join(parts)
 		else:
 			for id in mp_others:
-				parts.append("%s%s" % [_mp_name(id), " (끊김)" if mp_others[id]["gone"] else ""])
+				parts.append("%s%s" % [_mp_name(id), " (끊김)" if mp_others[id]["gone"] else _mp_bar_ping(id)])
 			mp_bar.text = "협동 · 나(%s) + %s" % ["호스트" if mp.is_host() else "참가", ", ".join(parts)]
 			mp_bar.add_theme_color_override("font_color", Mp.owner_color(mp.my_id))
+
+
+func _mp_bar_ping(id: int) -> String:
+	return " · %dms" % mp.ping[id] if mp.ping.has(id) else ""
 
 
 ## 쉬는 시간 시작 (_new_rest 안): 대결은 받아 둔 구체를 예고에, 협동 호스트는 다음 웨이브를 참가자에게.

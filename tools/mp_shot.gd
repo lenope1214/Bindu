@@ -20,6 +20,10 @@ func _initialize():
 	root.add_child(main)
 	steps = [
 		func():
+			Meta.guide_on = false  # 튜토리얼(처음 켤 때·멀티플레이 처음)이 화면을 가리지 않게
+			main.tut_first = false
+			if main.tut and main.tut.panel.visible:
+				main.tut.close()
 			Meta.ui_scale = z
 			main.touch_ui = touch
 			main._apply_ui_scale()
@@ -29,11 +33,20 @@ func _initialize():
 		func(): _snap("mp_title"); main._toggle_mp_lobby(),
 		func():
 			_snap("mp_lobby")
+			main.mp.my_id = 2  # 참가자: 방에 들어왔지만 호스트와 아직 안 이어짐 → 도는 고리
+			main.mp.code = "K7QX2M"
+			main.mp.mode = mode
+			main.mp.joined_ms = Time.get_ticks_msec() - 6000
+			main.mp.peers = {1: {"name": "빈두장인", "pf": "windows", "conn": null, "ok": false}, 2: {"name": "민수", "pf": "ios", "conn": null, "ok": true}}
+			main._mp_refresh_lobby(),
+		func():
+			_snap("mp_wait_host")
 			main.mp.my_id = 1
 			main.mp.code = "K7QX2M"
 			main.mp.mode = mode
 			main.mp.peers = {1: {"name": "빈두장인", "pf": "windows", "conn": null, "ok": true}, 2: {"name": "민수", "pf": "ios", "conn": null, "ok": true}, 3: {"name": "", "pf": "android", "conn": null, "ok": false}, 4: {"name": "맥유저", "pf": "mac", "conn": null, "ok": false}}
 			main.mp.diag_sent = {4: true}
+			main.mp.ping = {2: 38, 3: 212}
 			main._mp_refresh_lobby(),
 		func():
 			_snap("mp_room_" + mode)
