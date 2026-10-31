@@ -30,6 +30,8 @@ MODES = {
     "three": {"score": 0.50, "hard": False, "vs": ""},
     "soft": {"score": 0.70, "hard": False, "vs": "steel"},
     "ease": {"score": 0.85, "hard": False, "vs": "narrow"},
+    # 씨앗 나무(정원)를 쓴 판: 점수 배율 없음. 리더보드는 '성장'으로 따로 (Run.grow)
+    "grow": {"score": 1.0, "hard": True, "vs": ""},
 }
 MODE_SWARM = 1.25  # 물량: 웨이브 구체 수 (Modes.SWARM)
 MODE_MUL_MIN, MODE_MUL_MAX = 0.2, 2.5

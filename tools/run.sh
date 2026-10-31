@@ -4,12 +4,15 @@
 #   bots [규칙=1] [판 수=32] [stack]     자동 플레이 봇: 도달 웨이브 중간값·평균과 죽은 웨이브 분포
 #   long [규칙=1] [맵=plain] [웨이브=40]   죽지 않는 봇으로 긴 판 (웨이브가 4분 넘게 안 끝나면 STUCK)
 #   cont [규칙=1] [맵=plain] [웨이브=45]   4웨이브마다 끄고 이어하기 → 저장 전후가 다르면 DIFF
-#   fuzz [판 수=8] [프레임=9000]          무작위 클릭·끌기·키·터치 (스크립트 오류 찾기)
+#   fuzz [판 수=8] [프레임=9000]          무작위 클릭·끌기·키·터치 (스크립트 오류 찾기, GARDEN=1이면 정원 판)
 #   elem                                   속성마다 직선탄 Lv2 하나가 30초간 준 피해/초
 #   rx                                     특수 반응마다 두 속성 Lv1 직선탄 하나가 구체 무리에 준 반응 피해/초 (RX=id,id로 골라 보기)
 #   perf                                   후반 부하(오브젝트 16개·구체 250개+) 배속별 프레임당 계산 시간·부분별 시간
 #   perfwin                                perf를 창을 띄워 실행 (그리기 비용 포함, 수직 동기 끔)
 #   compare [기준=1] [새 규칙=3] [판 수=32] [stack]   같은 시드로 두 규칙을 돌려 차이와 판정 (새 규칙을 내기 전에)
+#   tree [규칙=1] [판 수=32]               씨앗 나무 없음·절반·전부로 같은 시드 봇 (정원 모드 → 일반 판 강화 폭)
+#   garden [시드 수=3] [웨이브=40]          정원 봇: 물러남·도달 게임 시간·숙련 (garden_bot.gd)
+#   gcheck                                 정원 점검: 저장·이어하기·꺼 둔 동안 보상·물러남·환생·씨앗 나무 (garden_check.gd)
 #   modes [규칙=1] [판 수=32] [모드...]   모드마다 같은 시드로 모드 없는 판과 비교: 웨이브 차이·점수 손익분기 배율
 #   spec                                   docs/features.md의 기대 동작 자동 점검 (tools/spec_check.gd)
 #   check                                  배포 전 한 번에: spec + 그린 궤적 + 무작위 입력 + 이어하기 (실패하면 끝 코드 1)
@@ -119,6 +122,37 @@ case "$CMD" in
 			else if (mb - ma >= 3 || r > 1.25) print "판정: 쉬움 — 기준보다 많이 길다. 의도한 것인지 확인"
 			else print "판정: 비슷함 (봇 기준). 사람 시험판은 따로"
 		}'
+		rm -rf "$D"
+		;;
+	tree)
+		# 씨앗 나무(정원)를 올린 일반 판: 없음·절반·전부를 같은 시드로 (기획 목표: 전부여도 중간값 +4 이내)
+		R=${1:-1}; N=${2:-32}
+		D=$(copy_project "$$")
+		cd "$D"
+		for lv in none half full; do
+			TREE=$lv run_bots "$R" "$N" "" "t$lv"
+			echo "씨앗 나무 $lv:"
+			summary t${lv}_*.txt
+		done
+		rm -rf "$D"
+		;;
+	garden)
+		# 정원 봇: 시드마다 정원을 [웨이브]까지 (물러남·게임 시간·숙련)
+		N=${1:-3}; W=${2:-40}
+		D=$(copy_project "$$")
+		cd "$D"
+		for seed in $(seq 1 "$N"); do
+			SPEED=${SPEED:-8} T 1800 "$G" --headless --fixed-fps 60 --path . -s tools/garden_bot.gd -- "$seed" "$W" 2>&1 | grep -E "^(W|RETREAT|RESULT|MASTERY)|SCRIPT ERROR" > "g_$seed.txt" &
+		done
+		wait
+		for seed in $(seq 1 "$N"); do echo "시드 $seed:"; grep -E "RETREAT|RESULT|SCRIPT ERROR" "g_$seed.txt" | tail -6; done
+		rm -rf "$D"
+		;;
+	gcheck)
+		# 정원 점검: 저장·이어하기·꺼 둔 동안 보상·물러남·환생·씨앗 나무·일반 판 보너스 (빈 기록으로)
+		D=$(copy_project "$$")
+		cd "$D"
+		T 600 "$G" --headless --fixed-fps 60 --path . -s tools/garden_check.gd 2>&1 | grep -E "^(ok|FAIL|RESULT|  )|SCRIPT ERROR" || true
 		rm -rf "$D"
 		;;
 	modes)

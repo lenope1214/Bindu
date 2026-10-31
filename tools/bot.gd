@@ -1,7 +1,7 @@
 extends SceneTree
 # 자동 플레이 봇: 반응 생기면 겹치기, 아니면 진입 방향을 가로지르게 새로 설치.
 # 사용: tools/run.sh bots (또는 godot --headless --fixed-fps 60 --path . -s tools/bot.gd -- <시드> [stack])
-# 환경 변수: BOT_ELEM=<속성 번호>·BOT_PAT=<공격방식 id>·BOT_MOD=<강화 id>(그 종류 카드를 전부 이것으로 바꿈, 조합 효율 측정용) WLOG=1(GOD일 때 웨이브마다 오브젝트별 피해 TW 줄)
+# 환경 변수: TREE(half|full: 씨앗 나무) BOT_ELEM=<속성 번호>·BOT_PAT=<공격방식 id>·BOT_MOD=<강화 id>(그 종류 카드를 전부 이것으로 바꿈, 조합 효율 측정용) WLOG=1(GOD일 때 웨이브마다 오브젝트별 피해 TW 줄)
 # RULES(규칙 버전) MODES(모드, 쉼표로) MAP(맵) FLIP=1(회랑에서 구체가 왼쪽에서) SPEED(배속) SMART=1(사람처럼 배치) GOD=<웨이브>(죽지 않고 그 웨이브까지, 멈춤 감시)
 var main
 var frames := 0
@@ -30,6 +30,22 @@ func _set_modes():
 	main.start_modes()
 	main.picks_left = maxi(2, Rules.picks)
 	main.rerolls_left = Modes.rerolls(1)
+	# TREE=half|full: 씨앗 나무·숙련을 그만큼 올린 일반 판 (tools/run.sh tree)
+	var tr := OS.get_environment("TREE")
+	if tr in ["half", "full"]:
+		var full := tr == "full"
+		Garden.tree = {"root": 5 if full else 2, "stem": 5 if full else 2, "leaf": 3 if full else 1, "fruit": 2 if full else 1, "bonsai": 3 if full else 0}
+		for k in Patch.ELEM_KEYS:
+			Garden.mastery[k] = 100000.0 if full else 5000.0
+		Garden.bonsai = {"e": Elem.FIRE, "pat": "spray", "plv": 2, "mods": ["rapid", "multi"]}
+		Garden.tree_on = true
+		main._apply_tree()
+		if Garden.lv("leaf") >= 3:
+			main.picks_left += 1
+	else:
+		Garden.tree = {}
+		Garden.mastery = {}
+		Garden.boosted = false
 var wave_ms := 0
 func _process(_d):
 	frames += 1

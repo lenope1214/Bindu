@@ -1,17 +1,26 @@
 extends SceneTree
 ## 무작위 입력(클릭·끌기·키)을 오래 넣어 스크립트 오류를 찾는다. 인자: 시드 프레임수
+## GARDEN=1이면 정원 판으로 (이슬을 자주 채우고, 홀수 시드는 중앙을 살려 두지 않아 물러남도 돈다)
 var main
 var f := 0
 var n := 6000
 var held := false
-var keys := [KEY_1, KEY_2, KEY_3, KEY_Q, KEY_V, KEY_SPACE, KEY_ESCAPE, KEY_TAB, KEY_H, KEY_P, KEY_E, KEY_R, KEY_ENTER, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_O, KEY_M, KEY_SHIFT]
+var seed_n := 1
+var garden := OS.get_environment("GARDEN") == "1"
+var keys := [KEY_1, KEY_2, KEY_3, KEY_4, KEY_G, KEY_Q, KEY_V, KEY_SPACE, KEY_ESCAPE, KEY_TAB, KEY_H, KEY_P, KEY_E, KEY_R, KEY_ENTER, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_O, KEY_M, KEY_SHIFT]
 func _initialize():
 	var a := OS.get_cmdline_user_args()
 	seed(int(a[0]) if a.size() > 0 else 1)
 	if a.size() > 1: n = int(a[1])
+	if garden:
+		if FileAccess.file_exists(Garden.RUN_PATH):
+			DirAccess.remove_absolute(Garden.RUN_PATH)
+		Garden.on = true
+		Garden.tree = {"bonsai": 1}
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	var sd: int = int(a[0]) if a.size() > 0 else 1
+	seed_n = sd
 	Meta.rules = Rules.IDS[sd % Rules.IDS.size()]
 	Meta.map_id = Meta.MAP_IDS[(sd / 4) % Meta.MAP_IDS.size()]
 	# 모드도 시드마다 몇 개씩 (반대 쌍은 set_on이 거른다)
@@ -29,7 +38,7 @@ func _initialize():
 	main.ready.connect(func():
 		Meta.ui_scale = z
 		main._apply_ui_scale())
-	print("FUZZR rules=", Meta.rules, " map=", Meta.map_id, " tutor=", main.tutor, " ui=", z, " modes=", ",".join(Modes.on))
+	print("FUZZR garden=", garden, " rules=", Meta.rules, " map=", Meta.map_id, " tutor=", main.tutor, " ui=", z, " modes=", ",".join(Modes.on))
 func _mouse(pos: Vector2, btn: int, pressed: bool, shift := false):
 	var e := InputEventMouseButton.new()
 	e.position = pos; e.global_position = pos; e.button_index = btn; e.pressed = pressed; e.shift_pressed = shift
@@ -46,7 +55,8 @@ func _key(k: int):
 		Input.parse_input_event(e)
 func _process(_d):
 	f += 1
-	if main.core_hp < 5: main.core_hp = 10  # 오래 돌도록
+	if main.core_hp < 5 and not (garden and seed_n % 2 == 1): main.core_hp = 10  # 오래 돌도록
+	if garden and f % 600 == 0: Garden.dew += 400.0
 	var vs: Vector2 = root.get_viewport().get_visible_rect().size
 	var r := randf()
 	var pos := Vector2(randf() * vs.x, randf() * vs.y)
@@ -73,5 +83,5 @@ func _process(_d):
 		main.cancel_btn.emit_signal("pressed")
 	if main.get_tree().paused and randf() < 0.05: _key(KEY_P)
 	if f % 1000 == 0:
-		print("FUZZ f=%d phase=%d wave=%d towers=%d sel=%d" % [f, main.phase, main.wave, main.towers.get_child_count(), main.selected.size()])
+		print("FUZZ f=%d phase=%d wave=%d towers=%d sel=%d garden=%s" % [f, main.phase, main.wave, main.towers.get_child_count(), main.selected.size(), Garden.on])
 	return f >= n

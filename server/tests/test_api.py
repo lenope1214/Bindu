@@ -244,3 +244,17 @@ def test_stats_min_wave():
         assert c.get("/admin/api/stats", params={**q, "min_wave": 0}, headers=A).json()["runs"] == 4
         assert "wave" in c.get("/admin/api/stats.csv", params={**q, "kind": "dropout"}, headers=A).text
         assert len([x for x in c.get("/admin/runs", params={"limit": 500}, headers=A).json() if x["device"].startswith("dev-mw")]) == 4
+
+
+def test_grow_board():
+    # 씨앗 나무(정원)를 쓴 판은 '성장' 리더보드에만, 쓰지 않은 판은 '순수'(기본)에만
+    with TestClient(app) as c:
+        kw = dict(map="cross", game="0.5.1", patch=2)
+        assert post_run(c, device="dev-grow-aaaa", modes=["grow"], score=5000, **kw).json()["accepted"]
+        assert post_run(c, device="dev-pure-aaaa", score=4000, **kw).json()["accepted"]
+        pure = c.get("/v1/leaderboard", params={"map": "cross", "rules": 1}).json()["entries"]
+        grow = c.get("/v1/leaderboard", params={"map": "cross", "rules": 1, "grow": True}).json()["entries"]
+        assert [e["score"] for e in pure] == [4000]
+        assert [e["score"] for e in grow] == [5000]
+        r = post_run(c, device="dev-grow-aaaa", modes=["grow", "rush"], score=6000, **kw).json()
+        assert r["accepted"] and r["rank"]["rank"] == 1
