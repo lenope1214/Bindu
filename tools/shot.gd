@@ -136,7 +136,9 @@ func _initialize():
 			main.towers.get_child(3).set_pattern("thorn")
 			main._on_pick({"type": "mod", "id": "pierce"})
 			Input.warp_mouse(main.towers.get_child(0).get_global_transform_with_canvas().origin),
-		func(): _snap("place_mod"); main._cancel_step(); main._set_cards_hidden(true),
+		# 넣을 수 있는 오브젝트에 올린 설명 상자 (다른 오브젝트를 가리지 않는 자리)
+		func(): _snap("place_mod"); Input.warp_mouse(main.towers.get_child(1).get_global_transform_with_canvas().origin),
+		func(): _snap("place_mod_ok"); main._cancel_step(); main._set_cards_hidden(true),
 		func():
 			_snap("cards_hidden")
 			# 오브젝트 정보창 (마우스를 올렸을 때, 화면 오른쪽 아래 쪽 오브젝트라 창이 화면 끝에 닿는지)

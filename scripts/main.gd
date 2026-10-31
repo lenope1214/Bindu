@@ -113,6 +113,7 @@ var targets: Array = []  # 화면 안에 들어온 구체 (공격 대상)
 var sim_id := 0  # 계산 조각 번호: 조각 안에서 변하지 않는 값(오브젝트 피해 배율)을 조각마다 한 번만 계산
 var prof_on := false  # tools/perf.gd: 부분별 계산 시간 기록
 var prof := {}
+var place_note := {}  # 카드 넣는 단계에서 올린 오브젝트 설명 (_draw_place_note)
 var fx_layer: Node2D  # 피해 숫자·파편 (맨 위)
 var fx_k := 1.0  # 터지는 효과 진하기 (효과 줄이기 설정이면 0.5)
 const FX_DPS := [0.0, 0.4, 0.7, 0.9]  # Meta.fx_dps별로 피해 몫이 작은 오브젝트 효과를 옅게 하는 세기
@@ -3671,7 +3672,9 @@ func _draw_wind_rings() -> void:
 	if winds.is_empty():
 		return
 	var show: Array = []
-	if moving != null or dragging or phase in [Phase.PLACE, Phase.MOVE]:
+	if _place_rings_off():
+		pass
+	elif moving != null or dragging or phase in [Phase.PLACE, Phase.MOVE]:
 		show = winds
 	else:
 		var h := _tower_at(get_global_mouse_position())
@@ -3685,6 +3688,12 @@ func _draw_wind_rings() -> void:
 		draw_arc(w.position, w.wind_range(), sp * TAU, sp * TAU + TAU * 0.85, 48, Color(wc, 0.35), 1.5)
 
 
+## 카드를 넣는 단계에서 모든 바람·별 둘레를 끌지: 새로 놓을 수 없는 카드(강화·연계 등)이거나 오브젝트 위에 올려 둔 동안.
+## 둘레는 새 자리를 고를 때만 쓸모 있고, 여러 개가 겹치면 올린 오브젝트 설명·범위가 묻힌다. 올린 오브젝트 자기 둘레는 draw_range가 그린다.
+func _place_rings_off() -> bool:
+	return phase == Phase.PLACE and moving == null and not dragging and (picked.get("type", "") != "elem" or _tower_at(get_global_mouse_position()) != null)
+
+
 ## 별 흡수 둘레: 오브젝트를 놓거나 옮기는 중엔 모든 별의 둘레(어디 두면 별빛을 주는지),
 ## 별빛을 주는 오브젝트에 마우스를 올리면 그걸 받는 별의 둘레. 별 자신에 올렸을 때·Alt·[범위 보기]는 draw_range가 그린다.
 func _draw_star_rings() -> void:
@@ -3695,7 +3704,9 @@ func _draw_star_rings() -> void:
 	if stars.is_empty():
 		return
 	var show: Array = []
-	if moving != null or dragging or phase in [Phase.PLACE, Phase.MOVE, Phase.AIM]:
+	if _place_rings_off():
+		pass
+	elif moving != null or dragging or phase in [Phase.PLACE, Phase.MOVE, Phase.AIM]:
 		show = stars.filter(func(s): return s != moving)
 	else:
 		var h := _tower_at(get_global_mouse_position())
@@ -7556,8 +7567,8 @@ func _process(delta: float) -> void:
 	touch_tip_t -= delta
 	# 터치 [자세히]: 오브젝트 정보창이 떠 있는 동안만 (취소 버튼 왼쪽)
 	var tip_on := touch_ui and Engine.get_process_frames() - tip_frame <= 2 and not title_label.visible
-	if touch_ui:
-		fx_layer.queue_redraw()  # 정보창이 떠 있는지(tip_frame)를 매 프레임 알도록 (쉬는 시간엔 다시 그리지 않는 프레임이 있다)
+	if touch_ui or phase == Phase.PLACE:
+		fx_layer.queue_redraw()  # PLACE: 올린 오브젝트 설명(place_note)이 마우스를 따라가게. 정보창이 떠 있는지(tip_frame)를 매 프레임 알도록 (쉬는 시간엔 다시 그리지 않는 프레임이 있다)
 	if not tip_on:
 		tip_detail = false
 	detail_btn.visible = tip_on
@@ -8798,6 +8809,7 @@ func _draw_fx() -> void:
 	var o := vw.position
 	var vs := vw.size
 	_draw_margins(vw)
+	_draw_place_note(fx_layer)
 	for i in 6:
 		var w := 14.0 * (6 - i)
 		var col := Color(0, 0, 0, 0.05)
@@ -9091,11 +9103,18 @@ func _draw() -> void:
 		# 넣을 수 있는 오브젝트: 숨 쉬는 빛 + 고리 + 도는 점선 고리 (속성 카드는 새 반응이 생기면 그 반응 색).
 		# 넣을 수 없는 오브젝트는 _update_place_dim이 흐리게 하고 누를 수 없다 (작은 ✕)
 		var spin := Time.get_ticks_msec() / 1000.0 * 1.6
+		var target := _tower_at(mpos)
+		place_note = {}
+		var pv: Array = target.preview(picked) if target and _place_ok(target) else []
+		var refuse: bool = target != null and (pv.is_empty() or (pv[0] as PackedStringArray)[0] == "넣을 수 없음")
 		for t in towers.get_children():
 			if not _place_ok(t):
-				draw_line(t.position + Vector2(-7, -7), t.position + Vector2(7, 7), Color(1, 0.35, 0.35, 0.55), 2.5)
-				draw_line(t.position + Vector2(7, -7), t.position + Vector2(-7, 7), Color(1, 0.35, 0.35, 0.55), 2.5)
+				if t != target:
+					draw_line(t.position + Vector2(-7, -7), t.position + Vector2(7, 7), Color(1, 0.35, 0.35, 0.55), 2.5)
+					draw_line(t.position + Vector2(7, -7), t.position + Vector2(-7, 7), Color(1, 0.35, 0.35, 0.55), 2.5)
 				continue
+			if t == target:
+				continue  # 올린 오브젝트는 아래에서 따로 (흰 고리 또는 넣을 수 없음 표시)
 			var hc := col
 			var strong := not is_elem
 			if is_elem:
@@ -9103,41 +9122,30 @@ func _draw() -> void:
 				if not fresh.is_empty():
 					hc = fresh[0]["color"]
 					strong = true
-			if not strong:
-				# 속성 카드는 빈 곳에 새로 놓을 수도 있어 겹치기만 옅게 표시
-				draw_arc(t.position, Tower.RADIUS + 9.0, 0, TAU, 32, Color(hc, 0.35), 1.5)
+			if not strong or target != null:
+				# 속성 카드는 빈 곳에 새로 놓을 수도 있어 겹치기만 옅게 표시.
+				# 오브젝트 하나에 올려 둔 동안엔 나머지는 얇은 고리만 (빛·도는 고리가 겹쳐 올린 것이 묻히지 않게)
+				draw_arc(t.position, Tower.RADIUS + 9.0, 0, TAU, 32, Color(hc, 0.55 if strong else 0.35), 1.5)
 				continue
 			draw_circle(t.position, Tower.RADIUS + 14.0 + pulse * 4.0, Color(hc, 0.07 + 0.07 * pulse))
 			draw_arc(t.position, Tower.RADIUS + 10.0 + pulse * 4.0, 0, TAU, 32, Color(hc, 0.95), 3.0)
 			for k in 4:
 				var a0 := spin + k * TAU / 4.0
 				draw_arc(t.position, Tower.RADIUS + 20.0, a0, a0 + 0.8, 8, Color(hc, 0.6), 2.0)
-		var target := _tower_at(mpos)
-		if target and not _place_ok(target):
-			# 넣을 수 없는 오브젝트 위: 범위 미리보기 없이 이유만
-			var why := _place_refuse(target)
-			var ww := ui_font.get_string_size(why, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
-			var wp := Vector2(clampf(target.position.x - ww / 2, 8, _right_limit() - ww), maxf(target.position.y - Tower.RADIUS - 22.0, 16.0))
-			draw_string(ui_font, wp + Vector2(1, 1), why, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color.BLACK)
-			draw_string(ui_font, wp, why, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1, 0.55, 0.55))
+		if target and refuse:
+			# 넣을 수 없는 오브젝트 위: 범위·설명 없이 빨간 고리 + 큰 ✕ + "넣을 수 없음" 하나만 (이유는 누르면 알림으로)
+			place_note = {"t": target, "lines": PackedStringArray(["넣을 수 없음"]), "col": Color(1, 0.3, 0.32), "fs": 18, "refuse": true}
 		elif target:
-			var pv: Array = target.preview(picked)
 			var lines: PackedStringArray = pv[0]
 			Tower.draw_range(self, target.position, target.dir, pv[1], picked["e"] if is_elem else -2)
 			draw_arc(target.position, Tower.RADIUS + 8.0, 0, TAU, 32, Color.WHITE, 2.0)
 			var tcol := col
 			if is_elem:
 				for r in Elem.new_reactions(target.eff_now(), picked["e"]):
-					lines.append("반응: %s (%s)" % [r["name"], r["desc"]])
+					var rd: String = r["desc"]
+					lines.append("반응: %s" % r["name"] + (" (%s)" % rd if rd.length() <= 26 else ""))
 					tcol = r["color"]
-			var y := target.position.y - Tower.RADIUS - 24.0 - 20.0 * (lines.size() - 1)
-			for i in lines.size():
-				var txt := lines[i]
-				var c2: Color = tcol if i == 0 or txt.begins_with("반응") else Color(1, 1, 1, 0.85)
-				var w := ui_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
-				var tp := Vector2(clampf(target.position.x - w / 2, 8, _right_limit() - w), maxf(y + i * 20.0, 16.0 + i * 20.0))
-				draw_string(ui_font, tp + Vector2(1, 1), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color.BLACK)
-				draw_string(ui_font, tp, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, c2)
+			place_note = {"t": target, "lines": lines, "col": tcol, "fs": 16, "refuse": false}
 		elif is_elem:
 			var at := mpos.clamp(field_rect().position, field_rect().end)  # 실제로 놓일 자리
 			draw_circle(at, Tower.RADIUS, Color(col, 0.4))
@@ -9211,6 +9219,70 @@ func _draw() -> void:
 		var r := Rect2(box_start, mpos - box_start).abs()
 		draw_rect(r, Color(0.5, 0.9, 1.0, 0.08))
 		draw_rect(r, Color(0.5, 0.9, 1.0, 0.8), false, 1.5)
+
+
+## 카드를 넣을 오브젝트에 올렸을 때의 설명 글 (main._draw가 place_note에 담고, 오브젝트 위에 보이게 fx_layer가 그린다).
+## 어두운 상자에 담아 다른 오브젝트·중앙을 가장 덜 가리는 자리(위·아래·옆, 조금씩 떨어진 곳까지)에 띄운다.
+## 넣을 수 없으면 빨간 고리 + 큰 ✕ + "넣을 수 없음" 한 줄만.
+func _draw_place_note(ci: CanvasItem) -> void:
+	if place_note.is_empty() or phase != Phase.PLACE or not is_instance_valid(place_note["t"]):
+		return
+	var target: Tower = place_note["t"]
+	var lines: PackedStringArray = place_note["lines"]
+	var col: Color = place_note["col"]
+	var fs: int = place_note["fs"]
+	var o := target.position
+	if place_note["refuse"]:
+		ci.draw_arc(o, Tower.RADIUS + 8.0, 0, TAU, 32, col, 3.0)
+		var xr := Tower.RADIUS * 0.8
+		ci.draw_line(o + Vector2(-xr, -xr), o + Vector2(xr, xr), Color(0, 0, 0, 0.6), 7.0)
+		ci.draw_line(o + Vector2(xr, -xr), o + Vector2(-xr, xr), Color(0, 0, 0, 0.6), 7.0)
+		ci.draw_line(o + Vector2(-xr, -xr), o + Vector2(xr, xr), col, 4.0)
+		ci.draw_line(o + Vector2(xr, -xr), o + Vector2(-xr, xr), col, 4.0)
+	var lh := fs + 5.0
+	var w := 0.0
+	for txt in lines:
+		w = maxf(w, ui_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+	var sz := Vector2(w + 16.0, lh * lines.size() + 8.0)
+	var vr := view_rect()
+	var lo := vr.position + Vector2(8.0, 44.0)
+	var hi := Vector2(_right_limit() - sz.x, vr.end.y - 76.0 - sz.y).max(lo)
+	var gap := Tower.RADIUS + 12.0
+	var cands: Array = []
+	for k in 5:
+		var dy := gap + k * 34.0
+		for fx in [0.5, 0.15, 0.85]:
+			cands.append(Vector2(o.x - sz.x * fx, o.y - dy - sz.y))  # 위
+			cands.append(Vector2(o.x - sz.x * fx, o.y + dy))  # 아래
+		var dx := gap + k * 40.0
+		cands.append(Vector2(o.x + dx, o.y - sz.y / 2.0))  # 오른쪽
+		cands.append(Vector2(o.x - dx - sz.x, o.y - sz.y / 2.0))  # 왼쪽
+	var blocks: Array = [[center(), CORE_RADIUS + 16.0]]
+	for t in towers.get_children():
+		blocks.append([t.position, Tower.RADIUS + 4.0])
+	var best := Rect2()
+	var best_s := INF
+	for p: Vector2 in cands:
+		var q := p.clamp(lo, hi)
+		var r := Rect2(q, sz)
+		var sc := q.distance_to(o) / 60.0 + q.distance_to(p) / 30.0
+		for bl in blocks:
+			var bp: Vector2 = bl[0]
+			if bp.clamp(r.position, r.end).distance_to(bp) < bl[1]:
+				sc += 10.0
+		if sc < best_s:
+			best_s = sc
+			best = r
+	var near := o.clamp(best.position, best.end)
+	if near.distance_to(o) > gap + 20.0:
+		# 떨어진 자리면 오브젝트까지 가는 가는 선
+		ci.draw_line(o + (near - o).normalized() * (Tower.RADIUS + 9.0), near, Color(col, 0.5), 1.5)
+	ci.draw_rect(best, Color(0.03, 0.03, 0.06, 0.85))
+	ci.draw_rect(best, Color(col, 0.6), false, 1.5)
+	for i in lines.size():
+		var txt := lines[i]
+		var c2: Color = col if i == 0 or txt.begins_with("반응") else Color(1, 1, 1, 0.9)
+		ci.draw_string(ui_font, best.position + Vector2(8.0, 2.0 + fs + i * lh), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, c2)
 
 
 ## 회랑 맵: 길(띠)·끝의 문·구체가 오는 쪽 화살표.

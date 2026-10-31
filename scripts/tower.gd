@@ -871,7 +871,7 @@ func mod_effect(id: String) -> String:
 	var fx := Pat.mod_fix(pattern, id, mf(id))
 	var t := _mod_effect(id)
 	if absf(fx - 1.0) >= 0.005 and id != "dice":
-		t += " · 이 공격방식 보정 피해 x%.2f" % fx
+		t += " · 공격방식 보정 x%.2f" % fx
 	return t
 
 
@@ -3061,21 +3061,21 @@ func preview(card: Dictionary) -> Array:
 		"mod":
 			var id: String = card["id"]
 			sp["mods"][id] = m(id) + 1
-			out.append("%s %d → %d" % [Pat.MODS[id]["name"], m(id), m(id) + 1] + (" (최대 %d)" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "") + ("  효과 x%.2f → x%.2f" % [mf(id), 2.0 * (1.0 - pow(0.5, m(id) + 1))] if Rules.mod_decay else "") + ("  (이미 들어 있음, 겹쳐서 세짐)" if m(id) > 0 else ""))
+			out.append("%s %d → %d" % [Pat.MODS[id]["name"], m(id), m(id) + 1] + (" (최대 %d)" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "") + ("  효과 x%.2f → x%.2f" % [mf(id), 2.0 * (1.0 - pow(0.5, m(id) + 1))] if Rules.mod_decay else "") )
 			var before := mod_effect(id) if m(id) > 0 else "없음"
 			mods[id] = m(id) + 1
 			var after := mod_effect(id)
 			mods[id] -= 1
 			if mods[id] == 0:
 				mods.erase(id)
-			out.append("%s → %s" % [before, after])
+			out.append(arrow_merge(before, after))
 			if m(id) == 0:
 				out.append(Pat.mdesc(id))
 		"link":
 			var id: String = card["id"]
 			var n := link_lv(id)
 			if n > 0:
-				out.append("%s x%d → x%d (이미 들어 있음, 겹쳐서 세짐)" % [Pat.LINKS[id]["name"], n, n + 1])
+				out.append("%s x%d → x%d" % [Pat.LINKS[id]["name"], n, n + 1])
 				out.append("%s %s → %s" % [LINK_POWER[id], link_value(id, n), link_value(id, n + 1)])
 			else:
 				out.append(Pat.LINKS[id]["name"])
@@ -3084,12 +3084,32 @@ func preview(card: Dictionary) -> Array:
 			var id: String = card["id"]
 			var n := tg(id)
 			if n > 0:
-				out.append("%s x%d → x%d (이미 들어 있음, 겹쳐서 세짐)" % [Pat.TRIGS[id]["name"], n, n + 1])
-				out.append("%s → %s" % [trig_value(id, n), trig_value(id, n + 1)])
+				out.append("%s x%d → x%d" % [Pat.TRIGS[id]["name"], n, n + 1])
+				out.append(arrow_merge(trig_value(id, n), trig_value(id, n + 1)))
 			else:
 				out.append(Pat.TRIGS[id]["name"])
 				out.append(Pat.tdesc(id))
 	return [out, sp]
+
+
+## 넣기 전·후 글 두 개를 한 줄로: 숫자만 다르고 나머지가 같으면 바뀐 숫자 자리에만 "앞→뒤"를 넣는다.
+## 예) "혼불 3개 (하나 피해 73%) · 공격방식 보정 x1.06" / "혼불 4개 (하나 피해 72%) · …" → "혼불 3→4개 (하나 피해 73→72%) · 공격방식 보정 x1.06"
+## 모양이 다르면 "앞 → 뒤" 그대로.
+static func arrow_merge(a: String, b: String) -> String:
+	var re := RegEx.create_from_string("-?\\d+(?:\\.\\d+)?")
+	var ma := re.search_all(a)
+	var mb := re.search_all(b)
+	if ma.size() != mb.size() or ma.is_empty() or re.sub(a, "#", true) != re.sub(b, "#", true):
+		return "%s → %s" % [a, b]
+	var out := ""
+	var at := 0
+	for i in mb.size():
+		out += b.substr(at, mb[i].get_start() - at)
+		var na := ma[i].get_string()
+		var nb := mb[i].get_string()
+		out += nb if na == nb else "%s→%s" % [na, nb]
+		at = mb[i].get_end()
+	return out + b.substr(at)
 
 
 ## 이 오브젝트에 든 연계 카드 수.

@@ -1227,6 +1227,17 @@ func _meta_misc() -> void:
 	var back: bool = bad_t.modulate == Color.WHITE
 	ok("UI-24", marks and back, "강화 카드 놓기: 넣을 수 있는 것만 밝게, 관통 연사는 흐리게·이유 문구, 단계가 바뀌면 원래대로")
 
+	# 넣을 오브젝트에 올린 설명: 전·후 숫자만 합친 한 줄, 강화 카드를 넣는 동안 모든 별·바람 둘레는 끔
+	var mg: String = Tower.arrow_merge("혼불 3개 (하나 피해 73%) · 공격방식 보정 x1.06", "혼불 4개 (하나 피해 72%) · 공격방식 보정 x1.06")
+	var mg2: String = Tower.arrow_merge("없음", "탄 2개")
+	main.picked = {"type": "mod", "id": "multi"}
+	main.phase = main.Phase.PLACE
+	var rings_off: bool = main._place_rings_off()
+	main.phase = main.Phase.CHOOSE
+	var rings_back: bool = not main._place_rings_off()
+	var pv_ok: bool = not (dt.preview({"type": "mod", "id": "multi"})[0] as PackedStringArray)[0].contains("겹쳐서")
+	ok("UI-25", mg == "혼불 3→4개 (하나 피해 73→72%) · 공격방식 보정 x1.06" and mg2 == "없음 → 탄 2개" and rings_off and rings_back and pv_ok, "넣기 설명 한 줄 합치기 '%s', 둘레 끔 %s/%s" % [mg, rings_off, rings_back])
+
 	# 웨이브 넘기기: 오브젝트가 있어야, 첫 판은 카드가 다 열린 뒤
 	_fresh(3)
 	var none: bool = main._can_skip()
