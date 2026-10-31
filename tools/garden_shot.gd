@@ -102,6 +102,7 @@ func _initialize():
 func _snap(n: String):
 	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s.png" % [n, z]))
 	print("SHOT ", n, " phase=", main.phase, " wave=", main.wave, " dew=", int(Garden.dew))
+	preload("res://tools/ui_check.gd").check(main, n)  # 겹침·화면 밖 (UI OVERLAP 줄)
 
 
 func _process(_d) -> bool:

@@ -36,7 +36,7 @@ func _initialize():
 		func(): main.vote_panel.take(FAKE); main.vote_panel._draw_list(),
 		func(): _snap("vote_panel"); main.vote_panel.tabs[3].pressed.emit(),
 		func(): _snap("vote_mod"); main.vote_panel.choose("trig:echo", "up"); main.vote_panel.choose("perk:power", "fix"); main.vote_panel.choose("elem:ice", "up"); main.vote_panel._say("표 5장을 다 썼어요. 다른 표를 취소하고 넣어 주세요"); main.vote_panel.tabs[6].pressed.emit(),
-		func(): _snap("vote_full_rx"); main.vote_panel.hide_panel(); main._close_title(),
+		func(): _snap("vote_full_rx"); main.vote_panel.hide_panel(); main.continue_btn.visible = false; main._close_title(),
 		func():
 			main.run_log = [{"w": 0, "k": "card", "p": "elem:fire"}, {"w": 2, "k": "card", "p": "pat:spray"}, {"w": 4, "k": "card", "p": "mod:rapid"}, {"w": 5, "k": "perk", "p": "perk:power"}]
 			main.wave = 12
@@ -52,6 +52,7 @@ func _initialize():
 func _snap(n: String):
 	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
 	print("SHOT ", n)
+	preload("res://tools/ui_check.gd").check(main, n)  # 겹침·화면 밖 (UI OVERLAP 줄)
 
 
 func _process(_d) -> bool:

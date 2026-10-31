@@ -140,6 +140,10 @@ var hud: Control  # 왼쪽 위 점수 줄: 아이콘 칩 (_update_hud가 hud_chi
 var hud_chips: Array = []  # [자리 Rect2, 아이콘, 아이콘 색, 글, 글 색, 말풍선 줄]
 var info: Control  # 화면 위 아이콘 층: 진입 화살표 배지·고르기 배지·말풍선 (_draw_info)
 var tip_rects: Array = []  # 이번 프레임 말풍선 자리 [Rect2(UI 좌표), 줄들 [[글, 색]]]
+var _hint_kept := ""  # 낱말 붙임(_kr_keep)을 넣은 아래 안내 글
+var _badge_memo := {}  # _free_badge 답 (입력 hash → Rect2)
+var _badge_cands: Array[Vector2] = []  # _free_badge가 볼 자리 (안쪽 칸, 옆 칸), 가까운 순
+var info_rects: Array = []  # 이번 프레임 info에 그린 배지 [이름, Rect2(UI 좌표)] (화면 배치 점검 tools/ui_check.gd)
 var tip_pin := -1  # 터치로 누른 말풍선 (tip_rects 번호)
 var wave_info: Array = []  # 다음 웨이브 자세한 안내 [[글, 색]] (배지에 올리면 보임)
 var wave_kinds: Array = []  # 다음 웨이브에 섞여 나오는 구체 [아이콘, 색, 처음 등장?]
@@ -1157,6 +1161,11 @@ func _refresh_dps() -> void:
 			if pr.grow(14.0).has_point(t.position):
 				under = true
 				break
+		# 진입 화살표가 표 밑에 깔려도 (왼쪽 위·왼쪽 길목) 보이게
+		for arr in _lane_arrows():
+			if pr.grow(14.0).has_point(arr[0]):
+				under = true
+				break
 	dps_panel.modulate.a = 0.4 if under else 1.0
 	# 점수 줄 아래, 왼쪽 아래 안내 글 위까지
 	var top := hud.position.y + hud.size.y + 8.0 if hud.visible else 8.0
@@ -1166,9 +1175,11 @@ func _refresh_dps() -> void:
 	var bottom := _bottom_free()
 	if choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and choice_box.get_rect().position.x < 320.0:
 		bottom = minf(bottom, choice_box.get_rect().position.y - 24.0)  # 카드 왼쪽 끝·고르기 꼬리표를 덮지 않게 (넘치면 굴려 본다)
+	if apply_btn.visible and apply_btn.get_rect().position.x < dps_panel.get_rect().end.x:
+		bottom = minf(bottom, apply_btn.get_rect().position.y - 28.0)  # 폰 [적용] 버튼(누른 카드 위)을 덮지 않게
 	if guide_label.visible and guide_label.get_rect().position.x < 320.0:
 		bottom = minf(bottom, guide_label.position.y - 4.0)  # 처음 안내 글 위까지만
-	var room := maxf(48.0, bottom - top - 44.0)
+	var room := maxf(0.0 if apply_btn.visible else 48.0, bottom - top - 44.0)
 	var list := towers.get_children()
 	list.sort_custom(func(a, b): return a.dealt > b.dealt)
 	var sig := "%s|%d|%d" % [dps_hidden, roundi(room), roundi(wave_time)]
@@ -1348,6 +1359,8 @@ func _apply_ui_scale() -> void:
 
 ## 안전 영역 밖 여백 (화면 좌표, position = 왼쪽·위, size = 오른쪽·아래). 폰·태블릿만.
 func _safe_pad() -> Rect2:
+	if Meta.sim_safe.has_area() or Meta.sim_safe.position != Vector2.ZERO:
+		return Meta.sim_safe
 	if not OS.has_feature("mobile") or DisplayServer.get_name() == "headless":
 		return Rect2()
 	var win := Vector2(DisplayServer.window_get_size())
@@ -1394,7 +1407,7 @@ func big_banner(t: String, col: Color) -> void:
 
 
 func _show_toast(t: String) -> void:
-	toast.text = t
+	toast.text = _kr_keep(t)  # 좁은 자리에서 두 줄로 접힐 때 한글 낱말 중간에서 끊기지 않게
 	toast_timer = 2.0
 
 
@@ -1466,8 +1479,12 @@ func _update_hud(force := false) -> void:
 			items.append(["perk", Color(0.75, 0.7, 1.0), pk["name"] + (" x%d" % n if n > 1 else ""), D, [["특성 " + pk["name"] + (" x%d" % n if n > 1 else ""), W], [pk["desc"], D]], first])
 			first = false
 	# 오른쪽 위 버튼(설명 보기, 터치면 범위 보기) 앞까지. 글자를 키우면(설정) 화면이 좁아진 만큼 줄어든다
-	var hud_w := ui_root.size.x - (300.0 if range_btn.visible else 190.0)
-	var sig := str(hud_w)
+	var hud_w := ui_root.size.x - (410.0 if zoom_btn.visible else 300.0 if range_btn.visible else 190.0)  # [확대 풀기]까지 피함
+	if Garden.on and gp != null and gp.visible and not gp_portrait:
+		hud_w = minf(hud_w, gp.position.x - 8.0)  # 정원 가로: 오른쪽 목록 패널 밑으로 들어가던 칩
+	# 둘째 줄부터는 오른쪽 설명(위에서 48부터) 왼쪽까지 (특성이 많으면 둘째 줄이 설명 글 위로 지나갔다)
+	var hud_w2 := minf(hud_w, legend.position.x - 8.0) if legend.visible else hud_w
+	var sig := "%s|%s" % [hud_w, hud_w2]
 	for it in items:
 		sig += "|" + it[2] + str(it[1])
 	if sig == hud_sig:
@@ -1480,7 +1497,7 @@ func _update_hud(force := false) -> void:
 	hud_chips.clear()
 	for it in items:
 		var w := Icons.chip_w(ui_font, it[2], fs)
-		if x > 0.0 and (it[5] or x + w > hud_w):
+		if x > 0.0 and (it[5] or x + w > (hud_w if y == 0.0 else hud_w2)):
 			x = 0.0
 			y += 34.0
 		hud_chips.append([Rect2(x, y, w, 30.0), it[0], it[1], it[2], it[3], it[4]])
@@ -3286,9 +3303,78 @@ func _off_legend(r: Rect2) -> Rect2:
 	return r
 
 
+## 배지가 피해야 할 화면 UI 자리 (UI 좌표): 점수 줄·DPS 표·오른쪽 위 버튼·웨이브 시작·아래 안내·버튼 줄·알림 등.
+## 예전엔 오른쪽 설명(legend)만 피해서 왼쪽 위 길목 배지가 DPS 표 위에, 아래 길목 배지가 [웨이브 시작] 위에 겹쳤다.
+func _info_blockers() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	var inv := ui_root.get_global_transform().affine_inverse()
+	for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, guide_label, mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, draw_ok_btn]:
+		if c == null or not c.is_visible_in_tree():
+			continue
+		if (c is Label and str(c.text) == "") or (c == hud and hud_chips.is_empty()):
+			continue
+		var r := inv * c.get_global_rect()
+		if c == hint:
+			# 안내 글은 칸이 넓어도 글이 있는 곳만
+			var tw := minf(r.size.x, ui_font.get_multiline_string_size(hint.text, HORIZONTAL_ALIGNMENT_LEFT, r.size.x, 15).x)
+			r.size.x = tw + 4.0
+		if r.has_area():
+			out.append(r.grow(4.0))
+	return out
+
+
+## 배지를 화살표에서 안쪽(전장 가운데 쪽)으로, 모자라면 옆으로 밀어 UI·다른 배지와 겹치지 않는 자리를 찾는다.
+## 자리가 없으면 처음 자리 그대로.
+func _free_badge(r: Rect2, inward: Vector2, avoid: Array[Rect2], lo_r: Rect2) -> Rect2:
+	# 겹친 넓이 (0이면 빈자리)
+	var cover := func(q: Rect2) -> float:
+		var a := 0.0
+		for b in avoid:
+			if q.intersects(b):
+				a += q.intersection(b).get_area()
+		return a
+	if is_zero_approx(cover.call(r)):
+		return r
+	# 같은 자리·같은 UI면 지난 답 그대로 (자리 찾기가 매 프레임 수백 칸을 보지 않게)
+	var key := hash([r, inward, avoid, lo_r])
+	if _badge_memo.has(key):
+		return _badge_memo[key]
+	if _badge_memo.size() > 64:
+		_badge_memo.clear()
+	var found := _free_badge_search(r, inward, lo_r, cover)
+	_badge_memo[key] = found
+	return found
+
+
+func _free_badge_search(r: Rect2, inward: Vector2, lo_r: Rect2, cover: Callable) -> Rect2:
+	# 화살표에서 가까운 자리부터: 안쪽(가운데 쪽)으로 0~34칸 × 옆으로 -6~6칸, 가까운 순. 바깥쪽(화면 끝)으로는 가지 않는다.
+	# 빈자리가 없으면(글자 130%로 UI가 화면을 많이 차지할 때) 가장 덜 겹치는 자리
+	if _badge_cands.is_empty():
+		for step in range(0, 35):
+			for sd in range(-6, 7):
+				if step != 0 or sd != 0:
+					_badge_cands.append(Vector2(step * 16.0, sd * 20.0))
+		_badge_cands.sort_custom(func(a, b): return a.length_squared() < b.length_squared())
+	var side := Vector2(-inward.y, inward.x)
+	var best := r
+	var best_a: float = cover.call(r)
+	for c: Vector2 in _badge_cands:
+		var q := r
+		q.position += inward * c.x + side * c.y
+		q.position = q.position.clamp(lo_r.position, lo_r.end - q.size)
+		var a: float = cover.call(q)
+		if is_zero_approx(a):
+			return q
+		if a < best_a - 1.0:
+			best_a = a
+			best = q
+	return best
+
+
 ## 화면 위 아이콘 층: 진입 화살표 옆 구체 수 배지, 놓친 구체, 남은 고르기, 칩·배지에 올리면 뜨는 말풍선.
 func _draw_info() -> void:
 	tip_rects.clear()
+	info_rects.clear()
 	var size := info.size
 	var top := hud.position.y + hud.size.y + 6.0 if hud.visible else 8.0
 	var lo := size.y - 64.0
@@ -3311,6 +3397,10 @@ func _draw_info() -> void:
 		var fs := 18
 		# 폰: 배지가 7개까지 겹쳐 전장을 덮었다 → 수와 보스 왕관만, 섞여 나오는 종류는 점 하나(누르면 말풍선)
 		var compact := _phone()
+		var blockers := _info_blockers()
+		# 오브젝트도 되도록 가리지 않는다 (배지를 비킬 때 오브젝트 위에 얹히던 것)
+		for t in towers.get_children():
+			blockers.append(Rect2(xf * t.position - Vector2(22, 26), Vector2(44, 48)))
 		for arr in _lane_arrows():
 			var li: int = arr[2]
 			var n: int = counts[li] if li < counts.size() else 0
@@ -3330,17 +3420,31 @@ func _draw_info() -> void:
 				else:
 					gx = minf(gx, gp.position.x)
 			r.position = r.position.clamp(Vector2(8.0, top), Vector2(gx - w - 8.0, gy - 30.0))
-			r = _off_legend(r)
+			var nh := 13.0 if not compact and wave_kinds.any(func(k): return k[2]) else 0.0  # 위에 붙는 NEW
+			var avoid: Array[Rect2] = blockers.duplicate()
+			for br in badges:
+				avoid.append(br.grow(4.0))
+			var inward: Vector2 = (xf.basis_xform(-arr[1])).normalized()
+			r = _free_badge(r.grow_side(SIDE_TOP, nh), inward, avoid, Rect2(8.0, 8.0, gx - 16.0, size.y - 16.0)).grow_side(SIDE_TOP, -nh)
 			badges.append(r)
 			# 카드 위에 걸친 배지는 그리지 않는다 (옅게 그려도 카드 글을 가렸고, 마우스를 올리면 말풍선이 카드를 덮었다). 카드를 내리면(V) 보인다
 			if cards_r.has_area() and r.intersects(cards_r):
 				continue
+			info_rects.append(["배지 %s" % txt, r.grow_side(SIDE_TOP, 13.0 if not compact and wave_kinds.any(func(k): return k[2]) else 0.0)])
 			var al := 1.0
 			var sb := StyleBoxFlat.new()
 			sb.bg_color = Color(0.16, 0.04, 0.06, 0.88 * al)
 			sb.border_color = Color(1, 0.35, 0.4, 0.9 * al)
 			sb.set_border_width_all(2)
 			sb.set_corner_radius_all(7)
+			var home := Rect2(p - Vector2(w, 30.0) / 2.0, Vector2(w, 30.0))
+			var far := r.get_center().distance_to(home.get_center())
+			if far > 70.0 and far < 240.0:  # 너무 멀면 선이 화면을 가로질러 더 어지럽다 (글자 130%·길목 7곳)
+				# UI를 피해 화살표에서 멀리 비켜났으면 화살표 쪽으로 옅은 선 (어느 길목 배지인지 보이게)
+				var tip: Vector2 = xf * arr[0]
+				var c0 := r.get_center()
+				var e0 := c0 + (tip - c0).normalized() * minf(r.size.x, r.size.y) * 0.5
+				info.draw_dashed_line(e0, tip - (tip - c0).normalized() * 14.0, Color(1, 0.4, 0.45, 0.35), 2.0, 6.0)
 			info.draw_style_box(sb, r)
 			var x := r.position.x + 10.0
 			var cy := r.get_center().y
@@ -3371,12 +3475,15 @@ func _draw_info() -> void:
 			var w := Icons.chip_w(ui_font, txt, 16)
 			var r := Rect2(p - Vector2(w, 26.0) / 2.0, Vector2(w, 26.0))
 			r.position = r.position.clamp(Vector2(8.0, top), Vector2(size.x - w - 8.0, lo - 26.0))
-			r = _off_legend(r)
+			var avoid: Array[Rect2] = blockers.duplicate()
 			for br in badges:
-				if r.intersects(br.grow(4.0)):
-					r.position = Vector2(br.position.x, br.end.y + 6.0)  # 같은 방향 배지 바로 아래
+				avoid.append(br.grow(4.0))
+			var inward: Vector2 = Vector2(1.0 if not Meta.line_flip else -1.0, 0) * -1.0 if Meta.map_id == "line" else (xf.basis_xform(-d)).normalized()
+			r = _free_badge(r, inward, avoid, Rect2(8.0, 8.0, size.x - 16.0, size.y - 16.0))
+			badges.append(r)
 			if cards_r.has_area() and r.intersects(cards_r):
 				continue
+			info_rects.append(["놓친 %s" % txt, r])
 			var la := 1.0
 			Icons.chip(info, ui_font, r, "orb", Color(0.85, 0.85, 0.9, la), txt, Color(1, 0.5, 0.5, la), 16, Color(0.1, 0.02, 0.03, 0.85 * la), Color(1, 0.4, 0.4, 0.6 * la))
 			tip_rects.append([r, [["지난 웨이브에 이쪽에서 놓친 구체 %d개" % lm[1], Color(1, 0.6, 0.6)], [_leak_text(), Color(1, 1, 1, 0.7)]]])
@@ -7266,25 +7373,50 @@ func _process(delta: float) -> void:
 	var hw := 590.0
 	if pause_btn.visible:
 		hw = clampf(bar_box.get_rect().position.x - hint.position.x - 12.0, 240.0, 590.0)
+	# 아래 가운데 버튼([웨이브 시작]·[취소]·[자세히]·[확정])에도 닿지 않게 (글이 길면 버튼 밑으로 지나갔다)
+	var hb := hint.get_rect().end.y
+	for b: Control in [start_btn, cancel_btn, detail_btn, draw_ok_btn, skip_badge]:
+		if b != null and b.visible:
+			var br := b.get_rect()
+			if br.end.y > hb - 70.0 and br.position.x > hint.position.x + 120.0:
+				hw = minf(hw, maxf(240.0, br.position.x - hint.position.x - 12.0))
 	if not is_equal_approx(hint.size.x, hw):
 		hint.size.x = hw
+	if hint.text != _hint_kept:
+		hint.text = _kr_keep(hint.text)  # 줄이 접힐 때 한글 낱말 중간("방향 바/꾸기")에서 끊기지 않게
+		_hint_kept = hint.text
 	toast.position.y = maxf(100.0, hud.position.y + hud.size.y + 36.0)  # 점수 줄이 길어져도 보스 체력 막대 아래
 	# 안내·큰 글자도 점수 줄이 길어지거나 글자를 키우면(설정) 그 아래로 밀어 겹치지 않게
 	guide_label.position.y = maxf(140.0, toast.position.y + 40.0)
-	_beside_legend(toast, 600.0)
 	_beside_legend(guide_label, 0.0)
 	if gp and gp.visible and gp.get_rect().position.x > 0.0:  # 정원 가로 화면: 오른쪽 상점 창 밑으로 들어가지 않게
 		guide_label.position.x = maxf(8.0, minf(guide_label.position.x, gp.get_rect().position.x - 8.0 - guide_label.size.x))
-	# 왼쪽 위 DPS 표를 펼쳐 두면 알림이 표 위에 겹치던 것 (글자 115% 이상·표가 길 때): 표 오른쪽에 자리가 있으면 그쪽, 없으면 표 아래로
-	if toast.visible and dps_panel.visible:
-		var dr := dps_panel.get_rect()
-		if toast.get_rect().intersects(dr):
-			var right := legend.get_rect().position.x - 8.0 if legend.visible else ui_root.size.x - 8.0
-			if right - dr.end.x - 8.0 >= toast.size.x:
-				toast.position.x = dr.end.x + 8.0 + (right - dr.end.x - 8.0 - toast.size.x) / 2.0
-			else:
-				toast.position.y = dr.end.y + 8.0
+	# 왼쪽 위 DPS 표를 펼쳐 두면 알림이 표 위에 겹치던 것 (글자 115% 이상·표가 길 때): 표와 오른쪽 설명 사이에 두고,
+	# 글이 그 폭보다 길면 두 줄로 접는다 (예전엔 표 아래로 내려 카드 줄 밑에 깔렸다: 봉인·이벤트 알림)
+	if toast.visible:
+		var left := 8.0
+		var right := legend.get_rect().position.x - 8.0 if legend.visible else ui_root.size.x - 8.0
+		if Garden.on and gp != null and gp.visible and not gp_portrait:
+			right = minf(right, gp.position.x - 8.0)  # 정원 가로: 목록 패널 왼쪽
+		if dps_panel.visible and dps_panel.get_rect().end.y > toast.position.y:
+			left = dps_panel.get_rect().end.x + 8.0
+		var avail := maxf(240.0, right - left)
+		var tw := ui_font.get_string_size(toast.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x + 12.0
+		var wrap := tw > avail
+		toast.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if wrap else TextServer.AUTOWRAP_OFF
+		toast.add_theme_font_size_override("font_size", 18 if wrap else 22)  # 접을 때는 조금 작게 (세 줄로 전장 가운데를 덮지 않게)
+		var w := minf(maxf(tw, 600.0), avail)
+		if not is_equal_approx(toast.size.x, w):
+			toast.size = Vector2(w, 0.0)
+		toast.position.x = clampf((ui_root.size.x - w) / 2.0, left, maxf(left, right - w))
 	banner.position.y = maxf(ui_root.size.y / 2.0 - 140.0, hud.position.y + hud.size.y + 12.0)
+	if toast.visible and toast.text != "":
+		banner.position.y = maxf(banner.position.y, toast.get_rect().end.y + 4.0)  # 점수 줄이 세 줄일 때 알림과 겹치던 것
+	# 큰 글은 정원 가로 화면이면 목록 패널 왼쪽 전장 가운데 (패널 밑으로 글 끝이 들어갔다)
+	var ban_w := gp.position.x if Garden.on and gp != null and gp.visible and not gp_portrait else ui_root.size.x
+	banner.size.x = minf(800.0, ban_w - 16.0)
+	banner.position.x = (ban_w - banner.size.x) / 2.0
+	banner.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if ui_font.get_string_size(banner.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x > banner.size.x else TextServer.AUTOWRAP_OFF
 	if choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0:
 		# 카드가 떠 있으면 "웨이브 N" 큰 글이 카드 윗변에 걸치지 않게 그 위로
 		banner.position.y = maxf(minf(banner.position.y, choice_box.get_rect().position.y - banner.size.y - 4.0), hud.position.y + hud.size.y + 12.0)
@@ -7358,12 +7490,19 @@ func _process(delta: float) -> void:
 	paused_label.visible = show_pause
 	pause_box.visible = show_pause
 	pause_dim.visible = dim
+	# 일시정지 창 버튼이 어둠 밑 카드 글 위에 겹쳐 읽기 힘들던 것 (폰·글자 130%): 멈춘 동안 카드 줄은 더 옅게
+	choice_box.modulate.a = 0.25 if dim else 1.0
 	if pause_box.visible:
 		# 글자를 키우면(설정) 가운데 기준 자리가 점수 줄에 닿는다: 점수 줄 아래로
 		paused_label.position.y = maxf(ui_root.size.y / 2.0 - 248.0, hud.get_rect().end.y + 8.0 if hud.visible else 8.0)
 		pause_box.position.y = paused_label.position.y + paused_label.size.y + 10.0
 		pause_box.size.x = 0.0  # 버튼 수(튜토리얼·끄기)만큼 넓어져도 가운데
 		pause_box.position.x = floorf((ui_root.size.x - pause_box.get_combined_minimum_size().x) / 2.0)
+	if vote_panel.visible:
+		# 넓은 화면(폰 가로·와이드)에서는 투표 창을 넓혀 카드 설명이 덜 잘리게 (860 고정이라 설명 끝이 … 로 많이 잘렸다)
+		var vh := clampf((ui_root.size.x - 48.0) / 2.0, 430.0, 580.0)
+		vote_panel.offset_left = -vh
+		vote_panel.offset_right = vh
 	_fit_panels()
 	_refresh_dps()
 	_soften_fx()
@@ -7395,7 +7534,10 @@ func _process(delta: float) -> void:
 		cx = 0.0
 	# 글자를 키우면(설정) 카드 줄 오른쪽이 설명 밑으로 들어가던 것: 설명 왼쪽까지 들어가게 왼쪽으로 옮기고, 모자라면 줄인다
 	var room := (legend.get_rect().position.x - 8.0) if legend.visible else ui_root.size.x - 8.0
-	var kw := minf((room - 8.0) / 730.0, 1.0)
+	if Garden.on and gp != null and gp.visible and not gp_portrait:
+		room = minf(room, gp.position.x - 8.0)  # 정원 가로: 카드 4장(열매 특성)이 오른쪽 목록 밑·화면 왼쪽 밖으로 나가던 것
+	var half := maxf(365.0, choice_box.get_combined_minimum_size().x / 2.0)  # 카드 4장은 730보다 넓다
+	var kw := minf((room - 8.0) / (half * 2.0), 1.0)
 	# 새로고침·내리기 버튼은 카드 바로 아래 한 줄에 (카드가 길어지면 버튼이 카드 글을 덮던 것).
 	# 카드+버튼 줄이 왼쪽 아래 안내 글에 닿으면 카드 줄을 위로 올리고, 그래도 모자라면(글자 크게) 0.7배까지 줄인다
 	var mid := ui_root.size.y / 2.0
@@ -7407,10 +7549,11 @@ func _process(delta: float) -> void:
 	if guide_label.visible:
 		floor_y = maxf(floor_y, guide_label.position.y + guide_label.size.y + 26.0)  # 처음 안내 글이 카드 글 뒤로 겹치던 것 (고르기 꼬리표 자리 포함)
 	var need := ch + 8.0 + 40.0 + (84.0 if Garden.on else 0.0)
-	var k := clampf(minf((lim - floor_y) / need, kw), 0.7, 1.0)
-	cx = minf(cx, room - 365.0 * k - ui_root.size.x / 2.0)
-	choice_box.offset_left = cx - 365.0
-	choice_box.offset_right = cx + 365.0
+	var k := clampf(minf((lim - floor_y) / need, kw), minf(0.7, kw), 1.0)
+	cx = minf(cx, room - half * k - ui_root.size.x / 2.0)
+	cx = maxf(cx, 8.0 + half * k - ui_root.size.x / 2.0)
+	choice_box.offset_left = cx - half
+	choice_box.offset_right = cx + half
 	var ctop := maxf(minf(mid - 90.0, lim - need * k), floor_y)
 	choice_box.pivot_offset = Vector2(choice_box.size.x / 2.0, 0.0)
 	choice_box.scale = Vector2(k, k)

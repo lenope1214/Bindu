@@ -21,6 +21,8 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 | `pat_dps.gd` | `godot --headless --fixed-fps 60 --path . -s tools/pat_dps.gd` (`PAT=lob,shot` `PLV=3` `ELEM=<번호>`): 공격방식마다 오브젝트 하나(속성 Lv1) 앞을 죽지 않는 무리가 30초 가로지를 때(cross)·정면으로 올 때(head) | 공격방식별 피해/초 |
 | `pat_kill.gd` | 같은 방법(`HP=15` `RATE=1`): 체력 HP 구체가 정면으로 60초 올 때(lane). spiral은 비껴 도는 길이 오브젝트 앞을 지나지 않는 경우가 많아 참고만 | 공격방식별 처치율 |
 | `path_test.gd` | `godot --headless --path . -s tools/path_test.gd`: 그린 궤적 넣기·그리기(꺾기·길이 제한)·길 따라 맞히기·레벨업 길이와 갈래·4개 상한·유도 차단·저장·대격변·등장 비율 | 항목별 ok/FAIL, 실패가 있으면 끝 코드 1 |
+| `ui_check.gd` | 스크린샷 도구(shot·mp_shot·vote_shot·garden_shot·path_shot·vary_shot·ui_audit)가 찍을 때마다 부름: 보이는 글·버튼·창·그림 배지끼리 겹침, 화면(폰은 안전 영역) 밖, 말줄임으로 잘린 글 | `UI OVERLAP/OFFSCREEN/CLIP <화면> …`, 없으면 `UI ok <화면>` |
+| `ui_audit.gd` | `xvfb-run godot --path . --rendering-driver opengl3 --resolution 2556x1179 -s tools/ui_audit.gd -- <폴더> [글자 크기] [touch] [phone]`: 일곱 길목(점수 줄·DPS 표·버튼·웨이브 시작·안내 쪽)·큰 점수·오브젝트 14개·특성 8개·놓친 구체·긴 알림으로 꽉 채운 쉬는 시간·카드·웨이브 화면. `--resolution`으로 화면비(2400x1080 20:9, 2048x1536 4:3 등), phone이면 노치 안전 영역도 흉내 | PNG + `UI BAD <수>` |
 | `path_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/path_shot.gd -- <폴더> [글자 크기] [touch]`: 그린 궤적 카드·그리는 중·다 씀·쉬는 시간·마우스 올림·웨이브 중·새 갈래 스크린샷 | PNG |
 | `vary_shot.gd` | `xvfb-run godot --path . -s tools/vary_shot.gd -- <폴더> [글자 크기] [touch]`: 판마다 다른 흐름 점수 줄 칩 말풍선(이벤트·예고·봉인·적응) 스크린샷 | PNG |
 | `mp_signal.gd` | `godot --headless -s tools/mp_signal.gd -- [포트=8790]`: 멀티플레이 중개 Worker(server/mp-worker)와 같은 약속의 로컬 서버. 게임·도구는 `BINDU_MP_URL=http://127.0.0.1:8790` | 로그 |

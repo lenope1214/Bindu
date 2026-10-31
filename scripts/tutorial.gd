@@ -196,6 +196,7 @@ func setup(sb: StyleBox, help: Callable) -> void:
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body.add_theme_font_size_override("font_size", 18)
 	body.custom_minimum_size = Vector2(0, 80)
+	body.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	pages_box.add_child(body)
 
 	list_box = VBoxContainer.new()
@@ -369,7 +370,8 @@ func _refresh() -> void:
 	head.text = "튜토리얼 · " + str(tp["name"])
 	var n: int = tp["pages"].size()
 	count.text = ("%d / %d" % [page + 1, n]) + (("   항목 %d / %d" % [qi + 1, queue.size()]) if queue.size() > 1 else "")
-	body.text = PatchNotes.kr_keep(page_text(pg, touch))
+	# 한 줄로 화면 끝까지 늘어져 읽기 힘들던 것: 문장마다 줄을 바꾸고(공명·프리즘·협공처럼 항목이 여럿이면 한 줄씩), 글 폭은 _process에서 줄인다
+	body.text = PatchNotes.kr_keep(page_text(pg, touch).replace(". ", ".\n"))
 	btn_prev.disabled = page == 0 and qi == 0
 	btn_next.text = ("목록으로" if from_list else "시작하기" if first_run else "닫기") if _last() else "다음 ▶"
 	btn_close.text = "건너뛰기" if first_run else "닫기"
@@ -389,6 +391,7 @@ func _process(delta: float) -> void:
 	panel.size = Vector2(w, hh)
 	panel.position = ((avail - panel.size) / 2.0).floor()
 	body.add_theme_font_size_override("font_size", 20 if phone else 18)
+	body.custom_minimum_size.x = minf(w - 48.0, 760.0)  # 읽기 좋은 폭 (넓은 폰 화면에서 한 줄이 1500px까지 늘어났다)
 	if mode == "pages":
 		pic.queue_redraw()
 

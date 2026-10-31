@@ -73,6 +73,7 @@ static var tutor_next := true  # 다음 새 판은 카드 종류를 웨이브마
 static var notes_seen := ""  # 마지막으로 패치노트를 연 게임 버전 (다르면 시작 화면 버튼 강조)
 const FIELD := Vector2(1280, 720)  # 전장 크기. 화면비가 달라도(폰 20:9, 태블릿 4:3) 이 넓이만 쓰고 남는 곳은 배경·UI (main.arena)
 static var sim_phone := false  # 점검 도구(tools/shot.gd phone): 데스크톱에서 폰 화면 구성 흉내 (main._phone)
+static var sim_safe := Rect2()  # 점검 도구: 안전 영역 밖 여백 흉내 (main._safe_pad와 같은 모양, 뷰포트 좌표 왼쪽·위·오른쪽·아래)
 static var ui_scale := 1.0  # 글자·버튼 크기 (UI_SCALES 중 하나). 폰은 기본 1.3
 static var modes: Array = []  # 시작 화면에서 고른 모드 (Modes). 다음 판에도 남는다
 const UI_SCALES := [1.0, 1.15, 1.3]

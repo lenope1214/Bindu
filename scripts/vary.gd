@@ -100,7 +100,7 @@ static func rest(w: int) -> Array:
 		msgs.append("이벤트 %s (웨이브 %d~%d): %s" % [ename(event), w + 1, w + every, edesc(event)])
 	if (w + 1) % every == 0 and next_event.is_empty():
 		next_event = _roll_event()
-		msgs.append("웨이브 %d가 끝나면 이벤트 %s: %s" % [w + 1, ename(next_event), edesc(next_event)])
+		msgs.append("웨이브 %d 뒤 이벤트 %s: %s" % [w + 1, ename(next_event), edesc(next_event)])
 	return msgs
 
 

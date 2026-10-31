@@ -52,6 +52,7 @@ func _initialize():
 func _snap(n: String):
 	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s.png" % [n, z, "_touch" if touch else ""]))
 	print("SHOT ", n)
+	preload("res://tools/ui_check.gd").check(main, n)  # 겹침·화면 밖 (UI OVERLAP 줄)
 
 
 func _process(_d) -> bool:

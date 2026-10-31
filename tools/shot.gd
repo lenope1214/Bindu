@@ -15,6 +15,8 @@ func _initialize():
 	if a.size() > 1: z = float(a[1])
 	touch = a.size() > 2 and a[2] == "touch"
 	Meta.sim_phone = a.size() > 3 and a[3] == "phone"  # 폰 화면 구성 (main._phone)
+	if Meta.sim_phone and DisplayServer.window_get_size().x > DisplayServer.window_get_size().y * 2:
+		Meta.sim_safe = Rect2(86, 0, 86, 38)  # 노치 있는 폰 가로: 양옆 노치·둥근 모서리, 아래 홈 막대
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	steps = [
@@ -75,7 +77,8 @@ func _initialize():
 		func(): _snap("tut_place"); main.tut.qi = 3; main.tut.page = 1; main.tut._refresh(),
 		func(): _snap("tut_react"); main.tut.close(); main._open_tut(["boss", "mp"]); main.tut.page = 2; main.tut._refresh(),
 		func(): _snap("tut_coin"); main.tut._next(); main.tut._next(),
-		func(): _snap("tut_coop"); main.tut.close(); main._open_tut_list(),
+		func(): _snap("tut_coop"); main.tut.close(); main._open_tut(["link"]),
+		func(): _snap("tut_link"); main.tut.close(); main._open_tut_list(),
 		func(): _snap("tut_list"); main.tut.close(); main.help_label.visible = true,
 		func():
 			_snap("help"); main.help_label.visible = false; main.continue_btn.visible = false
@@ -172,6 +175,7 @@ func _initialize():
 func _snap(n: String):
 	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
 	print("SHOT ", n)
+	preload("res://tools/ui_check.gd").check(main, n)  # 겹침·화면 밖 (UI OVERLAP 줄)
 
 
 func _process(_d) -> bool:
