@@ -136,7 +136,7 @@ func setup(k: int, base_hp: float, base_speed: float) -> void:
 		Kind.NORMAL:
 			max_hp = base_hp; speed = base_speed
 		Kind.FAST:
-			max_hp = maxf(1.0, ceilf(base_hp * 0.6)); speed = base_speed * 1.8
+			max_hp = maxf(1.0, ceilf(base_hp * 0.6)); speed = base_speed * 1.62  # 예전 1.8 (10% 느리게)
 		Kind.TANK:
 			max_hp = ceilf(base_hp * 2.5); speed = base_speed * 0.6
 		Kind.BOSS:
