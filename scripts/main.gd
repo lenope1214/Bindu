@@ -2703,7 +2703,7 @@ func _place_apply_btn() -> void:
 	var r: Rect2 = ui_root.get_global_transform().affine_inverse() * cs[tap_sel].get_global_rect()
 	var w := minf(120.0, r.size.x * 0.5)
 	apply_btn.size = Vector2(w, 34.0)
-	apply_btn.position = Vector2(r.end.x - w - 10.0, r.position.y - 24.0)
+	apply_btn.position = Vector2(r.end.x - w - 10.0, maxf(r.position.y - 36.0, 0.0))  # 카드 위: 글 첫 줄을 덮지 않게
 
 
 ## 카드 누르기. 마우스는 바로 고르고(올리면 미리보기), 터치는 한 번 누르면 미리보기(다른 카드는 옅게, 아래에 [적용]),
