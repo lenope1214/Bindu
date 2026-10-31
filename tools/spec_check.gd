@@ -1429,6 +1429,15 @@ func _vote() -> void:
 	var rk: Array = main._vote_run_keys()
 	v.open(rk)
 	var run_tab: bool = v.cat == "run" and v._entries("run").size() == 2
+	# 이름이 같은 카드(강화 속사·특성 속사)는 이번 판 탭에서 갈래로 구분
+	main.run_log = [{"w": 0, "k": "card", "p": "mod:rapid"}, {"w": 1, "k": "perk", "p": "perk:haste"}]
+	v.open(main._vote_run_keys())
+	var rx: Array = v._entries("run")
+	var same_name: bool = rx.size() == 2 and rx[0]["name"] == rx[1]["name"] and rx[0]["sub"] != rx[1]["sub"] and rx[0]["sub"] != ""
+	# 서버에 못 닿으면 '불러오는 중'에 멈추지 않고 안내 + [다시 시도] (기록 보내기를 끈 경우는 설정 안내)
+	v.load_votes(true)
+	var retry: bool = not v.loading and not v.can_vote and v.retry_btn.visible == Meta.online_on and not v.status.text.contains("불러오는")
+	run_tab = run_tab and same_name and retry
 	v.visible = false
 	v.dirty = false
 	main.run_log = []
