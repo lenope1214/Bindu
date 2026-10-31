@@ -11,6 +11,9 @@ const DIR_NAME := {"up": "강하게", "down": "약하게", "fix": "개선"}
 const DIR_COLOR := {"up": Color(1.0, 0.55, 0.4), "down": Color(0.5, 0.75, 1.0), "fix": Color(1.0, 0.86, 0.35)}
 const CATS := [["run", "이번 판"], ["elem", "속성"], ["pat", "공격방식"], ["mod", "강화"], ["link", "연계"], ["trig", "발동"], ["react", "특수 반응"], ["perk", "특성"]]
 const NOTE_MAX := 60
+const SLOW_S := 3  # 이만큼 넘게 기다리면 "응답이 늦어요"와 걸린 초
+const GIVE_UP_S := 15  # 이만큼 기다려도 안 오면 실패로 보고 [다시 시도] (늦게 온 응답은 버림)
+const FRESH_MS := 60000  # 이 안에 받은 적 있으면 다시 열 때 바로 보여 준다 (다시 받지 않음)
 const KEY_RE := "^(elem|pat|mod|link|trig|react|perk):[a-z0-9_]{1,40}$"
 
 var net: Net
@@ -22,10 +25,14 @@ var round_id := 0
 var round_name := ""
 var can_vote := false
 var loaded := false
+var loading := false
+var load_seq := 0  # 불러오기 차례 (늦게 온 옛 응답은 버린다)
+var loaded_ms := -1000000
 var dirty := false
 var sending := false
 var picks := {}  # 통계 키 -> {dir, note}
 var names := {}  # 통계 키 -> 이름 (지난 회차 결과 글)
+var infos := {}  # 통계 키 -> {name, color, desc, cat} ("이번 판" 탭: 이름이 같은 카드(강화 속사·특성 속사)를 갈래로 구분)
 var last := {}  # 지난 회차 결과 (서버)
 
 var list: VBoxContainer
@@ -34,6 +41,7 @@ var left_label: Label
 var status: Label
 var last_label: Label
 var send_btn: Button
+var retry_btn: Button
 var tabs: Array[Button] = []
 var tab_row: HBoxContainer
 
@@ -45,7 +53,9 @@ func setup(perk_list: Array, sb: StyleBox, net_node: Net) -> void:
 	for c in CATS:
 		if c[0] != "run":
 			for x in cx.entries(c[0]):
-				names[Codex.stat_key(x["key"])] = x["name"]
+				var sk := Codex.stat_key(x["key"])
+				names[sk] = x["name"]
+				infos[sk] = {"name": x["name"], "color": Color(x["color"], 1.0), "desc": x.get("desc", ""), "cat": c[1]}
 	set_anchors_preset(Control.PRESET_CENTER)
 	grow_horizontal = Control.GROW_DIRECTION_BOTH
 	grow_vertical = Control.GROW_DIRECTION_BOTH
@@ -132,6 +142,14 @@ func setup(perk_list: Array, sb: StyleBox, net_node: Net) -> void:
 	send_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	send_btn.pressed.connect(send)
 	row.add_child(send_btn)
+	retry_btn = Button.new()
+	retry_btn.text = "다시 시도"
+	retry_btn.focus_mode = Control.FOCUS_NONE
+	retry_btn.custom_minimum_size = Vector2(0, 40)
+	retry_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	retry_btn.visible = false
+	retry_btn.pressed.connect(func(): load_votes(true))
+	row.add_child(retry_btn)
 	var close := Button.new()
 	close.text = "닫기"
 	close.focus_mode = Control.FOCUS_NONE
@@ -158,6 +176,11 @@ func open(from_run: Array = []) -> void:
 	_draw_list()
 	(list.get_parent() as ScrollContainer).scroll_vertical = 0
 	load_votes()
+
+
+## 다시 열 때: 1분 안에 받았거나 아직 못 보낸 표가 있으면 그대로 보여 준다 (보내지 못한 표를 서버 것으로 덮지 않게).
+func _fresh() -> bool:
+	return loaded and (dirty or Time.get_ticks_msec() - loaded_ms < FRESH_MS)
 
 
 func toggle(from_run: Array = []) -> void:
@@ -231,6 +254,8 @@ func take(d: Dictionary) -> void:
 	last = d.get("last") if d.get("last") is Dictionary else {}
 	dirty = false
 	loaded = true
+	loaded_ms = Time.get_ticks_msec()
+	retry_btn.visible = why == "auth"
 	if round_id == 0:
 		_say("지금 열린 투표가 없어요")
 	elif why == "play":
@@ -245,20 +270,58 @@ func take(d: Dictionary) -> void:
 
 # ---------- 서버 ----------
 
-func load_votes() -> void:
-	loaded = false
+## force: [다시 시도]·회차가 바뀜. 아니면 최근에 받은 것이 있을 때 다시 받지 않는다.
+func load_votes(force := false) -> void:
+	if loading or (not force and _fresh()):
+		return
+	load_seq += 1
+	var seq := load_seq
+	loading = true
 	can_vote = false
+	retry_btn.visible = false
 	_say("불러오는 중…")
-	_draw_head()
+	_draw_list()
 	if net == null:
+		_fail("서버에 연결하지 못했어요")
 		return
+	_watch(seq)
 	var d: Dictionary = await net.vote_get()
-	if not is_inside_tree():
-		return
+	if not is_inside_tree() or seq != load_seq:
+		return  # 너무 늦게 왔거나 그 사이 다시 불러옴
+	loading = false
 	if d.is_empty():
-		_say("서버에 연결하지 못했어요" if Meta.online_on else "설정에서 '기록 보내기'를 켜면 투표할 수 있어요")
+		if Meta.online_on:
+			_fail("서버에 연결하지 못했어요")
+			return
+		_say("설정에서 '기록 보내기'를 켜면 투표할 수 있어요")
 	else:
 		take(d)
+	_draw_list()
+
+
+## 기다리는 동안 걸린 초를 보여 주고, GIVE_UP_S가 지나면 실패로 끊는다.
+func _watch(seq: int) -> void:
+	var t0 := Time.get_ticks_msec()
+	while true:
+		if not is_inside_tree():
+			return
+		await get_tree().create_timer(1.0).timeout
+		if not is_inside_tree() or seq != load_seq or not loading:
+			return
+		var s := int((Time.get_ticks_msec() - t0) / 1000.0)
+		if s >= GIVE_UP_S:
+			load_seq += 1  # 이 뒤에 오는 응답은 버린다
+			_fail("서버가 %d초 동안 응답하지 않았어요" % s)
+			return
+		if s >= SLOW_S:
+			_say("불러오는 중… 서버 응답이 늦어요 (%d초)" % s)
+
+
+func _fail(msg: String) -> void:
+	loading = false
+	can_vote = false
+	retry_btn.visible = true
+	_say(msg + ". [다시 시도]를 눌러 주세요")
 	_draw_list()
 
 
@@ -277,7 +340,7 @@ func send() -> void:
 			_say("보냈어요. 이번 회차 동안은 언제든 바꿀 수 있어요")
 		409:
 			_say("회차가 바뀌었어요. 다시 불러올게요")
-			load_votes()
+			load_votes(true)
 		403:
 			_say("투표할 수 없는 계정이에요")
 		_:
@@ -296,8 +359,8 @@ func _say(t: String) -> void:
 func _draw_head() -> void:
 	title_label.text = "다음 패치 투표%s   (V / Esc: 닫기)" % (" · " + round_name if round_name != "" else "")
 	left_label.text = "남은 표 %d / %d" % [maxi(0, max_votes - used()), max_votes] if loaded and round_id > 0 else ""
-	send_btn.disabled = not can_vote or sending
-	send_btn.text = "보내기" + (" *" if dirty else "")
+	send_btn.disabled = not can_vote or sending or loading
+	send_btn.text = "보내는 중…" if sending else ("불러오는 중…" if loading else ("보내기" + (" *" if dirty else "")))
 	var parts := PackedStringArray()
 	for d in DIRS:
 		var xs := PackedStringArray()
@@ -314,7 +377,9 @@ func _entries(c: String) -> Array:
 	if c == "run":
 		var out := []
 		for k in run_keys:
-			out.append({"key": k, "name": names.get(k, k), "color": Color(1, 1, 1, 0.9), "desc": ""})
+			var inf: Dictionary = infos.get(k, {})
+			# 갈래(강화·특성 등)를 이름 옆에: 강화 속사와 특성 속사처럼 이름이 같은 것을 구분
+			out.append({"key": k, "name": inf.get("name", k), "color": inf.get("color", Color(1, 1, 1, 0.9)), "desc": inf.get("desc", ""), "sub": "(%s)" % inf["cat"] if inf.has("cat") else ""})
 		return out
 	var xs := []
 	for x in cx.entries(c):

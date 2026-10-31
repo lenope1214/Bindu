@@ -17,6 +17,7 @@ signal run_moved(run_key: String)  # 이 기기의 이어하기를 다른 기기
 const OUTBOX_PATH := "user://outbox.json"
 const OUTBOX_MAX := 30  # 오프라인으로 쌓아 둘 판 수
 const TIMEOUT := 10.0
+const VOTE_TIMEOUT := 6.0  # 투표 창 불러오기는 사람이 보고 기다리니 짧게 (창이 15초에 끊고 [다시 시도])
 const LOGBOX_PATH := "user://logbox.json"
 const LOGBOX_MAX := 60  # 못 보내고 쌓아 둘 오류 수
 const LOG_EVERY := 30.0  # 오류를 서버로 보내는 최소 간격(초)
@@ -121,9 +122,9 @@ func flush_logs() -> void:
 	sending_logs = false
 
 
-func _request(method: int, path: String, body := "", headers := PackedStringArray()) -> Dictionary:
+func _request(method: int, path: String, body := "", headers := PackedStringArray(), timeout := TIMEOUT) -> Dictionary:
 	var http := HTTPRequest.new()
-	http.timeout = TIMEOUT
+	http.timeout = timeout
 	add_child(http)
 	var h := PackedStringArray(["Content-Type: application/json"])
 	h.append_array(headers)
@@ -202,15 +203,15 @@ func ensure_auth() -> bool:
 
 
 ## 토큰을 붙여 보낸다. 토큰이 무효(서버 키가 바뀜·계정 지움)면 한 번 다시 받아 보낸다.
-func _authed(method: int, path: String, body := "") -> Dictionary:
+func _authed(method: int, path: String, body := "", timeout := TIMEOUT) -> Dictionary:
 	if not await ensure_auth():
 		return {"code": 0, "data": null}
-	var r := await _request(method, path, body, PackedStringArray(["Authorization: Bearer " + Account.token]))
+	var r := await _request(method, path, body, PackedStringArray(["Authorization: Bearer " + Account.token]), timeout)
 	if r["code"] == 401:
 		Account.forget_token()
 		if not await ensure_auth():
 			return r
-		r = await _request(method, path, body, PackedStringArray(["Authorization: Bearer " + Account.token]))
+		r = await _request(method, path, body, PackedStringArray(["Authorization: Bearer " + Account.token]), timeout)
 	return r
 
 
@@ -360,9 +361,9 @@ func vote_get() -> Dictionary:
 		return {}
 	var r: Dictionary
 	if enabled() and acct_ok():
-		r = await _authed(HTTPClient.METHOD_GET, "/v1/vote")
+		r = await _authed(HTTPClient.METHOD_GET, "/v1/vote", "", VOTE_TIMEOUT)
 	else:
-		r = await _request(HTTPClient.METHOD_GET, "/v1/vote")
+		r = await _request(HTTPClient.METHOD_GET, "/v1/vote", "", PackedStringArray(), VOTE_TIMEOUT)
 	return r["data"] if r["code"] == 200 and r["data"] is Dictionary else {}
 
 
