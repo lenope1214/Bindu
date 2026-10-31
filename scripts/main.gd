@@ -207,7 +207,7 @@ const PERKS := [
 	{"id": "shield", "name": "실드", "desc": "웨이브를 시작할 때마다 중앙 실드 1칸 (겹치면 +1, 최대 3). 맞으면 체력 대신 실드가 깎이고, 다음 웨이브로 넘어가지 않아요"},
 	{"id": "rampart", "name": "성벽", "desc": "웨이브마다 중앙 앞에 바위 벽: 다가온 구체를 한 번 밀어내고 한 조각씩 부서져요. 조각 수 = 벽 오브젝트 레벨 합 + 1 (겹치면 +1, 최대 4)"},
 	{"id": "riposte", "name": "반격 파동", "desc": "중앙이 맞을 때마다(실드 포함) 파동이 퍼져 가까운 구체를 밀어내고 피해 (겹치면 피해 +50%)"},
-	{"id": "overflow", "name": "넘친 회복", "desc": "체력이 가득할 때 받은 회복(회복 특성·보스 처치)은 실드로 쌓여요 (최대 2, 웨이브가 지나도 남음)"},
+	{"id": "overflow", "name": "넘친 회복", "desc": "체력이 가득할 때 받은 회복은 실드로 쌓여요 (회복 특성·보스 처치, 최대 2, 웨이브가 지나도 남음)"},
 ]
 var perks := {}  # id → 고른 횟수
 var regen_acc := 0.0  # 회복 특성의 1이 안 되는 나머지 (다음 웨이브로)
@@ -2501,7 +2501,7 @@ func _guide(id: String, text: String) -> void:
 	guide_t = 8.0 if phase == Phase.WAVE else -1.0
 	var out := PackedStringArray()
 	for g in guide_lines:
-		out.append(_wrap_words(g, 570.0, 16))
+		out.append(_wrap_words(g, minf(570.0, ui_root.size.x - 40.0), 16))  # 세로 화면(정원)은 폭이 좁다
 	guide_label.text = "\n".join(out)
 	guide_label.reset_size()
 
@@ -7216,6 +7216,8 @@ func _process(delta: float) -> void:
 	guide_label.position.y = maxf(140.0, toast.position.y + 40.0)
 	_beside_legend(toast, 600.0)
 	_beside_legend(guide_label, 0.0)
+	if gp and gp.visible and gp.get_rect().position.x > 0.0:  # 정원 가로 화면: 오른쪽 상점 창 밑으로 들어가지 않게
+		guide_label.position.x = maxf(8.0, minf(guide_label.position.x, gp.get_rect().position.x - 8.0 - guide_label.size.x))
 	# 왼쪽 위 DPS 표를 펼쳐 두면 알림이 표 위에 겹치던 것 (글자 115% 이상·표가 길 때): 표 오른쪽에 자리가 있으면 그쪽, 없으면 표 아래로
 	if toast.visible and dps_panel.visible:
 		var dr := dps_panel.get_rect()
