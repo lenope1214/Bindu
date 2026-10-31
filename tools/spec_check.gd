@@ -207,7 +207,7 @@ func _elements() -> void:
 	Meta.rules = 1
 	main._apply_rules()
 
-	# 91개 조합 모두 반응
+	# 105개 조합 모두 반응
 	var missing := []
 	var ids := {}
 	for i in Elem.ALL.size():
@@ -217,14 +217,14 @@ func _elements() -> void:
 				missing.append("%s+%s" % [Elem.NAMES[Elem.ALL[i]], Elem.NAMES[Elem.ALL[j]]])
 			for r in rs:
 				ids[r["id"]] = true
-	ok("ELEM-05", missing.is_empty() and ids.size() == 91 and Elem.REACTIONS.size() == 91, "두 속성 조합 91개 모두 특수 반응 (빠짐 %s, 반응 %d)" % [str(missing), ids.size()])
+	ok("ELEM-05", missing.is_empty() and ids.size() == 105 and Elem.REACTIONS.size() == 105, "두 속성 조합 105개 모두 특수 반응 (빠짐 %s, 반응 %d)" % [str(missing), ids.size()])
 
 	t.eff = t.eff_now()
 	var fresh := Elem.new_reactions({Elem.FIRE: 1}, Elem.WOOD)
 	ok("ELEM-06", fresh.size() == 1 and t.reactions().size() == 3, "속성을 더하면 새 반응 알림, 3종이면 반응 3개")
 
 	var no_rider := Elem.ALL.filter(func(e): return Elem.rider(e).is_empty())
-	ok("ELEM-07", no_rider.is_empty() and Elem.ALL.size() == 14, "속성 14종 모두 부가효과 설명이 있음")
+	ok("ELEM-07", no_rider.is_empty() and Elem.ALL.size() == 15, "속성 15종 모두 부가효과 설명이 있음")
 
 
 # ---------- 공격방식 ----------
@@ -335,6 +335,110 @@ func _mods_links() -> void:
 	ok("TRIG-03", r.van_ready and r.van_k() == 1.0, "선봉은 웨이브 시작이 아니라 첫 타격부터 (시작 직후 x1)")
 	r.van_t = 1.0
 	ok("TRIG-04", r.van_k() == Tower.VAN_SPD, "선봉 켜진 동안 공격 속도 x2")
+
+	_stars()
+
+	# 축적: 둘레 처치(특수 2·보스 8)를 모아 다 차면 다음 공격 x5, 쏘면 비움
+	_clear()
+	var ch := _tower(c + Vector2(-200, 0))
+	ch.add_trig("charge")
+	var far := _orb(c + Vector2(-200, 300), 10.0)
+	for i in 6:
+		ch.add_charge(far)
+	ch.add_charge(_orb(c + Vector2(-150, 0), 10.0, Orb.Kind.TANK))
+	var c7 := ch.charge
+	ch.add_charge(_orb(c + Vector2(-150, 20), 10.0, Orb.Kind.BOSS))
+	main.targets = main.orbs.get_children()
+	main._build_grid()
+	var f: Array = ch._fire_mul(true)
+	main.targets = []
+	main._build_grid()
+	ok("TRIG-06", is_equal_approx(c7, 8.0) and is_equal_approx(f[0], 5.0) and f[2] == "trig:charge" and ch.charge == 0.0 and ch.charge_need() == 15,
+		"축적: 처치 1·특수 2·보스 8, 15 차면 다음 공격 x%.1f, 쏘면 비움 (8 → %.0f)" % [f[0], c7])
+
+	# 삼연: 3번째 공격마다 x1.8
+	var th := _tower(c + Vector2(-260, 80))
+	th.add_trig("third")
+	var ms := []
+	for i in 6:
+		ms.append(th._fire_mul(true)[0])
+	ok("TRIG-07", ms == [1.0, 1.0, 1.8, 1.0, 1.0, 1.8], "삼연: 3번째 공격마다 x1.8 %s" % str(ms))
+
+	# 마무리: 체력 30% 아래 구체에 x1.6, 보스는 절반(x1.3)
+	_clear()
+	var fi := _tower(c + Vector2(-200, 0), Elem.WIND)
+	fi.add_trig("finish")
+	var hi := _orb(c + Vector2(-120, 0), 100.0)
+	var lo := _orb(c + Vector2(-120, 30), 100.0)
+	lo.hp = 20.0
+	var d0 := fi.dealt
+	fi.hit(hi, 1.0)
+	var d1 := fi.dealt - d0
+	fi.hit(lo, 1.0)
+	var d2 := fi.dealt - d0 - d1
+	ok("TRIG-08", is_equal_approx(d2 / d1, 1.6) and fi.src.has("trig:finish"), "마무리: 약한 구체 피해 x%.2f, 피해 출처 trig:finish" % (d2 / d1))
+
+	# 호응: 둘레 오브젝트의 발동이 터지면 그쪽으로 한 발, 0.6초에 한 번
+	var an := _tower(c + Vector2(-200, 120), Elem.WIND)
+	an.add_trig("answer")
+	var n0: int = main.projectiles.get_child_count()
+	fi._notify_allies(c)
+	var n1: int = main.projectiles.get_child_count()
+	fi._notify_allies(c)
+	ok("TRIG-09", n1 == n0 + 1 and main.projectiles.get_child_count() == n1 and an.answer_cd > 0.0, "호응: 둘레 발동에 한 발 (%d발), 쿨 동안은 안 쏨" % (n1 - n0))
+
+
+# ---------- 별 ----------
+
+func _stars() -> void:
+	_clear()
+	var c: Vector2 = main.center()
+	var st := _tower(c + Vector2(-200, 0), Elem.STAR)
+	var fi := _tower(c + Vector2(-100, 0), Elem.FIRE)
+	var wa := _tower(c + Vector2(-200, 100), Elem.WATER)
+	main.star_towers = [st]
+	var o := _orb(c + Vector2(-60, 0), 1e6)
+	var d0 := fi.dealt
+	fi.hit(o, 1.0)
+	var got := fi.dealt - d0
+	ok("STAR-01", is_equal_approx(st.star_sum, got * 0.10 * 1.5) and st.star_e.has(Elem.FIRE) and is_equal_approx(fi.dealt - d0, got),
+		"별빛: 둘레 피해의 10%% x1.5(별만) 복사 (%.3f / %.3f)" % [st.star_sum, got])
+
+	# 행성: 별 + 불 = 불의 행성, 불 몫만 30%
+	st.add(Elem.FIRE, 1)
+	st.star_sum = 0.0
+	st.star_e.clear()
+	wa.hit(o, 1.0)
+	var none := st.star_sum
+	d0 = fi.dealt
+	fi.hit(o, 1.0)
+	got = fi.dealt - d0
+	ok("STAR-02", st.planet() == Elem.FIRE and none == 0.0 and is_equal_approx(st.star_sum, got * 0.30) and not st.can_take({"type": "elem", "e": Elem.ICE, "lv": 1}),
+		"행성: 물 피해는 안 모음(%.2f), 불 몫 30%% (%.3f / %.3f), 3종 못 넣음" % [none, st.star_sum, got])
+
+	# 초신성: 가운데 하나뿐이면 별빛 x3을 그 구체에
+	st.star_sum = st.star_need()
+	st.star_e = {Elem.FIRE: st.star_sum}
+	var big := _orb(c + Vector2(-300, -200), 1e6)
+	var hp0 := big.hp
+	var pool := st.star_sum * 3.0
+	st._supernova(big)
+	ok("STAR-03", st.star_sum == 0.0 and hp0 - big.hp >= pool * 0.99 and st.src.has("elem:star") and big.burn_t > 0.0,
+		"초신성: 별빛 x3 (%.0f 중 %.0f), 행성 효과" % [pool, hp0 - big.hp])
+
+	# 행성 제한: 같은 행성은 하나, 행성은 3개까지
+	var s2 := _tower(c + Vector2(100, -150), Elem.STAR)
+	var same := s2.can_take({"type": "elem", "e": Elem.FIRE, "lv": 1})
+	var why := s2.refuse_text({"type": "elem", "e": Elem.FIRE, "lv": 1})
+	s2.add(Elem.ICE, 1)
+	var s3 := _tower(c + Vector2(150, 100), Elem.STAR)
+	s3.add(Elem.WATER, 1)
+	var s4 := _tower(c + Vector2(250, 0), Elem.STAR)
+	var fourth := s4.can_take({"type": "elem", "e": Elem.WIND, "lv": 1})
+	var plain := _tower(c + Vector2(250, 150), Elem.WIND)
+	ok("STAR-04", not same and why.contains("이미") and not fourth and not plain.can_take({"type": "elem", "e": Elem.STAR, "lv": 1}),
+		"같은 행성 막음(%s), 행성 3개까지" % why)
+	main.star_towers = []
 
 
 # ---------- 웨이브 ----------

@@ -16,6 +16,7 @@ var hp := 1.0  # 바위 벽
 var dead := false
 var src := ""  # 피해 출처 (Tower.src 키, 비면 직접 타격)
 var amt := 1.0  # 형태 성질 세기 (Tower.tk)
+var boost := 1.0  # 축적·삼연이 실린 장판·바위·블랙홀 (Tower.fire_boost)
 var vel := Vector2.ZERO  # 움직이는 장판 (블랙홀, 물 흐름)
 var dir := Vector2.RIGHT
 var r0 := 0.0  # 블랙홀 처음 반지름
@@ -294,7 +295,7 @@ func _end() -> void:
 				return
 			for o in tw.main.near(position, radius + 30.0):
 				if o.hp > 0.0 and o.position.distance_to(position) < radius + o.radius():
-					tw.hit(o, Rules.t("vortex_end") * _p() * (1.0 + minf(0.1 * eaten, 0.5)))
+					tw.hit(o, Rules.t("vortex_end") * _p() * (1.0 + minf(0.1 * eaten, 0.5)) * boost)
 					if tw.tk(Elem.METAL) > 0.0:
 						o.stagger(o.speed * 0.2 * tw.tk(Elem.METAL))
 			tw.main.burst(position, Elem.COLORS[Elem.DARK], 10, 120.0)
@@ -408,7 +409,7 @@ func _ground(c: Color, a: float, fill := 0.18) -> void:
 func _hit(o: Orb, amount: float, k: float) -> void:
 	if is_instance_valid(owner_tower):
 		owner_tower.tag = src
-		owner_tower.hit(o, amount, k, {}, false)
+		owner_tower.hit(o, amount * boost, k, {}, false)
 		owner_tower.tag = ""
 	else:
 		o.hurt(amount)

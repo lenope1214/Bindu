@@ -117,6 +117,15 @@ const STAT := {
 	"trig_max": 5.0,  # 발동 카드 종류마다 최대
 	"echo_n": 3.0, "echo_dmg": 0.8, "echo_cd": 0.5,  # 여진 탄 수(+1/장), 탄 피해, 다시 터질 때까지
 	"van_spd": 2.0, "van_t": 5.0, "van_t_add": 2.5,  # 선봉 공격 속도 배율, 지속, +/장
+	"charge_r": 220.0, "charge_k": 1.0,  # 축적: 처치를 세는 거리, 강타 피해 배율(표 x이 값)
+	"third_k": 1.0, "third_size": 1.3,  # 삼연: 3번째 공격 피해 배율(표 x이 값), 탄 크기
+	"finish_hp": 0.3, "finish_mul": 1.6, "finish_add": 0.3,  # 마무리: 체력 이만큼 아래, 피해 배율, +/장
+	# 별: 둘레 거리, 다른 오브젝트 피해 복사 비율(+/레벨), 자기 피해 비율, 별만 든 오브젝트 배율,
+	# 초신성까지 필요한 별빛(이번 웨이브 구체 체력 x), 초신성 피해(별빛 x), 별 반응 따라붙는 피해(초신성 x)
+	# 행성(별 + 속성 하나)은 둘레 피해 중 자기 속성 몫만 planet_take로 모은다. 같은 행성은 한 판에 하나, 행성은 planet_max개까지
+	"star_r": 220.0, "star_take": 0.10, "star_lv": 0.03, "star_self": 0.2, "star_pure": 1.5, "planet_take": 0.30, "planet_max": 3.0,
+	"star_need": 8.0, "star_mul": 3.0, "star_rx": 0.3,
+	"answer_r": 220.0, "answer_cd": 0.6, "answer_dmg": 0.6, "answer_add": 0.15,  # 호응: 거리, 다시 쏠 때까지, 피해(직선탄 한 발 대비), +/장
 }
 
 

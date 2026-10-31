@@ -1,5 +1,5 @@
 class_name Glyph
-## 글 대신 쓰는 그림: 속성 14개·공격방식 16개·카드 종류·메뉴 버튼·결과 칩.
+## 글 대신 쓰는 그림: 속성 15개·공격방식 16개·카드 종류·메뉴 버튼·결과 칩.
 ## Icons(점수 줄·배지용)와 같은 규칙: c는 가운데, s는 반지름 정도의 크기.
 
 
@@ -94,6 +94,13 @@ static func elem(ci: CanvasItem, e: int, c: Vector2, s: float, col := Color(-1, 
 			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-s * 0.54, s * 0.2), c + Vector2(-s * 0.2, -s * 0.5), c + Vector2(s * 0.45, -s * 1.0), c + Vector2(s * 0.54, s * 0.2)]), k)
 			ci.draw_circle(c + Vector2(-s * 0.2, s * 0.3), s * 0.11, Color(0.06, 0.07, 0.1))
 			ci.draw_circle(c + Vector2(s * 0.18, s * 0.3), s * 0.11, Color(0.06, 0.07, 0.1))
+		Elem.STAR:
+			# 다섯 갈래 별 + 가운데 반짝임
+			var p := PackedVector2Array()
+			for i in 10:
+				p.append(c + Vector2.from_angle(-PI / 2.0 + PI * i / 5.0) * (s * (1.0 if i % 2 == 0 else 0.42)))
+			ci.draw_colored_polygon(p, k)
+			ci.draw_circle(c, s * 0.18, k.lightened(0.6))
 
 
 ## 불꽃 모양 (아래 둥글고 위 뾰족)

@@ -5,16 +5,17 @@ class_name Elem
 ## - 특정 두 속성이 함께 있으면 특수 반응(REACTIONS) 공격이 추가된다.
 ##   반응 모양은 한쪽 속성이 정한다: 물은 공격 방향으로 흐르는 물길, 땅은 오브젝트 공격이 맞힌 구체에 붙는다(용암·독늪·모래시계).
 ##   소리는 부채꼴 파동, 시간은 잠시 뒤 같은 공격이 한 번 더(잔상), 영혼은 쫓아가는 혼불.
-##   두 속성 조합 91개 모두에 반응이 있다 (속성마다 13개). 2026-10-30에 채운 65개는 RxMore.
+##   두 속성 조합 105개 모두에 반응이 있다 (속성마다 14개). 2026-10-30에 채운 65개는 RxMore.
+##   별(2026-10-31)은 둘레 피해를 모아 초신성을 터뜨리고, 별 반응은 초신성 뒤에 상대 속성 모양이 한 번 더 따라붙는다 (Tower._supernova).
 
-enum { FIRE, WOOD, WATER, ELECTRIC, WIND, ICE, EARTH, DARK, LIGHT, POISON, METAL, SOUND, TIME, SOUL }
+enum { FIRE, WOOD, WATER, ELECTRIC, WIND, ICE, EARTH, DARK, LIGHT, POISON, METAL, SOUND, TIME, SOUL, STAR }
 
-const ALL := [FIRE, WOOD, WATER, ELECTRIC, WIND, ICE, EARTH, DARK, LIGHT, POISON, METAL, SOUND, TIME, SOUL]
+const ALL := [FIRE, WOOD, WATER, ELECTRIC, WIND, ICE, EARTH, DARK, LIGHT, POISON, METAL, SOUND, TIME, SOUL, STAR]
 
 const NAMES := {
 	FIRE: "불", WOOD: "나무", WATER: "물", ELECTRIC: "전기", WIND: "바람", ICE: "얼음",
 	EARTH: "땅", DARK: "어둠", LIGHT: "빛", POISON: "독", METAL: "금속",
-	SOUND: "소리", TIME: "시간", SOUL: "영혼",
+	SOUND: "소리", TIME: "시간", SOUL: "영혼", STAR: "별",
 }
 
 const COLORS := {
@@ -32,6 +33,7 @@ const COLORS := {
 	SOUND: Color(1.0, 0.5, 0.7),
 	TIME: Color(0.95, 0.8, 0.4),
 	SOUL: Color(0.82, 0.62, 1.0),
+	STAR: Color(1.0, 0.93, 0.68),
 }
 
 ## 속성 기호: 이름 첫 글자를 검은 테두리로 (색이 밝아도 어두워도 읽히게). c는 글자 가운데.
@@ -58,6 +60,7 @@ const FORM := {
 	SOUND: "음파 (부채꼴 파동, 관통)",
 	TIME: "시계침 (앞쪽을 왕복하며 훑음)",
 	SOUL: "혼불 (구체를 쫓아감)",
+	STAR: "없음 (어느 공격방식이든 초신성은 같은 모양)",
 }
 
 ## 형태 성질(시험): 속성이 공격방식 공격의 모양에 더하는 성질. 공격방식이 무엇이든 같은 규칙.
@@ -79,6 +82,7 @@ const TRAIT := {
 	SOUND: "울림: 끝 자리에 작은 음파",
 	TIME: "째깍: 끝 자리가 0.6초 뒤 한 번 더 터짐",
 	SOUL: "넋불: 끝 자리에서 확률로 혼불 (10%/Lv)",
+	STAR: "끌림: 공격 끝 자리에서 별빛 가루가 오브젝트로 빨려 듦 (보이기만)",
 }
 
 ## 부가효과 설명. 나무는 규칙마다 세는 최대 레벨(Rules wood_cap)이 달라 붙여 보여 준다
@@ -104,6 +108,7 @@ const RIDER := {
 	SOUND: "울림: {sound_t}초간 어느 오브젝트에 맞든 3번째마다 주변에 음파",
 	TIME: "메아리: {time_t}초간 받은 피해의 일부를 한 번 더 받음",
 	SOUL: "넋: {soul_t}초 안에 죽으면 확률로 혼불이 나와 다른 구체를 쫓음",
+	STAR: "별빛: 둘레({star_r}) 다른 오브젝트 피해의 {star_take%}%(+{star_lv%}%/레벨)를 복사해 모으고, 다 차면 초신성 (별만 들면 x{star_pure})",
 }
 
 const REACTIONS := [
@@ -133,6 +138,21 @@ const REACTIONS := [
 	{"id": "styx", "a": WATER, "b": SOUL, "name": "망자의 강", "desc": "물길 안에서 죽은 구체는 반드시 혼불이 됨", "color": Color(0.5, 0.55, 0.95)},
 	{"id": "plague", "a": POISON, "b": SOUL, "name": "역병 혼불", "desc": "쫓아가 맞힌 구체를 강하게 중독시키는 혼불 2개", "color": Color(0.65, 0.9, 0.5)},
 	{"id": "spirit", "a": WOOD, "b": SOUL, "name": "고목령", "desc": "쫓아가 맞힌 구체를 묶는 혼불 2개", "color": Color(0.5, 0.8, 0.55)},
+	# 2026-10-31: 별 + 다른 속성 하나 = 그 속성의 행성 14개. 초신성 뒤에 그 행성 효과가 따라붙는다 (Tower._nova_follow)
+	{"id": "nova_fire", "a": STAR, "b": FIRE, "name": "불의 행성", "desc": "초신성 뒤 불길이 퍼져 맞은 구체 모두 강한 화상", "color": Color(1.0, 0.6, 0.3)},
+	{"id": "nova_wood", "a": STAR, "b": WOOD, "name": "나무의 행성", "desc": "초신성에 맞은 구체를 덩굴로 묶어 2초 멈춤", "color": Color(0.7, 0.95, 0.55)},
+	{"id": "nova_water", "a": STAR, "b": WATER, "name": "물의 행성", "desc": "초신성 뒤 물결이 퍼져 맞은 구체를 크게 느리게", "color": Color(0.6, 0.85, 1.0)},
+	{"id": "nova_electric", "a": STAR, "b": ELECTRIC, "name": "전기의 행성", "desc": "초신성에 맞은 구체마다 둘레로 번개 3갈래", "color": Color(1.0, 1.0, 0.6)},
+	{"id": "nova_wind", "a": STAR, "b": WIND, "name": "바람의 행성", "desc": "초신성 충격파가 맞은 구체를 바깥으로 밀어냄", "color": Color(0.8, 1.0, 0.9)},
+	{"id": "nova_ice", "a": STAR, "b": ICE, "name": "얼음의 행성", "desc": "초신성에 맞은 구체가 1초 얼어붙음 (보스는 절반)", "color": Color(0.85, 0.95, 1.0)},
+	{"id": "nova_earth", "a": STAR, "b": EARTH, "name": "땅의 행성", "desc": "초신성 둘레에 운석 3개가 떨어짐", "color": Color(0.9, 0.75, 0.5)},
+	{"id": "nova_dark", "a": STAR, "b": DARK, "name": "어둠의 행성", "desc": "초신성에 맞은 구체가 4초간 받는 피해 +40%", "color": Color(0.75, 0.55, 1.0)},
+	{"id": "nova_light", "a": STAR, "b": LIGHT, "name": "빛의 행성", "desc": "초신성 가운데 구체에 확정 치명타 (그 몫 2배)", "color": Color(1.0, 1.0, 0.9)},
+	{"id": "nova_poison", "a": STAR, "b": POISON, "name": "독의 행성", "desc": "초신성에 맞은 구체를 강하게 중독", "color": Color(0.8, 1.0, 0.45)},
+	{"id": "nova_metal", "a": STAR, "b": METAL, "name": "금속의 행성", "desc": "초신성 자리에서 금속 파편 8개가 사방으로", "color": Color(0.85, 0.87, 0.95)},
+	{"id": "nova_sound", "a": STAR, "b": SOUND, "name": "소리의 행성", "desc": "초신성에 맞은 구체마다 울림이 바로 터짐", "color": Color(1.0, 0.7, 0.85)},
+	{"id": "nova_time", "a": STAR, "b": TIME, "name": "시간의 행성", "desc": "1초 뒤 같은 자리에서 초신성 절반이 한 번 더", "color": Color(1.0, 0.88, 0.55)},
+	{"id": "nova_soul", "a": STAR, "b": SOUL, "name": "영혼의 행성", "desc": "초신성에 맞아 죽은 구체는 반드시 혼불이 됨", "color": Color(0.9, 0.78, 1.0)},
 	# 2026-10-30: 빈 칸 65개 (RxMore)
 	{"id": "miasma", "a": WIND, "b": POISON, "name": "독바람", "desc": "독 안개가 넓어지며 전진, 지나간 구체 중독. 이미 중독된 구체는 남은 중독의 절반을 바로 받음", "color": Color(0.6, 0.85, 0.35)},
 	{"id": "sandstorm", "a": WIND, "b": EARTH, "name": "모래 폭풍", "desc": "모래 회오리가 전진, 안에서 느려지고 자주 기절", "color": Color(0.85, 0.72, 0.45)},
@@ -209,6 +229,14 @@ static func reactions_with(elements: Dictionary) -> Array:
 		if elements.has(r["a"]) and elements.has(r["b"]):
 			out.append(r)
 	return out
+
+
+## 두 속성 a·b의 반응 (없으면 빈 사전).
+static func reaction_of(a: int, b: int) -> Dictionary:
+	for r in REACTIONS:
+		if (r["a"] == a and r["b"] == b) or (r["a"] == b and r["b"] == a):
+			return r
+	return {}
 
 
 ## 속성 e를 더하면 새로 생기는 특수 반응들.

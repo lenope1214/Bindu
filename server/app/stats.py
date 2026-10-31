@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from . import config
 from .db import Final, Pick, Run, SrcShare, now
 
-ELEM_IDS = ["fire", "wood", "water", "electric", "wind", "ice", "earth", "dark", "light", "poison", "metal", "sound", "time", "soul"]
+ELEM_IDS = ["fire", "wood", "water", "electric", "wind", "ice", "earth", "dark", "light", "poison", "metal", "sound", "time", "soul", "star"]
 
 
 def finals_of(towers) -> dict:

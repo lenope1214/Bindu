@@ -6,7 +6,7 @@ class_name Patch
 
 const CACHE_PATH := "user://patch.json"
 ## elem_dmg 키 → Elem 값 (Elem.ALL 순서)
-const ELEM_KEYS := ["fire", "wood", "water", "electric", "wind", "ice", "earth", "dark", "light", "poison", "metal", "sound", "time", "soul"]
+const ELEM_KEYS := ["fire", "wood", "water", "electric", "wind", "ice", "earth", "dark", "light", "poison", "metal", "sound", "time", "soul", "star"]
 
 static var id := 0  # 지금 적용된 패치 번호 (0: 내장 값)
 static var data := {}

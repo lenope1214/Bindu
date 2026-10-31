@@ -5,7 +5,7 @@ extends Node2D
 ## - 속성(elements): 효과. 모든 공격에 부가효과가 붙는다. 종류 수 상한은 Rules.max_elems.
 ## - 강화(mods): 공격방식에 붙는 변형. 종류마다 Rules.max_mod개까지.
 ## - 연계: 협공, 프리즘, 공명.
-## - 발동(trigs): 조건이 맞을 때 추가로 터지는 공격 (여진, 선봉).
+## - 발동(trigs): 조건이 맞을 때 추가로 터지는 공격 (여진, 선봉, 축적, 삼연, 마무리, 호응).
 
 const RADIUS := 18.0
 
@@ -22,6 +22,24 @@ var trigs := {}  # 발동 id -> 겹친 수
 var echo_cd := 0.0  # 여진: 다시 터질 때까지
 var van_ready := false  # 선봉: 이번 웨이브에 아직 안 켜짐 (웨이브 시작 때 켜고, 처음 맞히면 발동)
 var van_t := 0.0  # 선봉: 공격 속도 x2 남은 시간
+var charge := 0.0  # 축적: 모은 처치 (웨이브가 넘어가도 유지)
+var third_n := 0  # 삼연: 지금까지 쏜 공격 수
+var fire_boost := 1.0  # 지금 나가는 공격의 발동 배율 (축적·삼연, attack() 한 번 안에서만)
+var fire_size := 1.0
+var fire_key := ""  # 그 배율의 피해 출처 (trig:charge·trig:third)
+var burst_t := 0.0  # 계속 뿜는 공격: 발동 배율이 남은 시간
+var burst_mul := 1.0
+var burst_size := 1.0
+var burst_key := ""
+var cont_acc := 0.0  # 계속 뿜는 공격: 공격 한 번으로 치는 시간 모으기
+var answer_cd := 0.0  # 호응: 다시 쏠 때까지
+var star_sum := 0.0  # 별: 모은 별빛 (다 차면 초신성)
+var star_e := {}  # 별빛을 준 둘레 오브젝트의 속성 -> 모은 양 (초신성에 섞인다)
+var nova_fx := 0.0  # 초신성 표시 남은 시간
+var nova_pos := Vector2.ZERO  # 그 자리 (전역)
+var in_nova := false  # 초신성 피해 중 (별빛을 다시 모으지 않게)
+var feed_fx := {}  # 별빛을 준 오브젝트 -> 빛줄 남은 시간 (표시용)
+var notify_cd := 0.0  # 반응이 터졌다고 둘레에 알리는 간격 (호응)
 var wind_buff := 0.0  # 둘레 바람 오브젝트가 주는 공격 속도 (main이 매 계산마다 정함)
 var eff := {}  # 지금 쓰는 속성 (매 프레임 갱신)
 var dir := Vector2.RIGHT
@@ -176,6 +194,97 @@ const VAN_T_ADD := 2.5
 
 static func van_time(n: int) -> float:
 	return Rules.t("van_t") + Rules.t("van_t_add") * (n - 1)
+
+
+## 축적(1~5장): 필요한 처치, 강타 피해, 크기. 삼연(1~5장): 3번째 공격 피해. 호응·마무리는 Rules.
+const CHARGE_NEED := [15, 13, 11, 10, 9]
+const CHARGE_MUL := [5.0, 6.0, 7.0, 7.5, 8.0]
+const THIRD_MUL := [1.8, 2.4, 2.9, 3.3, 3.6]
+const CONT_BOOST := ["spray", "stream", "clock", "wisp"]  # 쏘는 순간이 없거나 오래 남는 공격: 발동 배율을 잠깐 동안 건다
+const CONT_IV := 0.5  # 그 공격은 이만큼을 공격 한 번으로 센다
+
+
+static func _at(a: Array, n: int) -> float:
+	return float(a[clampi(n, 1, a.size()) - 1])
+
+
+func charge_need() -> int:
+	return int(_at(CHARGE_NEED, tg("charge")))
+
+
+static func charge_mul(n: int) -> float:
+	return _at(CHARGE_MUL, n) * Rules.t("charge_k")
+
+
+static func third_mul(n: int) -> float:
+	return _at(THIRD_MUL, n) * Rules.t("third_k")
+
+
+static func finish_mul(n: int) -> float:
+	return Rules.t("finish_mul") + Rules.t("finish_add") * (n - 1)
+
+
+static func answer_dmg(n: int) -> float:
+	return Rules.t("answer_dmg") + Rules.t("answer_add") * (n - 1)
+
+
+## 축적: 둘레에서 구체가 죽었다 (main 처치 처리에서). 특수 2, 보스 8.
+func add_charge(o: Orb) -> void:
+	if tg("charge") <= 0:
+		return
+	charge = minf(charge + (8.0 if o.kind == Orb.Kind.BOSS else 1.0 if o.kind == Orb.Kind.NORMAL else 2.0), charge_need())
+
+
+## 공격 하나를 쏠 때 축적·삼연 배율 [피해, 크기, 출처]. commit이면 센다(삼연 수·축적 비움).
+## 축적은 둘레에 구체가 있을 때만 쓴다 (빈 곳에 강타를 버리지 않게).
+func _fire_mul(commit: bool) -> Array:
+	var mul := 1.0
+	var size := 1.0
+	var key := ""
+	var third := tg("third") > 0 and (third_n + 1) % 3 == 0
+	if third:
+		mul *= third_mul(tg("third"))
+		size *= Rules.t("third_size")
+		key = "trig:third"
+	var strike: bool = tg("charge") > 0 and charge >= charge_need() and main != null and not main.near(position, 450.0).is_empty()
+	if strike:
+		var n := tg("charge")
+		mul *= charge_mul(n)
+		size *= 1.6 + 0.1 * (n - 1)
+		key = "trig:charge"
+	if commit:
+		if tg("third") > 0:
+			third_n += 1
+		if strike:
+			charge = 0.0
+			main.burst(position, Pat.TRIG_COLOR, 24, 220.0)
+		if key != "":
+			_notify_allies(position + aim * 120.0)
+	return [mul, size, key]
+
+
+func _set_fire(f: Array) -> void:
+	fire_boost = f[0]
+	fire_size = f[1]
+	fire_key = f[2]
+
+
+## 호응: 둘레(answer_r 안) 호응 오브젝트들이 p 쪽으로 한 발씩 쏜다.
+func _notify_allies(p: Vector2) -> void:
+	if main == null:
+		return
+	for t2 in main.towers.get_children():
+		if t2 != self and t2.tg("answer") > 0 and t2.answer_cd <= 0.0 and t2.position.distance_to(position) < Rules.t("answer_r"):
+			t2._answer(p)
+
+
+func _answer(p: Vector2) -> void:
+	answer_cd = Rules.t("answer_cd")
+	var d := (p - position).normalized() if p.distance_to(position) > 1.0 else dir
+	var pr: Projectile = main.spawn_proj(self, "shot", plv, d)
+	pr.src = "trig:answer"
+	pr.dmg *= answer_dmg(tg("answer"))
+	pr.form_init()
 
 
 ## 웨이브 시작 (main._start_wave).
@@ -584,7 +693,14 @@ func add(e: int, n: int) -> String:
 func can_take(card: Dictionary) -> bool:
 	match card["type"]:
 		"elem":
-			return elements.has(card["e"]) or order.size() < Rules.max_elems
+			if elements.has(card["e"]):
+				return true
+			# 별이 든 오브젝트는 별 + 하나(그 속성의 행성)까지
+			if (elements.has(Elem.STAR) or card["e"] == Elem.STAR) and order.size() >= STAR_MAX_ELEMS:
+				return false
+			if not planet_refuse(card["e"]).is_empty():
+				return false
+			return order.size() < Rules.max_elems
 		"pat":
 			return can_pattern(card["id"])
 		"mod":
@@ -614,6 +730,10 @@ func refuse_text(card: Dictionary) -> String:
 		return ""
 	match card["type"]:
 		"elem":
+			if (elements.has(Elem.STAR) or card["e"] == Elem.STAR) and order.size() >= STAR_MAX_ELEMS:
+				return "별이 든 오브젝트는 별 + 속성 하나(행성)까지예요. 빈 곳에 놓아 새 오브젝트로 만드세요"
+			if not planet_refuse(card["e"]).is_empty():
+				return planet_refuse(card["e"])
 			return "속성은 %d종까지예요. 빈 곳에 놓아 새 오브젝트로 만드세요" % Rules.max_elems
 		"pat":
 			var bad := pattern_blockers(card["id"])
@@ -807,7 +927,19 @@ static func trig_value(id: String, n: int) -> String:
 			return "탄 %d개" % (int(Rules.t("echo_n")) + n - 1)
 		"vanguard":
 			return "%.1f초" % van_time(n)
+		"charge":
+			return "처치 %d마리 → 강타 x%s" % [int(_at(CHARGE_NEED, n)), _num(charge_mul(n))]
+		"third":
+			return "3번째 공격 x%s" % _num(third_mul(n))
+		"finish":
+			return "약한 구체 피해 x%s" % _num(finish_mul(n))
+		"answer":
+			return "한 발 피해 %d%%" % roundi(answer_dmg(n) * 100.0)
 	return ""
+
+
+static func _num(v: float) -> String:
+	return str(snappedf(v, 0.1)).trim_suffix(".0")
 
 
 ## 지금 쓰는 속성 (예전 연결선은 여기서 이어진 오브젝트 속성을 더했다).
@@ -848,7 +980,7 @@ func spec() -> Dictionary:
 ## 이어하기 저장용.
 func to_save() -> Dictionary:
 	return {"elements": elements, "order": Array(order), "pattern": pattern, "plv": plv, "mods": mods,
-		"prism": prism, "reso": reso, "pincer": pincer, "trigs": trigs, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt,
+		"prism": prism, "reso": reso, "pincer": pincer, "trigs": trigs, "charge": charge, "third_n": third_n, "star_sum": star_sum, "star_e": star_e, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt,
 		"src": src, "run_src": run_src, "paths": paths.map(func(p): return Array(p))}
 
 
@@ -905,6 +1037,14 @@ func load_save(d: Dictionary) -> void:
 		for id in tgs:
 			if Pat.TRIGS.has(id) and _int(tgs[id]) > 0:
 				trigs[id] = _int(tgs[id])
+	charge = clampf(_float(d.get("charge")), 0.0, 99.0)
+	star_sum = maxf(0.0, _float(d.get("star_sum")))
+	var se: Variant = d.get("star_e", {})
+	if se is Dictionary:
+		for e in se:
+			if e is int and e in Elem.ALL and _float(se[e]) > 0.0:
+				star_e[e] = _float(se[e])
+	third_n = maxi(0, _int(d.get("third_n")))
 	var pos: Variant = d.get("pos")
 	if pos is Vector2:
 		position = pos
@@ -957,6 +1097,8 @@ func _ready_to(key, interval: float, delta: float) -> bool:
 		recoil = 1.0
 		if key == "p":
 			roll_dice()
+			if not pattern in CONT_BOOST:
+				_set_fire(_fire_mul(true))
 		return true
 	cd[key] = v
 	return false
@@ -1041,6 +1183,9 @@ func attack(delta: float, orbs: Array) -> void:
 	fe2 = maxf(fe2 - delta, 0.0)
 	echo_cd = maxf(echo_cd - delta, 0.0)
 	van_t = maxf(van_t - delta, 0.0)
+	answer_cd = maxf(answer_cd - delta, 0.0)
+	notify_cd = maxf(notify_cd - delta, 0.0)
+	burst_t = maxf(burst_t - delta, 0.0)
 	_update_aim(orbs, delta)
 	# 속성을 많이 겹칠수록 공격이 느려진다(쌓기 대가), 속사 강화로 빨라진다
 	var de := delta * spd_k()
@@ -1055,6 +1200,18 @@ func attack(delta: float, orbs: Array) -> void:
 		if dice_t <= 0.0:
 			dice_t = 1.0
 			roll_dice()
+	if pattern in CONT_BOOST and (tg("charge") > 0 or tg("third") > 0):
+		cont_acc += dp
+		if cont_acc >= CONT_IV:
+			cont_acc -= CONT_IV
+			var f := _fire_mul(true)
+			if f[0] > 1.0:
+				burst_t = 0.5 if f[2] == "trig:charge" else 0.4
+				burst_mul = f[0]
+				burst_size = f[1]
+				burst_key = f[2]
+		if burst_t > 0.0:
+			_set_fire([burst_mul, burst_size, burst_key])
 	match pattern:
 		"shot", "thorn", "gust", "shard", "iron":
 			if _ready_to("p", BASE_IV[pattern] / spd(l), dp):
@@ -1079,9 +1236,11 @@ func attack(delta: float, orbs: Array) -> void:
 			else:
 				var fired := false
 				var used := {}
+				_set_fire(_fire_mul(false))
 				for d in dirs():
 					fired = _chain(orbs, d, l, used) or fired
 				if fired:
+					_fire_mul(true)
 					cd["p"] = 1.3 / spd(l)
 					roll_dice()
 					recoil = 1.0
@@ -1149,8 +1308,19 @@ func attack(delta: float, orbs: Array) -> void:
 				_fire_path(br, mk)
 				for i in mn("multi"):
 					path_q.append([PATH_GAP * (i + 1), br])
+	_set_fire([1.0, 1.0, ""])
 	_cont_end(orbs, l, s)
 	_reactions(orbs, de, k)
+	nova_fx = maxf(nova_fx - delta, 0.0)
+	for f in feed_fx.keys():
+		if not is_instance_valid(f):
+			feed_fx.erase(f)
+			continue
+		feed_fx[f] -= delta
+		if feed_fx[f] <= 0.0:
+			feed_fx.erase(f)
+	if lv(Elem.STAR) > 0 and star_sum >= star_need():
+		_try_nova()
 	queue_redraw()
 
 
@@ -1604,6 +1774,15 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		d *= Rules.rxd.get(tag, 1.0)  # 반응별 피해 배율 (온라인 패치 rxd_<id>)
 	var dx := dice_x if not in_rx else 1.0  # 주사위: 반응 피해에는 안 곱한다
 	d *= dx
+	# 발동: 축적·삼연이 실린 공격(쏘는 순간 바로 맞히는 공격), 마무리(약한 구체)
+	var fb := fire_boost if not in_rx else 1.0
+	d *= fb
+	var fm := 1.0
+	if tg("finish") > 0 and o.hp < o.max_hp * Rules.t("finish_hp"):
+		fm = finish_mul(tg("finish"))
+		if o.kind == Orb.Kind.BOSS:
+			fm = 1.0 + (fm - 1.0) * 0.5
+		d *= fm
 	var crit := dx >= Rules.dice_top and k >= 1.0  # 대박은 치명타처럼 금색 숫자
 	var lit := false  # 빛 치명타 (확정 치명타 반응은 반응 몫)
 	var cc := minf(Rules.light_ch * els.get(Elem.LIGHT, 0), Rules.light_max) if els.has(Elem.LIGHT) else 0.0
@@ -1631,6 +1810,11 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	d = o.hurt(d, crit)  # 받는 피해 배율(약점 등)까지 곱한 값
 	o.last_rx = in_rx or tag.begins_with("rx:")
 	dealt += d
+	# 별: 둘레 별 오브젝트가 이 피해의 일부를 복사해 별빛으로 모은다 (이 피해는 줄지 않는다)
+	if not in_nova and main and not main.star_towers.is_empty():
+		for s2 in main.star_towers:
+			if s2 == self or s2.position.distance_to(position) < Rules.t("star_r"):
+				s2.star_feed(d, self)
 	if in_rx:
 		rx_dealt += d
 	# 출처: 금속 고정 피해·빛 치명타로 늘어난 절반은 그 속성, 나머지는 지금 출처
@@ -1644,6 +1828,11 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		var dd := rest * (1.0 - 1.0 / dx)
 		rest -= dd
 		src["mod:dice"] = src.get("mod:dice", 0.0) + dd
+	for bk in [[fb, fire_key], [fm, "trig:finish"]]:
+		if bk[0] > 1.0 and bk[1] != "":
+			var dd: float = rest * (1.0 - 1.0 / bk[0])
+			rest -= dd
+			src[bk[1]] = src.get(bk[1], 0.0) + dd
 	if lit:
 		rest *= 0.5
 		src["elem:light"] = src.get("elem:light", 0.0) + rest
@@ -1652,6 +1841,10 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	if van_ready and not in_rx:
 		van_ready = false
 		van_t = van_time(tg("vanguard"))
+		_notify_allies(o.position)
+	if in_rx and notify_cd <= 0.0:
+		notify_cd = 0.3
+		_notify_allies(o.position)
 	if o.hp <= 0.0 and echo_cd <= 0.0 and tg("echo") > 0:
 		_echo(o)
 	if els.has(Elem.FIRE):
@@ -1694,9 +1887,276 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 			p.hit[o] = true
 
 
+# ---------- 별 ----------
+
+## 별·행성 그림: 별은 둘레를 도는 별빛 점(찬 만큼), 행성은 그 속성 색 고리. 별빛을 준 오브젝트로 가는 빛줄, 초신성 빛.
+func _draw_star() -> void:
+	var f := clampf(star_sum / maxf(star_need(), 0.001), 0.0, 1.0) if main else 0.0
+	var sc: Color = Elem.COLORS[Elem.STAR]
+	var pe := planet()
+	if pe >= 0:
+		var pc: Color = Elem.COLORS[pe]
+		var ring := PackedVector2Array()
+		for i in 33:
+			var a := TAU * i / 32.0
+			ring.append(Vector2(cos(a) * (RADIUS + 9.0), sin(a) * (RADIUS + 9.0) * 0.38).rotated(-0.35))
+		draw_polyline(ring, Color(pc, 0.85), 2.5)
+		draw_arc(Vector2.ZERO, RADIUS + 3.0, -PI / 2.0, -PI / 2.0 + TAU * f, 32, Color(pc.lightened(0.3), 0.9), 2.0)
+	else:
+		var n := 5
+		for i in n:
+			var a := t * 1.4 + TAU * i / n
+			var on := float(i) < f * n
+			draw_circle(Vector2.from_angle(a) * (RADIUS + 8.0), 2.4 if on else 1.4, Color(sc, 0.95 if on else 0.3))
+	if f >= 1.0:
+		draw_circle(Vector2.ZERO, RADIUS + 4.0 + 2.0 * sin(t * 9.0), Color(sc, 0.18))
+	for fr in feed_fx:
+		if is_instance_valid(fr):
+			var c: Color = Elem.COLORS[pe] if pe >= 0 else sc
+			draw_line(fr.position - position, Vector2.ZERO, Color(c, 0.35 * feed_fx[fr] / 0.4), 1.5)
+	if nova_fx > 0.0:
+		var p := nova_pos - position
+		var k := nova_fx / 0.6
+		draw_line(Vector2.ZERO, p, Color(sc, 0.9 * k), 6.0 * k + 1.0)
+		draw_arc(p, (NOVA_R + 10.0 * (lv(Elem.STAR) - 1)) * (1.2 - 0.6 * k), 0, TAU, 40, Color(sc, k), 4.0)
+		draw_circle(p, 30.0 * k, Color(1, 1, 1, 0.6 * k))
+
+const STAR_MAX_ELEMS := 2  # 별 + 속성 하나 = 그 속성의 행성
+const NOVA_R := 110.0  # 초신성 반지름 (별 레벨마다 +10)
+
+
+## 별만 든 오브젝트(행성이 아닌 별).
+func pure_star() -> bool:
+	return order.size() == 1 and elements.has(Elem.STAR)
+
+
+## 속성 e를 넣으면 행성이 되는데 못 만드는 이유 (같은 행성이 이미 있음·행성 최대). 행성이 안 되면 빈 글.
+func planet_refuse(e: int) -> String:
+	if elements.has(e) or order.size() != 1 or main == null:
+		return ""
+	var pe := -1
+	if elements.has(Elem.STAR) and e != Elem.STAR:
+		pe = e
+	elif e == Elem.STAR and not elements.has(Elem.STAR):
+		pe = order[0]
+	if pe < 0:
+		return ""
+	var n := 0
+	for t2 in main.towers.get_children():
+		if t2 != self and t2.planet() >= 0:
+			if t2.planet() == pe:
+				return "%s의 행성은 이미 있어요 (같은 행성은 한 판에 하나)" % Elem.NAMES[pe]
+			n += 1
+	if n >= int(Rules.t("planet_max")):
+		return "행성은 %d개까지예요" % int(Rules.t("planet_max"))
+	return ""
+
+
+## 행성이면 별과 함께 든 속성, 아니면 -1.
+func planet() -> int:
+	if not elements.has(Elem.STAR):
+		return -1
+	for e in order:
+		if e != Elem.STAR:
+			return e
+	return -1
+
+
+## 초신성까지 필요한 별빛: 이번 웨이브 구체 평균 체력(종류 보정 전) x star_need.
+func star_need() -> float:
+	var w: int = maxi(main.wave, 1) if main else 1
+	var g: float = main.hp_growth(w) if main else 1.0
+	return (1.5 + 0.7 * w) * g * Rules.orb_hp * Rules.t("star_need")
+
+
+## 별빛 모으는 비율: 다른 오브젝트 피해의 star_take(+레벨), 자기 피해는 star_self. 별만 든 오브젝트는 x star_pure.
+func star_rate(from_self: bool) -> float:
+	var k := Rules.t("star_self") if from_self else Rules.t("star_take") + Rules.t("star_lv") * (lv(Elem.STAR) - 1)
+	return k * (Rules.t("star_pure") if pure_star() else 1.0)
+
+
+## 피해 d를 준 오브젝트 from에게서 별빛을 모은다. 둘레 오브젝트의 속성(별 제외)도 같이 적어 둔다.
+## 행성은 다른 오브젝트 피해 중 자기 속성 몫(그 오브젝트 속성 레벨 중 비율)만 planet_take로 모은다.
+func star_feed(d: float, from: Tower) -> void:
+	var need := star_need()
+	if star_sum >= need or d <= 0.0:
+		return
+	var pe := planet()
+	var rate := star_rate(from == self)
+	if pe >= 0 and from != self:
+		if not from.elements.has(pe):
+			return
+		rate = Rules.t("planet_take") * float(from.lv(pe)) / maxf(from.total_level(), 1.0)
+	var amt := minf(d * rate, need - star_sum)
+	star_sum += amt
+	if from != self:
+		feed_fx[from] = 0.4
+	if pe >= 0:
+		if from != self:
+			star_e[pe] = star_e.get(pe, 0.0) + amt
+		return
+	if from != self:
+		var n := 0
+		for e in from.elements:
+			if e != Elem.STAR:
+				n += 1
+		for e in from.elements:
+			if e != Elem.STAR:
+				star_e[e] = star_e.get(e, 0.0) + amt / n
+
+
+## 초신성 자리: 사거리(450) 안에서 둘레(110)에 구체가 가장 많이 모인 구체. 없으면 아낀다.
+func _try_nova() -> void:
+	var best: Orb = null
+	var bn := -1
+	for o in main.near(position, 450.0):
+		if o.hp <= 0.0 or o.position.distance_to(position) > 450.0:
+			continue
+		var n: int = main.near(o.position, 110.0).size()
+		if n > bn:
+			bn = n
+			best = o
+	if best:
+		_supernova(best)
+
+
+## 모은 속성 중 많은 순 3개 → 레벨 3·2·1.
+func nova_mix() -> Dictionary:
+	var ks := star_e.keys()
+	ks.sort_custom(func(a, b): return star_e[a] > star_e[b])
+	var out := {}
+	for i in mini(ks.size(), 3):
+		out[ks[i]] = 3 - i
+	return out
+
+
+## 초신성: 별빛 x star_mul을 가운데 구체에 절반, 둘레 구체에 나머지 절반을 나눠 넣는다.
+## 모은 속성의 부가효과를 한꺼번에 걸고, 모은 속성끼리 반응이 있으면 그 몫(별빛 x0.15)을 더한다.
+## 모은 속성이 3종이면 저항·굳셈을 무시한다. 행성이면 그 속성 효과가 따라붙는다(_nova_follow).
+func _supernova(c: Orb) -> void:
+	var pool := star_sum * Rules.t("star_mul")
+	var mix := nova_mix()
+	star_sum = 0.0
+	star_e.clear()
+	in_nova = true
+	var r := NOVA_R + 10.0 * (lv(Elem.STAR) - 1)
+	var hits := []
+	for o in main.near(c.position, r + 30.0):
+		if o.hp > 0.0 and o.position.distance_to(c.position) < r + o.radius():
+			hits.append(o)
+	if not c in hits:
+		hits.append(c)
+	var others := hits.size() - 1
+	var rx_bonus := 0.0
+	var ids := mix.keys()
+	for i in ids.size():
+		for j in range(i + 1, ids.size()):
+			var rr := Elem.reaction_of(ids[i], ids[j])
+			if not rr.is_empty():
+				rx_bonus += 0.15
+				main.burst(c.position, rr["color"], 12, 200.0)
+	var total := 0.0
+	for o in hits:
+		var share: float = (pool * (0.5 if others > 0 else 1.0) if o == c else pool * 0.5 / others) * (1.0 + rx_bonus)
+		if mix.size() >= 3:
+			o.silence_t = maxf(o.silence_t, 0.3)  # 저항·굳셈 무시
+		else:
+			share *= o.resist_mul(mix)
+		var got: float = o.hurt(share, o == c)
+		credit(got, "elem:star")
+		total += got
+		if not mix.is_empty() and o.hp > 0.0:
+			# 모은 속성의 부가효과만 (피해는 거의 없음)
+			in_rx = true
+			tag = "elem:star"
+			hit(o, 0.01, 1.0, mix, false)
+			in_rx = false
+			tag = ""
+	_nova_follow(c.position, hits, pool)
+	in_nova = false
+	nova_fx = 0.6
+	nova_pos = c.position
+	main.burst(c.position, Elem.COLORS[Elem.STAR], 40, 320.0)
+	main.popup(c.position + Vector2(0, -30), total, Elem.COLORS[Elem.STAR], true, "초신성!", 1.2)
+	main.shake = maxf(main.shake, 0.25)
+	_notify_allies(c.position)
+
+
+## 행성(별 + 속성 하나): 초신성 뒤 그 속성 효과가 따라붙는다. 피해 몫은 별빛 x star_rx x rx_mul.
+func _nova_follow(at: Vector2, hits: Array, pool: float) -> void:
+	var e := planet()
+	if e < 0 or hits.is_empty():
+		return
+	var key: String = "rx:nova_" + Patch.ELEM_KEYS[Elem.ALL.find(e)]
+	var each := pool * Rules.t("star_rx") * Rules.rx_mul / hits.size()
+	var l := lv(e)
+	for o in hits:
+		if not is_instance_valid(o) or o.hp <= 0.0:
+			continue
+		match e:
+			Elem.FIRE:
+				o.burn(each / 3.0, 3.0, self, true, key)
+				continue
+			Elem.POISON:
+				o.poison(each / 4.0, 4.0, self, true, key)
+				continue
+			Elem.WOOD:
+				o.root(2.0)
+			Elem.WATER:
+				o.slow(0.4, 3.0)
+			Elem.ELECTRIC:
+				for i in 3:
+					main.arc(o, each / 3.0, self)
+			Elem.WIND:
+				o.push((o.position - at).normalized() * 80.0)
+			Elem.ICE:
+				if o.root(0.5 if o.kind == Orb.Kind.BOSS else 1.0):
+					o.frozen_t = o.root_timer
+			Elem.DARK:
+				RxMore.amp(o, "nova_dark", 0.4, 4.0)
+			Elem.SOUND:
+				o.tune_src = self
+				o.tune_lv = maxi(o.tune_lv, l)
+				main.sound_pulse(o)
+			Elem.SOUL:
+				o.styx_t = maxf(o.styx_t, 0.5)
+				o.styx_lv = l
+				o.styx_src = self
+		credit(o.hurt(each), key)
+	match e:
+		Elem.LIGHT:
+			# 가운데 구체에 확정 치명타: 그 몫 한 번 더
+			var c: Orb = hits[hits.size() - 1] if hits.size() == 1 else hits[0]
+			for o in hits:
+				if o.position.distance_to(at) < c.position.distance_to(at):
+					c = o
+			if is_instance_valid(c) and c.hp > 0.0:
+				credit(c.hurt(pool * 0.5 * Rules.rx_mul, true), key)
+		Elem.EARTH:
+			for i in 3:
+				var p := at + Vector2.from_angle(randf() * TAU) * randf_range(20.0, 80.0)
+				for o in main.near(p, 50.0):
+					if o.hp > 0.0 and o.position.distance_to(p) < 50.0 + o.radius():
+						credit(o.hurt(each), key)
+				main.burst(p, Elem.COLORS[Elem.EARTH], 10, 160.0)
+		Elem.METAL:
+			for i in 8:
+				var pr: Projectile = main.spawn_proj(self, "frag", plv, Vector2.from_angle(TAU * i / 8.0))
+				pr.src = key
+				pr.position = at
+		Elem.TIME:
+			later.append([1.0, func():
+				for o in main.near(at, NOVA_R + 30.0):
+					if o.hp > 0.0 and o.position.distance_to(at) < NOVA_R + o.radius():
+						credit(o.hurt(pool * 0.5 * Rules.rx_mul / maxf(hits.size(), 1.0)), key)
+				main.burst(at, Elem.COLORS[Elem.TIME], 24, 260.0)])
+	main.burst(at, Elem.COLORS[e], 24, 240.0)
+
+
 ## 여진: 잡은 구체 자리에서 작은 탄이 고르게 사방으로 (쏘는 방향은 판마다 조금씩 돈다).
 func _echo(o: Orb) -> void:
 	echo_cd = Rules.t("echo_cd")
+	_notify_allies(o.position)
 	var n := int(Rules.t("echo_n")) + tg("echo") - 1
 	var a0 := randf() * TAU
 	for i in n:
@@ -1942,6 +2402,17 @@ func _draw_body() -> void:
 		# 선봉: 켜져 있는 동안 남은 시간만큼 줄어드는 고리
 		var f := van_t / van_time(tg("vanguard"))
 		draw_arc(Vector2.ZERO, RADIUS + 6.0, -PI / 2.0, -PI / 2.0 + TAU * f, 24, Color(Pat.TRIG_COLOR, 0.9), 3.0)
+	if elements.has(Elem.STAR):
+		_draw_star()
+	if tg("charge") > 0:
+		# 축적: 모인 만큼 차오르는 얇은 고리, 다 차면 진하게 깜빡임
+		var cf := charge / float(charge_need())
+		var ca := 0.9 if cf < 1.0 else 0.6 + 0.4 * sin(t * 10.0)
+		draw_arc(Vector2.ZERO, RADIUS + 10.0, -PI / 2.0, -PI / 2.0 + TAU * cf, 32, Color(1.0, 0.85, 0.35, ca), 2.0)
+	if tg("third") > 0:
+		# 삼연: 위에 점 3개, 쏜 만큼 켜짐 (다 켜지면 다음이 강한 공격)
+		for i in 3:
+			draw_circle(Vector2(-7.0 + 7.0 * i, -RADIUS - 8.0), 2.2, Color(Pat.TRIG_COLOR, 0.95 if i < third_n % 3 else 0.3))
 	# 바람 버프 둘레는 main._draw_wind_rings (마우스를 올리거나 옮길 때만)
 	if wind_buff > 0.0:
 		# 바람 버프를 받는 중: 작은 바람 꼬리 둘

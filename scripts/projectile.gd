@@ -101,6 +101,11 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 		homing = tower.mf("homing")
 		if homing > 0.0 and max_travel >= 2000.0:
 			max_travel = HOMING_TRAVEL  # 끝까지 가는 관통탄(철구·관통 연사)이 유도로 전장 안을 맴돌며 끝없이 쫓지 않게
+	if tower.fire_boost > 1.0 and k != "frag":
+		# 축적·삼연이 실린 탄: 피해·크기가 커지고, 피해는 그 발동 몫으로 센다
+		dmg *= tower.fire_boost
+		radius *= tower.fire_size
+		src = tower.fire_key
 	vel = d * speed
 	position = tower.position + d * Tower.RADIUS
 	if k in ["blob", "log", "icebolt"]:

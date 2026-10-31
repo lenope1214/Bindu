@@ -35,6 +35,7 @@ var spawn_interval := 1.0
 
 var lanes: Array[float] = []  # 다음 웨이브 구체가 들어올 방향(라디안)
 var prism_towers: Array = []  # 발사체가 지날 때 확인할 프리즘 오브젝트 (매 계산마다 갱신)
+var star_towers: Array = []  # 별이 든 오브젝트 (둘레 피해를 별빛으로 모은다, 매 계산마다 갱신)
 var picks_left := 0  # 이번 쉬는 시간에 남은 설치 횟수
 var moving: Tower = null  # 위치를 옮기는 중인 오브젝트
 # 오브젝트를 꾹 누르거나 끌면 바로 옮긴다(카드를 고른 뒤에도). 선택된 오브젝트를 끌면 함께 움직인다.
@@ -1895,11 +1896,11 @@ func _roll_card() -> Dictionary:
 			return {"type": "cata", "id": "elem"}
 		if c < cata * 2.0:
 			return {"type": "cata", "id": "pat"}
-	# 종류 비율 (온라인 패치 cards로 바뀔 수 있음): 속성 42%, 공격방식 25%, 강화 23%, 연계 10%, 발동 8% (합으로 나눔)
+	# 종류 비율 (온라인 패치 cards로 바뀔 수 있음): 속성 42%, 공격방식 25%, 강화 23%, 연계 10%, 발동 12% (합으로 나눔)
 	var we := Patch.num("cards", "elem", 0.42)
 	var wp := Patch.num("cards", "pat", 0.25) if _card_open("pat") else 0.0
 	var wm := Patch.num("cards", "mod", 0.23) if _card_open("mod") else 0.0
-	var wt := Patch.num("cards", "trig", 0.08) if _card_open("trig") else 0.0
+	var wt := Patch.num("cards", "trig", 0.12) if _card_open("trig") else 0.0
 	var r := randf() * (we + wp + wm + wt + (Patch.num("cards", "link", 0.10) if _card_open("link") else 0.0))
 	if n == 0 or (wave == 0 and not Garden.on) or r < we:  # 정원은 웨이브 0으로 물러나도 다른 카드가 나오게
 		var lv := 2 if randf() < _lv2_chance() else 1
@@ -6847,6 +6848,9 @@ func spawn_zone(kind: String, l: int, pos: Vector2, t: Tower) -> Zone:
 	var z := Zone.new()
 	z.setup(kind, l, t)
 	z.src = t.tag if t else ""
+	if t and t.fire_boost > 1.0:
+		z.boost = t.fire_boost
+		z.src = t.fire_key
 	z.position = pos
 	zones.add_child(z)
 	return z
@@ -7577,6 +7581,7 @@ func _resolve(delta: float) -> void:
 
 	_build_grid()
 	prism_towers = towers.get_children().filter(func(t): return t.prism > 0)
+	star_towers = towers.get_children().filter(func(t): return t.elements.has(Elem.STAR))
 	_wind_buffs()
 	if prof_on:
 		us = _prof_add("목록·격자", us)
@@ -7662,6 +7667,9 @@ func _resolve(delta: float) -> void:
 				_show_toast("보스 처치! 중앙 체력 +2" + ("" if Modes.has("narrow") else ", 새로고침 +1"))
 			burst(o.position, o.death_color(), 10 if o.kind != Orb.Kind.BOSS else 40, 180.0)
 			kills += 1
+			for t in towers.get_children():
+				if t.tg("charge") > 0 and t.position.distance_to(o.position) < Rules.t("charge_r"):
+					t.add_charge(o)
 			if o.kind == Orb.Kind.BOSS:
 				shake = 0.4
 			if o.poison_t > 0.0:
