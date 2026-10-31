@@ -1,4 +1,5 @@
 """DB 테이블. PostgreSQL(운영)과 SQLite(테스트) 모두 동작."""
+import json
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import (JSON, BigInteger, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine, inspect,
@@ -95,6 +96,7 @@ class Run(Base):
     title: Mapped[str] = mapped_column(String(24), default="")  # 고른 칭호 (업적 id, 0.5.5부터)
     # 씨앗 나무(정원 모드)를 쓴 판: '성장' 리더보드에만 (0.5.3부터)
     grow: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    easy: Mapped[bool] = mapped_column(Boolean, default=False, index=True)  # 쉽게 모드를 쓴 판: '쉽게 모드' 리더보드에만
 
 
 class Pick(Base):
@@ -241,6 +243,17 @@ def init_db() -> None:
         if "grow" not in have_runs:
             con.execute(text("ALTER TABLE runs ADD COLUMN grow BOOLEAN DEFAULT FALSE"))
             con.execute(text("CREATE INDEX IF NOT EXISTS ix_runs_grow ON runs (grow)"))
+        if "easy" not in have_runs:
+            con.execute(text("ALTER TABLE runs ADD COLUMN easy BOOLEAN DEFAULT FALSE"))
+            con.execute(text("CREATE INDEX IF NOT EXISTS ix_runs_easy ON runs (easy)"))
+            # 예전엔 쉽게 모드 판을 숨김(hidden)으로 리더보드에서 뺐다: 그런 판을 쉽게 모드 리더보드로 옮긴다
+            # (차단된 기기·탈퇴한 계정(닉네임 지움) 기록은 숨김 그대로)
+            from . import validate
+            banned = {r[0] for r in con.execute(text("SELECT device_id FROM bans"))}
+            for rid, dev, nick, detail in con.execute(text("SELECT id, device_id, nickname, detail FROM runs WHERE hidden = TRUE")).all():
+                d = json.loads(detail) if isinstance(detail, str) else (detail or {})
+                if validate.easy(d.get("modes") or []):
+                    con.execute(text("UPDATE runs SET easy = TRUE, hidden = :h WHERE id = :i"), {"h": dev in banned or nick == "", "i": rid})
         if "sha256" not in have:
             con.execute(text("ALTER TABLE releases ADD COLUMN sha256 VARCHAR(64) DEFAULT ''"))
         if "size" not in have:

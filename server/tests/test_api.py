@@ -121,9 +121,9 @@ def test_flow():
         assert [e["score"] for e in lb["entries"]] == [3000]
         assert c.get("/admin").status_code == 200
 
-        # 모드: 쉽게 모드 판은 받지만 리더보드에는 없음, 반대 쌍·모르는 모드는 거부
+        # 모드: 쉽게 모드 판은 '쉽게 모드' 리더보드에만 (기본 리더보드에는 없음), 반대 쌍·모르는 모드는 거부
         r = post_run(c, device="dev-eeeeeeee", score=9000, patch=2, modes=["stroll"]).json()
-        assert r["accepted"] and r["rank"] is None
+        assert r["accepted"] and r["rank"]["rank"] == 1
         r = post_run(c, device="dev-ffffffff", score=9000, patch=2, modes=["rush", "steel"]).json()
         assert r["accepted"] and r["rank"]["rank"] == 1
         assert not post_run(c, device="dev-gggggggg", patch=2, modes=["rush", "stroll"]).json()["accepted"]
@@ -268,3 +268,17 @@ def test_admin_edit_run():
         r = c.post(f"/admin/runs/{rid}/edit", json={"wave": 155, "score": 33_410_723_996, "hidden": False, "valid": True}, headers=A).json()
         assert r["score"] == 33_410_723_996 and not r["hidden"] and r["valid"]
         assert c.post(f"/admin/runs/{rid}/edit", json={"wave": 1}).status_code == 401
+
+
+def test_easy_board():
+    # 쉽게 모드를 하나라도 쓴 판은 '쉽게 모드' 리더보드에만 (어렵게 모드와 섞여도)
+    with TestClient(app) as c:
+        kw = dict(map="storm", game="0.5.1", patch=2)
+        assert post_run(c, device="dev-easy-aaaa", modes=["stroll"], score=7000, **kw).json()["accepted"]
+        r = post_run(c, device="dev-easy-bbbb", modes=["steel", "fort"], score=6500, **kw).json()
+        assert r["accepted"] and r["rank"]["rank"] == 2
+        assert post_run(c, device="dev-easy-cccc", modes=["rush"], score=3000, **kw).json()["accepted"]
+        pure = c.get("/v1/leaderboard", params={"map": "storm", "rules": 1}).json()["entries"]
+        easy = c.get("/v1/leaderboard", params={"map": "storm", "rules": 1, "easy": True}).json()["entries"]
+        assert [e["score"] for e in pure] == [3000]
+        assert [e["score"] for e in easy] == [7000, 6500]
