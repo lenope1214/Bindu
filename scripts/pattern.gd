@@ -75,7 +75,7 @@ const MOD_IDS := ["multi", "split", "homing", "bounce", "size", "rapid", "pierce
 const NO_MOD := {
 	"pierce": ["thorn", "gust", "iron", "wisp"],  # 원래 모두 뚫는다 (혼불은 맞혀도 사라지지 않는다)
 	"bounce": ["thorn", "gust", "iron", "wisp"],  # 뚫고 나가서 튕길 일이 없다
-	"homing": ["wall", "path"],  # 벽은 정한 방향에만 세우고, 그린 궤적은 그린 길만 따라간다
+	"homing": ["wall", "path", "wisp"],  # 벽은 정한 방향에만 세우고, 그린 궤적은 그린 길만 따라간다. 혼불은 원래 쫓아가서 유도를 못 넣는다 (2026-10-31 사용자)
 	"split": ["wall", "lob"],  # 바닥에 남아 때리는 피해는 분열을 일으키지 않는다 (블랙홀은 끝에서 터질 때 분열)
 }
 
@@ -124,6 +124,8 @@ static func no_mod_why(pat: String, mod: String) -> String:
 		"homing":
 			if pat == "path":
 				return "%s은(는) 그린 길만 따라가서 유도가 효과가 없어요" % pname(pat)
+			if pat == "wisp":
+				return "%s은(는) 원래 구체를 쫓아가서 유도를 넣을 수 없어요" % pname(pat)
 			return "%s은(는) 정한 방향에만 세워져서 유도가 효과가 없어요" % pname(pat)
 		"split":
 			return "%s은(는) 바닥에 남아 때리는 공격이라 분열이 일어나지 않아요" % pname(pat)
