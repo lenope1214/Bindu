@@ -854,6 +854,8 @@ func _refresh_dps() -> void:
 	dps_panel.modulate.a = 0.4 if under else 1.0
 	# 점수 줄 아래, 왼쪽 아래 안내 글 위까지
 	var top := hud.position.y + hud.size.y + 8.0 if hud.visible else 8.0
+	if mp_bar.visible:
+		top += mp_bar.size.y + 4.0  # 멀티플레이 상태 줄 아래로
 	dps_panel.position.y = top
 	var bottom := _bottom_free()
 	if choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and choice_box.get_rect().position.x < 320.0:
@@ -6844,8 +6846,8 @@ func _build_mp_lobby(root: Control) -> void:
 	mp_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
 	mp_panel.offset_left = -330.0
 	mp_panel.offset_right = 330.0
-	mp_panel.offset_top = -230.0
-	mp_panel.offset_bottom = 230.0
+	mp_panel.offset_top = -160.0  # 내용만큼 위아래로 자란다
+	mp_panel.offset_bottom = 160.0
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.05, 0.06, 0.09, 1.0)
 	sb.set_border_width_all(1)
@@ -6920,11 +6922,7 @@ func _build_mp_lobby(root: Control) -> void:
 	lb.focus_mode = Control.FOCUS_NONE
 	lb.pressed.connect(_toggle_mp_lobby)
 	row.add_child(lb)
-	mp_bar = Label.new()
-	mp_bar.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	mp_bar.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	mp_bar.offset_top = 6.0
-	mp_bar.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mp_bar = Label.new()  # 점수 줄 바로 아래 (_mp_tick이 자리를 맞춘다)
 	mp_bar.add_theme_font_size_override("font_size", 15)
 	mp_bar.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	mp_bar.add_theme_constant_override("outline_size", 4)
@@ -7159,6 +7157,7 @@ func _mp_tick(delta: float) -> void:
 			mp_snap_t = 0.0
 			_mp_send_snap()
 	mp_bar.visible = not title_label.visible
+	mp_bar.position = Vector2(hud.position.x + 2.0, hud.position.y + hud.size.y + 4.0)
 	if mp_bar.visible:
 		var parts := PackedStringArray()
 		if mp_mode == "vs":

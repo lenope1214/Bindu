@@ -90,6 +90,7 @@ func _initialize():
 	_rules_modes()
 	_save_load()
 	_meta_misc()
+	_multiplayer()
 	_lint()
 	print("SPEC %s (실패 %d, 확인한 기능 %d개)" % ["통과" if fails == 0 else "실패", fails, seen.size()])
 	quit(1 if fails > 0 else 0)
@@ -679,6 +680,89 @@ func _meta_misc() -> void:
 	tw.credit(2.0, "rx:steam")
 	ok("DPS-01", is_equal_approx(tw.dealt, 7.0) and is_equal_approx(tw.src.get("rx:steam", 0.0), 7.0), "피해 출처: 출처별로 나눠 쌓음")
 	tw.free()
+
+
+# ---------- 멀티플레이 (연결 없이 확인할 수 있는 것) ----------
+
+func _multiplayer() -> void:
+	# 대결: 같은 씨앗이면 같은 웨이브. 씨앗 0이면 전역 난수 (혼자 하는 판 순서 그대로)
+	var rolls := []
+	for k in 2:
+		_fresh(6)
+		main.mp_seed = 4242
+		randomize()  # 전역 난수가 달라도 같아야 한다
+		main.lanes.clear()
+		main._new_rest()
+		var plan := [Array(main.lanes), main.wave_resist]
+		main.phase = main.Phase.WAVE
+		main.wave += 1
+		main.lane_bag.clear()
+		for i in main.lane_counts(main.wave).size():
+			for j in main.lane_counts(main.wave)[i]:
+				main.lane_bag.append(i)
+		main._wshuffle(main.lane_bag)
+		for i in 5:
+			plan.append(main._roll_orb(main.wave))
+		rolls.append(var_to_str(plan))
+	main.mp_seed = 0
+	seed(7)
+	var a := randf()
+	seed(7)
+	var b: float = main.wf()
+	ok("MP-03", rolls[0] == rolls[1] and is_equal_approx(a, b), "대결: 같은 씨앗이면 같은 방향·저항·구체, 씨앗 0이면 전역 난수")
+
+	# 대결: 보낸 구체는 다음 웨이브에 더 나오고, 다 나와야 웨이브가 끝난다
+	_fresh(3)
+	main.mp_mode = "vs"
+	main.mp_next_extra = 3
+	main.phase = main.Phase.READY
+	main._start_wave()
+	var extra: int = main.mp_extra_left
+	main.to_spawn = 0
+	for i in 600:
+		main._sim_step(1.0 / 30.0)
+	ok("MP-04", extra == 3 and main.mp_next_extra == 0 and main.mp_extra_left == 0, "보낸 구체 %d개가 이번 웨이브에 나옴 (남은 %d)" % [extra, main.mp_extra_left])
+	main.mp_mode = ""
+	main.mp_extra_left = 0
+
+	# 협동: 구체 수, 오브젝트 주인, 주고받는 상태
+	_fresh(5)
+	var solo: int = main.spawn_count(5)
+	main.coop_orbs = 1.6
+	var duo: int = main.spawn_count(5)
+	main.coop_orbs = 1.0
+	main.mp_mode = "coop"
+	main.mp.my_id = 1
+	var mine := _tower(main.center() + Vector2(-200, 0), Elem.FIRE, 2)
+	var other := _tower(main.center() + Vector2(200, 0), Elem.WATER)
+	other.owner_id = 2
+	main.phase = main.Phase.CHOOSE
+	main._begin_press(other, other.position)
+	var blocked: bool = main.press_t == null
+	ok("MP-06", duo == roundi(solo * 1.6) or abs(duo - solo * 1.6) <= 1.0, "협동: 2명이면 구체 x1.6 (%d → %d)" % [solo, duo])
+	mine.dealt = 55.0
+	var st: Dictionary = other.mp_state()
+	st["nid"] = 200001
+	var copy := Tower.new()
+	copy.main = main
+	copy.mp_apply(st)
+	mine.mp_apply(mine.mp_state())
+	ok("MP-07", mine.owner_id == 1 and mine.net_id == 100001 and blocked and main._my_towers() == [mine] and copy.elements == other.elements and copy.pattern == other.pattern and is_equal_approx(mine.dealt, 55.0) and mine.lv(Elem.FIRE) == 2,
+		"협동: 내 오브젝트만 바꿈, 상태를 주고받아도 속성·공격방식 같고 피해 기록은 이 기기 것 (%s)" % str([mine.owner_id, mine.net_id, blocked, main._my_towers().size(), copy.elements, other.elements, mine.dealt, mine.lv(Elem.FIRE)]))
+	copy.free()
+	main.press_t = null
+
+	# 멀티 판: 이어하기 저장·웨이브 넘기기 없음
+	var had := FileAccess.file_exists(main.RUN_PATH)
+	if had:
+		DirAccess.remove_absolute(main.RUN_PATH)
+	main.phase = main.Phase.CHOOSE
+	main._save_run()
+	ok("MP-08", not FileAccess.file_exists(main.RUN_PATH) and not main._can_skip(), "멀티 판은 이어하기 저장·웨이브 넘기기 없음")
+	main.mp_mode = ""
+	main.mp.my_id = 0
+	main.mp_tw_n = 0
+	_clear()
 
 
 # ---------- 문서 대조 ----------

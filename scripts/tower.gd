@@ -848,7 +848,8 @@ func mp_state() -> Dictionary:
 
 
 ## 협동 멀티플레이: 받은 상태로 이 오브젝트를 바꾼다 (피해 기록은 이 기기 것을 둔다).
-func mp_apply(d: Dictionary) -> void:
+func mp_apply(d0: Dictionary) -> void:
+	var d := d0.duplicate(true)  # 내 mp_state()를 그대로 받아도 아래에서 지우는 사전과 겹치지 않게
 	var keep := [dealt, run_dealt, src, run_src]
 	elements.clear()
 	order.clear()
