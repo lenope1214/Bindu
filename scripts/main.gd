@@ -318,9 +318,9 @@ var mp_host_box: HBoxContainer
 var mp_join_box: HBoxContainer
 var mp_room_box: VBoxContainer  # 방 코드·복사 + 사람 줄(플랫폼 그림·닉네임·핑)
 var mp_desc: Label  # 모드 설명 (방에 들어가면 숨김)
-var mp_load_row: HBoxContainer  # 방 만들기·들어가기·호스트와 연결 중: 도는 고리 + 글
-var mp_load_label: Label
+var mp_load_view: Control  # 방 만들기·들어가기·호스트와 연결 중 화면 (그림·단계·남은 시간, _mp_draw_load)
 var mp_load_msg := ""
+var mp_load_host := false  # 방을 만드는 중 (단계가 둘)
 var mp_close_btn: Button
 var mp_ping_labels := {}  # id -> 사람 줄 끝 핑 Label (핑이 바뀌면 줄을 다시 안 만들고 글만)
 var mp_btn: Button  # 시작 화면의 [멀티플레이]
@@ -8808,16 +8808,12 @@ func _build_mp_lobby(root: Control) -> void:
 	mp_room_box.add_theme_constant_override("separation", 6)
 	mp_room_box.visible = false
 	box.add_child(mp_room_box)
-	mp_load_row = HBoxContainer.new()
-	mp_load_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	mp_load_row.add_theme_constant_override("separation", 12)
-	mp_load_row.custom_minimum_size = Vector2(0, 64)
-	mp_load_row.visible = false
-	box.add_child(mp_load_row)
-	mp_load_row.add_child(_mp_spinner(15.0))
-	mp_load_label = Label.new()
-	mp_load_label.add_theme_font_size_override("font_size", 20)
-	mp_load_row.add_child(mp_load_label)
+	mp_load_view = Control.new()
+	mp_load_view.custom_minimum_size = Vector2(560, 200)
+	mp_load_view.visible = false
+	mp_load_view.add_to_group("mp_spin")  # 매 프레임 다시 그림
+	mp_load_view.draw.connect(_mp_draw_load)
+	box.add_child(mp_load_view)
 	mp_status = Label.new()
 	mp_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mp_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -8900,6 +8896,7 @@ func _mp_host(m: String) -> void:
 		return
 	mp_status.text = ""
 	mp_load_msg = "방을 만드는 중"
+	mp_load_host = true
 	mp.host(m, _mp_my_name())
 	_mp_refresh_lobby()
 
@@ -8913,6 +8910,7 @@ func _mp_join() -> void:
 		return
 	mp_status.text = ""
 	mp_load_msg = "방에 들어가는 중"
+	mp_load_host = false
 	mp.join(c, _mp_my_name())
 	_mp_refresh_lobby()
 
@@ -8942,7 +8940,7 @@ func _mp_refresh_lobby(keep_status := true) -> void:
 	mp_host_box.visible = not in_room and not busy
 	mp_join_box.visible = not in_room and not busy
 	mp_room_box.visible = in_room
-	mp_load_row.visible = busy or wait_host
+	mp_load_view.visible = busy or wait_host
 	mp_close_btn.text = "나가기" if in_room or busy else "닫기"
 	mp_desc.visible = not in_room and not busy
 	_mp_lobby_tick()
@@ -9071,18 +9069,88 @@ func _mp_spinner(r: float) -> Control:
 	return c
 
 
-## 매 프레임 (창이 열려 있을 때): 고리를 돌리고 기다린 초를 갱신.
+## 매 프레임 (창이 열려 있을 때): 고리·접속 화면을 다시 그린다.
 func _mp_lobby_tick() -> void:
 	if mp_panel == null or not mp_panel.visible:
 		return
 	get_tree().call_group("mp_spin", "queue_redraw")
-	if not mp_load_row.visible:
-		return
-	if mp.waiting_host():
-		var t := (Time.get_ticks_msec() - mp.joined_ms) / 1000.0
-		mp_load_label.text = "호스트와 연결하는 중  %d초" % int(t)
+
+
+## 접속 화면: 내 기기 ─ 오가는 점 ─ 상대(중개 서버·호스트), 지금 하는 일, 단계, (호스트 기다림) 남은 시간 막대.
+## 단계: 방 만들기 = 중개 서버 → 방 만들기, 참가 = 중개 서버 → 방 찾기 → 호스트와 직접 연결.
+func _mp_draw_load() -> void:
+	var c := mp_load_view
+	var w := c.size.x
+	var font := c.get_theme_default_font()
+	var now := Time.get_ticks_msec() / 1000.0
+	var wait_host := mp.waiting_host()
+	var ws_open := mp.ws.get_ready_state() == WebSocketPeer.STATE_OPEN
+	var steps: Array = ["중개 서버", "방 만들기"] if mp_load_host else ["중개 서버", "방 찾기", "호스트와 직접 연결"]
+	var cur := 2 if wait_host else (1 if ws_open else 0)
+	var accent := Color(0.6, 0.9, 1.0)
+	# 그림: 두 기기와 그 사이를 오가는 점
+	var y := 44.0
+	var a := Vector2(w * 0.24, y)
+	var b := Vector2(w * 0.76, y)
+	for p in [a, b]:
+		c.draw_circle(p, 30.0, Color(1, 1, 1, 0.06))
+		c.draw_arc(p, 30.0, 0.0, TAU, 40, Color(1, 1, 1, 0.18), 1.5, true)
+	Glyph.ui(c, "pf_" + str(Mp.PF[Mp.pf_code()]), a, 13.0, Color(1, 1, 1, 0.9))
+	if wait_host:
+		var hp: String = mp.peers.get(1, {}).get("pf", "")
+		Glyph.ui(c, "pf_" + (hp if hp != "" else "unknown"), b, 13.0, Color(1, 1, 1, 0.9))
+		Icons.draw(c, "score", b + Vector2(22, -22), 7.0, Color(1, 0.85, 0.4))
 	else:
-		mp_load_label.text = mp_load_msg + ".".repeat(1 + int(Time.get_ticks_msec() / 400.0) % 3)
+		# 중개 서버: 서버 칸 셋 (불빛은 차례로 깜빡)
+		for i in 3:
+			var r := Rect2(b + Vector2(-13, -13 + i * 9), Vector2(26, 7))
+			c.draw_rect(r, Color(1, 1, 1, 0.85), false, 1.5)
+			var on := int(now * 4.0) % 3 == i
+			c.draw_circle(r.position + Vector2(20, 3.5), 1.6, accent if on else Color(1, 1, 1, 0.5))
+	c.draw_arc(b, 36.0, now * 3.0, now * 3.0 + PI * 1.2, 24, accent, 3.0, true)  # 기다리는 쪽에 도는 고리
+	var x0 := a.x + 40.0
+	var x1 := b.x - 40.0
+	for i in 9:
+		c.draw_circle(Vector2(lerpf(x0, x1, i / 8.0), y), 1.5, Color(1, 1, 1, 0.18))
+	for i in 3:
+		var t := fposmod(now * 0.6 + i / 3.0, 1.0)
+		var back := i == 1  # 하나는 되돌아오는 답
+		var px := lerpf(x0, x1, 1.0 - t if back else t)
+		c.draw_circle(Vector2(px, y), 4.0, Color(accent, sin(t * PI)))
+	c.draw_string(font, Vector2(0, y + 52), "나", HORIZONTAL_ALIGNMENT_CENTER, w * 0.48, 14, Color(1, 1, 1, 0.55))
+	var right := ("호스트 " + _mp_name(1)) if wait_host else "중개 서버"
+	c.draw_string(font, Vector2(w * 0.52, y + 52), right, HORIZONTAL_ALIGNMENT_CENTER, w * 0.48, 14, Color(1, 1, 1, 0.55))
+	# 지금 하는 일
+	var dots := ".".repeat(1 + int(now * 2.5) % 3)
+	var title: String = ["중개 서버에 접속하는 중", mp_load_msg if not ws_open or mp_load_host else "방을 찾는 중", "호스트와 직접 연결하는 중"][cur]
+	if cur == 1 and mp_load_host:
+		title = "방을 만드는 중"
+	c.draw_string(font, Vector2(0, 132), title + dots, HORIZONTAL_ALIGNMENT_CENTER, w, 22, Color.WHITE)
+	# 단계: 끝난 것 초록 ✓, 지금 것 파랑, 남은 것 흐리게
+	var fs := 15
+	var parts: Array = []
+	var total := 0.0
+	for i in steps.size():
+		var tx: String = ("✓ " if i < cur else "%d " % (i + 1)) + steps[i]
+		var tw := font.get_string_size(tx, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		parts.append([tx, tw, Color(0.5, 1, 0.55) if i < cur else (accent if i == cur else Color(1, 1, 1, 0.35))])
+		total += tw + (34.0 if i < steps.size() - 1 else 0.0)
+	var sx := (w - total) * 0.5
+	for i in parts.size():
+		c.draw_string(font, Vector2(sx, 162), parts[i][0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, parts[i][2])
+		sx += parts[i][1]
+		if i < parts.size() - 1:
+			c.draw_line(Vector2(sx + 9, 157), Vector2(sx + 25, 157), Color(1, 1, 1, 0.25), 1.5)
+			sx += 34.0
+	# 호스트 기다림: 남은 시간 막대 (Mp.WAIT_JOIN초가 지나면 실패로 돌아감)
+	if wait_host:
+		var el := clampf((Time.get_ticks_msec() - mp.joined_ms) / 1000.0, 0.0, Mp.WAIT_JOIN)
+		var bar := Rect2(w * 0.2, 180, w * 0.6, 5)
+		c.draw_rect(bar, Color(1, 1, 1, 0.1))
+		c.draw_rect(Rect2(bar.position, Vector2(bar.size.x * el / Mp.WAIT_JOIN, bar.size.y)), accent if el < 10.0 else Color(1, 0.75, 0.35))
+		c.draw_string(font, Vector2(bar.end.x + 10, 187), "%d / %d초" % [int(el), int(Mp.WAIT_JOIN)], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 1, 0.5))
+		if el >= 8.0:
+			c.draw_string(font, Vector2(0, 210), "오래 걸리면 두 기기의 인터넷·방화벽을 확인해 보세요", HORIZONTAL_ALIGNMENT_CENTER, w, 14, Color(1, 1, 1, 0.5))
 
 
 ## 호스트 [시작]: 씨앗·맵·규칙을 정해 모두에게 보내고 함께 시작한다.

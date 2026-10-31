@@ -33,10 +33,20 @@ func _initialize():
 		func(): _snap("mp_title"); main._toggle_mp_lobby(),
 		func():
 			_snap("mp_lobby")
+			main.mp_load_msg = "방에 들어가는 중"  # 접속 화면 (중개 서버 단계): 연결 없이 그리기만
+			main.mp_load_host = false
+			main.mp_load_view.visible = true
+			main.mp_host_box.visible = false
+			main.mp_join_box.visible = false
+			main.mp_desc.visible = false
+			main.mp_status.text = "",
+		func():
+			_snap("mp_connecting")
+			main.mp_load_view.visible = false
 			main.mp.my_id = 2  # 참가자: 방에 들어왔지만 호스트와 아직 안 이어짐 → 도는 고리
 			main.mp.code = "K7QX2M"
 			main.mp.mode = mode
-			main.mp.joined_ms = Time.get_ticks_msec() - 6000
+			main.mp.joined_ms = Time.get_ticks_msec() - 9000
 			main.mp.peers = {1: {"name": "빈두장인", "pf": "windows", "conn": null, "ok": false}, 2: {"name": "민수", "pf": "ios", "conn": null, "ok": true}}
 			main._mp_refresh_lobby(),
 		func():
