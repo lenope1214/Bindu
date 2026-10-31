@@ -25,6 +25,7 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 | `ui_audit.gd` | `xvfb-run godot --path . --rendering-driver opengl3 --resolution 2556x1179 -s tools/ui_audit.gd -- <폴더> [글자 크기] [touch] [phone]`: 일곱 길목(점수 줄·DPS 표·버튼·웨이브 시작·안내 쪽)·큰 점수·오브젝트 14개·특성 8개·놓친 구체·긴 알림으로 꽉 채운 쉬는 시간·카드·웨이브 화면. `--resolution`으로 화면비(2400x1080 20:9, 2048x1536 4:3 등), phone이면 노치 안전 영역도 흉내 | PNG + `UI BAD <수>` |
 | `path_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/path_shot.gd -- <폴더> [글자 크기] [touch]`: 그린 궤적 카드·그리는 중·다 씀·쉬는 시간·마우스 올림·웨이브 중·새 갈래 스크린샷 | PNG |
 | `vary_shot.gd` | `xvfb-run godot --path . -s tools/vary_shot.gd -- <폴더> [글자 크기] [touch]`: 판마다 다른 흐름 점수 줄 칩 말풍선(이벤트·예고·봉인·적응) 스크린샷 | PNG |
+| `map_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/map_shot.gd -- <폴더> [글자 크기] [touch]`: 맵 규칙 준비 화면 맵 줄(맵 5개)·친화 카드 선택지·십자로 길목 띠·폭풍 바람 스크린샷 | PNG |
 | `mp_signal.gd` | `godot --headless -s tools/mp_signal.gd -- [포트=8790]`: 멀티플레이 중개 Worker(server/mp-worker)와 같은 약속의 로컬 서버. 게임·도구는 `BINDU_MP_URL=http://127.0.0.1:8790` | 로그 |
 | `mp_conn_test.gd` | 두 프로세스로 `-- host <코드 파일>` / `-- join <코드 파일>` (BINDU_MP_URL 필요): WebRTC로 이어져 메시지를 주고받고 핑을 재는지 | `MPCONN ok ... ping=Nms` / `MPCONN FAIL` |
 | `mp_play.gd` | 두(이상) 프로세스로 봇 판: `MP_ROLE=host\|join MP_MODE=vs\|coop MP_FILE=<코드 파일> MP_WAVES=8 MP_N=<참가 인원>` + BINDU_MP_URL. 대결은 웨이브마다 진입 방향이 같은지, 협동은 웨이브·점수·오브젝트가 같은지 | 웨이브마다 `MPW`·`MPDEALT`(주인별 피해), 끝에 `MPPLAY` |
@@ -37,7 +38,7 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 | `garden_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/garden_shot.gd -- <폴더> [글자 크기]`: 시작 화면 정원 줄·씨앗 나무 창·상점 4장·놓기·웨이브 중·물러난 뒤·특성 4장·리더보드 스크린샷 | PNG |
 | `perf` | 후반 부하(오브젝트 16개, 속성 3종·강화 10개씩, 구체 400개)를 1·4·8배속으로 600프레임씩 | 프레임 시간 평균·95%·최대, 화면 위 구체·탄·장판 수 |
 
-환경 변수: `SPEED`(배속, bots 4·long 8), `SMART`(기본 1: 사람처럼 중앙 가까이에서 길목 바깥쪽을 겨눠 배치, `SMART=0`은 예전 봇). `SKIP=n`: `SKIP_FROM`(기본 8)웨이브부터 웨이브 넘기기를 n개씩 쓰고, 멈추면 쌓인 것을 다 고른 뒤 다시 넘긴다.
+환경 변수: `SPEED`(배속, bots 4·long 8), `SMART`(기본 1: 사람처럼 중앙 가까이에서 길목 바깥쪽을 겨눠 배치, `SMART=0`은 예전 봇). `SKIP=n`: `SKIP_FROM`(기본 8)웨이브부터 웨이브 넘기기를 n개씩 쓰고, 멈추면 쌓인 것을 다 고른 뒤 다시 넘긴다. `MAPRULE=0`: 맵 규칙·친화 카드 끔 (맵별 켬·끔 비교, `MAP=<맵 id>`와 함께).
 
 봇은 쉬는 시간마다 진입 방향이 옮겨 가 아무 길목도 겨누지 않게 된 오브젝트를 비어 있는 길목으로 옮긴다(사람이 하듯이). 2026-10-30 판 길이 목표(중간값 12~15웨이브)는 이 봇 기준이다.
 

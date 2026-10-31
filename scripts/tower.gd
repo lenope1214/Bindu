@@ -534,11 +534,11 @@ func dmg_factor(rx := false) -> float:
 	var f := Rules.t("dmg_base") * (1.0 if rx else 1.0 + Rules.t("dmg_sum") * (total_level() - 1))
 	# 오브젝트 수 보너스: 설치된 오브젝트가 많을수록 모두 강해진다 (늘수록 덜 오름, Rules.crowd_bonus)
 	if main:
-		f *= 1.0 + Rules.crowd_bonus(main.towers.get_child_count())
+		f *= 1.0 + Rules.crowd_bonus(main.towers.get_child_count()) * MapRule.crowd_k()  # 평원: 무리 보너스 x2
 	if reso > 0 and main:
 		var near := 0
 		for o in main.towers.get_children():
-			if o != self and o.position.distance_to(position) < Rules.t("reso_r"):
+			if o != self and o.position.distance_to(position) < Rules.t("reso_r") * MapRule.reso_k():
 				near += 1
 		f *= 1.0 + Rules.t("reso_k") * reso * near
 	if m("pierce") > 0 and not pattern in Pat.PROJECTILE:
@@ -561,7 +561,15 @@ func dmg_factor(rx := false) -> float:
 		for e in elements:
 			f *= Patch.elem_mul.get(e, 1.0)
 	f *= Vary.tower_mul(elements, pattern)  # 판마다 다른 흐름: 웨이브 이벤트·적응 구체
+	f *= MapRule.tower_mul(elements, pattern)  # 맵 친화 속성·공격방식
+	if main and on_lane():
+		f *= 1.0 + Rules.t("map_cross_dmg")  # 십자로: 길목에서 길 따라 겨눔
 	return f
+
+
+## 십자로: 길 위에서 길을 따라 겨누는지 (혼불은 떠돌아서 제외)
+func on_lane() -> bool:
+	return pattern != "wisp" and main != null and MapRule.on_lane(position, dir, main.center(), main.lanes)
 
 
 ## hit용 피해 배율. 한 계산 조각 안에서는 변하지 않으니 조각마다 한 번만 계산한다
