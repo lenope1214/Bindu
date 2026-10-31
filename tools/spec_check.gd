@@ -27,6 +27,7 @@ func _fresh(w := 5) -> void:
 	Meta.rules = 1
 	Meta.map_id = "plain"
 	main._apply_rules()
+	Rules.tune["map_on"] = 0.0  # 맵 규칙은 _maps()에서만 켠다 (다른 검사의 피해·카드 수치가 평원 규칙에 흔들리지 않게)
 	Tower.dmg_mul = 1.0
 	Tower.spd_mul = 1.0
 	Tower.reach_mul = 1.0
@@ -94,6 +95,7 @@ func _initialize():
 	_perks()
 	_rules_modes()
 	_vary()
+	_maps()
 	_save_load()
 	_meta_misc()
 	_multiplayer()
@@ -309,6 +311,7 @@ func _mods_links() -> void:
 	u.free()
 	Meta.rules = 1
 	main._apply_rules()
+	Rules.tune["map_on"] = 0.0
 
 	ok("MOD-04", is_equal_approx(Pat.mod_fix("shot", "multi", 5.0), Pat.MOD_FIX["shot"]["multi"]) and is_equal_approx(Pat.mod_fix("shot", "rapid", 5.0), 1.0),
 		"강화 보정표: 5개면 표의 배율, 표에 없으면 1")
@@ -773,6 +776,96 @@ func _vary() -> void:
 	Rules.apply(1)
 	Vary.new_run(false)
 	ok("VARY-05", tut_off and patch_off and Vary.tower_mul({Elem.SOUL: 1}, "wisp") == 1.0, "첫 판·멀티플레이·정원은 끔, 패치 vary_on 0이면 끔")
+
+
+# ---------- 맵 규칙 ----------
+
+func _map_on(id: String) -> void:
+	_fresh(5)
+	Meta.map_id = id
+	Rules.tune["map_on"] = 1.0
+	main.lanes.clear()
+	main._roll_lanes()
+
+
+func _maps() -> void:
+	var c: Vector2 = main.center()
+	# 친화 카드: 회랑 얼음·물·독이 더 자주, 피해 +15%(속성 레벨 몫·공격방식)
+	_map_on("line")
+	_tower(c + Vector2(-200, 0))
+	_tower(c + Vector2(200, 0))
+	var cnt := {}
+	for i in 1500:
+		main._make_choices()
+		for cd in main.offer:
+			if cd["type"] == "elem":
+				cnt[cd["e"]] = cnt.get(cd["e"], 0) + 1
+	var aff := 0.0
+	var other := 0.0
+	for e in Elem.ALL:
+		if e in MapRule.aff("elem"):
+			aff += cnt.get(e, 0) / 3.0
+		else:
+			other += cnt.get(e, 0) / 11.0
+	var k := 1.0 + Rules.t("map_aff_dmg")
+	var mul_ok := is_equal_approx(MapRule.tower_mul({Elem.ICE: 2}, "lob"), k * k) and is_equal_approx(MapRule.tower_mul({Elem.ICE: 1, Elem.FIRE: 1}, "shot"), 1.0 + Rules.t("map_aff_dmg") / 2.0) and MapRule.tower_mul({Elem.FIRE: 1}, "wisp") == 1.0
+	ok("MAPX-01", aff > other * 1.25 and mul_ok and MapRule.card_aff({"type": "mod", "id": "size"}) and MapRule.aff_text() != "", "친화 카드: 더 자주(장당 %.0f vs %.0f), 피해 +15%%(속성 레벨 몫·공격방식)" % [aff, other])
+	Vary.new_run(true)
+	var sealed_aff: bool = Vary.sealed["elem"].any(func(e): return e in MapRule.aff("elem")) or Vary.sealed["pat"].any(func(p): return p in MapRule.aff("pat"))
+	ok("MAPX-07", not sealed_aff, "친화 카드는 봉인되지 않음")
+	Vary.new_run(false)
+
+	# 평원: 무리 보너스 x2, 공명 거리 +30%
+	_map_on("plain")
+	ok("MAPX-02", MapRule.crowd_k() == Rules.t("map_crowd") and is_equal_approx(MapRule.reso_k(), 1.0 + Rules.t("map_reso")), "평원: 무리 보너스 x%s, 공명 거리 x%.1f" % [MapRule.crowd_k(), MapRule.reso_k()])
+
+	# 소용돌이: 1~5웨이브 한 방향, 6~10 반대. 중앙 1.4배·바깥 0.8배
+	_map_on("spiral")
+	main.wave = 6
+	main._spawn_orb(Orb.Kind.NORMAL)
+	var o: Orb = main.orbs.get_child(main.orbs.get_child_count() - 1)
+	var flip_ok: bool = MapRule.swirl_sign(5) == 1.0 and MapRule.swirl_sign(6) == -1.0 and MapRule.swirl_sign(11) == 1.0 and o.swirl < 0.0
+	var spd_ok := is_equal_approx(MapRule.spiral_speed(60.0), Rules.t("map_spiral_in")) and is_equal_approx(MapRule.spiral_speed(900.0), Rules.t("map_spiral_out"))
+	ok("MAPX-03", flip_ok and spd_ok, "소용돌이: 보스 웨이브 뒤 회전 반전, 중앙 가까울수록 빠름")
+
+	# 십자로: 길 위에서 길 따라 겨누면 피해 +25%, 길 밖·가로로 겨누면 그대로
+	_map_on("cross")
+	var u := Vector2.from_angle(main.lanes[0])
+	var on_t := _tower(c + u * 200.0, Elem.FIRE, 1, u)
+	var cross_t := _tower(c + u * 330.0, Elem.FIRE, 1, u.orthogonal())
+	var off_t := _tower(c + u.rotated(PI / 4) * 200.0, Elem.FIRE, 1, u)
+	var ratio: float = on_t.dmg_factor() / cross_t.dmg_factor()
+	ok("MAPX-04", on_t.on_lane() and not cross_t.on_lane() and not off_t.on_lane() and is_equal_approx(ratio, 1.0 + Rules.t("map_cross_dmg")), "십자로: 길목에서 길 따라 겨눈 오브젝트 피해 x%.2f" % ratio)
+
+	# 폭풍: 진입 방향으로 정해지는 바람, 순풍 탄 +30% / 역풍 -15%
+	_map_on("storm")
+	var w := MapRule.wind_dir(main.lanes)
+	var same := MapRule.wind_dir(main.lanes.duplicate()) == w
+	var wt := _tower(c + Vector2(-150, 60), Elem.FIRE, 1, w)
+	var pr := Projectile.new()
+	pr.setup("shot", wt, 1, w)
+	var fast := is_equal_approx(pr.vel.length(), 440.0 * (1.0 + Rules.t("map_wind_with")))
+	pr.free()
+	ok("MAPX-05", w != Vector2.ZERO and same and fast and is_equal_approx(MapRule.wind_k(-w, w), 1.0 - Rules.t("map_wind_against")), "폭풍: 바람 방향(진입 방향으로 정해짐), 순풍 탄 빠름·역풍 느림")
+
+	# 회랑: 지나간 자리 장판 x2, 감속·밀치기 +30%
+	_map_on("line")
+	var lt := _tower(c + Vector2(-150, 0), Elem.POISON)
+	var z: Zone = main.spawn_zone("trail", 1, lt.position, lt)
+	z.trail("puddle")
+	var life_ok := is_equal_approx(z.max_life, Tower.LOB_LIFE * Rules.t("map_line_trail"))
+	var so := _orb(c + Vector2(300, 0), 50.0)
+	so.slow(0.8, 1.0)
+	var slow_ok := is_equal_approx(so.slow_factor, 1.0 - 0.2 * (1.0 + Rules.t("map_line_cc")))
+	ok("MAPX-06", life_ok and slow_ok, "회랑: 지나간 자리 장판 x%s, 감속 +30%%" % Rules.t("map_line_trail"))
+
+	# 끄기: 정원·패치 map_on 0
+	Garden.on = true
+	var g_off := not MapRule.on()
+	Garden.on = false
+	Rules.tune["map_on"] = 0.0
+	ok("MAPX-08", g_off and not MapRule.on() and MapRule.crowd_k() == 1.0 and MapRule.tower_mul({Elem.ICE: 1}, "lob") == 1.0, "정원·패치 map_on 0이면 맵 규칙·친화 끔")
+	_fresh(5)
 
 
 # ---------- 이어하기 ----------

@@ -102,6 +102,12 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 		if homing > 0.0 and max_travel >= 2000.0:
 			max_travel = HOMING_TRAVEL  # 끝까지 가는 관통탄(철구·관통 연사)이 유도로 전장 안을 맴돌며 끝없이 쫓지 않게
 	vel = d * speed
+	if tower.main:
+		# 폭풍: 바람을 탄 탄은 빠르고 멀리, 거스르면 느리고 짧게
+		var wk := MapRule.wind_k(d, MapRule.wind_dir(tower.main.lanes)) if MapRule.on() else 1.0
+		vel *= wk
+		if max_travel < 2000.0:
+			max_travel *= wk
 	position = tower.position + d * Tower.RADIUS
 	if k in ["blob", "log", "icebolt"]:
 		zone = tower.main.spawn_zone("trail", l, position, tower)
@@ -440,7 +446,8 @@ func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 		return false
 	if pierce_left > 0:
 		pierce_left -= 1
-		dmg *= Rules.pierce_hit  # 뚫고 나간 탄은 피해 절반
+		if not (is_instance_valid(owner_tower) and owner_tower.on_lane()):  # 십자로 길목: 줄지 않음
+			dmg *= Rules.pierce_hit  # 뚫고 나간 탄은 피해 절반
 		return false
 	if bounces > 0 and tw:
 		# 튕김: 아직 안 맞힌 가장 가까운 구체 쪽으로

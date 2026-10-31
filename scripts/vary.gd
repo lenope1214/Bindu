@@ -39,9 +39,14 @@ static func new_run(use: bool) -> void:
 	hist = []
 	if not on:
 		return
-	sealed["elem"] = _pick(Elem.ALL, int(Rules.t("vary_seal_elem")))
-	sealed["pat"] = _pick(Pat.PATTERN_IDS.slice(1), int(Rules.t("vary_seal_pat")))
-	sealed["link"] = _pick(Pat.LINK_IDS, int(Rules.t("vary_seal_link")))
+	# 맵 친화 카드(MapRule)는 봉인하지 않는다
+	sealed["elem"] = _pick(_no_aff("elem", Elem.ALL), int(Rules.t("vary_seal_elem")))
+	sealed["pat"] = _pick(_no_aff("pat", Pat.PATTERN_IDS.slice(1)), int(Rules.t("vary_seal_pat")))
+	sealed["link"] = _pick(_no_aff("link", Pat.LINK_IDS), int(Rules.t("vary_seal_link")))
+
+
+static func _no_aff(kind: String, arr: Array) -> Array:
+	return arr.filter(func(x): return not MapRule.is_aff(kind, x))
 
 
 static func _pick(arr: Array, n: int) -> Array:

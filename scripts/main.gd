@@ -10,6 +10,7 @@ const LINE_ORBS := 1.6  # 회랑 맵: 구체 수 배율 (방향이 하나고 길
 const LINE_HP := 2.4  # 회랑 맵: 구체 체력 배율
 const LINE_SPD := 1.6  # 회랑 맵: 구체 속도 배율 (길이 길어 오래 맞는 만큼)
 const SPIRAL_SWIRL := 0.6  # 소용돌이 맵: 구체가 중앙 방향에서 비껴 도는 각도(라디안)
+const MAP_AFF_COLOR := Color(0.55, 0.95, 0.85)  # 맵 친화 카드 표시 (MapRule)
 const CORE_MAX_HP := 10
 const MERGE_DIST := 30.0
 const SAVE_PATH := "user://best.cfg"
@@ -1402,9 +1403,14 @@ func _update_hud(force := false) -> void:
 		if ad != "":
 			txt += " · 적응"
 		items.append(["tag", vc, txt, vc, vl, false])
+	if MapRule.on():
+		# 맵 규칙·친화 카드 (시험): 칩은 규칙 이름, 말풍선에 규칙과 친화
+		var mc := MAP_AFF_COLOR
+		var rt := MapRule.rule_text()
+		items.append(["tag", mc, rt.get_slice(":", 0), mc, [["맵 규칙 (시험)", W], [rt, W], ["친화 카드 (자주 나옴, 속성·공격방식 피해 +%d%%): %s" % [roundi(Rules.t("map_aff_dmg") * 100), MapRule.aff_text()], D]], false])
 	var nt := towers.get_child_count()
 	if nt > 1:
-		var cb := roundi(Rules.crowd_bonus(nt) * 100)
+		var cb := roundi(Rules.crowd_bonus(nt) * MapRule.crowd_k() * 100)
 		items.append(["crowd", Color(0.6, 0.9, 0.65), "%d  +%d%%" % [nt, cb], Color(0.7, 0.95, 0.75), [["오브젝트 수 보너스: %d개, 피해 +%d%%" % [nt, cb], W]], false])
 	if phase == Phase.WAVE:
 		items.append(["orb", Color(0.85, 0.85, 0.9), str(to_spawn + _alive_count(orbs)), W, [["남은 구체", W]], false])
@@ -1627,6 +1633,8 @@ func _new_rest() -> void:
 		if wave > 0:
 			for msg in Vary.rest(wave):
 				_show_toast(msg)
+			if MapRule.is_map("spiral") and wave % 5 == 0:
+				_show_toast("회오리: 다음 웨이브부터 회전 방향이 반대로 바뀌어요")
 		_roll_lanes()
 		# 다음 웨이브 저항 속성: 12웨이브(버전 4는 8)부터 60% 확률
 		wave_resist = _wpick(Elem.ALL) if wave + 1 >= Rules.resist_from and wf() < 0.6 else -1
@@ -1806,7 +1814,7 @@ func _make_choices() -> void:
 			offer[offer.find(same[0])] = card
 	# 속성 카드(새 오브젝트를 놓을 수 있는 카드)는 최소 1장
 	if not offer.any(func(cd): return cd["type"] == "elem"):
-		offer[randi() % offer.size()] = {"type": "elem", "e": Vary.open("elem", Elem.ALL).pick_random(), "lv": 1}
+		offer[randi() % offer.size()] = {"type": "elem", "e": MapRule.pick("elem", Vary.open("elem", Elem.ALL)), "lv": 1}
 	if tutor:
 		_tutor_offer()
 	_show_offer()
@@ -1901,18 +1909,18 @@ func _roll_card() -> Dictionary:
 	var r := randf() * (we + wp + wm + wt + (Patch.num("cards", "link", 0.10) if _card_open("link") else 0.0))
 	if n == 0 or (wave == 0 and not Garden.on) or r < we:  # 정원은 웨이브 0으로 물러나도 다른 카드가 나오게
 		var lv := 2 if randf() < _lv2_chance() else 1
-		return {"type": "elem", "e": Vary.open("elem", Elem.ALL).pick_random(), "lv": lv}
+		return {"type": "elem", "e": MapRule.pick("elem", Vary.open("elem", Elem.ALL)), "lv": lv}
 	if r < we + wp:
-		return {"type": "pat", "id": Vary.open("pat", Pat.PATTERN_IDS.slice(1)).pick_random()}
+		return {"type": "pat", "id": MapRule.pick("pat", Vary.open("pat", Pat.PATTERN_IDS.slice(1)))}
 	if r < we + wp + wm:
-		return {"type": "mod", "id": Pat.MOD_IDS.pick_random()}
+		return {"type": "mod", "id": MapRule.pick("mod", Pat.MOD_IDS)}
 	if r < we + wp + wm + wt:
 		return {"type": "trig", "id": Pat.TRIG_IDS.pick_random()}
 	var ids: Array = Pat.LINK_IDS.duplicate() if n >= 2 else ["prism", "reso"]
 	ids = ids.filter(func(id): return not Vary.is_sealed("link", id))
 	if ids.is_empty():
-		return {"type": "elem", "e": Vary.open("elem", Elem.ALL).pick_random(), "lv": 1}
-	return {"type": "link", "id": ids.pick_random()}
+		return {"type": "elem", "e": MapRule.pick("elem", Vary.open("elem", Elem.ALL)), "lv": 1}
+	return {"type": "link", "id": MapRule.pick("link", ids)}
 
 
 ## 그린 궤적 카드를 넣을 오브젝트가 있는지 (궤적 레벨업, 또는 4개 미만일 때 직선탄).
@@ -1968,6 +1976,9 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 	if cc["tip"] != "" and not Meta.card_detail:
 		b.tooltip_text = cc["tip"]
 	b.set_meta("full", _card_full(card))
+	if MapRule.card_aff(card):
+		var dmg_up: bool = card["type"] in ["elem", "pat"]
+		rows.append({"t": "◆ %s 친화%s" % [Meta.map_name(), " · 피해 +%d%%" % roundi(Rules.t("map_aff_dmg") * 100) if dmg_up else ""], "fs": 12, "c": MAP_AFF_COLOR})
 	if Garden.on:
 		var pr := _garden_price_text(card)
 		rows.append({"t": pr[0], "fs": 13, "c": Color(0.6, 1, 0.75) if pr[1] else Color(1, 0.6, 0.55)})
@@ -3111,6 +3122,10 @@ func _update_preview() -> void:
 	else:
 		var bw := ceili(nw / 5.0) * 5
 		info_l.append(["다음 보스: 웨이브 %d (%d웨이브 뒤)" % [bw, bw - wave], Color(1, 0.75, 0.85)])
+	if MapRule.is_map("spiral") and wave > 0 and wave % 5 == 0:
+		info_l.append(["회오리: 이번 웨이브부터 회전 방향이 바뀜", MAP_AFF_COLOR])
+	if MapRule.is_map("storm"):
+		info_l.append(["뇌우: 바람 방향은 화면의 흰 화살표 (순풍 탄 +%d%%, 역풍 -%d%%)" % [roundi(Rules.t("map_wind_with") * 100), roundi(Rules.t("map_wind_against") * 100)], MAP_AFF_COLOR])
 	if Vary.on:
 		var vc := Color(0.75, 0.85, 1.0)
 		if not Vary.event.is_empty():
@@ -4920,6 +4935,44 @@ func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0) ->
 	return l
 
 
+## 맵 규칙 그림: 십자로 길목 띠(쉬는 시간), 폭풍 바람 줄기와 화살표.
+func _draw_map_rule(c: Vector2, now: float) -> void:
+	if title_label.visible:
+		return
+	if MapRule.is_map("cross") and phase != Phase.WAVE:
+		for a in lanes:
+			var u := Vector2.from_angle(a)
+			var e := _edge_point(c, u)
+			var n := u.orthogonal() * MapRule.LANE_W
+			draw_colored_polygon(PackedVector2Array([c + u * 60.0 + n, e + n, e - n, c + u * 60.0 - n]), Color(MAP_AFF_COLOR, 0.05))
+			draw_line(c + u * 60.0 + n, e + n, Color(MAP_AFF_COLOR, 0.18), 1.0)
+			draw_line(c + u * 60.0 - n, e - n, Color(MAP_AFF_COLOR, 0.18), 1.0)
+	var w := MapRule.wind_dir(lanes)
+	if w != Vector2.ZERO:
+		# 바람 줄기: 화면을 가로질러 흐르는 짧은 선 (웨이브 중에는 옅게)
+		var vr := arena()
+		var al := 0.16 if phase != Phase.WAVE else 0.07
+		for i in 24:
+			var h := Vector2(fmod(i * 0.6180339, 1.0), fmod(i * 0.4142135 + 0.13, 1.0))
+			var p := vr.position + Vector2(h.x * vr.size.x, h.y * vr.size.y)
+			var off := fmod(now * 90.0 + i * 37.0, 260.0)
+			p += w * off
+			p = Vector2(vr.position.x + fposmod(p.x - vr.position.x, vr.size.x), vr.position.y + fposmod(p.y - vr.position.y, vr.size.y))
+			draw_line(p, p + w * 34.0, Color(1, 1, 1, al * (1.0 - off / 260.0)), 2.0)
+		# 화살표: 중앙 위
+		var at := c + Vector2(0, -150.0)
+		var col := Color(1, 1, 1, 0.55 if phase != Phase.WAVE else 0.25)
+		draw_line(at - w * 40.0, at + w * 30.0, col, 4.0)
+		draw_colored_polygon(PackedVector2Array([at + w * 46.0, at + w * 22.0 + w.orthogonal() * 12.0, at + w * 22.0 - w.orthogonal() * 12.0]), col)
+
+
+## 시작 화면 맵 줄: 맵 규칙·친화 카드 (시험)
+func _map_rule_lines() -> String:
+	if not MapRule.on():
+		return ""
+	return "%s (시험)\n친화: %s\n" % [MapRule.rule_text(), MapRule.aff_text()]
+
+
 func _refresh_menu() -> void:
 	var m: Dictionary = Meta.MAPS[Meta.map_id]
 	var keep := Garden.boosted
@@ -4931,7 +4984,7 @@ func _refresh_menu() -> void:
 	garden_btn.get_parent().visible = Meta.games > 0 or Garden.seeds_total > 0  # 첫 판 뒤에
 	_refresh_garden_menu()
 	# 폰: 맵 설명 줄은 뺀다 (도움말·도감에 있고, 줄이 많으면 시작 화면 전체가 줄어 버튼이 작아진다)
-	map_label.text = _kh("맵: %s  (←/→)\n%s최고 기록%s  웨이브 %d · 점수 %s" % [Meta.map_name(), "" if _phone() else m["desc"] + "\n", (" (쉽게 모드)" if Modes.easy() else "") + grow_tag, best[0], num(best[1])])
+	map_label.text = _kh("맵: %s  (←/→)\n%s최고 기록%s  웨이브 %d · 점수 %s" % [Meta.map_name(), "" if _phone() else m["desc"] + "\n" + _map_rule_lines(), (" (쉽게 모드)" if Modes.easy() else "") + grow_tag, best[0], num(best[1])])
 	flip_label.get_parent().visible = Meta.map_id == "line"
 	flip_label.text = _kh("구체가 오는 쪽: %s  (F)" % ("왼쪽 → 문은 오른쪽 끝" if Meta.line_flip else "오른쪽 → 문은 왼쪽 끝"))
 	var ra := [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", "(눌러서 바꾸기)" if touch_ui else "(↑/↓)", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 550.0, 18)]
@@ -6858,12 +6911,13 @@ func _orb_path(a: float, y := 0.0) -> PackedVector2Array:
 	var p := c + Vector2.from_angle(a) * _spawn_radius()
 	if Meta.map_id != "spiral":
 		return PackedVector2Array([p, c])
+	var sw := SPIRAL_SWIRL * MapRule.swirl_sign(wave if phase == Phase.WAVE else wave + 1)
 	var pts := PackedVector2Array([p])
 	for k in 600:
 		var to := c - p
 		if to.length() <= 60.0:
 			break
-		p += to.normalized().rotated(SPIRAL_SWIRL) * 4.0
+		p += to.normalized().rotated(sw) * 4.0
 		if k % 3 == 2:
 			pts.append(p)
 	pts.append(p)
@@ -6885,7 +6939,7 @@ func _spawn_orb(kind := -1, plan := {}) -> void:
 		kind = _roll_kind()
 	o.main = self
 	if Meta.map_id == "spiral":
-		o.swirl = SPIRAL_SWIRL
+		o.swirl = SPIRAL_SWIRL * MapRule.swirl_sign(wave)  # 회오리: 보스 웨이브가 끝나면 방향이 바뀐다
 	o.setup(kind, p["hp"], p["spd"])
 	o.resist_e = p["resist"]
 	o.sturdy = p["sturdy"]
@@ -8406,6 +8460,7 @@ func _draw() -> void:
 				var f := fmod(now * 0.25 + k / 5.0, 1.0)
 				draw_circle(tip - d * f * (L - 40.0), 2.5, Color(col, 0.5 * (1.0 - f)))
 
+	_draw_map_rule(c, now)
 	_draw_boss_path(now)
 	_draw_wind_rings()
 	# 누수: 구체가 들어온 화면 가장자리가 붉게 번진다 (어느 길목이 뚫렸는지)

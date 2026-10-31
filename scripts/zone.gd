@@ -79,6 +79,7 @@ func trail(s: String) -> void:
 		radius = Tower.lob_r(level); max_life = Tower.LOB_LIFE; dps = Tower.LOB_DPS
 		if is_instance_valid(owner_tower):
 			radius *= owner_tower.sz()
+	max_life *= MapRule.trail_k()  # 회랑: 지나간 자리 장판이 오래 남는다
 	life = max_life
 	position = Vector2.ZERO
 

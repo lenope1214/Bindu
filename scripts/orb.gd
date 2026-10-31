@@ -242,7 +242,8 @@ func step(delta: float) -> void:
 	if root_timer > 0.0 or stagger_t > 0.0:
 		mult = 0.0
 	if swirl != 0.0 and position.distance_to(target) > 60.0:
-		# 소용돌이 맵: 중앙을 향하되 옆으로 비껴 나선을 그린다
+		# 소용돌이 맵: 중앙을 향하되 옆으로 비껴 나선을 그린다. 중앙에 가까울수록 빨라진다 (MapRule 회오리)
+		mult *= MapRule.spiral_speed(position.distance_to(target))
 		position += (target - position).normalized().rotated(swirl) * speed * mult * delta
 	else:
 		position = position.move_toward(target, speed * mult * delta)
@@ -363,6 +364,7 @@ func resist_mul(els: Dictionary) -> float:
 
 
 func slow(factor: float, duration: float) -> void:
+	factor = 1.0 - (1.0 - factor) * MapRule.cc_k()  # 회랑: 감속 +30%
 	if sturdy and silence_t <= 0.0:
 		factor = lerpf(factor, 1.0, 0.5)
 		duration *= 0.5
@@ -408,6 +410,7 @@ func stagger(dist: float) -> void:
 
 ## 밀기: 중앙 반대쪽으로 밀리는 만큼은 밀림 여유에서 빠진다(옆·안쪽은 그대로).
 func push(v: Vector2) -> void:
+	v *= MapRule.cc_k()  # 회랑: 밀치기 +30%
 	if sturdy and silence_t <= 0.0:
 		v *= 0.5
 	var away := (position - target).normalized()
