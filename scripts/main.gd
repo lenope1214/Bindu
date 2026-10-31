@@ -50,6 +50,7 @@ var aim_right := false  # 오브젝트를 우클릭한 채 끌어 방향을 정�
 var box_start := Vector2.ZERO
 var cards_hidden := false  # 선택지를 내려 필드를 보는 중
 var hide_btn: Button
+var card_detail_btn: Button  # 선택지 카드 [자세히] 켜기·끄기 (Meta.card_detail)
 var move_orig_pos := Vector2.ZERO
 var move_orig_dir := Vector2.RIGHT
 var move_return := Phase.CHOOSE  # 옮기기를 끝내면 돌아갈 단계
@@ -154,6 +155,8 @@ var banner_queue: Array = []  # 앞 글자가 떠 있는 동안 들어온 글자
 var choice_box: HBoxContainer
 const CARD_MAX_H := 250.0  # 선택지 카드 최대 높이 (넘으면 글자를 줄인다)
 var over_label: Label
+var over_card: Control  # 게임 오버 그림 카드 (over_data를 그림)
+var over_data := {}
 var legend: Label
 var bar_box: HBoxContainer  # 오른쪽 아래 버튼 줄
 var reroll_btn: Button
@@ -196,12 +199,13 @@ const PERKS := [
 	{"id": "core", "name": "단단한 중앙", "desc": "중앙 최대 체력 +3, 모두 회복"},
 	{"id": "reroll", "name": "넉넉한 선택", "desc": "쉬는 시간마다 새로고침 +1"},
 	{"id": "luck", "name": "행운", "desc": "속성 카드가 Lv2로 나올 확률 +20%"},
-	{"id": "regen", "name": "회복", "desc": "웨이브를 마칠 때마다 중앙 체력 +1"},
+	{"id": "regen", "name": "회복", "desc": "웨이브를 마칠 때마다 중앙 체력 +1 (겹쳐 고르면 하나당 +0.5)"},
 	{"id": "slow", "name": "끈적한 공간", "desc": "모든 구체 이동 속도 -8%"},
 	{"id": "harmony", "name": "조화", "desc": "속성을 여러 종류 겹쳐 생기는 공격 속도 감소가 절반으로"},
 	{"id": "coin", "name": "운명의 동전", "desc": "동전을 던지고 특성 3개를 새로 받아요. 앞면: 고른 특성이 두 번 적용. 뒷면: 한 번 적용 + 이번 쉬는 시간 새로고침 +2"},
 ]
 var perks := {}  # id → 고른 횟수
+var regen_acc := 0.0  # 회복 특성의 1이 안 되는 나머지 (다음 웨이브로)
 var perk_mode := false
 var perk_offer: Array = []
 var orb_speed_mul := 1.0
@@ -660,12 +664,15 @@ func _build_ui() -> void:
 	lsb.set_content_margin_all(8)
 	legend.add_theme_stylebox_override("normal", lsb)
 	legend.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
+	lsb.content_margin_left = 32.0
+	legend.draw.connect(_draw_legend_icons)
 	_refresh_legend()
 	root.add_child(legend)
 
 	reroll_btn = Button.new()
-	reroll_btn.text = "새로고침 (Q)"
+	reroll_btn.text = "1"
 	_icon_btn(reroll_btn, func(): return ["reroll", Color(0.6, 0.85, 1.0)])
+	_keycap(reroll_btn, "Q")
 	reroll_btn.set_anchors_preset(Control.PRESET_CENTER)
 	reroll_btn.position = Vector2(-170, 105)
 	reroll_btn.size = Vector2(340, 36)
@@ -695,6 +702,8 @@ func _build_ui() -> void:
 	skip_btn.set_anchors_preset(Control.PRESET_CENTER)
 	skip_btn.tooltip_text = "고르기를 미루고 웨이브를 연달아 진행합니다. 미룬 카드·새로고침·특성은 멈춘 뒤 한꺼번에 고릅니다\n중앙이 위험해지면(설정) 그 웨이브가 끝나고 멈춥니다"
 	skip_btn.pressed.connect(_on_skip)
+	_icon_btn(skip_btn, func(): return ["skip", Color(0.75, 0.9, 1.0)])
+	_keycap(skip_btn, "S")
 	skip_btn.visible = false
 	root.add_child(skip_btn)
 	skip_n_btn = Button.new()
@@ -716,8 +725,24 @@ func _build_ui() -> void:
 	hide_btn.focus_mode = Control.FOCUS_NONE
 	hide_btn.add_theme_font_size_override("font_size", 14)
 	hide_btn.pressed.connect(func(): _set_cards_hidden(not cards_hidden))
+	# 펼쳐 있을 때는 눈 그림만 (내려 두면 화면 위 "선택지 보기" 글)
+	_icon_btn(hide_btn, func(): return ["none" if cards_hidden else "eye", Color(1, 1, 1, 0.85)])
+	_keycap(hide_btn, func(): return "" if cards_hidden else "V")
 	hide_btn.visible = false
 	root.add_child(hide_btn)
+	card_detail_btn = Button.new()
+	card_detail_btn.set_anchors_preset(Control.PRESET_CENTER)
+	card_detail_btn.focus_mode = Control.FOCUS_NONE
+	card_detail_btn.add_theme_font_size_override("font_size", 14)
+	card_detail_btn.text = "자세히"
+	card_detail_btn.toggle_mode = true
+	card_detail_btn.button_pressed = Meta.card_detail
+	card_detail_btn.tooltip_text = "카드 설명 자세히 (Z): 켜면 설명 전체, 카드에 올리면(터치는 한 번 누르면) 위에 모든 내용"
+	card_detail_btn.toggled.connect(_set_card_detail)
+	_icon_btn(card_detail_btn, func(): return ["help", Color(1, 0.88, 0.5) if Meta.card_detail else Color(1, 1, 1, 0.7)])
+	_keycap(card_detail_btn, "Z")
+	card_detail_btn.visible = false
+	root.add_child(card_detail_btn)
 
 	var bar := HBoxContainer.new()
 	bar.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
@@ -875,19 +900,30 @@ func _build_ui() -> void:
 	pause_box = HBoxContainer.new()
 	pause_box.z_index = 21
 	pause_box.set_anchors_preset(Control.PRESET_CENTER)
-	pause_box.position = Vector2(-350, -150)  # 글 아래 (_process에서 글 높이에 맞춤)
-	pause_box.size = Vector2(700, 44)
+	pause_box.position = Vector2(-385, -150)  # 글 아래 (_process에서 글 높이에 맞춤)
+	pause_box.size = Vector2(770, 60)
 	pause_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	pause_box.add_theme_constant_override("separation", 12)
-	var pspecs := [["계속 (P)", _toggle_pause], ["판 끝내기 (E)", _end_run], ["시작 화면으로 (T)", _leave.bind(false)]]
+	# 글 대신 그림 버튼 (키 안내 글 두 줄을 없애고 키는 모서리에). 작은 버튼 셋은 그림만 (이름은 말풍선)
+	var pspecs := [["계속", _toggle_pause, "play", "P"], ["처음부터", _pause_restart, "restart", "R"], ["판 끝내기", _end_run, "flag", "E"], ["시작 화면", _leave.bind(false), "home", "T"]]
 	if OS.has_feature("pc"):
-		pspecs.append(["게임 끄기 (X)", _leave.bind(true)])  # 모바일은 운영체제가 앱을 닫는다
+		pspecs.append(["끄기", _leave.bind(true), "power", "X"])  # 모바일은 운영체제가 앱을 닫는다
+	pspecs += [["소리 (M)", _toggle_mute, "sound", "M", true], ["설정 (O)", _toggle_settings, "gear", "O", true]]
+	if OS.has_feature("pc"):
+		pspecs.append(["전체 화면 (F11)", _toggle_fullscreen, "full", "F11", true])
 	for spec in pspecs:
 		var b := Button.new()
-		b.text = spec[0]
-		b.custom_minimum_size = Vector2(170, 44)
+		var small: bool = spec.size() > 4
+		b.custom_minimum_size = Vector2(56 if small else 92, 60)
 		b.focus_mode = Control.FOCUS_NONE
 		b.pressed.connect(spec[1])
+		if small:
+			b.tooltip_text = spec[0]
+			_icon_btn(b, func(): return [("mute" if sfx.muted else "sound") if spec[2] == "sound" else spec[2], Color(1, 1, 1, 0.85)])
+			b.pressed.connect(_icon_toast.bind(b))
+		else:
+			_menu_glyph(b, spec[2], spec[0])
+		_keycap(b, spec[3])
 		pause_box.add_child(b)
 	pause_box.visible = false
 	root.add_child(pause_box)
@@ -925,17 +961,26 @@ func _build_ui() -> void:
 
 	over_label = Label.new()
 	over_label.set_anchors_preset(Control.PRESET_CENTER)
-	over_label.position = Vector2(-450, -150)
-	over_label.size = Vector2(900, 300)
+	over_label.position = Vector2(-450, 70)  # 그림 카드(over_card) 아래
+	over_label.size = Vector2(900, 150)
 	# 줄이 늘어도 가운데를 지키며 위아래로 자란다
 	over_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	over_label.grow_vertical = Control.GROW_DIRECTION_BOTH
+	over_label.grow_vertical = Control.GROW_DIRECTION_END
 	over_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	over_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	over_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	over_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # 최다 피해 오브젝트 이름 등이 길면 화면 밖으로 나가던 것: 900 안에서 접는다
-	over_label.add_theme_font_size_override("font_size", 26)
+	over_label.add_theme_font_size_override("font_size", 18)
+	over_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
 	over_label.visible = false
 	root.add_child(over_label)
+	# 게임 오버 그림 카드: 웨이브·점수 큰 칩, 처치·콤보·오브젝트 작은 칩, 새 업적 배지 (나머지 글은 아래 over_label)
+	over_card = Control.new()
+	over_card.set_anchors_preset(Control.PRESET_CENTER)
+	over_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	over_card.draw.connect(_draw_over_card)
+	over_card.add_to_group("keycap")  # 터치·마우스가 바뀌면 나가는 법 줄을 다시
+	over_card.visible = false
+	root.add_child(over_card)
 
 	_build_dps(root)
 	_build_menu(root)
@@ -1081,10 +1126,13 @@ func _dps_row(t: Tower, rank: int, total: float) -> Control:
 			dps_focus = null
 		row.queue_redraw())
 	var cells := [["%d" % rank, 18, HORIZONTAL_ALIGNMENT_RIGHT, Color(1, 1, 1, 0.55)],
-		[t.title(), 0, HORIZONTAL_ALIGNMENT_LEFT, col.lightened(0.35)],
+		["", 0],
 		["%.1f" % (t.dealt / wave_time), 52, HORIZONTAL_ALIGNMENT_RIGHT, Color(1, 0.9, 0.5)],
 		["%d%%" % roundi(share * 100.0), 36, HORIZONTAL_ALIGNMENT_RIGHT, Color(1, 1, 1, 0.7)]]
 	for c in cells:
+		if c[0] == "":
+			row.add_child(_dps_name(t, col))
+			continue
 		var l := Label.new()
 		l.text = c[0]
 		l.horizontal_alignment = c[2]
@@ -1109,6 +1157,31 @@ func _dps_row(t: Tower, rank: int, total: float) -> Control:
 		if b.has("pat:" + t.pattern) and b.size() > 1:
 			row.tooltip_text += "\n(직접 타격 안의 배율 몫은 추정)"
 	return row
+
+
+## 표 이름 칸: 글 대신 공격방식 그림 + 속성 그림(레벨 2 이상은 작은 숫자). 이름은 줄 말풍선에.
+func _dps_name(t: Tower, col: Color) -> Control:
+	var c := Control.new()
+	c.custom_minimum_size = Vector2(150, 22)
+	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	c.clip_contents = true
+	c.draw.connect(func():
+		var y := c.size.y / 2.0
+		Glyph.pat(c, t.pattern, Vector2(10, y), 8.0, col.lightened(0.5))
+		var x := 22.0
+		if t.plv > 1:
+			c.draw_string(ui_font, Vector2(x, y + 4.0), str(t.plv), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.6))
+			x += 9.0
+		x += 8.0
+		for e in t.order:
+			Glyph.elem(c, e, Vector2(x + 7.0, y), 7.0)
+			x += 16.0
+			if t.lv(e) > 1:
+				c.draw_string(ui_font, Vector2(x, y + 4.0), str(t.lv(e)), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.6))
+				x += 4.0 + 6.0 * str(t.lv(e)).length()
+			x += 3.0)
+	return c
 
 
 ## 판 전체 피해 출처 (모든 오브젝트 합).
@@ -1599,7 +1672,7 @@ func _update_skip_ui() -> void:
 	hint.visible = not (show_btn and hint.get_global_rect().intersects(skip_btn.get_global_rect()))
 	if show_btn:
 		var n := int(Meta.skip_n)
-		skip_btn.text = _kh("웨이브 %d개 넘기기 (S)" % n)
+		skip_btn.tooltip_text = "웨이브 %d개 넘기기 (S)\n고르기를 미루고 웨이브를 연달아 진행합니다. 미룬 카드·새로고침·특성은 멈춘 뒤 한꺼번에 고릅니다\n중앙이 위험해지면(설정) 그 웨이브가 끝나고 멈춥니다" % n
 		skip_n_btn.text = "×%d ▸" % n
 	skip_badge.visible = skip_left > 0 and phase in [Phase.WAVE, Phase.READY] and not title_label.visible
 	if skip_badge.visible:
@@ -1699,6 +1772,18 @@ func _card_open(k: String) -> bool:
 	return not tutor or wave + 1 >= TUTOR_OPEN[k]
 
 
+## 카드 [자세히] 켜기·끄기: 지금 선택지를 같은 카드로 다시 그린다 (새로 뽑지 않음).
+func _set_card_detail(on: bool) -> void:
+	Meta.card_detail = on
+	card_detail_btn.set_pressed_no_signal(on)
+	_save_best()
+	if phase == Phase.CHOOSE and not perk_mode and not offer.is_empty():
+		var sel := tap_sel
+		_show_offer()
+		tap_sel = sel
+		_tap_hover.call_deferred()
+
+
 ## 선택지 카드 버튼을 offer대로 다시 만든다.
 func _show_offer() -> void:
 	tap_sel = -1
@@ -1791,59 +1876,22 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 	b.add_theme_stylebox_override("normal", sb)
 	b.add_theme_stylebox_override("hover", sbh)
 	b.add_theme_stylebox_override("pressed", sbh)
-	var foot: Array = []  # 카드 아래 놓는 곳 줄 [아이콘, 글]
-	match card["type"]:
-		"cata":
-			if card["id"] == "elem":
-				b.text = "[%d] ★ 대격변: 속성 ★\n설치된 모든 오브젝트의 속성을\n하나씩 무작위로 다시 뽑는다\n같은 속성이 나오면 레벨 +1\n(희귀 1%%, 고르면 바로 발동)" % idx
-			else:
-				b.text = "[%d] ★ 대격변: 공격방식 ★\n모든 오브젝트의 공격방식을\n직선탄을 뺀 무작위로 바꾼다\n고정·직선탄도 바뀜, 레벨 유지\n(희귀 1%%, 고르면 바로 발동)" % idx
-		"elem":
-			var e: int = card["e"]
-			b.text = "[%d] 속성: %s%s\n추가 효과: %s\n형태 성질: %s" % [idx, Elem.NAMES[e], " Lv2" if card["lv"] == 2 else "", Elem.rider(e), Elem.TRAIT[e]]
-			foot = [["place_new", "새 오브젝트"], ["place_on", "겹치기" + (" %d종" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "")]]
-			var combos := _combos_for(e)
-			if not combos.is_empty():
-				b.text += "\n" + "\n".join(combos.slice(0, 2))
-		"pat":
-			var id: String = card["id"]
-			if id == "path":
-				b.text = "[%d] ★ 공격방식: 그린 궤적 (시험) ★\n탄이 직접 그린 길을 따라간다\n길이 400→500→600, 그 뒤 갈래 +1\n꺾기 %d번 · 오브젝트 %d개까지\n(희귀, 유도 못 넣음)" % [idx, Pat.PATH_BENDS, Pat.PATH_MAX]
-			else:
-				b.text = "[%d] 공격방식: %s\n%s" % [idx, Pat.pname(id), Pat.PATTERNS[id]["desc"]]
-			foot = [["place_on", "직선탄에: 고정 · 같은 것에: Lv+"]]
-			var fits := PackedStringArray()
-			for t in towers.get_children():
-				if t.pattern == id:
-					fits.append("%s Lv%d → Lv%d 가능" % [Pat.pname(id), t.plv, t.plv + 1])
-			if fits.is_empty() and not towers.get_children().any(func(t): return t.pattern == Pat.DEFAULT):
-				fits.append("넣을 수 있는 오브젝트 없음")
-			if not fits.is_empty():
-				b.text += "\n" + fits[0]
-		"mod":
-			var id: String = card["id"]
-			b.text = "[%d] 강화: %s\n%s" % [idx, Pat.MODS[id]["name"], Pat.mdesc(id)]
-			foot = [["place_on", "위에 놓기 · " + ("종류별 %d개" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "쌓을수록 절반")]]
-		"link":
-			var id: String = card["id"]
-			b.text = "[%d] 연계: %s\n%s" % [idx, Pat.LINKS[id]["name"], Pat.ldesc(id)]
-			foot = [["place_on", "오브젝트 위에 놓기"]]
-		"trig":
-			var id: String = card["id"]
-			b.text = "[%d] 발동: %s\n%s" % [idx, Pat.TRIGS[id]["name"], Pat.tdesc(id)]
-			foot = [["place_on", "위에 놓기 · 종류별 5개"]]
+	# 카드는 글 대신 그림 머리(종류 그림·이름·Lv 배지·번호 키)와 줄(앞에 그림)로 그린다 (_card_paint).
+	# 설명은 세 단계: 기본은 간소화, [자세히]를 켜면 조금 더, 자세히 + 올리기(터치는 한 번 누르기)면 카드 위 창에 전부 (_draw_card_full)
+	var cc := _card_content(card, 1 if Meta.card_detail else 0)
+	var head: Dictionary = cc["head"]
+	head["idx"] = idx
+	var rows: Array = cc["rows"]
+	var foot: Array = cc["foot"]
+	if cc["tip"] != "" and not Meta.card_detail:
+		b.tooltip_text = cc["tip"]
+	b.set_meta("full", _card_full(card))
 	if Garden.on:
 		var pr := _garden_price_text(card)
-		b.text += "\n" + pr[0]
+		rows.append({"t": pr[0], "fs": 13, "c": Color(0.6, 1, 0.75) if pr[1] else Color(1, 0.6, 0.55)})
 		if not pr[1]:
 			col = col.darkened(0.45)
-	_fit_card_text(b, b.text, 15 if offer.size() <= 3 else 13)
-	if not foot.is_empty():
-		# 놓는 곳은 카드 아래 한 줄 아이콘으로 (예전엔 두 줄 글이 카드마다 되풀이됨)
-		for st: StyleBoxFlat in [sb, sbh]:
-			st.content_margin_bottom = 24.0
-		b.custom_minimum_size.y += 18.0
-		b.draw.connect(_draw_card_foot.bind(b, foot, col))
+	_card_paint(b, head, rows, foot, col, 14, offer.size())
 	b.focus_mode = Control.FOCUS_NONE  # 다른 버튼처럼: Space·Enter가 카드를 고르지 않게
 	b.add_theme_color_override("font_color", col)
 	b.add_theme_color_override("font_hover_color", col.lightened(0.3))
@@ -1878,23 +1926,351 @@ func _draw_card_foot(b: Button, foot: Array, col: Color) -> void:
 		x += 18.0 + ui_font.get_string_size(f[1], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 12.0
 
 
-## 카드 글이 카드 안에 들어가게: 줄 수가 CARD_MAX_H를 넘으면 글자를 한 단계씩 줄인다 (최소 13).
-## 카드 높이는 글에 맞춰 170~CARD_MAX_H. 넘친 글이 카드 밖·아래 버튼 위로 삐져나오던 것.
-func _fit_card_text(b: Button, text: String, fs: int, count := -1) -> void:
-	var t := text
+## 카드 앞면 내용 {head, rows, foot, tip}. lvl 0 = 간소화(효과 이름·괄호 뺀 한 줄), 1 = 자세히(전체 설명).
+func _card_content(card: Dictionary, lvl: int) -> Dictionary:
+	var head := {"kind": card["type"], "name": ""}
+	var rows: Array = []
+	var foot: Array = []
+	var tip := ""
+	var dim := Color(1, 1, 1, 0.55)
+	match card["type"]:
+		"cata":
+			head["name"] = "대격변: " + ("속성" if card["id"] == "elem" else "공격방식")
+			if card["id"] == "elem":
+				rows = [{"t": "설치된 모든 오브젝트의 속성을 하나씩 무작위로 다시 뽑는다"}, {"t": "같은 속성이 나오면 레벨 +1"}]
+			else:
+				rows = [{"t": "모든 오브젝트의 공격방식을 직선탄을 뺀 무작위로 바꾼다"}, {"t": "고정·직선탄도 바뀜, 레벨 유지"}]
+			rows.append({"t": "희귀 1% · 고르면 바로 발동", "fs": 12, "c": dim})
+		"elem":
+			var e: int = card["e"]
+			head["name"] = Elem.NAMES[e]
+			head["e"] = e
+			if card["lv"] == 2:
+				head["lv"] = "Lv2"
+			rows = [{"i": "rider", "t": Elem.rider(e), "al": 0}, {"i": "trait", "t": Elem.TRAIT[e], "al": 0}]
+			foot = [["place_new", "새 오브젝트"], ["place_on", "겹치기" + (" %d종" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "")]]
+			var cf := _combo_parts(e)
+			if not cf["els"].is_empty():
+				rows.append({"els": cf["els"]})
+				tip = "생길 반응: " + ", ".join(cf["names"])
+			if cf["ups"] > 0:
+				rows.append({"chip": "Lv↑ %d곳" % cf["ups"], "i": "place_on"})
+		"pat":
+			var id: String = card["id"]
+			head["pat"] = id
+			if id == "path":
+				head["name"] = "그린 궤적"
+				head["badge"] = "시험"
+				rows = [{"t": "탄이 직접 그린 길을 따라간다"}, {"t": "길이 400→500→600, 그 뒤 갈래 +1"}, {"t": "꺾기 %d번 · 오브젝트 %d개까지" % [Pat.PATH_BENDS, Pat.PATH_MAX]}, {"t": "희귀 · 유도 못 넣음", "fs": 12, "c": dim}]
+			else:
+				head["name"] = Pat.pname(id)
+				rows = [{"t": Pat.PATTERNS[id]["desc"]}]
+			foot = [["place_on", "직선탄에: 고정 · 같은 것에: Lv+"]]
+			var fit := ""
+			for t in towers.get_children():
+				if t.pattern == id:
+					fit = "Lv%d → Lv%d" % [t.plv, t.plv + 1]
+					break
+			if fit != "":
+				rows.append({"chip": fit, "i": "place_on"})
+			elif not towers.get_children().any(func(t): return t.pattern == Pat.DEFAULT):
+				rows.append({"t": "넣을 수 있는 오브젝트 없음", "fs": 12, "c": Color(1, 0.6, 0.55)})
+		"mod":
+			var id: String = card["id"]
+			head["name"] = Pat.MODS[id]["name"]
+			rows = [{"t": Pat.mdesc(id)}]
+			foot = [["place_on", "위에 놓기 · " + ("종류별 %d개" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "쌓을수록 절반")]]
+		"link":
+			var id: String = card["id"]
+			head["name"] = Pat.LINKS[id]["name"]
+			rows = [{"t": Pat.ldesc(id)}]
+			foot = [["place_on", "오브젝트 위에 놓기"]]
+		"trig":
+			var id: String = card["id"]
+			head["name"] = Pat.TRIGS[id]["name"]
+			rows = [{"t": Pat.tdesc(id)}]
+			foot = [["place_on", "위에 놓기 · 종류별 5개"]]
+	if lvl == 0:
+		rows = _card_simple(card, rows)
+		for f in foot:
+			f[1] = _short(f[1]).get_slice(" · ", 0)
+	return {"head": head, "rows": rows, "foot": foot, "tip": tip}
+
+
+## 간소화: 속성은 효과 이름 두 개(가시 · 자람)만, 나머지는 괄호를 뺀 짧은 설명. 짝 속성·레벨업 칩은 그대로.
+func _card_simple(card: Dictionary, rows: Array) -> Array:
+	var out: Array = []
+	if card["type"] == "elem":
+		var e: int = card["e"]
+		out.append({"pair": [["rider", Elem.rider(e).get_slice(":", 0)], ["trait", (Elem.TRAIT[e] as String).get_slice(":", 0)]]})
+		for r in rows:
+			if r.has("els") or r.has("chip"):
+				out.append(r)
+		return out
+	var first := true
+	for r in rows:
+		if not r.has("t"):
+			out.append(r)
+		elif r.has("fs"):
+			if r.get("c", Color.WHITE) != Color(1, 1, 1, 0.55):
+				out.append(r)  # "넣을 수 있는 오브젝트 없음" 같은 경고는 남긴다
+		elif first:
+			out.append({"t": _short(r["t"])})
+			first = false
+	return out
+
+
+## 괄호 속 덧붙임을 뺀 짧은 글.
+func _short(t: String) -> String:
+	return short_re.sub(t, "", true).strip_edges()
+
+
+## 자세히 + 올리기 창의 줄 [[글, 색]]: 앞면에 줄인 것까지 전부.
+func _card_full(card: Dictionary) -> Array:
+	var W := Color(1, 1, 1, 0.9)
+	var D := Color(1, 1, 1, 0.6)
+	var out: Array = []
+	match card["type"]:
+		"elem":
+			var e: int = card["e"]
+			out.append(["추가 효과 · " + Elem.rider(e), Elem.COLORS[e].lightened(0.3)])
+			out.append(["형태 성질 · " + Elem.TRAIT[e], W])
+			var seen := {}
+			for t in towers.get_children():
+				if not t.can_take({"type": "elem", "e": e}):
+					continue
+				for r in Elem.new_reactions(t.elements, e):
+					if seen.has(r["id"]):
+						continue
+					seen[r["id"]] = true
+					var o: int = r["b"] if r["a"] == e else r["a"]
+					out.append(["반응 %s (+%s) · %s" % [r["name"], Elem.NAMES[o], r["desc"]], r["color"]])
+			var ups: int = _combo_parts(e)["ups"]
+			if ups > 0:
+				out.append(["%s 레벨업 가능 %d곳" % [Elem.NAMES[e], ups], D])
+			out.append(["새 오브젝트로 놓거나 오브젝트 위에 겹치기" + (" (%d종까지)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else " (종류마다 공격 속도 -%d%%)" % roundi(Rules.tax_step * 100)), D])
+		"pat":
+			var id: String = card["id"]
+			if id == "path":
+				out.append(["탄이 직접 그린 길을 따라간다. 길이 400→500→600, 그 뒤 갈래 +1", W])
+				out.append(["꺾기 %d번 · 오브젝트 %d개까지 · 희귀 · 유도 못 넣음" % [Pat.PATH_BENDS, Pat.PATH_MAX], D])
+			else:
+				out.append([Pat.PATTERNS[id]["desc"], W])
+				var no := Pat.no_mods(id)
+				if not no.is_empty():
+					out.append(["못 넣는 강화(효과 없음): " + "·".join(no), D])
+			for t in towers.get_children():
+				if t.pattern == id:
+					out.append(["%s Lv%d → Lv%d 가능" % [Pat.pname(id), t.plv, t.plv + 1], D])
+			out.append(["직선탄 오브젝트에 넣으면 그 공격방식으로 고정, 같은 공격방식에 넣으면 레벨업", D])
+		"mod":
+			out.append([Pat.mdesc(card["id"]), W])
+			out.append(["오브젝트 위에 놓기 · " + ("종류별 %d개까지" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "쌓을수록 효과 절반씩"), D])
+		"link":
+			out.append([Pat.ldesc(card["id"]), W])
+			out.append(["오브젝트 위에 놓기", D])
+		"trig":
+			out.append([Pat.tdesc(card["id"]), W])
+			out.append(["오브젝트 위에 놓기 · 종류별 5개까지", D])
+		"cata":
+			if card["id"] == "elem":
+				out.append(["설치된 모든 오브젝트의 속성을 하나씩 무작위로 다시 뽑는다. 같은 속성이 나오면 레벨 +1", W])
+			else:
+				out.append(["모든 오브젝트의 공격방식을 직선탄을 뺀 무작위로 바꾼다. 고정·직선탄도 바뀌고 레벨은 유지", W])
+			out.append(["희귀 1% · 고르면 바로 발동", D])
+	return out
+
+
+## [자세히]를 켠 채 카드에 올리면(터치는 한 번 눌러 미리보기) 카드 위에 모든 내용 창.
+func _draw_card_full() -> void:
+	if not Meta.card_detail or phase != Phase.CHOOSE or perk_mode or cards_hidden or not choice_box.visible or get_tree().paused:
+		return
+	var cs := choice_box.get_children()
+	var hit: Button = null
+	for i in cs.size():
+		var b := cs[i] as Button
+		if b == null or b.is_queued_for_deletion() or not b.has_meta("full"):
+			continue
+		if (touch_ui and i == tap_sel) or (not touch_ui and b.is_hovered()):
+			hit = b
+	if hit == null or (hit.get_meta("full") as Array).is_empty():
+		return
+	var inv := ui_root.get_global_transform().affine_inverse()
+	var cr: Rect2 = inv * hit.get_global_rect()
+	var row: Rect2 = inv * choice_box.get_global_rect()
+	var top_lim := (hud.position.y + hud.size.y + 6.0) if hud.visible else 8.0
+	var bot_lim := info.size.y - 8.0
+	var w := 420.0
+	var fs := 14
+	var rows: Array = []
+	var lh := 0.0
 	var h := 0.0
-	var w := 230.0 if (offer.size() if count < 0 else count) <= 3 else 166.0  # 정원 상점·씨앗 나무 열매 특성은 4장
+	# 화면 높이에 안 들어가면 글자를 한 단계씩 줄인다 (최소 12)
 	while true:
-		t = _wrap_words(text, w - 10.0, fs)
-		# 버튼이 실제로 그리는 폭(테두리 안 w-4)으로 다시 재서 줄 수를 센다
-		h = ui_font.get_multiline_string_size(t, HORIZONTAL_ALIGNMENT_CENTER, w - 4.0, fs).y + 14.0
-		if h <= CARD_MAX_H or fs <= 13:
+		rows.clear()
+		for l in hit.get_meta("full"):
+			for t in _wrap_words(_kr_keep(l[0]), w - 20.0, fs).split("\n"):
+				rows.append([t, l[1]])
+		lh = fs + 6.0
+		h = rows.size() * lh + 14.0
+		if h <= bot_lim - top_lim or fs <= 12:
 			break
 		fs -= 1
-	b.text = t
-	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	b.add_theme_font_size_override("font_size", fs)
-	b.custom_minimum_size = Vector2(w, clampf(h, 170.0, CARD_MAX_H))
+	var x := clampf(cr.get_center().x - w / 2.0, 8.0, info.size.x - w - 8.0)
+	var y := row.position.y - h - (44.0 if touch_ui else 30.0)  # 카드 줄 위 (고르기 꼬리표·[적용] 위)
+	if y < top_lim:
+		y = clampf(row.end.y + 50.0, top_lim, bot_lim - h)  # 위에 자리가 없으면 아래 버튼 줄 밑, 화면 안으로
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.04, 0.05, 0.08, 0.96)
+	sb.border_color = Color(1, 0.85, 0.5, 0.5)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(6)
+	info.draw_style_box(sb, Rect2(x, y, w, h))
+	# 어느 카드의 내용인지: 카드 쪽으로 작은 꼭지
+	var tipx := clampf(cr.get_center().x, x + 12.0, x + w - 12.0)
+	if y < row.position.y:
+		info.draw_colored_polygon(PackedVector2Array([Vector2(tipx - 7, y + h), Vector2(tipx + 7, y + h), Vector2(tipx, y + h + 7)]), sb.bg_color)
+	for i in rows.size():
+		info.draw_string(ui_font, Vector2(x + 10.0, y + 7.0 + fs + i * lh), rows[i][0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, rows[i][1])
+
+
+## 그림 카드: 머리(종류 그림·이름·Lv 배지, 번호는 오른쪽 위 작은 키)와 줄들을 직접 그린다 (버튼 글은 비움).
+## head: kind·name·idx, 있으면 e(속성 그림)·pat(공격방식 그림)·lv·badge. rows: 줄마다 하나
+##   {t: 글, i: 앞 그림(Glyph.ui id), fs, c, al(0 왼쪽 · 기본 가운데)} · {els: [짝 속성]} · {chip: 글, i} · {big: 글, i} · {pips: 보유 수}
+## 높이는 내용에 맞춰 170~CARD_MAX_H, 넘치면 글자를 줄인다(최소 12).
+func _card_paint(b: Button, head: Dictionary, rows: Array, foot: Array, col: Color, base_fs := 14, count := 3) -> void:
+	b.text = ""
+	var cw := 230.0 if count <= 3 else 166.0  # 정원 상점·씨앗 나무 열매 특성은 4장
+	var fs := base_fs
+	var lay: Array = []
+	var h := 0.0
+	var pad := 54.0 + (24.0 if not foot.is_empty() else 8.0)
+	while true:
+		lay.clear()
+		h = 0.0
+		for r: Dictionary in rows:
+			var f: int = mini(r.get("fs", fs), fs)
+			var lh := 0.0
+			var t := ""
+			if r.has("els"):
+				lh = 24.0
+			elif r.has("chip"):
+				lh = 28.0
+			elif r.has("big"):
+				lh = 44.0
+			elif r.has("pips"):
+				lh = 20.0
+			elif r.has("pair"):
+				lh = 28.0
+			else:
+				var w := cw - 24.0 - (20.0 if r.has("i") else 0.0)
+				t = _wrap_words(_kr_keep(r["t"]), w, f)
+				lh = ui_font.get_multiline_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, w, f).y + 4.0
+			lay.append([r, t, f, lh])
+			h += lh
+		if h + pad <= CARD_MAX_H or fs <= 12:
+			break
+		fs -= 1
+	b.custom_minimum_size = Vector2(cw, clampf(h + pad, 170.0, CARD_MAX_H))
+	b.clip_contents = true
+	b.set_meta("card", [head, lay, h, not foot.is_empty()])
+	b.add_to_group("keycap")
+	b.draw.connect(_draw_card.bind(b, col))
+	if not foot.is_empty():
+		b.draw.connect(_draw_card_foot.bind(b, foot, col))
+
+
+func _draw_card(b: Button, col: Color) -> void:
+	var m: Array = b.get_meta("card")
+	var head: Dictionary = m[0]
+	var hc := col.lightened(0.3) if b.is_hovered() else col
+	Glyph.kind(b, head["kind"], Vector2(17, 17), 8.0, hc)
+	if not touch_ui:
+		Glyph.keycap(b, ui_font, Vector2(b.size.x - 7.0, 7.0), str(head["idx"]))
+	# 이름 줄: [그림] 이름 [Lv 배지]
+	var nfs := 19
+	var nm: String = head["name"]
+	while nfs > 13 and ui_font.get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, nfs).x > 150.0:
+		nfs -= 1
+	var nw := ui_font.get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, nfs).x
+	var lv: String = head.get("lv", head.get("badge", ""))
+	var lw := (ui_font.get_string_size(lv, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x + 14.0) if lv != "" else 0.0
+	var gw := 24.0 if head.has("e") or head.has("pat") else 0.0
+	var x := (b.size.x - gw - nw - (lw + 6.0 if lv != "" else 0.0)) / 2.0
+	var y := 40.0
+	if head.has("e"):
+		Glyph.elem(b, head["e"], Vector2(x + 9.0, y - 6.0), 9.0)
+	elif head.has("pat"):
+		Glyph.pat(b, head["pat"], Vector2(x + 9.0, y - 6.0), 9.0, hc)
+	b.draw_string(ui_font, Vector2(x + gw, y), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, nfs, hc)
+	if lv != "":
+		Icons.chip(b, ui_font, Rect2(x + gw + nw + 6.0, y - 16.0, lw, 20.0), "", col, lv, Color.WHITE, 12, Color(col, 0.25), Color(col, 0.6))
+	# 줄들: 머리와 놓는 곳 줄 사이 가운데
+	var foot_h := 24.0 if m[3] else 8.0
+	y = 52.0 + maxf(0.0, (b.size.y - 52.0 - foot_h - float(m[2])) / 2.0)
+	var tc := Color(1, 1, 1, 0.88)
+	for l in m[1]:
+		var r: Dictionary = l[0]
+		var f: int = l[2]
+		if r.has("els"):
+			var els: Array = r["els"]
+			var n := mini(els.size(), 6)
+			var x0 := (b.size.x - (n * 23.0 + 22.0 + (26.0 if els.size() > 6 else 0.0))) / 2.0
+			Glyph.kind(b, "rx", Vector2(x0 + 9.0, y + 11.0), 7.0, col)
+			for i in n:
+				var c := Vector2(x0 + 34.0 + i * 23.0, y + 11.0)
+				b.draw_circle(c, 9.5, Color(Elem.COLORS[els[i]], 0.2))
+				Glyph.elem(b, els[i], c, 6.5)
+			if els.size() > 6:
+				b.draw_string(ui_font, Vector2(x0 + 28.0 + n * 23.0, y + 16.0), "+%d" % (els.size() - 6), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 1, 1, 0.55))
+		elif r.has("chip"):
+			var tw := Icons.chip_w(ui_font, r["chip"], 12)
+			Icons.chip(b, ui_font, Rect2((b.size.x - tw) / 2.0, y + 3.0, tw, 22.0), r.get("i", ""), col, r["chip"], Color(1, 1, 1, 0.85), 12, Color(col, 0.12), Color(col, 0.35))
+		elif r.has("pair"):
+			# [그림 이름] [그림 이름] 가운데 한 줄 (간소화한 속성 카드)
+			var parts: Array = r["pair"]
+			var pfs := 16
+			var pw := 0.0
+			while true:  # 좁은 카드(정원 상점 4장)에서 넘치면 글자를 줄인다
+				pw = 0.0
+				for it in parts:
+					pw += 20.0 + ui_font.get_string_size(it[1], HORIZONTAL_ALIGNMENT_LEFT, -1, pfs).x + 16.0
+				if pw - 16.0 <= b.size.x - 12.0 or pfs <= 11:
+					break
+				pfs -= 1
+			if pw - 16.0 > b.size.x - 12.0:
+				# 그래도 넘치면(긴 효과 이름) 칸마다 같은 폭으로 자르고 …
+				var lim := (b.size.x - 12.0) / parts.size() - 36.0
+				parts = parts.map(func(it):
+					var t: String = it[1]
+					while t.length() > 2 and ui_font.get_string_size(t + "…", HORIZONTAL_ALIGNMENT_LEFT, -1, pfs).x > lim:
+						t = t.substr(0, t.length() - 1)
+					return [it[0], t + "…" if t != it[1] else t])
+				pw = 0.0
+				for it in parts:
+					pw += 20.0 + ui_font.get_string_size(it[1], HORIZONTAL_ALIGNMENT_LEFT, -1, pfs).x + 16.0
+			var px := (b.size.x - pw + 16.0) / 2.0
+			for it in parts:
+				Glyph.ui(b, it[0], Vector2(px + 7.0, y + 13.0), 7.0, Color(col, 0.9))
+				b.draw_string(ui_font, Vector2(px + 20.0, y + 19.0), it[1], HORIZONTAL_ALIGNMENT_LEFT, -1, pfs, tc)
+				px += 20.0 + ui_font.get_string_size(it[1], HORIZONTAL_ALIGNMENT_LEFT, -1, pfs).x + 16.0
+		elif r.has("pips"):
+			var n: int = r["pips"]
+			for i in n:
+				Glyph.kind(b, "perk", Vector2(b.size.x / 2.0 + (i - (n - 1) / 2.0) * 16.0, y + 10.0), 6.0, Color(col, 0.85))
+		elif r.has("big"):
+			var tw := ui_font.get_string_size(r["big"], HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
+			var x0 := (b.size.x - tw - 34.0) / 2.0
+			Glyph.ui(b, r["i"], Vector2(x0 + 12.0, y + 22.0), 12.0, Color.WHITE)
+			b.draw_string(ui_font, Vector2(x0 + 34.0, y + 31.0), r["big"], HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color.WHITE)
+		else:
+			var c: Color = r.get("c", tc)
+			if r.has("i"):
+				Glyph.ui(b, r["i"], Vector2(19.0, y + f * 0.7), 6.5, Color(col, 0.9))
+				b.draw_multiline_string(ui_font, Vector2(32.0, y + f), l[1], HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 44.0, f, -1, c)
+			else:
+				b.draw_multiline_string(ui_font, Vector2(12.0, y + f), l[1], HORIZONTAL_ALIGNMENT_CENTER, b.size.x - 24.0, f, -1, c)
+		y += float(l[3])
 
 
 ## 도감에서 선호한 카드면 꼬리표 글: 카드 자체, 또는 속성 카드가 선호한 반응을 지금 오브젝트에 만들 수 있을 때. 아니면 "".
@@ -2074,8 +2450,20 @@ func _show_perks() -> void:
 		b.add_theme_stylebox_override("hover", sbh)
 		b.add_theme_stylebox_override("pressed", sbh)
 		var have: int = perks.get(pk["id"], 0)
-		var coin: String = {"double": "\n\n동전 앞면: 두 번 적용", "reroll": "\n\n동전 뒷면: + 새로고침 %d" % int(_perk_val("coin"))}.get(coin_next, "")
-		_fit_card_text(b, "[%d] 특성: %s\n\n%s%s%s" % [i + 1, pk["name"], _perk_desc(pk), "\n\n(보유 %d)" % have if have > 0 else "", coin], 17 if perk_offer.size() <= 3 else 15, perk_offer.size())
+		var coin: String = {"double": "동전 앞면: 두 번 적용", "reroll": "동전 뒷면: + 새로고침 %d" % int(_perk_val("coin"))}.get(coin_next, "")
+		var rows: Array = []
+		var desc := _perk_desc(pk)
+		var big := _perk_big(pk["id"], desc)
+		if big.is_empty():
+			rows.append({"t": desc, "fs": 16})
+		else:
+			rows.append(big)
+			b.tooltip_text = desc
+		if have > 0:
+			rows.append({"pips": mini(have, 8)})
+		if coin != "":
+			rows.append({"t": coin, "fs": 13, "c": Color(1, 0.85, 0.45)})
+		_card_paint(b, {"kind": "perk", "name": pk["name"], "idx": i + 1}, rows, [], Color(1, 0.85, 0.45), 16, perk_offer.size())
 		b.add_theme_color_override("font_color", Color(1, 0.85, 0.45))
 		b.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
 		b.focus_mode = Control.FOCUS_NONE
@@ -2299,11 +2687,35 @@ func _apply_perk(id: String) -> void:
 
 
 ## 특성 수치 (온라인 패치 perks로 바뀔 수 있음). 설명 글도 같이 바꿔야 하면 perk_desc. coin: 동전 뒷면 새로고침 수
-const PERK_VALS := {"power": 0.15, "haste": 0.12, "reach": 0.12, "core": 3, "reroll": 1, "luck": 0.2, "regen": 1, "slow": 0.08, "harmony": 0.5, "coin": 2}
+const PERK_VALS := {"power": 0.15, "haste": 0.12, "reach": 0.12, "core": 3, "reroll": 1, "luck": 0.2, "regen": 1, "regen_more": 0.5, "slow": 0.08, "harmony": 0.5, "coin": 2}
+
+
+## 회복 특성이 이번 웨이브에 채우는 체력. 처음 고른 것은 regen(1), 겹친 것은 하나당 regen_more(0.5)이고, 1이 안 되는 나머지는 다음 웨이브로 넘긴다.
+func _regen_take() -> int:
+	regen_acc += _perk_val("regen") + _perk_val("regen_more") * (perks.get("regen", 0) - 1)
+	var h := int(regen_acc)
+	regen_acc -= h
+	return h
 
 
 func _perk_val(id: String) -> float:
 	return Patch.num("perks", id, PERK_VALS[id])
+
+
+## 숫자 하나로 끝나는 특성은 그림 + 숫자로 (설명 글은 말풍선). 패치로 설명이 바뀌어 숫자를 못 찾으면 글 그대로.
+const PERK_GLYPH := {"power": "dmg", "haste": "rate", "reach": "range", "slow": "fast", "regen": "core", "reroll": "reroll"}
+
+
+func _perk_big(id: String, desc: String) -> Dictionary:
+	if not PERK_GLYPH.has(id):
+		return {}
+	if id == "regen" and perks.get("regen", 0) > 0:  # 이미 있으면 겹친 회복 값
+		return {"big": "+%s/웨이브" % String.num(_perk_val("regen_more")), "i": PERK_GLYPH[id]}
+	var re := RegEx.create_from_string("[+-]\\d+(\\.\\d+)?%?")
+	var mm := re.search(desc)
+	if mm == null:
+		return {}
+	return {"big": mm.get_string() + ("/웨이브" if id == "regen" else ""), "i": PERK_GLYPH[id]}
 
 
 func _perk_desc(pk: Dictionary) -> String:
@@ -2358,11 +2770,11 @@ func _set_cards_hidden(h: bool) -> void:
 func _update_reroll_btn() -> void:
 	if Garden.on:
 		reroll_btn.visible = not cards_hidden and not perk_mode
-		reroll_btn.text = "새로고침 %d이슬 (Q)" % Garden.REROLL_COST
-		reroll_btn.tooltip_text = "상점 카드 새로 뽑기"
+		reroll_btn.text = "%d이슬" % Garden.REROLL_COST
+		reroll_btn.tooltip_text = "상점 카드 새로 뽑기 (Q): %d이슬" % Garden.REROLL_COST
 		return
 	reroll_btn.visible = rerolls_left > 0 and not cards_hidden  # 모드 '외길'은 늘 0
-	reroll_btn.text = _kh("새로고침 %d (Q)" % rerolls_left)
+	reroll_btn.text = str(rerolls_left)
 	reroll_btn.tooltip_text = "선택지 새로고침 (Q): 이번 쉬는 시간에 %d번 남음" % rerolls_left
 
 
@@ -2417,9 +2829,9 @@ func _free_lane() -> float:
 
 
 ## 설치된 오브젝트에 겹쳤을 때 생기는 특수 반응 안내 문구들.
-func _combos_for(e: int) -> PackedStringArray:
-	var out := PackedStringArray()
-	# 속성 이름을 늘어놓지 않고 짧게: 생길 반응 이름과 레벨업 가능한 곳 수만 (대상은 판에 표시)
+## 속성 카드: 넣으면 생길 반응의 짝 속성·반응 이름, 레벨업 가능한 곳 수.
+func _combo_parts(e: int) -> Dictionary:
+	var els: Array = []
 	var names := PackedStringArray()
 	var ups := 0
 	var card := {"type": "elem", "e": e}
@@ -2427,15 +2839,14 @@ func _combos_for(e: int) -> PackedStringArray:
 		if not t.can_take(card):  # 속성 종류 상한으로 못 넣는 오브젝트는 셈에서 뺀다
 			continue
 		for r in Elem.new_reactions(t.elements, e):
+			var o: int = r["b"] if r["a"] == e else r["a"]
+			if not els.has(o):
+				els.append(o)
 			if not names.has(r["name"]):
 				names.append(r["name"])
 		if t.elements.has(e):
 			ups += 1
-	if not names.is_empty():
-		out.append("반응: " + ", ".join(names.slice(0, 3)) + (" 외" if names.size() > 3 else ""))
-	if ups > 0:
-		out.append("%s 레벨업 가능 %d곳" % [Elem.NAMES[e], ups])
-	return out
+	return {"els": els, "names": names, "ups": ups}
 
 
 func _els_name(t: Tower) -> String:
@@ -2616,6 +3027,8 @@ func _draw_info() -> void:
 		if nw % 5 == 0:
 			boss_li = 0 if Meta.map_id == "line" or boss_plan.is_empty() else _lane_of(boss_plan["a"])
 		var fs := 18
+		# 폰: 배지가 7개까지 겹쳐 전장을 덮었다 → 수와 보스 왕관만, 섞여 나오는 종류는 점 하나(누르면 말풍선)
+		var compact := _phone()
 		for arr in _lane_arrows():
 			var li: int = arr[2]
 			var n: int = counts[li] if li < counts.size() else 0
@@ -2623,7 +3036,7 @@ func _draw_info() -> void:
 				n = spawn_count(nw) - (1 if nw % 5 == 0 else 0)
 			var txt := "×%d" % n
 			var tw := ui_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-			var nk := wave_kinds.size() + (1 if li == boss_li else 0)
+			var nk := (0 if compact else wave_kinds.size()) + (1 if li == boss_li else 0)
 			var w := 10.0 + tw + (6.0 + nk * 22.0 if nk > 0 else 0.0) + 8.0
 			var p: Vector2 = xf * (arr[0] - arr[1] * 60.0)
 			var r := Rect2(p - Vector2(w, 30.0) / 2.0, Vector2(w, 30.0))
@@ -2644,7 +3057,11 @@ func _draw_info() -> void:
 			var cy := r.get_center().y
 			info.draw_string(ui_font, Vector2(x, cy + fs * 0.36), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1, 0.88, 0.88, al))
 			x += tw + 6.0
-			for k in wave_kinds:
+			if compact and not wave_kinds.is_empty():
+				# 특수 구체가 섞이면 오른쪽 위 점 (처음 나오는 종류가 있으면 더 크게)
+				var fresh := wave_kinds.any(func(k): return k[2])
+				info.draw_circle(Vector2(r.end.x - 2.0, r.position.y + 2.0), 6.0 if fresh else 4.5, Color(1, 0.45, 0.45) if not fresh else Color(1, 0.85, 0.3))
+			for k in ([] if compact else wave_kinds):
 				Icons.draw(info, k[0], Vector2(x + 11.0, cy), 7.5, Color(k[1], k[1].a * al))
 				if k[2] and al >= 1.0:
 					# 처음 나오는 종류: 위에 작은 NEW
@@ -2684,6 +3101,7 @@ func _draw_info() -> void:
 		var r := Rect2(fx + 10.0, cb.position.y - 21.0, w, 24.0)
 		Icons.chip(info, ui_font, r, "", Color.WHITE, txt, Color(1, 0.88, 0.5), 15, Color(0.12, 0.1, 0.04, 0.97), Color(1, 0.82, 0.4, 0.8))
 		tip_rects.append([r, [["이번 쉬는 시간에 %d장 더 고를 수 있어요" % picks_left, Color(1, 0.9, 0.6)]]])
+	_draw_card_full()
 	# 말풍선: 마우스를 올린 칩·배지 (터치는 누른 것)
 	var m := info.get_local_mouse_position()
 	var hit := -1
@@ -2966,7 +3384,27 @@ func _icon_btn(b: Button, icon: Callable) -> void:
 			# 가운데 맞춘 글 바로 왼쪽
 			var tw := b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x
 			x = (b.size.x - tw) / 2.0 - 13.0
-		Icons.draw(b, ic[0], Vector2(x, b.size.y / 2.0), 8.5, ic[1]))
+		Glyph.ui(b, ic[0], Vector2(x, b.size.y / 2.0), 8.5, ic[1]))
+
+
+## 버튼 오른쪽 위 모서리에 작은 단축키 상자 (터치 화면에선 안 그림). key는 글 또는 글을 돌려주는 Callable.
+func _keycap(b: Button, key: Variant) -> void:
+	b.add_to_group("keycap")
+	b.draw.connect(func():
+		var k: String = key.call() if key is Callable else key
+		if not touch_ui and k != "":
+			Glyph.keycap(b, ui_font, Vector2(b.size.x - 3.0, 3.0), k, 9))
+
+
+## 메뉴 그림 버튼: 위에 그림, 아래 짧은 이름 (버튼 글은 비움).
+func _menu_glyph(b: Button, icon: String, label: String) -> void:
+	b.text = ""
+	b.draw.connect(func():
+		var hov := b.is_hovered()
+		var c := Color(1, 1, 1, 1.0 if hov else 0.9)
+		var fs := 13
+		Glyph.ui(b, icon, Vector2(b.size.x / 2.0, b.size.y * 0.4), 10.0, c)
+		b.draw_string(ui_font, Vector2(0, b.size.y - 7.0), label, HORIZONTAL_ALIGNMENT_CENTER, b.size.x, fs, Color(c, 0.75)))
 
 
 ## 터치는 말풍선(tooltip)을 볼 수 없어 글 없는 아이콘 버튼이 무엇을 바꿨는지 몰랐다: 누르면 이름·상태를 잠깐 띄운다.
@@ -3127,13 +3565,100 @@ func _game_over() -> void:
 	if mp_mode != "":
 		record = ""
 		md = "\n" + mp_rank if mp_rank != "" else ""
-	over_label.text = _kr_keep("%s · %s · %s\n웨이브 %d · 점수 %s%s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\n%s" % [("협동 끝" if mp_mode == "coop" else "탈락") if mp_mode != "" else "판 끝냄" if ended else "게임 오버", Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules], wave, num(score), record if record != "" or mp_mode != "" else "   (최고 웨이브 %d)" % best_wave, md, num(kills), best_combo, towers.get_child_count(), mvp, ach, "눌러서 시작 화면으로" if touch_ui else "클릭·R·Esc: 시작 화면으로"])
+	var head: String = ("협동 끝" if mp_mode == "coop" else "탈락") if mp_mode != "" else "판 끝냄" if ended else "게임 오버"
+	over_data = {"head": head, "sub": "%s · %s" % [Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules]], "wave": wave, "score": score, "record": record != "", "best_wave": best_wave if mp_mode == "" else -1,
+		"kills": kills, "combo": best_combo, "towers": towers.get_child_count(), "ach": new_achievements.duplicate()}
+	# 아래 글은 그림으로 못 줄인 것만 (모드·순위·최다 피해·피해 출처, 온라인 순위는 나중에 붙음)
+	over_label.text = _kr_keep((md + mvp).strip_edges())
+	over_card.visible = true
+	over_card.queue_redraw()
 	over_label.visible = true
 	_submit_run()
 	sfx.play("over", 0.0)
 	reroll_btn.visible = false
 	choice_box.visible = false
 	hint.text = ""
+
+
+## 게임 오버 그림 카드 (over_card 가운데가 화면 가운데 위쪽).
+func _draw_over_card() -> void:
+	if not over_label.visible or over_data.is_empty():
+		return
+	var d := over_data
+	var c := over_card
+	var W := 620.0
+	var x0 := -W / 2.0
+	var y := -210.0
+	# 업적 배지 줄 나누기를 먼저 해서 바탕 높이를 안다
+	var ach_rows: Array = []
+	var ach_w: Array = []
+	for a in d["ach"]:
+		var aw := ui_font.get_string_size(a, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 36.0
+		if ach_rows.is_empty() or ach_w[-1] + aw > W:
+			ach_rows.append([])
+			ach_w.append(0.0)
+		ach_rows[-1].append([a, aw])
+		ach_w[-1] += aw + 6.0
+	var bh := 84.0 + 96.0 + 50.0 + ach_rows.size() * 30.0 + 34.0
+	var bg := StyleBoxFlat.new()
+	bg.bg_color = Color(0.03, 0.04, 0.06, 0.82)
+	bg.set_corner_radius_all(12)
+	c.draw_style_box(bg, Rect2(x0 - 10.0, y - 6.0, W + 20.0, bh))
+	c.draw_string(ui_font, Vector2(x0, y + 34.0), d["head"], HORIZONTAL_ALIGNMENT_CENTER, W, 34, Color.WHITE)
+	var sw := ui_font.get_string_size(d["sub"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 24.0
+	Icons.chip(c, ui_font, Rect2(-sw / 2.0, y + 46.0, sw, 24.0), "", Color.WHITE, d["sub"], Color(1, 1, 1, 0.65), 14, Color(1, 1, 1, 0.06), Color(1, 1, 1, 0.12))
+	# 큰 칩 둘: 웨이브 · 점수
+	y += 84.0
+	for i in 2:
+		var r := Rect2(-196.0 + i * 204.0, y, 188.0, 62.0)
+		var gold := i == 1
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.18, 0.15, 0.08, 0.95) if gold else Color(0.1, 0.12, 0.17, 0.95)
+		sb.border_color = Color(1, 0.85, 0.4, 0.6) if gold else Color(0.5, 0.7, 1, 0.4)
+		sb.set_border_width_all(2)
+		sb.set_corner_radius_all(8)
+		c.draw_style_box(sb, r)
+		Icons.draw(c, "score" if gold else "wave", r.position + Vector2(30, 31), 13.0, Color(1, 0.85, 0.4) if gold else Color(0.6, 0.8, 1))
+		var txt := num(d["score"]) if gold else str(d["wave"])
+		var fs := 32
+		while fs > 18 and ui_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > 120.0:
+			fs -= 2
+		c.draw_string(ui_font, r.position + Vector2(54, 31 + fs * 0.36), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+	if d["record"]:
+		Icons.chip(c, ui_font, Rect2(132.0, y - 9.0, 64.0, 20.0), "", Color.WHITE, "최고!", Color(0.12, 0.09, 0.0), 12, Color(1, 0.85, 0.4), Color(1, 0.85, 0.4))
+	elif d["best_wave"] >= 0:
+		Icons.draw(c, "best", Vector2(-110.0, y + 76.0), 6.0, Color(1, 1, 1, 0.5))
+		c.draw_string(ui_font, Vector2(-100.0, y + 80.0), "최고 %d" % d["best_wave"], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 1, 1, 0.5))
+	# 작은 칩: 처치 · 최고 콤보 · 오브젝트
+	y += 110.0
+	var smalls := [["kill", num(d["kills"]), "처치"], ["combo", str(d["combo"]), "최고 콤보"], ["tower", str(d["towers"]), "오브젝트"]]
+	for i in smalls.size():
+		var cx := -130.0 + i * 130.0
+		Glyph.ui(c, smalls[i][0], Vector2(cx - 22.0, y), 9.0, Color(0.85, 0.9, 1))
+		c.draw_string(ui_font, Vector2(cx - 8.0, y + 7.0), smalls[i][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color.WHITE)
+		c.draw_string(ui_font, Vector2(cx - 50.0, y + 24.0), smalls[i][2], HORIZONTAL_ALIGNMENT_CENTER, 100.0, 11, Color(1, 1, 1, 0.45))
+	# 새 업적 배지 (줄이 넘치면 다음 줄)
+	y += 42.0
+	for ri in ach_rows.size():
+		var x: float = -(ach_w[ri] - 6.0) / 2.0
+		for it in ach_rows[ri]:
+			var r := Rect2(x, y + ri * 30.0, it[1], 24.0)
+			Icons.chip(c, ui_font, r, "", Color.WHITE, "", Color.WHITE, 13, Color(0.15, 0.12, 0.2, 0.95), Color(0.8, 0.6, 1, 0.5))
+			Glyph.kind(c, "ach", r.position + Vector2(14, 12), 7.0, Color(1, 0.8, 0.4))
+			c.draw_string(ui_font, r.position + Vector2(26, 17), it[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
+			x += it[1] + 6.0
+	y += ach_rows.size() * 30.0
+	# 나가는 법
+	var dim := Color(1, 1, 1, 0.5)
+	if touch_ui:
+		c.draw_string(ui_font, Vector2(x0, y + 14.0), "눌러서 시작 화면으로", HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
+	else:
+		Glyph.ui(c, "click", Vector2(-46.0, y + 9.0), 7.0, dim)
+		c.draw_string(ui_font, Vector2(-34.0, y + 14.0), "· R · Esc", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, dim)
+		Glyph.ui(c, "home", Vector2(38.0, y + 9.0), 7.0, dim)
+	if absf(over_label.offset_top - (y + 34.0)) > 0.5:
+		over_label.offset_top = y + 34.0  # 남은 글은 카드 바로 아래 (둘 다 화면 가운데 기준)
+		over_label.offset_bottom = y + 184.0
 
 
 # ---------- 입력 ----------
@@ -3234,6 +3759,8 @@ func _input(event: InputEvent) -> void:
 					break
 	elif event is InputEventMouseMotion and event.device != InputEvent.DEVICE_ID_EMULATION:
 		touch_ui = false
+	if touch_ui != was_touch:
+		get_tree().call_group("keycap", "queue_redraw")  # 모서리 단축키 상자는 터치에서 숨긴다
 	if touch_ui != was_touch and legend:
 		_refresh_legend()  # 설명의 키 안내(도감 K)를 터치·마우스에 맞게
 
@@ -3305,12 +3832,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_F11:
 			_toggle_fullscreen()
 		elif event.keycode == KEY_R and get_tree().paused:
-			if restart_armed > 0.0:
-				get_tree().paused = false
-				_reload()
-			else:
-				restart_armed = 2.0
-				paused_label.text = _pause_text() + "\nR을 한 번 더 누르면 처음부터"
+			_pause_restart()
 		elif event.keycode == KEY_E and get_tree().paused:
 			_end_run()
 		elif event.keycode == KEY_T and get_tree().paused:
@@ -3337,6 +3859,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_on_skip()
 		elif event.keycode == KEY_V and phase == Phase.CHOOSE:
 			_set_cards_hidden(not cards_hidden)
+		elif event.keycode == KEY_Z and phase == Phase.CHOOSE and not perk_mode:
+			_set_card_detail(not Meta.card_detail)
 		elif event.keycode == KEY_D and phase in [Phase.CHOOSE, Phase.READY]:
 			_toggle_dps()
 		elif event.keycode == KEY_A and (event.ctrl_pressed or event.meta_pressed) and phase in [Phase.CHOOSE, Phase.READY] and not perk_mode:
@@ -3712,18 +4236,27 @@ func _build_menu(root: Control) -> void:
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 10)
 	box.add_child(row)
-	var specs := [["시작 (Enter)", _close_title], ["기록·업적", _toggle_records], ["도감 (K)", _toggle_codex], ["설정 (O)", _toggle_settings], ["도움말 (H)", func(): help_label.visible = not help_label.visible]]
+	# 시작 말고는 그림 + 짧은 이름 (단축키는 모서리 작은 키, 긴 이름은 말풍선)
+	var specs := [["시작", _close_title, "", ""], ["기록", _toggle_records, "records", "", "기록·업적"], ["도감", _toggle_codex, "book", "K", "도감 (K)"], ["설정", _toggle_settings, "gear", "O", "설정 (O)"], ["도움말", func(): help_label.visible = not help_label.visible, "help", "H", "도움말 (H)"]]
 	if OnlineConfig.SERVER_URL != "":
-		specs.insert(2, ["리더보드", _toggle_board])
+		specs.insert(2, ["순위", _toggle_board, "rank", "", "리더보드"])
 	for spec in specs:
 		var b := Button.new()
-		b.text = spec[0]
-		b.custom_minimum_size = Vector2(150 if specs.size() <= 4 else 120 if specs.size() == 5 else 100, 60 if _phone() else 44)
 		b.focus_mode = Control.FOCUS_NONE
 		b.pressed.connect(spec[1])
 		row.add_child(b)
+		if spec[2] == "":
+			b.text = spec[0]
+			b.custom_minimum_size = Vector2(170, 60 if _phone() else 54)
+			continue
+		b.custom_minimum_size = Vector2(78, 64 if _phone() else 54)
+		b.tooltip_text = spec[4]
+		_menu_glyph(b, spec[2], spec[0])
+		_keycap(b, spec[3])
 	row.get_child(0).add_theme_font_size_override("font_size", 20)
 	new_btn = row.get_child(0)
+	_icon_btn(new_btn, func(): return ["play", Color(1, 0.9, 0.6)])
+	_keycap(new_btn, func(): return "N" if continue_btn.visible else "Enter")
 	# 정원 모드와 씨앗 나무 (Garden)
 	var grow := HBoxContainer.new()
 	grow.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -3769,6 +4302,7 @@ func _build_menu(root: Control) -> void:
 	# 멀티플레이: 중개 서버 주소가 있고 WebRTC 확장이 읽힌 기기에서만
 	mp_btn = Button.new()
 	mp_btn.text = "멀티플레이 (대결·협동)"
+	_icon_btn(mp_btn, func(): return ["multi", Color(1, 1, 1, 0.85)])
 	mp_btn.custom_minimum_size = Vector2(630, 42)
 	mp_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	mp_btn.focus_mode = Control.FOCUS_NONE
@@ -3788,6 +4322,7 @@ func _build_menu(root: Control) -> void:
 	box.add_child(update_btn)
 	notes_btn = Button.new()
 	notes_btn.custom_minimum_size = Vector2(320, 52 if _phone() else 36)
+	_icon_btn(notes_btn, func(): return ["notes", Color(1, 1, 1, 0.8)])
 	notes_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	notes_btn.focus_mode = Control.FOCUS_NONE
 	notes_btn.pressed.connect(_toggle_notes)
@@ -3910,7 +4445,7 @@ func _build_menu(root: Control) -> void:
 		grid.add_theme_constant_override("v_separation", 4)
 		sv.add_child(grid)
 		cbox = grid
-	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 첫 글자)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"], ["웨이브 넘기기 중 중앙이 위험하면 멈춤 (체력 50%)", "skip_danger"], ["효과 줄이기 (장판·터지는 효과를 옅게, 많을수록 더)", "fx_low"]]:
+	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 속성 그림)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"], ["웨이브 넘기기 중 중앙이 위험하면 멈춤 (체력 50%)", "skip_danger"], ["효과 줄이기 (장판·터지는 효과를 옅게, 많을수록 더)", "fx_low"]]:
 		var cb := CheckButton.new()
 		cb.text = spec[0]
 		var key: String = spec[1]
@@ -4105,23 +4640,41 @@ func _cycle_map(d: int) -> void:
 
 
 ## 오른쪽 설명: 상한은 규칙 버전에 따라 다르다.
+const LEGEND_ICONS := ["pat", "elem", "mod", "link", "trig", "tower", "rx"]
+var legend_heads := PackedStringArray()
+var short_re := RegEx.create_from_string("\\s*\\([^)]*\\)")  # 카드 간소화: 괄호 덧붙임 빼기  # 그림이 붙는 앞줄들 (_draw_legend_icons)
+
+
+## 오른쪽 설명 줄 앞 그림. 글자를 키우면 줄이 접히므로 앞줄들이 몇 줄로 접히는지 세어 자리를 맞춘다.
+func _draw_legend_icons() -> void:
+	var lh := legend.get_line_height() + legend.get_theme_constant("line_spacing")
+	var fs := legend.get_theme_font_size("font_size")
+	var w := legend.size.x - 32.0 - 8.0
+	var row := 0
+	for i in mini(LEGEND_ICONS.size(), legend_heads.size()):
+		var c := Vector2(16.0, 8.0 + lh * row + legend.get_line_height() / 2.0)
+		row += _wrap_words(_kr_keep(legend_heads[i]), w, fs).count("\n") + 1
+		var id: String = LEGEND_ICONS[i]
+		if id == "tower":
+			Glyph.ui(legend, id, c, 6.5, Color(1, 1, 1, 0.7))
+		else:
+			Glyph.kind(legend, id, c, 7.0, Color(0.95, 0.85, 0.6))
+
+
 func _refresh_legend() -> void:
-	var cap_e := "한 오브젝트에 %d종까지(레벨은 무제한)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "종류 제한 없음, 종류마다 공격 속도 -%d%%" % roundi(Rules.tax_step * 100)
-	var cap_m := "종류별 %d개까지" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "제한 없음, 쌓을수록 효과 절반씩"
-	var lines := PackedStringArray([
-		"[오브젝트] 공격방식·속성·강화·연계·발동",
-		"· 새 오브젝트는 직선탄 + 속성 1개",
-		"· 공격방식: 직선탄에만 넣을 수 있고 이후 고정,",
-		"   같은 공격방식을 넣으면 레벨업",
-		"· 속성: 모든 공격에 추가 효과,",
-		"   " + cap_e,
-		"· 강화: 공격방식을 변형,",
-		"   " + cap_m,
-		"· 연계: 협공·프리즘·공명 (주변 오브젝트와 함께)",
-		"· 발동: 여진·선봉 (조건이 맞으면 추가 공격)",
-		"",
-		"[특수 반응] 두 속성이 함께 있으면 추가 공격 (발견\u00a0%d/%d)" % [Meta.codex.size(), Elem.REACTIONS.size()],
+	# 줄 앞 그림(카드 종류)은 legend.draw에서 (LEGEND_ICONS 순서). 그림이 있어 머리 글·긴 설명을 뺐다
+	var cap_e := "%d종까지" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "종류마다 공속 -%d%%" % roundi(Rules.tax_step * 100)
+	var cap_m := "종류별 %d개" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "쌓을수록 절반"
+	legend_heads = PackedStringArray([
+		"공격방식 · 직선탄에 1번, 같은 것 Lv↑",
+		"속성 · 추가 효과, " + cap_e,
+		"강화 · 공격 변형, " + cap_m,
+		"연계 · 주변 오브젝트와 함께",
+		"발동 · 조건이 맞으면 추가 공격",
+		"새 오브젝트 = 직선탄 + 속성 1",
+		"특수 반응 · 두 속성이 만나면 (%d/%d)" % [Meta.codex.size(), Elem.REACTIONS.size()],
 	])
+	var lines := legend_heads.duplicate()
 	# 반응이 91개라 만들어 본 반응만 한 줄에 세 개씩 (나머지는 개수만, 도감과 같은 기록).
 	# 줄 수는 legend_rx_rows까지: 많이 찾으면 설명이 화면 아래 설정 버튼까지 덮던 것 (_process에서 맞춤)
 	var rs: Array = Elem.REACTIONS.filter(func(r): return Meta.codex.has(r["id"]))
@@ -4141,7 +4694,7 @@ func _refresh_legend() -> void:
 		var left := Elem.REACTIONS.size() - rs.size()
 		lines.append("외 %d개%s (모두 도감%s)" % [rs.size() - shown, " · 못 만난 반응 %d개" % left if left > 0 else "", k])
 	elif rs.size() < Elem.REACTIONS.size():
-		lines.append("아직 못 만난 반응 %d개 (모든 두 속성 조합에 반응이 있어요, 도감%s)" % [Elem.REACTIONS.size() - rs.size(), k])
+		lines.append("못 만난 반응 %d개 (도감%s)" % [Elem.REACTIONS.size() - rs.size(), k])
 	legend.text = _kr_keep("\n".join(lines))
 	legend.size.y = 380.0  # Label은 글이 줄어도 저절로 작아지지 않는다 (글이 길면 다시 늘어남)
 
@@ -4902,7 +5455,7 @@ func _save_run() -> void:
 		"format": RUN_FORMAT, "version": ProjectSettings.get_setting("application/config/version", ""),
 		"map": Meta.map_id, "line_flip": Meta.line_flip, "rules": Meta.rules, "modes": Array(Modes.on), "wave": wave, "score": score, "kills": kills, "best_combo": best_combo,
 		"combo": combo, "combo_t": combo_t, "combo_bonus": combo_bonus,
-		"core_hp": core_hp, "core_max": core_max, "perks": perks.keys().map(func(k): return [k, perks[k]]), "orb_speed_mul": orb_speed_mul,
+		"core_hp": core_hp, "core_max": core_max, "perks": perks.keys().map(func(k): return [k, perks[k]]), "regen_acc": regen_acc, "orb_speed_mul": orb_speed_mul,
 		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
 		"rerolls_left": rerolls_left, "bonus_rerolls": bonus_rerolls, "picks_left": picks_left,
 		"skip_left": skip_left, "skip_total": skip_total, "skip_stop": skip_stop, "bank_picks": bank_picks, "bank_rerolls": bank_rerolls, "bank_perks": bank_perks, "coin_next": coin_next, "rest_ready": rest_ready,
@@ -4963,7 +5516,7 @@ func _refresh_continue() -> void:
 	if continue_btn.visible:
 		remote_btn.visible = false
 	new_armed = 0.0
-	new_btn.text = _kh("새로 시작 (N)" if continue_btn.visible else "시작 (Enter)")
+	new_btn.text = "새로 시작" if continue_btn.visible else "시작"
 	if continue_btn.visible:
 		continue_btn.text = "이어하기 (Enter)   웨이브 %d부터 · %s · %s" % [info["wave"] + 1, Meta.MAPS[info["map"]]["name"], Rules.NAMES[info["rules"]]]
 
@@ -5025,6 +5578,7 @@ func _continue_run() -> void:
 	for pr in pairs:
 		if pr is Array and pr.size() == 2 and PERKS.any(func(pk): return pk["id"] == pr[0]) and pr[1] is int and pr[1] > 0:
 			perks[pr[0]] = pr[1]
+	regen_acc = clampf(float(g.call("regen_acc", 0.0)), 0.0, 0.999)
 	orb_speed_mul = clampf(g.call("orb_speed_mul", 1.0), 0.05, 1.0)
 	Tower.dmg_mul = maxf(1.0, g.call("dmg_mul", 1.0))
 	Tower.spd_mul = maxf(1.0, g.call("spd_mul", 1.0))
@@ -5454,13 +6008,21 @@ func _toggle_pause() -> void:
 	pause_btn.text = _kh("계속 (P)" if get_tree().paused else "일시정지 (P)")
 
 
-## 일시정지 글: 지금 나가면 어디서부터 이어지는지도 알려 준다.
+## 일시정지에서 처음부터: 두 번 눌러야 (R 또는 버튼).
+func _pause_restart() -> void:
+	if restart_armed > 0.0:
+		get_tree().paused = false
+		_reload()
+	else:
+		restart_armed = 2.0
+		paused_label.text = _pause_text() + "\n처음부터를 한 번 더 누르면 새 판"
+
+
+## 일시정지 글: 지금 나가면 어디서부터 이어지는지도 알려 준다. 키는 아래 그림 버튼 모서리에.
 func _pause_text() -> String:
 	if Garden.on:
-		return "일시정지 (정원)\nP / Esc: 계속   T: 시작 화면%s\nM: 소리   O: 설정   F11: 전체 화면\n정원은 쉬는 시간마다 저장되고, 꺼 둔 동안에도 이슬이 쌓여요 (최대 %d시간치)" % ["   X: 끄기" if OS.has_feature("pc") else "", int(Garden.OFFLINE_MAX / 3600.0)]
-	var keys := "일시정지\nP / Esc: 계속   E: 판 끝내기   T: 시작 화면%s   R: 처음부터\nM: 소리   O: 설정   F11: 전체 화면" % ("   X: 끄기" if OS.has_feature("pc") else "")
-	if touch_ui:
-		keys = "일시정지"  # 터치는 아래 버튼으로 (키 안내는 뺀다)
+		return "일시정지 (정원)\n정원은 쉬는 시간마다 저장되고, 꺼 둔 동안에도 이슬이 쌓여요 (최대 %d시간치)" % int(Garden.OFFLINE_MAX / 3600.0)
+	var keys := "일시정지"
 	if phase == Phase.WAVE:
 		return keys + "\n지금 나가면 웨이브 %d 앞 쉬는 시간부터 이어집니다" % wave
 	return keys + "\n지금 나가도 이 쉬는 시간부터 이어서 할 수 있어요"
@@ -5871,7 +6433,7 @@ func _process(delta: float) -> void:
 	if new_armed > 0.0:
 		new_armed -= delta
 		if new_armed <= 0.0:
-			new_btn.text = _kh("새로 시작 (N)")
+			new_btn.text = "새로 시작"
 	toast_timer -= delta
 	toast.visible = toast_timer > 0.0
 	if guide_t > 0.0 and not get_tree().paused:
@@ -5983,10 +6545,11 @@ func _process(delta: float) -> void:
 	if boxing and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_finish_box()  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
 	hide_btn.visible = phase == Phase.CHOOSE and not title_label.visible and coin_stage == 0
+	card_detail_btn.visible = hide_btn.visible and not cards_hidden and not perk_mode
 	_update_skip_ui()
 	cancel_btn.visible = phase in [Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.DRAW] and not title_label.visible and not get_tree().paused
-	hide_btn.text = _kh(("▲ 선택지 보기" if cards_hidden else "▼ 필드 보기") + " (V)")
-	hide_btn.tooltip_text = "선택지를 다시 올린다" if cards_hidden else "선택지를 내리고 카드에 가려진 필드를 본다"
+	hide_btn.text = _kh("▲ 선택지 보기 (V)") if cards_hidden else ""
+	hide_btn.tooltip_text = "선택지를 다시 올린다" if cards_hidden else "필드 보기 (V): 선택지를 내리고 카드에 가려진 필드를 본다"
 	if speed_btn.visible:
 		speed_btn.queue_redraw()
 	# 펼쳐 있으면 카드 바로 아래 새로고침 버튼 옆, 내려 두면 화면 위쪽 가운데
@@ -6010,7 +6573,7 @@ func _process(delta: float) -> void:
 		floor_y += 44.0 + 48.0 + 6.0  # 왼쪽 위 DPS 표(머리 + 2줄, 나머지는 굴려 봄)를 덮지 않게
 	if guide_label.visible:
 		floor_y = maxf(floor_y, guide_label.position.y + guide_label.size.y + 26.0)  # 처음 안내 글이 카드 글 뒤로 겹치던 것 (고르기 꼬리표 자리 포함)
-	var need := ch + 8.0 + 36.0 + (42.0 if skip_btn.visible else 0.0) + (84.0 if Garden.on else 0.0)
+	var need := ch + 8.0 + 40.0 + (84.0 if Garden.on else 0.0)
 	var k := clampf(minf((lim - floor_y) / need, kw), 0.7, 1.0)
 	cx = minf(cx, room - 365.0 * k - ui_root.size.x / 2.0)
 	choice_box.offset_left = cx - 365.0
@@ -6021,26 +6584,28 @@ func _process(delta: float) -> void:
 	choice_box.offset_top = ctop - mid
 	choice_box.offset_bottom = choice_box.offset_top + ch
 	var by := choice_box.offset_top + ch * k + 8.0
-	var two := reroll_btn.visible
-	reroll_btn.offset_left = cx - 305.0
-	reroll_btn.offset_right = cx + 35.0
-	reroll_btn.offset_top = by
-	reroll_btn.offset_bottom = by + 36.0
-	var hx := 0.0 if cards_hidden else (cx + 175.0 if two else cx)
-	var hy := maxf(96.0, hud.position.y + hud.size.y + 8.0) if cards_hidden else by  # 내려 둘 때는 점수 줄 아래
-	hide_btn.offset_left = hx - 130.0
-	hide_btn.offset_right = hx + 130.0
-	hide_btn.offset_top = hy
-	hide_btn.offset_bottom = hy + (32.0 if cards_hidden else 36.0)
-	# 넘기기는 그 아래 한 줄: 버튼 + 넘길 웨이브 수
-	skip_btn.offset_left = cx - 305.0
-	skip_btn.offset_right = cx + 185.0
-	skip_btn.offset_top = by + 42.0
-	skip_btn.offset_bottom = by + 78.0
-	skip_n_btn.offset_left = cx + 195.0
-	skip_n_btn.offset_right = cx + 305.0
-	skip_n_btn.offset_top = by + 42.0
-	skip_n_btn.offset_bottom = by + 78.0
+	# 카드 밑 한 줄 그림 버튼: [새로고침 N] [필드 보기] [넘기기] [×N]. 없는 버튼 자리는 당겨 가운데 맞춘다
+	var row: Array = []
+	for bt in [reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn]:
+		if bt.visible and not (bt == hide_btn and cards_hidden):
+			row.append(bt)
+	var bw := {reroll_btn: 130.0 if Garden.on else 96.0, card_detail_btn: 104.0, hide_btn: 76.0, skip_btn: 76.0, skip_n_btn: 76.0}
+	var rw := -10.0
+	for bt in row:
+		rw += bw[bt] + 10.0
+	var bx := cx - rw / 2.0
+	for bt in row:
+		bt.offset_left = bx
+		bt.offset_right = bx + bw[bt]
+		bt.offset_top = by
+		bt.offset_bottom = by + 40.0
+		bx += bw[bt] + 10.0
+	if cards_hidden:
+		var hy := maxf(96.0, hud.position.y + hud.size.y + 8.0)  # 내려 둘 때는 점수 줄 아래
+		hide_btn.offset_left = -130.0
+		hide_btn.offset_right = 130.0
+		hide_btn.offset_top = hy
+		hide_btn.offset_bottom = hy + 32.0
 	_garden_layout(cx, by)
 	restart_armed = maxf(restart_armed - delta, 0.0)
 	end_armed = maxf(end_armed - delta, 0.0)
@@ -6140,7 +6705,7 @@ func _sim_step(delta: float) -> void:
 		sfx.play("clear", 0.0)
 		_show_mvp()
 		if perks.has("regen"):
-			core_hp = mini(core_hp + perks["regen"] * int(_perk_val("regen")), core_max)
+			core_hp = mini(core_hp + _regen_take(), core_max)
 		if wave % 5 == 0:
 			_submit_run(false)  # 5웨이브마다 진행 중 기록 (중간에 꺼도 서버에 남게)
 		_mp_wave_cleared()
@@ -6608,8 +7173,10 @@ func _draw_tooltip() -> void:
 	# Shift를 누르고 있으면 공격력·공격 속도·사거리 같은 수치를 자세히
 	var detail := (Input.is_key_pressed(KEY_SHIFT) or (touch_ui and tip_detail)) and not touch_move
 	tip = _th(tip)
+	var acts := tip != ""  # 쉬는 시간: 클릭·끌기 안내도
+	var ctrl := not touch_ui  # 마우스에선 조작 안내를 맨 아래 그림 줄로 (_draw_tip_ctrl)
 	if not touch_ui:
-		tip = (tip.trim_suffix(")") + " · " if tip != "" else "(") + ("Shift: 자세히)" if not detail else "Shift 떼기: 돌아가기)")
+		tip = "" if not detail else "(Shift 떼기: 돌아가기)"
 	if touch_move:
 		tip = "(새 자리 누르기: 옮기기 · 취소: 그대로)"
 	elif touch_aim:
@@ -6622,33 +7189,33 @@ func _draw_tooltip() -> void:
 		if tip != "":
 			lines.append([tip, Color(1, 1, 1, 0.6)])
 	var nhead := lines.size()
-	lines.append(["공격방식: %s Lv%d - %s" % [Pat.pname(t.pattern), t.plv, Pat.PATTERNS[t.pattern]["desc"]], Pat.pcolor(t.pattern).lightened(0.2)])
+	lines.append(["%s Lv%d - %s" % [Pat.pname(t.pattern), t.plv, Pat.PATTERNS[t.pattern]["desc"]], Pat.pcolor(t.pattern).lightened(0.2), "p:" + t.pattern])
 	var no := Pat.no_mods(t.pattern)
 	if not no.is_empty():
 		lines.append(["  못 넣는 강화(효과 없음): " + "·".join(no), Color(0.7, 0.7, 0.75)])
 	for e in t.order:
-		lines.append(["%s Lv%d: %s" % [Elem.NAMES[e], t.lv(e), Elem.rider(e)], Elem.COLORS[e]])
+		lines.append(["Lv%d %s" % [t.lv(e), Elem.rider(e)], Elem.COLORS[e], "e:%d" % e])
 	var ex := t.extras_text()
 	if ex != "":
-		lines.append(["강화·연계: " + ex, Color(1, 0.85, 0.45)])
-	lines.append(["피해 배율 x%.2f" % t.dmg_factor(), Color(1, 1, 1, 0.8)])
+		lines.append([ex, Color(1, 0.85, 0.45), "k:mod"])
+	lines.append(["×%.2f" % t.dmg_factor(), Color(1, 1, 1, 0.8), "dmg"])
 	var rxs := t.reactions()
 	if rxs.size() <= 5:
 		for r in rxs:
-			lines.append(["반응 %s: %s" % [r["name"], r["desc"]], r["color"]])
+			lines.append(["%s: %s" % [r["name"], r["desc"]], r["color"], "k:rx"])
 	else:
 		# 반응이 많으면 이름만 (설명까지 쓰면 화면 높이를 넘음)
-		lines.append(["반응 %d개: %s" % [rxs.size(), ", ".join(rxs.map(func(r): return r["name"]))], Color(1, 0.8, 0.95)])
+		lines.append(["반응 %d개: %s" % [rxs.size(), ", ".join(rxs.map(func(r): return r["name"]))], Color(1, 0.8, 0.95), "k:rx"])
 	if wave_time > 1.0:
 		var total := 0.0
 		for o in towers.get_children():
 			total += o.dealt
 		var share := " · 전체의 %d%%" % roundi(t.dealt / total * 100.0) if total > 0.0 and towers.get_child_count() > 1 else ""
-		lines.append(["%s 피해 %d (초당 %.1f%s)" % ["이번 웨이브" if phase == Phase.WAVE else "지난 웨이브", roundi(t.dealt), t.dealt / wave_time, share], Color(1, 0.9, 0.5)])
+		lines.append(["%s 피해 %d (초당 %.1f%s)" % ["이번 웨이브" if phase == Phase.WAVE else "지난 웨이브", roundi(t.dealt), t.dealt / wave_time, share], Color(1, 0.9, 0.5), "rank"])
 	_wind_buffs()  # 쉬는 시간에 새로 놓은 오브젝트도 바로 보이게
 	if t.wind_buff > 0.0:
-		lines.append(["바람 버프: 공격 속도 +%d%%" % roundi(t.wind_buff * 100.0), Elem.COLORS[Elem.WIND]])
-	lines.append([t.spd_line(), Color(0.6, 0.9, 1.0)])
+		lines.append(["바람 버프: 공격 속도 +%d%%" % roundi(t.wind_buff * 100.0), Elem.COLORS[Elem.WIND], "e:%d" % Elem.WIND])
+	lines.append([t.spd_line().trim_prefix("공격 속도 "), Color(0.6, 0.9, 1.0), "rate"])
 	var sp := t.spd_parts_text()
 	if sp != "":
 		lines.append(["  " + sp + " (모두 곱함)", Color(1, 1, 1, 0.65)])
@@ -6667,10 +7234,12 @@ func _draw_tooltip() -> void:
 					txt = "반응 %d개: %s 외 %d개" % [rxs.size(), ", ".join(names.slice(0, k)), names.size() - k]
 				lines[i] = [txt, lines[i][1]]
 		if _tip_rows(lines, maxw, fs) > avail and t.order.size() > 1:
-			var first := lines.find_custom(func(l): return (l[0] as String).begins_with(Elem.NAMES[t.order[0]] + " Lv"))
+			var first := lines.find_custom(func(l): return l.size() > 2 and l[2] == "e:%d" % t.order[0])
 			if first >= 0:
 				var riders: Array = t.order.map(func(e): return (Elem.RIDER[e] as String).get_slice(":", 0))
-				lines = lines.slice(0, first) + [["속성 효과: " + "·".join(riders) + (" (Shift: 자세히)" if not touch_ui else ""), Color(0.85, 0.85, 0.9)]] + lines.slice(first + t.order.size())
+				lines = lines.slice(0, first) + [["속성 효과: " + "·".join(riders), Color(0.85, 0.85, 0.9), "k:elem"]] + lines.slice(first + t.order.size())
+	# 줄 앞 그림(l[2])은 왼쪽 gut 칸에. 접힌 줄은 첫 줄에만 그림
+	var gut := 20.0 * z
 	var rows: Array = []
 	var w := 0.0
 	for l in lines:
@@ -6679,11 +7248,16 @@ func _draw_tooltip() -> void:
 			rows.append(l)
 			w = maxf(w, lw)
 			continue
+		var k := 0
 		for row in _wrap_words(l[0], maxw, fs).split("\n"):
-			rows.append([row, l[1]])
+			rows.append([row, l[1], l[2] if l.size() > 2 and k == 0 else ""])
 			w = maxf(w, ui_font.get_string_size(row, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+			k += 1
 	lines = rows
-	var h := lines.size() * lh + 10.0
+	if ctrl and not detail:
+		w = maxf(w, (250.0 if acts else 90.0) * z)
+	w += gut
+	var h := (lines.size() + (1 if ctrl and not detail else 0)) * lh + 10.0
 	var vw := view_rect()
 	var size := vw.end  # 화면 오른쪽 아래 끝 (월드 좌표. 폰은 전장 밖 양옆까지)
 	var p := t.position + Vector2(28, -h / 2)
@@ -6704,7 +7278,40 @@ func _draw_tooltip() -> void:
 	fx_layer.draw_rect(Rect2(p, Vector2(w + 16, h)), Color(0.05, 0.06, 0.09, 0.92))
 	fx_layer.draw_rect(Rect2(p, Vector2(w + 16, h)), Color(1, 1, 1, 0.2), false, 1.0)
 	for i in lines.size():
-		fx_layer.draw_string(ui_font, p + Vector2(8, 6 + fs + i * lh), lines[i][0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, lines[i][1])
+		fx_layer.draw_string(ui_font, p + Vector2(8 + gut, 6 + fs + i * lh), lines[i][0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, lines[i][1])
+		if lines[i].size() > 2 and lines[i][2] != "":
+			_tip_icon(lines[i][2], p + Vector2(8 + gut * 0.45, 6 + i * lh + lh * 0.5), 6.0 * z, lines[i][1])
+	if ctrl and not detail:
+		_draw_tip_ctrl(p + Vector2(8, 6 + lines.size() * lh), fs, lh, t.pattern == "path", acts)
+
+
+## 정보창 줄 앞 그림: "p:공격방식" · "e:속성" · "k:카드 종류" · 그 밖은 Glyph.ui.
+func _tip_icon(id: String, c: Vector2, s: float, col: Color) -> void:
+	match id.left(2):
+		"p:": Glyph.pat(fx_layer, id.substr(2), c, s, col)
+		"e:": Glyph.elem(fx_layer, int(id.substr(2)), c, s)
+		"k:": Glyph.kind(fx_layer, id.substr(2), c, s, col)
+		_: Glyph.ui(fx_layer, id, c, s, Color(col, 1.0))
+
+
+## 정보창 맨 아래 조작 줄 (마우스): [왼쪽 단추] 방향 · [끌기] 옮기기 · [Shift] 자세히.
+func _draw_tip_ctrl(at: Vector2, fs: int, lh: float, path: bool, acts: bool) -> void:
+	var z: float = Meta.ui_scale
+	var f := maxi(11, fs - 2)
+	var x := at.x
+	var y := at.y + lh * 0.5
+	var dim := Color(1, 1, 1, 0.6)
+	var items := [["click", "다시 그리기" if path else "방향"], ["drag", "옮기기"], ["Shift", "자세히"]] if acts else [["Shift", "자세히"]]
+	for it in items:
+		if it[0] == "Shift":
+			var kw := ui_font.get_string_size("Shift", HORIZONTAL_ALIGNMENT_LEFT, -1, f - 1).x + 8.0
+			Glyph.keycap(fx_layer, ui_font, Vector2(x + kw, y - (f + 4) * 0.5), "Shift", f - 1)
+			x += kw + 4.0
+		else:
+			Glyph.ui(fx_layer, it[0], Vector2(x + 6.0 * z, y), 7.0 * z, dim)
+			x += 16.0 * z
+		fx_layer.draw_string(ui_font, Vector2(x, y + f * 0.36), it[1], HORIZONTAL_ALIGNMENT_LEFT, -1, f, dim)
+		x += ui_font.get_string_size(it[1], HORIZONTAL_ALIGNMENT_LEFT, -1, f).x + 12.0 * z
 
 
 ## 정보창 줄들을 maxw로 접었을 때 줄 수.
@@ -7053,27 +7660,36 @@ func _draw_combo() -> void:
 		p.y = legend.get_global_rect().end.y + 8.0
 	if not live:
 		var a: float = clampf(combo_end[2] / 0.5, 0.0, 1.0)
-		fx_layer.draw_rect(Rect2(p, Vector2(w, 44)), Color(0, 0, 0, 0.55 * a))
-		fx_layer.draw_string(ui_font, p + Vector2(10, 19), "콤보 %d 끊김" % combo_end[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(1, 0.6, 0.5, a))
-		fx_layer.draw_string(ui_font, p + Vector2(10, 37), "콤보로 점수 +%s" % num(combo_end[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 0.9, 0.6, a))
+		# 끊김: 콤보 그림 + 숫자(빨강, 줄 그음) + 얻은 점수
+		fx_layer.draw_rect(Rect2(p, Vector2(w, 40)), Color(0, 0, 0, 0.55 * a))
+		var rc := Color(1, 0.6, 0.5, a)
+		Glyph.ui(fx_layer, "combo", p + Vector2(20, 20), 10.0, rc)
+		var ns := str(combo_end[0])
+		var nw := ui_font.get_string_size(ns, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
+		fx_layer.draw_string(ui_font, p + Vector2(36, 28), ns, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, rc)
+		fx_layer.draw_line(p + Vector2(34, 21), p + Vector2(38 + nw, 21), rc, 2.0)
+		Icons.draw(fx_layer, "score", p + Vector2(w - 78, 20), 7.0, Color(1, 0.9, 0.6, a))
+		fx_layer.draw_string(ui_font, p + Vector2(w - 68, 25), "+" + num(combo_end[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 0.9, 0.6, a))
 		return
 	var maxed := combo >= 20
 	var now := Time.get_ticks_msec() / 1000.0
 	var col := Color(1, 0.85, 0.2) if maxed else Color(1, 1, 1).lerp(Color(1, 0.6, 0.25), combo / 20.0)
-	fx_layer.draw_rect(Rect2(p, Vector2(w, 74)), Color(0, 0, 0, 0.6))
+	# 글 대신: [콤보 그림] 숫자 · 배율, 줄어드는 유지 막대, [별] 콤보로 얻은 점수
+	fx_layer.draw_rect(Rect2(p, Vector2(w, 62)), Color(0, 0, 0, 0.6))
 	if maxed:
 		# x3: 금색 테두리가 맥박치고, 닿은 순간엔 크게 반짝인다
 		var glow := 0.45 + 0.25 * sin(now * 6.0) + combo_max_flash
-		fx_layer.draw_rect(Rect2(p, Vector2(w, 74)), Color(1, 0.85, 0.2, clampf(glow, 0.0, 1.0)), false, 2.0 + 3.0 * combo_max_flash)
-	fx_layer.draw_string(ui_font, p + Vector2(10, 26), "콤보 %d" % combo, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, col)
-	var mt := "최대 x3" if maxed else "점수 x%.1f" % combo_mul()
-	fx_layer.draw_string(ui_font, p + Vector2(0, 25), mt, HORIZONTAL_ALIGNMENT_RIGHT, w - 10.0, 16, col)
+		fx_layer.draw_rect(Rect2(p, Vector2(w, 62)), Color(1, 0.85, 0.2, clampf(glow, 0.0, 1.0)), false, 2.0 + 3.0 * combo_max_flash)
+	Glyph.ui(fx_layer, "combo", p + Vector2(20, 20), 11.0, col)
+	fx_layer.draw_string(ui_font, p + Vector2(38, 30), str(combo), HORIZONTAL_ALIGNMENT_LEFT, -1, 26, col)
+	var mt := "×3 최대" if maxed else "×%.1f" % combo_mul()
+	fx_layer.draw_string(ui_font, p + Vector2(0, 27), mt, HORIZONTAL_ALIGNMENT_RIGHT, w - 10.0, 16, col)
 	# 남은 유지 시간: 다 줄어들기 전에 다음 구체를 잡아야 이어진다
 	var k := combo_t / COMBO_KEEP
-	fx_layer.draw_rect(Rect2(p + Vector2(10, 34), Vector2(w - 20, 5)), Color(1, 1, 1, 0.15))
-	fx_layer.draw_rect(Rect2(p + Vector2(10, 34), Vector2((w - 20) * k, 5)), Color(1, 0.35, 0.3) if k < 0.35 else col)
-	fx_layer.draw_string(ui_font, p + Vector2(10, 53), "콤보로 점수 +%s" % num(combo_bonus), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 0.9, 0.6))
-	fx_layer.draw_string(ui_font, p + Vector2(10, 68), "%d초 안에 다음 처치로 유지" % roundi(COMBO_KEEP), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.55))
+	fx_layer.draw_rect(Rect2(p + Vector2(10, 38), Vector2(w - 20, 5)), Color(1, 1, 1, 0.15))
+	fx_layer.draw_rect(Rect2(p + Vector2(10, 38), Vector2((w - 20) * k, 5)), Color(1, 0.35, 0.3) if k < 0.35 else col)
+	Icons.draw(fx_layer, "score", p + Vector2(17, 52), 6.0, Color(1, 0.9, 0.6))
+	fx_layer.draw_string(ui_font, p + Vector2(28, 57), "+" + num(combo_bonus), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 0.9, 0.6))
 
 
 ## 투척형 발사체가 착지했을 때.

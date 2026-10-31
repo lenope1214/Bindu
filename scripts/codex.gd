@@ -155,6 +155,12 @@ func setup(perk_list: Array, sb: StyleBox, changed: Callable) -> void:
 			cat = spec[0]
 			_draw_list()
 			(list.get_parent() as ScrollContainer).scroll_vertical = 0)
+		# 탭은 그림 + 모은 수 (이름은 말풍선)
+		b.tooltip_text = spec[1]
+		var kind: String = {"react": "rx"}.get(spec[0], spec[0])
+		b.draw.connect(func():
+			var tw := b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x
+			Glyph.kind(b, kind, Vector2((b.size.x - tw) / 2.0 - 12.0, b.size.y / 2.0), 8.0, Color(0.95, 0.85, 0.6)))
 		row.add_child(b)
 		tabs.append(b)
 	var sc := ScrollContainer.new()
@@ -349,7 +355,8 @@ func _draw_tabs() -> void:
 		else:
 			got = es.filter(func(x): return x.get("got", false)).size()
 			all = es.size()
-		b.text = "%s %d/%d" % [nm, got, all] + (" ★%d" % n if n > 0 else "")
+		b.text = "%d/%d" % [got, all] + (" ★%d" % n if n > 0 else "")
+		b.tooltip_text = nm
 	var tl := ""
 	if Meta.title != "":
 		tl = "칭호: " + Meta.ACHIEVEMENTS[Meta.title]["name"]

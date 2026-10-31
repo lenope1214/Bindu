@@ -56,7 +56,8 @@ static var games := 0
 static var volume := 1.0
 static var shake_on := true
 static var numbers_on := true
-static var symbols_on := true  # 속성 색 위에 첫 글자 표시 (색만으로 구분하기 어려울 때). 새 저장은 켬
+static var symbols_on := true  # 속성 색 위에 속성 그림 표시 (색만으로 구분하기 어려울 때). 새 저장은 켬
+static var card_detail := false  # 선택지 카드 [자세히]: 끄면 간소화, 켜면 설명 전체 + 올리면 카드 위 창 (기본 끔)
 static var fx_low := false  # 효과 줄이기: 형태 성질·반응 장판과 터지는 효과를 옅게, 많이 겹칠수록 더 옅게 (기본 끔)
 static var fx_dps := 2  # 피해 몫이 작은 오브젝트의 탄·장판을 옅게: 0 그대로 · 1 조금 · 2 보통 · 3 많이 (아래 버튼 줄)
 static var skip_n := 3  # 웨이브 넘기기 한 번에 넘길 웨이브 수 (1·3·5·10)
@@ -161,6 +162,7 @@ static func load_into(cfg: ConfigFile) -> void:
 		skip_n = 3
 	skip_danger = val(cfg, "settings", "skip_danger", true)
 	fx_low = val(cfg, "settings", "fx_low", false)
+	card_detail = val(cfg, "settings", "card_detail", false)
 	fx_dps = clampi(val(cfg, "settings", "fx_dps", 2), 0, 3)
 	online_on = val(cfg, "online", "on", true)
 	nickname = val(cfg, "online", "nickname", "")
@@ -222,6 +224,7 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("settings", "skip_n", skip_n)
 	cfg.set_value("settings", "skip_danger", skip_danger)
 	cfg.set_value("settings", "fx_low", fx_low)
+	cfg.set_value("settings", "card_detail", card_detail)
 	cfg.set_value("settings", "fx_dps", fx_dps)
 	cfg.set_value("settings", "ui_scale", ui_scale)
 	cfg.set_value("online", "on", online_on)

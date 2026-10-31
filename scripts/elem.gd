@@ -35,12 +35,11 @@ const COLORS := {
 }
 
 ## 속성 기호: 이름 첫 글자를 검은 테두리로 (색이 밝아도 어두워도 읽히게). c는 글자 가운데.
-static func draw_symbol(ci: CanvasItem, font: Font, c: Vector2, e: int, fs: int) -> void:
-	var ch: String = NAMES[e].left(1)
-	var w := font.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var p := c + Vector2(-w / 2.0, fs * 0.38)
-	ci.draw_string_outline(font, p, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 3, Color(0, 0, 0, 0.85))
-	ci.draw_string(font, p, ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+static func draw_symbol(ci: CanvasItem, _font: Font, c: Vector2, e: int, fs: int) -> void:
+	# 글자 대신 속성 그림 (어두운 바탕 원 위 흰색). fs는 예전 글자 크기 → 그림 크기
+	var s := fs * 0.5
+	ci.draw_circle(c, s * 1.3, Color(0, 0, 0, 0.55))
+	Glyph.elem(ci, e, c, s, Color.WHITE)
 
 
 ## 속성과 같은 색의 공격방식 (도감 설명용. 규칙 1·3에서 속성은 공격 모양을 바꾸지 않고, 공격방식은 따로 카드로 얻는다)
