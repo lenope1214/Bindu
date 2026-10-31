@@ -56,6 +56,10 @@ static var on := false  # 지금 정원 판인지 (장면을 다시 불러도 �
 static var dew := START_DEW
 static var best := 0  # 이번 정원(환생 전까지)의 최고 웨이브
 static var walls := {}  # 웨이브 -> 그 웨이브에서 물러난 횟수
+static var slots: Array = []  # 키우기 칸 8개 (Grow): {} 또는 {"e", "lv", "seed"}
+static var wither := 0.0  # 시듦: 중앙에 닿은 구체만큼 차고, 다 차면 한 단계 내려감 (중앙 체력 대신)
+const WITHER_MAX := 10.0
+const RUN_V := 2  # 정원 저장 형식: 2 = 키우기형 (1 = 카드·상점형, 들어오면 씨앗으로 바꿔 줌)
 static var rate := 0.0  # 최근 게임 시간 1초당 이슬 (오프라인 보상)
 static var saved_at := 0  # 마지막 저장 시각 (유닉스 초)
 static var prev := {}  # 정원에 들어오기 전 시작 화면 설정 {map, rules, modes}
@@ -310,11 +314,19 @@ static func reset_run() -> void:
 	walls = {}
 	rate = 0.0
 	saved_at = 0
+	wither = 0.0
+	reset_slots()
+
+
+static func reset_slots() -> void:
+	slots = []
+	for i in Grow.SLOTS:
+		slots.append({})
 
 
 static func run_state() -> Dictionary:
 	saved_at = int(Time.get_unix_time_from_system())
-	return {"dew": dew, "best": best, "walls": walls, "rate": rate, "saved_at": saved_at}
+	return {"v": RUN_V, "dew": dew, "best": best, "walls": walls, "rate": rate, "saved_at": saved_at, "slots": slots, "wither": wither}
 
 
 static func load_run(d: Variant) -> void:
@@ -327,6 +339,24 @@ static func load_run(d: Variant) -> void:
 	walls = wl if wl is Dictionary else {}
 	rate = maxf(0.0, float(d.get("rate", 0.0)))
 	saved_at = int(d.get("saved_at", 0))
+	wither = clampf(float(d.get("wither", 0.0)), 0.0, WITHER_MAX)
+	var sl: Variant = d.get("slots", [])
+	if sl is Array:
+		for i in mini((sl as Array).size(), Grow.SLOTS):
+			var x: Variant = sl[i]
+			if x is Dictionary and int(x.get("e", -1)) in Grow.PLANT_ELEMS and int(x.get("lv", 0)) >= 1:
+				slots[i] = {"e": int(x["e"]), "lv": mini(int(x["lv"]), 9999), "seed": int(x.get("seed", 1))}
+
+
+## 저장된 정원이 예전 카드·상점형이면 그 최고 웨이브 (키우기형이거나 없으면 -1).
+static func legacy_best() -> int:
+	var cfg := ConfigFile.new()
+	if cfg.load(RUN_PATH) != OK:
+		return -1
+	var g: Variant = cfg.get_value("run", "garden", null)
+	if not g is Dictionary or int(g.get("v", 1)) >= RUN_V:
+		return -1
+	return maxi(0, int(g.get("best", 0)))
 
 
 ## 꺼 둔 동안 쌓인 이슬 [이슬, 초]. 시계를 되돌렸거나 처음이면 0.
@@ -417,7 +447,7 @@ static func bonsai_text() -> String:
 ## 시작 화면 [정원] 버튼 글.
 static func menu_text() -> String:
 	if has_run:
-		return "이어하기\n웨이브 %d · 이슬 %s" % [run_wave, short(run_dew)]
+		return "이어하기\n단계 %d · 이슬 %s" % [run_wave, short(run_dew)]
 	return "꺼 두어도 자라는\n끝없는 판"
 
 

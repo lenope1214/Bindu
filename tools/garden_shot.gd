@@ -1,5 +1,5 @@
 extends SceneTree
-## 정원 모드 화면 스크린샷: 시작 화면(정원·씨앗 나무 버튼), 씨앗 나무 창, 정원 상점(오른쪽 목록), 영웅 탭(고르기·레벨), 자동 정원사, 세로 화면, 놓기, 웨이브 중, 물러난 뒤, 특성 4장(열매), 리더보드(성장/순수 버튼).
+## 정원(키우기형) 화면 스크린샷: 시작 화면, 씨앗 나무 창, 정원 칸 목록(오른쪽), 영웅 탭(고르기·레벨), 자동 정원사, 세로 화면, 심을 속성 고르기, 단계 중, 그 뒤, 리더보드(성장/순수 버튼).
 ## 인자: 저장 폴더 [글자 크기]. 예) xvfb-run godot --rendering-driver opengl3 --path . -s tools/garden_shot.gd -- /tmp/shots
 var main
 var f := 0
@@ -42,12 +42,13 @@ func _initialize():
 			main._toggle_tree()
 			main._enter_garden(),
 		func():
+			Garden.auto_buy = false
 			Garden.dew = 640.0
-			for i in 5:
-				main.picked = {"type": "elem", "e": Elem.ALL[i], "lv": 1}
-				main._place_tower(main.core() + Vector2.from_angle(main.lanes[0] + i * 1.2) * 120.0, Vector2.from_angle(main.lanes[0] + i * 1.2))
-			main.wave = 12
 			Garden.best = 27
+			for i in 6:
+				Garden.slots[i] = {"e": [Elem.FIRE, Elem.WATER, Elem.ELECTRIC, Elem.WOOD, Elem.LIGHT, Elem.ICE][i], "lv": [34, 22, 18, 9, 4, 1][i], "seed": 11 + i}
+			main._grow_rebuild()
+			main.wave = 12
 			main._garden_rest(true),
 		func(): _snap("g_shop"); main.gp_tab = "hero"; Garden.hero_free = true; Garden.hero_e = -1,
 		func(): pass,
@@ -62,11 +63,10 @@ func _initialize():
 		func(): _snap("g_portrait"); root.get_window().size = Vector2i(1280, 720),
 		func(): pass,
 		func():
-			main._on_pick(main.offer[0]),
-		func(): _snap("g_place"),
-		func():
-			main._cancel_step()
-			main._start_wave(),
+			main.gp_pick_slot = 6
+			main.gp_sig = "",
+		func(): pass,
+		func(): _snap("g_place"); main.gp_pick_slot = -1; main.gp_sig = "",
 		func(): pass,
 		func(): pass,
 		func(): _snap("g_wave"),
@@ -80,15 +80,6 @@ func _initialize():
 		func(): pass,
 		func(): _snap("g_after"),
 		func():
-			# 씨앗 나무 열매 1: 특성 4장
-			Garden.tree["fruit"] = 1
-			Garden.boosted = true
-			main.garden_perk_t = 30.0
-			main._start_perk(),
-		func(): pass,
-		func(): _snap("g_perk4"),
-		func():
-			main._on_perk(main.perk_offer[0])
 			main._leave(false),
 		func(): pass,
 		func():
@@ -107,6 +98,8 @@ func _snap(n: String):
 
 func _process(_d) -> bool:
 	f += 1
+	if f < 4:
+		Garden.auto_buy = false  # 저장된 설정을 읽은 뒤에
 	if f % 15 == 5:
 		var i := f / 15
 		if i < steps.size():

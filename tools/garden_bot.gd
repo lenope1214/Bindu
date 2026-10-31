@@ -26,7 +26,7 @@ func _initialize():
 	Garden.on = true
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
-	Garden.auto_buy = false  # 자동 정원사는 기본 켬: 점검·촬영·봇은 직접 산다
+	Garden.auto_buy = true  # 키우기형: 게임의 자동 정원사가 산다 (웨이브 중에도)
 	if OS.get_environment("REBIRTHS") != "":
 		Garden.rebirths = int(OS.get_environment("REBIRTHS"))
 	start_ms = Time.get_ticks_msec()
@@ -34,6 +34,8 @@ func _initialize():
 
 func _process(_d):
 	frames += 1
+	if frames < 5:
+		Garden.auto_buy = true  # 저장된 설정을 읽은 뒤에 (키우기형: 게임의 자동 정원사가 산다)
 	main.game_speed = float(OS.get_environment("SPEED")) if OS.get_environment("SPEED") != "" else 8.0
 	if main.phase == 3:
 		game_t += _d * main.game_speed
@@ -48,10 +50,11 @@ func _process(_d):
 		var tl := 0
 		for t in main.towers.get_children():
 			tl += t.total_level()
-		var lost: int = maxi(0, main.core_max - core_min) if core_min < 999 else 0
+		var lost: int = maxi(maxi(0, main.core_max - core_min) if core_min < 999 else 0, main.wave_dmg)  # 키우기형은 중앙 체력 대신 시듦 (wave_dmg)
 		if lost > 0:
 			hit_waves += 1
 		core_min = 999
+		print("SLOTS ", Garden.slots.map(func(x): return "%s%d" % [Elem.NAMES[x["e"]], x["lv"]] if not x.is_empty() else "-"), " wither=", Garden.wither)
 		print("W ", main.wave, " lost=", lost, " lanes=", main.lanes.size(), " core=", main.core_hp, " dew=", int(Garden.dew), " towers=", main.towers.get_child_count(), " levels=", tl, " t=", int(game_t + 3.0 * main.wave), " rate=", snappedf(Garden.rate, 0.1), " ms=", snappedf(pt_sum / maxi(pt_n, 1), 0.1), "/", snappedf(pt_max, 0.1), " perks=", main.perks)
 		pt_sum = 0.0; pt_n = 0; pt_max = 0.0
 	var mins := int(OS.get_environment("MINS")) if OS.get_environment("MINS") != "" else 20
@@ -69,8 +72,6 @@ func _process(_d):
 	if main.perk_mode:
 		main._on_perk(main.perk_offer[randi() % main.perk_offer.size()])
 		return false
-	if not _buy():
-		main._start_wave()
 	return false
 
 
