@@ -189,7 +189,7 @@ const REACTIONS := [
 	{"id": "latent", "a": POISON, "b": TIME, "name": "잠복 독", "desc": "가장 많이 중독된 구체 5개가 2초 뒤 남은 중독을 한 번에 받음", "color": Color(0.6, 0.8, 0.35)},
 	{"id": "plasma", "a": FIRE, "b": ELECTRIC, "name": "플라스마 구", "desc": "느린 불덩이가 지나가며 주변에 번개·화상", "color": Color(1.0, 0.7, 0.9)},
 	{"id": "blackfire", "a": FIRE, "b": DARK, "name": "흑염", "desc": "검은 불꽃 3발: 화상, 받는 피해 +25%", "color": Color(0.6, 0.25, 0.4)},
-	{"id": "solar", "a": FIRE, "b": LIGHT, "name": "태양 광선", "desc": "화면 끝까지 굵은 광선, 화상", "color": Color(1.0, 0.85, 0.4)},
+	{"id": "solar", "a": FIRE, "b": LIGHT, "name": "태양 광선", "desc": "화면 끝까지 굵은 광선, 화상 걸린 구체는 반드시 치명타·화상 2배", "color": Color(1.0, 0.85, 0.4)},
 	{"id": "hotiron", "a": FIRE, "b": METAL, "name": "달군 철구", "desc": "관통 철구가 화상, 끝에서 폭발", "color": Color(1.0, 0.5, 0.3)},
 	{"id": "blast", "a": FIRE, "b": SOUND, "name": "폭음", "desc": "부채꼴 파동, 화상 걸린 구체는 남은 화상을 바로 받음", "color": Color(1.0, 0.55, 0.45)},
 	{"id": "embers", "a": FIRE, "b": TIME, "name": "잔불", "desc": "불덩이에 맞은 구체가 1초·2초 뒤 그 자리에서 또 터짐", "color": Color(1.0, 0.65, 0.3)},

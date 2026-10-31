@@ -30,6 +30,7 @@ const CRACKS := ["icecrack", "thornvine", "ground", "shadowcrack", "crystal", "r
 const WAVE_RANGE := 300.0
 const CRACK_RANGE := 280.0
 const STRIP_LIFE := 2.0
+const SOLAR_W := 24.0  # 태양 광선 반너비 (다른 빛 광선 12~14)
 
 
 ## 새 반응 위력 단위: Tower.pw × Rules.rx_mul (봇 32판에서 반응 65개를 다 채우자 판이 크게 쉬워져 한꺼번에 낮춘다)
@@ -109,10 +110,15 @@ static func tick(t: Tower, id: String, l: int, orbs: Array, de: float, k: float)
 			shoot(t, id, l, d, "wraith", 140.0, 420.0 * R, 30.0, true, true)
 		# --- 빛: 즉시 광선 ---
 		"solar":
-			fx_line(t, d, 2000.0, 14.0, c)
-			t._line(orbs, d, 2000.0, 14.0, func(o):
-				t.hit(o, 3.5 * p)
-				o.burn(1.0 * l * Rules.rx_mul, 1.5, t, true))
+			# 햇볕 낙인: 이미 화상이 걸린 구체는 확정 치명타, 화상 2배. 거듭 맞아도 계속 커지지 않게 초당 4×레벨×rx_mul(기본 2×레벨)이 끝.
+			# 화상 여부는 이번 타격 전에 본다 (타격이 불 속성 화상을 먼저 걸기 때문)
+			fx_line(t, d, 2000.0, SOLAR_W, c)
+			t._line(orbs, d, 2000.0, SOLAR_W, func(o):
+				var lit: bool = o.burn_t > 0.0
+				var bd: float = o.burn_dps if lit else 0.0
+				t.hit(o, 3.5 * p, 1.0, {}, true, lit)
+				if lit and o.hp > 0.0:
+					o.burn(minf(bd * 2.0, maxf(bd, 4.0 * l * Rules.rx_mul)), 3.0, t, true))
 		"photo":
 			fx_line(t, d, 2000.0, 12.0, c)
 			var n := [0]
@@ -1104,7 +1110,9 @@ static func range_preview(ci: CanvasItem, o: Vector2, d: Vector2, id: String, rl
 			Tower._r_cone(ci, o, d, 345.0 * R, 0.45, rc)
 		"galeback":
 			Tower._r_band(ci, o, d, 0.0, 320.0 * R, 30.0, rc)
-		"solar", "photo", "corrosive", "flash":
+		"solar":
+			Tower._r_band(ci, o, d, 0.0, 2000.0, SOLAR_W, rc)
+		"photo", "corrosive", "flash":
 			Tower._r_band(ci, o, d, 0.0, 2000.0, 12.0, rc)
 		"blast", "drum", "resonate", "clarion", "toxecho", "requiem":
 			Tower._r_cone(ci, o, d, 240.0 * R, 0.5, rc)
