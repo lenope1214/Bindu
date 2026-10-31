@@ -297,6 +297,7 @@ var mp_code_edit: LineEdit
 var mp_start_btn: Button
 var mp_host_box: HBoxContainer
 var mp_join_box: HBoxContainer
+var mp_room_box: VBoxContainer  # 방 코드·복사 + 사람 줄(플랫폼 그림·닉네임)
 var mp_btn: Button  # 시작 화면의 [멀티플레이]
 var mp_bar: Label  # 게임 중 위쪽 가운데: 다른 플레이어 상태
 var mp_mode := ""  # "" 혼자 | "vs" 대결 | "coop" 협동 (판을 시작하면 정해짐)
@@ -399,6 +400,8 @@ func _ready() -> void:
 	mp.peers_changed.connect(_mp_refresh_lobby)
 	mp.failed.connect(_mp_failed)
 	mp.packet.connect(_mp_packet)
+	mp.status_changed.connect(_mp_apply_switch)
+	mp.check_status()
 	_mp_refresh_lobby(false)
 	net.booted.connect(_on_booted)
 	net.run_sent.connect(_on_run_sent)
@@ -4308,7 +4311,8 @@ func _build_menu(root: Control) -> void:
 	mp_btn.focus_mode = Control.FOCUS_NONE
 	mp_btn.add_theme_font_size_override("font_size", 18)
 	mp_btn.pressed.connect(_toggle_mp_lobby)
-	mp_btn.visible = Mp.available()
+	# Windows는 exe 안 dll을 풀어 읽어서 실패할 수 있다: 버튼은 두고 방을 만들 때 까닭을 보여 준다
+	mp_btn.visible = _mp_btn_shown()
 	box.add_child(mp_btn)
 	box.move_child(mp_btn, row.get_index() + 1)
 	_build_mp_lobby(root)
@@ -8077,13 +8081,9 @@ func _mp_name(id: int) -> String:
 	return n if n != "" else "플레이어 %d" % id
 
 
-static func _device_name() -> String:
-	match OS.get_name():
-		"Windows": return "Windows"
-		"macOS": return "Mac"
-		"iOS": return "iPhone"
-		"Android": return "Android"
-	return "PC"
+## 멀티플레이에서 남에게 보이는 이름 = 설정의 닉네임 (비우면 상대 화면엔 "플레이어 N"). 플랫폼은 그림으로 따로.
+static func _mp_my_name() -> String:
+	return Meta.nickname.strip_edges().left(12)
 
 
 func _build_mp_lobby(root: Control) -> void:
@@ -8136,22 +8136,41 @@ func _build_mp_lobby(root: Control) -> void:
 	box.add_child(mp_join_box)
 	mp_code_edit = LineEdit.new()
 	mp_code_edit.placeholder_text = "방 코드 6자리"
-	mp_code_edit.custom_minimum_size = Vector2(250, 46)
-	mp_code_edit.max_length = 6
+	mp_code_edit.custom_minimum_size = Vector2(220, 46)
 	mp_code_edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mp_code_edit.add_theme_font_size_override("font_size", 22)
+	# 글자 수 제한(max_length) 대신 넣을 때마다 코드 글자만 남긴다: "방 코드 3EL3MP" 같은 글을 붙여 넣어도 코드만
+	mp_code_edit.text_changed.connect(func(t):
+		var c := Mp.clean_code(t)
+		if c != t:
+			mp_code_edit.text = c
+			mp_code_edit.caret_column = c.length())
 	mp_code_edit.text_submitted.connect(func(_t): _mp_join())
 	mp_join_box.add_child(mp_code_edit)
+	var pb := Button.new()
+	pb.text = "붙여넣기"
+	pb.custom_minimum_size = Vector2(130, 46)
+	pb.focus_mode = Control.FOCUS_NONE
+	pb.pressed.connect(func():
+		mp_code_edit.text = Mp.clean_code(DisplayServer.clipboard_get())
+		mp_code_edit.caret_column = mp_code_edit.text.length()
+		if mp_code_edit.text.length() != 6:
+			mp_status.text = "복사한 글에 방 코드 6자리가 없어요")
+	mp_join_box.add_child(pb)
 	var jb := Button.new()
 	jb.text = "참가"
-	jb.custom_minimum_size = Vector2(250, 46)
+	jb.custom_minimum_size = Vector2(200, 46)
 	jb.focus_mode = Control.FOCUS_NONE
 	jb.pressed.connect(_mp_join)
 	mp_join_box.add_child(jb)
+	mp_room_box = VBoxContainer.new()
+	mp_room_box.add_theme_constant_override("separation", 6)
+	mp_room_box.visible = false
+	box.add_child(mp_room_box)
 	mp_status = Label.new()
 	mp_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mp_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	mp_status.custom_minimum_size = Vector2(600, 90)
+	mp_status.custom_minimum_size = Vector2(600, 30)
 	mp_status.add_theme_font_size_override("font_size", 18)
 	box.add_child(mp_status)
 	var row := HBoxContainer.new()
@@ -8183,14 +8202,51 @@ func _build_mp_lobby(root: Control) -> void:
 ## 시작 화면 [멀티플레이]: 창을 열고 닫는다. 닫으면 만든 방·들어간 방에서 나온다.
 func _toggle_mp_lobby() -> void:
 	mp_panel.visible = not mp_panel.visible
+	if mp_panel.visible:
+		mp.check_status()
 	if not mp_panel.visible and mp_mode == "":
 		mp.leave()
 	_mp_refresh_lobby()
 
 
+func _mp_btn_shown() -> bool:
+	if Mp.sw_hide:
+		return false
+	return Mp.available() or (Mp.url() != "" and OS.has_feature("windows"))
+
+
+## 서버 스위치가 바뀜: 숨김이면 버튼·창을 닫고, 막힘이면 창의 안내를 바꾼다 (이미 시작한 판은 그대로).
+func _mp_apply_switch() -> void:
+	if mp_btn:
+		mp_btn.visible = _mp_btn_shown()
+	if mp_panel and mp_panel.visible and not Mp.sw_on and mp_mode == "":
+		if not mp.active():
+			if Mp.sw_hide:
+				_toggle_mp_lobby()
+			else:
+				mp_status.text = _mp_off_text()
+
+
+func _mp_off_text() -> String:
+	return "멀티플레이를 잠시 쉬고 있어요" + (": " + Mp.sw_msg if Mp.sw_msg != "" else "")
+
+
+## 서버 스위치가 꺼졌거나 연결 부품(WebRTC 확장)을 못 읽은 기기: 방을 열어도 안 되니 미리 막는다.
+func _mp_blocked() -> bool:
+	if not Mp.sw_on:
+		mp_status.text = _mp_off_text()
+		return true
+	if Mp.loaded():
+		return false
+	mp_status.text = "이 기기에서 멀티플레이 연결 부품을 읽지 못했어요. 게임을 완전히 껐다 켜 보세요 (계속되면 오류가 자동으로 보고됩니다)"
+	return true
+
+
 func _mp_host(m: String) -> void:
+	if _mp_blocked():
+		return
 	mp_status.text = "방을 만드는 중…"
-	mp.host(m, _device_name())
+	mp.host(m, _mp_my_name())
 
 
 func _mp_join() -> void:
@@ -8198,8 +8254,10 @@ func _mp_join() -> void:
 	if c.length() != 6:
 		mp_status.text = "방 코드 6자리를 넣으세요"
 		return
+	if _mp_blocked():
+		return
 	mp_status.text = "방에 들어가는 중…"
-	mp.join(c, _device_name())
+	mp.join(c, _mp_my_name())
 
 
 func _mp_failed(reason: String) -> void:
@@ -8224,6 +8282,10 @@ func _mp_refresh_lobby(keep_status := true) -> void:
 	var in_room := mp.active()
 	mp_host_box.visible = not in_room
 	mp_join_box.visible = not in_room
+	mp_room_box.visible = in_room
+	for ch in mp_room_box.get_children():
+		mp_room_box.remove_child(ch)
+		ch.queue_free()
 	mp_start_btn.visible = in_room and mp.is_host()
 	var ready := mp.connected_ids().size()
 	mp_start_btn.disabled = ready < 1
@@ -8231,16 +8293,47 @@ func _mp_refresh_lobby(keep_status := true) -> void:
 		if not keep_status and mp_status.text == "":
 			mp_status.text = "방을 만들거나 친구에게 받은 방 코드로 들어가세요"
 		return
-	var lines := PackedStringArray()
-	lines.append("%s 방 코드  %s" % ["대결" if mp.mode == "vs" else "협동", mp.code])
+	var code_row := HBoxContainer.new()
+	code_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	code_row.add_theme_constant_override("separation", 12)
+	mp_room_box.add_child(code_row)
+	var cl := Label.new()
+	cl.text = "%s 방 코드  %s" % ["대결" if mp.mode == "vs" else "협동", mp.code]
+	cl.add_theme_font_size_override("font_size", 22)
+	code_row.add_child(cl)
+	var cb := Button.new()
+	cb.text = "복사"
+	cb.custom_minimum_size = Vector2(90, 38)
+	cb.focus_mode = Control.FOCUS_NONE
+	cb.pressed.connect(func():
+		DisplayServer.clipboard_set(mp.code)
+		cb.text = "복사됨")
+	code_row.add_child(cb)
 	for n in mp.names():
-		var st := "" if n[0] == mp.my_id else ("" if n[2] else "  (연결 중…)")
-		lines.append("%s%s%s" % ["★ " if n[0] == 1 else "· ", n[1] if n[0] != mp.my_id else n[1] + " (나)", st])
+		var st := "" if n[0] == mp.my_id or n[2] else ("  (연결 안 됨)" if n[4] else "  (연결 중…)")
+		var nm: String = _mp_name(n[0]) if n[0] != mp.my_id else (n[1] if n[1] != "" else "닉네임 없음")
+		mp_room_box.add_child(_mp_member_row(n[3], n[0] == 1, nm + (" (나)" if n[0] == mp.my_id else "") + st))
 	if mp.is_host():
-		lines.append("친구에게 방 코드를 알려 주세요. 연결되면 [시작] (최대 %d명)" % Mp.MAX_PLAYERS)
+		mp_status.text = "친구에게 방 코드를 알려 주세요. 연결되면 [시작] (최대 %d명)" % Mp.MAX_PLAYERS
 	else:
-		lines.append("호스트가 시작하기를 기다리는 중")
-	mp_status.text = "\n".join(lines)
+		mp_status.text = "호스트가 시작하기를 기다리는 중"
+
+
+## 로비 사람 한 줄: [플랫폼 그림] ★(호스트) 닉네임 (상태)
+func _mp_member_row(pf: String, host: bool, text: String) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 8)
+	var ic := Control.new()
+	ic.custom_minimum_size = Vector2(26, 26)
+	ic.tooltip_text = {"windows": "Windows", "mac": "Mac", "ios": "iPhone·iPad", "android": "Android", "linux": "Linux"}.get(pf, "")
+	ic.draw.connect(func(): Glyph.ui(ic, "pf_" + (pf if pf != "" else "unknown"), ic.size * 0.5, 10.0, Color(1, 1, 1, 0.85)))
+	row.add_child(ic)
+	var l := Label.new()
+	l.text = ("★ " if host else "") + text
+	l.add_theme_font_size_override("font_size", 20)
+	row.add_child(l)
+	return row
 
 
 ## 호스트 [시작]: 씨앗·맵·규칙을 정해 모두에게 보내고 함께 시작한다.

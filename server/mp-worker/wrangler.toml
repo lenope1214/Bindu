@@ -3,6 +3,13 @@ name = "bindu-mp"
 main = "src/index.js"
 compatibility_date = "2025-09-01"
 
+# 대시보드에서 넣은 변수(MP_OFF 멀티플레이 스위치)를 wrangler deploy가 지우지 않게
+keep_vars = true
+
+# 방 만들기·참가·오류·게임이 보낸 연결 실패 진단을 대시보드 Workers Logs에 남긴다 (무료 플랜 하루 20만 줄, 3일 보관)
+[observability]
+enabled = true
+
 [[durable_objects.bindings]]
 name = "ROOMS"
 class_name = "Room"

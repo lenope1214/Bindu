@@ -3,7 +3,7 @@
 Godot 4.5+ (4.7.2에서 열기). 도형만 사용.
 
 ## 실행
-- Mac: `run_mac.command` 더블클릭 (빌드 없이 바로 실행, 에디터 안 열림)
+- Mac: `run_mac.command` 더블클릭 (빌드 없이 바로 실행, 에디터 안 열림). 항상 GitHub main 최신을 받아(`~/Library/Caches/Bindu-main`) 실행하고, 이 폴더 그대로 실행하려면 `LOCAL=1 ./run_mac.command`
 - 에디터: Godot에서 이 폴더의 `project.godot`을 불러와 F5.
 - Windows: `git pull` 뒤 `build_windows.bat`로 다시 빌드해야 새 내용이 exe에 들어감(exe는 git에 올라가지 않음).
 - 왼쪽 아래 구석의 `빈두 v버전 · 규칙 …`으로 실행 중인 빌드 버전을 확인. 최신 버전은 `project.godot`의 `config/version`.
