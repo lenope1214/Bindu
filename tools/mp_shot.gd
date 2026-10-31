@@ -32,11 +32,12 @@ func _initialize():
 			main.mp.my_id = 1
 			main.mp.code = "K7QX2M"
 			main.mp.mode = mode
-			main.mp.peers = {1: {"name": "Windows", "conn": null, "ok": true}, 2: {"name": "iPhone", "conn": null, "ok": true}, 3: {"name": "Android", "conn": null, "ok": false}}
+			main.mp.peers = {1: {"name": "빈두장인", "pf": "windows", "conn": null, "ok": true}, 2: {"name": "민수", "pf": "ios", "conn": null, "ok": true}, 3: {"name": "", "pf": "android", "conn": null, "ok": false}, 4: {"name": "맥유저", "pf": "mac", "conn": null, "ok": false}}
+			main.mp.diag_sent = {4: true}
 			main._mp_refresh_lobby(),
 		func():
 			_snap("mp_room_" + mode)
-			main._mp_begin({"mode": mode, "seed": 77, "map": "plain", "rules": 1, "ids": [1, 2, 3], "names": {1: "Windows", 2: "iPhone", 3: "Android"}})
+			main._mp_begin({"mode": mode, "seed": 77, "map": "plain", "rules": 1, "ids": [1, 2, 3], "names": {1: "빈두장인", 2: "민수", 3: ""}})
 			if mode == "vs":
 				main.mp_others[2].merge({"w": 7, "hp": 6, "mx": 10, "sc": 4210}, true)
 				main.mp_others[3].merge({"w": 5, "alive": false, "sc": 1980}, true)

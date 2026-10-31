@@ -41,12 +41,24 @@ async function iceServers(env) {
   }
 }
 
+// 멀티플레이 스위치: 대시보드(Workers > bindu-mp > 설정 > 변수)의 MP_OFF.
+// 비어 있으면 켜짐, "hide"면 게임이 버튼을 숨김, 다른 글이면 버튼은 두고 그 글을 보여 주며 막음. 어느 쪽이든 새 방·참가는 거절.
+function mpSwitch(env) {
+  const off = String(env.MP_OFF || "").trim();
+  if (!off) return { on: true };
+  return off.toLowerCase() === "hide" ? { on: false, hide: true, msg: "" } : { on: false, hide: false, msg: off.slice(0, 120) };
+}
+
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     if (url.pathname === "/health") return new Response("ok");
+    if (url.pathname === "/status")
+      return new Response(JSON.stringify(mpSwitch(env)), { headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
     if (url.pathname !== "/ws") return new Response("bindu-mp", { status: 404 });
     if (req.headers.get("Upgrade") !== "websocket") return new Response("websocket only", { status: 426 });
+    const sw = mpSwitch(env);
+    if (!sw.on) return errSocket("off", { msg: sw.msg });
     const op = url.searchParams.get("op");
     if (op === "host") {
       // 겹치지 않는 코드가 나올 때까지 (32^6 ≈ 10억이라 거의 한 번)
@@ -70,6 +82,7 @@ export default {
 
 // 오류를 알리고 바로 닫는 WebSocket (게임은 HTTP 오류 코드를 못 읽어서).
 function errSocket(code, extra = {}) {
+  console.log(JSON.stringify({ ev: "err", code, ...extra }));
   const [client, server] = Object.values(new WebSocketPair());
   server.accept();
   server.send(JSON.stringify({ t: "err", code, ...extra }));
@@ -104,6 +117,9 @@ export class Room {
     await this.ctx.storage.put("meta", meta);
     // 1시간 뒤 방 정리 (판은 WebRTC로 계속되고, 여기는 들어오기·연결 맺기에만 쓰인다)
     await this.ctx.storage.setAlarm(Date.now() + 3600 * 1000);
+    // 대시보드 Workers Logs(wrangler.toml observability)에 남는 방 기록. 이름은 "플랫폼 글자|닉네임"
+    console.log(JSON.stringify({ ev: op === "host" ? "host" : "join", code: meta.code, mode: meta.mode, v, id, name,
+      ice: meta.ice.map((x) => x.urls.length).join("+"), turn: meta.ice.some((x) => x.credential) }));
 
     const [client, server] = Object.values(new WebSocketPair());
     const peers = this.members().map((m) => ({ id: m.id, name: m.name }));
@@ -139,6 +155,10 @@ export class Room {
         const a = other.deserializeAttachment();
         if (a && a.id === j.to) this.sendTo(other, { t: "sig", from: me.id, d: j.d });
       }
+    } else if (j.t === "log" && typeof j.msg === "string") {
+      // 게임이 연결 실패 진단을 남길 때 (방 코드와 함께 Workers Logs에)
+      const meta = await this.ctx.storage.get("meta");
+      console.log(JSON.stringify({ ev: "client", code: meta && meta.code, id: me.id, name: me.name, msg: j.msg.slice(0, 2000) }));
     } else if (j.t === "lock" && me.id === 1) {
       const meta = await this.ctx.storage.get("meta");
       if (meta) {

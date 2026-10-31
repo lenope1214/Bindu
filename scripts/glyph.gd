@@ -311,6 +311,27 @@ static func ui(ci: CanvasItem, id: String, c: Vector2, s: float, k: Color) -> vo
 				ci.draw_line(c + d, c + d * 0.5, k, w)
 				ci.draw_line(c + d, c + Vector2(d.x, d.y * 0.5), k, w)
 				ci.draw_line(c + d, c + Vector2(d.x * 0.5, d.y), k, w)
+		"pf_windows":  # 네 칸 창
+			var g := s * 0.12
+			for q in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+				ci.draw_rect(Rect2(c + Vector2(-s if q.x < 0 else g * 0.5, -s if q.y < 0 else g * 0.5), Vector2(s - g * 0.5, s - g * 0.5)), k)
+		"pf_mac":  # 노트북
+			ci.draw_rect(Rect2(c + Vector2(-s * 0.75, -s * 0.75), Vector2(s * 1.5, s * 1.05)), k, false, w)
+			ci.draw_rect(Rect2(c + Vector2(-s, s * 0.45), Vector2(s * 2.0, s * 0.3)), k)
+		"pf_ios":  # 전화기
+			ci.draw_rect(Rect2(c + Vector2(-s * 0.55, -s), Vector2(s * 1.1, s * 2.0)), k, false, w)
+			ci.draw_circle(c + Vector2(0, s * 0.7), s * 0.12, k)
+		"pf_android":  # 안테나 둘 달린 반원 머리
+			ci.draw_arc(c + Vector2(0, s * 0.35), s * 0.85, PI, TAU, 16, k, w)
+			ci.draw_line(c + Vector2(-s * 0.85, s * 0.35), c + Vector2(s * 0.85, s * 0.35), k, w)
+			ci.draw_line(c + Vector2(-s * 0.45, -s * 0.4), c + Vector2(-s * 0.75, -s * 0.9), k, w)
+			ci.draw_line(c + Vector2(s * 0.45, -s * 0.4), c + Vector2(s * 0.75, -s * 0.9), k, w)
+			ci.draw_circle(c + Vector2(-s * 0.35, 0), s * 0.12, k)
+			ci.draw_circle(c + Vector2(s * 0.35, 0), s * 0.12, k)
+		"pf_linux", "pf_unknown":  # 화면
+			ci.draw_rect(Rect2(c + Vector2(-s, -s * 0.8), Vector2(s * 2.0, s * 1.3)), k, false, w)
+			ci.draw_line(c + Vector2(0, s * 0.5), c + Vector2(0, s * 0.85), k, w)
+			ci.draw_line(c + Vector2(-s * 0.5, s * 0.9), c + Vector2(s * 0.5, s * 0.9), k, w)
 		"star_off":
 			Icons.draw(ci, "score", c, s, Color(k, 0.35))
 		_:
