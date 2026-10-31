@@ -466,6 +466,7 @@ func _ready() -> void:
 	net = Net.new()
 	add_child(net)
 	coop_orbs = 1.0
+	coop_n = 1
 	mp = Mp.new()
 	add_child(mp)
 	mp.room_ready.connect(_mp_refresh_lobby)
@@ -1610,7 +1611,15 @@ static func wave_size(w: int) -> int:
 
 
 ## 실제로 나오는 구체 수 (규칙 버전 배율, 십자로 맵 1.5배). 미리보기와 웨이브가 같은 값을 쓴다.
-static var coop_orbs := 1.0  # 협동: 인원만큼 구체가 늘어난다 (2명 x1.6, 3명 x2.2, 4명 x2.8)
+static var coop_orbs := 1.0  # 협동: 인원만큼 구체가 늘어난다 (Rules coop_orb_per: 2명 x1.6, 3명 x2.2, 4명 x2.8)
+static var coop_n := 1  # 협동 인원 (혼자·대결은 1)
+
+
+## 협동 구체 체력 배율: 인원만큼 + 웨이브마다 크게 올라 판이 짧게 끝난다 (Rules coop_hp_per·coop_ramp).
+static func coop_hp_k(w: int) -> float:
+	if coop_n <= 1:
+		return 1.0
+	return (1.0 + float(Rules.tune["coop_hp_per"]) * (coop_n - 1)) * pow(float(Rules.tune["coop_ramp"]), maxi(0, w - 1))
 
 
 static func spawn_count(w: int) -> int:
@@ -7070,6 +7079,7 @@ func _roll_orb(w: int) -> Dictionary:
 	if Garden.on:
 		hp *= Garden.hp_k(w)
 	hp *= Vary.hp_k()
+	hp *= coop_hp_k(w)
 	var spd := (30.0 + w * 3.0 + wf() * 8.0) * (LINE_SPD if Meta.map_id == "line" else 1.0) * Vary.spd_k()
 	# 저항·굳셈: 쉬는 시간에 미리 알려 준 대로
 	var res := wave_resist if wave_resist >= 0 and wf() < resist_share(w) else -1
@@ -9452,7 +9462,8 @@ func _mp_begin(msg: Dictionary) -> void:
 	mp_seed = int(msg.get("seed", 1)) if mp_mode == "vs" else 0
 	mp_ghost = mp_mode == "coop" and not mp.is_host()
 	if mp_mode == "coop":
-		coop_orbs = 1.0 + 0.6 * mp_others.size()
+		coop_n = 1 + mp_others.size()
+		coop_orbs = 1.0 + float(Rules.tune["coop_orb_per"]) * (coop_n - 1)
 		auto_start = false
 		_update_auto_btn()
 	mp_panel.visible = false

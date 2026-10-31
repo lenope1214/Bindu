@@ -1141,7 +1141,13 @@ func _multiplayer() -> void:
 	main.phase = main.Phase.CHOOSE
 	main._begin_press(other, other.position)
 	var blocked: bool = main.press_t == null
-	ok("MP-06", duo == roundi(solo * 1.6) or abs(duo - solo * 1.6) <= 1.0, "협동: 2명이면 구체 x1.6 (%d → %d)" % [solo, duo])
+	main.coop_n = 2
+	var hk1: float = main.coop_hp_k(1)
+	var hk3: float = main.coop_hp_k(3)
+	main.coop_n = 1
+	var hk_solo: float = main.coop_hp_k(3)
+	ok("MP-06", (duo == roundi(solo * 1.6) or abs(duo - solo * 1.6) <= 1.0) and is_equal_approx(hk1, 2.0) and is_equal_approx(hk3, 2.0 * 1.28 * 1.28) and hk_solo == 1.0,
+		"협동: 2명이면 구체 x1.6 (%d → %d), 체력 웨이브1 x%.2f·웨이브3 x%.2f, 혼자 x%.1f" % [solo, duo, hk1, hk3, hk_solo])
 	mine.dealt = 55.0
 	var st: Dictionary = other.mp_state()
 	st["nid"] = 200001
