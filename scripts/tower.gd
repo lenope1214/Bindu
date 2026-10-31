@@ -90,6 +90,7 @@ var photo_k := 0.0
 var main: Node
 var owner_id := 0  # 협동 멀티플레이: 놓은 사람 id (0이면 혼자 하는 판)
 var net_id := 0  # 협동 멀티플레이: 기기끼리 같은 오브젝트를 찾는 번호
+var req_e := -1  # 협동: 주인이 요청한 속성 (-1 없음). 다른 사람이 그 속성 카드만 넣을 수 있다
 ## 그린 궤적: 갈래마다 오브젝트 기준 점 목록 (첫 점은 오브젝트 자리). 오브젝트를 옮기면 같이 옮겨진다.
 var paths: Array = []
 var dice_x := 1.0  # 주사위 강화: 다음 공격까지 직접 피해에 곱하는 배율 (roll_dice)
@@ -1003,6 +1004,7 @@ func mp_state() -> Dictionary:
 	for k in ["dealt", "run_dealt", "src", "run_src"]:
 		d.erase(k)
 	d["nid"] = net_id
+	d["rq"] = req_e
 	return d
 
 
@@ -1020,6 +1022,9 @@ func mp_apply(d0: Dictionary) -> void:
 	run_dealt = keep[1]
 	src = keep[2]
 	run_src = keep[3]
+	req_e = int(d0.get("rq", -1)) if d0.get("rq", -1) is int or d0.get("rq", -1) is float else -1
+	if not req_e in Elem.ALL:
+		req_e = -1
 	eff = eff_now()
 	queue_redraw()
 
@@ -2392,6 +2397,15 @@ func _draw() -> void:
 	if owner_id > 0:
 		# 협동: 누가 놓은 오브젝트인지 발밑 고리 색으로
 		draw_arc(Vector2.ZERO, sz() + 7.0, 0.0, TAU, 28, Mp.owner_color(owner_id), 2.0)
+	if req_e >= 0 and Elem.COLORS.has(req_e):
+		# 협동 속성 요청: 머리 위 그 속성 색 방울 + 물음표 (다른 사람이 그 속성을 넣어 줄 수 있음)
+		var c := Elem.COLORS[req_e] as Color
+		var p := Vector2(sz() + 8.0, -sz() - 12.0)
+		draw_line(p + Vector2(-5, 7), Vector2(sz() * 0.5, -sz() * 0.5), Color(1, 1, 1, 0.5), 1.5)
+		draw_circle(p, 10.0, Color(0, 0, 0, 0.7))
+		draw_circle(p, 8.0, c)
+		draw_arc(p, 10.5, 0.0, TAU, 24, Color(1, 1, 1, 0.95), 2.0)
+		draw_circle(p, 2.5, Color(1, 1, 1, 0.95))
 
 
 ## 그린 길: 쉬는 시간엔 또렷하게, 웨이브 중엔 옅게. 끝에 화살촉.

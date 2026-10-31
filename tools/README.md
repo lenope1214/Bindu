@@ -28,7 +28,7 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 | `map_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/map_shot.gd -- <폴더> [글자 크기] [touch]`: 맵 규칙 준비 화면 맵 줄(맵 5개)·친화 카드 선택지·십자로 길목 띠·폭풍 바람 스크린샷 | PNG |
 | `mp_signal.gd` | `godot --headless -s tools/mp_signal.gd -- [포트=8790]`: 멀티플레이 중개 Worker(server/mp-worker)와 같은 약속의 로컬 서버. 게임·도구는 `BINDU_MP_URL=http://127.0.0.1:8790` | 로그 |
 | `mp_conn_test.gd` | 두 프로세스로 `-- host <코드 파일>` / `-- join <코드 파일>` (BINDU_MP_URL 필요): WebRTC로 이어져 메시지를 주고받고 핑을 재는지 | `MPCONN ok ... ping=Nms` / `MPCONN FAIL` |
-| `mp_play.gd` | 두(이상) 프로세스로 봇 판: `MP_ROLE=host\|join MP_MODE=vs\|coop MP_FILE=<코드 파일> MP_WAVES=8 MP_N=<참가 인원>` + BINDU_MP_URL. 대결은 웨이브마다 진입 방향이 같은지, 협동은 웨이브·점수·오브젝트가 같은지 | 웨이브마다 `MPW`·`MPDEALT`(주인별 피해), 끝에 `MPPLAY` |
+| `mp_play.gd` | 두(이상) 프로세스로 봇 판: `MP_ROLE=host\|join MP_MODE=vs\|coop MP_FILE=<코드 파일> MP_WAVES=8 MP_N=<참가 인원>` + BINDU_MP_URL (`MP_IDLE=<역할>`이면 그 역할은 아무것도 안 함: 잠수 처리 시험). 대결은 웨이브마다 진입 방향이 같은지, 협동은 웨이브·점수·오브젝트가 같은지 | 웨이브마다 `MPW`·`MPDEALT`(주인별 피해), 끝에 `MPPLAY` |
 | `mp_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/mp_shot.gd -- <폴더> [글자 크기] [touch] [vs\|coop]`: 연결 없이 상태만 채워 시작 버튼·방 화면·상태 줄·웨이브·끝 화면 스크린샷 | PNG |
 | `vote_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path <사본> -s tools/vote_shot.gd -- <폴더> [글자 크기] [touch] [phone]`: 서버 없이 응답을 채워 시작 화면 [투표]·투표 창(표·개선 의견·표 다 씀·지난 회차 결과)·판 끝 화면 버튼·이번 판 탭 스크린샷. 사본의 online_config SERVER_URL은 http://127.0.0.1:9로 | PNG |
 | `spec` | [docs/features.md](../docs/features.md)에서 검사가 spec인 기능마다 기대 동작을 확인(tools/spec_check.gd), 끝에 문서와 대조 | 기능별 ok/FAIL, 실패가 있으면 끝 코드 1 |

@@ -83,9 +83,24 @@ const LIST := [
 	{"id": "got_link", "name": "연계 수집가", "desc": "연계 카드 모두 골라 보기", "tier": "rare", "group": "수집", "stat": "got:link", "goal": -1},
 	{"id": "got_trig", "name": "발동 수집가", "desc": "발동 카드 모두 골라 보기", "tier": "rare", "group": "수집", "stat": "got:trig", "goal": -1},
 	{"id": "got_perk", "name": "특성 수집가", "desc": "특성 모두 골라 보기", "tier": "rare", "group": "수집", "stat": "got:perk", "goal": -1},
-	{"id": "bindu", "name": "빈두", "desc": "다른 업적 모두 달성", "tier": "myth", "group": "수집", "stat": "achs", "goal": -1},
+	{"id": "bindu", "name": "빈두", "desc": "다른 업적 모두 달성 (멀티 업적 빼고)", "tier": "myth", "group": "수집", "stat": "achs", "goal": -1},
+	# 멀티 (2026-10-31 사용자 "멀티는 업적작 안 되게 하고 따로"): 멀티 판에선 위 업적·도감이 안 오르고 이것만
+	{"id": "mp_coop5", "name": "함께라서", "desc": "협동 판 웨이브 5 클리어", "tier": "common", "group": "멀티", "stat": "max:mp_coop", "goal": 5},
+	{"id": "mp_win", "name": "첫 승리", "desc": "대결에서 승리 (상대 모두 탈락, 내 웨이브 5 이상)", "tier": "common", "group": "멀티", "stat": "mp_wins", "goal": 1},
+	{"id": "mp_coop10", "name": "손발이 맞다", "desc": "협동 판 웨이브 10 클리어", "tier": "rare", "group": "멀티", "stat": "max:mp_coop", "goal": 10},
+	{"id": "mp_sent100", "name": "완벽 방어", "desc": "대결에서 완벽 방어로 보낸 구체 누적 100", "tier": "rare", "group": "멀티", "stat": "mp_sent", "goal": 100},
+	{"id": "mp_counter", "name": "맞받아치기", "desc": "대결에서 받은 구체가 섞인 웨이브를 중앙 피해 없이 막기", "tier": "rare", "group": "멀티", "stat": "max:mp_counter", "goal": 1},
+	{"id": "mp_mates5", "name": "동료 모으기", "desc": "서로 다른 닉네임 5명과 멀티 판", "tier": "rare", "group": "멀티", "stat": "mp_mates", "goal": 5},
+	{"id": "mp_coop4", "name": "넷이서 하나", "desc": "4명 협동 웨이브 10 클리어", "tier": "hero", "group": "멀티", "stat": "max:mp_coop4", "goal": 10},
+	{"id": "mp_win4", "name": "왕좌", "desc": "4명 대결에서 승리", "tier": "hero", "group": "멀티", "stat": "mp_wins4", "goal": 1},
+	{"id": "mp_even", "name": "고른 팀", "desc": "협동 웨이브 12 클리어 때 모두의 피해 비중이 20% 이상", "tier": "hero", "group": "멀티", "stat": "max:mp_even", "goal": 1},
+	{"id": "mp_carry", "name": "혼자 다 했다", "desc": "협동 웨이브 12 이상 클리어 때 내 오브젝트 피해 비중 60% 이상", "tier": "hero", "group": "멀티", "stat": "max:mp_carry", "goal": 1},
+	{"id": "mp_comeback", "name": "역전", "desc": "대결에서 한때 웨이브 꼴찌였다가 승리", "tier": "legend", "group": "멀티", "stat": "max:mp_comeback", "goal": 1},
+	{"id": "mp_coop15", "name": "한계 너머", "desc": "협동 판 웨이브 15 클리어", "tier": "legend", "group": "멀티", "stat": "max:mp_coop", "goal": 15},
 ]
-const GROUPS := ["누적", "한 판", "조합", "맵", "수집"]
+const GROUPS := ["누적", "한 판", "조합", "맵", "수집", "멀티"]
+## 멀티 판에서만 오르는 업적 묶음
+const MP_GROUP := "멀티"
 
 ## main.PERKS의 id (main이 넣는다: 수집 분모)
 static var perk_ids: Array = []
@@ -98,6 +113,8 @@ static var others := {}
 static var run := {}
 ## 최근 1초 처치 시각 (게임 시간)
 static var _recent: Array[float] = []
+## 멀티 판이면 "vs"|"coop" (main이 넣는다). 이때는 멀티 업적 키("mp_" 들어간 것)만 오른다
+static var mp := ""
 
 
 static func by_id(id: String) -> Dictionary:
@@ -128,6 +145,16 @@ static func can_title(id: String) -> bool:
 	return not a.is_empty() and tier_rank(a["tier"]) >= tier_rank(TITLE_FROM)
 
 
+## 멀티 판에서만 오르는 업적인지.
+static func is_mp(id: String) -> bool:
+	return str(by_id(id).get("group", "")) == MP_GROUP
+
+
+## 기록 키가 지금 오를 수 있는지: 멀티 판에선 멀티 업적 키만.
+static func _key_ok(key: String) -> bool:
+	return mp == "" or key.contains("mp_") or key.begins_with("mpn:")
+
+
 static func hidden(a: Dictionary) -> bool:
 	return tier_rank(a["tier"]) >= tier_rank(HIDE_FROM) and not Meta.achieved.has(a["id"])
 
@@ -135,10 +162,14 @@ static func hidden(a: Dictionary) -> bool:
 # ---------- 누적 수 ----------
 
 static func add(key: String, n := 1) -> void:
+	if not _key_ok(key):
+		return
 	Meta.tally[key] = int(Meta.tally.get(key, 0)) + n
 
 
 static func raise(key: String, v: int) -> void:
+	if not _key_ok(key):
+		return
 	if v > int(Meta.tally.get(key, 0)):
 		Meta.tally[key] = v
 
@@ -199,7 +230,7 @@ static func goal(a: Dictionary) -> int:
 	match a["stat"]:
 		"max:rxs", "codex": return Elem.REACTIONS.size()
 		"maps15", "maps_hard30": return _map_count()
-		"achs": return LIST.size() - 1
+		"achs": return LIST.filter(func(a): return a["group"] != MP_GROUP).size() - 1
 	if str(a["stat"]).begins_with("got:"):
 		return cat_keys(str(a["stat"]).substr(4)).size()
 	return 1
@@ -217,16 +248,32 @@ static func value(stat: String) -> int:
 			return w
 		"maps15": return _maps(func(id): return _map_wave(id) >= 15)
 		"maps_hard30": return _maps(func(id): return total("max:hard:" + id) >= 30)
-		"achs": return Meta.achieved.keys().filter(func(k): return k != "bindu").size()
+		"achs": return Meta.achieved.keys().filter(func(k): return k != "bindu" and not is_mp(k) and not by_id(k).is_empty()).size()
+		"mp_mates": return _mates()
 	if stat.begins_with("got:"):
 		return got(stat.substr(4))
 	return total(stat)
 
 
-## 조건을 넘긴 업적 id (아직 안 받은 것만).
+## 함께 멀티 판을 한 서로 다른 닉네임 수 (모든 기기). 키 "mpn:<닉네임>".
+static func _mates() -> int:
+	var seen := {}
+	for k in Meta.tally:
+		if str(k).begins_with("mpn:"):
+			seen[k] = true
+	for dev in others:
+		for k in (others[dev] as Dictionary):
+			if str(k).begins_with("mpn:"):
+				seen[k] = true
+	return seen.size()
+
+
+## 조건을 넘긴 업적 id (아직 안 받은 것만). 멀티 판에선 멀티 업적만.
 static func newly_met() -> Array:
 	var out := []
 	for a in LIST:
+		if mp != "" and a["group"] != MP_GROUP:
+			continue
 		if a["stat"] != "" and not Meta.achieved.has(a["id"]) and value(a["stat"]) >= goal(a):
 			out.append(a["id"])
 	return out
@@ -256,6 +303,8 @@ static func _counts() -> bool:
 
 ## 카드·특성을 골랐다 (도감 수집).
 static func on_pick(stat_key: String) -> void:
+	if mp != "":
+		return  # 멀티 판은 기존 업적·도감 수집이 오르지 않는다
 	if stat_key == "" or stat_key.begins_with("cata:"):
 		return
 	add("pick:" + stat_key)
@@ -266,16 +315,22 @@ static func on_pick(stat_key: String) -> void:
 
 
 static func on_reroll() -> void:
+	if mp != "":
+		return  # 멀티 판은 기존 업적·도감 수집이 오르지 않는다
 	run["rerolls"] = int(run["rerolls"]) + 1
 
 
 ## 운명의 동전 (판을 넘어 이어지는 연속 앞면).
 static func on_coin(heads: bool) -> void:
+	if mp != "":
+		return  # 멀티 판은 기존 업적·도감 수집이 오르지 않는다
 	Meta.coin_streak = Meta.coin_streak + 1 if heads else 0
 	raise("max:coin", Meta.coin_streak)
 
 
 static func on_kill(o: Orb, now: float, combo: int) -> void:
+	if mp != "":
+		return  # 멀티 판은 기존 업적·도감 수집이 오르지 않는다
 	run["kills"] = int(run["kills"]) + 1
 	live_kills = int(run["kills"])
 	var rx: bool = o.last_rx
@@ -299,10 +354,14 @@ static func on_kill(o: Orb, now: float, combo: int) -> void:
 
 
 static func on_core_hit(d: int) -> void:
+	if mp != "":
+		return  # 멀티 판은 기존 업적·도감 수집이 오르지 않는다
 	run["core_lost"] = int(run["core_lost"]) + d
 
 
 static func on_reactions(rids: Array) -> void:
+	if mp != "":
+		return  # 멀티 판은 기존 업적·도감 수집이 오르지 않는다
 	for id in rids:
 		if not id in run["rxs"]:
 			run["rxs"].append(id)
@@ -312,6 +371,8 @@ static func on_reactions(rids: Array) -> void:
 
 ## 웨이브 시작: "웨이브 N 도달" 조건들 (지금 오브젝트로 그 웨이브에 들어섰다).
 static func on_wave_start(w: int, towers: Array, map_id: String) -> void:
+	if mp != "":
+		return  # 멀티 판은 기존 업적·도감 수집이 오르지 않는다
 	var n := towers.size()
 	run["towers_max"] = maxi(int(run["towers_max"]), n)
 	for t in towers:
@@ -347,6 +408,8 @@ static func on_wave_start(w: int, towers: Array, map_id: String) -> void:
 
 ## 웨이브 클리어.
 static func on_wave_clear(w: int, wave_dmg: int, core_hp: int, core_max: int) -> void:
+	if mp != "":
+		return  # 멀티 판은 기존 업적·도감 수집이 오르지 않는다
 	run["calm"] = int(run["calm"]) + 1 if wave_dmg == 0 else 0
 	run["needle"] = int(run["needle"]) + 1 if core_hp == 1 else 0
 	if not _counts():
@@ -361,5 +424,7 @@ static func on_wave_clear(w: int, wave_dmg: int, core_hp: int, core_max: int) ->
 
 ## 넘기기를 끝냈다: 멈추지 않고 넘긴 웨이브 수.
 static func on_skip_done(n: int) -> void:
+	if mp != "":
+		return  # 멀티 판은 기존 업적·도감 수집이 오르지 않는다
 	if _counts():
 		raise("max:skip", n)

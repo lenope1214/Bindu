@@ -74,11 +74,27 @@ func _initialize():
 				main.picked = {"e": Elem.ALL[i], "lv": 1}
 				main._place_tower(main.center() + Vector2.from_angle(i * 1.6) * 140.0, Vector2.from_angle(i * 1.6))
 				if mode == "coop":
-					main.towers.get_child(i).owner_id = 1 + i % 3,
+					main.towers.get_child(i).owner_id = 1 + i % 3
+			if mode == "coop":
+				# 잠수·속성 요청: 친구(2) 오브젝트에 물 요청, 2는 자리 비움, 나는 대신 고르기까지 남은 시간
+				main.towers.get_child(1).req_e = Elem.WATER
+				main.towers.get_child(1).queue_redraw()
+				main.mp_others[2]["afk"] = true
+				main.mp_wait_left = 32.0,
 		func(): _snap("mp_rest_" + mode); main.phase = main.Phase.READY; main._enter_ready(); main.mp_wave_go = true; main._start_wave(); main.mp_wave_go = false,
 		func(): _snap("mp_wave_" + mode); main._game_over(),
 		func(): _snap("mp_over_" + mode),
 	]
+	if mode == "coop":
+		var at := steps.size() - 3  # 쉬는 시간 스크린샷 다음에: 요청 창, 요청 속성 넣어 주기
+		steps.insert(at, func():
+			main.mp_wait_left = -1.0
+			main.mp_pop.visible = false
+			main.picked = {"type": "elem", "e": Elem.WATER, "lv": 1}
+			main.phase = main.Phase.PLACE)
+		steps.insert(at, func(): _snap("mp_rest_" + mode); main._mp_req_open(main.towers.get_child(0)))
+		steps[at + 2] = func(): _snap("mp_req_give"); main.picked = {}; main.phase = main.Phase.READY; main._enter_ready(); main.mp_wave_go = true; main._start_wave(); main.mp_wave_go = false
+		steps.insert(at + 1, func(): _snap("mp_req_pop"))
 
 
 func _snap(n: String):

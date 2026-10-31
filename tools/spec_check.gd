@@ -1303,6 +1303,112 @@ func _multiplayer() -> void:
 	main.mp.my_id = 0
 	main.mp_tw_n = 0
 	_clear()
+	_mp_more()
+
+
+## 멀티 업적·잠수·속성 요청·대결 보낸 구체 (2026-10-31).
+func _mp_more() -> void:
+	# MP-14: 멀티 판은 기존 업적·누적 키가 안 오르고 멀티 업적만
+	_fresh(5)
+	main.mp_mode = "coop"
+	main.mp.my_id = 1
+	main.coop_n = 2
+	Ach.mp = "coop"
+	var kb := int(Meta.tally.get("boss_kills", 0))
+	var mw := int(Meta.tally.get("max:wave", 0))
+	var w100 := Meta.achieved.has("wave100")
+	Ach.add("boss_kills")
+	Ach.raise("max:wave", 100)
+	main._achieve("wave100")
+	main._mp_ach_coop(5, {1: 0.5, 2: 0.5})
+	var blocked: bool = int(Meta.tally.get("boss_kills", 0)) == kb and int(Meta.tally.get("max:wave", 0)) == mw and Meta.achieved.has("wave100") == w100
+	var got: bool = Meta.achieved.has("mp_coop5") and int(Meta.tally.get("max:mp_coop", 0)) >= 5
+	Ach.mp = ""
+	var bindu_goal := Ach.goal(Ach.by_id("bindu"))
+	ok("MP-14", blocked and got and bindu_goal == Ach.LIST.filter(func(a): return a["group"] != Ach.MP_GROUP).size() - 1 and Ach.GROUPS.has(Ach.MP_GROUP),
+		"멀티 판: 기존 키·업적 막힘 %s, 협동 웨이브 5 업적 %s, 빈두 목표 %d(멀티 빼고)" % [blocked, got, bindu_goal])
+
+	# MP-15: 잠수 — 기다림 알림, 대신 고르기, 2번 연속 자리 비움, 누르면 돌아옴. 대결은 대신 고르고 웨이브 시작
+	_fresh(3)
+	main.mp_mode = "coop"
+	main.mp.my_id = 2
+	main._mp_packet(1, {"t": "wait", "s": 45.0, "ids": [2]})
+	var waited: bool = is_equal_approx(main.mp_wait_left, 45.0)
+	main.mp_afk_n = 0
+	main._start_choose()
+	main._mp_auto_rest()
+	var first := [main.phase == main.Phase.READY, main.mp_i_ready, main.towers.get_child_count() >= 1, main.mp_afk_n == 1, main.mp_afk]
+	main.mp_i_ready = false
+	main._start_choose()
+	main._mp_auto_rest()
+	var afk: bool = main.mp_afk
+	main._mp_presence()
+	var back: bool = not main.mp_afk and main.mp_afk_n == 0
+	_fresh(3)
+	main.mp_mode = "vs"
+	main.mp.my_id = 1
+	main.mp_afk_n = 0
+	main._start_choose()
+	main._mp_auto_rest()
+	var vs_go: bool = main.phase == main.Phase.WAVE and main.mp_afk_n == 1
+	ok("MP-15", waited and first == [true, true, true, true, false] and afk and back and vs_go and Rules.tune["mp_wait"] == 45.0 and Rules.tune["vs_idle"] == 90.0,
+		"잠수: 기다림 %s, 첫 대신 고르기 %s, 2번째 자리 비움 %s, 돌아옴 %s, 대결 웨이브 시작 %s" % [waited, str(first), afk, back, vs_go])
+	main.mp_i_ready = false
+	main.mp_afk_n = 0
+
+	# MP-16: 속성 요청 — 요청한 속성 카드만 친구 오브젝트에, 받으면 주인 기기가 넣고 요청이 지워짐
+	_fresh(3)
+	main.mp_mode = "coop"
+	main.mp.my_id = 1
+	var mine := _tower(main.center() + Vector2(-200, 0), Elem.FIRE)
+	var other := _tower(main.center() + Vector2(200, 0), Elem.WOOD)
+	other.owner_id = 2
+	other.req_e = Elem.WATER
+	main.picked = {"type": "elem", "e": Elem.WATER, "lv": 1}
+	var can_req: bool = main._place_ok(other)
+	main.picked = {"type": "elem", "e": Elem.FIRE, "lv": 1}
+	var cant_other: bool = not main._place_ok(other)
+	var st: Dictionary = other.mp_state()
+	var copy := Tower.new()
+	copy.main = main
+	copy.mp_apply(st)
+	var synced: bool = copy.req_e == Elem.WATER
+	copy.free()
+	mine.req_e = Elem.WATER
+	main._mp_recv_gift(2, {"nid": mine.net_id, "e": Elem.WATER, "lv": 1})
+	var given: bool = mine.lv(Elem.WATER) == 1 and mine.req_e == -1 and main.mp_req_got_w == main.wave
+	main._mp_recv_gift(2, {"nid": mine.net_id, "e": Elem.ICE, "lv": 1})
+	var no_req: bool = mine.lv(Elem.ICE) == 0
+	ok("MP-16", can_req and cant_other and synced and given and no_req,
+		"속성 요청: 요청 속성 넣기 %s, 다른 속성 막힘 %s, 상태 주고받기 %s, 받음 %s, 요청 없으면 안 들어감 %s" % [can_req, cant_other, synced, given, no_req])
+	main.picked = {}
+
+	# MP-17: 대결 보낸 구체 — 살아 있는 인원 4명 x0.5·3명 x0.7, 한 웨이브 받는 상한 (1+웨이브/4)x1.5
+	_fresh(3)
+	main.mp_mode = "vs"
+	main.mp.my_id = 1
+	main.mp_others = {}
+	for id in [2, 3, 4]:
+		main.mp_others[id] = {"name": "", "w": 3, "hp": 10, "mx": 10, "sc": id * 10, "alive": true, "gone": false}
+	var k4: float = main._mp_send_k()
+	main.mp_others[4]["alive"] = false
+	var k3: float = main._mp_send_k()
+	var tgt: int = main._mp_vs_target([3])
+	main.phase = main.Phase.CHOOSE
+	main.mp_recv_n = 0
+	main.mp_next_extra = 0
+	main._mp_packet(2, {"t": "atk", "n": 5})
+	var capped: bool = main.mp_recv_n == 3 and main.mp_next_extra == 3
+	ok("MP-17", is_equal_approx(k4, 0.5) and is_equal_approx(k3, 0.7) and tgt == 2 and capped,
+		"대결: 4명 x%.1f, 3명 x%.1f, 받는 사람 %d, 5개 중 받은 %d (상한 3)" % [k4, k3, tgt, main.mp_next_extra])
+	main.mp_others = {}
+	main.mp_next_extra = 0
+	main.mp_recv_n = 0
+	main.mp_mode = ""
+	main.mp.my_id = 0
+	main.mp_tw_n = 0
+	main.coop_n = 1
+	_clear()
 
 
 # ---------- 문서 대조 ----------

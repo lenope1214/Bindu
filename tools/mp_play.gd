@@ -1,6 +1,7 @@
 extends "res://tools/bot.gd"
 ## 멀티플레이 자동 판: 두(이상) 프로세스가 로컬 중개 서버로 방을 만들고 들어가 봇으로 판을 한다.
 ## 환경 변수: BINDU_MP_URL(중개 서버) MP_ROLE=host|join MP_MODE=vs|coop MP_FILE(방 코드를 주고받는 파일) MP_WAVES(이 웨이브에서 끝, 기본 8)
+##   MP_IDLE=<역할>(그 역할은 판이 시작되면 아무것도 안 함: 잠수 처리 시험)
 ## 끊김 시험: MP_BLIP_AT=N 참가자가 웨이브 N에서 연결을 끊음 (협동은 같은 판에 다시 붙음, 대결은 패배),
 ##   MP_DROP_AT=N 참가자 프로세스가 웨이브 N에서 꺼짐 → MP_REJOIN=1로 새로 띄운 참가자가 같은 코드로 들어와 이어 함.
 ## 출력: 웨이브마다 "MPW 역할 w=.. lanes=.. n=.. res=.. boss=.."(대결은 역할끼리 같아야 함),
@@ -78,8 +79,11 @@ func _process(d):
 		print("MPDEALT %s %s core=%d" % [role, JSON.stringify(by), main.core_hp])
 	if main.wave >= max_w or main.phase == 4:
 		var mine: int = main._my_towers().size()
+		print("MPAFK %s afk=%s afk_n=%d" % [role, main.mp_afk, main.mp_afk_n])
 		print("MPPLAY %s mode=%s wave=%d score=%d core=%d towers=%d mine=%d ghosts=%d others=%s" % [role, main.mp_mode, main.wave, main.score, main.core_hp, main.towers.get_child_count(), mine, main.orbs.get_child_count(), JSON.stringify(main.mp_others)])
 		return true
+	if OS.get_environment("MP_IDLE") == role:
+		return false  # 잠수 시험: 이 역할은 아무것도 안 함 (기다림·대신 고르기·자리 비움이 돌아야 함)
 	if main.mp_mode == "coop":
 		return _coop_bot()
 	return super(d)
