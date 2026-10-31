@@ -7785,7 +7785,7 @@ func beam(a: Vector2, b: Vector2, c: Color) -> void:
 
 
 ## 전기 부가효과: 가까운 다른 구체로 전류가 튄다 (src: 쏜 오브젝트, 피해 기록용).
-func arc(from: Orb, dmg: float, src: Tower = null) -> void:
+func arc(from: Orb, dmg: float, src: Tower = null, cap = null) -> void:  # cap: 초신성 보스 상한 (Tower.nova_hurt)
 	var best: Orb = null
 	var bd := 90.0
 	for o in near(from.position, bd):
@@ -7795,7 +7795,7 @@ func arc(from: Orb, dmg: float, src: Tower = null) -> void:
 				bd = d
 				best = o
 	if best:
-		var got: float = best.hurt(dmg)
+		var got: float = src.nova_hurt(best, dmg, cap) if src and cap is Dictionary else best.hurt(dmg)
 		if src:
 			src.credit(got, "elem:electric")
 		if arcs.size() < 80:

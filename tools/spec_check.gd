@@ -439,6 +439,26 @@ func _stars() -> void:
 	main.phase = ph0
 	ok("STAR-06", fx_on and st.nova_fx == 0.0 and st.fx["laser"] == 0.0,
 		"웨이브 밖에서도 초신성·공격 그림 사라짐 (%.2f)" % st.nova_fx)
+	# 보스 상한: 초신성 한 번(행성 효과·화상 포함)이 보스에게는 최대 체력의 star_boss_cap(15%)까지. 옆 일반 구체는 그대로
+	st.star_sum = st.star_need()
+	st.star_e = {Elem.FIRE: st.star_sum}
+	var pool2 := st.star_sum * 3.0
+	var boss := _orb(c + Vector2(-300, 200), pool2 / 12.0, Orb.Kind.BOSS)
+	var mate := _orb(c + Vector2(-260, 200), 1e6)
+	var bh0 := boss.hp
+	var mh0 := mate.hp
+	main.targets = main.orbs.get_children().filter(func(o): return is_instance_valid(o) and not o.is_queued_for_deletion())
+	main._build_grid()
+	st._supernova(boss)
+	var bcap := boss.max_hp * Rules.t("star_boss_cap")
+	var blost := bh0 - boss.hp  # 바로 깎인 몫 (행성 화상은 상한에서 미리 빼 두므로 이보다 적게 남는다)
+	ok("STAR-07", is_equal_approx(Rules.t("star_boss_cap"), 0.15) and blost <= bcap * 1.01 and blost >= bcap * 0.5 and mh0 - mate.hp >= pool2 * 0.4
+		and Elem.rider(Elem.STAR).contains("보스"),
+		"보스 상한: 체력 %.0f 중 %.0f(상한 %.0f), 옆 구체 %.0f" % [boss.max_hp, blost, bcap, mh0 - mate.hp])
+	boss.free()
+	mate.free()
+	main.targets = []
+	main._build_grid()
 
 	# 행성 제한: 같은 행성은 하나, 행성은 3개까지
 	var s2 := _tower(c + Vector2(100, -150), Elem.STAR)

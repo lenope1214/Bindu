@@ -118,7 +118,7 @@ const RIDER := {
 	SOUND: "울림: {sound_t}초간 어느 오브젝트에 맞든 3번째마다 주변에 음파",
 	TIME: "메아리: {time_t}초간 받은 피해의 일부를 한 번 더 받음",
 	SOUL: "넋: {soul_t}초 안에 죽으면 확률로 혼불이 나와 다른 구체를 쫓음",
-	STAR: "별빛: 둘레({star_r}) 다른 오브젝트 피해의 {star_take%}%(+{star_lv%}%/레벨)를 복사해 모으고, 다 차면 초신성 (별만 들면 x{star_pure})",
+	STAR: "별빛: 둘레({star_r}) 다른 오브젝트 피해의 {star_take%}%(+{star_lv%}%/레벨)를 복사해 모으고, 다 차면 초신성 (별만 들면 x{star_pure}, 보스는 한 번에 체력 {star_boss_cap%}%까지)",
 }
 
 const REACTIONS := [

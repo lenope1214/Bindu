@@ -2179,13 +2179,14 @@ func _supernova(c: Orb) -> void:
 				rx_bonus += 0.15
 				main.burst(c.position, rr["color"], 12, 200.0)
 	var total := 0.0
+	var cap := {}  # 보스마다 이번 초신성(행성 효과 포함)으로 더 깎을 수 있는 체력 (star_boss_cap, nova_hurt가 채움)
 	for o in hits:
 		var share: float = (pool * (0.5 if others > 0 else 1.0) if o == c else pool * 0.5 / others) * (1.0 + rx_bonus)
 		if mix.size() >= 3:
 			o.silence_t = maxf(o.silence_t, 0.3)  # 저항·굳셈 무시
 		else:
 			share *= o.resist_mul(mix)
-		var got: float = o.hurt(share, o == c)
+		var got: float = nova_hurt(o, share, cap, o == c)
 		credit(got, "elem:star")
 		total += got
 		if not mix.is_empty() and o.hp > 0.0:
@@ -2195,7 +2196,7 @@ func _supernova(c: Orb) -> void:
 			hit(o, 0.01, 1.0, mix, false)
 			in_rx = false
 			tag = ""
-	_nova_follow(c.position, hits, pool)
+	_nova_follow(c.position, hits, pool, cap)
 	in_nova = false
 	nova_fx = 0.6
 	nova_pos = c.position
@@ -2206,7 +2207,35 @@ func _supernova(c: Orb) -> void:
 
 
 ## 행성(별 + 속성 하나): 초신성 뒤 그 속성 효과가 따라붙는다. 피해 몫은 별빛 x star_rx x rx_mul.
-func _nova_follow(at: Vector2, hits: Array, pool: float) -> void:
+## 초신성 피해: 보스면 cap에 남은 만큼만 (받는 피해 배율까지 맞춰 줄이고, 깎인 만큼 cap에서 뺀다).
+func nova_hurt(o: Orb, d: float, cap: Dictionary, crit := false) -> float:
+	if o.kind != Orb.Kind.BOSS:
+		return o.hurt(d, crit)
+	if not cap.has(o):
+		cap[o] = o.max_hp * Rules.t("star_boss_cap")
+	var left: float = cap[o]
+	if left <= 0.0:
+		return 0.0
+	var k := o.hurt_mul()
+	if d * k > left:
+		d = left / maxf(k, 0.001)
+	var got := o.hurt(d, crit)
+	cap[o] = maxf(left - got, 0.0)
+	return got
+
+
+## 지속 피해(화상·중독)를 보스에게 걸 때 총량을 cap 안으로 줄이고 그만큼 미리 뺀다.
+func _nova_dot(o: Orb, total: float, cap: Dictionary) -> float:
+	if o.kind != Orb.Kind.BOSS:
+		return total
+	if not cap.has(o):
+		cap[o] = o.max_hp * Rules.t("star_boss_cap")
+	var t := minf(total, cap[o])
+	cap[o] = cap[o] - t
+	return t
+
+
+func _nova_follow(at: Vector2, hits: Array, pool: float, cap: Dictionary) -> void:
 	var e := planet()
 	if e < 0 or hits.is_empty():
 		return
@@ -2218,10 +2247,10 @@ func _nova_follow(at: Vector2, hits: Array, pool: float) -> void:
 			continue
 		match e:
 			Elem.FIRE:
-				o.burn(each / 3.0, 3.0, self, true, key)
+				o.burn(_nova_dot(o, each, cap) / 3.0, 3.0, self, true, key)
 				continue
 			Elem.POISON:
-				o.poison(each / 4.0, 4.0, self, true, key)
+				o.poison(_nova_dot(o, each, cap) / 4.0, 4.0, self, true, key)
 				continue
 			Elem.WOOD:
 				o.root(2.0)
@@ -2229,7 +2258,7 @@ func _nova_follow(at: Vector2, hits: Array, pool: float) -> void:
 				o.slow(0.4, 3.0)
 			Elem.ELECTRIC:
 				for i in 3:
-					main.arc(o, each / 3.0, self)
+					main.arc(o, each / 3.0, self, cap)
 			Elem.WIND:
 				o.push((o.position - at).normalized() * 80.0)
 			Elem.ICE:
@@ -2245,7 +2274,7 @@ func _nova_follow(at: Vector2, hits: Array, pool: float) -> void:
 				o.styx_t = maxf(o.styx_t, 0.5)
 				o.styx_lv = l
 				o.styx_src = self
-		credit(o.hurt(each), key)
+		credit(nova_hurt(o, each, cap), key)
 	match e:
 		Elem.LIGHT:
 			# 가운데 구체에 확정 치명타: 그 몫 한 번 더
@@ -2254,13 +2283,13 @@ func _nova_follow(at: Vector2, hits: Array, pool: float) -> void:
 				if o.position.distance_to(at) < c.position.distance_to(at):
 					c = o
 			if is_instance_valid(c) and c.hp > 0.0:
-				credit(c.hurt(pool * 0.5 * Rules.rx_mul, true), key)
+				credit(nova_hurt(c, pool * 0.5 * Rules.rx_mul, cap, true), key)
 		Elem.EARTH:
 			for i in 3:
 				var p := at + Vector2.from_angle(randf() * TAU) * randf_range(20.0, 80.0)
 				for o in main.near(p, 50.0):
 					if o.hp > 0.0 and o.position.distance_to(p) < 50.0 + o.radius():
-						credit(o.hurt(each), key)
+						credit(nova_hurt(o, each, cap), key)
 				main.burst(p, Elem.COLORS[Elem.EARTH], 10, 160.0)
 		Elem.METAL:
 			for i in 8:
@@ -2271,7 +2300,7 @@ func _nova_follow(at: Vector2, hits: Array, pool: float) -> void:
 			later.append([1.0, func():
 				for o in main.near(at, NOVA_R + 30.0):
 					if o.hp > 0.0 and o.position.distance_to(at) < NOVA_R + o.radius():
-						credit(o.hurt(pool * 0.5 * Rules.rx_mul / maxf(hits.size(), 1.0)), key)
+						credit(nova_hurt(o, pool * 0.5 * Rules.rx_mul / maxf(hits.size(), 1.0), cap), key)
 				main.burst(at, Elem.COLORS[Elem.TIME], 24, 260.0)])
 	main.burst(at, Elem.COLORS[e], 24, 240.0)
 

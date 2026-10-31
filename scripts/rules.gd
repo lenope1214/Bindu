@@ -177,6 +177,8 @@ const STAT := {
 	# 행성(별 + 속성 하나)은 둘레 피해 중 자기 속성 몫만 planet_take로 모은다. 같은 행성은 한 판에 하나, 행성은 planet_max개까지, 별이 든 오브젝트(별·행성 합쳐)는 star_max개까지
 	"star_r": 220.0, "star_take": 0.10, "star_lv": 0.03, "star_self": 0.2, "star_pure": 1.5, "planet_take": 0.30, "planet_max": 3.0, "star_max": 3.0,
 	"star_need": 8.0, "star_mul": 3.0, "star_rx": 0.3,
+	# 보스는 초신성 한 번(행성 효과·시간의 행성 한 번 더 포함)에 최대 체력의 star_boss_cap만큼만 깎인다 (2026-10-31: 다 찬 별 하나면 보스 즉사)
+	"star_boss_cap": 0.15,
 	"answer_r": 220.0, "answer_cd": 0.6, "answer_dmg": 0.6, "answer_add": 0.15,  # 호응: 거리, 다시 쏠 때까지, 피해(직선탄 한 발 대비), +/장
 }
 
