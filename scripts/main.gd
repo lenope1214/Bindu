@@ -2176,7 +2176,7 @@ func _card_content(card: Dictionary, lvl: int) -> Dictionary:
 			head["e"] = e
 			if card["lv"] == 2:
 				head["lv"] = "Lv2"
-			rows = [{"i": "rider", "t": Elem.rider(e), "al": 0}, {"i": "trait", "t": Elem.TRAIT[e], "al": 0}]
+			rows = [{"i": "rider", "t": "적중 · " + Elem.rider(e), "al": 0}, {"i": "trait", "t": "형태 · " + Elem.TRAIT[e], "al": 0}]
 			foot = [["place_new", "새 오브젝트"], ["place_on", "겹치기" + (" %d종" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "")]]
 			var cf := _combo_parts(e)
 			if not cf["els"].is_empty():
@@ -2231,7 +2231,8 @@ func _card_simple(card: Dictionary, rows: Array) -> Array:
 	var out: Array = []
 	if card["type"] == "elem":
 		var e: int = card["e"]
-		out.append({"pair": [["rider", Elem.rider(e).get_slice(":", 0)], ["trait", (Elem.TRAIT[e] as String).get_slice(":", 0)]]})
+		# [그림, 이름, 꼬리표]: 적중 = 맞힌 구체에 거는 효과, 형태 = 공격 모양(지나간 길·끝 자리)에 붙는 성질
+		out.append({"pair": [["rider", Elem.rider_name(e), "적중"], ["trait", Elem.trait_name(e), "형태"]]})
 		for r in rows:
 			if r.has("els") or r.has("chip"):
 				out.append(r)
@@ -2262,8 +2263,8 @@ func _card_full(card: Dictionary) -> Array:
 	match card["type"]:
 		"elem":
 			var e: int = card["e"]
-			out.append(["추가 효과 · " + Elem.rider(e), Elem.COLORS[e].lightened(0.3)])
-			out.append(["형태 성질 · " + Elem.TRAIT[e], W])
+			out.append(["적중 효과 (맞힌 구체에) · " + Elem.rider(e), Elem.COLORS[e].lightened(0.3)])
+			out.append(["형태 성질 (공격 모양에) · " + Elem.TRAIT[e], W])
 			var seen := {}
 			for t in towers.get_children():
 				if not t.can_take({"type": "elem", "e": e}):
@@ -2456,33 +2457,41 @@ func _draw_card(b: Button, col: Color) -> void:
 			var tw := Icons.chip_w(ui_font, r["chip"], 12)
 			Icons.chip(b, ui_font, Rect2((b.size.x - tw) / 2.0, y + 3.0, tw, 22.0), r.get("i", ""), col, r["chip"], Color(1, 1, 1, 0.85), 12, Color(col, 0.12), Color(col, 0.35))
 		elif r.has("pair"):
-			# [그림 이름] [그림 이름] 가운데 한 줄 (간소화한 속성 카드)
+			# [그림 꼬리표 이름] [그림 꼬리표 이름] 가운데 한 줄 (간소화한 속성 카드). 꼬리표는 작고 옅은 글(적중/형태)
 			var parts: Array = r["pair"]
 			var pfs := 16
 			var pw := 0.0
+			var tag_w := func(it: Array, f: int) -> float:
+				return ui_font.get_string_size(it[2], HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(f - 4, 10)).x + 5.0 if it.size() > 2 else 0.0
 			while true:  # 좁은 카드(정원 상점 4장)에서 넘치면 글자를 줄인다
 				pw = 0.0
 				for it in parts:
-					pw += 20.0 + ui_font.get_string_size(it[1], HORIZONTAL_ALIGNMENT_LEFT, -1, pfs).x + 16.0
+					pw += 20.0 + tag_w.call(it, pfs) + ui_font.get_string_size(it[1], HORIZONTAL_ALIGNMENT_LEFT, -1, pfs).x + 16.0
 				if pw - 16.0 <= b.size.x - 12.0 or pfs <= 11:
 					break
 				pfs -= 1
 			if pw - 16.0 > b.size.x - 12.0:
 				# 그래도 넘치면(긴 효과 이름) 칸마다 같은 폭으로 자르고 …
-				var lim := (b.size.x - 12.0) / parts.size() - 36.0
 				parts = parts.map(func(it):
+					var lim: float = (b.size.x - 12.0) / parts.size() - 36.0 - tag_w.call(it, pfs)
 					var t: String = it[1]
 					while t.length() > 2 and ui_font.get_string_size(t + "…", HORIZONTAL_ALIGNMENT_LEFT, -1, pfs).x > lim:
 						t = t.substr(0, t.length() - 1)
-					return [it[0], t + "…" if t != it[1] else t])
+					var o: Array = it.duplicate()
+					o[1] = t + "…" if t != it[1] else t
+					return o)
 				pw = 0.0
 				for it in parts:
-					pw += 20.0 + ui_font.get_string_size(it[1], HORIZONTAL_ALIGNMENT_LEFT, -1, pfs).x + 16.0
+					pw += 20.0 + tag_w.call(it, pfs) + ui_font.get_string_size(it[1], HORIZONTAL_ALIGNMENT_LEFT, -1, pfs).x + 16.0
 			var px := (b.size.x - pw + 16.0) / 2.0
 			for it in parts:
 				Glyph.ui(b, it[0], Vector2(px + 7.0, y + 13.0), 7.0, Color(col, 0.9))
-				b.draw_string(ui_font, Vector2(px + 20.0, y + 19.0), it[1], HORIZONTAL_ALIGNMENT_LEFT, -1, pfs, tc)
-				px += 20.0 + ui_font.get_string_size(it[1], HORIZONTAL_ALIGNMENT_LEFT, -1, pfs).x + 16.0
+				var tx := px + 20.0
+				if it.size() > 2:
+					b.draw_string(ui_font, Vector2(tx, y + 19.0), it[2], HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(pfs - 4, 10), Color(col, 0.75))
+					tx += tag_w.call(it, pfs)
+				b.draw_string(ui_font, Vector2(tx, y + 19.0), it[1], HORIZONTAL_ALIGNMENT_LEFT, -1, pfs, tc)
+				px = tx + ui_font.get_string_size(it[1], HORIZONTAL_ALIGNMENT_LEFT, -1, pfs).x + 16.0
 		elif r.has("pips"):
 			var n: int = r["pips"]
 			for i in n:
@@ -8589,7 +8598,7 @@ func _draw_tooltip() -> void:
 		if _tip_rows(lines, maxw, fs) > avail and t.order.size() > 1:
 			var first := lines.find_custom(func(l): return l.size() > 2 and l[2] == "e:%d" % t.order[0])
 			if first >= 0:
-				var riders: Array = t.order.map(func(e): return (Elem.RIDER[e] as String).get_slice(":", 0))
+				var riders: Array = t.order.map(func(e): return Elem.rider_name(e))
 				lines = lines.slice(0, first) + [["속성 효과: " + "·".join(riders), Color(0.85, 0.85, 0.9), "k:elem"]] + lines.slice(first + t.order.size())
 	# 줄 앞 그림(l[2])은 왼쪽 gut 칸에. 접힌 줄은 첫 줄에만 그림
 	var gut := 20.0 * z

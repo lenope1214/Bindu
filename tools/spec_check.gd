@@ -1192,7 +1192,17 @@ func _meta_misc() -> void:
 	var m0: Dictionary = main._card_content({"type": "mod", "id": "multi"}, 0)
 	var m1: Dictionary = main._card_content({"type": "mod", "id": "multi"}, 1)
 	var full: Array = main._card_full({"type": "elem", "e": Elem.WATER, "lv": 1})
-	var simple_ok: bool = s0["rows"][0].has("pair") and not str(m0["rows"][0]["t"]).contains("(") and str(m1["rows"][0]["t"]).contains("(")
+	# 속성마다 적중 효과·형태 성질 짧은 이름: 둘이 다르고 4글자 이하(간소화 카드에서 잘리지 않게), 꼬리표 적중/형태
+	var names_ok := true
+	for e in Elem.ALL:
+		var rn := Elem.rider_name(e)
+		var tn := Elem.trait_name(e)
+		if rn == tn or rn.length() > 4 or tn.length() > 4:
+			names_ok = false
+			print("  이름 문제: %s %s / %s" % [Elem.NAMES[e], rn, tn])
+	var pr: Array = s0["rows"][0].get("pair", [])
+	names_ok = names_ok and pr.size() == 2 and pr[0][2] == "적중" and pr[1][2] == "형태"
+	var simple_ok: bool = names_ok and s0["rows"][0].has("pair") and not str(m0["rows"][0]["t"]).contains("(") and str(m1["rows"][0]["t"]).contains("(")
 	var full_ok: bool = full.any(func(l): return str(l[0]).begins_with("반응 ")) and full.size() > s0["rows"].size()
 	main._set_card_detail(true)
 	var on_ok: bool = Meta.card_detail and main.card_detail_btn.button_pressed

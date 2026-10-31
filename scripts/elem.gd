@@ -79,11 +79,21 @@ const TRAIT := {
 	LIGHT: "빛줄기: 끝에서 앞으로 빛줄기",
 	POISON: "안개: 끝 자리에 독 안개 (1.5초, 중독)",
 	METAL: "무게: 공격방식 공격의 경직 +0.1초/Lv · 블랙홀은 터질 때 모인 구체 경직",
-	SOUND: "울림: 끝 자리에 작은 음파",
+	SOUND: "잔향: 끝 자리에 작은 음파",
 	TIME: "째깍: 끝 자리가 0.6초 뒤 한 번 더 터짐",
 	SOUL: "넋불: 끝 자리에서 확률로 혼불 (10%/Lv)",
 	STAR: "끌림: 공격 끝 자리에서 별빛 가루가 오브젝트로 빨려 듦 (보이기만)",
 }
+
+## 카드 간소화용 짧은 이름. 부가효과(적중 효과)는 맞힌 구체에, 형태 성질은 공격 모양(지나간 길·끝 자리)에 붙는다.
+## 두 이름이 같으면 안 된다 (2026-10-31 소리 울림·울림 → 형태는 잔향)
+static func rider_name(e: int) -> String:
+	return (RIDER[e] as String).get_slice(":", 0)
+
+
+static func trait_name(e: int) -> String:
+	return (TRAIT[e] as String).get_slice(":", 0)
+
 
 ## 부가효과 설명. 나무는 규칙마다 세는 최대 레벨(Rules wood_cap)이 달라 붙여 보여 준다
 static func rider(e: int) -> String:
@@ -96,15 +106,15 @@ static func rider(e: int) -> String:
 const RIDER := {
 	FIRE: "화상: 한동안 계속 피해",
 	WOOD: "가시: 이 오브젝트가 주는 피해 +{wood_dmg%}% (레벨마다)",
-	WATER: "감속 (느려짐)",
-	ELECTRIC: "주변 구체로 튀는 전류 (확률 {elec_ch%}%)",
-	WIND: "둘레({wind_range}) 다른 오브젝트 공격 속도 +{wind_buff%}%/레벨 (가장 큰 바람 하나만)",
-	ICE: "냉기가 쌓이면 빙결 (잠깐 멈춤)",
-	EARTH: "기절 (레벨마다 확률 +{earth_ch%}%, 최대 {earth_max%}%)",
-	DARK: "{dark_t}초간 받는 피해 +{dark_vuln%}%",
+	WATER: "감속: 느려짐",
+	ELECTRIC: "전류: 주변 구체로 튐 (확률 {elec_ch%}%)",
+	WIND: "순풍: 둘레({wind_range}) 다른 오브젝트 공격 속도 +{wind_buff%}%/레벨 (가장 큰 바람 하나만)",
+	ICE: "빙결: 냉기가 쌓이면 잠깐 멈춤",
+	EARTH: "기절: 레벨마다 확률 +{earth_ch%}%, 최대 {earth_max%}%",
+	DARK: "약화: {dark_t}초간 받는 피해 +{dark_vuln%}%",
 	LIGHT: "치명타: 피해 {light_mul}배 (레벨마다 확률 +{light_ch%}%, 최대 {light_max%}%)",
-	POISON: "중독 (죽으면 주변에 전염)",
-	METAL: "추가 피해 + 경직 (제자리에 잠깐 멈춤)",
+	POISON: "중독: 죽으면 주변에 전염",
+	METAL: "경직: 추가 피해 + 제자리에 잠깐 멈춤",
 	SOUND: "울림: {sound_t}초간 어느 오브젝트에 맞든 3번째마다 주변에 음파",
 	TIME: "메아리: {time_t}초간 받은 피해의 일부를 한 번 더 받음",
 	SOUL: "넋: {soul_t}초 안에 죽으면 확률로 혼불이 나와 다른 구체를 쫓음",
