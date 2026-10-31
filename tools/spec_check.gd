@@ -606,6 +606,15 @@ func _rules_modes() -> void:
 	ok("MODE-04", Rules.picks == 3 and Modes.rerolls(1) == 3, "세 장: 고르기 3장, 여유: 새로고침 +2")
 	Modes.set_on([])
 	main._apply_rules()
+	main._toggle_mode("stroll")
+	var shown: bool = main.easy_notice.visible
+	main.easy_notice_skip.button_pressed = true
+	main._close_easy_notice()
+	main._toggle_mode("stroll")
+	main._toggle_mode("stroll")
+	ok("MODE-05", shown and not main.easy_notice.visible and main._easy_notice_off(), "쉽게 모드를 켜면 안내, 다시 보지 않기면 안 뜸")
+	Modes.set_on([])
+	main._apply_rules()
 
 
 # ---------- 판마다 다른 흐름 ----------

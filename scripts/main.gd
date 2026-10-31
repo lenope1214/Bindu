@@ -266,6 +266,8 @@ var notes: PatchNotes
 var notes_back := false  # 설정 창에서 열었으면 닫을 때 설정 창으로 돌아간다
 var settings_panel: PanelContainer
 var modes_panel: PanelContainer  # 모드 고르기 (시작 화면, 첫 판 뒤)
+var easy_notice: PanelContainer  # 쉽게 모드를 처음 켤 때: 쉽게 모드 리더보드로 간다는 안내 (다시 보지 않기)
+var easy_notice_skip: CheckBox
 var codex_panel: Codex  # 도감·선호 표시 (시작 화면, K)
 var tut: Tutorial  # 튜토리얼 카드·다시 보기 목록 (시작 화면 [튜토리얼]·일시정지)
 var tut_queue: Array[String] = []  # 판에서 처음 생겨서 띄울 항목 (쉬는 시간·시작 화면에서 띄움)
@@ -5405,6 +5407,7 @@ func _build_modes(root: Control, sb: StyleBox) -> void:
 	modes_head.custom_minimum_size = Vector2(620, 0)
 	modes_head.add_theme_font_size_override("font_size", 16)
 	v.add_child(modes_head)
+	_build_easy_notice(v)
 	for hard in [true, false]:
 		var l := Label.new()
 		l.text = "어렵게 (점수 올라감)" if hard else "쉽게 (점수 내려감 · 쉽게 모드 리더보드 · 최고 기록 따로)"
@@ -5455,13 +5458,72 @@ func _modes_off() -> void:
 
 
 func _toggle_mode(id: String) -> void:
+	var was_easy := Modes.easy()
 	Modes.toggle(id)
 	_modes_changed()
+	if Modes.easy() and not was_easy and not _easy_notice_off():
+		easy_notice_skip.button_pressed = false
+		easy_notice.visible = true
+
+
+const EASY_NOTICE_KEY := "easy_board"  # user://device.cfg [notice]: 다시 보지 않기 (기기마다)
+
+
+## 쉽게 모드 안내 상자: 모드 창 맨 위에 뜬다 (판 시작은 막지 않음).
+func _build_easy_notice(v: VBoxContainer) -> void:
+	easy_notice = PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.08, 0.16, 0.26, 0.97)
+	sb.border_color = Color(0.6, 0.85, 1.0)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(8)
+	sb.set_content_margin_all(12)
+	easy_notice.add_theme_stylebox_override("panel", sb)
+	easy_notice.visible = false
+	v.add_child(easy_notice)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	easy_notice.add_child(box)
+	var l := Label.new()
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size = Vector2(600, 0)
+	l.add_theme_font_size_override("font_size", 17)
+	l.text = _kr_keep("쉽게 모드를 켰어요\n쉽게 모드를 하나라도 켠 판은 일반(순수·성장) 리더보드에 오르지 않고 \"쉽게 모드\" 리더보드에만 올라가요. 어렵게 모드와 함께 켜도 같아요. 최고 기록도 따로 세요.")
+	box.add_child(l)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	box.add_child(row)
+	easy_notice_skip = CheckBox.new()
+	easy_notice_skip.text = "다시 보지 않기"
+	easy_notice_skip.add_theme_font_size_override("font_size", 16)
+	easy_notice_skip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(easy_notice_skip)
+	var ok_btn := Button.new()
+	ok_btn.text = "확인"
+	ok_btn.custom_minimum_size = Vector2(120, 44)
+	ok_btn.pressed.connect(_close_easy_notice)
+	row.add_child(ok_btn)
+
+
+func _close_easy_notice() -> void:
+	if easy_notice_skip.button_pressed:
+		var cfg := ConfigFile.new()
+		cfg.load(Tutorial.PATH)
+		cfg.set_value("notice", EASY_NOTICE_KEY, true)
+		cfg.save(Tutorial.PATH)
+	easy_notice.visible = false
+
+
+func _easy_notice_off() -> bool:
+	var cfg := ConfigFile.new()
+	return cfg.load(Tutorial.PATH) == OK and cfg.get_value("notice", EASY_NOTICE_KEY, false) == true
 
 
 ## 고른 모드를 저장하고 규칙·기록 표시를 다시 맞춘다 (시작 화면에서만 바뀐다).
 func _modes_changed() -> void:
 	Meta.modes = Array(Modes.on)
+	if not Modes.easy():
+		easy_notice.visible = false
 	_apply_rules()
 	sfx.play("place")
 	_refresh_menu()
