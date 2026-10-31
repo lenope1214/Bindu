@@ -92,6 +92,7 @@ func _initialize():
 	_save_load()
 	_meta_misc()
 	_multiplayer()
+	_tutorial()
 	_lint()
 	print("SPEC %s (실패 %d, 확인한 기능 %d개)" % ["통과" if fails == 0 else "실패", fails, seen.size()])
 	quit(1 if fails > 0 else 0)
@@ -866,6 +867,100 @@ func _multiplayer() -> void:
 
 
 # ---------- 문서 대조 ----------
+
+# ---------- 튜토리얼 ----------
+
+func _tutorial() -> void:
+	# TUT-01: 기기 파일에만 저장, 처음이면 need_first, 닫으면(건너뛰기 포함) 기본 항목까지 본 것으로
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(Tutorial.PATH))
+	Tutorial.load_file()
+	var first := Tutorial.need_first()
+	main._open_tut(Tutorial.FIRST, true)
+	var showed: bool = main.tut.visible and main.tut.btn_close.text == "건너뛰기"
+	main.tut.close()
+	Tutorial.done = false
+	Tutorial.seen = {}
+	Tutorial.load_file()
+	var after := not Tutorial.need_first() and Tutorial.FIRST.all(func(id): return Tutorial.seen.has(id))
+	main._save_best()
+	var best := ConfigFile.new()
+	best.load(Meta.SAVE_PATH)
+	var prog := JSON.stringify(Progress.build())
+	ok("TUT-01", Tutorial.PATH == "user://device.cfg" and first and showed and after and not best.has_section("tutorial") and not prog.contains("tutorial"),
+		"첫 진입 %s, 건너뛰기 %s, 닫은 뒤 다시 안 뜸 %s, best.cfg·계정 진행엔 없음" % [first, showed, after])
+	# TUT-02: 항목 14개, id 겹침 없음, 장마다 그림 함수, 터치 글엔 키·클릭 말 없음, 모든 항목이 첫 진입이나 처음 나올 때로 뜸
+	var ids := {}
+	var bad := []
+	for tp in Tutorial.TOPICS:
+		ids[tp["id"]] = true
+		if tp["pages"].is_empty():
+			bad.append(tp["id"] + ":빈 항목")
+		for pg in tp["pages"]:
+			if not main.tut.has_method("_pic_" + pg["pic"]):
+				bad.append(tp["id"] + ":그림 " + pg["pic"])
+			var tt := Tutorial.page_text(pg, true)
+			for w in ["클릭", "Shift", "Esc", "Alt", "휠", "Q:", "V:", "S:", "(Q)"]:
+				if tt.contains(w):
+					bad.append(tp["id"] + ":터치 글 " + w)
+		if not (tp["id"] in Tutorial.FIRST or Tutorial.ON_EVENT.values().has(tp["id"])):
+			bad.append(tp["id"] + ":뜨는 때 없음")
+	for v in Tutorial.ON_EVENT.values():
+		if not ids.has(v):
+			bad.append("모르는 항목 " + v)
+	ok("TUT-02", Tutorial.TOPICS.size() == 14 and ids.size() == 14 and bad.is_empty(), "항목 %d개, 문제 %s" % [ids.size(), str(bad)])
+	# TUT-03: 처음 생긴 일이면 한 번만 줄에 넣고, 안내 끄기·멀티·이미 본 항목은 넣지 않음. 띄우면 본 것으로, 판을 멈췄으면 닫을 때 다시 진행
+	Tutorial.seen = {}
+	main.tut_queue.clear()
+	Meta.guide_on = true
+	main.mp_mode = ""
+	main._tut_event("pat")
+	main._tut_event("pat")
+	main._tut_event("nothing")
+	var once: bool = main.tut_queue == ["pat"]
+	main._guide("boss", "보스 안내")
+	var via_guide: bool = main.tut_queue.has("boss")
+	Meta.guide_on = false
+	main._tut_event("mod")
+	Meta.guide_on = true
+	main.mp_mode = "vs"
+	main._tut_event("mod")
+	main.mp_mode = ""
+	Tutorial.seen["link"] = true
+	main._tut_event("link")
+	var skipped: bool = not main.tut_queue.has("mod") and not main.tut_queue.has("link")
+	main.tut_queue.clear()
+	main.tut_paused = true
+	paused = true
+	main._open_tut(["pat"])
+	var marked := Tutorial.seen.has("pat")
+	main.tut._next()
+	main.tut._next()
+	var resumed: bool = not main.tut.visible and not paused and not main.tut_paused
+	paused = false
+	ok("TUT-03", once and via_guide and skipped and marked and resumed, "한 번만 %s, _guide에서 %s, 끄기·멀티·본 것 빼기 %s, 본 것 표시 %s, 닫으면 판 진행 %s" % [once, via_guide, skipped, marked, resumed])
+	# TUT-04: 시작 화면·일시정지의 [튜토리얼] 버튼, 목록 14개 + 전체 보기, ✓, 항목 → 카드 → 목록으로, 전체 보기 → 도움말
+	var title_btn := false
+	for b in main.title_box.find_children("*", "Button", true, false):
+		if (b as Button).pressed.is_connected(main._open_tut_list):
+			title_btn = true
+	var pause_btn := false
+	for b in main.pause_box.get_children():
+		if (b as Button).pressed.is_connected(main._open_tut_list):
+			pause_btn = true
+	Tutorial.seen = {"goal": true}
+	main._open_tut_list()
+	var g: GridContainer = main.tut.grid
+	var listed: bool = main.tut.mode == "list" and g.get_child_count() == 15 and (g.get_child(0) as Button).text.ends_with("✓") and not (g.get_child(1) as Button).text.ends_with("✓")
+	(g.get_child(4) as Button).pressed.emit()
+	var opened: bool = main.tut.mode == "pages" and main.tut.cur_topic()["id"] == Tutorial.TOPICS[4]["id"]
+	for i in 5:
+		main.tut._next()
+	var back: bool = main.tut.visible and main.tut.mode == "list"
+	(main.tut.grid.get_child(14) as Button).pressed.emit()
+	var helped: bool = not main.tut.visible and main.help_label.visible
+	main.help_label.visible = false
+	ok("TUT-04", title_btn and pause_btn and listed and opened and back and helped, "시작 화면 %s, 일시정지 %s, 목록 %s, 항목 열기 %s, 목록으로 %s, 전체 보기 %s" % [title_btn, pause_btn, listed, opened, back, helped])
+
 
 func _lint() -> void:
 	var f := FileAccess.open("res://docs/features.md", FileAccess.READ)

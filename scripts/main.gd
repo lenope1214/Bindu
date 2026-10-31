@@ -267,6 +267,10 @@ var notes_back := false  # 설정 창에서 열었으면 닫을 때 설정 창�
 var settings_panel: PanelContainer
 var modes_panel: PanelContainer  # 모드 고르기 (시작 화면, 첫 판 뒤)
 var codex_panel: Codex  # 도감·선호 표시 (시작 화면, K)
+var tut: Tutorial  # 튜토리얼 카드·다시 보기 목록 (시작 화면 [튜토리얼]·일시정지)
+var tut_queue: Array[String] = []  # 판에서 처음 생겨서 띄울 항목 (쉬는 시간·시작 화면에서 띄움)
+var tut_first := false  # 이 기기에서 처음 켰다: 시작 화면이 뜨면 기본 항목을 무조건
+var tut_paused := false  # 튜토리얼을 띄우느라 판을 멈췄다 (닫으면 다시 진행)
 var modes_btn: Button
 var modes_head: Label
 var modes_btns := {}  # 모드 id -> 켜고 끄는 버튼
@@ -363,6 +367,8 @@ func _ready() -> void:
 	Ach.perk_ids = PERKS.map(func(pk): return pk["id"])
 	Ach.new_run()
 	_load_best()
+	Tutorial.load_file()
+	tut_first = Tutorial.need_first() and DisplayServer.get_name() != "headless"
 	if Meta.device_id == "":
 		Meta.device_id = Crypto.new().generate_random_bytes(16).hex_encode()
 		_save_best()
@@ -908,7 +914,7 @@ func _build_ui() -> void:
 	pause_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	pause_box.add_theme_constant_override("separation", 12)
 	# 글 대신 그림 버튼 (키 안내 글 두 줄을 없애고 키는 모서리에). 작은 버튼 셋은 그림만 (이름은 말풍선)
-	var pspecs := [["계속", _toggle_pause, "play", "P"], ["처음부터", _pause_restart, "restart", "R"], ["판 끝내기", _end_run, "flag", "E"], ["시작 화면", _leave.bind(false), "home", "T"]]
+	var pspecs := [["계속", _toggle_pause, "play", "P"], ["튜토리얼", _open_tut_list, "help", ""], ["처음부터", _pause_restart, "restart", "R"], ["판 끝내기", _end_run, "flag", "E"], ["시작 화면", _leave.bind(false), "home", "T"]]
 	if OS.has_feature("pc"):
 		pspecs.append(["끄기", _leave.bind(true), "power", "X"])  # 모바일은 운영체제가 앱을 닫는다
 	pspecs += [["소리 (M)", _toggle_mute, "sound", "M", true], ["설정 (O)", _toggle_settings, "gear", "O", true]]
@@ -1451,6 +1457,7 @@ func _help_text() -> String:
 		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 이어하기(Enter)로 그 쉬는 시간부터 (새로 시작은 N 두 번)",
 		"첫 판은 카드가 단계별로 열려요 (공격방식 3·강화 4·연계 6웨이브)",
 		"처음 생기는 일엔 위쪽에 한 줄 안내 (설정에서 끄기·처음부터 다시 보기)",
+		"튜토리얼: 시작 화면 [튜토리얼]·일시정지에서 항목별로 다시 보기",
 		"도감(시작 화면)에서 ☆로 선호 표시: 그 카드·반응이 선택지에 나오면 반짝여요",
 	]
 	# 폰·태블릿: 키보드·마우스 안내 대신 버튼·누르기로
@@ -1468,6 +1475,7 @@ func _help_text() -> String:
 		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 [이어하기]로 그 쉬는 시간부터",
 		"첫 판은 카드가 단계별로 열려요 (공격방식 3·강화 4·연계 6웨이브)",
 		"처음 생기는 일엔 위쪽에 한 줄 안내 (설정에서 끄기·처음부터 다시 보기)",
+		"튜토리얼: 시작 화면 [튜토리얼]·일시정지에서 항목별로 다시 보기",
 		"도감(시작 화면)에서 ☆로 선호 표시: 그 카드·반응이 선택지에 나오면 반짝여요",
 	]
 	return "\n".join((touch if touch_ui else keys) + [
@@ -2312,11 +2320,70 @@ func _choose_hint() -> String:
 	return "선택지를 고르세요. 설치된 오브젝트 클릭: 방향 바꾸기 · 끌기: 옮기기"
 
 
+# ---------- 튜토리얼 ----------
+
+## 판에서 처음 생긴 일(_guide id 등) → 그 튜토리얼 항목을 이 기기에서 아직 안 봤으면 띄울 줄에 넣는다.
+## 안내 끄기(설정)를 따르고, 멀티 판(멈출 수 없음)·정원(지켜보는 판)에서는 띄우지 않는다.
+func _tut_event(id: String) -> void:
+	var tp: String = Tutorial.ON_EVENT.get(id, "")
+	if tp == "" or not Meta.guide_on or mp_mode != "" or Garden.on or Tutorial.seen.has(tp) or tut_queue.has(tp):
+		return
+	tut_queue.append(tp)
+
+
+## 띄울 때가 되면 띄운다: 처음 켠 기기는 시작 화면에서 기본 항목, 판에서 생긴 항목은 쉬는 시간(카드 고르기)이나 시작 화면에서.
+func _tut_tick() -> void:
+	if tut.visible or DisplayServer.get_name() == "headless":
+		return
+	var panels := settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible or mp_panel.visible or tree_panel.visible
+	if panels:
+		return
+	if tut_first:
+		if title_label.visible:
+			tut_first = false
+			_open_tut(Tutorial.FIRST, true)
+		return
+	if tut_queue.is_empty():
+		return
+	var ok := title_label.visible or (phase == Phase.CHOOSE and not get_tree().paused and coin_stage == 0 and skip_left == 0 and mp_mode == "")
+	if not ok:
+		return
+	var ids: Array = tut_queue.filter(func(x): return not Tutorial.seen.has(x))
+	tut_queue.clear()
+	if ids.is_empty():
+		return
+	if not title_label.visible:
+		get_tree().paused = true  # 고르는 동안은 시간이 안 가지만 자동 시작·배속 등이 돌지 않게
+		tut_paused = true
+	_open_tut(ids)
+
+
+func _open_tut(ids: Array, first := false) -> void:
+	tut.touch = touch_ui
+	tut.phone = _phone()
+	tut.open_topics(ids, first)
+
+
+## 다시 보기 목록 (시작 화면 [튜토리얼]·H, 일시정지 [튜토리얼]).
+func _open_tut_list() -> void:
+	help_label.visible = false
+	tut.touch = touch_ui
+	tut.phone = _phone()
+	tut.open_list()
+
+
+func _on_tut_closed() -> void:
+	if tut_paused:
+		tut_paused = false
+		get_tree().paused = false
+
+
 # ---------- 처음 안내 ----------
 
 ## 처음 생기는 일에 한 줄 안내. 안내마다 한 번만(Meta.guide_seen), 설정에서 끌 수 있다.
 ## 쉬는 시간 안내는 웨이브가 시작될 때까지, 웨이브 중 안내는 8초 보인다(쉬는 시간 안내가 붙으면 함께 남음). 많아야 3개.
 func _guide(id: String, text: String) -> void:
+	_tut_event(id)
 	if not Meta.guide_on or Meta.guide_seen.has(id) or title_label.visible:
 		return
 	var first := Meta.guide_seen.is_empty()
@@ -3523,6 +3590,7 @@ func _start_wave() -> void:
 
 func _game_over() -> void:
 	_mp_over()
+	_tut_event("over")
 	_log_wave()
 	phase = Phase.GAMEOVER
 	over_ms = Time.get_ticks_msec()
@@ -3797,7 +3865,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if title_label.visible:
 			match event.keycode:
 				KEY_H:
-					help_label.visible = not help_label.visible
+					if help_label.visible:
+						help_label.visible = false
+					else:
+						_open_tut_list()
 				KEY_K:
 					_toggle_codex()
 				KEY_G:
@@ -4240,7 +4311,7 @@ func _build_menu(root: Control) -> void:
 	row.add_theme_constant_override("separation", 10)
 	box.add_child(row)
 	# 시작 말고는 그림 + 짧은 이름 (단축키는 모서리 작은 키, 긴 이름은 말풍선)
-	var specs := [["시작", _close_title, "", ""], ["기록", _toggle_records, "records", "", "기록·업적"], ["도감", _toggle_codex, "book", "K", "도감 (K)"], ["설정", _toggle_settings, "gear", "O", "설정 (O)"], ["도움말", func(): help_label.visible = not help_label.visible, "help", "H", "도움말 (H)"]]
+	var specs := [["시작", _close_title, "", ""], ["기록", _toggle_records, "records", "", "기록·업적"], ["도감", _toggle_codex, "book", "K", "도감 (K)"], ["설정", _toggle_settings, "gear", "O", "설정 (O)"], ["튜토리얼", _open_tut_list, "help", "H", "튜토리얼 (H)"]]
 	if OnlineConfig.SERVER_URL != "":
 		specs.insert(2, ["순위", _toggle_board, "rank", "", "리더보드"])
 	for spec in specs:
@@ -4381,6 +4452,11 @@ func _build_menu(root: Control) -> void:
 	codex_panel.z_index = 22  # 일시정지 어둠(z 20) 위에
 	codex_panel.setup(PERKS, rsb.duplicate(), _save_best)
 	root.add_child(codex_panel)
+	tut = Tutorial.new()
+	tut.z_index = 23  # 일시정지 어둠(20)·다른 창(22) 위에
+	tut.setup(rsb.duplicate(), func(): help_label.visible = true)
+	tut.closed.connect(_on_tut_closed)
+	root.add_child(tut)
 
 	settings_panel = PanelContainer.new()
 	settings_panel.z_index = 22  # 일시정지 어둠(z 20) 위에
@@ -4492,6 +4568,8 @@ func _build_menu(root: Control) -> void:
 	gr.focus_mode = Control.FOCUS_NONE
 	gr.pressed.connect(func():
 		Meta.guide_seen = {}
+		Tutorial.seen = {}  # 튜토리얼 항목도 처음 생길 때 다시 (기기에서 처음 켤 때 보는 기본 항목은 그대로 지남)
+		Tutorial.save_file()
 		Meta.guide_on = true
 		Meta.tutor_next = true
 		gc.set_pressed_no_signal(true)
@@ -5369,6 +5447,7 @@ func _apply_volume() -> void:
 func _achieve(id: String) -> void:
 	if not Meta.achieve(id):
 		return
+	_tut_event("ach")
 	var a: Dictionary = Meta.ACHIEVEMENTS[id]
 	new_achievements.append(a["name"])
 	big_banner("업적: " + a["name"], Color(1, 0.85, 0.4))
@@ -5522,6 +5601,7 @@ func _refresh_continue() -> void:
 	new_armed = 0.0
 	new_btn.text = "새로 시작" if continue_btn.visible else "시작"
 	if continue_btn.visible:
+		_tut_event("continue")
 		continue_btn.text = "이어하기 (Enter)   웨이브 %d부터 · %s · %s" % [info["wave"] + 1, Meta.MAPS[info["map"]]["name"], Rules.NAMES[info["rules"]]]
 
 
@@ -6440,6 +6520,7 @@ func _process(delta: float) -> void:
 			new_btn.text = "새로 시작"
 	toast_timer -= delta
 	toast.visible = toast_timer > 0.0
+	_tut_tick()
 	if guide_t > 0.0 and not get_tree().paused:
 		guide_t -= delta
 		if guide_t <= 0.0:
@@ -6508,7 +6589,7 @@ func _process(delta: float) -> void:
 		var hh := minf(help_label.get_combined_minimum_size().y + 36.0, ui_root.size.y - 100.0)
 		help_scroll.offset_top = -hh / 2.0
 		help_scroll.offset_bottom = hh / 2.0
-	title_box.visible = not (settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible or mp_panel.visible or tree_panel.visible)
+	title_box.visible = not (tut.visible or settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible or mp_panel.visible or tree_panel.visible)
 	hud.visible = not title_label.visible  # 시작 화면엔 메뉴에 최고 기록이 따로 있다
 	# 시작 화면에서 일시정지·배속 버튼을 누르면 메뉴 위에 일시정지 창이 뜨던 문제
 	# 게임 중엔 펼쳤을 때만 보인다 (단축키 M·P·Space는 접어도 된다). 시작 화면엔 소리·자동 시작만
@@ -6529,7 +6610,7 @@ func _process(delta: float) -> void:
 	# 일시정지 위에 설정·도움말 등을 열면 일시정지 글·버튼은 잠깐 숨기고, 어둠은 남겨 창이 그 위에 뜬다 (창 z 22 > 어둠 20)
 	var over := settings_panel.visible or help_label.visible or records_panel.visible or notes_panel.visible or codex_panel.visible
 	var dim := get_tree().paused and not title_label.visible and phase != Phase.GAMEOVER
-	var show_pause := dim and not over
+	var show_pause := dim and not over and not tut_paused  # 튜토리얼이 멈춘 것은 일시정지 창 없이
 	paused_label.visible = show_pause
 	pause_box.visible = show_pause
 	pause_dim.visible = dim
@@ -6537,6 +6618,8 @@ func _process(delta: float) -> void:
 		# 글자를 키우면(설정) 가운데 기준 자리가 점수 줄에 닿는다: 점수 줄 아래로
 		paused_label.position.y = maxf(ui_root.size.y / 2.0 - 248.0, hud.get_rect().end.y + 8.0 if hud.visible else 8.0)
 		pause_box.position.y = paused_label.position.y + paused_label.size.y + 10.0
+		pause_box.size.x = 0.0  # 버튼 수(튜토리얼·끄기)만큼 넓어져도 가운데
+		pause_box.position.x = floorf((ui_root.size.x - pause_box.get_combined_minimum_size().x) / 2.0)
 	_fit_panels()
 	_refresh_dps()
 	_soften_fx()
@@ -8204,6 +8287,8 @@ func _toggle_mp_lobby() -> void:
 	mp_panel.visible = not mp_panel.visible
 	if mp_panel.visible:
 		mp.check_status()
+	if mp_panel.visible and Meta.guide_on and not Tutorial.seen.has("mp") and DisplayServer.get_name() != "headless":
+		_open_tut(["mp"])  # 멀티 창 위에 바로
 	if not mp_panel.visible and mp_mode == "":
 		mp.leave()
 	_mp_refresh_lobby()

@@ -67,7 +67,14 @@ func _initialize():
 		func(): _snap("codex_ach"); (main.codex_panel.list.get_parent() as ScrollContainer).scroll_vertical = 100000,
 		func(): _snap("codex_ach_end"); main.codex_panel.tabs[0].pressed.emit(),
 		func(): _snap("codex_elem"); main._toggle_codex(); main._toggle_modes(),
-		func(): _snap("modes"); main._toggle_modes(); main.help_label.visible = true,
+		func(): _snap("modes"); main._toggle_modes(); main._open_tut(Tutorial.FIRST, true),
+		# 튜토리얼: 기기 첫 진입(건너뛰기) → 놓기(터치 글이 다름) → 항목 줄의 마지막 장 → 다른 그림 몇 개 → 다시 보기 목록
+		func(): _snap("tut_goal"); main.tut._next(); main.tut._next(); main.tut._next(),
+		func(): _snap("tut_place"); main.tut.qi = 3; main.tut.page = 1; main.tut._refresh(),
+		func(): _snap("tut_react"); main.tut.close(); main._open_tut(["boss", "mp"]); main.tut.page = 2; main.tut._refresh(),
+		func(): _snap("tut_coin"); main.tut._next(); main.tut._next(),
+		func(): _snap("tut_coop"); main.tut.close(); main._open_tut_list(),
+		func(): _snap("tut_list"); main.tut.close(); main.help_label.visible = true,
 		func():
 			_snap("help"); main.help_label.visible = false; main.continue_btn.visible = false
 			main.remote_btn.text = "다른 기기에서 하던 판 이어하기   웨이브 29부터 · 소용돌이"
