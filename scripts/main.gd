@@ -67,7 +67,16 @@ var draw_skip := 0  # 방금 꺾임으로 센 뒤 다시 세지 않을 조각 �
 var auto_start := false  # 끄면 설치 후 Space로 웨이브 시작
 var auto_btn: Button
 var start_btn: Button
+var draw_ok_btn: Button  # 터치: 다 그린 길 [확정] (손을 떼자마자 넣으면 삐끗한 길을 되돌릴 수 없었다)
+var draw_wait := false  # 터치: 손을 뗀 뒤 [확정]을 기다리는 중
+var draw_aim := Vector2.ZERO  # 터치: 손가락 떨림을 줄인 그리기 목표점
 var cancel_btn: Button  # 옮기기·설치 중 화면 취소 (우클릭·Esc가 없는 터치 화면용)
+var detail_btn: Button  # 터치: 오브젝트 정보창 [자세히] (Shift 대신)
+var tip_tower: Tower = null  # 터치: 정보창에 보이던 오브젝트
+var tip_detail := false  # 터치로 [자세히]를 켰는지 (정보창이 사라지면 꺼짐)
+var tip_frame := -10  # 오브젝트 정보창을 마지막으로 그린 프레임
+var touch_tip_t := 0.0  # 터치: 누른 뒤 정보창을 보여 줄 남은 시간 (손을 뗀 자리에 정보창이 계속 남아 전장을 가리던 것)
+const TOUCH_TIP_SEC := 3.0
 var wave_leaks: Array = []  # 이번 웨이브에 중앙에 닿은 구체 [나온 방향 번호, 종류, 피해]
 var leak_log: Array = []  # 웨이브마다 누수 요약 (봇·통계·안내용)
 var leak_flash: Array = []  # 화면 가장자리 붉은 번짐 [자리, 남은 시간]
@@ -366,6 +375,11 @@ func _layer(n: String) -> Node2D:
 	return node
 
 
+## 폰·태블릿 화면 구성 (작은 화면에 손가락 크기 버튼). 점검 도구는 Meta.sim_phone으로 흉내 낸다.
+func _phone() -> bool:
+	return OS.has_feature("mobile") or Meta.sim_phone
+
+
 func center() -> Vector2:
 	return Meta.FIELD / 2.0
 
@@ -647,6 +661,30 @@ func _build_ui() -> void:
 	cancel_btn.pressed.connect(_cancel_step)
 	cancel_btn.visible = false
 	root.add_child(cancel_btn)
+	draw_ok_btn = Button.new()
+	draw_ok_btn.text = "확정"
+	draw_ok_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	draw_ok_btn.position = Vector2(-70.0 + 150.0, -100.0)  # 취소 오른쪽
+	draw_ok_btn.size = Vector2(140, 40)
+	draw_ok_btn.add_theme_font_size_override("font_size", 18)
+	draw_ok_btn.focus_mode = Control.FOCUS_NONE
+	draw_ok_btn.pressed.connect(func():
+		if phase == Phase.DRAW and draw_wait:
+			draw_wait = false
+			_draw_commit())
+	draw_ok_btn.visible = false
+	root.add_child(draw_ok_btn)
+	detail_btn = Button.new()
+	detail_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	detail_btn.position = Vector2(-70.0 - 130.0, -100.0)  # 취소 왼쪽
+	detail_btn.size = Vector2(120, 40)
+	detail_btn.add_theme_font_size_override("font_size", 18)
+	detail_btn.focus_mode = Control.FOCUS_NONE
+	detail_btn.pressed.connect(func():
+		tip_detail = not tip_detail
+		touch_tip_t = TOUCH_TIP_SEC * 3.0)  # 자세히는 읽을 게 많아 더 오래
+	detail_btn.visible = false
+	root.add_child(detail_btn)
 	for b in [pause_btn, speed_btn, reroll_btn, skip_btn, skip_n_btn, skip_badge, auto_btn, start_btn, mute_btn, cancel_btn, bar_btn]:
 		b.focus_mode = Control.FOCUS_NONE
 	_update_auto_btn()
@@ -2672,6 +2710,8 @@ func _game_over() -> void:
 ## 터치인지 마우스인지 기억한다 (터치에서 흉내 낸 마우스 움직임은 장치 번호가 EMULATION).
 func _input(event: InputEvent) -> void:
 	var was_touch := touch_ui
+	if event is InputEventScreenTouch or event is InputEventScreenDrag:
+		touch_tip_t = TOUCH_TIP_SEC
 	if event is InputEventScreenTouch:
 		touch_ui = true
 		if event.pressed:
@@ -3120,12 +3160,13 @@ func _build_menu(root: Control) -> void:
 	desc.add_theme_font_size_override("font_size", 19)
 	desc.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
 	desc.text = "밖에서 몰려오는 구체를 막아 중앙 점을 지키세요\n공격방식·속성·강화·연계를 조합해 오브젝트를 키우세요"
+	desc.visible = not _phone()  # 폰: 줄을 줄여야 시작 화면을 덜 줄여서 버튼이 손가락 크기로 남는다
 	box.add_child(desc)
 	map_label = _menu_row(box, func(): _cycle_map(-1), func(): _cycle_map(1))
 	flip_label = _menu_row(box, _toggle_flip, _toggle_flip)
 	rules_label = _menu_row(box, func(): _cycle_rules(-1), func(): _cycle_rules(1))
 	modes_btn = Button.new()
-	modes_btn.custom_minimum_size = Vector2(580, 40)
+	modes_btn.custom_minimum_size = Vector2(580, 56 if _phone() else 40)
 	modes_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	modes_btn.focus_mode = Control.FOCUS_NONE
 	modes_btn.add_theme_font_size_override("font_size", 17)
@@ -3148,7 +3189,7 @@ func _build_menu(root: Control) -> void:
 	for spec in specs:
 		var b := Button.new()
 		b.text = spec[0]
-		b.custom_minimum_size = Vector2(150 if specs.size() <= 4 else 120 if specs.size() == 5 else 100, 44)
+		b.custom_minimum_size = Vector2(150 if specs.size() <= 4 else 120 if specs.size() == 5 else 100, 60 if _phone() else 44)
 		b.focus_mode = Control.FOCUS_NONE
 		b.pressed.connect(spec[1])
 		row.add_child(b)
@@ -3156,7 +3197,7 @@ func _build_menu(root: Control) -> void:
 	new_btn = row.get_child(0)
 	# 이어하기: 저장된 판이 있을 때만 (쉬는 시간마다 자동 저장)
 	continue_btn = Button.new()
-	continue_btn.custom_minimum_size = Vector2(630, 48)
+	continue_btn.custom_minimum_size = Vector2(630, 60 if _phone() else 48)
 	continue_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	continue_btn.focus_mode = Control.FOCUS_NONE
 	continue_btn.add_theme_font_size_override("font_size", 19)
@@ -3165,7 +3206,7 @@ func _build_menu(root: Control) -> void:
 	box.add_child(continue_btn)
 	box.move_child(continue_btn, row.get_index())
 	remote_btn = Button.new()
-	remote_btn.custom_minimum_size = Vector2(630, 44)
+	remote_btn.custom_minimum_size = Vector2(630, 56 if _phone() else 44)
 	remote_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	remote_btn.focus_mode = Control.FOCUS_NONE
 	remote_btn.add_theme_font_size_override("font_size", 17)
@@ -3175,14 +3216,14 @@ func _build_menu(root: Control) -> void:
 	box.move_child(remote_btn, row.get_index())
 	# 온라인: 새 버전 알림, 패치 공지 (서버에서 받았을 때만 보임)
 	update_btn = Button.new()
-	update_btn.custom_minimum_size = Vector2(630, 40)
+	update_btn.custom_minimum_size = Vector2(630, 56 if _phone() else 40)
 	update_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	update_btn.focus_mode = Control.FOCUS_NONE
 	update_btn.add_theme_color_override("font_color", Color(1, 0.85, 0.45))
 	update_btn.visible = false
 	box.add_child(update_btn)
 	notes_btn = Button.new()
-	notes_btn.custom_minimum_size = Vector2(320, 36)
+	notes_btn.custom_minimum_size = Vector2(320, 52 if _phone() else 36)
 	notes_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	notes_btn.focus_mode = Control.FOCUS_NONE
 	notes_btn.pressed.connect(_toggle_notes)
@@ -3239,8 +3280,10 @@ func _build_menu(root: Control) -> void:
 	settings_panel = PanelContainer.new()
 	settings_panel.z_index = 22  # 일시정지 어둠(z 20) 위에
 	settings_panel.set_anchors_preset(Control.PRESET_CENTER)
-	settings_panel.position = Vector2(-240, 0)
-	settings_panel.size = Vector2(480, 0)
+	# 폰: 켜기·끄기 줄을 두 칸으로 나누고 줄을 손가락 크기로 (한 칸이면 창이 화면보다 길어져 줄어들고 줄이 3mm 남짓이었다)
+	var sw := 920.0 if _phone() else 480.0
+	settings_panel.position = Vector2(-sw / 2.0, 0)
+	settings_panel.size = Vector2(sw, 0)
 	settings_panel.grow_vertical = Control.GROW_DIRECTION_BOTH  # 내용 높이에 맞춰 위아래로 자라 가운데에 (온라인 줄이 생기면 아래가 잘리던 것)
 	settings_panel.add_theme_stylebox_override("panel", rsb.duplicate())
 	settings_panel.visible = false
@@ -3293,6 +3336,14 @@ func _build_menu(root: Control) -> void:
 			_save_best())
 		zrow.add_child(zb)
 	sv.add_child(zrow)
+	var cbox: Container = sv
+	if _phone():
+		var grid := GridContainer.new()
+		grid.columns = 2
+		grid.add_theme_constant_override("h_separation", 18)
+		grid.add_theme_constant_override("v_separation", 4)
+		sv.add_child(grid)
+		cbox = grid
 	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 첫 글자)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"], ["웨이브 넘기기 중 중앙이 위험하면 멈춤 (체력 50%)", "skip_danger"], ["효과 줄이기 (장판·터지는 효과를 옅게, 많을수록 더)", "fx_low"]]:
 		var cb := CheckButton.new()
 		cb.text = spec[0]
@@ -3319,7 +3370,7 @@ func _build_menu(root: Control) -> void:
 					for t in towers.get_children():
 						t.queue_redraw()
 			_save_best())
-		sv.add_child(cb)
+		cbox.add_child(cb)
 	var gc := CheckButton.new()
 	gc.text = "처음 안내 보기 (처음 생기는 일에 한 줄 설명)"
 	gc.button_pressed = Meta.guide_on
@@ -3329,7 +3380,7 @@ func _build_menu(root: Control) -> void:
 		if not on:
 			guide_lines.clear()
 		_save_best())
-	sv.add_child(gc)
+	cbox.add_child(gc)
 	var gr := Button.new()
 	gr.text = "안내 처음부터 다시 보기"
 	gr.tooltip_text = "본 안내를 지우고, 다음 새 판은 첫 판처럼 카드 종류를 웨이브마다 하나씩 엽니다"
@@ -3350,7 +3401,7 @@ func _build_menu(root: Control) -> void:
 		oc.toggled.connect(func(on):
 			Meta.online_on = on
 			_save_best())
-		sv.add_child(oc)
+		cbox.add_child(oc)
 		var nrow := HBoxContainer.new()
 		var nl := Label.new()
 		nl.text = "닉네임"
@@ -3394,6 +3445,12 @@ func _build_menu(root: Control) -> void:
 	close.pressed.connect(_toggle_settings)
 	brow.add_child(close)
 	sv.add_child(brow)
+	if _phone():
+		for c: Control in settings_panel.find_children("*", "", true, false):
+			if c is BaseButton or c is LineEdit or c is HSlider:
+				c.custom_minimum_size.y = maxf(c.custom_minimum_size.y, 52.0)
+			if c is CheckButton:
+				c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_refresh_menu()
 
 
@@ -3434,10 +3491,13 @@ func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0) ->
 func _refresh_menu() -> void:
 	var m: Dictionary = Meta.MAPS[Meta.map_id]
 	var best := Meta.best_of(Meta.run_key())
-	map_label.text = _kh("맵: %s  (←/→)\n%s\n최고 기록%s  웨이브 %d · 점수 %s" % [Meta.map_name(), m["desc"], " (쉽게 모드)" if Modes.easy() else "", best[0], num(best[1])])
+	# 폰: 맵 설명 줄은 뺀다 (도움말·도감에 있고, 줄이 많으면 시작 화면 전체가 줄어 버튼이 작아진다)
+	map_label.text = _kh("맵: %s  (←/→)\n%s최고 기록%s  웨이브 %d · 점수 %s" % [Meta.map_name(), "" if _phone() else m["desc"] + "\n", " (쉽게 모드)" if Modes.easy() else "", best[0], num(best[1])])
 	flip_label.get_parent().visible = Meta.map_id == "line"
 	flip_label.text = _kh("구체가 오는 쪽: %s  (F)" % ("왼쪽 → 문은 오른쪽 끝" if Meta.line_flip else "오른쪽 → 문은 왼쪽 끝"))
-	rules_label.text = _kh("규칙: %s%s  %s\n%s" % [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", "(눌러서 바꾸기)" if touch_ui else "(↑/↓)", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 550.0, 18)])
+	var ra := [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", "(눌러서 바꾸기)" if touch_ui else "(↑/↓)", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 550.0, 18)]
+	# 폰: 규칙 설명 줄도 뺀다 (이름만, 자세한 건 도움말·모드 창)
+	rules_label.text = _kh("규칙: %s%s  %s" % ra.slice(0, 3) if _phone() else "규칙: %s%s  %s\n%s" % ra)
 	rules_label.get_parent().visible = Meta.games > 0  # 규칙 버전 고르기는 첫 판을 끝낸 뒤에 (그 전엔 버전 1)
 	modes_btn.visible = Meta.games > 0  # 모드도
 	modes_btn.text = "모드 (시험): %s   ▶" % ("없음" if Modes.on.is_empty() else "%s · 점수 x%.2f" % [Modes.names(), Modes.mul()])
@@ -4596,6 +4656,7 @@ func _start_draw(t: Tower, q: Array, after: bool) -> void:
 
 func _draw_begin_branch() -> void:
 	draw_on = false
+	draw_wait = false
 	draw_pts = PackedVector2Array()
 	draw_len = 0.0
 	draw_bends = 0
@@ -4616,9 +4677,9 @@ func _draw_input(event: InputEvent) -> void:
 			_draw_begin_branch()
 			draw_on = true
 			draw_pts.append(draw_t.position)
+			draw_aim = get_global_mouse_position()
 		elif draw_on:
-			draw_on = false
-			_draw_commit()
+			_draw_release()
 	elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 		_cancel_step()
 
@@ -4635,10 +4696,23 @@ func _update_draw() -> void:
 		_draw_done()
 		return
 	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-		draw_on = false  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
-		_draw_commit()
+		_draw_release()  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
 		return
-	_draw_extend(get_global_mouse_position().clamp(field_rect().position, field_rect().end))
+	var m := get_global_mouse_position()
+	# 터치: 손가락 떨림이 꺾기로 세어져 꺾기를 일찍 다 쓰던 것 → 목표점을 부드럽게 따라간다
+	draw_aim = draw_aim.lerp(m, 0.45) if touch_ui else m
+	_draw_extend(draw_aim.clamp(field_rect().position, field_rect().end))
+
+
+## 손을 뗐을 때: 마우스는 바로 넣고, 터치는 길을 남겨 둔 채 [확정]을 기다린다 (다시 누른 채 끌면 새로 그림).
+func _draw_release() -> void:
+	draw_on = false
+	if touch_ui and draw_len >= DRAW_MIN:
+		_draw_extend(get_global_mouse_position().clamp(field_rect().position, field_rect().end))  # 떨림 줄이기로 덜 따라간 끝까지
+		draw_wait = true
+		hint.text = "[확정]으로 넣기 · 다시 누른 채 끌면 새로 그리기\n취소: 그대로 두기"
+		return
+	_draw_commit()
 
 
 func _draw_extend(p: Vector2) -> void:
@@ -4732,10 +4806,12 @@ func _draw_path_edit() -> void:
 	var txt := "남은 길이 %d · 꺾기 %d/%d" % [roundi(maxf(L - draw_len, 0.0)), draw_bends, Pat.PATH_BENDS]
 	if draw_stop != "":
 		txt += " · " + draw_stop
-	var at := tip + (Vector2(-70, -70) if touch_ui else Vector2(14, -14))
-	at = at.clamp(view_rect().position + Vector2(4, 20), view_rect().end - Vector2(240, 8))
-	draw_string(ui_font, at + Vector2(1, 1), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color.BLACK)
-	draw_string(ui_font, at, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1, 0.6, 0.5) if draw_stop != "" else Color(1, 0.95, 0.75))
+	var fs := roundi(15 * Meta.ui_scale)  # 폰은 글자 크기 설정만큼 (작아서 읽기 힘들었다)
+	var tw := ui_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var at := tip + (Vector2(-70, -70) * Meta.ui_scale if touch_ui else Vector2(14, -14))
+	at = at.clamp(view_rect().position + Vector2(4, 20), view_rect().end - Vector2(tw + 8, 8))
+	draw_string(ui_font, at + Vector2(1, 1), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.BLACK)
+	draw_string(ui_font, at, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1, 0.6, 0.5) if draw_stop != "" else Color(1, 0.95, 0.75))
 
 
 func _toggle_pause() -> void:
@@ -5131,6 +5207,16 @@ func _roll_kind() -> int:
 
 func _process(delta: float) -> void:
 	key_t -= delta
+	touch_tip_t -= delta
+	# 터치 [자세히]: 오브젝트 정보창이 떠 있는 동안만 (취소 버튼 왼쪽)
+	var tip_on := touch_ui and Engine.get_process_frames() - tip_frame <= 2 and not title_label.visible
+	if touch_ui:
+		fx_layer.queue_redraw()  # 정보창이 떠 있는지(tip_frame)를 매 프레임 알도록 (쉬는 시간엔 다시 그리지 않는 프레임이 있다)
+	if not tip_on:
+		tip_detail = false
+	detail_btn.visible = tip_on
+	draw_ok_btn.visible = phase == Phase.DRAW and draw_wait and not get_tree().paused
+	detail_btn.text = "간단히" if tip_detail else "자세히"
 	_place_apply_btn()
 	for c in [hint, skip_badge]:
 		c.self_modulate.a = 0.12 if Engine.get_process_frames() - tip_fade.get(c, -10) <= 2 else 1.0
@@ -5814,14 +5900,26 @@ func _draw_tooltip() -> void:
 	tip_orb = null
 	# 터치는 마우스를 올려 둘 수 없으니, 눌러서 옮기기 시작한 오브젝트의 정보를 보여 준다
 	var touch_move := phase == Phase.MOVE and touch_ui and moving != null
-	if (phase in [Phase.PLACE, Phase.GAMEOVER, Phase.MOVE, Phase.AIM, Phase.DRAW] and not touch_move) or title_label.visible or dragging or boxing:
+	# 터치로 방향 바꾸기: 손가락은 쏠 쪽에 있으니 그 오브젝트 정보를 함께 보여 준다 ([자세히]로 수치까지)
+	var touch_aim := phase == Phase.AIM and touch_ui and moving != null
+	if (phase in [Phase.PLACE, Phase.GAMEOVER, Phase.MOVE, Phase.AIM, Phase.DRAW] and not touch_move and not touch_aim) or title_label.visible or dragging or boxing:
+		return
+	# 터치는 손을 뗀 자리에 마우스가 남는다: 누르고 3초가 지나면 정보창을 닫는다
+	if touch_ui and not touch_move and not touch_aim and touch_tip_t <= 0.0:
 		return
 	if dps_panel.visible and dps_panel.get_global_rect().has_point(dps_panel.get_global_mouse_position()):
 		return  # DPS 표 위: 표 뒤에 가린 오브젝트 정보창이 뜨지 않게
-	var t := moving if touch_move else _tower_at(get_global_mouse_position())
+	var t := moving if touch_move or touch_aim else _tower_at(get_global_mouse_position())
+	# 터치로 [자세히]를 누르면 손가락이 버튼으로 가서 정보창이 사라졌다: 방금 보던 오브젝트를 이어서
+	if t == null and touch_ui and is_instance_valid(tip_tower) and detail_btn.visible \
+			and detail_btn.get_global_rect().has_point(get_viewport().get_mouse_position()):
+		t = tip_tower
+	if t != null:
+		tip_tower = t
 	if t == null:
 		_draw_orb_tooltip()
 		return
+	tip_frame = Engine.get_process_frames()
 	var z: float = Meta.ui_scale
 	var fs := roundi(14 * z)
 	var lh := 18.0 * z
@@ -5830,12 +5928,14 @@ func _draw_tooltip() -> void:
 	var head := t.title()
 	var tip := ("(클릭: 길 다시 그리기 · 끌기: 옮기기)" if t.pattern == "path" else "(클릭: 방향 · 끌기: 옮기기)") if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
 	# Shift를 누르고 있으면 공격력·공격 속도·사거리 같은 수치를 자세히
-	var detail := Input.is_key_pressed(KEY_SHIFT) and not touch_move
+	var detail := (Input.is_key_pressed(KEY_SHIFT) or (touch_ui and tip_detail)) and not touch_move
 	tip = _th(tip)
 	if not touch_ui:
 		tip = (tip.trim_suffix(")") + " · " if tip != "" else "(") + ("Shift: 자세히)" if not detail else "Shift 떼기: 돌아가기)")
 	if touch_move:
 		tip = "(새 자리 누르기: 옮기기 · 취소: 그대로)"
+	elif touch_aim:
+		tip = "(쏠 쪽 누르기: 방향 확정)"
 	if tip != "" and ui_font.get_string_size(head + "   " + tip, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= maxw:
 		lines.append([head + "   " + tip, Color.WHITE])
 	else:
@@ -5909,6 +6009,8 @@ func _draw_tooltip() -> void:
 	var vw := view_rect()
 	var size := vw.end  # 화면 오른쪽 아래 끝 (월드 좌표. 폰은 전장 밖 양옆까지)
 	var p := t.position + Vector2(28, -h / 2)
+	if touch_aim and get_global_mouse_position().x > t.position.x:
+		p.x = t.position.x - 28.0 - (w + 16.0)  # 손가락(쏠 쪽) 반대편에
 	p.x = clampf(p.x, vw.position.x + 8, _right_limit() - w - 16)
 	var top := _tip_top()
 	p.y = clampf(p.y, top if h <= size.y - top - 8.0 else vw.position.y + 8.0, size.y - h - 8)

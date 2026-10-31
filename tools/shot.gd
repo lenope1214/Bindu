@@ -1,6 +1,6 @@
 extends SceneTree
 ## 화면 배치 점검용 스크린샷: 시작 화면(줄이 가장 많을 때)·그 위 창들·카드·특성·일시정지·게임 오버.
-## 인자: 저장 폴더 [글자 크기] [touch]. 예) xvfb-run godot --path . -s tools/shot.gd -- /tmp/shots 1.3 touch
+## 인자: 저장 폴더 [글자 크기] [touch] [phone]. 예) xvfb-run godot --path . -s tools/shot.gd -- /tmp/shots 1.3 touch phone
 var main
 var f := 0
 var out := "/tmp"
@@ -14,6 +14,7 @@ func _initialize():
 	if a.size() > 0: out = a[0]
 	if a.size() > 1: z = float(a[1])
 	touch = a.size() > 2 and a[2] == "touch"
+	Meta.sim_phone = a.size() > 3 and a[3] == "phone"  # 폰 화면 구성 (main._phone)
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	steps = [
@@ -86,7 +87,20 @@ func _initialize():
 			# 오브젝트 정보창 (마우스를 올렸을 때, 화면 오른쪽 아래 쪽 오브젝트라 창이 화면 끝에 닿는지)
 			var t: Node2D = main.towers.get_child(1)
 			Input.warp_mouse(t.get_global_transform_with_canvas().origin),
-		func(): _snap("tip"); main.touch_ui = touch; main._set_cards_hidden(false); main._on_skip(),  # 마우스를 옮기면 touch_ui가 꺼진다
+		func():
+			_snap("tip")
+			# 터치로 방향 바꾸기: 오브젝트 정보창이 손가락 반대편에, 아래에 [자세히]
+			main.touch_ui = true
+			var t: Node2D = main.towers.get_child(1)
+			main._start_move(t)
+			Input.warp_mouse(t.get_global_transform_with_canvas().origin + Vector2(160, 0)),
+		func(): main.touch_ui = true,  # 마우스를 옮기면(warp) touch_ui가 꺼진다
+		func(): main.tip_detail = true,
+		func():
+			_snap("aim_touch_detail")
+			main.tip_detail = false
+			main._cancel_step()
+			main.touch_ui = touch; main._set_cards_hidden(false); main._on_skip(),  # 마우스를 옮기면 touch_ui가 꺼진다
 		func(): _snap("skip_ready"); main._start_wave(),
 		func(): _snap("skip_wave"); _orb_tip(),
 		func(): _snap("orb_tip"); main.touch_ui = touch; main.skip_left = 0; main._start_perk(),
@@ -98,7 +112,7 @@ func _initialize():
 
 
 func _snap(n: String):
-	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s.png" % [n, z, "_touch" if touch else ""]))
+	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
 	print("SHOT ", n)
 
 
