@@ -39,7 +39,7 @@ PATCH_KEYS = {"rules", "rules_desc", "perks", "perk_desc", "cards", "elem_dmg", 
 
 
 # 자동 배포 확인용: 서버 코드를 고쳐 배포할 때 바꾸면 /health로 새 이미지가 떴는지 밖에서 볼 수 있다
-SERVER_REV = "2026-10-31.2"
+SERVER_REV = "2026-10-31.3"
 
 
 @app.get("/health")
@@ -508,6 +508,27 @@ def hide_run(rid: int, body: HiddenIn, db: Session = Depends(get_db)):
     r.hidden = body.hidden
     db.commit()
     return {"id": r.id, "hidden": r.hidden}
+
+
+class RunEditIn(BaseModel):
+    wave: int | None = None
+    score: int | None = None
+    ended: bool | None = None
+    valid: bool | None = None
+    hidden: bool | None = None
+
+
+@app.post("/admin/runs/{rid}/edit", dependencies=[Depends(require_admin)])
+def edit_run(rid: int, body: RunEditIn, db: Session = Depends(get_db)):
+    """관리자가 기록을 직접 고친다 (서버 오류로 마지막 기록이 빠진 판 등). 검증을 통과로 바꾸면 이유는 manual."""
+    r = db.get(Run, rid) or _404()
+    for k, v in body.model_dump(exclude_none=True).items():
+        setattr(r, k, v)
+    if body.valid:
+        r.reason = "manual"
+    r.updated_at = now()
+    db.commit()
+    return {"id": r.id, "wave": r.wave, "score": r.score, "valid": r.valid, "hidden": r.hidden, "ended": r.ended, "season": r.season}
 
 
 class BanIn(BaseModel):

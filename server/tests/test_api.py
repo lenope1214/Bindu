@@ -258,3 +258,11 @@ def test_grow_board():
         assert [e["score"] for e in grow] == [5000]
         r = post_run(c, device="dev-grow-aaaa", modes=["grow", "rush"], score=6000, **kw).json()
         assert r["accepted"] and r["rank"]["rank"] == 1
+
+
+def test_admin_edit_run():
+    with TestClient(app) as c:
+        rid = post_run(c, device="dev-edit-aaaa", score=3000, modes=["stroll"]).json()["id"]
+        r = c.post(f"/admin/runs/{rid}/edit", json={"wave": 155, "score": 33_410_723_996, "hidden": False, "valid": True}, headers=A).json()
+        assert r["score"] == 33_410_723_996 and not r["hidden"] and r["valid"]
+        assert c.post(f"/admin/runs/{rid}/edit", json={"wave": 1}).status_code == 401
