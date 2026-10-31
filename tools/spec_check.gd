@@ -1274,6 +1274,30 @@ func _meta_misc() -> void:
 	ok("DPS-01", is_equal_approx(tw.dealt, 7.0) and is_equal_approx(tw.src.get("rx:steam", 0.0), 7.0), "피해 출처: 출처별로 나눠 쌓음")
 	tw.free()
 
+	# 웨이브 중 실시간 DPS: 최근 5초 이동 평균 (앞쪽 큰 피해는 창 밖으로 빠짐), 접기 상태 저장
+	_tower(main.center() + Vector2(-200, 0))
+	var lt: Tower = main.towers.get_child(main.towers.get_child_count() - 1)
+	var ph0 = main.phase
+	main.phase = main.Phase.WAVE
+	main.dps_hist.clear()
+	main.dps_t = 0.0
+	lt.dealt = 1000.0  # 웨이브 초반 큰 피해
+	main.wave_time = 0.0
+	for i in 40:  # 20초 동안 초당 10
+		main._dps_sample(main.DPS_STEP)
+		lt.dealt += 10.0 * main.DPS_STEP
+		main.wave_time += main.DPS_STEP
+	var live: float = main._dps_of(lt)
+	main.phase = main.Phase.CHOOSE
+	var after: float = main._dps_of(lt)
+	main.phase = ph0
+	var f0: bool = main.dps_hidden
+	main._toggle_dps()
+	var saved: bool = Meta.dps_fold == main.dps_hidden and main.dps_hidden != f0
+	main._toggle_dps()
+	ok("DPS-02", absf(live - 10.0) < 0.01 and after > 50.0 and saved, "실시간 DPS: 웨이브 중 최근 5초 이동 평균 (%.1f, 쉬는 시간엔 웨이브 평균 %.1f), 표 접기 저장" % [live, after])
+	_clear()
+
 
 # ---------- 멀티플레이 (연결 없이 확인할 수 있는 것) ----------
 

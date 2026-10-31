@@ -320,7 +320,13 @@ var dps_scroll: ScrollContainer
 var dps_list: VBoxContainer
 var dps_sig := ""  # 표를 다시 만들지 정하는 요약 (오브젝트·피해가 바뀔 때만)
 var dps_focus: Tower = null  # 표에서 마우스를 올린 오브젝트
-var dps_hidden := OS.has_feature("mobile")  # D: 표 접기. 폰·태블릿은 접어 두고 시작
+var dps_hidden := OS.has_feature("mobile")  # D: 표 접기 (Meta.dps_fold로 저장)
+# 웨이브 중 실시간 DPS: 게임 시간 DPS_STEP초마다 오브젝트별 누적 피해(dealt)를 적어 두고 최근 DPS_WIN초 차이로 초당 피해 (이동 평균이라 덜 흔들림)
+const DPS_STEP := 0.5
+const DPS_WIN := 5.0
+var dps_hist := {}  # 오브젝트 instance id → 최근 dealt 표본들 (오래된 것부터)
+var dps_t := 0.0  # 다음 표본까지 남은 게임 시간
+var dps_n := 0  # 이번 웨이브에 적은 표본 수 (표를 1초마다 고치는 데 씀)
 # 온라인 (Net·Patch): 판 기록·통계
 var net: Net
 # 멀티플레이 (아래 "멀티플레이" 절)
@@ -1134,6 +1140,7 @@ func _build_ui() -> void:
 	over_card.visible = false
 	root.add_child(over_card)
 
+	dps_hidden = Meta.dps_fold
 	_build_dps(root)
 	_build_menu(root)
 
@@ -1196,12 +1203,41 @@ func _build_dps(root: Control) -> void:
 
 func _toggle_dps() -> void:
 	dps_hidden = not dps_hidden
+	Meta.dps_fold = dps_hidden
 	dps_sig = ""
+	_save_best()
+
+
+## 웨이브 중 표본 적기 (게임 시간 기준이라 배속과 상관없이 같은 값).
+func _dps_sample(delta: float) -> void:
+	dps_t -= delta
+	if dps_t > 0.0:
+		return
+	dps_t += DPS_STEP
+	dps_n += 1
+	var keep := int(DPS_WIN / DPS_STEP) + 1
+	for t in towers.get_children():
+		var h: Array = dps_hist.get(t.get_instance_id(), [])
+		h.append(t.dealt)
+		if h.size() > keep:
+			h.pop_front()
+		dps_hist[t.get_instance_id()] = h
+
+
+## 표의 초당 피해: 웨이브 중이면 최근 DPS_WIN초 이동 평균, 쉬는 시간이면 지난 웨이브 평균.
+func _dps_of(t: Tower) -> float:
+	if phase != Phase.WAVE:
+		return t.dealt / maxf(wave_time, 0.001)
+	var h: Array = dps_hist.get(t.get_instance_id(), [])
+	if h.size() < 2:
+		return t.dealt / maxf(wave_time, 0.001)
+	# 마지막 표본 뒤 흐른 시간까지 넣으면 0.5초마다 톱니처럼 튀므로 표본끼리만 잰다
+	return (h[-1] - h[0]) / ((h.size() - 1) * DPS_STEP)
 
 
 ## 표를 보일지, 보이면 오브젝트·피해가 바뀌었을 때만 줄을 다시 만든다 (매 프레임 만들면 마우스 올림이 끊긴다).
 func _refresh_dps() -> void:
-	var on := phase in [Phase.CHOOSE, Phase.READY] and not title_label.visible and wave_time > 1.0 and towers.get_child_count() > 0 \
+	var on := phase in [Phase.CHOOSE, Phase.READY, Phase.WAVE] and not title_label.visible and wave_time > 1.0 and towers.get_child_count() > 0 \
 		and not get_tree().paused and not help_label.visible and not settings_panel.visible and not records_panel.visible and not notes_panel.visible and not modes_panel.visible
 	dps_panel.visible = on
 	if not on:
@@ -1236,15 +1272,22 @@ func _refresh_dps() -> void:
 	if guide_label.visible and guide_label.get_rect().position.x < 320.0:
 		bottom = minf(bottom, guide_label.position.y - 4.0)  # 처음 안내 글 위까지만
 	var room := maxf(0.0 if apply_btn.visible else 48.0, bottom - top - 44.0)
+	var live := phase == Phase.WAVE
 	var list := towers.get_children()
-	list.sort_custom(func(a, b): return a.dealt > b.dealt)
-	var sig := "%s|%d|%d" % [dps_hidden, roundi(room), roundi(wave_time)]
+	var dv := {}
 	for t in list:
-		sig += "|%d:%s:%d" % [t.get_instance_id(), t.title(), roundi(t.dealt)]
+		dv[t] = _dps_of(t)
+	list.sort_custom(func(a, b): return dv[a] > dv[b])
+	# 웨이브 중엔 1초(표본 2개)마다만 고친다: 숫자가 매 프레임 바뀌면 읽을 수 없고 줄 순서도 덜 뒤바뀐다
+	var sig := "%s|%s|%d|%d" % [dps_hidden, live, roundi(room), dps_n / 2 if live else roundi(wave_time)]
+	for t in list:
+		sig += "|%d:%s" % [t.get_instance_id(), t.title()]
+		if not live:
+			sig += ":%d" % roundi(t.dealt)
 	if sig == dps_sig:
 		return
 	dps_sig = sig
-	dps_head.text = _kh(("▶" if dps_hidden else "▼") + " 지난 웨이브 DPS (D)")
+	dps_head.text = _kh(("▶" if dps_hidden else "▼") + (" 실시간 DPS (D)" if live else " 지난 웨이브 DPS (D)"))
 	for c in dps_list.get_children():
 		c.queue_free()
 	dps_scroll.visible = not dps_hidden
@@ -1254,9 +1297,9 @@ func _refresh_dps() -> void:
 		return
 	var total := 0.0
 	for t in list:
-		total += t.dealt
+		total += dv[t]
 	for i in list.size():
-		dps_list.add_child(_dps_row(list[i], i + 1, total))
+		dps_list.add_child(_dps_row(list[i], i + 1, dv[list[i]], total, live))
 	var rows := list.size() * 24.0
 	dps_scroll.custom_minimum_size.y = minf(rows, room)
 	dps_panel.size = Vector2.ZERO  # 줄이 줄면 판도 줄인다
@@ -1265,8 +1308,8 @@ func _refresh_dps() -> void:
 
 
 ## 표 한 줄: 순위 · 색 · 이름 · 초당 피해 · 몫. 뒤에 몫만큼 막대.
-func _dps_row(t: Tower, rank: int, total: float) -> Control:
-	var share := t.dealt / total if total > 0.0 else 0.0
+func _dps_row(t: Tower, rank: int, dps: float, total: float, live := false) -> Control:
+	var share := dps / total if total > 0.0 else 0.0
 	var row := HBoxContainer.new()
 	row.custom_minimum_size = Vector2(0, 22)
 	row.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -1288,7 +1331,7 @@ func _dps_row(t: Tower, rank: int, total: float) -> Control:
 		row.queue_redraw())
 	var cells := [["%d" % rank, 18, HORIZONTAL_ALIGNMENT_RIGHT, Color(1, 1, 1, 0.55)],
 		["", 0],
-		["%.1f" % (t.dealt / wave_time), 52, HORIZONTAL_ALIGNMENT_RIGHT, Color(1, 0.9, 0.5)],
+		["%.1f" % dps, 52, HORIZONTAL_ALIGNMENT_RIGHT, Color(1, 0.9, 0.5)],
 		["%d%%" % roundi(share * 100.0), 36, HORIZONTAL_ALIGNMENT_RIGHT, Color(1, 1, 1, 0.7)]]
 	for c in cells:
 		if c[0] == "":
@@ -1309,10 +1352,13 @@ func _dps_row(t: Tower, rank: int, total: float) -> Control:
 			l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 			l.custom_minimum_size.x = 150
 		row.add_child(l)
-	row.tooltip_text = "%s\n지난 웨이브 피해 %d · 초당 %.1f · 전체의 %d%%" % [t.title(), roundi(t.dealt), t.dealt / wave_time, roundi(share * 100.0)]
+	if live:
+		row.tooltip_text = "%s\n최근 %d초 초당 %.1f · 전체의 %d%%\n이번 웨이브 피해 %d (평균 초당 %.1f)" % [t.title(), roundi(DPS_WIN), dps, roundi(share * 100.0), roundi(t.dealt), t.dealt / wave_time]
+	else:
+		row.tooltip_text = "%s\n지난 웨이브 피해 %d · 초당 %.1f · 전체의 %d%%" % [t.title(), roundi(t.dealt), dps, roundi(share * 100.0)]
 	var b := t.breakdown()
 	if t.dealt > 0.0 and not b.is_empty():
-		row.tooltip_text += "\n\n피해 출처 (초당 · 이 오브젝트의 몫)"
+		row.tooltip_text += "\n\n%s피해 출처 (초당 · 이 오브젝트의 몫)" % ("이번 웨이브 " if live else "")
 		for key in _src_top(b, 5):
 			row.tooltip_text += "\n  %s  %.1f · %d%%" % [src_name(key), b[key] / wave_time, roundi(b[key] / t.dealt * 100.0)]
 		if b.has("pat:" + t.pattern) and b.size() > 1:
@@ -1639,7 +1685,7 @@ func _help_text() -> String:
 		"빈 곳 끌기 / Shift·Ctrl+클릭 / Ctrl+A(모두): 여러 개 선택 → 그중 하나를 끌면 함께 이동",
 		"쉬는 시간에 오브젝트 클릭: 그 자리에서 방향 바꾸기 (우클릭한 채 끌면 한 번에)",
 		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 비율 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
-		"쉬는 시간 왼쪽 위 DPS 표: 지난 웨이브에 오브젝트마다 낸 DPS와 비율. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기",
+		"왼쪽 위 DPS 표: 웨이브 중엔 최근 5초 실시간 DPS, 쉬는 시간엔 지난 웨이브 DPS와 비율. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기 (저장됨)",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
 		"P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
 		"R: 처음부터 (일시정지 중 두 번) · 게임 오버 뒤 클릭·R·Esc: 시작 화면",
@@ -1660,7 +1706,7 @@ func _help_text() -> String:
 		"공격방식·강화·연계 카드: 오브젝트를 눌러 넣기 (효과가 없는 강화는 못 넣음: 관통 연사·돌풍·철구에 관통·튕김, 벽에 유도, 벽·투척 장판에 분열)",
 		"쉬는 시간에 오브젝트 누르기: 그 자리에서 쏠 방향 바꾸기   누른 채 끌기: 옮기기 (방향은 그대로)",
 		"[취소]: 한 단계 되돌리기   [범위 보기]: 모든 오브젝트의 공격 범위·피해 비율",
-		"쉬는 시간 왼쪽 위 DPS 표: 지난 웨이브에 오브젝트마다 낸 DPS와 비율. 제목을 누르면 접기·펴기",
+		"왼쪽 위 DPS 표: 웨이브 중엔 최근 5초 실시간 DPS, 쉬는 시간엔 지난 웨이브 DPS와 비율. 제목을 누르면 접기·펴기 (저장됨)",
 		"오른쪽 아래 [◀ 설정]: 소리·자동 시작·일시정지(시작 화면으로·판 끝내기·처음부터)·배속(x2~x8)",
 		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 [이어하기]로 그 쉬는 시간부터",
 		"첫 판은 카드가 단계별로 열려요 (공격방식 3·강화 4·연계 6웨이브)",
@@ -4050,6 +4096,9 @@ func _start_wave() -> void:
 	spawn_timer = 0.5
 	wave_time = 0.0
 	late_n = {}
+	dps_hist.clear()
+	dps_t = 0.0
+	dps_n = 0
 	for t in towers.get_children():
 		t.cd.clear()
 		t.fx.clear()
@@ -4425,7 +4474,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_set_cards_hidden(not cards_hidden)
 		elif event.keycode == KEY_Z and phase == Phase.CHOOSE and not perk_mode:
 			_set_card_detail(not Meta.card_detail)
-		elif event.keycode == KEY_D and phase in [Phase.CHOOSE, Phase.READY]:
+		elif event.keycode == KEY_D and phase in [Phase.CHOOSE, Phase.READY, Phase.WAVE]:
 			_toggle_dps()
 		elif event.keycode == KEY_A and (event.ctrl_pressed or event.meta_pressed) and phase in [Phase.CHOOSE, Phase.READY] and not perk_mode:
 			# 모두 선택: 한꺼번에 옮길 때
@@ -7968,6 +8017,7 @@ func _sim_step(delta: float) -> void:
 
 	wave_time += delta
 	run_game += delta
+	_dps_sample(delta)
 	# 콤보 유지 시간은 게임 시간으로 잰다: 배속을 올려도 점수가 달라지지 않는다
 	if combo_t > 0.0 and not combo_hold:
 		combo_t = maxf(combo_t - delta, 0.0)

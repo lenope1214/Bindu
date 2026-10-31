@@ -159,7 +159,18 @@ func _initialize():
 			main._cancel_step()
 			main.touch_ui = touch; main._set_cards_hidden(false); main._on_skip(),  # 마우스를 옮기면 touch_ui가 꺼진다
 		func(): _snap("skip_ready"); main._start_wave(),
-		func(): _snap("skip_wave"); _orb_tip(),
+		func():
+			_snap("skip_wave")
+			# 웨이브 중 실시간 DPS 표 (폰은 접어 두고 시작하지만 겹침을 보려고 펼쳐 둔다)
+			main.dps_hidden = false
+			main.wave_time = 8.0
+			var k := 1.0
+			for t in main.towers.get_children():
+				main.dps_hist[t.get_instance_id()] = [0.0, 40.0 * k]
+				t.dealt = 60.0 * k
+				k *= 1.7
+			main.dps_sig = "",
+		func(): _snap("wave_dps"); main.dps_hidden = Meta.dps_fold; _orb_tip(),
 		func(): _snap("orb_tip"); main.touch_ui = touch; main.skip_left = 0; Input.warp_mouse(Vector2(5, 360)); main._start_perk(),
 		func():
 			_snap("perks")
