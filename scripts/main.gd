@@ -180,7 +180,7 @@ const PERKS := [
 	{"id": "regen", "name": "회복", "desc": "웨이브를 마칠 때마다 중앙 체력 +1"},
 	{"id": "slow", "name": "끈적한 공간", "desc": "모든 구체 이동 속도 -8%"},
 	{"id": "harmony", "name": "조화", "desc": "속성을 여러 종류 겹쳐 생기는 공격 속도 감소가 절반으로"},
-	{"id": "coin", "name": "운명의 동전", "desc": "동전을 던지고 특성 3개를 새로 받아요. 앞면: 고른 특성이 두 번 적용. 뒷면: 한 번 적용 + 이번 쉬는 시간 새로고침 +2 (시험)"},
+	{"id": "coin", "name": "운명의 동전", "desc": "동전을 던지고 특성 3개를 새로 받아요. 앞면: 고른 특성이 두 번 적용. 뒷면: 한 번 적용 + 이번 쉬는 시간 새로고침 +2"},
 ]
 var perks := {}  # id → 고른 횟수
 var perk_mode := false
@@ -197,6 +197,16 @@ var bank_picks: Array = []  # 미룬 고르기. 값은 쌓은 쉬는 시간의 �
 var bank_rerolls := 0
 var bank_perks := 0  # 미룬 특성 고르기
 var coin_next := ""  # 운명의 동전을 던진 뒤 다음 특성: "double"(앞면) | "reroll"(뒷면) | ""
+## 동전 연출: 0 없음, 1 공중에서 회전(누르면 떨어짐, 1초 뒤 자동), 2 떨어지며 느려짐, 3 모서리로 서서 흔들림, 4 쓰러져 결과.
+## 결과(coin_next)는 던질 때 정해지고 연출은 보여 주기만 한다. 실제 시간으로 흐름(배속 무관). 자동 점검(headless)은 건너뜀
+var coin_anim := DisplayServer.get_name() != "headless"
+var coin_stage := 0
+var coin_t := 0.0
+var coin_ang := 0.0  # 회전각. 가로 폭 = cos(각), 양수면 앞면이 보임
+var coin_ang0 := 0.0
+var coin_spin := 0.0  # 떨어지는 동안 더 돌 각도 (끝에서 모서리가 서게 맞춤)
+var coin_tap_t := 0  # 마지막으로 누른 때(ms), 터치가 마우스로도 와서 두 번 눌리지 않게
+var coin_fx: Control
 var rest_ready := false  # 이번 쉬는 시간의 다음 웨이브(방향·저항·보스)를 이미 뽑아 둠 (넘기다 쉬는 시간에 멈춘 때)
 var combo := 0
 var combo_t := 0.0
@@ -683,6 +693,18 @@ func _build_ui() -> void:
 	info.draw.connect(_draw_info)
 	root.add_child(info)
 
+	coin_fx = Control.new()
+	coin_fx.set_anchors_preset(Control.PRESET_FULL_RECT)
+	coin_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	coin_fx.z_index = 15  # 카드 줄 버튼(넘기기·필드 보기) 위, 일시정지(20) 아래
+	coin_fx.visible = false
+	coin_fx.draw.connect(_draw_coin)
+	coin_fx.gui_input.connect(func(e: InputEvent):
+		if e is InputEventMouseButton and e.pressed or e is InputEventScreenTouch and e.pressed:
+			_coin_tap()
+			coin_fx.accept_event())
+	root.add_child(coin_fx)
+
 	banner = Label.new()
 	banner.set_anchors_preset(Control.PRESET_CENTER)
 	banner.position = Vector2(-400, -140)
@@ -692,6 +714,7 @@ func _build_ui() -> void:
 	banner.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	banner.add_theme_constant_override("outline_size", 6)
 	banner.visible = false
+	banner.z_index = 16  # 동전 연출(15) 위에 결과 글
 	root.add_child(banner)
 
 	over_label = Label.new()
@@ -1308,7 +1331,7 @@ func _cycle_skip_n() -> void:
 
 ## 넘기기 버튼·넘기는 중 표시 (매 프레임).
 func _update_skip_ui() -> void:
-	var show_btn := phase == Phase.CHOOSE and not cards_hidden and not title_label.visible and _can_skip() and not get_tree().paused
+	var show_btn := phase == Phase.CHOOSE and not cards_hidden and not title_label.visible and _can_skip() and not get_tree().paused and coin_stage == 0
 	skip_btn.visible = show_btn
 	skip_n_btn.visible = show_btn
 	# 글자를 키우면(폰 기본) 카드 아래 버튼 줄이 왼쪽 아래 안내 글까지 내려와 겹친다. 카드를 고르라는 글이라 겹칠 때만 숨긴다
@@ -1788,7 +1811,7 @@ func _show_perks() -> void:
 
 
 func _on_perk(pk: Dictionary) -> void:
-	if not perk_mode:
+	if not perk_mode or coin_stage > 0:
 		return
 	perk_mode = false
 	var id: String = pk["id"]
@@ -1797,9 +1820,10 @@ func _on_perk(pk: Dictionary) -> void:
 	if id == "coin":
 		# 운명의 동전: 지금 던지고 특성 3개를 새로 받는다 (뒷면도 보통 특성 하나보다 조금 낫게)
 		coin_next = "double" if randf() < 0.5 else "reroll"
-		sfx.play("crit")
-		_start_perk()
-		big_banner("동전 앞면!" if coin_next == "double" else "동전 뒷면!", Color(1, 0.85, 0.3))
+		if coin_anim:
+			_coin_throw()
+		else:
+			_coin_done()
 		return
 	_apply_perk(id)
 	var note := ""
@@ -1821,6 +1845,158 @@ func _on_perk(pk: Dictionary) -> void:
 		_start_perk()
 	else:
 		_start_choose(not rest_ready)
+
+
+## 동전을 던진다: 카드를 치우고 공중에서 돌리기 시작.
+func _coin_throw() -> void:
+	for c in choice_box.get_children():
+		c.queue_free()
+	choice_box.visible = false
+	banner_t = 0.0  # "특성 선택" 글이 남아 결과 글이 뒤로 밀리지 않게
+	banner_queue.clear()
+	toast_timer = 0.0
+	coin_stage = 1
+	coin_t = 0.0
+	coin_ang = 0.0
+	coin_fx.visible = true
+	coin_fx.mouse_filter = Control.MOUSE_FILTER_STOP
+	hint.text = _th("동전을 던졌어요! 눌러서 잡기 · 한 번 더 누르면 바로 결과")
+	sfx.play("place")
+
+
+## 누르기·Space: 공중이면 떨어뜨리고, 떨어지는 중이면 결과로, 결과가 떠 있으면 바로 카드로.
+func _coin_tap() -> void:
+	if coin_stage == 0 or Time.get_ticks_msec() - coin_tap_t < 150:
+		return
+	coin_tap_t = Time.get_ticks_msec()
+	match coin_stage:
+		1: _coin_drop()
+		2, 3: _coin_land()
+		4: _coin_done()
+
+
+func _coin_drop() -> void:
+	coin_stage = 2
+	coin_t = 0.0
+	coin_ang0 = coin_ang
+	# 처음 속도(초당 22)에서 고르게 느려져 0.85초 뒤 가로 폭 0(모서리)이 되게: 끝 각도 = (n + 0.5)π
+	coin_spin = ceilf((coin_ang0 + 9.35 - PI / 2.0) / PI) * PI + PI / 2.0 - coin_ang0
+
+
+func _coin_land() -> void:
+	coin_stage = 4
+	coin_t = 0.0
+	sfx.play("crit")
+	sfx.play("reaction", 0.0)
+	big_banner("동전 앞면! 두 번 적용" if coin_next == "double" else "동전 뒷면! 새로고침 +%d" % int(_perk_val("coin")), Color(1, 0.85, 0.3) if coin_next == "double" else Color(0.7, 0.82, 1.0))
+
+
+## 연출이 끝나 결과대로 특성 3개를 새로 받는다.
+func _coin_done() -> void:
+	coin_stage = 0
+	if coin_fx:
+		coin_fx.visible = false
+		coin_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if not coin_anim:
+		sfx.play("crit")
+		big_banner("동전 앞면!" if coin_next == "double" else "동전 뒷면!", Color(1, 0.85, 0.3))
+	_start_perk()
+
+
+func _coin_step(delta: float) -> void:
+	coin_t += delta
+	var was := cos(coin_ang) > 0.0
+	match coin_stage:
+		1:
+			coin_ang += 22.0 * delta
+			if coin_t >= 1.0:
+				_coin_drop()
+		2:
+			var k := minf(coin_t / 0.85, 1.0)
+			coin_ang = coin_ang0 + coin_spin * (1.0 - (1.0 - k) * (1.0 - k))
+			if k >= 1.0:
+				coin_stage = 3
+				coin_t = 0.0
+				sfx.play("place", 0.0)
+		3:
+			if coin_t >= 0.5:
+				_coin_land()
+		4:
+			if coin_t >= 0.75:
+				_coin_done()
+				return
+	if coin_stage in [1, 2] and (cos(coin_ang) > 0.0) != was:
+		sfx.play("hit", 0.02)  # 면이 바뀔 때마다 띵 (느려질수록 뜸해진다)
+	coin_fx.queue_redraw()
+
+
+func _draw_coin() -> void:
+	var sz := coin_fx.size
+	var c := sz / 2.0 + Vector2(0, 40)  # 결과 글(banner, 가운데 -140)이 동전 위에 오게
+	var air := c.y - 120.0
+	var fade := minf(coin_t / 0.2, 1.0) if coin_stage == 1 else 1.0
+	coin_fx.draw_rect(Rect2(Vector2.ZERO, sz), Color(0, 0, 0, 0.62 * fade))
+	var y := air + sin(coin_t * 5.0) * 6.0
+	var sx := cos(coin_ang)
+	var rot := 0.0
+	var r := 52.0
+	var front := sx > 0.0
+	match coin_stage:
+		2:
+			var k := minf(coin_t / 0.85, 1.0)
+			y = lerpf(air, c.y, k * k)
+			r = lerpf(52.0, 58.0, k)
+		3:
+			# 모서리로 서서 흔들림: 어느 쪽으로 쓰러질지 모르게 양쪽으로 기울었다 돌아온다
+			var k := coin_t / 0.5
+			y = c.y
+			r = 58.0
+			rot = sin(coin_t * 19.0) * 0.28 * (1.0 - k * 0.6)
+			sx = 0.1 * sin(coin_t * 27.0)
+			front = sx > 0.0
+			coin_fx.draw_string(ui_font, Vector2(c.x - 40, c.y + 110), "…?", HORIZONTAL_ALIGNMENT_CENTER, 80, 34, Color(1, 1, 1, 0.9))
+		4:
+			var k := minf(coin_t / 0.12, 1.0)
+			y = c.y
+			front = coin_next == "double"
+			sx = k if front else -k
+			r = 58.0 * (1.0 + 0.25 * maxf(0.0, 1.0 - coin_t / 0.25))
+			var col := Color(1, 0.82, 0.35) if front else Color(0.68, 0.8, 0.95)
+			var ray_a := Time.get_ticks_msec() / 1000.0 * 0.6
+			var rl := 190.0 * minf(coin_t / 0.15, 1.0)
+			for i in 16:
+				var a := ray_a + i * TAU / 16.0
+				coin_fx.draw_colored_polygon(PackedVector2Array([Vector2(c.x, y), Vector2(c.x, y) + Vector2.from_angle(a) * rl, Vector2(c.x, y) + Vector2.from_angle(a + 0.09) * rl]), Color(col, 0.22))
+			for i in 8:
+				coin_fx.draw_circle(Vector2(c.x, y), r * (2.6 - i * 0.2), Color(col, 0.05))
+	if coin_stage == 1:
+		coin_fx.draw_string(ui_font, Vector2(c.x - 200, c.y + 60), _th("눌러서 잡기"), HORIZONTAL_ALIGNMENT_CENTER, 400, 28, Color(1, 1, 1, 0.95 * fade))
+		coin_fx.draw_string(ui_font, Vector2(c.x - 200, c.y + 92), "운명의 동전", HORIZONTAL_ALIGNMENT_CENTER, 400, 18, Color(1, 0.85, 0.45, 0.8 * fade))
+	if coin_stage in [1, 2]:
+		# 잔상: 조금 전 위치의 흐린 동전
+		_coin_disc(Vector2(c.x, y - 14.0), r, cos(coin_ang - 0.35), 0.0, cos(coin_ang - 0.35) > 0.0, 0.25)
+	_coin_disc(Vector2(c.x, y), r, sx, rot, front, 1.0)
+
+
+## 동전 한 개. sx: 가로 폭(-1~1, 0이면 모서리). 앞면은 금색에 가운데 점(빈두), 뒷면은 은색에 새로고침 화살표.
+func _coin_disc(p: Vector2, r: float, sx: float, rot: float, front: bool, a: float) -> void:
+	var w := maxf(absf(sx), 0.07)
+	var face := Color(1, 0.8, 0.35, a) if front else Color(0.68, 0.8, 0.95, a)
+	var dark := Color(0.62, 0.42, 0.12, a) if front else Color(0.3, 0.4, 0.58, a)
+	var th := 3.0 + 6.0 * (1.0 - absf(sx))  # 옆으로 누울수록 두께가 보인다
+	coin_fx.draw_set_transform(p, rot, Vector2(w, 1.0))
+	coin_fx.draw_circle(Vector2(th / w, 0), r, dark)
+	coin_fx.draw_circle(Vector2.ZERO, r, face)
+	coin_fx.draw_arc(Vector2.ZERO, r - 2.0, 0, TAU, 40, dark, 4.0 / w)
+	if absf(sx) > 0.3:
+		coin_fx.draw_arc(Vector2.ZERO, r * 0.62, 0, TAU, 40, dark, 3.0 / w)
+		if front:
+			coin_fx.draw_circle(Vector2.ZERO, r * 0.16, dark)
+		else:
+			coin_fx.draw_arc(Vector2.ZERO, r * 0.32, 0.7, TAU - 0.5, 24, dark, 4.0 / w)
+			var tip := Vector2.from_angle(0.7) * r * 0.32
+			coin_fx.draw_colored_polygon(PackedVector2Array([tip + Vector2(-9, -2), tip + Vector2(7, -6), tip + Vector2(2, 9)]), dark)
+	coin_fx.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _apply_perk(id: String) -> void:
@@ -2602,6 +2778,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and get_viewport().gui_get_focus_owner() is LineEdit and event.keycode != KEY_ESCAPE:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
+		if coin_stage > 0 and event.keycode in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_1, KEY_2, KEY_3, KEY_KP_1, KEY_KP_2, KEY_KP_3]:
+			_coin_tap()
+			return
 		if event.keycode == KEY_O:
 			_toggle_settings()
 			return
@@ -4136,7 +4315,7 @@ func _hide_title() -> void:
 
 ## 쉬는 시간마다 판을 저장한다. 웨이브 중에 끄면 그 웨이브 앞 쉬는 시간부터 이어진다.
 func _save_run() -> void:
-	if title_label.visible or not phase in [Phase.CHOOSE, Phase.READY] or press_t or dragging:
+	if title_label.visible or not phase in [Phase.CHOOSE, Phase.READY] or press_t or dragging or coin_stage > 0:
 		return
 	var ts := towers.get_children()
 	var list: Array = []
@@ -5037,6 +5216,8 @@ func _roll_kind() -> int:
 
 func _process(delta: float) -> void:
 	key_t -= delta
+	if coin_stage > 0 and not get_tree().paused:
+		_coin_step(delta)
 	for c in [hint, skip_badge]:
 		c.self_modulate.a = 0.12 if Engine.get_process_frames() - tip_fade.get(c, -10) <= 2 else 1.0
 	if touch_ui and key_t <= 0.0:
@@ -5155,7 +5336,7 @@ func _process(delta: float) -> void:
 	_update_draw()
 	if boxing and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_finish_box()  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
-	hide_btn.visible = phase == Phase.CHOOSE and not title_label.visible
+	hide_btn.visible = phase == Phase.CHOOSE and not title_label.visible and coin_stage == 0
 	_update_skip_ui()
 	cancel_btn.visible = phase in [Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.DRAW] and not title_label.visible and not get_tree().paused
 	hide_btn.text = _kh(("▲ 선택지 보기" if cards_hidden else "▼ 필드 보기") + " (V)")

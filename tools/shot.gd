@@ -83,8 +83,24 @@ func _initialize():
 		func(): _snap("tip"); main.touch_ui = touch; main._set_cards_hidden(false); main._on_skip(),  # 마우스를 옮기면 touch_ui가 꺼진다
 		func(): _snap("skip_ready"); main._start_wave(),
 		func(): _snap("skip_wave"); _orb_tip(),
-		func(): _snap("orb_tip"); main.touch_ui = touch; main.skip_left = 0; main._start_perk(),
-		func(): _snap("perks"); main._toggle_pause(),
+		func(): _snap("orb_tip"); main.touch_ui = touch; main.skip_left = 0; Input.warp_mouse(Vector2(5, 360)); main._start_perk(),
+		func():
+			_snap("perks")
+			# 운명의 동전 연출: 장면마다 멈춰 두고 찍는다 (공중 → 떨어지는 중 → 모서리 → 결과 → 새 특성)
+			main.coin_anim = true
+			main._on_perk(main.PERKS[9])
+			main.coin_next = "double"
+			main._process(0.0)  # 숨길 버튼·글을 한 번 정리하고
+			main.set_process(false)  # 장면을 멈춰 둔다 (일시정지는 일시정지 창이 떠서 안 씀)
+			main.coin_t = 0.5; main.coin_ang = 0.6; main.coin_fx.queue_redraw(),
+		func():
+			_snap("coin_air"); main._coin_drop()
+			main.coin_t = 0.45; main.coin_ang = main.coin_ang0 + main.coin_spin * 0.72; main.coin_fx.queue_redraw(),
+		func(): _snap("coin_fall"); main.coin_stage = 3; main.coin_t = 0.1; main.coin_fx.queue_redraw(),
+		func(): _snap("coin_edge"); main.set_process(true); main._coin_land(),
+		func(): _snap("coin_land"),
+		func(): pass,
+		func(): _snap("coin_perks"); main._toggle_pause(),
 		func(): _snap("pause"); main._toggle_settings(),
 		func(): _snap("pause_settings"); main._toggle_settings(); main._toggle_pause(); main._game_over(),
 		func(): _snap("gameover"),

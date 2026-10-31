@@ -517,7 +517,33 @@ func _perks() -> void:
 	main.coin_next = "double"
 	var pw := Tower.dmg_mul
 	main._on_perk(main.PERKS[0])
+	var pw_n: int = main.perks.get("power", 0)
 	ok("PERK-05", is_equal_approx(Tower.dmg_mul, pw + 0.3) and main.coin_next == "", "동전 앞면: 고른 특성이 두 번 적용")
+	# 동전 연출: 공중 회전 → 누르면 떨어짐(안 누르면 1초 뒤) → 모서리 흔들림 → 결과, 그동안 카드·특성 고르기·저장 막음
+	main.coin_anim = true
+	main.perk_mode = true
+	main._on_perk(main.PERKS[9])
+	var st := [main.coin_stage, main.choice_box.visible]
+	main._on_perk(main.PERKS[0])  # 연출 중 특성 키는 먹지 않음
+	var held: bool = main.coin_stage == 1 and main.perks.get("power", 0) == pw_n
+	main._coin_tap()
+	var dropped: bool = main.coin_stage == 2
+	for i in 200:
+		if main.coin_stage == 0:
+			break
+		main._coin_step(0.02)
+	var auto_ok: bool = main.coin_stage == 0 and main.perk_mode and main.perk_offer.size() == 3 and not main.perk_offer.any(func(p): return p["id"] == "coin")
+	main.perk_mode = true
+	main.coin_next = ""
+	main._on_perk(main.PERKS[9])
+	for i in 200:  # 안 누르고 두면 저절로 끝까지
+		if main.coin_stage == 0:
+			break
+		main._coin_step(0.02)
+	ok("PERK-06", st[0] == 1 and not st[1] and held and dropped and auto_ok and main.coin_stage == 0 and main.coin_next in ["double", "reroll"],
+		"동전 연출: 던지면 카드가 사라지고 회전, 누르면 떨어지고 결과 뒤 새 특성 3개 (누르지 않아도 끝남)")
+	main.coin_anim = false
+	main.coin_next = ""
 	main.perk_mode = false
 
 
