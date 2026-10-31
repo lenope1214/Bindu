@@ -49,6 +49,15 @@ static func game_version() -> String:
 	return str(ProjectSettings.get_setting("application/config/version", "0"))
 
 
+## 마이너 버전(x.Y)까지 같은지. 이어하기 판은 패치(x.y.Z)가 바뀌어도 이어 하고, 마이너가 바뀔 때만 끝낸다.
+static func same_minor(a: String, b: String) -> bool:
+	var pa := a.split(".")
+	var pb := b.split(".")
+	if a == "" or b == "" or pa.size() < 2 or pb.size() < 2:
+		return a == b
+	return pa[0] == pb[0] and pa[1] == pb[1]
+
+
 ## 서버 주소가 있으면 패치·새 버전 확인과 리더보드 보기는 된다 (보내는 것이 없음).
 static func reachable() -> bool:
 	return OnlineConfig.SERVER_URL != "" and DisplayServer.get_name() != "headless"

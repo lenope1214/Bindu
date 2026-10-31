@@ -5210,7 +5210,7 @@ func _on_runs_listed(list: Array) -> void:
 			local = ""
 	if local == "" and not FileAccess.file_exists(RUN_PATH):
 		for e in list:
-			if e is Dictionary and not e.get("mine", true) and str(e.get("game", "")) == Net.game_version() and str(e.get("map", "")) in Meta.MAP_IDS:
+			if e is Dictionary and not e.get("mine", true) and Net.same_minor(str(e.get("game", "")), Net.game_version()) and str(e.get("map", "")) in Meta.MAP_IDS:
 				remote_run = str(e["run"])
 				remote_btn.text = "다른 기기에서 하던 판 이어하기   웨이브 %d부터 · %s" % [int(e.get("wave", 0)) + 1, Meta.MAPS[str(e["map"])]["name"]]
 				break
@@ -6234,18 +6234,19 @@ func _continue_run() -> void:
 		_show_toast("웨이브 %d 앞 쉬는 시간부터 이어서 합니다" % (wave + 1))
 
 
-## 저장된 판이 지난 게임 버전에서 저장됐으면 그 버전 (같은 버전이거나 저장이 없으면 "").
+## 저장된 판이 지난 마이너 버전(x.Y)에서 저장됐으면 그 버전 (마이너가 같거나 저장이 없으면 "").
+## 패치(x.y.Z)만 바뀐 판은 그대로 이어 한다.
 func _old_run_version() -> String:
 	var info := _run_info()
 	if info.is_empty():
 		return ""
 	var v := str(Meta.val(info["cfg"], "run", "version", ""))
-	if v == Net.game_version():
+	if Net.same_minor(v, Net.game_version()):
 		return ""
 	return v if v != "" else "?"
 
 
-## 게임 버전이 바뀌면 지난 버전의 판은 이어 하지 않는다: 그 판을 불러와 지금 점수로 끝낸다
+## 마이너 버전이 바뀌면 지난 버전의 판은 이어 하지 않는다: 그 판을 불러와 지금 점수로 끝낸다
 ## (판 끝내기와 같이 기록 저장·온라인 전송, 저장은 지움). 결과를 보여 주고 클릭하면 시작 화면.
 func _end_old_run(v: String) -> void:
 	old_run_ver = v

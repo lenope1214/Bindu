@@ -810,7 +810,12 @@ func _save_load() -> void:
 	cfg.load(main.RUN_PATH)
 	cfg.set_value("run", "version", "0.0.1")
 	cfg.save(main.RUN_PATH)
-	ok("SAVE-03", main._old_run_version() == "0.0.1", "게임 버전이 바뀐 저장은 지난 판으로 알아봄 (이어 하지 않고 끝냄)")
+	var old_minor: bool = main._old_run_version() == "0.0.1"
+	var vp := Net.game_version().split(".")
+	cfg.set_value("run", "version", "%s.%s.999" % [vp[0], vp[1] if vp.size() > 1 else "0"])
+	cfg.save(main.RUN_PATH)
+	ok("SAVE-03", old_minor and main._old_run_version() == "" and not Net.same_minor("0.6.0", "0.7.0") and Net.same_minor("0.6.0", "0.6.3"),
+		"마이너 버전(x.Y)이 바뀐 저장은 지난 판으로 알아봄 (이어 하지 않고 끝냄), 패치만 바뀐 판은 이어 함")
 	cfg.set_value("run", "map", "nowhere")
 	cfg.save(main.RUN_PATH)
 	ok("SAVE-04", main._run_info().is_empty(), "모르는 맵 등 깨진 저장은 이어하기 버튼을 띄우지 않음")
