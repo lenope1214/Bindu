@@ -583,9 +583,10 @@ func _on_bytes(id: int, b: PackedByteArray) -> void:
 		var to := int(msg.get("to", 0))
 		var bb := var_to_bytes(msg)
 		var sm := multiplayer as SceneMultiplayer
+		var tm := MultiplayerPeer.TRANSFER_MODE_UNRELIABLE_ORDERED if msg.get("t") == "cur" else MultiplayerPeer.TRANSFER_MODE_RELIABLE  # 마우스 위치는 늦게 오느니 버림
 		for other in connected_ids():
 			if other != id and (to == 0 or to == other):
-				sm.send_bytes(bb, other, MultiplayerPeer.TRANSFER_MODE_RELIABLE, 0)
+				sm.send_bytes(bb, other, tm, 0)
 		if to != 0 and to != 1:
 			return
 	packet.emit(int(msg.get("f", id)), msg)

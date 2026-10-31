@@ -68,6 +68,8 @@ func _initialize():
 				main._update_preview()
 			else:
 				main.mp_others[3]["gone"] = true
+				var now := Time.get_ticks_msec()  # 다른 사람 커서 (협동)
+				main.mp_cursors = {2: {"p": main.center() + Vector2(180, -90), "to": main.center() + Vector2(180, -90), "t": now}}
 			for i in 4:
 				main.picked = {"e": Elem.ALL[i], "lv": 1}
 				main._place_tower(main.center() + Vector2.from_angle(i * 1.6) * 140.0, Vector2.from_angle(i * 1.6))

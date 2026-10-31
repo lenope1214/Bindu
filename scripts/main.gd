@@ -351,7 +351,14 @@ var mp_code_last := ""  # 이번 판 방 코드 (끊기면 Mp가 code를 비우�
 var mp_rejoin_until := 0  # 협동 참가자 재접속: 이 시각(ms)까지 다시 붙어 본다 (0이면 안 하는 중)
 var mp_rejoin_wait := 0.0  # 다음 재시도까지
 const MP_REJOIN_S := 30
-var mp_rank := ""  # 대결: 게임 오버 글에 붙일 순위
+var mp_rank := ""
+## 협동: 다른 사람 마우스(터치) 위치. 초당 12번 보내고 받는 쪽은 부드럽게 따라가며 그린다 (대결은 전장이 따로라 안 함).
+var mp_cursors := {}  # id -> {"p": 그리는 자리, "to": 받은 자리, "t": 받은 시각 ms}
+var mp_cur_layer: Node2D
+var mp_cur_t := 0.0
+var mp_cur_last := Vector2.INF
+const MP_CUR_HZ := 12.0
+const MP_CUR_HIDE_MS := 4000  # 이만큼 안 움직이면 흐려지다 사라짐  # 대결: 게임 오버 글에 붙일 순위
 var run_id := ""  # 판 번호: 5웨이브마다 보내는 진행 기록과 끝 기록을 서버에서 한 줄로 (이어하기에 저장)
 var run_log: Array = []  # 선택지 기록 [{w, k: card|perk, o: 나온 것, p: 고른 것(새로고침이면 "")}]
 var run_game := 0.0  # 웨이브 진행 게임 시간 합
@@ -438,6 +445,9 @@ func _ready() -> void:
 	fx_layer = _layer("Fx")
 	fx_layer.z_index = 5
 	fx_layer.draw.connect(_draw_fx)
+	mp_cur_layer = _layer("Cursors")
+	mp_cur_layer.z_index = 6
+	mp_cur_layer.draw.connect(_draw_mp_cursors)
 	if OS.has_feature("mobile") and not Garden.on:
 		DisplayServer.screen_set_orientation(DisplayServer.SCREEN_SENSOR_LANDSCAPE)  # 앱은 자유 회전, 정원 밖은 가로
 	camera = Camera2D.new()
@@ -9385,6 +9395,7 @@ func _mp_start() -> void:
 func _mp_begin(msg: Dictionary) -> void:
 	mp.started = true
 	mp_start = msg.duplicate(true)
+	mp_cursors.clear()
 	mp_code_last = mp.code
 	mp_mode = str(msg.get("mode", "vs"))
 	mp.save_rejoin(mp_mode == "coop" and not mp.is_host())  # 협동 참가자만 다시 들어올 수 있다
@@ -9430,6 +9441,7 @@ func _mp_packet(from: int, msg: Dictionary) -> void:
 		return
 	match t:
 		"gone":
+			mp_cursors.erase(from)
 			if mp_others.has(from):
 				mp_others[from]["gone"] = true
 				if mp_mode == "vs" and mp_others[from]["alive"]:
@@ -9469,6 +9481,13 @@ func _mp_packet(from: int, msg: Dictionary) -> void:
 			sfx.play("danger", 0.0)
 		"tw":
 			_mp_recv_towers(from, msg.get("list", []))
+		"cur":
+			if mp_mode == "coop" and from != mp.my_id:
+				var to := Vector2(float(msg.get("x", 0)), float(msg.get("y", 0)))
+				var c: Dictionary = mp_cursors.get(from, {"p": to})
+				c["to"] = to
+				c["t"] = Time.get_ticks_msec()
+				mp_cursors[from] = c
 		"perk":
 			var id := str(msg.get("id", ""))
 			if PERKS.any(func(pk): return pk["id"] == id):
@@ -9617,6 +9636,8 @@ func _mp_send_perk(id: String) -> void:
 func _mp_tick(delta: float) -> void:
 	if mp_mode == "":
 		return
+	if mp_mode == "coop":
+		_mp_cursor_tick(delta)
 	if mp_rejoin_wait > 0.0:
 		mp_rejoin_wait -= delta
 		if mp_rejoin_wait <= 0.0:
@@ -9658,6 +9679,49 @@ func _mp_tick(delta: float) -> void:
 			if mp_rejoin_until > 0:
 				mp_bar.text = "협동 · 다시 접속하는 중… %d초" % maxi(0, (mp_rejoin_until - Time.get_ticks_msec()) / 1000)
 			mp_bar.add_theme_color_override("font_color", Mp.owner_color(mp.my_id))
+
+
+## 협동: 내 마우스 위치를 보내고(움직였을 때만, 초당 MP_CUR_HZ번) 받은 위치를 따라간다.
+func _mp_cursor_tick(delta: float) -> void:
+	mp_cur_t += delta
+	if mp_cur_t >= 1.0 / MP_CUR_HZ:
+		mp_cur_t = 0.0
+		var m := get_global_mouse_position()
+		if m.distance_to(mp_cur_last) > 1.0 and not title_label.visible:
+			mp_cur_last = m
+			mp.send({"t": "cur", "x": roundf(m.x), "y": roundf(m.y)}, 0, false)
+	var k := 1.0 - exp(-14.0 * delta)
+	for id in mp_cursors:
+		var c: Dictionary = mp_cursors[id]
+		c["p"] = (c["p"] as Vector2).lerp(c["to"], k)
+	if not mp_cursors.is_empty():
+		mp_cur_layer.queue_redraw()
+
+
+## 다른 사람 커서: 주인 색 화살표 + 닉네임. 화면 확대와 상관없이 같은 크기.
+func _draw_mp_cursors() -> void:
+	if mp_mode != "coop":
+		return
+	var now := Time.get_ticks_msec()
+	var z := 1.0 / maxf(0.01, camera.zoom.x) if camera else 1.0
+	for id in mp_cursors:
+		var c: Dictionary = mp_cursors[id]
+		var age: int = now - int(c["t"])
+		if age > MP_CUR_HIDE_MS:
+			continue
+		var a := clampf((MP_CUR_HIDE_MS - age) / 1000.0, 0.0, 1.0)
+		var col := Color(Mp.owner_color(id), a)
+		var p: Vector2 = c["p"]
+		var tri := PackedVector2Array([p, p + Vector2(0, 22) * z, p + Vector2(6, 17) * z, p + Vector2(14, 16) * z])
+		mp_cur_layer.draw_colored_polygon(tri, col)
+		tri.append(p)
+		mp_cur_layer.draw_polyline(tri, Color(0, 0, 0, 0.7 * a), 1.5 * z, true)
+		var nm := _mp_name(id)
+		var fs := 13
+		mp_cur_layer.draw_set_transform(p + Vector2(16, 28) * z, 0.0, Vector2(z, z))
+		mp_cur_layer.draw_string_outline(ui_font, Vector2.ZERO, nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0, 0, 0, 0.75 * a))
+		mp_cur_layer.draw_string(ui_font, Vector2.ZERO, nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+		mp_cur_layer.draw_set_transform(Vector2.ZERO)
 
 
 func _mp_bar_ping(id: int) -> String:
