@@ -89,6 +89,14 @@ const TUNE := {
 	"map_wind_with": 0.3, "map_wind_against": 0.15,  # 폭풍: 순풍 탄 속도·사거리 +, 역풍 -
 	"map_line_trail": 2.0,  # 회랑: 지나간 자리 장판 지속 배율
 	"map_line_cc": 0.3,  # 회랑: 감속·밀치기 세기 +
+	# 후반 구체 (2026-10-31 사용자 "100·175·250·350·500웨이브에 하나씩", Orb.late, Main._late_trait)
+	"late_blink_from": 100.0, "late_armor_from": 175.0, "late_heal_from": 250.0, "late_phase_from": 350.0, "late_devour_from": 500.0,
+	"late_share": 0.08, "late_share_step": 0.01, "late_share_max": 0.2,  # 처음 비율, 10웨이브마다 +, 최대 (종류마다)
+	"late_blink_iv": 3.5, "late_blink_dist": 90.0,  # 깜빡: 순간이동 간격(초)·거리(px)
+	"late_armor": 0.04, "late_armor_break": 0.02, "late_armor_floor": 0.5, "late_armor_min": 0.3,  # 갑옷: 그 웨이브 구체 체력 대비, 타격당 깨짐, 최소 남는 갑옷, 최소 들어가는 피해
+	"late_heal_iv": 2.5, "late_heal_r": 120.0, "late_heal": 0.06, "late_heal_max": 4.0,  # 치유: 간격·반경·최대 체력 대비 회복·웨이브당 최대 수
+	"late_phase_on": 2.5, "late_phase_off": 1.5, "late_phase_dmg": 0.3,  # 흐림: 실체·흐림 시간, 흐릴 때 직접 피해 배율
+	"late_devour_n": 2.0, "late_devour_take": 0.5, "late_devour_core": 5.0,  # 포식: 웨이브당 수, 삼킨 체력 비율, 중앙 피해 최대
 }
 
 ## 오브젝트·강화·속성·연계·발동 수치 (2026-10-31 사용자 요청 "공격력·사거리·공격속도 등 모든 옵션을 서버에서 임의 수정").

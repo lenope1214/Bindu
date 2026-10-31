@@ -25,6 +25,7 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 | `ui_audit.gd` | `xvfb-run godot --path . --rendering-driver opengl3 --resolution 2556x1179 -s tools/ui_audit.gd -- <폴더> [글자 크기] [touch] [phone]`: 일곱 길목(점수 줄·DPS 표·버튼·웨이브 시작·안내 쪽)·큰 점수·오브젝트 14개·특성 8개·놓친 구체·긴 알림으로 꽉 채운 쉬는 시간·카드·웨이브 화면. `--resolution`으로 화면비(2400x1080 20:9, 2048x1536 4:3 등), phone이면 노치 안전 영역도 흉내 | PNG + `UI BAD <수>` |
 | `path_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/path_shot.gd -- <폴더> [글자 크기] [touch]`: 그린 궤적 카드·그리는 중·다 씀·쉬는 시간·마우스 올림·웨이브 중·새 갈래 스크린샷 | PNG |
 | `vary_shot.gd` | `xvfb-run godot --path . -s tools/vary_shot.gd -- <폴더> [글자 크기] [touch]`: 판마다 다른 흐름 점수 줄 칩 말풍선(이벤트·예고·봉인·적응) 스크린샷 | PNG |
+| `late_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/late_shot.gd -- <폴더> [글자 크기] [touch]`: 후반 구체 다섯 종 안내(100·500웨이브 배지)·전장 위 모양(깜빡 예고·갑옷 깨짐·치유 맥동·흐림·포식 입) | PNG |
 | `map_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/map_shot.gd -- <폴더> [글자 크기] [touch]`: 맵 규칙 준비 화면 맵 줄(맵 5개)·친화 카드 선택지·십자로 길목 띠·폭풍 바람 스크린샷 | PNG |
 | `mp_signal.gd` | `godot --headless -s tools/mp_signal.gd -- [포트=8790]`: 멀티플레이 중개 Worker(server/mp-worker)와 같은 약속의 로컬 서버. 게임·도구는 `BINDU_MP_URL=http://127.0.0.1:8790` | 로그 |
 | `mp_conn_test.gd` | 두 프로세스로 `-- host <코드 파일>` / `-- join <코드 파일>` (BINDU_MP_URL 필요): WebRTC로 이어져 메시지를 주고받고 핑을 재는지 | `MPCONN ok ... ping=Nms` / `MPCONN FAIL` |

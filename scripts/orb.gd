@@ -22,6 +22,15 @@ var splits := false  # 죽으면 작은 구체 2개
 var resist_e := -1  # 이 속성 피해를 덜 받는다 (부분 저항)
 var sturdy := false  # 굳셈: 밀기·감속·기절·냉기 효과 절반
 var minion_t := 4.0  # 보스: 부하 소환 주기
+## 후반 구체 (2026-10-31): 깜빡(blink)·갑옷(armor)·치유(mender)·흐림(phase)·포식(devour). 한 구체에 하나. main._late_trait
+var late := ""
+var late_t := 0.0  # 깜빡: 다음 순간이동까지 / 치유: 다음 맥동까지 / 흐림: 주기 안 시각 / 포식: 다음 삼키기 검사까지
+var armor := 0.0  # 갑옷: 한 번 맞을 때 빼는 피해 (맞을수록 깨짐)
+var armor_hits := 0.0
+var heal_fx := 0.0  # 치유 맥동 그림 남은 시간
+var eaten := 0  # 포식: 삼킨 구체 수
+var digest_t := 0.0  # 포식: 소화하느라 멈춘 시간
+var prey: Object = null  # 포식: 쫓는 앞 구체
 var minion := false  # 보스가 부른 부하 (모드 '성난 보스'의 처치 점수 계산)
 var hp := 1.0
 var last_rx := false  # 마지막으로 맞은 피해가 특수 반응 몫인가 (업적 "반응으로 마무리"). hurt()가 끄고 반응 피해를 준 쪽이 켠다
@@ -126,6 +135,8 @@ func radius() -> float:
 			return 9.0
 		Kind.BOSS:
 			return 30.0
+	if late == "devour":
+		return 16.0 + minf(eaten * 1.5, 16.0)
 	return 9.0 + minf(max_hp, 12.0)
 
 
@@ -241,6 +252,10 @@ func step(delta: float) -> void:
 	var mult := slow_factor if slow_timer > 0.0 else 1.0
 	if root_timer > 0.0 or stagger_t > 0.0:
 		mult = 0.0
+	if late != "":
+		_late_step(delta, mult)
+		if digest_t > 0.0:
+			mult = 0.0
 	if swirl != 0.0 and position.distance_to(target) > 60.0:
 		# 소용돌이 맵: 중앙을 향하되 옆으로 비껴 나선을 그린다. 중앙에 가까울수록 빨라진다 (MapRule 회오리)
 		mult *= MapRule.spiral_speed(position.distance_to(target))
@@ -281,6 +296,8 @@ func _redraw_if_changed() -> void:
 	if resist_e >= 0: spin += roundi(age * 16.0) << 16
 	if curse_lv > 0: spin += roundi(age * 30.0) << 32
 	if echo_t > 0.0: spin += (roundi(echo_t * 10.0) + 1) << 48
+	if late != "":
+		spin += roundi(age * 20.0) << 8
 	sg ^= spin * 1000003
 	if sg != _sig:
 		_sig = sg
@@ -351,6 +368,95 @@ func echo(frac: float, duration: float, src = null) -> void:
 	echo_frac = frac
 	echo_amt = 0.0
 	echo_src = src
+
+
+## 후반 구체 행동 (step에서). mult: 감속·기절을 반영한 이동 배율 (0이면 멈춤).
+func _late_step(delta: float, mult: float) -> void:
+	if heal_fx > 0.0: heal_fx = maxf(heal_fx - delta, 0.0)
+	if digest_t > 0.0: digest_t = maxf(digest_t - delta, 0.0)
+	match late:
+		"blink":
+			# 기절·경직 중엔 타이머가 멈추고, 감속하면 그만큼 느리게 찬다
+			late_t -= delta * mult
+			if late_t <= 0.0:
+				late_t = Rules.t("late_blink_iv")
+				var to := target - position
+				var dist := minf(Rules.t("late_blink_dist"), to.length() - 70.0)
+				if dist > 0.0:
+					var dir := to.normalized().rotated(swirl) if swirl != 0.0 else to.normalized()
+					if main:
+						main.burst(position, Color(0.75, 0.6, 1.0), 6, 90.0)
+					position += dir * dist
+					hist.clear()
+		"mender":
+			if silence_t > 0.0:
+				return
+			late_t -= delta
+			if late_t <= 0.0:
+				late_t = Rules.t("late_heal_iv")
+				heal_fx = 0.4
+				if main:
+					var rr := Rules.t("late_heal_r")
+					for o in main.near(position, rr):
+						if o == self or o.hp <= 0.0 or o.kind == Kind.BOSS or o.position.distance_to(position) > rr + o.radius():
+							continue
+						var h: float = o.max_hp * Rules.t("late_heal") * (0.5 if o.burn_t > 0.0 or o.poison_t > 0.0 else 1.0)
+						o.hp = minf(o.max_hp, o.hp + h)
+		"phase":
+			if root_timer <= 0.0 and stagger_t <= 0.0:
+				late_t = fmod(late_t + delta, Rules.t("late_phase_on") + Rules.t("late_phase_off"))
+			modulate.a = 0.45 if phased() else 1.0
+		"devour":
+			if digest_t <= 0.0 and is_instance_valid(prey) and prey.hp > 0.0 and not prey.is_queued_for_deletion():
+				# 앞에 있는 가까운 구체 쪽으로 비껴 간다 (이동 속도의 절반만큼)
+				position += (prey.position - position).normalized() * speed * 0.5 * mult * delta
+			late_t -= delta
+			if late_t > 0.0 or digest_t > 0.0 or not main:
+				return
+			late_t = 0.2
+			var r := radius()
+			prey = null
+			var best := 160.0
+			var my_d := position.distance_to(target)
+			for o in main.near(position, 160.0):
+				if o == self or o.hp <= 0.0 or o.kind == Kind.BOSS or o.late == "devour" or o.ghost:
+					continue
+				var d: float = o.position.distance_to(position)
+				if d < best and o.position.distance_to(target) < my_d:
+					best = d
+					prey = o
+			for o in main.near(position, r + 12.0):
+				if o == self or o.hp <= 0.0 or o.kind == Kind.BOSS or o.late == "devour" or o.ghost or o.is_queued_for_deletion():
+					continue
+				if o.position.distance_to(position) > r + o.radius():
+					continue
+				var gain: float = maxf(o.hp, 0.0) * Rules.t("late_devour_take")
+				max_hp += gain
+				hp += gain
+				eaten += 1
+				core_dmg = mini(1 + eaten, int(Rules.t("late_devour_core")))
+				main.burst(o.position, Color(0.85, 0.35, 0.45), 8, 120.0)
+				o.queue_free()
+				if eaten % 3 == 0:
+					digest_t = 0.5
+					return
+
+
+## 흐린 중인가 (흐림 구체: 실체 late_phase_on초 → 흐림 late_phase_off초).
+func phased() -> bool:
+	return late == "phase" and late_t >= Rules.t("late_phase_on")
+
+
+## 오브젝트가 직접 맞힌 피해(탄·광선 등, 반응·장판·지속 피해 제외)에 후반 구체 저항을 건다. k: 이 타격의 무게 (광선은 프레임마다 작게)
+func late_direct(d: float, k := 1.0) -> float:
+	if late == "armor" and armor > 0.0:
+		var w := clampf(k, 0.0, 1.0)
+		var cur := armor * maxf(Rules.t("late_armor_floor"), 1.0 - Rules.t("late_armor_break") * armor_hits) * w
+		armor_hits += w
+		d = maxf(d - cur, d * Rules.t("late_armor_min"))
+	elif phased():
+		d *= Rules.t("late_phase_dmg")
+	return d
 
 
 ## 저항 속성이 오브젝트 속성에서 차지하는 비율만큼 피해를 줄인다 (최대 60%).
@@ -514,6 +620,8 @@ func _draw() -> void:
 				draw_line(Vector2(cos(a), sin(a)) * r, Vector2(cos(a), sin(a)) * (r + 8), Color(1, 0.3, 0.4), 3.0)
 		_:
 			draw_circle(Vector2.ZERO, r, body)
+	if late != "":
+		_draw_late(r)
 	var frac := clampf(hp / max_hp, 0.0, 1.0)
 	draw_arc(Vector2.ZERO, r + 3.0, -PI / 2, -PI / 2 + TAU * frac, 24, Color(1, 0.3, 0.4), 2.0)
 	if slow_timer > 0.0:
@@ -592,3 +700,61 @@ func _draw() -> void:
 		var txt := str(ceili(hp))
 		var size := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_CENTER, -1, 12)
 		draw_string(font, Vector2(-size.x / 2, 4), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.1, 0.1, 0.15))
+
+
+## 후반 구체 표시: 예고(깜빡 점·치유 불빛·흐림 물결·포식 입)가 행동보다 먼저 보인다.
+func _draw_late(r: float) -> void:
+	match late:
+		"blink":
+			var col := Color(0.75, 0.6, 1.0)
+			for i in 8:
+				var a0 := TAU * i / 8 + age
+				draw_arc(Vector2.ZERO, r + 5.0, a0, a0 + 0.35, 4, col, 2.0)
+			if late_t < 0.8:
+				# 곧 순간이동: 깜빡이고, 도착할 자리에 흐린 점
+				if fmod(age * 10.0, 1.0) < 0.5:
+					draw_circle(Vector2.ZERO, r, Color(col, 0.5))
+				var to := target - position
+				var dist := minf(Rules.t("late_blink_dist"), to.length() - 70.0)
+				if dist > 0.0:
+					var dir := to.normalized().rotated(swirl) if swirl != 0.0 else to.normalized()
+					draw_circle(dir * dist, r * 0.7, Color(col, 0.35))
+		"armor":
+			var left := clampf(1.0 - Rules.t("late_armor_break") * armor_hits, Rules.t("late_armor_floor"), 1.0)
+			draw_arc(Vector2.ZERO, r + 1.0, 0, TAU, 24, Color(0.55, 0.5, 0.42), 2.0 + 5.0 * left)
+			if left < 0.9:
+				for i in 3:
+					var d := Vector2.from_angle(1.3 + i * 2.1)
+					draw_line(d * r * 0.3, d * (r + 3.0), Color(0.25, 0.22, 0.2), 1.5)
+		"mender":
+			var g := Color(0.4, 0.95, 0.5)
+			var glow := 1.0 - clampf(late_t / 0.5, 0.0, 1.0)
+			draw_rect(Rect2(-r * 0.2, -r * 0.65, r * 0.4, r * 1.3), g)
+			draw_rect(Rect2(-r * 0.65, -r * 0.2, r * 1.3, r * 0.4), g)
+			if glow > 0.0:
+				draw_circle(Vector2.ZERO, r + 4.0, Color(g, 0.35 * glow))
+			if heal_fx > 0.0:
+				var f := 1.0 - heal_fx / 0.4
+				draw_arc(Vector2.ZERO, lerpf(r, Rules.t("late_heal_r"), f), 0, TAU, 40, Color(g, 0.6 * (1.0 - f)), 2.5)
+		"phase":
+			var on := Rules.t("late_phase_on")
+			var col := Color(0.6, 0.85, 1.0)
+			if phased():
+				draw_circle(Vector2.ZERO, r + 2.0, Color(0.05, 0.08, 0.15, 0.55))
+				draw_arc(Vector2.ZERO, r + 6.0, 0, TAU, 24, Color(col, 0.5), 1.5)
+			elif late_t > on - 0.5:
+				# 곧 흐려짐: 물결
+				var f := (late_t - (on - 0.5)) / 0.5
+				draw_arc(Vector2.ZERO, r + 4.0 + f * 8.0, 0, TAU, 24, Color(col, 0.8 * (1.0 - f)), 2.0)
+			else:
+				draw_arc(Vector2.ZERO, r + 6.0, 0, TAU, 24, Color(col, 0.7), 1.5)
+		"devour":
+			# 진행 방향으로 벌어진 입 (삼킬수록 몸이 커진다)
+			var col := Color(0.85, 0.3, 0.4)
+			var a := (target - position).angle()
+			var open := 0.45 + 0.2 * sin(age * 6.0)
+			var mouth := PackedVector2Array([Vector2.ZERO])
+			for k in 7:
+				mouth.append(Vector2.from_angle(a - open + open * 2.0 * k / 6.0) * (r + 0.5))
+			draw_colored_polygon(mouth, Color(0.25, 0.05, 0.1))
+			draw_arc(Vector2.ZERO, r + 7.0, a + open + 0.2, a + TAU - open - 0.2, 24, col, 3.0)

@@ -61,6 +61,26 @@ static func draw(ci: CanvasItem, id: String, c: Vector2, s: float, col: Color) -
 			for k in 4:
 				var d := Vector2.from_angle(PI / 4 + k * PI / 2)
 				ci.draw_line(c + d * s * 0.6, c + d * s, col, maxf(2.0, s * 0.28))
+		# 후반 구체 (orb.gd _draw_late와 같게)
+		"blink":
+			ci.draw_circle(c, s * 0.5, Color(0.85, 0.85, 0.9))
+			for k in 6:
+				var a0 := TAU * k / 6.0
+				ci.draw_arc(c, s * 0.85, a0, a0 + 0.5, 4, Color(0.75, 0.6, 1.0), maxf(1.5, s * 0.2))
+			ci.draw_circle(c + Vector2(s * 1.1, 0), s * 0.3, Color(0.75, 0.6, 1.0, 0.5))
+		"armor":
+			ci.draw_circle(c, s * 0.6, Color(0.85, 0.85, 0.9))
+			ci.draw_arc(c, s * 0.75, 0, TAU, 16, Color(0.55, 0.5, 0.42), maxf(2.5, s * 0.4))
+		"mender":
+			ci.draw_circle(c, s * 0.8, Color(0.85, 0.85, 0.9))
+			ci.draw_rect(Rect2(c + Vector2(-s * 0.15, -s * 0.55), Vector2(s * 0.3, s * 1.1)), Color(0.3, 0.8, 0.4))
+			ci.draw_rect(Rect2(c + Vector2(-s * 0.55, -s * 0.15), Vector2(s * 1.1, s * 0.3)), Color(0.3, 0.8, 0.4))
+		"phase":
+			ci.draw_circle(c, s * 0.75, Color(0.85, 0.85, 0.9, 0.45))
+			ci.draw_arc(c, s * 0.95, 0, TAU, 16, Color(0.6, 0.85, 1.0), maxf(1.5, s * 0.16))
+		"devour":
+			ci.draw_circle(c, s * 0.8, Color(0.85, 0.85, 0.9))
+			ci.draw_arc(c, s * 0.9, 0.5, TAU - 0.5, 16, Color(0.85, 0.3, 0.4), maxf(2.0, s * 0.28))
 		# 버튼
 		"sound", "mute":
 			ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-s, -s * 0.35), c + Vector2(-s * 0.45, -s * 0.35), c + Vector2(s * 0.15, -s * 0.9), c + Vector2(s * 0.15, s * 0.9), c + Vector2(-s * 0.45, s * 0.35), c + Vector2(-s, s * 0.35)]), col)

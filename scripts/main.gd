@@ -3237,6 +3237,13 @@ func _update_preview() -> void:
 		if nw >= m[0]:
 			mix.append(m[2])
 			kinds.append([m[1], body, nw == m[0]])
+	for id in LATE_IDS:
+		var lf := late_from(id)
+		if nw >= lf and not Garden.on:
+			mix.append(LATE_NAMES[id] + (" %d%%" % roundi(late_share(id, nw) * 100) if id != "devour" else " %d" % int(Rules.t("late_devour_n"))))
+			kinds.append([id, body, nw == lf])
+			if nw == lf:
+				firsts[lf] = (firsts[lf] + ", " if firsts.has(lf) else "") + LATE_DESC[id]
 	if not mix.is_empty():
 		info_l.append(["섞여 나옴: " + ", ".join(mix), W])
 	var sp := PackedStringArray()
@@ -4033,6 +4040,7 @@ func _start_wave() -> void:
 	spawn_interval = maxf(0.35, 1.2 - wave * 0.06)
 	spawn_timer = 0.5
 	wave_time = 0.0
+	late_n = {}
 	for t in towers.get_children():
 		t.cd.clear()
 		t.fx.clear()
@@ -7481,7 +7489,76 @@ func _spawn_orb(kind := -1, plan := {}) -> void:
 			o.splits = true
 	if Vary.all_split() and kind != Orb.Kind.BOSS:
 		o.splits = true  # 이벤트 증식
+	if kind != Orb.Kind.BOSS:
+		_late_trait(o, p)
 	orbs.add_child(o)
+
+
+## 후반 구체 (100·175·250·350·500웨이브~, Rules late_*). 종류마다 처음 late_share, 10웨이브마다 +late_share_step, 최대 late_share_max.
+## 치유는 웨이브당 late_heal_max, 포식은 웨이브 무리를 late_devour_n+1로 나눈 자리마다 하나(조금 빨라 앞 구체를 따라잡음).
+const LATE_IDS := ["blink", "armor", "mender", "phase", "devour"]
+const LATE_FROM := {"blink": "late_blink_from", "armor": "late_armor_from", "mender": "late_heal_from", "phase": "late_phase_from", "devour": "late_devour_from"}
+const LATE_NAMES := {"blink": "깜빡 구체", "armor": "갑옷 구체", "mender": "치유 구체", "phase": "흐림 구체", "devour": "포식 구체"}
+const LATE_DESC := {"blink": "깜빡 구체(보라 점선 고리: 몇 초마다 앞으로 순간이동, 깜빡이면 곧 뜀. 기절·속박 중엔 못 뜀)", "armor": "갑옷 구체(두꺼운 테두리: 맞을 때마다 피해가 조금씩 깎임, 큰 한 방·화상·중독·반응엔 약함. 맞을수록 깨짐)", "mender": "치유 구체(초록 십자: 주변 구체 체력을 채움. 화상·중독 걸린 구체는 절반, 침묵이면 멈춤)", "phase": "흐림 구체(파란 고리: 흐려진 동안 탄·광선 피해 30%만. 화상·중독·장판·반응은 그대로)", "devour": "포식 구체(붉은 입: 무리 사이에서 조금 빠르게 와 닿은 구체를 삼켜 커지고 중앙 피해가 늘어남)"}
+var late_n := {}  # 이번 웨이브에 나온 후반 구체 수 (치유·포식 상한)
+
+
+static func late_from(id: String) -> int:
+	return int(Rules.t(LATE_FROM[id]))
+
+
+static func late_share(id: String, w: int) -> float:
+	var f := late_from(id)
+	if w < f or id == "devour":
+		return 0.0
+	return minf(Rules.t("late_share") + Rules.t("late_share_step") * floorf((w - f) / 10.0), Rules.t("late_share_max"))
+
+
+func _late_trait(o: Orb, p: Dictionary) -> void:
+	if Garden.on or mp_ghost:
+		return
+	var id := ""
+	var dn := int(Rules.t("late_devour_n"))
+	var tot := spawn_count(wave)
+	if wave >= late_from("devour") and late_n.get("devour", 0) < dn and range(1, dn + 1).any(func(k): return to_spawn == int(tot * k / (dn + 1.0))):
+		id = "devour"  # 무리 한가운데쯤 나와 앞 구체를 따라잡아 삼킨다
+	else:
+		var x := wf()
+		for k in ["blink", "armor", "mender", "phase"]:
+			var sh := late_share(k, wave)
+			if sh <= 0.0:
+				continue
+			if x < sh:
+				if k != "mender" or late_n.get("mender", 0) < int(Rules.t("late_heal_max")):
+					id = k
+				break
+			x -= sh
+	if id == "":
+		return
+	late_n[id] = late_n.get(id, 0) + 1
+	o.late = id
+	var hk := 1.0
+	var sk := 1.0
+	match id:
+		"blink":
+			sk = 0.85
+			o.late_t = Rules.t("late_blink_iv")
+		"armor":
+			hk = 1.2; sk = 0.9
+			o.armor = p["hp"] * Rules.t("late_armor")
+		"mender":
+			hk = 0.7; sk = 0.8
+			o.late_t = Rules.t("late_heal_iv")
+		"phase":
+			hk = 1.3
+			o.late_t = wf() * Rules.t("late_phase_on")  # 다 같이 깜빡이지 않게
+		"devour":
+			hk = 3.0; sk = 1.3
+			o.splits = false
+			o.shield = 0.0
+	o.max_hp = ceilf(o.max_hp * hk)
+	o.hp = o.max_hp
+	o.speed *= sk
 
 
 ## 피해 숫자 팝업.
@@ -10912,7 +10989,7 @@ func _mp_ghost_clear(msg: Dictionary) -> void:
 		_start_choose()
 
 
-## 호스트: 전장 구체 상태를 보낸다 [번호, x, y, 체력, 최대, 종류, 보호막, 저항+1, 굳셈].
+## 호스트: 전장 구체 상태를 보낸다 [번호, x, y, 체력, 최대, 종류, 보호막, 저항+1, 굳셈 + 2x(후반 구체 번호+1)].
 func _mp_send_snap() -> void:
 	var o_list := PackedFloat32Array()
 	for o in orbs.get_children():
@@ -10921,7 +10998,7 @@ func _mp_send_snap() -> void:
 		if o.net_id == 0:
 			mp_orb_n += 1
 			o.net_id = mp_orb_n
-		o_list.append_array([o.net_id, o.position.x, o.position.y, o.hp, o.max_hp, o.kind, o.shield, o.resist_e + 1, 1.0 if o.sturdy else 0.0])
+		o_list.append_array([o.net_id, o.position.x, o.position.y, o.hp, o.max_hp, o.kind, o.shield, o.resist_e + 1, (1.0 if o.sturdy else 0.0) + 2.0 * (LATE_IDS.find(o.late) + 1)])
 	mp.send({"t": "snap", "w": wave, "hp": core_hp, "mx": core_max, "sc": score, "k": kills, "cb": combo, "o": o_list}, 0, false)
 
 
@@ -10965,7 +11042,9 @@ func _mp_apply_snap(msg: Dictionary) -> void:
 		o.max_hp = arr[i + 4]
 		o.shield = arr[i + 6]
 		o.resist_e = int(arr[i + 7]) - 1
-		o.sturdy = arr[i + 8] > 0.5
+		var sl := roundi(arr[i + 8])
+		o.sturdy = sl % 2 == 1
+		o.late = LATE_IDS[sl / 2 - 1] if sl >= 2 and sl / 2 - 1 < LATE_IDS.size() else ""
 		i += 9
 	for id in mp_ghosts.keys():
 		if not seen.has(id):

@@ -62,6 +62,7 @@ var place_pop := 0.0  # 설치·겹치기 순간 커졌다 줄어드는 연출
 var rocks: Array = []
 var mines: Array = []
 var wisps: Array = []  # 떠 있는 목줄 혼불
+var in_zone := false  # 지금 장판(바닥 효과)으로 때리는 중인지 (후반 구체 갑옷·흐림은 장판 피해를 그대로 받는다)
 var in_rx := false  # 지금 특수 반응 공격 중인지 (hit 피해 계산용)
 var rail_dir := Vector2.RIGHT  # 레일건이 마지막으로 쏜 방향
 var halo_cd := {}  # 광륜: 구체별 다시 맞힐 때까지 남은 시간
@@ -1843,6 +1844,8 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 			d *= 1.0 + minf(0.04 * tk(Elem.WOOD) * o.position.distance_to(position) / 100.0, 0.2)
 		if els.has(Elem.METAL):
 			o.stagger(o.speed * 0.1 * tk(Elem.METAL) * minf(k, 1.0))
+	if o.late != "" and not in_rx and not in_zone:
+		d = o.late_direct(d, k)  # 후반 구체 갑옷·흐림: 직접 맞힌 공격만
 	var rm := o.resist_mul(els)
 	d *= rm
 	d = o.hurt(d, crit)  # 받는 피해 배율(약점 등)까지 곱한 값

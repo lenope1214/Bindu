@@ -410,7 +410,9 @@ func _ground(c: Color, a: float, fill := 0.18) -> void:
 func _hit(o: Orb, amount: float, k: float) -> void:
 	if is_instance_valid(owner_tower):
 		owner_tower.tag = src
+		owner_tower.in_zone = true
 		owner_tower.hit(o, amount * boost, k, {}, false)
+		owner_tower.in_zone = false
 		owner_tower.tag = ""
 	else:
 		o.hurt(amount)

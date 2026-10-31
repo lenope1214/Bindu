@@ -543,6 +543,7 @@ func _orbs_cc() -> void:
 	sh.shield = 3.0
 	sh.hurt(5.0)
 	ok("ORB-02", is_equal_approx(sh.hp, 8.0) and sh.shield == 0.0, "보호막이 피해를 먼저 흡수")
+	_late_orbs()
 	_clear()
 
 
@@ -1639,3 +1640,63 @@ func _lint() -> void:
 	print(("ok   " if undocumented.is_empty() else "FAIL ") + "DOC 확인한 기능이 모두 문서에 spec으로 있음 (없음 %s)" % str(undocumented))
 	fails += dup.size() + unchecked.size() + undocumented.size()
 	print("DOC 기능 %d개 중 spec %d개" % [doc.size(), doc.values().filter(func(v): return v.contains("spec")).size()])
+
+
+## 후반 구체 다섯 종 (ORB-03)
+func _late_orbs() -> void:
+	var froms: Array = [main.late_from("blink"), main.late_from("armor"), main.late_from("mender"), main.late_from("phase"), main.late_from("devour")]
+	var share_ok: bool = main.late_share("blink", 99) == 0.0 and is_equal_approx(main.late_share("blink", 100), 0.08) and is_equal_approx(main.late_share("blink", 400), 0.2)
+	# 깜빡: 3.5초 뒤 90px 앞으로, 기절 중엔 안 뜀
+	var c: Vector2 = main.center()
+	var b := _orb(c + Vector2(500, 0), 10.0, Orb.Kind.NORMAL, 0.0)
+	b.late = "blink"
+	b.late_t = 3.5
+	b.root_timer = 10.0
+	for i in 240: b.step(1.0 / 60.0)
+	var held := b.position.distance_to(c + Vector2(500, 0)) < 1.0
+	b.root_timer = 0.0
+	for i in 211: b.step(1.0 / 60.0)
+	var jumped := is_equal_approx(roundf(b.position.x), c.x + 410.0)
+	# 갑옷: 직접 피해에서 갑옷만큼, 최소 30%, 맞을수록 깨짐
+	var a := _orb(c + Vector2(300, 200), 1000.0)
+	a.late = "armor"
+	a.armor = 10.0
+	var d1 := a.late_direct(12.0)  # 12 - 10 = 2 → 최소 3.6
+	var d2 := a.late_direct(100.0)  # 100 - 9.8
+	for i in 100: a.late_direct(100.0)
+	var d3 := a.late_direct(100.0)  # 깨짐은 절반까지: 100 - 5
+	var armor_ok := is_equal_approx(d1, 3.6) and is_equal_approx(d2, 90.2) and is_equal_approx(d3, 95.0)
+	# 치유: 주변 구체 6%, 화상이면 절반
+	var m := _orb(c + Vector2(-300, 200), 10.0)
+	m.late = "mender"
+	m.late_t = 0.01
+	var n1 := _orb(c + Vector2(-260, 200), 100.0)
+	var n2 := _orb(c + Vector2(-300, 240), 100.0)
+	n1.hp = 50.0
+	n2.hp = 50.0
+	n2.burn(0.0001, 10.0)
+	main._resolve(0.0)  # 격자
+	m.step(0.02)
+	var heal_ok := is_equal_approx(n1.hp, 56.0) and absf(n2.hp - 53.0) < 0.01
+	# 흐림: 흐린 동안 직접 피해 30%
+	var ph := _orb(c + Vector2(-300, -200), 10.0)
+	ph.late = "phase"
+	ph.late_t = 0.0
+	var solid := ph.late_direct(10.0)
+	ph.late_t = 3.0
+	var ghost := ph.late_direct(10.0)
+	var phase_ok := is_equal_approx(solid, 10.0) and is_equal_approx(ghost, 3.0)
+	# 포식: 닿은 구체를 삼켜 남은 체력 50%, 중앙 피해 +1
+	var dv := _orb(c + Vector2(0, -250), 30.0)
+	dv.late = "devour"
+	var prey := _orb(c + Vector2(5, -250), 20.0)
+	main._resolve(0.0)
+	dv.step(0.01)
+	var dev_ok := prey.is_queued_for_deletion() and is_equal_approx(dv.max_hp, 40.0) and dv.core_dmg == 2 and dv.eaten == 1
+	# 안내: 처음 나오는 웨이브에 NEW
+	main.wave = 99
+	main._update_preview()
+	var fresh: bool = main.wave_kinds.any(func(k): return k[0] == "blink" and k[2])
+	main.wave = 5
+	ok("ORB-03", froms == [100, 175, 250, 350, 500] and share_ok and held and jumped and armor_ok and heal_ok and phase_ok and dev_ok and fresh,
+		"후반 구체: 등장 %s 비율 %s 깜빡 %s/%s 갑옷 %s(%.1f·%.1f·%.1f) 치유 %s(%.1f·%.1f) 흐림 %s 포식 %s 안내 %s" % [str(froms), share_ok, held, jumped, armor_ok, d1, d2, d3, heal_ok, n1.hp, n2.hp, phase_ok, dev_ok, fresh])
