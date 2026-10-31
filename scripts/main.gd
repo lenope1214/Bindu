@@ -264,6 +264,7 @@ var notes_status: Label
 var notes_btn: Button
 var notes: PatchNotes
 var notes_back := false  # 설정 창에서 열었으면 닫을 때 설정 창으로 돌아간다
+var notes_open := {}  # 패치노트에서 펼친 버전 (지금·새 버전은 처음부터 펼침)
 var settings_panel: PanelContainer
 var modes_panel: PanelContainer  # 모드 고르기 (시작 화면, 첫 판 뒤)
 var easy_notice: PanelContainer  # 쉽게 모드를 처음 켤 때: 쉽게 모드 리더보드로 간다는 안내 (다시 보지 않기)
@@ -5268,6 +5269,10 @@ func _build_notes(root: Control) -> void:
 	notes_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	notes_text.add_theme_font_size_override("normal_font_size", 15)
 	notes_text.add_theme_font_size_override("bold_font_size", 15)
+	notes_text.add_theme_constant_override("line_separation", 3)
+	notes_text.add_theme_constant_override("paragraph_separation", 8)
+	notes_text.meta_underlined = false
+	notes_text.meta_clicked.connect(_on_notes_meta)
 	sc.add_child(notes_text)
 	var close := Button.new()
 	close.text = "닫기"
@@ -5316,41 +5321,60 @@ func _draw_notes() -> void:
 	if latest is Dictionary and str(latest.get("version", "")) != "":
 		var ln := str(latest.get("notes", ""))
 		out.append("[color=#ffd873]새 버전 v%s가 나왔어요. 시작 화면의 [받기]로 받을 수 있어요.%s[/color]\n" % [_bb(str(latest["version"])), ("\n" + _bb(ln)) if ln != "" else ""])
+	# 색 안내: 줄 앞 꼬리표가 무슨 뜻인지
+	var legend := PackedStringArray()
+	for k in NOTE_KINDS:
+		legend.append(_note_chip(k))
+	out.append("[font_size=13][color=#8a93a0]%s[/color][/font_size]" % "  ".join(legend))
 	var list := PatchNotes.notes()
 	var older := false
+	var first := true  # 지금 버전이 목록에 없으면 맨 위 버전을 펼친다
 	for i in range(list.size() - 1, -1, -1):
 		var n: Dictionary = list[i]
 		var v: String = n["v"]
-		var tag := ""
+		var items := _note_items(n["lines"])
 		if v == "":
 			if not older:
 				older = true
 				out.append("[color=#8899aa][b]v0.4 이전 기록[/b][/color]")
 			out.append("[b]%s[/b]" % _bb(n["title"]))
 		else:
+			var tag := ""
+			var newer := PatchNotes.vtuple(v) > cur_t
 			if v == cur:
-				tag = "  [color=#8fd18f](지금 버전)[/color]"
-			elif PatchNotes.vtuple(v) > cur_t:
-				tag = "  [color=#ffd873](새 버전)[/color]"
-			out.append("[b][font_size=19]v%s[/font_size][/b]  %s%s" % [v, _bb(n["title"]), tag])
-		var lines: Array = n["lines"]
-		# 목록으로 넣어야 접힌 줄이 글머리표 뒤에 맞춰진다 (예전엔 창 왼쪽 끝으로 돌아가 읽기 어려웠다).
-		# 들여 쓴 줄은 바로 위 줄 안의 목록으로 (따로 목록을 열면 빈 줄이 끼었다)
-		var items: Array = []  # [윗줄, [들여 쓴 줄...]]
-		for l: String in lines:
-			var s := l.strip_edges()
-			if s.begins_with("- "):
-				s = s.substr(2)
-			if l.begins_with(" ") and not items.is_empty():
-				items[-1][1].append(_bb(s))
-			else:
-				items.append([_bb(s), []])
+				tag = "  [bgcolor=#2e5a34][color=#bff0bf] 지금 버전 [/color][/bgcolor]"
+			elif newer:
+				tag = "  [bgcolor=#5a4a1c][color=#ffe08a] 새 버전 [/color][/bgcolor]"
+			if not notes_open.has(v):
+				notes_open[v] = v == cur or newer or (first and not PatchNotes.has_version(cur))
+			var open: bool = notes_open[v]
+			# 종류별 수: 접어 두어도 무엇이 얼마나 바뀌었는지 보이게
+			var cnt := {}
+			for it in items:
+				cnt[it[2]] = cnt.get(it[2], 0) + 1
+			var sums := PackedStringArray()
+			for k in NOTE_KINDS:
+				if cnt.has(k):
+					sums.append("[color=%s]%s %d[/color]" % [NOTE_KINDS[k][1], NOTE_KINDS[k][0], cnt[k]])
+			out.append("[url=v%s][bgcolor=#1b2230][b][font_size=19] %s v%s [/font_size][/b]  [color=#e8ecf2]%s[/color][/bgcolor][/url]%s" % [v, "▾" if open else "▸", v, _bb(n["title"]), tag])
+			out.append("[font_size=13]   %s%s[/font_size]" % ["  ·  ".join(sums), "" if open else "   [color=#6f7a88](눌러서 펼치기)[/color]"])
+			first = false
+			if not open:
+				out.append("")
+				continue
+		# 한 버전의 줄은 목록 하나에 (목록을 줄마다 열고 닫으면 빈 줄이 껴서 듬성듬성). 줄 사이는 paragraph_separation
+		var rows := PackedStringArray()
 		for it in items:
 			var subs: Array = it[1]
-			if subs.is_empty():
-				out.append("[ul bullet=·]%s[/ul]" % it[0])
-			else:
-				out.append("[ul bullet=·][b]%s[/b]\n[ul bullet=◦]%s[/ul][/ul]" % [it[0], "\n".join(subs)])
+			var row := "%s %s" % [_note_chip(it[2]), it[0]]
+			if not subs.is_empty():
+				var ss := PackedStringArray()
+				for sub: String in subs:
+					ss.append(_note_sub(sub))
+				row += "\n[ul bullet=◦][font_size=14]%s[/font_size][/ul]" % "\n".join(ss)
+			rows.append(row)
+		if not rows.is_empty():
+			out.append("[ul bullet= ]%s[/ul]" % "\n".join(rows))
 		out.append("")
 	notes_text.text = _kr_keep("\n".join(out))
 	match PatchNotes.source:
@@ -5360,6 +5384,112 @@ func _draw_notes() -> void:
 			notes_status.text = "불러오는 중…" if PatchNotes.fetching else "지난번에 받은 노트"
 		_:
 			notes_status.text = "불러오는 중…" if PatchNotes.fetching else "이 빌드에 든 노트"
+
+
+## 패치노트 줄 종류: [꼬리표, 글자색, 바탕색]. 위에서부터 먼저 맞는 것
+const NOTE_KINDS := {
+	"fix": ["고침", "#ff9a8a", "#4a2422"],
+	"new": ["새로움", "#8fe39a", "#1f4026"],
+	"tune": ["조정", "#ffc46b", "#4a3a1a"],
+	"ui": ["화면", "#8cc8ff", "#1d3550"],
+	"etc": ["바뀜", "#c0c6d0", "#2a3038"],
+}
+static var _re_fix := RegEx.create_from_string("버그|고침|고친|고쳤|안 되던|안 잡히던|오류")
+static var _re_new := RegEx.create_from_string("새 |새로운|추가|정식|생김|생겨|\\d+개 → \\d+개|기록|수집|보상|업적|멀티플레이")
+static var _re_tune := RegEx.create_from_string("조정|→|하향|상향|너프|버프|배율|보정|덜 오르|줄임|늘림|개편|바꿈|x\\d")
+static var _re_ui := RegEx.create_from_string("화면|폰|터치|버튼|창|글자|그림|말풍선|카드 설명|표시")
+static var _re_arrow := RegEx.create_from_string("([^\\s\\[\\]()]*\\d[^\\s\\[\\]()]*) → ([^\\s\\[\\](),]*\\d[^\\s\\[\\](),]*)")
+static var _re_quote := RegEx.create_from_string("\"([^\"\\[\\]]+)\"")
+static var _re_aside := RegEx.create_from_string(" ?\\((사용자|제보|측정)[^()]*(\\([^()]*\\)[^()]*)*\\)")
+
+
+func _note_kind(t: String) -> String:
+	var head := t.split(":")[0]
+	if _re_fix.search(head):
+		return "fix"
+	if _re_new.search(head):
+		return "new"
+	if _re_tune.search(head):
+		return "tune"
+	if _re_ui.search(head):
+		return "ui"
+	return "etc"
+
+
+func _note_chip(k: String) -> String:
+	var d: Array = NOTE_KINDS[k]
+	return "[bgcolor=%s][color=%s][font_size=12] %s [/font_size][/color][/bgcolor]" % [d[2], d[1], d[0]]
+
+
+## 노트 줄 → [[머리 글, [들여 쓴 줄...], 종류]]
+func _note_items(lines: Array) -> Array:
+	var items: Array = []
+	for l: String in lines:
+		var s := l.strip_edges()
+		if s.begins_with("- "):
+			s = s.substr(2)
+		if l.begins_with(" ") and not items.is_empty():
+			items[-1][1].append(s)
+		else:
+			items.append([_note_head(s), [], _note_kind(s)])
+	return items
+
+
+## 숫자 바뀜(A → B)은 옛 값 흐리게·새 값 밝게, "이름"은 금색
+func _note_marks(t: String) -> String:
+	t = _re_arrow.sub(_bb(t), "[color=#7d8694]$1[/color] → [b][color=#ffe08a]$2[/color][/b]", true)
+	return _re_quote.sub(t, "[color=#ffd873]\"$1\"[/color]", true)
+
+
+## 윗줄: "제목: 설명"이면 제목은 굵고 밝게, 설명은 보통. (사용자 선택 …)·(제보 …)는 작고 흐리게
+func _note_head(s: String) -> String:
+	var asides := PackedStringArray()
+	for m in _re_aside.search_all(s):
+		asides.append(m.get_string().strip_edges())
+	s = _re_aside.sub(s, "", true)
+	var cut := _colon_at(s)
+	var aside := ""
+	if not asides.is_empty():
+		aside = " [font_size=12][color=#6f7a88]%s[/color][/font_size]" % _bb(" ".join(asides))
+	if cut < 0:
+		return "[color=#e8ecf2]%s[/color]%s" % [_note_marks(s), aside]
+	# 설명은 다음 줄로 (제목만 훑어 읽기 쉽게)
+	return "[b][color=#ffffff]%s[/color][/b]%s\n[color=#c3c9d2]%s[/color]" % [_note_marks(s.substr(0, cut)), aside, _note_marks(s.substr(cut + 1).strip_edges())]
+
+
+## 들여 쓴 줄: 조금 흐리게, "측정"·봇 줄은 더 흐리게
+func _note_sub(s: String) -> String:
+	var dim := s.begins_with("측정") or s.begins_with("봇") or s.begins_with("자동 플레이")
+	var cut := _colon_at(s)
+	var c := "#8a93a0" if dim else "#b4bbc5"
+	if cut >= 0 and cut < 40:
+		return "[color=%s][b]%s[/b]:%s[/color]" % [c, _note_marks(s.substr(0, cut)), _note_marks(s.substr(cut + 1))]
+	return "[color=%s]%s[/color]" % [c, _note_marks(s)]
+
+
+## 괄호 밖 첫 ": " 자리 (없으면 -1)
+static func _colon_at(s: String) -> int:
+	var depth := 0
+	for i in s.length():
+		var ch := s[i]
+		if ch == "(":
+			depth += 1
+		elif ch == ")":
+			depth -= 1
+		elif ch == ":" and depth == 0 and i + 1 < s.length() and s[i + 1] == " ":
+			return i
+	return -1
+
+
+func _on_notes_meta(meta: Variant) -> void:
+	var m := str(meta)
+	if m.begins_with("v"):
+		var v := m.substr(1)
+		notes_open[v] = not notes_open.get(v, false)
+		var sc := notes_text.get_parent() as ScrollContainer
+		var y := sc.scroll_vertical
+		_draw_notes()
+		sc.set_deferred("scroll_vertical", y)
 
 
 ## RichTextLabel에 그대로 보이게 [ 를 바꾼다 (노트의 "[받기]" 같은 글자가 태그로 읽히지 않게).
