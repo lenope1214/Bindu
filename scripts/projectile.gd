@@ -38,6 +38,8 @@ var chase_v := Vector2.ZERO
 var chase_t := 0.0  # 이번 확인 구간에서 쫓은 시간
 var chase_d0 := 0.0  # 확인 구간 시작 때 거리
 var gave_up := {}  # 못 따라잡아 포기한 구체 id
+var leash := 0.0  # 목줄 혼불: 오브젝트에서 이 거리 안 구체만 쫓는다 (0 = 제한 없음)
+var next_hit := 0.0  # 목줄 혼불: 다음에 때릴 수 있는 시각 (t)
 var route := PackedVector2Array()  # 그린 궤적: 따라갈 길 (전역 좌표)
 var route_on := false  # 길 위를 가는 중 (튕기면 길을 벗어나 곧게)
 var route_seg := 0  # 지금 지나는 선분
@@ -89,7 +91,7 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 		"storm":
 			speed = 75.0; lob = true; dmg = 2.0 * p; radius = 100.0; max_travel = 360.0 * Tower.reach(l)
 		"wisp":
-			speed = 210.0; dmg = 4.0 * p; radius = 7.0; max_travel = 900.0 * Rules.t("range_wisp")
+			speed = 210.0; dmg = WISP_DMG * p; radius = 7.0; max_travel = INF  # 목줄 혼불: 거리 대신 WISP_LIFE초 (finished)
 		"ghost":
 			speed = 230.0; dmg = 2.4 * p; radius = 7.0; max_travel = 900.0
 	if k in Pat.PROJECTILE:
@@ -219,12 +221,18 @@ const CHASE_MAX := 2
 const CHASE_CHECK := 0.8
 const STEER_CONE := 1.6  # 유도 탄이 노리는 앞쪽 각도(라디안). 50도로 좁히면 덜 맞혀서 그대로 두고, 둘레를 도는 것은 포기 규칙으로 막는다
 const HOMING_TRAVEL := 900.0  # 화면 끝까지 가던 탄도 유도가 붙으면 혼불처럼 900까지만
-const WISP_SEEK := 380.0
-const WISP_SEEK_HOMING := 0.3  # 혼불: 유도 하나마다 찾는 범위 +30%
+const WISP_SEEK := 380.0  # 반응·영혼 넋불(ghost)이 찾는 범위
+## 목줄 혼불 (2026-10-31 개편, 사용자 선택 A): 오브젝트 곁에 머물며 목줄 안 구체를 쫓아 여러 번 때린다.
+## 떠 있는 수는 Tower.wisp_cap(), 사라지면 WISP_RESPAWN초 뒤 다시. 화면 끝까지 쫓아가던 예전 혼불이 배치와 상관없이 다 맞혀 너무 셌다
+const WISP_DMG := 1.0  # 한 번 때릴 때 (예전 한 발 4.0)
+const WISP_LIFE := 6.0
+const WISP_LEASH := 300.0  # 오브젝트에서 이만큼 안의 구체만 쫓는다 (공격방식 레벨 사거리·range_wisp 배율)
+const WISP_LEASH_HOMING := 0.15  # 유도 하나마다 목줄 +15%
+const WISP_RESPAWN := 1.2
 
 
-static func wisp_seek(h: float) -> float:
-	return WISP_SEEK * (1.0 + WISP_SEEK_HOMING * h) * Rules.t("range_wisp")
+static func wisp_leash(h: float, reach := 1.0) -> float:
+	return WISP_LEASH * (1.0 + WISP_LEASH_HOMING * h) * reach
 
 
 func _exit_tree() -> void:
@@ -259,6 +267,8 @@ func _set_chase(o: Orb) -> void:
 func _can_chase(o: Orb, r: float, cone: float) -> bool:
 	if not is_instance_valid(o) or hit.has(o) or o.hp <= 0.0 or gave_up.has(o.get_instance_id()):
 		return false
+	if leash > 0.0:
+		return o.position.distance_to(owner_tower.position) < leash
 	var v: Vector2 = o.position - position
 	return v.length() < r and (cone <= 0.0 or absf(vel.angle_to(v)) < cone)
 
@@ -283,7 +293,7 @@ func _chase(delta: float, r: float, cone: float, lim: float) -> void:
 		var bd := INF
 		var full: Orb = null
 		var fd := INF
-		for o in owner_tower.main.near(position, r):
+		for o in owner_tower.main.near(owner_tower.position if leash > 0.0 else position, leash if leash > 0.0 else r):
 			if not _can_chase(o, r, cone):
 				continue
 			var dd: float = o.position.distance_to(position)
@@ -297,6 +307,8 @@ func _chase(delta: float, r: float, cone: float, lim: float) -> void:
 		c = best if best != null else full
 		if c == null:
 			_set_chase(null)
+			if leash > 0.0:
+				_drift(lim)
 			return
 	if c.get_instance_id() != chase_id:
 		_set_chase(c)
@@ -313,12 +325,27 @@ func _steer(delta: float) -> void:
 	_chase(delta, 260.0, STEER_CONE, Rules.homing_k * homing * delta)
 
 
-## 혼불: 구체를 쫓아간다. 유도 강화면 더 빨리 돌고 찾는 범위가 넓어진다.
+## 혼불·넋불: 구체를 쫓아간다. 목줄 혼불은 유도 강화면 더 빨리 돌고 목줄이 길어진다.
 func _seek(delta: float) -> void:
 	if not is_instance_valid(owner_tower):
 		return
-	var r := wisp_seek(homing) if kind == "wisp" else WISP_SEEK
-	_chase(delta, r, 0.0, (5.0 + 2.0 * homing) * delta)
+	if kind == "wisp":
+		leash = wisp_leash(homing, owner_tower.rr(level))
+		# 때린 뒤 다음 때릴 때까지는 막 때린 구체를 놓아 둔다 (같은 구체만 맴돌지 않게)
+		for o in hit.keys():
+			if not is_instance_valid(o) or t >= hit[o]:
+				hit.erase(o)
+	_chase(delta, WISP_SEEK, 0.0, (5.0 + 2.0 * homing) * delta)
+
+
+## 목줄 혼불이 쫓을 구체가 없을 때: 오브젝트 쪽으로 돌아와 둘레를 떠돈다.
+func _drift(lim: float) -> void:
+	var home: Vector2 = owner_tower.position
+	var to := home - position
+	if to.length() > 70.0:
+		vel = vel.rotated(clampf(vel.angle_to(to), -lim, lim))
+	else:
+		vel = vel.rotated(lim * 0.6)
 
 
 ## 프리즘: 다른 오브젝트의 프리즘을 지나면 그 속성이 묻고 피해가 오른다.
@@ -350,6 +377,8 @@ func _drop_mines(dist: float) -> void:
 
 
 func finished() -> bool:
+	if kind == "wisp":
+		return t >= WISP_LIFE
 	return travel >= max_travel
 
 
@@ -372,6 +401,8 @@ func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 		return gone
 	if kind == "rx":
 		return false
+	if kind == "wisp":
+		return _wisp_hit(o, tw)
 	if continuous:
 		if tw:
 			tw.in_rx = kind in ["log", "tornado", "mushroom"]
@@ -433,6 +464,22 @@ func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 			return false
 	end_form()
 	return true
+
+
+## 목줄 혼불: 사라지지 않고 공격 간격마다 한 번 때린다. 맞힌 구체는 그 간격 동안 다시 쫓지 않는다.
+func _wisp_hit(o: Orb, tw: Tower) -> bool:
+	if t < next_hit or hit.has(o):
+		return false
+	var iv := tw.attack_iv() if tw else 0.5
+	next_hit = t + iv
+	hit[o] = t + iv * 2.0
+	if chase == o:
+		_set_chase(null)
+	if tw:
+		tw.hit(o, dmg, 1.0, prism_els)
+	else:
+		o.hurt(dmg)
+	return false
 
 
 func _draw() -> void:
