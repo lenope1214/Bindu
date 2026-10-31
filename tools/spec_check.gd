@@ -94,6 +94,7 @@ func _initialize():
 	_meta_misc()
 	_multiplayer()
 	_tutorial()
+	_vote()
 	_lint()
 	print("SPEC %s (실패 %d, 확인한 기능 %d개)" % ["통과" if fails == 0 else "실패", fails, seen.size()])
 	quit(1 if fails > 0 else 0)
@@ -1056,6 +1057,53 @@ func _tutorial() -> void:
 	var helped: bool = not main.tut.visible and main.help_label.visible
 	main.help_label.visible = false
 	ok("TUT-04", title_btn and pause_btn and listed and opened and back and helped, "시작 화면 %s, 일시정지 %s, 목록 %s, 항목 열기 %s, 목록으로 %s, 전체 보기 %s" % [title_btn, pause_btn, listed, opened, back, helped])
+
+
+# ---------- 다음 패치 투표 ----------
+
+func _vote() -> void:
+	var v: Vote = main.vote_panel
+	# 목록: 모든 탭 항목이 서버 키 모양(elem:fire 등)이고 겹치지 않음
+	var keys := {}
+	var bad := []
+	for c in Vote.CATS:
+		if c[0] == "run":
+			continue
+		for x in v._entries(c[0]):
+			if not Vote._key_ok(x["key"]) or keys.has(x["key"]):
+				bad.append(x["key"])
+			keys[x["key"]] = true
+	var has_all: bool = keys.has("elem:fire") and keys.has("pat:spray") and keys.has("mod:homing") and keys.has("perk:power") \
+		and keys.keys().any(func(k): return k.begins_with("react:")) and keys.keys().any(func(k): return k.begins_with("trig:"))
+	# 표 고르기: 회차마다 표 5장, 한 항목엔 방향 하나, 같은 방향 다시 누르면 취소, 개선엔 60자 의견
+	v.take({"round": {"id": 3, "name": "시험"}, "max": 5, "eligible": true, "reason": "", "mine": [{"key": "elem:fire", "dir": "up", "note": ""}], "last": null})
+	var r1: bool = v.can_vote and v.used() == 1 and v.picks["elem:fire"]["dir"] == "up"
+	v.choose("elem:fire", "down")
+	var r2: bool = v.used() == 1 and v.picks["elem:fire"]["dir"] == "down"
+	v.choose("elem:fire", "down")
+	var r3: bool = v.used() == 0
+	for k in ["elem:ice", "pat:spray", "mod:homing", "perk:power", "trig:echo"]:
+		v.choose(k, "fix" if k == "mod:homing" else "up")
+	var full: bool = v.choose("elem:wood", "up") == "full" and v.used() == 5
+	v.set_note("mod:homing", "  " + "가".repeat(80))
+	v.set_note("elem:ice", "무시")
+	var note_ok: bool = v.picks["mod:homing"]["note"].length() == Vote.NOTE_MAX and v.picks["elem:ice"]["note"] == ""
+	var pl := v.payload()
+	var pl_ok: bool = pl["round"] == 3 and pl["votes"].size() == 5
+	# 자격이 없으면 못 넣음, 판 끝난 화면은 이번 판에 고른 것을 앞 탭으로
+	v.take({"round": {"id": 3, "name": "시험"}, "max": 5, "eligible": false, "reason": "play", "mine": [], "min_wave": 5})
+	var no_vote: bool = not v.can_vote and v.status.text.contains("5웨이브")
+	main.run_log = [{"w": 0, "k": "card", "p": "elem:fire"}, {"w": 2, "k": "card", "p": ""}, {"w": 4, "k": "card", "p": "elem:fire"}, {"w": 5, "k": "perk", "p": "perk:power"}]
+	var rk: Array = main._vote_run_keys()
+	v.open(rk)
+	var run_tab: bool = v.cat == "run" and v._entries("run").size() == 2
+	v.visible = false
+	v.dirty = false
+	main.run_log = []
+	# 투표 API가 없는 서버면 버튼이 없다 (헤드리스는 서버에 닿지 않음)
+	var hidden: bool = not Net.vote_ok() and (main.vote_btn == null or not main.vote_btn.visible)
+	ok("ONLINE-04", bad.is_empty() and has_all and r1 and r2 and r3 and full and note_ok and pl_ok and no_vote and run_tab and hidden,
+		"다음 패치 투표: 항목 %d개 키 모양(틀림 %s), 표 5장·방향 하나·다시 누르면 취소·개선 의견 60자, 자격 없으면 못 넣음, 판 끝 화면은 이번 판 탭, 서버에 투표 없으면 버튼 숨김" % [keys.size(), str(bad)])
 
 
 func _lint() -> void:

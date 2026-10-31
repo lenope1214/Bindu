@@ -270,6 +270,9 @@ var modes_panel: PanelContainer  # 모드 고르기 (시작 화면, 첫 판 뒤)
 var easy_notice: PanelContainer  # 쉽게 모드를 처음 켤 때: 쉽게 모드 리더보드로 간다는 안내 (다시 보지 않기)
 var easy_notice_skip: CheckBox
 var codex_panel: Codex  # 도감·선호 표시 (시작 화면, K)
+var vote_panel: Vote  # 다음 패치 투표 (시작 화면 V, 판 끝난 화면 버튼)
+var vote_btn: Button  # 시작 화면 [투표]: 투표 API가 있는 서버일 때만
+var vote_over_btn: Button  # 판 끝난 화면 [다음 패치 투표]
 var tut: Tutorial  # 튜토리얼 카드·다시 보기 목록 (시작 화면 [튜토리얼]·일시정지)
 var tut_queue: Array[String] = []  # 판에서 처음 생겨서 띄울 항목 (쉬는 시간·시작 화면에서 띄움)
 var tut_first := false  # 이 기기에서 처음 켰다: 시작 화면이 뜨면 기본 항목을 무조건
@@ -986,6 +989,20 @@ func _build_ui() -> void:
 	over_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
 	over_label.visible = false
 	root.add_child(over_label)
+	# 판 끝난 화면: 다음 패치 투표 (투표 API가 있는 서버일 때만, 자리는 over_label 바로 아래로 매 프레임 맞춤)
+	vote_over_btn = Button.new()
+	vote_over_btn.set_anchors_preset(Control.PRESET_CENTER)
+	vote_over_btn.text = "다음 패치 투표"
+	vote_over_btn.focus_mode = Control.FOCUS_NONE
+	vote_over_btn.size = Vector2(220, 44)
+	vote_over_btn.position = Vector2(-110, 200)
+	vote_over_btn.add_theme_font_size_override("font_size", 17)
+	vote_over_btn.add_theme_color_override("font_color", Color(1, 0.86, 0.35))
+	vote_over_btn.tooltip_text = "이번 판에 쓴 카드 중 다음 패치에서 강해졌으면·약해졌으면·바뀌었으면 하는 것에 투표"
+	vote_over_btn.pressed.connect(func(): _toggle_vote(true))
+	vote_over_btn.visible = false
+	_icon_btn(vote_over_btn, func(): return ["vote", Color(1, 0.86, 0.35)])
+	root.add_child(vote_over_btn)
 	# 게임 오버 그림 카드: 웨이브·점수 큰 칩, 처치·콤보·오브젝트 작은 칩, 새 업적 배지 (나머지 글은 아래 over_label)
 	over_card = Control.new()
 	over_card.set_anchors_preset(Control.PRESET_CENTER)
@@ -1281,7 +1298,7 @@ func _safe_pad() -> Rect2:
 
 ## 화면보다 커지는 창(줄이 많거나 글자를 키웠을 때)은 줄여서 맞춘다. 가운데 창이라 위아래 여백이 같고, 아래는 버튼 줄을 비운다.
 func _fit_panels() -> void:
-	for c: Control in [title_box, help_scroll, records_panel, settings_panel, notes_panel, modes_panel, codex_panel]:
+	for c: Control in [title_box, help_scroll, records_panel, settings_panel, notes_panel, modes_panel, codex_panel, vote_panel]:
 		if not c.is_visible_in_tree():
 			continue
 		var h: float = c.get_combined_minimum_size().y if c == title_box else c.size.y
@@ -2367,7 +2384,7 @@ func _tut_event(id: String) -> void:
 func _tut_tick() -> void:
 	if tut.visible or DisplayServer.get_name() == "headless":
 		return
-	var panels := settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible or mp_panel.visible or tree_panel.visible
+	var panels := settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible or vote_panel.visible or mp_panel.visible or tree_panel.visible
 	if panels:
 		return
 	if tut_first:
@@ -3834,7 +3851,7 @@ func _over_scroll_ui(p: Vector2) -> bool:
 	var h := get_viewport().gui_get_hovered_control() if get_viewport().has_method("gui_get_hovered_control") else null
 	if h != null and h != ui_root and h != info:
 		return true
-	return settings_panel.visible or notes_panel.visible or help_label.visible or records_panel.visible or codex_panel.visible or get_tree().paused
+	return settings_panel.visible or notes_panel.visible or help_label.visible or records_panel.visible or codex_panel.visible or vote_panel.visible or get_tree().paused
 
 
 ## 두 번째 손가락이 닿으면: 첫 손가락으로 시작한 누르기·끌기·그리기·상자 선택을 없던 일로.
@@ -3897,10 +3914,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_ESCAPE and notes_panel.visible:
 			_close_notes()
 			return
-		if event.keycode == KEY_ESCAPE and (settings_panel.visible or records_panel.visible or help_label.visible or modes_panel.visible or codex_panel.visible or tree_panel.visible):
+		if event.keycode == KEY_ESCAPE and (settings_panel.visible or records_panel.visible or help_label.visible or modes_panel.visible or codex_panel.visible or vote_panel.visible or tree_panel.visible):
 			tree_panel.visible = false
 			settings_panel.visible = false
 			codex_panel.visible = false
+			if vote_panel.visible:
+				vote_panel.hide_panel()
 			modes_panel.visible = false
 			records_panel.visible = false
 			help_label.visible = false
@@ -3914,6 +3933,9 @@ func _unhandled_input(event: InputEvent) -> void:
 						_open_tut_list()
 				KEY_K:
 					_toggle_codex()
+				KEY_V:
+					if vote_btn and vote_btn.visible:
+						_toggle_vote()
 				KEY_G:
 					if garden_btn.visible:
 						_enter_garden()
@@ -4036,7 +4058,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	# 오브젝트를 우클릭한 채 끌기: 그 자리에서 방향만 바꾸고, 떼면 확정
 	if event.button_index == MOUSE_BUTTON_RIGHT and phase in [Phase.CHOOSE, Phase.READY] and not perk_mode and not title_label.visible \
-			and not (settings_panel.visible or notes_panel.visible or codex_panel.visible or records_panel.visible or help_label.visible):
+			and not (settings_panel.visible or notes_panel.visible or codex_panel.visible or vote_panel.visible or records_panel.visible or help_label.visible):
 		var rt := _tower_at(get_global_mouse_position())
 		if rt and _mine(rt):
 			_start_move(rt)
@@ -4047,6 +4069,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if codex_panel.visible:
 		codex_panel.visible = false
+		return
+	if vote_panel.visible:
+		vote_panel.hide_panel()
 		return
 	if records_panel.visible:
 		records_panel.visible = false
@@ -4357,6 +4382,7 @@ func _build_menu(root: Control) -> void:
 	var specs := [["시작", _close_title, "", ""], ["기록", _toggle_records, "records", "", "기록·업적"], ["도감", _toggle_codex, "book", "K", "도감 (K)"], ["설정", _toggle_settings, "gear", "O", "설정 (O)"], ["튜토리얼", _open_tut_list, "help", "H", "튜토리얼 (H)"]]
 	if OnlineConfig.SERVER_URL != "":
 		specs.insert(2, ["순위", _toggle_board, "rank", "", "리더보드"])
+		specs.insert(4, ["투표", _toggle_vote, "vote", "V", "다음 패치 투표 (V)"])
 	for spec in specs:
 		var b := Button.new()
 		b.focus_mode = Control.FOCUS_NONE
@@ -4368,6 +4394,9 @@ func _build_menu(root: Control) -> void:
 			continue
 		b.custom_minimum_size = Vector2(78, 64 if _phone() else 54)
 		b.tooltip_text = spec[4]
+		if spec[2] == "vote":
+			vote_btn = b
+			b.visible = Net.vote_ok()
 		_menu_glyph(b, spec[2], spec[0])
 		_keycap(b, spec[3])
 	row.get_child(0).add_theme_font_size_override("font_size", 20)
@@ -4495,6 +4524,10 @@ func _build_menu(root: Control) -> void:
 	codex_panel.z_index = 22  # 일시정지 어둠(z 20) 위에
 	codex_panel.setup(PERKS, rsb.duplicate(), _save_best)
 	root.add_child(codex_panel)
+	vote_panel = Vote.new()
+	vote_panel.z_index = 22
+	vote_panel.setup(PERKS, rsb.duplicate(), net)
+	root.add_child(vote_panel)
 	tut = Tutorial.new()
 	tut.z_index = 23  # 일시정지 어둠(20)·다른 창(22) 위에
 	tut.setup(rsb.duplicate(), func(): help_label.visible = true)
@@ -4868,9 +4901,33 @@ func _toggle_codex() -> void:
 		help_label.visible = false
 		notes_panel.visible = false
 		modes_panel.visible = false
+	if vote_panel.visible:
+		vote_panel.hide_panel()
 	codex_panel.toggle()
 	if codex_panel.visible:
 		net.ach_rates()
+
+
+## 다음 패치 투표 창. 판 끝난 화면에서 열면 이번 판에 고른 카드·특성이 맨 앞 탭.
+func _toggle_vote(from_run := false) -> void:
+	if not vote_panel.visible:
+		settings_panel.visible = false
+		records_panel.visible = false
+		help_label.visible = false
+		notes_panel.visible = false
+		modes_panel.visible = false
+		codex_panel.visible = false
+	vote_panel.toggle(_vote_run_keys() if from_run else [])
+
+
+## 이번 판에 고른 것 (통계 키, 고른 차례대로, 겹치지 않게).
+func _vote_run_keys() -> Array:
+	var out := []
+	for e in run_log:
+		var p := str(e.get("p", ""))
+		if p != "" and not out.has(p):
+			out.append(p)
+	return out
 
 
 func _toggle_records() -> void:
@@ -5759,6 +5816,8 @@ func _hide_title() -> void:
 	settings_panel.visible = false
 	notes_panel.visible = false
 	codex_panel.visible = false
+	if vote_panel.visible:
+		vote_panel.hide_panel()
 	remote_btn.visible = false
 	title_seen = true
 
@@ -6773,7 +6832,7 @@ func _process(delta: float) -> void:
 		if guide_t <= 0.0:
 			guide_lines.clear()
 			guide_t = 0.0
-	guide_label.visible = not guide_lines.is_empty() and not title_label.visible and phase != Phase.GAMEOVER and not get_tree().paused and not help_label.visible and not settings_panel.visible and not records_panel.visible and not notes_panel.visible and not modes_panel.visible and not codex_panel.visible
+	guide_label.visible = not guide_lines.is_empty() and not title_label.visible and phase != Phase.GAMEOVER and not get_tree().paused and not help_label.visible and not settings_panel.visible and not records_panel.visible and not notes_panel.visible and not modes_panel.visible and not codex_panel.visible and not vote_panel.visible
 	# 글자를 키운(설정) 좁은 화면에서 펼친 버튼 줄이 왼쪽 아래 안내 글에 닿으면 안내 글을 버튼 줄 앞까지로 줄인다.
 	# 줄이 늘면 위로 자라고, 다음 웨이브 미리보기는 그 위에 붙는다
 	var hw := 590.0
@@ -6836,7 +6895,14 @@ func _process(delta: float) -> void:
 		var hh := minf(help_label.get_combined_minimum_size().y + 36.0, ui_root.size.y - 100.0)
 		help_scroll.offset_top = -hh / 2.0
 		help_scroll.offset_bottom = hh / 2.0
-	title_box.visible = not (tut.visible or settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible or mp_panel.visible or tree_panel.visible)
+	title_box.visible = not (tut.visible or settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible or vote_panel.visible or mp_panel.visible or tree_panel.visible)
+	# 투표 버튼: 투표 API가 있는 서버(boot의 vote)에 닿았을 때만. 판 끝난 화면 버튼은 남은 글 바로 아래
+	if vote_btn:
+		vote_btn.visible = Net.vote_ok()
+	vote_over_btn.visible = over_label.visible and phase == Phase.GAMEOVER and mp_mode == "" and Net.vote_ok() and not vote_panel.visible
+	if vote_over_btn.visible:
+		var lh := over_label.get_line_count() * over_label.get_line_height() if over_label.text != "" else 0
+		vote_over_btn.position = Vector2(over_label.position.x + (over_label.size.x - vote_over_btn.size.x) / 2.0, over_label.position.y + lh + 10.0)
 	hud.visible = not title_label.visible  # 시작 화면엔 메뉴에 최고 기록이 따로 있다
 	# 시작 화면에서 일시정지·배속 버튼을 누르면 메뉴 위에 일시정지 창이 뜨던 문제
 	# 게임 중엔 펼쳤을 때만 보인다 (단축키 M·P·Space는 접어도 된다). 시작 화면엔 소리·자동 시작만
@@ -6855,7 +6921,7 @@ func _process(delta: float) -> void:
 	hud_cool -= delta
 	_update_hud()
 	# 일시정지 위에 설정·도움말 등을 열면 일시정지 글·버튼은 잠깐 숨기고, 어둠은 남겨 창이 그 위에 뜬다 (창 z 22 > 어둠 20)
-	var over := settings_panel.visible or help_label.visible or records_panel.visible or notes_panel.visible or codex_panel.visible
+	var over := settings_panel.visible or help_label.visible or records_panel.visible or notes_panel.visible or codex_panel.visible or vote_panel.visible
 	var dim := get_tree().paused and not title_label.visible and phase != Phase.GAMEOVER
 	var show_pause := dim and not over and not tut_paused  # 튜토리얼이 멈춘 것은 일시정지 창 없이
 	paused_label.visible = show_pause

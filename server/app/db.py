@@ -208,6 +208,29 @@ class RunSave(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now)
 
 
+class VoteRound(Base):
+    """다음 패치 투표 회차. 가장 최근 회차가 열려 있는 회차이고, 새 회차를 열면 앞 회차는 닫힌다(결과 고정)."""
+    __tablename__ = "vote_rounds"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(64), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class Vote(Base):
+    """계정 하나가 한 회차에 한 항목에 넣은 표. dir: up(강하게)·down(약하게)·fix(개선, note에 한 줄 의견)."""
+    __tablename__ = "votes"
+    __table_args__ = (UniqueConstraint("round_id", "account_id", "key", name="uq_vote"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    round_id: Mapped[int] = mapped_column(Integer, index=True)
+    account_id: Mapped[str] = mapped_column(String(32), index=True)
+    key: Mapped[str] = mapped_column(String(48), index=True)
+    dir: Mapped[str] = mapped_column(String(8))
+    note: Mapped[str] = mapped_column(String(120), default="")
+    device_id: Mapped[str] = mapped_column(String(64), default="")  # 넣은 기기 (차단 확인용)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now)
+
+
 class Ban(Base):
     __tablename__ = "bans"
     device_id: Mapped[str] = mapped_column(String(64), primary_key=True)

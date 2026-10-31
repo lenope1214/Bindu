@@ -22,7 +22,7 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from . import config, progress, signing
-from .db import Account, Ban, Identity, Pick, Run, RunSave, Save, get_db, now
+from .db import Account, Ban, Identity, Pick, Run, RunSave, Save, Vote, get_db, now
 
 router = APIRouter()
 
@@ -398,6 +398,8 @@ def merge_accounts(db: Session, src: Account, dst: Account) -> None:
     db.execute(update(Identity).where(Identity.account_id == src.id).values(account_id=dst.id))
     db.execute(update(Run).where(Run.account_id == src.id).values(account_id=dst.id))
     db.execute(update(Account).where(Account.merged_into == src.id).values(merged_into=dst.id))
+    from . import votes  # votes가 accounts를 읽으므로 여기서
+    votes.move_votes(db, src.id, dst.id)
     dst.banned = dst.banned or src.banned
     src.merged_into = dst.id
 
@@ -449,6 +451,7 @@ def delete_account(cur=Depends(current), db: Session = Depends(get_db)):
     db.execute(delete(RunSave).where(RunSave.account_id == a.id))
     devices = [i.subject for i in db.scalars(select(Identity).where(Identity.account_id == a.id, Identity.provider == "device"))]
     db.execute(delete(Identity).where(Identity.account_id == a.id))
+    db.execute(delete(Vote).where(Vote.account_id == a.id))
     db.execute(update(Run).where(Run.account_id == a.id).values(account_id=None, nickname="", hidden=True))
     if devices:
         db.execute(update(Run).where(Run.device_id.in_(devices)).values(nickname="", hidden=True))

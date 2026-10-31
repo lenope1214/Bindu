@@ -249,6 +249,12 @@ static func ui(ci: CanvasItem, id: String, c: Vector2, s: float, k: Color) -> vo
 			for i in 3:
 				var h: float = [0.9, 1.4, 0.6][i]
 				ci.draw_rect(Rect2(c + Vector2(-s + i * s * 0.68, s * 0.8 - s * h), Vector2(s * 0.6, s * h)), k)
+		"vote":
+			# 투표함: 상자 + 넣는 칸 + 위로 꽂힌 종이(체크)
+			ci.draw_rect(Rect2(c + Vector2(-s * 0.9, -s * 0.05), Vector2(s * 1.8, s * 0.95)), k, false, w)
+			ci.draw_line(c + Vector2(-s * 0.4, -s * 0.05), c + Vector2(s * 0.4, -s * 0.05), Color(0.06, 0.07, 0.1), w * 1.6)
+			ci.draw_rect(Rect2(c + Vector2(-s * 0.45, -s * 0.95), Vector2(s * 0.9, s * 0.95)), k, false, w * 0.9)
+			ci.draw_polyline(PackedVector2Array([c + Vector2(-s * 0.25, -s * 0.5), c + Vector2(-s * 0.05, -s * 0.3), c + Vector2(s * 0.28, -s * 0.72)]), k, w)
 		"records":
 			ci.draw_line(c + Vector2(-s, s * 0.8), c + Vector2(s, s * 0.8), k, w)
 			ci.draw_polyline(PackedVector2Array([c + Vector2(-s * 0.85, s * 0.4), c + Vector2(-s * 0.3, -s * 0.1), c + Vector2(s * 0.1, s * 0.2), c + Vector2(s * 0.85, -s * 0.7)]), k, w)

@@ -340,6 +340,31 @@ func ach_rates() -> void:
 		rates_loaded.emit()
 
 
+## 다음 패치 투표 (0.6.0 서버부터, boot의 vote). 지금 회차·내 표·자격·지난 회차 결과. 실패면 {}.
+## 기록 보내기를 끄면 계정 토큰 없이 회차·지난 결과만 받는다 (투표는 못 함).
+static func vote_ok() -> bool:
+	return reachable() and info.get("vote", false) == true
+
+
+func vote_get() -> Dictionary:
+	if not vote_ok():
+		return {}
+	var r: Dictionary
+	if enabled() and acct_ok():
+		r = await _authed(HTTPClient.METHOD_GET, "/v1/vote")
+	else:
+		r = await _request(HTTPClient.METHOD_GET, "/v1/vote")
+	return r["data"] if r["code"] == 200 and r["data"] is Dictionary else {}
+
+
+## 이번 회차 내 표를 통째로 보낸다. 돌려주는 값: HTTP 코드 (0이면 연결 실패).
+func vote_put(body: Dictionary) -> int:
+	if not vote_ok() or not enabled():
+		return 0
+	var r := await _authed(HTTPClient.METHOD_PUT, "/v1/vote", JSON.stringify(body))
+	return int(r["code"])
+
+
 func seasons() -> void:
 	var r := await _request(HTTPClient.METHOD_GET, "/v1/seasons")
 	seasons_loaded.emit(r["data"] if r["code"] == 200 and r["data"] is Array else [])

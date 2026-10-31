@@ -43,6 +43,7 @@
     <button data-t="release">새 버전</button>
     <button data-t="runs">판 기록</button>
     <button data-t="logs">오류</button>
+    <button data-t="votes">투표</button>
   </nav>
   <span style="flex:1"></span>
   <input id="token" type="password" placeholder="관리자 토큰" size="22">
@@ -134,6 +135,21 @@
   <div class="tbl" id="t-logs"></div>
   <h2 id="l-head"></h2><div class="tbl" id="t-log"></div>
 </section>
+
+<section id="votes">
+  <p class="dim">다음 패치 투표입니다. 계정마다 회차당 표 5장(▲ 강하게 · ▼ 약하게 · ✎ 개선), 5웨이브 이상 판을 보낸 계정만 넣을 수 있고 차단 계정은 빠집니다. 선택률·피해 몫은 통계 기본 거르기 기준. 이름을 누르면 개선 의견이 보입니다.</p>
+  <div class="row">
+    <select id="v-round"></select>
+    <button class="act" id="load-votes">불러오기</button>
+    <button class="sub" id="v-csv">CSV</button>
+    <span style="flex:1"></span>
+    <input id="v-name" placeholder="새 회차 이름 (예 0.6.0 다음)" size="22">
+    <button class="sub" id="v-new">새 회차 열기</button>
+  </div>
+  <div class="cards" id="v-sum"></div>
+  <div class="tbl" id="t-votes"></div>
+  <h2 id="v-head"></h2><div class="tbl" id="t-vnotes"></div>
+</section>
 </main>
 <script>
 const NAMES = {
@@ -167,7 +183,7 @@ async function api(path, opt = {}) {
 document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
   document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
   document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === b.dataset.t));
-  ({patch: loadPatches, release: loadReleases, runs: loadRuns, logs: loadLogs})[b.dataset.t]?.();
+  ({patch: loadPatches, release: loadReleases, runs: loadRuns, logs: loadLogs, votes: loadVotes})[b.dataset.t]?.();
 });
 
 // 표: cols = [[제목, 값 함수, 숫자?, 막대 최대값 함수?]]
@@ -268,6 +284,45 @@ window.logDetail = async fp => {
   table($("t-log"), rs, [["날짜", r => kst(r.created)], ["버전", r => `${esc(r.game)} p${r.patch}`], ["플랫폼", r => esc(`${r.platform} ${r.os}`)],
     ["맵·규칙", r => esc(`${r.map} v${r.rules}`)], ["모드", r => esc(r.modes)], ["모양", r => esc(r.skin)], ["웨이브", r => r.wave, 1], ["횟수", r => r.count, 1], ["기기", r => r.device.slice(0, 8)],
     ["백트레이스", (r, raw) => raw ? r.backtrace : `<pre style="margin:0;white-space:pre-wrap;max-width:520px">${esc(r.backtrace || "-")}</pre>`]]);
+};
+
+// ---------- 투표 ----------
+const vnm = k => { const a = k.replace(/^react:/, "rx:"); return NAMES[a] ? `${NAMES[a]} <span class="dim">${esc(k)}</span>` : esc(k); };
+let vRound = 0;
+async function loadVotes() {
+  const d = await api("/admin/api/votes" + ($("v-round").value ? "?round=" + $("v-round").value : ""));
+  vRound = d.round;
+  $("v-round").innerHTML = d.rounds.map(r => `<option value="${r.id}" ${r.id === d.round ? "selected" : ""}>${esc(r.name)} · ${r.closed ? "닫힘" : "진행 중"} · ${r.voters}명</option>`).join("");
+  const cur = d.rounds.find(r => r.id === d.round) || {};
+  const up = d.rows.reduce((a, r) => a + r.up, 0), down = d.rows.reduce((a, r) => a + r.down, 0), fix = d.rows.reduce((a, r) => a + r.fix, 0);
+  $("v-sum").innerHTML = [["투표한 계정", d.voters], ["▲ 강하게", up], ["▼ 약하게", down], ["✎ 개선", fix], ["시작", cur.created ? kst(cur.created) : "-"], ["닫힘", cur.closed ? kst(cur.closed) : "진행 중"]]
+    .map(([a, b]) => `<div class="card"><span>${a}</span><b>${b}</b></div>`).join("");
+  const mx = Math.max(1, ...d.rows.map(r => r.total));
+  table($("t-votes"), d.rows, [
+    ["항목", (r, raw) => raw ? r.key : `<a href="#" onclick="voteNotes('${esc(r.key)}');return false" style="color:var(--text)">${vnm(r.key)}</a>`],
+    ["▲ 강하게", r => r.up, 1], ["▼ 약하게", r => r.down, 1], ["✎ 개선", r => r.fix, 1], ["순 (▲−▼)", r => r.net, 1], ["전체", r => r.total, 1], ["", r => r.total, 0, r => r.total / mx],
+    ["의견", r => r.notes, 1],
+    ["선택률", (r, raw) => raw ? (r.pick_rate ?? -1) : (r.pick_rate == null ? '<span class="dim">-</span>' : pct(r.pick_rate)), 1],
+    ["피해 몫", (r, raw) => raw ? (r.share ?? -1) : (r.share == null ? '<span class="dim">-</span>' : pct(r.share)), 1]]);
+  $("v-head").textContent = ""; $("t-vnotes").innerHTML = "";
+}
+$("load-votes").onclick = loadVotes;
+window.voteNotes = async key => {
+  const rs = await api(`/admin/api/votes/notes?round=${vRound}&key=${encodeURIComponent(key)}`);
+  $("v-head").innerHTML = `개선 의견 · ${vnm(key)} (${rs.length})`;
+  table($("t-vnotes"), rs, [["날짜", r => kst(r.at)], ["닉네임", r => esc(r.nick || "-")], ["의견", (r, raw) => raw ? r.note : esc(r.note)], ["기기", r => esc(r.device.slice(0, 8))]]);
+};
+$("v-csv").onclick = async () => {
+  const t = await api(`/admin/api/votes.csv?round=${vRound}`);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([t], {type: "text/csv"}));
+  a.download = `bindu_votes_${vRound}.csv`; a.click();
+};
+$("v-new").onclick = async () => {
+  if (!confirm("지금 회차를 닫고 새 회차를 열까요? 닫힌 회차의 결과는 게임에 '지난 회차 결과'로 보입니다.")) return;
+  const r = await api("/admin/vote_rounds", {method: "POST", body: JSON.stringify({name: $("v-name").value.trim()})});
+  say(`새 회차 열림: ${r.name}`); $("v-name").value = ""; $("v-round").value = "";
+  $("v-round").innerHTML = ""; loadVotes();
 };
 </script>
 </body>

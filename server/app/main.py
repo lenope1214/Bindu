@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
-from . import accounts, config, signing, stats, validate
+from . import accounts, config, signing, stats, validate, votes
 from .db import Ban, ClientLog, Final, Identity, Patch, Pick, Release, Run, Season, SrcShare, get_db, init_db, kst_date, now
 
 @asynccontextmanager
@@ -25,6 +25,7 @@ async def lifespan(_app):
     if db.scalar(select(func.count()).select_from(Season)) == 0:
         db.add(Season(name="시즌 1"))
         db.commit()
+    votes.ensure_round(db)
     db.close()
     yield
 
@@ -32,6 +33,7 @@ async def lifespan(_app):
 app = FastAPI(title="Bindu server", version="1.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["*"])
 app.include_router(accounts.router)
+app.include_router(votes.router)
 
 PLATFORMS = ["windows", "macos", "linux", "android", "ios"]
 # 패치 data에서 게임이 읽는 최상위 키 (scripts/patch.gd)
@@ -39,7 +41,7 @@ PATCH_KEYS = {"rules", "rules_desc", "perks", "perk_desc", "cards", "elem_dmg", 
 
 
 # 자동 배포 확인용: 서버 코드를 고쳐 배포할 때 바꾸면 /health로 새 이미지가 떴는지 밖에서 볼 수 있다
-SERVER_REV = "2026-10-31.6"
+SERVER_REV = "2026-10-31.7"
 
 
 @app.get("/health")
@@ -99,8 +101,9 @@ def boot(game: str, platform: str = "", patch: int = -1, db: Session = Depends(g
             latest.update(sha256=r.sha256, size=r.size, sig=signing.sign(release_payload(r.platform, r.version, r.url, r.sha256, r.size)))
     s = current_season(db)
     # snap: 진행 중 판 기록(run·ended)을 받아 한 줄로 고칠 수 있는 서버. 게임은 이게 있을 때만 5웨이브마다 보낸다
+    # vote: 다음 패치 투표 API가 있는 서버 (0.6.0). 게임은 이게 있을 때만 투표 버튼을 보인다
     # acct: 계정·진행 저장 API가 있는 서버 (0.5.3). 게임은 이게 있을 때만 기기 인증·진행 맞추기를 한다
-    return {"patch": patch_out, "latest": latest, "season": {"id": s.id, "name": s.name} if s else None, "snap": True, "acct": True}
+    return {"patch": patch_out, "latest": latest, "season": {"id": s.id, "name": s.name} if s else None, "snap": True, "acct": True, "vote": True}
 
 
 class TowerIn(BaseModel):
@@ -566,6 +569,34 @@ def get_stats_csv(kind: str = "picks", rules: int = 0, map: str = "", game: str 
     data = stats.summary(db, stats.Filter(rules, map, game, patch, days, valid_only, ended_only, min_wave))
     return PlainTextResponse(stats.to_csv(data, kind), media_type="text/csv; charset=utf-8",
                              headers={"Content-Disposition": f'attachment; filename="bindu_{kind}.csv"'})
+
+
+class VoteRoundIn(BaseModel):
+    name: str = ""
+
+
+@app.get("/admin/api/votes", dependencies=[Depends(require_admin)])
+def admin_votes(round: int = 0, db: Session = Depends(get_db)):
+    return votes.admin_summary(db, round)
+
+
+@app.get("/admin/api/votes.csv", dependencies=[Depends(require_admin)], response_class=PlainTextResponse)
+def admin_votes_csv(round: int = 0, db: Session = Depends(get_db)):
+    data = votes.admin_summary(db, round)
+    return PlainTextResponse(votes.to_csv(data), media_type="text/csv; charset=utf-8",
+                             headers={"Content-Disposition": f'attachment; filename="bindu_votes_{data["round"]}.csv"'})
+
+
+@app.get("/admin/api/votes/notes", dependencies=[Depends(require_admin)])
+def admin_vote_notes(round: int, key: str, db: Session = Depends(get_db)):
+    return votes.admin_notes(db, round, key)
+
+
+@app.post("/admin/vote_rounds", dependencies=[Depends(require_admin)])
+def admin_new_round(body: VoteRoundIn, db: Session = Depends(get_db)):
+    """새 회차 열기: 지금 회차는 닫혀 결과가 고정되고 게임에 '지난 회차 결과'로 보인다."""
+    r = votes.new_round(db, body.name)
+    return {"id": r.id, "name": r.name}
 
 
 def _log_filter(q, game: str, platform: str, days: int):
