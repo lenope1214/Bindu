@@ -45,7 +45,7 @@ static var mastery := {}  # 속성 키(Patch.ELEM_KEYS) -> 정원에서 처치�
 static var hero_e := -1  # 영웅 속성 (-1 = 아직 없음). 바꾸기는 환생할 때만 (hero_free)
 static var hero_free := true  # 지금 영웅 속성을 고를 수 있는지 (처음·환생 직후)
 static var hero_xp := {}  # 속성 키 -> 영웅 경험치 (정원에서 그 속성이 처치한 몫, 속성마다 따로 남음)
-static var auto_buy := false  # 자동 정원사: 쉬는 시간에 이슬로 알아서 산다
+static var auto_buy := true  # 자동 정원사: 쉬는 시간에 이슬로 알아서 산다
 static var bonsai := {}  # {"e": 속성, "pat": 공격방식, "plv": 레벨, "mods": [강화 id...]} (비면 없음)
 static var has_run := false  # 저장된 정원 판이 있는지 (시작 화면 표시용)
 static var run_wave := 0
@@ -358,7 +358,7 @@ static func load_into(cfg: ConfigFile) -> void:
 	for key in hx:
 		if str(key) in Patch.ELEM_KEYS:
 			hero_xp[str(key)] = maxf(0.0, float(hx[key]))
-	auto_buy = Meta.val(cfg, "garden", "auto_buy", false)
+	auto_buy = Meta.val(cfg, "garden", "auto_buy2", true)  # 기본 켬 (예전 auto_buy 끔은 무시하고 새 키로)
 	mastery = {}
 	var ms: Dictionary = Meta.val(cfg, "garden", "mastery", {})
 	for key in ms:
@@ -382,7 +382,7 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("garden", "hero_e", hero_e)
 	cfg.set_value("garden", "hero_free", hero_free)
 	cfg.set_value("garden", "hero_xp", hero_xp)
-	cfg.set_value("garden", "auto_buy", auto_buy)
+	cfg.set_value("garden", "auto_buy2", auto_buy)
 	cfg.set_value("garden", "prev", prev if on else {})
 
 

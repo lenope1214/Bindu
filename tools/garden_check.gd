@@ -25,6 +25,7 @@ func _initialize():
 func _spawn() -> void:
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
+	Garden.auto_buy = false  # 자동 정원사는 기본 켬: 점검·촬영·봇은 직접 산다
 	current_scene = main
 
 
@@ -66,6 +67,17 @@ func _process(_d) -> bool:
 			print("  상점: ", main.offer.map(func(o): return o["type"]), " phase=", main.phase)
 			_ok(main.offer.size() == Garden.SHOP_ELEMS + Garden.SHOP_OTHERS, "오브젝트가 있으면 상점 4장")
 			var ad0 := Garden.dew
+			var pc := 0
+			for i in 3000:
+				var cd: Dictionary = main._roll_card()
+				if cd["type"] == "pat" and cd["id"] == "path":
+					pc += 1
+			_ok(pc == 0, "정원 상점엔 그린 궤적(손으로 그리기) 카드가 안 나옴")
+			var gs0: float = main.game_speed
+			main._toggle_speed()
+			_ok(main.game_speed == gs0 and main.game_speed >= 2.0 and not main.speed_btn.visible and not main.speed_pick.visible and not main.pause_btn.visible and main.gp_exit_btn.visible, "정원은 늘 x2, 배속·일시정지 버튼 없음, 패널에 [나가기]")
+			main._toggle_auto()
+			_ok(main.garden_auto and not main.auto_btn.visible and not main.gp_prog_btn.visible, "정원 자동 진행은 늘 켬 (끄는 버튼 없음)")
 			_ok(Gardener.buy(main) and Garden.dew < ad0, "자동 정원사: 이슬로 하나 삼 (%d → %d)" % [int(ad0), int(Garden.dew)])
 			main._garden_rest(true)
 			step = 1

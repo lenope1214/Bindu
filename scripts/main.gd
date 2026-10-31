@@ -170,6 +170,7 @@ var pause_btn: Button
 var speed_btn: Button
 var speed_pick: OptionButton
 const SPEEDS := [2.0, 3.0, 4.0, 6.0, 8.0]
+const GARDEN_SPEED := 2.0  # 정원은 늘 x2 (배속·일시정지 버튼 없음)
 var game_speed := 1.0  # 지금 배속
 var fast_speed := 2.0  # Space로 켜는 배속
 var paused_label: Label
@@ -388,6 +389,7 @@ var gp_hero: VBoxContainer  # 영웅 탭
 var gp_next_btn: Button
 var gp_sig := ""  # 상점 줄을 다시 만들지 (카드·살 수 있는지가 바뀌면)
 var gp_portrait := false
+var gp_exit_btn: Button  # 정원 패널 [나가기] (일시정지 버튼 대신)
 var gp_field_cx := 0.0
 var gp_view := Rect2()  # 정원: 패널을 뺀 화면이 보여 주는 월드 영역
 var gp_buy_t := 0.0  # 자동 정원사: 다음에 살 때까지
@@ -416,6 +418,7 @@ static var garden_note := ""  # 장면을 다시 불러온 뒤 보여 줄 글 (�
 
 func _ready() -> void:
 	randomize()
+	RenderingServer.set_default_clear_color(Color(0.04, 0.05, 0.07))  # 전장 밖(폰 세로 정원 아래 등)이 기본 회색으로 보이던 것
 	process_mode = Node.PROCESS_MODE_ALWAYS  # 일시정지 중에도 입력·UI는 동작
 	Tower.dmg_mul = 1.0
 	Tower.spd_mul = 1.0
@@ -1923,7 +1926,7 @@ func _card_key(card: Dictionary) -> String:
 ## 선택지 한 장: 속성 / 공격방식 / 강화 / 연계 중 하나.
 func _roll_card() -> Dictionary:
 	var n := _my_towers().size()
-	if n > 0 and wave > 0 and _card_open("pat") and _path_takers():
+	if n > 0 and wave > 0 and _card_open("pat") and _path_takers() and not Garden.on:  # 정원(방치형)은 손으로 그려야 해서 안 나옴
 		# 그린 궤적: 카드당 0.7%, 이 판에 궤적이 있으면 1.2% (여러 번 나와야 쓸모 있는 공격)
 		var has := _my_towers().any(func(t): return t.pattern == "path")
 		if randf() < (Patch.num("cards", "path_again", Pat.PATH_CHANCE_AGAIN) if has else Patch.num("cards", "path", Pat.PATH_CHANCE)):
@@ -3696,12 +3699,7 @@ func _toggle_mute() -> void:
 
 func _toggle_auto() -> void:
 	if Garden.on:
-		garden_auto = not garden_auto
-		garden_cd = Garden.NEXT_DELAY if garden_auto else -1.0
-		_update_auto_btn()
-		_save_best()
-		_show_toast("정원 자동 진행: " + ("켬" if garden_auto else "끔 (Space로 다음 웨이브)"))
-		return
+		return  # 정원은 자동 진행 고정 (방치형: 손을 덜 대게)
 	auto_start = not auto_start
 	_update_auto_btn()
 	_save_best()
@@ -6395,6 +6393,10 @@ func _continue_run() -> void:
 			t = Tower.new()
 			t.main = self
 			t.load_save(d)
+			if Garden.on and t.pattern == "path":
+				# 정원(방치형)은 손으로 그리지 않게: 예전 저장의 그린 궤적은 다른 공격방식으로 (레벨은 그대로)
+				t.pattern = Pat.PATTERN_IDS.slice(1).filter(func(id): return id != "wall").pick_random()
+				t.paths = []
 			var fr := field_rect()
 			t.position = t.position.clamp(fr.position, fr.end)  # 손으로 고친 저장에서 화면 밖 위치
 			if t.order.is_empty():
@@ -6825,9 +6827,16 @@ func _leave(quit_game: bool) -> void:
 
 
 func _toggle_speed() -> void:
-	# Space·버튼: 1배속 ↔ 고른 배속
-	game_speed = fast_speed if game_speed == 1.0 else 1.0
+	# Space·버튼: 1배속 ↔ 고른 배속 (정원은 x2 고정, 바꾸지 않음)
+	if Garden.on:
+		return
+	game_speed = _fast_now() if game_speed == 1.0 else 1.0
 	_update_speed_btn()
+
+
+## 빠르게 켤 때 배속 (정원은 늘 x2라 쓰지 않음)
+func _fast_now() -> float:
+	return GARDEN_SPEED if Garden.on else fast_speed
 
 
 func _update_speed_btn() -> void:
@@ -6842,7 +6851,7 @@ func _update_speed_btn() -> void:
 func _on_speed_pick(i: int) -> void:
 	fast_speed = SPEEDS[i]
 	if game_speed > 1.0:
-		game_speed = fast_speed
+		game_speed = _fast_now()
 	_update_speed_btn()
 	_save_best()
 
@@ -7297,10 +7306,10 @@ func _process(delta: float) -> void:
 	bar_btn.custom_minimum_size.x = 40.0 if bar_open else 96.0
 	bar_btn.tooltip_text = "설정 버튼 접기" if bar_open else "소리·자동 시작·일시정지·배속 버튼 펼치기"
 	mute_btn.visible = not in_game or bar_open
-	auto_btn.visible = not in_game or bar_open
-	pause_btn.visible = in_game and bar_open
-	speed_btn.visible = in_game and bar_open
-	speed_pick.visible = in_game and bar_open
+	auto_btn.visible = (not in_game or bar_open) and not Garden.on  # 정원은 자동 진행 고정
+	pause_btn.visible = in_game and bar_open and not Garden.on  # 정원(방치형)은 일시정지·배속 없음
+	speed_btn.visible = in_game and bar_open and not Garden.on
+	speed_pick.visible = in_game and bar_open and not Garden.on  # 정원은 x2 고정
 	fx_pick.visible = in_game and bar_open
 	hud_cool -= delta
 	_update_hud()
@@ -8832,7 +8841,7 @@ func _load_best() -> void:
 	if cfg.load(SAVE_PATH) == OK:
 		Meta.load_into(cfg)
 		Garden.load_into(cfg)
-		garden_auto = Meta.val(cfg, "option", "garden_auto", true)
+		garden_auto = true  # 정원 자동 진행은 늘 켬 (예전 저장의 끔은 무시)
 		if not Garden.on and not Garden.prev.is_empty():
 			Garden.restore_prev()  # 정원에서 게임을 끈 저장: 시작 화면 맵·규칙을 돌려 놓는다
 		var b := Meta.best_of(Meta.run_key())
@@ -10325,7 +10334,12 @@ func _build_garden_panel(root: Control) -> void:
 	tg.add_child(gp_auto_btn)
 	gp_prog_btn = _gp_btn("", _toggle_auto)
 	gp_prog_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	gp_prog_btn.visible = false  # 자동 진행은 고정 (버튼은 남겨 두고 숨김)
 	tg.add_child(gp_prog_btn)
+	gp_exit_btn = _gp_btn("나가기", func(): _leave(false))
+	gp_exit_btn.tooltip_text = "저장하고 시작 화면으로 (정원은 꺼 둔 동안에도 자라요)"
+	gp_exit_btn.custom_minimum_size.x = 110
+	tg.add_child(gp_exit_btn)
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 6)
 	v.add_child(tabs)
@@ -10387,9 +10401,11 @@ func _gp_rects() -> Array:
 	var s := ui_root.scale.x
 	gp_portrait = vs.y > vs.x
 	if gp_portrait:
-		var fh := minf(vs.x / Meta.FIELD.x, 1.0) * Meta.FIELD.y + 70.0 * s  # 전장 + 위 점수 줄
+		# 위: 점수 줄 아래부터 화면 절반까지 전장 (가로를 잘라 크게), 아래: 목록
+		var top := (hud.get_global_rect().end.y + 4.0 * s) if hud.visible else _safe_pad().position.y + 8.0 * s
+		var fb := maxf(top + 300.0 * s, vs.y * 0.52)
 		var bot := bar_btn.get_global_rect().position.y - 6.0 if bar_btn.visible else vs.y
-		return [Rect2(0, fh, vs.x, bot - fh), Rect2(0, 0, vs.x, fh)]
+		return [Rect2(0, fb, vs.x, bot - fb), Rect2(0, top, vs.x, fb - top)]
 	var pw := GP_W * s
 	var bot := bar_btn.get_global_rect().position.y - 6.0 if bar_btn.visible else vs.y  # 오른쪽 아래 설정 버튼은 패널 밑에
 	return [Rect2(vs.x - pw, 0, pw, bot), Rect2(0, 0, vs.x - pw, vs.y)]
@@ -10416,6 +10432,9 @@ func _garden_panel_tick(_delta: float) -> void:
 			_clamp_pan()  # 카메라를 원래대로
 	if not show:
 		return
+	if game_speed < GARDEN_SPEED:
+		game_speed = GARDEN_SPEED  # 정원은 늘 x2 (위험할 때 느려지기 등으로 내려가도 다시)
+		_update_speed_btn()
 	var rs := _gp_rects()
 	var pr: Rect2 = rs[0]
 	var fr: Rect2 = rs[1]
@@ -10426,6 +10445,8 @@ func _garden_panel_tick(_delta: float) -> void:
 	# 전장을 남은 자리에 맞춘다 (화면 좌표 → 월드: 카메라 배율·위치)
 	var vs := get_viewport_rect().size
 	var z := minf(minf(fr.size.x / Meta.FIELD.x, fr.size.y / Meta.FIELD.y), 1.0)
+	if gp_portrait:
+		z = minf(fr.size.y / Meta.FIELD.y, 1.0)  # 세로: 높이에 맞추고 좌우는 잘림 (가운데 정원이 크게)
 	camera.zoom = Vector2(z, z)
 	camera.position = center() - (fr.get_center() - vs / 2.0) / z
 	gp_view = Rect2(camera.position + (fr.position - vs / 2.0) / z, fr.size / z)
@@ -10439,6 +10460,7 @@ func _garden_panel_tick(_delta: float) -> void:
 		for b in [reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn]:
 			b.visible = false
 	gp_field_cx = (fr.get_center().x - vs.x / 2.0) / s  # 특성 카드 줄은 전장 가운데에 (다음 프레임 배치에서 씀)
+	_gp_fonts()
 	gp_head.text = "이슬 %s  (+%s/초)\n웨이브 %d · 최고 %d" % [Garden.short(Garden.dew), Garden.short(Garden.rate), wave, Garden.best]
 	gp_auto_btn.text = "자동 정원사: " + ("켬" if Garden.auto_buy else "끔")
 	gp_auto_btn.modulate = Color(0.7, 1, 0.75) if Garden.auto_buy else Color(1, 1, 1, 0.8)
@@ -10450,7 +10472,7 @@ func _garden_panel_tick(_delta: float) -> void:
 	else:
 		gp_tabs["hero"].text = "영웅"
 	var can := phase == Phase.CHOOSE and not perk_mode
-	var sig := "%s|%s|%s|%d|%d|%s" % [gp_tab, can, offer.map(func(o): return _card_key(o) + str(_garden_price_text(o))), Garden.hero_e, Garden.hero_lv(), Garden.hero_free]
+	var sig := "%s|%s|%s|%s|%d|%d|%s" % [gp_portrait, gp_tab, can, offer.map(func(o): return _card_key(o) + str(_garden_price_text(o))), Garden.hero_e, Garden.hero_lv(), Garden.hero_free]
 	if sig == gp_sig:
 		return
 	gp_sig = sig
@@ -10464,6 +10486,19 @@ func _garden_panel_tick(_delta: float) -> void:
 		_gp_fill_shop(can)
 	else:
 		_gp_fill_hero()
+
+
+## 세로 화면은 목록 글자를 1.25배로 (폰을 세우면 패널이 넓고 글이 작아 보이던 것)
+func _gp_fs(n: int) -> int:
+	return roundi(n * (1.25 if gp_portrait else 1.0))
+
+
+func _gp_fonts() -> void:
+	gp_head.add_theme_font_size_override("font_size", _gp_fs(20))
+	for b in [gp_auto_btn, gp_prog_btn, gp_exit_btn, gp_tabs["shop"], gp_tabs["hero"]]:
+		b.add_theme_font_size_override("font_size", _gp_fs(16))
+		b.custom_minimum_size.y = 60 if gp_portrait else (52 if _phone() else 38)
+	gp_next_btn.add_theme_font_size_override("font_size", _gp_fs(18))
 
 
 ## 상점 줄: [이름(색) · 짧은 설명 | 가격]. 누르면 카드를 고른 것과 같다 (속성은 빈 곳=새 오브젝트·오브젝트 위=겹치기).
@@ -10494,7 +10529,7 @@ func _gp_fill_shop(can: bool) -> void:
 	var hint_l := Label.new()
 	hint_l.text = _th("속성 카드를 누른 뒤 전장 빈 곳: 새 오브젝트 · 오브젝트 위: 겹치기. 오브젝트를 끌면 옮기기")
 	hint_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	hint_l.add_theme_font_size_override("font_size", 13)
+	hint_l.add_theme_font_size_override("font_size", _gp_fs(13))
 	hint_l.add_theme_color_override("font_color", Color(1, 1, 1, 0.5))
 	gp_list.add_child(hint_l)
 
@@ -10502,7 +10537,7 @@ func _gp_fill_shop(can: bool) -> void:
 func _gp_row(name_t: String, desc: String, price: String, col: Color, ok: bool) -> Button:
 	var b := Button.new()
 	b.focus_mode = Control.FOCUS_NONE
-	b.custom_minimum_size = Vector2(0, 60 if _phone() else 54)
+	b.custom_minimum_size = Vector2(0, 76 if gp_portrait else (60 if _phone() else 54))
 	b.disabled = not ok
 	var h := HBoxContainer.new()
 	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -10520,7 +10555,7 @@ func _gp_row(name_t: String, desc: String, price: String, col: Color, ok: bool) 
 	var n := Label.new()
 	n.text = name_t
 	n.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	n.add_theme_font_size_override("font_size", 17)
+	n.add_theme_font_size_override("font_size", _gp_fs(17))
 	n.add_theme_color_override("font_color", col if ok else Color(col, 0.5))
 	vv.add_child(n)
 	var d := Label.new()
@@ -10528,14 +10563,14 @@ func _gp_row(name_t: String, desc: String, price: String, col: Color, ok: bool) 
 	d.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	d.clip_text = true
 	d.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	d.add_theme_font_size_override("font_size", 12)
+	d.add_theme_font_size_override("font_size", _gp_fs(12))
 	d.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
 	vv.add_child(d)
 	var p := Label.new()
 	p.text = price
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	p.add_theme_font_size_override("font_size", 14)
+	p.add_theme_font_size_override("font_size", _gp_fs(14))
 	p.add_theme_color_override("font_color", Color(0.6, 1, 0.75) if ok else Color(1, 0.6, 0.55))
 	h.add_child(p)
 	return b
@@ -10545,7 +10580,7 @@ func _gp_row(name_t: String, desc: String, price: String, col: Color, ok: bool) 
 func _gp_fill_hero() -> void:
 	var t := Label.new()
 	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	t.add_theme_font_size_override("font_size", 15)
+	t.add_theme_font_size_override("font_size", _gp_fs(15))
 	gp_hero.add_child(t)
 	if Garden.hero_free:
 		t.text = "영웅 속성을 하나 고르세요. 그 속성이 정원에서 처치할수록 영웅 레벨이 올라요. 바꾸기는 환생할 때만 (레벨은 속성마다 남아요)"
@@ -10579,7 +10614,7 @@ func _gp_fill_hero() -> void:
 	gp_hero.add_child(bar)
 	var info := Label.new()
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	info.add_theme_font_size_override("font_size", 14)
+	info.add_theme_font_size_override("font_size", _gp_fs(14))
 	info.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
 	var lines := PackedStringArray()
 	lines.append("경험치 %s / %s (정원에서 %s 처치 몫)" % [Garden.short(pg[0]), Garden.short(pg[1]), Elem.NAMES[e]] if pg[1] > 0.0 else "최고 레벨")

@@ -21,6 +21,7 @@ func _initialize():
 	Tutorial.save_file()
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
+	Garden.auto_buy = false  # 자동 정원사는 기본 켬: 점검·촬영·봇은 직접 산다
 	current_scene = main
 	steps = [
 		func():
