@@ -994,7 +994,7 @@ func _update_hud(force := false) -> void:
 	items.append(["core", Color(1, 0.55, 0.6) if core_hp * 3 <= core_max else W, ct, Color(1, 0.6, 0.6) if wave_dmg > 0 else W, ctip, false])
 	items.append(["best", Color(1, 0.82, 0.35, 0.7), "%s · %d" % [num(best_score), best_wave], D, [["최고 기록: 점수 %s · 웨이브 %d" % [num(best_score), best_wave], W]], false])
 	if Meta.rules != 1:
-		items.append(["tag", D, Rules.NAMES[Meta.rules], D, [["규칙 버전", W]], false])
+		items.append(["tag", D, Rules.NAMES[Meta.rules], D, [["규칙", W]], false])
 	if not Modes.on.is_empty():
 		items.append(["tag", Color(1, 0.7, 0.4), "x%.2f" % Modes.mul(), Color(1, 0.8, 0.55), [["모드 점수 배율 x%.2f" % Modes.mul(), W]], false])
 	var nt := towers.get_child_count()
@@ -1143,7 +1143,7 @@ func _help_text() -> String:
 		"공격방식은 직선탄일 때 한 번만 정할 수 있고, 같은 것을 넣으면 레벨업",
 		"속성을 많이 겹칠수록 피해는 늘고 공격 속도는 조금씩 느려집니다. 오브젝트가 많을수록 모든 오브젝트의 피해가 늘어요(오브젝트 수 보너스, 5개 +16%% · 10개 +23%%, 늘수록 덜 오름). %s" % mods,
 		"감속은 최대 70%, 밀기는 조금씩만. 기절·속박·빙결은 연달아 걸릴수록 짧아지다가 잠깐 면역",
-		"화면 밖 구체는 맞지 않습니다. 시작 화면에서 규칙 버전%s과 맵%s을 바꿀 수 있어요" % (["", ""] if touch_ui else ["(↑/↓)", "(←/→)"]),
+		"화면 밖 구체는 맞지 않습니다. 시작 화면에서 규칙(랭크·도파민 모드)%s과 맵%s을 바꿀 수 있어요" % (["", ""] if touch_ui else ["(↑/↓)", "(←/→)"]),
 		"모드(첫 판 뒤): 어렵게 하면 점수 배율이 오르고, 쉽게 하면 내려가요 (쉽게 모드 판은 기록 따로)",
 	])
 
@@ -3471,8 +3471,8 @@ func _toggle_records() -> void:
 	# 규칙 버전끼리 비교하기 쉽게: 지금 맵의 버전별 최고 웨이브
 	var vers := PackedStringArray()
 	for r in Rules.IDS:
-		vers.append("버전 %d: %d" % [r, Meta.best_of(Meta.key(Meta.map_id, r))[0]])
-	lines.append("  %s 버전별 최고 웨이브  %s" % [Meta.map_name(Meta.map_id), " · ".join(vers)])
+		vers.append("%s: %d" % [Rules.NAMES[r], Meta.best_of(Meta.key(Meta.map_id, r))[0]])
+	lines.append("  %s 규칙별 최고 웨이브  %s" % [Meta.map_name(Meta.map_id), " · ".join(vers)])
 	# 2026-10-30 이전 규칙(버전 1~5)의 기록은 따로 보관해 보여 준다
 	var olds := PackedStringArray()
 	for r in Rules.OLD_IDS:
@@ -3773,7 +3773,7 @@ func _draw_board() -> void:
 		b.text = texts[i] + ("  ▶" if i < 2 or board_seasons.size() > 1 else "")
 		b.disabled = i == 2 and board_seasons.size() <= 1
 	board_bar.visible = true
-	var lines := PackedStringArray(["[리더보드]   위 버튼을 누르면 맵·규칙 버전·시즌이 바뀝니다   (빈 곳 %s)" % ("누르면 닫기" if touch_ui else "클릭: 닫기"), "", "", ""])
+	var lines := PackedStringArray(["[리더보드]   위 버튼을 누르면 맵·규칙·시즌이 바뀝니다   (빈 곳 %s)" % ("누르면 닫기" if touch_ui else "클릭: 닫기"), "", "", ""])
 	var specs := [["all", "이번 시즌 전체"], ["week", "이번 주"]] if board_season == 0 else [["all", sname + " 전체"]]
 	for spec in specs:
 		lines.append(spec[1])
@@ -4190,7 +4190,7 @@ func _refresh_continue() -> void:
 	new_armed = 0.0
 	new_btn.text = _kh("새로 시작 (N)" if continue_btn.visible else "시작 (Enter)")
 	if continue_btn.visible:
-		continue_btn.text = "이어하기 (Enter)   웨이브 %d부터 · %s · 버전 %d" % [info["wave"] + 1, Meta.MAPS[info["map"]]["name"], info["rules"]]
+		continue_btn.text = "이어하기 (Enter)   웨이브 %d부터 · %s · %s" % [info["wave"] + 1, Meta.MAPS[info["map"]]["name"], Rules.NAMES[info["rules"]]]
 
 
 ## 저장된 선택지 카드가 지금 판에서도 쓸 수 있는 형식인지.
