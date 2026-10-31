@@ -72,7 +72,7 @@ var wave_leaks: Array = []  # 이번 웨이브에 중앙에 닿은 구체 [나�
 var leak_log: Array = []  # 웨이브마다 누수 요약 (봇·통계·안내용)
 var leak_flash: Array = []  # 화면 가장자리 붉은 번짐 [자리, 남은 시간]
 var boss_plan := {}  # 다음 보스: 쉬는 시간에 진입 각도·체력·속도·저항을 미리 정해 길과 정보를 정확히 보여 준다
-var touch_ui := false  # 마지막 입력이 터치였는지 (터치는 마우스를 올려 둘 수 없다)
+var touch_ui := OS.has_feature("mobile")  # 마지막 입력이 터치였는지 (터치는 마우스를 올려 둘 수 없다). 폰·태블릿은 첫 터치 전 첫 화면부터 터치용 글
 var help_touch := false  # 도움말 글을 터치용으로 썼는지
 var legend_rx_rows := 999  # 설명에 적을 반응 줄 수 상한 (화면에 맞춰 _process가 줄임)
 var legend_rows := 0  # 지금 설명에 적힌 반응 줄 수
@@ -152,7 +152,7 @@ var fast_speed := 2.0  # Space로 켜는 배속
 var paused_label: Label
 var pause_box: HBoxContainer  # 일시정지 창 아래 버튼 (계속·시작 화면·끄기)
 var pause_dim: ColorRect
-var legend_hidden := false
+var legend_hidden := OS.has_feature("mobile")  # 폰·태블릿은 필드가 좁아 접어 두고 시작 (버튼으로 열면 저장)
 var bar_open := false  # 오른쪽 아래 설정 버튼(소리·자동 시작·일시정지·배속)을 펼쳤는지. 접으면 펼치기 버튼만 남는다
 var bar_btn: Button
 var tutor := false  # 이번 판이 첫 판 안내 판인지: 카드 종류를 웨이브마다 하나씩 연다 (TUTOR_OPEN)
@@ -252,7 +252,7 @@ var dps_scroll: ScrollContainer
 var dps_list: VBoxContainer
 var dps_sig := ""  # 표를 다시 만들지 정하는 요약 (오브젝트·피해가 바뀔 때만)
 var dps_focus: Tower = null  # 표에서 마우스를 올린 오브젝트
-var dps_hidden := false  # D: 표 접기
+var dps_hidden := OS.has_feature("mobile")  # D: 표 접기. 폰·태블릿은 접어 두고 시작
 # 온라인 (Net·Patch): 판 기록·통계
 var net: Net
 var run_id := ""  # 판 번호: 5웨이브마다 보내는 진행 기록과 끝 기록을 서버에서 한 줄로 (이어하기에 저장)
@@ -1298,6 +1298,8 @@ func _update_skip_ui() -> void:
 	var show_btn := phase == Phase.CHOOSE and not cards_hidden and not title_label.visible and _can_skip() and not get_tree().paused
 	skip_btn.visible = show_btn
 	skip_n_btn.visible = show_btn
+	# 글자를 키우면(폰 기본) 카드 아래 버튼 줄이 왼쪽 아래 안내 글까지 내려와 겹친다. 카드를 고르라는 글이라 겹칠 때만 숨긴다
+	hint.visible = not (show_btn and hint.get_global_rect().intersects(skip_btn.get_global_rect()))
 	if show_btn:
 		var n := int(Meta.skip_n)
 		skip_btn.text = _kh("웨이브 %d개 넘기기 (S)" % n)
@@ -1617,7 +1619,7 @@ func _guide(id: String, text: String) -> void:
 	_save_best()
 	guide_lines.append(text)
 	if first:
-		guide_lines.append("이런 안내는 처음 한 번만 나와요. 설정(O)에서 끌 수 있어요")
+		guide_lines.append(_kh("이런 안내는 처음 한 번만 나와요. 설정(O)에서 끌 수 있어요"))
 	while guide_lines.size() > 3:
 		guide_lines.pop_front()
 	guide_t = 8.0 if phase == Phase.WAVE else -1.0
@@ -6398,7 +6400,7 @@ func _load_best() -> void:
 		best_wave = b[0]
 		best_score = b[1]
 		auto_start = Meta.val(cfg, "option", "auto_start", false)
-		legend_hidden = Meta.val(cfg, "option", "legend_hidden", false)
+		legend_hidden = Meta.val(cfg, "option", "legend_hidden", legend_hidden)
 		bar_open = Meta.val(cfg, "option", "bar_open", false)
 		sfx.muted = Meta.val(cfg, "option", "muted", false)
 		fast_speed = Meta.val(cfg, "option", "fast_speed", 2.0)
