@@ -433,6 +433,8 @@ func _ready() -> void:
 	fx_layer = _layer("Fx")
 	fx_layer.z_index = 5
 	fx_layer.draw.connect(_draw_fx)
+	if OS.has_feature("mobile") and not Garden.on:
+		DisplayServer.screen_set_orientation(DisplayServer.SCREEN_SENSOR_LANDSCAPE)  # 앱은 자유 회전, 정원 밖은 가로
 	camera = Camera2D.new()
 	camera.position = center()
 	add_child(camera)
@@ -10191,6 +10193,11 @@ func _gp_rects() -> Array:
 
 func _garden_panel_tick(_delta: float) -> void:
 	var show := Garden.on and not title_label.visible and phase != Phase.GAMEOVER
+	# 폰: 정원에서만 세로로 돌릴 수 있게 (앱은 자유 회전으로 두고 일반 판·시작 화면은 가로 고정)
+	if OS.has_feature("mobile"):
+		var ori := DisplayServer.SCREEN_SENSOR if show else DisplayServer.SCREEN_SENSOR_LANDSCAPE
+		if DisplayServer.screen_get_orientation() != ori:
+			DisplayServer.screen_set_orientation(ori)
 	# 세로 화면(창·폰을 세움): 기준 해상도를 720x1280으로 바꿔 글자·버튼 크기를 지킨다 (전장은 폭에 맞춰 줄어듦)
 	var ws := get_window().size
 	var want := Vector2i(720, 1280) if show and ws.y > ws.x else Vector2i(1280, 720)
