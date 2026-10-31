@@ -113,6 +113,14 @@ var fx_pick: OptionButton  # 아래 버튼 줄: 그 세기 고르기
 var popups: Array = []  # [위치, 글자, 남은 시간, 색, 큰 글씨]
 var particles: Array = []  # [위치, 속도, 남은 시간, 색, 크기]
 var camera: Camera2D
+var view_zoom := 1.0  # 전장 확대 배율 (두 손가락 벌리기·마우스 휠)
+var view_pan := Vector2.ZERO  # 확대한 화면 가운데가 전장 가운데에서 벗어난 만큼
+var touches := {}  # 터치 번호 → 화면 자리 (두 손가락 확대·이동)
+var pinch_d := 0.0  # 두 손가락 사이 거리 (확대 시작할 때)
+var pinch_z := 1.0
+var pinch_lock := false  # 두 손가락을 댄 뒤 모든 손가락을 뗄 때까지 누르기·끌기를 막는다 (확대하다 설치되지 않게)
+var mid_drag := false  # PC: 휠 누른 채 끌어 화면 이동
+var zoom_btn: Button
 var shake := 0.0
 var core_flash := 0.0
 var danger_lv := 0  # 중앙 위험 단계: 0 보통, 1 체력 50% 이하, 2 25% 이하
@@ -362,6 +370,11 @@ func _notification(what: int) -> void:
 		esc.keycode = KEY_ESCAPE
 		esc.pressed = true
 		Input.parse_input_event(esc)
+	# 앱이 뒤로 가면 뗀 손가락 이벤트를 못 받을 수 있다: 두 손가락 확대 상태를 비운다
+	if what in [NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_WM_WINDOW_FOCUS_OUT]:
+		touches.clear()
+		pinch_lock = false
+		mid_drag = false
 	# 창을 닫거나 (모바일) 앱이 뒤로 가면 지금 쉬는 시간 상태를 한 번 더 저장 (옮긴 위치까지)
 	if (what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED) and towers and title_label:
 		_save_run()
@@ -392,7 +405,49 @@ func arena() -> Rect2:
 ## 지금 화면에 보이는 월드 영역. 화면이 16:9보다 길면(폰) 전장 양옆까지, 4:3이면(태블릿) 위아래까지 보인다.
 func view_rect() -> Rect2:
 	var vs := get_viewport_rect().size
+	if camera == null or is_equal_approx(view_zoom, 1.0):
+		return Rect2((Meta.FIELD - vs) / 2.0, vs)
+	var s := vs / view_zoom
+	return Rect2(camera.position - s / 2.0, s)
+
+
+## 확대하지 않았을 때 보이는 월드 영역 (확대한 화면이 이 밖으로 나가지 않게).
+func full_view() -> Rect2:
+	var vs := get_viewport_rect().size
 	return Rect2((Meta.FIELD - vs) / 2.0, vs)
+
+
+## 전장 확대: 1~ZOOM_MAX배, at(화면 좌표)이 가리키는 월드 점이 그 자리에 남게. 화면은 전장 밖으로 나가지 않는다.
+const ZOOM_MAX := 2.5
+func _zoom_to(z: float, at: Vector2) -> void:
+	var vs := get_viewport_rect().size
+	var before := camera.position + (at - vs / 2.0) / view_zoom
+	view_zoom = clampf(z, 1.0, ZOOM_MAX)
+	view_pan = before - (at - vs / 2.0) / view_zoom - center()
+	_clamp_pan()
+
+
+func _pan_by(screen_d: Vector2) -> void:
+	view_pan -= screen_d / view_zoom
+	_clamp_pan()
+
+
+func _clamp_pan() -> void:
+	var fv := full_view()
+	var hs := get_viewport_rect().size / view_zoom / 2.0
+	var c := center() + view_pan
+	c.x = clampf(c.x, fv.position.x + hs.x, fv.end.x - hs.x)
+	c.y = clampf(c.y, fv.position.y + hs.y, fv.end.y - hs.y)
+	view_pan = c - center()
+	if camera:
+		camera.zoom = Vector2(view_zoom, view_zoom)
+		camera.position = center() + view_pan
+
+
+func _reset_zoom() -> void:
+	view_zoom = 1.0
+	view_pan = Vector2.ZERO
+	_clamp_pan()
 
 
 ## 지키는 중앙 점. 회랑 맵은 화면 가운데가 아니라 구체가 오는 반대쪽 끝(문 가운데).
@@ -515,6 +570,16 @@ func _build_ui() -> void:
 	range_btn.pressed.connect(func(): range_all = not range_all)
 	range_btn.visible = false
 	root.add_child(range_btn)
+	# 확대했을 때만: 1배로 돌아가기
+	zoom_btn = Button.new()
+	zoom_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	zoom_btn.position = Vector2(-400, 10)
+	zoom_btn.size = Vector2(112, 30)
+	zoom_btn.focus_mode = Control.FOCUS_NONE
+	zoom_btn.add_theme_font_size_override("font_size", 14)
+	zoom_btn.pressed.connect(_reset_zoom)
+	zoom_btn.visible = false
+	root.add_child(zoom_btn)
 	legend.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # 긴 줄이 화면 밖으로 잘리지 않게
 	legend.add_theme_font_size_override("font_size", 14)
 	# 옅은 바탕: 지나가는 구체 위에서도, 글자를 키워(설정) 카드와 겹칠 때도 읽히게
@@ -2707,8 +2772,85 @@ func _game_over() -> void:
 
 # ---------- 입력 ----------
 
+## 두 손가락 벌리기·모으기 = 확대, 두 손가락 끌기 = 이동. PC는 휠 = 확대(커서 쪽), 휠 누른 채 끌기 = 이동.
+## 처리했으면 true (그 입력은 게임·UI로 넘기지 않는다).
+func _zoom_input(event: InputEvent) -> bool:
+	if title_label == null or title_label.visible or phase == Phase.GAMEOVER:
+		touches.clear()
+		pinch_lock = false
+		return false
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			touches[event.index] = event.position
+		else:
+			touches.erase(event.index)
+		if touches.size() >= 2:
+			if not pinch_lock:
+				pinch_lock = true
+				_abort_touch_action()  # 첫 손가락이 시작한 놓기·끌기·그리기를 거둔다
+			var ps: Array = touches.values()
+			pinch_d = maxf((ps[0] as Vector2).distance_to(ps[1]), 1.0)
+			pinch_z = view_zoom
+		elif touches.is_empty():
+			var was := pinch_lock
+			pinch_lock = false
+			return was  # 마지막 손가락을 뗀 것도 누르기로 치지 않는다
+		return pinch_lock
+	if event is InputEventScreenDrag:
+		if not touches.has(event.index):
+			return pinch_lock
+		var prev: Vector2 = touches[event.index]
+		touches[event.index] = event.position
+		if touches.size() >= 2 and pinch_lock:
+			var ps: Array = touches.values()
+			var d := maxf((ps[0] as Vector2).distance_to(ps[1]), 1.0)
+			var mid: Vector2 = ((ps[0] as Vector2) + (ps[1] as Vector2)) / 2.0
+			_zoom_to(pinch_z * d / pinch_d, mid)
+			_pan_by((event.position - prev) / 2.0)  # 두 손가락의 가운데가 움직인 만큼
+			return true
+		return pinch_lock
+	if pinch_lock and (event is InputEventMouseButton or event is InputEventMouseMotion):
+		return true  # 손가락에서 흉내 낸 마우스
+	if event is InputEventMouseButton and event.device != InputEvent.DEVICE_ID_EMULATION:
+		if event.button_index == MOUSE_BUTTON_MIDDLE:
+			mid_drag = event.pressed and view_zoom > 1.0
+			return mid_drag or not event.pressed
+		if event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN] and not _over_scroll_ui(event.position):
+			_zoom_to(view_zoom * (1.15 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / 1.15), event.position)
+			return true
+	if event is InputEventMouseMotion and mid_drag:
+		_pan_by(event.relative)
+		return true
+	return false
+
+
+## 휠을 굴릴 창(도감·패치노트·도움말·DPS 표 등)이 마우스 아래 있으면 확대하지 않는다.
+func _over_scroll_ui(p: Vector2) -> bool:
+	var h := get_viewport().gui_get_hovered_control() if get_viewport().has_method("gui_get_hovered_control") else null
+	if h != null and h != ui_root and h != info:
+		return true
+	return settings_panel.visible or notes_panel.visible or help_label.visible or records_panel.visible or codex_panel.visible or get_tree().paused
+
+
+## 두 번째 손가락이 닿으면: 첫 손가락으로 시작한 누르기·끌기·그리기·상자 선택을 없던 일로.
+func _abort_touch_action() -> void:
+	if phase == Phase.DRAW and draw_on:
+		draw_on = false
+		draw_pts = PackedVector2Array()
+		draw_len = 0.0
+	if press_t:
+		_drop_press()
+		_restore_hint()
+	boxing = false
+	if dragging and moving:
+		_cancel_step()
+
+
 ## 터치인지 마우스인지 기억한다 (터치에서 흉내 낸 마우스 움직임은 장치 번호가 EMULATION).
 func _input(event: InputEvent) -> void:
+	if _zoom_input(event):
+		get_viewport().set_input_as_handled()
+		return
 	var was_touch := touch_ui
 	if event is InputEventScreenTouch or event is InputEventScreenDrag:
 		touch_tip_t = TOUCH_TIP_SEC
@@ -5270,6 +5412,8 @@ func _process(delta: float) -> void:
 	legend.visible = phase in [Phase.CHOOSE, Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.READY] and not title_label.visible
 	legend_btn.visible = legend.visible
 	range_btn.visible = touch_ui and not title_label.visible and phase != Phase.GAMEOVER
+	zoom_btn.visible = view_zoom > 1.01 and not title_label.visible
+	zoom_btn.text = "확대 풀기 x%.1f" % view_zoom
 	range_btn.text = "범위 끄기" if range_all else "범위 보기"
 	legend_btn.text = _kh(("설명 보기" if legend_hidden else "설명 숨기기") + " (Tab)")
 	legend.visible = legend.visible and not legend_hidden
@@ -5890,7 +6034,9 @@ func _update_fx(delta: float) -> void:
 	core_flash = maxf(core_flash - delta, 0.0)
 	eclipse_flash = maxf(eclipse_flash - delta, 0.0)
 	eclipse_cd = maxf(eclipse_cd - delta, 0.0)
-	camera.position = center()
+	if view_zoom > 1.0 and (title_label.visible or phase == Phase.GAMEOVER):
+		_reset_zoom()  # 시작 화면·게임 오버는 1배로
+	camera.position = center() + view_pan
 	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 14.0 * shake * (1.0 if Meta.shake_on else 0.0)
 	fx_layer.queue_redraw()
 
@@ -6301,8 +6447,11 @@ func _draw_fx() -> void:
 		var f: Font = ThemeDB.fallback_font if p[1].is_valid_int() else ui_font
 		fx_layer.draw_string(f, p[0] + Vector2(1, 1), p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0, 0, 0, 0.7 * a))
 		fx_layer.draw_string(f, p[0], p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(p[3], a))
+	# 보스 체력 줄·콤보 상자는 화면에 붙은 글이라 화면 좌표로 그린다 (확대해도 크기·자리 그대로)
+	fx_layer.draw_set_transform_matrix(get_canvas_transform().affine_inverse())
 	_draw_boss_bar()
 	_draw_combo()
+	fx_layer.draw_set_transform_matrix(Transform2D.IDENTITY)
 	_draw_tooltip()
 
 
@@ -6322,7 +6471,7 @@ func _draw_boss_bar() -> void:
 		return
 	var w := 300.0
 	# 위쪽 점수 줄(바탕 상자) 바로 아래. 특성 줄이 늘면 같이 내려간다
-	var p := Vector2(center().x - w / 2.0, view_rect().position.y + hud.position.y + hud.size.y + 20.0) + camera.offset
+	var p := Vector2(get_viewport_rect().size.x / 2.0 - w / 2.0, ui_root.position.y + (hud.position.y + hud.size.y) * ui_root.scale.y + 20.0)
 	fx_layer.draw_rect(Rect2(p, Vector2(w, 10)), Color(0, 0, 0, 0.6))
 	fx_layer.draw_rect(Rect2(p, Vector2(w * clampf(hp / mx, 0.0, 1.0), 10)), Color(1, 0.3, 0.4))
 	fx_layer.draw_rect(Rect2(p, Vector2(w, 10)), Color(1, 1, 1, 0.3), false, 1.0)
@@ -6346,9 +6495,9 @@ func _draw_combo() -> void:
 		return
 	var w := 180.0
 	var r := legend_btn.get_global_rect()
-	var p := view_rect().position + Vector2(get_viewport_rect().size.x - 10.0 - w, r.end.y + 8.0) + camera.offset
+	var p := Vector2(ui_root.position.x + ui_root.size.x * ui_root.scale.x - 10.0 - w, r.end.y + 8.0)
 	if legend.visible:
-		p.y = view_rect().position.y + legend.get_global_rect().end.y + 8.0 + camera.offset.y
+		p.y = legend.get_global_rect().end.y + 8.0
 	if not live:
 		var a: float = clampf(combo_end[2] / 0.5, 0.0, 1.0)
 		fx_layer.draw_rect(Rect2(p, Vector2(w, 44)), Color(0, 0, 0, 0.55 * a))

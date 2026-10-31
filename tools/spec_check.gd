@@ -665,6 +665,23 @@ func _meta_misc() -> void:
 	main.touch_ui = false
 	ok("PATH-02", waiting and done, "그린 궤적 터치: 손을 떼면 길을 남겨 두고 [확정]을 누르면 넣음")
 
+	# 전장 확대: 두 손가락 벌리기로 확대, 그동안 누르기는 게임에 안 넘어감, 다 떼면 풀림. [확대 풀기]로 1배
+	_fresh(3)
+	main.phase = main.Phase.CHOOSE
+	var t0 := InputEventScreenTouch.new(); t0.index = 0; t0.pressed = true; t0.position = Vector2(600, 360)
+	var t1 := InputEventScreenTouch.new(); t1.index = 1; t1.pressed = true; t1.position = Vector2(700, 360)
+	main._zoom_input(t0)
+	var lock1: bool = main._zoom_input(t1)
+	var dr := InputEventScreenDrag.new(); dr.index = 1; dr.position = Vector2(800, 360)
+	main._zoom_input(dr)
+	var zin: bool = main.view_zoom > 1.5 and main.view_rect().size.x < main.get_viewport_rect().size.x
+	t1.pressed = false; t0.pressed = false
+	main._zoom_input(t1)
+	var last: bool = main._zoom_input(t0)
+	var unlocked: bool = not main.pinch_lock and last
+	main._reset_zoom()
+	ok("UI-18", lock1 and zin and unlocked and is_equal_approx(main.view_zoom, 1.0) and main.arena().size == Meta.FIELD, "두 손가락 벌리기 = 전장 확대(x%.1f), 확대 중 누르기는 게임에 안 넘어감, [확대 풀기] = 1배, 전장 크기 그대로" % main.view_zoom)
+
 	# 웨이브 넘기기: 오브젝트가 있어야, 첫 판은 카드가 다 열린 뒤
 	_fresh(3)
 	var none: bool = main._can_skip()

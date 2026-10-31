@@ -73,6 +73,13 @@ func _initialize():
 		func():
 			_snap("cards_tap")
 			main.touch_ui = touch
+			# 전장 확대 2배 (오른쪽 위 [확대 풀기], 배지·카드·정보는 그대로 화면에)
+			main._set_cards_hidden(true)
+			main._zoom_to(2.0, main.get_viewport_rect().size * Vector2(0.3, 0.5)),
+		func():
+			_snap("zoom")
+			main._reset_zoom()
+			main._set_cards_hidden(false)
 			main.offer = [{"type": "pat", "id": Pat.PATTERN_IDS[2]}, {"type": "mod", "id": Pat.MOD_IDS[0]}, {"type": "cata", "id": "elem"}]
 			main._show_offer(),
 		func():
