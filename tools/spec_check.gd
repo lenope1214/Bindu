@@ -438,6 +438,20 @@ func _stars() -> void:
 	var plain := _tower(c + Vector2(250, 150), Elem.WIND)
 	ok("STAR-04", not same and why.contains("이미") and not fourth and not plain.can_take({"type": "elem", "e": Elem.STAR, "lv": 1}),
 		"같은 행성 막음(%s), 행성 3개까지" % why)
+	# 별 상한: 별이 든 오브젝트(별·행성 합쳐) 3개까지. 다 차면 새로 놓기·다른 오브젝트에 별 넣기를 막고, 있는 별 레벨업은 된다
+	_clear()
+	var p1 := _tower(c + Vector2(-200, 0), Elem.STAR)
+	_tower(c + Vector2(200, 0), Elem.STAR)
+	var w1 := _tower(c + Vector2(0, 200), Elem.WIND)
+	var free_before: bool = not main.star_full() and w1.can_take({"type": "elem", "e": Elem.STAR, "lv": 1})
+	p1.add(Elem.FIRE, 1)  # 행성도 같이 센다
+	w1.add(Elem.STAR, 1)
+	var w2 := _tower(c + Vector2(0, -200), Elem.WIND)
+	var star_card := {"type": "elem", "e": Elem.STAR, "lv": 1}
+	var why5: String = w2.refuse_text(star_card)
+	ok("STAR-05", free_before and Tower.star_count(main) == 3 and main.star_full() and not w2.can_take(star_card) and why5.contains("합쳐")
+		and w1.can_take(star_card) and not main._star_blocked(star_card),
+		"별·행성 합쳐 3개 (%d개, %s)" % [Tower.star_count(main), why5])
 	main.star_towers = []
 
 

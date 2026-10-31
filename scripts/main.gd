@@ -1841,6 +1841,8 @@ func _make_choices() -> void:
 		# 넣을 곳이 없는 공격방식·강화 카드는 내지 않는다
 		if card["type"] in ["pat", "mod", "trig"] and not _my_towers().any(func(t): return t.can_take(card)):
 			continue
+		if _star_blocked(card):  # 별·행성이 다 찼고 레벨업할 별도 없으면 별 카드는 내지 않는다
+			continue
 		# 같은 속성은 레벨만 다르게 두 장 나오지 않게: 높은 레벨 한 장만 남긴다
 		var same := offer.filter(func(cd): return _card_key(cd) == _card_key(card))
 		if same.is_empty():
@@ -1852,7 +1854,8 @@ func _make_choices() -> void:
 		offer[0] = {"type": "elem", "e": Garden.hero_e, "lv": 1}
 	# 속성 카드(새 오브젝트를 놓을 수 있는 카드)는 최소 1장
 	if not offer.any(func(cd): return cd["type"] == "elem"):
-		offer[randi() % offer.size()] = {"type": "elem", "e": Vary.open("elem", Elem.ALL).pick_random(), "lv": 1}
+		var pool: Array = Vary.open("elem", Elem.ALL).filter(func(e): return not _star_blocked({"type": "elem", "e": e}))
+		offer[randi() % offer.size()] = {"type": "elem", "e": pool.pick_random() if not pool.is_empty() else Elem.FIRE, "lv": 1}
 	if tutor:
 		_tutor_offer()
 	_show_offer()
@@ -4303,6 +4306,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			_apply_card(target)
 			return
 		elif Garden.on and not _garden_can_new():
+			return
+		elif picked["e"] == Elem.STAR and star_full():
+			_show_toast(Tower.star_full_text())
 			return
 		else:
 			place_pos = mpos
@@ -10141,6 +10147,16 @@ func _garden_pay(cost: int) -> bool:
 	Garden.dew -= cost
 	popup(get_global_mouse_position() + Vector2(14, -18), 0.0, Color(0.6, 1, 0.75), false, "-%s 이슬" % Garden.short(cost), 1.0)
 	return true
+
+
+## 별이 든 오브젝트(별·행성 합쳐)가 star_max개라 별을 새로 놓을 수 없다.
+func star_full() -> bool:
+	return Tower.star_count(self) >= int(Rules.t("star_max"))
+
+
+## 이 카드가 별 카드인데 새로 놓을 수도, 넣을(레벨업할) 오브젝트도 없다.
+func _star_blocked(card: Dictionary) -> bool:
+	return card.get("type") == "elem" and card.get("e") == Elem.STAR and star_full() and not _my_towers().any(func(t): return t.can_take(card))
 
 
 ## 정원에 새 오브젝트를 놓을 수 있나 (개수·이슬).

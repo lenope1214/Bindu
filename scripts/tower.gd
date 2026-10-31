@@ -1935,10 +1935,12 @@ func pure_star() -> bool:
 	return order.size() == 1 and elements.has(Elem.STAR)
 
 
-## 속성 e를 넣으면 행성이 되는데 못 만드는 이유 (같은 행성이 이미 있음·행성 최대). 행성이 안 되면 빈 글.
+## 속성 e를 넣으면 행성이 되는데 못 만드는 이유 (같은 행성이 이미 있음·행성 최대·별 최대). 행성이 안 되면 빈 글.
 func planet_refuse(e: int) -> String:
 	if elements.has(e) or order.size() != 1 or main == null:
 		return ""
+	if e == Elem.STAR and not elements.has(Elem.STAR) and star_count(main, self) >= int(Rules.t("star_max")):
+		return star_full_text()
 	var pe := -1
 	if elements.has(Elem.STAR) and e != Elem.STAR:
 		pe = e
@@ -1955,6 +1957,19 @@ func planet_refuse(e: int) -> String:
 	if n >= int(Rules.t("planet_max")):
 		return "행성은 %d개까지예요" % int(Rules.t("planet_max"))
 	return ""
+
+
+## 별이 든 오브젝트(별·행성) 수. except는 빼고 센다.
+static func star_count(m: Node, except: Node = null) -> int:
+	var n := 0
+	for t2 in m.towers.get_children():
+		if t2 != except and not t2.is_queued_for_deletion() and t2.elements.has(Elem.STAR):
+			n += 1
+	return n
+
+
+static func star_full_text() -> String:
+	return "별·행성은 합쳐 %d개까지예요. 있는 별에 겹치면 레벨업" % int(Rules.t("star_max"))
 
 
 ## 행성이면 별과 함께 든 속성, 아니면 -1.

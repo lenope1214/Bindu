@@ -174,6 +174,15 @@ func _process(_d):
 		if pick["type"] != "elem" and target == null:
 			for t in ts:
 				if t.can_take(pick): target = t; break
+		if pick["type"] == "elem" and target == null and pick["e"] == Elem.STAR and main.star_full():
+			pick = null  # 별·행성이 다 참: 다른 카드 (사람도 새로 놓을 수 없음)
+			for o in offer:
+				if o["type"] == "elem" and o["e"] != Elem.STAR: pick = o; break
+			if pick == null:
+				main._on_reroll()
+				if main.phase == 0 and main.rerolls_left <= 0 and main.offer == offer:
+					main.picks_left = 1; main._after_place()
+				return false
 		main._on_pick(pick)
 		if pick["type"] != "elem":
 			if target == null: target = ts[0] if ts.size() > 0 else null

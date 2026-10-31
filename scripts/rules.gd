@@ -122,8 +122,8 @@ const STAT := {
 	"finish_hp": 0.3, "finish_mul": 1.6, "finish_add": 0.3,  # 마무리: 체력 이만큼 아래, 피해 배율, +/장
 	# 별: 둘레 거리, 다른 오브젝트 피해 복사 비율(+/레벨), 자기 피해 비율, 별만 든 오브젝트 배율,
 	# 초신성까지 필요한 별빛(이번 웨이브 구체 체력 x), 초신성 피해(별빛 x), 별 반응 따라붙는 피해(초신성 x)
-	# 행성(별 + 속성 하나)은 둘레 피해 중 자기 속성 몫만 planet_take로 모은다. 같은 행성은 한 판에 하나, 행성은 planet_max개까지
-	"star_r": 220.0, "star_take": 0.10, "star_lv": 0.03, "star_self": 0.2, "star_pure": 1.5, "planet_take": 0.30, "planet_max": 3.0,
+	# 행성(별 + 속성 하나)은 둘레 피해 중 자기 속성 몫만 planet_take로 모은다. 같은 행성은 한 판에 하나, 행성은 planet_max개까지, 별이 든 오브젝트(별·행성 합쳐)는 star_max개까지
+	"star_r": 220.0, "star_take": 0.10, "star_lv": 0.03, "star_self": 0.2, "star_pure": 1.5, "planet_take": 0.30, "planet_max": 3.0, "star_max": 3.0,
 	"star_need": 8.0, "star_mul": 3.0, "star_rx": 0.3,
 	"answer_r": 220.0, "answer_cd": 0.6, "answer_dmg": 0.6, "answer_add": 0.15,  # 호응: 거리, 다시 쏠 때까지, 피해(직선탄 한 발 대비), +/장
 }
