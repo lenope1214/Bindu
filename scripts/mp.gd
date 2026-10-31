@@ -28,15 +28,39 @@ var started := false  # 판을 시작함 (더는 들어올 수 없음)
 var join_wait := -1.0
 var closing := false
 
+const WEBRTC_EXT := "res://addons/webrtc/webrtc.gdextension"
+const WEBRTC_DLL := "libwebrtc_native.windows.template_release.x86_64.dll"
+static var _dll_tried := false
+
 
 ## 이 기기에서 WebRTC 확장이 읽혔는지 (Android 32비트처럼 라이브러리가 없으면 false).
 static func available() -> bool:
 	if url() == "":
 		return false
+	_load_embedded_dll()
 	var c := WebRTCPeerConnection.new()
 	var ok := c.initialize({}) == OK
 	c.close()
 	return ok
+
+
+## 자동 업데이트(updater.gd, 이미 나간 0.5.x 포함)는 exe만 바꿔 dll이 안 따라온다. exe 안에 담은 dll을
+## exe 옆에 풀고(Godot이 Windows에서 찾는 자리) 읽는다. 폴더에 못 쓰면 멀티플레이 버튼만 꺼진다.
+static func _load_embedded_dll() -> void:
+	if _dll_tried or not OS.has_feature("windows") or not OS.has_feature("template"):
+		return
+	_dll_tried = true
+	if GDExtensionManager.is_extension_loaded(WEBRTC_EXT):
+		return
+	var dst := OS.get_executable_path().get_base_dir().path_join(WEBRTC_DLL)
+	if not FileAccess.file_exists(dst):
+		var data := FileAccess.get_file_as_bytes("res://addons/webrtc/lib/" + WEBRTC_DLL)
+		var f := FileAccess.open(dst, FileAccess.WRITE)
+		if data.is_empty() or f == null:
+			return
+		f.store_buffer(data)
+		f.close()
+	GDExtensionManager.load_extension(WEBRTC_EXT)
 
 
 ## 중개 서버 주소. 시험할 때는 환경 변수 BINDU_MP_URL로 바꾼다.
