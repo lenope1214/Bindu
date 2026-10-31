@@ -8886,12 +8886,18 @@ func _mp_refresh_lobby(keep_status := true) -> void:
 		# 참가자: 호스트와 이어지기 전엔 사람 줄 대신 도는 고리만 (이어지면 peers_changed로 다시 그림)
 		mp_status.text = ""
 		return
+	# 사람 줄은 왼쪽 정렬 (그림·★·이름이 세로로 맞게), 목록 덩어리는 창 가운데
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	list.custom_minimum_size = Vector2(380, 0)
+	list.add_theme_constant_override("separation", 6)
+	mp_room_box.add_child(list)
 	for n in mp.names():
 		var id: int = n[0]
 		var me := id == mp.my_id
 		var nm: String = _mp_name(id) if not me else (n[1] if n[1] != "" else "닉네임 없음")
 		var st := "" if me or n[2] else ("연결 안 됨" if n[4] else "연결 중")
-		mp_room_box.add_child(_mp_member_row(id, n[3], id == 1, nm + (" (나)" if me else ""), st))
+		list.add_child(_mp_member_row(id, n[3], id == 1, nm + (" (나)" if me else ""), st))
 	_mp_refresh_pings()
 	if mp.is_host():
 		mp_status.text = "친구에게 방 코드를 알려 주세요. 연결되면 [시작]" if ready < 1 else "모두 연결되면 [시작]"
@@ -8902,7 +8908,7 @@ func _mp_refresh_lobby(keep_status := true) -> void:
 ## 로비 사람 한 줄: [플랫폼 그림] ★(호스트) 닉네임 [연결 중 고리·상태 | 핑]
 func _mp_member_row(id: int, pf: String, host: bool, text: String, state: String) -> HBoxContainer:
 	var row := HBoxContainer.new()
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.alignment = BoxContainer.ALIGNMENT_BEGIN
 	row.add_theme_constant_override("separation", 8)
 	var ic := Control.new()
 	ic.custom_minimum_size = Vector2(26, 26)
@@ -8910,7 +8916,7 @@ func _mp_member_row(id: int, pf: String, host: bool, text: String, state: String
 	ic.draw.connect(func(): Glyph.ui(ic, "pf_" + (pf if pf != "" else "unknown"), ic.size * 0.5, 10.0, Color(1, 1, 1, 0.85)))
 	row.add_child(ic)
 	var l := Label.new()
-	l.text = ("★ " if host else "") + text
+	l.text = ("★ " if host else "    ") + text  # ★ 자리를 비워 이름 시작을 맞춤
 	l.add_theme_font_size_override("font_size", 20)
 	row.add_child(l)
 	if state == "연결 중":
