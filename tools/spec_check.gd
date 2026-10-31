@@ -32,6 +32,7 @@ func _fresh(w := 5) -> void:
 	Tower.reach_mul = 1.0
 	Tower.tax_step = Rules.tax_step
 	main.perks = {}
+	main.regen_acc = 0.0
 	main.perk_mode = false
 	main.coin_next = ""
 	main.orb_speed_mul = 1.0
@@ -520,6 +521,17 @@ func _perks() -> void:
 	main._on_perk(main.PERKS[0])
 	var pw_n: int = main.perks.get("power", 0)
 	ok("PERK-05", is_equal_approx(Tower.dmg_mul, pw + 0.3) and main.coin_next == "", "동전 앞면: 고른 특성이 두 번 적용")
+	var keep_perks: Dictionary = main.perks.duplicate()
+	main.perks = {"regen": 1}
+	main.regen_acc = 0.0
+	var r1 := [main._regen_take(), main._regen_take()]
+	main.perks = {"regen": 2}
+	var r2 := [main._regen_take(), main._regen_take()]
+	main.perks = {"regen": 3}
+	var r3 := [main._regen_take(), main._regen_take()]
+	main.perks = keep_perks
+	main.regen_acc = 0.0
+	ok("PERK-07", r1 == [1, 1] and r2 == [1, 2] and r3 == [2, 2], "회복 겹치기: 1개 웨이브마다 +1, 2개 +1.5, 3개 +2 (%s %s %s)" % [r1, r2, r3])
 	# 동전 연출: 공중 회전 → 누르면 떨어짐(안 누르면 1초 뒤) → 모서리 흔들림 → 결과, 그동안 카드·특성 고르기·저장 막음
 	main.coin_anim = true
 	main.perk_mode = true

@@ -199,12 +199,13 @@ const PERKS := [
 	{"id": "core", "name": "단단한 중앙", "desc": "중앙 최대 체력 +3, 모두 회복"},
 	{"id": "reroll", "name": "넉넉한 선택", "desc": "쉬는 시간마다 새로고침 +1"},
 	{"id": "luck", "name": "행운", "desc": "속성 카드가 Lv2로 나올 확률 +20%"},
-	{"id": "regen", "name": "회복", "desc": "웨이브를 마칠 때마다 중앙 체력 +1"},
+	{"id": "regen", "name": "회복", "desc": "웨이브를 마칠 때마다 중앙 체력 +1 (겹쳐 고르면 하나당 +0.5)"},
 	{"id": "slow", "name": "끈적한 공간", "desc": "모든 구체 이동 속도 -8%"},
 	{"id": "harmony", "name": "조화", "desc": "속성을 여러 종류 겹쳐 생기는 공격 속도 감소가 절반으로"},
 	{"id": "coin", "name": "운명의 동전", "desc": "동전을 던지고 특성 3개를 새로 받아요. 앞면: 고른 특성이 두 번 적용. 뒷면: 한 번 적용 + 이번 쉬는 시간 새로고침 +2"},
 ]
 var perks := {}  # id → 고른 횟수
+var regen_acc := 0.0  # 회복 특성의 1이 안 되는 나머지 (다음 웨이브로)
 var perk_mode := false
 var perk_offer: Array = []
 var orb_speed_mul := 1.0
@@ -2602,7 +2603,15 @@ func _apply_perk(id: String) -> void:
 
 
 ## 특성 수치 (온라인 패치 perks로 바뀔 수 있음). 설명 글도 같이 바꿔야 하면 perk_desc. coin: 동전 뒷면 새로고침 수
-const PERK_VALS := {"power": 0.15, "haste": 0.12, "reach": 0.12, "core": 3, "reroll": 1, "luck": 0.2, "regen": 1, "slow": 0.08, "harmony": 0.5, "coin": 2}
+const PERK_VALS := {"power": 0.15, "haste": 0.12, "reach": 0.12, "core": 3, "reroll": 1, "luck": 0.2, "regen": 1, "regen_more": 0.5, "slow": 0.08, "harmony": 0.5, "coin": 2}
+
+
+## 회복 특성이 이번 웨이브에 채우는 체력. 처음 고른 것은 regen(1), 겹친 것은 하나당 regen_more(0.5)이고, 1이 안 되는 나머지는 다음 웨이브로 넘긴다.
+func _regen_take() -> int:
+	regen_acc += _perk_val("regen") + _perk_val("regen_more") * (perks.get("regen", 0) - 1)
+	var h := int(regen_acc)
+	regen_acc -= h
+	return h
 
 
 func _perk_val(id: String) -> float:
@@ -5271,7 +5280,7 @@ func _save_run() -> void:
 		"format": RUN_FORMAT, "version": ProjectSettings.get_setting("application/config/version", ""),
 		"map": Meta.map_id, "line_flip": Meta.line_flip, "rules": Meta.rules, "modes": Array(Modes.on), "wave": wave, "score": score, "kills": kills, "best_combo": best_combo,
 		"combo": combo, "combo_t": combo_t, "combo_bonus": combo_bonus,
-		"core_hp": core_hp, "core_max": core_max, "perks": perks.keys().map(func(k): return [k, perks[k]]), "orb_speed_mul": orb_speed_mul,
+		"core_hp": core_hp, "core_max": core_max, "perks": perks.keys().map(func(k): return [k, perks[k]]), "regen_acc": regen_acc, "orb_speed_mul": orb_speed_mul,
 		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
 		"rerolls_left": rerolls_left, "bonus_rerolls": bonus_rerolls, "picks_left": picks_left,
 		"skip_left": skip_left, "skip_total": skip_total, "skip_stop": skip_stop, "bank_picks": bank_picks, "bank_rerolls": bank_rerolls, "bank_perks": bank_perks, "coin_next": coin_next, "rest_ready": rest_ready,
@@ -5380,6 +5389,7 @@ func _continue_run() -> void:
 	for pr in pairs:
 		if pr is Array and pr.size() == 2 and PERKS.any(func(pk): return pk["id"] == pr[0]) and pr[1] is int and pr[1] > 0:
 			perks[pr[0]] = pr[1]
+	regen_acc = clampf(float(g.call("regen_acc", 0.0)), 0.0, 0.999)
 	orb_speed_mul = clampf(g.call("orb_speed_mul", 1.0), 0.05, 1.0)
 	Tower.dmg_mul = maxf(1.0, g.call("dmg_mul", 1.0))
 	Tower.spd_mul = maxf(1.0, g.call("spd_mul", 1.0))
@@ -6479,7 +6489,7 @@ func _sim_step(delta: float) -> void:
 		sfx.play("clear", 0.0)
 		_show_mvp()
 		if perks.has("regen"):
-			core_hp = mini(core_hp + perks["regen"] * int(_perk_val("regen")), core_max)
+			core_hp = mini(core_hp + _regen_take(), core_max)
 		if wave % 5 == 0:
 			_submit_run(false)  # 5웨이브마다 진행 중 기록 (중간에 꺼도 서버에 남게)
 		_mp_wave_cleared()
