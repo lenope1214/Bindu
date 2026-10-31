@@ -1,0 +1,21 @@
+; godotengine/webrtc-native 1.2.0-stable (MIT). 멀티플레이 연결용.
+; 용량을 줄이려고 release 라이브러리만 두고 debug(편집기·디버그 실행)도 같은 파일을 쓴다.
+; 없는 플랫폼(Android 32비트 등)은 확장이 안 읽혀 멀티플레이 버튼만 꺼진다 (scripts/mp.gd Mp.available).
+[configuration]
+
+entry_symbol = "webrtc_extension_init"
+compatibility_minimum = 4.3
+
+[libraries]
+
+linux.debug.x86_64 = "lib/libwebrtc_native.linux.template_release.x86_64.so"
+macos.debug = "lib/libwebrtc_native.macos.template_release.universal.framework"
+windows.debug.x86_64 = "lib/libwebrtc_native.windows.template_release.x86_64.dll"
+android.debug.arm64 = "lib/libwebrtc_native.android.template_release.arm64.so"
+ios.debug.arm64 = "lib/libwebrtc_native.ios.template_release.arm64.dylib"
+
+linux.release.x86_64 = "lib/libwebrtc_native.linux.template_release.x86_64.so"
+macos.release = "lib/libwebrtc_native.macos.template_release.universal.framework"
+windows.release.x86_64 = "lib/libwebrtc_native.windows.template_release.x86_64.dll"
+android.release.arm64 = "lib/libwebrtc_native.android.template_release.arm64.so"
+ios.release.arm64 = "lib/libwebrtc_native.ios.template_release.arm64.dylib"

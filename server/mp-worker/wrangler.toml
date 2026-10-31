@@ -1,0 +1,18 @@
+# 빈두 멀티플레이 방 코드 중개 (Cloudflare Workers + Durable Objects, 무료 플랜)
+name = "bindu-mp"
+main = "src/index.js"
+compatibility_date = "2025-09-01"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+
+# 무료 플랜은 SQLite 저장소를 쓰는 Durable Object만 된다
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]
+
+# 비밀 값(대시보드 Realtime > TURN에서 만든 키)은 저장소에 넣지 않고 아래로 넣는다:
+#   npx wrangler secret put TURN_KEY_ID
+#   npx wrangler secret put TURN_KEY_TOKEN
+# 없으면 STUN만 내려 준다(대부분 연결되지만 엄격한 NAT끼리는 실패).

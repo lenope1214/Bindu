@@ -285,6 +285,37 @@ var dps_focus: Tower = null  # 표에서 마우스를 올린 오브젝트
 var dps_hidden := OS.has_feature("mobile")  # D: 표 접기. 폰·태블릿은 접어 두고 시작
 # 온라인 (Net·Patch): 판 기록·통계
 var net: Net
+# 멀티플레이 (아래 "멀티플레이" 절)
+var mp: Mp
+var mp_panel: PanelContainer  # 시작 화면: 방 만들기·참가·대기실
+var mp_status: Label
+var mp_code_edit: LineEdit
+var mp_start_btn: Button
+var mp_host_box: HBoxContainer
+var mp_join_box: HBoxContainer
+var mp_btn: Button  # 시작 화면의 [멀티플레이]
+var mp_bar: Label  # 게임 중 위쪽 가운데: 다른 플레이어 상태
+var mp_mode := ""  # "" 혼자 | "vs" 대결 | "coop" 협동 (판을 시작하면 정해짐)
+var mp_seed := 0  # 대결: 모두 같은 웨이브를 받는 씨앗 (0이면 혼자 하는 판처럼 전역 난수)
+var wrng := RandomNumberGenerator.new()
+var w_off := false  # 보낸 구체처럼 씨앗 밖에서 뽑는 구체 (같은 웨이브 순서를 흐트리지 않게)
+var mp_others := {}  # id -> {name, w, hp, mx, sc, alive, gone}
+var mp_next_extra := 0  # 대결: 다음 웨이브에 더 오는 구체 (상대가 보냄)
+var mp_extra_left := 0  # 대결: 이번 웨이브에 아직 안 나온 보낸 구체
+var mp_pending := 0  # 대결: 웨이브 중에 받은 것 (다음 쉬는 시간에 예고에 더함)
+var mp_st_sig := ""
+var mp_tick_t := 0.0
+var mp_ghost := false  # 협동 참가자: 판 계산은 호스트가 하고 이 기기는 받은 대로 그린다
+var mp_wave_go := false
+var mp_ready := {}  # 협동 호스트: 웨이브 시작을 누른 사람
+var mp_i_ready := false
+var mp_next := {}  # 협동 참가자: 호스트가 정한 다음 웨이브 {w, lanes, res, boss}
+var mp_ghosts := {}  # 협동 참가자: net_id -> Orb
+var mp_orb_n := 0
+var mp_tw_n := 0
+var mp_tw_sig := ""
+var mp_snap_t := 0.0
+var mp_rank := ""  # 대결: 게임 오버 글에 붙일 순위
 var run_id := ""  # 판 번호: 5웨이브마다 보내는 진행 기록과 끝 기록을 서버에서 한 줄로 (이어하기에 저장)
 var run_log: Array = []  # 선택지 기록 [{w, k: card|perk, o: 나온 것, p: 고른 것(새로고침이면 "")}]
 var run_game := 0.0  # 웨이브 진행 게임 시간 합
@@ -342,6 +373,14 @@ func _ready() -> void:
 	_update_speed_btn()
 	net = Net.new()
 	add_child(net)
+	coop_orbs = 1.0
+	mp = Mp.new()
+	add_child(mp)
+	mp.room_ready.connect(_mp_refresh_lobby)
+	mp.peers_changed.connect(_mp_refresh_lobby)
+	mp.failed.connect(_mp_failed)
+	mp.packet.connect(_mp_packet)
+	_mp_refresh_lobby(false)
 	net.booted.connect(_on_booted)
 	net.run_sent.connect(_on_run_sent)
 	net.board_loaded.connect(_on_board_loaded)
@@ -945,6 +984,8 @@ func _refresh_dps() -> void:
 	dps_panel.modulate.a = 0.4 if under else 1.0
 	# 점수 줄 아래, 왼쪽 아래 안내 글 위까지
 	var top := hud.position.y + hud.size.y + 8.0 if hud.visible else 8.0
+	if mp_bar.visible:
+		top += mp_bar.size.y + 4.0  # 멀티플레이 상태 줄 아래로
 	dps_panel.position.y = top
 	var bottom := _bottom_free()
 	if choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and choice_box.get_rect().position.x < 320.0:
@@ -1336,8 +1377,11 @@ static func wave_size(w: int) -> int:
 
 
 ## 실제로 나오는 구체 수 (규칙 버전 배율, 십자로 맵 1.5배). 미리보기와 웨이브가 같은 값을 쓴다.
+static var coop_orbs := 1.0  # 협동: 인원만큼 구체가 늘어난다 (2명 x1.6, 3명 x2.2, 4명 x2.8)
+
+
 static func spawn_count(w: int) -> int:
-	var n := roundi(wave_size(w) * Rules.orb_mul)
+	var n := roundi(wave_size(w) * Rules.orb_mul * coop_orbs)
 	# 새 진입 방향이 열리는 웨이브는 구체를 조금 덜 (새 길목을 막을 시간)
 	if not Meta.map_id in ["cross", "line"] and lanes_for(w) > lanes_for(w - 1):
 		n = roundi(n * 0.8)
@@ -1378,10 +1422,16 @@ func _start_choose(new_round := true) -> void:
 
 ## 새 쉬는 시간: 다음 웨이브(방향·저항·보스)를 뽑고 고르기·새로고침 수를 정한다.
 func _new_rest() -> void:
-	_roll_lanes()
-	# 다음 웨이브 저항 속성: 12웨이브(버전 4는 8)부터 60% 확률
-	wave_resist = Elem.ALL.pick_random() if wave + 1 >= Rules.resist_from and randf() < 0.6 else -1
-	_plan_boss()
+	if mp_seed != 0:
+		wrng.seed = hash([mp_seed, wave])  # 대결: 모두 같은 웨이브 (방향·저항·보스·구체)
+	if mp_ghost:
+		_mp_ghost_rest()  # 협동 참가자: 다음 웨이브는 호스트가 정한 것
+	else:
+		_roll_lanes()
+		# 다음 웨이브 저항 속성: 12웨이브(버전 4는 8)부터 60% 확률
+		wave_resist = _wpick(Elem.ALL) if wave + 1 >= Rules.resist_from and wf() < 0.6 else -1
+		_plan_boss()
+	_mp_rest_begin()
 	picks_left = maxi(2, Rules.picks) if wave <= 1 else Rules.picks  # 처음 두 번의 쉬는 시간은 2개씩 (모드 '세 장'이면 3개)
 	rerolls_left = Modes.rerolls(1 + bonus_rerolls + perks.get("reroll", 0) * int(_perk_val("reroll")))
 	bonus_rerolls = 0
@@ -1391,6 +1441,8 @@ func _new_rest() -> void:
 
 ## 넘기기를 쓸 수 있나: 오브젝트가 있고, 첫 판이면 카드 종류가 다 열린 뒤.
 func _can_skip() -> bool:
+	if mp_mode != "":
+		return false  # 멀티플레이는 웨이브 넘기기 없음 (협동은 함께, 대결은 같은 웨이브 순서)
 	return towers.get_child_count() > 0 and not (tutor and wave + 1 < TUTOR_OPEN.values().max()) and skip_left == 0
 
 
@@ -1539,7 +1591,7 @@ func _make_choices() -> void:
 		guard += 1
 		var card := _roll_card()
 		# 넣을 곳이 없는 공격방식·강화 카드는 내지 않는다
-		if card["type"] in ["pat", "mod", "trig"] and not towers.get_children().any(func(t): return t.can_take(card)):
+		if card["type"] in ["pat", "mod", "trig"] and not _my_towers().any(func(t): return t.can_take(card)):
 			continue
 		# 같은 속성은 레벨만 다르게 두 장 나오지 않게: 높은 레벨 한 장만 남긴다
 		var same := offer.filter(func(cd): return _card_key(cd) == _card_key(card))
@@ -1610,14 +1662,14 @@ func _card_key(card: Dictionary) -> String:
 
 ## 선택지 한 장: 속성 / 공격방식 / 강화 / 연계 중 하나.
 func _roll_card() -> Dictionary:
-	var n := towers.get_child_count()
+	var n := _my_towers().size()
 	if n > 0 and wave > 0 and _card_open("pat") and _path_takers():
 		# 그린 궤적: 카드당 0.7%, 이 판에 궤적이 있으면 1.2% (여러 번 나와야 쓸모 있는 공격)
-		var has := towers.get_children().any(func(t): return t.pattern == "path")
+		var has := _my_towers().any(func(t): return t.pattern == "path")
 		if randf() < (Patch.num("cards", "path_again", Pat.PATH_CHANCE_AGAIN) if has else Patch.num("cards", "path", Pat.PATH_CHANCE)):
 			return {"type": "pat", "id": "path"}
 	var cata := Patch.num("cards", "cata", 0.01)
-	if n > 0 and wave > 0 and _card_open("cata"):
+	if n > 0 and wave > 0 and _card_open("cata") and mp_mode != "coop":  # 협동: 친구 오브젝트까지 뒤섞여서 빼기
 		# 대격변: 각각 1%
 		var c := randf()
 		if c < cata:
@@ -1645,7 +1697,7 @@ func _roll_card() -> Dictionary:
 
 ## 그린 궤적 카드를 넣을 오브젝트가 있는지 (궤적 레벨업, 또는 4개 미만일 때 직선탄).
 func _path_takers() -> bool:
-	return towers.get_children().any(func(t): return t.can_pattern("path"))
+	return _my_towers().any(func(t): return t.can_pattern("path"))
 
 
 func _card_color(card: Dictionary) -> Color:
@@ -1990,11 +2042,13 @@ func _on_perk(pk: Dictionary) -> void:
 			_coin_done()
 		return
 	_apply_perk(id)
+	_mp_send_perk(id)
 	var note := ""
 	match coin_next:
 		"double":
 			perks[id] += 1
 			_apply_perk(id)
+			_mp_send_perk(id)
 			note = " · 동전 앞면: 두 번"
 		"reroll":
 			rerolls_left += int(_perk_val("coin"))
@@ -2243,14 +2297,14 @@ func _roll_lanes() -> void:
 	if Meta.map_id == "cross":
 		# 십자로: 처음부터 네 방향 고정
 		if lanes.size() != 4:
-			var r0 := randf() * TAU
+			var r0 := wf() * TAU
 			lanes = [r0, r0 + PI / 2, r0 + PI, r0 + PI * 1.5]
 		return
 	if Meta.map_id == "storm":
 		# 폭풍: 매번 전부 새로
 		lanes.clear()
-	if not lanes.is_empty() and randf() < 0.25:
-		lanes.remove_at(randi() % lanes.size())
+	if not lanes.is_empty() and wf() < 0.25:
+		lanes.remove_at(wi() % lanes.size())
 	while lanes.size() < n:
 		lanes.append(_free_lane())
 
@@ -2259,7 +2313,7 @@ func _roll_lanes() -> void:
 ## (6곳이 될 때 기존 방향이 고르게 퍼져 있으면 빈자리가 없어 게임이 멈추던 것).
 func _free_lane() -> float:
 	for i in 40:
-		var a := randf() * TAU
+		var a := wf() * TAU
 		if lanes.all(func(b): return absf(angle_difference(a, b)) >= 0.8):
 			return a
 	var ls: Array = lanes.map(func(b): return fposmod(b, TAU))
@@ -2315,6 +2369,8 @@ func _update_preview() -> void:
 	if lk != "":
 		info_l.append([lk, Color(1, 0.6, 0.6)])
 	info_l.append(["다음 웨이브 %d: 구체 %d개, 진입 방향 %d곳" % [nw, spawn_count(nw), lanes.size()], W])
+	if mp_next_extra > 0:
+		info_l.append(["상대가 보낸 구체 +%d개 (이번 웨이브 구체와 같은 세기, 아무 방향)" % mp_next_extra, Color(1, 0.55, 0.45)])
 	var firsts := {4: "빠른 구체", 7: "단단한 구체", 8: "보호막 두른 구체(먼저 보호막을 깎아야 함)", 12: "분열 구체(터지면 둘로 나뉨)", 11: "이제부터 구체 체력이 웨이브마다 %d%%씩 곱으로 늘어남" % roundi((Rules.hp_growth - 1.0) * 100)}
 	for f in [[Rules.resist_from, "저항 구체(같은 색 점선 고리: 그 속성 피해를 덜 받음. 오브젝트에서 그 속성이 차지하는 만큼, 최대 60%)"], [Rules.sturdy_from, "굳센 구체(회색 쐐기: 밀기·감속·기절·냉기 절반)"]]:
 		firsts[f[0]] = (firsts[f[0]] + ", " if firsts.has(f[0]) else "") + f[1]
@@ -2865,6 +2921,10 @@ func _update_auto_btn() -> void:
 
 
 func _start_wave() -> void:
+	if mp_mode == "coop" and not mp_wave_go:
+		countdown = -1.0
+		_mp_coop_ready()
+		return
 	countdown = -1.0
 	_drop_press()
 	boxing = false
@@ -2877,13 +2937,18 @@ func _start_wave() -> void:
 	choice_box.visible = false
 	reroll_btn.visible = false
 	to_spawn = spawn_count(wave)
+	mp_extra_left = mp_next_extra
+	mp_next_extra = 0
 	# 진입 방향은 배지에 띄운 수대로 고르게 나눠 섞는다 (구체마다 무작위로 고르면 화살표의 수와 달라짐)
 	lane_bag.clear()
 	var lc := lane_counts(wave)
 	for i in lc.size():
 		for k in lc[i]:
 			lane_bag.append(i)
-	lane_bag.shuffle()
+	_wshuffle(lane_bag)
+	if mp_ghost:
+		to_spawn = 0  # 협동 참가자: 구체는 호스트가 보낸 대로
+		lane_bag.clear()
 	wave_leaks.clear()
 	leak_marks.clear()
 	wave_dmg = 0
@@ -2913,6 +2978,7 @@ func _start_wave() -> void:
 
 
 func _game_over() -> void:
+	_mp_over()
 	_log_wave()
 	phase = Phase.GAMEOVER
 	over_ms = Time.get_ticks_msec()
@@ -2924,9 +2990,10 @@ func _game_over() -> void:
 	banner_t = minf(banner_t, 0.4)
 	# 기록은 지금 맵·규칙 버전의 저장값과 비교한다 (다른 키에서 남은 값이 섞이지 않게)
 	var prev := Meta.best_of(Meta.run_key())
-	var record := "  최고 기록!" if score > prev[1] or wave > prev[0] else ""
-	best_score = maxi(score, prev[1])
-	best_wave = maxi(wave, prev[0])
+	var record := "  최고 기록!" if (score > prev[1] or wave > prev[0]) and mp_mode == "" else ""
+	if mp_mode == "":  # 멀티플레이 판은 혼자 하는 판 최고 기록에 넣지 않는다
+		best_score = maxi(score, prev[1])
+		best_wave = maxi(wave, prev[0])
 	Meta.total_kills += kills
 	Meta.games += 1
 	Ach.live_kills = 0
@@ -2954,7 +3021,10 @@ func _game_over() -> void:
 			tops.append("%s %d%%" % [src_name(key), roundi(rs[key] / total * 100.0)])
 		mvp += "\n피해 출처: " + ", ".join(tops)
 	var md := "" if Modes.on.is_empty() else "\n모드: %s · 점수 x%.2f%s" % [Modes.names(), Modes.mul(), "\n쉽게 모드: 최고 기록 따로, 리더보드 제외" if Modes.easy() else ""]
-	over_label.text = _kr_keep("%s · %s · %s\n웨이브 %d · 점수 %s%s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\n%s" % ["판 끝냄" if ended else "게임 오버", Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules], wave, num(score), record if record != "" else "   (최고 웨이브 %d)" % best_wave, md, num(kills), best_combo, towers.get_child_count(), mvp, ach, "눌러서 시작 화면으로" if touch_ui else "클릭·R·Esc: 시작 화면으로"])
+	if mp_mode != "":
+		record = ""
+		md = "\n" + mp_rank if mp_rank != "" else ""
+	over_label.text = _kr_keep("%s · %s · %s\n웨이브 %d · 점수 %s%s%s\n처치 %s · 최고 콤보 %d · 오브젝트 %d개%s%s\n%s" % [("협동 끝" if mp_mode == "coop" else "탈락") if mp_mode != "" else "판 끝냄" if ended else "게임 오버", Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules], wave, num(score), record if record != "" or mp_mode != "" else "   (최고 웨이브 %d)" % best_wave, md, num(kills), best_combo, towers.get_child_count(), mvp, ach, "눌러서 시작 화면으로" if touch_ui else "클릭·R·Esc: 시작 화면으로"])
 	over_label.visible = true
 	_submit_run()
 	sfx.play("over", 0.0)
@@ -3218,7 +3288,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.button_index == MOUSE_BUTTON_RIGHT and phase in [Phase.CHOOSE, Phase.READY] and not perk_mode and not title_label.visible \
 			and not (settings_panel.visible or notes_panel.visible or codex_panel.visible or records_panel.visible or help_label.visible):
 		var rt := _tower_at(get_global_mouse_position())
-		if rt:
+		if rt and _mine(rt):
 			_start_move(rt)
 			aim_right = phase == Phase.AIM
 			return
@@ -3303,6 +3373,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## 고른 카드를 오브젝트에 넣는다 (PLACE에서 오브젝트를 짧게 클릭).
 func _place_on(target: Tower) -> void:
+	if not _mine(target):
+		_show_toast("친구가 놓은 오브젝트에는 넣을 수 없어요")
+		return
 	if picked["type"] != "elem":
 		_apply_card(target)
 		return
@@ -3320,6 +3393,9 @@ func _place_on(target: Tower) -> void:
 
 
 func _begin_press(t: Tower, mpos: Vector2) -> void:
+	if not _mine(t):
+		_show_toast("친구가 놓은 오브젝트는 바꿀 수 없어요")
+		return
 	press_t = t
 	press_pos = mpos
 	press_ms = Time.get_ticks_msec()
@@ -3432,7 +3508,7 @@ func _finish_box() -> void:
 		selected.clear()
 	if r.size.length() > 8.0:
 		for t in towers.get_children():
-			if r.grow(Tower.RADIUS * 0.5).has_point(t.position) and not t in selected:
+			if r.grow(Tower.RADIUS * 0.5).has_point(t.position) and not t in selected and _mine(t):
 				selected.append(t)
 	_restore_hint()
 
@@ -3552,6 +3628,18 @@ func _build_menu(root: Control) -> void:
 	remote_btn.visible = false
 	box.add_child(remote_btn)
 	box.move_child(remote_btn, row.get_index())
+	# 멀티플레이: 중개 서버 주소가 있고 WebRTC 확장이 읽힌 기기에서만
+	mp_btn = Button.new()
+	mp_btn.text = "멀티플레이 (대결·협동)"
+	mp_btn.custom_minimum_size = Vector2(630, 42)
+	mp_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	mp_btn.focus_mode = Control.FOCUS_NONE
+	mp_btn.add_theme_font_size_override("font_size", 18)
+	mp_btn.pressed.connect(_toggle_mp_lobby)
+	mp_btn.visible = Mp.available()
+	box.add_child(mp_btn)
+	box.move_child(mp_btn, row.get_index() + 1)
+	_build_mp_lobby(root)
 	# 온라인: 새 버전 알림, 패치 공지 (서버에서 받았을 때만 보임)
 	update_btn = Button.new()
 	update_btn.custom_minimum_size = Vector2(630, 56 if _phone() else 40)
@@ -4144,7 +4232,7 @@ static func _new_run_id() -> String:
 ## 판 기록(점수·특성·선택지·지금 구성)을 서버로. 설정에서 끄면 보내지 않는다.
 ## done=false: 5웨이브마다 보내는 진행 중 기록. 서버는 같은 판 번호(run)면 한 줄을 고친다.
 func _submit_run(done := true) -> void:
-	if not Net.enabled():
+	if not Net.enabled() or mp_mode != "":
 		return
 	var ts := towers.get_children()
 	var total := 0.0
@@ -4646,6 +4734,8 @@ func _hide_title() -> void:
 
 ## 쉬는 시간마다 판을 저장한다. 웨이브 중에 끄면 그 웨이브 앞 쉬는 시간부터 이어진다.
 func _save_run() -> void:
+	if mp_mode != "":
+		return  # 멀티플레이 판은 이어하기가 없다
 	if title_label.visible or not phase in [Phase.CHOOSE, Phase.READY] or press_t or dragging or coin_stage > 0:
 		return
 	var ts := towers.get_children()
@@ -4884,6 +4974,9 @@ func _end_old_run(v: String) -> void:
 func _apply_card(target: Tower) -> void:
 	if target == null:
 		_show_toast("오브젝트 위에 놓으세요")
+		return
+	if not _mine(target):
+		_show_toast("친구가 놓은 오브젝트에는 넣을 수 없어요")
 		return
 	var msg := ""
 	match picked["type"]:
@@ -5271,6 +5364,10 @@ func _place_tower(p: Vector2, d: Vector2) -> void:
 	t.dir = d
 	t.position = p
 	t.main = self
+	if mp_mode == "coop":
+		mp_tw_n += 1
+		t.owner_id = mp.my_id
+		t.net_id = mp.my_id * 100000 + mp_tw_n
 	towers.add_child(t)
 
 
@@ -5410,9 +5507,9 @@ func _roll_orb(w: int) -> Dictionary:
 		spread = 0.06  # 십자로: 네 길 위로만 온다
 	elif Meta.map_id == "line":
 		spread = 0.0  # 회랑: 방향은 하나, 대신 높이가 길 폭 안에서 갈린다
-	var li: int = lane_bag.pop_back() if not lane_bag.is_empty() and phase == Phase.WAVE else randi() % lanes.size()
-	var a: float = lanes[li] + randf_range(-spread, spread)
-	var hp := (1.0 + floorf(w * 0.7) + randi() % 2) * hp_growth(w) * Rules.orb_hp
+	var li: int = lane_bag.pop_back() if not lane_bag.is_empty() and phase == Phase.WAVE and not w_off else wi() % lanes.size()
+	var a: float = lanes[li] + wrange(-spread, spread)
+	var hp := (1.0 + floorf(w * 0.7) + wi() % 2) * hp_growth(w) * Rules.orb_hp
 	match Meta.map_id:
 		"cross":
 			hp = ceilf(hp * 1.6)
@@ -5420,11 +5517,11 @@ func _roll_orb(w: int) -> Dictionary:
 			hp = maxf(1.0, roundf(hp * 0.6))
 		"line":
 			hp *= LINE_HP
-	var spd := (30.0 + w * 3.0 + randf() * 8.0) * (LINE_SPD if Meta.map_id == "line" else 1.0)
+	var spd := (30.0 + w * 3.0 + wf() * 8.0) * (LINE_SPD if Meta.map_id == "line" else 1.0)
 	# 저항·굳셈: 쉬는 시간에 미리 알려 준 대로
-	var res := wave_resist if wave_resist >= 0 and randf() < resist_share(w) else -1
-	var y := randf_range(-LINE_HALF + 20.0, LINE_HALF - 20.0) if Meta.map_id == "line" else 0.0
-	return {"a": a, "y": y, "hp": roundf(hp), "spd": spd, "resist": res, "sturdy": randf() < sturdy_share(w)}
+	var res := wave_resist if wave_resist >= 0 and wf() < resist_share(w) else -1
+	var y := wrange(-LINE_HALF + 20.0, LINE_HALF - 20.0) if Meta.map_id == "line" else 0.0
+	return {"a": a, "y": y, "hp": roundf(hp), "spd": spd, "resist": res, "sturdy": wf() < sturdy_share(w)}
 
 
 ## 다음 웨이브가 보스 웨이브면 보스를 미리 뽑아 둔다 (화면에 길·체력을 정확히 알려 주려고).
@@ -5482,9 +5579,9 @@ func _spawn_orb(kind := -1, plan := {}) -> void:
 	o.sturdy = p["sturdy"]
 	# A4·A5: 보호막(8웨이브~), 분열(12웨이브~, 10웨이브는 보스·저항이 처음 겹침)
 	if kind == Orb.Kind.NORMAL or kind == Orb.Kind.TANK:
-		if wave >= 8 and randf() < minf(0.1 + 0.01 * wave, 0.3):
+		if wave >= 8 and wf() < minf(0.1 + 0.01 * wave, 0.3):
 			o.shield = (2.0 + wave * 0.3) * hp_growth(wave) * Rules.orb_hp
-		if wave >= 12 and randf() < 0.15:
+		if wave >= 12 and wf() < 0.15:
 			o.splits = true
 	orbs.add_child(o)
 
@@ -5552,7 +5649,7 @@ func _spawn_child(parent: Orb) -> void:
 
 ## 웨이브가 오를수록 빠른 구체(4웨이브~), 단단한 구체(6웨이브~)가 섞인다.
 func _roll_kind() -> int:
-	var x := randf()
+	var x := wf()
 	# 단단한 구체는 7웨이브부터 (6웨이브는 세 번째 진입 방향이 열림)
 	if wave >= 7 and x < minf(0.08 + 0.02 * wave, 0.3):
 		return Orb.Kind.TANK
@@ -5565,6 +5662,7 @@ func _roll_kind() -> int:
 
 func _process(delta: float) -> void:
 	key_t -= delta
+	_mp_tick(delta)
 	if coin_stage > 0 and not get_tree().paused:
 		_coin_step(delta)
 	touch_tip_t -= delta
@@ -5658,7 +5756,7 @@ func _process(delta: float) -> void:
 		var hh := minf(help_label.get_combined_minimum_size().y + 36.0, ui_root.size.y - 100.0)
 		help_scroll.offset_top = -hh / 2.0
 		help_scroll.offset_bottom = hh / 2.0
-	title_box.visible = not (settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible)
+	title_box.visible = not (settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible or mp_panel.visible)
 	hud.visible = not title_label.visible  # 시작 화면엔 메뉴에 최고 기록이 따로 있다
 	# 시작 화면에서 일시정지·배속 버튼을 누르면 메뉴 위에 일시정지 창이 뜨던 문제
 	# 게임 중엔 펼쳤을 때만 보인다 (단축키 M·P·Space는 접어도 된다). 시작 화면엔 소리·자동 시작만
@@ -5800,6 +5898,8 @@ func _sim_step(delta: float) -> void:
 	if prof_on:
 		_prof_add("이동", us)
 
+	if mp_extra_left > 0 and not mp_ghost:
+		_mp_spawn_extra(delta)
 	if to_spawn > 0:
 		spawn_timer -= delta
 		if spawn_timer <= 0.0:
@@ -5823,9 +5923,11 @@ func _sim_step(delta: float) -> void:
 			combo_end = [combo, combo_bonus, 1.5]
 	_resolve(delta)
 
+	if mp_ghost:
+		return  # 협동 참가자: 웨이브 끝·게임 오버는 호스트가 알려 준다
 	if core_hp <= 0:
 		_game_over()
-	elif to_spawn == 0 and _alive_count(orbs) == 0:
+	elif to_spawn == 0 and mp_extra_left == 0 and _alive_count(orbs) == 0:
 		combo_hold = true  # 쉬는 시간·카드 고르기 동안 콤보가 끊기지 않게
 		_log_wave()
 		_achieve("first")
@@ -5844,6 +5946,7 @@ func _sim_step(delta: float) -> void:
 			core_hp = mini(core_hp + perks["regen"] * int(_perk_val("regen")), core_max)
 		if wave % 5 == 0:
 			_submit_run(false)  # 5웨이브마다 진행 중 기록 (중간에 꺼도 서버에 남게)
+		_mp_wave_cleared()
 		if skip_left > 1 and not skip_stop:
 			skip_left -= 1
 			_skip_rest()
@@ -6017,8 +6120,8 @@ func _resolve(delta: float) -> void:
 	if prof_on:
 		us = _prof_add("발사체 판정", us)
 
-	# 구체 처치 / 중앙 도달
-	for o in live_orbs:
+	# 구체 처치 / 중앙 도달 (협동 참가자는 호스트가 보낸 대로)
+	for o in (live_orbs if not mp_ghost else []):
 		if o.hp <= 0.0:
 			if o.shade_t > 0.0:
 				_pass_shade(o)
@@ -7085,3 +7188,653 @@ func _save_best() -> void:
 	cfg.set_value("option", "muted", sfx.muted)
 	cfg.set_value("option", "fast_speed", fast_speed)
 	cfg.save(SAVE_PATH)
+
+
+# ---------- 멀티플레이 ----------
+# 대결(vs): 모두 같은 씨앗으로 같은 웨이브를 받아 각자 판을 하고, 상태·보낸 구체·탈락만 주고받는다.
+# 협동(coop): 호스트가 한 전장을 계산하고 참가자는 받은 구체를 그린다. 오브젝트는 놓은 사람이 바꾸고 서로 보낸다.
+
+## 대결 씨앗이 있으면 모두 같은 난수, 없으면 전역 난수(혼자 하는 판·봇 측정과 같은 순서).
+func wf() -> float:
+	return wrng.randf() if mp_seed != 0 and not w_off else randf()
+
+
+func wi() -> int:
+	return wrng.randi() if mp_seed != 0 and not w_off else randi()
+
+
+func wrange(a: float, b: float) -> float:
+	return wrng.randf_range(a, b) if mp_seed != 0 and not w_off else randf_range(a, b)
+
+
+func _wpick(arr: Array) -> Variant:
+	return arr[wi() % arr.size()] if mp_seed != 0 and not w_off else arr.pick_random()
+
+
+func _wshuffle(arr: Array) -> void:
+	if mp_seed == 0:
+		arr.shuffle()
+		return
+	for i in range(arr.size() - 1, 0, -1):
+		var j := wi() % (i + 1)
+		var tmp: Variant = arr[i]
+		arr[i] = arr[j]
+		arr[j] = tmp
+
+
+## 이 기기 사람이 바꿀 수 있는 오브젝트인지 (협동에서 친구 것은 아님).
+func _mine(t: Tower) -> bool:
+	return t == null or mp_mode != "coop" or t.owner_id == mp.my_id
+
+
+func _my_towers() -> Array:
+	if mp_mode != "coop":
+		return towers.get_children()
+	return towers.get_children().filter(func(t): return t.owner_id == mp.my_id)
+
+
+func _mp_name(id: int) -> String:
+	if id == mp.my_id:
+		return "나"
+	var n: String = mp_others.get(id, {}).get("name", "")
+	if n == "":
+		n = mp.peers.get(id, {}).get("name", "")
+	return n if n != "" else "플레이어 %d" % id
+
+
+static func _device_name() -> String:
+	match OS.get_name():
+		"Windows": return "Windows"
+		"macOS": return "Mac"
+		"iOS": return "iPhone"
+		"Android": return "Android"
+	return "PC"
+
+
+func _build_mp_lobby(root: Control) -> void:
+	mp_panel = PanelContainer.new()
+	mp_panel.z_index = 22
+	mp_panel.set_anchors_preset(Control.PRESET_CENTER)
+	mp_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	mp_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	mp_panel.offset_left = -330.0
+	mp_panel.offset_right = 330.0
+	mp_panel.offset_top = -160.0  # 내용만큼 위아래로 자란다
+	mp_panel.offset_bottom = 160.0
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.05, 0.06, 0.09, 1.0)
+	sb.set_border_width_all(1)
+	sb.border_color = Color(1, 1, 1, 0.25)
+	sb.set_content_margin_all(18)
+	mp_panel.add_theme_stylebox_override("panel", sb)
+	mp_panel.visible = false
+	root.add_child(mp_panel)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 12)
+	mp_panel.add_child(box)
+	var head := Label.new()
+	head.text = "멀티플레이"
+	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	head.add_theme_font_size_override("font_size", 28)
+	box.add_child(head)
+	var desc := Label.new()
+	desc.text = "대결: 같은 웨이브를 각자 막고, 실수 없이 막으면 상대에게 구체를 보냄\n협동: 한 전장을 함께 막음 (호스트 기기가 계산, 인원만큼 구체가 많아짐)\n맵·규칙은 호스트가 시작 화면에서 고른 것으로, 모드는 끈 채로 합니다"
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.add_theme_font_size_override("font_size", 15)
+	desc.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
+	box.add_child(desc)
+	mp_host_box = HBoxContainer.new()
+	mp_host_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	mp_host_box.add_theme_constant_override("separation", 10)
+	box.add_child(mp_host_box)
+	for spec in [["대결 방 만들기", "vs"], ["협동 방 만들기", "coop"]]:
+		var b := Button.new()
+		b.text = spec[0]
+		b.custom_minimum_size = Vector2(250, 46)
+		b.focus_mode = Control.FOCUS_NONE
+		var m: String = spec[1]
+		b.pressed.connect(func(): _mp_host(m))
+		mp_host_box.add_child(b)
+	mp_join_box = HBoxContainer.new()
+	mp_join_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	mp_join_box.add_theme_constant_override("separation", 10)
+	box.add_child(mp_join_box)
+	mp_code_edit = LineEdit.new()
+	mp_code_edit.placeholder_text = "방 코드 6자리"
+	mp_code_edit.custom_minimum_size = Vector2(250, 46)
+	mp_code_edit.max_length = 6
+	mp_code_edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mp_code_edit.add_theme_font_size_override("font_size", 22)
+	mp_code_edit.text_submitted.connect(func(_t): _mp_join())
+	mp_join_box.add_child(mp_code_edit)
+	var jb := Button.new()
+	jb.text = "참가"
+	jb.custom_minimum_size = Vector2(250, 46)
+	jb.focus_mode = Control.FOCUS_NONE
+	jb.pressed.connect(_mp_join)
+	mp_join_box.add_child(jb)
+	mp_status = Label.new()
+	mp_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	mp_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	mp_status.custom_minimum_size = Vector2(600, 90)
+	mp_status.add_theme_font_size_override("font_size", 18)
+	box.add_child(mp_status)
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 10)
+	box.add_child(row)
+	mp_start_btn = Button.new()
+	mp_start_btn.text = "시작"
+	mp_start_btn.custom_minimum_size = Vector2(200, 46)
+	mp_start_btn.focus_mode = Control.FOCUS_NONE
+	mp_start_btn.pressed.connect(_mp_start)
+	row.add_child(mp_start_btn)
+	var lb := Button.new()
+	lb.text = "닫기"
+	lb.custom_minimum_size = Vector2(200, 46)
+	lb.focus_mode = Control.FOCUS_NONE
+	lb.pressed.connect(_toggle_mp_lobby)
+	row.add_child(lb)
+	mp_bar = Label.new()  # 점수 줄 바로 아래 (_mp_tick이 자리를 맞춘다)
+	mp_bar.add_theme_font_size_override("font_size", 15)
+	mp_bar.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	mp_bar.add_theme_constant_override("outline_size", 4)
+	mp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mp_bar.visible = false
+	root.add_child(mp_bar)
+	_mp_refresh_lobby()
+
+
+## 시작 화면 [멀티플레이]: 창을 열고 닫는다. 닫으면 만든 방·들어간 방에서 나온다.
+func _toggle_mp_lobby() -> void:
+	mp_panel.visible = not mp_panel.visible
+	if not mp_panel.visible and mp_mode == "":
+		mp.leave()
+	_mp_refresh_lobby()
+
+
+func _mp_host(m: String) -> void:
+	mp_status.text = "방을 만드는 중…"
+	mp.host(m, _device_name())
+
+
+func _mp_join() -> void:
+	var c := Mp.clean_code(mp_code_edit.text)
+	if c.length() != 6:
+		mp_status.text = "방 코드 6자리를 넣으세요"
+		return
+	mp_status.text = "방에 들어가는 중…"
+	mp.join(c, _device_name())
+
+
+func _mp_failed(reason: String) -> void:
+	if mp_mode == "":
+		mp_status.text = reason
+		_mp_refresh_lobby(false)
+		return
+	# 판 중에 끊김
+	if mp_mode == "coop" and mp_ghost and phase != Phase.GAMEOVER:
+		mp_rank = reason
+		core_hp = 0
+		_game_over()
+	else:
+		_show_toast(reason)
+		for id in mp_others:
+			mp_others[id]["gone"] = true
+
+
+func _mp_refresh_lobby(keep_status := true) -> void:
+	if mp_panel == null or mp == null:
+		return
+	var in_room := mp.active()
+	mp_host_box.visible = not in_room
+	mp_join_box.visible = not in_room
+	mp_start_btn.visible = in_room and mp.is_host()
+	var ready := mp.connected_ids().size()
+	mp_start_btn.disabled = ready < 1
+	if not in_room:
+		if not keep_status and mp_status.text == "":
+			mp_status.text = "방을 만들거나 친구에게 받은 방 코드로 들어가세요"
+		return
+	var lines := PackedStringArray()
+	lines.append("%s 방 코드  %s" % ["대결" if mp.mode == "vs" else "협동", mp.code])
+	for n in mp.names():
+		var st := "" if n[0] == mp.my_id else ("" if n[2] else "  (연결 중…)")
+		lines.append("%s%s%s" % ["★ " if n[0] == 1 else "· ", n[1] if n[0] != mp.my_id else n[1] + " (나)", st])
+	if mp.is_host():
+		lines.append("친구에게 방 코드를 알려 주세요. 연결되면 [시작] (최대 %d명)" % Mp.MAX_PLAYERS)
+	else:
+		lines.append("호스트가 시작하기를 기다리는 중")
+	mp_status.text = "\n".join(lines)
+
+
+## 호스트 [시작]: 씨앗·맵·규칙을 정해 모두에게 보내고 함께 시작한다.
+func _mp_start() -> void:
+	if not mp.is_host() or mp.connected_ids().is_empty():
+		return
+	var ids: Array = [1] + mp.connected_ids()
+	var names := {}
+	for id in ids:
+		names[id] = mp.peers.get(id, {}).get("name", "")
+	var msg := {"t": "start", "seed": randi() % 2000000000 + 1, "map": Meta.map_id, "flip": Meta.line_flip, "rules": Meta.rules,
+		"mode": mp.mode, "ids": ids, "names": names}
+	mp.lock()
+	mp.send(msg)
+	_mp_begin(msg)
+
+
+func _mp_begin(msg: Dictionary) -> void:
+	mp.started = true
+	mp_mode = str(msg.get("mode", "vs"))
+	var m := str(msg.get("map", "plain"))
+	Meta.map_id = m if m in Meta.MAP_IDS else "plain"
+	Meta.line_flip = msg.get("flip", false) == true
+	var r := int(msg.get("rules", 1))
+	Meta.rules = r if r in Rules.IDS else 1
+	Modes.set_on([])
+	_apply_rules()
+	mp_others.clear()
+	var names: Dictionary = msg.get("names", {})
+	for id in msg.get("ids", []):
+		if int(id) != mp.my_id:
+			mp_others[int(id)] = {"name": str(names.get(id, "")), "w": 0, "hp": CORE_MAX_HP, "mx": CORE_MAX_HP, "sc": 0, "alive": true, "gone": false}
+	mp_seed = int(msg.get("seed", 1)) if mp_mode == "vs" else 0
+	mp_ghost = mp_mode == "coop" and not mp.is_host()
+	if mp_mode == "coop":
+		coop_orbs = 1.0 + 0.6 * mp_others.size()
+		auto_start = false
+		_update_auto_btn()
+	mp_panel.visible = false
+	var tn := Meta.tutor_next
+	Meta.tutor_next = false  # 멀티플레이는 첫 판 안내(카드 종류를 하나씩 엶) 없이
+	_hide_title()
+	lanes.clear()
+	_start_choose()
+	Meta.tutor_next = tn
+	big_banner("%s 시작! %d명" % ["대결" if mp_mode == "vs" else "협동", mp_others.size() + 1], Color(0.6, 0.9, 1.0))
+
+
+func _mp_packet(from: int, msg: Dictionary) -> void:
+	var t := str(msg.get("t", ""))
+	if t == "start":
+		if from == 1 and mp_mode == "" and mp.active():
+			_mp_begin(msg)
+		return
+	if mp_mode == "":
+		return
+	match t:
+		"gone":
+			if mp_others.has(from):
+				mp_others[from]["gone"] = true
+				_show_toast("%s 연결이 끊겼어요" % _mp_name(from))
+			mp_ready.erase(from)
+			if mp_mode == "coop" and mp.is_host():
+				_mp_try_go()
+			elif mp_mode == "vs":
+				_mp_check_win()
+		"st":
+			if mp_others.has(from):
+				var o: Dictionary = mp_others[from]
+				o["w"] = int(msg.get("w", 0))
+				o["hp"] = int(msg.get("hp", 0))
+				o["mx"] = int(msg.get("mx", CORE_MAX_HP))
+				o["sc"] = int(msg.get("sc", 0))
+		"dead":
+			if mp_others.has(from):
+				mp_others[from]["alive"] = false
+				mp_others[from]["w"] = int(msg.get("w", 0))
+				mp_others[from]["sc"] = int(msg.get("sc", 0))
+				_show_toast("%s 탈락 (웨이브 %d)" % [_mp_name(from), mp_others[from]["w"]])
+				_mp_check_win()
+		"atk":
+			var n := int(msg.get("n", 0))
+			if n <= 0 or phase == Phase.GAMEOVER:
+				return
+			if phase == Phase.WAVE:
+				mp_pending += n
+			else:
+				mp_next_extra += n
+				_update_preview()
+			_show_toast("%s가 구체 %d개를 보냈어요 (다음 웨이브에 더 옴)" % [_mp_name(from), n])
+			sfx.play("danger", 0.0)
+		"tw":
+			_mp_recv_towers(from, msg.get("list", []))
+		"perk":
+			var id := str(msg.get("id", ""))
+			if PERKS.any(func(pk): return pk["id"] == id):
+				perks[id] = perks.get(id, 0) + 1
+				_apply_perk(id)
+				_show_toast("%s 특성: %s (팀 전체)" % [_mp_name(from), _perk_name(id)])
+		"ready":
+			if mp.is_host():
+				mp_ready[from] = true
+				_mp_try_go()
+		"wave":
+			if mp_ghost and from == 1:
+				wave = int(msg.get("w", wave + 1)) - 1
+				mp_wave_go = true
+				_end_ghost_rest()
+				_start_wave()
+				mp_wave_go = false
+				mp_i_ready = false
+		"next":
+			if mp_ghost and from == 1:
+				mp_next = msg
+				if int(msg.get("w", -1)) == wave:
+					_mp_ghost_rest()
+					_update_preview()
+		"snap":
+			if mp_ghost and from == 1:
+				_mp_apply_snap(msg)
+		"clear":
+			if mp_ghost and from == 1 and phase == Phase.WAVE:
+				_mp_ghost_clear(msg)
+		"over":
+			if mp_ghost and from == 1 and phase != Phase.GAMEOVER:
+				score = int(msg.get("sc", score))
+				kills = int(msg.get("k", kills))
+				wave = int(msg.get("w", wave))
+				core_hp = 0
+				_game_over()
+
+
+func _perk_name(id: String) -> String:
+	for pk in PERKS:
+		if pk["id"] == id:
+			return pk["name"]
+	return id
+
+
+func _mp_send_perk(id: String) -> void:
+	if mp_mode == "coop":
+		mp.send({"t": "perk", "id": id})
+
+
+## 매 프레임: 상태·오브젝트·전장 보내기, 위쪽 상태 줄.
+func _mp_tick(delta: float) -> void:
+	if mp_mode == "":
+		return
+	mp_tick_t += delta
+	mp_snap_t += delta
+	if mp_mode == "vs" and mp_tick_t >= 0.5:
+		mp_tick_t = 0.0
+		var sig := "%d/%d/%d/%d" % [wave, core_hp, core_max, score]
+		if sig != mp_st_sig and phase != Phase.GAMEOVER:
+			mp_st_sig = sig
+			mp.send({"t": "st", "w": wave, "hp": core_hp, "mx": core_max, "sc": score})
+	if mp_mode == "coop":
+		if mp_tick_t >= 0.25 and phase != Phase.GAMEOVER:
+			mp_tick_t = 0.0
+			_mp_send_towers()
+		if mp.is_host() and phase == Phase.WAVE and mp_snap_t >= 1.0 / 12.0:
+			mp_snap_t = 0.0
+			_mp_send_snap()
+	mp_bar.visible = not title_label.visible
+	mp_bar.position = Vector2(hud.position.x + 2.0, hud.position.y + hud.size.y + 4.0)
+	if mp_bar.visible:
+		var parts := PackedStringArray()
+		if mp_mode == "vs":
+			for id in mp_others:
+				var o: Dictionary = mp_others[id]
+				var nm := _mp_name(id)
+				if o["gone"] and o["alive"]:
+					parts.append("%s 연결 끊김" % nm)
+				elif not o["alive"]:
+					parts.append("%s 탈락 W%d" % [nm, o["w"]])
+				else:
+					parts.append("%s W%d ♥%d/%d %s점" % [nm, o["w"], o["hp"], o["mx"], num(o["sc"])])
+			mp_bar.text = "대결 · " + "   |   ".join(parts)
+		else:
+			for id in mp_others:
+				parts.append("%s%s" % [_mp_name(id), " (끊김)" if mp_others[id]["gone"] else ""])
+			mp_bar.text = "협동 · 나(%s) + %s" % ["호스트" if mp.is_host() else "참가", ", ".join(parts)]
+			mp_bar.add_theme_color_override("font_color", Mp.owner_color(mp.my_id))
+
+
+## 쉬는 시간 시작 (_new_rest 안): 대결은 받아 둔 구체를 예고에, 협동 호스트는 다음 웨이브를 참가자에게.
+func _mp_rest_begin() -> void:
+	if mp_mode == "vs":
+		mp_next_extra += mp_pending
+		mp_pending = 0
+	elif mp_mode == "coop" and mp.is_host():
+		mp.send({"t": "next", "w": wave, "lanes": Array(lanes), "res": wave_resist, "boss": boss_plan})
+
+
+## 대결: 상대가 보낸 구체를 웨이브 동안 섞어 내보낸다 (같은 웨이브 순서를 흐트리지 않게 씨앗 밖에서 뽑음).
+func _mp_spawn_extra(delta: float) -> void:
+	if randf() > delta * 1.2:
+		return
+	mp_extra_left -= 1
+	w_off = true
+	_spawn_orb()
+	w_off = false
+
+
+## 대결: 웨이브를 막았을 때. 중앙이 한 번도 안 맞았으면 상대에게 구체를 보낸다.
+## 협동 호스트: 참가자에게 웨이브 끝을 알린다.
+func _mp_wave_cleared() -> void:
+	if mp_mode == "coop" and mp.is_host():
+		mp.send({"t": "clear", "w": wave, "perk": wave % 5 == 0, "sc": score, "hp": core_hp, "mx": core_max, "k": kills})
+		return
+	if mp_mode != "vs" or wave_dmg > 0:
+		return
+	var alive: Array = mp_others.keys().filter(func(id): return mp_others[id]["alive"] and not mp_others[id]["gone"])
+	if alive.is_empty():
+		return
+	# 앞서 있는(점수가 높은) 상대에게
+	alive.sort_custom(func(a, b): return mp_others[a]["sc"] > mp_others[b]["sc"])
+	var n := 1 + wave / 4
+	mp.send({"t": "atk", "n": n}, alive[0])
+	_show_toast("완벽 방어! %s에게 구체 %d개를 보냈어요" % [_mp_name(alive[0]), n])
+
+
+## 대결·협동: 이 기기가 끝났을 때.
+func _mp_over() -> void:
+	if mp_mode == "vs":
+		mp.send({"t": "dead", "w": wave, "sc": score})
+		var rows: Array = [[mp.my_id, wave, score]]
+		for id in mp_others:
+			var o: Dictionary = mp_others[id]
+			rows.append([id, o["w"], o["sc"], o["alive"] and not o["gone"]])
+		rows.sort_custom(func(a, b): return a[1] > b[1] or (a[1] == b[1] and a[2] > b[2]))
+		var place := 1 + mp_others.values().filter(func(o): return o["alive"] and not o["gone"]).size()
+		var ls := PackedStringArray()
+		for r in rows:
+			ls.append("%s W%d%s" % [_mp_name(r[0]), r[1], " (진행 중)" if r.size() > 3 and r[3] else ""])
+		mp_rank = "대결 %d위 / %d명 · %s" % [place, mp_others.size() + 1, " · ".join(ls)]
+	elif mp_mode == "coop":
+		if mp.is_host():
+			mp.send({"t": "over", "w": wave, "sc": score, "k": kills})
+		if mp_rank == "":
+			mp_rank = "협동 %d명 · 함께 웨이브 %d까지" % [mp_others.size() + 1, wave]
+
+
+## 대결: 다른 사람이 모두 탈락하면 승리 (판은 계속할 수 있다).
+func _mp_check_win() -> void:
+	if phase == Phase.GAMEOVER or mp_others.is_empty():
+		return
+	if mp_others.values().all(func(o): return not o["alive"] or o["gone"]):
+		big_banner("승리! 끝까지 버텨 기록을 늘려 보세요", Color(1, 0.85, 0.3))
+		sfx.play("clear", 0.0)
+
+
+# --- 협동 ---
+
+## 웨이브 시작을 누름: 모두 누르면 호스트가 시작한다.
+func _mp_coop_ready() -> void:
+	if phase != Phase.READY:
+		return
+	if mp.is_host():
+		mp_ready[1] = true
+		_mp_try_go()
+	elif not mp_i_ready:
+		mp_i_ready = true
+		mp.send({"t": "ready"}, 1)
+		start_btn.text = "친구를 기다리는 중…"
+
+
+func _mp_try_go() -> void:
+	if not mp_ready.get(1, false) or phase != Phase.READY:
+		return
+	var need: Array = mp.connected_ids()
+	var have := need.filter(func(id): return mp_ready.get(id, false)).size()
+	if have < need.size():
+		start_btn.text = "친구를 기다리는 중 (%d/%d)" % [have + 1, need.size() + 1]
+		return
+	mp_ready.clear()
+	mp.send({"t": "wave", "w": wave + 1})
+	mp_wave_go = true
+	_start_wave()
+	mp_wave_go = false
+
+
+## 참가자: 호스트가 웨이브를 시작했는데 아직 고르는 중이면 그대로 닫는다.
+func _end_ghost_rest() -> void:
+	if phase in [Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.DRAW]:
+		_cancel_step()
+	perk_mode = false
+	choice_box.visible = false
+
+
+## 참가자의 쉬는 시간: 다음 웨이브는 호스트가 보낸 것으로.
+func _mp_ghost_rest() -> void:
+	if int(mp_next.get("w", -1)) != wave:
+		return
+	lanes.assign((mp_next.get("lanes", []) as Array).filter(func(a): return a is float))
+	wave_resist = int(mp_next.get("res", -1))
+	var bp: Variant = mp_next.get("boss", {})
+	boss_plan = bp if bp is Dictionary else {}
+
+
+## 참가자: 호스트 웨이브가 끝남 → 이 기기도 쉬는 시간.
+func _mp_ghost_clear(msg: Dictionary) -> void:
+	wave = int(msg.get("w", wave))
+	score = int(msg.get("sc", score))
+	kills = int(msg.get("k", kills))
+	core_max = int(msg.get("mx", core_max))
+	core_hp = int(msg.get("hp", core_hp))
+	for o in orbs.get_children():
+		o.queue_free()
+	mp_ghosts.clear()
+	combo_hold = true
+	_show_toast("웨이브 %d 클리어!" % wave)
+	sfx.play("clear", 0.0)
+	_show_mvp()
+	if bool(msg.get("perk", false)):
+		_start_perk()
+	else:
+		_start_choose()
+
+
+## 호스트: 전장 구체 상태를 보낸다 [번호, x, y, 체력, 최대, 종류, 보호막, 저항+1, 굳셈].
+func _mp_send_snap() -> void:
+	var o_list := PackedFloat32Array()
+	for o in orbs.get_children():
+		if o.is_queued_for_deletion():
+			continue
+		if o.net_id == 0:
+			mp_orb_n += 1
+			o.net_id = mp_orb_n
+		o_list.append_array([o.net_id, o.position.x, o.position.y, o.hp, o.max_hp, o.kind, o.shield, o.resist_e + 1, 1.0 if o.sturdy else 0.0])
+	mp.send({"t": "snap", "w": wave, "hp": core_hp, "mx": core_max, "sc": score, "k": kills, "cb": combo, "o": o_list}, 0, false)
+
+
+func _mp_apply_snap(msg: Dictionary) -> void:
+	if phase != Phase.WAVE or int(msg.get("w", -1)) != wave:
+		return
+	var hp := int(msg.get("hp", core_hp))
+	if hp < core_hp:
+		sfx.play("core", 0.0)
+		shake = 0.25
+		core_flash = 0.4
+		_show_toast("중앙 피격! %d/%d" % [maxi(hp, 0), core_max])
+	core_hp = hp
+	core_max = int(msg.get("mx", core_max))
+	score = int(msg.get("sc", score))
+	kills = int(msg.get("k", kills))
+	combo = int(msg.get("cb", combo))
+	best_combo = maxi(best_combo, combo)
+	_check_danger()
+	var arr: PackedFloat32Array = msg.get("o", PackedFloat32Array())
+	var seen := {}
+	var i := 0
+	while i + 8 < arr.size():
+		var id := int(arr[i])
+		seen[id] = true
+		var o: Orb = mp_ghosts.get(id)
+		var pos := Vector2(arr[i + 1], arr[i + 2])
+		if o == null or not is_instance_valid(o):
+			o = Orb.new()
+			o.main = self
+			o.ghost = true
+			o.net_id = id
+			o.setup(int(arr[i + 5]), arr[i + 4], 30.0)
+			o.position = pos
+			o.target = center()
+			o.from_a = (pos - center()).angle()
+			orbs.add_child(o)
+			mp_ghosts[id] = o
+		o.net_pos = pos
+		o.hp = arr[i + 3]
+		o.max_hp = arr[i + 4]
+		o.shield = arr[i + 6]
+		o.resist_e = int(arr[i + 7]) - 1
+		o.sturdy = arr[i + 8] > 0.5
+		i += 9
+	for id in mp_ghosts.keys():
+		if not seen.has(id):
+			var o: Orb = mp_ghosts[id]
+			if is_instance_valid(o):
+				if o.position.distance_to(center()) > 40.0:
+					burst(o.position, o.death_color(), 10 if o.kind != Orb.Kind.BOSS else 40, 180.0)
+					sfx.play("kill", 0.15)
+				o.queue_free()
+			mp_ghosts.erase(id)
+
+
+## 내 오브젝트가 바뀌었으면 다른 기기로 보낸다.
+func _mp_send_towers() -> void:
+	var list: Array = []
+	for t in _my_towers():
+		list.append(t.mp_state())
+	var sig := var_to_str(list)
+	if sig == mp_tw_sig:
+		return
+	mp_tw_sig = sig
+	mp.send({"t": "tw", "list": list})
+
+
+func _mp_recv_towers(owner: int, list: Variant) -> void:
+	if not list is Array or owner == mp.my_id:
+		return
+	var keep := {}
+	for d in list:
+		if not d is Dictionary:
+			continue
+		var nid := int(d.get("nid", 0))
+		if nid / 100000 != owner:
+			continue  # 남의 번호로 보낸 것
+		keep[nid] = true
+		var t: Tower = null
+		for x in towers.get_children():
+			if x.net_id == nid:
+				t = x
+				break
+		if t == null:
+			t = Tower.new()
+			t.main = self
+			t.owner_id = owner
+			t.net_id = nid
+			t.mp_apply(d)
+			if t.order.is_empty():
+				t.free()
+				continue
+			towers.add_child(t)
+			t.place_pop = 1.0
+		else:
+			t.mp_apply(d)
+	for x in towers.get_children():
+		if x.owner_id == owner and not keep.has(x.net_id):
+			if x in selected:
+				selected.erase(x)
+			x.queue_free()

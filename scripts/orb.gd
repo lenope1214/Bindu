@@ -108,6 +108,9 @@ var dmg_acc := 0.0  # 피해 숫자 팝업용 누적
 var pop_t := 0.0
 var age := 0.0  # 등장 연출
 var ti := 0  # main.targets 안 순서 (격자 조회 결과를 원래 순서로 맞출 때)
+var net_id := 0  # 협동 멀티플레이: 호스트가 붙인 번호
+var ghost := false  # 협동 참가자 화면의 구체: 움직임·체력은 호스트가 보낸 대로
+var net_pos := Vector2.ZERO
 var from_a := 0.0  # 나온 방향(중앙 기준 각도): 누수 기록·표시용
 
 
@@ -146,6 +149,11 @@ func setup(k: int, base_hp: float, base_speed: float) -> void:
 ## main이 웨이브 중 호출한다(배속이면 한 프레임에 여러 번).
 func step(delta: float) -> void:
 	age += delta
+	if ghost:
+		position = position.lerp(net_pos, minf(1.0, delta * 15.0)) if position.distance_to(net_pos) < 120.0 else net_pos
+		if flash > 0.0: flash = maxf(flash - delta, 0.0)
+		_redraw_if_changed()
+		return
 	if pincer_cd > 0.0: pincer_cd = maxf(pincer_cd - delta, 0.0)
 	# A6: 보스는 주기적으로 빠른 부하를 부른다
 	if kind == Kind.BOSS and main and silence_t <= 0.0:
