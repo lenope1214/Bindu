@@ -1341,6 +1341,24 @@ func _update_hud(force := false) -> void:
 		items.append(["tag", D, Rules.NAMES[Meta.rules], D, [["규칙", W]], false])
 	if not Modes.on.is_empty():
 		items.append(["tag", Color(1, 0.7, 0.4), "x%.2f" % Modes.mul(), Color(1, 0.8, 0.55), [["모드 점수 배율 x%.2f" % Modes.mul(), W]], false])
+	if Vary.on:
+		# 판마다 다른 흐름: 지금 이벤트(없으면 봉인 수), 말풍선에 이벤트·예고·봉인·적응
+		var vc := Color(0.7, 0.85, 1.0)
+		var vt := ["이번 판 흐름 (시험)", W]
+		var vl: Array = [vt]
+		if not Vary.event.is_empty():
+			vl.append(["이벤트 %s: %s" % [Vary.ename(Vary.event), Vary.edesc(Vary.event)], W])
+		if not Vary.next_event.is_empty():
+			vl.append(["다음 이벤트 %s: %s" % [Vary.ename(Vary.next_event), Vary.edesc(Vary.next_event)], D])
+		if Vary.count() > 0:
+			vl.append(["봉인: " + Vary.sealed_text(), D])
+		var ad := Vary.adapt_text()
+		if ad != "":
+			vl.append(["적응 구체: " + ad, Color(1, 0.75, 0.6)])
+		var txt := Vary.ename(Vary.event) if not Vary.event.is_empty() else "봉인 %d" % Vary.count()
+		if ad != "":
+			txt += " · 적응"
+		items.append(["tag", vc, txt, vc, vl, false])
 	var nt := towers.get_child_count()
 	if nt > 1:
 		var cb := roundi(Rules.crowd_bonus(nt) * 100)
@@ -1424,6 +1442,7 @@ func _apply_rules() -> void:
 	Patch.commit()  # 받아 둔 온라인 패치는 새 판을 시작할 때 적용
 	Rules.apply(Meta.rules)
 	Modes.apply_rules()
+	Vary.new_run(false)  # 판마다 다른 흐름: 일반 새 판에서만 켠다 (_on_rest_start), 이어하기는 저장에서
 	Tower.tax_step = Rules.tax_step
 	if legend:
 		_refresh_legend()
@@ -1535,6 +1554,9 @@ func _start_choose(new_round := true) -> void:
 		tutor = Meta.tutor_next and DisplayServer.get_name() != "headless"
 		tutor_given = {}
 		start_modes()
+		Vary.new_run(mp_mode == "" and not tutor)
+		if Vary.on and Vary.count() > 0:
+			_show_toast("이번 판 봉인 (시험): " + Vary.sealed_text())
 		run_id = _new_run_id()
 		Ach.new_run()
 		_apply_tree()
@@ -1559,6 +1581,9 @@ func _new_rest() -> void:
 	if mp_ghost:
 		_mp_ghost_rest()  # 협동 참가자: 다음 웨이브는 호스트가 정한 것
 	else:
+		if wave > 0:
+			for msg in Vary.rest(wave):
+				_show_toast(msg)
 		_roll_lanes()
 		# 다음 웨이브 저항 속성: 12웨이브(버전 4는 8)부터 60% 확률
 		wave_resist = _wpick(Elem.ALL) if wave + 1 >= Rules.resist_from and wf() < 0.6 else -1
@@ -1738,7 +1763,7 @@ func _make_choices() -> void:
 			offer[offer.find(same[0])] = card
 	# 속성 카드(새 오브젝트를 놓을 수 있는 카드)는 최소 1장
 	if not offer.any(func(cd): return cd["type"] == "elem"):
-		offer[randi() % offer.size()] = {"type": "elem", "e": Elem.ALL.pick_random(), "lv": 1}
+		offer[randi() % offer.size()] = {"type": "elem", "e": Vary.open("elem", Elem.ALL).pick_random(), "lv": 1}
 	if tutor:
 		_tutor_offer()
 	_show_offer()
@@ -1833,14 +1858,17 @@ func _roll_card() -> Dictionary:
 	var r := randf() * (we + wp + wm + wt + (Patch.num("cards", "link", 0.10) if _card_open("link") else 0.0))
 	if n == 0 or (wave == 0 and not Garden.on) or r < we:  # 정원은 웨이브 0으로 물러나도 다른 카드가 나오게
 		var lv := 2 if randf() < _lv2_chance() else 1
-		return {"type": "elem", "e": Elem.ALL.pick_random(), "lv": lv}
+		return {"type": "elem", "e": Vary.open("elem", Elem.ALL).pick_random(), "lv": lv}
 	if r < we + wp:
-		return {"type": "pat", "id": Pat.PATTERN_IDS.slice(1).pick_random()}
+		return {"type": "pat", "id": Vary.open("pat", Pat.PATTERN_IDS.slice(1)).pick_random()}
 	if r < we + wp + wm:
 		return {"type": "mod", "id": Pat.MOD_IDS.pick_random()}
 	if r < we + wp + wm + wt:
 		return {"type": "trig", "id": Pat.TRIG_IDS.pick_random()}
 	var ids: Array = Pat.LINK_IDS.duplicate() if n >= 2 else ["prism", "reso"]
+	ids = ids.filter(func(id): return not Vary.is_sealed("link", id))
+	if ids.is_empty():
+		return {"type": "elem", "e": Vary.open("elem", Elem.ALL).pick_random(), "lv": 1}
 	return {"type": "link", "id": ids.pick_random()}
 
 
@@ -2968,6 +2996,17 @@ func _update_preview() -> void:
 	else:
 		var bw := ceili(nw / 5.0) * 5
 		info_l.append(["다음 보스: 웨이브 %d (%d웨이브 뒤)" % [bw, bw - wave], Color(1, 0.75, 0.85)])
+	if Vary.on:
+		var vc := Color(0.75, 0.85, 1.0)
+		if not Vary.event.is_empty():
+			info_l.append(["이벤트 %s: %s" % [Vary.ename(Vary.event), Vary.edesc(Vary.event)], vc])
+		if not Vary.next_event.is_empty():
+			info_l.append(["웨이브 %d 뒤 이벤트 %s: %s" % [nw, Vary.ename(Vary.next_event), Vary.edesc(Vary.next_event)], vc])
+		if Vary.count() > 0:
+			info_l.append(["봉인 (시험): " + Vary.sealed_text(), vc])
+		var ad := Vary.adapt_text()
+		if ad != "":
+			info_l.append(["적응 구체 (많이 쓴 것에 저항): " + ad, vc])
 	wave_info = info_l
 	wave_kinds = kinds
 	if wave == 0:
@@ -5037,7 +5076,7 @@ func _submit_run(done := true) -> void:
 		"device": Meta.device_id, "nick": Meta.nickname, "title": Meta.title, "platform": Net.platform(), "game": old_run_ver if old_run_ver != "" else Net.game_version(),
 		"patch": Patch.id, "map": Meta.map_id, "rules": Meta.rules, "modes": Array(Modes.on) + (["grow"] if Garden.boosted else []), "wave": wave, "score": score, "kills": kills,
 		"best_combo": best_combo, "game_secs": run_game, "real_secs": run_real, "perks": perks.duplicate(),
-		"towers": list, "src": src, "log": run_log, "run": run_id, "ended": done,
+		"towers": list, "src": src, "log": run_log, "vary": Vary.record(), "run": run_id, "ended": done,
 	})
 
 
@@ -5541,7 +5580,7 @@ func _save_run() -> void:
 		"core_hp": core_hp, "core_max": core_max, "perks": perks.keys().map(func(k): return [k, perks[k]]), "regen_acc": regen_acc, "orb_speed_mul": orb_speed_mul,
 		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
 		"rerolls_left": rerolls_left, "bonus_rerolls": bonus_rerolls, "picks_left": picks_left,
-		"skip_left": skip_left, "skip_total": skip_total, "skip_stop": skip_stop, "bank_picks": bank_picks, "bank_rerolls": bank_rerolls, "bank_perks": bank_perks, "coin_next": coin_next, "rest_ready": rest_ready,
+		"vary": Vary.save(), "skip_left": skip_left, "skip_total": skip_total, "skip_stop": skip_stop, "bank_picks": bank_picks, "bank_rerolls": bank_rerolls, "bank_perks": bank_perks, "coin_next": coin_next, "rest_ready": rest_ready,
 		"lanes": Array(lanes), "wave_resist": wave_resist, "boss": boss_plan, "achievements": new_achievements, "ach_run": Ach.run,
 		"state": "perk" if perk_mode else ("ready" if phase == Phase.READY else "choose"),
 		"offer": offer, "perk_offer": perk_offer.map(func(pk): return pk["id"]), "towers": list,
@@ -5687,6 +5726,7 @@ func _continue_run() -> void:
 	wave_resist = g.call("wave_resist", -1)
 	if not wave_resist in Elem.ALL:
 		wave_resist = -1
+	Vary.load_from(g.call("vary", {}))
 	# 미리 뽑아 둔 보스 (없거나 형식이 다르면 새로 뽑음)
 	var bp: Variant = g.call("boss", {})
 	boss_plan = {}
@@ -6349,11 +6389,12 @@ func _roll_orb(w: int) -> Dictionary:
 			hp *= LINE_HP
 	if Garden.on:
 		hp *= Garden.hp_k(w)
-	var spd := (30.0 + w * 3.0 + wf() * 8.0) * (LINE_SPD if Meta.map_id == "line" else 1.0)
+	hp *= Vary.hp_k()
+	var spd := (30.0 + w * 3.0 + wf() * 8.0) * (LINE_SPD if Meta.map_id == "line" else 1.0) * Vary.spd_k()
 	# 저항·굳셈: 쉬는 시간에 미리 알려 준 대로
 	var res := wave_resist if wave_resist >= 0 and wf() < resist_share(w) else -1
 	var y := wrange(-LINE_HALF + 20.0, LINE_HALF - 20.0) if Meta.map_id == "line" else 0.0
-	return {"a": a, "y": y, "hp": roundf(hp), "spd": spd, "resist": res, "sturdy": wf() < sturdy_share(w)}
+	return {"a": a, "y": y, "hp": roundf(hp), "spd": spd, "resist": res, "sturdy": wf() < sturdy_share(w) or Vary.all_sturdy()}
 
 
 ## 다음 웨이브가 보스 웨이브면 보스를 미리 뽑아 둔다 (화면에 길·체력을 정확히 알려 주려고).
@@ -6415,6 +6456,8 @@ func _spawn_orb(kind := -1, plan := {}) -> void:
 			o.shield = (2.0 + wave * 0.3) * hp_growth(wave) * Rules.orb_hp
 		if wave >= 12 and wf() < 0.15:
 			o.splits = true
+	if Vary.all_split() and kind != Orb.Kind.BOSS:
+		o.splits = true  # 이벤트 증식
 	orbs.add_child(o)
 
 
@@ -6779,6 +6822,7 @@ func _sim_step(delta: float) -> void:
 	elif to_spawn == 0 and mp_extra_left == 0 and _alive_count(orbs) == 0:
 		combo_hold = true  # 쉬는 시간·카드 고르기 동안 콤보가 끊기지 않게
 		_log_wave()
+		Vary.wave_done(wave, _my_towers())
 		_achieve("first")
 		Ach.on_wave_clear(wave, wave_dmg, core_hp, core_max)
 		_ach_check()
@@ -6991,7 +7035,7 @@ func _resolve(delta: float) -> void:
 				var gd := Garden.kill_dew(wave, o.kind == Orb.Kind.BOSS)
 				Garden.dew += gd
 				garden_wave_dew += gd
-			var base: float = o.max_hp * Modes.kill_k(o.kind == Orb.Kind.BOSS, o.minion) * 10 * Modes.mul()
+			var base: float = o.max_hp * Modes.kill_k(o.kind == Orb.Kind.BOSS, o.minion) * 10 * Modes.mul() * Vary.score_k()
 			var gain := int(base * combo_mul())
 			score += gain
 			combo_bonus += gain - int(base)

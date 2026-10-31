@@ -148,6 +148,7 @@ class RunIn(BaseModel):
     log: list[LogIn] = []
     run: str = Field("", pattern=r"^[A-Za-z0-9-]{0,40}$")  # 판 번호: 같은 판의 진행 기록을 한 줄로 (0.5.1 다음 버전부터)
     ended: bool = True  # False: 5웨이브마다 보내는 진행 중 기록
+    vary: dict = {}  # 판마다 다른 흐름 (봉인·지금 이벤트·적응 저항, 0.6.0 시험). detail.vary로 남긴다
 
 
 @app.post("/v1/runs")
@@ -190,7 +191,7 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), au
     vals = dict(device_id=run.device, nickname=nick, ip_hash=ip, platform=run.platform, game_version=run.game,
                 patch_id=run.patch, season=season, map=run.map, rules=run.rules, wave=run.wave, score=run.score,
                 kills=run.kills, best_combo=run.best_combo, game_secs=run.game_secs, real_secs=run.real_secs,
-                detail={"perks": run.perks, "modes": run.modes, "towers": [x.model_dump() for x in run.towers], "src": run.src, "log": [x.model_dump() for x in run.log]},
+                detail={"perks": run.perks, "modes": run.modes, "towers": [x.model_dump() for x in run.towers], "src": run.src, "log": [x.model_dump() for x in run.log], "vary": run.vary},
                 valid=reason == "", reason=reason, run_key=run.run, ended=run.ended, updated_at=now(), title=run.title, grow="grow" in run.modes)
     if acct:
         vals["account_id"] = acct.id

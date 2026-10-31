@@ -449,6 +449,7 @@ func dmg_factor(rx := false) -> float:
 	if not Patch.elem_mul.is_empty():
 		for e in elements:
 			f *= Patch.elem_mul.get(e, 1.0)
+	f *= Vary.tower_mul(elements, pattern)  # 판마다 다른 흐름: 웨이브 이벤트·적응 구체
 	return f
 
 
@@ -705,7 +706,7 @@ func cataclysm_elements() -> void:
 	elements.clear()
 	order.clear()
 	for e in old:
-		var ne: int = Elem.ALL.pick_random()
+		var ne: int = Vary.open("elem", Elem.ALL).pick_random()
 		elements[ne] = lv(ne) + olds[e] + (1 if ne == e else 0)
 		if not order.has(ne):
 			order.append(ne)
@@ -715,7 +716,7 @@ func cataclysm_elements() -> void:
 
 ## 공격방식 대격변: 직선탄을 뺀 공격방식 중 하나로 바뀐다(고정 무시). 레벨은 유지, 같은 것이면 +1.
 func cataclysm_pattern() -> void:
-	var id: String = Pat.PATTERN_IDS.slice(1).pick_random()
+	var id: String = Vary.open("pat", Pat.PATTERN_IDS.slice(1)).pick_random()
 	if id == pattern:
 		plv += 1
 	else:

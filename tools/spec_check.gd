@@ -89,6 +89,7 @@ func _initialize():
 	_score_core()
 	_perks()
 	_rules_modes()
+	_vary()
 	_save_load()
 	_meta_misc()
 	_multiplayer()
@@ -605,6 +606,92 @@ func _rules_modes() -> void:
 	ok("MODE-04", Rules.picks == 3 and Modes.rerolls(1) == 3, "세 장: 고르기 3장, 여유: 새로고침 +2")
 	Modes.set_on([])
 	main._apply_rules()
+
+
+# ---------- 판마다 다른 흐름 ----------
+
+func _vary() -> void:
+	_fresh(5)
+	var off_after_rules := not Vary.on
+	Vary.new_run(true)
+	var counts_ok: bool = Vary.sealed["elem"].size() == 3 and Vary.sealed["pat"].size() == 4 and Vary.sealed["link"].size() == 1
+	var c: Vector2 = main.center()
+	_tower(c + Vector2(-200, 0))
+	_tower(c + Vector2(200, 0))
+	_tower(c + Vector2(0, -200))
+	var leak := 0
+	for i in 400:
+		main._make_choices()
+		for cd in main.offer:
+			if cd["type"] == "elem" and Vary.is_sealed("elem", cd["e"]) or cd["type"] in ["pat", "link"] and Vary.is_sealed(cd["type"], cd["id"]):
+				leak += 1
+	var t: Tower = main.towers.get_child(0)
+	for i in 30:
+		t.cataclysm_pattern()
+		if Vary.is_sealed("pat", t.pattern):
+			leak += 1
+	var n0 := Vary.count()
+	Vary.rest(25)
+	ok("VARY-01", off_after_rules and counts_ok and leak == 0 and Vary.count() == n0 - 1, "봉인: 속성 3·공격방식 4·연계 1, 선택지·대격변에 안 나옴(새어 나옴 %d), 25웨이브에 하나 풀림" % leak)
+
+	Vary.new_run(true)
+	Vary.rest(8)
+	var none_yet: bool = Vary.next_event.is_empty() and Vary.event.is_empty()
+	Vary.rest(9)
+	var planned: bool = not Vary.next_event.is_empty()
+	var pid: String = Vary.next_event.get("id", "")
+	Vary.rest(10)
+	var active: bool = Vary.ev_id() == pid and Vary.next_event.is_empty()
+	Vary.event = {"id": "eclipse", "el": {Elem.LIGHT: 0.6, Elem.DARK: 1.4}, "pt": {}}
+	var ecl: bool = is_equal_approx(Vary.tower_mul({Elem.LIGHT: 2}, "shot"), 0.6) and is_equal_approx(Vary.tower_mul({Elem.LIGHT: 1, Elem.DARK: 1}, "shot"), 1.0)
+	Vary.event = {"id": "gold", "el": {}, "pt": {}}
+	var gold: bool = Vary.score_k() == 2.0 and Vary.spd_k() > 1.0
+	Vary.event = {"id": "shell", "el": {}, "pt": {}}
+	var shell: bool = main._roll_orb(15)["sturdy"]
+	Vary.event = {}
+	ok("VARY-02", none_yet and planned and active and ecl and gold and shell, "이벤트: 9웨이브 뒤 예고, 10웨이브 뒤 시작해 10웨이브, 일식 빛 x0.6, 황금 점수 x2, 굳은 껍질 모두 굳셈")
+
+	Vary.new_run(true)
+	var soul := Tower.new()
+	soul.elements = {Elem.SOUL: 3}
+	soul.pattern = "wisp"
+	soul.dealt = 900.0
+	var fire := Tower.new()
+	fire.elements = {Elem.FIRE: 1}
+	fire.pattern = "shot"
+	fire.dealt = 100.0
+	for w in range(20, 29):
+		Vary.wave_done(w, [soul, fire])
+	var before_ok: bool = Vary.adapt_el.is_empty()
+	for w in range(29, 60):
+		Vary.wave_done(w, [soul, fire])
+	var top_mul := Vary.tower_mul({Elem.SOUL: 3}, "wisp")
+	var other_mul := Vary.tower_mul({Elem.FIRE: 1}, "shot")
+	ok("VARY-03", before_ok and is_equal_approx(top_mul, 0.8) and is_equal_approx(other_mul, 1.0) and Vary.adapt_text() != "", "적응 구체: 30웨이브부터 1위 속성·공격방식에 저항, 합쳐 최대 20%%(%.2f), 나머지는 그대로" % top_mul)
+	soul.free()
+	fire.free()
+
+	Vary.new_run(true)
+	Vary.rest(9)
+	Vary.adapt_el = {Elem.SOUL: 0.1}
+	Vary.adapt_pt = {"wisp": 0.06}
+	var saved := Vary.save()
+	var want := [Vary.sealed.duplicate(true), Vary.next_event.duplicate(true), Vary.adapt_el.duplicate(), Vary.adapt_pt.duplicate()]
+	Vary.load_from(JSON.parse_string(JSON.stringify(saved)))
+	var got := [Vary.sealed, Vary.next_event, Vary.adapt_el, Vary.adapt_pt]
+	ok("VARY-04", Vary.on and str(got) == str(want), "이어하기: 봉인·예고 이벤트·적응 저항이 저장 후 그대로")
+	main.tutor = true
+	Vary.new_run(main.mp_mode == "" and not main.tutor)
+	var tut_off := not Vary.on
+	main.tutor = false
+	Patch.data = {"rules": {"all": {"vary_on": 0}}}
+	Rules.apply(1)
+	Vary.new_run(true)
+	var patch_off := not Vary.on
+	Patch.data = {}
+	Rules.apply(1)
+	Vary.new_run(false)
+	ok("VARY-05", tut_off and patch_off and Vary.tower_mul({Elem.SOUL: 1}, "wisp") == 1.0, "첫 판·멀티플레이·정원은 끔, 패치 vary_on 0이면 끔")
 
 
 # ---------- 이어하기 ----------
