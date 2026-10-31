@@ -69,6 +69,8 @@ var pend_ph := 0.0  # 진자 위상
 var photo_t := 0.0  # 광합성: 공격 속도 증가 남은 시간
 var photo_k := 0.0
 var main: Node
+var owner_id := 0  # 협동 멀티플레이: 놓은 사람 id (0이면 혼자 하는 판)
+var net_id := 0  # 협동 멀티플레이: 기기끼리 같은 오브젝트를 찾는 번호
 ## 그린 궤적: 갈래마다 오브젝트 기준 점 목록 (첫 점은 오브젝트 자리). 오브젝트를 옮기면 같이 옮겨진다.
 var paths: Array = []
 var dice_x := 1.0  # 주사위 강화: 다음 공격까지 직접 피해에 곱하는 배율 (roll_dice)
@@ -834,6 +836,32 @@ func to_save() -> Dictionary:
 	return {"elements": elements, "order": Array(order), "pattern": pattern, "plv": plv, "mods": mods,
 		"prism": prism, "reso": reso, "pincer": pincer, "trigs": trigs, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt,
 		"src": src, "run_src": run_src, "paths": paths.map(func(p): return Array(p))}
+
+
+## 협동 멀티플레이: 다른 기기에 보낼 오브젝트 상태 (피해 기록은 빼서 웨이브 중에 자꾸 바뀌지 않게).
+func mp_state() -> Dictionary:
+	var d := to_save()
+	for k in ["dealt", "run_dealt", "src", "run_src"]:
+		d.erase(k)
+	d["nid"] = net_id
+	return d
+
+
+## 협동 멀티플레이: 받은 상태로 이 오브젝트를 바꾼다 (피해 기록은 이 기기 것을 둔다).
+func mp_apply(d: Dictionary) -> void:
+	var keep := [dealt, run_dealt, src, run_src]
+	elements.clear()
+	order.clear()
+	mods.clear()
+	trigs.clear()
+	pattern = Pat.DEFAULT
+	load_save(d)
+	dealt = keep[0]
+	run_dealt = keep[1]
+	src = keep[2]
+	run_src = keep[3]
+	eff = eff_now()
+	queue_redraw()
 
 
 ## 저장값으로 되살린다. 알 수 없는 속성·공격방식·강화나 형식이 다른 값은 버린다.
@@ -1834,6 +1862,9 @@ func _draw() -> void:
 	if main and main.wave_active:
 		_draw_attack()
 	_draw_body()
+	if owner_id > 0:
+		# 협동: 누가 놓은 오브젝트인지 발밑 고리 색으로
+		draw_arc(Vector2.ZERO, sz() + 7.0, 0.0, TAU, 28, Mp.owner_color(owner_id), 2.0)
 
 
 ## 그린 길: 쉬는 시간엔 또렷하게, 웨이브 중엔 옅게. 끝에 화살촉.

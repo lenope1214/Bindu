@@ -3,6 +3,8 @@ class_name OnlineConfig
 ## 공개키·HMAC 키는 게임 안에 들어가는 값이라 비밀이 아니다 (서버 개인키·관리자 토큰은 server/.env·keys/).
 
 const SERVER_URL := "https://bindu.anon-chat.kr"
+## 멀티플레이 방 코드 중개(Cloudflare Worker, server/mp-worker). 비우면 멀티플레이 버튼이 꺼진다.
+const MP_URL := ""
 const RUN_HMAC_KEY := "SZvKlp_IZXYoOcJH9TualCpV3KPr6CFO"
 const PATCH_PUBLIC_KEY := """-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2okrtPWid5XRfIJpoCYQ
