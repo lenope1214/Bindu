@@ -2625,6 +2625,8 @@ const PERK_GLYPH := {"power": "dmg", "haste": "rate", "reach": "range", "slow": 
 func _perk_big(id: String, desc: String) -> Dictionary:
 	if not PERK_GLYPH.has(id):
 		return {}
+	if id == "regen" and perks.get("regen", 0) > 0:  # 이미 있으면 겹친 회복 값
+		return {"big": "+%s/웨이브" % String.num(_perk_val("regen_more")), "i": PERK_GLYPH[id]}
 	var re := RegEx.create_from_string("[+-]\\d+(\\.\\d+)?%?")
 	var mm := re.search(desc)
 	if mm == null:

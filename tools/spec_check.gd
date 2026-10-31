@@ -529,9 +529,13 @@ func _perks() -> void:
 	var r2 := [main._regen_take(), main._regen_take()]
 	main.perks = {"regen": 3}
 	var r3 := [main._regen_take(), main._regen_take()]
+	var big: String = main._perk_big("regen", main.PERKS[6]["desc"]).get("big", "")
+	main.perks = {}
+	var big0: String = main._perk_big("regen", main.PERKS[6]["desc"]).get("big", "")
 	main.perks = keep_perks
 	main.regen_acc = 0.0
-	ok("PERK-07", r1 == [1, 1] and r2 == [1, 2] and r3 == [2, 2], "회복 겹치기: 1개 웨이브마다 +1, 2개 +1.5, 3개 +2 (%s %s %s)" % [r1, r2, r3])
+	ok("PERK-07", r1 == [1, 1] and r2 == [1, 2] and r3 == [2, 2] and big0 == "+1/웨이브" and big == "+0.5/웨이브",
+		"회복 겹치기: 1개 웨이브마다 +1, 2개 +1.5, 3개 +2, 카드 숫자 +1 → 이미 있으면 +0.5 (%s %s %s %s %s)" % [r1, r2, r3, big0, big])
 	# 동전 연출: 공중 회전 → 누르면 떨어짐(안 누르면 1초 뒤) → 모서리 흔들림 → 결과, 그동안 카드·특성 고르기·저장 막음
 	main.coin_anim = true
 	main.perk_mode = true
