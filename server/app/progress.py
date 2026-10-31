@@ -5,6 +5,8 @@
   ach    [업적 id]  codex [반응 id]  seen [본 안내 id]   합집합
   counts {기기 id: [처치, 판 수]}       기기마다 큰 값 (합계는 보여 줄 때 더함)
   lww    {이름: [고친 시각(초), 값]}    이름마다 늦게 고친 쪽 (같으면 값 글자로 정해 어느 쪽에서 합쳐도 같게)
+  tally  {기기 id: {키: 수}}           기기·키마다 큰 값 (업적·도감 수집 누적, 0.5.5부터. 게임 scripts/ach.gd)
+         "past-<기기>"는 서버가 지난 판 기록(Pick)으로 한 번 채운 카드 고른 횟수
 
 두 기기에서 따로 해도 순서와 상관없이 같은 결과가 나오므로 충돌을 사람에게 묻지 않는다.
 """
@@ -19,7 +21,7 @@ MAX_COUNT = 1_000_000_000
 ID_RE = re.compile(r"^[^\x00-\x1f\x7f]{1,64}$")
 DEV_RE = re.compile(r"^[A-Za-z0-9-]{8,64}$")
 # 기기마다 다른 설정(소리·글자 크기 등)은 넣지 않는다
-LWW_RE = re.compile(r"^(map|rules|modes|tower_skin|core_skin|line_flip|tutor|notes_seen|nick|fav:[^\x00-\x1f\x7f]{1,60})$")
+LWW_RE = re.compile(r"^(map|rules|modes|tower_skin|core_skin|line_flip|tutor|notes_seen|nick|title|fav:[^\x00-\x1f\x7f]{1,60})$")
 
 
 class Bad(ValueError):
@@ -27,7 +29,7 @@ class Bad(ValueError):
 
 
 def empty() -> dict:
-    return {"format": FORMAT, "best": {}, "ach": [], "codex": [], "seen": [], "counts": {}, "lww": {}}
+    return {"format": FORMAT, "best": {}, "ach": [], "codex": [], "seen": [], "counts": {}, "lww": {}, "tally": {}}
 
 
 def _int(v) -> int:
@@ -76,6 +78,13 @@ def clean(d) -> dict:
     for k, v in counts.items():
         if DEV_RE.match(k) and isinstance(v, list) and len(v) >= 2:
             out["counts"][k] = [_int(v[0]), _int(v[1])]
+    tally = d.get("tally", {})
+    if not isinstance(tally, dict) or len(tally) > 64:
+        raise Bad("tally")
+    for dev, kv in tally.items():
+        if not DEV_RE.match(dev) or not isinstance(kv, dict) or len(kv) > 400:
+            raise Bad("tally")
+        out["tally"][dev] = {k: _int(v) for k, v in kv.items() if ID_RE.match(k)}
     lww = d.get("lww", {})
     if not isinstance(lww, dict) or len(lww) > 600:
         raise Bad("lww")
@@ -102,6 +111,9 @@ def merge(a: dict, b: dict) -> dict:
     for k in set(a["counts"]) | set(b["counts"]):
         x, y = a["counts"].get(k, [0, 0]), b["counts"].get(k, [0, 0])
         out["counts"][k] = [max(x[0], y[0]), max(x[1], y[1])]
+    for dev in set(a["tally"]) | set(b["tally"]):
+        x, y = a["tally"].get(dev, {}), b["tally"].get(dev, {})
+        out["tally"][dev] = {k: max(x.get(k, 0), y.get(k, 0)) for k in set(x) | set(y)}
     for k in set(a["lww"]) | set(b["lww"]):
         if k not in a["lww"]:
             out["lww"][k] = b["lww"][k]
@@ -114,4 +126,9 @@ def merge(a: dict, b: dict) -> dict:
 
 def nick(d: dict) -> str:
     v = d["lww"].get("nick")
+    return v[1] if v and isinstance(v[1], str) else ""
+
+
+def title(d: dict) -> str:
+    v = d["lww"].get("title")
     return v[1] if v and isinstance(v[1], str) else ""

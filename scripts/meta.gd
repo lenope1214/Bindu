@@ -20,30 +20,24 @@ const TOWER_SKINS := {
 	"gem": {"name": "보석", "need": "boss"},
 	"ring": {"name": "고리", "need": "codex5"},
 	"star": {"name": "별", "need": "wave20"},
+	"flower": {"name": "꽃", "need": "wave30"},
+	"prism": {"name": "삼각", "need": "got_elem"},
+	"halo": {"name": "후광", "need": "solo30"},
 }
-const TOWER_SKIN_IDS := ["circle", "hex", "gem", "ring", "star"]
+const TOWER_SKIN_IDS := ["circle", "hex", "gem", "ring", "star", "flower", "prism", "halo"]
 
 const CORE_SKINS := {
 	"dot": {"name": "점", "need": ""},
 	"eye": {"name": "눈", "need": "wave15"},
 	"sun": {"name": "태양", "need": "allmaps"},
+	"crown": {"name": "왕관", "need": "boss25"},
+	"galaxy": {"name": "은하", "need": "bindu"},
 }
-const CORE_SKIN_IDS := ["dot", "eye", "sun"]
+const CORE_SKIN_IDS := ["dot", "eye", "sun", "crown", "galaxy"]
 
-const ACHIEVEMENTS := {
-	"first": {"name": "첫걸음", "desc": "웨이브 1 클리어"},
-	"wave10": {"name": "버티기", "desc": "웨이브 10 도달"},
-	"wave15": {"name": "수호자", "desc": "웨이브 15 도달"},
-	"wave20": {"name": "철벽", "desc": "웨이브 20 도달"},
-	"boss": {"name": "보스 사냥", "desc": "보스 처치"},
-	"codex5": {"name": "연금술사", "desc": "특수 반응 5종 발견 (도감)"},
-	"codex9": {"name": "현자", "desc": "특수 반응 모두 발견"},
-	"links3": {"name": "협공진", "desc": "한 판에 협공을 넣은 오브젝트 3개"},
-	"stack5": {"name": "무지개", "desc": "오브젝트 하나에 속성 5종"},
-	"combo30": {"name": "연쇄 폭발", "desc": "콤보 30 달성"},
-	"allmaps": {"name": "여행자", "desc": "모든 맵에서 웨이브 5 도달"},
-}
-const ACH_IDS := ["first", "wave10", "wave15", "wave20", "boss", "codex5", "codex9", "links3", "stack5", "combo30", "allmaps"]
+## 업적 정의는 Ach.LIST (등급·조건)
+static var ACHIEVEMENTS: Dictionary = Ach.names()
+static var ACH_IDS: Array = Ach.ids()
 
 # ---------- 저장되는 값 ----------
 static var map_id := "plain"
@@ -54,6 +48,9 @@ static var map_best := {}  # 맵 id -> [웨이브, 점수]
 static var achieved := {}  # 업적 id -> true
 static var codex := {}  # 발견한 반응 id -> true
 static var favs := {}  # 도감에서 선호 표시한 항목 (Codex.card_key 등) -> true
+static var tally := {}  # 업적·도감 수집용 누적 수 중 이 기기 몫 (Ach: "pick:elem:fire" 고른 횟수, "max:..." 한 판 최고)
+static var coin_streak := 0  # 운명의 동전 연속 앞면 (판을 넘어 이어짐, 이 기기만)
+static var title := ""  # 고른 칭호 (업적 id, 리더보드 닉네임 옆)
 static var total_kills := 0
 static var games := 0
 static var volume := 1.0
@@ -74,6 +71,7 @@ static var guide_seen := {}  # 이미 본 안내 id -> true
 static var tutor_next := true  # 다음 새 판은 카드 종류를 웨이브마다 하나씩 연다 (첫 판, 설정에서 다시 켬)
 static var notes_seen := ""  # 마지막으로 패치노트를 연 게임 버전 (다르면 시작 화면 버튼 강조)
 const FIELD := Vector2(1280, 720)  # 전장 크기. 화면비가 달라도(폰 20:9, 태블릿 4:3) 이 넓이만 쓰고 남는 곳은 배경·UI (main.arena)
+static var sim_phone := false  # 점검 도구(tools/shot.gd phone): 데스크톱에서 폰 화면 구성 흉내 (main._phone)
 static var ui_scale := 1.0  # 글자·버튼 크기 (UI_SCALES 중 하나). 폰은 기본 1.3
 static var modes: Array = []  # 시작 화면에서 고른 모드 (Modes). 다음 판에도 남는다
 const UI_SCALES := [1.0, 1.15, 1.3]
@@ -149,6 +147,9 @@ static func load_into(cfg: ConfigFile) -> void:
 	favs = val(cfg, "meta", "favs", {})
 	total_kills = val(cfg, "meta", "kills", 0)
 	games = val(cfg, "meta", "games", 0)
+	tally = val(cfg, "meta", "tally", {})
+	coin_streak = val(cfg, "meta", "coin_streak", 0)
+	title = val(cfg, "meta", "title", "")
 	volume = val(cfg, "settings", "volume", 1.0)
 	shake_on = val(cfg, "settings", "shake", true)
 	numbers_on = val(cfg, "settings", "numbers", true)
@@ -192,6 +193,8 @@ static func fix() -> void:
 		tower_skin = "circle"
 	if not CORE_SKINS.has(core_skin) or not unlocked(CORE_SKINS[core_skin]["need"]):
 		core_skin = "dot"
+	if title != "" and not (achieved.has(title) and Ach.can_title(title)):
+		title = ""
 
 
 static func save_into(cfg: ConfigFile) -> void:
@@ -206,6 +209,9 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("meta", "favs", favs)
 	cfg.set_value("meta", "kills", total_kills)
 	cfg.set_value("meta", "games", games)
+	cfg.set_value("meta", "tally", tally)
+	cfg.set_value("meta", "coin_streak", coin_streak)
+	cfg.set_value("meta", "title", title)
 	cfg.set_value("meta", "modes", modes)
 	cfg.set_value("settings", "volume", volume)
 	cfg.set_value("settings", "shake", shake_on)

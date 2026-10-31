@@ -656,6 +656,59 @@ func _meta_misc() -> void:
 	main.touch_ui = false
 	ok("UI-02", not t.contains("(Q)") and h.contains("[조작 · 터치]"), "터치 화면은 키 안내를 빼고 터치용 도움말")
 
+	# 폰 카드: 한 번 누르면 미리보기, 같은 카드를 한 번 더 누르면 고름 (마우스는 바로)
+	_fresh(3)
+	main.phase = main.Phase.CHOOSE
+	main.offer = [{"type": "elem", "e": Elem.WATER, "lv": 1}, {"type": "elem", "e": Elem.FIRE, "lv": 1}]
+	main._show_offer()
+	main.touch_ui = true
+	main._on_card_tap(main.offer[0], 0)
+	var tap1: bool = main.phase == main.Phase.CHOOSE and main.tap_sel == 0 and main.hover_elem == Elem.WATER
+	main._on_card_tap(main.offer[1], 1)
+	var tap2: bool = main.phase == main.Phase.CHOOSE and main.tap_sel == 1
+	main._on_card_tap(main.offer[1], 1)
+	var tap3: bool = main.phase == main.Phase.PLACE and main.picked.get("e", -1) == Elem.FIRE
+	main.touch_ui = false
+	main.phase = main.Phase.CHOOSE
+	main._show_offer()
+	main._on_card_tap(main.offer[0], 0)
+	var mouse1: bool = main.phase == main.Phase.PLACE
+	ok("UI-14", tap1 and tap2 and tap3 and mouse1, "터치 카드: 한 번 누르면 미리보기·다른 카드 누르면 바꿈·한 번 더 누르면 고름, 마우스는 바로 고름")
+	main.phase = main.Phase.CHOOSE
+
+	# 그린 궤적 터치: 손을 떼면 [확정]을 기다리고, 누르면 넣는다 (마우스는 떼자마자)
+	_fresh(3)
+	var pt := _tower(main.center() + Vector2(-200, 0))
+	main.touch_ui = true
+	main._start_draw(pt, [0], false)
+	main.draw_on = true
+	main.draw_pts = PackedVector2Array([pt.position, pt.position + Vector2(60, 0), pt.position + Vector2(120, 0)])
+	main.draw_len = 120.0
+	var before: int = pt.paths.size()
+	main._draw_release()
+	var waiting: bool = main.draw_wait and main.phase == main.Phase.DRAW and pt.paths.size() == before
+	main.draw_ok_btn.pressed.emit()
+	var done: bool = not main.draw_wait and pt.paths.size() > before and main.phase != main.Phase.DRAW
+	main.touch_ui = false
+	ok("PATH-02", waiting and done, "그린 궤적 터치: 손을 떼면 길을 남겨 두고 [확정]을 누르면 넣음")
+
+	# 전장 확대: 두 손가락 벌리기로 확대, 그동안 누르기는 게임에 안 넘어감, 다 떼면 풀림. [확대 풀기]로 1배
+	_fresh(3)
+	main.phase = main.Phase.CHOOSE
+	var t0 := InputEventScreenTouch.new(); t0.index = 0; t0.pressed = true; t0.position = Vector2(600, 360)
+	var t1 := InputEventScreenTouch.new(); t1.index = 1; t1.pressed = true; t1.position = Vector2(700, 360)
+	main._zoom_input(t0)
+	var lock1: bool = main._zoom_input(t1)
+	var dr := InputEventScreenDrag.new(); dr.index = 1; dr.position = Vector2(800, 360)
+	main._zoom_input(dr)
+	var zin: bool = main.view_zoom > 1.5 and main.view_rect().size.x < main.get_viewport_rect().size.x
+	t1.pressed = false; t0.pressed = false
+	main._zoom_input(t1)
+	var last: bool = main._zoom_input(t0)
+	var unlocked: bool = not main.pinch_lock and last
+	main._reset_zoom()
+	ok("UI-18", lock1 and zin and unlocked and is_equal_approx(main.view_zoom, 1.0) and main.arena().size == Meta.FIELD, "두 손가락 벌리기 = 전장 확대(x%.1f), 확대 중 누르기는 게임에 안 넘어감, [확대 풀기] = 1배, 전장 크기 그대로" % main.view_zoom)
+
 	# 웨이브 넘기기: 오브젝트가 있어야, 첫 판은 카드가 다 열린 뒤
 	_fresh(3)
 	var none: bool = main._can_skip()

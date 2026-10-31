@@ -67,7 +67,16 @@ var draw_skip := 0  # 방금 꺾임으로 센 뒤 다시 세지 않을 조각 �
 var auto_start := false  # 끄면 설치 후 Space로 웨이브 시작
 var auto_btn: Button
 var start_btn: Button
+var draw_ok_btn: Button  # 터치: 다 그린 길 [확정] (손을 떼자마자 넣으면 삐끗한 길을 되돌릴 수 없었다)
+var draw_wait := false  # 터치: 손을 뗀 뒤 [확정]을 기다리는 중
+var draw_aim := Vector2.ZERO  # 터치: 손가락 떨림을 줄인 그리기 목표점
 var cancel_btn: Button  # 옮기기·설치 중 화면 취소 (우클릭·Esc가 없는 터치 화면용)
+var detail_btn: Button  # 터치: 오브젝트 정보창 [자세히] (Shift 대신)
+var tip_tower: Tower = null  # 터치: 정보창에 보이던 오브젝트
+var tip_detail := false  # 터치로 [자세히]를 켰는지 (정보창이 사라지면 꺼짐)
+var tip_frame := -10  # 오브젝트 정보창을 마지막으로 그린 프레임
+var touch_tip_t := 0.0  # 터치: 누른 뒤 정보창을 보여 줄 남은 시간 (손을 뗀 자리에 정보창이 계속 남아 전장을 가리던 것)
+const TOUCH_TIP_SEC := 3.0
 var wave_leaks: Array = []  # 이번 웨이브에 중앙에 닿은 구체 [나온 방향 번호, 종류, 피해]
 var leak_log: Array = []  # 웨이브마다 누수 요약 (봇·통계·안내용)
 var leak_flash: Array = []  # 화면 가장자리 붉은 번짐 [자리, 남은 시간]
@@ -104,6 +113,14 @@ var fx_pick: OptionButton  # 아래 버튼 줄: 그 세기 고르기
 var popups: Array = []  # [위치, 글자, 남은 시간, 색, 큰 글씨]
 var particles: Array = []  # [위치, 속도, 남은 시간, 색, 크기]
 var camera: Camera2D
+var view_zoom := 1.0  # 전장 확대 배율 (두 손가락 벌리기·마우스 휠)
+var view_pan := Vector2.ZERO  # 확대한 화면 가운데가 전장 가운데에서 벗어난 만큼
+var touches := {}  # 터치 번호 → 화면 자리 (두 손가락 확대·이동)
+var pinch_d := 0.0  # 두 손가락 사이 거리 (확대 시작할 때)
+var pinch_z := 1.0
+var pinch_lock := false  # 두 손가락을 댄 뒤 모든 손가락을 뗄 때까지 누르기·끌기를 막는다 (확대하다 설치되지 않게)
+var mid_drag := false  # PC: 휠 누른 채 끌어 화면 이동
+var zoom_btn: Button
 var shake := 0.0
 var core_flash := 0.0
 var danger_lv := 0  # 중앙 위험 단계: 0 보통, 1 체력 50% 이하, 2 25% 이하
@@ -140,6 +157,8 @@ var over_label: Label
 var legend: Label
 var bar_box: HBoxContainer  # 오른쪽 아래 버튼 줄
 var reroll_btn: Button
+var apply_btn: Button  # 폰: 한 번 누른 카드 아래의 [적용]
+var tap_sel := -1  # 폰: 한 번 눌러 미리보기 중인 카드 번호 (0부터). 같은 카드를 한 번 더 누르거나 [적용]을 누르면 고른다
 var skip_btn: Button  # 웨이브 넘기기 (S)
 var skip_n_btn: Button  # 넘길 웨이브 수 바꾸기
 var skip_badge: Button  # 넘기는 중 표시, 누르면 멈추기
@@ -248,6 +267,7 @@ var modes_btn: Button
 var modes_head: Label
 var modes_btns := {}  # 모드 id -> 켜고 끄는 버튼
 var new_achievements: Array = []  # 이번 판에 새로 달성한 업적 이름
+var ach_dirty := false  # 이번 프레임에 처치가 있었다: 업적 조건을 한 번 본다
 var help_label: Label
 var help_scroll: ScrollContainer
 var hover_elem := -1  # 마우스를 올린 선택지의 속성
@@ -320,6 +340,8 @@ func _ready() -> void:
 	Tower.reach_mul = 1.0
 	sfx = Sfx.new()
 	add_child(sfx)
+	Ach.perk_ids = PERKS.map(func(pk): return pk["id"])
+	Ach.new_run()
 	_load_best()
 	if Meta.device_id == "":
 		Meta.device_id = Crypto.new().generate_random_bytes(16).hex_encode()
@@ -346,6 +368,7 @@ func _ready() -> void:
 		stars.append(Vector3(randf() * Meta.FIELD.x, randf() * Meta.FIELD.y, randf_range(0.03, 0.12)))
 	_build_ui()
 	_apply_ui_scale()
+	_ach_catch_up()
 	_apply_volume()
 	_update_speed_btn()
 	net = Net.new()
@@ -367,6 +390,7 @@ func _ready() -> void:
 	net.runs_listed.connect(_on_runs_listed)
 	net.run_claimed.connect(_on_run_claimed)
 	net.run_moved.connect(_on_run_moved)
+	net.rates_loaded.connect(func(): if codex_panel.visible: codex_panel._draw_list())
 	updater = Updater.new()
 	add_child(updater)
 	updater.cleanup()
@@ -400,6 +424,11 @@ func _notification(what: int) -> void:
 		esc.keycode = KEY_ESCAPE
 		esc.pressed = true
 		Input.parse_input_event(esc)
+	# 앱이 뒤로 가면 뗀 손가락 이벤트를 못 받을 수 있다: 두 손가락 확대 상태를 비운다
+	if what in [NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_WM_WINDOW_FOCUS_OUT]:
+		touches.clear()
+		pinch_lock = false
+		mid_drag = false
 	# 창을 닫거나 (모바일) 앱이 뒤로 가면 지금 쉬는 시간 상태를 한 번 더 저장 (옮긴 위치까지)
 	if (what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED) and towers and title_label:
 		_save_run()
@@ -411,6 +440,11 @@ func _layer(n: String) -> Node2D:
 	node.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(node)
 	return node
+
+
+## 폰·태블릿 화면 구성 (작은 화면에 손가락 크기 버튼). 점검 도구는 Meta.sim_phone으로 흉내 낸다.
+func _phone() -> bool:
+	return OS.has_feature("mobile") or Meta.sim_phone
 
 
 func center() -> Vector2:
@@ -425,7 +459,49 @@ func arena() -> Rect2:
 ## 지금 화면에 보이는 월드 영역. 화면이 16:9보다 길면(폰) 전장 양옆까지, 4:3이면(태블릿) 위아래까지 보인다.
 func view_rect() -> Rect2:
 	var vs := get_viewport_rect().size
+	if camera == null or is_equal_approx(view_zoom, 1.0):
+		return Rect2((Meta.FIELD - vs) / 2.0, vs)
+	var s := vs / view_zoom
+	return Rect2(camera.position - s / 2.0, s)
+
+
+## 확대하지 않았을 때 보이는 월드 영역 (확대한 화면이 이 밖으로 나가지 않게).
+func full_view() -> Rect2:
+	var vs := get_viewport_rect().size
 	return Rect2((Meta.FIELD - vs) / 2.0, vs)
+
+
+## 전장 확대: 1~ZOOM_MAX배, at(화면 좌표)이 가리키는 월드 점이 그 자리에 남게. 화면은 전장 밖으로 나가지 않는다.
+const ZOOM_MAX := 2.5
+func _zoom_to(z: float, at: Vector2) -> void:
+	var vs := get_viewport_rect().size
+	var before := camera.position + (at - vs / 2.0) / view_zoom
+	view_zoom = clampf(z, 1.0, ZOOM_MAX)
+	view_pan = before - (at - vs / 2.0) / view_zoom - center()
+	_clamp_pan()
+
+
+func _pan_by(screen_d: Vector2) -> void:
+	view_pan -= screen_d / view_zoom
+	_clamp_pan()
+
+
+func _clamp_pan() -> void:
+	var fv := full_view()
+	var hs := get_viewport_rect().size / view_zoom / 2.0
+	var c := center() + view_pan
+	c.x = clampf(c.x, fv.position.x + hs.x, fv.end.x - hs.x)
+	c.y = clampf(c.y, fv.position.y + hs.y, fv.end.y - hs.y)
+	view_pan = c - center()
+	if camera:
+		camera.zoom = Vector2(view_zoom, view_zoom)
+		camera.position = center() + view_pan
+
+
+func _reset_zoom() -> void:
+	view_zoom = 1.0
+	view_pan = Vector2.ZERO
+	_clamp_pan()
 
 
 ## 지키는 중앙 점. 회랑 맵은 화면 가운데가 아니라 구체가 오는 반대쪽 끝(문 가운데).
@@ -548,6 +624,16 @@ func _build_ui() -> void:
 	range_btn.pressed.connect(func(): range_all = not range_all)
 	range_btn.visible = false
 	root.add_child(range_btn)
+	# 확대했을 때만: 1배로 돌아가기
+	zoom_btn = Button.new()
+	zoom_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	zoom_btn.position = Vector2(-400, 10)
+	zoom_btn.size = Vector2(112, 30)
+	zoom_btn.focus_mode = Control.FOCUS_NONE
+	zoom_btn.add_theme_font_size_override("font_size", 14)
+	zoom_btn.pressed.connect(_reset_zoom)
+	zoom_btn.visible = false
+	root.add_child(zoom_btn)
 	legend.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # 긴 줄이 화면 밖으로 잘리지 않게
 	legend.add_theme_font_size_override("font_size", 14)
 	# 옅은 바탕: 지나가는 구체 위에서도, 글자를 키워(설정) 카드와 겹칠 때도 읽히게
@@ -569,6 +655,24 @@ func _build_ui() -> void:
 	reroll_btn.pressed.connect(_on_reroll)
 	reroll_btn.visible = false
 	root.add_child(reroll_btn)
+
+	apply_btn = Button.new()
+	apply_btn.text = "적용"
+	apply_btn.focus_mode = Control.FOCUS_NONE
+	apply_btn.add_theme_font_size_override("font_size", 17)
+	# 카드 글 위에 걸치므로 꽉 찬 바탕 (다른 버튼처럼 옅으면 카드 글과 섞인다)
+	for st in ["normal", "hover", "pressed"]:
+		var asb := StyleBoxFlat.new()
+		asb.bg_color = Color(1.0, 0.82, 0.4) if st == "normal" else Color(1.0, 0.9, 0.6)
+		asb.set_corner_radius_all(6)
+		apply_btn.add_theme_stylebox_override(st, asb)
+	for fc in ["font_color", "font_hover_color", "font_pressed_color"]:
+		apply_btn.add_theme_color_override(fc, Color(0.12, 0.09, 0.02))
+	apply_btn.pressed.connect(func():
+		if tap_sel >= 0 and tap_sel < offer.size():
+			_on_pick(offer[tap_sel]))
+	apply_btn.visible = false
+	root.add_child(apply_btn)
 
 	skip_btn = Button.new()
 	skip_btn.set_anchors_preset(Control.PRESET_CENTER)
@@ -625,11 +729,13 @@ func _build_ui() -> void:
 	mute_btn = Button.new()
 	mute_btn.custom_minimum_size = Vector2(44, 36)
 	mute_btn.pressed.connect(_toggle_mute)
+	mute_btn.pressed.connect(_icon_toast.bind(mute_btn))
 	_icon_btn(mute_btn, func(): return ["mute" if sfx.muted else "sound", Color(1, 1, 1, 0.9)])
 	bar.add_child(mute_btn)
 	auto_btn = Button.new()
 	auto_btn.custom_minimum_size = Vector2(44, 36)
 	auto_btn.pressed.connect(_toggle_auto)
+	auto_btn.pressed.connect(_icon_toast.bind(auto_btn))
 	_icon_btn(auto_btn, func(): return ["auto", Color(0.5, 0.9, 0.6) if auto_start else Color(1, 1, 1, 0.35)])
 	bar.add_child(auto_btn)
 	pause_btn = Button.new()
@@ -674,6 +780,30 @@ func _build_ui() -> void:
 	cancel_btn.pressed.connect(_cancel_step)
 	cancel_btn.visible = false
 	root.add_child(cancel_btn)
+	draw_ok_btn = Button.new()
+	draw_ok_btn.text = "확정"
+	draw_ok_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	draw_ok_btn.position = Vector2(-70.0 + 150.0, -100.0)  # 취소 오른쪽
+	draw_ok_btn.size = Vector2(140, 40)
+	draw_ok_btn.add_theme_font_size_override("font_size", 18)
+	draw_ok_btn.focus_mode = Control.FOCUS_NONE
+	draw_ok_btn.pressed.connect(func():
+		if phase == Phase.DRAW and draw_wait:
+			draw_wait = false
+			_draw_commit())
+	draw_ok_btn.visible = false
+	root.add_child(draw_ok_btn)
+	detail_btn = Button.new()
+	detail_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	detail_btn.position = Vector2(-70.0 - 130.0, -100.0)  # 취소 왼쪽
+	detail_btn.size = Vector2(120, 40)
+	detail_btn.add_theme_font_size_override("font_size", 18)
+	detail_btn.focus_mode = Control.FOCUS_NONE
+	detail_btn.pressed.connect(func():
+		tip_detail = not tip_detail
+		touch_tip_t = TOUCH_TIP_SEC * 3.0)  # 자세히는 읽을 게 많아 더 오래
+	detail_btn.visible = false
+	root.add_child(detail_btn)
 	for b in [pause_btn, speed_btn, reroll_btn, skip_btn, skip_n_btn, skip_badge, auto_btn, start_btn, mute_btn, cancel_btn, bar_btn]:
 		b.focus_mode = Control.FOCUS_NONE
 	_update_auto_btn()
@@ -997,9 +1127,33 @@ func _apply_ui_scale() -> void:
 	var s: float = Meta.ui_scale
 	legend_rx_rows = 999  # 글자 크기가 바뀌면 설명 반응 줄 수를 다시 맞춘다
 	ui_root.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	ui_root.position = Vector2.ZERO
+	# 폰: 노치·둥근 모서리·홈 막대 자리(안전 영역 밖)는 비운다 (화면비를 넓힌 뒤 가장자리 UI가 노치 밑에 깔릴 수 있다)
+	var pad := _safe_pad()
+	ui_root.position = Vector2(pad.position.x, pad.position.y)
 	ui_root.scale = Vector2(s, s)
-	ui_root.size = get_viewport_rect().size / s
+	ui_root.size = (get_viewport_rect().size - Vector2(pad.position.x + pad.size.x, pad.position.y + pad.size.y)) / s
+	if pause_dim:
+		# 일시정지 어둠은 안전 영역 밖까지 덮는다
+		pause_dim.offset_left = -pad.position.x / s
+		pause_dim.offset_top = -pad.position.y / s
+		pause_dim.offset_right = pad.size.x / s
+		pause_dim.offset_bottom = pad.size.y / s
+
+
+## 안전 영역 밖 여백 (화면 좌표, position = 왼쪽·위, size = 오른쪽·아래). 폰·태블릿만.
+func _safe_pad() -> Rect2:
+	if not OS.has_feature("mobile") or DisplayServer.get_name() == "headless":
+		return Rect2()
+	var win := Vector2(DisplayServer.window_get_size())
+	var safe := Rect2(DisplayServer.get_display_safe_area())
+	if win.x <= 0.0 or win.y <= 0.0 or safe.size.x <= 0.0 or safe.size.y <= 0.0:
+		return Rect2()
+	var k := get_viewport_rect().size / win  # 화면 픽셀 → 뷰포트 좌표
+	var l := clampf(safe.position.x, 0.0, win.x * 0.15) * k.x
+	var t := clampf(safe.position.y, 0.0, win.y * 0.15) * k.y
+	var r := clampf(win.x - safe.end.x, 0.0, win.x * 0.15) * k.x
+	var b := clampf(win.y - safe.end.y, 0.0, win.y * 0.15) * k.y
+	return Rect2(l, t, r, b)
 
 
 ## 화면보다 커지는 창(줄이 많거나 글자를 키웠을 때)은 줄여서 맞춘다. 가운데 창이라 위아래 여백이 같고, 아래는 버튼 줄을 비운다.
@@ -1251,6 +1405,7 @@ func _start_choose(new_round := true) -> void:
 		tutor_given = {}
 		start_modes()
 		run_id = _new_run_id()
+		Ach.new_run()
 	if new_round and tutor and wave + 1 >= TUTOR_OPEN.values().max() and Meta.tutor_next:
 		Meta.tutor_next = false  # 모두 열렸다: 다음 판부터는 처음부터 모두
 		_save_best()
@@ -1347,6 +1502,8 @@ func _take_bank() -> void:
 ## 넘기기를 끝내고 쌓인 것을 연다: 특성부터 하나씩, 그다음 카드.
 ## now_rest: 이번 쉬는 시간의 다음 웨이브를 이미 뽑아 둔 채(넘기기 대기 중) 멈췄나.
 func _end_skip(now_rest: bool) -> void:
+	if not now_rest and not skip_stop:
+		Ach.on_skip_done(skip_total)  # 멈추지 않고 끝까지 넘김
 	skip_left = 0
 	skip_stop = false
 	countdown = -1.0
@@ -1491,6 +1648,7 @@ func _card_open(k: String) -> bool:
 
 ## 선택지 카드 버튼을 offer대로 다시 만든다.
 func _show_offer() -> void:
+	tap_sel = -1
 	for c in choice_box.get_children():
 		c.queue_free()
 	for i in offer.size():
@@ -1631,11 +1789,14 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 	b.focus_mode = Control.FOCUS_NONE  # 다른 버튼처럼: Space·Enter가 카드를 고르지 않게
 	b.add_theme_color_override("font_color", col)
 	b.add_theme_color_override("font_hover_color", col.lightened(0.3))
-	b.pressed.connect(_on_pick.bind(card))
+	b.pressed.connect(_on_card_tap.bind(card, idx - 1))
 	_mark_fav(b, sb, sbh, _fav_tag(card))
 	if card["type"] == "elem":
-		b.mouse_entered.connect(func(): hover_elem = card["e"])
-		b.mouse_exited.connect(func(): hover_elem = -1)
+		# 터치는 누르는 순간 마우스가 들어와 미리보기가 보이기도 전에 골라졌다: 터치는 한 번 누르기(_on_card_tap)로 미리보기
+		b.mouse_entered.connect(func():
+			if not touch_ui: hover_elem = card["e"])
+		b.mouse_exited.connect(func():
+			if not touch_ui: hover_elem = -1)
 	return b
 
 
@@ -1701,6 +1862,8 @@ func _choose_hint() -> String:
 	if Meta.games >= 3:
 		return ""
 	# 선택지 내리기(V)는 카드 아래 버튼에 적혀 있다
+	if touch_ui:
+		return "카드를 한 번 누르면 미리보기, 한 번 더 누르거나 [적용]으로 고르기. 설치된 오브젝트 누르기: 방향 바꾸기 · 끌기: 옮기기"
 	return "선택지를 고르세요. 설치된 오브젝트 클릭: 방향 바꾸기 · 끌기: 옮기기"
 
 
@@ -1869,6 +2032,7 @@ func _on_perk(pk: Dictionary) -> void:
 	var id: String = pk["id"]
 	perks[id] = perks.get(id, 0) + 1
 	run_log.append({"w": wave, "k": "perk", "o": perk_offer.map(func(x): return "perk:" + x["id"]), "p": "perk:" + id})
+	Ach.on_pick("perk:" + id)
 	if id == "coin":
 		# 운명의 동전: 지금 던지고 특성 3개를 새로 받는다 (뒷면도 보통 특성 하나보다 조금 낫게)
 		coin_next = "double" if randf() < 0.5 else "reroll"
@@ -1948,6 +2112,8 @@ func _coin_land() -> void:
 ## 연출이 끝나 결과대로 특성 3개를 새로 받는다.
 func _coin_done() -> void:
 	coin_stage = 0
+	Ach.on_coin(coin_next == "double")
+	_ach_check()
 	if coin_fx:
 		coin_fx.visible = false
 		coin_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -2093,6 +2259,7 @@ func _on_reroll() -> void:
 		_show_toast("이번 쉬는 시간의 새로고침을 다 썼어요")  # Q를 눌러도 아무 일이 없던 것
 		return
 	rerolls_left -= 1
+	Ach.on_reroll()
 	_log_offer({})
 	_make_choices()
 	_update_reroll_btn()
@@ -2107,6 +2274,7 @@ func _set_cards_hidden(h: bool) -> void:
 	cards_hidden = h
 	choice_box.visible = not h
 	hover_elem = -1
+	_tap_hover()  # 다시 올리면 터치로 고르던 카드 미리보기도 다시
 	if perk_mode:
 		reroll_btn.visible = false
 	else:
@@ -2580,7 +2748,42 @@ func _draw_boss_path(now: float) -> void:
 	draw_string(ui_font, lp, label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1, 0.75, 0.85))
 
 
+## 폰 [적용] 버튼: 미리보기 중인 카드 오른쪽 위 모서리에 걸친다 (왼쪽 위는 고르기 꼬리표, 카드 아래는 새로고침 줄)
+func _place_apply_btn() -> void:
+	var cs := choice_box.get_children() if choice_box else []
+	var on := touch_ui and phase == Phase.CHOOSE and not perk_mode and choice_box.visible and not cards_hidden \
+		and tap_sel >= 0 and tap_sel < cs.size() and not cs[tap_sel].is_queued_for_deletion() and not get_tree().paused
+	apply_btn.visible = on
+	if not on:
+		return
+	var r: Rect2 = ui_root.get_global_transform().affine_inverse() * cs[tap_sel].get_global_rect()
+	var w := minf(120.0, r.size.x * 0.5)
+	apply_btn.size = Vector2(w, 34.0)
+	apply_btn.position = Vector2(r.end.x - w - 10.0, r.position.y - 24.0)
+
+
+## 카드 누르기. 마우스는 바로 고르고(올리면 미리보기), 터치는 한 번 누르면 미리보기(다른 카드는 옅게, 아래에 [적용]),
+## 같은 카드를 한 번 더 누르거나 [적용]을 누르면 고른다.
+func _on_card_tap(card: Dictionary, i: int) -> void:
+	if not touch_ui or tap_sel == i:
+		_on_pick(card)
+		return
+	tap_sel = i
+	_tap_hover()
+
+
+## 터치로 고른(미리보기 중인) 카드의 속성 미리보기와 카드 진하기.
+func _tap_hover() -> void:
+	if tap_sel >= 0 and tap_sel < offer.size() and not cards_hidden:
+		hover_elem = offer[tap_sel]["e"] if offer[tap_sel]["type"] == "elem" else -1
+	var cs := choice_box.get_children()
+	for k in cs.size():
+		cs[k].modulate.a = 0.55 if tap_sel >= 0 and k != tap_sel else 1.0
+
+
 func _on_pick(card: Dictionary) -> void:
+	tap_sel = -1
+	_tap_hover()
 	if card["type"] == "cata":
 		_cataclysm(card["id"])
 		return
@@ -2636,6 +2839,7 @@ func _place_hint() -> String:
 ## card: 이번에 넣은 카드 (대격변은 picked를 거치지 않아 따로 넘긴다).
 func _after_place(card: Dictionary = {}) -> void:
 	_log_offer(picked if card.is_empty() else card)
+	Ach.on_pick(_stat_key(picked if card.is_empty() else card))
 	_check_progress()
 	picks_left -= 1
 	if not bank_picks.is_empty():
@@ -2674,6 +2878,12 @@ func _icon_btn(b: Button, icon: Callable) -> void:
 			var tw := b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x
 			x = (b.size.x - tw) / 2.0 - 13.0
 		Icons.draw(b, ic[0], Vector2(x, b.size.y / 2.0), 8.5, ic[1]))
+
+
+## 터치는 말풍선(tooltip)을 볼 수 없어 글 없는 아이콘 버튼이 무엇을 바꿨는지 몰랐다: 누르면 이름·상태를 잠깐 띄운다.
+func _icon_toast(b: Button) -> void:
+	if touch_ui and b.tooltip_text != "":
+		_show_toast(_kh(b.tooltip_text.get_slice("\n", 0)))
 
 
 func _toggle_mute() -> void:
@@ -2748,6 +2958,8 @@ func _start_wave() -> void:
 	for w in [10, 15, 20]:
 		if wave >= w:
 			_achieve("wave%d" % w)
+	Ach.on_wave_start(wave, towers.get_children(), Meta.map_id)
+	_ach_check()
 	spawn_interval = maxf(0.35, 1.2 - wave * 0.06)
 	spawn_timer = 0.5
 	wave_time = 0.0
@@ -2784,6 +2996,8 @@ func _game_over() -> void:
 		best_wave = maxi(wave, prev[0])
 	Meta.total_kills += kills
 	Meta.games += 1
+	Ach.live_kills = 0
+	_ach_check()
 	if tutor:
 		Meta.tutor_next = false
 	_save_best()
@@ -2821,9 +3035,88 @@ func _game_over() -> void:
 
 # ---------- 입력 ----------
 
+## 두 손가락 벌리기·모으기 = 확대, 두 손가락 끌기 = 이동. PC는 휠 = 확대(커서 쪽), 휠 누른 채 끌기 = 이동.
+## 처리했으면 true (그 입력은 게임·UI로 넘기지 않는다).
+func _zoom_input(event: InputEvent) -> bool:
+	if title_label == null or title_label.visible or phase == Phase.GAMEOVER:
+		touches.clear()
+		pinch_lock = false
+		return false
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			touches[event.index] = event.position
+		else:
+			touches.erase(event.index)
+		if touches.size() >= 2:
+			if not pinch_lock:
+				pinch_lock = true
+				_abort_touch_action()  # 첫 손가락이 시작한 놓기·끌기·그리기를 거둔다
+			var ps: Array = touches.values()
+			pinch_d = maxf((ps[0] as Vector2).distance_to(ps[1]), 1.0)
+			pinch_z = view_zoom
+		elif touches.is_empty():
+			var was := pinch_lock
+			pinch_lock = false
+			return was  # 마지막 손가락을 뗀 것도 누르기로 치지 않는다
+		return pinch_lock
+	if event is InputEventScreenDrag:
+		if not touches.has(event.index):
+			return pinch_lock
+		var prev: Vector2 = touches[event.index]
+		touches[event.index] = event.position
+		if touches.size() >= 2 and pinch_lock:
+			var ps: Array = touches.values()
+			var d := maxf((ps[0] as Vector2).distance_to(ps[1]), 1.0)
+			var mid: Vector2 = ((ps[0] as Vector2) + (ps[1] as Vector2)) / 2.0
+			_zoom_to(pinch_z * d / pinch_d, mid)
+			_pan_by((event.position - prev) / 2.0)  # 두 손가락의 가운데가 움직인 만큼
+			return true
+		return pinch_lock
+	if pinch_lock and (event is InputEventMouseButton or event is InputEventMouseMotion):
+		return true  # 손가락에서 흉내 낸 마우스
+	if event is InputEventMouseButton and event.device != InputEvent.DEVICE_ID_EMULATION:
+		if event.button_index == MOUSE_BUTTON_MIDDLE:
+			mid_drag = event.pressed and view_zoom > 1.0
+			return mid_drag or not event.pressed
+		if event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN] and not _over_scroll_ui(event.position):
+			_zoom_to(view_zoom * (1.15 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / 1.15), event.position)
+			return true
+	if event is InputEventMouseMotion and mid_drag:
+		_pan_by(event.relative)
+		return true
+	return false
+
+
+## 휠을 굴릴 창(도감·패치노트·도움말·DPS 표 등)이 마우스 아래 있으면 확대하지 않는다.
+func _over_scroll_ui(p: Vector2) -> bool:
+	var h := get_viewport().gui_get_hovered_control() if get_viewport().has_method("gui_get_hovered_control") else null
+	if h != null and h != ui_root and h != info:
+		return true
+	return settings_panel.visible or notes_panel.visible or help_label.visible or records_panel.visible or codex_panel.visible or get_tree().paused
+
+
+## 두 번째 손가락이 닿으면: 첫 손가락으로 시작한 누르기·끌기·그리기·상자 선택을 없던 일로.
+func _abort_touch_action() -> void:
+	if phase == Phase.DRAW and draw_on:
+		draw_on = false
+		draw_pts = PackedVector2Array()
+		draw_len = 0.0
+	if press_t:
+		_drop_press()
+		_restore_hint()
+	boxing = false
+	if dragging and moving:
+		_cancel_step()
+
+
 ## 터치인지 마우스인지 기억한다 (터치에서 흉내 낸 마우스 움직임은 장치 번호가 EMULATION).
 func _input(event: InputEvent) -> void:
+	if _zoom_input(event):
+		get_viewport().set_input_as_handled()
+		return
 	var was_touch := touch_ui
+	if event is InputEventScreenTouch or event is InputEventScreenDrag:
+		touch_tip_t = TOUCH_TIP_SEC
 	if event is InputEventScreenTouch:
 		touch_ui = true
 		if event.pressed:
@@ -3281,12 +3574,13 @@ func _build_menu(root: Control) -> void:
 	desc.add_theme_font_size_override("font_size", 19)
 	desc.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
 	desc.text = "밖에서 몰려오는 구체를 막아 중앙 점을 지키세요\n공격방식·속성·강화·연계를 조합해 오브젝트를 키우세요"
+	desc.visible = not _phone()  # 폰: 줄을 줄여야 시작 화면을 덜 줄여서 버튼이 손가락 크기로 남는다
 	box.add_child(desc)
 	map_label = _menu_row(box, func(): _cycle_map(-1), func(): _cycle_map(1))
 	flip_label = _menu_row(box, _toggle_flip, _toggle_flip)
 	rules_label = _menu_row(box, func(): _cycle_rules(-1), func(): _cycle_rules(1))
 	modes_btn = Button.new()
-	modes_btn.custom_minimum_size = Vector2(580, 40)
+	modes_btn.custom_minimum_size = Vector2(580, 56 if _phone() else 40)
 	modes_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	modes_btn.focus_mode = Control.FOCUS_NONE
 	modes_btn.add_theme_font_size_override("font_size", 17)
@@ -3309,7 +3603,7 @@ func _build_menu(root: Control) -> void:
 	for spec in specs:
 		var b := Button.new()
 		b.text = spec[0]
-		b.custom_minimum_size = Vector2(150 if specs.size() <= 4 else 120 if specs.size() == 5 else 100, 44)
+		b.custom_minimum_size = Vector2(150 if specs.size() <= 4 else 120 if specs.size() == 5 else 100, 60 if _phone() else 44)
 		b.focus_mode = Control.FOCUS_NONE
 		b.pressed.connect(spec[1])
 		row.add_child(b)
@@ -3317,7 +3611,7 @@ func _build_menu(root: Control) -> void:
 	new_btn = row.get_child(0)
 	# 이어하기: 저장된 판이 있을 때만 (쉬는 시간마다 자동 저장)
 	continue_btn = Button.new()
-	continue_btn.custom_minimum_size = Vector2(630, 48)
+	continue_btn.custom_minimum_size = Vector2(630, 60 if _phone() else 48)
 	continue_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	continue_btn.focus_mode = Control.FOCUS_NONE
 	continue_btn.add_theme_font_size_override("font_size", 19)
@@ -3326,7 +3620,7 @@ func _build_menu(root: Control) -> void:
 	box.add_child(continue_btn)
 	box.move_child(continue_btn, row.get_index())
 	remote_btn = Button.new()
-	remote_btn.custom_minimum_size = Vector2(630, 44)
+	remote_btn.custom_minimum_size = Vector2(630, 56 if _phone() else 44)
 	remote_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	remote_btn.focus_mode = Control.FOCUS_NONE
 	remote_btn.add_theme_font_size_override("font_size", 17)
@@ -3348,14 +3642,14 @@ func _build_menu(root: Control) -> void:
 	_build_mp_lobby(root)
 	# 온라인: 새 버전 알림, 패치 공지 (서버에서 받았을 때만 보임)
 	update_btn = Button.new()
-	update_btn.custom_minimum_size = Vector2(630, 40)
+	update_btn.custom_minimum_size = Vector2(630, 56 if _phone() else 40)
 	update_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	update_btn.focus_mode = Control.FOCUS_NONE
 	update_btn.add_theme_color_override("font_color", Color(1, 0.85, 0.45))
 	update_btn.visible = false
 	box.add_child(update_btn)
 	notes_btn = Button.new()
-	notes_btn.custom_minimum_size = Vector2(320, 36)
+	notes_btn.custom_minimum_size = Vector2(320, 52 if _phone() else 36)
 	notes_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	notes_btn.focus_mode = Control.FOCUS_NONE
 	notes_btn.pressed.connect(_toggle_notes)
@@ -3412,8 +3706,10 @@ func _build_menu(root: Control) -> void:
 	settings_panel = PanelContainer.new()
 	settings_panel.z_index = 22  # 일시정지 어둠(z 20) 위에
 	settings_panel.set_anchors_preset(Control.PRESET_CENTER)
-	settings_panel.position = Vector2(-240, 0)
-	settings_panel.size = Vector2(480, 0)
+	# 폰: 켜기·끄기 줄을 두 칸으로 나누고 줄을 손가락 크기로 (한 칸이면 창이 화면보다 길어져 줄어들고 줄이 3mm 남짓이었다)
+	var sw := 920.0 if _phone() else 480.0
+	settings_panel.position = Vector2(-sw / 2.0, 0)
+	settings_panel.size = Vector2(sw, 0)
 	settings_panel.grow_vertical = Control.GROW_DIRECTION_BOTH  # 내용 높이에 맞춰 위아래로 자라 가운데에 (온라인 줄이 생기면 아래가 잘리던 것)
 	settings_panel.add_theme_stylebox_override("panel", rsb.duplicate())
 	settings_panel.visible = false
@@ -3466,6 +3762,14 @@ func _build_menu(root: Control) -> void:
 			_save_best())
 		zrow.add_child(zb)
 	sv.add_child(zrow)
+	var cbox: Container = sv
+	if _phone():
+		var grid := GridContainer.new()
+		grid.columns = 2
+		grid.add_theme_constant_override("h_separation", 18)
+		grid.add_theme_constant_override("v_separation", 4)
+		sv.add_child(grid)
+		cbox = grid
 	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 첫 글자)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"], ["웨이브 넘기기 중 중앙이 위험하면 멈춤 (체력 50%)", "skip_danger"], ["효과 줄이기 (장판·터지는 효과를 옅게, 많을수록 더)", "fx_low"]]:
 		var cb := CheckButton.new()
 		cb.text = spec[0]
@@ -3492,7 +3796,7 @@ func _build_menu(root: Control) -> void:
 					for t in towers.get_children():
 						t.queue_redraw()
 			_save_best())
-		sv.add_child(cb)
+		cbox.add_child(cb)
 	var gc := CheckButton.new()
 	gc.text = "처음 안내 보기 (처음 생기는 일에 한 줄 설명)"
 	gc.button_pressed = Meta.guide_on
@@ -3502,7 +3806,7 @@ func _build_menu(root: Control) -> void:
 		if not on:
 			guide_lines.clear()
 		_save_best())
-	sv.add_child(gc)
+	cbox.add_child(gc)
 	var gr := Button.new()
 	gr.text = "안내 처음부터 다시 보기"
 	gr.tooltip_text = "본 안내를 지우고, 다음 새 판은 첫 판처럼 카드 종류를 웨이브마다 하나씩 엽니다"
@@ -3523,7 +3827,7 @@ func _build_menu(root: Control) -> void:
 		oc.toggled.connect(func(on):
 			Meta.online_on = on
 			_save_best())
-		sv.add_child(oc)
+		cbox.add_child(oc)
 		var nrow := HBoxContainer.new()
 		var nl := Label.new()
 		nl.text = "닉네임"
@@ -3567,6 +3871,12 @@ func _build_menu(root: Control) -> void:
 	close.pressed.connect(_toggle_settings)
 	brow.add_child(close)
 	sv.add_child(brow)
+	if _phone():
+		for c: Control in settings_panel.find_children("*", "", true, false):
+			if c is BaseButton or c is LineEdit or c is HSlider:
+				c.custom_minimum_size.y = maxf(c.custom_minimum_size.y, 52.0)
+			if c is CheckButton:
+				c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_refresh_menu()
 
 
@@ -3607,10 +3917,13 @@ func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0) ->
 func _refresh_menu() -> void:
 	var m: Dictionary = Meta.MAPS[Meta.map_id]
 	var best := Meta.best_of(Meta.run_key())
-	map_label.text = _kh("맵: %s  (←/→)\n%s\n최고 기록%s  웨이브 %d · 점수 %s" % [Meta.map_name(), m["desc"], " (쉽게 모드)" if Modes.easy() else "", best[0], num(best[1])])
+	# 폰: 맵 설명 줄은 뺀다 (도움말·도감에 있고, 줄이 많으면 시작 화면 전체가 줄어 버튼이 작아진다)
+	map_label.text = _kh("맵: %s  (←/→)\n%s최고 기록%s  웨이브 %d · 점수 %s" % [Meta.map_name(), "" if _phone() else m["desc"] + "\n", " (쉽게 모드)" if Modes.easy() else "", best[0], num(best[1])])
 	flip_label.get_parent().visible = Meta.map_id == "line"
 	flip_label.text = _kh("구체가 오는 쪽: %s  (F)" % ("왼쪽 → 문은 오른쪽 끝" if Meta.line_flip else "오른쪽 → 문은 왼쪽 끝"))
-	rules_label.text = _kh("규칙: %s%s  %s\n%s" % [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", "(눌러서 바꾸기)" if touch_ui else "(↑/↓)", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 550.0, 18)])
+	var ra := [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", "(눌러서 바꾸기)" if touch_ui else "(↑/↓)", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 550.0, 18)]
+	# 폰: 규칙 설명 줄도 뺀다 (이름만, 자세한 건 도움말·모드 창)
+	rules_label.text = _kh("규칙: %s%s  %s" % ra.slice(0, 3) if _phone() else "규칙: %s%s  %s\n%s" % ra)
 	rules_label.get_parent().visible = Meta.games > 0  # 규칙 버전 고르기는 첫 판을 끝낸 뒤에 (그 전엔 버전 1)
 	modes_btn.visible = Meta.games > 0  # 모드도
 	modes_btn.text = "모드 (시험): %s   ▶" % ("없음" if Modes.on.is_empty() else "%s · 점수 x%.2f" % [Modes.names(), Modes.mul()])
@@ -3731,6 +4044,8 @@ func _toggle_codex() -> void:
 		notes_panel.visible = false
 		modes_panel.visible = false
 	codex_panel.toggle()
+	if codex_panel.visible:
+		net.ach_rates()
 
 
 func _toggle_records() -> void:
@@ -3758,17 +4073,14 @@ func _toggle_records() -> void:
 		lines.append("  이전 규칙 최고 웨이브  %s" % " · ".join(olds))
 	lines.append("  총 처치 %s · 플레이 %d판" % [num(Meta.total_kills), Meta.games])
 	lines.append("")
-	lines.append("[업적] %d / %d" % [Meta.achieved.size(), Meta.ACH_IDS.size()])
-	for id in Meta.ACH_IDS:
-		var a: Dictionary = Meta.ACHIEVEMENTS[id]
-		var unlock := ""
-		for sk in Meta.TOWER_SKIN_IDS:
-			if Meta.TOWER_SKINS[sk]["need"] == id:
-				unlock = " → 오브젝트 모양 '%s'" % Meta.TOWER_SKINS[sk]["name"]
-		for sk in Meta.CORE_SKIN_IDS:
-			if Meta.CORE_SKINS[sk]["need"] == id:
-				unlock = " → 중앙 모양 '%s'" % Meta.CORE_SKINS[sk]["name"]
-		lines.append("  %s %s - %s%s" % ["✓" if Meta.achieved.has(id) else "·", a["name"], a["desc"], unlock])
+	# 업적은 도감 업적 탭에 진행 막대와 함께 (55개라 여기에 다 쓰면 창이 넘친다). 등급마다 수만
+	var tiers := PackedStringArray()
+	for tid in Ach.TIER_IDS:
+		var of_t := Ach.LIST.filter(func(a): return a["tier"] == tid)
+		tiers.append("%s %d/%d" % [Ach.TIERS[tid]["name"], of_t.filter(func(a): return Meta.achieved.has(a["id"])).size(), of_t.size()])
+	lines.append("[업적] %d / %d   %s   (도감%s 업적 탭)" % [Meta.achieved.size(), Ach.LIST.size(), " · ".join(tiers), "" if touch_ui else "(K)"])
+	if Meta.title != "":
+		lines.append("  칭호: " + Meta.ACHIEVEMENTS[Meta.title]["name"])
 	lines.append("")
 	lines.append("[반응 도감] %d / %d   (모든 반응·조합은 도감%s 특수 반응 탭)" % [Meta.codex.size(), Elem.REACTIONS.size(), "" if touch_ui else "(K)"])
 	# 찾은 반응만 이어 쓴다. 모르는 칸마다 ???를 쓰면 반응이 91개라 창이 화면 높이만큼 길어져 글자가 읽을 수 없게 작아졌다
@@ -3822,6 +4134,7 @@ func _on_progress_synced() -> void:
 	var b := Meta.best_of(Meta.run_key())
 	best_wave = maxi(best_wave, b[0])
 	best_score = maxi(best_score, b[1])
+	_ach_catch_up()
 	_save_best()
 	if title_label.visible:
 		Modes.set_on(Meta.modes if Meta.games > 0 else [])
@@ -3939,7 +4252,7 @@ func _submit_run(done := true) -> void:
 		if total > 0.0 and rs[key] / total >= 0.0005:
 			src[key] = snappedf(rs[key] / total, 0.0001)
 	net.submit({
-		"device": Meta.device_id, "nick": Meta.nickname, "platform": Net.platform(), "game": old_run_ver if old_run_ver != "" else Net.game_version(),
+		"device": Meta.device_id, "nick": Meta.nickname, "title": Meta.title, "platform": Net.platform(), "game": old_run_ver if old_run_ver != "" else Net.game_version(),
 		"patch": Patch.id, "map": Meta.map_id, "rules": Meta.rules, "modes": Array(Modes.on), "wave": wave, "score": score, "kills": kills,
 		"best_combo": best_combo, "game_secs": run_game, "real_secs": run_real, "perks": perks.duplicate(),
 		"towers": list, "src": src, "log": run_log, "run": run_id, "ended": done,
@@ -4029,7 +4342,9 @@ func _on_board_loaded(d: Dictionary) -> void:
 		var shown_me := false
 		for e in d.get("entries", []):
 			shown_me = shown_me or e.get("me", false)
-			lines.append("  %d. %s   웨이브 %d · 점수 %s%s" % [int(e["rank"]), e["nick"], int(e["wave"]), num(int(e["score"])), ("   ◀ 나" if e.get("me", false) else "") + ("   ▶ 진행 중" if not e.get("ended", true) else "")])
+			var tt := str(e.get("title", ""))
+			var nick := str(e["nick"]) + (" 「%s」" % Meta.ACHIEVEMENTS[tt]["name"] if Meta.ACHIEVEMENTS.has(tt) else "")
+			lines.append("  %d. %s   웨이브 %d · 점수 %s%s" % [int(e["rank"]), nick, int(e["wave"]), num(int(e["score"])), ("   ◀ 나" if e.get("me", false) else "") + ("   ▶ 진행 중" if not e.get("ended", true) else "")])
 		if lines.is_empty():
 			lines.append("  아직 기록이 없어요")
 		var me: Variant = d.get("me")
@@ -4356,6 +4671,23 @@ func _achieve(id: String) -> void:
 	_save_best()
 
 
+## 조건을 넘긴 업적을 준다 (Ach.LIST).
+func _ach_check() -> void:
+	for id in Ach.newly_met():
+		_achieve(id)
+
+
+## 이전 기록·다른 기기 진행으로 이미 넘긴 업적은 배너 없이 한꺼번에 (불러올 때·진행 맞춘 뒤).
+func _ach_catch_up() -> void:
+	var got := Ach.newly_met()
+	if got.is_empty():
+		return
+	for id in got:
+		Meta.achieve(id)
+	if is_inside_tree() and hint:
+		_show_toast("업적 %d개 달성: %s" % [got.size(), ", ".join(got.map(func(id): return Meta.ACHIEVEMENTS[id]["name"]))])
+
+
 ## 설치 후 확인하는 업적·도감.
 func _check_progress() -> void:
 	var pincers := 0
@@ -4363,7 +4695,9 @@ func _check_progress() -> void:
 		pincers += 1 if t.pincer > 0 else 0
 		if t.order.size() >= 5:
 			_achieve("stack5")
-		for r in t.reactions():
+		var rs: Array = t.reactions()
+		Ach.on_reactions(rs.map(func(r): return r["id"]))
+		for r in rs:
 			if Meta.discover(r["id"]):
 				_show_toast("반응 도감에 추가: " + r["name"])
 				_save_best()
@@ -4371,10 +4705,7 @@ func _check_progress() -> void:
 				_guide("react", "특수 반응 · %s(%s+%s): %s. 발견한 반응은 오른쪽 설명에 채워져요" % [r["name"], Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["desc"]])
 	if pincers >= 3:
 		_achieve("links3")
-	if Meta.codex.size() >= 5:
-		_achieve("codex5")
-	if Meta.codex.size() >= Elem.REACTIONS.size():
-		_achieve("codex9")
+	_ach_check()
 
 
 func _close_title() -> void:
@@ -4419,7 +4750,7 @@ func _save_run() -> void:
 		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
 		"rerolls_left": rerolls_left, "bonus_rerolls": bonus_rerolls, "picks_left": picks_left,
 		"skip_left": skip_left, "skip_total": skip_total, "skip_stop": skip_stop, "bank_picks": bank_picks, "bank_rerolls": bank_rerolls, "bank_perks": bank_perks, "coin_next": coin_next, "rest_ready": rest_ready,
-		"lanes": Array(lanes), "wave_resist": wave_resist, "boss": boss_plan, "achievements": new_achievements,
+		"lanes": Array(lanes), "wave_resist": wave_resist, "boss": boss_plan, "achievements": new_achievements, "ach_run": Ach.run,
 		"state": "perk" if perk_mode else ("ready" if phase == Phase.READY else "choose"),
 		"offer": offer, "perk_offer": perk_offer.map(func(pk): return pk["id"]), "towers": list,
 		"log": run_log, "game_secs": run_game, "real_secs": run_real, "run_id": run_id,
@@ -4556,6 +4887,7 @@ func _continue_run() -> void:
 	else:
 		_plan_boss()
 	new_achievements = (g.call("achievements", []) as Array).filter(func(a): return a is String)
+	Ach.load_run(cfg.get_value("run", "ach_run", {}))
 	run_log = (g.call("log", []) as Array).filter(func(e): return e is Dictionary)
 	run_game = maxf(0.0, g.call("game_secs", 0.0))
 	run_real = maxf(0.0, g.call("real_secs", 0.0))
@@ -4774,6 +5106,7 @@ func _start_draw(t: Tower, q: Array, after: bool) -> void:
 
 func _draw_begin_branch() -> void:
 	draw_on = false
+	draw_wait = false
 	draw_pts = PackedVector2Array()
 	draw_len = 0.0
 	draw_bends = 0
@@ -4794,9 +5127,9 @@ func _draw_input(event: InputEvent) -> void:
 			_draw_begin_branch()
 			draw_on = true
 			draw_pts.append(draw_t.position)
+			draw_aim = get_global_mouse_position()
 		elif draw_on:
-			draw_on = false
-			_draw_commit()
+			_draw_release()
 	elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 		_cancel_step()
 
@@ -4813,10 +5146,23 @@ func _update_draw() -> void:
 		_draw_done()
 		return
 	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-		draw_on = false  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
-		_draw_commit()
+		_draw_release()  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
 		return
-	_draw_extend(get_global_mouse_position().clamp(field_rect().position, field_rect().end))
+	var m := get_global_mouse_position()
+	# 터치: 손가락 떨림이 꺾기로 세어져 꺾기를 일찍 다 쓰던 것 → 목표점을 부드럽게 따라간다
+	draw_aim = draw_aim.lerp(m, 0.45) if touch_ui else m
+	_draw_extend(draw_aim.clamp(field_rect().position, field_rect().end))
+
+
+## 손을 뗐을 때: 마우스는 바로 넣고, 터치는 길을 남겨 둔 채 [확정]을 기다린다 (다시 누른 채 끌면 새로 그림).
+func _draw_release() -> void:
+	draw_on = false
+	if touch_ui and draw_len >= DRAW_MIN:
+		_draw_extend(get_global_mouse_position().clamp(field_rect().position, field_rect().end))  # 떨림 줄이기로 덜 따라간 끝까지
+		draw_wait = true
+		hint.text = "[확정]으로 넣기 · 다시 누른 채 끌면 새로 그리기\n취소: 그대로 두기"
+		return
+	_draw_commit()
 
 
 func _draw_extend(p: Vector2) -> void:
@@ -4910,10 +5256,12 @@ func _draw_path_edit() -> void:
 	var txt := "남은 길이 %d · 꺾기 %d/%d" % [roundi(maxf(L - draw_len, 0.0)), draw_bends, Pat.PATH_BENDS]
 	if draw_stop != "":
 		txt += " · " + draw_stop
-	var at := tip + (Vector2(-70, -70) if touch_ui else Vector2(14, -14))
-	at = at.clamp(view_rect().position + Vector2(4, 20), view_rect().end - Vector2(240, 8))
-	draw_string(ui_font, at + Vector2(1, 1), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color.BLACK)
-	draw_string(ui_font, at, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1, 0.6, 0.5) if draw_stop != "" else Color(1, 0.95, 0.75))
+	var fs := roundi(15 * Meta.ui_scale)  # 폰은 글자 크기 설정만큼 (작아서 읽기 힘들었다)
+	var tw := ui_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var at := tip + (Vector2(-70, -70) * Meta.ui_scale if touch_ui else Vector2(14, -14))
+	at = at.clamp(view_rect().position + Vector2(4, 20), view_rect().end - Vector2(tw + 8, 8))
+	draw_string(ui_font, at + Vector2(1, 1), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.BLACK)
+	draw_string(ui_font, at, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1, 0.6, 0.5) if draw_stop != "" else Color(1, 0.95, 0.75))
 
 
 func _toggle_pause() -> void:
@@ -5214,6 +5562,7 @@ func _orb_path(a: float, y := 0.0) -> PackedVector2Array:
 func _spawn_orb(kind := -1, plan := {}) -> void:
 	var o := Orb.new()
 	var p: Dictionary = plan if not plan.is_empty() else _roll_orb(wave)
+	o.born = run_game
 	o.position = center() + Vector2.from_angle(p["a"]) * _spawn_radius()
 	o.from_a = p["a"]
 	o.target = center()
@@ -5316,6 +5665,17 @@ func _process(delta: float) -> void:
 	_mp_tick(delta)
 	if coin_stage > 0 and not get_tree().paused:
 		_coin_step(delta)
+	touch_tip_t -= delta
+	# 터치 [자세히]: 오브젝트 정보창이 떠 있는 동안만 (취소 버튼 왼쪽)
+	var tip_on := touch_ui and Engine.get_process_frames() - tip_frame <= 2 and not title_label.visible
+	if touch_ui:
+		fx_layer.queue_redraw()  # 정보창이 떠 있는지(tip_frame)를 매 프레임 알도록 (쉬는 시간엔 다시 그리지 않는 프레임이 있다)
+	if not tip_on:
+		tip_detail = false
+	detail_btn.visible = tip_on
+	draw_ok_btn.visible = phase == Phase.DRAW and draw_wait and not get_tree().paused
+	detail_btn.text = "간단히" if tip_detail else "자세히"
+	_place_apply_btn()
 	for c in [hint, skip_badge]:
 		c.self_modulate.a = 0.12 if Engine.get_process_frames() - tip_fade.get(c, -10) <= 2 else 1.0
 	if touch_ui and key_t <= 0.0:
@@ -5368,6 +5728,8 @@ func _process(delta: float) -> void:
 	legend.visible = phase in [Phase.CHOOSE, Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.READY] and not title_label.visible
 	legend_btn.visible = legend.visible
 	range_btn.visible = touch_ui and not title_label.visible and phase != Phase.GAMEOVER
+	zoom_btn.visible = view_zoom > 1.01 and not title_label.visible
+	zoom_btn.text = "확대 풀기 x%.1f" % view_zoom
 	range_btn.text = "범위 끄기" if range_all else "범위 보기"
 	legend_btn.text = _kh(("설명 보기" if legend_hidden else "설명 숨기기") + " (Tab)")
 	legend.visible = legend.visible and not legend_hidden
@@ -5569,6 +5931,8 @@ func _sim_step(delta: float) -> void:
 		combo_hold = true  # 쉬는 시간·카드 고르기 동안 콤보가 끊기지 않게
 		_log_wave()
 		_achieve("first")
+		Ach.on_wave_clear(wave, wave_dmg, core_hp, core_max)
+		_ach_check()
 		if wave >= 5:
 			Meta.map_best[Meta.run_key()] = [maxi(Meta.best_of(Meta.run_key())[0], wave), maxi(Meta.best_of(Meta.run_key())[1], score)]
 			if Meta.MAP_IDS.all(func(id): return id in Meta.TRIAL_MAPS or Meta.best_of(Meta.key(id))[0] >= 5):
@@ -5769,6 +6133,8 @@ func _resolve(delta: float) -> void:
 			combo += 1
 			combo_t = COMBO_KEEP
 			best_combo = maxi(best_combo, combo)
+			Ach.on_kill(o, run_game, combo)
+			ach_dirty = true
 			if combo >= 30:
 				_achieve("combo30")
 			# 모드가 늘린 체력·수는 빼고 매긴 뒤 모드 배율을 곱한다
@@ -5821,12 +6187,16 @@ func _resolve(delta: float) -> void:
 			burst(o.position if Meta.map_id == "line" else center(), Color(1, 0.3, 0.35), 18, 220.0)
 			_show_toast("중앙 피격! %d/%d" % [maxi(core_hp, 0), core_max])
 			wave_dmg += o.core_dmg
+			Ach.on_core_hit(o.core_dmg)
 			popup((o.position if Meta.map_id == "line" else center()) + Vector2(0, -CORE_RADIUS - 24.0), o.core_dmg, Color(1, 0.3, 0.35), true, "-%d" % o.core_dmg, 1.2)
 			_check_danger()
 			_record_leak(o)
 			o.queue_free()
 			continue
 
+	if ach_dirty:
+		ach_dirty = false
+		_ach_check()
 	for a in arcs:
 		a[2] -= delta
 	arcs = arcs.filter(func(a): return a[2] > 0.0)
@@ -5857,6 +6227,7 @@ func _curse_burst(o: Orb) -> void:
 		var d: float = other.position.distance_to(o.position)
 		if d < 100.0 + other.radius():
 			var got: float = other.hurt(dmg)
+			other.last_rx = true
 			if tw:
 				tw.credit(got, "rx:curse")
 				tw.rx_dealt += got
@@ -5993,7 +6364,9 @@ func _update_fx(delta: float) -> void:
 	core_flash = maxf(core_flash - delta, 0.0)
 	eclipse_flash = maxf(eclipse_flash - delta, 0.0)
 	eclipse_cd = maxf(eclipse_cd - delta, 0.0)
-	camera.position = center()
+	if view_zoom > 1.0 and (title_label.visible or phase == Phase.GAMEOVER):
+		_reset_zoom()  # 시작 화면·게임 오버는 1배로
+	camera.position = center() + view_pan
 	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 14.0 * shake * (1.0 if Meta.shake_on else 0.0)
 	fx_layer.queue_redraw()
 
@@ -6003,14 +6376,26 @@ func _draw_tooltip() -> void:
 	tip_orb = null
 	# 터치는 마우스를 올려 둘 수 없으니, 눌러서 옮기기 시작한 오브젝트의 정보를 보여 준다
 	var touch_move := phase == Phase.MOVE and touch_ui and moving != null
-	if (phase in [Phase.PLACE, Phase.GAMEOVER, Phase.MOVE, Phase.AIM, Phase.DRAW] and not touch_move) or title_label.visible or dragging or boxing:
+	# 터치로 방향 바꾸기: 손가락은 쏠 쪽에 있으니 그 오브젝트 정보를 함께 보여 준다 ([자세히]로 수치까지)
+	var touch_aim := phase == Phase.AIM and touch_ui and moving != null
+	if (phase in [Phase.PLACE, Phase.GAMEOVER, Phase.MOVE, Phase.AIM, Phase.DRAW] and not touch_move and not touch_aim) or title_label.visible or dragging or boxing:
+		return
+	# 터치는 손을 뗀 자리에 마우스가 남는다: 누르고 3초가 지나면 정보창을 닫는다
+	if touch_ui and not touch_move and not touch_aim and touch_tip_t <= 0.0:
 		return
 	if dps_panel.visible and dps_panel.get_global_rect().has_point(dps_panel.get_global_mouse_position()):
 		return  # DPS 표 위: 표 뒤에 가린 오브젝트 정보창이 뜨지 않게
-	var t := moving if touch_move else _tower_at(get_global_mouse_position())
+	var t := moving if touch_move or touch_aim else _tower_at(get_global_mouse_position())
+	# 터치로 [자세히]를 누르면 손가락이 버튼으로 가서 정보창이 사라졌다: 방금 보던 오브젝트를 이어서
+	if t == null and touch_ui and is_instance_valid(tip_tower) and detail_btn.visible \
+			and detail_btn.get_global_rect().has_point(get_viewport().get_mouse_position()):
+		t = tip_tower
+	if t != null:
+		tip_tower = t
 	if t == null:
 		_draw_orb_tooltip()
 		return
+	tip_frame = Engine.get_process_frames()
 	var z: float = Meta.ui_scale
 	var fs := roundi(14 * z)
 	var lh := 18.0 * z
@@ -6019,12 +6404,14 @@ func _draw_tooltip() -> void:
 	var head := t.title()
 	var tip := ("(클릭: 길 다시 그리기 · 끌기: 옮기기)" if t.pattern == "path" else "(클릭: 방향 · 끌기: 옮기기)") if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
 	# Shift를 누르고 있으면 공격력·공격 속도·사거리 같은 수치를 자세히
-	var detail := Input.is_key_pressed(KEY_SHIFT) and not touch_move
+	var detail := (Input.is_key_pressed(KEY_SHIFT) or (touch_ui and tip_detail)) and not touch_move
 	tip = _th(tip)
 	if not touch_ui:
 		tip = (tip.trim_suffix(")") + " · " if tip != "" else "(") + ("Shift: 자세히)" if not detail else "Shift 떼기: 돌아가기)")
 	if touch_move:
 		tip = "(새 자리 누르기: 옮기기 · 취소: 그대로)"
+	elif touch_aim:
+		tip = "(쏠 쪽 누르기: 방향 확정)"
 	if tip != "" and ui_font.get_string_size(head + "   " + tip, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= maxw:
 		lines.append([head + "   " + tip, Color.WHITE])
 	else:
@@ -6098,6 +6485,8 @@ func _draw_tooltip() -> void:
 	var vw := view_rect()
 	var size := vw.end  # 화면 오른쪽 아래 끝 (월드 좌표. 폰은 전장 밖 양옆까지)
 	var p := t.position + Vector2(28, -h / 2)
+	if touch_aim and get_global_mouse_position().x > t.position.x:
+		p.x = t.position.x - 28.0 - (w + 16.0)  # 손가락(쏠 쪽) 반대편에
 	p.x = clampf(p.x, vw.position.x + 8, _right_limit() - w - 16)
 	var top := _tip_top()
 	p.y = clampf(p.y, top if h <= size.y - top - 8.0 else vw.position.y + 8.0, size.y - h - 8)
@@ -6250,6 +6639,27 @@ func _draw_core_skin(c: Vector2, col: Color, now: float) -> void:
 					c + d.rotated(-0.18) * (CORE_RADIUS - 1.0),
 				]), Color(1.0, 0.85, 0.35, 0.85))
 			draw_circle(c, CORE_RADIUS * 0.7, Color(1.0, 0.9, 0.5).lerp(col, 0.4))
+		"crown":
+			# 왕관 (보스 사냥꾼): 위로 솟은 다섯 뾰족
+			var w := CORE_RADIUS * 0.8
+			var pts := PackedVector2Array([c + Vector2(-w, w * 0.45), c + Vector2(w, w * 0.45)])
+			for i in 5:
+				var x := w - i * w * 0.5
+				pts.append(c + Vector2(x, -w * (0.75 if i % 2 == 0 else 0.25)))
+				if i < 4:
+					pts.append(c + Vector2(x - w * 0.25, w * 0.05))
+			draw_colored_polygon(pts, Color(1.0, 0.82, 0.3).lerp(col, 0.25))
+			for i in 3:
+				draw_circle(c + Vector2(-w + i * w, -w * 0.75), 2.5, Color(1, 0.4, 0.45))
+		"galaxy":
+			# 은하 (신화 업적 '빈두'): 도는 나선 팔 두 개
+			draw_circle(c, CORE_RADIUS * 0.35, Color(1, 0.95, 0.85))
+			for arm in 2:
+				for i in 14:
+					var t := i / 14.0
+					var a := now * 0.8 + arm * PI + t * 3.2
+					var d := CORE_RADIUS * (0.3 + 0.75 * t)
+					draw_circle(c + Vector2.from_angle(a) * d, 2.6 * (1.0 - t * 0.6), Color.from_hsv(fmod(0.6 + t * 0.4 + now * 0.05, 1.0), 0.55, 1.0, 0.9 - t * 0.5))
 
 ## 일식 발동 때 화면 전체 연출(어둡게·큰 고리)을 이 오브젝트가 맡을지. 2.5초에 한 번만 맡기고 나머지는 오브젝트 둘레만 작게.
 ## 연출만 고르고 피해·발동 시각은 바꾸지 않는다
@@ -6388,8 +6798,11 @@ func _draw_fx() -> void:
 		var f: Font = ThemeDB.fallback_font if p[1].is_valid_int() else ui_font
 		fx_layer.draw_string(f, p[0] + Vector2(1, 1), p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0, 0, 0, 0.7 * a))
 		fx_layer.draw_string(f, p[0], p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(p[3], a))
+	# 보스 체력 줄·콤보 상자는 화면에 붙은 글이라 화면 좌표로 그린다 (확대해도 크기·자리 그대로)
+	fx_layer.draw_set_transform_matrix(get_canvas_transform().affine_inverse())
 	_draw_boss_bar()
 	_draw_combo()
+	fx_layer.draw_set_transform_matrix(Transform2D.IDENTITY)
 	_draw_tooltip()
 
 
@@ -6409,7 +6822,7 @@ func _draw_boss_bar() -> void:
 		return
 	var w := 300.0
 	# 위쪽 점수 줄(바탕 상자) 바로 아래. 특성 줄이 늘면 같이 내려간다
-	var p := Vector2(center().x - w / 2.0, view_rect().position.y + hud.position.y + hud.size.y + 20.0) + camera.offset
+	var p := Vector2(get_viewport_rect().size.x / 2.0 - w / 2.0, ui_root.position.y + (hud.position.y + hud.size.y) * ui_root.scale.y + 20.0)
 	fx_layer.draw_rect(Rect2(p, Vector2(w, 10)), Color(0, 0, 0, 0.6))
 	fx_layer.draw_rect(Rect2(p, Vector2(w * clampf(hp / mx, 0.0, 1.0), 10)), Color(1, 0.3, 0.4))
 	fx_layer.draw_rect(Rect2(p, Vector2(w, 10)), Color(1, 1, 1, 0.3), false, 1.0)
@@ -6433,9 +6846,9 @@ func _draw_combo() -> void:
 		return
 	var w := 180.0
 	var r := legend_btn.get_global_rect()
-	var p := view_rect().position + Vector2(get_viewport_rect().size.x - 10.0 - w, r.end.y + 8.0) + camera.offset
+	var p := Vector2(ui_root.position.x + ui_root.size.x * ui_root.scale.x - 10.0 - w, r.end.y + 8.0)
 	if legend.visible:
-		p.y = view_rect().position.y + legend.get_global_rect().end.y + 8.0 + camera.offset.y
+		p.y = legend.get_global_rect().end.y + 8.0
 	if not live:
 		var a: float = clampf(combo_end[2] / 0.5, 0.0, 1.0)
 		fx_layer.draw_rect(Rect2(p, Vector2(w, 44)), Color(0, 0, 0, 0.55 * a))

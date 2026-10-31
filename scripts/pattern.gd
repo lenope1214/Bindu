@@ -21,7 +21,7 @@ const PATTERNS := {
 	"iron": {"name": "철구", "desc": "느리고 무거운 관통탄", "from": Elem.METAL},
 	"sonic": {"name": "음파", "desc": "부채꼴로 퍼지는 파동 (관통, 멀수록 약함)", "from": Elem.SOUND},
 	"clock": {"name": "시계침", "desc": "앞쪽을 바늘이 왕복하며 훑는다", "from": Elem.TIME},
-	"wisp": {"name": "혼불", "desc": "구체를 쫓아가는 혼불을 띄운다", "from": Elem.SOUL},
+	"wisp": {"name": "혼불", "desc": "오브젝트 곁을 떠돌며 가까이 온 구체를 쫓아 때리는 혼불 2개", "from": Elem.SOUL},
 	"path": {"name": "그린 궤적", "desc": "직접 그린 길을 따라 탄이 날아간다. 레벨마다 길이 400→500→600, 그 뒤 갈래 최대 3개 (희귀, 시험)", "from": -1},
 }
 
@@ -59,7 +59,7 @@ const PROJECTILE := ["shot", "thorn", "gust", "shard", "iron", "wisp", "path"]
 const MODS := {
 	"multi": {"name": "다중 발사", "desc": "공격이 1개 더 나간다 (하나하나는 피해 {multi_dmg%}%, 많이 쌓을수록 조금씩 줄어듦)"},
 	"split": {"name": "분열", "desc": "맞은 구체에서 약한 파편 2개가 튄다 (1개마다 확률 +{split_ch%}%, 최대 {split_max%}%). 벽·투척 장판에는 못 넣음"},
-	"homing": {"name": "유도", "desc": "탄이 구체 쪽으로 천천히 휜다. 범위 공격은 구체 쪽으로 조금 돈다. 한 구체는 탄 2개까지만 쫓고, 못 따라잡으면 다른 구체로. 혼불은 찾는 범위 +30%. 벽·그린 궤적에는 못 넣음"},
+	"homing": {"name": "유도", "desc": "탄이 구체 쪽으로 천천히 휜다. 범위 공격은 구체 쪽으로 조금 돈다. 한 구체는 탄 2개까지만 쫓고, 못 따라잡으면 다른 구체로. 혼불은 목줄 +15%. 벽·그린 궤적에는 못 넣음"},
 	"bounce": {"name": "튕김", "desc": "탄이 가까운 구체로 튄다(튕긴 탄 피해 {bounce_hit%}%). 번개는 1번 더 튄다. 그 밖의 공격은 피해 +{bounce_dmg%}%"},
 	"size": {"name": "크기", "desc": "탄 크기·범위·사거리 +{size_k%}% (탄을 쏘는 공격은 피해도 +{size_dmg%}%)"},
 	"rapid": {"name": "속사", "desc": "공격 속도 +{rapid_k%}%"},
@@ -73,8 +73,8 @@ const MOD_IDS := ["multi", "split", "homing", "bounce", "size", "rapid", "pierce
 ## 이 강화가 든 오브젝트는 그 공격방식으로 바꿀 수도 없다.
 ## 새 공격방식을 넣을 때 여기에 같이 적는다 (그린 길을 따라가는 공격방식은 homing).
 const NO_MOD := {
-	"pierce": ["thorn", "gust", "iron"],  # 원래 모두 뚫는다
-	"bounce": ["thorn", "gust", "iron"],  # 뚫고 나가서 튕길 일이 없다
+	"pierce": ["thorn", "gust", "iron", "wisp"],  # 원래 모두 뚫는다 (혼불은 맞혀도 사라지지 않는다)
+	"bounce": ["thorn", "gust", "iron", "wisp"],  # 뚫고 나가서 튕길 일이 없다
 	"homing": ["wall", "path"],  # 벽은 정한 방향에만 세우고, 그린 궤적은 그린 길만 따라간다
 	"split": ["wall", "lob"],  # 바닥에 남아 때리는 피해는 분열을 일으키지 않는다 (블랙홀은 끝에서 터질 때 분열)
 }
@@ -98,7 +98,7 @@ const MOD_FIX := {
 	"iron": {"multi": 0.93, "split": 1.13, "homing": 0.7, "size": 1.04},
 	"sonic": {"multi": 0.97, "split": 1.15, "homing": 1.13, "bounce": 1.16, "size": 1.22, "pierce": 1.09},
 	"clock": {"homing": 1.36, "bounce": 1.17, "size": 1.24, "pierce": 1.1},
-	"wisp": {"multi": 0.82, "split": 1.25, "homing": 1.31, "bounce": 0.93, "size": 1.17, "pierce": 0.82},
+	"wisp": {"multi": 1.15},  # 2026-10-31 목줄 혼불: 늘어난 혼불은 구체가 적으면 놀아서 다중 발사를 조금 올린다 (봇 GOD 판 누수로 맞춤)
 }
 
 

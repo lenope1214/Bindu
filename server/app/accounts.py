@@ -22,7 +22,7 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from . import config, progress, signing
-from .db import Account, Ban, Identity, Run, RunSave, Save, get_db, now
+from .db import Account, Ban, Identity, Pick, Run, RunSave, Save, get_db, now
 
 router = APIRouter()
 
@@ -186,6 +186,9 @@ def put_save(body: SaveIn, cur=Depends(current), db: Session = Depends(get_db)):
     s = _save_of(db, a.id)
     old = progress.clean(s.data) if s.data else progress.empty()
     merged = progress.merge(old, mine)
+    past = "past-" + device[:59]
+    if past not in merged["tally"]:
+        merged["tally"][past] = past_picks(db, device)
     if merged != old:
         s.data, s.rev, s.device = merged, s.rev + 1, device
     n = progress.nick(merged)
@@ -194,6 +197,29 @@ def put_save(body: SaveIn, cur=Depends(current), db: Session = Depends(get_db)):
         a.nickname = clean_nick(n, device)
     db.commit()
     return {"rev": s.rev, "data": merged}
+
+
+BACKFILL_BEFORE = (0, 5, 5)  # 이 버전부터는 게임이 카드 고른 횟수를 직접 센다
+
+
+def _ver(v: str) -> tuple:
+    try:
+        return tuple(int(x) for x in v.split("."))
+    except ValueError:
+        return (0,)
+
+
+def past_picks(db: Session, device: str) -> dict:
+    """도감 수집을 처음 맞출 때 한 번: 이 기기가 예전 버전으로 한 판들의 카드·특성 고른 횟수 {"pick:키": 수}."""
+    ids = [rid for rid, gv in db.execute(select(Run.id, Run.game_version).where(Run.device_id == device)) if _ver(gv) < BACKFILL_BEFORE]
+    out: dict[str, int] = {}
+    for i in range(0, len(ids), 500):
+        rows = db.execute(select(Pick.key, func.count()).where(Pick.run_id.in_(ids[i:i + 500]), Pick.picked.is_(True),
+                                                               Pick.kind.in_(("card", "perk"))).group_by(Pick.key))
+        for key, n in rows:
+            if not key.startswith("cata:"):
+                out["pick:" + key] = out.get("pick:" + key, 0) + int(n)
+    return out
 
 
 # ---------- 진행 중 판 ----------
