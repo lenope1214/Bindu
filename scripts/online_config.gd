@@ -4,7 +4,7 @@ class_name OnlineConfig
 
 const SERVER_URL := "https://bindu.anon-chat.kr"
 ## 멀티플레이 방 코드 중개(Cloudflare Worker, server/mp-worker). 비우면 멀티플레이 버튼이 꺼진다.
-const MP_URL := ""
+const MP_URL := "https://bindu-mp.lsb-8c8.workers.dev"
 const RUN_HMAC_KEY := "SZvKlp_IZXYoOcJH9TualCpV3KPr6CFO"
 const PATCH_PUBLIC_KEY := """-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2okrtPWid5XRfIJpoCYQ

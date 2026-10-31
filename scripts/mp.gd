@@ -40,9 +40,12 @@ static func available() -> bool:
 
 
 ## 중개 서버 주소. 시험할 때는 환경 변수 BINDU_MP_URL로 바꾼다.
+## 헤드리스(봇·무작위 입력)는 환경 변수가 없으면 실제 중개 서버에 방을 만들지 않게 끈다 (Net.reachable()과 같은 이유).
 static func url() -> String:
 	var e := OS.get_environment("BINDU_MP_URL")
-	return e if e != "" else OnlineConfig.MP_URL
+	if e != "":
+		return e
+	return OnlineConfig.MP_URL if DisplayServer.get_name() != "headless" else ""
 
 
 ## 협동: 사람마다 오브젝트 고리·상태 줄 색.
