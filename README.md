@@ -249,6 +249,7 @@ Godot 4.5+ (4.7.2에서 열기). 도형만 사용.
 - 오브젝트는 체력이 없어 부서지지 않음. 구체는 오브젝트를 그냥 지나감.
 - 중앙 점 체력 10, 구체가 닿으면 -1, 0이면 게임 오버. 웨이브는 무한.
 - 변경 내역은 `CHANGELOG.md`.
+- 모든 기능의 기대 동작과 그 검사: [docs/features.md](docs/features.md). 배포 전 `tools/run.sh check`.
 - 조정할 수치: `scripts/elem.gd`(속성·반응), `scripts/pattern.gd`(공격방식·강화·연계 정의), `scripts/tower.gd`의 `attack()`/`hit()`(공격·부가효과 수치), `projectile.gd`, `zone.gd`, `scripts/main.gd`의 `_start_wave`/`_spawn_orb`(난이도).
 
 ## 온라인 (패치·리더보드·통계)

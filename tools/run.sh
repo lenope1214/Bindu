@@ -11,6 +11,8 @@
 #   perfwin                                perf를 창을 띄워 실행 (그리기 비용 포함, 수직 동기 끔)
 #   compare [기준=1] [새 규칙=3] [판 수=32] [stack]   같은 시드로 두 규칙을 돌려 차이와 판정 (새 규칙을 내기 전에)
 #   modes [규칙=1] [판 수=32] [모드...]   모드마다 같은 시드로 모드 없는 판과 비교: 웨이브 차이·점수 손익분기 배율
+#   spec                                   docs/features.md의 기대 동작 자동 점검 (tools/spec_check.gd)
+#   check                                  배포 전 한 번에: spec + 그린 궤적 + 무작위 입력 + 이어하기 (실패하면 끝 코드 1)
 # 환경 변수: SPEED(배속, 기본 4) SMART(기본 1: 사람처럼 중앙 가까이에서 길목을 겨눔, 0이면 예전 봇)
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -27,7 +29,7 @@ T() {
 copy_project() {
 	local d
 	d=$(mktemp -d)
-	cp -r "$ROOT/scripts" "$ROOT/tools" "$ROOT/main.tscn" "$ROOT/project.godot" "$ROOT/icon.svg" "$d/"
+	cp -r "$ROOT/scripts" "$ROOT/tools" "$ROOT/docs" "$ROOT/main.tscn" "$ROOT/project.godot" "$ROOT/icon.svg" "$d/"
 	# config/name이 다르면 user:// 폴더가 달라 실제 게임의 기록·이어하기를 건드리지 않는다
 	sed -i.bak "s/^config\/name=.*/config\/name=\"BinduTools$1\"/" "$d/project.godot"
 	(cd "$d" && T 300 "$G" --headless --import > /dev/null 2>&1 || true)
@@ -193,8 +195,47 @@ case "$CMD" in
 		T 900 "$G" --fixed-fps 60 --path . -s tools/perf.gd 2>&1 | grep -E "PERF|SCRIPT ERROR" || true
 		rm -rf "$D"
 		;;
+	spec)
+		D=$(copy_project "$$")
+		cd "$D"
+		T 600 "$G" --headless --fixed-fps 60 --path . -s tools/spec_check.gd > spec.txt 2>&1 || true
+		grep -E "^(ok|FAIL|SPEC|DOC)|SCRIPT ERROR|Parse Error" spec.txt || true
+		r=0
+		grep -q "^SPEC 통과" spec.txt || r=1
+		cd / && rm -rf "$D"
+		exit $r
+		;;
+	check)
+		# 배포 전 점검 (docs/features.md). 화면 배치는 tools/shot.gd 스크린샷을 눈으로 따로 본다.
+		bad=""
+		"$0" spec > /tmp/bindu_check_spec.txt 2>&1 || bad="$bad spec"
+		grep -E "^FAIL|^SPEC" /tmp/bindu_check_spec.txt || true
+		D=$(copy_project "$$")
+		if (cd "$D" && T 300 "$G" --headless --path . -s tools/path_test.gd > path.txt 2>&1); then echo "path 통과"; else bad="$bad path"; fi
+		grep -E "^FAIL|SCRIPT ERROR" "$D/path.txt" || true
+		rm -rf "$D"
+		F=$("$0" fuzz 4 3000)
+		echo "$F" | grep "^시드"
+		echo "$F" | grep "^시드" | grep -qv "오류 0개" && bad="$bad fuzz"
+		C=$("$0" cont 1 plain 13)
+		echo "$C" | grep -E "RESULT|DIFF|SCRIPT ERROR" | head -5
+		echo "$C" | grep -qE "DIFF|SCRIPT ERROR" && bad="$bad cont"
+		echo "$C" | grep -q "RESULT" || bad="$bad cont"
+		D=$(copy_project "$$")
+		(cd "$D" && T 120 "$G" --headless --path . -s tools/online_check.gd > online.txt 2>&1)
+		grep -q "결과: 모두 통과" "$D/online.txt" && echo "online 통과" || { grep -E "실패|SCRIPT ERROR" "$D/online.txt" | head -5; bad="$bad online"; }
+		rm -rf "$D"
+		if python3 -c "import fastapi, pytest, httpx" > /dev/null 2>&1; then
+			(cd "$ROOT/server" && python3 -m pytest -q 2>&1 | tail -1) | tee /tmp/bindu_check_server.txt
+			grep -qE "failed|error" /tmp/bindu_check_server.txt && bad="$bad server"
+		else
+			echo "server 건너뜀 (python3에 fastapi·pytest·httpx 없음: pip install -r server/requirements-dev.txt)"
+		fi
+		if [ -n "$bad" ]; then echo "CHECK 실패:$bad"; exit 1; fi
+		echo "CHECK 통과. 화면 배치는 tools/shot.gd 스크린샷으로 따로 확인 (docs/features.md)"
+		;;
 	*)
-		sed -n '2,11p' "$0"
+		sed -n '2,13p' "$0"
 		exit 1
 		;;
 esac

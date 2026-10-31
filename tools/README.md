@@ -20,6 +20,8 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 | `pat_kill.gd` | 같은 방법(`HP=15` `RATE=1`): 체력 HP 구체가 정면으로 60초 올 때(lane). spiral은 비껴 도는 길이 오브젝트 앞을 지나지 않는 경우가 많아 참고만 | 공격방식별 처치율 |
 | `path_test.gd` | `godot --headless --path . -s tools/path_test.gd`: 그린 궤적 넣기·그리기(꺾기·길이 제한)·길 따라 맞히기·레벨업 길이와 갈래·4개 상한·유도 차단·저장·대격변·등장 비율 | 항목별 ok/FAIL, 실패가 있으면 끝 코드 1 |
 | `path_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/path_shot.gd -- <폴더> [글자 크기] [touch]`: 그린 궤적 카드·그리는 중·다 씀·쉬는 시간·마우스 올림·웨이브 중·새 갈래 스크린샷 | PNG |
+| `spec` | [docs/features.md](../docs/features.md)에서 검사가 spec인 기능마다 기대 동작을 확인(tools/spec_check.gd), 끝에 문서와 대조 | 기능별 ok/FAIL, 실패가 있으면 끝 코드 1 |
+| `check` | 배포 전 한 번에: spec + 그린 궤적 + 무작위 입력 4판 + 이어하기 13웨이브 + 온라인 서명 + 서버 pytest(패키지가 있을 때). 4~5분 | `CHECK 통과` / `CHECK 실패: <항목>`, 끝 코드 |
 | `perf` | 후반 부하(오브젝트 16개, 속성 3종·강화 10개씩, 구체 400개)를 1·4·8배속으로 600프레임씩 | 프레임 시간 평균·95%·최대, 화면 위 구체·탄·장판 수 |
 
 환경 변수: `SPEED`(배속, bots 4·long 8), `SMART`(기본 1: 사람처럼 중앙 가까이에서 길목 바깥쪽을 겨눠 배치, `SMART=0`은 예전 봇). `SKIP=n`: `SKIP_FROM`(기본 8)웨이브부터 웨이브 넘기기를 n개씩 쓰고, 멈추면 쌓인 것을 다 고른 뒤 다시 넘긴다.
@@ -31,6 +33,10 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 `perf`는 헤드리스라 실제 화면 그리기 비용은 빠지고, 이 컨테이너처럼 한글 글꼴이 없는 환경에서는 글자 모양 계산이 실제보다 훨씬 비싸게 나온다. 같은 기계에서 고치기 전후를 번갈아 두 번 이상 돌려 비교할 것(한 번은 ±3ms 흔들림).
 
 `compare`의 "비슷함"은 봇 기준일 뿐이다. 버전 5(강화 칸)는 봇으로 중간값 -1·평균 x0.91(비슷함)이었지만 사람에겐 너무 어려워 폐기했다. 새 규칙은 [docs/rule-history.md](../docs/rule-history.md)의 절차대로 사람 시험판까지 거친다.
+
+## 기능 명세와 배포 전 점검
+
+모든 기능의 기대 동작은 [docs/features.md](../docs/features.md)에 한 줄씩 있고, 줄마다 무엇으로 확인하는지(spec·path·fuzz·cont·shot 등)가 짝지어져 있다. 배포 전에는 `tools/run.sh check`가 통과하고 `tools/shot.gd` 스크린샷에 문제가 없으면 된다. 기능을 바꾸면 그 줄과 `tools/spec_check.gd`의 같은 id 검사를 같은 커밋에서 고친다(문서와 검사가 어긋나면 `spec`이 실패한다).
 
 ## 패치노트
 
