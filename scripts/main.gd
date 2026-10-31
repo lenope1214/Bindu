@@ -338,6 +338,7 @@ var board_map := "plain"  # 리더보드 필터. 창을 열 때 지금 고른 �
 var board_rules := 1
 var board_season := 0  # 0: 이번 시즌
 var board_grow := false  # 리더보드: 씨앗 나무를 쓴 '성장' 기록 (끄면 '순수')
+var board_easy := false  # 리더보드: 쉽게 모드를 쓴 판 (성장·순수 섞어서)
 var board_seasons: Array = []  # 서버 시즌 목록 (새 시즌부터)
 static var title_seen := false  # 다시 시작하면 타이틀은 건너뛴다
 # 정원 모드 (Garden)
@@ -3671,7 +3672,7 @@ func _game_over() -> void:
 		for key in _src_top(rs, 3):
 			tops.append("%s %d%%" % [src_name(key), roundi(rs[key] / total * 100.0)])
 		mvp += "\n피해 출처: " + ", ".join(tops)
-	var md := "" if Modes.on.is_empty() else "\n모드: %s · 점수 x%.2f%s" % [Modes.names(), Modes.mul(), "\n쉽게 모드: 최고 기록 따로, 리더보드 제외" if Modes.easy() else ""]
+	var md := "" if Modes.on.is_empty() else "\n모드: %s · 점수 x%.2f%s" % [Modes.names(), Modes.mul(), "\n쉽게 모드: 최고 기록 따로, 쉽게 모드 리더보드에 올라감" if Modes.easy() else ""]
 	if mp_mode != "":
 		record = ""
 		md = "\n" + mp_rank if mp_rank != "" else ""
@@ -5090,7 +5091,7 @@ func _on_run_sent(res: Dictionary) -> void:
 	elif rk is Dictionary:
 		var season: Variant = Net.info.get("season")
 		var sname := str(season.get("name", "")) if season is Dictionary else ""
-		over_label.text += "\n온라인 순위: %s%d위 (최고 점수 %s)" % [sname + " " if sname != "" else "", int(rk["rank"]), num(int(rk["score"]))]
+		over_label.text += "\n온라인 순위%s: %s%d위 (최고 점수 %s)" % [" (쉽게 모드)" if Modes.easy() else "", sname + " " if sname != "" else "", int(rk["rank"]), num(int(rk["score"]))]
 
 
 ## 시작 화면 리더보드: 위쪽 버튼으로 맵·규칙 버전·시즌을 골라 본다.
@@ -5103,26 +5104,33 @@ func _toggle_board() -> void:
 	board_map = Meta.map_id
 	board_rules = Meta.rules if Meta.rules in Rules.IDS else Rules.IDS[0]
 	board_grow = Garden.want_boost()  # 다음 판과 같은 쪽 (씨앗 나무를 켰으면 성장)
+	board_easy = Modes.easy()  # 쉽게 모드를 켰으면 쉽게 모드 기록
 	board_season = 0
 	net.seasons()
 	_load_board()
 
 
 func _board_tag() -> String:
-	return "%s|%d|%d|%s" % [board_map, board_rules, board_season, board_grow]
+	return "%s|%d|%d|%s|%s" % [board_map, board_rules, board_season, board_grow, board_easy]
 
 
 func _load_board() -> void:
 	board_lines = {}
 	_draw_board()
-	net.leaderboard(board_map, board_rules, "all", board_season, _board_tag(), board_grow)
+	net.leaderboard(board_map, board_rules, "all", board_season, _board_tag(), board_grow, board_easy)
 	if board_season == 0:
-		net.leaderboard(board_map, board_rules, "week", 0, _board_tag(), board_grow)
+		net.leaderboard(board_map, board_rules, "week", 0, _board_tag(), board_grow, board_easy)
 
 
-## 순수(씨앗 나무 없이) ↔ 성장(씨앗 나무·숙련을 쓴 판) 기록.
+## 순수(씨앗 나무 없이) → 성장(씨앗 나무·숙련을 쓴 판) → 쉽게 모드(쉽게 모드를 쓴 판) 기록.
 func _board_next_grow() -> void:
-	board_grow = not board_grow
+	if board_easy:
+		board_easy = false
+		board_grow = false
+	elif board_grow:
+		board_easy = true
+	else:
+		board_grow = true
 	_load_board()
 
 
@@ -5182,16 +5190,20 @@ func _on_board_loaded(d: Dictionary) -> void:
 	_draw_board()
 
 
+func _board_kind_name() -> String:
+	return "쉽게 모드" if board_easy else ("성장 (씨앗 나무)" if board_grow else "순수")
+
+
 func _draw_board() -> void:
 	var cur := "" if board_seasons.is_empty() else str(board_seasons[0].get("name", ""))
 	var sname := ("이번 시즌" + (" (%s)" % cur if cur != "" else "")) if board_season == 0 else _season_name(board_season)
-	var texts := ["맵: %s" % Meta.map_name(board_map), "규칙: %s" % Rules.NAMES[board_rules], "시즌: %s" % sname, "기록: %s" % ("성장 (씨앗 나무)" if board_grow else "순수")]
+	var texts := ["맵: %s" % Meta.map_name(board_map), "규칙: %s" % Rules.NAMES[board_rules], "시즌: %s" % sname, "기록: %s" % _board_kind_name()]
 	for i in 4:
 		var b: Button = board_bar.get_child(i)
 		b.text = texts[i] + ("  ▶" if i != 2 or board_seasons.size() > 1 else "")
 		b.disabled = i == 2 and board_seasons.size() <= 1
 	board_bar.visible = true
-	var lines := PackedStringArray(["[리더보드]   위 버튼을 누르면 맵·규칙·시즌·순수/성장이 바뀝니다   (빈 곳 %s)" % ("누르면 닫기" if touch_ui else "클릭: 닫기"), "", "", ""])
+	var lines := PackedStringArray(["[리더보드]   위 버튼을 누르면 맵·규칙·시즌·순수/성장/쉽게 모드가 바뀝니다   (빈 곳 %s)" % ("누르면 닫기" if touch_ui else "클릭: 닫기"), "", "", ""])
 	var specs := [["all", "이번 시즌 전체"], ["week", "이번 주"]] if board_season == 0 else [["all", sname + " 전체"]]
 	for spec in specs:
 		lines.append(spec[1])
@@ -5395,7 +5407,7 @@ func _build_modes(root: Control, sb: StyleBox) -> void:
 	v.add_child(modes_head)
 	for hard in [true, false]:
 		var l := Label.new()
-		l.text = "어렵게 (점수 올라감)" if hard else "쉽게 (점수 내려감 · 리더보드 제외 · 최고 기록 따로)"
+		l.text = "어렵게 (점수 올라감)" if hard else "쉽게 (점수 내려감 · 쉽게 모드 리더보드 · 최고 기록 따로)"
 		l.add_theme_font_size_override("font_size", 17)
 		l.add_theme_color_override("font_color", Color(1, 0.65, 0.5) if hard else Color(0.6, 0.85, 1.0))
 		v.add_child(l)
@@ -5465,7 +5477,7 @@ func _refresh_modes() -> void:
 		b.text = "%s %s  %s\n   %s" % ["●" if Modes.has(id) else "○", d["name"], Modes.pct(Modes.score_of(id)), d["desc"]]
 	var head := "점수 x%.2f (%s)" % [Modes.mul(), Modes.pct(Modes.mul())] if not Modes.on.is_empty() else "고른 모드 없음"
 	if Modes.easy():
-		head += " · 쉽게 모드: 리더보드 제외, 최고 기록 따로"
+		head += " · 쉽게 모드: 쉽게 모드 리더보드, 최고 기록 따로"
 	else:
 		head += " · 여러 개를 고르면 배율을 곱해요 (x%.1f~x%.1f)" % [Modes.MUL_MIN, Modes.MUL_MAX]
 	modes_head.text = _kr_keep(head)
