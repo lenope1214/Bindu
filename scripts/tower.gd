@@ -368,6 +368,8 @@ func dmg_factor(rx := false) -> float:
 		f *= 1.0 + 0.04 * mf("bounce")
 	if m("size") > 0 and pattern in Pat.PROJECTILE:
 		f *= 1.0 + 0.04 * mf("size")
+	if not rx:
+		f *= mod_fix_all()
 	# 온라인 밸런스 패치: 공격방식·넣은 속성별 피해 배율
 	if not Patch.pat_mul.is_empty():
 		f *= Patch.pat_mul.get(pattern, 1.0)
@@ -438,6 +440,8 @@ func breakdown() -> Dictionary:
 		fs.append(["mod:multi", log((1 + mn("multi")) * multi_k())])
 	if dmg_mul * spd_mul > 1.0:
 		fs.append(["etc:perk", log(dmg_mul * spd_mul)])
+	for id in mods:  # 강화 보정표로 늘어난 몫은 그 강화로 (줄어든 몫은 0 이하라 아래에서 빠짐)
+		fs.append(["mod:" + id, log(Pat.mod_fix(pattern, id, mf(id)))])
 	var sum := 0.0
 	for f in fs:
 		if f[1] > 0.0:
@@ -655,6 +659,14 @@ func add_mod(id: String) -> String:
 
 ## 지금 든 강화의 효과량 (detail_lines·dmg_factor·multi_k 등과 같은 식). 공격방식마다 다르다.
 func mod_effect(id: String) -> String:
+	var fx := Pat.mod_fix(pattern, id, mf(id))
+	var t := _mod_effect(id)
+	if absf(fx - 1.0) >= 0.005 and id != "dice":
+		t += " · 이 공격방식 보정 피해 x%.2f" % fx
+	return t
+
+
+func _mod_effect(id: String) -> String:
 	var f := mf(id)
 	match id:
 		"multi":
@@ -867,6 +879,14 @@ func dirs() -> Array:
 
 
 ## 다중 발사면 공격 하나당 피해 55%, 더 쌓을수록 한 발은 조금씩 약해진다 (1개 x1.1, 3개 x1.7).
+## 강화 보정표(Pat.MOD_FIX)를 넣은 강화 전부에 대해 곱한 값
+func mod_fix_all() -> float:
+	var f := 1.0
+	for id in mods:
+		f *= Pat.mod_fix(pattern, id, mf(id))
+	return f
+
+
 func multi_k() -> float:
 	return 1.0 if m("multi") == 0 else 0.55 / (1.0 + 0.15 * (mf("multi") - 1.0))
 

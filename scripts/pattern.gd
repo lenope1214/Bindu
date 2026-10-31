@@ -80,6 +80,36 @@ const NO_MOD := {
 }
 
 
+## 강화 보정표 (2026-10-31, 사용자 선택 "목표 띠 + 보정표"): 같은 강화 5개일 때 이 피해 배율을 곱한다(개수에 비례해 배율^(개수/5)).
+## 조합 효율 측정(tools/combo_eff.gd SET=pm STAGE=late, 규칙 1)에서 강화 효과가 1.65배를 넘는 칸은 1.6배로, 1.3배 미만인 칸은 1.35배로 맞춘 값.
+## 강화 성격(다중·유도 등)은 그대로고 숫자만 맞춘다. Rules.t("mod_fix")가 세기(1 = 이 표, 0 = 끔)
+const MOD_FIX := {
+	"shot": {"multi": 0.79, "split": 1.19, "homing": 1.14, "bounce": 0.92, "size": 1.17, "pierce": 0.91},
+	"spray": {"multi": 0.86, "split": 1.12, "bounce": 1.16, "size": 1.35, "pierce": 1.08},
+	"thorn": {"multi": 0.79, "homing": 0.65},
+	"stream": {"multi": 0.8, "bounce": 1.18, "size": 1.16, "pierce": 1.11},
+	"chain": {"split": 1.2, "homing": 1.36, "bounce": 1.08, "size": 1.3, "pierce": 1.1},
+	"gust": {"multi": 1.09, "split": 1.21, "homing": 0.82, "rapid": 1.38},
+	"shard": {"multi": 0.49, "split": 1.29, "homing": 1.22, "size": 1.16, "pierce": 1.29},
+	"wall": {"bounce": 1.17, "pierce": 1.1},
+	"vortex": {"multi": 0.42, "split": 1.35, "bounce": 1.19, "pierce": 1.12},
+	"laser": {"multi": 0.81, "split": 1.19, "bounce": 1.16, "size": 1.14, "pierce": 1.09},
+	"lob": {"multi": 0.88, "homing": 0.94, "bounce": 1.16, "size": 1.08, "rapid": 1.35, "pierce": 1.08},
+	"iron": {"multi": 0.93, "split": 1.13, "homing": 0.7, "size": 1.04},
+	"sonic": {"multi": 0.97, "split": 1.15, "homing": 1.13, "bounce": 1.16, "size": 1.22, "pierce": 1.09},
+	"clock": {"homing": 1.36, "bounce": 1.17, "size": 1.24, "pierce": 1.1},
+	"wisp": {"multi": 0.82, "split": 1.25, "homing": 1.31, "bounce": 0.93, "size": 1.17, "pierce": 0.82},
+}
+
+
+## 이 공격방식에서 강화 n개(효과량)의 보정 배율
+static func mod_fix(pat: String, mod: String, n: float) -> float:
+	var t: Dictionary = MOD_FIX.get(pat, {})
+	if not t.has(mod) or n <= 0.0:
+		return 1.0
+	return pow(t[mod], n / 5.0 * Rules.t("mod_fix"))
+
+
 static func mod_ok(pat: String, mod: String) -> bool:
 	return not NO_MOD.get(mod, []).has(pat)
 
