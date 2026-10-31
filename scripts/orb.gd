@@ -444,18 +444,18 @@ func _late_step(delta: float, mult: float) -> void:
 
 ## 흐린 중인가 (흐림 구체: 실체 late_phase_on초 → 흐림 late_phase_off초).
 func phased() -> bool:
-	return late == "phase" and late_t >= Rules.t("late_phase_on")
+	return late == "phase" and late_t >= Rules.late_phase_on
 
 
 ## 오브젝트가 직접 맞힌 피해(탄·광선 등, 반응·장판·지속 피해 제외)에 후반 구체 저항을 건다. k: 이 타격의 무게 (광선은 프레임마다 작게)
 func late_direct(d: float, k := 1.0) -> float:
 	if late == "armor" and armor > 0.0:
 		var w := clampf(k, 0.0, 1.0)
-		var cur := armor * maxf(Rules.t("late_armor_floor"), 1.0 - Rules.t("late_armor_break") * armor_hits) * w
+		var cur := armor * maxf(Rules.late_armor_floor, 1.0 - Rules.late_armor_break * armor_hits) * w
 		armor_hits += w
-		d = maxf(d - cur, d * Rules.t("late_armor_min"))
+		d = maxf(d - cur, d * Rules.late_armor_min)
 	elif phased():
-		d *= Rules.t("late_phase_dmg")
+		d *= Rules.late_phase_dmg
 	return d
 
 

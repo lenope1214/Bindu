@@ -544,6 +544,7 @@ func _orbs_cc() -> void:
 	sh.hurt(5.0)
 	ok("ORB-02", is_equal_approx(sh.hp, 8.0) and sh.shield == 0.0, "보호막이 피해를 먼저 흡수")
 	_late_orbs()
+	_late_curve()
 	_clear()
 
 
@@ -1734,3 +1735,13 @@ func _late_orbs() -> void:
 	main.wave = 5
 	ok("ORB-03", froms == [100, 175, 250, 350, 500] and share_ok and held and jumped and armor_ok and heal_ok and phase_ok and dev_ok and fresh,
 		"후반 구체: 등장 %s 비율 %s 깜빡 %s/%s 갑옷 %s(%.1f·%.1f·%.1f) 치유 %s(%.1f·%.1f) 흐림 %s 포식 %s 안내 %s" % [str(froms), share_ok, held, jumped, armor_ok, d1, d2, d3, heal_ok, n1.hp, n2.hp, phase_ok, dev_ok, fresh])
+
+
+## 후반 곡선 (WAVE-12)
+func _late_curve() -> void:
+	var g150: float = main.hp_growth(150)
+	var g151: float = main.hp_growth(151)
+	var hp_ok := is_equal_approx(g150, pow(1.05, 140)) and is_equal_approx(g151, pow(1.05, 140) * 1.03 * 305.0 / 303.0)
+	var n_ok: bool = main.wave_size(150) == 303 and main.wave_size(400) == 303 and main.wave_size(100) == 203
+	var s_ok: bool = main.orb_base_speed(100) == 330.0 and main.orb_base_speed(450) == 1380.0 and main.orb_base_speed(600) == 1380.0
+	ok("WAVE-12", hp_ok and n_ok and s_ok, "후반 곡선: 체력 150까지 x1.05·뒤 x1.03(+수 상한 몫) %s, 구체 수 303 상한 %s, 속도 450웨이브 값 1380 상한 %s" % [hp_ok, n_ok, s_ok])

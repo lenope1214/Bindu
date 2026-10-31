@@ -1638,8 +1638,23 @@ static func num(n: int) -> String:
 
 
 ## 11웨이브부터 구체 체력이 웨이브마다 곱으로 늘어난다 (오브젝트 성장 속도에 맞춤, Rules.hp_growth).
+## 후반 (2026-10-31 사용자 "600웨이브쯤이 한계로"): hp_late_from웨이브 뒤로는 x hp_growth_late, 구체 수 상한(orb_n_cap_w)을 넘는 몫은 체력으로 옮긴다.
 static func hp_growth(w: int) -> float:
-	return 1.0 if w <= 10 else pow(Rules.hp_growth, w - 10)
+	if w <= 10:
+		return 1.0
+	var lf := int(Rules.t("hp_late_from"))
+	return pow(Rules.hp_growth, mini(w, lf) - 10) * pow(Rules.t("hp_growth_late"), maxi(0, w - lf)) * count_k(w)
+
+
+## 구체 수 상한으로 줄어든 만큼 구체 하나 체력 배율 (웨이브 전체 체력은 그대로).
+static func count_k(w: int) -> float:
+	var cw := int(Rules.t("orb_n_cap_w"))
+	return 1.0 if w <= cw else float(3 + w * 2) / float(3 + cw * 2)
+
+
+## 구체 기본 속도 30+3w, orb_spd_cap_w웨이브 값에서 멈춘다.
+static func orb_base_speed(w: int) -> float:
+	return 30.0 + mini(w, int(Rules.t("orb_spd_cap_w"))) * 3.0
 
 
 ## 저항 구체(12웨이브~, 버전 4는 8~): 웨이브마다 저항 속성 하나를 정하고 미리 알려 준다.
@@ -1736,8 +1751,9 @@ func _ver_text() -> String:
 
 
 ## 웨이브 구체 수: 3 + 2w. 첫 웨이브는 70%에서 시작해 10웨이브에 100%가 된다 (초반에 판이 끝나지 않게).
+## orb_n_cap_w웨이브(150 = 303개)에서 멈춘다 (넘는 몫은 count_k로 체력에).
 static func wave_size(w: int) -> int:
-	return roundi((3 + w * 2) * lerpf(0.7, 1.0, clampf((w - 1) / 9.0, 0.0, 1.0)))
+	return roundi((3 + mini(w, int(Rules.t("orb_n_cap_w"))) * 2) * lerpf(0.7, 1.0, clampf((w - 1) / 9.0, 0.0, 1.0)))
 
 
 ## 실제로 나오는 구체 수 (규칙 버전 배율, 십자로 맵 1.5배). 미리보기와 웨이브가 같은 값을 쓴다.
@@ -7478,7 +7494,7 @@ func _roll_orb(w: int) -> Dictionary:
 		hp *= Garden.hp_k(w)
 	hp *= Vary.hp_k()
 	hp *= coop_hp_k(w)
-	var spd := (30.0 + w * 3.0 + wf() * 8.0) * (LINE_SPD if Meta.map_id == "line" else 1.0) * Vary.spd_k()
+	var spd := (orb_base_speed(w) + wf() * 8.0) * (LINE_SPD if Meta.map_id == "line" else 1.0) * Vary.spd_k()
 	# 저항·굳셈: 쉬는 시간에 미리 알려 준 대로
 	var res := wave_resist if wave_resist >= 0 and wf() < resist_share(w) else -1
 	var y := wrange(-LINE_HALF + 20.0, LINE_HALF - 20.0) if Meta.map_id == "line" else 0.0
@@ -7661,7 +7677,7 @@ func spawn_minion(boss: Orb) -> void:
 	o.position = boss.position
 	o.from_a = boss.from_a
 	o.target = boss.target
-	o.setup(Orb.Kind.FAST, maxf(1.0, roundf(wave * 0.5 * hp_growth(wave) * Rules.orb_hp)), 36.0 + wave * 3.0)
+	o.setup(Orb.Kind.FAST, maxf(1.0, roundf(wave * 0.5 * hp_growth(wave) * Rules.orb_hp)), orb_base_speed(wave) + 6.0)
 	o.resist_e = boss.resist_e
 	o.minion = true
 	orbs.add_child(o)

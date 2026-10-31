@@ -89,6 +89,11 @@ const TUNE := {
 	"map_wind_with": 0.3, "map_wind_against": 0.15,  # 폭풍: 순풍 탄 속도·사거리 +, 역풍 -
 	"map_line_trail": 2.0,  # 회랑: 지나간 자리 장판 지속 배율
 	"map_line_cc": 0.3,  # 회랑: 감속·밀치기 세기 +
+	# 후반 난이도 (2026-10-31 사용자 "600웨이브쯤이 한계로"): Main.hp_growth·count_k·orb_base_speed·wave_size
+	"hp_late_from": 150.0,  # 이 웨이브까지 체력 x hp_growth(1.05), 그 뒤는 x hp_growth_late
+	"hp_growth_late": 1.03,  # 봇으로 맞춤
+	"orb_n_cap_w": 150.0,  # 구체 수가 이 웨이브 수(303개)에서 멈춤, 넘는 몫은 체력으로
+	"orb_spd_cap_w": 450.0,  # 구체 기본 속도(30+3w)가 이 웨이브 값(1,380)에서 멈춤
 	# 후반 구체 (2026-10-31 사용자 "100·175·250·350·500웨이브에 하나씩", Orb.late, Main._late_trait)
 	"late_blink_from": 100.0, "late_armor_from": 175.0, "late_heal_from": 250.0, "late_phase_from": 350.0, "late_devour_from": 500.0,
 	"late_share": 0.08, "late_share_step": 0.01, "late_share_max": 0.2,  # 처음 비율, 10웨이브마다 +, 최대 (종류마다)
@@ -218,6 +223,11 @@ static var bounce_hit: float = STAT["bounce_hit"]
 static var homing_k: float = STAT["homing_k"]
 static var prism_dmg: float = STAT["prism_dmg"]
 static var pincer_t: float = STAT["pincer_t"]
+static var late_armor_break: float = TUNE["late_armor_break"]
+static var late_armor_floor: float = TUNE["late_armor_floor"]
+static var late_armor_min: float = TUNE["late_armor_min"]
+static var late_phase_on: float = TUNE["late_phase_on"]
+static var late_phase_dmg: float = TUNE["late_phase_dmg"]
 static var rxd := {}  # "rx:<반응 id>" → 피해 배율 (1이 아닌 것만)
 
 
@@ -266,6 +276,11 @@ static func _cache() -> void:
 	homing_k = tune["homing_k"]
 	prism_dmg = tune["prism_dmg"]
 	pincer_t = tune["pincer_t"]
+	late_armor_break = tune["late_armor_break"]
+	late_armor_floor = tune["late_armor_floor"]
+	late_armor_min = tune["late_armor_min"]
+	late_phase_on = tune["late_phase_on"]
+	late_phase_dmg = tune["late_phase_dmg"]
 	rxd.clear()
 	for r in Elem.REACTIONS:
 		var v: float = tune["rxd_" + r["id"]]
