@@ -23,6 +23,8 @@ var sturdy := false  # 굳셈: 밀기·감속·기절·냉기 효과 절반
 var minion_t := 4.0  # 보스: 부하 소환 주기
 var minion := false  # 보스가 부른 부하 (모드 '성난 보스'의 처치 점수 계산)
 var hp := 1.0
+var last_rx := false  # 마지막으로 맞은 피해가 특수 반응 몫인가 (업적 "반응으로 마무리"). hurt()가 끄고 반응 피해를 준 쪽이 켠다
+var born := 0.0  # 나온 때 (main.run_game, 업적 보스 순살)
 var max_hp := 1.0
 var speed := 50.0
 var target := Vector2.ZERO
@@ -213,12 +215,14 @@ func step(delta: float) -> void:
 	if burn_t > 0.0:
 		burn_t -= delta
 		_credit(burn_src, hurt(burn_dps * delta), burn_rx, burn_key)
+		last_rx = burn_rx
 	if poison_t > 0.0:
 		poison_t -= delta
 		var pd := poison_dps * delta * (2.0 if swamp_t > 0.0 else 1.0)
 		if smog_t > 0.0 and burn_t > 0.0 or frostpo_t > 0.0 and frozen_t > 0.0:
 			pd *= 2.0
 		_credit(poison_src, hurt(pd), poison_rx, poison_key)
+		last_rx = poison_rx
 	# 피해 숫자는 0.35초마다 묶어서 표시
 	pop_t -= delta
 	if pop_t <= 0.0 and dmg_acc >= 1.0 and main:
@@ -277,6 +281,7 @@ func _redraw_if_changed() -> void:
 ## 어둠 "받는 피해 +30%"·씨앗 바람 등 증폭이 어느 피해 기록에도 안 잡혔다).
 func hurt(amount: float, crit := false) -> float:
 	var d := amount * (1.5 if prison_t > 0.0 else 1.0 + Rules.dark_vuln if vuln_t > 0.0 else 1.0)
+	last_rx = false
 	if not amp.is_empty():
 		for v in amp.values():
 			d *= 1.0 + v[0]

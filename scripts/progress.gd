@@ -2,10 +2,11 @@ class_name Progress
 ## 계정 진행 저장(클라우드 세이브): Meta의 진행을 서버 형식으로 꺼내고, 합친 결과를 Meta에 넣는다.
 ## 형식·합치기 규칙은 server/app/progress.py와 같아야 한다 (기기마다 다른 설정은 넣지 않음).
 ##   best 키마다 둘 다 큰 값 · ach·codex·seen 합집합 · counts 기기마다 큰 값 · lww 이름마다 늦게 고친 쪽
+##   tally {기기 id: {키: 수}} 기기·키마다 큰 값 (업적·도감 수집 누적, Ach. 0.5.5부터: 없는 진행도 그대로 읽는다)
 
 const FORMAT := 1
 ## 늦게 고친 쪽이 이기는 값 (Meta 변수는 _value·_assign)
-const LWW := ["map", "rules", "modes", "tower_skin", "core_skin", "line_flip", "tutor", "notes_seen", "nick"]
+const LWW := ["map", "rules", "modes", "tower_skin", "core_skin", "line_flip", "tutor", "notes_seen", "nick", "title"]
 const FAV := "fav:"
 
 ## 이름 -> [고친 시각(초), 그때 값]. 저장할 때 값이 바뀐 이름만 시각을 새로 찍는다 (best.cfg [sync] stamps)
@@ -37,6 +38,7 @@ static func _value(name: String) -> Variant:
 		"tutor": return Meta.tutor_next
 		"notes_seen": return Meta.notes_seen
 		"nick": return Meta.nickname
+		"title": return Meta.title
 	return null
 
 
@@ -51,6 +53,7 @@ static func _assign(name: String, v: Variant) -> void:
 		"tutor": Meta.tutor_next = v
 		"notes_seen": Meta.notes_seen = v
 		"nick": Meta.nickname = v
+		"title": Meta.title = v
 
 
 static func _current() -> Dictionary:
@@ -102,14 +105,17 @@ static func build() -> Dictionary:
 	var best := {}
 	for k in Meta.map_best:
 		best[k] = Meta.best_of(k)
+	var tl := Ach.others.duplicate(true)
+	if Meta.device_id != "":
+		tl[Meta.device_id] = Meta.tally.duplicate()
 	return {"format": FORMAT, "best": best, "ach": Meta.achieved.keys(), "codex": Meta.codex.keys(), "seen": Meta.guide_seen.keys(),
-		"counts": c, "lww": stamps.duplicate(true)}
+		"counts": c, "lww": stamps.duplicate(true), "tally": tl}
 
 
 ## 두 진행을 합친다 (서버 progress.merge와 같은 규칙). 게임은 서버가 돌려준 합친 결과를 지금 것과 다시 합쳐 넣는다
 ## (올린 뒤 그 사이에 바뀐 것을 잃지 않게).
 static func merge(a: Dictionary, b: Dictionary) -> Dictionary:
-	var out := {"format": FORMAT, "best": {}, "ach": [], "codex": [], "seen": [], "counts": {}, "lww": {}}
+	var out := {"format": FORMAT, "best": {}, "ach": [], "codex": [], "seen": [], "counts": {}, "lww": {}, "tally": {}}
 	for part in ["best", "counts"]:
 		var x: Dictionary = a.get(part, {})
 		var y: Dictionary = b.get(part, {})
@@ -124,6 +130,15 @@ static func merge(a: Dictionary, b: Dictionary) -> Dictionary:
 		var ks := s.keys()
 		ks.sort()
 		out[part] = ks
+	var ta: Dictionary = a.get("tally", {})
+	var tb: Dictionary = b.get("tally", {})
+	for dev in _keys(ta, tb):
+		var x: Dictionary = ta.get(dev, {})
+		var y: Dictionary = tb.get(dev, {})
+		var m := {}
+		for k in _keys(x, y):
+			m[k] = maxi(int(x.get(k, 0)), int(y.get(k, 0)))
+		out["tally"][dev] = m
 	var la: Dictionary = a.get("lww", {})
 	var lb: Dictionary = b.get("lww", {})
 	for k in _keys(la, lb):
@@ -175,6 +190,13 @@ static func apply(d: Dictionary) -> void:
 	for k in m["seen"]:
 		Meta.guide_seen[k] = true
 	counts = m["counts"]
+	Ach.others = {}
+	for dev in m["tally"]:
+		if dev == Meta.device_id:
+			for k in m["tally"][dev]:
+				Meta.tally[k] = maxi(int(Meta.tally.get(k, 0)), int(m["tally"][dev][k]))
+		else:
+			Ach.others[dev] = m["tally"][dev]
 	var k_sum := 0
 	var g_sum := 0
 	for dev in counts:
@@ -204,9 +226,11 @@ static func apply(d: Dictionary) -> void:
 static func load_into(cfg: ConfigFile) -> void:
 	stamps = Meta.val(cfg, "sync", "stamps", {})
 	counts = Meta.val(cfg, "sync", "counts", {})
+	Ach.others = Meta.val(cfg, "sync", "tally", {})
 
 
 static func save_into(cfg: ConfigFile) -> void:
 	stamp()
 	cfg.set_value("sync", "stamps", stamps)
 	cfg.set_value("sync", "counts", counts)
+	cfg.set_value("sync", "tally", Ach.others)

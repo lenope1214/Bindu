@@ -1583,6 +1583,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	var rm := o.resist_mul(els)
 	d *= rm
 	d = o.hurt(d, crit)  # 받는 피해 배율(약점 등)까지 곱한 값
+	o.last_rx = in_rx or tag.begins_with("rx:")
 	dealt += d
 	if in_rx:
 		rx_dealt += d
@@ -1939,6 +1940,12 @@ func _draw_body() -> void:
 			draw_polyline(b[0], b[1], RADIUS * 0.4)
 		else:
 			draw_colored_polygon(b[0], b[1])
+	if skin == "halo":
+		# 후광 (전설 업적 '외로운 탑'): 머리 위 고리와 도는 빛 셋
+		var now := Time.get_ticks_msec() / 1000.0
+		draw_arc(Vector2(0, -RADIUS * 0.15), RADIUS + 5.0, 0, TAU, 40, Color(1, 0.9, 0.55, 0.55 + 0.25 * sin(now * 2.4)), 2.0)
+		for i in 3:
+			draw_circle(Vector2.from_angle(now * 1.6 + TAU * i / 3.0) * (RADIUS + 5.0) + Vector2(0, -RADIUS * 0.15), 2.2, Color(1, 0.95, 0.7))
 	if skin == "gem":
 		draw_line(Vector2(0, -RADIUS * 1.15), Vector2(0, RADIUS * 1.15), Color(1, 1, 1, 0.35), 1.5)
 		draw_line(Vector2(-RADIUS * 0.85, 0), Vector2(RADIUS * 0.85, 0), Color(1, 1, 1, 0.35), 1.5)
@@ -1991,6 +1998,11 @@ static func _skin_r(skin: String, a: float) -> float:
 			return RADIUS * 1.15 * cos(k) / cos(fposmod(a + PI / 2, 2 * k) - k)
 		"star":
 			return RADIUS * (0.78 + 0.32 * cos(5.0 * (a + PI / 2)))
+		"flower":
+			return RADIUS * (0.82 + 0.26 * absf(cos(3.0 * (a + PI / 2))))
+		"prism":
+			var k := PI / 3.0
+			return RADIUS * 1.25 * cos(k) / cos(fposmod(a + PI / 2, 2 * k) - k)
 	return RADIUS
 
 

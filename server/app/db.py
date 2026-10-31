@@ -92,6 +92,7 @@ class Run(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now)
     # 계정 (0.5.3부터). 비면 예전 기록·토큰 없는 게임: 리더보드는 기기 id로 묶는다
     account_id: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    title: Mapped[str] = mapped_column(String(24), default="")  # 고른 칭호 (업적 id, 0.5.5부터)
 
 
 class Pick(Base):
@@ -231,6 +232,8 @@ def init_db() -> None:
         if "account_id" not in have_runs:
             con.execute(text("ALTER TABLE runs ADD COLUMN account_id VARCHAR(32)"))
             con.execute(text("CREATE INDEX IF NOT EXISTS ix_runs_account_id ON runs (account_id)"))
+        if "title" not in have_runs:
+            con.execute(text("ALTER TABLE runs ADD COLUMN title VARCHAR(24) DEFAULT ''"))
         if "sha256" not in have:
             con.execute(text("ALTER TABLE releases ADD COLUMN sha256 VARCHAR(64) DEFAULT ''"))
         if "size" not in have:
