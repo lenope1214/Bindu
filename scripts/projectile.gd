@@ -97,6 +97,8 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 		pierce_left = tower.mn("pierce")
 		bounces = tower.mn("bounce")
 		homing = tower.mf("homing")
+		if homing > 0.0 and max_travel >= 2000.0:
+			max_travel = HOMING_TRAVEL  # 끝까지 가는 관통탄(철구·관통 연사)이 유도로 전장 안을 맴돌며 끝없이 쫓지 않게
 	vel = d * speed
 	position = tower.position + d * Tower.RADIUS
 	if k in ["blob", "log", "icebolt"]:
@@ -216,6 +218,7 @@ func _strike(delta: float) -> void:
 const CHASE_MAX := 2
 const CHASE_CHECK := 0.8
 const STEER_CONE := 1.6  # 유도 탄이 노리는 앞쪽 각도(라디안). 50도로 좁히면 덜 맞혀서 그대로 두고, 둘레를 도는 것은 포기 규칙으로 막는다
+const HOMING_TRAVEL := 900.0  # 화면 끝까지 가던 탄도 유도가 붙으면 혼불처럼 900까지만
 const WISP_SEEK := 380.0
 const WISP_SEEK_HOMING := 0.3  # 혼불: 유도 하나마다 찾는 범위 +30%
 
@@ -425,7 +428,8 @@ func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 				vel = vel.normalized() * route_speed
 				max_travel = 400.0
 			vel = (best.position - position).normalized() * vel.length()
-			travel = 0.0
+			if homing <= 0.0 and kind != "wisp":
+				travel = 0.0  # 곧게 나는 탄은 튕긴 자리에서 다시 사거리만큼. 쫓는 탄(혼불·유도)은 그대로 이어 세야 튕길 때마다 900씩 늘며 끝없이 쫓지 않는다
 			return false
 	end_form()
 	return true

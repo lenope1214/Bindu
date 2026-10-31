@@ -303,7 +303,9 @@ func range_text() -> String:
 		"wall": return "앞 %d~ (벽 %d개)" % [roundi(90.0 * rr(l)), 2 + roundi(mf("multi"))]
 		"wisp": return "%d (구체를 쫓아감)" % roundi(900.0 * Rules.t("range_wisp"))
 		"path": return "그린 길 최대 %d (갈래 %d/%d)" % [roundi(Pat.path_len(plv)), paths.size(), Pat.path_branches(plv)]
-		"shard": return "화면 끝까지 (파편 130)"
+		"shard": return "화면 끝까지 (파편 130)" if m("homing") == 0 else "%d (유도, 파편 130)" % roundi(Projectile.HOMING_TRAVEL)
+	if m("homing") > 0 and pattern in Pat.PROJECTILE:
+		return "%d (유도)" % roundi(Projectile.HOMING_TRAVEL)
 	return "화면 끝까지"
 
 
