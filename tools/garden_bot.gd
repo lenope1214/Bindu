@@ -10,7 +10,6 @@ var last_w := -1
 var retreats := 0
 var game_t := 0.0
 var start_ms := 0
-var lane_i := 0
 var pt_sum := 0.0  # 이번 웨이브 프레임당 계산 시간(ms) 합·최대 (후반 렉 점검)
 var pt_n := 0
 var pt_max := 0.0
@@ -67,92 +66,6 @@ func _process(_d):
 	return false
 
 
-## 살 수 있는 것 하나를 사서 놓는다. 살 게 없으면 false.
+## 살 수 있는 것 하나를 사서 놓는다 (게임의 자동 정원사와 같은 판단).
 func _buy() -> bool:
-	var ts = main.towers.get_children()
-	var n = ts.size()
-	var want = main.lanes.size() + 1 + main.wave / 8
-	for o in main.offer:
-		if o["type"] != "elem":
-			continue
-		# 새 오브젝트: 길목보다 적으면, 또는 레벨업보다 싸면
-		var newc = Garden.cost_new(n)
-		if n < Garden.MAX_TOWERS and Garden.dew >= newc and (n < want or newc < _cheapest_level(o, ts)):
-			main.picked = o
-			main._garden_pay(newc)
-			_place_new(o)
-			main._after_place()
-			return true
-	# 반응·레벨업·공격방식·강화 중 가장 싼 것
-	var best = null
-	var best_t = null
-	var best_c = 1e18
-	for o in main.offer:
-		for t in ts:
-			if not t.can_take(o):
-				continue
-			var c = 0
-			match o["type"]:
-				"elem": c = Garden.cost_elem_on(t, o["e"], n) * (0.5 if not Elem.new_reactions(t.eff_now(), o["e"]).is_empty() else 1.0)
-				"pat":
-					if not t.can_pattern(o["id"]): continue
-					c = Garden.cost_pat(t, o["id"])
-				"mod": c = Garden.cost_mod(t, o["id"]) * 0.8
-				"trig": c = Garden.cost_trig(t, o["id"]) * 0.9
-				"link": c = Garden.cost_link(main._garden_links()) * 1.2
-			if c < best_c and Garden.dew >= _real(o, t, n):  # 지금 살 수 있는 것 중에서 (반응 할인으로 못 사는 걸 고르고 멈추던 것)
-				best_c = c; best = o; best_t = t
-	if best == null:
-		if Garden.dew > Garden.REROLL_COST * 8:
-			main._on_reroll()
-			return true
-		return false
-	main._on_pick(best)
-	if best["type"] == "elem":
-		main._place_on(best_t)
-	else:
-		main._apply_card(best_t)
-	if main.phase == 1:
-		main._back_to_choose()
-	return true
-
-
-func _real(o, t, n) -> int:
-	match o["type"]:
-		"elem": return Garden.cost_elem_on(t, o["e"], n)
-		"pat": return Garden.cost_pat(t, o["id"])
-		"mod": return Garden.cost_mod(t, o["id"])
-		"trig": return Garden.cost_trig(t, o["id"])
-		"link": return Garden.cost_link(main._garden_links())
-	return 0
-
-
-func _cheapest_level(o, ts) -> float:
-	var low = 1e18
-	for t in ts:
-		if t.can_take(o):
-			low = minf(low, Garden.cost_elem_on(t, o["e"], ts.size()))
-	return low
-
-
-func _place_new(o) -> void:
-	var c = main.core()
-	var ts = main.towers.get_children()
-	var la = main.lanes[0]
-	var fewest = 999
-	for a in main.lanes:
-		var cnt = 0
-		for t in ts:
-			if absf(angle_difference((t.position - c).angle(), a)) < 0.4:
-				cnt += 1
-		if cnt < fewest:
-			fewest = cnt; la = a
-	lane_i += 1
-	var ld = Vector2(cos(la), sin(la))
-	for k in 8:
-		var p = c + ld * (90 + 30 * (k % 4) + 25 * (lane_i % 3)) + ld.orthogonal() * 30 * (1 if (lane_i + k) % 2 == 0 else -1) * (1 + k / 4)
-		p = p.clamp(main.field_rect().position, main.field_rect().end)
-		if main._tower_at(p) == null and p.distance_to(c) > 60:
-			main._place_tower(p, ld)
-			return
-	main._place_tower(c + ld * 200, ld)
+	return Gardener.buy(main)

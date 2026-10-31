@@ -65,6 +65,9 @@ func _process(_d) -> bool:
 			main._garden_rest(true)
 			print("  상점: ", main.offer.map(func(o): return o["type"]), " phase=", main.phase)
 			_ok(main.offer.size() == Garden.SHOP_ELEMS + Garden.SHOP_OTHERS, "오브젝트가 있으면 상점 4장")
+			var ad0 := Garden.dew
+			_ok(Gardener.buy(main) and Garden.dew < ad0, "자동 정원사: 이슬로 하나 삼 (%d → %d)" % [int(ad0), int(Garden.dew)])
+			main._garden_rest(true)
 			step = 1
 		1:
 			# 웨이브 진행: 처치하면 이슬
@@ -113,6 +116,15 @@ func _process(_d) -> bool:
 			_ok(absf(Garden.dew - float(snap["dew"])) < 1.0, "이어하기: 이슬 같음 (1분 안이라 보상 없음)")
 			_ok(_towers_sig() == snap["t"], "이어하기: 오브젝트 같음")
 			_ok(Garden.best == int(snap["best"]), "이어하기: 최고 웨이브 같음")
+			# 영웅: 처음엔 고를 수 있고, 고르면 환생 전엔 못 바꿈, 경험치는 그 속성 처치 몫만
+			Garden.hero_e = -1
+			Garden.hero_free = true
+			Garden.hero_xp = {}
+			_ok(Garden.set_hero(Elem.FIRE) and not Garden.set_hero(Elem.WATER) and Garden.hero_e == Elem.FIRE, "영웅: 한 번 고르면 환생 전엔 못 바꿈")
+			Garden.add_hero_xp(Elem.FIRE, 100.0 + 150.0 + 225.0 + 337.5 + 506.25)
+			Garden.add_hero_xp(Elem.WATER, 5000.0)
+			_ok(Garden.hero_lv() == 5 and Garden.hero_lv_of(Elem.WATER) == 0, "영웅 경험치 100x1.5^L: 1318 → Lv5, 다른 속성 처치는 안 셈")
+			_ok(is_equal_approx(Garden.hero_garden_mul({Elem.FIRE: 1}), 1.10) and is_equal_approx(Garden.hero_garden_mul({Elem.FIRE: 1, Elem.WATER: 1}), 1.05) and is_equal_approx(Garden.hero_garden_mul({Elem.WATER: 1}), 1.0), "정원 안 영웅 속성 피해 +2%/Lv (섞이면 몫만큼)")
 			# 꺼 둔 동안 보상: 2시간 전에 저장한 것으로
 			var cf := ConfigFile.new()
 			cf.load(Garden.RUN_PATH)
@@ -140,6 +152,7 @@ func _process(_d) -> bool:
 				return false
 			_ok(Garden.seeds == 11 and Garden.seeds_total == int(snap["s0"]) + 11, "환생: 최고 31 → 씨앗 +11")
 			_ok(Garden.rebirths == 1, "환생 횟수 1")
+			_ok(Garden.hero_free and Garden.hero_lv_of(Elem.FIRE) == 5, "환생하면 영웅 속성을 다시 고를 수 있고 레벨은 남음")
 			_ok(main.wave == 0 and main.towers.get_child_count() == 0, "환생하면 정원을 처음부터")
 			_ok(is_equal_approx(Garden.dew, Garden.start_dew()), "환생 뒤 시작 이슬 %d" % int(Garden.start_dew()))
 			_ok(Garden.kill_dew(10, false) > Garden.k("dew_kill", 8.0) * pow(1.05, 10) * 1.05, "환생하면 처치 이슬 +10%")
@@ -168,6 +181,9 @@ func _process(_d) -> bool:
 			_ok(Garden.boosted, "씨앗 나무를 켜 두면 일반 판에 적용")
 			_ok(main.core_max == 10 + 1, "뿌리 1: 중앙 체력 +1 (%d)" % main.core_max)
 			_ok(Meta.run_key().ends_with(Garden.GROW_TAG), "기록 키에 ~grow (성장)")
+			_ok(main.offer.any(func(o): return o["type"] == "elem" and o["e"] == Elem.FIRE), "영웅 Lv5: 일반 판 첫 쉬는 시간에 영웅 속성 카드")
+			var nb: float = Garden.elem_mul({Elem.FIRE: 1}) - 1.0
+			_ok(absf(nb - (0.025 + Garden.mastery_bonus(Elem.FIRE))) < 0.0001 and Garden.hero_norm_bonus() <= 0.05, "일반 판 영웅 속성 피해 +0.5%/Lv (Lv5 = +2.5%, 숙련과 더함)")
 			Garden.tree_on = false
 			_ok(not Garden.want_boost(), "끄면 다음 판은 순수")
 			print("RESULT fails=", fails)

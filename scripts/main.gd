@@ -365,6 +365,21 @@ var board_seasons: Array = []  # 서버 시즌 목록 (새 시즌부터)
 static var title_seen := false  # 다시 시작하면 타이틀은 건너뛴다
 # 정원 모드 (Garden)
 var garden_cd := -1.0  # 다음 웨이브까지 남은 시간 (정원 쉬는 시간, 자동 진행)
+var gp: PanelContainer  # 정원 목록 패널: 가로 화면은 오른쪽, 세로 화면은 아래 (전장은 남은 자리에 맞춰 줄임)
+var gp_head: Label
+var gp_auto_btn: Button
+var gp_prog_btn: Button
+var gp_tabs := {}  # "shop"/"hero" -> 탭 버튼
+var gp_tab := "shop"
+var gp_list: VBoxContainer  # 상점 줄
+var gp_hero: VBoxContainer  # 영웅 탭
+var gp_next_btn: Button
+var gp_sig := ""  # 상점 줄을 다시 만들지 (카드·살 수 있는지가 바뀌면)
+var gp_portrait := false
+var gp_field_cx := 0.0
+var gp_view := Rect2()  # 정원: 패널을 뺀 화면이 보여 주는 월드 영역
+var gp_buy_t := 0.0  # 자동 정원사: 다음에 살 때까지
+const GP_W := 400.0  # 가로 화면 패널 폭 (UI 단위)
 var garden_auto := true  # 정원: 쉬는 시간이 지나면 다음 웨이브를 저절로 (끄면 Space)
 var garden_perk_t := 0.0  # 정원 특성: 이 시간이 지나면 첫 번째를 고른다
 var garden_wave_dew := 0.0  # 이번 웨이브에 얻은 이슬
@@ -521,6 +536,8 @@ func arena() -> Rect2:
 ## 지금 화면에 보이는 월드 영역. 화면이 16:9보다 길면(폰) 전장 양옆까지, 4:3이면(태블릿) 위아래까지 보인다.
 func view_rect() -> Rect2:
 	var vs := get_viewport_rect().size
+	if camera != null and Garden.on and gp != null and gp.visible:
+		return gp_view  # 정원: 목록 패널을 뺀 전장 쪽 (진입 표시·정보창이 패널 밑에 깔리지 않게)
 	if camera == null or is_equal_approx(view_zoom, 1.0):
 		return Rect2((Meta.FIELD - vs) / 2.0, vs)
 	var s := vs / view_zoom
@@ -1807,6 +1824,9 @@ func _make_choices() -> void:
 			offer.append(card)
 		elif card.get("lv", 1) > same[0].get("lv", 1):
 			offer[offer.find(same[0])] = card
+	# 영웅 Lv5: 일반 판 첫 쉬는 시간에 영웅 속성 카드 보장
+	if wave == 0 and Garden.hero_card() and not offer.any(func(cd): return cd["type"] == "elem" and cd["e"] == Garden.hero_e):
+		offer[0] = {"type": "elem", "e": Garden.hero_e, "lv": 1}
 	# 속성 카드(새 오브젝트를 놓을 수 있는 카드)는 최소 1장
 	if not offer.any(func(cd): return cd["type"] == "elem"):
 		offer[randi() % offer.size()] = {"type": "elem", "e": Vary.open("elem", Elem.ALL).pick_random(), "lv": 1}
@@ -3267,7 +3287,14 @@ func _draw_info() -> void:
 			var w := 10.0 + tw + (6.0 + nk * 22.0 if nk > 0 else 0.0) + 8.0
 			var p: Vector2 = xf * (arr[0] - arr[1] * 60.0)
 			var r := Rect2(p - Vector2(w, 30.0) / 2.0, Vector2(w, 30.0))
-			r.position = r.position.clamp(Vector2(8.0, top), Vector2(size.x - w - 8.0, lo - 30.0))
+			var gx := size.x
+			var gy := lo
+			if Garden.on and gp != null and gp.visible:  # 정원: 목록 패널 밑으로 들어가지 않게
+				if gp_portrait:
+					gy = minf(gy, gp.position.y - 8.0)
+				else:
+					gx = minf(gx, gp.position.x)
+			r.position = r.position.clamp(Vector2(8.0, top), Vector2(gx - w - 8.0, gy - 30.0))
 			r = _off_legend(r)
 			badges.append(r)
 			# 카드 위에 걸친 배지는 그리지 않는다 (옅게 그려도 카드 글을 가렸고, 마우스를 올리면 말풍선이 카드를 덮었다). 카드를 내리면(V) 보인다
@@ -3896,7 +3923,7 @@ func _draw_over_card() -> void:
 ## 두 손가락 벌리기·모으기 = 확대, 두 손가락 끌기 = 이동. PC는 휠 = 확대(커서 쪽), 휠 누른 채 끌기 = 이동.
 ## 처리했으면 true (그 입력은 게임·UI로 넘기지 않는다).
 func _zoom_input(event: InputEvent) -> bool:
-	if title_label == null or title_label.visible or phase == Phase.GAMEOVER:
+	if title_label == null or title_label.visible or phase == Phase.GAMEOVER or Garden.on:  # 정원은 패널에 맞춰 전장 크기를 정한다
 		touches.clear()
 		pinch_lock = false
 		return false
@@ -4689,6 +4716,7 @@ func _build_menu(root: Control) -> void:
 	_build_notes(root)
 	_build_modes(root, rsb)
 	_build_tree(root, rsb)
+	_build_garden_panel(root)
 	codex_panel = Codex.new()
 	codex_panel.z_index = 22  # 일시정지 어둠(z 20) 위에
 	codex_panel.setup(PERKS, rsb.duplicate(), _save_best)
@@ -7290,6 +7318,8 @@ func _process(delta: float) -> void:
 	hide_btn.set_anchors_preset(Control.PRESET_CENTER_TOP if cards_hidden else Control.PRESET_CENTER)
 	# 카드 줄은 오른쪽 설명을 피해 왼쪽으로 비켜 있다. 설명을 숨기면 가운데로, 버튼도 카드 가운데에 맞춘다
 	var cx := 0.0 if legend_hidden else -75.0
+	if Garden.on and gp != null and gp.visible:
+		cx = gp_field_cx  # 정원: 오른쪽 목록 패널을 피해 전장 가운데
 	# 카드 4장(정원 상점·열매 특성)이 오른쪽 설명 밑으로 들어가면(글자 크게) 쉬는 시간 동안 설명을 접고 가운데로
 	if legend.visible and phase == Phase.CHOOSE and choice_box.get_child_count() > 3 and ui_root.size.x / 2.0 + cx + 365.0 > legend.position.x - 8.0:
 		legend.visible = false
@@ -7361,6 +7391,7 @@ func _process(delta: float) -> void:
 			_start_wave()
 	if Garden.on:
 		_garden_ui(delta, reading)
+	_garden_panel_tick(delta)
 	if reading:
 		return
 	_update_fx(delta)
@@ -7901,7 +7932,8 @@ func _update_fx(delta: float) -> void:
 	eclipse_cd = maxf(eclipse_cd - delta, 0.0)
 	if view_zoom > 1.0 and (title_label.visible or phase == Phase.GAMEOVER):
 		_reset_zoom()  # 시작 화면·게임 오버는 1배로
-	camera.position = center() + view_pan
+	if not (Garden.on and gp != null and gp.visible):  # 정원은 목록 패널에 맞춰 _garden_panel_tick이 정한다
+		camera.position = center() + view_pan
 	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 14.0 * shake * (1.0 if Meta.shake_on else 0.0)
 	fx_layer.queue_redraw()
 
@@ -9917,6 +9949,7 @@ func _garden_wave_done() -> void:
 			if t.dealt > 0.0 and not t.elements.is_empty():
 				for e in t.elements:
 					Garden.add_mastery(e, kw * t.dealt / total / t.elements.size())
+					Garden.add_hero_xp(e, kw * t.dealt / total / t.elements.size())
 	Garden.best = maxi(Garden.best, wave)
 	# 웨이브를 막으면 중앙 체력이 다 찬다: 놓친 구체가 쌓여 켜 둔 채 결국 물러나지 않게, 한 웨이브에 다 뚫릴 때만 물러남
 	if core_hp < core_max:
@@ -9985,6 +10018,7 @@ func _rebirth() -> void:
 	Garden.seeds += got
 	Garden.seeds_total += got
 	Garden.rebirths += 1
+	Garden.hero_free = true  # 영웅 속성은 환생할 때만 바꿀 수 있다 (레벨은 속성마다 남음)
 	_clear_run()
 	Garden.reset_run()
 	_save_best()
@@ -10017,29 +10051,334 @@ func _garden_ui(delta: float, reading: bool) -> void:
 	bonsai_btn.visible = rest and not perk_mode and Garden.lv("bonsai") > 0 and towers.get_child_count() > 0
 	if bonsai_btn.visible:
 		bonsai_btn.text = "분재로 지정 (%s)" % ("선택한 것" if selected.size() == 1 else "최다 피해")
+	if Garden.on and phase != Phase.READY:
+		start_btn.visible = false  # 정원: 다음 웨이브 버튼은 목록 패널 안 (gp_next_btn)
 	if not rest:
-		if Garden.on and phase != Phase.READY:
-			start_btn.visible = false  # 놓는 중·웨이브 중엔 카운트다운 버튼을 숨긴다 (놓는 동안 멈춰 있음)
+		gp_next_btn.text = "웨이브 %d 진행 중" % wave if phase == Phase.WAVE else "놓는 중… (취소: Esc)"
+		gp_next_btn.disabled = true
 		return
+	gp_next_btn.disabled = false
 	if perk_mode:
-		start_btn.visible = false
+		gp_next_btn.text = "특성을 고르세요"
+		gp_next_btn.disabled = true
 		garden_perk_t -= delta
 		if garden_perk_t <= 0.0 and not perk_offer.is_empty() and garden_auto:
 			_on_perk(perk_offer[0])
 		return
-	start_btn.visible = true
+	# 자동 정원사: 쉬는 시간에 0.35초마다 하나씩 산다 (살 게 없으면 멈춤)
+	if Garden.auto_buy and not reading and not press_t:
+		gp_buy_t -= delta
+		if gp_buy_t <= 0.0:
+			gp_buy_t = 0.35
+			if Gardener.buy(self):
+				return
 	if garden_cd < 0.0:
-		start_btn.text = "다음 웨이브 (Space)"
+		gp_next_btn.text = _kh("다음 웨이브 (Space)")
 		return
 	var hc := get_viewport().gui_get_hovered_control()
-	var hovering := hc != null and (choice_box.is_ancestor_of(hc) or hc == reroll_btn or hc == rebirth_btn or hc == bonsai_btn)
+	var hovering := hc != null and (gp.is_ancestor_of(hc) or choice_box.is_ancestor_of(hc))
 	if press_t or boxing or reading or hovering:
 		garden_cd = maxf(garden_cd, 1.5)
 	else:
 		garden_cd -= delta
-	start_btn.text = "%.1f초 뒤 다음 웨이브 (Space)" % maxf(garden_cd, 0.0)
+	gp_next_btn.text = _kh("%.1f초 뒤 다음 웨이브 (Space)" % maxf(garden_cd, 0.0))
 	if garden_cd <= 0.0:
 		_start_wave()
+
+
+## 정원 목록 패널: 머리(이슬·웨이브) · 자동 정원사/자동 진행 · 탭(상점·영웅) · 목록 · 다음 웨이브·환생·분재.
+func _build_garden_panel(root: Control) -> void:
+	gp = PanelContainer.new()
+	gp.z_index = 3
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.05, 0.065, 0.09, 0.97)
+	sb.border_color = Color(1, 1, 1, 0.12)
+	sb.border_width_left = 1
+	sb.border_width_top = 1
+	sb.set_content_margin_all(12)
+	gp.add_theme_stylebox_override("panel", sb)
+	gp.visible = false
+	root.add_child(gp)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 8)
+	gp.add_child(v)
+	gp_head = Label.new()
+	gp_head.add_theme_font_size_override("font_size", 20)
+	gp_head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	v.add_child(gp_head)
+	var tg := HBoxContainer.new()
+	tg.add_theme_constant_override("separation", 8)
+	v.add_child(tg)
+	gp_auto_btn = _gp_btn("", func():
+		Garden.auto_buy = not Garden.auto_buy
+		gp_buy_t = 0.2
+		_save_best()
+		_show_toast("자동 정원사: " + ("켬 (쉬는 시간에 이슬로 알아서 사요)" if Garden.auto_buy else "끔")))
+	gp_auto_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	gp_auto_btn.tooltip_text = "켜 두면 쉬는 시간마다 이슬로 알아서 사요 (영웅 속성 먼저)"
+	tg.add_child(gp_auto_btn)
+	gp_prog_btn = _gp_btn("", _toggle_auto)
+	gp_prog_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tg.add_child(gp_prog_btn)
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 6)
+	v.add_child(tabs)
+	for t in [["shop", "상점"], ["hero", "영웅"]]:
+		var id: String = t[0]
+		var b := _gp_btn(t[1], func():
+			gp_tab = id
+			gp_sig = "")
+		b.toggle_mode = true
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tabs.add_child(b)
+		gp_tabs[id] = b
+	var sc := ScrollContainer.new()
+	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	v.add_child(sc)
+	var inner := VBoxContainer.new()
+	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sc.add_child(inner)
+	gp_list = VBoxContainer.new()
+	gp_list.add_theme_constant_override("separation", 6)
+	gp_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inner.add_child(gp_list)
+	gp_hero = VBoxContainer.new()
+	gp_hero.add_theme_constant_override("separation", 6)
+	gp_hero.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	inner.add_child(gp_hero)
+	gp_next_btn = _gp_btn("", func():
+		if phase == Phase.CHOOSE and not perk_mode:
+			_start_wave())
+	gp_next_btn.custom_minimum_size.y = 52 if _phone() else 46
+	gp_next_btn.add_theme_font_size_override("font_size", 18)
+	v.add_child(gp_next_btn)
+	var low := HBoxContainer.new()
+	low.add_theme_constant_override("separation", 8)
+	v.add_child(low)
+	for b in [rebirth_btn, bonsai_btn]:
+		b.get_parent().remove_child(b)
+		b.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		b.custom_minimum_size = Vector2(0, 52 if _phone() else 40)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.clip_text = true
+		low.add_child(b)
+
+
+func _gp_btn(t: String, f: Callable) -> Button:
+	var b := Button.new()
+	b.text = t
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = Vector2(0, 52 if _phone() else 38)
+	b.add_theme_font_size_override("font_size", 16)
+	b.pressed.connect(f)
+	return b
+
+
+## 패널이 차지하는 화면 영역과 전장 영역 (화면 좌표). 세로가 더 길면 아래, 아니면 오른쪽.
+func _gp_rects() -> Array:
+	var vs := get_viewport_rect().size
+	var s := ui_root.scale.x
+	gp_portrait = vs.y > vs.x
+	if gp_portrait:
+		var fh := minf(vs.x / Meta.FIELD.x, 1.0) * Meta.FIELD.y + 70.0 * s  # 전장 + 위 점수 줄
+		var bot := bar_btn.get_global_rect().position.y - 6.0 if bar_btn.visible else vs.y
+		return [Rect2(0, fh, vs.x, bot - fh), Rect2(0, 0, vs.x, fh)]
+	var pw := GP_W * s
+	var bot := bar_btn.get_global_rect().position.y - 6.0 if bar_btn.visible else vs.y  # 오른쪽 아래 설정 버튼은 패널 밑에
+	return [Rect2(vs.x - pw, 0, pw, bot), Rect2(0, 0, vs.x - pw, vs.y)]
+
+
+func _garden_panel_tick(_delta: float) -> void:
+	var show := Garden.on and not title_label.visible and phase != Phase.GAMEOVER
+	# 세로 화면(창·폰을 세움): 기준 해상도를 720x1280으로 바꿔 글자·버튼 크기를 지킨다 (전장은 폭에 맞춰 줄어듦)
+	var ws := get_window().size
+	var want := Vector2i(720, 1280) if show and ws.y > ws.x else Vector2i(1280, 720)
+	if get_window().content_scale_size != want:
+		get_window().content_scale_size = want
+		_apply_ui_scale.call_deferred()
+		gp_sig = ""
+	if gp.visible != show:
+		gp.visible = show
+		gp_sig = ""
+		if not show:
+			_clamp_pan()  # 카메라를 원래대로
+	if not show:
+		return
+	var rs := _gp_rects()
+	var pr: Rect2 = rs[0]
+	var fr: Rect2 = rs[1]
+	var s := ui_root.scale.x
+	var inv := ui_root.get_global_transform().affine_inverse()
+	gp.position = inv * pr.position
+	gp.size = pr.size / s
+	# 전장을 남은 자리에 맞춘다 (화면 좌표 → 월드: 카메라 배율·위치)
+	var vs := get_viewport_rect().size
+	var z := minf(minf(fr.size.x / Meta.FIELD.x, fr.size.y / Meta.FIELD.y), 1.0)
+	camera.zoom = Vector2(z, z)
+	camera.position = center() - (fr.get_center() - vs / 2.0) / z
+	gp_view = Rect2(camera.position + (fr.position - vs / 2.0) / z, fr.size / z)
+	# 정원 상점은 패널 목록으로 (특성 고르기만 카드로, 전장 가운데)
+	if phase == Phase.CHOOSE and not perk_mode:
+		hint.visible = false  # 상점 안내는 패널 안에 (아래 안내 글이 패널·설정 버튼 밑으로 들어가던 것)
+	legend.visible = false
+	legend_btn.visible = false
+	if not perk_mode:
+		choice_box.visible = false
+		for b in [reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn]:
+			b.visible = false
+	gp_field_cx = (fr.get_center().x - vs.x / 2.0) / s  # 특성 카드 줄은 전장 가운데에 (다음 프레임 배치에서 씀)
+	gp_head.text = "이슬 %s  (+%s/초)\n웨이브 %d · 최고 %d" % [Garden.short(Garden.dew), Garden.short(Garden.rate), wave, Garden.best]
+	gp_auto_btn.text = "자동 정원사: " + ("켬" if Garden.auto_buy else "끔")
+	gp_auto_btn.modulate = Color(0.7, 1, 0.75) if Garden.auto_buy else Color(1, 1, 1, 0.8)
+	gp_prog_btn.text = "자동 진행: " + ("켬" if garden_auto else "끔")
+	for id in gp_tabs:
+		gp_tabs[id].set_pressed_no_signal(id == gp_tab)
+	if Garden.hero_free and Garden.hero_e < 0:
+		gp_tabs["hero"].text = "영웅 (고르기!)"
+	else:
+		gp_tabs["hero"].text = "영웅"
+	var can := phase == Phase.CHOOSE and not perk_mode
+	var sig := "%s|%s|%s|%d|%d|%s" % [gp_tab, can, offer.map(func(o): return _card_key(o) + str(_garden_price_text(o))), Garden.hero_e, Garden.hero_lv(), Garden.hero_free]
+	if sig == gp_sig:
+		return
+	gp_sig = sig
+	gp_list.visible = gp_tab == "shop"
+	gp_hero.visible = gp_tab == "hero"
+	for c in gp_list.get_children():
+		c.queue_free()
+	for c in gp_hero.get_children():
+		c.queue_free()
+	if gp_tab == "shop":
+		_gp_fill_shop(can)
+	else:
+		_gp_fill_hero()
+
+
+## 상점 줄: [이름(색) · 짧은 설명 | 가격]. 누르면 카드를 고른 것과 같다 (속성은 빈 곳=새 오브젝트·오브젝트 위=겹치기).
+func _gp_fill_shop(can: bool) -> void:
+	for card in offer:
+		var cc := _card_content(card, 1)
+		var head: Dictionary = cc.get("head", {})
+		var rows: Array = cc.get("rows", [])
+		var desc := ""
+		for r in rows:
+			if r is Dictionary and r.has("t"):
+				desc = str(r["t"])
+				break
+		var pr := _garden_price_text(card)
+		var col: Color = Elem.COLORS[card["e"]] if card["type"] == "elem" else Color(0.95, 0.85, 0.55)
+		var b := _gp_row(str(head.get("name", "")), desc, pr[0], col, pr[1] and can)
+		b.tooltip_text = str(cc.get("tip", ""))
+		var cd: Dictionary = card
+		b.pressed.connect(func():
+			if phase == Phase.CHOOSE and not perk_mode:
+				_on_pick(cd))
+		gp_list.add_child(b)
+	var rb := _gp_row("새로고침", "상점 카드를 새로 뽑아요 (Q)", "%d이슬" % Garden.REROLL_COST, Color(0.8, 0.85, 1), can and Garden.dew >= Garden.REROLL_COST)
+	rb.pressed.connect(func():
+		if phase == Phase.CHOOSE and not perk_mode:
+			_on_reroll())
+	gp_list.add_child(rb)
+	var hint_l := Label.new()
+	hint_l.text = _th("속성 카드를 누른 뒤 전장 빈 곳: 새 오브젝트 · 오브젝트 위: 겹치기. 오브젝트를 끌면 옮기기")
+	hint_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint_l.add_theme_font_size_override("font_size", 13)
+	hint_l.add_theme_color_override("font_color", Color(1, 1, 1, 0.5))
+	gp_list.add_child(hint_l)
+
+
+func _gp_row(name_t: String, desc: String, price: String, col: Color, ok: bool) -> Button:
+	var b := Button.new()
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = Vector2(0, 60 if _phone() else 54)
+	b.disabled = not ok
+	var h := HBoxContainer.new()
+	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	h.add_theme_constant_override("separation", 8)
+	b.add_child(h)
+	h.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 0)
+	h.offset_left = 10.0
+	h.offset_right = -10.0
+	var vv := VBoxContainer.new()
+	vv.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vv.alignment = BoxContainer.ALIGNMENT_CENTER
+	vv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vv.add_theme_constant_override("separation", 0)
+	h.add_child(vv)
+	var n := Label.new()
+	n.text = name_t
+	n.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	n.add_theme_font_size_override("font_size", 17)
+	n.add_theme_color_override("font_color", col if ok else Color(col, 0.5))
+	vv.add_child(n)
+	var d := Label.new()
+	d.text = desc
+	d.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	d.clip_text = true
+	d.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	d.add_theme_font_size_override("font_size", 12)
+	d.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
+	vv.add_child(d)
+	var p := Label.new()
+	p.text = price
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	p.add_theme_font_size_override("font_size", 14)
+	p.add_theme_color_override("font_color", Color(0.6, 1, 0.75) if ok else Color(1, 0.6, 0.55))
+	h.add_child(p)
+	return b
+
+
+## 영웅 탭: 고를 수 있으면 속성 버튼들, 아니면 레벨·경험치·효과.
+func _gp_fill_hero() -> void:
+	var t := Label.new()
+	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	t.add_theme_font_size_override("font_size", 15)
+	gp_hero.add_child(t)
+	if Garden.hero_free:
+		t.text = "영웅 속성을 하나 고르세요. 그 속성이 정원에서 처치할수록 영웅 레벨이 올라요. 바꾸기는 환생할 때만 (레벨은 속성마다 남아요)"
+		var g := GridContainer.new()
+		g.columns = 2
+		g.add_theme_constant_override("h_separation", 6)
+		g.add_theme_constant_override("v_separation", 6)
+		gp_hero.add_child(g)
+		for e in Elem.ALL:
+			var lv := Garden.hero_lv_of(e)
+			var b := _gp_btn("%s%s" % [Elem.NAMES[e], "  Lv%d" % lv if lv > 0 else ""], func():
+				if Garden.set_hero(e):
+					_save_best()
+					_show_toast("영웅 속성: " + Elem.NAMES[e])
+					gp_sig = "")
+			b.add_theme_color_override("font_color", Elem.COLORS[e])
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			g.add_child(b)
+		return
+	var e := Garden.hero_e
+	var lv := Garden.hero_lv()
+	var pg := Garden.hero_progress()
+	t.text = "영웅: %s Lv%d / %d" % [Elem.NAMES[e], lv, Garden.HERO_MAX]
+	t.add_theme_font_size_override("font_size", 20)
+	t.add_theme_color_override("font_color", Elem.COLORS[e])
+	var bar := ProgressBar.new()
+	bar.show_percentage = false
+	bar.custom_minimum_size = Vector2(0, 14)
+	bar.max_value = maxf(pg[1], 1.0)
+	bar.value = pg[0] if pg[1] > 0.0 else bar.max_value
+	gp_hero.add_child(bar)
+	var info := Label.new()
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.add_theme_font_size_override("font_size", 14)
+	info.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
+	var lines := PackedStringArray()
+	lines.append("경험치 %s / %s (정원에서 %s 처치 몫)" % [Garden.short(pg[0]), Garden.short(pg[1]), Elem.NAMES[e]] if pg[1] > 0.0 else "최고 레벨")
+	lines.append("정원: %s 피해 +%d%%" % [Elem.NAMES[e], roundi(Garden.k("hero_garden", 0.02) * lv * 100)])
+	lines.append("일반 판(씨앗 나무 켬): %s 피해 +%.1f%%" % [Elem.NAMES[e], Garden.hero_norm_bonus() * 100])
+	lines.append(("✓ " if lv >= 5 else "Lv5: ") + "일반 판 첫 쉬는 시간에 %s 카드" % Elem.NAMES[e])
+	lines.append(("✓ " if lv >= Garden.HERO_MAX else "Lv10: ") + "정원에서 %s 추가 효과 한 단계" % Elem.NAMES[e])
+	lines.append("바꾸기: 환생하면 다시 고를 수 있어요")
+	info.text = "\n".join(lines)
+	gp_hero.add_child(info)
 
 
 ## 정원 쉬는 시간: 다음 웨이브·환생·분재 버튼을 카드 줄 아래에 (화면 맨 아래 진입 표시와 겹치던 것).
@@ -10050,16 +10389,7 @@ func _garden_layout(cx: float, by: float) -> void:
 			start_btn.position = Vector2(-110, -100)
 			start_btn.size = Vector2(220, 44)
 		return
-	var rows := [[start_btn, cx - 305.0, cx - 5.0, by + 42.0], [rebirth_btn, cx + 5.0, cx + 305.0, by + 42.0], [bonsai_btn, cx - 150.0, cx + 150.0, by + 84.0]]
-	if not rebirth_btn.visible:
-		rows[0][2] = cx + 305.0
-	for r in rows:
-		var b: Button = r[0]
-		b.set_anchors_preset(Control.PRESET_CENTER)
-		b.offset_left = r[1]
-		b.offset_right = r[2]
-		b.offset_top = r[3]
-		b.offset_bottom = r[3] + 36.0
+	return  # 정원: 다음 웨이브·환생·분재는 목록 패널 안 (_garden_panel_tick)
 
 
 # ---------- 씨앗 나무 (일반 판) ----------

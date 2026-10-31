@@ -552,6 +552,8 @@ func dmg_factor(rx := false) -> float:
 	# 정원 속성 숙련 (씨앗 나무를 쓰는 일반 판만)
 	if Garden.boosted:
 		f *= Garden.elem_mul(elements)
+	if Garden.on:
+		f *= Garden.hero_garden_mul(elements)  # 정원 안 영웅 속성 +2%/Lv
 	# 온라인 밸런스 패치: 공격방식·넣은 속성별 피해 배율
 	if not Patch.pat_mul.is_empty():
 		f *= Patch.pat_mul.get(pattern, 1.0)
@@ -944,7 +946,10 @@ static func _num(v: float) -> String:
 
 ## 지금 쓰는 속성 (예전 연결선은 여기서 이어진 오브젝트 속성을 더했다).
 func eff_now() -> Dictionary:
-	return elements.duplicate()
+	var d := elements.duplicate()
+	if Garden.on and Garden.hero_e >= 0 and d.has(Garden.hero_e):
+		d[Garden.hero_e] += Garden.hero_eff_bonus(Garden.hero_e)  # 정원 영웅 Lv10: 추가 효과 한 단계
+	return d
 
 
 func title() -> String:

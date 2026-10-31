@@ -1,5 +1,5 @@
 extends SceneTree
-## 정원 모드 화면 스크린샷: 시작 화면(정원·씨앗 나무 버튼), 씨앗 나무 창, 정원 상점, 놓기, 웨이브 중, 물러난 뒤, 특성 4장(열매), 리더보드(성장/순수 버튼).
+## 정원 모드 화면 스크린샷: 시작 화면(정원·씨앗 나무 버튼), 씨앗 나무 창, 정원 상점(오른쪽 목록), 영웅 탭(고르기·레벨), 자동 정원사, 세로 화면, 놓기, 웨이브 중, 물러난 뒤, 특성 4장(열매), 리더보드(성장/순수 버튼).
 ## 인자: 저장 폴더 [글자 크기]. 예) xvfb-run godot --rendering-driver opengl3 --path . -s tools/garden_shot.gd -- /tmp/shots
 var main
 var f := 0
@@ -48,7 +48,18 @@ func _initialize():
 			main.wave = 12
 			Garden.best = 27
 			main._garden_rest(true),
-		func(): _snap("g_shop"),
+		func(): _snap("g_shop"); main.gp_tab = "hero"; Garden.hero_free = true; Garden.hero_e = -1,
+		func(): pass,
+		func(): _snap("g_hero_pick"); Garden.hero_xp = {"fire": 900.0}; Garden.set_hero(Elem.FIRE); main.gp_sig = "",
+		func(): pass,
+		func(): _snap("g_hero"); main.gp_tab = "shop"; Garden.auto_buy = true,
+		func(): pass,
+		func(): pass,
+		func(): _snap("g_auto"); Garden.auto_buy = false; root.get_window().size = Vector2i(720, 1440),
+		func(): pass,
+		func(): pass,
+		func(): _snap("g_portrait"); root.get_window().size = Vector2i(1280, 720),
+		func(): pass,
 		func():
 			main._on_pick(main.offer[0]),
 		func(): _snap("g_place"),

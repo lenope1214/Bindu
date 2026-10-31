@@ -42,6 +42,10 @@ static var best_ever := 0
 static var tree := {}  # 가지 id -> 단계
 static var tree_on := true  # 일반 판에 씨앗 나무·숙련을 쓰는지 (끄면 '순수' 기록)
 static var mastery := {}  # 속성 키(Patch.ELEM_KEYS) -> 정원에서 처치한 수
+static var hero_e := -1  # 영웅 속성 (-1 = 아직 없음). 바꾸기는 환생할 때만 (hero_free)
+static var hero_free := true  # 지금 영웅 속성을 고를 수 있는지 (처음·환생 직후)
+static var hero_xp := {}  # 속성 키 -> 영웅 경험치 (정원에서 그 속성이 처치한 몫, 속성마다 따로 남음)
+static var auto_buy := false  # 자동 정원사: 쉬는 시간에 이슬로 알아서 산다
 static var bonsai := {}  # {"e": 속성, "pat": 공격방식, "plv": 레벨, "mods": [강화 id...]} (비면 없음)
 static var has_run := false  # 저장된 정원 판이 있는지 (시작 화면 표시용)
 static var run_wave := 0
@@ -102,7 +106,83 @@ static func has_power() -> bool:
 	for e in Elem.ALL:
 		if mastery_bonus(e) > 0.0:
 			return true
-	return false
+	return hero_lv() > 0
+
+
+# ---------- 영웅 (정원에서 속성 하나를 골라 키운다) ----------
+
+const HERO_MAX := 10
+
+
+static func hero_key(e: int) -> String:
+	return Patch.ELEM_KEYS[Elem.ALL.find(e)]
+
+
+## 레벨 L에서 L+1로 가는 데 드는 경험치: 100 x 1.5^L (Lv10까지 약 1.1만)
+static func hero_need(l: int) -> float:
+	return k("hero_xp", 100.0) * pow(1.5, l)
+
+
+static func hero_lv_of(e: int) -> int:
+	if e < 0:
+		return 0
+	var x := float(hero_xp.get(hero_key(e), 0.0))
+	var l := 0
+	while l < HERO_MAX and x >= hero_need(l):
+		x -= hero_need(l)
+		l += 1
+	return l
+
+
+static func hero_lv() -> int:
+	return hero_lv_of(hero_e)
+
+
+## [이번 레벨에서 모은 경험치, 다음 레벨까지 필요한 양] (최대 레벨이면 [0, 0])
+static func hero_progress() -> Array:
+	var x := float(hero_xp.get(hero_key(hero_e), 0.0)) if hero_e >= 0 else 0.0
+	var l := 0
+	while l < HERO_MAX and x >= hero_need(l):
+		x -= hero_need(l)
+		l += 1
+	return [0.0, 0.0] if l >= HERO_MAX else [x, hero_need(l)]
+
+
+static func set_hero(e: int) -> bool:
+	if not hero_free or not e in Elem.ALL:
+		return false
+	hero_e = e
+	hero_free = false
+	return true
+
+
+static func add_hero_xp(e: int, n: float) -> void:
+	if e != hero_e or e < 0:
+		return
+	var key := hero_key(e)
+	hero_xp[key] = float(hero_xp.get(key, 0.0)) + n
+
+
+## 정원 안: 영웅 속성이 든 오브젝트 피해 +2%/Lv (여러 속성이면 그 몫만큼)
+static func hero_garden_mul(elements: Dictionary) -> float:
+	if hero_e < 0 or not elements.has(hero_e):
+		return 1.0
+	return 1.0 + k("hero_garden", 0.02) * hero_lv() / elements.size()
+
+
+## 일반 판: 영웅 속성 피해 +0.5%/Lv (최대 +5%, 씨앗 나무를 켠 '성장' 판만)
+static func hero_norm_bonus() -> float:
+	return k("hero_norm", 0.005) * hero_lv()
+
+
+## 일반 판 첫 쉬는 시간에 영웅 속성 카드 보장 (Lv5부터)
+static func hero_card() -> bool:
+	return boosted and hero_e >= 0 and hero_lv() >= int(k("hero_card_lv", 5.0))
+
+
+## 정원 안 Lv10: 영웅 속성 추가 효과 한 단계 (효과 계산 레벨 +1)
+static func hero_eff_bonus(e: int) -> int:
+	return 1 if on and e == hero_e and hero_lv() >= HERO_MAX else 0
 
 
 ## 새 일반 판이 씨앗 나무를 쓸지 (시작할 때 정해 판 끝까지).
@@ -139,7 +219,7 @@ static func elem_mul(elements: Dictionary) -> float:
 		return 1.0
 	var s := 0.0
 	for e in elements:
-		s += mastery_bonus(e)
+		s += mastery_bonus(e) + (hero_norm_bonus() if e == hero_e else 0.0)
 	return 1.0 + s / elements.size()
 
 
@@ -270,6 +350,15 @@ static func load_into(cfg: ConfigFile) -> void:
 		if tr.has(id):
 			tree[id] = clampi(int(tr[id]), 0, max_lv(id))
 	tree_on = Meta.val(cfg, "garden", "tree_on", true)
+	var he: int = Meta.val(cfg, "garden", "hero_e", -1)
+	hero_e = he if he in Elem.ALL else -1
+	hero_free = Meta.val(cfg, "garden", "hero_free", true) or hero_e < 0
+	hero_xp = {}
+	var hx: Dictionary = Meta.val(cfg, "garden", "hero_xp", {})
+	for key in hx:
+		if str(key) in Patch.ELEM_KEYS:
+			hero_xp[str(key)] = maxf(0.0, float(hx[key]))
+	auto_buy = Meta.val(cfg, "garden", "auto_buy", false)
 	mastery = {}
 	var ms: Dictionary = Meta.val(cfg, "garden", "mastery", {})
 	for key in ms:
@@ -290,6 +379,10 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("garden", "tree_on", tree_on)
 	cfg.set_value("garden", "mastery", mastery)
 	cfg.set_value("garden", "bonsai", bonsai)
+	cfg.set_value("garden", "hero_e", hero_e)
+	cfg.set_value("garden", "hero_free", hero_free)
+	cfg.set_value("garden", "hero_xp", hero_xp)
+	cfg.set_value("garden", "auto_buy", auto_buy)
 	cfg.set_value("garden", "prev", prev if on else {})
 
 
