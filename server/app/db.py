@@ -1,7 +1,7 @@
 """DB 테이블. PostgreSQL(운영)과 SQLite(테스트) 모두 동작."""
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import (JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine, inspect,
+from sqlalchemy import (JSON, BigInteger, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine, inspect,
                         text)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
@@ -77,7 +77,7 @@ class Run(Base):
     map: Mapped[str] = mapped_column(String(32), index=True)
     rules: Mapped[int] = mapped_column(Integer, index=True)
     wave: Mapped[int] = mapped_column(Integer)
-    score: Mapped[int] = mapped_column(Integer)
+    score: Mapped[int] = mapped_column(BigInteger)  # 후반 점수는 21억(INTEGER)을 넘는다
     kills: Mapped[int] = mapped_column(Integer, default=0)
     best_combo: Mapped[int] = mapped_column(Integer, default=0)
     game_secs: Mapped[float] = mapped_column(Float, default=0.0)
@@ -201,7 +201,7 @@ class RunSave(Base):
     map: Mapped[str] = mapped_column(String(32), default="")
     rules: Mapped[int] = mapped_column(Integer, default=0)
     wave: Mapped[int] = mapped_column(Integer, default=0)
-    score: Mapped[int] = mapped_column(Integer, default=0)
+    score: Mapped[int] = mapped_column(BigInteger, default=0)
     data: Mapped[str] = mapped_column(Text, default="")  # run.cfg 글 그대로
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now)
 
@@ -223,6 +223,8 @@ def init_db() -> None:
     # create_all은 이미 있는 표에 열을 더하지 않는다: 나중에 생긴 열은 여기서
     have = {c["name"] for c in inspect(engine).get_columns("releases")}
     have_runs = {c["name"] for c in inspect(engine).get_columns("runs")}
+    small_score = [t for t in ("runs", "run_saves") if any(c["name"] == "score" and not isinstance(c["type"], BigInteger)
+                                                          for c in inspect(engine).get_columns(t))]
     with engine.begin() as con:
         if "run_key" not in have_runs:
             con.execute(text("ALTER TABLE runs ADD COLUMN run_key VARCHAR(40) DEFAULT ''"))
@@ -243,6 +245,10 @@ def init_db() -> None:
             con.execute(text("ALTER TABLE releases ADD COLUMN sha256 VARCHAR(64) DEFAULT ''"))
         if "size" not in have:
             con.execute(text("ALTER TABLE releases ADD COLUMN size INTEGER DEFAULT 0"))
+        # 점수 열을 INTEGER(최대 약 21억)에서 BIGINT로: 넘는 판은 저장이 실패해 리더보드·통계에서 빠졌다
+        if engine.dialect.name == "postgresql":
+            for tbl in small_score:
+                con.execute(text(f"ALTER TABLE {tbl} ALTER COLUMN score TYPE BIGINT"))
 
 
 def get_db():
