@@ -375,6 +375,8 @@ var garden_btn: Button  # 시작 화면
 var home_box: VBoxContainer  # 시작 화면 첫 화면: 이어하기·큰 타일(일반 판·정원·멀티)·그림 버튼 줄
 var prep_box: VBoxContainer  # [일반 판]을 누르면: 맵·규칙·모드 + 시작 (Esc 뒤로)
 var prep_title: Label
+var prep_back: Button  # 준비 화면 왼쪽 위 [뒤로]
+var modes_label: Label  # 준비 화면 모드 줄 가운데 글
 var normal_info: Label  # 일반 판 타일의 맵·최고 기록 줄
 var garden_info: Label
 var prep := false
@@ -4462,7 +4464,7 @@ func _build_menu(root: Control) -> void:
 	# [일반 판]을 누르면 나오는 준비 화면 (맵·오는 쪽·규칙·모드 + 시작)
 	prep_title = Label.new()
 	prep_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	prep_title.add_theme_font_size_override("font_size", 30)
+	prep_title.add_theme_font_size_override("font_size", 38)
 	prep_title.text = "일반 판"
 	prep_title.visible = false
 	box.add_child(prep_title)
@@ -4473,32 +4475,69 @@ func _build_menu(root: Control) -> void:
 	home_box = VBoxContainer.new()
 	home_box.add_theme_constant_override("separation", 10)
 	box.add_child(home_box)
-	map_label = _menu_row(prep_box, func(): _cycle_map(-1), func(): _cycle_map(1))
-	flip_label = _menu_row(prep_box, _toggle_flip, _toggle_flip)
-	rules_label = _menu_row(prep_box, func(): _cycle_rules(-1), func(): _cycle_rules(1))
+	map_label = _prep_row(prep_box, "맵", func(): _cycle_map(-1), func(): _cycle_map(1))
+	flip_label = _prep_row(prep_box, "오는 쪽", _toggle_flip, _toggle_flip)
+	rules_label = _prep_row(prep_box, "규칙", func(): _cycle_rules(-1), func(): _cycle_rules(1))
+	# 모드: 여러 개를 켜고 끄는 창이라 화살표 대신 줄 전체가 [모드] 창을 연다
 	modes_btn = Button.new()
-	modes_btn.custom_minimum_size = Vector2(580, 56 if _phone() else 40)
+	modes_btn.custom_minimum_size = Vector2(PREP_W, 64 if _phone() else 56)
 	modes_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	modes_btn.focus_mode = Control.FOCUS_NONE
-	modes_btn.add_theme_font_size_override("font_size", 17)
 	modes_btn.pressed.connect(_toggle_modes)
+	for st in ["normal", "hover", "pressed"]:
+		modes_btn.add_theme_stylebox_override(st, _prep_sb(st != "normal"))
+	var mh := HBoxContainer.new()
+	mh.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mh.add_theme_constant_override("separation", 12)
+	modes_btn.add_child(mh)
+	mh.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 0)
+	mh.offset_left = 14.0
+	mh.offset_right = -10.0
+	var mn := _prep_name("모드 (시험)")
+	mh.add_child(mn)
+	var mv := VBoxContainer.new()
+	mv.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mv.alignment = BoxContainer.ALIGNMENT_CENTER
+	mv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mh.add_child(mv)
+	modes_label = _prep_main()
+	mv.add_child(modes_label)
+	var msub := _prep_sub()
+	mv.add_child(msub)
+	modes_label.set_meta("sub", msub)
+	var marrow := Label.new()
+	marrow.text = "고르기 ▶"
+	marrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	marrow.custom_minimum_size = Vector2(90, 0)
+	marrow.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
+	mh.add_child(marrow)
 	prep_box.add_child(modes_btn)
 	new_btn = Button.new()
-	new_btn.custom_minimum_size = Vector2(630, 64 if _phone() else 56)
+	new_btn.custom_minimum_size = Vector2(PREP_W, 72 if _phone() else 64)
 	new_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	new_btn.focus_mode = Control.FOCUS_NONE
-	new_btn.add_theme_font_size_override("font_size", 22)
+	new_btn.add_theme_font_size_override("font_size", 24)
+	for st in ["normal", "hover", "pressed"]:
+		var gsb := StyleBoxFlat.new()
+		gsb.bg_color = Color(0.15, 0.22, 0.13) if st == "normal" else Color(0.2, 0.3, 0.17)
+		gsb.set_border_width_all(2)
+		gsb.border_color = Color(0.56, 0.82, 0.44)
+		gsb.set_corner_radius_all(10)
+		new_btn.add_theme_stylebox_override(st, gsb)
 	new_btn.pressed.connect(_close_title)
 	prep_box.add_child(new_btn)
 	_icon_btn(new_btn, func(): return ["play", Color(1, 0.9, 0.6)])
 	_keycap(new_btn, "Enter")
-	var back := Button.new()
-	back.text = "◀ 뒤로 (Esc)"
-	back.custom_minimum_size = Vector2(200, 52 if _phone() else 38)
-	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	back.focus_mode = Control.FOCUS_NONE
-	back.pressed.connect(func(): _set_prep(false))
-	prep_box.add_child(back)
+	prep_back = Button.new()
+	prep_back.text = "◀ 뒤로 (Esc)"
+	prep_back.add_to_group("key_hint")
+	prep_back.custom_minimum_size = Vector2(150, 56 if _phone() else 42)
+	prep_back.position = Vector2(20, 20)
+	prep_back.focus_mode = Control.FOCUS_NONE
+	prep_back.add_theme_font_size_override("font_size", 18)
+	prep_back.pressed.connect(func(): _set_prep(false))
+	prep_back.visible = false
+	title_label.add_child(prep_back)
 	# 첫 화면: 큰 타일 셋 (일반 판 · 정원 · 멀티플레이)
 	var tiles := HBoxContainer.new()
 	tiles.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -4890,11 +4929,114 @@ func _set_prep(on: bool) -> void:
 	prep = on
 	prep_title.visible = on
 	prep_box.visible = on
+	prep_back.visible = on
 	home_box.visible = not on
+	title_box.get_child(0).visible = not on  # 로고·소개 줄은 첫 화면에만
+	title_box.get_child(1).visible = not on and not _phone()
 	new_armed = 0.0
 	new_btn.text = "새로 시작" if continue_btn.visible else "시작"
 	sfx.play("place")
 	_refresh_menu()
+
+
+const PREP_W := 640.0
+
+
+func _prep_sb(hov := false) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.1, 0.12, 0.16) if hov else Color(0.07, 0.085, 0.115)
+	sb.set_corner_radius_all(8)
+	sb.content_margin_left = 14
+	sb.content_margin_right = 8
+	sb.content_margin_top = 6
+	sb.content_margin_bottom = 6
+	return sb
+
+
+func _prep_name(t: String) -> Label:
+	var n := Label.new()
+	n.text = t
+	n.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	n.custom_minimum_size = Vector2(96, 0)
+	n.add_theme_font_size_override("font_size", 15)
+	n.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
+	return n
+
+
+func _prep_main() -> Label:
+	var l := Label.new()
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	l.add_theme_font_size_override("font_size", 19)
+	return l
+
+
+func _prep_sub() -> Label:
+	var l := Label.new()
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	l.custom_minimum_size = Vector2(PREP_W - 220.0, 0)
+	l.add_theme_font_size_override("font_size", 13)
+	l.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
+	return l
+
+
+## 준비 화면 한 줄: [이름표 | ◀ | 가운데 글(+작은 설명) | ▶]. 가운데 글을 눌러도 다음으로.
+## 가운데 Label을 돌려주고, 작은 설명 Label은 meta "sub", 줄 전체는 meta "row".
+func _prep_row(box: BoxContainer, title: String, prev: Callable, next: Callable) -> Label:
+	var row := PanelContainer.new()
+	row.custom_minimum_size = Vector2(PREP_W, 64 if _phone() else 56)
+	row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	row.add_theme_stylebox_override("panel", _prep_sb())
+	box.add_child(row)
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 8)
+	row.add_child(h)
+	h.add_child(_prep_name(title))
+	var bs := Vector2(56, 52) if OS.has_feature("mobile") else Vector2(40, 40)
+	var a := Button.new()
+	a.text = "◀"
+	a.flat = true
+	a.focus_mode = Control.FOCUS_NONE
+	a.custom_minimum_size = bs
+	a.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	a.pressed.connect(prev)
+	h.add_child(a)
+	var v := VBoxContainer.new()
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.add_theme_constant_override("separation", 0)
+	h.add_child(v)
+	var l := _prep_main()
+	l.mouse_filter = Control.MOUSE_FILTER_STOP
+	l.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	l.gui_input.connect(func(e: InputEvent):
+		if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT and not e.pressed:
+			next.call()
+			l.accept_event())
+	v.add_child(l)
+	var sub := _prep_sub()
+	v.add_child(sub)
+	var b := Button.new()
+	b.text = "▶"
+	b.flat = true
+	b.focus_mode = Control.FOCUS_NONE
+	b.custom_minimum_size = bs
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.pressed.connect(next)
+	h.add_child(b)
+	l.set_meta("sub", sub)
+	l.set_meta("row", row)
+	return l
+
+
+## 준비 화면 줄 글: 가운데 글과 작은 설명 (설명이 비면 숨김).
+func _prep_set(l: Label, main_t: String, sub_t: String) -> void:
+	l.text = main_t
+	var sub: Label = l.get_meta("sub")
+	sub.text = _kr_keep(sub_t)
+	sub.visible = sub_t != ""
 
 
 func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0) -> Label:
@@ -4941,15 +5083,15 @@ func _refresh_menu() -> void:
 	garden_btn.get_parent().visible = Meta.games > 0 or Garden.seeds_total > 0  # 첫 판 뒤에
 	_refresh_garden_menu()
 	# 폰: 맵 설명 줄은 뺀다 (도움말·도감에 있고, 줄이 많으면 시작 화면 전체가 줄어 버튼이 작아진다)
-	map_label.text = _kh("맵: %s  (←/→)\n%s최고 기록%s  웨이브 %d · 점수 %s" % [Meta.map_name(), "" if _phone() else m["desc"] + "\n", (" (쉽게 모드)" if Modes.easy() else "") + grow_tag, best[0], num(best[1])])
-	flip_label.get_parent().visible = Meta.map_id == "line"
-	flip_label.text = _kh("구체가 오는 쪽: %s  (F)" % ("왼쪽 → 문은 오른쪽 끝" if Meta.line_flip else "오른쪽 → 문은 왼쪽 끝"))
+	_prep_set(map_label, _kh("%s  (←/→)" % Meta.map_name()), "%s최고 기록%s · 웨이브 %d · 점수 %s" % ["" if _phone() else m["desc"].replace("\n", " ") + "\n", (" (쉽게 모드)" if Modes.easy() else "") + grow_tag, best[0], num(best[1])])
+	flip_label.get_meta("row").visible = Meta.map_id == "line"
+	_prep_set(flip_label, _kh("%s  (F)" % ("왼쪽 → 문은 오른쪽 끝" if Meta.line_flip else "오른쪽 → 문은 왼쪽 끝")), "")
 	var ra := [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", "(눌러서 바꾸기)" if touch_ui else "(↑/↓)", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 550.0, 18)]
 	# 폰: 규칙 설명 줄도 뺀다 (이름만, 자세한 건 도움말·모드 창)
-	rules_label.text = _kh("규칙: %s%s  %s" % ra.slice(0, 3) if _phone() else "규칙: %s%s  %s\n%s" % ra)
-	rules_label.get_parent().visible = Meta.games > 0  # 규칙 버전 고르기는 첫 판을 끝낸 뒤에 (그 전엔 버전 1)
+	_prep_set(rules_label, _kh("%s%s  %s" % ra.slice(0, 3)), "" if _phone() else ra[3].replace("\n", " · "))
+	rules_label.get_meta("row").visible = Meta.games > 0  # 규칙 버전 고르기는 첫 판을 끝낸 뒤에 (그 전엔 버전 1)
 	modes_btn.visible = Meta.games > 0  # 모드도
-	modes_btn.text = "모드 (시험): %s   ▶" % ("없음" if Modes.on.is_empty() else "%s · 점수 x%.2f" % [Modes.names(), Modes.mul()])
+	_prep_set(modes_label, "없음" if Modes.on.is_empty() else Modes.names(), "판을 어렵게·쉽게 바꾸는 규칙 · 점수 배율이 붙어요" if Modes.on.is_empty() else "점수 x%.2f" % Modes.mul())
 	if modes_panel.visible:
 		_refresh_modes()
 	var ts: Dictionary = Meta.TOWER_SKINS[Meta.tower_skin]
@@ -7083,6 +7225,7 @@ func _process(delta: float) -> void:
 		help_scroll.offset_top = -hh / 2.0
 		help_scroll.offset_bottom = hh / 2.0
 	title_box.visible = not (tut.visible or settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible or vote_panel.visible or mp_panel.visible or tree_panel.visible)
+	prep_back.visible = prep and title_box.visible  # 준비 화면에서 모드 창 등을 열면 [뒤로]도 숨김
 	# 투표 버튼: 투표 API가 있는 서버(boot의 vote)에 닿았을 때만. 판 끝난 화면 버튼은 남은 글 바로 아래
 	if vote_btn:
 		vote_btn.visible = Net.vote_ok()

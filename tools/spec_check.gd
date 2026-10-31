@@ -655,7 +655,7 @@ func _rules_modes() -> void:
 	main.rules_label.gui_input.emit(up)
 	var r1: int = Meta.rules
 	main.rules_label.gui_input.emit(up)
-	ok("RULE-04", main.rules_label.get_parent().visible and tap_txt and r1 == 3 and Meta.rules == 1 and main.rules_label.mouse_filter == Control.MOUSE_FILTER_STOP, "규칙 줄 글을 누르면 랭크 ↔ 도파민 모드, 터치 화면 안내 '눌러서 바꾸기'")
+	ok("RULE-04", main.rules_label.get_meta("row").visible and tap_txt and r1 == 3 and Meta.rules == 1 and main.rules_label.mouse_filter == Control.MOUSE_FILTER_STOP, "규칙 줄 글을 누르면 랭크 ↔ 도파민 모드, 터치 화면 안내 '눌러서 바꾸기'")
 	main.touch_ui = false
 	Meta.games = g0
 	main._refresh_menu()
