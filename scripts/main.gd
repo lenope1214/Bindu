@@ -317,6 +317,7 @@ var mp_start_btn: Button
 var mp_host_box: HBoxContainer
 var mp_join_box: HBoxContainer
 var mp_room_box: VBoxContainer  # 방 코드·복사 + 사람 줄(플랫폼 그림·닉네임·핑)
+var mp_desc: Label  # 모드 설명 (방에 들어가면 숨김)
 var mp_load_row: HBoxContainer  # 방 만들기·들어가기·호스트와 연결 중: 도는 고리 + 글
 var mp_load_label: Label
 var mp_load_msg := ""
@@ -8741,6 +8742,7 @@ func _build_mp_lobby(root: Control) -> void:
 	head.add_theme_font_size_override("font_size", 28)
 	box.add_child(head)
 	var desc := Label.new()
+	mp_desc = desc
 	desc.text = "대결: 같은 웨이브를 각자 막고, 실수 없이 막으면 상대에게 구체를 보냄\n협동: 한 전장을 함께 막음 (호스트 기기가 계산, 인원만큼 구체가 많아짐)\n맵·규칙은 호스트가 시작 화면에서 고른 것으로, 모드는 끈 채로 합니다"
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc.add_theme_font_size_override("font_size", 15)
@@ -8817,7 +8819,7 @@ func _build_mp_lobby(root: Control) -> void:
 	box.add_child(row)
 	mp_start_btn = Button.new()
 	mp_start_btn.text = "시작"
-	mp_start_btn.custom_minimum_size = Vector2(200, 46)
+	mp_start_btn.custom_minimum_size = Vector2(220, 46)
 	mp_start_btn.focus_mode = Control.FOCUS_NONE
 	mp_start_btn.pressed.connect(_mp_start)
 	row.add_child(mp_start_btn)
@@ -8931,6 +8933,7 @@ func _mp_refresh_lobby(keep_status := true) -> void:
 	mp_room_box.visible = in_room
 	mp_load_row.visible = busy or wait_host
 	mp_close_btn.text = "나가기" if in_room or busy else "닫기"
+	mp_desc.visible = not in_room and not busy
 	_mp_lobby_tick()
 	for ch in mp_room_box.get_children():
 		mp_room_box.remove_child(ch)
@@ -8939,6 +8942,7 @@ func _mp_refresh_lobby(keep_status := true) -> void:
 	mp_start_btn.visible = in_room and mp.is_host()
 	var ready := mp.connected_ids().size()
 	mp_start_btn.disabled = ready < 1
+	mp_start_btn.text = "시작 (%d/%d명)" % [ready + 1, Mp.MAX_PLAYERS] if in_room else "시작"
 	if not in_room:
 		if busy:
 			mp_status.text = ""
@@ -8982,6 +8986,10 @@ func _mp_refresh_lobby(keep_status := true) -> void:
 		var nm: String = _mp_name(id) if not me else (n[1] if n[1] != "" else "닉네임 없음")
 		var st := "" if me or n[2] else ("연결 안 됨" if n[4] else "연결 중")
 		list.add_child(_mp_member_row(id, n[3], id == 1, nm + (" (나)" if me else ""), st))
+	for i in Mp.MAX_PLAYERS - mp.names().size():
+		var empty := _mp_member_row(0, "", false, "빈 자리", "")
+		empty.modulate = Color(1, 1, 1, 0.3)
+		list.add_child(empty)
 	_mp_refresh_pings()
 	if mp.is_host():
 		mp_status.text = "친구에게 방 코드를 알려 주세요. 연결되면 [시작]" if ready < 1 else "모두 연결되면 [시작]"
@@ -8997,7 +9005,8 @@ func _mp_member_row(id: int, pf: String, host: bool, text: String, state: String
 	var ic := Control.new()
 	ic.custom_minimum_size = Vector2(26, 26)
 	ic.tooltip_text = {"windows": "Windows", "mac": "Mac", "ios": "iPhone·iPad", "android": "Android", "linux": "Linux"}.get(pf, "")
-	ic.draw.connect(func(): Glyph.ui(ic, "pf_" + (pf if pf != "" else "unknown"), ic.size * 0.5, 10.0, Color(1, 1, 1, 0.85)))
+	if id > 0:  # 빈 자리는 그림 없이
+		ic.draw.connect(func(): Glyph.ui(ic, "pf_" + (pf if pf != "" else "unknown"), ic.size * 0.5, 10.0, Color(1, 1, 1, 0.85)))
 	row.add_child(ic)
 	var l := Label.new()
 	l.text = ("★ " if host else "    ") + text  # ★ 자리를 비워 이름 시작을 맞춤
@@ -9011,7 +9020,7 @@ func _mp_member_row(id: int, pf: String, host: bool, text: String, state: String
 		sl.add_theme_font_size_override("font_size", 16)
 		sl.add_theme_color_override("font_color", Color(1, 0.45, 0.4) if state == "연결 안 됨" else Color(1, 1, 1, 0.55))
 		row.add_child(sl)
-	elif id != mp.my_id:
+	elif id != mp.my_id and id > 0:
 		var pl := Label.new()
 		pl.add_theme_font_size_override("font_size", 16)
 		pl.tooltip_text = "왕복 지연 (호스트와의 연결 기준)"

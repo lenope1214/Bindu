@@ -44,8 +44,8 @@ func _initialize():
 			main.mp.my_id = 1
 			main.mp.code = "K7QX2M"
 			main.mp.mode = mode
-			main.mp.peers = {1: {"name": "빈두장인", "pf": "windows", "conn": null, "ok": true}, 2: {"name": "민수", "pf": "ios", "conn": null, "ok": true}, 3: {"name": "", "pf": "android", "conn": null, "ok": false}, 4: {"name": "맥유저", "pf": "mac", "conn": null, "ok": false}}
-			main.mp.diag_sent = {4: true}
+			main.mp.peers = {1: {"name": "빈두장인", "pf": "windows", "conn": null, "ok": true}, 2: {"name": "민수", "pf": "ios", "conn": null, "ok": true}, 3: {"name": "", "pf": "android", "conn": null, "ok": false}}
+			main.mp.diag_sent = {3: true}
 			main.mp.ping = {2: 38, 3: 212}
 			main._mp_refresh_lobby(),
 		func():
