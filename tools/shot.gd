@@ -29,8 +29,10 @@ func _initialize():
 			Meta.rules = 3
 			Meta.map_id = "line"
 			main._refresh_menu()
-			main.continue_btn.text = "이어하기 (Enter)    웨이브 29부터 · 소용돌이 · 버전 1"
+			main.continue_info.text = "웨이브 29부터 · 소용돌이 · 랭크"
+			main.continue_btn.custom_minimum_size.x = 3 * main._tile_w() + 32
 			main.continue_btn.visible = true
+			main.get_tree().call_group("keycap", "queue_redraw")
 			main.update_btn.text = "새 버전 0.9.9 받기"
 			main.update_btn.visible = true
 			main.notice_label.text = "공지: 시즌 2가 시작됐어요"

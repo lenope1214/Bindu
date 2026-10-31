@@ -267,6 +267,8 @@ var hud_urgent := ""  # 바로 보여야 하는 값(웨이브·중앙 체력 등
 var title_label: Control  # 메인 메뉴
 var title_box: VBoxContainer
 var continue_btn: Button  # 저장된 판이 있을 때만 보임
+var continue_info: Label  # 이어하기 카드의 설명 줄 (웨이브·맵·규칙)
+const CONT_COL := Color(1.0, 0.78, 0.38)  # 이어하기 카드 색 (호박)
 var account_label: Label  # 설정: 계정 상태 한 줄
 var remote_btn: Button  # 같은 계정의 다른 기기에서 하던 판이 있고, 이 기기에 하던 판이 없을 때만
 var remote_run := ""  # remote_btn이 가져올 판
@@ -4944,11 +4946,18 @@ func _build_menu(root: Control) -> void:
 	garden_btn.add_child(tree_btn)
 	tree_btn.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE, Control.PRESET_MODE_KEEP_HEIGHT, 10)
 	# 이어하기: 저장된 판이 있을 때만 (쉬는 시간마다 자동 저장)
+	# 아래 타일과 같은 카드 모양(호박색 테두리·이름·설명 줄), 폭은 타일 줄과 같게 (_refresh_continue)
 	continue_btn = Button.new()
-	continue_btn.custom_minimum_size = Vector2(630, 60 if _phone() else 48)
+	continue_info = _tile(continue_btn, "이어하기", CONT_COL, "Enter")
+	continue_btn.custom_minimum_size.y = 104 if _phone() else 92
 	continue_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	continue_btn.focus_mode = Control.FOCUS_NONE
-	continue_btn.add_theme_font_size_override("font_size", 19)
+	for st in ["normal", "hover", "pressed"]:
+		var csb: StyleBoxFlat = continue_btn.get_theme_stylebox(st).duplicate()
+		csb.bg_color = Color(0.13, 0.11, 0.07) if st == "normal" else Color(0.18, 0.15, 0.09)
+		csb.border_color = Color(CONT_COL, 0.8 if st == "normal" else 1.0)
+		continue_btn.add_theme_stylebox_override(st, csb)
+	continue_info.add_theme_font_size_override("font_size", 17)
+	continue_info.add_theme_color_override("font_color", Color(1, 0.95, 0.85, 0.85))
 	continue_btn.pressed.connect(_continue_run)
 	continue_btn.visible = false
 	home_box.add_child(continue_btn)
@@ -6615,7 +6624,10 @@ func _refresh_continue() -> void:
 	new_btn.text = "새로 시작" if continue_btn.visible else "시작"
 	if continue_btn.visible:
 		_tut_event("continue")
-		continue_btn.text = "이어하기 (Enter)   웨이브 %d부터 · %s · %s" % [info["wave"] + 1, Meta.MAPS[info["map"]]["name"], Rules.NAMES[info["rules"]]]
+		continue_info.text = "웨이브 %d부터 · %s · %s" % [info["wave"] + 1, Meta.MAPS[info["map"]]["name"], Rules.NAMES[info["rules"]]]
+		var n := 3 if mp_btn.visible else 2
+		continue_btn.custom_minimum_size.x = n * _tile_w() + 16 * (n - 1)
+	get_tree().call_group("keycap", "queue_redraw")  # [일반 판] 타일의 Enter 표시는 이어하기가 있으면 뺀다
 
 
 ## 저장된 선택지 카드가 지금 판에서도 쓸 수 있는 형식인지.
