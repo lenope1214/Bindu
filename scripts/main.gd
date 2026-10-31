@@ -4682,6 +4682,20 @@ func _tower_at(p: Vector2, except: Tower = null) -> Tower:
 	return null
 
 
+## 어둠 그림자 표식이 붙은 구체가 죽으면 남은 시간째 가장 가까운 산 구체(150 안)로 옮긴다.
+func _pass_shade(o: Orb) -> void:
+	var best: Orb = null
+	var bd := 150.0
+	for x in near(o.position, bd):
+		if x != o and x.hp > 0.0 and x.position.distance_to(o.position) < bd:
+			bd = x.position.distance_to(o.position)
+			best = x
+	if best:
+		best.shade(o.shade_t)
+		beam(o.position, best.position, Elem.COLORS[Elem.DARK])
+	o.shade_t = 0.0
+
+
 func _place_tower(p: Vector2, d: Vector2) -> void:
 	var t := Tower.new()
 	t.add(picked["e"], picked["lv"])
@@ -4742,9 +4756,9 @@ func sound_pulse(o: Orb) -> void:
 	var tox: Tower = o.toxring_src if o.toxring_t > 0.0 and is_instance_valid(o.toxring_src) else null
 	for other in near(o.position, r + 30.0):
 		if other.hp > 0.0 and other.position.distance_to(o.position) < r + other.radius():
-			other.hurt(dmg)
+			var got: float = other.hurt(dmg)
 			if tw:
-				tw.credit(dmg, "elem:sound")
+				tw.credit(got, "elem:sound")
 			if tox:
 				other.poison(1.2 * o.toxring_lv * Rules.rx_mul, 3.0, tox, true, "rx:toxecho")
 	if pulses.size() < 40:
@@ -4813,9 +4827,9 @@ func arc(from: Orb, dmg: float, src: Tower = null) -> void:
 				bd = d
 				best = o
 	if best:
-		best.hurt(dmg)
+		var got: float = best.hurt(dmg)
 		if src:
-			src.credit(dmg, "elem:electric")
+			src.credit(got, "elem:electric")
 		if arcs.size() < 80:
 			arcs.append([from.position, best.position, 0.12])
 
@@ -5419,6 +5433,8 @@ func _resolve(delta: float) -> void:
 	# 구체 처치 / 중앙 도달
 	for o in live_orbs:
 		if o.hp <= 0.0:
+			if o.shade_t > 0.0:
+				_pass_shade(o)
 			sfx.play("kill", 0.15)
 			combo_hold = false
 			if combo_t <= 0.0:
@@ -5514,10 +5530,10 @@ func _curse_burst(o: Orb) -> void:
 			continue
 		var d: float = other.position.distance_to(o.position)
 		if d < 100.0 + other.radius():
-			other.hurt(dmg)
+			var got: float = other.hurt(dmg)
 			if tw:
-				tw.credit(dmg, "rx:curse")
-				tw.rx_dealt += dmg
+				tw.credit(got, "rx:curse")
+				tw.rx_dealt += got
 		if other.curse_lv == 0 and d < bd:
 			bd = d
 			next = other

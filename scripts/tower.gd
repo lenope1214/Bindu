@@ -137,6 +137,7 @@ func tax() -> float:
 
 ## 바람 속성: 이 거리 안의 다른 오브젝트 공격 속도 +Rules wind_buff(8%)/바람 레벨. 한 오브젝트에는 가장 큰 바람 하나만.
 const WIND_RANGE := 240.0
+const SHADE_T := 3.0  # 어둠 형태 성질 그림자 표식 시간 (2026-10-31, 끌기 대신: 블랙홀과 겹치지 않게)
 
 
 ## 공격 속도 배율: 특성 × 속사 × 바람 버프 ÷ 속성을 겹친 대가 (모두 곱한다). 특수 반응 공격도 이 배율.
@@ -1032,7 +1033,7 @@ func _pincer(o: Orb) -> void:
 	if o.kind == Orb.Kind.BOSS:
 		f *= 0.25
 	var d := o.max_hp * f
-	o.hurt(d, false)
+	d = o.hurt(d, false)
 	credit(d, "link:pincer")
 	if main:
 		main.popup(o.position, d, Color(1.0, 0.55, 0.85), true, "협공")
@@ -1463,7 +1464,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 			o.stagger(o.speed * 0.1 * tk(Elem.METAL) * minf(k, 1.0))
 	var rm := o.resist_mul(els)
 	d *= rm
-	o.hurt(d, crit)
+	d = o.hurt(d, crit)  # 받는 피해 배율(약점 등)까지 곱한 값
 	dealt += d
 	if in_rx:
 		rx_dealt += d
@@ -1582,8 +1583,8 @@ func form_end(pos: Vector2, d: Vector2, big := false) -> void:
 					main.bolt(PackedVector2Array([pos, best.position]))
 			Elem.DARK:
 				for o in main.near(pos, 60.0):
-					if o.position.distance_to(pos) < 60.0 + o.radius():
-						o.push((pos - o.position).limit_length(10.0 * a))
+					if o.hp > 0.0 and o.position.distance_to(pos) < 60.0 + o.radius():
+						o.shade(SHADE_T)
 			Elem.LIGHT:
 				var to := pos + d * 200.0
 				for o in main.near(pos + d * 100.0, 110.0):
@@ -2145,9 +2146,8 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 			"vortex":
 				# 앞으로 날아가며 줄어드는 띠 (Zone.launch와 같은 계산)
 				var wk := 1.0 + 0.12 * mini(els.get(Elem.WIND, 0), 3) * Rules.trait_mul
-				var dk := 1.0 + 0.15 * mini(els.get(Elem.DARK, 0), 3) * Rules.trait_mul
 				var shr := maxf(0.3, 1.0 - 0.15 * (mini(els.get(Elem.WOOD, 0), 3) + mini(els.get(Elem.WIND, 0), 3)) * Rules.trait_mul)
-				var r0 := (100.0 + 10.0 * (l - 1)) * s * dk
+				var r0 := (100.0 + 10.0 * (l - 1)) * s
 				var nn := dd.orthogonal()
 				var a0 := o + dd * RADIUS
 				var b0 := a0 + dd * 420.0 * wk

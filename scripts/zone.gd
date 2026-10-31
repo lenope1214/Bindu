@@ -126,15 +126,13 @@ func trail_orbs(main) -> Array:
 	return out
 
 
-## 블랙홀: 방향 d로 날아간다. 바람(멀리)은 빠르고 멀리, 나무(자람)·바람은 덜 줄고, 어둠(끌기)은 크고 세게.
+## 블랙홀: 방향 d로 날아간다. 바람(멀리)은 빠르고 멀리, 나무(자람)·바람은 덜 줄고, 어둠(그림자)은 안에 든 구체에 표식.
 func launch(d: Vector2) -> void:
 	dir = d
 	var tw := owner_tower
 	vel = d * Rules.t("vortex_speed") * (1.0 + 0.12 * tw.tk(Elem.WIND))
 	shrink = maxf(0.3, 1.0 - 0.15 * (tw.tk(Elem.WOOD) + tw.tk(Elem.WIND)))
-	var dk := 1.0 + 0.15 * tw.tk(Elem.DARK)
-	pull = 80.0 * dk
-	radius *= dk
+	pull = 80.0
 	r0 = radius
 
 
@@ -186,6 +184,8 @@ func affect(orbs: Array, delta: float) -> void:
 				# 작아질수록 세진다: 처음 vortex_dmg(1.2) → 다 줄면 2배
 				var ramp := 1.0 + (1.0 - radius / r0) / 0.6 if r0 > 0.0 else 1.0
 				_hit(o, Rules.t("vortex_dmg") * _p() * ramp * delta, delta * 3.0)
+				if is_instance_valid(owner_tower) and owner_tower.tk(Elem.DARK) > 0.0:
+					o.shade(Tower.SHADE_T)
 				if o.hp <= 0.0 and not eaten_set.has(o):
 					eaten_set[o] = true
 					eaten += 1
@@ -415,7 +415,7 @@ func _hit(o: Orb, amount: float, k: float) -> void:
 
 
 func _hurt(o: Orb, amount: float) -> void:
-	o.hurt(amount)
+	amount = o.hurt(amount)
 	if is_instance_valid(owner_tower):
 		owner_tower.credit(amount, src if src != "" else "hit")
 		if kind in ["trail", "mine", "boom"]:  # 장작 장판(trail은 불만 _hurt)·독버섯은 반응 피해

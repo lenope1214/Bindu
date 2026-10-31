@@ -500,7 +500,7 @@ static func _raw(t: Tower, o: Orb, d: float, mul := true) -> void:
 	if d <= 0.0:
 		return
 	if mul:
-		o.hurt(d)
+		d = o.hurt(d)
 	else:
 		o.hp -= d
 	t.credit(d, t.tag if t.tag != "" else "hit")

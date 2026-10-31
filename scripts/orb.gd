@@ -40,6 +40,7 @@ var poison_rx := false
 var burn_key := "elem:fire"  # 피해 출처 (Tower.src 키)
 var poison_key := "elem:poison"
 var vuln_t := 0.0
+var shade_t := 0.0  # 어둠 그림자 표식: 받는 피해 +30%를 유지, 죽으면 가까운 구체로 남은 시간째 옮겨 간다
 var chill := 0.0
 var frozen_t := 0.0  # 빙결 표시
 var swamp_t := 0.0  # 독늪 안: 중독 2배, 죽으면 독 폭발
@@ -154,6 +155,7 @@ func step(delta: float) -> void:
 	if root_timer > 0.0: root_timer = maxf(root_timer - delta, 0.0)
 	if stagger_t > 0.0: stagger_t = maxf(stagger_t - delta, 0.0)
 	if vuln_t > 0.0: vuln_t = maxf(vuln_t - delta, 0.0)
+	if shade_t > 0.0: shade_t = maxf(shade_t - delta, 0.0)
 	if flash > 0.0: flash = maxf(flash - delta, 0.0)
 	if frozen_t > 0.0: frozen_t = maxf(frozen_t - delta, 0.0)
 	if swamp_t > 0.0: swamp_t = maxf(swamp_t - delta, 0.0)
@@ -210,15 +212,13 @@ func step(delta: float) -> void:
 	chill = maxf(chill - 0.4 * delta, 0.0)
 	if burn_t > 0.0:
 		burn_t -= delta
-		hurt(burn_dps * delta)
-		_credit(burn_src, burn_dps * delta, burn_rx, burn_key)
+		_credit(burn_src, hurt(burn_dps * delta), burn_rx, burn_key)
 	if poison_t > 0.0:
 		poison_t -= delta
 		var pd := poison_dps * delta * (2.0 if swamp_t > 0.0 else 1.0)
 		if smog_t > 0.0 and burn_t > 0.0 or frostpo_t > 0.0 and frozen_t > 0.0:
 			pd *= 2.0
-		hurt(pd)
-		_credit(poison_src, pd, poison_rx, poison_key)
+		_credit(poison_src, hurt(pd), poison_rx, poison_key)
 	# 피해 숫자는 0.35초마다 묶어서 표시
 	pop_t -= delta
 	if pop_t <= 0.0 and dmg_acc >= 1.0 and main:
@@ -273,11 +273,14 @@ func _redraw_if_changed() -> void:
 		queue_redraw()
 
 
-func hurt(amount: float, crit := false) -> void:
+## 받는 피해 배율(약점·감옥·증폭)까지 곱한 피해를 돌려준다. 때린 쪽은 이 값을 자기 피해로 센다 (2026-10-31: 예전엔 배율 전 값을 세서
+## 어둠 "받는 피해 +30%"·씨앗 바람 등 증폭이 어느 피해 기록에도 안 잡혔다).
+func hurt(amount: float, crit := false) -> float:
 	var d := amount * (1.5 if prison_t > 0.0 else 1.3 if vuln_t > 0.0 else 1.0)
 	if not amp.is_empty():
 		for v in amp.values():
 			d *= 1.0 + v[0]
+	var out := d
 	if shield > 0.0:
 		var absorbed := minf(shield, d)
 		shield -= absorbed
@@ -297,6 +300,7 @@ func hurt(amount: float, crit := false) -> void:
 		main.sfx.play("hit", 0.12)
 	else:
 		dmg_acc += d
+	return out
 
 
 ## 메아리가 끝나면 기록해 둔 피해를 한 번에 (이 피해는 다시 기록하지 않는다).
@@ -307,8 +311,7 @@ func _echo_release() -> void:
 	echo_amt = 0.0
 	if d <= 0.0 or hp <= 0.0:
 		return
-	hurt(d)
-	_credit(echo_src, d, false, "elem:time")
+	_credit(echo_src, hurt(d), false, "elem:time")
 	if main and d >= 1.0:
 		main.popup(position, d, Elem.COLORS[Elem.TIME], true, "메아리")
 
@@ -434,6 +437,12 @@ func _credit(src, d: float, rx: bool, key: String) -> void:
 
 
 func vuln(duration: float) -> void:
+	vuln_t = maxf(vuln_t, duration)
+
+
+## 어둠 형태 성질: 그림자 표식 (받는 피해 +30%는 vuln과 같은 효과, 겹치지 않음)
+func shade(duration: float) -> void:
+	shade_t = maxf(shade_t, duration)
 	vuln_t = maxf(vuln_t, duration)
 
 
