@@ -3466,6 +3466,28 @@ func _draw_wind_rings() -> void:
 		draw_arc(w.position, w.wind_range(), sp * TAU, sp * TAU + TAU * 0.85, 48, Color(wc, 0.35), 1.5)
 
 
+## 별 흡수 둘레: 오브젝트를 놓거나 옮기는 중엔 모든 별의 둘레(어디 두면 별빛을 주는지),
+## 별빛을 주는 오브젝트에 마우스를 올리면 그걸 받는 별의 둘레. 별 자신에 올렸을 때·Alt·[범위 보기]는 draw_range가 그린다.
+func _draw_star_rings() -> void:
+	if title_label.visible or phase == Phase.GAMEOVER or Input.is_key_pressed(KEY_ALT) or range_all:
+		return
+	# star_towers는 웨이브 계산 때만 갱신되니 쉬는 시간에도 맞게 여기서 직접 고른다
+	var stars := towers.get_children().filter(func(t): return t.lv(Elem.STAR) > 0)
+	if stars.is_empty():
+		return
+	var show: Array = []
+	if moving != null or dragging or phase in [Phase.PLACE, Phase.MOVE, Phase.AIM]:
+		show = stars.filter(func(s): return s != moving)
+	else:
+		var h := _tower_at(get_global_mouse_position())
+		if h != null:
+			for s in stars:
+				if s != h and s.position.distance_to(h.position) < Rules.t("star_r"):
+					show.append(s)
+	for s in show:
+		Tower.draw_star_ring(self, s.position, Elem.COLORS[Elem.STAR])
+
+
 ## 보스가 올 길: 쉬는 시간과, 보스 웨이브에서 보스가 나오기 전까지.
 func _draw_boss_path(now: float) -> void:
 	if boss_plan.is_empty() or title_label.visible or phase == Phase.GAMEOVER:
@@ -8632,6 +8654,7 @@ func _draw() -> void:
 
 	_draw_boss_path(now)
 	_draw_wind_rings()
+	_draw_star_rings()
 	# 누수: 구체가 들어온 화면 가장자리가 붉게 번진다 (어느 길목이 뚫렸는지)
 	for lf in leak_flash:
 		var f: float = lf[1] / 1.2

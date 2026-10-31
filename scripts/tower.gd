@@ -2863,6 +2863,12 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 				_r_band(ci, o, dd, 0.0, shot_range(tl, md.get("size", 0)) * wr, 6.0 * s, c)
 			_:
 				_r_band(ci, o, dd, 0.0, far, 6.0 * s, c)
+	if els.has(Elem.STAR):
+		# 별빛을 모으는 둘레: 이 안에 중심이 있는 오브젝트의 피해를 복사해 모은다 (채우지 않고 점선 윤곽만)
+		var sc: Color = Elem.COLORS[Elem.STAR]
+		if focus >= 0 and focus != Elem.STAR:
+			sc.a = 0.35
+		draw_star_ring(ci, o, sc)
 	for r in Elem.reactions_with(els):
 		var rl: int = mini(els[r["a"]], els[r["b"]])
 		var rc: Color = r["color"]
@@ -2907,6 +2913,16 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 				ci.draw_rect(Rect2((Meta.FIELD - ci.get_viewport_rect().size) / 2.0, ci.get_viewport_rect().size), Color(rc.r, rc.g, rc.b, 0.05 * rc.a))  # 보이는 화면 전체 (main.view_rect)
 			_:
 				RxMore.range_preview(ci, o, d, r["id"], rl, rc)
+
+
+## 별 흡수 둘레(star_r): 천천히 도는 얇은 점선 원. 장판처럼 보이지 않게 채우지 않는다.
+static func draw_star_ring(ci: CanvasItem, o: Vector2, c: Color) -> void:
+	var r := Rules.t("star_r")
+	var n := 36
+	var rot := fmod(Time.get_ticks_msec() / 1000.0 * 0.15, 1.0) * TAU / n
+	for i in n:
+		var a := rot + TAU * i / n
+		ci.draw_arc(o, r, a, a + TAU / n * 0.55, 4, Color(c.r, c.g, c.b, 0.75 * c.a), 1.5)
 
 
 static func _r_cone(ci: CanvasItem, o: Vector2, d: Vector2, rng: float, half: float, c: Color) -> void:
