@@ -2019,7 +2019,7 @@ func _draw_body() -> void:
 		draw_circle(Vector2(-(mini(nm, 8) - 1) * 3.0 + i * 6.0, RADIUS + 7.0), 2.0, Color(1, 0.85, 0.45))
 
 
-## 속성 기호(설정): 몸체의 속성 칸마다 그 속성 이름 첫 글자. 하나뿐이면 가운데.
+## 속성 기호(설정): 몸체의 속성 칸마다 그 속성 그림(Glyph.elem). 하나뿐이면 가운데.
 func _draw_symbols(total: int, skin: String) -> void:
 	var font: Font = main.ui_font if main and main.ui_font else ThemeDB.fallback_font
 	var fs := 12 if order.size() <= 3 else 9

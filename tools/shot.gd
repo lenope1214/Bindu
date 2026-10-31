@@ -89,6 +89,15 @@ func _initialize():
 			main._on_card_tap(main.offer[0], 0),
 		func():
 			_snap("cards_tap")
+			# 카드 [자세히]: 켠 채 한 번 누른 카드는 위에 모든 내용 창 (마우스는 올리면 같은 창)
+			main._set_card_detail(true),
+		func():
+			_snap("cards_detail_full")
+			main.tap_sel = -1
+			main._tap_hover(),
+		func():
+			_snap("cards_detail")
+			main._set_card_detail(false)
 			main.touch_ui = touch
 			# 전장 확대 2배 (오른쪽 위 [확대 풀기], 배지·카드·정보는 그대로 화면에)
 			main._set_cards_hidden(true)

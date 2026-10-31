@@ -709,6 +709,37 @@ func _meta_misc() -> void:
 	main._reset_zoom()
 	ok("UI-18", lock1 and zin and unlocked and is_equal_approx(main.view_zoom, 1.0) and main.arena().size == Meta.FIELD, "두 손가락 벌리기 = 전장 확대(x%.1f), 확대 중 누르기는 게임에 안 넘어감, [확대 풀기] = 1배, 전장 크기 그대로" % main.view_zoom)
 
+	# 글 대신 그림: 카드는 버튼 글 없이 그림 머리(속성 카드는 속성 그림·Lv 배지), 짝 속성 줄·숫자 특성은 그림 + 숫자,
+	# 시작 화면·일시정지는 그림 버튼(이름은 말풍선), 오른쪽 설명 앞줄마다 그림
+	_fresh(3)
+	_tower(main.center() + Vector2(-200, 0))
+	var ec: Button = main._card_button({"type": "elem", "e": Elem.WATER, "lv": 2}, 1)
+	var em: Array = ec.get_meta("card")
+	var has_els: bool = em[1].any(func(l): return l[0].has("els"))
+	var pc: Button = main._card_button({"type": "trig", "id": "echo"}, 2)
+	var big: Dictionary = main._perk_big("haste", main._perk_desc(main.PERKS[1]))
+	var glyph_btns: bool = main.title_box.find_children("*", "Button", true, false).filter(func(b): return b.text == "" and b.tooltip_text in ["도감 (K)", "설정 (O)"]).size() == 2
+	var pause_ok: bool = main.pause_box.get_child_count() >= 6 and main.pause_box.get_children().all(func(b): return b.text == "")
+	ok("UI-19", ec.text == "" and em[0].get("e", -1) == Elem.WATER and em[0].get("lv", "") == "Lv2" and has_els and pc.text == "" and big.get("big", "") == "+12%" and big.get("i", "") == "rate" \
+		and glyph_btns and pause_ok and main.legend_heads.size() == main.LEGEND_ICONS.size() and not main._pause_text().contains("Esc:"),
+		"글 대신 그림: 카드 그림 머리·짝 속성 그림, 특성 그림+숫자, 시작 화면·일시정지 그림 버튼, 설명 앞줄 그림")
+	ec.free()
+	pc.free()
+
+	# 카드 설명 세 단계: 기본 간소화(속성은 효과 이름만, 괄호 덧붙임 뺌) → [자세히] 전체 → 자세히 + 올리기 창(반응 설명까지)
+	var was_d := Meta.card_detail
+	Meta.card_detail = false
+	var s0: Dictionary = main._card_content({"type": "elem", "e": Elem.WATER, "lv": 1}, 0)
+	var m0: Dictionary = main._card_content({"type": "mod", "id": "multi"}, 0)
+	var m1: Dictionary = main._card_content({"type": "mod", "id": "multi"}, 1)
+	var full: Array = main._card_full({"type": "elem", "e": Elem.WATER, "lv": 1})
+	var simple_ok: bool = s0["rows"][0].has("pair") and not str(m0["rows"][0]["t"]).contains("(") and str(m1["rows"][0]["t"]).contains("(")
+	var full_ok: bool = full.any(func(l): return str(l[0]).begins_with("반응 ")) and full.size() > s0["rows"].size()
+	main._set_card_detail(true)
+	var on_ok: bool = Meta.card_detail and main.card_detail_btn.button_pressed
+	main._set_card_detail(was_d)
+	ok("UI-20", simple_ok and full_ok and on_ok, "카드 설명: 기본 간소화 · [자세히] 전체 · 자세히 + 올리기(터치는 한 번 누르기) 창에 반응 설명까지")
+
 	# 웨이브 넘기기: 오브젝트가 있어야, 첫 판은 카드가 다 열린 뒤
 	_fresh(3)
 	var none: bool = main._can_skip()
