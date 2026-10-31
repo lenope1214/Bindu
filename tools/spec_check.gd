@@ -1058,6 +1058,35 @@ func _meta_misc() -> void:
 	main._set_card_detail(was_d)
 	ok("UI-20", simple_ok and full_ok and on_ok, "카드 설명: 기본 간소화 · [자세히] 전체 · 자세히 + 올리기(터치는 한 번 누르기) 창에 반응 설명까지")
 
+	# 카드 선택 막: 선택지가 펼쳐져 있으면 검은 막(카드·카드 줄 버튼은 그 위), 필드 보기·카드를 고르면 곧바로 걷힘
+	_fresh(3)
+	var dt := _tower(main.center() + Vector2(-200, 0))
+	main._start_choose()
+	main._process(0.016)
+	var dim_on: bool = main.card_dim.visible and is_equal_approx(main.card_dim.color.a, main.CARD_DIM_A) and main.choice_box.z_index > main.card_dim.z_index \
+		and main.reroll_btn.z_index > main.card_dim.z_index and main.card_dim.mouse_filter == Control.MOUSE_FILTER_IGNORE
+	main._set_cards_hidden(true)
+	main._process(0.016)
+	var dim_hide: bool = not main.card_dim.visible
+	main._set_cards_hidden(false)
+	main._on_pick({"type": "mod", "id": "pierce"})
+	main._process(0.016)
+	var dim_off: bool = not main.card_dim.visible and main.phase == main.Phase.PLACE
+	ok("UI-23", dim_on and dim_hide and dim_off, "카드 선택 중 검은 막 %s(카드 위), 필드 보기 %s·카드 고르면 %s 걷힘" % [dim_on, dim_hide, dim_off])
+
+	# 카드 넣을 대상: 넣을 수 있는 오브젝트만 밝게, 못 넣는 오브젝트(NO_MOD 등)는 흐리게·선택 불가
+	var bad_t := _tower(main.center() + Vector2(200, 0))
+	bad_t.set_pattern("thorn")
+	main.picked = {"type": "mod", "id": "pierce"}
+	main.phase = main.Phase.PLACE
+	main._update_place_dim()
+	var marks: bool = main._place_ok(dt) and not main._place_ok(bad_t) and bad_t.modulate == main.PLACE_OFF and dt.modulate == Color.WHITE \
+		and main._place_refuse(bad_t) != ""
+	main.phase = main.Phase.CHOOSE
+	main._update_place_dim()
+	var back: bool = bad_t.modulate == Color.WHITE
+	ok("UI-24", marks and back, "강화 카드 놓기: 넣을 수 있는 것만 밝게, 관통 연사는 흐리게·이유 문구, 단계가 바뀌면 원래대로")
+
 	# 웨이브 넘기기: 오브젝트가 있어야, 첫 판은 카드가 다 열린 뒤
 	_fresh(3)
 	var none: bool = main._can_skip()

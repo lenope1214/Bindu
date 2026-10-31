@@ -37,6 +37,9 @@ var lanes: Array[float] = []  # 다음 웨이브 구체가 들어올 방향(라�
 var prism_towers: Array = []  # 발사체가 지날 때 확인할 프리즘 오브젝트 (매 계산마다 갱신)
 var star_towers: Array = []  # 별이 든 오브젝트 (둘레 피해를 별빛으로 모은다, 매 계산마다 갱신)
 var picks_left := 0  # 이번 쉬는 시간에 남은 설치 횟수
+const CARD_DIM_A := 0.65  # 카드 선택 중 전장 위 검은 막 (카드·카드 줄 버튼은 그 위)
+const PLACE_OFF := Color(0.45, 0.45, 0.5, 0.4)  # 카드를 놓는 중 넣을 수 없는 오브젝트
+var card_dim: ColorRect
 var moving: Tower = null  # 위치를 옮기는 중인 오브젝트
 # 오브젝트를 꾹 누르거나 끌면 바로 옮긴다(카드를 고른 뒤에도). 선택된 오브젝트를 끌면 함께 움직인다.
 var press_t: Tower = null
@@ -699,7 +702,19 @@ func _build_ui() -> void:
 	guide_label.visible = false
 	root.add_child(guide_label)
 
+	# 카드 선택 중 전장·점수 줄·설명을 어둡게 (카드·카드 줄 버튼·알림·안내는 z 2로 그 위). 마우스는 통과
+	card_dim = ColorRect.new()
+	card_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	card_dim.color = Color(0, 0, 0, CARD_DIM_A)
+	card_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card_dim.z_index = 1
+	card_dim.visible = false
+	root.add_child(card_dim)
+	toast.z_index = 2
+	guide_label.z_index = 2
+
 	choice_box = HBoxContainer.new()
+	choice_box.z_index = 2
 	choice_box.set_anchors_preset(Control.PRESET_CENTER)
 	choice_box.position = Vector2(-440, -90)
 	choice_box.size = Vector2(730, 180)
@@ -762,6 +777,7 @@ func _build_ui() -> void:
 	reroll_btn.size = Vector2(340, 36)
 	reroll_btn.pressed.connect(_on_reroll)
 	reroll_btn.visible = false
+	reroll_btn.z_index = 2  # 카드 선택 막(card_dim) 위
 	root.add_child(reroll_btn)
 
 	apply_btn = Button.new()
@@ -780,6 +796,7 @@ func _build_ui() -> void:
 		if tap_sel >= 0 and tap_sel < offer.size():
 			_on_pick(offer[tap_sel]))
 	apply_btn.visible = false
+	apply_btn.z_index = 2  # 카드 선택 막(card_dim) 위
 	root.add_child(apply_btn)
 
 	skip_btn = Button.new()
@@ -789,12 +806,14 @@ func _build_ui() -> void:
 	_icon_btn(skip_btn, func(): return ["skip", Color(0.75, 0.9, 1.0)])
 	_keycap(skip_btn, "S")
 	skip_btn.visible = false
+	skip_btn.z_index = 2  # 카드 선택 막(card_dim) 위
 	root.add_child(skip_btn)
 	skip_n_btn = Button.new()
 	skip_n_btn.set_anchors_preset(Control.PRESET_CENTER)
 	skip_n_btn.tooltip_text = "넘길 웨이브 수 바꾸기 (1·3·5·10)"
 	skip_n_btn.pressed.connect(_cycle_skip_n)
 	skip_n_btn.visible = false
+	skip_n_btn.z_index = 2  # 카드 선택 막(card_dim) 위
 	root.add_child(skip_n_btn)
 	skip_badge = Button.new()
 	skip_badge.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
@@ -813,6 +832,7 @@ func _build_ui() -> void:
 	_icon_btn(hide_btn, func(): return ["none" if cards_hidden else "eye", Color(1, 1, 1, 0.85)])
 	_keycap(hide_btn, func(): return "" if cards_hidden else "V")
 	hide_btn.visible = false
+	hide_btn.z_index = 2  # 카드 선택 막(card_dim) 위
 	root.add_child(hide_btn)
 	card_detail_btn = Button.new()
 	card_detail_btn.set_anchors_preset(Control.PRESET_CENTER)
@@ -826,6 +846,7 @@ func _build_ui() -> void:
 	_icon_btn(card_detail_btn, func(): return ["help", Color(1, 0.88, 0.5) if Meta.card_detail else Color(1, 1, 1, 0.7)])
 	_keycap(card_detail_btn, "Z")
 	card_detail_btn.visible = false
+	card_detail_btn.z_index = 2  # 카드 선택 막(card_dim) 위
 	root.add_child(card_detail_btn)
 
 	var bar := HBoxContainer.new()
@@ -1349,12 +1370,13 @@ func _apply_ui_scale() -> void:
 	ui_root.position = Vector2(pad.position.x, pad.position.y)
 	ui_root.scale = Vector2(s, s)
 	ui_root.size = (get_viewport_rect().size - Vector2(pad.position.x + pad.size.x, pad.position.y + pad.size.y)) / s
-	if pause_dim:
-		# 일시정지 어둠은 안전 영역 밖까지 덮는다
-		pause_dim.offset_left = -pad.position.x / s
-		pause_dim.offset_top = -pad.position.y / s
-		pause_dim.offset_right = pad.size.x / s
-		pause_dim.offset_bottom = pad.size.y / s
+	# 일시정지 어둠·카드 선택 막은 안전 영역 밖까지 덮는다
+	for d in [pause_dim, card_dim]:
+		if d:
+			d.offset_left = -pad.position.x / s
+			d.offset_top = -pad.position.y / s
+			d.offset_right = pad.size.x / s
+			d.offset_bottom = pad.size.y / s
 
 
 ## 안전 영역 밖 여백 (화면 좌표, position = 왼쪽·위, size = 오른쪽·아래). 폰·태블릿만.
@@ -3431,7 +3453,7 @@ func _draw_info() -> void:
 			if cards_r.has_area() and r.intersects(cards_r):
 				continue
 			info_rects.append(["배지 %s" % txt, r.grow_side(SIDE_TOP, 13.0 if not compact and wave_kinds.any(func(k): return k[2]) else 0.0)])
-			var al := 1.0
+			var al := 0.35 if card_dim.visible else 1.0  # 카드 선택 막 아래 전장 것이라 같이 옅게
 			var sb := StyleBoxFlat.new()
 			sb.bg_color = Color(0.16, 0.04, 0.06, 0.88 * al)
 			sb.border_color = Color(1, 0.35, 0.4, 0.9 * al)
@@ -3484,9 +3506,29 @@ func _draw_info() -> void:
 			if cards_r.has_area() and r.intersects(cards_r):
 				continue
 			info_rects.append(["놓친 %s" % txt, r])
-			var la := 1.0
+			var la := 0.35 if card_dim.visible else 1.0
 			Icons.chip(info, ui_font, r, "orb", Color(0.85, 0.85, 0.9, la), txt, Color(1, 0.5, 0.5, la), 16, Color(0.1, 0.02, 0.03, 0.85 * la), Color(1, 0.4, 0.4, 0.6 * la))
 			tip_rects.append([r, [["지난 웨이브에 이쪽에서 놓친 구체 %d개" % lm[1], Color(1, 0.6, 0.6)], [_leak_text(), Color(1, 1, 1, 0.7)]]])
+	# 카드 선택 막 위로: 마우스를 올린 속성 카드로 새 반응이 생기는 오브젝트 고리 (전장의 고리는 막에 가려 옅다)
+	if card_dim.visible and hover_elem >= 0:
+		var xf2 := ui_root.get_global_transform().affine_inverse() * get_canvas_transform()
+		var cr := ui_root.get_global_transform().affine_inverse() * choice_box.get_global_rect()
+		var pz := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 1000.0 * 6.7)
+		var zs := xf2.get_scale().x
+		var hcard := {"type": "elem", "e": hover_elem}
+		for t in towers.get_children():
+			if not t.can_take(hcard):
+				continue
+			var fresh := Elem.new_reactions(t.eff_now(), hover_elem)
+			if fresh.is_empty():
+				continue
+			var tp: Vector2 = xf2 * t.position
+			var rr := (Tower.RADIUS + 10.0 + pz * 4.0) * zs
+			if cr.grow(rr).has_point(tp):
+				continue
+			if guide_label.visible and guide_label.get_rect().grow(rr).has_point(tp):
+				continue  # 처음 안내 글 위에 걸치지 않게
+			info.draw_arc(tp, rr, 0, TAU, 32, Color(fresh[0]["color"], 0.95), 3.0)
 	# 남은 선택 수: 카드 줄 위 가운데 꼬리표 (2026-10-31: 왼쪽 모서리 "고르기 N"이 뜻이 어렵고 눈에 덜 띄던 것)
 	if phase == Phase.CHOOSE and not perk_mode and choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and not get_tree().paused and not Garden.on:
 		var inv := ui_root.get_global_transform().affine_inverse()
@@ -4415,6 +4457,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if phase == Phase.PLACE and event.button_index == MOUSE_BUTTON_LEFT:
 		var target := _tower_at(mpos)
+		if target and not _place_ok(target):
+			# 넣을 수 없는 오브젝트는 흐리게 그리고 누르거나 끌 수 없다 (이유만 알림)
+			_show_toast(_place_refuse(target))
+			return
 		if target:
 			# 클릭은 손을 뗄 때 처리한다. 꾹 누르거나 끌면 카드를 유지한 채 옮긴다.
 			_begin_press(target, mpos)
@@ -4445,6 +4491,37 @@ func _unhandled_input(event: InputEvent) -> void:
 			_cancel_step()
 	elif phase == Phase.PLACE and event.button_index == MOUSE_BUTTON_RIGHT:
 		_cancel_step()
+
+
+## 카드 선택 막을 깔지: 선택지 카드가 펼쳐져 있을 때만 (일시정지 어둠이 있으면 그것만).
+func _card_dim_on() -> bool:
+	return phase == Phase.CHOOSE and choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 \
+		and not title_label.visible and not get_tree().paused
+
+
+## 지금 고른 카드를 이 오브젝트에 넣을 수 있는지 (속성 종류·강화 종류별 상한·Pat.NO_MOD·별 상한·친구 오브젝트).
+func _place_ok(t: Tower) -> bool:
+	if picked.is_empty() or not is_instance_valid(t):
+		return false
+	return _mine(t) and t.can_take(picked)
+
+
+## 넣을 수 없는 이유 (_place_ok가 false일 때).
+func _place_refuse(t: Tower) -> String:
+	if not _mine(t):
+		return "친구가 놓은 오브젝트에는 넣을 수 없어요"
+	return t.refuse_text(picked)
+
+
+## 카드를 놓는 중(PLACE): 넣을 수 없는 오브젝트는 흐리게. 다른 단계에서는 원래대로.
+func _update_place_dim() -> void:
+	var on := phase == Phase.PLACE and not picked.is_empty()
+	for t in towers.get_children():
+		var c := Color.WHITE
+		if on and not _place_ok(t):
+			c = PLACE_OFF
+		if t.modulate != c:
+			t.modulate = c
 
 
 ## 고른 카드를 오브젝트에 넣는다 (PLACE에서 오브젝트를 짧게 클릭).
@@ -7495,6 +7572,9 @@ func _process(delta: float) -> void:
 	paused_label.visible = show_pause
 	pause_box.visible = show_pause
 	pause_dim.visible = dim
+	# 카드 선택 중: 카드 밖은 검은 막 (닫히면 곧바로 걷는다). 카드를 내리면(필드 보기) 막도 걷는다
+	card_dim.visible = _card_dim_on()
+	_update_place_dim()
 	# 일시정지 창 버튼이 어둠 밑 카드 글 위에 겹쳐 읽기 힘들던 것 (폰·글자 130%): 멈춘 동안 카드 줄은 더 옅게
 	choice_box.modulate.a = 0.25 if dim else 1.0
 	if pause_box.visible:
@@ -8839,24 +8919,39 @@ func _draw() -> void:
 		var col := _card_color(picked)
 		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 150.0)
 		var is_elem: bool = picked["type"] == "elem"
-		# 새 반응이 생기는 오브젝트 강조
-		if is_elem:
-			for t in towers.get_children():
-				if not t.can_take(picked):
-					continue
+		# 넣을 수 있는 오브젝트: 숨 쉬는 빛 + 고리 + 도는 점선 고리 (속성 카드는 새 반응이 생기면 그 반응 색).
+		# 넣을 수 없는 오브젝트는 _update_place_dim이 흐리게 하고 누를 수 없다 (작은 ✕)
+		var spin := Time.get_ticks_msec() / 1000.0 * 1.6
+		for t in towers.get_children():
+			if not _place_ok(t):
+				draw_line(t.position + Vector2(-7, -7), t.position + Vector2(7, 7), Color(1, 0.35, 0.35, 0.55), 2.5)
+				draw_line(t.position + Vector2(7, -7), t.position + Vector2(-7, 7), Color(1, 0.35, 0.35, 0.55), 2.5)
+				continue
+			var hc := col
+			var strong := not is_elem
+			if is_elem:
 				var fresh := Elem.new_reactions(t.eff_now(), picked["e"])
 				if not fresh.is_empty():
-					draw_arc(t.position, Tower.RADIUS + 10.0 + pulse * 4.0, 0, TAU, 32, Color(fresh[0]["color"], 0.9), 3.0)
-		if picked["type"] in ["pat", "mod", "elem", "trig"]:
-			for t in towers.get_children():
-				if t.can_take(picked):
-					if picked["type"] != "elem":
-						draw_arc(t.position, Tower.RADIUS + 10.0 + pulse * 4.0, 0, TAU, 32, Color(col, 0.9), 3.0)
-				else:
-					draw_line(t.position + Vector2(-8, -8), t.position + Vector2(8, 8), Color(1, 0.3, 0.3, 0.7), 3.0)
-					draw_line(t.position + Vector2(8, -8), t.position + Vector2(-8, 8), Color(1, 0.3, 0.3, 0.7), 3.0)
+					hc = fresh[0]["color"]
+					strong = true
+			if not strong:
+				# 속성 카드는 빈 곳에 새로 놓을 수도 있어 겹치기만 옅게 표시
+				draw_arc(t.position, Tower.RADIUS + 9.0, 0, TAU, 32, Color(hc, 0.35), 1.5)
+				continue
+			draw_circle(t.position, Tower.RADIUS + 14.0 + pulse * 4.0, Color(hc, 0.07 + 0.07 * pulse))
+			draw_arc(t.position, Tower.RADIUS + 10.0 + pulse * 4.0, 0, TAU, 32, Color(hc, 0.95), 3.0)
+			for k in 4:
+				var a0 := spin + k * TAU / 4.0
+				draw_arc(t.position, Tower.RADIUS + 20.0, a0, a0 + 0.8, 8, Color(hc, 0.6), 2.0)
 		var target := _tower_at(mpos)
-		if target:
+		if target and not _place_ok(target):
+			# 넣을 수 없는 오브젝트 위: 범위 미리보기 없이 이유만
+			var why := _place_refuse(target)
+			var ww := ui_font.get_string_size(why, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
+			var wp := Vector2(clampf(target.position.x - ww / 2, 8, _right_limit() - ww), maxf(target.position.y - Tower.RADIUS - 22.0, 16.0))
+			draw_string(ui_font, wp + Vector2(1, 1), why, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color.BLACK)
+			draw_string(ui_font, wp, why, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1, 0.55, 0.55))
+		elif target:
 			var pv: Array = target.preview(picked)
 			var lines: PackedStringArray = pv[0]
 			Tower.draw_range(self, target.position, target.dir, pv[1], picked["e"] if is_elem else -2)

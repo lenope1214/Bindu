@@ -126,7 +126,15 @@ func _initialize():
 			main.guide_lines.clear()
 			Meta.guide_seen.erase("start")
 			main._guide("start", "빨간 화살표가 구체가 들어오는 길목이에요. 속성 카드를 고른 뒤 길목 쪽 빈 곳을 눌러 놓고, 한 번 더 눌러 쏠 방향을 정하세요"),
-		func(): _snap("cards_guide"); main.guide_lines.clear(); main._set_cards_hidden(true),
+		func():
+			_snap("cards_guide")
+			main.guide_lines.clear()
+			# 강화 카드를 넣는 단계: 넣을 수 있는 오브젝트는 빛나는 고리, 못 넣는 것(관통 연사 ✕ 관통)은 흐리게·이유 글
+			main.towers.get_child(0).set_pattern("thorn")
+			main.towers.get_child(3).set_pattern("thorn")
+			main._on_pick({"type": "mod", "id": "pierce"})
+			Input.warp_mouse(main.towers.get_child(0).get_global_transform_with_canvas().origin),
+		func(): _snap("place_mod"); main._cancel_step(); main._set_cards_hidden(true),
 		func():
 			_snap("cards_hidden")
 			# 오브젝트 정보창 (마우스를 올렸을 때, 화면 오른쪽 아래 쪽 오브젝트라 창이 화면 끝에 닿는지)
