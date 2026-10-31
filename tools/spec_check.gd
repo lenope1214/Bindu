@@ -525,6 +525,23 @@ func _perks() -> void:
 
 func _rules_modes() -> void:
 	ok("RULE-01", Rules.IDS == [1, 3] and Rules.NAMES[1] == "랭크" and Rules.NAMES[3] == "도파민 모드", "고를 수 있는 규칙: 랭크(1)·도파민 모드(3)")
+	# 폰: 규칙 줄 글을 눌러도 바뀐다 (화살표 버튼이 손가락보다 작아서), 터치 화면엔 "눌러서 바꾸기"
+	var g0: int = Meta.games
+	Meta.games = 1
+	Meta.rules = 1
+	main.touch_ui = true
+	main._refresh_menu()
+	var tap_txt: bool = main.rules_label.text.contains("눌러서 바꾸기") and not main.rules_label.text.contains("↑/↓")
+	var up := InputEventMouseButton.new()
+	up.button_index = MOUSE_BUTTON_LEFT
+	up.pressed = false
+	main.rules_label.gui_input.emit(up)
+	var r1: int = Meta.rules
+	main.rules_label.gui_input.emit(up)
+	ok("RULE-04", main.rules_label.get_parent().visible and tap_txt and r1 == 3 and Meta.rules == 1 and main.rules_label.mouse_filter == Control.MOUSE_FILTER_STOP, "규칙 줄 글을 누르면 랭크 ↔ 도파민 모드, 터치 화면 안내 '눌러서 바꾸기'")
+	main.touch_ui = false
+	Meta.games = g0
+	main._refresh_menu()
 	Rules.apply(5)
 	var v5 := Rules.version
 	Rules.apply(1)

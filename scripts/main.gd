@@ -3309,21 +3309,29 @@ func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0) ->
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 12)
 	box.add_child(row)
+	# 폰에선 화면이 작아 화살표 버튼이 손가락보다 작다: 버튼을 키우고 가운데 글을 눌러도 다음으로 (2026-10-31)
+	var bs := Vector2(64, 56) if OS.has_feature("mobile") else Vector2(44, 40)
 	var a := Button.new()
 	a.text = "◀"
 	a.focus_mode = Control.FOCUS_NONE
-	a.custom_minimum_size = Vector2(44, 40)
+	a.custom_minimum_size = bs
 	a.pressed.connect(prev)
 	row.add_child(a)
 	var l := Label.new()
 	l.custom_minimum_size = Vector2(w, 0)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.mouse_filter = Control.MOUSE_FILTER_STOP
+	l.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	l.gui_input.connect(func(e: InputEvent):
+		if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT and not e.pressed:
+			next.call()
+			l.accept_event())
 	row.add_child(l)
 	var b := Button.new()
 	b.text = "▶"
 	b.focus_mode = Control.FOCUS_NONE
-	b.custom_minimum_size = Vector2(44, 40)
+	b.custom_minimum_size = bs
 	b.pressed.connect(next)
 	row.add_child(b)
 	return l
@@ -3335,7 +3343,7 @@ func _refresh_menu() -> void:
 	map_label.text = _kh("맵: %s  (←/→)\n%s\n최고 기록%s  웨이브 %d · 점수 %s" % [Meta.map_name(), m["desc"], " (쉽게 모드)" if Modes.easy() else "", best[0], num(best[1])])
 	flip_label.get_parent().visible = Meta.map_id == "line"
 	flip_label.text = _kh("구체가 오는 쪽: %s  (F)" % ("왼쪽 → 문은 오른쪽 끝" if Meta.line_flip else "오른쪽 → 문은 왼쪽 끝"))
-	rules_label.text = _kh("규칙: %s%s  (↑/↓)\n%s" % [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 550.0, 18)])
+	rules_label.text = _kh("규칙: %s%s  %s\n%s" % [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", "(눌러서 바꾸기)" if touch_ui else "(↑/↓)", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 550.0, 18)])
 	rules_label.get_parent().visible = Meta.games > 0  # 규칙 버전 고르기는 첫 판을 끝낸 뒤에 (그 전엔 버전 1)
 	modes_btn.visible = Meta.games > 0  # 모드도
 	modes_btn.text = "모드 (시험): %s   ▶" % ("없음" if Modes.on.is_empty() else "%s · 점수 x%.2f" % [Modes.names(), Modes.mul()])
