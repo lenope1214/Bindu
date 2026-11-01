@@ -38,7 +38,8 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 | `mp_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/mp_shot.gd -- <폴더> [글자 크기] [touch] [vs\|coop]`: 연결 없이 상태만 채워 시작 버튼·방 화면·상태 줄·웨이브·끝 화면 스크린샷 | PNG |
 | `vote_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path <사본> -s tools/vote_shot.gd -- <폴더> [글자 크기] [touch] [phone]`: 서버 없이 응답을 채워 시작 화면 [투표]·투표 창(표·개선 의견·표 다 씀·지난 회차 결과)·판 끝 화면 버튼·이번 판 탭 스크린샷. 사본의 online_config SERVER_URL은 http://127.0.0.1:9로 | PNG |
 | `spec` | [docs/features.md](../docs/features.md)에서 검사가 spec인 기능마다 기대 동작을 확인(tools/spec_check.gd), 끝에 문서와 대조 | 기능별 ok/FAIL, 실패가 있으면 끝 코드 1 |
-| `check` | 배포 전 한 번에: spec + 그린 궤적 + 무작위 입력 4판 + 이어하기 13웨이브 + 온라인 서명 + 패치 키 + 서버 pytest(패키지가 있을 때). 4~5분 | `CHECK 통과` / `CHECK 실패: <항목>`, 끝 코드 |
+| `notes` | `python3 tools/notes_check.py`: CHANGELOG(게임 안 패치노트)에 패치 키·코드 이름·파일 경로·서버 API 경로·커밋 해시·백틱·요청/제보 인용이 없는지 ([docs/changelog-rules.md](../docs/changelog-rules.md)). Godot 필요 없음 | 걸린 줄마다 `FAIL CHANGELOG.md:<줄> <이유>`, 끝 줄 `NOTES ok` |
+| `check` | 배포 전 한 번에: 패치노트 검사 + spec + 그린 궤적 + 무작위 입력 4판 + 이어하기 13웨이브 + 온라인 서명 + 패치 키 + 서버 pytest(패키지가 있을 때). 4~5분 | `CHECK 통과` / `CHECK 실패: <항목>`, 끝 코드 |
 | `patch_keys_check.gd` | `godot --headless --path . -s tools/patch_keys_check.gd`: 온라인 패치 rules의 오브젝트 수치 키(공격방식별 피해·속도·사거리, 강화·속성 수치, 규칙별 덮어쓰기)가 실제 값·설명 글에 먹는지 | 항목별 ok/FAIL, 끝 줄 `PATCHCHECK ok` |
 | `gcheck` | 정원 점검(`garden_check.gd`, 빈 기록으로): 상점 값 치르기·웨이브와 이슬·물러남(웨이브 0 아래로 안 감)·저장 뒤 이어하기·꺼 둔 동안 보상(50%, 8시간)·환생(두 번 누르기, 씨앗)·씨앗 나무 사기·숙련 단계·일반 판 보너스와 ~grow 기록 키 | 항목별 ok/FAIL |
 | `garden_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/garden_shot.gd -- <폴더> [글자 크기]`: 시작 화면 정원 줄·씨앗 나무 창·상점 4장·놓기·웨이브 중·물러난 뒤·특성 4장·리더보드 스크린샷 | PNG |

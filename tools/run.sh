@@ -16,6 +16,7 @@
 #   gcheck                                 정원 점검: 저장·이어하기·꺼 둔 동안 보상·물러남·환생·씨앗 나무 (garden_check.gd)
 #   modes [규칙=1] [판 수=32] [모드...]   모드마다 같은 시드로 모드 없는 판과 비교: 웨이브 차이·점수 손익분기 배율
 #   spec                                   docs/features.md의 기대 동작 자동 점검 (tools/spec_check.gd)
+#   notes                                  CHANGELOG(게임 안 패치노트)에 패치 키·코드 이름·경로·해시·요청 인용이 없는지 (docs/changelog-rules.md)
 #   check                                  배포 전 한 번에: spec + 그린 궤적 + 무작위 입력 + 이어하기 (실패하면 끝 코드 1)
 # 환경 변수: SPEED(배속, 기본 4) SMART(기본 1: 사람처럼 중앙 가까이에서 길목을 겨눔, 0이면 예전 봇) VARY(0이면 판마다 다른 흐름 끔: 봉인·이벤트·적응 켬/끔 비교)
 set -e
@@ -246,9 +247,13 @@ case "$CMD" in
 		cd / && rm -rf "$D"
 		exit $r
 		;;
+	notes)
+		python3 "$ROOT/tools/notes_check.py"
+		;;
 	check)
 		# 배포 전 점검 (docs/features.md). 화면 배치는 tools/shot.gd 스크린샷을 눈으로 따로 본다.
 		bad=""
+		if python3 "$ROOT/tools/notes_check.py" > /tmp/bindu_check_notes.txt 2>&1; then echo "notes 통과"; else grep -E "^FAIL|^NOTES" /tmp/bindu_check_notes.txt | head -10; bad="$bad notes"; fi
 		"$0" spec > /tmp/bindu_check_spec.txt 2>&1 || bad="$bad spec"
 		grep -E "^FAIL|^SPEC" /tmp/bindu_check_spec.txt || true
 		D=$(copy_project "$$")
