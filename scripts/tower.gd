@@ -479,10 +479,8 @@ func range_text() -> String:
 	return "화면 끝까지"
 
 
-## Shift 상세 정보 [글자, 색].
-func detail_lines() -> Array:
-	var out := []
-	var dim := Color(1, 1, 1, 0.65)
+## 한 번 공격의 피해 계산 (정보창 기본 줄·자세히 줄이 같은 값을 쓴다).
+func hit_calc() -> Dictionary:
 	var els: Dictionary = eff if not eff.is_empty() else elements
 	var bh: Array = BASE_HIT.get(pattern, [1.0, ""])
 	match pattern:  # Rules.tune(온라인 패치)로 바뀌는 값
@@ -502,7 +500,60 @@ func detail_lines() -> Array:
 	var metal: float = Rules.metal_dmg * els.get(Elem.METAL, 0)
 	if pattern in ["spray", "stream", "lob", "wall"]:
 		metal *= 3.0 * (pspd() if pattern in ["spray", "stream"] else 1.0)  # 계속 때리는 공격은 초당 (hit의 k = 조각 시간 x3)
-	out.append(["공격력: %.1f  (%s)" % [one + metal, bh[1]], Color(1, 0.9, 0.5)])
+	return {"one": one, "metal": metal, "bh": bh, "f": f, "mk_on": mk_on, "wood": wood, "shots": shots}
+
+
+## 치명타 [확률(0~1), 배율 글자]. 빛이 없으면 확률 0.
+func crit_info() -> Array:
+	var els: Dictionary = eff if not eff.is_empty() else elements
+	var light: int = els.get(Elem.LIGHT, 0)
+	return [minf(Rules.light_ch * light, Rules.light_max) if light > 0 else 0.0, Rules.fmt("{light_mul}")]
+
+
+## 정보창 기본(간단히) 줄: 피해·공격 속도·치명타 숫자만. [글자, 색, 그림 id]
+func basic_lines() -> Array:
+	var out := []
+	var hc := hit_calc()
+	var dmg := "피해 %s" % tip_num(hc["one"] + hc["metal"])
+	if hc["shots"] > 1.0 and pattern != "wall":
+		dmg += "  × %s발" % tip_num(hc["shots"])
+	if pattern in ["spray", "stream"]:
+		dmg += " /초"
+	out.append([dmg, Color(1, 0.9, 0.5), "dmg"])
+	var iv := attack_iv()
+	var k := pspd()
+	var pc := roundi((k - 1.0) * 100.0)
+	var rate := ("초당 %.2f번" % (1.0 / iv)) if iv > 0.0 else "계속 뿜음"
+	if pc != 0:
+		rate += "  (%s%d%%)" % ["+" if pc > 0 else "", pc]
+	out.append([rate, Color(0.6, 0.9, 1.0), "rate"])
+	var ci := crit_info()
+	if ci[0] > 0.0:
+		out.append(["치명타 %d%%  × %s" % [roundi(ci[0] * 100.0), ci[1]], Elem.COLORS[Elem.LIGHT], "e:%d" % Elem.LIGHT])
+	return out
+
+
+## 정보창 숫자: 100 넘으면 정수, 아니면 소수 한 자리.
+static func tip_num(v: float) -> String:
+	if v >= 100.0:
+		return str(roundi(v))
+	return ("%.1f" % v).trim_suffix(".0")
+
+
+## Shift 상세 정보 [글자, 색].
+func detail_lines() -> Array:
+	var out := []
+	var dim := Color(1, 1, 1, 0.65)
+	var els: Dictionary = eff if not eff.is_empty() else elements
+	var hc := hit_calc()
+	var bh: Array = hc["bh"]
+	var f: float = hc["f"]
+	var one: float = hc["one"]
+	var metal: float = hc["metal"]
+	var wood: float = hc["wood"]
+	var mk_on: bool = hc["mk_on"]
+	var shots: float = hc["shots"]
+	out.append(["공격력: %.1f  (%s)" % [one + metal, bh[1]], Color(1, 0.9, 0.5), "dmg"])
 	var parts := PackedStringArray(["기본 %.2f" % bh[0], "공격방식 Lv%d x%.2f" % [plv, pw(plv)], "피해 배율 x%.2f" % f])
 	if mk_on:
 		parts.append("다중 발사 한 발 x%.2f" % multi_k())
@@ -525,16 +576,16 @@ func detail_lines() -> Array:
 	out.append(["  피해 배율: " + " · ".join(fp) + " (공명·강화·패치 포함 x%.2f)" % f, dim])
 	if shots > 1.0:
 		out.append(["한 번에 %.2f개 (다중 발사)" % shots if pattern != "wall" else "벽 최대 %d개 (다중 발사)" % (2 + roundi(mf("multi"))), Color(1, 0.85, 0.45)])
-	out.append([spd_line(), Color(0.6, 0.9, 1.0)])
+	out.append([spd_line(), Color(0.6, 0.9, 1.0), "rate"])
 	var sp := spd_parts_text()
 	if sp != "":
 		out.append(["  " + sp + " (모두 곱함)", dim])
 	if BASE_IV.has(pattern):
 		out.append(["  기본 간격 %.2f초 ÷ 공격방식 Lv%d x%.2f" % [BASE_IV[pattern], plv, spd(plv)], dim])
-	out.append(["사거리: " + range_text(), Color(0.75, 1, 0.75)])
-	var light: int = els.get(Elem.LIGHT, 0)
-	if light > 0:
-		out.append(["치명타: %d%% 확률로 피해 %s배" % [roundi(minf(Rules.light_ch * light, Rules.light_max) * 100.0), Rules.fmt("{light_mul}")], Elem.COLORS[Elem.LIGHT]])
+	out.append(["사거리: " + range_text(), Color(0.75, 1, 0.75), "range"])
+	var ci := crit_info()
+	if ci[0] > 0.0:
+		out.append(["치명타: %d%% 확률로 피해 %s배" % [roundi(ci[0] * 100.0), ci[1]], Elem.COLORS[Elem.LIGHT], "e:%d" % Elem.LIGHT])
 	var mp := PackedStringArray()
 	if m("pierce") > 0:
 		mp.append("관통 %.2f개" % mf("pierce") if pattern in Pat.PROJECTILE else "관통 피해 x%.2f" % (1.0 + Rules.t("pierce_dmg") * mf("pierce")))
@@ -547,7 +598,7 @@ func detail_lines() -> Array:
 	if m("dice") > 0:
 		mp.append("주사위 %d개 · 대박까지 최대 %d번" % [dice_n(), maxi(1, dice_pity() - dice_miss)])
 	if not mp.is_empty():
-		out.append(["강화: " + " · ".join(mp), Color(1, 0.85, 0.45)])
+		out.append(["강화: " + " · ".join(mp), Color(1, 0.85, 0.45), "k:mod"])
 	return out
 
 
@@ -3030,7 +3081,8 @@ static func _hash(x: float) -> float:
 ## 공격 범위를 ci(전역 좌표 캔버스)에 그린다. 설치·겹치기 전 미리보기와 툴팁용.
 ## sp: spec() 묶음 {"els", "pat", "plv", "mods"}
 ## focus: 바뀌는 부분(-2: 공격방식, 0 이상: 그 속성의 반응)만 진하게, 나머지는 옅게
-static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, focus := -1) -> void:
+## rings = false면 별 흡수 둘레는 빼고 공격 범위만 (정보창 기본: 주변과 주고받는 둘레는 자세히에서).
+static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, focus := -1, rings := true) -> void:
 	# 방향을 고를 때 마우스가 설치 지점과 겹치면 방향이 0이 되어 다각형이 깨진다
 	if not o.is_finite():
 		return
@@ -3109,7 +3161,7 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 				_r_band(ci, lo, dd, 0.0, shot_range(tl, md.get("size", 0)) * wr, 6.0 * s, c)
 			_:
 				_r_band(ci, lo, dd, 0.0, far, 6.0 * s, c)
-	if els.has(Elem.STAR):
+	if els.has(Elem.STAR) and rings:
 		# 별빛을 모으는 둘레: 이 안에 중심이 있는 오브젝트의 피해를 복사해 모은다 (채우지 않고 점선 윤곽만)
 		var sc: Color = Elem.COLORS[Elem.STAR]
 		if focus >= 0 and focus != Elem.STAR:

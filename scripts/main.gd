@@ -3898,7 +3898,7 @@ func _boss_text() -> String:
 
 
 ## 바람 버프 둘레: 늘 그리면 바람 오브젝트마다 큰 원이 겹쳐 어지러워서,
-## 바람 오브젝트에 마우스를 올렸을 때(그 둘레), 버프 받는 오브젝트에 올렸을 때(버프를 주는 둘레),
+## 바람 오브젝트에 Shift 자세히로 올렸을 때(그 둘레), 버프 받는 오브젝트에 자세히로 올렸을 때(버프를 주는 둘레),
 ## 오브젝트를 옮기는 중일 때(모든 둘레)만 그린다.
 func _draw_wind_rings() -> void:
 	if title_label.visible or phase == Phase.GAMEOVER:
@@ -3912,7 +3912,7 @@ func _draw_wind_rings() -> void:
 	elif moving != null or dragging or phase in [Phase.PLACE, Phase.MOVE]:
 		show = winds
 	else:
-		var h := _tower_at(get_global_mouse_position())
+		var h := _ring_target()  # 올린 오브젝트 둘레는 자세히일 때만
 		if h != null:
 			for w in winds:
 				if w == h or w.position.distance_to(h.position) <= w.wind_range():
@@ -3930,7 +3930,7 @@ func _place_rings_off() -> bool:
 
 
 ## 별 흡수 둘레: 오브젝트를 놓거나 옮기는 중엔 모든 별의 둘레(어디 두면 별빛을 주는지),
-## 별빛을 주는 오브젝트에 마우스를 올리면 그걸 받는 별의 둘레. 별 자신에 올렸을 때·Alt·[범위 보기]는 draw_range가 그린다.
+## 별빛을 주는 오브젝트에 자세히(Shift)로 올리면 그걸 받는 별의 둘레. 별 자신에 올렸을 때·Alt·[범위 보기]는 draw_range가 그린다.
 func _draw_star_rings() -> void:
 	if title_label.visible or phase == Phase.GAMEOVER or Input.is_key_pressed(KEY_ALT) or range_all:
 		return
@@ -3944,7 +3944,7 @@ func _draw_star_rings() -> void:
 	elif moving != null or dragging or phase in [Phase.PLACE, Phase.MOVE, Phase.AIM]:
 		show = stars.filter(func(s): return s != moving)
 	else:
-		var h := _tower_at(get_global_mouse_position())
+		var h := _ring_target()
 		if h != null:
 			for s in stars:
 				if s != h and s.position.distance_to(h.position) < Rules.t("star_r"):
@@ -8758,7 +8758,7 @@ func _process(delta: float) -> void:
 	draw_ok_btn.visible = phase == Phase.DRAW and draw_wait and not get_tree().paused
 	detail_btn.text = "간단히" if tip_detail else "자세히"
 	_place_apply_btn()
-	for c in [hint, skip_badge]:
+	for c in [hint, skip_badge, hide_btn]:
 		c.self_modulate.a = 0.12 if Engine.get_process_frames() - tip_fade.get(c, -10) <= 2 else 1.0
 	if touch_ui and key_t <= 0.0:
 		key_t = 0.2
@@ -9638,7 +9638,7 @@ func _draw_tooltip() -> void:
 	var head := t.title()
 	var tip := ("(클릭: 길 다시 그리기 · 끌기: 옮기기)" if t.pattern == "path" else "(클릭: 방향 · 끌기: 옮기기)") if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
 	# Shift를 누르고 있으면 공격력·공격 속도·사거리 같은 수치를 자세히
-	var detail := (Input.is_key_pressed(KEY_SHIFT) or (touch_ui and tip_detail)) and not touch_move
+	var detail := _tip_detail_on() and not touch_move
 	tip = _th(tip)
 	var acts := tip != ""  # 쉬는 시간: 클릭·끌기 안내도
 	var ctrl := not touch_ui  # 마우스에선 조작 안내를 맨 아래 그림 줄로 (_draw_tip_ctrl)
@@ -9655,56 +9655,60 @@ func _draw_tooltip() -> void:
 			lines.append([row, Color.WHITE])
 		if tip != "":
 			lines.append([tip, Color(1, 1, 1, 0.6)])
-	var nhead := lines.size()
-	lines.append(["%s Lv%d - %s" % [Pat.pname(t.pattern), t.plv, Pat.PATTERNS[t.pattern]["desc"]], Pat.pcolor(t.pattern).lightened(0.2), "p:" + t.pattern])
-	var no := Pat.no_mods(t.pattern)
-	if not no.is_empty():
-		lines.append(["  못 넣는 강화(효과 없음): " + "·".join(no), Color(0.7, 0.7, 0.75)])
-	for e in t.order:
-		lines.append(["Lv%d %s" % [t.lv(e), Elem.rider(e)], Elem.COLORS[e], "e:%d" % e])
-	var ex := t.extras_text()
-	if ex != "":
-		lines.append([ex, Color(1, 0.85, 0.45), "k:mod"])
-	lines.append(["×%.2f" % t.dmg_factor(), Color(1, 1, 1, 0.8), "dmg"])
-	var rxs := t.reactions()
-	if rxs.size() <= 5:
-		for r in rxs:
-			lines.append(["%s: %s" % [r["name"], r["desc"]], r["color"], "k:rx"])
-	else:
-		# 반응이 많으면 이름만 (설명까지 쓰면 화면 높이를 넘음)
-		lines.append(["반응 %d개: %s" % [rxs.size(), ", ".join(rxs.map(func(r): return r["name"]))], Color(1, 0.8, 0.95), "k:rx"])
+	var share_line := []
 	if wave_time > 1.0:
 		var total := 0.0
 		for o in towers.get_children():
 			total += o.dealt
-		var share := " · 전체의 %d%%" % roundi(t.dealt / total * 100.0) if total > 0.0 and towers.get_child_count() > 1 else ""
-		lines.append(["%s 피해 %d (초당 %.1f%s)" % ["이번 웨이브" if phase == Phase.WAVE else "지난 웨이브", roundi(t.dealt), t.dealt / wave_time, share], Color(1, 0.9, 0.5), "rank"])
-	_wind_buffs()  # 쉬는 시간에 새로 놓은 오브젝트도 바로 보이게
-	if t.wind_buff > 0.0:
-		lines.append(["바람 버프: 공격 속도 +%d%%" % roundi(t.wind_buff * 100.0), Elem.COLORS[Elem.WIND], "e:%d" % Elem.WIND])
-	lines.append([t.spd_line().trim_prefix("공격 속도 "), Color(0.6, 0.9, 1.0), "rate"])
-	var sp := t.spd_parts_text()
-	if sp != "":
-		lines.append(["  " + sp + " (모두 곱함)", Color(1, 1, 1, 0.65)])
-	if detail:
-		lines = lines.slice(0, nhead) + t.detail_lines()
-	elif _tip_rows(lines, maxw, fs) * lh + 10.0 > view_rect().end.y - _tip_top() - 8.0:
-		# 속성·반응이 아주 많으면 화면 높이를 넘어 위가 잘렸다: 반응 이름은 두 줄까지, 그래도 넘치면 속성 효과를 한 줄로
-		var avail := floori((view_rect().end.y - _tip_top() - 18.0) / lh)
-		for i in lines.size():
-			if (lines[i][0] as String).begins_with("반응 %d개: " % rxs.size()):
-				var names: Array = rxs.map(func(r): return r["name"])
-				var k := names.size()
-				var txt: String = lines[i][0]
-				while k > 1 and _wrap_words(txt, maxw, fs).count("\n") >= 2:
-					k -= 1
-					txt = "반응 %d개: %s 외 %d개" % [rxs.size(), ", ".join(names.slice(0, k)), names.size() - k]
-				lines[i] = [txt, lines[i][1]]
-		if _tip_rows(lines, maxw, fs) > avail and t.order.size() > 1:
-			var first := lines.find_custom(func(l): return l.size() > 2 and l[2] == "e:%d" % t.order[0])
-			if first >= 0:
-				var riders: Array = t.order.map(func(e): return Elem.rider_name(e))
-				lines = lines.slice(0, first) + [["속성 효과: " + "·".join(riders), Color(0.85, 0.85, 0.9), "k:elem"]] + lines.slice(first + t.order.size())
+		var share := " · %d%%" % roundi(t.dealt / total * 100.0) if total > 0.0 and towers.get_child_count() > 1 else ""
+		share_line = ["%s %s%s" % ["이번 웨이브" if phase == Phase.WAVE else "지난 웨이브", Tower.tip_num(t.dealt), share], Color(1, 0.9, 0.5), "rank"]
+	if not detail:
+		# 기본: 피해·공격 속도·치명타·피해 몫 숫자만 (효과 설명·계산 내역은 자세히에서)
+		lines += t.basic_lines()
+		if not share_line.is_empty():
+			lines.append(share_line)
+	else:
+		# 자세히: 수치와 계산 내역 → 공격방식·속성·강화·반응 설명 → 버프·피해 몫. 화면을 넘으면 내역 줄부터 줄인다
+		var nums: Array = t.detail_lines()
+		var desc: Array = []
+		desc.append(["%s Lv%d - %s" % [Pat.pname(t.pattern), t.plv, Pat.PATTERNS[t.pattern]["desc"]], Pat.pcolor(t.pattern).lightened(0.2), "p:" + t.pattern])
+		var no := Pat.no_mods(t.pattern)
+		if not no.is_empty():
+			desc.append(["  못 넣는 강화(효과 없음): " + "·".join(no), Color(0.7, 0.7, 0.75)])
+		for e in t.order:
+			desc.append(["Lv%d %s" % [t.lv(e), Elem.rider(e)], Elem.COLORS[e], "e:%d" % e])
+		var ex := t.extras_text()
+		if ex != "":
+			desc.append([ex, Color(1, 0.85, 0.45), "k:mod"])
+		var rxs := t.reactions()
+		if rxs.size() <= 5:
+			for r in rxs:
+				desc.append(["%s: %s" % [r["name"], r["desc"]], r["color"], "k:rx"])
+		else:
+			desc.append(["반응 %d개: %s" % [rxs.size(), ", ".join(rxs.map(func(r): return r["name"]))], Color(1, 0.8, 0.95), "k:rx"])
+		_wind_buffs()  # 쉬는 시간에 새로 놓은 오브젝트도 바로 보이게
+		var tail: Array = []
+		if t.wind_buff > 0.0:
+			tail.append(["바람 버프: 공격 속도 +%d%%" % roundi(t.wind_buff * 100.0), Elem.COLORS[Elem.WIND], "e:%d" % Elem.WIND])
+		if not share_line.is_empty():
+			tail.append(share_line)
+		var avail := floori((_tip_bottom() - _tip_top() - 18.0) / lh)
+		var all: Array = lines + nums + desc + tail
+		if _tip_rows(all, maxw, fs) > avail:
+			# 1) 계산 내역(들여 쓴 흐린 줄)을 뺀다
+			nums = nums.filter(func(l): return not (l[0] as String).begins_with("  "))
+			desc = desc.filter(func(l): return not (l[0] as String).begins_with("  "))
+			all = lines + nums + desc + tail
+		if _tip_rows(all, maxw, fs) > avail:
+			# 2) 반응·속성 효과를 한 줄씩으로
+			var keep: Array = desc.filter(func(l): return not (l.size() > 2 and ((l[2] as String).begins_with("e:") or l[2] == "k:rx")))
+			var riders: Array = t.order.map(func(e): return Elem.rider_name(e))
+			keep.append(["속성 효과: " + "·".join(riders), Color(0.85, 0.85, 0.9), "k:elem"])
+			if not rxs.is_empty():
+				keep.append(["반응 %d개: %s" % [rxs.size(), ", ".join(rxs.map(func(r): return r["name"]))], Color(1, 0.8, 0.95), "k:rx"])
+			desc = keep
+			all = lines + nums + desc + tail
+		lines = all
 	# 줄 앞 그림(l[2])은 왼쪽 gut 칸에. 접힌 줄은 첫 줄에만 그림
 	var gut := 20.0 * z
 	var rows: Array = []
@@ -9727,6 +9731,7 @@ func _draw_tooltip() -> void:
 	var h := (lines.size() + (1 if ctrl and not detail else 0)) * lh + 10.0
 	var vw := view_rect()
 	var size := vw.end  # 화면 오른쪽 아래 끝 (월드 좌표. 폰은 전장 밖 양옆까지)
+	size.y = _tip_bottom()
 	var p := t.position + Vector2(28, -h / 2)
 	if touch_aim and get_global_mouse_position().x > t.position.x:
 		p.x = t.position.x - 28.0 - (w + 16.0)  # 손가락(쏠 쪽) 반대편에
@@ -9738,8 +9743,8 @@ func _draw_tooltip() -> void:
 		var above := t.position.y - 30.0 - h
 		p.y = above if above >= top else minf(t.position.y + 30.0, size.y - h - 8)
 	p = _avoid_cards(Rect2(p, Vector2(w + 16, h)), size)
-	# 아래 안내 글·넘기기 표시는 UI라 정보창 위에 그려져 글이 섞인다: 겹치는 동안 옅게
-	for c in [hint, skip_badge]:
+	# 아래 안내 글·넘기기 표시·[선택지 보기]는 UI라 정보창 위에 그려져 글이 섞인다: 겹치는 동안 옅게
+	for c in [hint, skip_badge, hide_btn]:
 		if c.visible and c.text != "" and Rect2(p, Vector2(w + 16, h)).intersects(get_canvas_transform().affine_inverse() * c.get_global_rect()):
 			tip_fade[c] = Engine.get_process_frames()
 	fx_layer.draw_rect(Rect2(p, Vector2(w + 16, h)), Color(0.05, 0.06, 0.09, 0.92))
@@ -9750,6 +9755,22 @@ func _draw_tooltip() -> void:
 			_tip_icon(lines[i][2], p + Vector2(8 + gut * 0.45, 6 + i * lh + lh * 0.5), 6.0 * z, lines[i][1])
 	if ctrl and not detail:
 		_draw_tip_ctrl(p + Vector2(8, 6 + lines.size() * lh), fs, lh, t.pattern == "path", acts)
+
+
+## 정보창 자세히: Shift를 누르고 있거나 터치 [자세히]. 기본 정보창은 숫자만, 올린 오브젝트는 공격 범위만 그리고
+## 별 흡수 둘레·바람 버프 둘레(주변과 주고받는 범위)는 자세히일 때만.
+func _tip_detail_on() -> bool:
+	return Input.is_key_pressed(KEY_SHIFT) or (touch_ui and tip_detail)
+
+
+## 자세히일 때 둘레를 그릴 오브젝트: 마우스 아래, 터치는 [자세히]를 누르느라 손가락이 떠나도 정보창의 오브젝트.
+func _ring_target() -> Tower:
+	if not _tip_detail_on():
+		return null
+	var h := _tower_at(get_global_mouse_position())
+	if h == null and touch_ui and is_instance_valid(tip_tower) and Engine.get_process_frames() - tip_frame <= 2:
+		h = tip_tower
+	return h
 
 
 ## 정보창 줄 앞 그림: "p:공격방식" · "e:속성" · "k:카드 종류" · 그 밖은 Glyph.ui.
@@ -9794,6 +9815,14 @@ func _tip_top() -> float:
 	if not hud.visible:
 		return 8.0
 	return (get_canvas_transform().affine_inverse() * hud.get_global_rect()).end.y + 6.0
+
+
+## 정보창을 놓을 수 있는 아래쪽 끝: 화면 끝, 터치 [자세히]·[간단히] 버튼이 떠 있으면 그 위 (정보창이 버튼을 덮던 것).
+func _tip_bottom() -> float:
+	var b := view_rect().end.y
+	if touch_ui and detail_btn != null and detail_btn.visible:
+		b = minf(b, (get_canvas_transform().affine_inverse() * detail_btn.get_global_rect()).position.y - 6.0)
+	return b
 
 
 ## 글자를 놓을 수 있는 오른쪽 끝: 오른쪽 설명이 떠 있으면 그 앞까지 (설명이 글자를 가린다).
@@ -10393,8 +10422,10 @@ func _draw() -> void:
 				Tower.draw_range(self, t.position, t.dir, t.spec())
 	elif phase in [Phase.CHOOSE, Phase.WAVE, Phase.READY]:
 		var hov := _tower_at(mpos)
+		if hov == null:
+			hov = _ring_target()
 		if hov:
-			Tower.draw_range(self, hov.position, hov.dir, hov.spec())
+			Tower.draw_range(self, hov.position, hov.dir, hov.spec(), -1, _tip_detail_on())
 	if dps_panel.visible and is_instance_valid(dps_focus):
 		# DPS 표에서 고른 오브젝트: 범위와 깜빡이는 고리, 위에서 가리키는 화살표
 		var fp := dps_focus.position

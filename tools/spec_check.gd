@@ -1349,6 +1349,21 @@ func _meta_misc() -> void:
 	var pv_ok: bool = not (dt.preview({"type": "mod", "id": "multi"})[0] as PackedStringArray)[0].contains("겹쳐서")
 	ok("UI-25", mg == "혼불 3→4개 (하나 피해 73→72%) · 공격방식 보정 x1.06" and mg2 == "없음 → 탄 2개" and rings_off and rings_back and pv_ok, "넣기 설명 한 줄 합치기 '%s', 둘레 끔 %s/%s" % [mg, rings_off, rings_back])
 
+	# 오브젝트 정보창: 기본은 피해·공격 속도·치명타 숫자만, 자세히에만 주변 둘레
+	_fresh(3)
+	var tp := _tower(main.center() + Vector2(0, -150), Elem.SOUL, 3)
+	tp.add(Elem.STAR, 1)
+	tp.add(Elem.LIGHT, 2)
+	tp.eff = tp.eff_now()
+	var bl: Array = tp.basic_lines()
+	var bl_ok: bool = bl.size() == 3 and (bl[0][0] as String).begins_with("피해 ") and (bl[1][0] as String).begins_with("초당 ") and (bl[2][0] as String).begins_with("치명타 ")
+	var plain := _tower(main.center() + Vector2(0, 150))
+	plain.eff = plain.eff_now()
+	var no_crit: bool = plain.basic_lines().size() == 2
+	var dl_more: bool = tp.detail_lines().size() > bl.size()
+	var basic_ring: bool = main._ring_target() == null and not main._tip_detail_on()
+	ok("UI-26", bl_ok and no_crit and dl_more and basic_ring, "정보창 기본 %d줄 %s, 빛 없으면 치명타 줄 없음 %s, 자세히가 더 많음 %s, 기본엔 둘레 없음 %s" % [bl.size(), bl_ok, no_crit, dl_more, basic_ring])
+
 	# 웨이브 넘기기: 오브젝트가 있어야, 첫 판은 카드가 다 열린 뒤
 	_fresh(3)
 	var none: bool = main._can_skip()
