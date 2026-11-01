@@ -139,7 +139,7 @@ static func tick(t: Tower, id: String, l: int, orbs: Array, de: float, k: float)
 		"flash":
 			fx_line(t, d, 2000.0, 14.0, c)
 			t._line(orbs, d, 2000.0, 14.0, func(o):
-				t.hit(o, 2.6 * p)
+				t.hit(o, 3.0 * p)
 				o.root(0.6))
 		# --- 소리: 부채꼴 파동 ---
 		"blast":
