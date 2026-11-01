@@ -244,6 +244,21 @@ class Vote(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now)
 
 
+class Report(Base):
+    """닉네임 신고 (reports.py). target은 신고 들어올 때 pid로 찾은 계정(없으면 기기) id."""
+    __tablename__ = "reports"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now, index=True)
+    reporter: Mapped[str] = mapped_column(String(64), index=True)
+    pid: Mapped[str] = mapped_column(String(16), index=True)
+    target: Mapped[str] = mapped_column(String(64), default="")
+    nick: Mapped[str] = mapped_column(String(32), default="")
+    where: Mapped[str] = mapped_column(String(8), default="board")
+    reason: Mapped[str] = mapped_column(String(8), default="nick")
+    status: Mapped[str] = mapped_column(String(10), default="open", index=True)
+    done_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
 class Ban(Base):
     __tablename__ = "bans"
     device_id: Mapped[str] = mapped_column(String(64), primary_key=True)

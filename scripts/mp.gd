@@ -35,6 +35,7 @@ const REJOIN_PATH := "user://mp_rejoin.json"
 const REJOIN_KEEP_S := 6 * 3600
 var tok := ""
 var last_err := ""  # 중개 서버가 마지막으로 보낸 거절 (nocode 등). 끊긴 뒤에도 남아 협동 재접속이 방이 없어졌는지 안다
+var pids := {}  # id -> 공개 id(Account.pid). 신고·차단에 씀. 연결되면 서로 보내고 호스트가 표를 모두에게 돌린다 (_pid·_pids)
 var ping := {}  # id -> 왕복 ms. 호스트는 참가자마다, 참가자는 호스트(1)와 다른 참가자(호스트가 잰 값)
 var _ping_t := 0.0
 const PING_EVERY := 1.0
@@ -249,6 +250,7 @@ func _reset() -> void:
 			peers[id]["conn"].close()
 	peers.clear()
 	ping.clear()
+	pids.clear()
 	diag_sent.clear()
 	if rtc:
 		rtc.close()
@@ -473,6 +475,10 @@ func _diag(id: int) -> void:
 func _on_peer_up(id: int) -> void:
 	if peers.has(id):
 		peers[id]["ok"] = true
+	if Account.pid != "" and multiplayer is SceneMultiplayer:
+		(multiplayer as SceneMultiplayer).send_bytes(var_to_bytes({"t": "_pid", "p": Account.pid}), id, MultiplayerPeer.TRANSFER_MODE_RELIABLE, 0)
+	if is_host() and not pids.is_empty():
+		_send_pids()
 	if id == 1:
 		join_wait = -1.0
 	peers_changed.emit()
@@ -489,6 +495,7 @@ func _on_peer_down(id: int) -> void:
 
 func _drop(id: int) -> void:
 	ping.erase(id)
+	pids.erase(id)
 	if not peers.has(id):
 		return
 	peers.erase(id)  # 먼저 지운다: remove_peer가 peer_disconnected를 바로 내도 다시 들어오지 않게
@@ -553,8 +560,31 @@ func _send_pings() -> void:
 			sm.send_bytes(tb, id, MultiplayerPeer.TRANSFER_MODE_UNRELIABLE, 0)
 
 
+func _send_pids() -> void:
+	var all := pids.duplicate()
+	if Account.pid != "":
+		all[my_id] = Account.pid
+	var b := var_to_bytes({"t": "_pids", "p": all})
+	for id in connected_ids():
+		(multiplayer as SceneMultiplayer).send_bytes(b, id, MultiplayerPeer.TRANSFER_MODE_RELIABLE, 0)
+
+
 func _on_ping_msg(id: int, msg: Dictionary) -> bool:
 	match str(msg.get("t", "")):
+		"_pid":
+			var p := str(msg.get("p", ""))
+			if p.length() == 16 and p.is_valid_hex_number():
+				pids[id] = p
+				peers_changed.emit()
+				if is_host():
+					_send_pids()
+		"_pids":
+			if id == 1 and msg.get("p") is Dictionary:
+				for k in msg["p"]:
+					var p := str(msg["p"][k])
+					if int(k) != my_id and p.length() == 16 and p.is_valid_hex_number():
+						pids[int(k)] = p
+				peers_changed.emit()
 		"_ping":
 			(multiplayer as SceneMultiplayer).send_bytes(var_to_bytes({"t": "_pong", "ts": msg.get("ts", 0)}), id, MultiplayerPeer.TRANSFER_MODE_UNRELIABLE, 0)
 		"_pong":

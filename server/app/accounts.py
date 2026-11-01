@@ -100,7 +100,8 @@ def current(authorization: str = Header(default=""), db: Session = Depends(get_d
 def _out(db: Session, a: Account, device: str, **extra) -> dict:
     token, exp = make_token(a.id, device)
     linked = sorted({i.provider for i in db.scalars(select(Identity).where(Identity.account_id == a.id)) if i.provider != "device"})
-    return {"token": token, "expires": exp, "account": a.id, "nick": a.nickname, "linked": linked, **extra}
+    from .reports import pid  # 순환 import 피함
+    return {"token": token, "expires": exp, "account": a.id, "nick": a.nickname, "linked": linked, "pid": pid(a.id), **extra}
 
 
 def _sha(s: str) -> str:

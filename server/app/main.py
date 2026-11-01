@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
-from . import accounts, config, signing, stats, validate, votes
+from . import accounts, config, reports, signing, stats, validate, votes
 from .db import Ban, ClientLog, Final, Identity, Leak, Patch, Pick, Release, Run, Season, SrcShare, get_db, init_db, kst_date, now
 
 @asynccontextmanager
@@ -34,6 +34,7 @@ app = FastAPI(title="Bindu server", version="1.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["*"])
 app.include_router(accounts.router)
 app.include_router(votes.router)
+app.include_router(reports.router)
 
 PLATFORMS = ["windows", "macos", "linux", "android", "ios"]
 # 패치 data에서 게임이 읽는 최상위 키 (scripts/patch.gd)
@@ -41,7 +42,7 @@ PATCH_KEYS = {"rules", "rules_desc", "perks", "perk_desc", "cards", "elem_dmg", 
 
 
 # 자동 배포 확인용: 서버 코드를 고쳐 배포할 때 바꾸면 /health로 새 이미지가 떴는지 밖에서 볼 수 있다
-SERVER_REV = "2026-10-31.9"
+SERVER_REV = "2026-11-01.1"
 
 
 @app.get("/health")
@@ -77,6 +78,8 @@ def require_admin(authorization: str = Header(default="")) -> None:
 
 def clean_nick(nick: str, device: str) -> str:
     nick = re.sub(r"[\x00-\x1f\x7f<>]", "", nick or "").strip()[:12]
+    if reports.bad_nick(nick):
+        nick = ""
     return nick or f"익명-{device[:4]}"
 
 
@@ -103,7 +106,7 @@ def boot(game: str, platform: str = "", patch: int = -1, db: Session = Depends(g
     # snap: 진행 중 판 기록(run·ended)을 받아 한 줄로 고칠 수 있는 서버. 게임은 이게 있을 때만 5웨이브마다 보낸다
     # vote: 다음 패치 투표 API가 있는 서버 (0.6.0). 게임은 이게 있을 때만 투표 버튼을 보인다
     # acct: 계정·진행 저장 API가 있는 서버 (0.5.3). 게임은 이게 있을 때만 기기 인증·진행 맞추기를 한다
-    return {"patch": patch_out, "latest": latest, "season": {"id": s.id, "name": s.name} if s else None, "snap": True, "acct": True, "vote": True}
+    return {"patch": patch_out, "latest": latest, "season": {"id": s.id, "name": s.name} if s else None, "snap": True, "acct": True, "vote": True, "report": True}
 
 
 class TowerIn(BaseModel):
@@ -360,7 +363,8 @@ def leaderboard(map: str, rules: int, season: int = 0, period: str = "all", limi
     rows = db.execute(select(sub).where(sub.c.rn == 1).order_by(sub.c.score.desc(), sub.c.wave.desc(), sub.c.id).limit(limit)).all()
     total = db.scalar(select(func.count()).select_from(sub).where(sub.c.rn == 1))
     entries = [{"rank": i + 1, "nick": r.nickname, "wave": r.wave, "score": r.score, "game": r.game_version,
-                "date": kst_date(r.created_at), "me": bool(who) and r.who == who, "ended": r.ended, "title": r.title or ""}
+                "date": kst_date(r.created_at), "me": bool(who) and r.who == who, "ended": r.ended, "title": r.title or "",
+                "pid": reports.pid(r.who)}
                for i, r in enumerate(rows)]
     me = board_rank(db, map, rules, s.id, since, who, grow, easy) if who else None
     return {"season": {"id": s.id, "name": s.name}, "period": period, "total": total, "entries": entries, "me": me}
@@ -577,6 +581,20 @@ def ban(body: BanIn, db: Session = Depends(get_db)):
         db.execute(update(Run).where(Run.account_id == a.id).values(hidden=True))
     db.commit()
     return {"banned": body.device_id}
+
+
+@app.get("/admin/api/reports", dependencies=[Depends(require_admin)])
+def get_reports(status: str = "open", db: Session = Depends(get_db)):
+    return reports.admin_list(db, status)
+
+
+class ReportAct(BaseModel):
+    action: str
+
+
+@app.post("/admin/reports/{rid}", dependencies=[Depends(require_admin)])
+def act_report(rid: int, body: ReportAct, db: Session = Depends(get_db)):
+    return reports.admin_act(db, rid, body.action)
 
 
 @app.get("/admin/api/stats", dependencies=[Depends(require_admin)])

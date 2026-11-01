@@ -375,6 +375,29 @@ func vote_put(body: Dictionary) -> int:
 	return int(r["code"])
 
 
+## 닉네임 신고 (서버 boot의 report, 2026-11-01). where: board(리더보드)·mp(멀티 방). 돌려주는 값: HTTP 코드 (0이면 연결 실패).
+static func report_ok() -> bool:
+	return reachable() and info.get("report", false) == true
+
+
+func report(target_pid: String, nick: String, where: String, reason := "nick") -> int:
+	if not report_ok() or target_pid.length() != 16:
+		return 0
+	var r := await _authed(HTTPClient.METHOD_POST, "/v1/reports", JSON.stringify({"pid": target_pid, "nick": nick.left(32), "where": where, "reason": reason, "device": Meta.device_id}))
+	return int(r["code"])
+
+
+## 내 온라인 데이터 지우기: 서버의 계정·진행·진행 중 판을 지우고 리더보드에서 이름·기록을 뺀다 (accounts.py DELETE /v1/account).
+## 성공하면 이 기기의 토큰도 버린다. 돌려주는 값: HTTP 코드 (0이면 연결 실패).
+func delete_account() -> int:
+	if not reachable() or not acct_ok():
+		return 0
+	var r := await _authed(HTTPClient.METHOD_DELETE, "/v1/account")
+	if int(r["code"]) == 200:
+		Account.forget_all()
+	return int(r["code"])
+
+
 func seasons() -> void:
 	var r := await _request(HTTPClient.METHOD_GET, "/v1/seasons")
 	seasons_loaded.emit(r["data"] if r["code"] == 200 and r["data"] is Array else [])

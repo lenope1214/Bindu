@@ -103,6 +103,7 @@ func _initialize():
 	_multiplayer()
 	_tutorial()
 	_vote()
+	_ugc()
 	_lint()
 	print("SPEC %s (실패 %d, 확인한 기능 %d개)" % ["통과" if fails == 0 else "실패", fails, seen.size()])
 	quit(1 if fails > 0 else 0)
@@ -1712,6 +1713,44 @@ func _vote() -> void:
 	var hidden: bool = not Net.vote_ok() and (main.vote_btn == null or not main.vote_btn.visible)
 	ok("ONLINE-04", bad.is_empty() and has_all and r1 and r2 and r3 and full and note_ok and pl_ok and no_vote and run_tab and hidden,
 		"다음 패치 투표: 항목 %d개 키 모양(틀림 %s), 표 5장·방향 하나·다시 누르면 취소·개선 의견 60자, 자격 없으면 못 넣음, 판 끝 화면은 이번 판 탭, 서버에 투표 없으면 버튼 숨김" % [keys.size(), str(bad)])
+
+
+## 닉네임 거르기·신고·차단·데이터 지우기 (App Store 1.2·5.1.1(v))
+func _ugc() -> void:
+	var filt: bool = NickFilter.bad("시 발") and NickFilter.bad("FuCk_you") and NickFilter.bad("개1새끼") and NickFilter.bad("운영자") \
+		and not NickFilter.bad("별빛") and not NickFilter.bad("Tester") and not NickFilter.bad("grape") and not NickFilter.bad("")
+	var keep: Dictionary = Meta.blocked.duplicate()
+	Meta.blocked = {"aaaaaaaaaaaaaaaa": "나쁜이름"}
+	main.records_panel.visible = true
+	main.board_bar.visible = true
+	main.board_raw = {}
+	main.board_people = {}
+	var tag: String = main._board_tag()
+	main._on_board_loaded({"tag": tag, "period": "all", "season": {"name": "s"}, "entries": [
+		{"rank": 1, "nick": "나쁜이름", "wave": 9, "score": 100, "pid": "aaaaaaaaaaaaaaaa"},
+		{"rank": 2, "nick": "착한이름", "wave": 8, "score": 90, "pid": "bbbbbbbbbbbbbbbb"},
+		{"rank": 3, "nick": "나", "wave": 7, "score": 80, "pid": "cccccccccccccccc", "me": true}]})
+	var txt: String = main.records_panel.text
+	var hide_ok: bool = txt.contains("(차단한 플레이어)") and not txt.contains("나쁜이름") and txt.contains("착한이름")
+	var people_ok: bool = main.board_people.size() == 2 and main.board_ugc_btn.visible
+	main._board_ugc_open()
+	var btns: Array = main.board_ugc_panel.find_children("*", "Button", true, false)
+	var reps: Array = btns.filter(func(b): return b.text == "신고")
+	var unblock: Array = btns.filter(func(b): return b.text == "차단 풀기")
+	var panel_ok: bool = main.board_ugc_panel.visible and reps.size() == 2 and unblock.size() == 1 and reps.all(func(b): return b.disabled == not Net.report_ok())
+	# 차단 풀기 → 이름이 다시 보임
+	unblock[0].pressed.emit()
+	var unblock_ok: bool = not Meta.blocked.has("aaaaaaaaaaaaaaaa") and main.records_panel.text.contains("나쁜이름")
+	main.board_ugc_panel.visible = false
+	main.records_panel.visible = false
+	main.board_bar.visible = false
+	main.board_ugc_btn.visible = false
+	Meta.blocked = keep
+	main._save_best()
+	# 설정의 [내 온라인 데이터 지우기] (서버 주소가 있는 빌드)
+	var del_ok: bool = OnlineConfig.SERVER_URL == "" or main.settings_panel.find_children("*", "Button", true, false).any(func(b): return b.text == "내 온라인 데이터 지우기")
+	ok("ONLINE-06", filt and hide_ok and people_ok and panel_ok and unblock_ok and del_ok,
+		"닉네임 거르기, 리더보드 차단한 사람 이름 가림·[신고·차단] 창(신고는 서버 report 있을 때만)·차단 풀기, 설정 데이터 지우기 버튼")
 
 
 func _lint() -> void:

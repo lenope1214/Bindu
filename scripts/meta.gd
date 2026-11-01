@@ -69,6 +69,7 @@ static var danger_slow := false  # 중앙 체력이 50%·25% 아래로 처음 �
 static var orb_hp_on := false  # 모든 구체에 체력 숫자 (끄면 고리만, 보스·마우스를 올린 구체는 숫자도)
 static var online_on := true  # 판 기록 보내기 (리더보드·사용 통계). 끄면 아무것도 보내지 않음
 static var nickname := ""
+static var blocked := {}  # 차단한 플레이어 {pid: 그때 닉네임}. 이 기기에서만 (리더보드·멀티 방에서 이름을 가림)
 static var device_id := ""  # 이 기기의 무작위 id (개인정보 아님). 처음 켤 때 만든다
 static var guide_on := true  # 처음 생기는 일에 한 줄 안내 (설정에서 끔)
 static var guide_seen := {}  # 이미 본 안내 id -> true
@@ -173,6 +174,7 @@ static func load_into(cfg: ConfigFile) -> void:
 	dps_fold = val(cfg, "settings", "dps_fold", OS.has_feature("mobile"))
 	online_on = val(cfg, "online", "on", true)
 	nickname = val(cfg, "online", "nickname", "")
+	blocked = val(cfg, "online", "blocked", {})
 	device_id = val(cfg, "online", "device", "")
 	guide_on = val(cfg, "guide", "on", true)
 	guide_seen = val(cfg, "guide", "seen", {})
@@ -239,6 +241,7 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("settings", "ui_scale", ui_scale)
 	cfg.set_value("online", "on", online_on)
 	cfg.set_value("online", "nickname", nickname)
+	cfg.set_value("online", "blocked", blocked)
 	cfg.set_value("online", "device", device_id)
 	cfg.set_value("guide", "on", guide_on)
 	cfg.set_value("guide", "seen", guide_seen)

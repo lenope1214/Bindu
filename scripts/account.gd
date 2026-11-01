@@ -8,6 +8,7 @@ static var secret := ""  # 이 기기만 아는 무작위 값 (서버는 해시�
 static var token := ""
 static var expires := 0
 static var id := ""  # 서버 계정 id
+static var pid := ""  # 남에게 보이는 공개 id (서버가 계정 id로 만든 값, 리더보드·멀티 방의 신고·차단에 씀)
 static var linked: Array = []  # 붙은 소셜 수단 (google·apple …)
 static var drops: Array = []  # 서버에서 지워야 하는데 못 지운 진행 중 판 (오프라인일 때 끝낸 판)
 static var loaded := false
@@ -23,6 +24,7 @@ static func load_file() -> void:
 		token = Meta.val(cfg, "account", "token", "")
 		expires = Meta.val(cfg, "account", "expires", 0)
 		id = Meta.val(cfg, "account", "id", "")
+		pid = Meta.val(cfg, "account", "pid", "")
 		linked = Meta.val(cfg, "account", "linked", [])
 		drops = Meta.val(cfg, "account", "drops", [])
 	if secret.length() != 64:
@@ -36,6 +38,7 @@ static func save_file() -> void:
 	cfg.set_value("account", "token", token)
 	cfg.set_value("account", "expires", expires)
 	cfg.set_value("account", "id", id)
+	cfg.set_value("account", "pid", pid)
 	cfg.set_value("account", "linked", linked)
 	cfg.set_value("account", "drops", drops.slice(-20))
 	cfg.save(PATH)
@@ -50,7 +53,19 @@ static func take(d: Dictionary) -> void:
 	token = str(d.get("token", ""))
 	expires = int(d.get("expires", 0))
 	id = str(d.get("account", ""))
+	pid = str(d.get("pid", ""))
 	linked = d.get("linked", []) if d.get("linked") is Array else []
+	save_file()
+
+
+## 계정 지우기 뒤: 토큰·id를 버린다 (비밀값은 그대로, 다음 온라인 때 새 익명 계정을 받는다).
+static func forget_all() -> void:
+	token = ""
+	expires = 0
+	id = ""
+	pid = ""
+	linked = []
+	drops = []
 	save_file()
 
 

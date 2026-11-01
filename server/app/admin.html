@@ -44,6 +44,7 @@
     <button data-t="runs">판 기록</button>
     <button data-t="logs">오류</button>
     <button data-t="votes">투표</button>
+    <button data-t="reports">신고</button>
   </nav>
   <span style="flex:1"></span>
   <input id="token" type="password" placeholder="관리자 토큰" size="22">
@@ -155,6 +156,15 @@
   <div class="tbl" id="t-votes"></div>
   <h2 id="v-head"></h2><div class="tbl" id="t-vnotes"></div>
 </section>
+
+<section id="reports">
+  <p class="dim">리더보드·멀티 방에서 들어온 닉네임 신고입니다. 24시간 안에 처리해 주세요(App Store 약속). 이름 지우기 = 닉네임을 익명으로, 차단 = 이름 지우고 기기·계정 차단(기록 숨김), 넘기기 = 문제없음. 같은 사람에 걸린 열린 신고는 같이 닫힙니다.</p>
+  <div class="row">
+    <select id="r-status"><option value="open">열린 신고</option><option value="">전체</option></select>
+    <button class="act" id="load-reports">불러오기</button>
+  </div>
+  <div class="tbl" id="t-reports"></div>
+</section>
 </main>
 <script>
 const NAMES = {
@@ -188,7 +198,7 @@ async function api(path, opt = {}) {
 document.querySelectorAll("#tabs button").forEach(b => b.onclick = () => {
   document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
   document.querySelectorAll("section").forEach(s => s.classList.toggle("on", s.id === b.dataset.t));
-  ({patch: loadPatches, release: loadReleases, runs: loadRuns, logs: loadLogs, votes: loadVotes})[b.dataset.t]?.();
+  ({patch: loadPatches, release: loadReleases, runs: loadRuns, logs: loadLogs, votes: loadVotes, reports: loadReports})[b.dataset.t]?.();
 });
 
 // 표: cols = [[제목, 값 함수, 숫자?, 막대 최대값 함수?]]
@@ -333,6 +343,23 @@ $("v-new").onclick = async () => {
   const r = await api("/admin/vote_rounds", {method: "POST", body: JSON.stringify({name: $("v-name").value.trim()})});
   say(`새 회차 열림: ${r.name}`); $("v-name").value = ""; $("v-round").value = "";
   $("v-round").innerHTML = ""; loadVotes();
+};
+
+// ---------- 신고 ----------
+const RWHERE = {board: "리더보드", mp: "멀티 방"}, RWHY = {nick: "닉네임", cheat: "부정 기록", other: "기타"};
+const RST = {open: "열림", renamed: "이름 지움", banned: "차단", dismissed: "넘김"};
+async function loadReports() {
+  const rs = await api("/admin/api/reports?status=" + $("r-status").value);
+  table($("t-reports"), rs, [["날짜", r => kst(r.created)], ["신고된 이름", r => esc(r.nick || "-")], ["지금 이름", r => esc(r.now || "-")],
+    ["곳", r => RWHERE[r.where] || esc(r.where)], ["까닭", r => RWHY[r.reason] || esc(r.reason)], ["신고한 사람", r => r.reporters, 1],
+    ["대상", r => r.target ? esc(r.target.slice(0, 8)) : '<span class="dim">못 찾음</span>'], ["상태", r => RST[r.status] || esc(r.status)],
+    ["", (r, raw) => raw ? r.id : r.status !== "open" ? "" : `<button class="sub" onclick="actReport(${r.id},'rename')">이름 지우기</button> <button class="sub" onclick="actReport(${r.id},'ban')">차단</button> <button class="sub" onclick="actReport(${r.id},'dismiss')">넘기기</button>`]]);
+}
+$("load-reports").onclick = loadReports;
+window.actReport = async (id, action) => {
+  if (action === "ban" && !confirm("이 사람을 차단할까요? 기록이 리더보드에서 숨겨집니다.")) return;
+  const r = await api(`/admin/reports/${id}`, {method: "POST", body: JSON.stringify({action})});
+  say(`신고 ${id}: ${RST[r.status]}`); loadReports();
 };
 </script>
 </body>

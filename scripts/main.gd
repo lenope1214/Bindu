@@ -427,6 +427,10 @@ var board_season := 0  # 0: 이번 시즌
 var board_grow := false  # 리더보드: 씨앗 나무를 쓴 '성장' 기록 (끄면 '순수')
 var board_easy := false  # 리더보드: 쉽게 모드를 쓴 판 (성장·순수 섞어서)
 var board_seasons: Array = []  # 서버 시즌 목록 (새 시즌부터)
+var board_raw := {}  # 리더보드 창: period → 받은 응답 (차단을 바꾸면 다시 그리기)
+var board_people := {}  # 리더보드 창에 보이는 다른 사람 {pid: 닉네임} (신고·차단 창 목록)
+var board_ugc_btn: Button  # 리더보드 창 오른쪽 아래 [신고·차단]
+var board_ugc_panel: PanelContainer  # 리더보드 위에 뜨는 신고·차단 목록
 static var title_seen := false  # 다시 시작하면 타이틀은 건너뛴다
 # 정원 모드 (Garden)
 var garden_cd := -1.0  # 다음 웨이브까지 남은 시간 (정원 쉬는 시간, 자동 진행)
@@ -5226,6 +5230,30 @@ func _build_menu(root: Control) -> void:
 	board_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	board_bar.visible = false
 	records_panel.add_child(board_bar)
+	# 리더보드 닉네임 신고·차단 (App Store 1.2: 남에게 보이는 닉네임 = 사용자 생성 콘텐츠)
+	board_ugc_btn = Button.new()
+	board_ugc_btn.text = "신고·차단"
+	board_ugc_btn.tooltip_text = "부적절한 닉네임을 신고하거나, 이 기기에서 그 사람 이름을 가립니다"
+	board_ugc_btn.focus_mode = Control.FOCUS_NONE
+	board_ugc_btn.add_theme_font_size_override("font_size", 15)
+	board_ugc_btn.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	board_ugc_btn.offset_left = -150.0
+	board_ugc_btn.offset_top = -54.0
+	board_ugc_btn.offset_right = -18.0
+	board_ugc_btn.offset_bottom = -18.0
+	board_ugc_btn.visible = false
+	board_ugc_btn.pressed.connect(_board_ugc_open)
+	records_panel.add_child(board_ugc_btn)
+	board_ugc_panel = PanelContainer.new()
+	var usb: StyleBoxFlat = rsb.duplicate()
+	usb.bg_color = Color(0.08, 0.09, 0.13, 1.0)
+	usb.border_color = Color(1, 1, 1, 0.45)
+	board_ugc_panel.add_theme_stylebox_override("panel", usb)
+	board_ugc_panel.set_anchors_preset(Control.PRESET_CENTER)
+	board_ugc_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	board_ugc_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	board_ugc_panel.visible = false
+	records_panel.add_child(board_ugc_panel)
 	for f in [_board_next_map, _board_next_rules, _board_next_season, _board_next_grow]:
 		var b := Button.new()
 		b.custom_minimum_size = Vector2(200, 36)
@@ -5394,18 +5422,38 @@ func _build_menu(root: Control) -> void:
 		ne.placeholder_text = "비우면 익명"
 		ne.text = Meta.nickname
 		ne.custom_minimum_size = Vector2(240, 0)
+		var nbad := Label.new()  # 욕설·운영자 사칭 등 (NickFilter): 저장하지 않고 익명으로
+		nbad.text = "쓸 수 없는 낱말이 있어요"
+		nbad.add_theme_font_size_override("font_size", 14)
+		nbad.add_theme_color_override("font_color", Color(1, 0.5, 0.45))
+		nbad.visible = NickFilter.bad(Meta.nickname)
 		ne.text_changed.connect(func(t):
-			Meta.nickname = t.strip_edges()
+			var bad := NickFilter.bad(t)
+			nbad.visible = bad
+			Meta.nickname = "" if bad else t.strip_edges()
 			_save_best())
 		ne.text_submitted.connect(func(_t): ne.release_focus())
 		nrow.add_child(ne)
+		nrow.add_child(nbad)
 		sv.add_child(nrow)
+		var arow := HBoxContainer.new()
+		arow.add_theme_constant_override("separation", 8)
 		account_label = Label.new()
 		account_label.add_theme_font_size_override("font_size", 14)
 		account_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
 		account_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		account_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		account_label.text = Account.label()
-		sv.add_child(account_label)
+		arow.add_child(account_label)
+		# 내 온라인 데이터 지우기 (App Store 5.1.1(v)): 두 번 눌러야 지운다. 서버 계정·진행·리더보드 이름과 기록을 지우고 기록 보내기를 끈다.
+		var del := Button.new()
+		del.text = "내 온라인 데이터 지우기"
+		del.tooltip_text = "서버에 저장된 진행·리더보드 이름과 기록을 지웁니다. 이 기기의 기록·업적은 남아요"
+		del.focus_mode = Control.FOCUS_NONE
+		del.add_theme_font_size_override("font_size", 14)
+		del.pressed.connect(_on_delete_data.bind(del, ne))
+		arow.add_child(del)
+		sv.add_child(arow)
 	var nb := Button.new()
 	nb.text = "패치노트 (N)"
 	nb.focus_mode = Control.FOCUS_NONE
@@ -5434,6 +5482,42 @@ func _build_menu(root: Control) -> void:
 			if c is CheckButton:
 				c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_refresh_menu()
+
+
+## 설정의 [내 온라인 데이터 지우기]: 첫 누름은 확인 글로 바꾸고 4초 안에 한 번 더 누르면 지운다.
+func _on_delete_data(b: Button, nick_edit: LineEdit) -> void:
+	if not b.has_meta("armed"):
+		b.set_meta("armed", true)
+		b.text = "한 번 더 누르면 지워요"
+		b.add_theme_color_override("font_color", Color(1, 0.55, 0.5))
+		get_tree().create_timer(4.0).timeout.connect(func():
+			if is_instance_valid(b) and b.has_meta("armed") and not b.disabled:
+				b.remove_meta("armed")
+				b.text = "내 온라인 데이터 지우기"
+				b.remove_theme_color_override("font_color"))
+		return
+	b.remove_meta("armed")
+	b.disabled = true
+	b.text = "지우는 중…"
+	var code := await net.delete_account()
+	if not is_instance_valid(b):
+		return
+	b.disabled = false
+	b.text = "내 온라인 데이터 지우기"
+	b.remove_theme_color_override("font_color")
+	if code == 200:
+		Meta.online_on = false  # 바로 새 계정이 생기지 않게: 다시 켜면 새 익명 계정으로 시작
+		Meta.nickname = ""
+		nick_edit.text = ""
+		for c in settings_panel.find_children("*", "CheckButton", true, false):
+			if (c as CheckButton).text.begins_with("기록 보내기"):
+				(c as CheckButton).set_pressed_no_signal(false)
+		_save_best()
+		if account_label:
+			account_label.text = Account.label()
+		_show_toast("서버에 저장된 내 데이터를 지웠어요. '기록 보내기'를 다시 켜면 새 익명 계정으로 시작해요")
+	else:
+		_show_toast("지우지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요" if code == 0 else "지우지 못했어요 (서버 %d)" % code)
 
 
 ## ◀ 글자 ▶ 한 줄.
@@ -5860,6 +5944,8 @@ func _vote_run_keys() -> Array:
 func _toggle_records() -> void:
 	records_panel.visible = not records_panel.visible
 	board_bar.visible = false
+	board_ugc_btn.visible = false
+	board_ugc_panel.visible = false
 	if not records_panel.visible:
 		return
 	var lines := PackedStringArray(["[맵별 최고 기록 · %s]   (아무 곳이나 %s)" % [Rules.NAMES[Meta.rules], "누르면 닫기" if touch_ui else "클릭: 닫기"]])
@@ -6085,8 +6171,10 @@ func _on_run_sent(res: Dictionary) -> void:
 ## 처음엔 지금 고른 맵·규칙 버전의 이번 시즌 전체·이번 주 순위. 지난 시즌은 전체만.
 func _toggle_board() -> void:
 	records_panel.visible = not records_panel.visible
+	board_ugc_panel.visible = false
 	if not records_panel.visible:
 		board_bar.visible = false
+		board_ugc_btn.visible = false
 		return
 	board_map = Meta.map_id
 	board_rules = Meta.rules if Meta.rules in Rules.IDS else Rules.IDS[0]
@@ -6103,6 +6191,9 @@ func _board_tag() -> String:
 
 func _load_board() -> void:
 	board_lines = {}
+	board_raw = {}
+	board_people = {}
+	board_ugc_panel.visible = false
 	_draw_board()
 	net.leaderboard(board_map, board_rules, "all", board_season, _board_tag(), board_grow, board_easy)
 	if board_season == 0:
@@ -6157,6 +6248,7 @@ func _season_name(id: int) -> String:
 func _on_board_loaded(d: Dictionary) -> void:
 	if not records_panel.visible or not board_bar.visible or d.get("tag", "") != _board_tag():
 		return
+	board_raw[d.get("period", "all")] = d
 	var lines := PackedStringArray()
 	if d.has("error"):
 		lines.append("  " + str(d["error"]))
@@ -6166,7 +6258,12 @@ func _on_board_loaded(d: Dictionary) -> void:
 		for e in d.get("entries", []):
 			shown_me = shown_me or e.get("me", false)
 			var tt := str(e.get("title", ""))
+			var pid := str(e.get("pid", ""))
+			if pid != "" and not e.get("me", false):
+				board_people[pid] = str(e["nick"])
 			var nick := str(e["nick"]) + (" 「%s」" % Meta.ACHIEVEMENTS[tt]["name"] if Meta.ACHIEVEMENTS.has(tt) else "")
+			if Meta.blocked.has(pid):
+				nick = "(차단한 플레이어)"
 			lines.append("  %d. %s   웨이브 %d · 점수 %s%s" % [int(e["rank"]), nick, int(e["wave"]), num(int(e["score"])), ("   ◀ 나" if e.get("me", false) else "") + ("   ▶ 진행 중" if not e.get("ended", true) else "")])
 		if lines.is_empty():
 			lines.append("  아직 기록이 없어요")
@@ -6200,9 +6297,121 @@ func _draw_board() -> void:
 		lines.append("설정에서 '기록 보내기'를 켜면 내 기록도 올라갑니다")
 	elif Meta.nickname == "":
 		lines.append("설정에서 닉네임을 정할 수 있어요")
+	lines.append("")  # 오른쪽 아래 [신고·차단] 자리
+	lines.append("")
+	board_ugc_btn.visible = true
 	records_panel.text = _kr_keep("\n".join(lines))
 	var lh := records_panel.get_line_height()
 	board_bar.position = Vector2(18, 18 + lh + (lh * 2.0 - 36.0) / 2.0 + 2.0)
+
+
+# ---------- 닉네임 신고·차단 (App Store 1.2) ----------
+
+## 리더보드 [신고·차단]: 지금 창에 보이는 다른 사람 목록. 다시 누르면 닫는다.
+func _board_ugc_open() -> void:
+	if board_ugc_panel.visible:
+		board_ugc_panel.visible = false
+		return
+	for ch in board_ugc_panel.get_children():
+		board_ugc_panel.remove_child(ch)
+		ch.queue_free()
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 8)
+	board_ugc_panel.add_child(v)
+	var t := Label.new()
+	t.text = "신고·차단"
+	t.add_theme_font_size_override("font_size", 20)
+	v.add_child(t)
+	var hint := Label.new()
+	hint.text = "신고하면 운영자가 24시간 안에 확인해 이름을 지우거나 차단해요.\n차단하면 이 기기에서 그 사람 이름이 가려지고 멀티 방에서도 막혀요."
+	hint.add_theme_font_size_override("font_size", 14)
+	hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
+	v.add_child(hint)
+	var sc := ScrollContainer.new()
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sc.custom_minimum_size = Vector2(560, mini(board_people.size(), 7) * 44 + 4 if not board_people.is_empty() else 36)
+	v.add_child(sc)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list.add_theme_constant_override("separation", 6)
+	sc.add_child(list)
+	if board_people.is_empty():
+		var e := Label.new()
+		e.text = "  목록에 다른 사람이 없어요"
+		list.add_child(e)
+	for pid in board_people:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		var l := Label.new()
+		l.text = "(차단한 플레이어) " + str(Meta.blocked[pid]) if Meta.blocked.has(pid) else str(board_people[pid])
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		l.clip_text = true
+		l.add_theme_font_size_override("font_size", 17)
+		row.add_child(l)
+		row.add_child(_ugc_buttons(pid, str(board_people[pid]), "board", func():
+			_draw_board_again()
+			board_ugc_panel.visible = false
+			_board_ugc_open()))
+		list.add_child(row)
+	var close := Button.new()
+	close.text = "닫기"
+	close.focus_mode = Control.FOCUS_NONE
+	close.pressed.connect(func(): board_ugc_panel.visible = false)
+	v.add_child(close)
+	board_ugc_panel.visible = true
+
+
+## 차단을 바꾼 뒤 리더보드 줄을 다시 쓴다 (받은 응답은 그대로, 이름만 가림).
+func _draw_board_again() -> void:
+	for d in board_raw.values():
+		_on_board_loaded(d)
+
+
+## 한 사람 줄의 [신고] [차단] 버튼. pid가 없으면(예전 서버·예전 게임) 신고는 못 하고 차단만 이름으로 못 함 → 둘 다 꺼 둠.
+## after: 차단을 바꾼 뒤 부름 (목록 다시 그리기).
+func _ugc_buttons(pid: String, nick: String, where: String, after: Callable) -> HBoxContainer:
+	var box := HBoxContainer.new()
+	box.add_theme_constant_override("separation", 6)
+	var rb := Button.new()
+	rb.text = "신고"
+	rb.focus_mode = Control.FOCUS_NONE
+	rb.custom_minimum_size = Vector2(72, 40 if _phone() else 32)
+	rb.add_theme_font_size_override("font_size", 15)
+	rb.disabled = pid == "" or not Net.report_ok()
+	rb.tooltip_text = "부적절한 닉네임 신고" if not rb.disabled else "지금은 신고할 수 없어요 (온라인 연결 필요)"
+	rb.pressed.connect(func():
+		rb.disabled = true
+		rb.text = "보내는 중"
+		var code := await net.report(pid, nick, where)
+		if not is_instance_valid(rb):
+			return
+		if code == 200:
+			rb.text = "신고함"
+			_show_toast("신고했어요. 운영자가 24시간 안에 확인해요")
+		else:
+			rb.text = "신고"
+			rb.disabled = false
+			_show_toast("신고를 보내지 못했어요. 잠시 뒤 다시 눌러 주세요"))
+	box.add_child(rb)
+	var bb := Button.new()
+	var on := Meta.blocked.has(pid)
+	bb.text = "차단 풀기" if on else "차단"
+	bb.focus_mode = Control.FOCUS_NONE
+	bb.custom_minimum_size = Vector2(90, 40 if _phone() else 32)
+	bb.add_theme_font_size_override("font_size", 15)
+	bb.disabled = pid == ""
+	bb.tooltip_text = "이 기기에서 이 사람 이름을 가리고 멀티 방에서 막아요"
+	bb.pressed.connect(func():
+		if Meta.blocked.has(pid):
+			Meta.blocked.erase(pid)
+			_show_toast("차단을 풀었어요")
+		else:
+			Meta.blocked[pid] = nick.left(16)
+			_show_toast("차단했어요. 이 기기에서 이름이 가려져요")
+		_save_best()
+		after.call())
+	box.add_child(bb)
+	return box
 
 
 # ---------- 패치노트 ----------
@@ -10042,6 +10251,8 @@ func _my_towers() -> Array:
 func _mp_name(id: int) -> String:
 	if id == mp.my_id:
 		return "나"
+	if Meta.blocked.has(mp.pids.get(id, "")):
+		return "차단한 플레이어"
 	var n: String = mp_others.get(id, {}).get("name", "")
 	if n == "":
 		n = mp.peers.get(id, {}).get("name", "")
@@ -10686,9 +10897,18 @@ func _mp_refresh_lobby(keep_status := true) -> void:
 	for n in mp.names():
 		var id: int = n[0]
 		var me := id == mp.my_id
+		# 호스트: 내가 차단한 사람은 시작 전에 방에서 내보낸다
+		if mp.is_host() and not me and not mp.started and Meta.blocked.has(mp.pids.get(id, "")):
+			var did := id
+			_show_toast("차단한 플레이어가 들어와서 내보냈어요")
+			mp.call_deferred("_drop", did)
+			continue
 		var nm: String = _mp_name(id) if not me else (n[1] if n[1] != "" else "닉네임 없음")
 		var st := "" if me or n[2] else ("연결 안 됨" if n[4] else "연결 중")
-		list.add_child(_mp_member_row(id, n[3], id == 1, nm + (" (나)" if me else ""), st))
+		var row := _mp_member_row(id, n[3], id == 1, nm + (" (나)" if me else ""), st)
+		if not me:
+			row.add_child(_ugc_buttons(mp.pids.get(id, ""), str(n[1]), "mp", func(): _mp_refresh_lobby()))
+		list.add_child(row)
 	for i in Mp.MAX_PLAYERS - mp.names().size():
 		var empty := _mp_member_row(0, "", false, "빈 자리", "")
 		empty.modulate = Color(1, 1, 1, 0.3)
