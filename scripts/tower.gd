@@ -2281,18 +2281,26 @@ func star_rate(from_self: bool) -> float:
 	return k * (Rules.t("star_pure") if pure_star() else 1.0)
 
 
+## 행성이 오브젝트 from의 피해에서 모으는 비율: 내 속성 몫(속성 레벨 비율)은 planet_take(+별 레벨마다 planet_lv),
+## 나머지 몫은 planet_other, 자기 피해는 planet_self (2026-11-01: 예전엔 내 속성 몫 30%만·자기 20%라 순수 별보다 훨씬 늦게 찼음)
+func planet_rate(from: Tower) -> float:
+	if from == self:
+		return Rules.t("planet_self")
+	var pe := planet()
+	var share := float(from.lv(pe)) / maxf(from.total_level(), 1.0) if from.elements.has(pe) else 0.0
+	return (Rules.t("planet_take") + Rules.t("planet_lv") * (lv(Elem.STAR) - 1)) * share + Rules.t("planet_other") * (1.0 - share)
+
+
 ## 피해 d를 준 오브젝트 from에게서 별빛을 모은다. 둘레 오브젝트의 속성(별 제외)도 같이 적어 둔다.
-## 행성은 다른 오브젝트 피해 중 자기 속성 몫(그 오브젝트 속성 레벨 중 비율)만 planet_take로 모은다.
+## 행성은 planet_rate: 내 속성 몫은 크게, 나머지 몫은 조금.
 func star_feed(d: float, from: Tower) -> void:
 	var need := star_need()
 	if star_sum >= need or d <= 0.0:
 		return
 	var pe := planet()
 	var rate := star_rate(from == self)
-	if pe >= 0 and from != self:
-		if not from.elements.has(pe):
-			return
-		rate = Rules.t("planet_take") * float(from.lv(pe)) / maxf(from.total_level(), 1.0)
+	if pe >= 0:
+		rate = planet_rate(from)
 	var amt := minf(d * rate, need - star_sum)
 	star_sum += amt
 	if from != self:
@@ -2357,7 +2365,7 @@ func nova_mix() -> Dictionary:
 ## 모은 속성의 부가효과를 한꺼번에 걸고, 모은 속성끼리 반응이 있으면 그 몫(별빛 x0.15)을 더한다.
 ## 모은 속성이 3종이면 저항·굳셈을 무시한다. 행성이면 그 속성 효과가 따라붙는다(_nova_follow).
 func _supernova(c: Orb) -> void:
-	var pool := star_sum * Rules.t("star_mul")
+	var pool := star_sum * Rules.t("star_mul") * (Rules.t("planet_mul") if planet() >= 0 else 1.0)
 	var mix := nova_mix()
 	star_sum = 0.0
 	star_e.clear()

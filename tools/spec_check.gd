@@ -454,18 +454,20 @@ func _stars() -> void:
 	d0 = fi.dealt
 	fi.hit(o, 1.0)
 	got = fi.dealt - d0
-	ok("STAR-02", st.planet() == Elem.FIRE and none == 0.0 and is_equal_approx(st.star_sum, got * 0.30) and not st.can_take({"type": "elem", "e": Elem.ICE, "lv": 1}),
-		"행성: 물 피해는 안 모음(%.2f), 불 몫 30%% (%.3f / %.3f), 3종 못 넣음" % [none, st.star_sum, got])
+	var none_k := none / maxf(wa.dealt, 0.0001)
+	ok("STAR-02", st.planet() == Elem.FIRE and is_equal_approx(none_k, 0.05) and is_equal_approx(st.star_sum - none, got * 0.45) and is_equal_approx(st.planet_rate(st), 0.3) and not st.can_take({"type": "elem", "e": Elem.ICE, "lv": 1}),
+		"행성: 물 피해는 5%%(%.3f), 불 몫 45%% (%.3f / %.3f), 자기 30%%, 3종 못 넣음" % [none_k, st.star_sum - none, got])
 
 	# 초신성: 가운데 하나뿐이면 별빛 x3을 그 구체에
 	st.star_sum = st.star_need()
 	st.star_e = {Elem.FIRE: st.star_sum}
 	var big := _orb(c + Vector2(-300, -200), 1e6)
 	var hp0 := big.hp
-	var pool := st.star_sum * 3.0
+	var pool := st.star_sum * 3.0 * 0.85  # 행성 초신성은 x0.85 (planet_mul)
+	var pool_star := st.star_sum * 3.0
 	st._supernova(big)
-	ok("STAR-03", st.star_sum == 0.0 and hp0 - big.hp >= pool * 0.99 and st.src.has("elem:star") and big.burn_t > 0.0,
-		"초신성: 별빛 x3 (%.0f 중 %.0f), 행성 효과" % [pool, hp0 - big.hp])
+	ok("STAR-03", st.star_sum == 0.0 and hp0 - big.hp >= pool * 0.99 and hp0 - big.hp < pool_star * 0.99 and st.src.has("elem:star") and big.burn_t > 0.0,
+		"초신성: 행성은 별빛 x3 x0.85 (%.0f 중 %.0f), 행성 효과" % [pool, hp0 - big.hp])
 	# 초신성 그림은 웨이브가 끝나도(쉬는 시간·카드 선택) 0.6초 뒤 사라진다 (예전엔 attack이 안 불려 다음 웨이브까지 남음)
 	var fx_on := st.nova_fx > 0.0
 	st.fx["laser"] = 0.3
