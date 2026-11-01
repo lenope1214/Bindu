@@ -42,7 +42,7 @@ PATCH_KEYS = {"rules", "rules_desc", "perks", "perk_desc", "cards", "elem_dmg", 
 
 
 # 자동 배포 확인용: 서버 코드를 고쳐 배포할 때 바꾸면 /health로 새 이미지가 떴는지 밖에서 볼 수 있다
-SERVER_REV = "2026-11-01.2"
+SERVER_REV = "2026-11-01.3"
 
 
 @app.get("/health")
@@ -673,6 +673,12 @@ def log_detail(fp: str, limit: int = Query(30, le=200), db: Session = Depends(ge
     return [{"created": r.created_at.isoformat(), "device": r.device_id, "platform": r.platform, "os": r.os, "game": r.game_version,
              "patch": r.patch_id, "map": r.map, "rules": r.rules, "modes": r.modes, "skin": r.skin, "wave": r.wave, "count": r.count,
              "kind": r.kind, "message": r.message, "file": r.file, "line": r.line, "func": r.func, "backtrace": r.backtrace} for r in rows]
+
+
+@app.get("/admin/rule_keys", dependencies=[Depends(require_admin)])
+def rule_keys():
+    """관리자 페이지 수치 표: 온라인 패치 rules 키·묶음·설명·기본값 (tools/run.sh rulekeys가 게임 코드에서 만든 파일)."""
+    return json.loads((Path(__file__).parent / "rule_keys.json").read_text(encoding="utf-8"))
 
 
 @app.get("/admin", response_class=HTMLResponse)

@@ -1517,7 +1517,7 @@ func attack(delta: float, orbs: Array) -> void:
 				var ls := lanes()
 				var ds := dirs()
 				for i in ds.size():
-					_line(orbs, ds[i], 2000.0, 14.0 * s, func(o): hit(o, 3.4 * pw(l) * mk), ls[i])
+					_line(orbs, ds[i], 2000.0, Rules.t("laser_w") * s, func(o): hit(o, 3.4 * pw(l) * mk), ls[i])
 		"lob":
 			if _ready_to("p", LOB_IV / spd(l), dp):
 				var ls := lanes()
@@ -3197,8 +3197,9 @@ func _draw_attack() -> void:
 				var d: Vector2 = ds[i]
 				var o2: Vector2 = ls[i]
 				if f > 0.0:
-					draw_line(o2 + d * RADIUS, o2 + d * 2000.0, Color(c, f / 0.3), (10.0 * f / 0.3 + 2.0) * s)
-					draw_line(o2 + d * RADIUS, o2 + d * 2000.0, Color(1, 1, 1, f / 0.3), 3.0)
+					var wk: float = Rules.t("laser_w") / 14.0  # 판정 폭(laser_w)에 맞춰 빛줄기 두께도 (14가 예전 기본)
+					draw_line(o2 + d * RADIUS, o2 + d * 2000.0, Color(c, f / 0.3), (10.0 * f / 0.3 + 2.0) * s * wk)
+					draw_line(o2 + d * RADIUS, o2 + d * 2000.0, Color(1, 1, 1, f / 0.3), 3.0 * wk)
 				else:
 					var ch: float = 1.0 - cd.get("p", 0.0) / (2.0 / spd(l))
 					draw_circle(d * (RADIUS + 4.0), 2.0 + 4.0 * ch, Color(c, 0.4 + 0.6 * ch))
@@ -3427,7 +3428,7 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 			"gust":
 				_r_band(ci, lo, dd, 0.0, 420.0 * s * Rules.t("range_gust"), 34.0 * s, c)
 			"laser":
-				_r_band(ci, lo, dd, 0.0, far, 14.0 * s, c)
+				_r_band(ci, lo, dd, 0.0, far, Rules.t("laser_w") * s, c)
 			"wall":
 				if i == 0:
 					var inner := Rect2(Vector2.ZERO, Meta.FIELD).grow(-100.0)  # main.spawn_rock처럼 전장 가장자리 안쪽

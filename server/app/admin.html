@@ -32,6 +32,10 @@
   .bar { height:8px; background:var(--bar); border-radius:4px; min-width:1px; }
   .dim { color:var(--dim); } .bad { color:var(--bad); }
   #msg { color:var(--accent); }
+  #t-keys td.desc { white-space:normal; min-width:260px; color:var(--dim); font-size:13px; }
+  #t-keys input { width:90px; padding:3px 6px; text-align:right; }
+  #t-keys tr.set td { background:#232a1c; }
+  #t-keys th { position:sticky; top:0; background:var(--panel); cursor:default; }
 </style>
 </head>
 <body>
@@ -89,6 +93,18 @@
 
 <section id="patch">
   <p class="dim">게임이 켜질 때 받는 수치 덮어쓰기입니다. 쓸 수 있는 키: rules, rules_desc, perks, perk_desc, cards, elem_dmg, pat_dmg, modes, message (server/README.md 참고).</p>
+  <h2>수치 편집 (rules)</h2>
+  <p class="dim">게임은 켜진 패치 중 가장 최근 것 하나만 받습니다. 지금 값을 이어 가려면 먼저 [켜진 패치 불러오기]로 바탕을 채운 뒤 바꾸세요. 새 값 칸에 넣으면 아래 JSON의 rules에 바로 들어가고, 비우면 빠집니다 (기본값으로).</p>
+  <div class="row">
+    <select id="k-scope"><option value="all">모든 규칙 (all)</option><option value="1">랭크만 (1)</option><option value="3">도파민 모드만 (3)</option></select>
+    <select id="k-group"><option value="">묶음 전체</option></select>
+    <input id="k-find" placeholder="키·설명 찾기 (예: 레이저, laser)" size="26">
+    <label><input type="checkbox" id="k-changed"> 바꾼 것만</label>
+    <button class="sub" id="k-load">켜진 패치 불러오기</button>
+    <span class="dim" id="k-count"></span>
+  </div>
+  <div class="tbl" id="t-keys" style="max-height:520px; overflow-y:auto; margin-bottom:12px"></div>
+  <h2>패치 JSON</h2>
   <textarea id="p-data">{
   "rules": {"all": {}, "1": {}},
   "perks": {},
@@ -255,8 +271,57 @@ document.querySelectorAll("[data-csv]").forEach(b => b.onclick = async () => {
   a.download = `bindu_${b.dataset.csv}.csv`; a.click();
 });
 
+// 수치 편집: 키 목록(/admin/rule_keys) + 패치 JSON의 rules[대상]을 표로. JSON 칸이 원본이고 표는 그걸 읽고 고친다.
+let KEYS = null, PATCHES = [];
+function pdata() { try { return JSON.parse($("p-data").value); } catch (e) { return null; } }
+function keyRows() {
+  const d = pdata(), sc = $("k-scope").value;
+  const cur = (d && d.rules && d.rules[sc]) || {}, all = (d && d.rules && d.rules.all) || {};
+  const q = $("k-find").value.trim().toLowerCase(), g = $("k-group").value, only = $("k-changed").checked;
+  const rows = KEYS.filter(e => (!g || e.g === g) && (!q || (e.k + " " + e.d + " " + e.g).toLowerCase().includes(q)) && (!only || e.k in cur));
+  $("k-count").textContent = `${rows.length}개` + (d ? "" : " · JSON 형식 오류: 고치기 전엔 표가 안 바뀜");
+  const def = e => sc === "3" && "v3" in e ? e.v3 : e.v;
+  $("t-keys").innerHTML = `<table><thead><tr><th>묶음</th><th>키</th><th>설명</th><th>기본</th>${sc === "all" ? "" : "<th>all 값</th>"}<th>새 값</th></tr></thead><tbody>` +
+    rows.map(e => `<tr class="${e.k in cur ? "set" : ""}"><td>${esc(e.g)}</td><td>${esc(e.k)}</td><td class="desc">${esc(e.d)}</td><td class="num">${def(e)}${"v3" in e && sc === "all" ? ` <span class="dim">(도파민 ${e.v3})</span>` : ""}</td>` +
+      (sc === "all" ? "" : `<td class="num">${e.k in all ? all[e.k] : ""}</td>`) +
+      `<td><input data-k="${esc(e.k)}" value="${e.k in cur ? esc(cur[e.k]) : ""}" placeholder="${def(e)}" inputmode="decimal"></td></tr>`).join("") + "</tbody></table>";
+  $("t-keys").querySelectorAll("input").forEach(i => i.onchange = () => setKey(i.dataset.k, i.value.trim()));
+}
+function setKey(k, v) {
+  const d = pdata();
+  if (!d) { say("JSON 형식 오류: 아래 JSON부터 고치세요"); return; }
+  const sc = $("k-scope").value;
+  d.rules = d.rules || {};
+  d.rules[sc] = d.rules[sc] || {};
+  if (v === "") delete d.rules[sc][k];
+  else if (k === "mod_decay") d.rules[sc][k] = v === "true" || v === "1";
+  else if (isNaN(+v)) { say(`${k}: 숫자가 아님`); keyRows(); return; }
+  else d.rules[sc][k] = +v;
+  $("p-data").value = JSON.stringify(d, null, 2);
+  keyRows();
+}
+async function loadKeys() {
+  if (!KEYS) {
+    KEYS = await api("/admin/rule_keys");
+    $("k-group").innerHTML = `<option value="">묶음 전체</option>` + [...new Set(KEYS.map(e => e.g))].map(g => `<option>${esc(g)}</option>`).join("");
+  }
+  keyRows();
+}
+["k-scope", "k-group", "k-changed"].forEach(id => $(id).onchange = keyRows);
+$("k-find").oninput = keyRows;
+$("p-data").addEventListener("input", () => { if (KEYS) keyRows(); });
+$("k-load").onclick = () => {
+  const p = PATCHES.find(x => x.active);
+  if (!p) { say("켜진 패치 없음"); return; }
+  $("p-data").value = JSON.stringify(p.data, null, 2);
+  $("p-notes").value = `패치 ${p.id} 이어서: `;
+  $("p-min").value = p.min_game; $("p-max").value = p.max_game || "";
+  say(`패치 ${p.id} 불러옴`); keyRows();
+};
+
 async function loadPatches() {
-  const ps = await api("/admin/patches");
+  loadKeys();
+  const ps = PATCHES = await api("/admin/patches");
   table($("t-patches"), ps, [["번호", r => r.id, 1], ["날짜", r => kst(r.created)], ["메모", r => esc(r.notes)], ["게임 버전", r => `${r.min_game} ~ ${r.max_game || ""}`], ["시즌", r => r.season, 1],
     ["상태", (r, raw) => raw ? +r.active : `<button class="sub" onclick="togglePatch(${r.id}, ${!r.active})">${r.active ? "켜짐 → 끄기" : "꺼짐 → 켜기"}</button>`]]);
   const ss = await (await fetch("/v1/seasons")).json();

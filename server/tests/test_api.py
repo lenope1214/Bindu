@@ -46,6 +46,9 @@ def test_flow():
         assert b["patch"] == {"id": 0} and b["season"]["id"] == 1 and b["latest"] is None
         # 관리자 토큰 없으면 거부
         assert c.post("/admin/patches", json={"data": {}}).status_code == 401
+        assert c.get("/admin/rule_keys").status_code == 401
+        ks = {e["k"]: e for e in c.get("/admin/rule_keys", headers=A).json()}
+        assert ks["laser_w"]["v"] == 21 and ks["max_elems"]["v3"] == 99 and "dmg_laser" in ks
         assert c.post("/admin/patches", json={"data": {"bogus": 1}}, headers=A).status_code == 422
         r = c.post("/admin/patches", json={"data": {"rules": {"1": {"max_mod": 4}}, "perks": {"power": 0.2}}, "notes": "t", "min_game": "0.4.25"}, headers=A).json()
         assert r == {"id": 1, "season": 1}
