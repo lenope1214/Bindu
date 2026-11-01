@@ -5450,7 +5450,6 @@ func _build_menu(root: Control) -> void:
 		del.text = "내 온라인 데이터 지우기"
 		del.tooltip_text = "서버에 저장된 진행·리더보드 이름과 기록을 지웁니다. 이 기기의 기록·업적은 남아요"
 		del.focus_mode = Control.FOCUS_NONE
-		del.add_theme_font_size_override("font_size", 14)
 		del.pressed.connect(_on_delete_data.bind(del, ne))
 		arow.add_child(del)
 		sv.add_child(arow)

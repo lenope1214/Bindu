@@ -1730,7 +1730,7 @@ func _ugc() -> void:
 		{"rank": 1, "nick": "나쁜이름", "wave": 9, "score": 100, "pid": "aaaaaaaaaaaaaaaa"},
 		{"rank": 2, "nick": "착한이름", "wave": 8, "score": 90, "pid": "bbbbbbbbbbbbbbbb"},
 		{"rank": 3, "nick": "나", "wave": 7, "score": 80, "pid": "cccccccccccccccc", "me": true}]})
-	var txt: String = main.records_panel.text
+	var txt: String = main.records_panel.text.replace("\u2060", "")  # _kr_keep이 낱말 사이에 줄바꿈 방지 문자를 넣는다
 	var hide_ok: bool = txt.contains("(차단한 플레이어)") and not txt.contains("나쁜이름") and txt.contains("착한이름")
 	var people_ok: bool = main.board_people.size() == 2 and main.board_ugc_btn.visible
 	main._board_ugc_open()
@@ -1740,7 +1740,7 @@ func _ugc() -> void:
 	var panel_ok: bool = main.board_ugc_panel.visible and reps.size() == 2 and unblock.size() == 1 and reps.all(func(b): return b.disabled == not Net.report_ok())
 	# 차단 풀기 → 이름이 다시 보임
 	unblock[0].pressed.emit()
-	var unblock_ok: bool = not Meta.blocked.has("aaaaaaaaaaaaaaaa") and main.records_panel.text.contains("나쁜이름")
+	var unblock_ok: bool = not Meta.blocked.has("aaaaaaaaaaaaaaaa") and main.records_panel.text.replace("\u2060", "").contains("나쁜이름")
 	main.board_ugc_panel.visible = false
 	main.records_panel.visible = false
 	main.board_bar.visible = false
