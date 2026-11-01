@@ -529,6 +529,7 @@ func _ready() -> void:
 	_update_speed_btn()
 	net = Net.new()
 	add_child(net)
+	vote_panel.net = net  # 투표 창은 _build_ui에서 net보다 먼저 만들어져 null을 받았다 ("서버에 연결하지 못했어요")
 	coop_orbs = 1.0
 	coop_n = 1
 	Ach.mp = ""
