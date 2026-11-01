@@ -4651,6 +4651,13 @@ func _unhandled_input(event: InputEvent) -> void:
 				KEY_M:
 					_toggle_mute()  # 시작 화면에도 소리 버튼이 보인다
 			return
+		if event.keycode == KEY_ESCAPE and Garden.on:
+			# 정원: ESC = [나가기] (일시정지 창 대신). 심을 속성 고르는 중이면 그것만 닫는다
+			if gp_pick_slot >= 0:
+				gp_pick_slot = -1
+			else:
+				_leave(false)
+			return
 		if event.keycode == KEY_ESCAPE and phase == Phase.GAMEOVER:
 			if Time.get_ticks_msec() - over_ms > 800:
 				title_seen = false
@@ -12532,12 +12539,16 @@ func _garden_wave_done() -> void:
 	for t in towers.get_children():
 		total += t.dealt
 	var kw := float(kills - garden_kills0)
+	var planted := 0  # 키우기형: 칸이 많을수록 한 속성의 몫이 작아져 영웅이 거의 안 컸다 → 영웅 경험치는 칸 수를 곱해 평균 칸이 그 웨이브 처치 전부를 받게
+	for t in towers.get_children():
+		if not t.elements.is_empty():
+			planted += 1
 	if total > 0.0 and kw > 0.0:
 		for t in towers.get_children():
 			if t.dealt > 0.0 and not t.elements.is_empty():
 				for e in t.elements:
 					Garden.add_mastery(e, kw * t.dealt / total / t.elements.size())
-					Garden.add_hero_xp(e, kw * t.dealt / total / t.elements.size())
+					Garden.add_hero_xp(e, kw * t.dealt / total / t.elements.size() * maxi(1, planted))
 	# 키우기형 단계: 하나도 안 새면 다음 단계, 새면 같은 단계를 다시 (시듦은 안 샌 단계마다 2씩 빠짐)
 	var clean := wave_dmg == 0
 	if clean:
@@ -12848,7 +12859,7 @@ func _garden_panel_tick(_delta: float) -> void:
 	else:
 		gp_tabs["hero"].text = "영웅"
 	var can := phase == Phase.CHOOSE and not perk_mode
-	var sig := "%s|%s|%s|%s|%d|%d|%s|%d|%d" % [gp_portrait, gp_tab, can, _grow_sig(), Garden.hero_e, Garden.hero_lv(), Garden.hero_free, gp_pick_slot, grow_n]
+	var sig := "%s|%s|%s|%s|%d|%d|%s|%d|%d" % [gp_portrait, gp_tab, can, _grow_sig(), Garden.hero_e, Garden.hero_lv(), Garden.hero_free, gp_pick_slot, grow_n] + ("|%d" % int(Garden.hero_progress()[0]) if gp_tab == "hero" else "")  # 영웅 탭은 경험치가 오를 때마다 다시 그림
 	if sig == gp_sig:
 		return
 	gp_sig = sig

@@ -116,6 +116,12 @@ func _process(_d) -> bool:
 			main.wave = 3
 			Garden.best = 3
 			var d0 := Garden.dew
+			Garden.hero_e = Elem.FIRE  # 영웅 경험치 점검: 세 칸 다 불로 (Lv20에 붙는 둘째 속성과 몫을 나눔)
+			for i in 3:
+				Garden.slots[i]["e"] = Elem.FIRE
+			main._grow_rebuild()
+			Garden.hero_free = false
+			Garden.hero_xp = {}
 			main._start_wave()
 			print("  단계 시작 phase=", main.phase, " wave=", main.wave)
 			main.game_speed = 8.0
@@ -129,6 +135,37 @@ func _process(_d) -> bool:
 				_ok(Garden.dew > float(snap["d0"]), "처치로 이슬이 늘어남 (%d → %d)" % [int(snap["d0"]), int(Garden.dew)])
 				_ok(main.core_hp == main.core_max, "키우기형: 중앙 체력은 늘 다 참 (시듦으로 대신)")
 				_ok(Garden.rate > 0.0, "이슬 속도 기록 (꺼 둔 동안 보상용)")
+				# 영웅 경험치 = 처치 x 영웅 속성 피해 몫 x 심은 칸 수 (칸이 많아도 평균 칸이면 처치 전부, GARD-06)
+				var tot := 0.0
+				var fire := 0.0
+				var pl := 0
+				for t in main.towers.get_children():
+					tot += t.dealt
+					if not t.elements.is_empty():
+						pl += 1
+					if t.elements.has(Elem.FIRE):
+						fire += t.dealt / t.elements.size()
+				var kw := float(main.kills - main.garden_kills0)
+				var want := kw * fire / maxf(tot, 1.0) * pl
+				var got := float(Garden.hero_xp.get("fire", 0.0))
+				_ok(pl == 3 and kw > 0.0 and got > 0.0 and absf(got - want) < 0.01 * maxf(1.0, want), "영웅 경험치: 처치 %d x 불 몫 %.2f x 칸 %d = %.1f (받음 %.1f)" % [kw, fire / maxf(tot, 1.0), pl, want, got])
+				main.gp_tab = "hero"
+				main._garden_panel_tick(0.0)
+				var s0: String = main.gp_sig
+				Garden.hero_xp["fire"] = got + 7.0
+				main._garden_panel_tick(0.0)
+				_ok(main.gp_sig != s0, "영웅 탭: 경험치가 오르면 패널을 다시 그림")
+				# 정원 Esc = [나가기] (심을 속성 고르는 중이면 그것만 닫음)
+				main.gp_pick_slot = 1
+				var ev := InputEventKey.new()
+				ev.keycode = KEY_ESCAPE
+				ev.pressed = true
+				main._unhandled_input(ev)
+				_ok(main.gp_pick_slot == -1 and Garden.on, "정원 Esc: 심기 고르기 중이면 고르기만 닫음")
+				main.gp_pick_slot = -1
+				Garden.hero_e = -1
+				Garden.hero_free = true
+				Garden.hero_xp = {}
 				step = 3
 		3:
 			# 시듦: 다 차면 한 단계 내려감
