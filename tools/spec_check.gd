@@ -206,7 +206,11 @@ func _elements() -> void:
 	t.add(Elem.ICE, 1)
 	var fourth := t.can_take({"type": "elem", "e": Elem.WOOD, "lv": 1})
 	var same := t.can_take({"type": "elem", "e": Elem.FIRE, "lv": 1})
-	ok("ELEM-02", not fourth and same, "랭크: 속성 3종까지, 같은 속성 레벨은 계속")
+	var t5 := _tower(c + Vector2(-200, 150), Elem.FIRE, 4)
+	t5.add(Elem.FIRE, 3)
+	var cap_ok := t5.lv(Elem.FIRE) == 5 and not t5.can_take({"type": "elem", "e": Elem.FIRE, "lv": 1}) and "Lv5" in t5.refuse_text({"type": "elem", "e": Elem.FIRE, "lv": 1})
+	t5.queue_free()
+	ok("ELEM-02", not fourth and same and cap_ok, "랭크: 속성 3종까지, 같은 속성은 Lv5까지 (Lv%d, 더 넣기 막음 %s)" % [5, cap_ok])
 	ok("ELEM-03", is_equal_approx(t.tax(), 1.0 + Rules.tax_step * 2) and is_equal_approx(Rules.tax_step, 0.15), "쌓기 대가: 종류마다 공격 속도 ÷(1+0.15×(종류-1)) (%.2f)" % t.tax())
 
 	Meta.rules = 3
@@ -233,7 +237,30 @@ func _elements() -> void:
 
 	var no_rider := Elem.ALL.filter(func(e): return Elem.rider(e).is_empty())
 	ok("ELEM-07", no_rider.is_empty() and Elem.ALL.size() == 15, "속성 15종 모두 부가효과 설명이 있음")
+	_elem_lv5()
 	_no_fixed_zone()
+
+
+## 속성 Lv5 값 (2026-11-01): 금속은 맞힌 피해 +8%/레벨, 어둠 약화는 +20% + 4%/레벨, 물 감속은 0.85 - 0.03/레벨
+func _elem_lv5() -> void:
+	_clear()
+	var c: Vector2 = main.center()
+	var mt := _tower(c + Vector2(-200, 0), Elem.METAL, 5)
+	var hc := mt.hit_calc()
+	var metal_ok := is_equal_approx(hc["metal"], hc["one"] * 0.4)
+	var dk := _tower(c + Vector2(-200, 100), Elem.DARK, 5)
+	var o := _orb(c + Vector2(-100, 0), 1e6)
+	dk.hit(o, 1.0)
+	var dark_ok := is_equal_approx(o.vuln_k, 0.4)
+	var wt := _tower(c + Vector2(-200, -100), Elem.WATER, 5)
+	var o2 := _orb(c + Vector2(-100, 60), 1e6)
+	wt.hit(o2, 1.0)
+	var water_ok := absf(o2.slow_factor - 0.70) < 0.06
+	var vk := o.vuln_k
+	var sf := o2.slow_factor
+	_clear()
+	ok("ELEM-11", metal_ok and dark_ok and water_ok,
+		"Lv5: 금속 맞힌 피해 +40%% (%s), 어둠 약화 +40%% (%.2f), 물 감속 0.70 (%.2f)" % [metal_ok, vk, sf])
 
 
 ## 고정 거리 장판 금지 (2026-11-01): 형태 성질 "끝"은 장판을 만들지 않고 구체에 바로 걸고,
@@ -380,7 +407,69 @@ func _attacks() -> void:
 	main.wave_active = false
 	main.phase = main.Phase.CHOOSE
 	_clear()
+	_well()
+	_fade()
 	ok("PAT-04", silent.is_empty(), "공격방식 %d개 모두 앞에서 다가오는 구체에 피해 (못 맞힘: %s)" % [Pat.PATTERN_IDS.size(), str(silent)])
+
+
+## 블랙홀 중력 우물 (2026-11-01): 사거리 안 구체가 가장 빽빽한 곳에 떨어지고, 안 구체가 남에게 받은 피해 20%를 모았다가 끝에 나눠 넣음
+func _well() -> void:
+	_fresh()
+	var c: Vector2 = main.center()
+	var vt := _tower(c + Vector2(-100, 0), Elem.DARK, 1, Vector2.LEFT)
+	vt.set_pattern("vortex")
+	var other := _tower(c + Vector2(-100, 200), Elem.FIRE)
+	var lone := _orb(c + Vector2(-200, 0), 1e6)  # 혼자 있는 구체
+	var pack := []
+	for i in 5:
+		pack.append(_orb(c + Vector2(-350, 150) + Vector2(i * 8, i * 6), 1e6))
+	main.targets = [lone] + pack
+	main._build_grid()
+	var spots := vt.well_spots(1)
+	var at_pack: bool = not spots.is_empty() and spots[0].distance_to(pack[0].position) < 60.0
+	var z: Zone = main.spawn_zone("vortex", 1, spots[0] if not spots.is_empty() else c, vt)
+	z.well()
+	var o: Orb = pack[2]
+	var before := z.store
+	var d0 := other.dealt
+	other.hit(o, 1.0)
+	var got := other.dealt - d0
+	var fed := is_equal_approx(z.store - before, got * 0.2)
+	var own0 := z.store
+	vt.hit(o, 1.0)
+	var self_no := z.store == own0  # 자기 피해는 안 모음
+	z.store = 1000.0
+	var hp0 := o.hp
+	z._end()
+	var burst := hp0 - o.hp >= 1000.0 / 5.0 * 0.99
+	main.wave_active = false
+	main.phase = main.Phase.CHOOSE
+	_clear()
+	ok("PAT-06", at_pack and fed and self_no and burst,
+		"중력 우물: 구체 무리에 (%s), 남의 피해 20%% 모음 (%s), 자기 피해 안 모음 (%s), 끝에 나눠 넣음 (%s)" % [at_pack, fed, self_no, burst])
+
+
+## 유도탄·혼불 감쇠 (2026-11-01): 유도탄은 휜 90도마다 -15%(최저 55%), 혼불은 2초 뒤 초당 -12%(최저 50%)
+func _fade() -> void:
+	var p := Projectile.new()
+	p.kind = "shot"
+	var straight := p.fade_k()
+	p.turned = PI / 2.0
+	var bent := p.fade_k()
+	p.turned = 20.0
+	var floor_k := p.fade_k()
+	var w := Projectile.new()
+	w.kind = "wisp"
+	w.t = 1.5
+	var young := w.fade_k()
+	w.t = 4.0
+	var old := w.fade_k()
+	w.t = 30.0
+	var w_floor := w.fade_k()
+	p.free()
+	w.free()
+	ok("MOD-12", straight == 1.0 and is_equal_approx(bent, 0.85) and is_equal_approx(floor_k, 0.55) and young == 1.0 and is_equal_approx(old, 0.76) and is_equal_approx(w_floor, 0.5) and is_equal_approx(Projectile.WISP_DMG, 1.15),
+		"감쇠: 유도 곧게 %.2f·90도 %.2f·최저 %.2f, 혼불 1.5초 %.2f·4초 %.2f·최저 %.2f" % [straight, bent, floor_k, young, old, w_floor])
 
 
 ## 다중 발사가 짝수 개(다중 1·3개)여도 조준한 정면의 먼 작은 구체를 맞힌다 (2026-11-01: 가운데가 비어 빗나가던 것)

@@ -16,6 +16,7 @@ var hit := {}
 var travel := 0.0
 var max_travel := 2000.0
 var t := 0.0
+var turned := 0.0  # 유도로 휜 각도 합 (라디안, fade_k)
 var trail := PackedVector2Array()  # 잔상(전역 좌표)
 var pierce_left := 0  # 관통 강화로 더 뚫을 수 있는 수
 var bounces := 0  # 튕김 강화
@@ -236,7 +237,7 @@ const HOMING_TRAVEL := 900.0  # 화면 끝까지 가던 탄도 유도가 붙으�
 const WISP_SEEK := 380.0  # 반응·영혼 넋불(ghost)이 찾는 범위
 ## 목줄 혼불 (2026-10-31 개편, 사용자 선택 A): 오브젝트 곁에 머물며 목줄 안 구체를 쫓아 여러 번 때린다.
 ## 떠 있는 수는 Tower.wisp_cap(), 사라지면 WISP_RESPAWN초 뒤 다시. 화면 끝까지 쫓아가던 예전 혼불이 배치와 상관없이 다 맞혀 너무 셌다
-const WISP_DMG := 1.0  # 한 번 때릴 때 (예전 한 발 4.0)
+const WISP_DMG := 1.15  # 한 번 때릴 때 (예전 한 발 4.0, 2026-11-01 체공 감쇠를 넣으며 1.0 → 1.15)
 const WISP_LIFE := 6.0
 const WISP_LEASH := 300.0  # 오브젝트에서 이만큼 안의 구체만 쫓는다 (공격방식 레벨 사거리·range_wisp 배율)
 const WISP_LEASH_HOMING := 0.15  # 유도 하나마다 목줄 +15%
@@ -334,7 +335,21 @@ func _chase(delta: float, r: float, cone: float, lim: float) -> void:
 
 ## 유도: 앞쪽 구체 쪽으로 방향을 튼다.
 func _steer(delta: float) -> void:
+	var a0 := vel.angle()
 	_chase(delta, 260.0, STEER_CONE, Rules.homing_k * homing * delta)
+	turned += absf(angle_difference(a0, vel.angle()))
+
+
+## 오래 쫓은 탄은 약해진다 (2026-11-01 사용자 "유도/혼불은 떠다닐수록 데미지가 조금씩 약해지게"):
+## 유도탄은 쏜 뒤 휜 각도 90도마다 -homing_fade(최저 homing_fade_min), 혼불은 나온 뒤 wisp_fade_from초부터 초당 -wisp_fade(최저 wisp_fade_min).
+## 곧게 맞힌 탄·막 나온 혼불은 그대로.
+func fade_k() -> float:
+	if kind == "wisp":
+		var over := t - Rules.t("wisp_fade_from")
+		return 1.0 if over <= 0.0 else maxf(Rules.t("wisp_fade_min"), 1.0 - Rules.t("wisp_fade") * over)
+	if turned > 0.0:
+		return maxf(Rules.t("homing_fade_min"), 1.0 - Rules.t("homing_fade") * turned / (PI / 2.0))
+	return 1.0
 
 
 ## 혼불·넋불: 구체를 쫓아간다. 목줄 혼불은 유도 강화면 더 빨리 돌고 목줄이 길어진다.
@@ -431,10 +446,10 @@ func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 	hit[o] = true
 	if tw:
 		tw.in_rx = kind in ["log", "tornado", "mushroom"] or ghost in ["plague", "spirit", "styx"] or src.begins_with("rx:")
-		tw.hit(o, dmg, 1.0, prism_els, kind != "frag")
+		tw.hit(o, dmg * fade_k(), 1.0, prism_els, kind != "frag")
 		tw.in_rx = false
 	else:
-		o.hurt(dmg)
+		o.hurt(dmg * fade_k())
 	# 관통·튕김 탄은 처음 맞힌 자리가 "끝"
 	if pierce or pierce_left > 0 or bounces > 0:
 		end_form()
@@ -490,10 +505,11 @@ func _wisp_hit(o: Orb, tw: Tower) -> bool:
 	hit[o] = t + iv * 2.0
 	if chase == o:
 		_set_chase(null)
+	var fk := fade_k()
 	if tw:
-		tw.hit(o, dmg, 1.0, prism_els)
+		tw.hit(o, dmg * fk, 1.0, prism_els)
 	else:
-		o.hurt(dmg)
+		o.hurt(dmg * fk)
 	return false
 
 
@@ -574,6 +590,10 @@ func _draw() -> void:
 			elif ghost in RxMore.GHOSTS:
 				gc = RxMore.color(ghost if ghost != "samsara2" else "samsara")
 			var fl := 1.0 + 0.15 * sin(t * 18.0)
+			if kind == "wisp":
+				var fk := fade_k()
+				fl *= 0.6 + 0.4 * fk  # 약해질수록 작고 흐리게
+				gc.a *= 0.5 + 0.5 * fk
 			draw_colored_polygon(PackedVector2Array([-d * radius * 2.6 * fl, n * radius * 0.9, d * radius, -n * radius * 0.9]), Color(gc, 0.45))
 			draw_circle(Vector2.ZERO, radius * fl, gc)
 			draw_circle(d * radius * 0.2, radius * 0.45, Color(1, 1, 1, 0.8))

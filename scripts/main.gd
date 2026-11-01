@@ -37,6 +37,7 @@ var spawn_interval := 1.0
 
 var lanes: Array[float] = []  # 다음 웨이브 구체가 들어올 방향(라디안)
 var prism_towers: Array = []  # 발사체가 지날 때 확인할 프리즘 오브젝트 (매 계산마다 갱신)
+var wells: Array = []  # 지금 떠 있는 중력 우물 (블랙홀): 안 구체가 받은 피해를 모은다
 var star_towers: Array = []  # 별이 든 오브젝트 (둘레 피해를 별빛으로 모은다, 매 계산마다 갱신)
 var picks_left := 0  # 이번 쉬는 시간에 남은 설치 횟수
 const CARD_DIM_A := 0.65  # 카드 선택 중 전장 위 검은 막 (카드·카드 줄 버튼은 그 위)

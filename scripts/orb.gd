@@ -55,6 +55,7 @@ var poison_rx := false
 var burn_key := "elem:fire"  # 피해 출처 (Tower.src 키)
 var poison_key := "elem:poison"
 var vuln_t := 0.0
+var vuln_k := 0.3  # 지금 걸린 약화 세기 (받는 피해 +)
 var shade_t := 0.0  # 어둠 그림자 표식: 받는 피해 +30%를 유지, 죽으면 가까운 구체로 남은 시간째 옮겨 간다
 var chill := 0.0
 var frozen_t := 0.0  # 빙결 표시
@@ -321,14 +322,14 @@ func _redraw_if_changed() -> void:
 ## 어둠 "받는 피해 +30%"·씨앗 바람 등 증폭이 어느 피해 기록에도 안 잡혔다).
 ## hurt가 곱하는 받는 피해 배율 (가둠·약화·증폭). 보호막은 빼고.
 func hurt_mul() -> float:
-	var m := 1.5 if prison_t > 0.0 else 1.0 + Rules.dark_vuln if vuln_t > 0.0 else 1.0
+	var m := 1.5 if prison_t > 0.0 else 1.0 + vuln_k if vuln_t > 0.0 else 1.0
 	for v in amp.values():
 		m *= 1.0 + v[0]
 	return m
 
 
 func hurt(amount: float, crit := false) -> float:
-	var d := amount * (1.5 if prison_t > 0.0 else 1.0 + Rules.dark_vuln if vuln_t > 0.0 else 1.0)
+	var d := amount * (1.5 if prison_t > 0.0 else 1.0 + vuln_k if vuln_t > 0.0 else 1.0)
 	last_rx = false
 	if not amp.is_empty():
 		for v in amp.values():
@@ -611,7 +612,12 @@ func _credit(src, d: float, rx: bool, key: String) -> void:
 			src.rx_dealt += d
 
 
-func vuln(duration: float) -> void:
+## 어둠 약화: 받는 피해 +amount (레벨이 높은 어둠이 걸면 큰 값으로, 2026-11-01 레벨마다 오름)
+func vuln(duration: float, amount := -1.0) -> void:
+	if amount < 0.0:
+		amount = 0.3  # 반응이 거는 약화는 예전처럼 +30%
+	if vuln_t <= 0.0 or amount > vuln_k:
+		vuln_k = amount
 	vuln_t = maxf(vuln_t, duration)
 
 

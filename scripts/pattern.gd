@@ -15,7 +15,7 @@ const PATTERNS := {
 	"gust": {"name": "돌풍", "desc": "넓은 바람이 지나가며 옆으로 민다", "from": Elem.WIND},
 	"shard": {"name": "파편탄", "desc": "맞으면 파편 3개로 갈라진다", "from": Elem.ICE},
 	"wall": {"name": "벽", "desc": "앞에 바위 벽을 세워 막는다. 무너질 때 둘레에 돌 파편", "from": Elem.EARTH},
-	"vortex": {"name": "블랙홀", "desc": "앞으로 날아가며 양옆 구체를 길 위로 끌어모은다. 점점 작아지며 세지다 끝에서 터진다. 구체를 먹을수록 빨리 작아지고 세게 터진다", "from": Elem.DARK},
+	"vortex": {"name": "블랙홀", "desc": "구체가 가장 많이 모인 곳에 중력 우물을 떨어뜨려 가운데로 끌어모은다. 안에 든 구체가 다른 오브젝트에게 받은 피해 일부를 빨아들였다가 끝에 터지며 나눠 넣는다", "from": Elem.DARK},
 	"laser": {"name": "레이저", "desc": "충전 후 화면 끝까지 관통", "from": Elem.LIGHT},
 	"lob": {"name": "투척 장판", "desc": "느린 탄이 지나간 자리에 속성 장판이 남는다 (유도하면 휜 길 그대로)", "from": Elem.POISON},
 	"iron": {"name": "철구", "desc": "느리고 무거운 관통탄", "from": Elem.METAL},
@@ -59,7 +59,7 @@ const PROJECTILE := ["shot", "thorn", "gust", "shard", "iron", "wisp", "path"]
 const MODS := {
 	"multi": {"name": "다중 발사", "desc": "공격이 1개 더 나간다 (하나하나는 피해 {multi_dmg%}%, 많이 쌓을수록 조금씩 줄어듦)"},
 	"split": {"name": "분열", "desc": "맞은 구체에서 약한 파편 2개가 튄다 (1개마다 확률 +{split_ch%}%, 최대 {split_max%}%). 벽·투척 장판에는 못 넣음"},
-	"homing": {"name": "유도", "desc": "탄이 구체 쪽으로 천천히 휜다. 범위 공격은 구체 쪽으로 조금 돈다. 한 구체는 탄 2개까지만 쫓고, 못 따라잡으면 다른 구체로. 혼불은 목줄 +15%. 벽·그린 궤적·시계침·연쇄 번개에는 못 넣음"},
+	"homing": {"name": "유도", "desc": "탄이 구체 쪽으로 천천히 휜다(많이 휠수록 피해가 줄어 최저 {homing_fade_min%}%). 범위 공격은 구체 쪽으로 조금 돈다. 한 구체는 탄 2개까지만 쫓고, 못 따라잡으면 다른 구체로. 혼불은 목줄 +15%. 벽·그린 궤적·시계침·연쇄 번개에는 못 넣음"},
 	"bounce": {"name": "튕김", "desc": "탄이 가까운 구체로 튄다(튕긴 탄 피해 {bounce_hit%}%). 번개는 1번 더 튄다. 그 밖의 공격은 맞힌 구체에서 작은 탄이 1개 더 튄다({bounce_iv}초마다)"},
 	"size": {"name": "크기", "desc": "탄 크기·범위·사거리 +{size_k%}% (탄을 쏘는 공격은 피해도 +{size_dmg%}%)"},
 	"rapid": {"name": "속사", "desc": "공격 속도 +{rapid_k%}%"},

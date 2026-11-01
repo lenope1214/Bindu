@@ -22,7 +22,7 @@ const DESCS := {
 const NO_CAP := 99
 
 static var version := 1
-static var max_elems := 3  # 한 오브젝트에 넣을 수 있는 속성 종류 (레벨은 무제한)
+static var max_elems := 3  # 한 오브젝트에 넣을 수 있는 속성 종류 (레벨은 elem_cap까지)
 static var max_mod := 5  # 강화 종류마다 쌓을 수 있는 수
 static var mod_total := 12  # 한 오브젝트에 넣을 수 있는 강화 합계 (2026-11-01: 종류 수 제한이 없어 40개까지 몰아 넣으면 강화 없을 때의 17배)
 static var crowd := 0.10  # 오브젝트 수 보너스 계수: 모든 피해 x(1 + crowd x ln(오브젝트 수)), crowd_bonus 참고
@@ -41,13 +41,16 @@ static var rx_mul := RX_MUL  # 2026-10-30에 채운 반응 65개(RxMore)의 피�
 const RX_MUL := 0.5
 ## 조합 효율 측정(2026-10-30, docs/combo-efficiency)으로 고친 수치. 온라인 패치 rules의 같은 키로 덮어쓴다.
 const TUNE := {
-	"wood_cap": 3.0,  # 나무 부가효과(이 오브젝트가 주는 피해 +20%/레벨)가 세는 최대 레벨 (예전 상한 없음. 규칙 1은 99 = 상한 없음, apply)
+	"elem_cap": 5.0,  # 한 오브젝트에서 같은 속성 최대 레벨 (2026-11-01 사용자 "모든 속성 Lv5", 예전 무제한. 정원은 상한 없음)
+	"wood_cap": 5.0,  # 나무 부가효과(이 오브젝트가 주는 피해 +16%/레벨)가 세는 최대 레벨 (속성 Lv5 상한과 같게, 2026-11-01)
 	"mod_fix": 1.0,  # 강화 보정표(Pat.MOD_FIX) 세기: 1 = 표대로, 0 = 끔, 0.5 = 절반만
 	"wind_buff": 0.08,  # 바람 부가효과: 둘레 다른 오브젝트 공격 속도 +/레벨 (예전 0.10, 조합 점수표 돕기 1위라 2026-10-31 사용자 요청)
 	"clock_dmg": 0.9,  # 시계침 한 번 훑을 때 피해 (예전 1.2)
 	"vortex_speed": 90.0,  # 블랙홀 날아가는 속도 (예전 140)
-	"vortex_dmg": 1.5,  # 블랙홀 날아가는 동안 초당 피해, 다 줄면 2배 (예전 0.8)
-	"vortex_end": 3.0,  # 블랙홀 붕괴 피해 (예전 2.0)
+	"vortex_dmg": 0.4,  # 블랙홀(중력 우물) 안 구체 초당 피해 (예전 이동형 1.5, 2026-11-01 우물은 4초 붙잡아 0.4)
+	"vortex_end": 1.5,  # 블랙홀 붕괴 피해 (예전 3.0, 우물은 모은 피해가 더해져 1.5)
+	# 중력 우물 (2026-11-01 블랙홀 개편 A): 떨어뜨리는 사거리, 머무는 시간, 끌기(초당 px), 가운데 느려지는 둘레, 남의 피해 모으는 비율(+/공격방식 레벨)
+	"well_range": 450.0, "well_life": 4.0, "well_pull": 90.0, "well_core": 40.0, "well_absorb": 0.2, "well_absorb_lv": 0.03,  # 블랙홀 붕괴 피해 (예전 2.0)
 	"gust_push_lv": 2.0,  # 돌풍 옆으로 미는 힘이 세는 최대 레벨 (예전 상한 없음: 밀어낸 구체를 다음 돌풍이 못 맞힘)
 	"sound_cd": 1.0,  # 소리 울림 음파: 같은 구체에 다시 터질 때까지
 	"sound_pulse": 1.2,  # 소리 울림 음파 피해
@@ -160,21 +163,23 @@ const STAT := {
 	"pierce_armor": 0.2,  # 관통: 탄이 아닌 공격에 후반 갑옷이 빼는 피해 - (1개마다)
 	"gust_gap": 45.0,  # 돌풍 다중 발사: 같은 방향으로 나란히 나가는 돌풍 사이 옆 간격(px)
 	"homing_k": 0.8,  # 유도: 휘는 힘
+	"homing_fade": 0.15, "homing_fade_min": 0.55,  # 유도탄: 휜 각도 90도마다 피해 -, 최저 (2026-11-01)
+	"wisp_fade_from": 2.0, "wisp_fade": 0.12, "wisp_fade_min": 0.5,  # 혼불: 이만큼(초) 지나면 초당 피해 -, 최저 (2026-11-01)
 	# 속성 부가효과
-	"fire_dps": 0.8, "fire_t": 2.0,  # 화상 초당 피해/레벨, 시간
-	"poison_dps": 0.5, "poison_t": 4.0,  # 중독 초당 피해/레벨, 시간
-	"wood_dmg": 0.2,  # 가시: 주는 피해 +/레벨
-	"water_slow": 0.8, "water_t": 0.8,  # 감속 배율(낮을수록 느림), 시간
-	"elec_ch": 0.3, "elec_dmg": 0.5,  # 전류 확률, 피해(맞힌 피해 대비/레벨)
+	"fire_dps": 1.0, "fire_t": 2.0,  # 화상 초당 피해/레벨, 시간
+	"poison_dps": 0.6, "poison_t": 4.0,  # 중독 초당 피해/레벨, 시간
+	"wood_dmg": 0.16,  # 가시: 주는 피해 +/레벨
+	"water_slow": 0.85, "water_t": 0.8, "water_lv": 0.03,  # 감속 배율(낮을수록 느림) - water_lv/레벨, 시간 (2026-11-01 Lv5 상한과 함께 레벨마다 오르게: Lv5 0.70)
+	"elec_ch": 0.3, "elec_dmg": 0.4,  # 전류 확률, 피해(맞힌 피해 대비/레벨)
 	"wind_range": 240.0,  # 바람 버프 둘레 (버프 세기는 wind_buff)
 	"ice_chill": 0.6,  # 냉기 쌓는 양/레벨
-	"earth_ch": 0.2, "earth_max": 0.7, "earth_t": 0.8,  # 기절 확률/레벨, 최대, 시간
-	"dark_vuln": 0.3, "dark_t": 2.0,  # 받는 피해 +, 시간
+	"earth_ch": 0.14, "earth_max": 0.7, "earth_t": 0.8,  # 기절 확률/레벨, 최대, 시간
+	"dark_vuln": 0.2, "dark_t": 2.0, "dark_lv": 0.04,  # 받는 피해 + (기본 + dark_lv/레벨, Lv5 +40%), 시간
 	"light_ch": 0.12, "light_max": 0.6, "light_mul": 2.0,  # 치명타 확률/레벨, 최대, 배율
-	"metal_dmg": 0.4, "metal_stagger": 4.0,  # 추가 피해/레벨, 경직
+	"metal_dmg": 0.08, "metal_stagger": 4.0,  # 맞힌 피해 +/레벨 (예전 고정 +0.4/레벨), 경직
 	"sound_t": 3.0,  # 울림 지속
 	"time_base": 0.15, "time_lv": 0.05, "time_max": 0.4, "time_t": 2.0,  # 메아리 비율 기본, +/레벨, 최대, 시간
-	"soul_t": 3.0, "soul_base": 0.2, "soul_lv": 0.1, "soul_max": 0.6,  # 넋 시간, 혼불 확률 기본, +/레벨, 최대
+	"soul_t": 3.0, "soul_base": 0.2, "soul_lv": 0.08, "soul_max": 0.6,  # 넋 시간, 혼불 확률 기본, +/레벨, 최대
 	# 연계
 	"reso_k": 0.12, "reso_r": 150.0,  # 공명: 가까운 오브젝트 하나당 피해 +, 거리
 	"prism_dmg": 0.2,  # 프리즘: 지나간 탄 피해 +
@@ -226,6 +231,8 @@ static var poison_dps: float = STAT["poison_dps"]
 static var poison_t: float = STAT["poison_t"]
 static var ice_chill: float = STAT["ice_chill"]
 static var water_slow: float = STAT["water_slow"]
+static var water_lv: float = STAT["water_lv"]
+static var dark_lv: float = STAT["dark_lv"]
 static var water_t: float = STAT["water_t"]
 static var earth_ch: float = STAT["earth_ch"]
 static var earth_max: float = STAT["earth_max"]
@@ -281,6 +288,8 @@ static func _cache() -> void:
 	poison_t = tune["poison_t"]
 	ice_chill = tune["ice_chill"]
 	water_slow = tune["water_slow"]
+	water_lv = tune["water_lv"]
+	dark_lv = tune["dark_lv"]
 	water_t = tune["water_t"]
 	earth_ch = tune["earth_ch"]
 	earth_max = tune["earth_max"]
@@ -382,7 +391,7 @@ static func apply(v: int) -> void:
 	tune = DEFAULTS.duplicate()
 	match version:
 		1:
-			tune["wood_cap"] = 99.0  # 같은 속성 레벨이 무제한인 규칙이라 상한을 두면 후반이 크게 어려워짐 (봇 81~100웨이브 누수 70% → 상한 3: 86%, 6·10: 80%)
+			pass  # 예전 wood_cap 99 (레벨 무제한 규칙). 2026-11-01부터 모든 규칙이 속성 Lv5 상한(elem_cap)이라 나무도 Lv5까지 다 센다
 		2:
 			max_elems = 2
 			max_mod = 3

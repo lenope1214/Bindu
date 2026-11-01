@@ -26,6 +26,8 @@ var pull := 80.0  # 블랙홀 끌기 (초당)
 var path_acc := 0.0
 var eaten := 0  # 블랙홀 안에서 죽은 구체 수: 하나마다 더 작아지고 터질 때 세짐
 var eaten_set := {}
+var store := 0.0  # 중력 우물: 안 구체가 남에게 받은 피해에서 모은 양 (끝에 터질 때 나눠 넣음)
+var absorb := 0.0  # 중력 우물: 모으는 비율
 var sub := ""  # trail: puddle·burn
 var pts := PackedVector2Array()  # trail: 지나온 점 (오래된 것부터)
 var born := PackedFloat32Array()  # trail: 점이 생긴 시각 (t)
@@ -124,7 +126,21 @@ func trail_orbs(main) -> Array:
 	return out
 
 
-## 블랙홀: 방향 d로 날아간다. 바람(멀리)은 빠르고 멀리, 나무(자람)·바람은 덜 줄고, 어둠(그림자)은 안에 든 구체에 표식.
+## 중력 우물 (블랙홀 공격방식, 2026-11-01): 그 자리에 머물며 가운데로 끌고, 남의 피해를 모았다가 끝에 터진다.
+## 나무(자람)·바람(멀리)은 우물을 넓힌다. 어둠(그림자)은 안 구체에 표식.
+func well() -> void:
+	var tw := owner_tower
+	radius *= 1.0 + 0.15 * (tw.tk(Elem.WOOD) + tw.tk(Elem.WIND))
+	r0 = radius
+	pull = Rules.t("well_pull")
+	max_life = Rules.t("well_life")
+	life = max_life
+	absorb = Rules.t("well_absorb") + Rules.t("well_absorb_lv") * (level - 1)
+	tw.main.wells = tw.main.wells.filter(func(w): return is_instance_valid(w) and not w.dead)  # 웨이브 끝에 그냥 지워진 우물
+	tw.main.wells.append(self)
+
+
+## 블랙홀(예전 이동형): 방향 d로 날아간다. 바람(멀리)은 빠르고 멀리, 나무(자람)·바람은 덜 줄고, 어둠(그림자)은 안에 든 구체에 표식.
 func launch(d: Vector2) -> void:
 	dir = d
 	var tw := owner_tower
@@ -175,13 +191,12 @@ func affect(orbs: Array, delta: float) -> void:
 				else:
 					_hit(o, dps * _p() * delta * _rapid(), delta * 3.0)
 			"vortex":
-				# 진행 방향에 수직으로만 끌어 길 위 한 줄로 모은다 (구체를 바깥으로 끌고 가지 않게)
+				# 중력 우물: 가운데로 끈다 (안에서 죽은 구체마다 +10%, 최대 +50%), 가운데 둘레는 느리게
 				var v: Vector2 = position - o.position
-				v -= dir * v.dot(dir)
-				o.push(v.limit_length(pull * delta))
-				# 작아질수록 세진다: 처음 vortex_dmg(1.2) → 다 줄면 2배
-				var ramp := 1.0 + (1.0 - radius / r0) / 0.6 if r0 > 0.0 else 1.0
-				_hit(o, Rules.t("vortex_dmg") * _p() * ramp * delta, delta * 3.0)
+				o.push(v.limit_length(pull * (1.0 + minf(0.1 * eaten, 0.5)) * delta))
+				if v.length() < Rules.t("well_core"):
+					o.slow(0.5, 0.2)
+				_hit(o, Rules.t("vortex_dmg") * _p() * delta, delta * 3.0)
 				if is_instance_valid(owner_tower) and owner_tower.tk(Elem.DARK) > 0.0:
 					o.shade(Tower.SHADE_T)
 				if o.hp <= 0.0 and not eaten_set.has(o):
@@ -282,11 +297,19 @@ func _end() -> void:
 		"vortex":
 			if r0 <= 0.0:
 				return
+			tw.main.wells.erase(self)
+			var inside: Array = []
 			for o in tw.main.near(position, radius + 30.0):
 				if o.hp > 0.0 and o.position.distance_to(position) < radius + o.radius():
-					tw.hit(o, Rules.t("vortex_end") * _p() * (1.0 + minf(0.1 * eaten, 0.5)) * boost)
-					if tw.tk(Elem.METAL) > 0.0:
-						o.stagger(o.speed * 0.2 * tw.tk(Elem.METAL))
+					inside.append(o)
+			# 모은 피해는 안에 있는 구체에 나눠 넣는다 (이미 배율이 다 곱해진 피해라 그대로)
+			var share := store / inside.size() if not inside.is_empty() else 0.0
+			for o in inside:
+				tw.hit(o, Rules.t("vortex_end") * _p() * (1.0 + minf(0.1 * eaten, 0.5)) * boost)
+				if share > 0.0 and o.hp > 0.0:
+					_hurt(o, share)
+				if tw.tk(Elem.METAL) > 0.0:
+					o.stagger(o.speed * 0.2 * tw.tk(Elem.METAL))
 			tw.main.burst(position, Elem.COLORS[Elem.DARK], 10, 120.0)
 			tw.form_end(position, dir, true)
 		"rock":

@@ -377,7 +377,7 @@ const BASE_HIT := {
 	"shot": [2.4, "한 발"], "thorn": [0.85, "한 발, 모두 뚫음"], "gust": [2.2, "한 번, 모두 뚫음"],
 	"shard": [3.0, "한 발, 파편 3개는 1.0씩"], "iron": [1.7, "한 발, 모두 뚫음"], "wisp": [Projectile.WISP_DMG, "혼불마다 공격 간격에 한 번"], "path": [2.4, "한 발"],
 	"chain": [2.2, "한 번 튈 때"], "laser": [3.4, "한 번, 모두 뚫음"], "sonic": [2.6, "가까이, 끝에서는 절반"],
-	"clock": [0.9, "한 번 훑을 때"], "vortex": [3.0, "터질 때, 날아가는 동안 초당 1.5~3.0"],
+	"clock": [0.9, "한 번 훑을 때"], "vortex": [1.5, "터질 때 + 모은 피해, 안에서 초당 0.4"],
 	"lob": [LOB_DPS, "지나간 띠 안 초당, 2.5초 남음"], "spray": [5.5, "초당, 계속 뿜음"], "stream": [3.0, "뿜는 동안 초당, 0.6초"],
 	"wall": [3.5, "벽에 막힌 동안 초당, 무너질 때 둘레 2.0"],
 }
@@ -461,7 +461,7 @@ func range_text() -> String:
 		"sonic": return "%d" % roundi(sonic_r(l))
 		"clock": return "%d" % roundi(240.0 * rr(l) * s)
 		"lob": return "%d 날아감 (지나간 띠 반지름 %d)" % [roundi(LOB_RANGE * rr(l)), roundi(lob_r(l) * s)]
-		"vortex": return "약 %d 날아감 (반지름 %d)" % [roundi(420.0 * Rules.t("range_vortex")), roundi((100.0 + 10.0 * (l - 1)) * s)]
+		"vortex": return "%d 안 구체 무리에 (우물 반지름 %d)" % [roundi(well_range()), roundi((100.0 + 10.0 * (l - 1)) * s * (1.0 + 0.15 * (tk(Elem.WOOD) + tk(Elem.WIND))))]
 		"wall": return "앞 %d~ (벽 %d개)" % [roundi(90.0 * rr(l)), 2 + roundi(mf("multi"))]
 		"wisp": return "목줄 %d (혼불 %d개가 오브젝트 둘레를 지키며 쫓아감)" % [roundi(Projectile.wisp_leash(mf("homing"), rr(l))), wisp_cap()]
 		"path": return "그린 길 최대 %d (갈래 %d/%d)" % [roundi(Pat.path_len(plv)), paths.size(), Pat.path_branches(plv)]
@@ -478,7 +478,7 @@ func hit_calc() -> Dictionary:
 	match pattern:  # Rules.tune(온라인 패치)로 바뀌는 값
 		"clock": bh = [Rules.t("clock_dmg"), bh[1]]
 		"wall": bh = [Rules.t("wall_dmg"), bh[1]]
-		"vortex": bh = [Rules.t("vortex_end"), "터질 때, 날아가는 동안 초당 %.1f~%.1f" % [Rules.t("vortex_dmg"), 2.0 * Rules.t("vortex_dmg")]]
+		"vortex": bh = [Rules.t("vortex_end"), "터질 때 + 모은 피해, 안에서 초당 %.1f" % Rules.t("vortex_dmg")]
 	var f := dmg_k(false)
 	var one: float = bh[0] * pw(plv) * f
 	var shots := 1.0 + mf("multi")
@@ -489,9 +489,8 @@ func hit_calc() -> Dictionary:
 		one *= pspd()  # 계속 뿜는 공격은 공격 속도만큼 초당 피해가 는다
 	var wood: float = 1.0 + Rules.wood_dmg * mini(els.get(Elem.WOOD, 0), int(Rules.wood_cap))
 	one *= wood
-	var metal: float = Rules.metal_dmg * els.get(Elem.METAL, 0)
-	if pattern in ["spray", "stream", "lob", "wall"]:
-		metal *= 3.0 * (pspd() if pattern in ["spray", "stream"] else 1.0)  # 계속 때리는 공격은 초당 (hit의 k = 조각 시간 x3)
+	# 금속: 맞힌 피해 +metal_dmg/레벨 (2026-11-01 예전 고정 +0.4/레벨은 후반에 거의 0이었다)
+	var metal: float = one * Rules.metal_dmg * els.get(Elem.METAL, 0)
 	return {"one": one, "metal": metal, "bh": bh, "f": f, "mk_on": mk_on, "wood": wood, "shots": shots}
 
 
@@ -552,7 +551,7 @@ func detail_lines() -> Array:
 	if wood > 1.0:
 		parts.append("나무 x%.2f" % wood)
 	if metal > 0.0:
-		parts.append("금속 +%.1f" % metal)
+		parts.append("금속 x%.2f" % (1.0 + Rules.metal_dmg * els.get(Elem.METAL, 0)))
 	out.append(["  " + " · ".join(parts), dim])
 	var fp := PackedStringArray()
 	var tl := total_level()
@@ -808,7 +807,7 @@ func color() -> Color:
 ## 속성을 겹친다. 결과 메시지를 돌려준다.
 func add(e: int, n: int) -> String:
 	var fresh := Elem.new_reactions(eff_now(), e)
-	elements[e] = lv(e) + n
+	elements[e] = mini(lv(e) + n, elem_cap())
 	if not order.has(e):
 		order.append(e)
 	place_pop = 1.0
@@ -821,12 +820,17 @@ func add(e: int, n: int) -> String:
 	return "반응: " + ", ".join(names)
 
 
-## 이 카드를 넣을 수 있는지 (속성 종류·강화 종류별 상한, 공격방식 고정).
+## 한 오브젝트에서 같은 속성이 오를 수 있는 최대 레벨 (2026-11-01 사용자 "모든 속성 Lv5 상한"). 정원은 칸 레벨이 성장 축이라 상한 없음
+static func elem_cap() -> int:
+	return 1 << 30 if Garden.on else maxi(1, int(Rules.t("elem_cap")))
+
+
+## 이 카드를 넣을 수 있는지 (속성 종류·강화 종류별 상한, 같은 속성 레벨 상한, 공격방식 고정).
 func can_take(card: Dictionary) -> bool:
 	match card["type"]:
 		"elem":
 			if elements.has(card["e"]):
-				return true
+				return lv(card["e"]) < elem_cap()
 			# 별이 든 오브젝트는 별 + 하나(그 속성의 행성)까지
 			if (elements.has(Elem.STAR) or card["e"] == Elem.STAR) and order.size() >= STAR_MAX_ELEMS:
 				return false
@@ -870,6 +874,8 @@ func refuse_text(card: Dictionary) -> String:
 		return ""
 	match card["type"]:
 		"elem":
+			if elements.has(card["e"]):
+				return "같은 속성은 Lv%d까지예요. 다른 오브젝트에 넣거나 빈 곳에 놓아 새 오브젝트로 만드세요" % elem_cap()
 			if (elements.has(Elem.STAR) or card["e"] == Elem.STAR) and order.size() >= STAR_MAX_ELEMS:
 				return "별이 든 오브젝트는 별 + 속성 하나(행성)까지예요. 빈 곳에 놓아 새 오브젝트로 만드세요"
 			if not planet_refuse(card["e"]).is_empty():
@@ -969,7 +975,7 @@ func cataclysm_elements() -> void:
 	order.clear()
 	for e in old:
 		var ne: int = Vary.open("elem", Elem.ALL).pick_random()
-		elements[ne] = lv(ne) + olds[e] + (1 if ne == e else 0)
+		elements[ne] = mini(lv(ne) + olds[e] + (1 if ne == e else 0), elem_cap())
 		if not order.has(ne):
 			order.append(ne)
 	place_pop = 1.0
@@ -1496,12 +1502,15 @@ func attack(delta: float, orbs: Array) -> void:
 			if _ready_to("p", Rules.t("wall_iv") / spd(l), dp) and rocks.size() < 2 + roundi(mf("multi")):
 				main.spawn_rock(self, l)
 		"vortex":
-			# 앞으로 날아가며 작아지는 블랙홀 (Zone.launch)
+			# 중력 우물 (2026-11-01 사용자 "블랙홀을 중력·흡수 컨셉으로"): 사거리 안 구체가 가장 빽빽한 곳에 떨어져
+			# 끌어모으고, 안에 든 구체가 다른 오브젝트에게 받은 피해 일부를 모았다가 끝에 터진다 (Zone.well).
+			# 자리는 오브젝트에서 정한 거리가 아니라 구체 무리를 따라간다. 구체가 없으면 0.3초 뒤 다시 찾는다
 			if _ready_to("p", 5.0 / spd(l), dp):
-				var ls := lanes()
-				var ds := dirs()
-				for i in ds.size():
-					main.spawn_zone("vortex", l, position + ds[i] * RADIUS + ls[i], self).launch(ds[i])
+				var spots := well_spots(dirs().size())
+				if spots.is_empty():
+					cd["p"] = 0.3
+				for p in spots:
+					main.spawn_zone("vortex", l, p, self).well()
 		"laser":
 			if _ready_to("p", 2.0 / spd(l), dp):
 				fx["laser"] = 0.3
@@ -1840,6 +1849,28 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 				RxMore.tick(self, id, l, orbs, de, k)
 
 
+## 중력 우물 자리 n개: 사거리(well_range) 안 구체 중 둘레 110에 구체가 가장 많은 구체 자리. 둘째부터는 앞 자리에서 150 넘게 떨어진 곳
+func well_spots(n: int) -> Array:
+	var out: Array = []
+	var rng := well_range()
+	var cand: Array = []
+	for o in main.near(position, rng):
+		if o.hp > 0.0 and o.position.distance_to(position) <= rng:
+			cand.append([main.near(o.position, 110.0).size(), o.position])
+	cand.sort_custom(func(a, b): return a[0] > b[0])
+	for c in cand:
+		if out.size() >= n:
+			break
+		if out.all(func(p): return p.distance_to(c[1]) > 150.0):
+			out.append(c[1])
+	return out
+
+
+## 중력 우물을 떨어뜨리는 사거리 (공격방식 레벨·바람 멀리·사거리 배율)
+func well_range() -> float:
+	return Rules.t("well_range") * rr(plv) * (1.0 + 0.12 * tk(Elem.WIND)) * Rules.t("range_vortex")
+
+
 ## 벽 바위 k번째 자리(오브젝트 기준). 처음 두 개는 앞으로 한 줄(90·150), 다중 발사로 늘어난 바위는 그 사이 양옆에 번갈아
 ## (2026-10-30: 앞으로만 늘어서면 맨 앞 바위에 막힌 구체가 옆으로 비껴 나가 다중 발사가 피해를 0.65~0.76배로 깎던 것)
 static func rock_slot(d: Vector2, k: int, l: int) -> Vector2:
@@ -2055,7 +2086,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		d *= 1.0 + Rules.wood_dmg * mini(els.get(Elem.WOOD, 0), int(Rules.wood_cap))
 	var mt := 0.0
 	if els.has(Elem.METAL):
-		mt = Rules.metal_dmg * els.get(Elem.METAL, 0) * k
+		mt = d * Rules.metal_dmg * els.get(Elem.METAL, 0)
 		d += mt
 		o.stagger(Rules.metal_stagger * els.get(Elem.METAL, 0) * k)
 	# 형태 성질 자람·무게: 공격방식 공격만 (반응·형태 성질 효과 제외)
@@ -2076,6 +2107,8 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		# 남은 보호막이 0이 되면 hurt()가 깨지는 효과를 내도록 아주 조금 남긴다
 		o.shield = maxf(o.shield - d * Rules.pierce_shield * ap, 0.001)
 	d = o.hurt(d, crit)  # 받는 피해 배율(약점 등)까지 곱한 값
+	if main and not main.wells.is_empty():
+		_well_feed(o, d)
 	o.last_rx = in_rx or tag.begins_with("rx:")
 	dealt += d
 	# 별: 둘레 별 오브젝트가 이 피해의 일부를 복사해 별빛으로 모은다 (이 피해는 줄지 않는다)
@@ -2122,11 +2155,11 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	if els.has(Elem.ICE):
 		o.add_chill(Rules.ice_chill * k * els.get(Elem.ICE, 0))
 	if els.has(Elem.WATER):
-		o.slow(Rules.water_slow, Rules.water_t)
+		o.slow(Rules.water_slow - Rules.water_lv * els.get(Elem.WATER, 0), Rules.water_t)
 	if els.has(Elem.EARTH) and randf() < minf(Rules.earth_ch * els.get(Elem.EARTH, 0), Rules.earth_max) * k * (2.0 if o.mud_t > 0.0 else 1.0):
 		o.root(Rules.earth_t)
 	if els.has(Elem.DARK):
-		o.vuln(Rules.dark_t)
+		o.vuln(Rules.dark_t, Rules.dark_vuln + Rules.dark_lv * els.get(Elem.DARK, 0))
 	if els.has(Elem.ELECTRIC) and randf() < Rules.elec_ch * k:
 		main.arc(o, d * Rules.elec_dmg * els.get(Elem.ELECTRIC, 0), self)
 	if els.has(Elem.SOUND):
@@ -2333,6 +2366,13 @@ func planet_rate(from: Tower) -> float:
 	var share := float(from.lv(pe)) / maxf(from.total_level(), 1.0) if from.elements.has(pe) else 0.0
 	var pl := maxi(mini(lv(Elem.STAR), int(Rules.t("star_lv_cap"))) - 1, 0)  # 별 레벨 성장은 star_lv_cap(Lv5)까지
 	return (Rules.t("planet_take") + Rules.t("planet_lv") * pl) * share + Rules.t("planet_other") * (1.0 - share)
+
+
+## 중력 우물 흡수: 우물 안 구체가 다른 오브젝트에게 받은 피해의 일부를 그 우물에 모은다 (피해는 줄지 않음)
+func _well_feed(o: Orb, d: float) -> void:
+	for w in main.wells:
+		if is_instance_valid(w) and not w.dead and w.owner_tower != self and o.position.distance_squared_to(w.position) < w.radius * w.radius:
+			w.store += d * w.absorb
 
 
 ## 피해 d를 준 오브젝트 from에게서 별빛을 모은다. 둘레 오브젝트의 속성(별 제외)도 같이 적어 둔다.
@@ -3394,18 +3434,11 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 					for k in 2 + md.get("multi", 0):
 						_r_circle(ci, (o + rock_slot(d, k, l)).clamp(inner.position, inner.end), 28.0 * s, c)
 			"vortex":
-				# 앞으로 날아가며 줄어드는 띠 (Zone.launch와 같은 계산)
-				var wk := 1.0 + 0.12 * mini(els.get(Elem.WIND, 0), 3) * Rules.trait_mul
-				var shr := maxf(0.3, 1.0 - 0.15 * (mini(els.get(Elem.WOOD, 0), 3) + mini(els.get(Elem.WIND, 0), 3)) * Rules.trait_mul)
-				var r0 := (100.0 + 10.0 * (l - 1)) * s
-				var nn := dd.orthogonal()
-				var a0 := lo + dd * RADIUS
-				var b0 := a0 + dd * 420.0 * wk * Rules.t("range_vortex")
-				var r1 := r0 * (1.0 - 0.6 * shr)
-				var vp := PackedVector2Array([a0 + nn * r0, b0 + nn * r1, b0 - nn * r1, a0 - nn * r0])
-				ci.draw_colored_polygon(vp, Color(c.r, c.g, c.b, 0.14 * c.a))
-				vp.append(vp[0])
-				ci.draw_polyline(vp, Color(c.r, c.g, c.b, 0.6 * c.a), 1.5)
+				# 중력 우물을 떨어뜨리는 사거리 (Tower.well_range와 같은 계산, 다중 발사여도 원 하나)
+				if i == 0:
+					var wk := 1.0 + 0.12 * mini(els.get(Elem.WIND, 0), 3) * Rules.trait_mul
+					var wr := Rules.t("well_range") * pr * wk * Rules.t("range_vortex")
+					ci.draw_arc(o, wr, 0, TAU, 64, Color(c.r, c.g, c.b, 0.6 * c.a), 1.5)
 			"lob":
 				_r_band(ci, lo, dd, 0.0, LOB_RANGE * pr, lob_r(l) * s, c)
 			"iron":
