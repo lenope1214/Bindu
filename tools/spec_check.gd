@@ -1710,6 +1710,22 @@ func _multiplayer() -> void:
 	var b: float = main.wf()
 	ok("MP-03", rolls[0] == rolls[1] and is_equal_approx(a, b), "대결: 같은 씨앗이면 같은 방향·저항·구체, 씨앗 0이면 전역 난수")
 
+	# 멀티 난이도: 대결·협동만 구체 체력 x0.7(대결)·중앙 체력 13, 혼자 판은 그대로
+	_fresh(3)
+	var cores := []
+	for st in [[false, 1], [true, 1], [false, 2]]:
+		main.vs_on = st[0]
+		main.coop_n = st[1]
+		main.start_modes()
+		cores.append(main.core_max)
+	main.vs_on = true
+	var vk: float = main.vs_k("vs_hp")
+	main.vs_on = false
+	main.coop_n = 1
+	main.start_modes()
+	ok("MP-20", cores == [10, 13, 13] and is_equal_approx(vk, 0.7) and main.vs_k("vs_hp") == 1.0 and main.core_max == 10,
+		"멀티 난이도: 중앙 체력 혼자/대결/협동 %s, 대결 구체 체력 x%.2f" % [str(cores), vk])
+
 	# 대결: 보낸 구체는 다음 웨이브에 더 나오고, 다 나와야 웨이브가 끝난다
 	_fresh(3)
 	main.mp_mode = "vs"
@@ -1743,7 +1759,7 @@ func _multiplayer() -> void:
 	var hk3: float = main.coop_hp_k(3)
 	main.coop_n = 1
 	var hk_solo: float = main.coop_hp_k(3)
-	ok("MP-06", (duo == roundi(solo * 1.6) or abs(duo - solo * 1.6) <= 1.0) and is_equal_approx(hk1, 2.0) and is_equal_approx(hk3, 2.0 * 1.28 * 1.28) and hk_solo == 1.0,
+	ok("MP-06", (duo == roundi(solo * 1.6) or abs(duo - solo * 1.6) <= 1.0) and is_equal_approx(hk1, 1.5) and is_equal_approx(hk3, 1.5 * 1.18 * 1.18) and hk_solo == 1.0,
 		"협동: 2명이면 구체 x1.6 (%d → %d), 체력 웨이브1 x%.2f·웨이브3 x%.2f, 혼자 x%.1f" % [solo, duo, hk1, hk3, hk_solo])
 	mine.dealt = 55.0
 	var st: Dictionary = other.mp_state()

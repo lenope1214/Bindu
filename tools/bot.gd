@@ -30,7 +30,15 @@ func _set_modes():
 	main.auto_skills = OS.get_environment("SKILL") != "0"
 	Meta.skill_set = int(OS.get_environment("SKILLSET")) if OS.get_environment("SKILLSET") != "" else 0
 	Modes.set_on(Array(OS.get_environment("MODES").split(",", false)))
+	# BOT_PATCH='{"orb_hp":0.8}': 온라인 패치 rules.all에 넣은 것처럼 (패치 전 수치 시험)
+	if OS.get_environment("BOT_PATCH") != "":
+		Patch.pending = {"id": -1, "data": {"rules": {"all": JSON.parse_string(OS.get_environment("BOT_PATCH"))}}}
 	main._apply_rules()
+	# VS=1: 대결 판 배율만 켠 혼자 판 (보낸 구체는 없음). COOP=N: N명 협동 근사 (구체·체력은 N명, 카드는 쉬는 시간마다 N명 몫)
+	main.vs_on = OS.get_environment("VS") != ""
+	if OS.get_environment("COOP") != "":
+		main.coop_n = int(OS.get_environment("COOP"))
+		main.coop_orbs = 1.0 + float(Rules.tune["coop_orb_per"]) * (main.coop_n - 1)
 	main.start_modes()
 	main.picks_left = maxi(Rules.open_picks, Rules.picks)
 	main.rerolls_left = Modes.rerolls(1)

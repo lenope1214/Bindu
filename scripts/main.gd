@@ -549,6 +549,7 @@ func _ready() -> void:
 	vote_panel.net = net  # 투표 창은 _build_ui에서 net보다 먼저 만들어져 null을 받았다 ("서버에 연결하지 못했어요")
 	coop_orbs = 1.0
 	coop_n = 1
+	vs_on = false
 	Ach.mp = ""
 	if mp_keep != null and is_instance_valid(mp_keep):
 		mp = mp_keep  # 판이 끝나도 방 유지: 지난 화면의 연결을 그대로 받는다
@@ -1612,7 +1613,7 @@ func _fit_panels() -> void:
 
 ## 새 판을 시작할 때 모드가 바꾸는 시작 값 (중앙 체력). 봇이 모드를 바꾼 뒤에도 부른다.
 func start_modes() -> void:
-	core_max = Modes.core_max(CORE_MAX_HP)
+	core_max = maxi(1, roundi(Modes.core_max(CORE_MAX_HP) * (float(Rules.tune["mp_core"]) if vs_on or coop_n > 1 else 1.0)))
 	core_hp = core_max
 	core_disp = float(core_hp)
 	danger_lv = 0
@@ -1887,6 +1888,12 @@ static func wave_size(w: int) -> int:
 ## 실제로 나오는 구체 수 (규칙 버전 배율, 십자로 맵 1.5배). 미리보기와 웨이브가 같은 값을 쓴다.
 static var coop_orbs := 1.0  # 협동: 인원만큼 구체가 늘어난다 (Rules coop_orb_per: 2명 x1.6, 3명 x2.2, 4명 x2.8)
 static var coop_n := 1  # 협동 인원 (혼자·대결은 1)
+static var vs_on := false  # 대결 판 (구체 체력·속도에 Rules vs_hp·vs_spd)
+
+
+## 대결 판에서만 쓰는 구체 배율 (혼자·협동은 1).
+static func vs_k(key: String) -> float:
+	return float(Rules.tune[key]) if vs_on else 1.0
 
 
 ## 협동 구체 체력 배율: 인원만큼 + 웨이브마다 크게 올라 판이 짧게 끝난다 (Rules coop_hp_per·coop_ramp).
@@ -8555,8 +8562,8 @@ func _roll_orb(w: int) -> Dictionary:
 	if Garden.on:
 		hp *= Garden.hp_k(w)
 	hp *= Vary.hp_k()
-	hp *= coop_hp_k(w)
-	var spd := (orb_base_speed(w) + wf() * 8.0) * (LINE_SPD if Meta.map_id == "line" else 1.0) * Vary.spd_k()
+	hp *= coop_hp_k(w) * vs_k("vs_hp")
+	var spd := (orb_base_speed(w) + wf() * 8.0) * (LINE_SPD if Meta.map_id == "line" else 1.0) * Vary.spd_k() * vs_k("vs_spd")
 	# 저항·굳셈: 쉬는 시간에 미리 알려 준 대로
 	var res := wave_resist if wave_resist >= 0 and wf() < resist_share(w) else -1
 	var y := wrange(-LINE_HALF + 20.0, LINE_HALF - 20.0) if Meta.map_id == "line" else 0.0
@@ -11748,7 +11755,8 @@ func _mp_begin(msg: Dictionary) -> void:
 	var names: Dictionary = msg.get("names", {})
 	for id in msg.get("ids", []):
 		if int(id) != mp.my_id:
-			mp_others[int(id)] = {"name": str(names.get(id, "")), "w": 0, "hp": CORE_MAX_HP, "mx": CORE_MAX_HP, "sc": 0, "alive": true, "gone": false}
+			var c0 := roundi(CORE_MAX_HP * float(Rules.tune["mp_core"]))
+			mp_others[int(id)] = {"name": str(names.get(id, "")), "w": 0, "hp": c0, "mx": c0, "sc": 0, "alive": true, "gone": false}
 	mp_seed = int(msg.get("seed", 1)) if mp_mode == "vs" else 0
 	Ach.mp = mp_mode
 	for id in mp_others:
@@ -11756,6 +11764,7 @@ func _mp_begin(msg: Dictionary) -> void:
 		if nk != "":
 			Ach.raise("mpn:" + nk.left(16), 1)
 	mp_ghost = mp_mode == "coop" and not mp.is_host()
+	vs_on = mp_mode == "vs"
 	if mp_mode == "coop":
 		coop_n = 1 + mp_others.size()
 		coop_orbs = 1.0 + float(Rules.tune["coop_orb_per"]) * (coop_n - 1)
