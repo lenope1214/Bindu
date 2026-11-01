@@ -55,7 +55,7 @@ func setup(k: String, l: int, tower: Tower) -> void:
 		"cloud":
 			radius = 60.0; max_life = 2.0
 		"rock":
-			radius = 28.0; max_life = 12.0; hp = 10.0 * l
+			radius = Rules.t("wall_r"); max_life = 12.0; hp = Rules.t("wall_hp") * l
 	# 공격방식이 만든 장판은 크기 강화를 받는다
 	if k in ["rock", "vortex"] and is_instance_valid(tower):
 		radius *= tower.sz()
@@ -210,7 +210,7 @@ func affect(orbs: Array, delta: float) -> void:
 				o.position = position + away * (radius + o.radius())
 				o.root(0.1, false)
 				_hit(o, Rules.t("wall_dmg") * Tower.pw(level) * delta, delta * 3.0)
-				hp -= 2.0 * delta
+				hp -= Rules.t("wall_drain") * (3.0 if o.kind == Orb.Kind.BOSS else 1.0) * delta
 	if kind == "rock" and hp <= 0.0:
 		life = 0.0
 
@@ -287,6 +287,12 @@ func _end() -> void:
 			tw.main.burst(position, Elem.COLORS[Elem.DARK], 10, 120.0)
 			tw.form_end(position, dir, true)
 		"rock":
+			# 무너지거나 사라질 때 둘레 구체에 돌 파편 피해 (2026-11-01 사용자 "벽 대폭 상향")
+			if Rules.t("wall_break") > 0.0:
+				for o in tw.main.near(position, radius + 60.0):
+					if o.hp > 0.0 and o.position.distance_to(position) < radius + 40.0 + o.radius():
+						_hit(o, Rules.t("wall_break") * _p(), 1.0)
+				tw.main.burst(position, Elem.COLORS[Elem.EARTH], 8, 100.0)
 			tw.form_end(position, tw.dir, true)
 
 

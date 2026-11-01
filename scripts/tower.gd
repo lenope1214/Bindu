@@ -379,7 +379,7 @@ static func lob_r(l: int) -> float:
 
 ## 공격방식 Lv1의 공격 간격(초). attack()과 같은 값. 분사는 계속 뿜어서 없음, 시계침은 한 번 훑는 시간.
 const BASE_IV := {"shot": 0.5, "thorn": 0.35, "gust": 1.5, "shard": 0.9, "iron": 1.5, "stream": 1.0, "chain": 1.3,
-	"wall": 4.0, "vortex": 5.0, "laser": 2.0, "lob": LOB_IV, "sonic": 1.0, "clock": 0.8, "wisp": 0.6, "path": 0.5}
+	"wall": 3.5, "vortex": 5.0, "laser": 2.0, "lob": LOB_IV, "sonic": 1.0, "clock": 0.8, "wisp": 0.6, "path": 0.5}
 
 ## 공격방식 한 번 맞힐 때의 기본 피해(Lv1, 배율 전)와 설명. projectile.gd·zone.gd·attack()과 같은 값.
 const BASE_HIT := {
@@ -388,7 +388,7 @@ const BASE_HIT := {
 	"chain": [2.2, "한 번 튈 때"], "laser": [3.4, "한 번, 모두 뚫음"], "sonic": [2.6, "가까이, 끝에서는 절반"],
 	"clock": [0.9, "한 번 훑을 때"], "vortex": [3.0, "터질 때, 날아가는 동안 초당 1.5~3.0"],
 	"lob": [LOB_DPS, "지나간 띠 안 초당, 2.5초 남음"], "spray": [5.5, "초당, 계속 뿜음"], "stream": [3.0, "뿜는 동안 초당, 0.6초"],
-	"wall": [3.0, "벽에 막힌 동안 초당"],
+	"wall": [3.5, "벽에 막힌 동안 초당, 무너질 때 둘레 2.0"],
 }
 
 
@@ -1466,7 +1466,7 @@ func attack(delta: float, orbs: Array) -> void:
 						form_end(chain_end, aim, true)
 		"wall":
 			rocks = rocks.filter(func(r): return is_instance_valid(r))
-			if _ready_to("p", 4.0 / spd(l), dp) and rocks.size() < 2 + roundi(mf("multi")):
+			if _ready_to("p", Rules.t("wall_iv") / spd(l), dp) and rocks.size() < 2 + roundi(mf("multi")):
 				main.spawn_rock(self, l)
 		"vortex":
 			# 앞으로 날아가며 작아지는 블랙홀 (Zone.launch)

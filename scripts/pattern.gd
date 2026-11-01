@@ -14,7 +14,7 @@ const PATTERNS := {
 	"chain": {"name": "연쇄 번개", "desc": "앞쪽 구체를 치고 주변으로 튄다", "from": Elem.ELECTRIC},
 	"gust": {"name": "돌풍", "desc": "넓은 바람이 지나가며 옆으로 민다", "from": Elem.WIND},
 	"shard": {"name": "파편탄", "desc": "맞으면 파편 3개로 갈라진다", "from": Elem.ICE},
-	"wall": {"name": "벽", "desc": "앞에 바위 벽을 세워 막는다", "from": Elem.EARTH},
+	"wall": {"name": "벽", "desc": "앞에 바위 벽을 세워 막는다. 무너질 때 둘레에 돌 파편", "from": Elem.EARTH},
 	"vortex": {"name": "블랙홀", "desc": "앞으로 날아가며 양옆 구체를 길 위로 끌어모은다. 점점 작아지며 세지다 끝에서 터진다. 구체를 먹을수록 빨리 작아지고 세게 터진다", "from": Elem.DARK},
 	"laser": {"name": "레이저", "desc": "충전 후 화면 끝까지 관통", "from": Elem.LIGHT},
 	"lob": {"name": "투척 장판", "desc": "느린 탄이 지나간 자리에 속성 장판이 남는다 (유도하면 휜 길 그대로)", "from": Elem.POISON},
