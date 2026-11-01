@@ -725,9 +725,16 @@ func _perks() -> void:
 	main._apply_perk("core")
 	main._apply_perk("slow")
 	main._apply_perk("harmony")
+	main._apply_perk("harmony")  # 동전 앞면·옛 저장처럼 두 번 와도 한 번만
+	var h_ok := (is_equal_approx(Tower.tax_step, Rules.tax_step * 0.5) and is_equal_approx(Tower.tax_of(3), 1.0 + Rules.tax_step)
+		and is_equal_approx(Tower.tax_of(9), (1.0 + Rules.tax_step * 8) / 1.2))
+	main.perks["harmony"] = 1
+	main.coin_next = ""
+	h_ok = h_ok and not main._perk_pool().any(func(pk): return pk["id"] == "harmony")
+	main.perks.erase("harmony")
 	ok("PERK-03", is_equal_approx(Tower.dmg_mul, 1.15) and is_equal_approx(Tower.spd_mul, 1.12) and is_equal_approx(Tower.reach_mul, 1.12)
-		and main.core_max == 13 and main.core_hp == 13 and is_equal_approx(main.orb_speed_mul, 0.92) and is_equal_approx(Tower.tax_step, Rules.tax_step * 0.5),
-		"특성 효과: 화력 +15%·속사 +12%·원거리 +12%·중앙 +3 회복·끈적 -8%·조화 대가 절반")
+		and main.core_max == 13 and main.core_hp == 13 and is_equal_approx(main.orb_speed_mul, 0.92) and h_ok,
+		"특성 효과: 화력 +15%·속사 +12%·원거리 +12%·중앙 +3 회복·끈적 -8%·조화 대가 절반(한 번만, 공속 최대 +20%)")
 	main.wave = 5
 	main.rest_ready = false
 	main._start_perk()

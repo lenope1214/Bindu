@@ -161,11 +161,21 @@ static var dmg_mul := 1.0
 static var spd_mul := 1.0
 static var reach_mul := 1.0
 static var tax_step := 0.1
+static var harmony_cap := 0.2  # 조화 특성이 올려 주는 공격 속도 상한 (+20%, 온라인 패치 perks.harmony_cap)
 
 
 ## 쌓기 대가: 속성 종류 하나 늘 때마다 공격 속도 감소 (기본 15%, 버전 3은 25%).
 func tax() -> float:
-	return 1.0 + tax_step * (order.size() - 1)
+	return tax_of(order.size())
+
+
+## 속성 n종일 때의 대가. 조화(tax_step이 규칙 값보다 작음)가 줄여 주는 몫은 공격 속도 +harmony_cap까지만
+## (2026-11-01: 도파민은 속성 종류 상한이 없어 조화가 끝없이 커졌음. 랭크는 3종 +13%라 상한에 안 닿음)
+static func tax_of(n: int) -> float:
+	var t := 1.0 + tax_step * (n - 1)
+	if tax_step < Rules.tax_step and harmony_cap > 0.0:
+		t = maxf(t, (1.0 + Rules.tax_step * (n - 1)) / (1.0 + harmony_cap))
+	return t
 
 
 ## 바람 속성: 이 거리 안의 다른 오브젝트 공격 속도 +Rules wind_buff(8%)/바람 레벨. 한 오브젝트에는 가장 큰 바람 하나만.
@@ -3195,7 +3205,7 @@ func preview(card: Dictionary) -> Array:
 				out.append("모든 공격에 추가 효과: " + Elem.rider(e))
 				out.append("형태 성질(시험): " + Elem.TRAIT[e])
 				var before := roundi((1.0 - 1.0 / tax()) * 100.0)
-				var after := roundi((1.0 - 1.0 / (tax() + tax_step)) * 100.0)
+				var after := roundi((1.0 - 1.0 / tax_of(order.size() + 1)) * 100.0)
 				out.append("속성을 겹친 대가: 공격 속도 -%d%% → -%d%%" % [before, after])
 			out.append("피해 x%.1f → x%.1f" % [dmg_factor(), dmg_factor() + 1.3 * 0.35 * n])
 		"pat":

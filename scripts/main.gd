@@ -214,7 +214,7 @@ const PERKS := [
 	{"id": "luck", "name": "행운", "desc": "속성 카드가 Lv2로 나올 확률 +20%"},
 	{"id": "regen", "name": "회복", "desc": "웨이브를 마칠 때마다 중앙 체력 +1 (겹쳐 고르면 하나당 +0.5)"},
 	{"id": "slow", "name": "끈적한 공간", "desc": "모든 구체 이동 속도 -8%"},
-	{"id": "harmony", "name": "조화", "desc": "속성을 여러 종류 겹쳐 생기는 공격 속도 감소가 절반으로"},
+	{"id": "harmony", "name": "조화", "desc": "속성을 여러 종류 겹쳐 생기는 공격 속도 감소가 절반으로 (한 번만, 공격 속도 최대 +20%)"},
 	{"id": "coin", "name": "운명의 동전", "desc": "동전을 던지고 특성 3개를 새로 받아요. 앞면: 고른 특성이 두 번 적용. 뒷면: 한 번 적용 + 이번 쉬는 시간 새로고침 +2"},
 	{"id": "shield", "name": "실드", "desc": "웨이브를 시작할 때마다 중앙 실드 1칸 (겹치면 +1, 최대 3). 맞으면 체력 대신 실드가 깎이고, 다음 웨이브로 넘어가지 않아요"},
 	{"id": "rampart", "name": "성벽", "desc": "웨이브마다 중앙 앞에 바위 벽: 다가온 구체를 한 번 밀어내고 한 조각씩 부서져요. 조각 수 = 벽 오브젝트 레벨 합 + 1 (겹치면 +1, 최대 4)"},
@@ -1755,6 +1755,7 @@ func _apply_rules() -> void:
 	Modes.apply_rules()
 	Vary.new_run(false)  # 판마다 다른 흐름: 일반 새 판에서만 켠다 (_on_rest_start), 이어하기는 저장에서
 	Tower.tax_step = Rules.tax_step
+	Tower.harmony_cap = _perk_val("harmony_cap")
 	if legend:
 		_refresh_legend()
 	if ver_label:
@@ -2909,24 +2910,31 @@ func _lv2_chance() -> float:
 
 
 func _start_perk() -> void:
-	var pool: Array = PERKS.duplicate()
-	if Modes.has("narrow"):
-		pool = pool.filter(func(pk): return not pk["id"] in ["reroll", "coin"])  # 외길: 새로고침이 없으니 쓸모없는 특성은 빼고 (동전 뒷면도 새로고침)
-	if coin_next != "":
-		pool = pool.filter(func(pk): return pk["id"] != "coin")  # 던진 동전의 결과를 받을 차례
-	# 더 골라도 거의 효과가 없는 특성은 빼고: 이미 거의 Lv2로 나오는 행운, 두 번 고른 조화(공속 감소 10% → 2.5%)
-	pool = pool.filter(func(pk): return not (pk["id"] == "luck" and _lv2_chance() >= 0.9 or pk["id"] == "harmony" and perks.get("harmony", 0) >= 2))
-	# 넣어도 효과가 없는 중앙 특성은 빼고: 벽 오브젝트가 없을 때 성벽, 이미 최대인 실드·성벽
-	pool = pool.filter(func(pk): return not (pk["id"] == "rampart" and (not _has_wall() or _rampart_n() >= int(_perk_val("rampart_max")))
-		or pk["id"] == "shield" and _shield_wave() >= int(_perk_val("shield_max"))
-		or pk["id"] == "overflow" and perks.has("overflow")
-		or pk["id"] == "quick" and (skill_ids.is_empty() or perks.get("quick", 0) >= 3)))
+	var pool := _perk_pool()
 	pool.shuffle()
 	perk_offer = pool.slice(0, 4 if Garden.boosted and Garden.lv("fruit") >= 1 else 3)  # 씨앗 나무 열매 1: 특성 선택지 4개
 	_show_perks()
 	if coin_next == "":
 		big_banner("특성 선택", Color(1, 0.85, 0.45))
 	_save_run()
+
+
+## 지금 선택지에 나올 수 있는 특성들
+func _perk_pool() -> Array:
+	var pool: Array = PERKS.duplicate()
+	if Modes.has("narrow"):
+		pool = pool.filter(func(pk): return not pk["id"] in ["reroll", "coin"])  # 외길: 새로고침이 없으니 쓸모없는 특성은 빼고 (동전 뒷면도 새로고침)
+	if coin_next != "":
+		pool = pool.filter(func(pk): return pk["id"] != "coin")  # 던진 동전의 결과를 받을 차례
+	# 더 골라도 거의 효과가 없는 특성은 빼고: 이미 거의 Lv2로 나오는 행운, 조화(한 번만, 2026-11-01: 도파민에서 겹치고 속성을 많이 쌓으면 속사보다 훨씬 셌음).
+	# 동전 앞면(두 번 적용)일 때도 조화는 한 번만 효과가 있어 뺀다
+	pool = pool.filter(func(pk): return not (pk["id"] == "luck" and _lv2_chance() >= 0.9 or pk["id"] == "harmony" and (perks.has("harmony") or coin_next == "double")))
+	# 넣어도 효과가 없는 중앙 특성은 빼고: 벽 오브젝트가 없을 때 성벽, 이미 최대인 실드·성벽
+	pool = pool.filter(func(pk): return not (pk["id"] == "rampart" and (not _has_wall() or _rampart_n() >= int(_perk_val("rampart_max")))
+		or pk["id"] == "shield" and _shield_wave() >= int(_perk_val("shield_max"))
+		or pk["id"] == "overflow" and perks.has("overflow")
+		or pk["id"] == "quick" and (skill_ids.is_empty() or perks.get("quick", 0) >= 3)))
+	return pool
 
 
 ## 특성 고르기 화면 (perk_offer는 이미 정해져 있음).
@@ -3185,11 +3193,11 @@ func _apply_perk(id: String) -> void:
 			core_max += int(_perk_val("core"))
 			core_hp = core_max
 		"slow": orb_speed_mul *= 1.0 - _perk_val("slow")
-		"harmony": Tower.tax_step *= _perk_val("harmony")
+		"harmony": Tower.tax_step = minf(Tower.tax_step, Rules.tax_step * _perk_val("harmony"))  # 한 번만 (동전 앞면·옛 저장에서 두 번 와도 같게)
 
 
 ## 특성 수치 (온라인 패치 perks로 바뀔 수 있음). 설명 글도 같이 바꿔야 하면 perk_desc. coin: 동전 뒷면 새로고침 수
-const PERK_VALS := {"power": 0.15, "haste": 0.12, "reach": 0.12, "core": 3, "reroll": 1, "luck": 0.2, "regen": 1, "regen_more": 0.5, "slow": 0.08, "harmony": 0.5, "coin": 2,
+const PERK_VALS := {"power": 0.15, "haste": 0.12, "reach": 0.12, "core": 3, "reroll": 1, "luck": 0.2, "regen": 1, "regen_more": 0.5, "slow": 0.08, "harmony": 0.5, "harmony_cap": 0.2, "coin": 2,
 	"shield": 1, "shield_max": 3, "shield_all": 4, "rampart": 1, "rampart_max": 4, "rampart_push": 140, "riposte": 0.6, "riposte_more": 0.5, "riposte_r": 160, "overflow": 2}
 const RAMPART_R := 56.0  # 성벽이 서는 중앙에서의 거리
 const FX_RIPOSTE := 0.35

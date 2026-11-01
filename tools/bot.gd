@@ -108,7 +108,14 @@ func _process(_d):
 		if OS.get_environment("DIAG") != "": print("SKIP w=", main.wave, " bank=", main.bank_picks, " rr=", main.bank_rerolls)
 		return false
 	if main.perk_mode:
-		main._on_perk(main.perk_offer[randi() % 3])
+		# BOT_PERK=<id>: 특성 하나의 효율을 재려고 그 특성을 고를 수 있는 한 매번 고른다 (선택지에 없어도. 빠지는 조건은 지킴: 조화는 한 번 등)
+		var want := OS.get_environment("BOT_PERK")
+		var forced = null
+		if want != "":
+			for pk in main._perk_pool():
+				if pk["id"] == want:
+					forced = pk
+		main._on_perk(forced if forced != null else main.perk_offer[randi() % main.perk_offer.size()])
 		return false
 	if OS.get_environment("PICKS") != "" and main.phase == 0 and main.wave != picks_w:
 		picks_w = main.wave
@@ -230,7 +237,9 @@ func _process(_d):
 				# 직선탄은 진입 방향을 향해 겨눈다
 				main._place_tower(p, (c + ld * 600 - p).normalized())
 			main._after_place()
-	if main.phase == 4 or frames > 60 * 60 * (int(OS.get_environment("MINS")) if OS.get_environment("MINS") != "" else 25) / main.game_speed:
+	# CAP=<웨이브>: 그 웨이브에 닿으면 끝 (도파민처럼 판이 아주 길어지는 규칙에서 특성·카드 비교를 빨리)
+	var cap := int(OS.get_environment("CAP")) if OS.get_environment("CAP") != "" else 0
+	if main.phase == 4 or cap > 0 and main.wave >= cap or frames > 60 * 60 * (int(OS.get_environment("MINS")) if OS.get_environment("MINS") != "" else 25) / main.game_speed:
 		var ts = []
 		for t in main.towers.get_children(): ts.append(t.title())
 		print("RESULT wave=", main.wave, " score=", main.score, " mul=", Modes.mul(), " skills=", main.skill_used, " ", main._perk_text(), " towers=", ts)
