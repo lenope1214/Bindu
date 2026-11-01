@@ -1225,7 +1225,7 @@ func dice_avg() -> float:
 ## 다중 발사 방향들 (가운데 기준 0.22라디안 간격). 옆 간격은 lanes()와 같은 순서.
 func dirs() -> Array:
 	var out := []
-	for k in spread_ks(1 + mn("multi")):
+	for k in spread_ks(shots()):
 		out.append(aim.rotated(spread_a(k)))
 	return out
 
@@ -1233,9 +1233,21 @@ func dirs() -> Array:
 ## 다중 발사 한 발마다 쏘는 자리 옆 간격 (dirs()와 같은 순서, 오브젝트 기준 위치 차이)
 func lanes() -> Array:
 	var out := []
-	for k in spread_ks(1 + mn("multi")):
+	for k in spread_ks(shots()):
 		out.append(aim.orthogonal() * spread_lane(k))
 	return out
+
+
+## 다중 발사 발 수. 소수 몫(도파민 규칙의 감쇠 등)은 확률로 한 발 더라, 같은 프레임 안에서는 한 번만 굴린다.
+## 예전엔 dirs()와 lanes()가 따로 굴려 발 수가 달라지면 ls[i]가 배열 밖이었다 (2026-11-01 봇 도파민 속사 판 오류)
+var _shots_f := -1
+var _shots_n := 1
+func shots() -> int:
+	var f := Engine.get_process_frames()
+	if f != _shots_f:
+		_shots_f = f
+		_shots_n = 1 + mn("multi")
+	return _shots_n
 
 
 ## 짝수 개 다중 발사는 가운데 두 발을 같은 방향으로 나란히(옆 간격 ±MULTI_LANE) 쏜다.
