@@ -1427,6 +1427,41 @@ func _meta_misc() -> void:
 	ok("DPS-02", absf(live - 10.0) < 0.01 and after > 50.0 and saved, "실시간 DPS: 웨이브 중 최근 5초 이동 평균 (%.1f, 쉬는 시간엔 웨이브 평균 %.1f), 표 접기 저장" % [live, after])
 	_clear()
 
+	# 피해 1~3위 왕관·메달: 쉬는 시간 지난 웨이브 피해 순, 2개면 1위만, 1위가 바뀌면 왕관이 날아감, 설정으로 끔
+	var rk: Array = []
+	for i in 4:
+		_tower(main.center() + Vector2(-240 + 160 * i, 120))
+		rk.append(main.towers.get_child(main.towers.get_child_count() - 1))
+	var ph1 = main.phase
+	main.phase = main.Phase.CHOOSE
+	for i in 4:
+		rk[i].dealt = [300.0, 900.0, 100.0, 500.0][i]
+	main.rank_of.clear()
+	main._rank_update()
+	var r_ok: bool = main.rank_of.get(rk[1].get_instance_id(), 0) == 1 and main.rank_of.get(rk[3].get_instance_id(), 0) == 2 \
+		and main.rank_of.get(rk[0].get_instance_id(), 0) == 3 and not main.rank_of.has(rk[2].get_instance_id())
+	rk[2].dealt = 2000.0
+	main._rank_update()
+	var fly: bool = main.rank_of.get(rk[2].get_instance_id(), 0) == 1 and rk[2].crown_t > 0.0
+	main.phase = main.Phase.WAVE
+	main.wave_time = 1.0
+	rk[1].dealt = 5000.0
+	main._rank_update()
+	var hold: bool = main.rank_of.get(rk[2].get_instance_id(), 0) == 1  # 웨이브 첫 3초는 그대로
+	main.phase = main.Phase.CHOOSE
+	for i in 2:
+		rk[i].dealt = 0.0
+	main._rank_update()
+	var two: bool = main.rank_of.size() == 1  # 피해 있는 오브젝트 2개 → 1위만
+	var on0: bool = Meta.rank_on
+	Meta.rank_on = false
+	main._rank_update()
+	var off: bool = main.rank_of.is_empty()
+	Meta.rank_on = on0
+	main.phase = ph1
+	ok("RANK-01", r_ok and fly and hold and two and off, "피해 1~3위 왕관·메달 (순위 %s, 날아감 %s, 웨이브 초반 유지 %s, 2개면 1위만 %s, 끄기 %s)" % [r_ok, fly, hold, two, off])
+	_clear()
+
 
 # ---------- 멀티플레이 (연결 없이 확인할 수 있는 것) ----------
 

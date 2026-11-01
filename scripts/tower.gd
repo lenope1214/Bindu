@@ -2692,6 +2692,7 @@ func _draw() -> void:
 	if main and main.wave_active:
 		_draw_attack()
 	_draw_body()
+	_draw_rank()
 	if owner_id > 0:
 		# 협동: 누가 놓은 오브젝트인지 발밑 고리 색으로
 		draw_arc(Vector2.ZERO, sz() + 7.0, 0.0, TAU, 28, Mp.owner_color(owner_id), 2.0)
@@ -2704,6 +2705,53 @@ func _draw() -> void:
 		draw_circle(p, 8.0, c)
 		draw_arc(p, 10.5, 0.0, TAU, 24, Color(1, 1, 1, 0.95), 2.0)
 		draw_circle(p, 2.5, Color(1, 1, 1, 0.95))
+
+
+const CROWN_FLY := 0.4  # 1위가 바뀔 때 왕관이 날아가는 시간
+var crown_from := Vector2.ZERO  # 날아오기 시작한 자리 (이 오브젝트 기준)
+var crown_t := 0.0
+const RANK_COLORS := [Color(1.0, 0.82, 0.25), Color(0.85, 0.88, 0.95), Color(0.85, 0.55, 0.3)]
+
+
+## 피해 1위 왕관, 2·3위 메달 (왼쪽 위, 협동 요청 방울은 오른쪽 위)
+func _draw_rank() -> void:
+	if not main:
+		return
+	var r: int = main.rank_of.get(get_instance_id(), 0)
+	if r == 0:
+		return
+	var c: Color = RANK_COLORS[r - 1]
+	var bob := sin(Time.get_ticks_msec() / 400.0) * 1.5
+	var k := clampf(Meta.ui_scale, 1.0, 1.4)  # 글자 크기 설정만큼 같이 키운다 (폰 1.3)
+	if r == 1:
+		var at := Vector2(-RADIUS * 1.05, -RADIUS - 1.0 + bob)
+		if crown_t > 0.0:
+			var f := 1.0 - crown_t / CROWN_FLY
+			at = (crown_from + at).lerp(at, f) + Vector2(0, -30.0 * sin(PI * f))  # 위로 포물선
+		draw_set_transform(at, -0.6, Vector2(k, k) * 1.15)
+		var w := 12.0
+		var pts := PackedVector2Array([Vector2(-w, 5), Vector2(-w, -4), Vector2(-w * 0.5, 1), Vector2(0, -8), Vector2(w * 0.5, 1), Vector2(w, -4), Vector2(w, 5)])
+		var out := pts.duplicate()
+		out.append(pts[0])
+		draw_colored_polygon(pts, c)
+		draw_polyline(out, Color(0.25, 0.15, 0.0, 0.95), 1.6)
+		draw_rect(Rect2(-w, 5, w * 2.0, 3), c.darkened(0.25))
+		for p in [Vector2(-w, -4), Vector2(0, -8), Vector2(w, -4)]:
+			draw_circle(p, 1.8, Color(1, 1, 0.9))
+		draw_circle(Vector2(0, 2), 1.8, Color(0.95, 0.25, 0.3))
+		var sp := fmod(Time.get_ticks_msec() / 1000.0, 2.0)
+		if sp < 0.4:
+			var a: float = 1.0 - absf(sp - 0.2) / 0.2
+			draw_line(Vector2(w * 0.5, -6) + Vector2(-3, 0), Vector2(w * 0.5, -6) + Vector2(3, 0), Color(1, 1, 1, a), 1.2)
+			draw_line(Vector2(w * 0.5, -6) + Vector2(0, -3), Vector2(w * 0.5, -6) + Vector2(0, 3), Color(1, 1, 1, a), 1.2)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	else:
+		draw_set_transform(Vector2(-RADIUS * 0.95, -RADIUS * 0.95), 0.0, Vector2(k, k))
+		draw_circle(Vector2.ZERO, 9.0, Color(0.1, 0.08, 0.05, 0.9))
+		draw_circle(Vector2.ZERO, 7.5, c)
+		draw_arc(Vector2.ZERO, 7.5, 0.0, TAU, 20, c.lightened(0.4), 1.2)
+		draw_string(ThemeDB.fallback_font, Vector2(-7.5, 4.8), str(r), HORIZONTAL_ALIGNMENT_CENTER, 15, 13, Color(0.12, 0.08, 0.04))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 ## 그린 길: 쉬는 시간엔 또렷하게, 웨이브 중엔 옅게. 끝에 화살촉.
@@ -2720,6 +2768,10 @@ func _draw_paths() -> void:
 
 
 func _process(delta: float) -> void:
+	if crown_t > 0.0:
+		crown_t = maxf(crown_t - delta, 0.0)
+	if main and main.rank_of.has(get_instance_id()):
+		queue_redraw()  # 왕관 흔들림·반짝임 (오브젝트 최대 3개)
 	if place_pop > 0.0:
 		place_pop = maxf(place_pop - delta * 3.0, 0.0)
 		queue_redraw()

@@ -338,6 +338,8 @@ const DPS_WIN := 5.0
 var dps_hist := {}  # 오브젝트 instance id → 최근 dealt 표본들 (오래된 것부터)
 var dps_t := 0.0  # 다음 표본까지 남은 게임 시간
 var dps_n := 0  # 이번 웨이브에 적은 표본 수 (표를 1초마다 고치는 데 씀)
+var rank_of := {}  # 오브젝트 instance id → 피해 순위 1~3 (왕관·메달)
+var rank_t := 0.0  # 다음 순위 매김까지 남은 시간
 # 온라인 (Net·Patch): 판 기록·통계
 var net: Net
 # 멀티플레이 (아래 "멀티플레이" 절)
@@ -1252,6 +1254,37 @@ func _dps_sample(delta: float) -> void:
 		dps_hist[t.get_instance_id()] = h
 
 
+## 피해 1~3위 (왕관·메달, Tower._draw_rank). 이번 웨이브 누적 피해, 쉬는 시간엔 지난 웨이브 피해(t.dealt가 그 값).
+## 웨이브 첫 RANK_HOLD초는 피해가 0부터 다시 쌓이므로 지난 순위를 그대로 둔다. 오브젝트 2개면 1위만, 1개면 없음.
+const RANK_STEP := 1.0
+const RANK_HOLD := 3.0
+func _rank_update() -> void:
+	if not Meta.rank_on:
+		if not rank_of.is_empty():
+			rank_of.clear()
+			for t in towers.get_children():
+				t.queue_redraw()
+		return
+	if phase == Phase.WAVE and wave_time < RANK_HOLD:
+		return
+	var list := towers.get_children().filter(func(t): return t.dealt > 0.0)
+	list.sort_custom(func(a, b): return a.dealt > b.dealt)
+	var n := 0 if list.size() < 2 else (1 if list.size() < 3 else 3)
+	var old_king = null
+	for t in towers.get_children():
+		if rank_of.get(t.get_instance_id(), 0) == 1:
+			old_king = t
+	rank_of.clear()
+	for i in mini(n, list.size()):
+		rank_of[list[i].get_instance_id()] = i + 1
+	if n > 0 and old_king != null and old_king != list[0]:
+		# 1위가 바뀌면 왕관이 옛 1위 자리에서 새 1위로 날아간다
+		list[0].crown_from = old_king.position - list[0].position
+		list[0].crown_t = Tower.CROWN_FLY
+	for t in towers.get_children():
+		t.queue_redraw()
+
+
 ## 표의 초당 피해: 웨이브 중이면 최근 DPS_WIN초 이동 평균, 쉬는 시간이면 지난 웨이브 평균.
 func _dps_of(t: Tower) -> float:
 	if phase != Phase.WAVE:
@@ -1357,7 +1390,7 @@ func _dps_row(t: Tower, rank: int, dps: float, total: float, live := false) -> C
 		if dps_focus == t:
 			dps_focus = null
 		row.queue_redraw())
-	var cells := [["%d" % rank, 18, HORIZONTAL_ALIGNMENT_RIGHT, Color(1, 1, 1, 0.55)],
+	var cells := [["%d" % rank, 18, HORIZONTAL_ALIGNMENT_RIGHT, Tower.RANK_COLORS[rank - 1] if rank <= 3 and rank_of.get(t.get_instance_id(), 0) == rank else Color(1, 1, 1, 0.55)],
 		["", 0],
 		["%.1f" % dps, 52, HORIZONTAL_ALIGNMENT_RIGHT, Color(1, 0.9, 0.5)],
 		["%d%%" % roundi(share * 100.0), 36, HORIZONTAL_ALIGNMENT_RIGHT, Color(1, 1, 1, 0.7)]]
@@ -4277,6 +4310,7 @@ func _start_wave() -> void:
 	dps_hist.clear()
 	dps_t = 0.0
 	dps_n = 0
+	rank_t = RANK_HOLD + 0.05  # 피해가 다시 쌓인 뒤에 매긴다
 	for t in towers.get_children():
 		t.cd.clear()
 		t.fx.clear()
@@ -5392,7 +5426,7 @@ func _build_menu(root: Control) -> void:
 		grid.add_theme_constant_override("v_separation", 4)
 		sv.add_child(grid)
 		cbox = grid
-	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 속성 그림)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"], ["웨이브 넘기기 중 중앙이 위험하면 멈춤 (체력 50%)", "skip_danger"], ["중앙 기술 자동 사용 (구체가 몰린 곳에)", "skill_auto"], ["효과 줄이기 (장판·터지는 효과를 옅게, 많을수록 더)", "fx_low"]]:
+	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 속성 그림)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"], ["웨이브 넘기기 중 중앙이 위험하면 멈춤 (체력 50%)", "skip_danger"], ["중앙 기술 자동 사용 (구체가 몰린 곳에)", "skill_auto"], ["효과 줄이기 (장판·터지는 효과를 옅게, 많을수록 더)", "fx_low"], ["피해 1~3위 왕관·메달", "rank_on"]]:
 		var cb := CheckButton.new()
 		cb.text = spec[0]
 		var key: String = spec[1]
@@ -5405,6 +5439,7 @@ func _build_menu(root: Control) -> void:
 			"skip_danger": cb.button_pressed = Meta.skip_danger
 			"skill_auto": cb.button_pressed = Meta.skill_auto
 			"fx_low": cb.button_pressed = Meta.fx_low
+			"rank_on": cb.button_pressed = Meta.rank_on
 		cb.focus_mode = Control.FOCUS_NONE
 		cb.toggled.connect(func(on):
 			match key:
@@ -5415,6 +5450,9 @@ func _build_menu(root: Control) -> void:
 				"skip_danger": Meta.skip_danger = on
 				"skill_auto": Meta.skill_auto = on
 				"fx_low": Meta.fx_low = on
+				"rank_on":
+					Meta.rank_on = on
+					_rank_update()
 				"symbols_on":
 					Meta.symbols_on = on
 					for t in towers.get_children():
@@ -8742,6 +8780,10 @@ func _roll_kind() -> int:
 # ---------- 루프 ----------
 
 func _process(delta: float) -> void:
+	rank_t -= delta
+	if rank_t <= 0.0:
+		rank_t = RANK_STEP
+		_rank_update()
 	key_t -= delta
 	_mp_lobby_tick()
 	_mp_tick(delta)

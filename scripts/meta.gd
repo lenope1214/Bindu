@@ -58,6 +58,7 @@ static var shake_on := true
 static var numbers_on := true
 static var symbols_on := true  # 속성 색 위에 속성 그림 표시 (색만으로 구분하기 어려울 때). 새 저장은 켬
 static var card_detail := false  # 선택지 카드 [자세히]: 끄면 간소화, 켜면 설명 전체 + 올리면 카드 위 창 (기본 끔)
+static var rank_on := true  # 피해 1~3위 오브젝트에 왕관·은/동 메달 (기본 켬)
 static var fx_low := false  # 효과 줄이기: 형태 성질·반응 장판과 터지는 효과를 옅게, 많이 겹칠수록 더 옅게 (기본 끔)
 static var fx_dps := 2  # 피해 몫이 작은 오브젝트의 탄·장판을 옅게: 0 그대로 · 1 조금 · 2 보통 · 3 많이 (아래 버튼 줄)
 static var dps_fold := OS.has_feature("mobile")  # 왼쪽 위 DPS 표 접기 (D·표 제목). 폰·태블릿은 접어 두고 시작, 바꾸면 저장
@@ -169,6 +170,7 @@ static func load_into(cfg: ConfigFile) -> void:
 	skill_set = clampi(int(val(cfg, "settings", "skill_set", 0)), 0, 2)
 	skill_auto = val(cfg, "settings", "skill_auto", false) == true
 	fx_low = val(cfg, "settings", "fx_low", false)
+	rank_on = val(cfg, "settings", "rank_on", true)
 	card_detail = val(cfg, "settings", "card_detail", false)
 	fx_dps = clampi(val(cfg, "settings", "fx_dps", 2), 0, 3)
 	dps_fold = val(cfg, "settings", "dps_fold", OS.has_feature("mobile"))
@@ -235,6 +237,7 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("settings", "skill_set", skill_set)
 	cfg.set_value("settings", "skill_auto", skill_auto)
 	cfg.set_value("settings", "fx_low", fx_low)
+	cfg.set_value("settings", "rank_on", rank_on)
 	cfg.set_value("settings", "card_detail", card_detail)
 	cfg.set_value("settings", "fx_dps", fx_dps)
 	cfg.set_value("settings", "dps_fold", dps_fold)
