@@ -760,6 +760,23 @@ func _waves() -> void:
 	Meta.map_id = "plain"
 	ok("WAVE-04", cross == roundi(main.wave_size(4) * 1.5), "십자로 맵 구체 1.5배")
 	ok("WAVE-05", is_equal_approx(main.hp_growth(10), 1.0) and is_equal_approx(main.hp_growth(12), 1.05 * 1.05), "11웨이브부터 구체 체력 웨이브마다 x1.05")
+	# 진입 부채꼴(화면)과 실제 구체 각도가 같은 폭: 웨이브 11에 ±0.26, 25웨이브부터 ±0.4, 십자로 0.06, 회랑 0
+	main.lanes.assign([1.0, 3.0])
+	main.wave = 10
+	var sp: float = main.lane_spread(11)
+	var inside := true
+	var widest := 0.0
+	for i in 400:
+		var a: float = main._roll_orb(11)["a"]
+		var off: float = minf(absf(angle_difference(a, 1.0)), absf(angle_difference(a, 3.0)))
+		widest = maxf(widest, off)
+		inside = inside and off <= sp + 0.0001
+	Meta.map_id = "cross"
+	var sc: float = main.lane_spread(30)
+	Meta.map_id = "line"
+	var sl: float = main.lane_spread(30)
+	Meta.map_id = "plain"
+	ok("UI-27", inside and widest > sp * 0.9 and is_equal_approx(sp, 0.26) and is_equal_approx(main.lane_spread(25), 0.4) and is_equal_approx(main.lane_spread(40), 0.4) and sc == 0.06 and sl == 0.0, "구체는 진입 부채꼴(±%.2f) 안으로만, 폭 끝까지 옴 (가장 벗어난 %.2f)" % [sp, widest])
 	ok("WAVE-06", main.resist_share(9) == 0.0 and main.resist_share(10) > 0.0 and main.sturdy_share(12) == 0.0 and main.sturdy_share(13) > 0.0, "저항 구체 10웨이브, 굳센 구체 13웨이브부터")
 
 	var kinds := {}

@@ -2885,7 +2885,7 @@ func _guide(id: String, text: String) -> void:
 ## 쉬는 시간이 열릴 때: 길목·겹치기·보스·저항·굳센 구체 안내.
 func _rest_guides() -> void:
 	if wave == 0:
-		_guide("start", "빨간 화살표가 구체가 들어오는 길목이에요. 속성 카드를 고른 뒤 길목 쪽 빈 곳을 눌러 놓고, 한 번 더 눌러 쏠 방향을 정하세요")
+		_guide("start", "빨간 부채꼴이 구체가 들어오는 길목이에요. 그 넓이 어디로든 와요. 속성 카드를 고른 뒤 길목 쪽 빈 곳을 눌러 놓고, 한 번 더 눌러 쏠 방향을 정하세요")
 	elif towers.get_child_count() > 0:
 		_guide("stack", "속성 카드를 오브젝트 위에 놓으면 겹쳐져요. 같은 속성은 레벨업, 다른 속성은 추가 효과가 더해지고, 맞는 두 속성이 만나면 특수 반응이 생겨요")
 	if not boss_plan.is_empty() and boss_plan["wave"] == wave + 1:
@@ -3565,7 +3565,7 @@ func _update_preview() -> void:
 	wave_info = info_l
 	wave_kinds = kinds
 	if wave == 0:
-		_guide("lanes", "빨간 화살표 쪽에서 구체가 와요. 옆 숫자는 그쪽에서 오는 구체 수(%s 자세히). 길목을 가로지르게 설치하세요" % ("누르면" if touch_ui else "올리면"))
+		_guide("lanes", "구체는 빨간 부채꼴 넓이 어디로든 와요. 옆 숫자는 그쪽에서 오는 구체 수(%s 자세히). 부채꼴을 가로지르게, 좁은 중앙 쪽에 설치하면 다 막혀요" % ("누르면" if touch_ui else "올리면"))
 
 
 ## 다음 웨이브 구체를 진입 방향별로 고르게 나눈 수 (보스 제외). 화살표 배지와 실제 웨이브(lane_bag)가 같은 값을 쓴다.
@@ -4028,6 +4028,74 @@ func _draw_star_rings() -> void:
 
 
 ## 보스가 올 길: 쉬는 시간과, 보스 웨이브에서 보스가 나오기 전까지.
+## 진입 부채꼴: 구체가 실제로 올 수 있는 범위(진입 각도 a ± sp)를 옅게 칠하고 테두리, 화면 가장자리엔 입구 막대,
+## 흐르는 점은 폭 전체에. 소용돌이는 나선 길을 ±sp 돌린 띠. 웨이브 중엔 더 옅게.
+func _draw_lane_fan(a: float, sp: float, now: float) -> void:
+	if sp <= 0.0:
+		return
+	var c := center()
+	var rest := phase != Phase.WAVE
+	var col := Color(1, 0.3, 0.35)
+	var fill := Color(col, 0.16 if rest else 0.05)
+	var rim := Color(col, 0.5 if rest else 0.18)
+	var bar := Color(col, 0.9 if rest else 0.3)
+	const N := 16
+	if Meta.map_id == "spiral":
+		var vr := arena().grow(2.0)
+		var mid := PackedVector2Array()
+		for q in _orb_path(a):
+			if not mid.is_empty() or vr.has_point(q):
+				mid.append(q)
+		if mid.size() < 2:
+			return
+		var lo := PackedVector2Array()
+		var hi := PackedVector2Array()
+		for q in mid:
+			lo.append(c + (q - c).rotated(-sp))
+			hi.append(c + (q - c).rotated(sp))
+		var fade := func(q: Vector2) -> Color: return Color(fill, fill.a * clampf((q.distance_to(c) - 40.0) / 360.0, 0.0, 1.0))
+		for i in range(1, mid.size()):
+			if vr.has_point(lo[i]) or vr.has_point(hi[i]):
+				draw_polygon(PackedVector2Array([lo[i - 1], lo[i], hi[i], hi[i - 1]]),
+					PackedColorArray([fade.call(lo[i - 1]), fade.call(lo[i]), fade.call(hi[i]), fade.call(hi[i - 1])]))
+		for side in [lo, hi]:
+			var cut := PackedVector2Array()
+			for q in side:
+				if not cut.is_empty() or vr.has_point(q):
+					cut.append(q)
+			if cut.size() >= 2:
+				draw_polyline(cut, rim, 2.0)
+		if rest:
+			for k in 5:
+				var f := fmod(now * 0.25 + k / 5.0, 1.0)
+				var q: Vector2 = mid[mini(int(f * (mid.size() - 1)), mid.size() - 1)]
+				for j in 3:
+					var r := (j - 1) * sp
+					draw_circle(c + (q - c).rotated(r), 2.5, Color(col, 0.5 * (1.0 - f)))
+		return
+	var edge := PackedVector2Array()
+	for k in N + 1:
+		edge.append(_edge_point(c, Vector2.from_angle(a - sp + 2.0 * sp * k / N)))
+	# 가장자리에서 진하고 중앙으로 갈수록 투명하게 (길목이 6곳이면 화면 전체가 붉어지고, 중앙에 테두리가 몰려 어지러웠다)
+	var poly := PackedVector2Array([c])
+	poly.append_array(edge)
+	var cols := PackedColorArray([Color(fill, 0.0)])
+	for k in N + 1:
+		cols.append(fill)
+	draw_polygon(poly, cols)
+	var clear := Color(rim, 0.0)
+	draw_polyline_colors(PackedVector2Array([c, edge[0]]), PackedColorArray([clear, rim]), 2.0)
+	draw_polyline_colors(PackedVector2Array([c, edge[N]]), PackedColorArray([clear, rim]), 2.0)
+	draw_polyline(edge, bar, 5.0 if rest else 3.0)
+	if rest:
+		# 중앙 쪽으로 흐르는 점을 폭 전체에 (가운데 한 줄만 흐르면 그 선으로만 오는 줄 안다)
+		for j in 5:
+			var e := _edge_point(c, Vector2.from_angle(a - sp + 2.0 * sp * (j + 0.5) / 5.0))
+			for k in 3:
+				var f := fmod(now * 0.25 + k / 3.0 + j * 0.13, 1.0)
+				draw_circle(e.lerp(c, f * 0.85), 2.5, Color(col, 0.55 * (1.0 - f)))
+
+
 ## 보스 길 표시 자리 (그림과 진입 배지 비키기가 같은 값을 쓴다). 그릴 게 없으면 빈 사전.
 ## pts: 화면 안 길, lens: 누적 길이, m: 들어오는 자리 고리, lp·lw: 글자 자리·폭.
 func _boss_mark() -> Dictionary:
@@ -8543,12 +8611,17 @@ func arc(from: Orb, dmg: float, src: Tower = null, cap = null) -> void:  # cap: 
 
 
 ## 구체 하나의 진입 각도·체력(종류 보정 전)·속도·저항·굳셈을 뽑는다.
-func _roll_orb(w: int) -> Dictionary:
-	var spread := minf(0.15 + 0.01 * w, 0.4)
+## 웨이브 w 구체가 진입 방향 각도에서 벗어나는 폭(라디안, ±). 화면의 진입 부채꼴(_draw_lane_fan)과 같은 값.
+static func lane_spread(w: int) -> float:
 	if Meta.map_id == "cross":
-		spread = 0.06  # 십자로: 네 길 위로만 온다
-	elif Meta.map_id == "line":
-		spread = 0.0  # 회랑: 방향은 하나, 대신 높이가 길 폭 안에서 갈린다
+		return 0.06  # 십자로: 네 길 위로만 온다
+	if Meta.map_id == "line":
+		return 0.0  # 회랑: 방향은 하나, 대신 높이가 길 폭 안에서 갈린다
+	return minf(0.15 + 0.01 * w, 0.4)
+
+
+func _roll_orb(w: int) -> Dictionary:
+	var spread := lane_spread(w)
 	var li: int = lane_bag.pop_back() if not lane_bag.is_empty() and phase == Phase.WAVE and not w_off else wi() % lanes.size()
 	var a: float = lanes[li] + wrange(-spread, spread)
 	var hp := (1.0 + floorf(w * 0.7) + wi() % 2) * hp_growth(w) * Rules.orb_hp
@@ -10451,21 +10524,13 @@ func _draw() -> void:
 				d = (path[0] - path[1]).normalized()
 		var tip := edge - d * 18.0 - d * 6.0 * sin(now * 4.0)
 		var col := Color(1, 0.3, 0.35, 0.9 if phase != Phase.WAVE else 0.35)
+		_draw_lane_fan(a, lane_spread(wave if phase == Phase.WAVE else wave + 1), now)
 		draw_colored_polygon(PackedVector2Array([
 			tip - d * 22.0,
 			tip + d.orthogonal() * 12.0,
 			tip - d.orthogonal() * 12.0,
 		]), col)
-		if phase != Phase.WAVE and Meta.map_id == "spiral":
-			# 나선 경로 미리보기 (구체 이동과 같은 식)
-			if path.size() >= 2:
-				draw_polyline(path, Color(col, 0.3), 1.5)
-		elif phase != Phase.WAVE:
-			# 중앙 쪽으로 흘러가는 점 (점선은 진입 방향이 늘면 화면을 가로질러 어지러워 뺐다)
-			var L := (tip - c).length()
-			for k in 5:
-				var f := fmod(now * 0.25 + k / 5.0, 1.0)
-				draw_circle(tip - d * f * (L - 40.0), 2.5, Color(col, 0.5 * (1.0 - f)))
+		# 길 한 줄(나선 미리보기·흐르는 점)은 부채꼴(_draw_lane_fan)이 대신한다: 한 줄로 그리면 초보가 그 선만 막았다
 
 	_draw_map_rule(c, now)
 	_draw_boss_path(now)

@@ -15,7 +15,7 @@ const ON_EVENT := {
 const TOPICS := [
 	{"id": "goal", "name": "목표와 화면", "pages": [
 		{"pic": "goal", "pc": "구체가 화면 끝에서 가운데 중앙으로 몰려와요. 중앙 체력은 10이고 구체가 닿을 때마다 줄어요. 0이 되면 판이 끝나요."},
-		{"pic": "lanes", "pc": "가장자리의 빨간 화살표가 구체가 들어오는 길목이에요. 옆 숫자는 그쪽에서 올 구체 수예요. 길목은 3웨이브마다 하나씩 늘어요."},
+		{"pic": "lanes", "pc": "가장자리의 빨간 부채꼴이 구체가 들어오는 길목이에요. 구체는 화살표 한 줄이 아니라 부채꼴 넓이 어디로든 와요. 옆 숫자는 그쪽에서 올 구체 수, 길목은 3웨이브마다 하나씩 늘어요."},
 		{"pic": "loop", "pc": "웨이브를 막으면 쉬는 시간이에요. 쉬는 시간에 카드를 골라 오브젝트를 놓거나 강하게 만들고 다음 웨이브를 시작해요."},
 	]},
 	{"id": "place", "name": "오브젝트 놓기·방향", "pages": [
@@ -577,12 +577,19 @@ func _pic_goal() -> void:
 func _pic_lanes() -> void:
 	pic.draw_rect(Rect2(P(40, 10), Vector2(480, 220) * _s), DIM, false, 1.5 * _s)
 	var c := P(280, 120)
+	# 진입 부채꼴: 가장자리 폭 전체에서 중앙으로 모인다
+	for f in [[P(42, 60), P(42, 180)], [P(230, 12), P(330, 12)]]:
+		pic.draw_colored_polygon(PackedVector2Array([c, f[0], f[1]]), Color(LANE_COL, 0.12))
+		pic.draw_line(c, f[0], Color(LANE_COL, 0.5), 1.5 * _s)
+		pic.draw_line(c, f[1], Color(LANE_COL, 0.5), 1.5 * _s)
+		pic.draw_line(f[0], f[1], LANE_COL, 4 * _s)
 	_core(c, "")
 	_lane(P(52, 120), Vector2.RIGHT, "6")
 	_lane(P(280, 22), Vector2.DOWN, "4")
 	for i in 3:
-		_orb(P(60, 120).lerp(c, fmod(t * 0.25 + i * 0.33, 1.0)))
-		_orb(P(280, 30).lerp(c, fmod(t * 0.25 + i * 0.33 + 0.15, 1.0)))
+		var k := fmod(t * 0.25 + i * 0.33, 1.0)
+		_orb(P(44, 70 + i * 45).lerp(c, k))
+		_orb(P(240 + i * 40, 14).lerp(c, fmod(k + 0.15, 1.0)))
 	_txt(P(470, 205), "길목", 14, LANE_COL)
 
 
