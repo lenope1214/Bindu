@@ -231,6 +231,91 @@ func _elements() -> void:
 
 	var no_rider := Elem.ALL.filter(func(e): return Elem.rider(e).is_empty())
 	ok("ELEM-07", no_rider.is_empty() and Elem.ALL.size() == 15, "속성 15종 모두 부가효과 설명이 있음")
+	_no_fixed_zone()
+
+
+## 고정 거리 장판 금지 (2026-11-01): 형태 성질 "끝"은 장판을 만들지 않고 구체에 바로 걸고,
+## 계속 공격하는 형태의 끝은 사거리 끝이 아니라 공격 안의 가장 먼 구체, 모든 공격방식이 만드는 장판 종류는 허용 목록뿐.
+const ZONE_OK := ["trail", "vortex", "rock", "mine", "bog", "cloud", "boom"]
+const FORM_ELS := [Elem.FIRE, Elem.WATER, Elem.ICE, Elem.EARTH, Elem.POISON, Elem.TIME]
+const CONT_PATS := ["spray", "stream", "laser", "sonic", "clock"]
+
+
+func _form_tower(p: Vector2, d := Vector2.RIGHT) -> Tower:
+	var t := _tower(p, Elem.FIRE, 3, d)
+	for e in FORM_ELS:
+		if e != Elem.FIRE:
+			t.add(e, 3)
+	t.eff = t.eff_now()
+	return t
+
+
+func _no_fixed_zone() -> void:
+	_fresh()
+	Meta.rules = 3  # 속성 종류 제한 없음 (형태 성질 6개를 한 오브젝트에)
+	main._apply_rules()
+	var c: Vector2 = main.center()
+	var t := _form_tower(c + Vector2(-200, 0))
+	# 1) 끝 효과: 구체가 없어도 있어도 장판 0개, 가까운 구체에 화상·중독·감속·째깍
+	var z0: int = main.zones.get_child_count()
+	t.form_end(c + Vector2(100, 0), Vector2.RIGHT, true)
+	var o := _orb(c + Vector2(100, 10), 99999.0)
+	main.targets = main.orbs.get_children()
+	main._build_grid()
+	t.form_end(c + Vector2(100, 0), Vector2.RIGHT, true)
+	var no_zone: bool = main.zones.get_child_count() == z0
+	var on_orb: bool = o.burn_t > 0.0 and o.poison_t > 0.0 and o.slow_timer > 0.0 and o.tick_t > 0.0
+	# 째깍: 표식이 끝나면 그 구체 자리에서 터져 옆 구체도 맞는다
+	var o2 := _orb(o.position + Vector2(20, 0), 99999.0)
+	main.wave_active = true
+	main.phase = main.Phase.WAVE
+	main.to_spawn = 0
+	for i in 150:  # 째깍 0.6초 (구체가 멈춘 동안에도 표식 시간은 간다)
+		main._sim_step(1.0 / 60.0)
+	var ticked: bool = o.tick_t <= 0.0 and o2.hp < o2.max_hp
+	# 2) 계속 공격 형태: 끝은 공격 방향 안의 가장 먼 구체 자리 (사거리 끝 고정 지점 아님)
+	var cont_ok := true
+	var cont_bad := []
+	for pat in CONT_PATS:
+		_clear()
+		var ct := _form_tower(c, Vector2.RIGHT)
+		ct.set_pattern(pat)
+		ct.aim = Vector2.RIGHT
+		var near_o := _orb(c + Vector2(60, 0), 99999.0)
+		var far_o := _orb(c + Vector2(110, 0), 99999.0)
+		ct.fe2 = 0.0
+		main.targets = main.orbs.get_children()
+		main._build_grid()
+		var zc: int = main.zones.get_child_count()
+		ct._cont_end([near_o, far_o], ct.plv, 1.0)
+		if not (far_o.tick_t > 0.0 and near_o.tick_t <= 0.0 and main.zones.get_child_count() == zc):
+			cont_ok = false
+			cont_bad.append(pat)
+	# 3) 모든 공격방식 3초: 장판 종류는 허용 목록뿐, 계속 공격 형태는 불씨·물길(지나간 길)도 없음
+	var bad := []
+	for pat in Pat.PATTERN_IDS:
+		_clear()
+		var pt := _form_tower(c + Vector2(-60, 0), Vector2.LEFT)
+		if pat != "shot":
+			pt.set_pattern(pat)
+		_orb(c + Vector2(-260, 0), 99999.0, Orb.Kind.NORMAL, 30.0)
+		_orb(c + Vector2(-330, 30), 99999.0, Orb.Kind.NORMAL, 30.0)
+		var kinds := {}
+		for i in 180:
+			main._sim_step(1.0 / 60.0)
+			for z in main.zones.get_children():
+				kinds[z.kind] = true
+		for k in kinds:
+			var allowed: bool = k in ZONE_OK or (k in Tower.FORM_ZONES and pat not in CONT_PATS)
+			if not allowed:
+				bad.append("%s:%s" % [pat, k])
+	main.wave_active = false
+	main.phase = main.Phase.CHOOSE
+	_clear()
+	Meta.rules = 1
+	main._apply_rules()
+	ok("ELEM-10", no_zone and on_orb and ticked and cont_ok and bad.is_empty(),
+		"고정 거리 장판 없음: 형태 성질 끝은 구체에 바로(장판 %s, 구체 %s, 째깍 %s), 계속 공격 끝은 가장 먼 구체(틀림 %s), 장판 종류 허용 목록뿐(어긋남 %s)" % [no_zone, on_orb, ticked, str(cont_bad), str(bad)])
 
 
 # ---------- 공격방식 ----------

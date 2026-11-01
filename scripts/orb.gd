@@ -64,6 +64,10 @@ var swamp_src: Object = null  # 독늪 늪을 만든 오브젝트 (안에서 죽
 var lava_t := 0.0  # 용암: 묻은 뒤 남은 시간, 0이 되면(또는 죽으면) 그 자리에서 터짐
 var lava_lv := 1
 var lava_src: Object = null
+var tick_t := 0.0  # 시간 형태 성질 째깍: 남은 시간, 0이 되면(또는 죽으면) 이 구체 자리에서 한 번 더 터짐 (main.tick_burst)
+var tick_dmg := 0.0
+var tick_src: Object = null
+var tick_key := ""
 var bog_t := 0.0  # 독늪 표식: 이 시간 안에 죽으면 그 자리에 늪
 var bog_lv := 1
 var bog_src: Object = null
@@ -190,6 +194,10 @@ func step(delta: float) -> void:
 		lava_t -= delta
 		if lava_t <= 0.0 and main:
 			main.lava_burst(self)
+	if tick_t > 0.0:
+		tick_t -= delta
+		if tick_t <= 0.0 and main:
+			main.tick_burst(self)
 	hist_acc -= delta
 	if hist_acc <= 0.0:
 		hist_acc = 0.25
@@ -717,6 +725,10 @@ func _draw() -> void:
 		for i in 3:
 			var a0 := -PI / 2 + TAU * i / 3
 			draw_arc(Vector2.ZERO, r + 4.5, a0 + 0.25, a0 + TAU / 3 - 0.25, 8, Color(rc, 0.9 if i < int(ring) else 0.3), 2.0)
+	if tick_t > 0.0:
+		# 째깍: 시간색 호가 줄어든다 (0.6초 뒤 터짐)
+		var kc: Color = Elem.COLORS[Elem.TIME]
+		draw_arc(Vector2.ZERO, r + 8.0, -PI / 2, -PI / 2 + TAU * clampf(tick_t / 0.6, 0.0, 1.0), 16, Color(kc, 0.85), 2.5)
 	if echo_t > 0.0:
 		# 메아리: 금빛 시계 바늘
 		var tc: Color = Elem.COLORS[Elem.TIME]

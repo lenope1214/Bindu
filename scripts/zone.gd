@@ -2,7 +2,8 @@ class_name Zone
 extends Node2D
 ## 바닥에 남는 효과(지나간 자리 장판, 블랙홀, 지뢰, 바위 벽, 형태 성질 장판). kind로 구분한다.
 ## 지나간 자리 장판(trail)은 탄 하나가 지나온 점들을 들고, 점마다 life만큼 남는다. sub: puddle(투척 장판)·burn(장작)·prison(빙결 감옥).
-## 블랙홀은 앞으로 날아가며 줄어든다(launch). 형태 성질 장판(ember·rill·frost·ledge·fog·tick)의 세기는 amt.
+## 블랙홀은 앞으로 날아가며 줄어든다(launch). 형태 성질 장판(ember·rill: 날아가는 공격이 지나간 길에만)의 세기는 amt.
+## 오브젝트에서 고정된 거리(사거리 끝·착지 자리)에 생기는 장판은 만들지 않는다 (ELEM-10, Tower.FORM_ZONES).
 
 var kind := "burn"
 var level := 1
@@ -33,9 +34,9 @@ var dps := 0.0  # trail: 안에 있는 구체에 초당 피해 (레벨 배율 �
 var caught := {}  # trail prison: 이미 가둔 구체 (띠 하나에 한 번)
 
 ## 효과 줄이기(설정)에서 옅게 그리는 장판: 형태 성질·반응·투척 장판. 블랙홀·바위 벽·턱·독버섯은 막거나 끌어서 그대로
-const SOFT := ["trail", "bog", "cloud", "boom", "ember", "rill", "frost", "fog", "tick"]
+const SOFT := ["trail", "bog", "cloud", "boom", "ember", "rill"]
 ## 모양이 바뀌지 않고 옅어지기만 하는 장판: 한 번 그리고 self_modulate로 옅게 (불씨·물길이 100개 가까이 깔려 매 프레임 다시 그리던 것). 바위 벽은 아예 그대로
-const STILL := ["ember", "rill", "frost", "fog", "ledge"]
+const STILL := ["ember", "rill"]
 
 
 func setup(k: String, l: int, tower: Tower) -> void:
@@ -47,14 +48,6 @@ func setup(k: String, l: int, tower: Tower) -> void:
 			radius = 100.0 + 10.0 * (l - 1); max_life = 3.0
 		"ember", "rill":
 			radius = 22.0; max_life = 1.0
-		"frost":
-			radius = 40.0; max_life = 1.0
-		"ledge":
-			radius = 20.0; max_life = 0.6
-		"fog":
-			radius = 50.0; max_life = 1.5
-		"tick":
-			radius = 35.0; max_life = 0.6
 		"mine":
 			radius = 14.0; max_life = 20.0
 		"bog":
@@ -195,14 +188,6 @@ func affect(orbs: Array, delta: float) -> void:
 				o.burn(0.4 * amt * _p(), 1.5, owner_tower, false, src)
 			"rill":
 				o.slow(0.7, 0.6)
-			"frost":
-				o.add_chill(0.5 * amt * delta)
-			"fog":
-				o.poison(0.4 * amt * _p(), 2.0, owner_tower, false, src)
-			"ledge":
-				var away: Vector2 = (o.position - position).normalized()
-				o.position = position + away * (radius + o.radius())
-				o.root(0.1, false)
 			"cloud":
 				o.poison(0.8 * level, 2.0, owner_tower, true, src)
 			"bog":
@@ -284,7 +269,7 @@ func step(delta: float) -> void:
 		queue_redraw()
 
 
-## 사라질 때: 블랙홀 붕괴, 째깍 폭발, 바위 벽 무너짐 → 형태 성질 "끝".
+## 사라질 때: 블랙홀 붕괴, 바위 벽 무너짐 → 형태 성질 "끝".
 func _end() -> void:
 	if dead or not is_instance_valid(owner_tower):
 		return
@@ -301,15 +286,6 @@ func _end() -> void:
 						o.stagger(o.speed * 0.2 * tw.tk(Elem.METAL))
 			tw.main.burst(position, Elem.COLORS[Elem.DARK], 10, 120.0)
 			tw.form_end(position, dir, true)
-		"tick":
-			tw.in_form = true
-			tw.tag = src
-			for o in tw.main.near(position, radius + 30.0):
-				if o.hp > 0.0 and o.position.distance_to(position) < radius + o.radius():
-					tw.hit(o, 0.25 * _p() * amt, 0.5)
-			tw.in_form = false
-			tw.tag = ""
-			tw.main.burst(position, Elem.COLORS[Elem.TIME], 6, 90.0)
 		"rock":
 			tw.form_end(position, tw.dir, true)
 
@@ -333,17 +309,6 @@ func _draw() -> void:
 			_ground(Elem.COLORS[Elem.FIRE], a, 0.3)
 		"rill":
 			_ground(Elem.COLORS[Elem.WATER], a, 0.25)
-		"frost":
-			_ground(Elem.COLORS[Elem.ICE], a, 0.25)
-		"fog":
-			_ground(Elem.COLORS[Elem.POISON], a, 0.15)
-		"ledge":
-			draw_circle(Vector2.ZERO, radius, Color(Elem.COLORS[Elem.EARTH], a))
-			draw_arc(Vector2.ZERO, radius, 0, TAU, 16, Color(0.35, 0.25, 0.15, a), 2.0)
-		"tick":
-			var tc: Color = Elem.COLORS[Elem.TIME]
-			draw_arc(Vector2.ZERO, radius, -PI / 2, -PI / 2 + TAU * (1.0 - a), 32, Color(tc, 0.8), 3.0)
-			draw_line(Vector2.ZERO, Vector2.from_angle(-PI / 2 + TAU * (1.0 - a)) * radius * 0.8, Color(tc, 0.8), 2.0)
 		"mine":
 			var pulse := 1.0 + 0.1 * sin(t * 6.0)
 			Projectile._draw_mushroom(self, pulse)

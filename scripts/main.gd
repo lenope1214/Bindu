@@ -9421,6 +9421,8 @@ func _resolve(delta: float) -> void:
 				_swamp_burst(o)
 			if o.lava_t > 0.0:
 				lava_burst(o)
+			if o.tick_t > 0.0:
+				tick_burst(o)
 			# 독늪: 표식이 남았거나 늪 안에서 죽으면 그 자리에 늪 (늪이 번진다)
 			var bs: Object = o.bog_src if o.bog_t > 0.0 else o.swamp_src if o.swamp_t > 0.0 else null
 			if is_instance_valid(bs):
@@ -9540,6 +9542,24 @@ func lava_burst(o: Orb) -> void:
 	tw.in_rx = false
 	tw.tag = ""
 	burst(o.position, Color(0.95, 0.3, 0.05), 12, 170.0)
+
+
+## 시간 형태 성질 째깍: 표식이 끝나면(또는 구체가 죽으면) 그 구체 자리에서 한 번 더 터진다.
+## 예전엔 끝 자리 바닥에 남던 장판이었다 (오브젝트에서 고정된 거리라 없앰, ELEM-10).
+func tick_burst(o: Orb) -> void:
+	o.tick_t = 0.0
+	var tw = o.tick_src
+	if not is_instance_valid(tw):
+		return
+	var old_tag: String = tw.tag
+	tw.in_form = true
+	tw.tag = o.tick_key
+	for other in near(o.position, Tower.TICK_R + 30.0):
+		if other.hp > 0.0 and other.position.distance_to(o.position) < Tower.TICK_R + other.radius():
+			tw.hit(other, o.tick_dmg, 0.5)
+	tw.in_form = false
+	tw.tag = old_tag
+	burst(o.position, Elem.COLORS[Elem.TIME], 6, 90.0)
 
 
 ## 독늪 안에서 죽으면 독이 터져 주변 구체를 중독시킨다.
@@ -9946,6 +9966,7 @@ func _draw_orb_tooltip() -> void:
 		if o.resist_e >= 0: parts.append("%s 저항" % Elem.NAMES[o.resist_e])
 		if o.sturdy: parts.append("굳셈(밀기·감속·기절·냉기 절반)")
 		if o.lava_t > 0.0: parts.append("용암(%.1f초 뒤 폭발)" % o.lava_t)
+		if o.tick_t > 0.0: parts.append("째깍(%.1f초 뒤 터짐)" % o.tick_t)
 		if o.seed_n > 0: parts.append("씨앗 %d" % o.seed_n)
 		if not o.amp.is_empty():
 			# 반응이 건 받는 피해 증가 (녹·씨앗·검은 물 등, 곱해서 하나로)

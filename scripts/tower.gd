@@ -2538,7 +2538,8 @@ func _echo(o: Orb) -> void:
 
 # ---------- 형태 성질 (Elem.TRAIT) ----------
 
-## 계속 공격하는 형태: 2초에 한 번 사거리 끝에서 "끝" 효과 (사거리 안에 구체가 있을 때).
+## 계속 공격하는 형태: 2초에 한 번 "끝" 효과. 끝 자리는 사거리 끝(오브젝트에서 늘 같은 거리)이 아니라
+## 공격 방향 안에서 가장 먼 구체 자리다 (ELEM-10). 공격 안에 구체가 없으면 건너뛴다.
 func _cont_end(orbs: Array, l: int, s: float) -> void:
 	if fe2 > 0.0 or orbs.is_empty():
 		return
@@ -2553,10 +2554,20 @@ func _cont_end(orbs: Array, l: int, s: float) -> void:
 			rng = 240.0 * rr(l) * s
 			d = aim.rotated(clock_a())
 		_: return
-	if not orbs.any(func(o): return o.position.distance_to(position) < rng):
+	var best: Orb = null
+	var bd := -1.0
+	for o in orbs:
+		if not is_instance_valid(o) or o.hp <= 0.0:
+			continue
+		var v: Vector2 = o.position - position
+		var dist := v.length()
+		if dist < rng + o.radius() and dist > bd and (pattern == "sonic" or absf(d.angle_to(v)) < CONT_END_HALF):
+			bd = dist
+			best = o
+	if not best:
 		return
 	fe2 = 2.0
-	form_end(position + d * rng, d, true)
+	form_end(best.position, (best.position - position).normalized(), true)
 
 
 ## 공격이 끝난 자리 pos(방향 d)에서 속성마다 형태 성질. big: 날아가는 공격의 재사용 대기(1.5초)를 무시.
@@ -2577,12 +2588,8 @@ func form_end(pos: Vector2, d: Vector2, big := false) -> void:
 			continue
 		tag = trait_tag(e)
 		match e:
-			Elem.FIRE: _fz("ember", pos, a)
-			Elem.WATER: _fz("rill", pos, a)
-			Elem.ICE: _fz("frost", pos, a)
-			Elem.EARTH: _fz("ledge", pos, a)
-			Elem.POISON: _fz("fog", pos, a)
-			Elem.TIME: _fz("tick", pos, a)
+			Elem.FIRE, Elem.WATER, Elem.ICE, Elem.EARTH, Elem.POISON, Elem.TIME:
+				_form_orbs(e, pos, a, p)
 			Elem.ELECTRIC:
 				var best: Orb = null
 				var bd := 120.0
@@ -2635,8 +2642,54 @@ func form_path(pos: Vector2) -> void:
 	tag = old_tag
 
 
-## 형태 성질 장판. 화면의 장판이 많으면 건너뛴다 (후반 부하).
+## 예전 "끝 자리 장판"(불씨·물길·서리·턱·안개·째깍)은 바닥에 남기지 않고 끝 자리 가까운 구체에 바로 건다.
+## 사거리 끝·착지 자리는 오브젝트에서 고정된 거리라 장판이면 늘 같은 곳에 깔렸다 (2026-11-01, ELEM-10).
+const FORM_R := 60.0  # 끝 자리에서 구체를 찾는 거리
+const FORM_N := 3  # 화상·감속·냉기·중독을 거는 구체 수 (가까운 순)
+const TICK_R := 35.0  # 째깍 폭발 반지름 (main.tick_burst)
+const TICK_T := 0.6
+const CONT_END_HALF := 0.6  # 계속 공격 "끝"을 찾는 공격 방향 반각 (라디안)
+## 형태 성질이 만들 수 있는 장판: 날아가는 공격이 지나간 길(form_path)의 불씨·물길뿐 (spec ELEM-10)
+const FORM_ZONES := ["ember", "rill"]
+
+
+func _form_orbs(e: int, pos: Vector2, a: float, p: float) -> void:
+	var cand: Array = []
+	for o in main.near(pos, FORM_R):
+		if o.hp > 0.0 and o.position.distance_to(pos) < FORM_R + o.radius():
+			cand.append(o)
+	if cand.is_empty():
+		return
+	cand.sort_custom(func(x, y): return x.position.distance_squared_to(pos) < y.position.distance_squared_to(pos))
+	var c: Color = Elem.COLORS[e]
+	match e:
+		Elem.FIRE:
+			for o in cand.slice(0, FORM_N):
+				o.burn(0.4 * a * p, 2.5, self, false, tag)
+		Elem.WATER:
+			for o in cand.slice(0, FORM_N):
+				o.slow(0.7, 1.2)
+		Elem.ICE:
+			for o in cand.slice(0, FORM_N):
+				o.add_chill(0.5 * a)
+		Elem.POISON:
+			for o in cand.slice(0, FORM_N):
+				o.poison(0.4 * a * p, 3.0, self, false, tag)
+		Elem.EARTH:
+			cand[0].root(0.5)
+		Elem.TIME:
+			var o: Orb = cand[0]
+			if o.tick_t <= 0.0:
+				o.tick_t = TICK_T
+				o.tick_dmg = 0.25 * p * a
+				o.tick_src = self
+				o.tick_key = tag
+	main.burst(cand[0].position, c, 5, 80.0)
+
+
+## 형태 성질 장판 (지나간 길의 불씨·물길만). 화면의 장판이 많으면 건너뛴다 (후반 부하).
 func _fz(kind: String, pos: Vector2, a: float) -> void:
+	assert(kind in FORM_ZONES)
 	if main.zones.get_child_count() >= 160:
 		return
 	main.spawn_zone(kind, plv, pos, self).amt = a
