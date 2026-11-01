@@ -487,6 +487,8 @@ func _stars() -> void:
 	st._nova_aim_tick(0.3)
 	ok("STAR-08", aim_lo == null and st.nova_aim == aim_o and Tower.NOVA_FX_T <= 0.8,
 		"초신성 예고: 50%%엔 없음, 90%%엔 터질 자리 (%s)" % [st.nova_aim != null])
+	ok("STAR-08", Tower.GAUGE_GAP - Tower.GAUGE_W * 0.5 - 2.0 > 7.0 + 2.5 and Tower.GAUGE_W >= 5.0,
+		"별빛 게이지 고리가 속성 점(RADIUS+7)과 안 겹치고 굵음 (+%s, 두께 %s)" % [Tower.GAUGE_GAP, Tower.GAUGE_W])
 	st.nova_aim = null
 	aim_o.free()
 	main.targets = []

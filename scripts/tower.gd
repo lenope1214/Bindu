@@ -2126,38 +2126,40 @@ func _draw_star() -> void:
 	var sc := NOVA_COL
 	var pe := planet()
 	var gc: Color = Elem.COLORS[pe].lightened(0.3) if pe >= 0 else sc
+	var gr := RADIUS + GAUGE_GAP
 	if pe >= 0:
 		var pc: Color = Elem.COLORS[pe]
 		var ring := PackedVector2Array()
 		for i in 33:
 			var a := TAU * i / 32.0
-			ring.append(Vector2(cos(a) * (RADIUS + 11.0), sin(a) * (RADIUS + 11.0) * 0.38).rotated(-0.35))
+			ring.append(Vector2(cos(a) * (gr + 7.0), sin(a) * (gr + 7.0) * 0.38).rotated(-0.35))
 		draw_polyline(ring, Color(pc, 0.85), 2.5)
 	var warn := f >= NOVA_WARN
 	var full := f >= 1.0
-	var gr := RADIUS + 7.0
-	# 게이지: 빈 고리 위에 찬 만큼 (위에서 시계 방향)
-	draw_arc(Vector2.ZERO, gr, 0, TAU, 40, Color(0, 0, 0, 0.55), 6.0)
-	draw_arc(Vector2.ZERO, gr, 0, TAU, 40, Color(gc, 0.22), 4.0)
+	# 게이지: 몸체·속성 점(RADIUS+7)과 떨어진 바깥 고리. 어두운 바탕 + 옅은 빈 칸 + 찬 만큼 (위에서 시계 방향), 4분의 1마다 눈금
+	draw_arc(Vector2.ZERO, gr, 0, TAU, 48, Color(0, 0, 0, 0.7), GAUGE_W + 4.0)
+	draw_arc(Vector2.ZERO, gr, 0, TAU, 48, Color(gc, 0.3), GAUGE_W)
 	if f > 0.0:
-		var w := 4.0
-		var ga := 0.95
+		var w := GAUGE_W
 		if warn and not full:
-			w = 4.0 + 2.0 * (0.5 + 0.5 * sin(t * 14.0))
-		draw_arc(Vector2.ZERO, gr, -PI / 2.0, -PI / 2.0 + TAU * f, 40, Color(gc, ga), w)
+			w = GAUGE_W + 2.5 * (0.5 + 0.5 * sin(t * 14.0))
+		draw_arc(Vector2.ZERO, gr, -PI / 2.0, -PI / 2.0 + TAU * f, 48, Color(gc.lightened(0.15), 1.0), w)
 		if not full:
-			draw_circle(Vector2.from_angle(-PI / 2.0 + TAU * f) * gr, 2.6, Color(1, 1, 1, 0.9))
+			draw_circle(Vector2.from_angle(-PI / 2.0 + TAU * f) * gr, GAUGE_W * 0.6, Color.WHITE)
+	for i in 4:
+		var dv := Vector2.from_angle(-PI / 2.0 + PI / 2.0 * i)
+		draw_line(dv * (gr - GAUGE_W * 0.5 - 1.0), dv * (gr + GAUGE_W * 0.5 + 1.0), Color(0, 0, 0, 0.8), 1.5)
 	if warn:
 		# 곧 터짐: 바깥에서 별로 빨려 드는 빛
 		var n := 6
 		for i in n:
 			var ph := fmod(t * 1.6 + float(i) / n, 1.0)
-			var d := lerpf(RADIUS + 34.0, gr, ph)
+			var d := lerpf(gr + 26.0, gr, ph)
 			draw_circle(Vector2.from_angle(TAU * i / n + t * 0.7) * d, 1.2 + 1.8 * ph, Color(gc, 0.25 + 0.6 * ph))
 	if full:
 		var pu := 0.5 + 0.5 * sin(t * 9.0)
-		draw_circle(Vector2.ZERO, RADIUS + 6.0 + 3.0 * pu, Color(sc, 0.22))
-		draw_arc(Vector2.ZERO, RADIUS + 10.0 + 4.0 * pu, 0, TAU, 40, Color(1, 1, 1, 0.5 + 0.4 * pu), 2.0)
+		draw_circle(Vector2.ZERO, gr + 2.0 + 3.0 * pu, Color(sc, 0.18))
+		draw_arc(Vector2.ZERO, gr + GAUGE_W + 2.0 + 4.0 * pu, 0, TAU, 48, Color(1, 1, 1, 0.5 + 0.4 * pu), 2.0)
 	for fr in feed_fx:
 		if is_instance_valid(fr):
 			draw_line(fr.position - position, Vector2.ZERO, Color(gc, 0.35 * feed_fx[fr] / 0.4), 1.5)
@@ -2208,6 +2210,8 @@ const STAR_MAX_ELEMS := 2  # 별 + 속성 하나 = 그 속성의 행성
 const NOVA_R := 110.0  # 초신성 반지름 (별 레벨마다 +10)
 const NOVA_COL := Color(1.0, 0.85, 0.35)  # 별빛 게이지·예고·초신성 색 (별 속성 색보다 진한 금빛)
 const NOVA_FX_T := 0.75  # 초신성 그림 시간
+const GAUGE_GAP := 16.0  # 별빛 게이지 고리 반지름 = RADIUS + 이만큼 (속성 점 RADIUS+7·축적 고리 RADIUS+10보다 바깥)
+const GAUGE_W := 5.0  # 별빛 게이지 두께
 const NOVA_WARN := 0.85  # 별빛이 이만큼 차면 곧 터짐 표시·터질 자리 예고
 const NOVA_AIM_T := 0.25  # 터질 자리 다시 고르는 간격
 
