@@ -437,6 +437,10 @@ var gp_prog_btn: Button
 var gp_tabs := {}  # "shop"/"hero" -> 탭 버튼
 var gp_tab := "shop"
 var gp_list: VBoxContainer  # 상점 줄
+var gp_scroll: ScrollContainer  # 목록 스크롤 (끌면 스크롤, 끌지 않고 떼면 누르기)
+var gp_press := Vector2(-1, -1)  # 목록 위에서 누른 곳 (-1 = 안 누름)
+var gp_press_sv := 0
+var gp_dragged := false  # 이번 누르기가 끌기(스크롤)였는지: 떼어도 칸을 누른 것으로 치지 않는다
 var gp_hero: VBoxContainer  # 영웅 탭
 var gp_next_btn: Button
 var grow_n := 1  # 키우기 한 번에 올릴 레벨 (1·10, -1 = 이슬이 되는 만큼)
@@ -4439,7 +4443,7 @@ func _abort_touch_action() -> void:
 func _input(event: InputEvent) -> void:
 	if mp_mode != "" and ((event is InputEventMouseButton or event is InputEventScreenTouch or event is InputEventKey) and event.pressed):
 		_mp_presence()
-	if _zoom_input(event):
+	if _zoom_input(event) or (Garden.on and _gp_scroll_input(event)):
 		get_viewport().set_input_as_handled()
 		return
 	var was_touch := touch_ui
@@ -12002,6 +12006,7 @@ func _build_garden_panel(root: Control) -> void:
 	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	v.add_child(sc)
+	gp_scroll = sc
 	var inner := VBoxContainer.new()
 	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sc.add_child(inner)
@@ -12108,7 +12113,7 @@ func _garden_panel_tick(_delta: float) -> void:
 			b.visible = false
 	gp_field_cx = (fr.get_center().x - vs.x / 2.0) / s  # 특성 카드 줄은 전장 가운데에 (다음 프레임 배치에서 씀)
 	_gp_fonts()
-	gp_head.text = "이슬 %s  (+%s/초)\n단계 %d · 최고 %d · 시듦 %d/%d" % [Garden.short(Garden.dew), Garden.short(Garden.rate), maxi(wave, 1) if phase == Phase.WAVE else wave + 1, Garden.best, int(Garden.wither), int(Garden.WITHER_MAX)]
+	gp_head.text = "이슬 %s  (+%s/초)" % [Garden.short(Garden.dew), Garden.short(Garden.rate)]  # 단계·최고·시듦은 위 점수 줄에 있다
 	gp_auto_btn.text = "자동 정원사: " + ("켬" if Garden.auto_buy else "끔")
 	gp_auto_btn.modulate = Color(0.7, 1, 0.75) if Garden.auto_buy else Color(1, 1, 1, 0.8)
 	gp_prog_btn.text = "키우기 " + ("최대" if grow_n < 0 else "x%d" % grow_n)
@@ -12135,9 +12140,59 @@ func _garden_panel_tick(_delta: float) -> void:
 		_gp_fill_hero()
 
 
-## 세로 화면은 목록 글자를 1.25배로 (폰을 세우면 패널이 넓고 글이 작아 보이던 것)
+## 세로 화면은 목록 글자를 1.4배로, 가로 폰은 1.15배 (폰에서 글이 작아 보이던 것)
 func _gp_fs(n: int) -> int:
-	return roundi(n * (1.25 if gp_portrait else 1.0))
+	return roundi(n * (1.4 if gp_portrait else (1.15 if _phone() else 1.0)))
+
+
+## 목록 끌기 = 스크롤 (폰 터치·PC 마우스), 휠도. 끌기였으면 손을 떼도 칸을 누른 것으로 치지 않는다 (_gp_tap).
+func _gp_scroll_input(event: InputEvent) -> bool:
+	if gp == null or not gp.visible or gp_scroll == null:
+		gp_press = Vector2(-1, -1)
+		return false
+	var r := gp_scroll.get_global_rect()
+	var s := ui_root.scale.x
+	if event is InputEventMouseButton:
+		if event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+			if event.pressed and r.has_point(event.position):
+				gp_scroll.scroll_vertical += 60 * (-1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1)
+				return true
+			return false
+		if event.button_index != MOUSE_BUTTON_LEFT:
+			return false
+		if event.pressed:
+			gp_dragged = false
+			gp_press = event.position if r.has_point(event.position) else Vector2(-1, -1)
+			gp_press_sv = gp_scroll.scroll_vertical
+		else:
+			gp_press = Vector2(-1, -1)
+		return false
+	if event is InputEventMouseMotion and gp_press.x >= 0.0:
+		if not (event.button_mask & MOUSE_BUTTON_MASK_LEFT):
+			gp_press = Vector2(-1, -1)
+			return false
+		var dy: float = event.position.y - gp_press.y
+		if not gp_dragged and absf(dy) > 12.0 * s:
+			gp_dragged = true
+			# 누른 칸의 눌린 모양을 푼다 (disabled를 잠깐 바꾸면 BaseButton이 누르기 상태를 지움)
+			var h := get_viewport().gui_get_hovered_control()
+			while h != null and not (h is Button) and h != gp_scroll:
+				h = h.get_parent()
+			if h is Button:
+				var was: bool = h.disabled
+				h.disabled = true
+				h.disabled = was
+		if gp_dragged:
+			gp_scroll.scroll_vertical = gp_press_sv - roundi(dy / s)
+			return true  # 끄는 동안 칸 버튼이 호버·눌린 모양으로 바뀌지 않게
+	return false
+
+
+## 목록 칸 누르기: 스크롤하려고 끈 것이면 무시.
+func _gp_tap(f: Callable) -> Callable:
+	return func():
+		if not gp_dragged:
+			f.call()
 
 
 func _gp_fonts() -> void:
@@ -12262,63 +12317,79 @@ func _gp_fill_slots() -> void:
 		t.text = "칸 %d에 심을 속성 (이슬 %s)" % [gp_pick_slot + 1, Garden.short(Grow.plant_cost())]
 		t.add_theme_font_size_override("font_size", _gp_fs(15))
 		gp_list.add_child(t)
+		var have := {}  # 이미 심은 속성 -> 칸 수
+		var cur := PackedStringArray()  # 지금 심은 칸: 속성 Lv (색)
+		for sl2 in Garden.slots:
+			if not (sl2 as Dictionary).is_empty():
+				var e2 := int(sl2["e"])
+				have[e2] = int(have.get(e2, 0)) + 1
+				cur.append("[color=#%s]%s %d%s[/color]" % [(Elem.COLORS[e2] as Color).to_html(false), Elem.NAMES[e2], int(sl2["lv"]), " ★" if e2 == Garden.hero_e else ""])
+		# 지금 정원을 고르기 위에 한 줄로 (아래 칸 목록이 화면 밖이어도 보며 고르게)
+		var now_r := RichTextLabel.new()
+		now_r.bbcode_enabled = true
+		now_r.fit_content = true
+		now_r.scroll_active = false
+		now_r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		now_r.add_theme_font_size_override("normal_font_size", _gp_fs(15))
+		now_r.text = "[color=#ffffff99]지금[/color]  " + ("  ·  ".join(cur) if not cur.is_empty() else "[color=#ffffff99]아직 없음[/color]")
+		gp_list.add_child(now_r)
 		var g := GridContainer.new()
-		g.columns = 3
+		g.columns = 4 if gp_portrait else 3
 		g.add_theme_constant_override("h_separation", 6)
 		g.add_theme_constant_override("v_separation", 6)
 		gp_list.add_child(g)
 		for e in Grow.PLANT_ELEMS:
 			var ee: int = e
-			var b := _gp_btn(Elem.NAMES[e] + (" ★" if e == Garden.hero_e else ""), func():
+			var tag := (" ★" if e == Garden.hero_e else "") + (" ✓" if have.has(e) else "")
+			var b := _gp_btn(Elem.NAMES[e] + tag, _gp_tap(func():
 				var i := gp_pick_slot
 				gp_pick_slot = -1
-				grow_plant(i, ee))
+				grow_plant(i, ee)))
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			b.add_theme_color_override("font_color", Elem.COLORS[e])
+			b.add_theme_font_size_override("font_size", _gp_fs(16))
+			b.tooltip_text = ("이미 심은 속성 (칸 %d개)" % have[e]) if have.has(e) else "아직 안 심은 속성"
 			g.add_child(b)
-		var back := _gp_btn("취소", func():
+		var back := _gp_btn("취소", _gp_tap(func():
 			gp_pick_slot = -1
-			gp_sig = "")
+			gp_sig = ""))
+		back.add_theme_font_size_override("font_size", _gp_fs(16))
 		gp_list.add_child(back)
-		return
+		var now_l := Label.new()
+		now_l.text = "★ 영웅 속성 · ✓ 이미 심은 속성"
+		now_l.add_theme_font_size_override("font_size", _gp_fs(14))
+		now_l.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
+		gp_list.add_child(now_l)
+		# 아래로 지금 칸 목록을 그대로 (무엇을 심었는지·레벨을 보며 고르게)
 	var pc := Grow.plant_cost()
 	for i in Grow.SLOTS:
 		var ii: int = i
 		var sl: Dictionary = Garden.slots[i]
 		if not Grow.is_open(i):
-			gp_list.add_child(_gp_row("잠긴 칸", "최고 단계 %d에서 열려요" % Grow.OPEN_AT[i], "", Color(1, 1, 1, 0.45), false))
+			gp_list.add_child(_gp_row("잠긴 칸", "단계 %d에서 열려요" % Grow.OPEN_AT[i], "", Color(1, 1, 1, 0.45), false))
 			continue
 		if sl.is_empty():
-			var b := _gp_row("빈 칸", "눌러서 속성을 심어요", "심기 %s" % Garden.short(pc), Color(0.75, 1, 0.55), Garden.dew >= pc)
-			b.pressed.connect(func():
+			var b := _gp_row("빈 칸" + (" (심는 중)" if i == gp_pick_slot else ""), "눌러서 심기", "심기 %s" % Garden.short(pc), Color(0.75, 1, 0.55), Garden.dew >= pc)
+			b.pressed.connect(_gp_tap(func():
 				gp_pick_slot = ii
-				gp_sig = "")
+				gp_sig = ""))
 			gp_list.add_child(b)
 			continue
 		var lv: int = sl["lv"]
 		var e: int = sl["e"]
 		var nr := Grow.next_reward(lv)
-		var t := _grow_tower(i)
-		var parts := PackedStringArray()
-		if t:
-			if t.pattern != Pat.DEFAULT:
-				parts.append(Pat.pname(t.pattern) + ("" if t.plv <= 1 else " %d" % t.plv))
-			for x in t.order:
-				if x != e:
-					parts.append("+" + Elem.NAMES[x])
-			for id in t.mods:
-				parts.append(Pat.MODS[id]["name"])
-		var desc := " · ".join(parts)
-		if nr[0] > 0:
-			desc = ("%s · " % desc if desc != "" else "") + "Lv%d: %s" % [nr[0], nr[1]]
+		# 한 줄에는 다음 보상만 (붙은 공격방식·강화는 전장 오브젝트 그림으로 보인다)
+		var desc := "다음 Lv%d: %s" % [nr[0], nr[1]] if nr[0] > 0 else ""
 		var r: Array = Grow.grow_many(lv, e, grow_n, Garden.dew)
 		var cnt: int = r[0] if grow_n < 0 else grow_n
 		var cost: int = r[1] if grow_n < 0 else Grow.grow_many(lv, e, grow_n, 0.0)[1]
-		var price := ("키우기 +%d  %s" % [cnt, Garden.short(cost)]) if cnt > 0 else "키우기 %s" % Garden.short(Grow.grow_cost(lv, e))
+		var price := ("+%d  %s" % [cnt, Garden.short(cost)]) if cnt > 0 else Garden.short(Grow.grow_cost(lv, e))
 		var ok := Garden.dew >= cost and cnt > 0
 		var b2 := _gp_row(Grow.slot_title(sl) + (" ★" if e == Garden.hero_e else ""), desc, price, Elem.COLORS[e], ok)
-		b2.pressed.connect(func(): grow_up(ii, grow_n))
+		b2.pressed.connect(_gp_tap(func(): grow_up(ii, grow_n)))
 		gp_list.add_child(b2)
+	if Garden.best >= 10:
+		return  # 처음 몇 단계만 안내 (목록을 짧게)
 	var hint_l := Label.new()
 	hint_l.text = "칸을 키우면 레벨 구간마다 공격방식·강화·속성이 저절로 붙어요. 속성이 하나 더 붙으면 반응도 생겨요"
 	hint_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -12363,8 +12434,13 @@ func _gp_fill_shop(can: bool) -> void:
 func _gp_row(name_t: String, desc: String, price: String, col: Color, ok: bool) -> Button:
 	var b := Button.new()
 	b.focus_mode = Control.FOCUS_NONE
-	b.custom_minimum_size = Vector2(0, 76 if gp_portrait else (60 if _phone() else 54))
+	b.custom_minimum_size = Vector2(0, 86 if gp_portrait else (64 if _phone() else 56))
 	b.disabled = not ok
+	if touch_ui:
+		# 터치: 손가락을 뗀 뒤에도 남는 호버 모양을 안 쓴다 (칸이 골라진 것처럼 보이던 것)
+		var nb := b.get_theme_stylebox("normal")
+		b.add_theme_stylebox_override("hover", nb)
+		b.add_theme_stylebox_override("hover_pressed", nb)
 	var h := HBoxContainer.new()
 	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	h.add_theme_constant_override("separation", 8)
@@ -12381,7 +12457,7 @@ func _gp_row(name_t: String, desc: String, price: String, col: Color, ok: bool) 
 	var n := Label.new()
 	n.text = name_t
 	n.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	n.add_theme_font_size_override("font_size", _gp_fs(17))
+	n.add_theme_font_size_override("font_size", _gp_fs(19))
 	n.add_theme_color_override("font_color", col if ok else Color(col, 0.5))
 	vv.add_child(n)
 	var d := Label.new()
@@ -12389,14 +12465,15 @@ func _gp_row(name_t: String, desc: String, price: String, col: Color, ok: bool) 
 	d.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	d.clip_text = true
 	d.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	d.add_theme_font_size_override("font_size", _gp_fs(12))
-	d.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
+	d.add_theme_font_size_override("font_size", _gp_fs(14))
+	d.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
+	d.visible = desc != ""
 	vv.add_child(d)
 	var p := Label.new()
 	p.text = price
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	p.add_theme_font_size_override("font_size", _gp_fs(14))
+	p.add_theme_font_size_override("font_size", _gp_fs(17))
 	p.add_theme_color_override("font_color", Color(0.6, 1, 0.75) if ok else Color(1, 0.6, 0.55))
 	h.add_child(p)
 	return b
@@ -12417,11 +12494,11 @@ func _gp_fill_hero() -> void:
 		gp_hero.add_child(g)
 		for e in Elem.ALL:
 			var lv := Garden.hero_lv_of(e)
-			var b := _gp_btn("%s%s" % [Elem.NAMES[e], "  Lv%d" % lv if lv > 0 else ""], func():
+			var b := _gp_btn("%s%s" % [Elem.NAMES[e], "  Lv%d" % lv if lv > 0 else ""], _gp_tap(func():
 				if Garden.set_hero(e):
 					_save_best()
 					_show_toast("영웅 속성: " + Elem.NAMES[e])
-					gp_sig = "")
+					gp_sig = ""))
 			b.add_theme_color_override("font_color", Elem.COLORS[e])
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			g.add_child(b)
@@ -12430,27 +12507,35 @@ func _gp_fill_hero() -> void:
 	var lv := Garden.hero_lv()
 	var pg := Garden.hero_progress()
 	t.text = "영웅: %s Lv%d / %d" % [Elem.NAMES[e], lv, Garden.HERO_MAX]
-	t.add_theme_font_size_override("font_size", 20)
+	t.add_theme_font_size_override("font_size", _gp_fs(21))
 	t.add_theme_color_override("font_color", Elem.COLORS[e])
 	var bar := ProgressBar.new()
 	bar.show_percentage = false
-	bar.custom_minimum_size = Vector2(0, 14)
+	bar.custom_minimum_size = Vector2(0, 18 if gp_portrait else 14)
 	bar.max_value = maxf(pg[1], 1.0)
 	bar.value = pg[0] if pg[1] > 0.0 else bar.max_value
 	gp_hero.add_child(bar)
 	var info := Label.new()
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	info.add_theme_font_size_override("font_size", _gp_fs(14))
-	info.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
+	info.add_theme_font_size_override("font_size", _gp_fs(16))
+	info.add_theme_color_override("font_color", Color(1, 1, 1, 0.85))
+	# 줄을 줄였다: 경험치 · 지금 효과 · 다음에 열리는 것 하나 (자세한 설명은 버튼 툴팁)
 	var lines := PackedStringArray()
-	lines.append("경험치 %s / %s (정원에서 %s 처치 몫)" % [Garden.short(pg[0]), Garden.short(pg[1]), Elem.NAMES[e]] if pg[1] > 0.0 else "최고 레벨")
-	lines.append("정원: %s 피해 +%d%%" % [Elem.NAMES[e], roundi(Garden.k("hero_garden", 0.02) * lv * 100)])
-	lines.append("일반 판(씨앗 나무 켬): %s 피해 +%.1f%%" % [Elem.NAMES[e], Garden.hero_norm_bonus() * 100])
-	lines.append(("✓ " if lv >= 5 else "Lv5: ") + "일반 판 첫 쉬는 시간에 %s 카드" % Elem.NAMES[e])
-	lines.append(("✓ " if lv >= Garden.HERO_MAX else "Lv10: ") + "정원에서 %s 추가 효과 한 단계" % Elem.NAMES[e])
-	lines.append("바꾸기: 환생하면 다시 고를 수 있어요")
+	lines.append("경험치 %s / %s" % [Garden.short(pg[0]), Garden.short(pg[1])] if pg[1] > 0.0 else "최고 레벨")
+	lines.append("정원 피해 +%d%% · 일반 판 +%.1f%%" % [roundi(Garden.k("hero_garden", 0.02) * lv * 100), Garden.hero_norm_bonus() * 100])
+	if lv < 5:
+		lines.append("Lv5: 일반 판 첫 쉬는 시간에 %s 카드" % Elem.NAMES[e])
+	elif lv < Garden.HERO_MAX:
+		lines.append("Lv10: %s 추가 효과 한 단계" % Elem.NAMES[e])
 	info.text = "\n".join(lines)
+	info.tooltip_text = "경험치: 정원에서 %s가 처치한 몫\n정원 피해 +%d%%/Lv, 일반 판(씨앗 나무 켬) +0.5%%/Lv\nLv5: 일반 판 첫 쉬는 시간에 %s 카드 · Lv10: 정원에서 추가 효과 한 단계\n바꾸기: 환생할 때" % [Elem.NAMES[e], roundi(Garden.k("hero_garden", 0.02) * 100), Elem.NAMES[e]]
+	info.mouse_filter = Control.MOUSE_FILTER_PASS
 	gp_hero.add_child(info)
+	var sw := Label.new()
+	sw.text = "환생하면 바꿀 수 있어요"
+	sw.add_theme_font_size_override("font_size", _gp_fs(13))
+	sw.add_theme_color_override("font_color", Color(1, 1, 1, 0.45))
+	gp_hero.add_child(sw)
 
 
 ## 정원 쉬는 시간: 다음 웨이브·환생·분재 버튼을 카드 줄 아래에 (화면 맨 아래 진입 표시와 겹치던 것).
