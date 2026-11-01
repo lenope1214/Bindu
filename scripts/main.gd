@@ -1816,7 +1816,7 @@ func _apply_rules() -> void:
 ## 도움말: 상한·장수는 고른 규칙 버전에 따라 다르다.
 func _help_text() -> String:
 	var elems := "속성 %d종까지, 레벨은 제한 없음" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "종류 제한 없음"
-	var mods := "강화는 종류마다 %d개까지" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "강화는 제한 없이 쌓이지만 쌓을수록 효과가 절반씩"
+	var mods := "강화는 종류마다 %d개, 한 오브젝트에 합쳐 %d개까지" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "강화는 제한 없이 쌓이지만 쌓을수록 효과가 절반씩"
 	var keys := [
 		"[조작]",
 		"1 / 2 / 3 또는 클릭: 카드 선택     Q: 선택지 새로고침     V: 선택지 내리고 필드 보기",
@@ -2454,7 +2454,7 @@ func _card_content(card: Dictionary, lvl: int) -> Dictionary:
 			var id: String = card["id"]
 			head["name"] = Pat.MODS[id]["name"]
 			rows = [{"t": Pat.mdesc(id)}]
-			foot = [["place_on", "위에 놓기 · " + ("종류별 %d개" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "쌓을수록 절반")]]
+			foot = [["place_on", "위에 놓기 · " + ("종류별 %d · 합 %d" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "쌓을수록 절반")]]
 		"link":
 			var id: String = card["id"]
 			head["name"] = Pat.LINKS[id]["name"]
@@ -2541,7 +2541,7 @@ func _card_full(card: Dictionary) -> Array:
 			out.append(["직선탄 오브젝트에 넣으면 그 공격방식으로 고정, 같은 공격방식에 넣으면 레벨업", D])
 		"mod":
 			out.append([Pat.mdesc(card["id"]), W])
-			out.append(["오브젝트 위에 놓기 · " + ("종류별 %d개까지" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "쌓을수록 효과 절반씩"), D])
+			out.append(["오브젝트 위에 놓기 · " + ("종류별 %d개, 합쳐 %d개까지" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "쌓을수록 효과 절반씩"), D])
 		"link":
 			out.append([Pat.ldesc(card["id"]), W])
 			out.append(["오브젝트 위에 놓기", D])
@@ -2899,12 +2899,12 @@ func _card_guides() -> void:
 	if "pat" in types:
 		_guide("pat", "새 카드 · 공격방식: 직선탄 오브젝트에 넣으면 공격 모양이 바뀌고 그 뒤로 고정돼요. 같은 공격방식을 넣으면 레벨업")
 	if "mod" in types:
-		var cap := "같은 강화는 %d개까지 쌓여요" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "쌓을수록 효과가 절반씩 줄어요"
+		var cap := "같은 강화는 %d개, 한 오브젝트에 합쳐 %d개까지 넣어요" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "쌓을수록 효과가 절반씩 줄어요"
 		_guide("mod", "새 카드 · 강화: 오브젝트 위에 놓아 공격을 바꿔요(빠르게·크게·관통 등). " + cap)
 	if "link" in types:
 		_guide("link", "새 카드 · 연계: 오브젝트 위에 놓아 주변과 함께 싸워요. 협공은 여러 오브젝트가 같이 맞힌 구체를 터뜨려요")
 	if "trig" in types:
-		_guide("trig", "새 카드 · 발동: 오브젝트 위에 놓으면 조건이 맞을 때 공격이 더 나가요. 여진은 잡은 자리에서 탄이 터지고, 선봉은 웨이브 첫 타격부터 빨라져요")
+		_guide("trig", "새 카드 · 발동: 오브젝트 위에 놓으면 조건이 맞을 때 공격이 더 나가요. 여진은 잡은 자리에서 탄이 터지고, 선봉은 체력이 많이 남은 구체를 더 세게 때려요")
 
 
 ## 띄어쓰기 단위로 줄을 나눈다. Godot 자동 줄바꿈은 한글을 음절마다 끊어 "형\n태"처럼 단어가 잘린다.
@@ -6058,7 +6058,7 @@ func _draw_legend_icons() -> void:
 func _refresh_legend() -> void:
 	# 줄 앞 그림(카드 종류)은 legend.draw에서 (LEGEND_ICONS 순서). 그림이 있어 머리 글·긴 설명을 뺐다
 	var cap_e := "%d종까지" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "종류마다 공속 -%d%%" % roundi(Rules.tax_step * 100)
-	var cap_m := "종류별 %d개" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "쌓을수록 절반"
+	var cap_m := "종류별 %d · 합 %d" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "쌓을수록 절반"
 	legend_heads = PackedStringArray([
 		"공격방식 · 직선탄에 1번, 같은 것 Lv↑",
 		"속성 · 추가 효과, " + cap_e,
@@ -9793,6 +9793,8 @@ func _draw_tooltip() -> void:
 		for e in t.order:
 			desc.append(["Lv%d %s" % [t.lv(e), Elem.rider(e)], Elem.COLORS[e], "e:%d" % e])
 		var ex := t.extras_text()
+		if t.mod_count() > 0 and Rules.mod_total < Rules.NO_CAP:
+			ex = "강화 %d/%d" % [t.mod_count(), Rules.mod_total] + (" · " + ex if ex != "" else "")
 		if ex != "":
 			desc.append([ex, Color(1, 0.85, 0.45), "k:mod"])
 		var rxs := t.reactions()

@@ -162,7 +162,7 @@ const LINK_IDS := ["pincer", "prism", "reso"]
 ## 발동: 기본 공격과 별개로, 조건이 맞을 때 추가로 터지는 공격 (Tower.trigs). 겹치면 세진다.
 const TRIGS := {
 	"echo": {"name": "여진", "desc": "이 오브젝트가 맞혀 구체를 잡으면 그 자리에서 작은 탄 {echo_n}개가 사방으로 ({echo_cd}초에 한 번)"},
-	"vanguard": {"name": "선봉", "desc": "웨이브마다 처음 구체를 맞힌 순간부터 {van_t}초 동안 공격 속도 x{van_spd}"},
+	"vanguard": {"name": "선봉", "desc": "체력 {van_hp%}% 이상인 구체에 피해 x{van_mul} (장마다 +{van_add}, 보스는 절반). 마무리의 반대: 앞줄에서 먼저 때리는 오브젝트에"},
 	"charge": {"name": "축적", "desc": "거리 {charge_r} 안에서 구체가 15마리 죽으면(누가 잡든, 특수 2·보스 8) 다음 공격이 x5 강타. 웨이브가 넘어가도 유지"},
 	"third": {"name": "삼연", "desc": "3번째 공격마다 피해 x1.8 (탄은 크기도 x{third_size}). 계속 뿜는 공격은 1.5초마다 잠깐"},
 	"finish": {"name": "마무리", "desc": "체력이 {finish_hp%}% 아래인 구체에 피해 x{finish_mul} (보스는 절반). 다른 오브젝트가 깎은 구체에 강해요"},

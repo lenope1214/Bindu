@@ -505,13 +505,19 @@ func _mods_links() -> void:
 	for i in Rules.max_mod:
 		t.add_mod("rapid")
 	ok("MOD-01", Rules.max_mod == 5 and not t.can_take({"type": "mod", "id": "rapid"}), "랭크: 같은 강화 5개까지")
+	var tt := _tower(c + Vector2(-200, 120))
+	for id in ["multi", "rapid", "size", "pierce", "bounce", "split"]:
+		for i in 2:
+			tt.add_mod(id)
+	ok("MOD-11", Rules.mod_total == 12 and tt.mod_count() == 12 and not tt.can_take({"type": "mod", "id": "homing"}) and tt.refuse_text({"type": "mod", "id": "homing"}).contains("12개까지"),
+		"랭크: 한 오브젝트 강화 합쳐 12개까지 (%d개 든 오브젝트에 새 종류 거절)" % tt.mod_count())
 	ok("MOD-02", is_equal_approx(t.spd_k() * t.tax(), 1.5), "속사 5개 = 공격 속도 +50%% (%.2f)" % (t.spd_k() * t.tax()))
 
 	Meta.rules = 3
 	main._apply_rules()
 	var u := Tower.new()
 	u.mods = {"size": 3}
-	ok("MOD-03", is_equal_approx(u.mf("size"), 1.75), "도파민 모드: 같은 강화는 1, 1.5, 1.75… (3개 %.2f)" % u.mf("size"))
+	ok("MOD-03", is_equal_approx(u.mf("size"), 1.75) and Rules.mod_total >= Rules.NO_CAP, "도파민 모드: 같은 강화는 1, 1.5, 1.75… (3개 %.2f), 합계 상한 없음" % u.mf("size"))
 	u.free()
 	Meta.rules = 1
 	main._apply_rules()
@@ -537,11 +543,22 @@ func _mods_links() -> void:
 	for i in Tower.TRIG_MAX:
 		r.add_trig("vanguard")
 	ok("TRIG-01", not r.can_take({"type": "trig", "id": "vanguard"}) and r.can_take({"type": "trig", "id": "echo"}), "발동 카드는 종류마다 %d장까지" % Tower.TRIG_MAX)
-	ok("TRIG-02", is_equal_approx(Tower.van_time(1), 5.0) and is_equal_approx(Tower.van_time(2), 7.5), "선봉: 5초, 한 장마다 +2.5초")
-	r.wave_begin()
-	ok("TRIG-03", r.van_ready and r.van_k() == 1.0, "선봉은 웨이브 시작이 아니라 첫 타격부터 (시작 직후 x1)")
-	r.van_t = 1.0
-	ok("TRIG-04", r.van_k() == Tower.VAN_SPD, "선봉 켜진 동안 공격 속도 x2")
+	ok("TRIG-02", is_equal_approx(Tower.van_mul(1), 1.4) and is_equal_approx(Tower.van_mul(2), 1.55), "선봉: x1.4, 한 장마다 +0.15")
+	# 선봉: 체력 70% 이상 구체에 x1.4, 그 아래는 그대로, 공격 속도는 안 바뀜
+	_clear()
+	var va := _tower(c + Vector2(-200, 0), Elem.WIND)
+	var sp0 := va.spd_k()
+	va.add_trig("vanguard")
+	var full := _orb(c + Vector2(-120, 0), 100.0)
+	var hurt := _orb(c + Vector2(-120, 30), 100.0)
+	hurt.hp = 60.0
+	var v0 := va.dealt
+	va.hit(full, 1.0)
+	var v1 := va.dealt - v0
+	va.hit(hurt, 1.0)
+	var v2 := va.dealt - v0 - v1
+	ok("TRIG-03", is_equal_approx(v1 / v2, 1.4) and va.src.has("trig:vanguard"), "선봉: 성한 구체 피해 x%.2f(체력 60%% 구체 대비), 출처 trig:vanguard" % (v1 / v2))
+	ok("TRIG-04", is_equal_approx(va.spd_k(), sp0), "선봉은 공격 속도를 바꾸지 않음")
 
 	_stars()
 

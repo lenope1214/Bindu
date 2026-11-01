@@ -3,7 +3,7 @@ extends Node2D
 ## 설치형 오브젝트. 설치 시 정한 방향으로 공격한다.
 ## - 공격방식(pattern): 형태. 하나만 갖고, 새 오브젝트는 직선탄.
 ## - 속성(elements): 효과. 모든 공격에 부가효과가 붙는다. 종류 수 상한은 Rules.max_elems.
-## - 강화(mods): 공격방식에 붙는 변형. 종류마다 Rules.max_mod개까지.
+## - 강화(mods): 공격방식에 붙는 변형. 종류마다 Rules.max_mod개, 합쳐서 Rules.mod_total개까지.
 ## - 연계: 협공, 프리즘, 공명.
 ## - 발동(trigs): 조건이 맞을 때 추가로 터지는 공격 (여진, 선봉, 축적, 삼연, 마무리, 호응).
 
@@ -22,8 +22,6 @@ var pincer := 0  # 협공: 여러 오브젝트가 함께 맞힌 구체에 표식
 var reso := 0
 var trigs := {}  # 발동 id -> 겹친 수
 var echo_cd := 0.0  # 여진: 다시 터질 때까지
-var van_ready := false  # 선봉: 이번 웨이브에 아직 안 켜짐 (웨이브 시작 때 켜고, 처음 맞히면 발동)
-var van_t := 0.0  # 선봉: 공격 속도 x2 남은 시간
 var focus_t := 0.0  # 중앙 기술 집중: 공격 속도 배율 남은 시간 (Skill)
 var jam_t := 0.0  # 방해 구체(그림자·표적)가 멈춘 남은 시간: 공격하지 않는다
 var jam_imm := 0.0  # 멈춤이 풀린 뒤 다시 멈추지 않는 시간
@@ -191,7 +189,7 @@ const SHADE_T := 3.0  # 어둠 형태 성질 그림자 표식 시간 (2026-10-31
 
 ## 공격 속도 배율: 특성 × 속사 × 바람 버프 ÷ 속성을 겹친 대가 (모두 곱한다). 특수 반응 공격도 이 배율.
 func spd_k() -> float:
-	return spd_mul * (1.0 + Rules.rapid_k * mf("rapid")) * (1.0 + wind_buff) * (1.0 + (photo_k if photo_t > 0.0 else 0.0)) * van_k() * skill_k() / tax()
+	return spd_mul * (1.0 + Rules.rapid_k * mf("rapid")) * (1.0 + wind_buff) * (1.0 + (photo_k if photo_t > 0.0 else 0.0)) * skill_k() / tax()
 
 
 ## 중앙 기술 집중·흡수 구체가 바꾼 공격 속도 배율.
@@ -221,29 +219,21 @@ func leech() -> void:
 	leech_t = Rules.t("jam_leech_t")
 
 
-## 선봉이 켜져 있으면 공격 속도 배율.
-func van_k() -> float:
-	return Rules.t("van_spd") if van_t > 0.0 else 1.0
-
-
 ## 발동 카드 수.
 func tg(id: String) -> int:
 	return trigs.get(id, 0)
 
 
 ## 여진(echo): 탄 수 3(+1/장), 탄 피해(파편 기본의 배), 다시 터질 때까지.
-## 선봉: 공격 속도 배율, 지속 5초(+2.5초/장).
-const TRIG_MAX := 5  # 발동 카드는 종류마다 5장까지 (선봉을 끝없이 쌓으면 웨이브 내내 x2)
+## 선봉: 체력 70% 이상 구체에 피해 x1.4(+0.15/장), 보스는 절반.
+const TRIG_MAX := 5  # 발동 카드는 종류마다 5장까지
 const ECHO_N := 3
 const ECHO_DMG := 0.8
 const ECHO_CD := 0.5
-const VAN_SPD := 2.0
-const VAN_T := 5.0
-const VAN_T_ADD := 2.5
 
 
-static func van_time(n: int) -> float:
-	return Rules.t("van_t") + Rules.t("van_t_add") * (n - 1)
+static func van_mul(n: int) -> float:
+	return Rules.t("van_mul") + Rules.t("van_add") * (n - 1)
 
 
 ## 축적(1~5장): 필요한 처치, 강타 피해, 크기. 삼연(1~5장): 3번째 공격 피해. 호응·마무리는 Rules.
@@ -339,8 +329,6 @@ func _answer(p: Vector2) -> void:
 
 ## 웨이브 시작 (main._start_wave).
 func wave_begin() -> void:
-	van_ready = tg("vanguard") > 0
-	van_t = 0.0
 	echo_cd = 0.0
 	focus_t = 0.0
 	jam_t = 0.0
@@ -430,8 +418,6 @@ func spd_parts() -> Array:
 		out.append(["바람 버프", 1.0 + wind_buff])
 	if spd_mul != 1.0:
 		out.append(["특성", spd_mul])
-	if van_t > 0.0:
-		out.append(["선봉", Rules.t("van_spd")])
 	if focus_t > 0.0:
 		out.append(["집중", Rules.t("skill_focus_spd")])
 	if leech_n > 0:
@@ -850,10 +836,18 @@ func can_take(card: Dictionary) -> bool:
 		"pat":
 			return can_pattern(card["id"])
 		"mod":
-			return m(card["id"]) < Rules.max_mod and mod_useless(card["id"]).is_empty()
+			return m(card["id"]) < Rules.max_mod and mod_count() < Rules.mod_total and mod_useless(card["id"]).is_empty()
 		"trig":
 			return tg(card["id"]) < int(Rules.t("trig_max"))
 	return true
+
+
+## 든 강화 합계 (Rules.mod_total까지).
+func mod_count() -> int:
+	var n := 0
+	for k in mods:
+		n += int(mods[k])
+	return n
 
 
 ## 버전 3(쌓을수록 절반): 이만큼 쌓으면 효과가 최대의 97%라 더 넣어도 거의 늘지 않는다.
@@ -892,6 +886,8 @@ func refuse_text(card: Dictionary) -> String:
 			var why := mod_useless(card["id"])
 			if not why.is_empty():
 				return why
+			if mod_count() >= Rules.mod_total:
+				return "강화는 한 오브젝트에 %d개까지예요. 다른 오브젝트에 넣으세요" % Rules.mod_total
 			return "%s은(는) %d개까지 쌓을 수 있어요" % [Pat.MODS[card["id"]]["name"], Rules.max_mod]
 		"trig":
 			return "%s은(는) %d개까지 쌓을 수 있어요" % [Pat.TRIGS[card["id"]]["name"], int(Rules.t("trig_max"))]
@@ -1072,7 +1068,7 @@ static func trig_value(id: String, n: int) -> String:
 		"echo":
 			return "탄 %d개" % (int(Rules.t("echo_n")) + n - 1)
 		"vanguard":
-			return "%.1f초" % van_time(n)
+			return "성한 구체 피해 x%s" % _num(van_mul(n))
 		"charge":
 			return "처치 %d마리 → 강타 x%s" % [int(_at(CHARGE_NEED, n)), _num(charge_mul(n))]
 		"third":
@@ -1407,7 +1403,6 @@ func attack(delta: float, orbs: Array) -> void:
 	fe_cd = maxf(fe_cd - delta, 0.0)
 	fe2 = maxf(fe2 - delta, 0.0)
 	echo_cd = maxf(echo_cd - delta, 0.0)
-	van_t = maxf(van_t - delta, 0.0)
 	focus_t = maxf(focus_t - delta, 0.0)
 	jam_imm = maxf(jam_imm - delta, 0.0)
 	if leech_t > 0.0:
@@ -2035,6 +2030,12 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	# 발동: 축적·삼연이 실린 공격(쏘는 순간 바로 맞히는 공격), 마무리(약한 구체)
 	var fb := fire_boost if not in_rx else 1.0
 	d *= fb
+	var vm := 1.0
+	if tg("vanguard") > 0 and not in_rx and o.hp >= o.max_hp * Rules.t("van_hp"):
+		vm = van_mul(tg("vanguard"))
+		if o.kind == Orb.Kind.BOSS:
+			vm = 1.0 + (vm - 1.0) * 0.5
+		d *= vm
 	var fm := 1.0
 	if tg("finish") > 0 and o.hp < o.max_hp * Rules.t("finish_hp"):
 		fm = finish_mul(tg("finish"))
@@ -2099,7 +2100,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		var dd := rest * (1.0 - 1.0 / dx)
 		rest -= dd
 		src["mod:dice"] = src.get("mod:dice", 0.0) + dd
-	for bk in [[fb, fire_key], [fm, "trig:finish"]]:
+	for bk in [[fb, fire_key], [fm, "trig:finish"], [vm, "trig:vanguard"]]:
 		if bk[0] > 1.0 and bk[1] != "":
 			var dd: float = rest * (1.0 - 1.0 / bk[0])
 			rest -= dd
@@ -2109,10 +2110,6 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		src["elem:light"] = src.get("elem:light", 0.0) + rest
 	src[key] = src.get(key, 0.0) + rest
 	_pincer(o)
-	if van_ready and not in_rx:
-		van_ready = false
-		van_t = van_time(tg("vanguard"))
-		_notify_allies(o.position)
 	if in_rx and notify_cd <= 0.0:
 		notify_cd = 0.3
 		_notify_allies(o.position)
@@ -2964,10 +2961,11 @@ func _draw_body() -> void:
 		# 흡수당함: 겹친 만큼 초록 점
 		for i in leech_n:
 			draw_circle(Vector2.from_angle(PI / 2.0 + (i - (leech_n - 1) / 2.0) * 0.35) * (RADIUS + 7.0), 2.5, Color(0.45, 0.95, 0.5, 0.95))
-	if van_t > 0.0:
-		# 선봉: 켜져 있는 동안 남은 시간만큼 줄어드는 고리
-		var f := van_t / van_time(tg("vanguard"))
-		draw_arc(Vector2.ZERO, RADIUS + 6.0, -PI / 2.0, -PI / 2.0 + TAU * f, 24, Color(Pat.TRIG_COLOR, 0.9), 3.0)
+	if tg("vanguard") > 0:
+		# 선봉: 겨눈 쪽 바깥에 작은 화살촉 (앞줄에서 먼저 때리는 오브젝트)
+		var vd := aim.normalized() if aim.length() > 0.01 else dir
+		var tip := vd * (RADIUS + 11.0)
+		draw_colored_polygon(PackedVector2Array([tip, tip - vd * 7.0 + vd.orthogonal() * 5.0, tip - vd * 7.0 - vd.orthogonal() * 5.0]), Color(Pat.TRIG_COLOR, 0.9))
 	if elements.has(Elem.STAR):
 		_draw_star()
 	if tg("charge") > 0:
@@ -3579,6 +3577,8 @@ func preview(card: Dictionary) -> Array:
 			var id: String = card["id"]
 			sp["mods"][id] = m(id) + 1
 			out.append("%s %d → %d" % [Pat.MODS[id]["name"], m(id), m(id) + 1] + (" (최대 %d)" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "") + ("  효과 x%.2f → x%.2f" % [mf(id), 2.0 * (1.0 - pow(0.5, m(id) + 1))] if Rules.mod_decay else "") )
+			if Rules.mod_total < Rules.NO_CAP:
+				out.append("강화 합계 %d → %d (한 오브젝트 %d개까지)" % [mod_count(), mod_count() + 1, Rules.mod_total])
 			var before := mod_effect(id) if m(id) > 0 else "없음"
 			mods[id] = m(id) + 1
 			var after := mod_effect(id)

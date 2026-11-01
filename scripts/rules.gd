@@ -24,6 +24,7 @@ const NO_CAP := 99
 static var version := 1
 static var max_elems := 3  # 한 오브젝트에 넣을 수 있는 속성 종류 (레벨은 무제한)
 static var max_mod := 5  # 강화 종류마다 쌓을 수 있는 수
+static var mod_total := 12  # 한 오브젝트에 넣을 수 있는 강화 합계 (2026-11-01: 종류 수 제한이 없어 40개까지 몰아 넣으면 강화 없을 때의 17배)
 static var crowd := 0.10  # 오브젝트 수 보너스 계수: 모든 피해 x(1 + crowd x ln(오브젝트 수)), crowd_bonus 참고
 static var pincer_frac := 0.10  # 협공 표식 폭발: 구체 최대 체력 대비
 static var orb_mul := 1.0  # 웨이브 구체 수 배율
@@ -177,7 +178,7 @@ const STAT := {
 	# 발동
 	"trig_max": 5.0,  # 발동 카드 종류마다 최대
 	"echo_n": 3.0, "echo_dmg": 0.8, "echo_cd": 0.5,  # 여진 탄 수(+1/장), 탄 피해, 다시 터질 때까지
-	"van_spd": 2.0, "van_t": 5.0, "van_t_add": 2.5,  # 선봉 공격 속도 배율, 지속, +/장
+	"van_hp": 0.7, "van_mul": 1.4, "van_add": 0.15,  # 선봉: 체력이 이 비율 이상인 구체에 피해 배율, +/장 (보스 절반)
 	"charge_r": 220.0, "charge_k": 1.0,  # 축적: 처치를 세는 거리, 강타 피해 배율(표 x이 값)
 	"third_k": 1.0, "third_size": 1.3,  # 삼연: 3번째 공격 피해 배율(표 x이 값), 탄 크기
 	"finish_hp": 0.3, "finish_mul": 1.6, "finish_add": 0.3,  # 마무리: 체력 이만큼 아래, 피해 배율, +/장
@@ -360,6 +361,7 @@ static func apply(v: int) -> void:
 	version = v if v in ALL_IDS else 1
 	max_elems = 3
 	max_mod = 5
+	mod_total = 12
 	crowd = 0.10
 	pincer_frac = 0.10
 	orb_mul = 1.0
@@ -384,6 +386,7 @@ static func apply(v: int) -> void:
 		3:
 			max_elems = NO_CAP
 			max_mod = NO_CAP
+			mod_total = NO_CAP
 			tax_step = 0.25
 			mod_decay = true
 		4:
@@ -412,6 +415,7 @@ static func _apply_patch(p: Dictionary) -> void:
 		match k:
 			"max_elems": max_elems = maxi(1, int(v))
 			"max_mod": max_mod = maxi(1, int(v))
+			"mod_total": mod_total = maxi(1, int(v))
 			"picks": picks = maxi(1, int(v))
 			"open_picks": open_picks = maxi(1, int(v))
 			"resist_from": resist_from = int(v)
