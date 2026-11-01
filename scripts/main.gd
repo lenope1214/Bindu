@@ -3543,6 +3543,7 @@ func _update_preview() -> void:
 	if firsts.has(nw):
 		info_l.append(["처음 등장: " + firsts[nw], Color(1, 0.75, 0.75)])
 	if nw % 5 == 0:
+		info_l.insert(0, ["⚠ 보스 웨이브 · 놓치면 중앙 체력 -3", Color(1, 0.35, 0.4)])
 		for l in _boss_text().split("\n"):
 			info_l.append([l, Color(1, 0.75, 0.85)])
 	else:
@@ -4361,7 +4362,7 @@ func _icon_toast(b: Button) -> void:
 
 
 func _toggle_mute() -> void:
-	sfx.muted = not sfx.muted
+	sfx.set_muted(not sfx.muted)
 	mute_btn.tooltip_text = "소리: " + ("끔" if sfx.muted else "켬") + " (M)"
 	mute_btn.queue_redraw()
 	_save_best()
@@ -5225,7 +5226,7 @@ func _confirm_aim() -> void:
 		return
 	if moving:
 		moving.position = place_pos
-		moving.dir = d
+		moving.set_attack_direction(d)
 		moving.place_pop = 1.0
 		sfx.play("place")
 		moving.queue_redraw()
@@ -7910,7 +7911,7 @@ func _cancel_step() -> void:
 		return
 	if moving:
 		moving.position = move_orig_pos
-		moving.dir = move_orig_dir
+		moving.set_attack_direction(move_orig_dir)
 		moving.queue_redraw()
 		moving = null
 		_end_move()
@@ -10649,8 +10650,7 @@ func _draw() -> void:
 		if d != Vector2.ZERO:
 			Tower.draw_range(self, place_pos, d, sp)
 			if moving:
-				moving.dir = d
-				moving.queue_redraw()
+				moving.set_attack_direction(d)
 			draw_line(place_pos, place_pos + d * (Tower.RADIUS + 14.0), Color.WHITE, 3.0)
 	elif phase == Phase.DRAW and is_instance_valid(draw_t):
 		_draw_path_edit()
@@ -10670,6 +10670,8 @@ func _draw() -> void:
 		var total := 0.0
 		for t in towers.get_children():
 			Tower.draw_range(self, t.position, t.dir, t.spec())
+			if t.reso > 0:
+				draw_arc(t.position, Rules.t("reso_r") * MapRule.reso_k(), 0, TAU, 48, Color(1.0, 0.78, 0.3, 0.8), 2.0)
 			total += t.dealt
 		if total > 0.0:
 			for t in towers.get_children():
@@ -10861,7 +10863,7 @@ func _load_best() -> void:
 		auto_start = Meta.val(cfg, "option", "auto_start", false)
 		legend_hidden = Meta.val(cfg, "option", "legend_hidden", legend_hidden)
 		bar_open = Meta.val(cfg, "option", "bar_open", false)
-		sfx.muted = Meta.val(cfg, "option", "muted", false)
+		sfx.set_muted(Meta.val(cfg, "option", "muted", false))
 		fast_speed = Meta.val(cfg, "option", "fast_speed", 2.0)
 		if not fast_speed in SPEEDS:
 			fast_speed = 2.0

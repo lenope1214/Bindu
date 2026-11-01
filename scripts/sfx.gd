@@ -13,6 +13,7 @@ var lead: Array[AudioStreamPlayer] = []  # IMPORTANT 전용
 var next_lead := 0
 var last_play := {}  # 이름 -> 마지막 재생 시각(초), 너무 잦은 재생 방지
 var muted := false
+var music_player: AudioStreamPlayer
 
 ## 이름: [시작 주파수, 끝 주파수, 길이(초), 파형, 잡음 비율, 음량]
 const DEFS := {
@@ -29,6 +30,7 @@ const MIN_GAP := {"hit": 0.045, "crit": 0.08, "kill": 0.04}
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_create_music()
 	for k in DEFS:
 		var d: Array = DEFS[k]
 		sounds[k] = _synth([[d[0], d[1], d[2]]], d[3], d[4], d[5])
@@ -48,6 +50,35 @@ func _ready() -> void:
 		lead.append(p)
 
 
+## 음원 파일 없이 반복 재생하는 낮은 음량의 잔잔한 4마디 배경 음악.
+func _create_music() -> void:
+	var notes := [220.0, 261.63, 329.63, 293.66, 196.0, 246.94, 293.66, 261.63]
+	var frames := RATE * 8
+	var data := PackedByteArray()
+	data.resize(frames * 2)
+	for i in frames:
+		var step := int(i / (RATE * 0.5))
+		var f: float = notes[step % notes.size()]
+		var local := fposmod(float(i) / RATE, 0.5)
+		var env := minf(local * 14.0, 1.0) * (0.72 + 0.28 * cos(local * TAU))
+		var sample := sin(TAU * f * i / RATE) * 0.035 + sin(TAU * f * 0.5 * i / RATE) * 0.018
+		var value := int(clampf(sample * env, -1.0, 1.0) * 32767.0)
+		data[i * 2] = value & 0xFF
+		data[i * 2 + 1] = (value >> 8) & 0xFF
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = RATE
+	stream.stereo = false
+	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	stream.loop_end = frames
+	stream.data = data
+	music_player = AudioStreamPlayer.new()
+	music_player.stream = stream
+	music_player.volume_db = -9.0
+	add_child(music_player)
+	music_player.play()
+
+
 func play(name: String, pitch_jitter := 0.06) -> void:
 	if muted or not sounds.has(name):
 		return
@@ -65,6 +96,12 @@ func play(name: String, pitch_jitter := 0.06) -> void:
 	p.stream = sounds[name]
 	p.pitch_scale = 1.0 + randf_range(-pitch_jitter, pitch_jitter)
 	p.play()
+
+
+func set_muted(value: bool) -> void:
+	muted = value
+	if music_player:
+		music_player.stream_paused = value
 
 
 ## notes: [[시작Hz, 끝Hz, 길이], ...] 를 이어 붙인 16비트 모노 소리.

@@ -1205,8 +1205,9 @@ func load_save(d: Dictionary) -> void:
 		position = pos
 	var dv: Variant = d.get("dir")
 	if dv is Vector2 and dv.length() > 0.01:
-		dir = dv.normalized()
-	aim = dir
+		set_attack_direction(dv)
+	else:
+		set_attack_direction(dir)
 	dealt = maxf(0.0, _float(d.get("dealt")))
 	run_dealt = maxf(0.0, _float(d.get("run_dealt")))
 	src = _src_dict(d.get("src"))
@@ -1224,6 +1225,16 @@ func load_save(d: Dictionary) -> void:
 				paths.append(pts)
 	if pattern == "path" and paths.is_empty():
 		paths.append(straight_path(dir))
+	set_attack_direction(dir)
+
+
+## 방향 변경 시 공격 계산과 총구 표시를 같은 프레임에 갱신한다.
+func set_attack_direction(value: Vector2) -> void:
+	if value.length() < 0.01:
+		return
+	dir = value.normalized()
+	aim = dir
+	queue_redraw()
 
 
 static func _src_dict(v: Variant) -> Dictionary:
