@@ -2834,7 +2834,8 @@ func _wind_buffs() -> void:
 	for t in ts:
 		var b := 0.0
 		for w in winds:
-			if w != t and w.position.distance_to(t.position) < w.wind_range():
+			# 정원: 칸 위치를 고를 수 없어 거리와 상관없이 모든 칸에 (원 반지름 150이라 범위 240이면 4칸만 닿던 것)
+			if w != t and (Garden.on or w.position.distance_to(t.position) < w.wind_range()):
 				b = maxf(b, Rules.t("wind_buff") * w.lv(Elem.WIND))
 		t.wind_buff = b
 
@@ -3193,7 +3194,7 @@ func _riposte(p: Vector2) -> void:
 		var d: float = o.position.distance_to(p)
 		if d < r + o.radius():
 			o.hurt(dmg)
-			o.push((o.position - p).normalized() * 60.0 if d > 0.1 else Vector2.ZERO)
+			o.knock((o.position - p).normalized() * 60.0 if d > 0.1 else Vector2.ZERO)
 	if core_fx.size() < 20:
 		core_fx.append([p, r, FX_RIPOSTE])
 

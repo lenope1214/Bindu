@@ -646,7 +646,7 @@ static func proj_hit(pr: Projectile, o: Orb, delta: float, tw: Tower) -> bool:
 			amp(o, "seed", 0.15 * o.seed_n, 3.0)
 		"tidal":
 			tw.hit(o, 2.4 * p)
-			o.push(pr.vel.normalized() * 40.0)
+			o.knock(pr.vel.normalized() * 40.0)
 			o.slow(0.6, 0.6)
 		"feather":
 			tw.hit(o, 1.8 * p, 0.99, {}, true, true)
@@ -712,7 +712,7 @@ static func proj_hit(pr: Projectile, o: Orb, delta: float, tw: Tower) -> bool:
 			if pr.rx == "glacier":
 				o.add_chill(0.6)
 			elif pr.rx == "backflow" and pr.rxd.has("turned"):
-				o.push(pr.vel.normalized() * 30.0)
+				o.knock(pr.vel.normalized() * 30.0)
 	return false
 
 

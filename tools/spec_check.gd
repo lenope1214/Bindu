@@ -557,6 +557,14 @@ func _orbs_cc() -> void:
 	s.root(1.0)
 	ok("CC-03", is_equal_approx(s.root_timer, 0.5), "굳센 구체는 기절 시간 절반")
 
+	var kb := _orb(main.center() + Vector2(-300, 0), 10.0, Orb.Kind.BOSS, 50.0)
+	var k0 := kb.position
+	kb.knock((kb.target - kb.position).normalized() * 100.0)  # 중앙 쪽
+	var k_in := kb.position.distance_to(k0)
+	kb.knock((kb.target - kb.position).normalized().orthogonal() * 100.0)  # 옆
+	var k_side := kb.position.distance_to(k0)
+	ok("CC-04", k_in < 0.01 and k_side <= Orb.BOSS_PUSH + 0.01 and k_side > 1.0, "밀쳐내기: 중앙 쪽 0, 옆은 밀림 여유까지 (보스 안쪽 %.1f · 옆 %.1f)" % [k_in, k_side])
+
 	o.resist_e = Elem.FIRE
 	ok("ORB-01", is_equal_approx(o.resist_mul({Elem.FIRE: 1}), 0.4) and is_equal_approx(o.resist_mul({Elem.FIRE: 1, Elem.WATER: 1}), 0.7) and o.resist_mul({Elem.WATER: 1}) == 1.0,
 		"저항 구체: 그 속성 비중만큼 피해 최대 60% 감소")

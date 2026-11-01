@@ -2260,7 +2260,7 @@ func _nova_follow(at: Vector2, hits: Array, pool: float, cap: Dictionary) -> voi
 				for i in 3:
 					main.arc(o, each / 3.0, self, cap)
 			Elem.WIND:
-				o.push((o.position - at).normalized() * 80.0)
+				o.knock((o.position - at).normalized() * 80.0)
 			Elem.ICE:
 				if o.root(0.5 if o.kind == Orb.Kind.BOSS else 1.0):
 					o.frozen_t = o.root_timer

@@ -511,8 +511,11 @@ func root(duration: float, dr := true) -> bool:
 	return true
 
 
+const BOSS_PUSH := 15.0
+
+
 func _push_max() -> float:
-	return 15.0 if kind == Kind.BOSS else PUSH_BUDGET
+	return BOSS_PUSH if kind == Kind.BOSS else PUSH_BUDGET
 
 
 ## 경직: 그만큼 밀려났다 다시 오는 시간만큼 제자리에 멈춘다(위치는 그대로라 사거리·장판을 벗어나지 않는다).
@@ -527,7 +530,34 @@ func stagger(dist: float) -> void:
 	stagger_t = minf(stagger_t + ok / speed, STAGGER_MAX)
 
 
-## 밀기: 중앙 반대쪽으로 밀리는 만큼은 밀림 여유에서 빠진다(옆·안쪽은 그대로).
+## 밀쳐내기(바람·돌풍·밀물·역류·반격 등 맞혀서 미는 것): 중앙(목표) 쪽 힘은 없애고, 바깥으로 밀리는 거리는 밀림 여유에서.
+## 보스는 옆으로 밀리는 것도 여유에서 (정원처럼 중앙을 둘러싼 오브젝트가 건너편에서 쏘면 보스를 중앙으로 밀어 넣던 것,
+## 돌풍이 보스를 옆으로 끝없이 밀던 것). 보통 구체까지 옆을 묶으면 봇 16판 중간값 20→12라 보스만.
+## 맵 모양과 상관없이 구체가 가는 목표를 기준으로 (회랑도 같음).
+func knock(v: Vector2) -> void:
+	v *= MapRule.cc_k()  # 회랑: 밀치기 +30%
+	if sturdy and silence_t <= 0.0:
+		v *= 0.5
+	var away := (position - target).normalized()
+	var out := v.dot(away)
+	if out < 0.0:
+		v -= away * out
+		out = 0.0
+	var ok := minf(out, push_budget)
+	push_budget -= ok
+	v -= away * (out - ok)
+	if kind == Kind.BOSS:
+		# 보스: 옆으로 밀리는 것도 밀림 여유에서 (돌풍이 보스를 끝없이 옆으로 밀던 것)
+		var side := v - away * ok
+		var sl := side.length()
+		if sl > 0.0:
+			var sok := minf(sl, push_budget)
+			push_budget -= sok
+			v -= side * (1.0 - sok / sl)
+	position += v
+
+
+## 끌기(블랙홀·소용돌이 등 한곳으로 모으는 것): 중앙 반대쪽으로 끌리는 만큼만 밀림 여유에서 빠진다(옆·안쪽은 그대로).
 func push(v: Vector2) -> void:
 	v *= MapRule.cc_k()  # 회랑: 밀치기 +30%
 	if sturdy and silence_t <= 0.0:

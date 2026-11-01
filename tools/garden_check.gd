@@ -97,6 +97,21 @@ func _process(_d) -> bool:
 				return false
 			for i in 3:
 				Garden.slots[i] = {"e": [Elem.FIRE, Elem.ELECTRIC, Elem.LIGHT][i], "lv": 60, "seed": 7 + i}
+			# 정원 바람: 거리와 상관없이 모든 칸에 (GARD-10)
+			var wt := Tower.new()
+			wt.main = main
+			wt.add(Elem.WIND, 1)
+			wt.position = main.center() + Vector2(0, -150)
+			var ft := Tower.new()
+			ft.main = main
+			ft.add(Elem.FIRE, 1)
+			ft.position = main.center() + Vector2(0, 150)
+			main.towers.add_child(wt)
+			main.towers.add_child(ft)
+			main._wind_buffs()
+			_ok(ft.wind_buff > 0.0 and wt.position.distance_to(ft.position) > wt.wind_range(), "정원 바람: 범위 밖 건너편 칸에도 버프 (%.2f)" % ft.wind_buff)
+			wt.queue_free()
+			ft.queue_free()
 			main._grow_rebuild()
 			main.wave = 3
 			Garden.best = 3
