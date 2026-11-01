@@ -104,6 +104,7 @@ func _initialize():
 	_tutorial()
 	_vote()
 	_ugc()
+	_board_filters()
 	_lint()
 	print("SPEC %s (실패 %d, 확인한 기능 %d개)" % ["통과" if fails == 0 else "실패", fails, seen.size()])
 	quit(1 if fails > 0 else 0)
@@ -1738,6 +1739,34 @@ func _vote() -> void:
 		"다음 패치 투표: 항목 %d개 키 모양(틀림 %s), 표 5장·방향 하나·다시 누르면 취소·개선 의견 60자, 자격 없으면 못 넣음, 판 끝 화면은 이번 판 탭, 서버에 투표 없으면 버튼 숨김" % [keys.size(), str(bad)])
 
 
+## 리더보드 필터: 맵·규칙·기록·시즌 칩을 모두 펼쳐 한 번 눌러 고르고, 순위 표는 시즌 전체/이번 주 탭
+func _board_filters() -> void:
+	var keep_map: String = Meta.map_id
+	main._toggle_board()
+	main._on_seasons_loaded([{"id": 3, "name": "시즌 3"}, {"id": 2, "name": "시즌 2"}])
+	var ch: Dictionary = main.board_chips
+	var counts: bool = ch["map"].get_child_count() == Meta.MAP_IDS.size() and ch["rules"].get_child_count() == Rules.IDS.size() \
+		and ch["kind"].get_child_count() == 3 and ch["season"].get_child_count() == 2
+	# 소용돌이 칩 한 번 → 바로 그 맵, 쉽게 모드 칩 → 쉽게 기록
+	ch["map"].get_child(Meta.MAP_IDS.find("spiral")).pressed.emit()
+	ch["kind"].get_child(2).pressed.emit()
+	var picked: bool = main.board_map == "spiral" and main.board_easy and not main.board_grow
+	# 이번 주 탭 → 지난 시즌 칩을 누르면 시즌 전체만 (이번 주 탭 숨김)
+	main.board_period_btns[1].pressed.emit()
+	var week: bool = main.board_period == "week"
+	ch["season"].get_child(1).pressed.emit()
+	var old: bool = main.board_season == 2 and main.board_period == "all" and not main.board_period_btns[1].visible
+	# 표: 받은 순위가 줄마다, 내 줄은 '나'
+	main._on_board_loaded({"tag": main._board_tag(), "period": "all", "entries": [{"rank": 1, "nick": "가나", "wave": 9, "score": 100}, {"rank": 2, "nick": "다라", "wave": 8, "score": 90, "me": true}]})
+	var rows: bool = main.board_rows.get_child_count() == 2 and main._board_text().contains("가나") and main._board_text().contains("나")
+	var ugc: bool = main.board_ugc_btn.visible and main.board_ugc_btn.is_visible_in_tree()
+	main._toggle_board()
+	var closed: bool = not main.records_panel.visible
+	Meta.map_id = keep_map
+	ok("ONLINE-07", counts and picked and week and old and rows and ugc and closed,
+		"리더보드 필터 칩(맵 %d·규칙·기록 3·시즌), 한 번 눌러 고름 %s, 이번 주 탭 %s, 지난 시즌이면 전체만 %s, 표 %s, [신고·차단] %s, 닫기 %s" % [Meta.MAP_IDS.size(), picked, week, old, rows, ugc, closed])
+
+
 ## 닉네임 거르기·신고·차단·데이터 지우기 (App Store 1.2·5.1.1(v))
 func _ugc() -> void:
 	var filt: bool = NickFilter.bad("시 발") and NickFilter.bad("FuCk_you") and NickFilter.bad("개1새끼") and NickFilter.bad("운영자") \
@@ -1745,7 +1774,7 @@ func _ugc() -> void:
 	var keep: Dictionary = Meta.blocked.duplicate()
 	Meta.blocked = {"aaaaaaaaaaaaaaaa": "나쁜이름"}
 	main.records_panel.visible = true
-	main.board_bar.visible = true
+	main.board_box.visible = true
 	main.board_raw = {}
 	main.board_people = {}
 	var tag: String = main._board_tag()
@@ -1753,7 +1782,7 @@ func _ugc() -> void:
 		{"rank": 1, "nick": "나쁜이름", "wave": 9, "score": 100, "pid": "aaaaaaaaaaaaaaaa"},
 		{"rank": 2, "nick": "착한이름", "wave": 8, "score": 90, "pid": "bbbbbbbbbbbbbbbb"},
 		{"rank": 3, "nick": "나", "wave": 7, "score": 80, "pid": "cccccccccccccccc", "me": true}]})
-	var txt: String = main.records_panel.text.replace("\u2060", "")  # _kr_keep이 낱말 사이에 줄바꿈 방지 문자를 넣는다
+	var txt: String = main._board_text()
 	var hide_ok: bool = txt.contains("(차단한 플레이어)") and not txt.contains("나쁜이름") and txt.contains("착한이름")
 	var people_ok: bool = main.board_people.size() == 2 and main.board_ugc_btn.visible
 	main._board_ugc_open()
@@ -1763,11 +1792,10 @@ func _ugc() -> void:
 	var panel_ok: bool = main.board_ugc_panel.visible and reps.size() == 2 and unblock.size() == 1 and reps.all(func(b): return b.disabled == not Net.report_ok())
 	# 차단 풀기 → 이름이 다시 보임
 	unblock[0].pressed.emit()
-	var unblock_ok: bool = not Meta.blocked.has("aaaaaaaaaaaaaaaa") and main.records_panel.text.replace("\u2060", "").contains("나쁜이름")
+	var unblock_ok: bool = not Meta.blocked.has("aaaaaaaaaaaaaaaa") and main._board_text().contains("나쁜이름")
 	main.board_ugc_panel.visible = false
 	main.records_panel.visible = false
-	main.board_bar.visible = false
-	main.board_ugc_btn.visible = false
+	main.board_box.visible = false
 	Meta.blocked = keep
 	main._save_best()
 	# 설정의 [내 온라인 데이터 지우기] (서버 주소가 있는 빌드)
