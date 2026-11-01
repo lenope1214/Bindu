@@ -469,10 +469,11 @@ func phased() -> bool:
 
 
 ## 오브젝트가 직접 맞힌 피해(탄·광선 등, 반응·장판·지속 피해 제외)에 후반 구체 저항을 건다. k: 이 타격의 무게 (광선은 프레임마다 작게)
-func late_direct(d: float, k := 1.0) -> float:
+## ap: 관통 강화 개수 (탄이 아닌 공격) — 갑옷이 빼는 피해를 1개마다 Rules.pierce_armor씩 줄인다
+func late_direct(d: float, k := 1.0, ap := 0.0) -> float:
 	if late == "armor" and armor > 0.0:
 		var w := clampf(k, 0.0, 1.0)
-		var cur := armor * maxf(Rules.late_armor_floor, 1.0 - Rules.late_armor_break * armor_hits) * w
+		var cur := armor * maxf(Rules.late_armor_floor, 1.0 - Rules.late_armor_break * armor_hits) * w * maxf(0.0, 1.0 - Rules.pierce_armor * ap)
 		armor_hits += w
 		d = maxf(d - cur, d * Rules.late_armor_min)
 	elif phased():

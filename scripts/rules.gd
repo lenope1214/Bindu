@@ -150,7 +150,10 @@ const STAT := {
 	"pierce_hit": 0.5,  # 관통: 뚫고 나간 탄 피해 배율
 	"pierce_dmg": 0.06,  # 관통: 탄이 아닌 공격 피해 +
 	"bounce_hit": 0.4,  # 튕김: 튕긴 탄 피해 배율
-	"bounce_dmg": 0.04,  # 튕김: 탄·번개가 아닌 공격 피해 +
+	"bounce_iv": 0.8,  # 튕김: 탄·번개가 아닌 공격이 맞힐 때 튕김 탄을 내는 간격(초, 공격 속도 배율로 나눔)
+	"pierce_shield": 0.25,  # 관통: 탄이 아닌 공격이 보호막을 피해의 이만큼 더 깎음 (1개마다)
+	"pierce_armor": 0.2,  # 관통: 탄이 아닌 공격에 후반 갑옷이 빼는 피해 - (1개마다)
+	"gust_gap": 45.0,  # 돌풍 다중 발사: 같은 방향으로 나란히 나가는 돌풍 사이 옆 간격(px)
 	"homing_k": 0.8,  # 유도: 휘는 힘
 	# 속성 부가효과
 	"fire_dps": 0.8, "fire_t": 2.0,  # 화상 초당 피해/레벨, 시간
@@ -247,6 +250,8 @@ static var wood_cap: float = TUNE["wood_cap"]
 static var dice_top: float = TUNE["dice_top"]
 static var pierce_hit: float = STAT["pierce_hit"]
 static var bounce_hit: float = STAT["bounce_hit"]
+static var pierce_shield: float = STAT["pierce_shield"]
+static var pierce_armor: float = STAT["pierce_armor"]
 static var homing_k: float = STAT["homing_k"]
 static var prism_dmg: float = STAT["prism_dmg"]
 static var pincer_t: float = STAT["pincer_t"]
@@ -300,6 +305,8 @@ static func _cache() -> void:
 	dice_top = tune["dice_top"]
 	pierce_hit = tune["pierce_hit"]
 	bounce_hit = tune["bounce_hit"]
+	pierce_shield = tune["pierce_shield"]
+	pierce_armor = tune["pierce_armor"]
 	homing_k = tune["homing_k"]
 	prism_dmg = tune["prism_dmg"]
 	pincer_t = tune["pincer_t"]

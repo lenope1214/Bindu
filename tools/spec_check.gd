@@ -91,6 +91,7 @@ func _initialize():
 	await _attacks()
 	await _multi_center()
 	_mods_links()
+	await _mods_area()
 	_waves()
 	_orbs_cc()
 	_score_core()
@@ -413,6 +414,85 @@ func _multi_center() -> void:
 	_clear()
 	ok("MOD-06", miss.is_empty() and Tower.spread_a(0.5) == 0.0 and Tower.spread_lane(0.5) > 0.0,
 		"다중 발사 짝수 개도 정면 먼 구체 맞힘 (가운데 두 발 나란히, 못 맞힘: %s)" % str(miss))
+
+
+# ---------- 강화가 의미 없던 조합 (2026-11-01) ----------
+
+func _mods_area() -> void:
+	_fresh()
+	var c: Vector2 = main.center()
+	# MOD-07 관통 (탄 아닌 공격): 보호막을 더 깎고 갑옷이 빼는 피해가 준다
+	var a := _tower(c + Vector2(-200, 0))
+	a.set_pattern("spray")
+	var b := _tower(c + Vector2(-200, 120))
+	b.set_pattern("spray")
+	b.add_mod("pierce")
+	b.add_mod("pierce")
+	var oa := _orb(c + Vector2(300, 0), 1e6)
+	var ob := _orb(c + Vector2(300, 120), 1e6)
+	oa.shield = 1000.0
+	ob.shield = 1000.0
+	a.hit(oa, 10.0)
+	b.hit(ob, 10.0)
+	var la := 1000.0 - oa.shield
+	var lb := 1000.0 - ob.shield
+	var arm := _orb(c + Vector2(300, -120), 1e6)
+	arm.late = "armor"
+	arm.armor = 5.0
+	var d0 := arm.late_direct(10.0, 1.0, 0.0)
+	arm.armor_hits = 0.0
+	var d2 := arm.late_direct(10.0, 1.0, 2.0)
+	ok("MOD-07", lb > la * 1.4 and d2 > d0, "관통 2개 분사: 보호막 %.1f → %.1f 깎음, 갑옷 뒤 피해 %.1f → %.1f" % [la, lb, d0, d2])
+	# MOD-08 튕김 (탄 아닌 공격): 맞힌 구체 옆 구체로 작은 탄이 튄다
+	_clear()
+	var t := _tower(c + Vector2(-200, 0))
+	t.set_pattern("spray")
+	t.add_mod("bounce")
+	t.aim = Vector2.RIGHT
+	_orb(c + Vector2(-80, 0), 1e6)
+	_orb(c + Vector2(-80, 60), 1e6)
+	main.wave_active = true
+	main.phase = main.Phase.WAVE
+	main.to_spawn = 0
+	for i in 90:
+		main._sim_step(1.0 / 60.0)
+	await process_frame
+	ok("MOD-08", t.src.get("mod:bounce", 0.0) > 0.0 and is_equal_approx(t.bounce_iv(), Rules.t("bounce_iv")),
+		"튕김 분사: 튕김 탄 피해 %.2f (%.1f초마다)" % [t.src.get("mod:bounce", 0.0), t.bounce_iv()])
+	# MOD-09 벽·투척 속사는 닿은 피해 속도에, 벽 크기는 체력·시간에. 시계침·연쇄 번개 유도 막힘. 관통 연사 유도 보정은 3개째부터
+	_clear()
+	var w := _tower(c + Vector2(-200, 0))
+	w.set_pattern("wall")
+	w.add_mod("rapid")
+	w.add_mod("rapid")
+	w.add_mod("size")
+	var z: Zone = main.spawn_zone("rock", 1, c, w)
+	var rk: float = z._rapid()
+	var life: float = z.max_life
+	ok("MOD-09", is_equal_approx(rk, 1.0 + 2.0 * Rules.rapid_k) and is_equal_approx(life, 12.0 * w.sz())
+		and not Pat.mod_ok("clock", "homing") and not Pat.mod_ok("chain", "homing")
+		and is_equal_approx(Pat.mod_fix("thorn", "homing", 2.0), 1.0) and is_equal_approx(Pat.mod_fix("thorn", "homing", 5.0), Pat.MOD_FIX["thorn"]["homing"]),
+		"벽 속사 2개 피해 속도 x%.2f, 크기 1개 벽 %.1f초, 시계침·연쇄 유도 막힘, 관통 연사 유도 2개 보정 x%.2f" % [rk, life, Pat.mod_fix("thorn", "homing", 2.0)])
+	# MOD-10 돌풍 다중 발사: 부채꼴이 아니라 같은 방향으로 나란히
+	_clear()
+	var g := _tower(c + Vector2(-300, 0))
+	g.set_pattern("gust")
+	g.add_mod("multi")
+	g.add_mod("multi")
+	g.aim = Vector2.RIGHT
+	var dirs := []
+	for i in 60:
+		main._sim_step(1.0 / 60.0)
+		for p in main.projectiles.get_children():
+			if p.kind == "gust" and not p in dirs:
+				dirs.append(p)
+	var same := dirs.size() >= 3
+	for p in dirs:
+		same = same and p.vel.normalized().dot(dirs[0].vel.normalized()) > 0.999
+	main.wave_active = false
+	main.phase = main.Phase.CHOOSE
+	_clear()
+	ok("MOD-10", same, "돌풍 다중 2개: 돌풍 %d개가 같은 방향으로 나란히" % dirs.size())
 
 
 # ---------- 강화·연계·발동 ----------

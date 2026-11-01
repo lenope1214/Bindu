@@ -8,7 +8,7 @@ extends SceneTree
 #   SET=ep (속성×공격방식) | pm (공격방식×강화) | rx (특수 반응 = 두 속성) | lv (공격방식 레벨 성장)
 #   RULES=1|3  STAGE=early|mid|late (속성 Lv1/3/6, 공격방식 Lv1/2/4, 강화 0/2/5개)
 #   PART=i/n (i번째 조각만, 여러 프로세스로 나눠 돌리기)  SECS(기본 20)
-#   ELEM=<속성 번호> (ep에서 그 속성만)
+#   ELEM=<속성 번호> (ep에서 그 속성만)  PAT=a,b / MOD=a,b (pm에서 그 공격방식·강화만)
 #   PARTNER=<공격방식> PPOS=0~3 (금속 파트너를 PPOS 자리에 같은 단계로 두고 파트너가 준 피해/초 pd를 같이 찍는다.
 #     끌기·늦추기 같은 군중 제어가 남을 얼마나 돕는지: 같은 단계 직선탄을 넣었을 때의 pd와 비교)
 var main
@@ -44,8 +44,12 @@ func _initialize():
 			# 강화 효과: 불 Lv(단계) 하나로, 강화 없음과 강화 하나 종류를 (단계 개수만큼, 최소 2) 쌓은 것
 			var n: int = maxi(st[2], 2)
 			for p in Pat.PATTERN_IDS:
+				if OS.get_environment("PAT") != "" and not p in OS.get_environment("PAT").split(","):
+					continue
 				jobs.append({"els": [Elem.FIRE], "lv": st[0], "pat": p, "plv": st[1], "mods": {}})
 				for mid in Pat.MOD_IDS:
+					if OS.get_environment("MOD") != "" and not mid in OS.get_environment("MOD").split(","):
+						continue
 					jobs.append({"els": [Elem.FIRE], "lv": st[0], "pat": p, "plv": st[1], "mods": {mid: n}})
 		"rx":
 			for r in Elem.REACTIONS:

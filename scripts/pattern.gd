@@ -59,11 +59,11 @@ const PROJECTILE := ["shot", "thorn", "gust", "shard", "iron", "wisp", "path"]
 const MODS := {
 	"multi": {"name": "다중 발사", "desc": "공격이 1개 더 나간다 (하나하나는 피해 {multi_dmg%}%, 많이 쌓을수록 조금씩 줄어듦)"},
 	"split": {"name": "분열", "desc": "맞은 구체에서 약한 파편 2개가 튄다 (1개마다 확률 +{split_ch%}%, 최대 {split_max%}%). 벽·투척 장판에는 못 넣음"},
-	"homing": {"name": "유도", "desc": "탄이 구체 쪽으로 천천히 휜다. 범위 공격은 구체 쪽으로 조금 돈다. 한 구체는 탄 2개까지만 쫓고, 못 따라잡으면 다른 구체로. 혼불은 목줄 +15%. 벽·그린 궤적에는 못 넣음"},
-	"bounce": {"name": "튕김", "desc": "탄이 가까운 구체로 튄다(튕긴 탄 피해 {bounce_hit%}%). 번개는 1번 더 튄다. 그 밖의 공격은 피해 +{bounce_dmg%}%"},
+	"homing": {"name": "유도", "desc": "탄이 구체 쪽으로 천천히 휜다. 범위 공격은 구체 쪽으로 조금 돈다. 한 구체는 탄 2개까지만 쫓고, 못 따라잡으면 다른 구체로. 혼불은 목줄 +15%. 벽·그린 궤적·시계침·연쇄 번개에는 못 넣음"},
+	"bounce": {"name": "튕김", "desc": "탄이 가까운 구체로 튄다(튕긴 탄 피해 {bounce_hit%}%). 번개는 1번 더 튄다. 그 밖의 공격은 맞힌 구체에서 작은 탄이 1개 더 튄다({bounce_iv}초마다)"},
 	"size": {"name": "크기", "desc": "탄 크기·범위·사거리 +{size_k%}% (탄을 쏘는 공격은 피해도 +{size_dmg%}%)"},
 	"rapid": {"name": "속사", "desc": "공격 속도 +{rapid_k%}%"},
-	"pierce": {"name": "관통", "desc": "탄이 1개 더 뚫는다(뚫을 때마다 피해 x{pierce_hit}). 그 밖의 공격은 피해 +{pierce_dmg%}%"},
+	"pierce": {"name": "관통", "desc": "탄이 1개 더 뚫는다(뚫을 때마다 피해 x{pierce_hit}). 그 밖의 공격은 피해 +{pierce_dmg%}%, 보호막을 {pierce_shield%}% 더 깎고 갑옷을 {pierce_armor%}% 무시"},
 	"dice": {"name": "주사위", "desc": "공격할 때마다 주사위: 4~5는 피해 x{dice_mid}, 6은 x{dice_top} 대박 (다음 공격까지). 1~3은 그대로. 더 넣으면 주사위가 늘어 높은 눈을 쓴다(3개까지). 대박은 8번 안에 꼭. 반응 피해 제외 (시험)"},
 }
 
@@ -75,31 +75,37 @@ const MOD_IDS := ["multi", "split", "homing", "bounce", "size", "rapid", "pierce
 const NO_MOD := {
 	"pierce": ["thorn", "gust", "iron", "wisp"],  # 원래 모두 뚫는다 (혼불은 맞혀도 사라지지 않는다)
 	"bounce": ["thorn", "gust", "iron", "wisp"],  # 뚫고 나가서 튕길 일이 없다
-	"homing": ["wall", "path", "wisp"],  # 벽은 정한 방향에만 세우고, 그린 궤적은 그린 길만 따라간다. 혼불은 원래 쫓아가서 유도를 못 넣는다 (2026-10-31 사용자)
+	"homing": ["wall", "path", "wisp", "clock", "chain"],  # 벽은 정한 방향에만 세우고, 그린 궤적은 그린 길만 따라간다. 혼불은 원래 쫓아가서 유도를 못 넣는다 (2026-10-31 사용자). 시계침·연쇄 번개는 범위 공격이라 차이가 없다 (2026-11-01 측정, 사용자 승인)
 	"split": ["wall", "lob"],  # 바닥에 남아 때리는 피해는 분열을 일으키지 않는다 (블랙홀은 끝에서 터질 때 분열)
 }
 
 
 ## 강화 보정표 (2026-10-31, 사용자 선택 "목표 띠 + 보정표"): 같은 강화 5개일 때 이 피해 배율을 곱한다(개수에 비례해 배율^(개수/5)).
 ## 조합 효율 측정(tools/combo_eff.gd SET=pm STAGE=late, 규칙 1)에서 강화 효과가 1.65배를 넘는 칸은 1.6배로, 1.3배 미만인 칸은 1.35배로 맞춘 값.
+## 2026-11-01: 탄 아닌 공격의 튕김(진짜 튕김 탄)·벽 다중·크기·돌풍 다중(나란히)을 바꾸며 그 칸을 다시 맞춤 (5개 1.4~1.5배)
 ## 강화 성격(다중·유도 등)은 그대로고 숫자만 맞춘다. Rules.t("mod_fix")가 세기(1 = 이 표, 0 = 끔)
 const MOD_FIX := {
 	"shot": {"multi": 0.79, "split": 1.19, "homing": 1.14, "bounce": 0.92, "size": 1.17, "pierce": 0.91},
-	"spray": {"multi": 0.86, "split": 1.12, "bounce": 1.16, "size": 1.35, "pierce": 1.08},
+	"spray": {"multi": 0.86, "split": 1.12, "bounce": 1.19, "size": 1.35, "pierce": 1.08},
 	"thorn": {"multi": 0.79, "homing": 0.65},
-	"stream": {"multi": 0.8, "bounce": 1.18, "size": 1.16, "pierce": 1.11},
-	"chain": {"split": 1.2, "homing": 1.36, "bounce": 1.08, "size": 1.3, "pierce": 1.1},
-	"gust": {"multi": 1.09, "split": 1.21, "homing": 0.82, "rapid": 1.38},
+	"stream": {"multi": 0.8, "size": 1.16, "pierce": 1.11},
+	"chain": {"split": 1.2, "bounce": 1.08, "size": 1.3, "pierce": 1.1},
+	"gust": {"split": 1.21, "homing": 0.82, "rapid": 1.38},
 	"shard": {"multi": 0.49, "split": 1.29, "homing": 1.22, "size": 1.16, "pierce": 1.29},
-	"wall": {"bounce": 1.17, "pierce": 1.1},
-	"vortex": {"multi": 0.42, "split": 1.35, "bounce": 1.19, "pierce": 1.12},
-	"laser": {"multi": 0.81, "split": 1.19, "bounce": 1.16, "size": 1.14, "pierce": 1.09},
-	"lob": {"multi": 0.88, "homing": 0.94, "bounce": 1.16, "size": 1.08, "rapid": 1.35, "pierce": 1.08},
+	"wall": {"bounce": 1.22, "size": 0.95, "pierce": 1.1},
+	"vortex": {"multi": 0.42, "split": 1.35, "pierce": 1.12},
+	"laser": {"multi": 0.81, "split": 1.19, "bounce": 1.14, "size": 1.14, "pierce": 1.09},
+	"lob": {"multi": 0.88, "homing": 0.94, "bounce": 1.18, "size": 1.08, "pierce": 1.08},
 	"iron": {"multi": 0.93, "split": 1.13, "homing": 0.7, "size": 1.04},
-	"sonic": {"multi": 0.97, "split": 1.15, "homing": 1.13, "bounce": 1.16, "size": 1.22, "pierce": 1.09},
-	"clock": {"homing": 1.36, "bounce": 1.17, "size": 1.24, "pierce": 1.1},
+	"sonic": {"multi": 0.97, "split": 1.15, "homing": 1.13, "bounce": 1.29, "size": 1.22, "pierce": 1.09},
+	"clock": {"bounce": 1.24, "size": 1.24, "pierce": 1.1},
 	"wisp": {"multi": 1.15},  # 2026-10-31 목줄 혼불: 늘어난 혼불은 구체가 적으면 놀아서 다중 발사를 조금 올린다 (봇 GOD 판 누수로 맞춤)
 }
+
+
+## 보정표를 이 개수를 넘는 몫에만 건다 (5개 값은 그대로). 관통 연사 유도는 적게 넣으면 거의 안 휘어서
+## 개수에 비례해 깎으면 2개가 +1%였다 (2026-11-01 측정, 사용자 승인)
+const MOD_FIX_FROM := {"thorn": {"homing": 2.0}}
 
 
 ## 이 공격방식에서 강화 n개(효과량)의 보정 배율
@@ -107,7 +113,10 @@ static func mod_fix(pat: String, mod: String, n: float) -> float:
 	var t: Dictionary = MOD_FIX.get(pat, {})
 	if not t.has(mod) or n <= 0.0:
 		return 1.0
-	return pow(t[mod], n / 5.0 * Rules.t("mod_fix"))
+	var from: float = MOD_FIX_FROM.get(pat, {}).get(mod, 0.0)
+	if n <= from:
+		return 1.0
+	return pow(t[mod], (n - from) / (5.0 - from) * Rules.t("mod_fix"))
 
 
 static func mod_ok(pat: String, mod: String) -> bool:
@@ -126,6 +135,8 @@ static func no_mod_why(pat: String, mod: String) -> String:
 				return "%s은(는) 그린 길만 따라가서 유도가 효과가 없어요" % pname(pat)
 			if pat == "wisp":
 				return "%s은(는) 원래 구체를 쫓아가서 유도를 넣을 수 없어요" % pname(pat)
+			if pat in ["clock", "chain"]:
+				return "%s은(는) 범위를 훑는 공격이라 유도가 효과가 없어요" % pname(pat)
 			return "%s은(는) 정한 방향에만 세워져서 유도가 효과가 없어요" % pname(pat)
 		"split":
 			return "%s은(는) 바닥에 남아 때리는 공격이라 분열이 일어나지 않아요" % pname(pat)

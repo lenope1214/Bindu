@@ -56,6 +56,9 @@ func setup(k: String, l: int, tower: Tower) -> void:
 			radius = 60.0; max_life = 2.0
 		"rock":
 			radius = Rules.t("wall_r"); max_life = 12.0; hp = Rules.t("wall_hp") * l
+			if is_instance_valid(tower):
+				max_life *= tower.sz()  # 크기: 벽이 오래·단단하게 (반지름만 커지면 2개에 +3%였다, 2026-11-01)
+				hp *= tower.sz()
 	# 공격방식이 만든 장판은 크기 강화를 받는다
 	if k in ["rock", "vortex"] and is_instance_valid(tower):
 		radius *= tower.sz()
@@ -170,7 +173,7 @@ func affect(orbs: Array, delta: float) -> void:
 					_hurt(o, dps * _p() * delta)
 					o.burn(1.0, 1.0, owner_tower, true, src)
 				else:
-					_hit(o, dps * _p() * delta, delta * 3.0)
+					_hit(o, dps * _p() * delta * _rapid(), delta * 3.0)
 			"vortex":
 				# 진행 방향에 수직으로만 끌어 길 위 한 줄로 모은다 (구체를 바깥으로 끌고 가지 않게)
 				var v: Vector2 = position - o.position
@@ -209,7 +212,7 @@ func affect(orbs: Array, delta: float) -> void:
 				var away: Vector2 = (o.position - position).normalized()
 				o.position = position + away * (radius + o.radius())
 				o.root(0.1, false)
-				_hit(o, Rules.t("wall_dmg") * Tower.pw(level) * delta, delta * 3.0)
+				_hit(o, Rules.t("wall_dmg") * Tower.pw(level) * delta * _rapid(), delta * 3.0)
 				hp -= Rules.t("wall_drain") * (3.0 if o.kind == Orb.Kind.BOSS else 1.0) * delta
 	if kind == "rock" and hp <= 0.0:
 		life = 0.0
@@ -378,6 +381,11 @@ func _ground(c: Color, a: float, fill := 0.18) -> void:
 
 
 ## 공격방식 장판: 주인 오브젝트의 속성 부가효과까지 붙는다.
+## 속사: 벽·투척 장판은 다시 세우거나 던지는 속도만 빨라지면 상한·겹침 때문에 거의 놀아서, 닿은 피해 속도에도 건다 (2026-11-01)
+func _rapid() -> float:
+	return 1.0 + Rules.rapid_k * owner_tower.mf("rapid") if is_instance_valid(owner_tower) else 1.0
+
+
 func _hit(o: Orb, amount: float, k: float) -> void:
 	if is_instance_valid(owner_tower):
 		owner_tower.tag = src

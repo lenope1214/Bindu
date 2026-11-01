@@ -107,6 +107,7 @@ var dice_miss := 0  # 마지막 대박(6) 뒤로 굴린 수
 var dice_t := 0.0  # 계속 공격하는 형태: 다음에 굴릴 때까지 남은 초
 var path_i := 0  # 다음 탄이 갈 갈래
 var path_q: Array = []  # 다중 발사: 같은 길로 조금 늦게 나갈 탄까지 남은 시간
+var bounce_cd := 0.0  # 탄이 아닌 공격의 튕김 탄 간격 (공격 속도로 줄어듦)
 
 
 func _ready() -> void:
@@ -593,7 +594,7 @@ func detail_lines() -> Array:
 	if m("pierce") > 0:
 		mp.append("관통 %.2f개" % mf("pierce") if pattern in Pat.PROJECTILE else "관통 피해 x%.2f" % (1.0 + Rules.t("pierce_dmg") * mf("pierce")))
 	if m("bounce") > 0:
-		mp.append("튕김 %.2f번" % mf("bounce") if pattern in Pat.PROJECTILE or pattern == "chain" else "튕김 피해 x%.2f" % (1.0 + Rules.t("bounce_dmg") * mf("bounce")))
+		mp.append("튕김 %.2f번" % mf("bounce") if pattern in Pat.PROJECTILE or pattern == "chain" else "튕김 탄 %d개/%.1f초" % [mn("bounce"), bounce_iv()])
 	if m("split") > 0:
 		mp.append("분열 %d%%" % roundi(split_ch() * 100.0))
 	if m("size") > 0:
@@ -636,6 +637,30 @@ func split_ch() -> float:
 	return minf(Rules.split_max, Rules.split_ch * mf("split"))
 
 
+## 튕김 (탄이 아닌 공격): 맞힌 구체에서 작은 탄이 가까운 다른 구체로 튀는 간격(초, 공격 속도 전)
+func bounce_iv() -> float:
+	return Rules.t("bounce_iv")
+
+
+## 탄이 아닌 공격의 튕김: 맞힌 구체 o에서 가까운 다른 구체로 작은 탄 튕김 개수만큼 (직선탄 한 발 x bounce_hit)
+func _area_bounce(o: Orb) -> void:
+	var cands: Array = []
+	for other in main.near(o.position, 140.0):
+		if other != o and other.hp > 0.0 and other.position.distance_to(o.position) < 140.0:
+			cands.append(other)
+	if cands.is_empty():
+		return
+	bounce_cd = bounce_iv()
+	cands.sort_custom(func(a, b): return a.position.distance_squared_to(o.position) < b.position.distance_squared_to(o.position))
+	for i in mini(mn("bounce"), cands.size()):
+		var p: Projectile = main.spawn_proj(self, "frag", plv, (cands[i].position - o.position).normalized())
+		p.src = "mod:bounce"
+		p.dmg = 2.4 * pw(plv) * Rules.bounce_hit
+		p.max_travel = 160.0
+		p.position = o.position
+		p.hit[o] = true
+
+
 ## 속성이 많을수록, 공명·관통 강화로 피해가 늘어난다.
 ## rx: 특수 반응 공격은 겹친 레벨 합 보너스를 받지 않는다 (반응은 자기 레벨로 강해짐).
 ## 한 오브젝트에 몰아 넣으면 반응 수 x 레벨 합으로 곱이 되던 문제를 막는다.
@@ -652,8 +677,6 @@ func dmg_factor(rx := false) -> float:
 		f *= 1.0 + Rules.t("reso_k") * reso * near
 	if m("pierce") > 0 and not pattern in Pat.PROJECTILE:
 		f *= 1.0 + Rules.t("pierce_dmg") * mf("pierce")
-	if m("bounce") > 0 and not pattern in Pat.PROJECTILE and pattern != "chain":
-		f *= 1.0 + Rules.t("bounce_dmg") * mf("bounce")
 	if m("size") > 0 and pattern in Pat.PROJECTILE:
 		f *= 1.0 + Rules.size_dmg * mf("size")
 	if not rx:
@@ -734,8 +757,6 @@ func breakdown() -> Dictionary:
 			fs.append(["link:reso", log(1.0 + Rules.t("reso_k") * reso * near)])
 	if m("pierce") > 0 and not pattern in Pat.PROJECTILE:
 		fs.append(["mod:pierce", log(1.0 + 0.06 * mf("pierce"))])
-	if m("bounce") > 0 and not pattern in Pat.PROJECTILE and pattern != "chain":
-		fs.append(["mod:bounce", log(1.0 + 0.04 * mf("bounce"))])
 	if m("size") > 0 and pattern in Pat.PROJECTILE:
 		fs.append(["mod:size", log(1.0 + 0.04 * mf("size"))])
 	if m("rapid") > 0:
@@ -1007,7 +1028,7 @@ func _mod_effect(id: String) -> String:
 		"bounce":
 			if pattern in Pat.PROJECTILE or pattern == "chain":
 				return "튕김 %.2f번" % f
-			return "피해 +%d%%" % roundi(Rules.t("bounce_dmg") * f * 100.0)
+			return "맞힐 때 %.1f초마다 작은 탄 %d개가 튐" % [bounce_iv(), mn("bounce")]
 		"size":
 			return "크기·범위·사거리 +%d%%" % roundi((sz() - 1.0) * 100.0) + (" · 피해 +%d%%" % roundi(Rules.size_dmg * f * 100.0) if pattern in Pat.PROJECTILE else "")
 		"rapid":
@@ -1015,7 +1036,7 @@ func _mod_effect(id: String) -> String:
 		"pierce":
 			if pattern in Pat.PROJECTILE:
 				return "%.2f개 더 뚫음" % f
-			return "피해 +%d%%" % roundi(Rules.t("pierce_dmg") * f * 100.0)
+			return "피해 +%d%% · 보호막 +%d%% 더 깎음 · 갑옷 %d%% 무시" % [roundi(Rules.t("pierce_dmg") * f * 100.0), roundi(Rules.pierce_shield * f * 100.0), roundi(minf(Rules.pierce_armor * f, 1.0) * 100.0)]
 		"dice":
 			return "주사위 %d개 · 대박 %d%% · 평균 피해 +%d%% · %d번 안에 대박" % [dice_n(), roundi((1.0 - pow(5.0 / 6.0, dice_n())) * 100.0), roundi((dice_avg() - 1.0) * 100.0), dice_pity()]
 	return ""
@@ -1408,6 +1429,7 @@ func attack(delta: float, orbs: Array) -> void:
 	var l := plv
 	var s := sz()
 	var mk := multi_k()
+	bounce_cd = maxf(bounce_cd - dp, 0.0)
 	if pattern in DICE_TIMED and m("dice") > 0:
 		dice_t -= de
 		if dice_t <= 0.0:
@@ -1426,7 +1448,15 @@ func attack(delta: float, orbs: Array) -> void:
 		if burst_t > 0.0:
 			_set_fire([burst_mul, burst_size, burst_key])
 	match pattern:
-		"shot", "thorn", "gust", "shard", "iron":
+		"gust":
+			# 다중 발사: 부채꼴로 벌리지 않고 같은 방향으로 나란히 (넓은 돌풍이 길목 밖으로 빠지지 않게, 2026-11-01)
+			if _ready_to("p", BASE_IV[pattern] / spd(l), dp):
+				var n := shots()
+				for i in n:
+					var pr: Projectile = main.spawn_proj(self, "gust", l, aim, aim.orthogonal() * Rules.t("gust_gap") * (i - (n - 1) / 2.0))
+					pr.dmg *= mk
+					pr.form_init()
+		"shot", "thorn", "shard", "iron":
 			if _ready_to("p", BASE_IV[pattern] / spd(l), dp):
 				var ls := lanes()
 				var ds := dirs()
@@ -1818,7 +1848,8 @@ func _reactions_inner(orbs: Array, de: float, k: float) -> void:
 static func rock_slot(d: Vector2, k: int, l: int) -> Vector2:
 	if k < 2:
 		return d * (90.0 + 60.0 * k) * rr_of("wall", l)
-	return d * 120.0 * rr_of("wall", l) + d.orthogonal() * 56.0 * (1 + (k - 2) / 2) * (1.0 if k % 2 == 0 else -1.0)
+	# 옆 벽은 앞 벽에 바짝 붙여(44) 넓은 담처럼 (56이면 틈으로 구체가 빠져 다중이 거의 놀았다, 2026-11-01)
+	return d * 120.0 * rr_of("wall", l) + d.orthogonal() * 44.0 * (1 + (k - 2) / 2) * (1.0 if k % 2 == 0 else -1.0)
 
 
 ## 음파 사거리.
@@ -2030,12 +2061,17 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 			d *= 1.0 + minf(0.04 * tk(Elem.WOOD) * o.position.distance_to(position) / 100.0, 0.2)
 		if els.has(Elem.METAL):
 			o.stagger(o.speed * 0.1 * tk(Elem.METAL) * minf(k, 1.0))
+	# 관통 (탄이 아닌 공격): 갑옷이 빼는 피해를 줄이고 보호막을 더 깎는다
+	var ap := mf("pierce") if not in_rx and m("pierce") > 0 and not pattern in Pat.PROJECTILE else 0.0
 	if o.late != "" and not in_rx and not in_zone:
-		d = o.late_direct(d, k)  # 후반 구체 갑옷·흐림: 직접 맞힌 공격만
+		d = o.late_direct(d, k, ap)  # 후반 구체 갑옷·흐림: 직접 맞힌 공격만
 	if o.jam == "leech" and not in_rx and o.silence_t <= 0.0:
 		leech()  # 흡수 구체: 맞힌 오브젝트 공격 속도를 빼앗는다 (침묵이면 못 함)
 	var rm := o.resist_mul(els)
 	d *= rm
+	if ap > 0.0 and o.shield > 0.0:
+		# 남은 보호막이 0이 되면 hurt()가 깨지는 효과를 내도록 아주 조금 남긴다
+		o.shield = maxf(o.shield - d * Rules.pierce_shield * ap, 0.001)
 	d = o.hurt(d, crit)  # 받는 피해 배율(약점 등)까지 곱한 값
 	o.last_rx = in_rx or tag.begins_with("rx:")
 	dealt += d
@@ -2111,6 +2147,8 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 			o.soul_lv = els.get(Elem.SOUL, 0)
 			o.soul_src = self
 		o.soul_t = Rules.soul_t
+	if not in_rx and not in_form and bounce_cd <= 0.0 and m("bounce") > 0 and not pattern in Pat.PROJECTILE and pattern != "chain" and not tag.begins_with("mod:"):
+		_area_bounce(o)
 	if can_split and m("split") > 0 and randf() < split_ch() * minf(k, 1.0):
 		for i in 2:
 			var p: Projectile = main.spawn_proj(self, "frag", plv, Vector2.from_angle(randf() * TAU))
