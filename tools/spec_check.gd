@@ -173,13 +173,13 @@ func _cards() -> void:
 	main._on_reroll()
 	ok("CARD-06", after1 == 0 and main.rerolls_left == 0 and main.offer.size() == 3, "새로고침은 남은 횟수만큼, 다 쓰면 그대로")
 
-	# 쉬는 시간마다 고르는 수: 처음 두 번 2장, 그 뒤 규칙 장수
+	# 쉬는 시간마다 고르는 수: 처음 두 번 2장, 그 뒤 1장
 	main.wave = 0
 	main._new_rest()
 	var p0: int = main.picks_left
 	main.wave = 6
 	main._new_rest()
-	ok("CARD-07", p0 == 2 and main.picks_left == Rules.picks, "고르는 수: 첫 쉬는 시간 %d, 그 뒤 %d (규칙 %d)" % [p0, main.picks_left, Rules.picks])
+	ok("CARD-07", p0 == 2 and main.picks_left == 1 and Rules.picks == 1, "고르는 수: 첫 쉬는 시간 %d, 그 뒤 %d (규칙 %d)" % [p0, main.picks_left, Rules.picks])
 
 	# 속성 Lv2 확률: 20% + 웨이브마다 2%, 최대 50%, 행운 +20%
 	main.wave = 0
@@ -906,7 +906,7 @@ func _rules_modes() -> void:
 	Rules.apply(1)
 	ok("RULE-02", v5 == 1, "모르는(폐기한) 규칙 버전은 1로")
 	Rules._apply_patch({"max_mod": 7, "picks": "x", "nope": 3, "wind_buff": -1})
-	var patched := Rules.max_mod == 7 and Rules.picks == 2 and Rules.t("wind_buff") == 0.0
+	var patched := Rules.max_mod == 7 and Rules.picks == 1 and Rules.t("wind_buff") == 0.0
 	Rules.apply(1)
 	ok("PATCH-01", patched and Rules.max_mod == 5, "온라인 패치 rules: 아는 키만 적용, 형식이 틀린 값·모르는 키 무시, 새 판에 원래대로")
 
@@ -917,7 +917,7 @@ func _rules_modes() -> void:
 	ok("MODE-03", is_equal_approx(Modes.mul(), Modes.MUL_MAX) and not Modes.easy(), "점수 배율은 곱, %.1f배에서 멈춤" % Modes.MUL_MAX)
 	Modes.set_on(["three", "ease"])
 	main._apply_rules()
-	ok("MODE-04", Rules.picks == 3 and Modes.rerolls(1) == 3, "세 장: 고르기 3장, 여유: 새로고침 +2")
+	ok("MODE-04", Rules.picks == 2 and Modes.rerolls(1) == 3, "두 장: 고르기 2장, 여유: 새로고침 +2")
 	Modes.set_on([])
 	main._apply_rules()
 	main._toggle_mode("stroll")
@@ -1394,6 +1394,16 @@ func _meta_misc() -> void:
 	ok("SKIP-02", main.skip_left == 3 and main.bank_picks.size() == 2, "넘기기: 이번 고르기를 쌓아 두고 n웨이브 진행 (남은 %d, 쌓인 고르기 %d)" % [main.skip_left, main.bank_picks.size()])
 	main.skip_left = 0
 	main.bank_picks = []
+	# 카드를 다 고른 뒤(웨이브 시작 대기)에도 넘기기: 버튼이 보이고, 누르면 넘기기 시작
+	_tower(main.center() + Vector2(-200, 0))
+	main._enter_ready()
+	main.countdown = -1.0
+	main._update_skip_ui()
+	var ready_btn: bool = main.skip_btn.visible
+	main._on_skip()
+	ok("SKIP-03", ready_btn and main.skip_left == 3 and main.bank_picks.is_empty() and main.phase == main.Phase.READY, "웨이브 시작 대기에서도 넘기기 (버튼 %s, 남은 %d)" % [ready_btn, main.skip_left])
+	main.skip_left = 0
+	main.countdown = -1.0
 	_clear()
 
 	# 피해 출처

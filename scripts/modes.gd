@@ -17,7 +17,7 @@ const LIST := {
 	"seal": {"name": "봉인", "hard": true, "desc": "판 시작 때 속성 3·공격방식 4·연계 1개가 선택지에 안 나옴 (25·50웨이브에 하나씩 풀림)", "score": 1.10, "vs": ""},
 	"stroll": {"name": "산책", "hard": false, "desc": "구체 속도 -20%", "score": 0.70, "vs": "rush"},
 	"fort": {"name": "든든한 중앙", "hard": false, "desc": "중앙 체력 10 → 20", "score": 0.70, "vs": "glass"},
-	"three": {"name": "세 장", "hard": false, "desc": "쉬는 시간에 고르는 카드 2장 → 3장", "score": 0.50, "vs": ""},
+	"three": {"name": "두 장", "hard": false, "desc": "쉬는 시간에 고르는 카드 1장 → 2장", "score": 0.50, "vs": ""},
 	"soft": {"name": "물렁", "hard": false, "desc": "구체 체력 -25%", "score": 0.70, "vs": "steel"},
 	"ease": {"name": "여유", "hard": false, "desc": "쉬는 시간마다 새로고침 +2", "score": 0.85, "vs": "narrow"},
 }
@@ -84,7 +84,7 @@ static func apply_rules() -> void:
 		Rules.orb_mul *= SWARM
 	Rules.orb_hp *= hp_k()
 	if has("three"):
-		Rules.picks = 3
+		Rules.picks += 1  # 두 장 (id는 예전 이름 그대로)
 	if has("early"):
 		Rules.resist_from -= EARLY
 		Rules.sturdy_from -= EARLY

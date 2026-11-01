@@ -161,7 +161,10 @@ func _initialize():
 			_snap("aim_touch_detail")
 			main.tip_detail = false
 			main._cancel_step()
-			main.touch_ui = touch; main._set_cards_hidden(false); main._on_skip(),  # 마우스를 옮기면 touch_ui가 꺼진다
+			main.touch_ui = touch; main._set_cards_hidden(false); main.picks_left = 0; main._enter_ready(),  # 마우스를 옮기면 touch_ui가 꺼진다
+		# 카드를 다 고른 뒤: [웨이브 시작] 옆 [넘기기]·[×N]
+		func(): if main.tut and main.tut.visible: main.tut.close(),
+		func(): _snap("ready_skip"); main._on_skip(),
 		func(): _snap("skip_ready"); main._start_wave(),
 		func():
 			_snap("skip_wave")

@@ -25,7 +25,7 @@ func _set_modes():
 	Modes.set_on(Array(OS.get_environment("MODES").split(",", false)))
 	main._apply_rules()
 	main.start_modes()
-	main.picks_left = maxi(2, Rules.picks)
+	main.picks_left = maxi(Rules.open_picks, Rules.picks)
 	main.rerolls_left = Modes.rerolls(1)
 var cont_w := -1
 func _snap() -> String:

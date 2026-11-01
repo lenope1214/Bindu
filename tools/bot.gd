@@ -32,7 +32,7 @@ func _set_modes():
 	Modes.set_on(Array(OS.get_environment("MODES").split(",", false)))
 	main._apply_rules()
 	main.start_modes()
-	main.picks_left = maxi(2, Rules.picks)
+	main.picks_left = maxi(Rules.open_picks, Rules.picks)
 	main.rerolls_left = Modes.rerolls(1)
 	# TREE=half|full: 씨앗 나무·숙련을 그만큼 올린 일반 판 (tools/run.sh tree)
 	var tr := OS.get_environment("TREE")

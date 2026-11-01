@@ -1846,7 +1846,7 @@ func _help_text() -> String:
 		"",
 		"[규칙 · %s]" % Rules.NAMES[Rules.version],
 		"중앙 체력 10. 구체가 닿으면 줄어듭니다",
-		"쉬는 시간마다 3개 중 1개를 고릅니다 (처음 두 번은 2번)" if Rules.picks == 1 else "쉬는 시간마다 3개 중 1개씩 %d번 고릅니다" % Rules.picks,
+		"쉬는 시간마다 3개 중 1개를 고릅니다 (처음 두 번은 %d번)" % Rules.open_picks if Rules.picks == 1 else "쉬는 시간마다 3개 중 1개씩 %d번 고릅니다" % Rules.picks,
 		"5웨이브마다 보스. 처치하면 체력 +2, 새로고침 +1",
 		"콤보: 게임 시간 3초 안에 다음 구체를 잡으면 이어져요 (어느 오브젝트가 잡든, 배속과 상관없이). 쉬는 시간엔 멈춰서 다음 웨이브로 이어져요. 콤보마다 처치 점수 +10%, 콤보 20부터 x3. 오른쪽 위 상자에 배율과 남은 시간",
 		"보스 웨이브를 넘기면 특성(모든 오브젝트에 붙는 강화) 3개 중 1개 선택",
@@ -1949,7 +1949,7 @@ func _new_rest() -> void:
 		wave_resist = _wpick(Elem.ALL) if wave + 1 >= Rules.resist_from and wf() < 0.6 else -1
 		_plan_boss()
 	_mp_rest_begin()
-	picks_left = maxi(2, Rules.picks) if wave <= 1 else Rules.picks  # 처음 두 번의 쉬는 시간은 2개씩 (모드 '세 장'이면 3개)
+	picks_left = maxi(Rules.open_picks, Rules.picks) if wave <= 1 else Rules.picks  # 처음 두 번의 쉬는 시간은 2개씩, 그 뒤 1개 (모드 '두 장'이면 계속 2개)
 	if wave == 0 and Garden.boosted and Garden.lv("leaf") >= 3:
 		picks_left += 1  # 씨앗 나무 잎 3: 첫 쉬는 시간 고르기 +1
 	rerolls_left = Modes.rerolls(1 + bonus_rerolls + perks.get("reroll", 0) * int(_perk_val("reroll")))
@@ -1969,7 +1969,7 @@ func _can_skip() -> bool:
 
 ## 선택지(또는 특성) 화면에서 넘기기: 이번 쉬는 시간의 고르기를 쌓아 두고 웨이브를 시작한다.
 func _on_skip() -> void:
-	if phase != Phase.CHOOSE or not _can_skip() or title_label.visible:
+	if phase not in [Phase.CHOOSE, Phase.READY] or not _can_skip() or title_label.visible:
 		return
 	if perk_mode:
 		perk_mode = false
@@ -2061,7 +2061,9 @@ func _cycle_skip_n() -> void:
 
 ## 넘기기 버튼·넘기는 중 표시 (매 프레임).
 func _update_skip_ui() -> void:
-	var show_btn := phase == Phase.CHOOSE and not cards_hidden and not title_label.visible and _can_skip() and not get_tree().paused and coin_stage == 0
+	# 카드를 다 고른 뒤(웨이브 시작 대기)에도 [웨이브 시작] 옆에서 넘기기를 쓸 수 있다
+	var ready_skip := phase == Phase.READY and skip_left == 0
+	var show_btn := (phase == Phase.CHOOSE and not cards_hidden or ready_skip) and not title_label.visible and _can_skip() and not get_tree().paused and coin_stage == 0
 	skip_btn.visible = show_btn
 	skip_n_btn.visible = show_btn
 	# 글자를 키우면(폰 기본) 카드 아래 버튼 줄이 왼쪽 아래 안내 글까지 내려와 겹친다. 카드를 고르라는 글이라 겹칠 때만 숨긴다
@@ -4684,7 +4686,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_S and not event.ctrl_pressed and not event.meta_pressed and not title_label.visible:
 			if skip_left > 0:
 				_toggle_skip_stop()
-			elif phase == Phase.CHOOSE:
+			elif phase in [Phase.CHOOSE, Phase.READY]:
 				_on_skip()
 		elif event.keycode == KEY_V and phase == Phase.CHOOSE:
 			_set_cards_hidden(not cards_hidden)
@@ -9030,6 +9032,17 @@ func _process(delta: float) -> void:
 		bt.offset_top = by
 		bt.offset_bottom = by + 40.0
 		bx += bw[bt] + 10.0
+	if phase == Phase.READY and skip_btn.visible:
+		# 웨이브 시작 대기: [웨이브 시작] 바로 오른쪽에 [넘기기] [×N]
+		var pw: Vector2 = skip_btn.get_parent().size
+		var sx := start_btn.position.x + start_btn.size.x + 10.0 - pw.x / 2.0
+		var sy := start_btn.position.y + (start_btn.size.y - 40.0) / 2.0 - pw.y / 2.0
+		for bt in [skip_btn, skip_n_btn]:
+			bt.offset_left = sx
+			bt.offset_right = sx + 76.0
+			bt.offset_top = sy
+			bt.offset_bottom = sy + 40.0
+			sx += 86.0
 	if cards_hidden:
 		var hy := maxf(96.0, hud.position.y + hud.size.y + 8.0)  # 내려 둘 때는 점수 줄 아래
 		hide_btn.offset_left = -130.0
