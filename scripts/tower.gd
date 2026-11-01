@@ -2041,9 +2041,13 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	dealt += d
 	# 별: 둘레 별 오브젝트가 이 피해의 일부를 복사해 별빛으로 모은다 (이 피해는 줄지 않는다)
 	if not in_nova and main and not main.star_towers.is_empty():
+		# 한 피해를 여러 별이 받으면 별 수로 나눠 받는다 (별을 겹쳐 둬도 보너스는 1개분, 2026-11-01)
+		var feeders: Array = []
 		for s2 in main.star_towers:
 			if s2 == self or s2.position.distance_to(position) < Rules.t("star_r"):
-				s2.star_feed(d, self)
+				feeders.append(s2)
+		for s2 in feeders:
+			s2.star_feed(d / feeders.size(), self)
 	if in_rx:
 		rx_dealt += d
 	# 출처: 금속 고정 피해·빛 치명타로 늘어난 절반은 그 속성, 나머지는 지금 출처
@@ -2277,8 +2281,10 @@ func star_need() -> float:
 
 ## 별빛 모으는 비율: 다른 오브젝트 피해의 star_take(+레벨), 자기 피해는 star_self. 별만 든 오브젝트는 x star_pure.
 func star_rate(from_self: bool) -> float:
-	var k := Rules.t("star_self") if from_self else Rules.t("star_take") + Rules.t("star_lv") * (lv(Elem.STAR) - 1)
-	return k * (Rules.t("star_pure") if pure_star() else 1.0)
+	if from_self:
+		return Rules.t("star_self")  # 자기 피해 흡수엔 순수 별 보너스 없음 (혼자 굴러가지 않게, 2026-11-01)
+	var l := mini(lv(Elem.STAR), int(Rules.t("star_lv_cap"))) - 1  # 레벨 성장은 star_lv_cap(Lv5)까지, 그 뒤 레벨은 초신성 범위만
+	return (Rules.t("star_take") + Rules.t("star_lv") * maxi(l, 0)) * (Rules.t("star_pure") if pure_star() else 1.0)
 
 
 ## 행성이 오브젝트 from의 피해에서 모으는 비율: 내 속성 몫(속성 레벨 비율)은 planet_take(+별 레벨마다 planet_lv),
@@ -2288,7 +2294,8 @@ func planet_rate(from: Tower) -> float:
 		return Rules.t("planet_self")
 	var pe := planet()
 	var share := float(from.lv(pe)) / maxf(from.total_level(), 1.0) if from.elements.has(pe) else 0.0
-	return (Rules.t("planet_take") + Rules.t("planet_lv") * (lv(Elem.STAR) - 1)) * share + Rules.t("planet_other") * (1.0 - share)
+	var pl := maxi(mini(lv(Elem.STAR), int(Rules.t("star_lv_cap"))) - 1, 0)  # 별 레벨 성장은 star_lv_cap(Lv5)까지
+	return (Rules.t("planet_take") + Rules.t("planet_lv") * pl) * share + Rules.t("planet_other") * (1.0 - share)
 
 
 ## 피해 d를 준 오브젝트 from에게서 별빛을 모은다. 둘레 오브젝트의 속성(별 제외)도 같이 적어 둔다.

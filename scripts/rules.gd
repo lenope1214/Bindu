@@ -176,7 +176,7 @@ const STAT := {
 	# 별: 둘레 거리, 다른 오브젝트 피해 복사 비율(+/레벨), 자기 피해 비율, 별만 든 오브젝트 배율,
 	# 초신성까지 필요한 별빛(이번 웨이브 구체 체력 x), 초신성 피해(별빛 x), 별 반응 따라붙는 피해(초신성 x)
 	# 행성(별 + 속성 하나)은 둘레 피해 중 자기 속성 몫만 planet_take로 모은다. 같은 행성은 한 판에 하나, 행성은 planet_max개까지, 별이 든 오브젝트(별·행성 합쳐)는 star_max개까지
-	"star_r": 220.0, "star_take": 0.10, "star_lv": 0.03, "star_self": 0.2, "star_pure": 1.5, "planet_take": 0.45, "planet_max": 3.0, "star_max": 3.0,
+	"star_r": 220.0, "star_take": 0.10, "star_lv": 0.03, "star_lv_cap": 5.0, "star_self": 0.2, "star_pure": 1.5, "planet_take": 0.45, "planet_max": 3.0, "star_max": 3.0,
 	# 행성 (2026-11-01 사용자 "행성이 되면 오히려 약해짐" → 흡수 올리고 초신성 피해 조금 낮춤): 별 레벨마다 내 속성 몫 +planet_lv,
 	# 내 속성이 아닌 몫에서도 planet_other, 자기 피해는 planet_self(순수 별과 같은 30%), 초신성 피해 x planet_mul
 	"planet_lv": 0.045, "planet_other": 0.05, "planet_self": 0.3, "planet_mul": 0.85,

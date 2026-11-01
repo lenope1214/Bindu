@@ -444,6 +444,26 @@ func _stars() -> void:
 	var got := fi.dealt - d0
 	ok("STAR-01", is_equal_approx(st.star_sum, got * 0.10 * 1.5) and st.star_e.has(Elem.FIRE) and is_equal_approx(fi.dealt - d0, got),
 		"별빛: 둘레 피해의 10%% x1.5(별만) 복사 (%.3f / %.3f)" % [st.star_sum, got])
+	# 레벨 성장은 Lv5까지, 자기 피해엔 별만 보너스 없음, 별 둘이 같은 피해를 받으면 나눠 받음
+	var sx := _tower(c + Vector2(300, 250), Elem.STAR)
+	var r5 := sx.star_rate(false)
+	sx.add(Elem.STAR, 4)
+	var r5b := sx.star_rate(false)
+	sx.add(Elem.STAR, 6)
+	var r11 := sx.star_rate(false)
+	sx.free()
+	var rs := st.star_rate(true)
+	var st2 := _tower(c + Vector2(-150, -80), Elem.STAR)
+	main.star_towers = [st, st2]
+	st.star_sum = 0.0
+	d0 = fi.dealt
+	fi.hit(o, 1.0)
+	got = fi.dealt - d0
+	ok("STAR-01", is_equal_approx(r5b, (0.10 + 0.03 * 4) * 1.5) and is_equal_approx(r11, r5b) and r5 < r5b and is_equal_approx(rs, 0.2)
+		and is_equal_approx(st.star_sum, got * 0.5 * 0.15) and is_equal_approx(st2.star_sum, got * 0.5 * 0.15),
+		"별빛 상한: Lv5 %.3f = Lv11 %.3f, 자기 %.2f, 별 둘이면 반씩 (%.3f / %.3f)" % [r5b, r11, rs, st.star_sum, st2.star_sum])
+	st2.free()
+	main.star_towers = [st]
 
 	# 행성: 별 + 불 = 불의 행성, 불 몫만 30%
 	st.add(Elem.FIRE, 1)
