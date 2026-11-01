@@ -46,6 +46,21 @@ func _initialize():
 			root.get_viewport().warp_mouse(main.hud.get_global_transform_with_canvas() * r.get_center()),
 		func(): pass,
 		func(): _snap("vary_chip"),
+		func():
+			# 봉인 모드: 카드 줄 위 봉인 칩
+			Modes.set_on(["seal"])
+			Vary.new_run(true)
+			Vary.sealed = {"elem": [Elem.FIRE, Elem.POISON, Elem.SOUL], "pat": ["wisp", "wall", "spray", "laser"], "link": ["pincer"]}
+			main.wave = 3
+			main.picks_left = 1
+			main._make_choices()
+			main._open_choose()
+			main.card_dim.visible = true
+			root.get_viewport().warp_mouse(Vector2(5, 700)),
+		func():
+			if main.tut:
+				main.tut.close(),
+		func(): _snap("seal_cards"),
 	]
 
 

@@ -1612,7 +1612,7 @@ func _update_hud(force := false) -> void:
 		items.append(["tag", D, Rules.NAMES[Meta.rules], D, [["규칙", W]], false])
 	if not Modes.on.is_empty():
 		items.append(["tag", Color(1, 0.7, 0.4), "x%.2f" % Modes.mul(), Color(1, 0.8, 0.55), [["모드 점수 배율 x%.2f" % Modes.mul(), W]], false])
-	if Vary.on:
+	if Vary.on or Vary.count() > 0:
 		# 판마다 다른 흐름: 지금 이벤트(없으면 봉인 수), 말풍선에 이벤트·예고·봉인·적응
 		var vc := Color(0.7, 0.85, 1.0)
 		var vt := ["이번 판 흐름 (시험)", W]
@@ -1626,7 +1626,7 @@ func _update_hud(force := false) -> void:
 		var ad := Vary.adapt_text()
 		if ad != "":
 			vl.append(["적응 구체: " + ad, Color(1, 0.75, 0.6)])
-		var txt := Vary.ename(Vary.event) if not Vary.event.is_empty() else "봉인 %d" % Vary.count()
+		var txt := Vary.ename(Vary.event) if not Vary.event.is_empty() else ("봉인 %d" % Vary.count() if Vary.count() > 0 else "흐름")
 		if ad != "":
 			txt += " · 적응"
 		items.append(["tag", vc, txt, vc, vl, false])
@@ -1866,8 +1866,9 @@ func _start_choose(new_round := true) -> void:
 		tutor_given = {}
 		start_modes()
 		Vary.new_run(mp_mode == "" and not tutor)
-		if Vary.on and Vary.count() > 0:
-			_show_toast("이번 판 봉인 (시험): " + Vary.sealed_text())
+		if Vary.count() > 0:
+			_show_toast("봉인: " + Vary.sealed_text())
+			toast_timer = 5.0  # 카드 줄 위 봉인 칩에도 계속 보임 (_draw_seal_chip)
 		run_id = _new_run_id()
 		Ach.new_run()
 		_apply_tree()
@@ -2090,6 +2091,53 @@ func _make_choices() -> void:
 		_tutor_offer()
 	_show_offer()
 	_card_guides()
+
+
+## 카드 줄 위 봉인 칩 (봉인 모드): 봉인된 속성(그림 + 이름)·공격방식(그림 + 이름)·연계 이름. cx 가운데, bottom 칩 아래 끝.
+func _draw_seal_chip(ci: CanvasItem, cx: float, bottom: float) -> Rect2:
+	var fs := 14
+	var items: Array = []  # [그리기 종류, id, 글, 색]
+	for e in Vary.sealed["elem"]:
+		items.append(["e", e, Elem.NAMES[e], Elem.COLORS[e]])
+	for p in Vary.sealed["pat"]:
+		items.append(["p", p, Pat.pname(p), Pat.pcolor(p).lightened(0.15)])
+	for l in Vary.sealed["link"]:
+		items.append(["l", l, Pat.LINKS[l]["name"], Color(0.55, 0.9, 1.0)])
+	var head := "봉인"
+	var hw := ui_font.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var widths: Array = []
+	var w := 12.0 + hw + 10.0
+	for it in items:
+		var iw: float = (0.0 if it[0] == "l" else 18.0) + ui_font.get_string_size(it[2], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		widths.append(iw)
+		w += iw + 10.0
+	w += 2.0
+	var r := Rect2(cx - w / 2.0, bottom - 26.0, w, 26.0)
+	r.position.x = clampf(r.position.x, 8.0, maxf(8.0, info.size.x - w - 8.0))
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.06, 0.06, 0.12, 0.97)
+	sb.border_color = Color(0.7, 0.7, 1.0, 0.7)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(6)
+	ci.draw_style_box(sb, r)
+	var cy := r.position.y + 13.0
+	var x := r.position.x + 12.0
+	ci.draw_string(ui_font, Vector2(x, cy + fs * 0.36), head, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(0.8, 0.8, 1.0))
+	x += hw + 10.0
+	for i in items.size():
+		var it: Array = items[i]
+		var col: Color = it[3]
+		if it[0] == "e":
+			Glyph.elem(ci, it[1], Vector2(x + 7.0, cy), 7.0)
+		elif it[0] == "p":
+			Glyph.pat(ci, it[1], Vector2(x + 7.0, cy), 7.0, col)
+		var tx := x + (0.0 if it[0] == "l" else 18.0)
+		ci.draw_string(ui_font, Vector2(tx, cy + fs * 0.36), it[2], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+		# 봉인: 이름 위에 가로줄
+		var tw: float = ui_font.get_string_size(it[2], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		ci.draw_line(Vector2(tx - 1.0, cy), Vector2(tx + tw + 1.0, cy), Color(col, 0.7), 1.5)
+		x += widths[i] + 10.0
+	return r
 
 
 ## 첫 판: 이번 웨이브에 새로 열린 카드 종류를 처음 한 번은 선택지에 꼭 넣는다 (속성 카드 하나는 남김).
@@ -3429,14 +3477,14 @@ func _update_preview() -> void:
 		info_l.append(["회오리: 이번 웨이브부터 회전 방향이 바뀜", MAP_AFF_COLOR])
 	if MapRule.is_map("storm"):
 		info_l.append(["뇌우: 바람 방향은 화면의 흰 화살표 (순풍 탄 +%d%%, 역풍 -%d%%)" % [roundi(Rules.t("map_wind_with") * 100), roundi(Rules.t("map_wind_against") * 100)], MAP_AFF_COLOR])
-	if Vary.on:
+	if Vary.on or Vary.count() > 0:
 		var vc := Color(0.75, 0.85, 1.0)
 		if not Vary.event.is_empty():
 			info_l.append(["이벤트 %s: %s" % [Vary.ename(Vary.event), Vary.edesc(Vary.event)], vc])
 		if not Vary.next_event.is_empty():
 			info_l.append(["웨이브 %d 뒤 이벤트 %s: %s" % [nw, Vary.ename(Vary.next_event), Vary.edesc(Vary.next_event)], vc])
 		if Vary.count() > 0:
-			info_l.append(["봉인 (시험): " + Vary.sealed_text(), vc])
+			info_l.append(["봉인: " + Vary.sealed_text(), vc])
 		var ad := Vary.adapt_text()
 		if ad != "":
 			info_l.append(["적응 구체 (많이 쓴 것에 저항): " + ad, vc])
@@ -3765,6 +3813,9 @@ func _draw_info() -> void:
 				r.position.x = ar.position.x - w - 8.0
 		Icons.chip(info, ui_font, r, "", Color.WHITE, txt, Color(1, 0.88, 0.5), 16, Color(0.12, 0.1, 0.04, 0.97), Color(1, 0.82, 0.4, 0.8))
 		tip_rects.append([r, [["이번 쉬는 시간에 카드를 %d장 더 선택할 수 있어요" % picks_left, Color(1, 0.9, 0.6)]]])
+		if Vary.count() > 0:
+			var sr := _draw_seal_chip(info, (x0 + x1) / 2.0, r.position.y - 6.0)
+			tip_rects.append([sr, [["봉인 모드: 이번 판 선택지에 안 나오는 카드", Color(0.8, 0.8, 1.0)], [Vary.sealed_text(), Color(1, 1, 1, 0.9)], ["25·50웨이브에 하나씩 풀려요", Color(1, 1, 1, 0.6)]]])
 	_draw_card_full()
 	# 말풍선: 마우스를 올린 칩·배지 (터치는 누른 것)
 	var m := info.get_local_mouse_position()

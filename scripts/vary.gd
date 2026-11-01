@@ -2,6 +2,7 @@ class_name Vary
 ## 판마다 다른 흐름 (2026-10-31 사용자 요청 "최고점이 하나로 수렴하지 않게", 시험).
 ## 기획 docs/vary.md. 세 가지를 일반 판(랭크·도파민)에 얹는다. 정원·멀티플레이·첫 판(튜토리얼)은 끔.
 ## 1) 봉인: 판 시작 때 속성·공격방식·연계 몇 개가 이번 판 선택지에 안 나온다. 25·50웨이브에 하나씩 풀린다.
+##    2026-11-01 사용자 요청 "봉인을 기본 대신 모드로": 모드 "봉인"(Modes seal)을 켠 판에만. 흐름(vary_on)과 따로.
 ## 2) 웨이브 이벤트: 10웨이브마다 다음 10웨이브에 걸리는 사건 하나 (한 웨이브 전에 예고).
 ## 3) 적응 구체: 30웨이브부터 직전 5웨이브 피해 1위 속성·공격방식에 저항이 쌓인다 (오브젝트 피해 최대 -20%).
 ## 수치는 온라인 패치 rules의 vary_* 키 (Rules.TUNE).
@@ -19,7 +20,8 @@ const EVENT_IDS := ["eclipse", "white", "flow", "form", "gold", "shell", "swarm"
 const UNSEAL_WAVES := [25, 50]
 const ADAPT_HIST := 5  # 적응: 이만큼의 지난 웨이브 피해로 1위를 정한다
 
-static var on := false
+static var on := false  # 이벤트·적응 (흐름)
+static var seal_on := false  # 봉인 모드 (Modes "seal")
 static var sealed := {"elem": [], "pat": [], "link": []}
 static var event := {}  # 지금 걸린 이벤트 {"id", "el": {속성: 배율}, "pt": {공격방식: 배율}}
 static var next_event := {}  # 예고된 다음 이벤트
@@ -31,13 +33,14 @@ static var hist: Array = []  # 지난 웨이브 피해 [{"e": {속성: 피해}, 
 ## 새 판. use: 이 판에 켤지 (main이 정원·멀티·튜토리얼을 거른다)
 static func new_run(use: bool) -> void:
 	on = use and Rules.t("vary_on") > 0.0 and OS.get_environment("VARY") != "0"
+	seal_on = use and Modes.has("seal")
 	sealed = {"elem": [], "pat": [], "link": []}
 	event = {}
 	next_event = {}
 	adapt_el = {}
 	adapt_pt = {}
 	hist = []
-	if not on:
+	if not seal_on:
 		return
 	# 맵 친화 카드(MapRule)는 봉인하지 않는다
 	sealed["elem"] = _pick(_no_aff("elem", Elem.ALL), int(Rules.t("vary_seal_elem")))
@@ -56,12 +59,12 @@ static func _pick(arr: Array, n: int) -> Array:
 
 
 static func is_sealed(kind: String, id: Variant) -> bool:
-	return on and sealed.has(kind) and id in sealed[kind]
+	return sealed.has(kind) and id in sealed[kind]
 
 
 ## 봉인 안 된 것만 (모두 봉인이면 원래 목록)
 static func open(kind: String, arr: Array) -> Array:
-	if not on:
+	if count() == 0:
 		return arr
 	var out := arr.filter(func(x): return not x in sealed[kind])
 	return out if not out.is_empty() else arr
@@ -88,14 +91,14 @@ static func sealed_text() -> String:
 ## 쉬는 시간 시작 (w: 방금 끝낸 웨이브). 알릴 글 목록을 돌려준다.
 static func rest(w: int) -> Array:
 	var msgs: Array = []
-	if not on:
-		return msgs
 	if w in UNSEAL_WAVES and count() > 0:
 		var kinds := sealed.keys().filter(func(k): return not sealed[k].is_empty())
 		var k: String = kinds.pick_random()
 		var id: Variant = sealed[k].pick_random()
 		sealed[k].erase(id)
 		msgs.append("봉인 풀림: %s" % _name(k, id))
+	if not on:
+		return msgs
 	var every := maxi(2, int(Rules.t("vary_event_every")))
 	if w >= every and w % every == 0:
 		if next_event.is_empty():
@@ -288,7 +291,7 @@ static func adapt_text() -> String:
 # ---------- 저장 ----------
 
 static func save() -> Dictionary:
-	return {"on": on, "sealed": sealed, "event": _ev_out(event), "next": _ev_out(next_event),
+	return {"on": on, "seal": seal_on, "sealed": sealed, "event": _ev_out(event), "next": _ev_out(next_event),
 		"ae": adapt_el.keys().map(func(k): return [k, adapt_el[k]]), "ap": adapt_pt.keys().map(func(k): return [k, adapt_pt[k]]),
 		"hist": hist.map(func(h): return {"e": h["e"].keys().map(func(k): return [k, h["e"][k]]), "p": h["p"]})}
 
@@ -317,14 +320,18 @@ static func _ev_in(v: Variant) -> Dictionary:
 
 static func load_from(g: Variant) -> void:
 	new_run(false)
-	if not g is Dictionary or not g.get("on", false):
+	if not g is Dictionary:
 		return
-	on = true
+	# 봉인은 모드라 흐름과 따로 (0.6.x 저장은 흐름이 켜졌으면 봉인도 있었음)
 	var s: Variant = g.get("sealed", {})
 	if s is Dictionary:
 		sealed["elem"] = Array(s.get("elem", [])).map(func(x): return int(x)).filter(func(x): return x in Elem.ALL)
 		sealed["pat"] = Array(s.get("pat", [])).filter(func(x): return x in Pat.PATTERN_IDS)
 		sealed["link"] = Array(s.get("link", [])).filter(func(x): return x in Pat.LINK_IDS)
+	seal_on = g.get("seal", count() > 0)
+	if not g.get("on", false):
+		return
+	on = true
 	event = _ev_in(g.get("event"))
 	next_event = _ev_in(g.get("next"))
 	for p in g.get("ae", []):
@@ -344,7 +351,7 @@ static func load_from(g: Variant) -> void:
 
 ## 서버 판 기록용 (detail.vary)
 static func record() -> Dictionary:
-	if not on:
+	if not on and not seal_on:
 		return {}
 	return {"seal_e": sealed["elem"].map(func(e): return Patch.ELEM_KEYS[Elem.ALL.find(e)]), "seal_p": sealed["pat"], "seal_l": sealed["link"],
 		"event": ev_id(), "adapt": adapt_text()}

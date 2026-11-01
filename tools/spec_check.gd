@@ -914,7 +914,13 @@ func _rules_modes() -> void:
 func _vary() -> void:
 	_fresh(5)
 	var off_after_rules := not Vary.on
+	Modes.set_on([])
 	Vary.new_run(true)
+	var no_mode_no_seal: bool = Vary.on and Vary.count() == 0 and not Vary.seal_on
+	Modes.set_on(["seal"])
+	Vary.new_run(true)
+	var mode_ok: bool = Vary.seal_on and Modes.mul() > 1.0 and not Modes.easy()
+	ok("VARY-06", no_mode_no_seal and mode_ok, "봉인은 모드: 안 켜면 봉인 없음(흐름은 켜짐), 켜면 봉인·어렵게 점수 배율")
 	var counts_ok: bool = Vary.sealed["elem"].size() == 3 and Vary.sealed["pat"].size() == 4 and Vary.sealed["link"].size() == 1
 	var c: Vector2 = main.center()
 	_tower(c + Vector2(-200, 0))
@@ -933,7 +939,12 @@ func _vary() -> void:
 			leak += 1
 	var n0 := Vary.count()
 	Vary.rest(25)
-	ok("VARY-01", off_after_rules and counts_ok and leak == 0 and Vary.count() == n0 - 1, "봉인: 속성 3·공격방식 4·연계 1, 선택지·대격변에 안 나옴(새어 나옴 %d), 25웨이브에 하나 풀림" % leak)
+	var sv := Vary.save()
+	var sealed_e: Array = Vary.sealed["elem"].duplicate()
+	Vary.load_from(JSON.parse_string(JSON.stringify(sv)))
+	var keep: bool = Vary.seal_on and Vary.sealed["elem"] == sealed_e
+	Modes.set_on([])
+	ok("VARY-01", off_after_rules and counts_ok and keep and leak == 0 and Vary.count() == n0 - 1, "봉인: 속성 3·공격방식 4·연계 1, 선택지·대격변에 안 나옴(새어 나옴 %d), 25웨이브에 하나 풀림" % leak)
 
 	Vary.new_run(true)
 	Vary.rest(8)

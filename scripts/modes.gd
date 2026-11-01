@@ -14,13 +14,14 @@ const LIST := {
 	"narrow": {"name": "외길", "hard": true, "desc": "선택지 새로고침 없음", "score": 1.15, "vs": "ease"},
 	"early": {"name": "이른 위협", "hard": true, "desc": "저항·굳센 구체가 3웨이브 일찍", "score": 1.15, "vs": ""},
 	"angry": {"name": "성난 보스", "hard": true, "desc": "보스 체력 x1.5, 부하를 2배 자주 부름", "score": 1.25, "vs": ""},
+	"seal": {"name": "봉인", "hard": true, "desc": "판 시작 때 속성 3·공격방식 4·연계 1개가 선택지에 안 나옴 (25·50웨이브에 하나씩 풀림)", "score": 1.10, "vs": ""},
 	"stroll": {"name": "산책", "hard": false, "desc": "구체 속도 -20%", "score": 0.70, "vs": "rush"},
 	"fort": {"name": "든든한 중앙", "hard": false, "desc": "중앙 체력 10 → 20", "score": 0.70, "vs": "glass"},
 	"three": {"name": "세 장", "hard": false, "desc": "쉬는 시간에 고르는 카드 2장 → 3장", "score": 0.50, "vs": ""},
 	"soft": {"name": "물렁", "hard": false, "desc": "구체 체력 -25%", "score": 0.70, "vs": "steel"},
 	"ease": {"name": "여유", "hard": false, "desc": "쉬는 시간마다 새로고침 +2", "score": 0.85, "vs": "narrow"},
 }
-const ORDER := ["rush", "swarm", "steel", "glass", "narrow", "early", "angry", "stroll", "fort", "three", "soft", "ease"]
+const ORDER := ["rush", "swarm", "steel", "glass", "narrow", "early", "angry", "seal", "stroll", "fort", "three", "soft", "ease"]
 const MUL_MIN := 0.2
 const MUL_MAX := 2.5
 const SWARM := 1.25  # 물량: 웨이브 구체 수

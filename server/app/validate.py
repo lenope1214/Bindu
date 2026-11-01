@@ -25,6 +25,7 @@ MODES = {
     "narrow": {"score": 1.15, "hard": True, "vs": "ease"},
     "early": {"score": 1.15, "hard": True, "vs": ""},
     "angry": {"score": 1.25, "hard": True, "vs": ""},
+    "seal": {"score": 1.10, "hard": True, "vs": ""},  # 봉인 (2026-11-01, 예전엔 모든 판 기본)
     "stroll": {"score": 0.70, "hard": False, "vs": "rush"},
     "fort": {"score": 0.70, "hard": False, "vs": "glass"},
     "three": {"score": 0.50, "hard": False, "vs": ""},
