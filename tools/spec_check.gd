@@ -1122,7 +1122,8 @@ func _vary() -> void:
 	var want := [Vary.sealed.duplicate(true), Vary.next_event.duplicate(true), Vary.adapt_el.duplicate(), Vary.adapt_pt.duplicate()]
 	Vary.load_from(JSON.parse_string(JSON.stringify(saved)))
 	var got := [Vary.sealed, Vary.next_event, Vary.adapt_el, Vary.adapt_pt]
-	ok("VARY-04", Vary.on and str(got) == str(want), "이어하기: 봉인·예고 이벤트·적응 저항이 저장 후 그대로")
+	ok("VARY-04", Vary.on and got == want,  # 내용 비교 (JSON을 거치면 사전 키 순서가 바뀌어 str 비교는 판마다 흔들렸다)
+		"이어하기: 봉인·예고 이벤트·적응 저항이 저장 후 그대로")
 	main.tutor = true
 	Vary.new_run(main.mp_mode == "" and not main.tutor)
 	var tut_off := not Vary.on
