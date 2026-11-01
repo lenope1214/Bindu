@@ -476,6 +476,20 @@ func _stars() -> void:
 	main.phase = ph0
 	ok("STAR-06", fx_on and st.nova_fx == 0.0 and st.fx["laser"] == 0.0,
 		"웨이브 밖에서도 초신성·공격 그림 사라짐 (%.2f)" % st.nova_fx)
+	# 초신성 예고: 별빛 85%부터 터질 자리(지금 터지면 맞을 구체)를 골라 두고, 그 아래면 없음
+	var aim_o := _orb(st.position + Vector2(-200, 0), 1e6)
+	main.targets = [aim_o]
+	main._build_grid()
+	st.star_sum = st.star_need() * 0.5
+	st._nova_aim_tick(0.3)
+	var aim_lo = st.nova_aim
+	st.star_sum = st.star_need() * 0.9
+	st._nova_aim_tick(0.3)
+	ok("STAR-08", aim_lo == null and st.nova_aim == aim_o and Tower.NOVA_FX_T <= 0.8,
+		"초신성 예고: 50%%엔 없음, 90%%엔 터질 자리 (%s)" % [st.nova_aim != null])
+	st.nova_aim = null
+	aim_o.free()
+	main.targets = []
 	# 보스 상한: 초신성 한 번(행성 효과·화상 포함)이 보스에게는 최대 체력의 star_boss_cap(15%)까지. 옆 일반 구체는 그대로
 	st.star_sum = st.star_need()
 	st.star_e = {Elem.FIRE: st.star_sum}

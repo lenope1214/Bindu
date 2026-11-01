@@ -42,6 +42,9 @@ var star_sum := 0.0  # 별: 모은 별빛 (다 차면 초신성)
 var star_e := {}  # 별빛을 준 둘레 오브젝트의 속성 -> 모은 양 (초신성에 섞인다)
 var nova_fx := 0.0  # 초신성 표시 남은 시간
 var nova_pos := Vector2.ZERO  # 그 자리 (전역)
+var nova_from := Vector2.ZERO  # 터질 때 별 자리 (전역, 빛줄기 시작)
+var nova_aim: Orb = null  # 별빛이 NOVA_WARN 넘으면 터질 자리 예고 (표시용, NOVA_AIM_T마다 다시 고름)
+var nova_aim_t := 0.0
 var in_nova := false  # 초신성 피해 중 (별빛을 다시 모으지 않게)
 var feed_fx := {}  # 별빛을 준 오브젝트 -> 빛줄 남은 시간 (표시용)
 var notify_cd := 0.0  # 반응이 터졌다고 둘레에 알리는 간격 (호응)
@@ -1350,7 +1353,7 @@ func fade_fx(delta: float) -> void:
 		leech_n = 0
 		leech_t = 0.0
 		queue_redraw()
-	var any := nova_fx > 0.0 or not feed_fx.is_empty() or recoil > 0.0 or burst_t > 0.0
+	var any := nova_fx > 0.0 or nova_aim != null or not feed_fx.is_empty() or recoil > 0.0 or burst_t > 0.0
 	for k in fx.keys():
 		if fx[k] > 0.0:
 			fx[k] = maxf(fx[k] - delta, 0.0)
@@ -1360,6 +1363,7 @@ func fade_fx(delta: float) -> void:
 	recoil = maxf(recoil - delta * 6.0, 0.0)
 	burst_t = maxf(burst_t - delta, 0.0)
 	nova_fx = maxf(nova_fx - delta, 0.0)
+	nova_aim = null
 	for f in feed_fx.keys():
 		feed_fx[f] -= delta
 		if not is_instance_valid(f) or feed_fx[f] <= 0.0:
@@ -1541,6 +1545,7 @@ func attack(delta: float, orbs: Array) -> void:
 			feed_fx.erase(f)
 	if lv(Elem.STAR) > 0 and star_sum >= star_need():
 		_try_nova()
+	_nova_aim_tick(delta)
 	queue_redraw()
 
 
@@ -2113,40 +2118,98 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 
 # ---------- 별 ----------
 
-## 별·행성 그림: 별은 둘레를 도는 별빛 점(찬 만큼), 행성은 그 속성 색 고리. 별빛을 준 오브젝트로 가는 빛줄, 초신성 빛.
+## 별·행성 그림: 둘레 게이지 고리(찬 만큼, 행성은 그 속성 색), 행성은 기운 궤도 고리.
+## NOVA_WARN부터 고리가 빨리 뛰고 빛이 별로 빨려 들며, 터질 자리(nova_aim)에 조준 고리. 다 차면 크게 맥동.
+## 터질 때 별 → 자리 빛줄기, 섬광, 충격파 두 겹, 빛살 8갈래 (NOVA_FX_T초).
 func _draw_star() -> void:
 	var f := clampf(star_sum / maxf(star_need(), 0.001), 0.0, 1.0) if main else 0.0
-	var sc: Color = Elem.COLORS[Elem.STAR]
+	var sc := NOVA_COL
 	var pe := planet()
+	var gc: Color = Elem.COLORS[pe].lightened(0.3) if pe >= 0 else sc
 	if pe >= 0:
 		var pc: Color = Elem.COLORS[pe]
 		var ring := PackedVector2Array()
 		for i in 33:
 			var a := TAU * i / 32.0
-			ring.append(Vector2(cos(a) * (RADIUS + 9.0), sin(a) * (RADIUS + 9.0) * 0.38).rotated(-0.35))
+			ring.append(Vector2(cos(a) * (RADIUS + 11.0), sin(a) * (RADIUS + 11.0) * 0.38).rotated(-0.35))
 		draw_polyline(ring, Color(pc, 0.85), 2.5)
-		draw_arc(Vector2.ZERO, RADIUS + 3.0, -PI / 2.0, -PI / 2.0 + TAU * f, 32, Color(pc.lightened(0.3), 0.9), 2.0)
-	else:
-		var n := 5
+	var warn := f >= NOVA_WARN
+	var full := f >= 1.0
+	var gr := RADIUS + 7.0
+	# 게이지: 빈 고리 위에 찬 만큼 (위에서 시계 방향)
+	draw_arc(Vector2.ZERO, gr, 0, TAU, 40, Color(0, 0, 0, 0.55), 6.0)
+	draw_arc(Vector2.ZERO, gr, 0, TAU, 40, Color(gc, 0.22), 4.0)
+	if f > 0.0:
+		var w := 4.0
+		var ga := 0.95
+		if warn and not full:
+			w = 4.0 + 2.0 * (0.5 + 0.5 * sin(t * 14.0))
+		draw_arc(Vector2.ZERO, gr, -PI / 2.0, -PI / 2.0 + TAU * f, 40, Color(gc, ga), w)
+		if not full:
+			draw_circle(Vector2.from_angle(-PI / 2.0 + TAU * f) * gr, 2.6, Color(1, 1, 1, 0.9))
+	if warn:
+		# 곧 터짐: 바깥에서 별로 빨려 드는 빛
+		var n := 6
 		for i in n:
-			var a := t * 1.4 + TAU * i / n
-			var on := float(i) < f * n
-			draw_circle(Vector2.from_angle(a) * (RADIUS + 8.0), 2.4 if on else 1.4, Color(sc, 0.95 if on else 0.3))
-	if f >= 1.0:
-		draw_circle(Vector2.ZERO, RADIUS + 4.0 + 2.0 * sin(t * 9.0), Color(sc, 0.18))
+			var ph := fmod(t * 1.6 + float(i) / n, 1.0)
+			var d := lerpf(RADIUS + 34.0, gr, ph)
+			draw_circle(Vector2.from_angle(TAU * i / n + t * 0.7) * d, 1.2 + 1.8 * ph, Color(gc, 0.25 + 0.6 * ph))
+	if full:
+		var pu := 0.5 + 0.5 * sin(t * 9.0)
+		draw_circle(Vector2.ZERO, RADIUS + 6.0 + 3.0 * pu, Color(sc, 0.22))
+		draw_arc(Vector2.ZERO, RADIUS + 10.0 + 4.0 * pu, 0, TAU, 40, Color(1, 1, 1, 0.5 + 0.4 * pu), 2.0)
 	for fr in feed_fx:
 		if is_instance_valid(fr):
-			var c: Color = Elem.COLORS[pe] if pe >= 0 else sc
-			draw_line(fr.position - position, Vector2.ZERO, Color(c, 0.35 * feed_fx[fr] / 0.4), 1.5)
+			draw_line(fr.position - position, Vector2.ZERO, Color(gc, 0.35 * feed_fx[fr] / 0.4), 1.5)
+	var nr := NOVA_R + 10.0 * (lv(Elem.STAR) - 1)
+	if warn and is_instance_valid(nova_aim) and nova_aim.hp > 0.0:
+		# 터질 자리 예고: 초신성 반지름 점선 고리 + 가운데 십자, 찰수록 진해짐
+		var p := nova_aim.position - position
+		var al := lerpf(0.45, 0.95, clampf((f - NOVA_WARN) / (1.0 - NOVA_WARN), 0.0, 1.0))
+		var rot := t * 0.8
+		var segs := 24
+		for i in segs:
+			var a := rot + TAU * i / segs
+			draw_arc(p, nr, a, a + TAU / segs * 0.5, 4, Color(sc, al), 3.0)
+		draw_circle(p, nr, Color(sc, 0.07 * al))
+		for i in 4:
+			var dv := Vector2.from_angle(-rot * 1.5 + PI / 2.0 * i)
+			draw_line(p + dv * 10.0, p + dv * 24.0, Color(sc, al), 3.0)
 	if nova_fx > 0.0:
 		var p := nova_pos - position
-		var k := nova_fx / 0.6
-		draw_line(Vector2.ZERO, p, Color(sc, 0.9 * k), 6.0 * k + 1.0)
-		draw_arc(p, (NOVA_R + 10.0 * (lv(Elem.STAR) - 1)) * (1.2 - 0.6 * k), 0, TAU, 40, Color(sc, k), 4.0)
-		draw_circle(p, 30.0 * k, Color(1, 1, 1, 0.6 * k))
+		var o := nova_from - position
+		var k := nova_fx / NOVA_FX_T  # 1 → 0
+		var e := 1.0 - k
+		# 빛줄기 (처음 0.3만 굵게)
+		var bk := clampf(1.0 - e / 0.4, 0.0, 1.0)
+		if bk > 0.0:
+			draw_line(o, p, Color(sc, 0.85 * bk), 12.0 * bk + 1.0)
+			draw_line(o, p, Color(1, 1, 1, 0.9 * bk), 4.0 * bk + 0.5)
+		# 섬광: 처음에 반지름만큼 밝게, 빨리 꺼짐
+		var fl := clampf(1.0 - e / 0.35, 0.0, 1.0)
+		if fl > 0.0:
+			draw_circle(p, nr * (0.6 + 0.4 * e), Color(sc.lerp(Color.WHITE, 0.6), 0.45 * fl))
+			draw_circle(p, nr * 0.35, Color(1, 1, 1, 0.8 * fl))
+		# 충격파 두 겹
+		draw_arc(p, nr * (0.2 + 1.1 * e), 0, TAU, 48, Color(sc, k), 2.0 + 6.0 * k)
+		var e2 := clampf((e - 0.2) / 0.8, 0.0, 1.0)
+		if e2 > 0.0:
+			draw_arc(p, nr * (0.2 + 0.8 * e2), 0, TAU, 48, Color(1, 1, 1, 0.6 * (1.0 - e2)), 2.0)
+		# 빛살 8갈래
+		for i in 8:
+			var dv := Vector2.from_angle(TAU * i / 8.0 + e * 0.6)
+			var l0 := nr * 0.25
+			var l1 := nr * (0.7 + 0.7 * e) * (1.0 if i % 2 == 0 else 0.65)
+			draw_line(p + dv * l0, p + dv * l1, Color(sc.lerp(Color.WHITE, 0.4), 0.85 * k), 3.0 * k + 0.5)
+		# 별 자리: 터뜨린 별 둘레로 퍼지는 고리
+		draw_arc(o, RADIUS + 6.0 + 40.0 * e, 0, TAU, 32, Color(sc, 0.8 * k), 2.5)
 
 const STAR_MAX_ELEMS := 2  # 별 + 속성 하나 = 그 속성의 행성
 const NOVA_R := 110.0  # 초신성 반지름 (별 레벨마다 +10)
+const NOVA_COL := Color(1.0, 0.85, 0.35)  # 별빛 게이지·예고·초신성 색 (별 속성 색보다 진한 금빛)
+const NOVA_FX_T := 0.75  # 초신성 그림 시간
+const NOVA_WARN := 0.85  # 별빛이 이만큼 차면 곧 터짐 표시·터질 자리 예고
+const NOVA_AIM_T := 0.25  # 터질 자리 다시 고르는 간격
 
 
 ## 별만 든 오브젝트(행성이 아닌 별).
@@ -2246,6 +2309,24 @@ func star_feed(d: float, from: Tower) -> void:
 
 ## 초신성 자리: 사거리(450) 안에서 둘레(110)에 구체가 가장 많이 모인 구체. 없으면 아낀다.
 func _try_nova() -> void:
+	var best := _nova_pick()
+	if best:
+		_supernova(best)
+
+
+## 별빛이 NOVA_WARN 이상이면 지금 터지면 맞을 구체를 골라 둔다 (그림이 그 자리에 예고를 그린다).
+func _nova_aim_tick(delta: float) -> void:
+	if lv(Elem.STAR) <= 0 or star_sum < star_need() * NOVA_WARN:
+		nova_aim = null
+		return
+	nova_aim_t -= delta
+	if nova_aim_t <= 0.0 or not is_instance_valid(nova_aim) or nova_aim.hp <= 0.0:
+		nova_aim_t = NOVA_AIM_T
+		nova_aim = _nova_pick()
+
+
+## 초신성 자리 고르기 (_try_nova와 예고가 같이 쓴다).
+func _nova_pick() -> Orb:
 	var best: Orb = null
 	var bn := -1
 	for o in main.near(position, 450.0):
@@ -2255,8 +2336,7 @@ func _try_nova() -> void:
 		if n > bn:
 			bn = n
 			best = o
-	if best:
-		_supernova(best)
+	return best
 
 
 ## 모은 속성 중 많은 순 3개 → 레벨 3·2·1.
@@ -2314,8 +2394,10 @@ func _supernova(c: Orb) -> void:
 			tag = ""
 	_nova_follow(c.position, hits, pool, cap)
 	in_nova = false
-	nova_fx = 0.6
+	nova_fx = NOVA_FX_T
 	nova_pos = c.position
+	nova_from = position
+	nova_aim = null
 	main.burst(c.position, Elem.COLORS[Elem.STAR], 40, 320.0)
 	main.popup(c.position + Vector2(0, -30), total, Elem.COLORS[Elem.STAR], true, "초신성!", 1.2)
 	main.shake = maxf(main.shake, 0.25)
