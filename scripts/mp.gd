@@ -42,6 +42,11 @@ const PING_EVERY := 1.0
 var joined_ms := 0  # 방 정보를 받은 때 (참가자: 호스트와 연결 기다린 시간 표시)
 var diag_sent := {}  # id -> true (연결 실패 진단을 한 번만 남긴다)
 var started := false  # 판을 시작함 (더는 들어올 수 없음)
+## 판이 끝나도 방은 남는다: 판 끝 화면을 지나면 대기방(멀티플레이 창)으로 돌아온다 (나가기 전까지).
+## in_game: 아직 판 안에 있는 사람 (판 시작 때 모두, 대기방으로 돌아오면 "lobby"를 보내 빠짐). 호스트는 모두 돌아와야 다시 시작.
+var in_game := {}
+## 판 중이나 대기방에서 중개 서버 연결만 끊김: WebRTC로 이어진 사람끼리는 계속 (새 사람은 못 들어옴).
+var relay_lost := false
 var join_wait := -1.0
 var closing := false
 
@@ -249,6 +254,7 @@ func _reset() -> void:
 		if peers[id].get("conn"):
 			peers[id]["conn"].close()
 	peers.clear()
+	in_game.clear()
 	ping.clear()
 	pids.clear()
 	diag_sent.clear()
@@ -259,6 +265,7 @@ func _reset() -> void:
 	rtc = null
 	code = ""
 	tok = ""
+	relay_lost = false
 	my_id = 0
 	started = false
 	join_wait = -1.0
@@ -302,9 +309,13 @@ func _process(delta: float) -> void:
 				_on_signal(j)
 	elif st == WebSocketPeer.STATE_CLOSED and ws_open:
 		ws_open = false
-		# 판을 시작한 뒤에는 중개 서버가 필요 없다 (WebRTC로 이어져 있으면 계속)
-		if not started and my_id > 0 and not closing:
-			_fail("중개 서버 연결이 끊겼습니다")
+		# 판을 시작한 뒤·판을 마치고 돌아온 대기방에선 중개 서버가 없어도 된다 (WebRTC로 이어져 있으면 계속)
+		if my_id > 0 and not closing:
+			if started or _rtc_alive():
+				relay_lost = true
+				peers_changed.emit()
+			else:
+				_fail("중개 서버 연결이 끊겼습니다")
 	elif st == WebSocketPeer.STATE_CLOSED and my_id == 0 and code == "" and not closing and ws.get_close_code() != -1:
 		_fail("중개 서버에 연결하지 못했습니다")
 	if rtc:
@@ -325,6 +336,11 @@ func _process(delta: float) -> void:
 			if id != 1 and not p["ok"] and p.get("conn") and now - int(p.get("t", now)) > WAIT_JOIN * 1000.0 and not diag_sent.has(id):
 				_diag(id)
 				peers_changed.emit()  # "연결 중…" → "연결 안 됨"
+
+
+## WebRTC로 누군가와 이어져 있나 (참가자는 호스트와)
+func _rtc_alive() -> bool:
+	return not connected_ids().is_empty() if is_host() else peers.get(1, {}).get("ok", false)
 
 
 func _fail(reason: String) -> void:
@@ -384,7 +400,10 @@ func _on_signal(j: Dictionary) -> void:
 		"sig":
 			_on_rtc_signal(int(j.get("from", 0)), j.get("d", {}))
 		"closed":
-			if not started:
+			# 호스트의 중개 서버 연결만 끊긴 경우엔 호스트와 WebRTC가 이어져 있으면 계속 (호스트가 정말 나가면 WebRTC도 끊겨 끝남)
+			if started or _rtc_alive():
+				relay_lost = true
+			else:
 				_fail("호스트가 방을 닫았습니다")
 		"err":
 			last_err = str(j.get("code", ""))
@@ -495,6 +514,7 @@ func _on_peer_down(id: int) -> void:
 
 func _drop(id: int) -> void:
 	ping.erase(id)
+	in_game.erase(id)
 	pids.erase(id)
 	if not peers.has(id):
 		return
@@ -502,12 +522,29 @@ func _drop(id: int) -> void:
 	if rtc and rtc.has_peer(id):
 		rtc.remove_peer(id)
 	peers_changed.emit()
+	if relay_lost and not started and is_host() and connected_ids().is_empty():
+		_fail.call_deferred("방에 남은 사람이 없어 방이 닫혔습니다")  # 중개 서버도 끊겨 새 사람이 못 들어온다
 
 
 ## 판 시작: 중개 서버에 방을 잠그게 하고 연결을 끊는다(남은 통신은 WebRTC).
 func lock() -> void:
 	started = true
 	_send_ws({"t": "lock"})
+
+
+## 판이 끝나 대기방으로 돌아옴: 다시 들어올 수 있게 방을 풀고(호스트) 모두에게 알린다.
+func back_to_lobby() -> void:
+	started = false
+	in_game.erase(my_id)
+	if is_host():
+		_send_ws({"t": "unlock"})
+	send({"t": "lobby"})
+	peers_changed.emit()
+
+
+## 아직 판 안에 있는 다른 사람 (연결된 사람만)
+func playing_ids() -> Array:
+	return connected_ids().filter(func(id): return in_game.has(id))
 
 
 func names() -> Array:
@@ -619,4 +656,8 @@ func _on_bytes(id: int, b: PackedByteArray) -> void:
 				sm.send_bytes(bb, other, tm, 0)
 		if to != 0 and to != 1:
 			return
+	if msg.get("t") == "lobby":
+		in_game.erase(int(msg.get("f", id)))
+		peers_changed.emit()
+		return
 	packet.emit(int(msg.get("f", id)), msg)

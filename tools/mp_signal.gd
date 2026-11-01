@@ -132,6 +132,9 @@ func _msg(s: Dictionary, j: Dictionary) -> void:
 		"lock":
 			if s["id"] == 1:
 				room["locked"] = true
+		"unlock":
+			if s["id"] == 1:
+				room["locked"] = false
 
 
 func _close(s: Dictionary) -> void:

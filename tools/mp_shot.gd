@@ -82,11 +82,37 @@ func _initialize():
 				main.mp_others[2]["afk"] = true
 				main.mp_wait_left = 32.0,
 		func(): _snap("mp_rest_" + mode); main.phase = main.Phase.READY; main._enter_ready(); main.mp_wave_go = true; main._start_wave(); main.mp_wave_go = false,
-		func(): _snap("mp_wave_" + mode); main._game_over(),
-		func(): _snap("mp_over_" + mode),
+		func():
+			_snap("mp_wave_" + mode)
+			if mode == "coop":
+				main.mp_view = 2  # [보기] 필터: 민수 것만 진하게
+				main._mp_view_next.call()  # 2 → 다음, 다시 2로 맞춘다
+				main.mp_view = 2,
+		func():
+			if mode == "coop":
+				_snap("mp_view_coop")
+			main._game_over(),
+		func():
+			_snap("mp_over_" + mode)
+			# 끝 화면을 지나 대기방으로 (방 유지): 화면을 새로 만들고 민수는 아직 판 진행 중
+			main._mp_keep_room()
+			var old = main
+			root.remove_child(old)
+			old.free()
+			main = load("res://main.tscn").instantiate()
+			root.add_child(main)
+			main.tut_first = false
+			if main.tut and main.tut.panel.visible:
+				main.tut.close()
+			main.touch_ui = touch
+			main._apply_ui_scale()
+			main.mp.in_game = {2: true}
+			main._mp_refresh_lobby(),
+		func(): _snap("mp_lobby_back_" + mode),
 	]
 	if mode == "coop":
 		var at := steps.size() - 3  # 쉬는 시간 스크린샷 다음에: 요청 창, 요청 속성 넣어 주기
+		at -= 2  # [보기]·대기방 단계가 뒤에 붙음
 		steps.insert(at, func():
 			main.mp_wait_left = -1.0
 			main.mp_pop.visible = false

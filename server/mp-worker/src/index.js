@@ -186,6 +186,13 @@ export class Room {
         await this.ctx.storage.put("meta", meta);
         await this.ctx.storage.setAlarm(Date.now() + 6 * 3600 * 1000);
       }
+    } else if (j.t === "unlock" && me.id === 1) {
+      // 판이 끝나 대기방으로 돌아옴: 방은 그대로, 새 사람이 다시 들어올 수 있게
+      const meta = await this.ctx.storage.get("meta");
+      if (meta) {
+        meta.locked = false;
+        await this.ctx.storage.put("meta", meta);
+      }
     }
   }
 

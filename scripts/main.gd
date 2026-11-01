@@ -381,6 +381,9 @@ var mp_tw_sig := ""
 var mp_snap_t := 0.0
 var mp_start := {}  # 판을 시작한 "start" 메시지 (협동 호스트가 다시 들어온 사람에게 다시 보냄)
 var mp_code_last := ""  # 이번 판 방 코드 (끊기면 Mp가 code를 비우므로 따로)
+var mp_view := 0  # 협동 [보기] 필터: 0이면 모두, 사람 id면 그 사람 오브젝트만 진하게 (나머지·그 공격은 흐리게)
+var mp_view_btn: Button
+var mp_fail_msg := ""  # 판 중에 방에서 떨어진 까닭 (판 끝 뒤 대기방 창에 보여 줌)
 var mp_rejoin_until := 0  # 협동 참가자 재접속: 이 시각(ms)까지 다시 붙어 본다 (0이면 안 하는 중)
 var mp_rejoin_wait := 0.0  # 다음 재시도까지
 const MP_REJOIN_S := 30
@@ -442,6 +445,11 @@ var board_people := {}  # 리더보드 창에 보이는 다른 사람 {pid: 닉�
 var board_ugc_btn: Button  # 리더보드 창 오른쪽 아래 [신고·차단] (App Store 1.2, 지우지 말 것)
 var board_ugc_panel: PanelContainer  # 리더보드 위에 뜨는 신고·차단 목록
 static var title_seen := false  # 다시 시작하면 타이틀은 건너뛴다
+## 멀티 판이 끝나도 방은 남는다: 판 끝 화면을 지나 다시 불러올 때 Mp 노드를 루트에 잠시 옮겨 두고(연결 유지)
+## 새 화면이 받아 대기방(멀티플레이 창)을 연다. 방이 없어졌으면 그 까닭을 창에 보여 준다.
+static var mp_keep: Mp = null
+static var mp_back := false
+static var mp_back_msg := ""
 # 정원 모드 (Garden)
 var garden_cd := -1.0  # 다음 웨이브까지 남은 시간 (정원 쉬는 시간, 자동 진행)
 var gp: PanelContainer  # 정원 목록 패널: 가로 화면은 오른쪽, 세로 화면은 아래 (전장은 남은 자리에 맞춰 줄임)
@@ -542,8 +550,13 @@ func _ready() -> void:
 	coop_orbs = 1.0
 	coop_n = 1
 	Ach.mp = ""
-	mp = Mp.new()
-	add_child(mp)
+	if mp_keep != null and is_instance_valid(mp_keep):
+		mp = mp_keep  # 판이 끝나도 방 유지: 지난 화면의 연결을 그대로 받는다
+		mp.reparent(self)
+	else:
+		mp = Mp.new()
+		add_child(mp)
+	mp_keep = null
 	mp.room_ready.connect(_mp_refresh_lobby)
 	mp.peers_changed.connect(_mp_refresh_lobby)
 	mp.failed.connect(_mp_failed)
@@ -579,6 +592,8 @@ func _ready() -> void:
 	get_window().title = "빈두 v%s" % ProjectSettings.get_setting("application/config/version", "?")
 	if Garden.on:
 		_enter_garden()
+	elif mp_back:
+		_mp_back_lobby()
 	elif title_seen or DisplayServer.get_name() == "headless":
 		_start_choose()
 	elif _old_run_version() != "":
@@ -1816,7 +1831,7 @@ func _help_text() -> String:
 		"왼쪽 위 DPS 표: 웨이브 중엔 최근 5초 실시간 DPS, 쉬는 시간엔 지난 웨이브 DPS와 비율. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기 (저장됨)",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
 		"P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
-		"R: 처음부터 (일시정지 중 두 번) · 게임 오버 뒤 클릭·R·Esc: 시작 화면",
+		"R: 처음부터 (일시정지 중 두 번) · 게임 오버 뒤 클릭·R·Esc: 시작 화면 (멀티 판은 대기방)",
 		"E: 판 끝내기 (일시정지 중 두 번) — 지금 점수로 게임 오버, 기록·온라인 순위에 올라감",
 		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 이어하기(Enter)로 그 쉬는 시간부터 (새로 시작은 N 두 번)",
 		"첫 판은 카드가 단계별로 열려요 (공격방식 3·강화 4·연계 6웨이브)",
@@ -3560,8 +3575,22 @@ func lane_counts(w: int) -> Array[int]:
 
 ## 장면 다시 읽기. 한 프레임에 입력이 여럿 오면 두 번째는 current_scene이 이미 비어 오류가 난다.
 func _reload() -> void:
+	_mp_keep_room()
 	if is_inside_tree() and get_tree().current_scene != null:
 		get_tree().reload_current_scene()
+
+
+## 멀티 판 끝 → 다시 불러오기 전에: 방 연결(Mp)을 루트에 옮겨 두고, 새 화면이 대기방을 열게 표시한다.
+func _mp_keep_room() -> void:
+	if mp != null and mp_mode != "" and phase == Phase.GAMEOVER and is_inside_tree():
+		# 멀티 판 끝 → 대기방으로 (방은 나가기 전까지 남는다)
+		mp_back = true
+		mp_back_msg = ""
+		if mp.active():
+			mp_keep = mp
+			mp.reparent(get_tree().root)
+		else:
+			mp_back_msg = mp_fail_msg if mp_fail_msg != "" else "방이 없어져 대기방으로 돌아가지 못했어요"
 
 
 ## 왼쪽 아래 안내 글 위쪽 끝 (안내 글이 없으면 아래 버튼 줄 위).
@@ -4461,12 +4490,16 @@ func _draw_over_card() -> void:
 	y += ach_rows.size() * 30.0
 	# 나가는 법
 	var dim := Color(1, 1, 1, 0.5)
+	var to_lobby := mp_mode != "" and mp.active()  # 멀티 판: 방이 남아 있으면 대기방으로
 	if touch_ui:
-		c.draw_string(ui_font, Vector2(x0, y + 14.0), "눌러서 시작 화면으로", HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
+		c.draw_string(ui_font, Vector2(x0, y + 14.0), "눌러서 대기방으로" if to_lobby else "눌러서 시작 화면으로", HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
 	else:
 		Glyph.ui(c, "click", Vector2(-46.0, y + 9.0), 7.0, dim)
 		c.draw_string(ui_font, Vector2(-34.0, y + 14.0), "· R · Esc", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, dim)
-		Glyph.ui(c, "home", Vector2(38.0, y + 9.0), 7.0, dim)
+		if to_lobby:
+			c.draw_string(ui_font, Vector2(30.0, y + 14.0), "대기방", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, dim)
+		else:
+			Glyph.ui(c, "home", Vector2(38.0, y + 9.0), 7.0, dim)
 	if absf(over_label.offset_top - (y + 34.0)) > 0.5:
 		over_label.offset_top = y + 34.0  # 남은 글은 카드 바로 아래 (둘 다 화면 가운데 기준)
 		over_label.offset_bottom = y + 184.0
@@ -10896,6 +10929,13 @@ func _build_mp_lobby(root: Control) -> void:
 	mp_act.add_theme_constant_override("separation", 8)
 	mp_act.visible = false
 	root.add_child(mp_act)
+	mp_view_btn = Button.new()
+	mp_view_btn.text = "보기: 모두"
+	mp_view_btn.tooltip_text = "누구 오브젝트인지 골라 보기: 모두 → 나 → 친구마다 (고른 사람 것만 진하게, 나머지는 흐리게)"
+	mp_view_btn.focus_mode = Control.FOCUS_NONE
+	mp_view_btn.add_theme_font_size_override("font_size", 14)
+	mp_view_btn.pressed.connect(_mp_view_next)
+	mp_act.add_child(mp_view_btn)
 	mp_req_btn = Button.new()
 	mp_req_btn.text = "속성 요청"
 	mp_req_btn.tooltip_text = "내 오브젝트 하나에 원하는 속성을 요청해요. 친구가 그 속성 카드를 고르면 넣어 줄 수 있어요 (쉬는 시간마다 1장)"
@@ -11092,6 +11132,30 @@ func _mp_kick(id: int) -> void:
 	_show_toast("%s을(를) 내보냈어요" % _mp_name(id))
 	get_tree().create_timer(0.5).timeout.connect(func(): mp._drop(id))  # 메시지가 간 뒤에 끊는다
 	_mp_try_go()
+
+
+## 협동 [보기]: 모두 → 나 → 친구마다 차례로.
+func _mp_view_next() -> void:
+	var ids: Array = [0, mp.my_id]
+	for id in mp_others:
+		if not mp_others[id].get("gone", false):
+			ids.append(id)
+	mp_view = ids[(ids.find(mp_view) + 1) % ids.size()]
+	for t in towers.get_children():
+		t.queue_redraw()
+
+
+## 고른 사람 것이 아닌 오브젝트·그 탄·장판을 흐리게 (부드럽게 바뀜).
+func _mp_view_fade(delta: float) -> void:
+	var k := minf(1.0, delta * 10.0)
+	for t in towers.get_children():
+		var a := 1.0 if mp_view == 0 or t.owner_id == mp_view else 0.25
+		t.self_modulate.a = lerpf(t.self_modulate.a, a, k)  # modulate는 카드 놓기 흐림(_update_place_dim)이 쓴다
+	for layer in [projectiles, zones]:
+		for n in layer.get_children():
+			var ot = n.get("owner_tower")
+			var a := 1.0 if mp_view == 0 or not is_instance_valid(ot) or ot.owner_id == mp_view else 0.25
+			n.modulate.a = lerpf(n.modulate.a, a, k)
 
 
 func _mp_wait_end() -> void:
@@ -11317,6 +11381,8 @@ func _mp_join() -> void:
 
 
 func _mp_failed(reason: String) -> void:
+	if mp_mode != "":
+		mp_fail_msg = reason
 	if mp_mode == "":
 		mp_status.text = reason
 		_mp_refresh_lobby(false)
@@ -11365,7 +11431,8 @@ func _mp_refresh_lobby(keep_status := true) -> void:
 	mp_ping_labels.clear()
 	mp_start_btn.visible = in_room and mp.is_host()
 	var ready := mp.connected_ids().size()
-	mp_start_btn.disabled = ready < 1
+	var playing := mp.playing_ids().size() if in_room else 0  # 지난 판이 아직 안 끝난 사람
+	mp_start_btn.disabled = ready < 1 or playing > 0
 	mp_start_btn.text = "시작 (%d/%d명)" % [ready + 1, Mp.MAX_PLAYERS] if in_room else "시작"
 	if not in_room:
 		if busy:
@@ -11415,6 +11482,8 @@ func _mp_refresh_lobby(keep_status := true) -> void:
 			continue
 		var nm: String = _mp_name(id) if not me else (n[1] if n[1] != "" else "닉네임 없음")
 		var st := "" if me or n[2] else ("연결 안 됨" if n[4] else "연결 중")
+		if st == "" and not me and mp.in_game.has(id):
+			st = "판 진행 중"
 		var row := _mp_member_row(id, n[3], id == 1, nm + (" (나)" if me else ""), st)
 		if not me:
 			row.add_child(_ugc_buttons(mp.pids.get(id, ""), str(n[1]), "mp", func(): _mp_refresh_lobby()))
@@ -11424,7 +11493,11 @@ func _mp_refresh_lobby(keep_status := true) -> void:
 		empty.modulate = Color(1, 1, 1, 0.3)
 		list.add_child(empty)
 	_mp_refresh_pings()
-	if mp.is_host():
+	if mp.relay_lost and mp.is_host():
+		mp_status.text = "중개 서버 연결이 끊겨 새로 들어올 수는 없어요. 지금 있는 사람끼리는 계속할 수 있어요" if playing == 0 else "지난 판이 아직 끝나지 않은 사람이 있어요 (중개 서버 연결이 끊겨 새로 들어올 수는 없어요)"
+	elif playing > 0:
+		mp_status.text = "지난 판이 아직 끝나지 않은 사람이 있어요. 모두 돌아오면 %s" % ("[시작]" if mp.is_host() else "호스트가 시작해요")
+	elif mp.is_host():
 		mp_status.text = "친구에게 방 코드를 알려 주세요. 연결되면 [시작]" if ready < 1 else "모두 연결되면 [시작]"
 	else:
 		mp_status.text = "호스트가 시작하기를 기다리는 중"
@@ -11579,7 +11652,7 @@ func _mp_draw_load() -> void:
 
 ## 호스트 [시작]: 씨앗·맵·규칙을 정해 모두에게 보내고 함께 시작한다.
 func _mp_start() -> void:
-	if not mp.is_host() or mp.connected_ids().is_empty():
+	if not mp.is_host() or mp.connected_ids().is_empty() or not mp.playing_ids().is_empty():
 		return
 	var ids: Array = [1] + mp.connected_ids()
 	var names := {}
@@ -11592,8 +11665,28 @@ func _mp_start() -> void:
 	_mp_begin(msg)
 
 
+## 멀티 판이 끝나고 돌아옴: 시작 화면 위에 대기방(멀티플레이 창)을 연다. 방이 남아 있으면 다시 들어올 수 있게 풀고 알린다.
+func _mp_back_lobby() -> void:
+	mp_back = false
+	title_label.visible = true
+	_refresh_continue()
+	hint.text = ""
+	mp_panel.visible = true
+	if mp.active():
+		mp.back_to_lobby()
+		mp_status.text = ""
+		_mp_refresh_lobby()
+	else:
+		_mp_refresh_lobby()
+		mp_status.text = mp_back_msg
+	mp_back_msg = ""
+
+
 func _mp_begin(msg: Dictionary) -> void:
 	mp.started = true
+	mp.in_game.clear()
+	for id in msg.get("ids", []):
+		mp.in_game[int(id)] = true
 	mp_start = msg.duplicate(true)
 	mp_cursors.clear()
 	mp_code_last = mp.code
@@ -11737,6 +11830,7 @@ func _mp_packet(from: int, msg: Dictionary) -> void:
 			if from == 1 and mp_mode == "coop" and phase != Phase.GAMEOVER:
 				mp.save_rejoin(false)
 				mp_rank = "호스트가 판에서 내보냈어요"
+				mp_fail_msg = mp_rank
 				core_hp = 0
 				_game_over()
 		"gift":
@@ -11914,7 +12008,19 @@ func _mp_tick(delta: float) -> void:
 	mp_req_btn.visible = mp_mode == "coop" and phase in [Phase.CHOOSE, Phase.READY] and not perk_mode and mine_n > 0
 	mp_kick_btn.visible = mp_mode == "coop" and mp.is_host() and phase != Phase.GAMEOVER \
 		and mp_others.keys().any(func(id): return not mp_kicked.has(id))
-	mp_act.visible = mp_bar.visible and (mp_req_btn.visible or mp_kick_btn.visible)
+	mp_view_btn.visible = mp_mode == "coop" and phase != Phase.GAMEOVER
+	if phase == Phase.GAMEOVER:
+		mp_view = 0  # 끝 화면에선 모두 보이게
+	if mp_view > 0 and mp_view != mp.my_id and (not mp_others.has(mp_view) or mp_others[mp_view].get("gone", false)):
+		mp_view = 0  # 고른 사람이 나감
+	mp_view_btn.text = "보기: " + ("모두" if mp_view == 0 else _mp_name(mp_view))
+	if mp_view > 0:
+		mp_view_btn.add_theme_color_override("font_color", Mp.owner_color(mp_view))
+	else:
+		mp_view_btn.remove_theme_color_override("font_color")
+	if mp_mode == "coop":
+		_mp_view_fade(delta)
+	mp_act.visible = mp_bar.visible and (mp_req_btn.visible or mp_kick_btn.visible or mp_view_btn.visible)
 	mp_act.position = mp_bar.position + Vector2(0, mp_bar.size.y + 2.0)
 	if not mp_req_btn.visible and mp_req_mode:
 		mp_req_mode = false

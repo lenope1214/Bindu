@@ -1,6 +1,7 @@
 extends "res://tools/bot.gd"
 ## 멀티플레이 자동 판: 두(이상) 프로세스가 로컬 중개 서버로 방을 만들고 들어가 봇으로 판을 한다.
 ## 환경 변수: BINDU_MP_URL(중개 서버) MP_ROLE=host|join MP_MODE=vs|coop MP_FILE(방 코드를 주고받는 파일) MP_WAVES(이 웨이브에서 끝, 기본 8)
+##   MP_LOBBY=1: 판이 끝나면 대기방으로 돌아와(방 유지) 호스트가 모두 돌아온 뒤 다시 시작하는지. 끝에 "MPLOBBY ok 역할"
 ##   MP_IDLE=<역할>(그 역할은 판이 시작되면 아무것도 안 함: 잠수 처리 시험)
 ## 끊김 시험: MP_BLIP_AT=N 참가자가 웨이브 N에서 연결을 끊음 (협동은 같은 판에 다시 붙음, 대결은 패배),
 ##   MP_DROP_AT=N 참가자 프로세스가 웨이브 N에서 꺼짐 → MP_REJOIN=1로 새로 띄운 참가자가 같은 코드로 들어와 이어 함.
@@ -17,6 +18,8 @@ var max_w := 8
 var seen_w := -1
 var placed := 0
 var blipped := false
+var lobby_st := 0  # MP_LOBBY: 0 판 중, 1 판 끝 기다림, 2 대기방
+var lobby_t := 0.0
 
 
 func _initialize():
@@ -77,7 +80,15 @@ func _process(d):
 		for t in main.towers.get_children():
 			by[t.owner_id] = by.get(t.owner_id, 0) + int(t.run_dealt)
 		print("MPDEALT %s %s core=%d" % [role, JSON.stringify(by), main.core_hp])
+	if OS.get_environment("MP_LOBBY") != "" and lobby_st > 0:
+		return _lobby_step(d)
 	if main.wave >= max_w or main.phase == 4:
+		if OS.get_environment("MP_LOBBY") != "":
+			if main.phase != 4 and (role == "host" or main.mp_mode == "vs"):
+				main.core_hp = 0
+				main._game_over()
+			lobby_st = 1
+			return false
 		var mine: int = main._my_towers().size()
 		print("MPAFK %s afk=%s afk_n=%d" % [role, main.mp_afk, main.mp_afk_n])
 		print("MPPLAY %s mode=%s wave=%d score=%d core=%d towers=%d mine=%d ghosts=%d others=%s" % [role, main.mp_mode, main.wave, main.score, main.core_hp, main.towers.get_child_count(), mine, main.orbs.get_child_count(), JSON.stringify(main.mp_others)])
@@ -139,4 +150,41 @@ func _coop_bot() -> bool:
 	var p: Vector2 = main.core() + ld * (90.0 + 30.0 * (placed % 4)) + ld.orthogonal() * 26.0 * side
 	main._place_tower(p, ld)
 	main._after_place()
+	return false
+
+
+## MP_LOBBY: 판 끝 화면 → 대기방 → (호스트) 모두 돌아오면 다시 시작.
+func _lobby_step(d: float) -> bool:
+	if lobby_st == 1:
+		if main.phase != 4:
+			return false
+		lobby_t += d
+		if lobby_t < 1.5:
+			return false
+		print("MPLOBBY over ", role, " head=", main.over_data.get("head", ""))
+		# 시작 화면으로 돌아가기와 같은 일 (봇은 current_scene이 아니라 직접 바꿔 끼운다)
+		main._mp_keep_room()
+		var old = main
+		root.remove_child(old)
+		old.free()
+		main = load("res://main.tscn").instantiate()
+		root.add_child(main)
+		lobby_st = 2
+		lobby_t = 0.0
+		print("MPLOBBY back ", role, " active=", main.mp.active(), " panel=", main.mp_panel.visible, " title=", main.title_label.visible, " status=", main.mp_status.text)
+		if not main.mp.active() or not main.mp_panel.visible:
+			print("MPLOBBY FAIL ", role)
+			quit(1)
+			return true
+		return false
+	lobby_t += d
+	if main.mp_mode != "":
+		print("MPLOBBY ok ", role, " mode=", main.mp_mode, " ids=", main.mp_start.get("ids", []))
+		quit(0)
+		return true
+	if role == "host" and lobby_t > 0.5 and main.mp.playing_ids().is_empty() and not main.mp.connected_ids().is_empty():
+		print("MPLOBBY restart host peers=", main.mp.names())
+		main._mp_start()
+	elif Engine.get_process_frames() % 120 == 0:
+		print("MPLOBBY wait ", role, " playing=", main.mp.playing_ids(), " start_disabled=", main.mp_start_btn.disabled, " status=", main.mp_status.text)
 	return false

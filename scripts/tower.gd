@@ -2801,13 +2801,14 @@ func _chain(orbs: Array, d: Vector2, l: int, used: Dictionary) -> bool:
 func _draw() -> void:
 	if pattern == "path":
 		_draw_paths()
+	if owner_id > 0:
+		_draw_owner_glow()
 	if main and main.wave_active:
 		_draw_attack()
 	_draw_body()
 	_draw_rank()
 	if owner_id > 0:
-		# 협동: 누가 놓은 오브젝트인지 발밑 고리 색으로
-		draw_arc(Vector2.ZERO, sz() + 7.0, 0.0, TAU, 28, Mp.owner_color(owner_id), 2.0)
+		_draw_owner_mark()
 	if req_e >= 0 and Elem.COLORS.has(req_e):
 		# 협동 속성 요청: 머리 위 그 속성 색 방울 + 물음표 (다른 사람이 그 속성을 넣어 줄 수 있음)
 		var c := Elem.COLORS[req_e] as Color
@@ -2817,6 +2818,33 @@ func _draw() -> void:
 		draw_circle(p, 8.0, c)
 		draw_arc(p, 10.5, 0.0, TAU, 24, Color(1, 1, 1, 0.95), 2.0)
 		draw_circle(p, 2.5, Color(1, 1, 1, 0.95))
+
+
+## 협동: 누가 놓은 오브젝트인지. 발밑에 주인 색 빛 + 바깥 고리, 남의 것엔 아래에 이름 첫 글자 배지.
+## [보기] 필터로 고른 사람 것은 고리가 숨 쉬듯 밝아진다 (나머지는 main이 흐리게).
+func _draw_owner_glow() -> void:
+	var c := Mp.owner_color(owner_id)
+	var r := RADIUS * sz()
+	draw_circle(Vector2.ZERO, r + 14.0, Color(c, 0.08))
+	draw_circle(Vector2.ZERO, r + 8.0, Color(c, 0.14))
+
+
+func _draw_owner_mark() -> void:
+	var c := Mp.owner_color(owner_id)
+	var r := RADIUS * sz() + 5.0
+	draw_arc(Vector2.ZERO, r, 0.0, TAU, 40, c, 3.0, true)
+	var focus: bool = main != null and int(main.get("mp_view")) == owner_id
+	if focus:
+		var k := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.006)
+		draw_arc(Vector2.ZERO, r + 4.0 + 3.0 * k, 0.0, TAU, 36, Color(c, 0.35 + 0.4 * k), 2.0, true)
+	if main == null or owner_id == main.mp.my_id:
+		return
+	var nm: String = main._mp_name(owner_id)
+	var p := Vector2(r * 0.71, r * 0.71)  # 오른쪽 아래 (왕관은 왼쪽 위, 요청 방울은 오른쪽 위)
+	draw_circle(p, 8.5, Color(0, 0, 0, 0.75))
+	draw_circle(p, 7.0, c)
+	var font: Font = main.ui_font if main.ui_font else ThemeDB.fallback_font
+	draw_string(font, p + Vector2(-8.0, 4.5), nm.left(1), HORIZONTAL_ALIGNMENT_CENTER, 16.0, 12, Color(0.05, 0.05, 0.08))
 
 
 const CROWN_FLY := 0.4  # 1위가 바뀔 때 왕관이 날아가는 시간
