@@ -19,6 +19,7 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 | `compare` | 같은 시드로 기준 규칙과 새 규칙을 32판씩 (`stack`을 붙이면 몰빵 봇) | 두 규칙의 중간값·평균·상위 25% 판 평균(참고), 차이, 판정(어려움: 중간값 -2 이하 또는 평균 x0.85 미만 / 쉬움: +3 이상 또는 x1.25 초과 / 비슷함) |
 | `modes` | `modes [규칙=1] [판 수=32] [모드...]`: 모드마다 같은 시드로 모드 없는 판과 비교 (모드를 쉼표로 이으면 함께 켬). 봇에 모드를 켜려면 환경 변수 `MODES=rush,steel` | 모드별 웨이브 중간값·평균 차이와 점수 손익분기 배율 (`docs/modes.md`) |
 | `pat_dps.gd` | `godot --headless --fixed-fps 60 --path . -s tools/pat_dps.gd` (`PAT=lob,shot` `PLV=3` `ELEM=<번호>`): 공격방식마다 오브젝트 하나(속성 Lv1) 앞을 죽지 않는 무리가 30초 가로지를 때(cross)·정면으로 올 때(head) | 공격방식별 피해/초 |
+| `miss_audit.gd` | `tools/run.sh miss` (`PAT=shot,laser` `KIND=fast`): 공격방식 x 강화 하나 x 다중 발사 0~3개마다 정면(조준한 그 방향)에 멈춘 구체를 거리 90~440에 두고 4초 피해. 사거리 안인데 0이거나 가장 잘 맞힌 거리의 15% 미만이면 `MISS` | 피해가 안 들어가는 조합 전수조사 |
 | `pat_kill.gd` | 같은 방법(`HP=15` `RATE=1`): 체력 HP 구체가 정면으로 60초 올 때(lane). spiral은 비껴 도는 길이 오브젝트 앞을 지나지 않는 경우가 많아 참고만 | 공격방식별 처치율 |
 | `path_test.gd` | `godot --headless --path . -s tools/path_test.gd`: 그린 궤적 넣기·그리기(꺾기·길이 제한)·길 따라 맞히기·레벨업 길이와 갈래·4개 상한·유도 차단·저장·대격변·등장 비율 | 항목별 ok/FAIL, 실패가 있으면 끝 코드 1 |
 | `ui_check.gd` | 스크린샷 도구(shot·mp_shot·vote_shot·garden_shot·path_shot·vary_shot·ui_audit)가 찍을 때마다 부름: 보이는 글·버튼·창·그림 배지끼리 겹침, 화면(폰은 안전 영역) 밖, 말줄임으로 잘린 글 | `UI OVERLAP/OFFSCREEN/CLIP <화면> …`, 없으면 `UI ok <화면>` |

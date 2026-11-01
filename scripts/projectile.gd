@@ -50,7 +50,8 @@ var look := ""  # 그 모양
 var rxd := {}  # 그 반응 상태 (부메랑·커지기 등)
 
 
-func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
+## off: 다중 발사 짝수 개일 때 나란히 쏘는 옆 간격 (Tower.lanes)
+func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO, off := Vector2.ZERO) -> void:
 	kind = k
 	owner_tower = tower
 	level = l
@@ -113,7 +114,7 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO) -> void:
 		vel *= wk
 		if max_travel < 2000.0:
 			max_travel *= wk
-	position = tower.position + d * Tower.RADIUS
+	position = tower.position + d * Tower.RADIUS + off
 	if k in ["blob", "log", "icebolt"]:
 		zone = tower.main.spawn_zone("trail", l, position, tower)
 		zone.trail({"blob": "puddle", "log": "burn", "icebolt": "prison"}[k])

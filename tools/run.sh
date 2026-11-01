@@ -5,6 +5,7 @@
 #   long [규칙=1] [맵=plain] [웨이브=40]   죽지 않는 봇으로 긴 판 (웨이브가 4분 넘게 안 끝나면 STUCK)
 #   cont [규칙=1] [맵=plain] [웨이브=45]   4웨이브마다 끄고 이어하기 → 저장 전후가 다르면 DIFF
 #   fuzz [판 수=8] [프레임=9000]          무작위 클릭·끌기·키·터치 (스크립트 오류 찾기, GARDEN=1이면 정원 판)
+#   miss                                   공격방식 x 강화 x 다중 발사 수마다 정면 구체를 거리별로 맞히는지 (사거리 안 피해 0이면 MISS, KIND=fast 작은 구체)
 #   elem                                   속성마다 직선탄 Lv2 하나가 30초간 준 피해/초
 #   rx                                     특수 반응마다 두 속성 Lv1 직선탄 하나가 구체 무리에 준 반응 피해/초 (RX=id,id로 골라 보기)
 #   perf                                   후반 부하(오브젝트 16개·구체 250개+) 배속별 프레임당 계산 시간·부분별 시간
@@ -203,6 +204,12 @@ case "$CMD" in
 			echo "시드 $seed: 오류 $(grep -c 'SCRIPT ERROR' "f_$seed.txt" || true)개 · $(grep FUZZR "f_$seed.txt" | head -1)"
 		done
 		grep -h "SCRIPT ERROR" -A3 f_*.txt | head -20 || true
+		rm -rf "$D"
+		;;
+	miss)
+		D=$(copy_project "$$")
+		cd "$D"
+		T 3000 "$G" --headless --fixed-fps 60 --path . -s tools/miss_audit.gd 2>&1 | grep -E "^(ok|MISS|AUDIT)|SCRIPT ERROR" || true
 		rm -rf "$D"
 		;;
 	elem)

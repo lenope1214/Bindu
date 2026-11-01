@@ -7677,9 +7677,9 @@ func _place_tower(p: Vector2, d: Vector2) -> void:
 
 # ---------- 생성 ----------
 
-func spawn_proj(t: Tower, kind: String, l: int, d := Vector2.ZERO) -> Projectile:
+func spawn_proj(t: Tower, kind: String, l: int, d := Vector2.ZERO, off := Vector2.ZERO) -> Projectile:
 	var p := Projectile.new()
-	p.setup(kind, t, l, d)
+	p.setup(kind, t, l, d, off)
 	projectiles.add_child(p)
 	if kind == "mushroom":
 		t.mines.append(p)

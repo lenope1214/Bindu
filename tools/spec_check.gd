@@ -89,6 +89,7 @@ func _initialize():
 	_elements()
 	_patterns()
 	await _attacks()
+	await _multi_center()
 	_mods_links()
 	_waves()
 	_orbs_cc()
@@ -291,6 +292,40 @@ func _attacks() -> void:
 	main.phase = main.Phase.CHOOSE
 	_clear()
 	ok("PAT-04", silent.is_empty(), "공격방식 %d개 모두 앞에서 다가오는 구체에 피해 (못 맞힘: %s)" % [Pat.PATTERN_IDS.size(), str(silent)])
+
+
+## 다중 발사가 짝수 개(다중 1·3개)여도 조준한 정면의 먼 작은 구체를 맞힌다 (2026-11-01: 가운데가 비어 빗나가던 것)
+func _multi_center() -> void:
+	_fresh(5)
+	var c: Vector2 = main.center()
+	var far := {"shot": 330.0, "thorn": 400.0, "shard": 320.0, "iron": 400.0, "laser": 450.0, "stream": 190.0, "lob": 260.0}
+	var miss := []
+	for p in far:
+		for nm in [1, 3]:
+			_clear()
+			var tp := c + Vector2(-520, 0)
+			var t := _tower(tp, Elem.FIRE, 1, Vector2.RIGHT)
+			if p != "shot":
+				t.set_pattern(p)
+			for i in nm:
+				t.add_mod("multi")
+			var o := _orb(tp + Vector2(far[p], 0), 1e9, Orb.Kind.FAST, 0.0)
+			o.target = o.position
+			main.wave_active = true
+			main.phase = main.Phase.WAVE
+			main.to_spawn = 0
+			for i in 300:  # 5초
+				main._sim_step(1.0 / 60.0)
+				if not is_instance_valid(o) or o.hp < o.max_hp:
+					break
+			if is_instance_valid(o) and o.hp >= o.max_hp:
+				miss.append("%s+다중%d" % [p, nm])
+			await process_frame
+	main.wave_active = false
+	main.phase = main.Phase.CHOOSE
+	_clear()
+	ok("MOD-06", miss.is_empty() and Tower.spread_a(0.5) == 0.0 and Tower.spread_lane(0.5) > 0.0,
+		"다중 발사 짝수 개도 정면 먼 구체 맞힘 (가운데 두 발 나란히, 못 맞힘: %s)" % str(miss))
 
 
 # ---------- 강화·연계·발동 ----------

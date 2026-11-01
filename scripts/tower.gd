@@ -1212,13 +1212,45 @@ func dice_avg() -> float:
 	return lo + (mid - lo) * Rules.t("dice_mid") + (1.0 - mid) * Rules.dice_top
 
 
-## 다중 발사 방향들 (가운데 기준 0.22라디안 간격).
+## 다중 발사 방향들 (가운데 기준 0.22라디안 간격). 옆 간격은 lanes()와 같은 순서.
 func dirs() -> Array:
-	var n := 1 + mn("multi")
+	var out := []
+	for k in spread_ks(1 + mn("multi")):
+		out.append(aim.rotated(spread_a(k)))
+	return out
+
+
+## 다중 발사 한 발마다 쏘는 자리 옆 간격 (dirs()와 같은 순서, 오브젝트 기준 위치 차이)
+func lanes() -> Array:
+	var out := []
+	for k in spread_ks(1 + mn("multi")):
+		out.append(aim.orthogonal() * spread_lane(k))
+	return out
+
+
+## 짝수 개 다중 발사는 가운데 두 발을 같은 방향으로 나란히(옆 간격 ±MULTI_LANE) 쏜다.
+## 예전에는 모든 발을 0.22라디안씩 벌려 2발이면 정중앙이 비어, 조준한 구체가 약 250px보다 멀면
+## 두 발이 양옆으로 빗나가 피해가 0이었다 (2026-11-01 사용자 제보, tools/miss_audit.gd).
+const MULTI_LANE := 8.0  # 작은 구체(반지름 9)도 두 발이 다 맞는 간격
+
+
+## n발의 자리 번호: 가운데 0, 홀수 n은 정수(-1, 0, 1), 짝수 n은 ±0.5, ±1.5 …
+static func spread_ks(n: int) -> Array:
 	var out := []
 	for i in n:
-		out.append(aim.rotated((i - (n - 1) / 2.0) * Rules.multi_angle))
+		out.append(i - (n - 1) / 2.0)
 	return out
+
+
+## 자리 번호 → 각도. 짝수일 때 가운데 두 발(±0.5)은 0, 그 바깥은 한 칸씩 안으로 당긴다
+static func spread_a(k: float) -> float:
+	if is_equal_approx(absf(fmod(k, 1.0)), 0.5):
+		return signf(k) * (absf(k) - 0.5) * Rules.multi_angle
+	return k * Rules.multi_angle
+
+
+static func spread_lane(k: float) -> float:
+	return signf(k) * MULTI_LANE if is_equal_approx(absf(fmod(k, 1.0)), 0.5) else 0.0
 
 
 ## 다중 발사면 공격 하나당 피해 55%, 더 쌓을수록 한 발은 조금씩 약해진다 (1개 x1.1, 3개 x1.7).
@@ -1319,8 +1351,10 @@ func attack(delta: float, orbs: Array) -> void:
 	match pattern:
 		"shot", "thorn", "gust", "shard", "iron":
 			if _ready_to("p", BASE_IV[pattern] / spd(l), dp):
-				for d in dirs():
-					var pr: Projectile = main.spawn_proj(self, pattern, l, d)
+				var ls := lanes()
+				var ds := dirs()
+				for i in ds.size():
+					var pr: Projectile = main.spawn_proj(self, pattern, l, ds[i], ls[i])
 					pr.dmg *= mk  # 다중 발사: 한 발 피해 감소
 					pr.form_init()
 		"spray":
@@ -1330,10 +1364,12 @@ func attack(delta: float, orbs: Array) -> void:
 			if _ready_to("p", 1.0 / spd(l), dp):
 				fx["stream"] = 0.6
 			if fx.get("stream", 0.0) > 0.0:
-				for d in dirs():
-					_line(orbs, d, 260.0 * rr(l) * s, 10.0 * s, func(o):
+				var ls := lanes()
+				var ds := dirs()
+				for i in ds.size():
+					_line(orbs, ds[i], 260.0 * rr(l) * s, 10.0 * s, func(o):
 						hit(o, 3.0 * pw(l) * dp * mk, kp)
-						o.stagger(60.0 * dp))
+						o.stagger(60.0 * dp), ls[i])
 		"chain":
 			if cd.get("p", 0.0) > 0.0:
 				cd["p"] -= dp
@@ -1358,17 +1394,23 @@ func attack(delta: float, orbs: Array) -> void:
 		"vortex":
 			# 앞으로 날아가며 작아지는 블랙홀 (Zone.launch)
 			if _ready_to("p", 5.0 / spd(l), dp):
-				for d in dirs():
-					main.spawn_zone("vortex", l, position + d * RADIUS, self).launch(d)
+				var ls := lanes()
+				var ds := dirs()
+				for i in ds.size():
+					main.spawn_zone("vortex", l, position + ds[i] * RADIUS + ls[i], self).launch(ds[i])
 		"laser":
 			if _ready_to("p", 2.0 / spd(l), dp):
 				fx["laser"] = 0.3
-				for d in dirs():
-					_line(orbs, d, 2000.0, 14.0 * s, func(o): hit(o, 3.4 * pw(l) * mk))
+				var ls := lanes()
+				var ds := dirs()
+				for i in ds.size():
+					_line(orbs, ds[i], 2000.0, 14.0 * s, func(o): hit(o, 3.4 * pw(l) * mk), ls[i])
 		"lob":
 			if _ready_to("p", LOB_IV / spd(l), dp):
-				for d in dirs():
-					main.spawn_proj(self, "blob", l, d).form_init()
+				var ls := lanes()
+				var ds := dirs()
+				for i in ds.size():
+					main.spawn_proj(self, "blob", l, ds[i], ls[i]).form_init()
 		"sonic":
 			# 부채꼴로 퍼지는 파동: 안의 구체를 모두 치고, 멀수록 약하다 (끝에서 50%)
 			if _ready_to("p", 1.0 / spd(l), dp):
@@ -1384,12 +1426,13 @@ func attack(delta: float, orbs: Array) -> void:
 			if (cos(clock_ph) >= 0.0) != was:
 				clock_hit.clear()
 			var ds := dirs()
+			var ls := lanes()
 			for i in ds.size():
 				_line(orbs, ds[i].rotated(clock_a()), 240.0 * rr(l) * s, 10.0 * s, func(o):
 					var key := [i, o]
 					if not clock_hit.has(key):
 						clock_hit[key] = true
-						hit(o, Rules.t("clock_dmg") * pw(l) * mk))
+						hit(o, Rules.t("clock_dmg") * pw(l) * mk), ls[i])
 		"wisp":
 			wisps = wisps.filter(func(w): return is_instance_valid(w) and not w.is_queued_for_deletion())
 			var cap := wisp_cap()
@@ -2443,9 +2486,10 @@ func _band(_orbs: Array, from: Vector2, d: Vector2, length: float, half_w: float
 
 
 ## d 방향 직선 위의 구체에 효과.
-func _line(_orbs: Array, d: Vector2, length: float, width: float, f: Callable) -> void:
-	for o in main.near_t(position + d * length * 0.5, length * 0.5 + width):
-		var v: Vector2 = o.position - position
+func _line(_orbs: Array, d: Vector2, length: float, width: float, f: Callable, off := Vector2.ZERO) -> void:
+	var p0 := position + off  # off: 다중 발사 짝수 개일 때 나란히 쏘는 옆 간격 (lanes)
+	for o in main.near_t(p0 + d * length * 0.5, length * 0.5 + width):
+		var v: Vector2 = o.position - p0
 		var along := v.dot(d)
 		if along > 0.0 and along < length and absf(v.cross(d)) < width + o.radius():
 			f.call(o)
@@ -2754,14 +2798,20 @@ func _draw_attack() -> void:
 				_draw_puffs(d, 200.0 * rr(l) * s, 0.35, 34, 2.4, c.lightened(0.4), c, 3.0, 10.0)
 		"stream":
 			if fx.get("stream", 0.0) > 0.0:
-				for d in dirs():
-					_draw_wave(d, 260.0 * rr(l) * s, 5.0 * s, 0.05, c, 7.0 * s)
+				var ls := lanes()
+				var ds := dirs()
+				for i in ds.size():
+					_draw_wave(ds[i], 260.0 * rr(l) * s, 5.0 * s, 0.05, c, 7.0 * s, ls[i])
 		"laser":
 			var f: float = fx.get("laser", 0.0)
-			for d in dirs():
+			var ls := lanes()
+			var ds := dirs()
+			for i in ds.size():
+				var d: Vector2 = ds[i]
+				var o2: Vector2 = ls[i]
 				if f > 0.0:
-					draw_line(d * RADIUS, d * 2000.0, Color(c, f / 0.3), (10.0 * f / 0.3 + 2.0) * s)
-					draw_line(d * RADIUS, d * 2000.0, Color(1, 1, 1, f / 0.3), 3.0)
+					draw_line(o2 + d * RADIUS, o2 + d * 2000.0, Color(c, f / 0.3), (10.0 * f / 0.3 + 2.0) * s)
+					draw_line(o2 + d * RADIUS, o2 + d * 2000.0, Color(1, 1, 1, f / 0.3), 3.0)
 				else:
 					var ch: float = 1.0 - cd.get("p", 0.0) / (2.0 / spd(l))
 					draw_circle(d * (RADIUS + 4.0), 2.0 + 4.0 * ch, Color(c, 0.4 + 0.6 * ch))
@@ -2775,12 +2825,16 @@ func _draw_attack() -> void:
 						var rr := R * clampf(k - i * 0.15, 0.05, 1.0)
 						draw_arc(Vector2.ZERO, rr, d.angle() - 0.5, d.angle() + 0.5, 16, Color(c.lightened(0.3), (1.0 - k) * (1.0 - i * 0.25)), 3.0)
 		"clock":
-			for d in dirs():
+			var ls := lanes()
+			var ds := dirs()
+			for i in ds.size():
+				var d: Vector2 = ds[i]
+				var o2: Vector2 = ls[i]
 				var hd: Vector2 = d.rotated(clock_a())
 				var L := 240.0 * rr(l) * s
-				draw_arc(Vector2.ZERO, L, d.angle() - 0.7, d.angle() + 0.7, 24, Color(c, 0.15), 2.0)
-				draw_line(hd * RADIUS, hd * L, Color(c, 0.85), 4.0 * s)
-				draw_line(hd * RADIUS, hd * L, Color(1, 1, 1, 0.5), 1.5)
+				draw_arc(o2, L, d.angle() - 0.7, d.angle() + 0.7, 24, Color(c, 0.15), 2.0)
+				draw_line(o2 + hd * RADIUS, o2 + hd * L, Color(c, 0.85), 4.0 * s)
+				draw_line(o2 + hd * RADIUS, o2 + hd * L, Color(1, 1, 1, 0.5), 1.5)
 	# 물이 들어간 반응은 같은 물길 하나 위에 겹쳐 그린다
 	var rxs := reactions()
 	var chan := 0.0
@@ -2931,7 +2985,7 @@ func _draw_puffs(d: Vector2, rng: float, half: float, n: int, speed: float, c0: 
 
 
 ## 발사 방향으로 뻗은 물결선(물줄기·덩굴).
-func _draw_wave(d: Vector2, length: float, amp: float, freq: float, c: Color, width: float) -> void:
+func _draw_wave(d: Vector2, length: float, amp: float, freq: float, c: Color, width: float, o := Vector2.ZERO) -> void:
 	if length < 2.0:
 		return
 	var pts := PackedVector2Array()
@@ -2939,7 +2993,7 @@ func _draw_wave(d: Vector2, length: float, amp: float, freq: float, c: Color, wi
 	for i in n + 1:
 		var dd := length * i / n
 		var off := sin(dd * freq * TAU - t * 14.0) * amp
-		pts.append(d * (RADIUS + dd) + d.orthogonal() * off)
+		pts.append(o + d * (RADIUS + dd) + d.orthogonal() * off)
 	draw_polyline(pts, c, width)
 	draw_polyline(pts, Color(1, 1, 1, 0.5), width * 0.35)
 
@@ -2971,19 +3025,21 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 		c = Elem.COLORS[els.keys()[0]]
 	if focus >= 0:
 		c.a = 0.35
+	var ks := spread_ks(n)
 	for i in n:
-		var dd := d.rotated((i - (n - 1) / 2.0) * Rules.multi_angle)
+		var dd := d.rotated(spread_a(ks[i]))
+		var lo: Vector2 = o + d.orthogonal() * spread_lane(ks[i])  # 짝수 개 가운데 두 발은 나란히
 		match sp["pat"]:
 			"spray":
 				_r_cone(ci, o, dd, 200.0 * pr * s, 0.35, c)
 			"chain":
 				_r_cone(ci, o, dd, 280.0 * pr * s, 0.5, c)
 			"stream":
-				_r_band(ci, o, dd, 0.0, 260.0 * pr * s, 10.0 * s, c)
+				_r_band(ci, lo, dd, 0.0, 260.0 * pr * s, 10.0 * s, c)
 			"gust":
-				_r_band(ci, o, dd, 0.0, 420.0 * s * Rules.t("range_gust"), 34.0 * s, c)
+				_r_band(ci, lo, dd, 0.0, 420.0 * s * Rules.t("range_gust"), 34.0 * s, c)
 			"laser":
-				_r_band(ci, o, dd, 0.0, far, 14.0 * s, c)
+				_r_band(ci, lo, dd, 0.0, far, 14.0 * s, c)
 			"wall":
 				if i == 0:
 					var inner := Rect2(Vector2.ZERO, Meta.FIELD).grow(-100.0)  # main.spawn_rock처럼 전장 가장자리 안쪽
@@ -2995,7 +3051,7 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 				var shr := maxf(0.3, 1.0 - 0.15 * (mini(els.get(Elem.WOOD, 0), 3) + mini(els.get(Elem.WIND, 0), 3)) * Rules.trait_mul)
 				var r0 := (100.0 + 10.0 * (l - 1)) * s
 				var nn := dd.orthogonal()
-				var a0 := o + dd * RADIUS
+				var a0 := lo + dd * RADIUS
 				var b0 := a0 + dd * 420.0 * wk * Rules.t("range_vortex")
 				var r1 := r0 * (1.0 - 0.6 * shr)
 				var vp := PackedVector2Array([a0 + nn * r0, b0 + nn * r1, b0 - nn * r1, a0 - nn * r0])
@@ -3003,9 +3059,9 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 				vp.append(vp[0])
 				ci.draw_polyline(vp, Color(c.r, c.g, c.b, 0.6 * c.a), 1.5)
 			"lob":
-				_r_band(ci, o, dd, 0.0, LOB_RANGE * pr, lob_r(l) * s, c)
+				_r_band(ci, lo, dd, 0.0, LOB_RANGE * pr, lob_r(l) * s, c)
 			"iron":
-				_r_band(ci, o, dd, 0.0, far, 12.0 * s, c)
+				_r_band(ci, lo, dd, 0.0, far, 12.0 * s, c)
 			"sonic":
 				_r_cone(ci, o, dd, 230.0 * pr * s, 0.5, c)
 			"clock":
@@ -3028,9 +3084,9 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 				for e in els:
 					tl += els[e]
 				var wr := 1.0 + 0.12 * mini(els.get(Elem.WIND, 0), 3) * Rules.trait_mul
-				_r_band(ci, o, dd, 0.0, shot_range(tl, md.get("size", 0)) * wr, 6.0 * s, c)
+				_r_band(ci, lo, dd, 0.0, shot_range(tl, md.get("size", 0)) * wr, 6.0 * s, c)
 			_:
-				_r_band(ci, o, dd, 0.0, far, 6.0 * s, c)
+				_r_band(ci, lo, dd, 0.0, far, 6.0 * s, c)
 	if els.has(Elem.STAR):
 		# 별빛을 모으는 둘레: 이 안에 중심이 있는 오브젝트의 피해를 복사해 모은다 (채우지 않고 점선 윤곽만)
 		var sc: Color = Elem.COLORS[Elem.STAR]
