@@ -104,6 +104,11 @@ const TUNE := {
 	"map_wind_with": 0.3, "map_wind_against": 0.15,  # 폭풍: 순풍 탄 속도·사거리 +, 역풍 -
 	"map_line_trail": 2.0,  # 회랑: 지나간 자리 장판 지속 배율
 	"map_line_cc": 0.3,  # 회랑: 감속·밀치기 세기 +
+	# 진입 시간 맞추기 (2026-11-01): 구체가 전장 가장자리 바로 밖에서 나오고, 가장자리→중앙 시간이 방향과 상관없이 같다 (Main.lane_k)
+	"lane_even": 1.0,  # 0이면 예전처럼 모든 방향 같은 거리(대각선 반 + 30)에서 같은 속도
+	"lane_margin": 30.0,  # 전장 가장자리 밖 몇 px에서 나오는지
+	"lane_speed": 1.1,  # 맞추면서 상하 구체가 전장에 오래 머물러 쉬워진 몫: 모든 방향 속도에 곱함 (봇으로 맞춤)
+	"lane_speed_spiral": 1.0,  # 소용돌이는 따로 (봇 32판 평균: 기존 8.7, 1.1이면 7.7, 0.95면 10.8)
 	# 후반 난이도 (2026-10-31 사용자 "600웨이브쯤이 한계로"): Main.hp_growth·count_k·orb_base_speed·wave_size
 	"hp_late_from": 150.0,  # 이 웨이브까지 체력 x hp_growth(1.05), 그 뒤는 x hp_growth_late
 	"hp_growth_late": 1.03,  # 봇으로 맞춤

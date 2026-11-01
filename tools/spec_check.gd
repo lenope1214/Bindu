@@ -1392,6 +1392,35 @@ func _maps() -> void:
 	var spd_ok := is_equal_approx(MapRule.spiral_speed(60.0), Rules.t("map_spiral_in")) and is_equal_approx(MapRule.spiral_speed(900.0), Rules.t("map_spiral_out"))
 	ok("MAPX-03", flip_ok and spd_ok, "소용돌이: 보스 웨이브 뒤 회전 반전, 중앙 가까울수록 빠름")
 
+	# 진입 시간 맞추기: 평원·소용돌이에서 좌우·상하·모서리 구체가 곧바로 전장에 들어오고 중앙까지 걸리는 시간이 같다
+	var lane_ok := true
+	var lane_txt := ""
+	for mid in ["plain", "spiral"]:
+		_map_on(mid)
+		main.wave = 1
+		var ins: Array = []
+		var arr: Array = []
+		var base: Dictionary = main._roll_orb(1)
+		for a in [0.0, PI / 2.0, atan2(360.0, 640.0), PI, PI * 1.5]:
+			var plan: Dictionary = base.duplicate()
+			plan["a"] = a
+			main._spawn_orb(Orb.Kind.NORMAL, plan)
+			var lo: Orb = main.orbs.get_child(main.orbs.get_child_count() - 1)
+			var t_in := -1.0
+			var t := 0.0
+			while lo.position.distance_to(main.center()) > 20.0 and t < 120.0:
+				lo.step(0.02)
+				t += 0.02
+				if t_in < 0.0 and main.arena().grow(lo.radius()).has_point(lo.position):
+					t_in = t
+			ins.append(t_in)
+			arr.append(t)
+		var lo_t: float = arr.min()
+		var hi_t: float = arr.max()
+		lane_ok = lane_ok and ins.max() < 1.5 and hi_t / lo_t < 1.04
+		lane_txt += " %s 들어옴 %.1f초 이내, 도착 %.1f~%.1f초" % [mid, ins.max(), lo_t, hi_t]
+	ok("WAVE-13", lane_ok, "진입 시간 맞추기:" + lane_txt)
+
 	# 십자로: 길 위에서 길 따라 겨누면 피해 +25%, 길 밖·가로로 겨누면 그대로
 	_map_on("cross")
 	var u := Vector2.from_angle(main.lanes[0])

@@ -18,6 +18,7 @@ var core_dmg := 1  # 중앙에 닿았을 때 깎는 체력
 var shield := 0.0  # 보호막: 이만큼 피해를 먼저 흡수
 var walled := false  # 성벽 특성에 한 번 밀려났음
 var swirl := 0.0  # 나선 이동 각도(라디안)
+var lane_k := 1.0  # 진입 시간 맞추기: 나온 방향별 이동 속도 배율 (main.lane_k)
 var splits := false  # 죽으면 작은 구체 2개
 var resist_e := -1  # 이 속성 피해를 덜 받는다 (부분 저항)
 var sturdy := false  # 굳셈: 밀기·감속·기절·냉기 효과 절반
@@ -264,6 +265,7 @@ func step(delta: float) -> void:
 	var mult := slow_factor if slow_timer > 0.0 else 1.0
 	if root_timer > 0.0 or stagger_t > 0.0:
 		mult = 0.0
+	mult *= lane_k
 	if late != "":
 		_late_step(delta, mult)
 		if digest_t > 0.0:

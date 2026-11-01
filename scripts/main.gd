@@ -3955,7 +3955,7 @@ func _boss_eta() -> float:
 	for i in range(1, pts.size()):
 		L += pts[i - 1].distance_to(pts[i])
 	L -= CORE_RADIUS + 30.0  # 보스 반지름만큼 먼저 닿는다
-	return L / (boss_plan["spd"] * 0.45 * orb_speed_mul * Modes.speed())
+	return L / (boss_plan["spd"] * 0.45 * orb_speed_mul * Modes.speed() * lane_k(boss_plan["a"]))
 
 
 ## 다음 보스 안내 (쉬는 시간에 미리 뽑아 둔 그대로).
@@ -8652,9 +8652,34 @@ func _plan_boss() -> void:
 		boss_plan["wave"] = wave + 1
 
 
-## 구체가 나오는 거리 (화면 대각선 반 + 30, 화면 밖).
-func _spawn_radius() -> float:
-	return Meta.FIELD.length() / 2.0 + 30.0
+## 구체가 나오는 거리. 예전(lane_even 0)은 모든 방향 화면 대각선 반 + 30.
+## 지금은 각도 a 방향 전장 가장자리 + lane_margin: 상하(360)는 좌우(640)보다 가깝다 → lane_k로 속도를 맞춘다.
+func _spawn_radius(a := 0.0) -> float:
+	if Rules.t("lane_even") <= 0.0:
+		return Meta.FIELD.length() / 2.0 + 30.0
+	return _edge_point(center(), Vector2.from_angle(a)).distance_to(center()) + Rules.t("lane_margin")
+
+
+## 진입 시간 맞추기 (2026-11-01): 각도 a에서 나온 구체 속도 배율. 나온 곳에서 중앙까지 걸리는 시간이
+## 좌우(가장 먼 가로 방향)와 같아지게 거리 비율로 곱한다 (상하 약 0.58, 좌우 1, 모서리 약 1.14). 전체에 lane_speed(소용돌이는 lane_speed_spiral, 정원은 1)를 곱함.
+## 소용돌이는 중앙 가까울수록 빨라지므로 거리 대신 걸리는 시간 몫(_lane_time)으로 비율을 낸다.
+func lane_k(a: float) -> float:
+	if Rules.t("lane_even") <= 0.0 or Meta.map_id == "line":
+		return 1.0
+	var ref := Meta.FIELD.x / 2.0 + Rules.t("lane_margin")
+	return _lane_time(_spawn_radius(a)) / _lane_time(ref) * (1.0 if Garden.on else Rules.t("lane_speed_spiral" if Meta.map_id == "spiral" else "lane_speed"))
+
+
+## 거리 d에서 중앙까지 속도 1로 걸리는 시간 (소용돌이: 나선이라 안쪽으로는 cos(비낌)만큼, 거리별 속도 배율 반영).
+func _lane_time(d: float) -> float:
+	if Meta.map_id != "spiral":
+		return d
+	var t := 60.0
+	var n := 48
+	var step := maxf(d - 60.0, 0.0) / n
+	for i in n:
+		t += step / (cos(SPIRAL_SWIRL) * MapRule.spiral_speed(60.0 + step * (i + 0.5)))
+	return t
 
 
 ## 각도 a에서 나온 구체가 막히지 않을 때 지나가는 길 (소용돌이 맵은 나선, 구체 이동과 같은 식).
@@ -8663,7 +8688,7 @@ func _orb_path(a: float, y := 0.0) -> PackedVector2Array:
 	if Meta.map_id == "line":
 		return PackedVector2Array([_line_start(y), _line_end(y)])
 	var c := center()
-	var p := c + Vector2.from_angle(a) * _spawn_radius()
+	var p := c + Vector2.from_angle(a) * _spawn_radius(a)
 	if Meta.map_id != "spiral":
 		return PackedVector2Array([p, c])
 	var sw := SPIRAL_SWIRL * MapRule.swirl_sign(wave if phase == Phase.WAVE else wave + 1)
@@ -8684,9 +8709,10 @@ func _spawn_orb(kind := -1, plan := {}) -> void:
 	var o := Orb.new()
 	var p: Dictionary = plan if not plan.is_empty() else _roll_orb(wave)
 	o.born = run_game
-	o.position = center() + Vector2.from_angle(p["a"]) * _spawn_radius()
+	o.position = center() + Vector2.from_angle(p["a"]) * _spawn_radius(p["a"])
 	o.from_a = p["a"]
 	o.target = center()
+	o.lane_k = lane_k(p["a"])
 	if Meta.map_id == "line":
 		o.position = _line_start(p.get("y", 0.0))
 		o.target = _line_end(p.get("y", 0.0))
@@ -8832,6 +8858,7 @@ func _jam_trait(o: Orb) -> void:
 			o.jam_home = o.target
 			o.target = best.position
 			o.swirl = 0.0  # 곧장 온다
+			o.lane_k = 1.0
 
 
 ## 계산 조각마다: 그림자는 둘레 오브젝트를 멈추고, 표적은 닿으면 멈추고 사라진다.
@@ -8926,6 +8953,7 @@ func _spawn_child(parent: Orb) -> void:
 	o.position = parent.position + Vector2(randf_range(-14, 14), randf_range(-14, 14))
 	o.from_a = parent.from_a
 	o.target = parent.target
+	o.lane_k = parent.lane_k
 	o.setup(Orb.Kind.NORMAL, maxf(1.0, ceilf(parent.max_hp * 0.4)), parent.speed * 1.1 / (orb_speed_mul * Modes.speed()))
 	o.resist_e = parent.resist_e
 	o.sturdy = parent.sturdy
