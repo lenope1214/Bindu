@@ -16,6 +16,8 @@ var plv := 1  # 공격방식 레벨
 var mods := {}  # 강화 id -> 겹친 수
 var prism := 0
 var prism_flash := 0.0  # 탄이 지나간 순간 프리즘이 번쩍인다 (표시용)
+var prism_fx_cd := 0.0  # 프리즘 번쩍임 연출 대기 (표시용, 0이 되어야 다시 번쩍)
+const PRISM_FX_GAP := 0.8  # 프리즘 연출(번쩍·파편·육각형) 최소 간격 초
 var pincer := 0  # 협공: 여러 오브젝트가 함께 맞힌 구체에 표식 폭발
 var reso := 0
 var trigs := {}  # 발동 id -> 겹친 수
@@ -2885,6 +2887,8 @@ func _process(delta: float) -> void:
 	if place_pop > 0.0:
 		place_pop = maxf(place_pop - delta * 3.0, 0.0)
 		queue_redraw()
+	if prism_fx_cd > 0.0:
+		prism_fx_cd = maxf(prism_fx_cd - delta, 0.0)
 	if prism_flash > 0.0:
 		prism_flash = maxf(prism_flash - delta * 4.0, 0.0)
 		queue_redraw()

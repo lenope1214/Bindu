@@ -106,6 +106,7 @@ func _initialize():
 	_vote()
 	_ugc()
 	_board_filters()
+	_prism_fx()
 	_lint()
 	print("SPEC %s (실패 %d, 확인한 기능 %d개)" % ["통과" if fails == 0 else "실패", fails, seen.size()])
 	quit(1 if fails > 0 else 0)
@@ -2073,6 +2074,33 @@ func _ugc() -> void:
 	var del_ok: bool = OnlineConfig.SERVER_URL == "" or main.settings_panel.find_children("*", "Button", true, false).any(func(b): return b.text == "내 온라인 데이터 지우기")
 	ok("ONLINE-06", filt and hide_ok and people_ok and panel_ok and unblock_ok and del_ok,
 		"닉네임 거르기, 리더보드 차단한 사람 이름 가림·[신고·차단] 창(신고는 서버 report 있을 때만)·차단 풀기, 설정 데이터 지우기 버튼")
+
+
+## 프리즘 연출(번쩍·굴절 육각형)은 프리즘마다 PRISM_FX_GAP초에 한 번, 피해 +는 탄마다.
+## 파편 연출이 난수를 써서 다른 검사의 난수 순서를 흔들지 않게 맨 끝(_lint 앞)에서 돈다.
+func _prism_fx() -> void:
+	_fresh()
+	var c: Vector2 = main.center()
+	var r := _tower(c + Vector2(-200, 0))
+	var near := _tower(c + Vector2(-100, 0))
+	near.add_link("prism")
+	main.prism_towers = [near]
+	main.refracts = []
+	var pdm: Array = []
+	for i in 3:
+		if i == 2:
+			near._process(Tower.PRISM_FX_GAP + 0.01)
+		var pp := Projectile.new()
+		pp.setup("shot", r, 1, Vector2.RIGHT)
+		pp.position = near.position
+		var d0: float = pp.dmg
+		pp._check_prisms()
+		pdm.append(pp.dmg / d0)
+		pp.free()
+	var fx_ok: bool = main.refracts.size() == 2 and pdm.all(func(x): return is_equal_approx(x, 1.0 + Rules.prism_dmg))
+	ok("LINK-02", fx_ok, "프리즘 연출은 %.1f초에 한 번 (탄 3발 중 굴절 %d번), 피해 +%d%%는 탄마다" % [Tower.PRISM_FX_GAP, main.refracts.size(), roundi(Rules.prism_dmg * 100)])
+	main.prism_towers = []
+	main.refracts = []
 
 
 func _lint() -> void:

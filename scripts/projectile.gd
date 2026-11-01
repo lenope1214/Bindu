@@ -369,9 +369,11 @@ func _check_prisms() -> void:
 			for e in tw.elements:
 				prism_els[e] = maxi(prism_els.get(e, 0), tw.elements[e])
 			col = col.lerp(tw.color(), 0.5)
-			owner_tower.main.burst(position, tw.color(), 4, 80.0)
-			owner_tower.main.refract(tw.position, vel.normalized(), tw.color())
-			tw.prism_flash = 1.0
+			if tw.prism_fx_cd <= 0.0:  # 번쩍·파편·육각형은 프리즘마다 PRISM_FX_GAP초에 한 번 (피해·속성은 매번)
+				tw.prism_fx_cd = Tower.PRISM_FX_GAP
+				owner_tower.main.burst(position, tw.color(), 4, 80.0)
+				owner_tower.main.refract(tw.position, vel.normalized(), tw.color())
+				tw.prism_flash = 1.0
 
 
 ## 독버섯: 굴러가며 MUSH_GAP마다 지뢰 (마지막 하나는 멈춘 자리에, main._land).
