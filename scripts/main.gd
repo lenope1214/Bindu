@@ -285,7 +285,8 @@ var remote_run := ""  # remote_btn이 가져올 판
 var moved_run := ""  # 다른 기기가 가져간 판: 이 기기에서 계속 해도 서버에는 더 올리지 않는다
 var new_btn: Button
 var new_armed := 0.0  # 저장된 판이 있을 때 새로 시작은 두 번 눌러야 (실수로 지우지 않게)
-var map_label: Label
+var map_label: Label  # 준비 화면 맵 카드 아래 설명 (고른 맵 이름·규칙, 작은 설명은 meta "sub")
+var map_cards: Array[Button] = []  # 준비 화면 맵 카드 (Meta.MAP_IDS 순서, _draw_map_card)
 var flip_label: Label  # 회랑 맵: 구체가 오는 쪽 (회랑일 때만 보임)
 var rules_label: Label
 var skill_label: Label  # 준비 화면 중앙 기술 묶음
@@ -5071,7 +5072,7 @@ func _build_menu(root: Control) -> void:
 	home_box = VBoxContainer.new()
 	home_box.add_theme_constant_override("separation", 10)
 	box.add_child(home_box)
-	map_label = _prep_row(prep_box, "맵", func(): _cycle_map(-1), func(): _cycle_map(1))
+	map_label = _build_map_cards(prep_box)
 	flip_label = _prep_row(prep_box, "오는 쪽", _toggle_flip, _toggle_flip)
 	rules_label = _prep_row(prep_box, "규칙", func(): _cycle_rules(-1), func(): _cycle_rules(1))
 	skill_label = _prep_row(prep_box, "중앙 기술", func(): _cycle_skill(-1), func(): _cycle_skill(1))
@@ -5717,6 +5718,119 @@ func _prep_row(box: BoxContainer, title: String, prev: Callable, next: Callable)
 	return l
 
 
+## 준비 화면 맵 고르기: 맵 카드 다섯 장(이름·길 모양·규칙·친화 속성 그림·최고 웨이브) + 아래 고른 맵 설명.
+## 2026-11-01 사용자 요청 "맵 친화 속성도 게임 시작 전에 알 수 있게, 텍스트 대신 카드 형식으로". ←/→도 그대로.
+func _build_map_cards(box: BoxContainer) -> Label:
+	var row := PanelContainer.new()
+	row.custom_minimum_size = Vector2(PREP_W, 0)
+	row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var psb := _prep_sb()
+	psb.content_margin_left = 8
+	psb.content_margin_top = 8
+	psb.content_margin_bottom = 8
+	row.add_theme_stylebox_override("panel", psb)
+	box.add_child(row)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 6)
+	row.add_child(v)
+	var h := HBoxContainer.new()
+	h.alignment = BoxContainer.ALIGNMENT_CENTER
+	h.add_theme_constant_override("separation", 8)
+	v.add_child(h)
+	map_cards.clear()
+	var cw := floorf((PREP_W - 16.0 - 8.0 * (Meta.MAP_IDS.size() - 1)) / Meta.MAP_IDS.size())
+	for id in Meta.MAP_IDS:
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(cw, 150 if _phone() else 138)
+		b.focus_mode = Control.FOCUS_NONE
+		b.set_meta("map", id)
+		for st in ["normal", "hover", "pressed"]:
+			b.add_theme_stylebox_override(st, StyleBoxEmpty.new())  # 바탕·테두리는 _draw_map_card가 (고른 맵 강조)
+		b.pressed.connect(func():
+			if Meta.map_id != id:
+				Meta.map_id = id
+				sfx.play("place")
+				_refresh_menu()
+				_save_best()
+				queue_redraw())
+		b.draw.connect(_draw_map_card.bind(b))
+		b.mouse_entered.connect(b.queue_redraw)
+		b.mouse_exited.connect(b.queue_redraw)
+		h.add_child(b)
+		map_cards.append(b)
+	var l := _prep_main()
+	v.add_child(l)
+	var sub := _prep_sub()
+	sub.custom_minimum_size = Vector2(PREP_W - 40.0, 0)
+	v.add_child(sub)
+	l.set_meta("sub", sub)
+	l.set_meta("row", row)
+	return l
+
+
+## 맵 카드 한 장: 고른 맵은 밝은 테두리. 위 이름, 가운데 길 모양, 규칙 이름, 친화 속성 그림, 최고 웨이브.
+func _draw_map_card(b: Button) -> void:
+	var id: String = b.get_meta("map")
+	var m: Dictionary = Meta.MAPS[id]
+	var sel := Meta.map_id == id
+	var hov := b.is_hovered()
+	var r := Rect2(Vector2.ZERO, b.size)
+	var acc := Color(0.75, 0.85, 1.0)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = (m["bg"] as Color).lightened(0.12 if sel else (0.07 if hov else 0.03))
+	sb.border_color = Color(1, 0.85, 0.45) if sel else Color(1, 1, 1, 0.25 if hov else 0.1)
+	sb.set_border_width_all(3 if sel else 1)
+	sb.set_corner_radius_all(8)
+	b.draw_style_box(sb, r)
+	var cx := b.size.x / 2.0
+	var nc := Color(1, 0.92, 0.7) if sel else Color(1, 1, 1, 0.85)
+	b.draw_string(ui_font, Vector2(0, 22), m["name"], HORIZONTAL_ALIGNMENT_CENTER, b.size.x, 16, nc)
+	if id in Meta.TRIAL_MAPS:
+		b.draw_string(ui_font, Vector2(0, 35), "시험", HORIZONTAL_ALIGNMENT_CENTER, b.size.x, 10, Color(1, 1, 1, 0.45))
+	_draw_map_path(b, id, Vector2(cx, 62.0), 20.0, Color(acc, 0.75 if sel else 0.5))
+	var rt := MapRule.rule_text(id).get_slice(":", 0)
+	b.draw_string(ui_font, Vector2(0, 100), rt, HORIZONTAL_ALIGNMENT_CENTER, b.size.x, 13, Color(MAP_AFF_COLOR, 0.95 if sel else 0.7))
+	# 친화 속성 그림 (자주 나오고 피해 +)
+	var es: Array = MapRule.aff("elem", id)
+	var gap := 26.0
+	var x0 := cx - gap * (es.size() - 1) / 2.0
+	for i in es.size():
+		Glyph.elem(b, es[i], Vector2(x0 + gap * i, 118.0), 9.0)
+	var best := Meta.best_of(Meta.run_key(id))
+	if best[0] > 0:
+		b.draw_string(ui_font, Vector2(0, b.size.y - 6.0), "최고 %d" % best[0], HORIZONTAL_ALIGNMENT_CENTER, b.size.x, 11, Color(1, 1, 1, 0.5))
+
+
+## 맵 카드 가운데 길 모양 그림 (구체가 들어오는 모양). c 가운데, s 반지름.
+func _draw_map_path(ci: CanvasItem, id: String, c: Vector2, s: float, col: Color) -> void:
+	ci.draw_circle(c, 3.0, Color(1, 0.9, 0.6))
+	match id:
+		"plain":
+			for k in 3:
+				var d := Vector2.from_angle(-PI / 2.0 + k * TAU / 3.0)
+				ci.draw_line(c + d * s * 1.5, c + d * s * 0.45, col, 2.0)
+		"spiral":
+			var pts := PackedVector2Array()
+			for i in 40:
+				var t := i / 39.0
+				pts.append(c + Vector2.from_angle(t * TAU * 1.4) * s * (1.5 - t * 1.1))
+			ci.draw_polyline(pts, col, 2.0)
+		"cross":
+			for k in 4:
+				var d := Vector2.from_angle(k * PI / 2.0)
+				ci.draw_line(c + d * s * 1.5, c + d * s * 0.45, col, 3.0)
+		"storm":
+			for k in 6:
+				var a := k * TAU / 6.0 + 0.3
+				var d := Vector2.from_angle(a)
+				ci.draw_line(c + d * s * 1.5, c + d * s * 1.0, Color(col, 0.4 + 0.1 * (k % 3)), 2.0)
+			ci.draw_arc(c, s * 0.75, 0.6, 2.4, 10, Color(col, 0.6), 1.5)
+			ci.draw_arc(c, s * 0.75, 3.7, 5.5, 10, Color(col, 0.6), 1.5)
+		"line":
+			ci.draw_line(c + Vector2(-s * 2.2, 0), c + Vector2(s * 2.2, 0), col, 3.0)
+			ci.draw_line(c + Vector2(-s * 2.2, -6), c + Vector2(-s * 2.2, 6), Color(1, 0.9, 0.6, 0.8), 2.0)
+
+
 ## 준비 화면 줄 글: 가운데 글과 작은 설명 (설명이 비면 숨김).
 func _prep_set(l: Label, main_t: String, sub_t: String) -> void:
 	l.text = main_t
@@ -5790,12 +5904,6 @@ func _draw_map_rule(c: Vector2, now: float) -> void:
 
 
 ## 시작 화면 맵 줄: 맵 규칙·친화 카드 (시험)
-func _map_rule_lines() -> String:
-	if not MapRule.on():
-		return ""
-	return "%s (시험)\n친화: %s\n" % [MapRule.rule_text(), MapRule.aff_text()]
-
-
 func _refresh_menu() -> void:
 	var m: Dictionary = Meta.MAPS[Meta.map_id]
 	var keep := Garden.boosted
@@ -5807,7 +5915,11 @@ func _refresh_menu() -> void:
 	garden_btn.get_parent().visible = Meta.games > 0 or Garden.seeds_total > 0  # 첫 판 뒤에
 	_refresh_garden_menu()
 	# 폰: 맵 설명 줄은 뺀다 (도움말·도감에 있고, 줄이 많으면 시작 화면 전체가 줄어 버튼이 작아진다)
-	_prep_set(map_label, _kh("%s  (←/→)" % Meta.map_name()), "%s최고 기록%s · 웨이브 %d · 점수 %s" % ["" if _phone() else m["desc"].replace("\n", " ") + "\n" + _map_rule_lines(), (" (쉽게 모드)" if Modes.easy() else "") + grow_tag, best[0], num(best[1])])
+	# 맵 카드 아래: 고른 맵 이름·규칙, 작은 설명에 맵 설명·친화 카드·최고 기록 (폰은 맵 설명 줄만 뺌)
+	var mr := MapRule.rule_text() + " (시험)" if MapRule.on() else ""
+	_prep_set(map_label, _kh("%s%s" % [Meta.map_name(), "" if touch_ui else "  (←/→)"]), "%s%s최고 기록%s · 웨이브 %d · 점수 %s" % ["" if _phone() else m["desc"].replace("\n", " ") + "\n", "%s\n친화 카드 (자주 나옴·피해 +%d%%): %s\n" % [mr, roundi(Rules.t("map_aff_dmg") * 100), MapRule.aff_text()] if MapRule.on() else "", (" (쉽게 모드)" if Modes.easy() else "") + grow_tag, best[0], num(best[1])])
+	for mc in map_cards:
+		mc.queue_redraw()
 	flip_label.get_meta("row").visible = Meta.map_id == "line"
 	_prep_set(flip_label, _kh("%s  (F)" % ("왼쪽 → 문은 오른쪽 끝" if Meta.line_flip else "오른쪽 → 문은 왼쪽 끝")), "")
 	var ra := [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", "(눌러서 바꾸기)" if touch_ui else "(↑/↓)", _wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 550.0, 18)]

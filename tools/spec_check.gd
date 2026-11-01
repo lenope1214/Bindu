@@ -1094,6 +1094,18 @@ func _maps() -> void:
 	Rules.tune["map_on"] = 0.0
 	ok("MAPX-08", g_off and not MapRule.on() and MapRule.crowd_k() == 1.0 and MapRule.tower_mul({Elem.ICE: 1}, "lob") == 1.0, "정원·패치 map_on 0이면 맵 규칙·친화 끔")
 	_fresh(5)
+	var map0: String = Meta.map_id
+	var mo: float = Rules.tune["map_on"]
+	Rules.tune["map_on"] = 1.0
+	var n_ok: bool = main.map_cards.size() == Meta.MAP_IDS.size()
+	main.map_cards[2].pressed.emit()
+	var picked: bool = Meta.map_id == Meta.MAP_IDS[2]
+	var sub_t: String = (main.map_label.get_meta("sub") as Label).text.replace("\u2060", "")  # _kr_keep 줄바꿈 방지 문자
+	var aff_shown: bool = sub_t.contains("친화") and sub_t.contains(Elem.NAMES[MapRule.aff("elem")[0]])
+	Meta.map_id = map0
+	Rules.tune["map_on"] = mo
+	main._refresh_menu()
+	ok("MAPX-09", n_ok and picked and aff_shown, "준비 화면 맵 카드: 맵마다 한 장, 누르면 그 맵, 아래 설명에 친화 카드")
 
 
 # ---------- 이어하기 ----------
