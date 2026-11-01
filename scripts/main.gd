@@ -3773,6 +3773,9 @@ func _draw_info() -> void:
 		# 오브젝트도 되도록 가리지 않는다 (배지를 비킬 때 오브젝트 위에 얹히던 것)
 		for t in towers.get_children():
 			blockers.append(Rect2(xf * t.position - Vector2(22, 26), Vector2(44, 48)))
+		# 보스 길 안내(고리·"보스 · 웨이브 N" 글자·들어오는 길)도 가리지 않는다
+		for br in _boss_mark_rects():
+			blockers.append(xf * br)
 		for arr in _lane_arrows():
 			var li: int = arr[2]
 			var n: int = counts[li] if li < counts.size() else 0
@@ -4018,12 +4021,13 @@ func _draw_star_rings() -> void:
 
 
 ## 보스가 올 길: 쉬는 시간과, 보스 웨이브에서 보스가 나오기 전까지.
-func _draw_boss_path(now: float) -> void:
+## 보스 길 표시 자리 (그림과 진입 배지 비키기가 같은 값을 쓴다). 그릴 게 없으면 빈 사전.
+## pts: 화면 안 길, lens: 누적 길이, m: 들어오는 자리 고리, lp·lw: 글자 자리·폭.
+func _boss_mark() -> Dictionary:
 	if boss_plan.is_empty() or title_label.visible or phase == Phase.GAMEOVER:
-		return
+		return {}
 	if phase == Phase.WAVE and boss_plan["wave"] != wave:
-		return
-	var col := Color(1, 0.35, 0.6)
+		return {}
 	var vr := arena()
 	var all := _orb_path(boss_plan["a"], boss_plan.get("y", 0.0))
 	# 화면 안에 들어온 뒤부터 그린다 (직선은 화면 가장자리에서 자름)
@@ -4039,13 +4043,66 @@ func _draw_boss_path(now: float) -> void:
 			if not pts.is_empty() or vr.has_point(p):
 				pts.append(p)
 	if pts.size() < 2:
-		return
-	var pulse := 0.75 + 0.25 * sin(now * 3.0)
-	draw_polyline(pts, Color(col, 0.6 * pulse), 2.5)
-	# 보스가 오는 쪽으로 흐르는 화살 (길이 비율로 놓는다)
+		return {}
 	var lens: Array[float] = [0.0]
 	for i in range(1, pts.size()):
 		lens.append(lens[i - 1] + pts[i - 1].distance_to(pts[i]))
+	var total: float = lens[-1]
+	# 들어오는 자리: 큰 고리 + 글자. 가장자리의 버튼·점수 줄에 가리지 않게 길을 따라 안쪽(110)에
+	var at := minf(110.0, total * 0.4)
+	var j2 := 1
+	while j2 < pts.size() - 1 and lens[j2] < at:
+		j2 += 1
+	var d2 := (pts[j2] - pts[j2 - 1]).normalized()
+	var m := pts[j2 - 1] + d2 * (at - lens[j2 - 1])
+	var label := "보스 · 웨이브 %d" % boss_plan["wave"]
+	var w := ui_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, BOSS_FS).x
+	# 길 옆에 쓴다 (길 위에 쓰면 화살과 겹침): 중앙에서 먼 쪽 옆
+	var side := d2.orthogonal()
+	if side.dot(m - core()) < 0.0:
+		side = -side
+	var lp := m + side * 30.0 + Vector2(-w / 2.0 if absf(side.x) < 0.5 else (0.0 if side.x > 0.0 else -w), 6.0)
+	lp = lp.clamp(Vector2(8, 70), vr.size - Vector2(w + 8, 70))
+	return {"pts": pts, "lens": lens, "m": m, "lp": lp, "lw": w, "label": label}
+
+
+## 진입 배지가 피할 보스 표시 자리(월드 좌표): 고리·글자·화면 안 길.
+func _boss_mark_rects() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	var bm := _boss_mark()
+	if bm.is_empty():
+		return out
+	var m: Vector2 = bm["m"]
+	out.append(Rect2(m - Vector2(26, 26), Vector2(52, 52)))
+	out.append(Rect2(bm["lp"] - Vector2(4, BOSS_FS + 2), Vector2(bm["lw"] + 8, BOSS_FS + 10)))
+	# 길 전체 (중앙 점 둘레는 빼고): 소용돌이는 꺾인 길을 마디마다
+	var pts: PackedVector2Array = bm["pts"]
+	for i in range(1, pts.size()):
+		var a := pts[i - 1]
+		var L := a.distance_to(pts[i])
+		var d := (pts[i] - a) / maxf(L, 0.01)
+		var s := 0.0
+		while s < L:
+			var q := a + d * s
+			if q.distance_to(core()) > CORE_RADIUS + 30.0:
+				out.append(Rect2(q - Vector2(8, 8), Vector2(16, 16)))
+			s += 20.0
+	return out
+
+
+const BOSS_FS := 16
+
+
+func _draw_boss_path(now: float) -> void:
+	var bm := _boss_mark()
+	if bm.is_empty():
+		return
+	var col := Color(1, 0.35, 0.6)
+	var pts: PackedVector2Array = bm["pts"]
+	var lens: Array[float] = bm["lens"]
+	var pulse := 0.75 + 0.25 * sin(now * 3.0)
+	draw_polyline(pts, Color(col, 0.6 * pulse), 2.5)
+	# 보스가 오는 쪽으로 흐르는 화살 (길이 비율로 놓는다)
 	var total: float = lens[-1]
 	for k in 3:
 		var dpos := fmod(now * 0.12 + k / 3.0, 1.0) * (total - CORE_RADIUS - 20.0)
@@ -4058,26 +4115,12 @@ func _draw_boss_path(now: float) -> void:
 		var d := seg.normalized()
 		var q := pts[j - 1] + d * (dpos - lens[j - 1])
 		draw_colored_polygon(PackedVector2Array([q + d * 9.0, q - d * 5.0 + d.orthogonal() * 7.0, q - d * 5.0 - d.orthogonal() * 7.0]), Color(col, 0.85))
-	# 들어오는 자리: 큰 고리 + 글자. 가장자리의 버튼·점수 줄에 가리지 않게 길을 따라 안쪽(110)에
-	var at := minf(110.0, total * 0.4)
-	var j2 := 1
-	while j2 < pts.size() - 1 and lens[j2] < at:
-		j2 += 1
-	var d2 := (pts[j2] - pts[j2 - 1]).normalized()
-	var m := pts[j2 - 1] + d2 * (at - lens[j2 - 1])
+	var m: Vector2 = bm["m"]
 	draw_arc(m, 20.0 + 3.0 * sin(now * 5.0), 0, TAU, 32, Color(col, 0.95), 3.0)
 	draw_circle(m, 9.0, Color(col, 0.9))
-	var label := "보스 · 웨이브 %d" % boss_plan["wave"]
-	var fs := 16
-	var w := ui_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	# 길 옆에 쓴다 (길 위에 쓰면 화살과 겹침): 중앙에서 먼 쪽 옆
-	var side := d2.orthogonal()
-	if side.dot(m - core()) < 0.0:
-		side = -side
-	var lp := m + side * 30.0 + Vector2(-w / 2.0 if absf(side.x) < 0.5 else (0.0 if side.x > 0.0 else -w), 6.0)
-	lp = lp.clamp(Vector2(8, 70), vr.size - Vector2(w + 8, 70))
-	draw_string_outline(ui_font, lp, label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0, 0, 0, 0.9))
-	draw_string(ui_font, lp, label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1, 0.75, 0.85))
+	var lp: Vector2 = bm["lp"]
+	draw_string_outline(ui_font, lp, bm["label"], HORIZONTAL_ALIGNMENT_LEFT, -1, BOSS_FS, 4, Color(0, 0, 0, 0.9))
+	draw_string(ui_font, lp, bm["label"], HORIZONTAL_ALIGNMENT_LEFT, -1, BOSS_FS, Color(1, 0.75, 0.85))
 
 
 ## 폰 [적용] 버튼: 미리보기 중인 카드 오른쪽 위 모서리에 걸친다 (왼쪽 위는 고르기 꼬리표, 카드 아래는 새로고침 줄)
