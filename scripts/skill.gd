@@ -60,7 +60,13 @@ static func focus_tower(main, p: Vector2) -> Tower:
 	return best
 
 
-## p에 쓴다. 닿은 것이 없으면 false (쿨다운을 쓰지 않는다).
+## 붙잡기 범위 안 생존 구체. near는 격자 후보라 실제 거리도 확인한다.
+static func hold_targets(main, p: Vector2) -> Array:
+	var r := radius("hold")
+	return main.near(p, r).filter(func(o): return o.hp > 0.0 and o.position.distance_to(p) < r + o.radius())
+
+
+## p에 쓴다. 효과를 적용한 대상이 없으면 false (쿨다운을 쓰지 않는다).
 static func use(main, id: String, p: Vector2) -> bool:
 	var col: Color = COLORS[id]
 	match id:
@@ -72,10 +78,8 @@ static func use(main, id: String, p: Vector2) -> bool:
 			p = t.position
 		"hold":
 			var any := false
-			var r := Rules.t("skill_hold_r")
-			for o in main.near(p, r):
-				if o.hp > 0.0 and o.position.distance_to(p) < r + o.radius():
-					o.root(Rules.t("skill_hold_t"))
+			for o in hold_targets(main, p):
+				if o.root(Rules.t("skill_hold_t")):
 					any = true
 			if not any:
 				return false

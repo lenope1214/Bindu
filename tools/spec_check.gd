@@ -2502,6 +2502,88 @@ func _skills() -> void:
 	main._skills_new_run(0)
 	ok("SKILL-05", q_ok and auto_ok, "빠른 손 2번 x0.64 %s, 자동 사용 %s" % [q_ok, auto_ok])
 	_clear()
+	_hold_immunity()
+
+
+## 붙잡기 실패는 사용 횟수·쿨다운·성공 효과를 쓰지 않고, 수동 조준은 유지한다.
+func _hold_immunity() -> void:
+	for natural in [false, true]:
+		for kind in [Orb.Kind.NORMAL, Orb.Kind.BOSS]:
+			_fresh(12)
+			main._skills_new_run(0)
+			main.phase = main.Phase.WAVE
+			var o := _orb(main.center() + Vector2(210, 0), 100.0, kind, 60.0)
+			if natural:
+				for i in 3:
+					o.root(2.0)
+				for i in 121:
+					o.step(1.0 / 60.0)
+			else:
+				o.root_immune = 2.0
+			main._resolve(0.0)
+			main._arm_skill(1)
+			var fx_n: int = main.skill_fx.size()
+			var immune := o.root_immune > 0.0 and o.root_timer == 0.0
+			var used: bool = main._use_skill("hold", o.position)
+			var no_cost: bool = not used and main.skill_left("hold") == 0.0 and main.skill_used == 0
+			var feedback: bool = main.skill_arm == "hold" and main.toast.text.contains(main._kr_keep("면역"))
+			ok("SKILL-03", immune and no_cost and feedback and o.root_timer == 0.0 and main.skill_fx.size() == fx_n,
+				"붙잡기 전부 면역: 자연 %s·종류 %d, 사용 %s·쿨다운 %.1f·안내 %s" % [natural, kind, used, main.skill_left("hold"), feedback])
+
+	# near는 격자 후보를 돌려주므로 죽은 구체·실제 범위 밖 면역 구체는 면역 안내 대상이 아니다.
+	_fresh(12)
+	main._skills_new_run(0)
+	main.phase = main.Phase.WAVE
+	var p: Vector2 = main.center() + Vector2(210, 0)
+	var dead := _orb(p, 50.0)
+	dead.root_immune = 2.0
+	var outside := _orb(p + Vector2(150, 0), 50.0)
+	outside.root_immune = 2.0
+	main._resolve(0.0)
+	dead.hp = 0.0
+	main._arm_skill(1)
+	var missed: bool = not main._use_skill("hold", p)
+	ok("SKILL-03", missed and main.skill_left("hold") == 0.0 and main.toast.text.contains(main._kr_keep("없어요")) and not main.toast.text.contains(main._kr_keep("면역")),
+		"붙잡기 빈 범위: 죽은 구체·범위 밖 면역 구체는 제외하고 구체 없음 안내")
+
+	# 성공한 첫 구체 때문에 뒤 구체의 root 호출을 건너뛰면 안 된다. 순서를 바꿔 둘 다 확인한다.
+	for immune_first in [false, true]:
+		_fresh(12)
+		main._skills_new_run(0)
+		main.phase = main.Phase.WAVE
+		var c: Vector2 = main.center() + Vector2(210, 0)
+		var group: Array = []
+		for i in 3:
+			group.append(_orb(c + Vector2(0, i * 20), 50.0))
+		var immune: Orb = group[0 if immune_first else 2]
+		immune.root_immune = 2.0
+		main._resolve(0.0)
+		main._arm_skill(1)
+		var used: bool = main._use_skill("hold", c)
+		var stopped: bool = group.all(func(o): return o == immune or is_equal_approx(o.root_timer, 2.0))
+		ok("SKILL-03", used and stopped and immune.root_timer == 0.0 and is_equal_approx(main.skill_left("hold"), 30.0) and main.skill_used == 1 and main.skill_arm == "",
+			"붙잡기 혼합 범위: 면역 먼저 %s, 비면역 구체 모두 정지·쿨다운 한 번" % immune_first)
+
+	# 자동 사용은 면역 실패를 조용히 넘기고, 면역이 끝나면 같은 기술을 다시 시도한다.
+	_fresh(12)
+	main._skills_new_run(0)
+	main.phase = main.Phase.WAVE
+	var boss := _orb(main.center() + Vector2(210, 0), 100.0, Orb.Kind.BOSS)
+	boss.root_immune = 2.0
+	main._resolve(0.0)
+	main.toast.text = "자동 사용 전"
+	main.auto_skills = true
+	main._skill_tick(0.01)
+	var quiet: bool = main.skill_left("hold") == 0.0 and main.skill_used == 0 and main.toast.text == "자동 사용 전"
+	boss.step(2.1)
+	main._resolve(0.0)
+	main._skill_tick(0.01)
+	ok("SKILL-03", quiet and is_equal_approx(boss.root_timer, 1.0) and is_equal_approx(main.skill_left("hold"), 30.0) and main.skill_used == 1,
+		"붙잡기 자동 사용: 면역 중 비용·안내 없음, 면역이 풀리면 다시 사용")
+	main.auto_skills = false
+	main.phase = main.Phase.CHOOSE
+	main._skills_new_run(0)
+	_clear()
 
 
 ## 기맥·빌드 읽기 (LEY-01..03, BUILD-01..02)

@@ -8337,13 +8337,16 @@ func _arm_skill(i: int) -> void:
 		_show_toast(("%s: 쓸 곳을 누르세요" if touch_ui else "%s: 쓸 곳을 클릭 (우클릭·Esc 취소)") % Skill.NAMES[id])
 
 
-## p에 기술을 쓴다. 닿는 것이 없으면 쓰지 않는다 (누른 기술이면 이유를 알림).
+## p에 기술을 쓴다. 적용할 대상이 없으면 쓰지 않는다 (누른 기술이면 이유를 알림).
 func _use_skill(id: String, p: Vector2) -> bool:
 	if phase != Phase.WAVE or skill_left(id) > 0.0 or not id in skill_ids:
 		return false
 	if not Skill.use(self, id, p):
 		if skill_arm == id:
-			_show_toast("집중: 오브젝트 위를 누르세요" if id == "focus" else "%s: 둘레에 구체가 없어요" % Skill.NAMES[id])
+			if id == "hold" and not Skill.hold_targets(self, p).is_empty():
+				_show_toast("붙잡기: 구체가 기절·속박 면역 중이에요")
+			else:
+				_show_toast("집중: 오브젝트 위를 누르세요" if id == "focus" else "%s: 둘레에 구체가 없어요" % Skill.NAMES[id])
 		return false
 	skill_cd[id] = Skill.cd_full(id, perks.get("quick", 0))
 	skill_used += 1
