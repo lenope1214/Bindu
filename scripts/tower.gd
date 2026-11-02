@@ -967,35 +967,6 @@ static func poly_len(pts: PackedVector2Array) -> float:
 	return L
 
 
-## 속성 대격변: 속성마다 무작위로 다시 뽑는다. 같은 속성이 나오면 레벨 +1.
-func cataclysm_elements() -> void:
-	var old := order.duplicate()
-	var olds := elements.duplicate()
-	elements.clear()
-	order.clear()
-	for e in old:
-		var ne: int = Vary.open("elem", Elem.ALL).pick_random()
-		elements[ne] = mini(lv(ne) + olds[e] + (1 if ne == e else 0), elem_cap())
-		if not order.has(ne):
-			order.append(ne)
-	place_pop = 1.0
-	queue_redraw()
-
-
-## 공격방식 대격변: 직선탄을 뺀 공격방식 중 하나로 바뀐다(고정 무시). 레벨은 유지, 같은 것이면 +1.
-func cataclysm_pattern() -> void:
-	var id: String = Vary.open("pat", Pat.PATTERN_IDS.slice(1)).pick_random()
-	if id == pattern:
-		plv += 1
-	else:
-		pattern = id
-		paths.clear()
-	cd.clear()
-	fx.clear()
-	place_pop = 1.0
-	queue_redraw()
-
-
 func add_mod(id: String) -> String:
 	mods[id] = m(id) + 1
 	place_pop = 1.0

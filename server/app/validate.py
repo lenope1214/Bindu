@@ -102,9 +102,8 @@ def lanes_for(w: int) -> int:
 
 
 def wave_size(w: int) -> int:
-    """main.gd wave_size: 3 + 2w, 첫 웨이브 70%에서 10웨이브 100%로."""
-    k = 0.7 + 0.3 * min(max((w - 1) / 9.0, 0.0), 1.0)
-    return _roundi((3 + w * 2) * k)
+    """main.gd wave_size: 3 + 2w, capped at the 150-wave count limit."""
+    return 3 + min(w, 150) * 2
 
 
 def spawn_count(w: int, map_id: str, orb_mul: float) -> int:
