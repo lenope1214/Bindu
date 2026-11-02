@@ -1673,14 +1673,27 @@ func _meta_misc() -> void:
 	main._process(0.016)
 	var dim_on: bool = main.card_dim.visible and is_equal_approx(main.card_dim.color.a, main.CARD_DIM_A) and main.choice_box.z_index > main.card_dim.z_index \
 		and main.reroll_btn.z_index > main.card_dim.z_index and main.card_dim.mouse_filter == Control.MOUSE_FILTER_IGNORE
+	main.picks_left = 2
+	main._process(0.016)
+	var head_two: bool = main.choice_header.visible and main.choice_remaining.text == "2장 더 선택 가능" and main.choice_header.z_index > main.card_dim.z_index
+	main.picks_left = 1
+	main._process(0.016)
+	var head_one: bool = main.choice_remaining.text == "1장 더 선택 가능"
+	main.perk_mode = true
+	main._process(0.016)
+	var head_perk: bool = not main.choice_header.visible
+	main.perk_mode = false
 	main._set_cards_hidden(true)
 	main._process(0.016)
 	var dim_hide: bool = not main.card_dim.visible
+	var head_hide: bool = not main.choice_header.visible
 	main._set_cards_hidden(false)
 	main._on_pick({"type": "mod", "id": "pierce"})
 	main._process(0.016)
 	var dim_off: bool = not main.card_dim.visible and main.phase == main.Phase.PLACE
 	ok("UI-23", dim_on and dim_hide and dim_off, "카드 선택 중 검은 막 %s(카드 위), 필드 보기 %s·카드 고르면 %s 걷힘" % [dim_on, dim_hide, dim_off])
+	ok("UI-28", head_two and head_one and head_perk and head_hide and not main.choice_header.visible,
+		"카드 줄 선택 안내: 2장→1장 갱신, 특성·필드 보기·카드를 고른 뒤 숨김")
 
 	# 카드 넣을 대상: 넣을 수 있는 오브젝트만 밝게, 못 넣는 오브젝트(NO_MOD 등)는 흐리게·선택 불가
 	var bad_t := _tower(main.center() + Vector2(200, 0))
