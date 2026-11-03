@@ -2619,7 +2619,9 @@ func _draw_card_full() -> void:
 	var row: Rect2 = inv * choice_box.get_global_rect()
 	var top_lim := (hud.position.y + hud.size.y + 6.0) if hud.visible else 8.0
 	var bot_lim := info.size.y - 8.0
-	var w := 420.0
+	var side_room := info.size.x - row.end.x - 20.0
+	var beside := touch_ui and side_room >= 260.0
+	var w := minf(420.0, side_room) if beside else 420.0
 	var fs := 14
 	var rows: Array = []
 	var lh := 0.0
@@ -2637,8 +2639,11 @@ func _draw_card_full() -> void:
 		fs -= 1
 	var x := clampf(cr.get_center().x - w / 2.0, 8.0, info.size.x - w - 8.0)
 	var y := row.position.y - h - _choice_headroom() - 10.0  # 카드 선택 안내·봉인·[적용] 위
-	if y < top_lim:
-		y = clampf(row.end.y + 50.0, top_lim, bot_lim - h)  # 위에 자리가 없으면 아래 버튼 줄 밑, 화면 안으로
+	if beside:
+		x = row.end.x + 12.0
+		y = clampf(row.position.y, top_lim, bot_lim - h)
+	elif y < top_lim:
+		y = maxf(top_lim, row.end.y - h - 8.0)  # 조작 줄은 가리지 않고 카드 영역 안에서 펼친다
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.04, 0.05, 0.08, 0.96)
 	sb.border_color = Color(1, 0.85, 0.5, 0.5)
