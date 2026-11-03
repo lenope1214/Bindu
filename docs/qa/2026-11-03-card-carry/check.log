@@ -1,0 +1,9 @@
+notes 통과
+FAIL WAVE-01 웨이브 구체 수 3+2w, 1웨이브 70%에서 10웨이브 100% (5·23·43)
+FAIL UI-20 카드 기본 효과: 15속성·0/12/50웨이브 true, 조건 false, 반응 그림 true, 자세히 보존 true
+FAIL MP-04 보낸 구체 0개가 이번 웨이브에 나옴 (남은 0)
+FAIL MP-15 잠수: 기다림 true, 첫 대신 고르기 [true, true, true, true, false], 2번째 자리 비움 true, 돌아옴 true, 대결 웨이브 시작 false
+FAIL DOC 문서의 spec 기능을 모두 확인 (빠짐 ["CATA-01", "VARY-01", "VARY-02", "VARY-03", "VARY-04", "VARY-05"])
+SPEC 실패 (실패 10, 확인한 기능 173개)
+
+검사 종료: spec 기존 실패 10개. path 검사는 삭제된 cataclysm_pattern 호출에서 진행 중단되어 이 실행을 종료함. 이후 항목은 미실행.

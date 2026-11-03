@@ -1,0 +1,6 @@
+SCRIPT ERROR: Parse Error: Cannot infer the type of "mouse" variable because the value doesn't have a set type.
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+SCRIPT ERROR: Invalid assignment of property or key 'text' with value of type 'String' on a base object of type 'Nil'.
+SCRIPT ERROR: Invalid assignment of property or key 'net' with value of type 'Node (Net)' on a base object of type 'Nil'.
+SCRIPT ERROR: Invalid access to property or key 'visible' on a base object of type 'Nil'.

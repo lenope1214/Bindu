@@ -618,6 +618,8 @@ func _ready() -> void:
 
 ## 창이 포커스를 잃어도 판은 계속 진행된다 (직접 조작이 없으니 멈추지 않음).
 func _notification(what: int) -> void:
+	if what in [NOTIFICATION_WM_WINDOW_FOCUS_OUT, NOTIFICATION_APPLICATION_PAUSED] and card_dock != null:
+		card_dock.clear_gesture()
 	# Android 뒤로가기 = Esc (한 단계 되돌리기 / 일시정지)
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		var esc := InputEventKey.new()
@@ -2910,10 +2912,7 @@ func _choose_hint() -> String:
 		return "상점: 카드를 사서 놓아요 (빈 곳: 새 오브젝트 · 오브젝트 위: 겹치기·넣기). 끌기: 옮기기"
 	if Meta.games >= 3:
 		return ""
-	# 선택지 내리기(V)는 카드 아래 버튼에 적혀 있다
-	if touch_ui:
-		return "카드를 한 번 누르면 미리보기, 한 번 더 누르거나 [적용]으로 선택. 설치된 오브젝트 누르기: 방향 바꾸기 · 끌기: 옮기기"
-	return "선택지를 고르세요. 설치된 오브젝트 클릭: 방향 바꾸기 · 끌기: 옮기기"
+	return "카드를 눌러 든 뒤 대상에 놓으세요. 카드에서 바로 끌어 놓을 수도 있어요."
 
 
 # ---------- 튜토리얼 ----------
@@ -2947,11 +2946,9 @@ func _first_action_text() -> String:
 				return ""
 			if cards_hidden:
 				return "선택지를 다시 열어 카드를 고르세요."
-			if touch_ui and tap_sel >= 0:
-				return "선택한 카드를 적용하세요."
 			return "카드를 한 장 더 고르세요." if towers.get_child_count() > 0 else "카드를 하나 고르세요."
 		Phase.PLACE:
-			return "빨간 길목 쪽 빈 곳에 놓으세요."
+			return "넣을 오브젝트를 고르세요." if picked.get("type", "elem") != "elem" else "빨간 길목 쪽 빈 곳에 놓으세요."
 		Phase.AIM:
 			return "구체가 오는 쪽으로 방향을 정하세요."
 		Phase.READY:
@@ -3853,7 +3850,7 @@ func _off_legend(r: Rect2) -> Rect2:
 func _info_blockers() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var inv := ui_root.get_global_transform().affine_inverse()
-	for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, guide_more,  mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, draw_ok_btn, card_dock.focus_btn]:
+	for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, guide_more,  mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, draw_ok_btn, card_dock.focus_btn, card_dock.panel, card_dock.side, card_dock.held_chip]:
 		if c == null or not c.is_visible_in_tree():
 			continue
 		if (c is Label and str(c.text) == "") or (c == hud and hud_chips.is_empty()):
@@ -4412,14 +4409,23 @@ func _draw_apply_icon() -> void:
 
 
 
-## 카드 누르기. 마우스는 바로 고르고(올리면 미리보기), 터치는 한 번 누르면 미리보기(다른 카드는 옅게, 아래에 [적용]),
-## 같은 카드를 한 번 더 누르거나 [적용]을 누르면 고른다.
+## 일반 판은 PC·터치 한 번 눌러 든다. 정원 상점은 기존 터치 두 단계 선택을 유지한다.
 func _on_card_tap(card: Dictionary, i: int) -> void:
+	if not Garden.on:
+		if phase != Phase.CHOOSE or card_dock.suppress_tap or card_dock.input_blocked():
+			return
+		_on_pick(card)
+		return
 	if not touch_ui or tap_sel == i:
 		_on_pick(card)
 		return
 	tap_sel = i
 	_tap_hover()
+
+
+func _release_card_tap_guard() -> void:
+	card_dock.suppress_tap = false
+	card_dock.touch_capture = false
 
 
 ## 터치로 고른(미리보기 중인) 카드의 속성 미리보기와 카드 진하기.
@@ -4432,6 +4438,7 @@ func _tap_hover() -> void:
 
 
 func _on_pick(card: Dictionary) -> void:
+	_save_run()  # 카드를 들고 앱을 닫아도 적용 전 목록과 남은 선택을 복원한다.
 	tap_sel = -1
 	_tap_hover()
 	picked = card
@@ -4440,6 +4447,8 @@ func _on_pick(card: Dictionary) -> void:
 	reroll_btn.visible = false
 	phase = Phase.PLACE
 	hint.text = _th(_place_hint())
+	if card_dock.active():
+		card_dock.tick()
 
 
 ## 통계용 카드 이름: elem:fire, pat:spray, mod:rapid, link:prism
@@ -4565,7 +4574,7 @@ func _toggle_legend() -> void:
 
 ## 카드 도크·설명 칸을 접어 전장을 넓게 보거나 다시 연다 (F·모바일 버튼).
 func _toggle_focus_view() -> void:
-	if card_dock == null or not card_dock.available():
+	if card_dock == null or not card_dock.available() or card_dock.carrying():
 		return
 	card_dock.full_field = not card_dock.full_field
 	if card_dock.full_field:
@@ -4983,6 +4992,9 @@ func _abort_touch_action() -> void:
 func _input(event: InputEvent) -> void:
 	if mp_mode != "" and ((event is InputEventMouseButton or event is InputEventScreenTouch or event is InputEventKey) and event.pressed):
 		_mp_presence()
+	if card_dock != null and card_dock.handle_input(event):
+		get_viewport().set_input_as_handled()
+		return
 	if _zoom_input(event) or (Garden.on and _gp_scroll_input(event)):
 		get_viewport().set_input_as_handled()
 		return
@@ -5114,7 +5126,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			help_label.visible = not help_label.visible
 		elif event.keycode == KEY_TAB:
 			_toggle_legend()
-		elif event.keycode in [KEY_1, KEY_2, KEY_3, KEY_4, KEY_KP_1, KEY_KP_2, KEY_KP_3, KEY_KP_4] and phase == Phase.CHOOSE and help_label.visible == false:
+		elif event.keycode in [KEY_1, KEY_2, KEY_3, KEY_4, KEY_KP_1, KEY_KP_2, KEY_KP_3, KEY_KP_4] and phase == Phase.CHOOSE and help_label.visible == false and not get_tree().paused:
 			var i: int = event.keycode - (KEY_KP_1 if event.keycode >= KEY_KP_1 else KEY_1)
 			if perk_mode:
 				if i < perk_offer.size():
@@ -5263,32 +5275,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_cancel_step()
 		return
 	if phase == Phase.PLACE and event.button_index == MOUSE_BUTTON_LEFT:
-		var target := _tower_at(mpos)
-		if target and not _place_ok(target):
-			# 넣을 수 없는 오브젝트는 흐리게 그리고 누르거나 끌 수 없다 (이유만 알림)
-			_show_toast(_place_refuse(target))
-			return
-		if target:
-			# 클릭은 손을 뗄 때 처리한다. 꾹 누르거나 끌면 카드를 유지한 채 옮긴다.
-			_begin_press(target, mpos)
-			return
-		mpos = mpos.clamp(field_rect().position, field_rect().end)
-		if mpos.distance_to(core()) < 50.0:
-			_show_toast("중앙 점에 너무 가까워요")
-			return
-		if picked["type"] != "elem":
-			_apply_card(target)
-			return
-		elif Garden.on and not _garden_can_new():
-			return
-		elif picked["e"] == Elem.STAR and star_full():
-			_show_toast(Tower.star_full_text())
-			return
-		else:
-			place_pos = mpos
-			phase = Phase.AIM
-			aim_start_ms = Time.get_ticks_msec()
-			hint.text = _th("클릭 또는 끌어서 놓기: 발사 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 위치 다시 정하기")
+		_place_card_at(mpos)
 	elif phase == Phase.AIM:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			# 오브젝트 바로 위를 누르면 손을 뗄 때 정한다 (그 자리에서 바깥으로 끌어 조준)
@@ -5299,6 +5286,47 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif phase == Phase.PLACE and event.button_index == MOUSE_BUTTON_RIGHT:
 		_cancel_step()
 
+
+## 드롭은 손을 뗀 화면 좌표로 판정한다. 패널·창 밖·무효 대상에서는 카드를 소비하지 않는다.
+func _drop_carried_card(screen: Vector2) -> void:
+	if phase != Phase.PLACE or picked.is_empty() or not get_viewport_rect().has_point(screen) or card_dock.input_blocked() or card_dock.over_ui(screen):
+		return
+	var world := get_canvas_transform().affine_inverse() * screen
+	_place_card_at(world, true)
+
+
+func _place_card_at(mpos: Vector2, direct := false) -> void:
+	var target := _tower_at(mpos)
+	if target and not _place_ok(target):
+		# 넣을 수 없는 오브젝트는 흐리게 그리고 누르거나 끌 수 없다 (이유만 알림)
+		_show_toast(_place_refuse(target))
+		return
+	if target:
+		# 클릭은 손을 뗄 때 처리한다. 꾹 누르거나 끌면 카드를 유지한 채 옮긴다.
+		if direct:
+			_place_on(target)
+		else:
+			_begin_press(target, mpos)
+		return
+	if not field_rect().has_point(mpos):
+		_show_toast("전장 안에 놓으세요")
+		return
+	if mpos.distance_to(core()) < 50.0:
+		_show_toast("중앙 점에 너무 가까워요")
+		return
+	if picked["type"] != "elem":
+		_apply_card(target)
+		return
+	elif Garden.on and not _garden_can_new():
+		return
+	elif picked["e"] == Elem.STAR and star_full():
+		_show_toast(Tower.star_full_text())
+		return
+	else:
+		place_pos = mpos
+		phase = Phase.AIM
+		aim_start_ms = Time.get_ticks_msec()
+		hint.text = _th("클릭 또는 끌어서 놓기: 발사 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 위치 다시 정하기")
 
 ## 카드 선택 막을 깔지: 선택지 카드가 펼쳐져 있을 때만 (일시정지 어둠이 있으면 그것만).
 func _card_dim_on() -> bool:
@@ -8210,7 +8238,17 @@ func _cancel_step() -> void:
 
 ## 선택지를 그대로 둔 채 오브젝트 고르기로 돌아간다.
 func _back_to_choose() -> void:
+	if not Garden.on:
+		card_dock.clear_gesture()
+		card_dock.full_field = false
+		cards_hidden = false
+		tap_sel = offer.find(picked)
+		for button: Button in choice_box.get_children():
+			if button.get_meta("offer_card", {}) == picked:
+				card_dock.hovered = button
 	phase = Phase.CHOOSE
+	if not Garden.on:
+		_tap_hover()
 	choice_box.visible = not cards_hidden
 	_update_reroll_btn()
 	hint.text = _th(_choose_hint())

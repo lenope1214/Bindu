@@ -1,0 +1,52 @@
+{
+  "baseline": "dc7366cb1423509fb61da705e4006f4bdd291afd",
+  "baseline_render_note": "card_dock.gd mouse에 Vector2 타입 주석만 보정",
+  "profiles": {
+    "desktop": 12,
+    "large": 12,
+    "phone": 12
+  },
+  "committed_image_sizes": {
+    "before.png": [
+      1280,
+      720
+    ],
+    "browse.png": [
+      1280,
+      720
+    ],
+    "held.png": [
+      1280,
+      720
+    ],
+    "cancelled.png": [
+      1280,
+      720
+    ],
+    "element-aim.png": [
+      1280,
+      720
+    ],
+    "phone-held.png": [
+      2556,
+      1180
+    ]
+  },
+  "baseline_failure_ids": [
+    "DOC",
+    "MP-04",
+    "MP-15",
+    "UI-20",
+    "UI-23",
+    "WAVE-01"
+  ],
+  "current_failure_ids": [
+    "DOC",
+    "MP-04",
+    "MP-15",
+    "UI-20",
+    "WAVE-01"
+  ],
+  "added_failure_ids": [],
+  "targeted_features": 6
+}

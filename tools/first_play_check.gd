@@ -43,16 +43,10 @@ func _initialize():
 	await snap("choose")
 	ok("TUT-06", main.picks_left == 2 and main._first_action_text().contains("하나"), "first choice keeps two picks")
 	var card: Dictionary = main.offer[0]
+	main._on_card_tap(card, 0)
+	ok("TUT-06", main.phase == main.Phase.PLACE and main.picks_left == 2 and not main.choice_box.visible, "first tap holds card without consuming a pick")
 	if main.touch_ui:
-		main._on_card_tap(card, 0)
-		ok("TUT-06", main.phase == main.Phase.CHOOSE and main._first_action_text().contains("적용"), "touch first tap is preview")
 		await snap("preview")
-		main._set_card_detail(true)
-		await snap("preview_detail")
-		main._set_card_detail(false)
-		main.apply_btn.pressed.emit()
-	else:
-		main._on_pick(card)
 	await snap("place")
 	main.phase = main.Phase.AIM
 	await snap("aim")
