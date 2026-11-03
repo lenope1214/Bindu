@@ -1642,33 +1642,41 @@ func _meta_misc() -> void:
 	var quit_btn: bool = main.home_box.find_children("*", "Button", true, false).any(func(b): return b.tooltip_text == "게임 종료") == OS.has_feature("pc")
 	ok("UI-21", home0 and tiles_ok and prep1 and main.home_box.visible and skins_set and quit_btn, "첫 화면 %s·타일 %s, 준비 화면 %s, 모양은 설정 %s, 종료(PC만) %s" % [home0, tiles_ok, prep1, skins_set, quit_btn])
 
-	# 카드 설명 세 단계: 기본 간소화(속성은 효과 이름만, 괄호 덧붙임 뺌) → [자세히] 전체 → 자세히 + 올리기 창(반응 설명까지)
+	# 기본 설명은 효과 문장이고, 자세히와 반응·레벨업 정보는 남는다. 첫 판에 한정하지 않는다.
 	var was_d := Meta.card_detail
 	Meta.card_detail = false
-	var s0: Dictionary = main._card_content({"type": "elem", "e": Elem.WATER, "lv": 1}, 0)
-	var m0: Dictionary = main._card_content({"type": "mod", "id": "multi"}, 0)
-	var m1: Dictionary = main._card_content({"type": "mod", "id": "multi"}, 1)
 	var full: Array = main._card_full({"type": "elem", "e": Elem.WATER, "lv": 1})
-	# 속성마다 적중 효과·형태 성질 짧은 이름: 둘이 다르고 4글자 이하(간소화 카드에서 잘리지 않게), 꼬리표 적중/형태
-	var names_ok := true
-	for e in Elem.ALL:
-		var rn := Elem.rider_name(e)
-		var tn := Elem.trait_name(e)
-		if rn == tn or rn.length() > 4 or tn.length() > 4:
-			names_ok = false
-			print("  이름 문제: %s %s / %s" % [Elem.NAMES[e], rn, tn])
-	var pr: Array = s0["rows"][0].get("pair", [])
-	names_ok = names_ok and pr.size() == 2 and pr[0][2] == "적중" and pr[1][2] == "형태"
-	var simple_ok: bool = names_ok and s0["rows"][0].has("pair") and not str(m0["rows"][0]["t"]).contains("(") and str(m1["rows"][0]["t"]).contains("(")
-	var full_ok: bool = full.any(func(l): return str(l[0]).begins_with("반응 ")) and full.size() > s0["rows"].size()
+	var basic_ok := true
+	var wave_before: int = main.wave
+	for w in [0, 12, 50]:
+		main.wave = w
+		for e in Elem.ALL:
+			var basic: Dictionary = main._card_content({"type": "elem", "e": e, "lv": 1}, 0)
+			var text: String = basic["rows"][0].get("t", "")
+			basic_ok = basic_ok and text.length() >= 10 and not basic["rows"][0].has("pair") and not text.contains("적중 ·") and not text.contains("형태 ·")
+	main.wave = wave_before
+	var ice: String = main._card_content({"type": "elem", "e": Elem.ICE, "lv": 1}, 0)["rows"][0]["t"]
+	var earth: String = main._card_content({"type": "elem", "e": Elem.EARTH, "lv": 1}, 0)["rows"][0]["t"]
+	var star: String = main._card_content({"type": "elem", "e": Elem.STAR, "lv": 1}, 0)["rows"][0]["t"]
+	var conditions: bool = ice.contains("쌓아") and earth.contains("확률") and star.contains("복사") and star.contains("다 차면")
+	var s0: Dictionary = main._card_content({"type": "elem", "e": Elem.WATER, "lv": 1}, 0)
+	var combo_ok: bool = s0["rows"].any(func(r): return r.has("els"))
+	var multi: Dictionary = main._card_content({"type": "mod", "id": "multi"}, 0)
+	var finish: Dictionary = main._card_content({"type": "trig", "id": "finish"}, 0)
+	var reso: Dictionary = main._card_content({"type": "link", "id": "reso"}, 0)
+	var cata: Dictionary = main._card_content({"type": "cata", "id": "pat"}, 0)
+	conditions = conditions and multi["rows"][0]["t"].contains("피해는 줄어") and multi["rows"][0]["t"].contains("벽·블랙홀·투척 장판") and finish["rows"][0]["t"].contains("보스") and reso["rows"][0]["t"].contains("거리") and cata["rows"].size() == 3
+	var detail: Dictionary = main._card_content({"type": "mod", "id": "multi"}, 1)
+	var full_ok: bool = full.any(func(l): return str(l[0]).begins_with("반응 ")) and full.any(func(l): return str(l[0]).begins_with("형태 성질")) and detail["rows"][0]["t"].contains("(")
 	main._set_card_detail(true)
 	var on_ok: bool = Meta.card_detail and main.card_detail_btn.button_pressed
 	Meta.card_detail = false
 	var plain_card: Button = main._card_button({"type":"elem", "e":Elem.WATER, "lv":1}, 1)
 	var no_floating_tip := plain_card.tooltip_text == ""
+	var dock_brief: bool = main.card_dock.summary_text(plain_card).contains(Elem.BRIEF[Elem.WATER])
 	plain_card.free()
 	main._set_card_detail(was_d)
-	ok("UI-20", simple_ok and full_ok and on_ok and no_floating_tip, "카드 요약·오른쪽 상세 전환, 전체 조건·반응 설명 보존, 전장 위 카드 툴팁 없음")
+	ok("UI-20", basic_ok and conditions and combo_ok and full_ok and on_ok and no_floating_tip and dock_brief, "카드 기본 효과: 15속성·0/12/50웨이브 %s, 조건 %s, 반응 그림 %s, 자세히 보존 %s" % [basic_ok, conditions, combo_ok, full_ok])
 
 	# 카드 선택 막: 선택지가 펼쳐져 있으면 검은 막(카드·카드 줄 버튼은 그 위), 필드 보기·카드를 고르면 곧바로 걷힘
 	_fresh(3)
@@ -1676,14 +1684,37 @@ func _meta_misc() -> void:
 	main._start_choose()
 	main._process(0.016)
 	var dim_on: bool = not main.card_dim.visible and main.card_dock.panel.visible and main.card_dock.side.visible
+	main.picks_left = 2
+	main._process(0.016)
+	var head_two: bool = main.choice_header.visible and main.choice_remaining.text == "2장 더 선택 가능" and main.choice_header.z_index > main.card_dim.z_index
+	main.picks_left = 1
+	main._process(0.016)
+	var head_one: bool = main.choice_remaining.text == "1장 더 선택 가능"
+	for card_node in main.choice_box.get_children():
+		if card_node.is_queued_for_deletion():
+			main.choice_box.remove_child(card_node)
+	main.touch_ui = true
+	main.tap_sel = 1
+	main._process(0.016)
+	var apply_row: bool = main.apply_btn.get_meta("choice_icon", {}) == main.choice_box.get_child(1).get_meta("card")[0] and main.apply_btn.visible and main.apply_btn.text.replace("\u2060", "").ends_with(" 적용") and is_equal_approx(main.apply_btn.offset_top, main.reroll_btn.offset_top)
+	main.tap_sel = -1
+	main.touch_ui = false
+	main.perk_mode = true
+	main._process(0.016)
+	var head_perk: bool = not main.choice_header.visible
+	main.perk_mode = false
 	main._set_cards_hidden(true)
 	main._process(0.016)
 	var dim_hide: bool = not main.card_dim.visible
+	var head_hide: bool = not main.choice_header.visible
 	main._set_cards_hidden(false)
 	main._on_pick({"type": "mod", "id": "pierce"})
 	main._process(0.016)
 	var dim_off: bool = not main.card_dim.visible and main.phase == main.Phase.PLACE
 	ok("UI-23", dim_on and dim_hide and dim_off, "일반 판 카드 선택 시 전장 어둠 없음 %s, 필드 보기 %s·카드 고른 뒤 %s 유지" % [dim_on, dim_hide, dim_off])
+	ok("UI-30", head_two and head_one and apply_row and head_perk and head_hide and not main.choice_header.visible,
+		"카드 줄 선택 안내: 갱신 %s·%s, 적용 줄 %s, 숨김 %s·%s·%s" % [head_two, head_one, apply_row, head_perk, head_hide, not main.choice_header.visible])
+
 
 
 	main.shake = 0.0
@@ -1716,6 +1747,7 @@ func _meta_misc() -> void:
 	dt.owner_id = 0
 	ok("UI-29", target_good and target_capped and ownership and requested, "카드 미리보기 적용 상한·협동 소유권·요청 속성 구분")
 	main.phase = main.Phase.PLACE
+
 
 	# 카드 넣을 대상: 넣을 수 있는 오브젝트만 밝게, 못 넣는 오브젝트(NO_MOD 등)는 흐리게·선택 불가
 	var bad_t := _tower(main.center() + Vector2(200, 0))

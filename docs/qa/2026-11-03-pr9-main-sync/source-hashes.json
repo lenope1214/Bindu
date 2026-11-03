@@ -1,4 +1,10 @@
 {
-  "scripts/main.gd": "2318ed0f7b06e471ef2646e64c448a2a6012cefa6e6a6d93a7bbaefa69ca093a",
-  "scripts/card_dock.gd": "161a4ce4b26f6b3706c6b4c3390573c01f21344f9a9d289ad6bc6b2e014cc71e"
+  "scripts/main.gd": "e2a20458c385c576ff50918c1cb68fc8512ee8ae95159839e736f4a62e7db548",
+  "scripts/card_dock.gd": "d1f28288294af63387039d42e70faea8be6ce75362dabfeaff4ca08a3c24bef1",
+  "scripts/tutorial.gd": "e78c6686e84e0ac4a4fe9472b36827e53506cf1c53bb36ec5aecbdef7a0ab9e1",
+  "scripts/elem.gd": "a0ec955d79fc1be9dc63c6a2786e704731161449c30843b312b340e083f29389",
+  "scripts/pattern.gd": "ea0133555373d92b81b96fafef4be6bb27d15a36f0a28c4fe500c11d80862e67",
+  "tools/spec_check.gd": "c2cb22eea67c21a616d3b2e4863b840748af2c8803bca90516cbd26439c0c75b",
+  "tools/dock_check.gd": "08c4c624291c9b15b16f42fbe667d13e9c4fbe94ff287942a0d5b0ce8be9e8af",
+  "tools/first_play_check.gd": "083fdecee2a866a0a6493b007af0b8c241cb9cc4a3a82912a8c26f9a46e6e148"
 }

@@ -28,3 +28,5 @@ ok   TUT-03 event does not pause or open another modal
 ok   TUT-03 turning guidance off hides current hint immediately
 ok   TUT-01 returning device keeps intro done and unread detail separate
 NATIVE FIRST failures=0
+WARNING: 4 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
