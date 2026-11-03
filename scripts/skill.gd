@@ -7,7 +7,7 @@ const IDS := ["focus", "hold", "brand"]
 const SETS := [["focus", "hold"], ["focus", "brand"], ["hold", "brand"]]
 const NAMES := {"focus": "집중", "hold": "붙잡기", "brand": "낙인"}
 const COLORS := {"focus": Color(1.0, 0.8, 0.35), "hold": Color(0.55, 0.85, 1.0), "brand": Color(1.0, 0.45, 0.55)}
-const PICK_R := 70.0  # 집중: 누른 곳에서 이 거리 안 가장 가까운 오브젝트
+static var PICK_R := 70.0  # 집중: 누른 곳에서 이 거리 안 가장 가까운 오브젝트
 
 
 ## 묶음 번호 → 기술 두 개 (모르는 번호는 0번).

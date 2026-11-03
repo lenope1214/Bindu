@@ -149,8 +149,8 @@ static func spiral_speed(d: float) -> float:
 
 # ---------- 십자로: 관문 ----------
 
-const LANE_W := 60.0  # 길 가운데 선에서 이만큼 안이면 길 위
-const LANE_ALIGN := 0.9  # 겨눈 방향과 길 방향 cos (약 25도 안)
+static var LANE_W := 60.0  # 길 가운데 선에서 이만큼 안이면 길 위
+static var LANE_ALIGN := 0.9  # 겨눈 방향과 길 방향 cos (약 25도 안)
 
 
 ## 오브젝트가 길 위에서 길을 따라 겨누는지

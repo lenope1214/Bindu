@@ -5,13 +5,19 @@ extends Node2D
 enum Kind { NORMAL, FAST, TANK, BOSS }
 
 # 군중 제어 한계: 겹쳐 걸수록 효율이 떨어지고, 계속 맞아도 앞으로는 나아간다.
-const SLOW_FLOOR := 0.3  # 감속은 최대 70% (보스 50%)
-const PUSH_BUDGET := 40.0  # 중앙 반대쪽으로 한 번에 밀릴 수 있는 거리 (보스 15)
-const PUSH_REGEN := 0.15  # 밀림 여유가 초당 이동 속도의 15%씩 회복 (보스 5%): 최대로 느려져도(30%) 조금씩은 전진
-const STAGGER_MAX := 0.6  # 경직은 한 번에 이만큼(초)까지만 쌓인다
-const ROOT_DR := [1.0, 0.5, 0.25]  # 연달아 기절·속박·빙결: 지속시간 100% → 50% → 25%, 그다음 면역
-const ROOT_IMMUNE := 2.0
-const ROOT_DR_RESET := 4.0  # 이만큼 안 걸리면 처음부터
+## 구체 종류별 체력·속도 배율 (일반 구체 대비), 보스가 중앙에 주는 피해. 온라인 패치 rules "Orb.KIND.<이름>"
+static var KIND := {
+	"fast_hp": 0.6, "fast_spd": 1.62,  # 빠른 구체
+	"tank_hp": 2.5, "tank_spd": 0.6,  # 단단한 구체
+	"boss_hp": 12.0, "boss_spd": 0.45, "boss_core": 3,  # 보스
+}
+static var SLOW_FLOOR := 0.3  # 감속은 최대 70% (보스 50%)
+static var PUSH_BUDGET := 40.0  # 중앙 반대쪽으로 한 번에 밀릴 수 있는 거리 (보스 15)
+static var PUSH_REGEN := 0.15  # 밀림 여유가 초당 이동 속도의 15%씩 회복 (보스 5%): 최대로 느려져도(30%) 조금씩은 전진
+static var STAGGER_MAX := 0.6  # 경직은 한 번에 이만큼(초)까지만 쌓인다
+static var ROOT_DR := [1.0, 0.5, 0.25]  # 연달아 기절·속박·빙결: 지속시간 100% → 50% → 25%, 그다음 면역
+static var ROOT_IMMUNE := 2.0  # 세 번 연달아 걸린 뒤 기절·속박·빙결 면역 시간(초)
+static var ROOT_DR_RESET := 4.0  # 이만큼 안 걸리면 처음부터
 
 var kind := Kind.NORMAL
 var core_dmg := 1  # 중앙에 닿았을 때 깎는 체력
@@ -156,11 +162,11 @@ func setup(k: int, base_hp: float, base_speed: float) -> void:
 		Kind.NORMAL:
 			max_hp = base_hp; speed = base_speed
 		Kind.FAST:
-			max_hp = maxf(1.0, ceilf(base_hp * 0.6)); speed = base_speed * 1.62  # 예전 1.8 (10% 느리게)
+			max_hp = maxf(1.0, ceilf(base_hp * KIND.fast_hp)); speed = base_speed * KIND.fast_spd
 		Kind.TANK:
-			max_hp = ceilf(base_hp * 2.5); speed = base_speed * 0.6
+			max_hp = ceilf(base_hp * KIND.tank_hp); speed = base_speed * KIND.tank_spd
 		Kind.BOSS:
-			max_hp = ceilf(base_hp * 12.0 * Modes.boss_hp()); speed = base_speed * 0.45; core_dmg = 3
+			max_hp = ceilf(base_hp * KIND.boss_hp * Modes.boss_hp()); speed = base_speed * KIND.boss_spd; core_dmg = int(KIND.boss_core)
 	hp = max_hp
 	if main:
 		speed *= main.orb_speed_mul * Modes.speed()
@@ -525,7 +531,7 @@ func root(duration: float, dr := true) -> bool:
 	return true
 
 
-const BOSS_PUSH := 15.0
+static var BOSS_PUSH := 15.0  # 보스가 한 번에 밀릴 수 있는 거리
 
 
 func _push_max() -> float:

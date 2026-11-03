@@ -33,12 +33,12 @@ const ALL_IDS := PATTERN_IDS + RARE_IDS
 
 ## 그린 궤적 (2026-10-30 기획안): 카드당 0.7%, 이 판에 궤적이 있으면 1.2%. 오브젝트 4개까지.
 ## 레벨 1~3은 그릴 수 있는 길이, 4·5는 갈래 하나씩, 그 뒤로는 피해만 오른다.
-const PATH_CHANCE := 0.007
-const PATH_CHANCE_AGAIN := 0.012
-const PATH_MAX := 4
+static var PATH_CHANCE := 0.007
+static var PATH_CHANCE_AGAIN := 0.012
+static var PATH_MAX := 4
 const PATH_LEN := [400.0, 500.0, 600.0]
-const PATH_BRANCH_MAX := 3
-const PATH_BENDS := 3  # 갈래마다 꺾을 수 있는 수 (45도 넘게 방향이 바뀌면 한 번)
+static var PATH_BRANCH_MAX := 3  # 그린 궤적 갈래 최대
+static var PATH_BENDS := 3  # 갈래마다 꺾을 수 있는 수 (45도 넘게 방향이 바뀌면 한 번)
 const PATH_BEND_ANGLE := PI / 4.0
 
 

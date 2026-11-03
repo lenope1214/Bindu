@@ -6,13 +6,13 @@ enum Phase { CHOOSE, PLACE, AIM, WAVE, GAMEOVER, MOVE, READY, DRAW }
 const CORE_RADIUS := 14.0
 const LINE_INSET := 90.0  # 회랑 맵: 문(중앙 점)이 화면 끝에서 떨어진 거리
 const LINE_HALF := 180.0  # 회랑 맵: 길 폭의 반
-const LINE_ORBS := 1.6  # 회랑 맵: 구체 수 배율 (방향이 하나고 길이 길어서). 봇 32판으로 평원에 맞춤 (2026-10-30)
-const CROSS_HP := 5.6  # 십자로 맵: 구체 체력 배율 (1.6 → 5.6, 2026-10-31 맵 난이도 맞추기: 봇 중간값 44 → 17). 서버 validate.py MAP_HP와 같이
-const LINE_HP := 4.8  # 회랑 맵: 구체 체력 배율 (2.4 → 4.8, 2026-10-31 맵 난이도 맞추기: 봇 중간값 35 → 16, 다른 맵 16~17)
-const LINE_SPD := 1.6  # 회랑 맵: 구체 속도 배율 (길이 길어 오래 맞는 만큼)
-const SPIRAL_SWIRL := 0.6  # 소용돌이 맵: 구체가 중앙 방향에서 비껴 도는 각도(라디안)
+static var LINE_ORBS := 1.6  # 회랑 맵: 구체 수 배율 (방향이 하나고 길이 길어서). 봇 32판으로 평원에 맞춤 (2026-10-30)
+static var CROSS_HP := 5.6  # 십자로 맵: 구체 체력 배율 (1.6 → 5.6, 2026-10-31 맵 난이도 맞추기: 봇 중간값 44 → 17). 서버 validate.py MAP_HP와 같이
+static var LINE_HP := 4.8  # 회랑 맵: 구체 체력 배율 (2.4 → 4.8, 2026-10-31 맵 난이도 맞추기: 봇 중간값 35 → 16, 다른 맵 16~17)
+static var LINE_SPD := 1.6  # 회랑 맵: 구체 속도 배율 (길이 길어 오래 맞는 만큼)
+static var SPIRAL_SWIRL := 0.6  # 소용돌이 맵: 구체가 중앙 방향에서 비껴 도는 각도(라디안)
 const MAP_AFF_COLOR := Color(0.55, 0.95, 0.85)  # 맵 친화 카드 표시 (MapRule)
-const CORE_MAX_HP := 10
+static var CORE_MAX_HP := 10  # 중앙 체력 (모드·멀티 배율 전)
 const MERGE_DIST := 30.0
 const SAVE_PATH := "user://best.cfg"
 const RUN_PATH := "user://run.cfg"  # 이어하기: 쉬는 시간마다 저장, 게임 오버면 지움
@@ -273,7 +273,7 @@ var coin_fx: Control
 var rest_ready := false  # 이번 쉬는 시간의 다음 웨이브(방향·저항·보스)를 이미 뽑아 둠 (넘기다 쉬는 시간에 멈춘 때)
 var combo := 0
 var combo_t := 0.0
-const COMBO_KEEP := 3.0  # 이 게임 시간(배속과 상관없이) 안에 다음 처치가 나와야 콤보가 이어진다
+static var COMBO_KEEP := 3.0  # 이 게임 시간(배속과 상관없이) 안에 다음 처치가 나와야 콤보가 이어진다
 var combo_hold := false  # 웨이브가 끝나면 남은 유지 시간을 멈춰 두고, 다음 웨이브 첫 처치에서 푼다
 var combo_bonus := 0  # 이번 콤보로 더 얻은 점수 (배율 없이 받았을 점수와의 차이)
 var combo_end := [0, 0, 0.0]  # 끊긴 콤보 [콤보, 보너스, 남은 표시 시간]
@@ -1851,16 +1851,23 @@ static func orb_base_speed(w: int) -> float:
 	return 30.0 + mini(w, int(Rules.t("orb_spd_cap_w"))) * 3.0
 
 
+## 저항·굳센 구체 비율: 나오는 웨이브의 처음 비율, 웨이브마다 +, 최대. 온라인 패치 rules "Main.SPECIAL.<이름>"
+static var SPECIAL := {
+	"resist": 0.3, "resist_step": 0.01, "resist_max": 0.6,  # 저항 구체: 처음 비율, 웨이브마다 +, 최대
+	"sturdy": 0.15, "sturdy_step": 0.01, "sturdy_max": 0.4,  # 굳센 구체: 처음 비율, 웨이브마다 +, 최대
+}
+
+
 ## 저항 구체(12웨이브~, 버전 4는 8~): 웨이브마다 저항 속성 하나를 정하고 미리 알려 준다.
 static func resist_share(w: int) -> float:
 	var s := Rules.resist_from
-	return 0.0 if w < s else minf(0.3 + 0.01 * (w - s), 0.6)
+	return 0.0 if w < s else minf(SPECIAL.resist + SPECIAL.resist_step * (w - s), SPECIAL.resist_max)
 
 
 ## 굳센 구체(15웨이브~, 버전 4는 11~): 밀기·감속·기절·냉기 절반.
 static func sturdy_share(w: int) -> float:
 	var s := Rules.sturdy_from
-	return 0.0 if w < s else minf(0.15 + 0.01 * (w - s), 0.4)
+	return 0.0 if w < s else minf(SPECIAL.sturdy + SPECIAL.sturdy_step * (w - s), SPECIAL.sturdy_max)
 
 
 ## 고른 규칙 버전을 적용한다 (시작 화면에서 바꿀 때, 새 판마다).
@@ -3364,7 +3371,7 @@ func _apply_perk(id: String) -> void:
 ## 특성 수치 (온라인 패치 perks로 바뀔 수 있음). 설명 글도 같이 바꿔야 하면 perk_desc. coin: 동전 뒷면 새로고침 수
 const PERK_VALS := {"power": 0.15, "haste": 0.12, "reach": 0.12, "core": 3, "reroll": 1, "luck": 0.2, "regen": 1, "regen_more": 0.5, "slow": 0.08, "harmony": 0.5, "harmony_cap": 0.2, "coin": 2,
 	"shield": 1, "shield_max": 3, "shield_all": 4, "rampart": 1, "rampart_max": 4, "rampart_push": 140, "riposte": 0.6, "riposte_more": 0.5, "riposte_r": 160, "overflow": 2}
-const RAMPART_R := 56.0  # 성벽이 서는 중앙에서의 거리
+static var RAMPART_R := 56.0  # 성벽이 서는 중앙에서의 거리
 const FX_RIPOSTE := 0.35
 
 
@@ -9829,7 +9836,7 @@ func _prof_add(part: String, since: int) -> int:
 
 ## 저주: 표식 구체가 죽으면 주변에 그 구체 최대 체력의 10% 피해(보스는 1/4), 표식은 가까운 구체로 옮겨 간다.
 ## 2026-10-30 25% → 10%: 오브젝트 힘과 상관없이 후반 구체 체력만큼 커져 몰아 쌓은 판에서 피해의 2/3가 됐다.
-const CURSE_BURST := 0.10
+static var CURSE_BURST := 0.10
 
 
 func _curse_burst(o: Orb) -> void:

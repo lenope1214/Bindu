@@ -24,12 +24,12 @@ const LIST := {
 const ORDER := ["rush", "swarm", "steel", "glass", "narrow", "early", "angry", "seal", "stroll", "fort", "three", "soft", "ease"]
 const MUL_MIN := 0.2
 const MUL_MAX := 2.5
-const SWARM := 1.25  # 물량: 웨이브 구체 수
-const STEEL := 1.3  # 강철: 구체 체력
-const SOFT := 0.75  # 물렁: 구체 체력
-const EARLY := 3  # 이른 위협: 저항·굳센 구체가 이만큼 일찍
-const ANGRY_HP := 1.5
-const ANGRY_MINIONS := 2.0
+static var SWARM := 1.25  # 물량: 웨이브 구체 수
+static var STEEL := 1.3  # 강철: 구체 체력
+static var SOFT := 0.75  # 물렁: 구체 체력
+static var EARLY := 3  # 이른 위협: 저항·굳센 구체가 이만큼 일찍
+static var ANGRY_HP := 1.5  # 분노: 보스 체력 배율
+static var ANGRY_MINIONS := 2.0  # 분노: 보스 부하 부르는 빈도 배율
 
 static var on: Array[String] = []  # 이번 판에 쓰는 모드 (판 도중에는 바뀌지 않는다)
 

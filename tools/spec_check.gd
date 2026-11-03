@@ -470,7 +470,7 @@ func _fade() -> void:
 	var w_floor := w.fade_k()
 	p.free()
 	w.free()
-	ok("MOD-12", straight == 1.0 and is_equal_approx(bent, 0.85) and is_equal_approx(floor_k, 0.55) and young == 1.0 and is_equal_approx(old, 0.76) and is_equal_approx(w_floor, 0.5) and is_equal_approx(Projectile.WISP_DMG, 1.15),
+	ok("MOD-12", straight == 1.0 and is_equal_approx(bent, 0.85) and is_equal_approx(floor_k, 0.55) and young == 1.0 and is_equal_approx(old, 0.76) and is_equal_approx(w_floor, 0.5) and is_equal_approx(Tower.HIT.wisp, 1.15),
 		"감쇠: 유도 곧게 %.2f·90도 %.2f·최저 %.2f, 혼불 1.5초 %.2f·4초 %.2f·최저 %.2f" % [straight, bent, floor_k, young, old, w_floor])
 
 
@@ -1414,6 +1414,20 @@ func _rules_modes() -> void:
 	var patched := Rules.max_mod == 7 and Rules.picks == 1 and Rules.t("wind_buff") == 0.0
 	Rules.apply(1)
 	ok("PATCH-01", patched and Rules.max_mod == 5, "온라인 패치 rules: 아는 키만 적용, 형식이 틀린 값·모르는 키 무시, 새 판에 원래대로")
+	# 게임 코드 수치 (Rules.CODE): 레이저 피해를 패치로 올리면 실제 맞힌 피해가 오르고, 패치를 빼면 원래대로
+	var lz := Tower.new()
+	lz.main = main
+	main.towers.add_child(lz)
+	lz.add(Elem.LIGHT, 1)
+	lz.pattern = "laser"
+	var hz0: float = lz.hit_calc()["one"]
+	Rules._apply_patch({"Tower.HIT.laser": 6.8, "Orb.KIND.boss_hp": "x", "Tower.HIT.nope": 1})
+	var hz1: float = lz.hit_calc()["one"]
+	Rules.apply(1)
+	var hz2: float = lz.hit_calc()["one"]
+	lz.free()
+	ok("PATCH-03", is_equal_approx(hz1, hz0 * 2.0) and is_equal_approx(hz2, hz0) and is_equal_approx(Orb.KIND.boss_hp, 12.0),
+		"게임 코드 수치 패치: Tower.HIT.laser 3.4 → 6.8이면 한 번 피해 %.2f → %.2f, 빼면 %.2f" % [hz0, hz1, hz2])
 
 	Modes.set_on(["rush", "stroll", "bogus", "rush", "fort"])
 	ok("MODE-01", Modes.on == ["rush", "fort"], "모드: 모르는 것·중복·반대 쌍 뒤쪽은 버림 %s" % str(Modes.on))

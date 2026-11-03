@@ -313,6 +313,7 @@ static func defaults() -> Dictionary:
 			d[p + id] = 1.0
 	for r in Elem.REACTIONS:
 		d["rxd_" + r["id"]] = 1.0
+		d["rxiv_" + r["id"]] = 1.0
 	return d
 
 
@@ -372,6 +373,7 @@ static var late_armor_floor: float = TUNE["late_armor_floor"]
 static var late_armor_min: float = TUNE["late_armor_min"]
 static var late_phase_on: float = TUNE["late_phase_on"]
 static var late_phase_dmg: float = TUNE["late_phase_dmg"]
+static var rxiv := {}  # "rx:<반응 id>" → 다시 터지는 간격 배율 (1이 아닌 것만, Tower._ready_to)
 static var rxd := {}  # "rx:<반응 id>" → 피해 배율 (1이 아닌 것만)
 
 
@@ -430,10 +432,14 @@ static func _cache() -> void:
 	late_phase_on = tune["late_phase_on"]
 	late_phase_dmg = tune["late_phase_dmg"]
 	rxd.clear()
+	rxiv.clear()
 	for r in Elem.REACTIONS:
 		var v: float = tune["rxd_" + r["id"]]
 		if v != 1.0:
 			rxd["rx:" + r["id"]] = v
+		var iv: float = tune["rxiv_" + r["id"]]
+		if iv != 1.0:
+			rxiv["rx:" + r["id"]] = maxf(0.05, iv)
 
 
 static func t(k: String) -> float:
@@ -512,10 +518,66 @@ static func apply(v: int) -> void:
 	_cache()
 
 
+## 게임 코드 수치 (2026-11-03 사용자 "모든 값을 온라인으로 패치"): 아래 스크립트의 대문자 static var(숫자, 숫자 배열,
+## 숫자 사전)를 rules 키 "<이름>.<변수>" 또는 "<이름>.<변수>.<칸>"으로 덮어쓴다. 예) "Tower.HIT.laser": 4.0, "Orb.KIND.boss_hp": 10
+## 목록·설명은 tools/rule_keys.gd가 만든다 (관리 화면 수치 편집 표).
+const CODE := {
+	"Tower": "res://scripts/tower.gd", "Projectile": "res://scripts/projectile.gd", "Orb": "res://scripts/orb.gd",
+	"Main": "res://scripts/main.gd", "Modes": "res://scripts/modes.gd", "RxMore": "res://scripts/rx_more.gd",
+	"Pat": "res://scripts/pattern.gd", "MapRule": "res://scripts/maprule.gd", "Skill": "res://scripts/skill.gd",
+}
+static var _code_orig := {}  # "Tower.HIT" → 패치 전 값 (처음 바꿀 때 기억해 두고, 다음 apply마다 되돌린다)
+
+
+static func _code_reset() -> void:
+	for full in _code_orig:
+		var i: int = full.find(".")
+		var v: Variant = _code_orig[full]
+		(load(CODE[full.left(i)]) as GDScript).set(full.substr(i + 1), v.duplicate() if v is Array or v is Dictionary else v)
+
+
+## "Tower.HIT.laser" 같은 키 하나. 모르는 이름·칸, 숫자가 아닌 값은 무시. 정수 칸은 정수로.
+static func _code_set(k: String, v: float) -> bool:
+	var parts := k.split(".")
+	if parts.size() < 2 or parts.size() > 3 or not CODE.has(parts[0]) or parts[1] != parts[1].to_upper():
+		return false
+	var sc := load(CODE[parts[0]]) as GDScript
+	var cur: Variant = sc.get(parts[1])
+	if cur == null:
+		return false
+	var full := parts[0] + "." + parts[1]
+	if not _code_orig.has(full):
+		_code_orig[full] = cur.duplicate() if cur is Array or cur is Dictionary else cur
+	if parts.size() == 2:
+		if not (cur is float or cur is int):
+			return false
+		sc.set(parts[1], int(v) if cur is int else v)
+		return true
+	var sub := parts[2]
+	if cur is Dictionary:
+		if not cur.has(sub) or not (cur[sub] is float or cur[sub] is int):
+			return false
+		var d: Dictionary = cur.duplicate()
+		d[sub] = int(v) if cur[sub] is int else v
+		sc.set(parts[1], d)
+		return true
+	if cur is Array and sub.is_valid_int() and int(sub) >= 0 and int(sub) < cur.size() and (cur[int(sub)] is float or cur[int(sub)] is int):
+		var a: Array = cur.duplicate()
+		a[int(sub)] = int(v) if cur[int(sub)] is int else v
+		sc.set(parts[1], a)
+		return true
+	return false
+
+
 ## 온라인 패치(Patch)의 rules 덮어쓰기. 모르는 키·형식이 틀린 값은 무시.
 static func _apply_patch(p: Dictionary) -> void:
+	_code_reset()
 	for k in p:
 		var v: Variant = p[k]
+		if "." in k:
+			if v is float or v is int:
+				_code_set(k, float(v))
+			continue
 		if k == "mod_decay":
 			if v is bool:
 				mod_decay = v

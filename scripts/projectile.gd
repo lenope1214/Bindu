@@ -62,40 +62,42 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO, off := Vector2.ZE
 		d = tower.dir
 	var p := Tower.pw(l)
 	var speed := 400.0
+	var P := PROJ
+	var H := Tower.HIT
 	match k:
 		"shot":
-			speed = 440.0; dmg = 2.4 * p; radius = 6.0; max_travel = Tower.shot_range(tower.total_level(), tower.mf("size"))
+			speed = P.shot_spd; dmg = H.shot * p; radius = P.shot_r; max_travel = Tower.shot_range(tower.total_level(), tower.mf("size"))
 		"path":
-			speed = 440.0; dmg = 2.4 * p; radius = 6.0
+			speed = P.path_spd; dmg = H.path * p; radius = P.path_r
 		"blob":
-			speed = 260.0; lob = true; max_travel = Tower.LOB_RANGE * Tower.rr_of("lob", l)
+			speed = P.blob_spd; lob = true; max_travel = Tower.LOB_RANGE * Tower.rr_of("lob", l)
 			homing = tower.mf("homing")  # 휜 길 그대로 장판이 깔린다
 		"thorn":
-			speed = 460.0; dmg = 0.85 * p; pierce = true
+			speed = P.thorn_spd; dmg = H.thorn * p; radius = P.thorn_r; pierce = true
 		"gust":
-			speed = 300.0; dmg = 2.2 * p; radius = 34.0; pierce = true; max_travel = 420.0 * Rules.t("range_gust")
+			speed = P.gust_spd; dmg = H.gust * p; radius = P.gust_r; pierce = true; max_travel = P.gust_far * Rules.t("range_gust")
 		"shard":
-			speed = 380.0; dmg = 3.0 * p; radius = 7.0
+			speed = P.shard_spd; dmg = H.shard * p; radius = P.shard_r
 		"frag":
-			speed = 380.0; dmg = 1.0 * p; radius = 4.0; max_travel = 130.0
+			speed = P.frag_spd; dmg = P.frag_dmg * p; radius = P.frag_r; max_travel = P.frag_far
 		"glob":
-			speed = 300.0; dmg = 0.6 * p; radius = 7.0
+			speed = P.glob_spd; dmg = P.glob_dmg * p; radius = P.glob_r
 		"iron":
-			speed = 200.0; dmg = 1.7 * p; radius = 12.0; pierce = true
+			speed = P.iron_spd; dmg = H.iron * p; radius = P.iron_r; pierce = true
 		"log":
-			speed = 240.0; lob = true; max_travel = Tower.BURN_RANGE * Tower.reach(l)
+			speed = P.log_spd; lob = true; max_travel = Tower.BURN_RANGE * Tower.reach(l)
 		"tornado":
-			speed = 110.0; dmg = 1.2 * p; radius = 26.0; continuous = true; max_travel = 380.0
+			speed = P.tornado_spd; dmg = P.tornado_dmg * p; radius = P.tornado_r; continuous = true; max_travel = P.tornado_far
 		"mushroom":
-			speed = 220.0; lob = true; max_travel = Tower.MUSH_RANGE * Tower.reach(l)
+			speed = P.mushroom_spd; lob = true; max_travel = Tower.MUSH_RANGE * Tower.reach(l)
 		"icebolt":
-			speed = 300.0; lob = true; max_travel = Tower.PRISON_RANGE * Tower.reach(l)
+			speed = P.icebolt_spd; lob = true; max_travel = Tower.PRISON_RANGE * Tower.reach(l)
 		"storm":
-			speed = 75.0; lob = true; dmg = 2.0 * p; radius = 100.0; max_travel = 360.0 * Tower.reach(l)
+			speed = P.storm_spd; lob = true; dmg = P.storm_dmg * p; radius = P.storm_r; max_travel = P.storm_far * Tower.reach(l)
 		"wisp":
-			speed = 210.0; dmg = WISP_DMG * p; radius = 7.0; max_travel = INF  # 목줄 혼불: 거리 대신 WISP_LIFE초 (finished)
+			speed = P.wisp_spd; dmg = H.wisp * p; radius = P.wisp_r; max_travel = INF  # 목줄 혼불: 거리 대신 WISP_LIFE초 (finished)
 		"ghost":
-			speed = 230.0; dmg = 2.4 * p; radius = 7.0; max_travel = 900.0
+			speed = P.ghost_spd; dmg = P.ghost_dmg * p; radius = P.ghost_r; max_travel = P.ghost_far
 	if k in Pat.PROJECTILE:
 		radius *= tower.sz()
 		pierce_left = tower.mn("pierce")
@@ -226,22 +228,42 @@ func _strike(delta: float) -> void:
 	tw.main.bolt(pts)
 
 
+## 탄 종류별 속도(초당 px)·반지름·날아가는 거리·피해(반응 탄만, 공격방식 탄 피해는 Tower.HIT).
+## 온라인 패치 rules "Projectile.PROJ.<이름>". 공격방식 탄 반지름은 크기 강화를 곱한다.
+static var PROJ := {
+	"shot_spd": 440.0, "shot_r": 6.0,  # 직선탄
+	"path_spd": 440.0, "path_r": 6.0,  # 그린 궤적
+	"blob_spd": 260.0,  # 투척 장판 탄
+	"thorn_spd": 460.0, "thorn_r": 6.0,  # 관통 연사
+	"gust_spd": 300.0, "gust_r": 34.0, "gust_far": 420.0,  # 돌풍 (거리는 range_gust 곱)
+	"shard_spd": 380.0, "shard_r": 7.0,  # 파편탄
+	"frag_spd": 380.0, "frag_r": 4.0, "frag_far": 130.0, "frag_dmg": 1.0,  # 파편탄 파편
+	"glob_spd": 300.0, "glob_r": 7.0, "glob_dmg": 0.6,  # 반응 작은 탄
+	"iron_spd": 200.0, "iron_r": 12.0,  # 철구
+	"log_spd": 240.0,  # 장작 장판 통나무
+	"tornado_spd": 110.0, "tornado_r": 26.0, "tornado_far": 380.0, "tornado_dmg": 1.2,  # 화염 회오리
+	"mushroom_spd": 220.0,  # 버섯 지뢰
+	"icebolt_spd": 300.0,  # 빙결 감옥 얼음 덩이
+	"storm_spd": 75.0, "storm_r": 100.0, "storm_far": 360.0, "storm_dmg": 2.0,  # 폭풍 구름
+	"wisp_spd": 210.0, "wisp_r": 7.0,  # 혼불 (피해는 Tower.HIT.wisp)
+	"ghost_spd": 230.0, "ghost_r": 7.0, "ghost_far": 900.0, "ghost_dmg": 2.4,  # 넋불
+}
+
 ## 유도·혼불이 노릴 구체 고르기 (2026-10-30):
 ## - 같은 오브젝트의 탄은 한 구체를 CHASE_MAX개까지만 쫓는다 (다 차 있으면 그중 가장 가까운 것)
 ## - CHASE_CHECK초 쫓아도 거리가 줄지 않으면 그 구체는 포기한다 (빠른 구체를 끝없이 따라가지 않게)
 ## - 구체가 갈 자리를 어림해 그쪽으로 튼다
-const CHASE_MAX := 2
-const CHASE_CHECK := 0.8
-const STEER_CONE := 1.6  # 유도 탄이 노리는 앞쪽 각도(라디안). 50도로 좁히면 덜 맞혀서 그대로 두고, 둘레를 도는 것은 포기 규칙으로 막는다
-const HOMING_TRAVEL := 900.0  # 화면 끝까지 가던 탄도 유도가 붙으면 혼불처럼 900까지만
-const WISP_SEEK := 380.0  # 반응·영혼 넋불(ghost)이 찾는 범위
+static var CHASE_MAX := 2
+static var CHASE_CHECK := 0.8
+static var STEER_CONE := 1.6  # 유도 탄이 노리는 앞쪽 각도(라디안). 50도로 좁히면 덜 맞혀서 그대로 두고, 둘레를 도는 것은 포기 규칙으로 막는다
+static var HOMING_TRAVEL := 900.0  # 화면 끝까지 가던 탄도 유도가 붙으면 혼불처럼 900까지만
+static var WISP_SEEK := 380.0  # 반응·영혼 넋불(ghost)이 찾는 범위
 ## 목줄 혼불 (2026-10-31 개편, 사용자 선택 A): 오브젝트 곁에 머물며 목줄 안 구체를 쫓아 여러 번 때린다.
 ## 떠 있는 수는 Tower.wisp_cap(), 사라지면 WISP_RESPAWN초 뒤 다시. 화면 끝까지 쫓아가던 예전 혼불이 배치와 상관없이 다 맞혀 너무 셌다
-const WISP_DMG := 1.15  # 한 번 때릴 때 (예전 한 발 4.0, 2026-11-01 체공 감쇠를 넣으며 1.0 → 1.15)
-const WISP_LIFE := 6.0
-const WISP_LEASH := 300.0  # 오브젝트에서 이만큼 안의 구체만 쫓는다 (공격방식 레벨 사거리·range_wisp 배율)
-const WISP_LEASH_HOMING := 0.15  # 유도 하나마다 목줄 +15%
-const WISP_RESPAWN := 1.2
+static var WISP_LIFE := 6.0
+static var WISP_LEASH := 300.0  # 오브젝트에서 이만큼 안의 구체만 쫓는다 (공격방식 레벨 사거리·range_wisp 배율)
+static var WISP_LEASH_HOMING := 0.15  # 유도 하나마다 목줄 +15%
+static var WISP_RESPAWN := 1.2
 
 
 static func wisp_leash(h: float, reach := 1.0) -> float:

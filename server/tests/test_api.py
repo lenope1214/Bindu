@@ -156,6 +156,12 @@ def test_validate_bounds():
     assert validate.check(dict(run, modes=["three", "soft"])) == ""
     assert validate.modes_mul(["rush", "steel"]) == 1.3 * 1.3
     assert validate.modes_mul(["rush"], {"modes": {"rush": 1.5}}) == 1.5
+    # 게임 코드 수치 패치: 보스 체력을 올리면 점수 상한도 오르고, 내려도 기본값보다 낮아지지 않음
+    up = {"rules": {"all": {"Orb.KIND.boss_hp": 30, "Orb.KIND.tank_hp": 5.0}}}
+    down = {"rules": {"all": {"Orb.KIND.boss_hp": 1, "Main.CROSS_HP": 1.0}}}
+    assert validate.max_score(30, "plain", 1, up) > cap * 1.5
+    assert validate.max_score(30, "plain", 1, down) == cap
+    assert validate.max_score(30, "cross", 1, down) == validate.max_score(30, "cross", 1)
 
 
 def post_logs(c, entries, device="dev-logs-aaaa"):

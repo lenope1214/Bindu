@@ -131,10 +131,91 @@ static func build() -> Array:
 			elif p == "rxd_" and rx.has(id):
 				e["g"] = "반응 피해 배율"
 				e["d"] = "%s 반응이 맞혀 주는 피해 배율 (1 = 그대로)" % rx[id]
+			elif k.begins_with("rxiv_") and rx.has(k.substr(5)):
+				e["g"] = "반응 간격 배율"
+				e["d"] = "%s 반응이 다시 터지는 간격 배율 (1 = 그대로, 2 = 절반만 터짐)" % rx[k.substr(5)]
 			else:
 				e["g"] = "기타"
 				e["d"] = ""
 		out.append(e)
+	var nm := names.duplicate()
+	nm.merge(rx)
+	out.append_array(_code(nm))
+	return out
+
+
+const CODE_LABEL := {"Tower": "오브젝트", "Projectile": "탄", "Orb": "구체", "Main": "맵·중앙", "Modes": "모드", "RxMore": "새 반응",
+	"Pat": "그린 궤적", "MapRule": "맵 규칙", "Skill": "중앙 기술"}
+
+
+## 사전 묶음 이름: 설명 첫 마디 (없으면 변수 이름)
+static func _short(doc: String, name: String) -> String:
+	var h := doc
+	for cut in [" (", ".", ":", "("]:
+		var i := h.find(cut)
+		if i > 0:
+			h = h.substr(0, i)
+	h = h.strip_edges()
+	return h.left(30) if h != "" else name
+
+
+## Rules.CODE 스크립트의 대문자 static var (숫자·숫자 배열·숫자 사전). 설명은 줄 끝 주석, 없으면 바로 위 ## 주석.
+static func _code(names: Dictionary) -> Array:
+	var out := []
+	var re_var := RegEx.create_from_string("^static var ([A-Z][A-Z0-9_]*)")
+	var re_key := RegEx.create_from_string("\"([a-z0-9_]+)\"\\s*:")
+	for cls in Rules.CODE:
+		var sc := load(Rules.CODE[cls]) as GDScript
+		var src := FileAccess.get_file_as_string(Rules.CODE[cls]).split("\n")
+		var doc := ""
+		var i := 0
+		while i < src.size():
+			var line: String = src[i]
+			if line.begins_with("##"):
+				var start := i == 0 or not src[i - 1].begins_with("##")
+				doc = (doc + " " if doc != "" and not start else "") + line.trim_prefix("##").strip_edges()
+				i += 1
+				continue
+			var m := re_var.search(line)
+			if m == null:
+				if line.strip_edges() == "" or not line.begins_with("static var"):
+					doc = ""  # 빈 줄·다른 코드까지: 바로 위 ## 설명은 이어진 static var 묶음에만
+				i += 1
+				continue
+			var name := m.get_string(1)
+			var val: Variant = sc.get(name)
+			var ci := line.find("  # ")
+			var desc := line.substr(ci + 4).strip_edges() if ci >= 0 else doc
+			var g: String = CODE_LABEL[cls]
+			var key0: String = cls + "." + name
+			if val is float or val is int:
+				out.append({"k": key0, "g": g, "d": desc, "v": _num(val)})
+			elif val is Array:
+				for j in val.size():
+					if val[j] is float or val[j] is int:
+						out.append({"k": "%s.%d" % [key0, j], "g": g, "d": "%s (%d번째)" % [desc, j + 1], "v": _num(val[j])})
+			elif val is Dictionary:
+				# 사전: 여러 줄이면 칸마다 줄 끝 주석, 한 줄이면 사전 설명
+				var dc := {}
+				var j := i
+				while j < src.size():
+					var ln: String = src[j]
+					var c2 := ln.find("  # ")
+					var body := ln.substr(0, c2) if c2 >= 0 else ln
+					for km in re_key.search_all(body):
+						dc[km.get_string(1)] = ln.substr(c2 + 4).strip_edges() if c2 >= 0 else ""
+					if ln.strip_edges().ends_with("}") or (j == i and "}" in body):
+						break
+					j += 1
+				for sub in val:
+					if not (val[sub] is float or val[sub] is int):
+						continue
+					var sd: String = dc.get(sub, "")
+					if sd == "" and names.has(sub):
+						sd = names[sub]
+					out.append({"k": "%s.%s" % [key0, sub], "g": "%s · %s" % [g, _short(doc, name)], "d": sd if sd != "" else sub, "v": _num(val[sub])})
+				i = j
+			i += 1
 	return out
 
 

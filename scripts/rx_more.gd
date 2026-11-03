@@ -6,7 +6,7 @@ class_name RxMore
 ## 동작은 Tower._reactions_inner가 tick을, Projectile·Zone·Orb·main이 아래 훅을 부른다.
 
 ## 반응 id → 마지막 쿨다운(초, 공속으로 줄어듦). 지속형(진자)은 0.
-const IV := {
+static var IV := {
 	"miasma": 2.5, "sandstorm": 2.5, "seedwind": 2.5, "tidal": 3.0, "vacuum": 3.0, "feather": 2.5,
 	"bladewind": 3.0, "whistle": 2.5, "galeback": 3.0, "wraith": 3.0,
 	"thermal": 3.0, "frostthorn": 2.0, "glacier": 2.5, "frostbolt": 2.5, "icecrack": 2.5, "coldneedle": 2.0,
@@ -27,10 +27,10 @@ const GHOSTS := ["frostsoul", "foxfire", "soulbolt", "phantom", "angel", "sword"
 ## 물결(지나간 자리 물길)·균열(지나간 자리 띠) 반응
 const WAVES := ["tidal", "glacier", "mud", "foulwater", "blackwater", "rainbow", "mercury", "ripple", "backflow"]
 const CRACKS := ["icecrack", "thornvine", "ground", "shadowcrack", "crystal", "rumble", "tomb"]
-const WAVE_RANGE := 300.0
-const CRACK_RANGE := 280.0
-const STRIP_LIFE := 2.0
-const SOLAR_W := 24.0  # 태양 광선 반너비 (다른 빛 광선 12~14)
+static var WAVE_RANGE := 300.0  # 물결 반응이 흘러가는 거리
+static var CRACK_RANGE := 280.0  # 균열 반응이 뻗는 거리
+static var STRIP_LIFE := 2.0  # 물결·균열이 지나간 자리 띠가 남는 시간(초)
+static var SOLAR_W := 24.0  # 태양 광선 반너비 (다른 빛 광선 12~14)
 
 
 ## 새 반응 위력 단위: Tower.pw × Rules.rx_mul (봇 32판에서 반응 65개를 다 채우자 판이 크게 쉬워져 한꺼번에 낮춘다)

@@ -185,7 +185,7 @@ static func tax_of(n: int) -> float:
 
 ## 바람 속성: 이 거리 안의 다른 오브젝트 공격 속도 +Rules wind_buff(8%)/바람 레벨. 한 오브젝트에는 가장 큰 바람 하나만.
 const WIND_RANGE := 240.0
-const SHADE_T := 3.0  # 어둠 형태 성질 그림자 표식 시간 (2026-10-31, 끌기 대신: 블랙홀과 겹치지 않게)
+static var SHADE_T := 3.0  # 어둠 형태 성질 그림자 표식 시간 (2026-10-31, 끌기 대신: 블랙홀과 겹치지 않게)
 
 
 ## 공격 속도 배율: 특성 × 속사 × 바람 버프 ÷ 속성을 겹친 대가 (모두 곱한다). 특수 반응 공격도 이 배율.
@@ -238,11 +238,11 @@ static func van_mul(n: int) -> float:
 
 
 ## 축적(1~5장): 필요한 처치, 강타 피해, 크기. 삼연(1~5장): 3번째 공격 피해. 호응·마무리는 Rules.
-const CHARGE_NEED := [15, 13, 11, 10, 9]
-const CHARGE_MUL := [5.0, 6.0, 7.0, 7.5, 8.0]
-const THIRD_MUL := [1.8, 2.4, 2.9, 3.3, 3.6]
+static var CHARGE_NEED := [15, 13, 11, 10, 9]  # 축적 강타까지 필요한 처치 (장 수별)
+static var CHARGE_MUL := [5.0, 6.0, 7.0, 7.5, 8.0]  # 축적 강타 피해 배율 (장 수별)
+static var THIRD_MUL := [1.8, 2.4, 2.9, 3.3, 3.6]  # 삼연 3번째 공격 피해 배율 (장 수별)
 const CONT_BOOST := ["spray", "stream", "clock", "wisp"]  # 쏘는 순간이 없거나 오래 남는 공격: 발동 배율을 잠깐 동안 건다
-const CONT_IV := 0.5  # 그 공격은 이만큼을 공격 한 번으로 센다
+static var CONT_IV := 0.5  # 그 공격은 이만큼을 공격 한 번으로 센다
 
 
 static func _at(a: Array, n: int) -> float:
@@ -340,29 +340,29 @@ func wave_begin() -> void:
 
 ## 투척 장판: 느린 탄이 날아간 길에 띠 장판이 남는다 (Zone.trail). 던지는 간격, 날아가는 거리(Lv1, reach 배율),
 ## 띠 반지름(Lv1, 레벨마다 +), 점마다 남는 시간, 띠 안의 구체에 초당 피해(Lv1).
-const LOB_IV := 1.6
-const LOB_RANGE := 420.0
-const LOB_R := 30.0
-const LOB_R_LV := 3.0
-const LOB_LIFE := 2.5
-const LOB_DPS := 3.4
+static var LOB_IV := 1.6
+static var LOB_RANGE := 420.0
+static var LOB_R := 30.0
+static var LOB_R_LV := 3.0
+static var LOB_LIFE := 2.5
+static var LOB_DPS := 3.4
 ## 빙결 감옥(얼음+어둠): 얼음 덩이가 날아간 길에 얼음 띠. 띠에 처음 닿은 구체를 멈추고 받는 피해 +50%.
-const PRISON_IV := 7.0
-const PRISON_RANGE := 300.0
-const PRISON_R := 44.0
-const PRISON_R_LV := 4.0
-const PRISON_LIFE := 1.2
+static var PRISON_IV := 7.0
+static var PRISON_RANGE := 300.0
+static var PRISON_R := 44.0
+static var PRISON_R_LV := 4.0
+static var PRISON_LIFE := 1.2
 ## 독버섯(독+나무): 버섯이 굴러가며 MUSH_GAP마다 지뢰를 떨군다 (오브젝트당 4+레벨 개까지).
-const MUSH_IV := 2.5
-const MUSH_RANGE := 270.0
-const MUSH_GAP := 90.0
+static var MUSH_IV := 2.5
+static var MUSH_RANGE := 270.0
+static var MUSH_GAP := 90.0
 ## 장작 반응(불+나무): 굴러간 길에 불 장판. 반응 피해라 _hurt + 화상.
-const BURN_IV := 2.2
-const BURN_RANGE := 320.0
-const BURN_R := 32.0
-const BURN_R_LV := 3.0
-const BURN_LIFE := 3.0
-const BURN_DPS := 4.5
+static var BURN_IV := 2.2
+static var BURN_RANGE := 320.0
+static var BURN_R := 32.0
+static var BURN_R_LV := 3.0
+static var BURN_LIFE := 3.0
+static var BURN_DPS := 4.5
 
 
 static func lob_r(l: int) -> float:
@@ -370,18 +370,67 @@ static func lob_r(l: int) -> float:
 
 
 ## 공격방식 Lv1의 공격 간격(초). attack()과 같은 값. 분사는 계속 뿜어서 없음, 시계침은 한 번 훑는 시간.
-const BASE_IV := {"shot": 0.5, "thorn": 0.35, "gust": 1.5, "shard": 0.9, "iron": 1.5, "stream": 1.0, "chain": 1.3,
-	"wall": 3.5, "vortex": 5.0, "laser": 2.0, "lob": LOB_IV, "sonic": 1.0, "clock": 0.8, "wisp": 0.6, "path": 0.5}
+## (온라인 패치 rules "Tower.BASE_IV.<공격방식>")
+static var BASE_IV := {"shot": 0.5, "thorn": 0.35, "gust": 1.5, "shard": 0.9, "iron": 1.5, "stream": 1.0, "chain": 1.3,
+	"wall": 3.5, "vortex": 5.0, "laser": 2.0, "lob": 1.6, "sonic": 1.0, "clock": 0.8, "wisp": 0.6, "path": 0.5}
 
-## 공격방식 한 번 맞힐 때의 기본 피해(Lv1, 배율 전)와 설명. projectile.gd·zone.gd·attack()과 같은 값.
-const BASE_HIT := {
-	"shot": [2.4, "한 발"], "thorn": [0.85, "한 발, 모두 뚫음"], "gust": [2.2, "한 번, 모두 뚫음"],
-	"shard": [3.0, "한 발, 파편 3개는 1.0씩"], "iron": [1.7, "한 발, 모두 뚫음"], "wisp": [Projectile.WISP_DMG, "혼불마다 공격 간격에 한 번"], "path": [2.4, "한 발"],
-	"chain": [2.2, "한 번 튈 때"], "laser": [3.4, "한 번, 모두 뚫음"], "sonic": [2.6, "가까이, 끝에서는 절반"],
-	"clock": [0.9, "한 번 훑을 때"], "vortex": [1.5, "터질 때 + 모은 피해, 안에서 초당 0.4"],
-	"lob": [LOB_DPS, "지나간 띠 안 초당, 2.5초 남음"], "spray": [5.5, "초당, 계속 뿜음"], "stream": [3.0, "뿜는 동안 초당, 0.6초"],
-	"wall": [3.5, "벽에 막힌 동안 초당, 무너질 때 둘레 2.0"],
+## 공격방식 한 번 맞힐 때의 기본 피해(Lv1, 배율 전). attack()·projectile.gd가 이 값을 쓴다 (온라인 패치 rules "Tower.HIT.<공격방식>").
+## 시계침·벽·블랙홀·투척 장판은 Rules 키(clock_dmg·wall_dmg·vortex_end)와 LOB_DPS.
+static var HIT := {
+	"shot": 2.4,  # 직선탄 한 발
+	"thorn": 0.85,  # 관통 연사 한 발
+	"gust": 2.2,  # 돌풍 한 번
+	"shard": 3.0,  # 파편탄 한 발 (파편은 PROJ frag_dmg)
+	"iron": 1.7,  # 철구 한 발
+	"wisp": 1.15,  # 혼불 한 번 때릴 때
+	"path": 2.4,  # 그린 궤적 한 발
+	"chain": 2.2,  # 연쇄 번개 한 번 튈 때
+	"laser": 3.4,  # 레이저 한 번
+	"sonic": 2.6,  # 음파 가까이 (끝에서는 SHAPE sonic_far만큼 약함)
+	"spray": 5.5,  # 분사 초당
+	"stream": 3.0,  # 물줄기 뿜는 동안 초당
 }
+## 공격 모양 (온라인 패치 rules "Tower.SHAPE.<이름>"). 길이는 공격방식 레벨 사거리·range_<id>·크기 강화를 곱한다.
+static var SHAPE := {
+	"spray_len": 200.0,  # 분사 길이
+	"spray_ang": 0.35,  # 분사 부채꼴 반각(라디안)
+	"stream_len": 260.0,  # 물줄기 길이
+	"stream_w": 10.0,  # 물줄기 판정 반폭
+	"stream_t": 0.6,  # 물줄기 한 번 뿜는 시간(초)
+	"stream_stop": 60.0,  # 물줄기 경직(멈춰 세우는 세기)
+	"chain_len": 280.0,  # 연쇄 번개 첫 대상 거리
+	"chain_ang": 0.5,  # 연쇄 번개 첫 대상 찾는 반각(라디안)
+	"chain_jump": 110.0,  # 연쇄 번개 튀는 거리
+	"chain_n": 3,  # 연쇄 번개 튀는 수 (+공격방식 레벨 +튕김)
+	"sonic_len": 230.0,  # 음파 길이
+	"sonic_ang": 0.5,  # 음파 부채꼴 반각(라디안)
+	"sonic_far": 0.5,  # 음파 끝에서 줄어드는 피해 몫
+	"clock_len": 240.0,  # 시계침 길이
+	"clock_w": 10.0,  # 시계침 판정 반폭
+	"clock_arc": 0.7,  # 시계침 왕복 반각(라디안)
+	"clock_sweep": 1.6,  # 시계침 한 번 왕복 시간(초, 공격 속도로 나눔)
+}
+const HIT_DESC := {
+	"shot": "한 발", "thorn": "한 발, 모두 뚫음", "gust": "한 번, 모두 뚫음", "shard": "한 발, 파편 3개는 %s씩", "iron": "한 발, 모두 뚫음",
+	"wisp": "혼불마다 공격 간격에 한 번", "path": "한 발", "chain": "한 번 튈 때", "laser": "한 번, 모두 뚫음", "sonic": "가까이, 끝에서는 절반",
+	"clock": "한 번 훑을 때", "vortex": "터질 때 + 모은 피해, 안에서 초당 %s", "lob": "지나간 띠 안 초당, %s초 남음", "spray": "초당, 계속 뿜음",
+	"stream": "뿜는 동안 초당, %s초", "wall": "벽에 막힌 동안 초당, 무너질 때 둘레 %s",
+}
+
+
+## 공격방식 기본 피해와 설명 [피해, 글] (정보창).
+static func base_hit(p: String) -> Array:
+	var d: String = HIT_DESC.get(p, "")
+	match p:
+		"clock": return [Rules.t("clock_dmg"), d]
+		"wall": return [Rules.t("wall_dmg"), d % Rules.fmt("{wall_break}")]
+		"vortex": return [Rules.t("vortex_end"), d % Rules.fmt("{vortex_dmg}")]
+		"lob": return [LOB_DPS, d % str(LOB_LIFE)]
+		"shard": return [HIT.shard, d % str(Projectile.PROJ.frag_dmg)]
+		"stream": return [HIT.stream, d % str(SHAPE.stream_t)]
+	return [HIT.get(p, 1.0), d]
+
+
 
 
 ## 목줄 혼불이 한꺼번에 떠 있는 수: 2 + 다중 발사.
@@ -457,12 +506,12 @@ func range_text() -> String:
 	var s := sz()
 	match pattern:
 		"shot": return "%d (속성 레벨 합이 오를수록 멀리)" % roundi(shot_range(total_level(), mf("size")) * (1.0 + 0.12 * tk(Elem.WIND)))
-		"spray": return "%d" % roundi(200.0 * rr(l) * s)
-		"stream": return "%d" % roundi(260.0 * rr(l) * s)
-		"chain": return "%d (튀는 거리 %d)" % [roundi(280.0 * rr(l) * s), roundi(110.0 * s)]
-		"gust": return "%d" % roundi(420.0 * s * Rules.t("range_gust"))
+		"spray": return "%d" % roundi(SHAPE.spray_len * rr(l) * s)
+		"stream": return "%d" % roundi(SHAPE.stream_len * rr(l) * s)
+		"chain": return "%d (튀는 거리 %d)" % [roundi(SHAPE.chain_len * rr(l) * s), roundi(SHAPE.chain_jump * s)]
+		"gust": return "%d" % roundi(Projectile.PROJ.gust_far * s * Rules.t("range_gust"))
 		"sonic": return "%d" % roundi(sonic_r(l))
-		"clock": return "%d" % roundi(240.0 * rr(l) * s)
+		"clock": return "%d" % roundi(SHAPE.clock_len * rr(l) * s)
 		"lob": return "%d 날아감 (지나간 띠 반지름 %d)" % [roundi(LOB_RANGE * rr(l)), roundi(lob_r(l) * s)]
 		"vortex": return "%d 안 구체 무리에 (우물 반지름 %d)" % [roundi(well_range()), roundi((100.0 + 10.0 * (l - 1)) * s * (1.0 + 0.15 * (tk(Elem.WOOD) + tk(Elem.WIND))))]
 		"wall": return "앞 %d~ (벽 %d개)" % [roundi(90.0 * rr(l)), 2 + roundi(mf("multi"))]
@@ -477,11 +526,7 @@ func range_text() -> String:
 ## 한 번 공격의 피해 계산 (정보창 기본 줄·자세히 줄이 같은 값을 쓴다).
 func hit_calc() -> Dictionary:
 	var els: Dictionary = eff if not eff.is_empty() else elements
-	var bh: Array = BASE_HIT.get(pattern, [1.0, ""])
-	match pattern:  # Rules.tune(온라인 패치)로 바뀌는 값
-		"clock": bh = [Rules.t("clock_dmg"), bh[1]]
-		"wall": bh = [Rules.t("wall_dmg"), bh[1]]
-		"vortex": bh = [Rules.t("vortex_end"), "터질 때 + 모은 피해, 안에서 초당 %.1f" % Rules.t("vortex_dmg")]
+	var bh: Array = base_hit(pattern)
 	var f := dmg_k(false)
 	var one: float = bh[0] * pw(plv) * f
 	var shots := 1.0 + mf("multi")
@@ -1247,6 +1292,8 @@ static func _float(v: Variant) -> float:
 func _ready_to(key, interval: float, delta: float) -> bool:
 	var v: float = cd.get(key, 0.0) - delta
 	if v <= 0.0:
+		if in_rx and not Rules.rxiv.is_empty():
+			interval *= Rules.rxiv.get(tag, 1.0)  # 반응별 간격 배율 (온라인 패치 rxiv_<반응 id>)
 		cd[key] = interval
 		recoil = 1.0
 		if key == "p":
@@ -1260,7 +1307,7 @@ func _ready_to(key, interval: float, delta: float) -> bool:
 
 ## 주사위를 시간으로 굴리는 계속 공격 (그 밖의 공격은 쏠 때마다 _ready_to·연쇄 번개에서 굴린다)
 const DICE_TIMED := ["spray", "clock"]
-const DICE_PITY := [8, 7, 6, 5, 4]  # 장 수별: 이만큼 굴리는 동안 6이 없으면 다음은 6
+static var DICE_PITY := [8, 7, 6, 5, 4]  # 장 수별: 이만큼 굴리는 동안 6이 없으면 다음은 6
 
 
 ## 주사위 강화: 굴려서 다음 공격까지 이 오브젝트의 직접 피해 배율을 정한다.
@@ -1331,7 +1378,7 @@ func shots() -> int:
 ## 짝수 개 다중 발사는 가운데 두 발을 같은 방향으로 나란히(옆 간격 ±MULTI_LANE) 쏜다.
 ## 예전에는 모든 발을 0.22라디안씩 벌려 2발이면 정중앙이 비어, 조준한 구체가 약 250px보다 멀면
 ## 두 발이 양옆으로 빗나가 피해가 0이었다 (2026-11-01 사용자 제보, tools/miss_audit.gd).
-const MULTI_LANE := 8.0  # 작은 구체(반지름 9)도 두 발이 다 맞는 간격
+static var MULTI_LANE := 8.0  # 작은 구체(반지름 9)도 두 발이 다 맞는 간격
 
 
 ## n발의 자리 번호: 가운데 0, 홀수 n은 정수(-1, 0, 1), 짝수 n은 ±0.5, ±1.5 …
@@ -1471,18 +1518,19 @@ func attack(delta: float, orbs: Array) -> void:
 					pr.dmg *= mk  # 다중 발사: 한 발 피해 감소
 					pr.form_init()
 		"spray":
+			var sdm: float = HIT.spray * pw(l)
 			for d in dirs():
-				_cone(orbs, d, 200.0 * rr(l) * s, 0.35, func(o): hit(o, 5.5 * pw(l) * dp * mk, kp))
+				_cone(orbs, d, SHAPE.spray_len * rr(l) * s, SHAPE.spray_ang, func(o): hit(o, sdm * dp * mk, kp))
 		"stream":
-			if _ready_to("p", 1.0 / spd(l), dp):
-				fx["stream"] = 0.6
+			if _ready_to("p", BASE_IV.stream / spd(l), dp):
+				fx["stream"] = SHAPE.stream_t
 			if fx.get("stream", 0.0) > 0.0:
 				var ls := lanes()
 				var ds := dirs()
 				for i in ds.size():
-					_line(orbs, ds[i], 260.0 * rr(l) * s, 10.0 * s, func(o):
-						hit(o, 3.0 * pw(l) * dp * mk, kp)
-						o.stagger(60.0 * dp), ls[i])
+					_line(orbs, ds[i], SHAPE.stream_len * rr(l) * s, SHAPE.stream_w * s, func(o):
+						hit(o, HIT.stream * pw(l) * dp * mk, kp)
+						o.stagger(SHAPE.stream_stop * dp), ls[i])
 		"chain":
 			if cd.get("p", 0.0) > 0.0:
 				cd["p"] -= dp
@@ -1494,7 +1542,7 @@ func attack(delta: float, orbs: Array) -> void:
 					fired = _chain(orbs, d, l, used) or fired
 				if fired:
 					_fire_mul(true)
-					cd["p"] = 1.3 / spd(l)
+					cd["p"] = BASE_IV.chain / spd(l)
 					roll_dice()
 					recoil = 1.0
 					if fe2 <= 0.0:
@@ -1508,43 +1556,43 @@ func attack(delta: float, orbs: Array) -> void:
 			# 중력 우물 (2026-11-01 사용자 "블랙홀을 중력·흡수 컨셉으로"): 사거리 안 구체가 가장 빽빽한 곳에 떨어져
 			# 끌어모으고, 안에 든 구체가 다른 오브젝트에게 받은 피해 일부를 모았다가 끝에 터진다 (Zone.well).
 			# 자리는 오브젝트에서 정한 거리가 아니라 구체 무리를 따라간다. 구체가 없으면 0.3초 뒤 다시 찾는다
-			if _ready_to("p", 5.0 / spd(l), dp):
+			if _ready_to("p", BASE_IV.vortex / spd(l), dp):
 				var spots := well_spots(dirs().size())
 				if spots.is_empty():
 					cd["p"] = 0.3
 				for p in spots:
 					main.spawn_zone("vortex", l, p, self).well()
 		"laser":
-			if _ready_to("p", 2.0 / spd(l), dp):
+			if _ready_to("p", BASE_IV.laser / spd(l), dp):
 				fx["laser"] = 0.3
 				var ls := lanes()
 				var ds := dirs()
 				for i in ds.size():
-					_line(orbs, ds[i], 2000.0, Rules.t("laser_w") * s, func(o): hit(o, 3.4 * pw(l) * mk), ls[i])
+					_line(orbs, ds[i], 2000.0, Rules.t("laser_w") * s, func(o): hit(o, HIT.laser * pw(l) * mk), ls[i])
 		"lob":
-			if _ready_to("p", LOB_IV / spd(l), dp):
+			if _ready_to("p", BASE_IV.lob / spd(l), dp):
 				var ls := lanes()
 				var ds := dirs()
 				for i in ds.size():
 					main.spawn_proj(self, "blob", l, ds[i], ls[i]).form_init()
 		"sonic":
 			# 부채꼴로 퍼지는 파동: 안의 구체를 모두 치고, 멀수록 약하다 (끝에서 50%)
-			if _ready_to("p", 1.0 / spd(l), dp):
+			if _ready_to("p", BASE_IV.sonic / spd(l), dp):
 				fx["sonic"] = 0.35
 				var R := sonic_r(l)
 				for d in dirs():
-					_cone(orbs, d, R, 0.5, func(o):
-						hit(o, 2.6 * pw(l) * mk * (1.0 - 0.5 * minf(o.position.distance_to(position) / R, 1.0))))
+					_cone(orbs, d, R, SHAPE.sonic_ang, func(o):
+						hit(o, HIT.sonic * pw(l) * mk * (1.0 - SHAPE.sonic_far * minf(o.position.distance_to(position) / R, 1.0))))
 		"clock":
 			# 바늘이 앞쪽 ±0.7라디안을 왕복한다. 한 번 훑을 때마다 같은 구체는 한 번씩
 			var was := cos(clock_ph) >= 0.0
-			clock_ph += dp * spd(l) * TAU / 1.6
+			clock_ph += dp * spd(l) * TAU / SHAPE.clock_sweep
 			if (cos(clock_ph) >= 0.0) != was:
 				clock_hit.clear()
 			var ds := dirs()
 			var ls := lanes()
 			for i in ds.size():
-				_line(orbs, ds[i].rotated(clock_a()), 240.0 * rr(l) * s, 10.0 * s, func(o):
+				_line(orbs, ds[i].rotated(clock_a()), SHAPE.clock_len * rr(l) * s, SHAPE.clock_w * s, func(o):
 					var key := [i, o]
 					if not clock_hit.has(key):
 						clock_hit[key] = true
@@ -1588,7 +1636,7 @@ func attack(delta: float, orbs: Array) -> void:
 	queue_redraw()
 
 
-const PATH_GAP := 0.08  # 다중 발사 탄 사이 시간(초)
+static var PATH_GAP := 0.08  # 다중 발사 탄 사이 시간(초)
 
 
 func _fire_path(br: int, mk: float) -> void:
@@ -1606,7 +1654,7 @@ func _fire_path(br: int, mk: float) -> void:
 
 ## 협공: 맞힌 오브젝트를 구체에 표시해 두고, 협공이 있는 오브젝트가 맞힐 때
 ## 최근 PINCER_T초 안에 서로 다른 오브젝트 PINCER_N개 이상에게 맞았으면 표식이 터진다.
-const PINCER_N := 2
+static var PINCER_N := 2
 const PINCER_T := 3.0
 const PINCER_CD := 1.5  # 한 구체가 다시 터질 때까지
 
@@ -1885,12 +1933,12 @@ static func rock_slot(d: Vector2, k: int, l: int) -> Vector2:
 
 ## 음파 사거리.
 func sonic_r(l: int) -> float:
-	return 230.0 * rr(l) * sz()
+	return SHAPE.sonic_len * rr(l) * sz()
 
 
 ## 시계침 각도 (공격 방향 기준).
 func clock_a() -> float:
-	return sin(clock_ph) * 0.7
+	return sin(clock_ph) * SHAPE.clock_arc
 
 
 ## 앞쪽 가장 가까운 구체부터 n개를 잇는다 (되감기 번개).
@@ -1951,17 +1999,17 @@ func chan_w(l: int) -> float:
 
 ## 땅 반응은 오브젝트 공격(공격방식)이 맞힐 때 붙는다 (2026-10-30, 앞쪽 가로 벽 대신).
 ## 용암: 묻은 구체가 LAVA_FUSE초 뒤(또는 죽을 때) 그 자리에서 터짐. 같은 구체는 터질 때까지 한 번만.
-const LAVA_FUSE := 2.0
-const LAVA_DMG := 2.4
-const LAVA_R := 70.0
+static var LAVA_FUSE := 2.0
+static var LAVA_DMG := 2.4
+static var LAVA_R := 70.0
 ## 독늪: 맞은 구체가 BOG_MARK초 안에 죽으면 그 자리에 늪. 늪 안에서 죽으면 또 늪(번짐), 오브젝트당 BOG_MAX개.
-const BOG_MARK := 4.0
-const BOG_MAX := 6
-const BOG_R := 56.0
-const BOG_LIFE := 4.0
+static var BOG_MARK := 4.0
+static var BOG_MAX := 6
+static var BOG_R := 56.0
+static var BOG_LIFE := 4.0
 ## 모래시계: 맞은 구체를 약 1초 전 위치로 되감기 (같은 구체는 SAND_CD초에 한 번, 보스는 절반만), 받은 피해 메아리 50%.
-const SAND_CD := 3.0
-const SAND_DMG := 8.0
+static var SAND_CD := 3.0
+static var SAND_DMG := 8.0
 
 
 func _earth_on_hit(o: Orb) -> void:
@@ -2036,7 +2084,7 @@ static func reflex_range_of(pat: String, l: int, total: int, size_n: float, wind
 		"spray": return 200.0 * r * s
 		"stream": return 260.0 * r * s
 		"chain": return 280.0 * r * s
-		"gust": return _reflex_flight_range(420.0 * Rules.t("range_gust"), wind, weather)
+		"gust": return _reflex_flight_range(Projectile.PROJ.gust_far * Rules.t("range_gust"), wind, weather)
 		"sonic": return 230.0 * r * s
 		"clock": return 240.0 * r * s
 		"lob": return _reflex_flight_range(LOB_RANGE * r, wind, weather)
@@ -2334,12 +2382,12 @@ func _draw_star() -> void:
 		draw_arc(o, RADIUS + 6.0 + 40.0 * e, 0, TAU, 32, Color(sc, 0.8 * k), 2.5)
 
 const STAR_MAX_ELEMS := 2  # 별 + 속성 하나 = 그 속성의 행성
-const NOVA_R := 110.0  # 초신성 반지름 (별 레벨마다 +10)
+static var NOVA_R := 110.0  # 초신성 반지름 (별 레벨마다 +10)
 const NOVA_COL := Color(1.0, 0.85, 0.35)  # 별빛 게이지·예고·초신성 색 (별 속성 색보다 진한 금빛)
 const NOVA_FX_T := 0.75  # 초신성 그림 시간
 const GAUGE_GAP := 16.0  # 별빛 게이지 고리 반지름 = RADIUS + 이만큼 (속성 점 RADIUS+7·축적 고리 RADIUS+10보다 바깥)
 const GAUGE_W := 5.0  # 별빛 게이지 두께
-const NOVA_WARN := 0.85  # 별빛이 이만큼 차면 곧 터짐 표시·터질 자리 예고
+static var NOVA_WARN := 0.85  # 별빛이 이만큼 차면 곧 터짐 표시·터질 자리 예고
 const NOVA_AIM_T := 0.25  # 터질 자리 다시 고르는 간격
 
 
@@ -2676,12 +2724,12 @@ func _cont_end(orbs: Array, l: int, s: float) -> void:
 	var rng := 0.0
 	var d := aim
 	match pattern:
-		"spray": rng = 200.0 * rr(l) * s
-		"stream": rng = 260.0 * rr(l) * s
+		"spray": rng = SHAPE.spray_len * rr(l) * s
+		"stream": rng = SHAPE.stream_len * rr(l) * s
 		"laser": rng = 400.0
 		"sonic": rng = sonic_r(l)
 		"clock":
-			rng = 240.0 * rr(l) * s
+			rng = SHAPE.clock_len * rr(l) * s
 			d = aim.rotated(clock_a())
 		_: return
 	var best: Orb = null
@@ -2774,11 +2822,11 @@ func form_path(pos: Vector2) -> void:
 
 ## 예전 "끝 자리 장판"(불씨·물길·서리·턱·안개·째깍)은 바닥에 남기지 않고 끝 자리 가까운 구체에 바로 건다.
 ## 사거리 끝·착지 자리는 오브젝트에서 고정된 거리라 장판이면 늘 같은 곳에 깔렸다 (2026-11-01, ELEM-10).
-const FORM_R := 60.0  # 끝 자리에서 구체를 찾는 거리
-const FORM_N := 3  # 화상·감속·냉기·중독을 거는 구체 수 (가까운 순)
-const TICK_R := 35.0  # 째깍 폭발 반지름 (main.tick_burst)
-const TICK_T := 0.6
-const CONT_END_HALF := 0.6  # 계속 공격 "끝"을 찾는 공격 방향 반각 (라디안)
+static var FORM_R := 60.0  # 끝 자리에서 구체를 찾는 거리
+static var FORM_N := 3  # 화상·감속·냉기·중독을 거는 구체 수 (가까운 순)
+static var TICK_R := 35.0  # 째깍 폭발 반지름 (main.tick_burst)
+static var TICK_T := 0.6
+static var CONT_END_HALF := 0.6  # 계속 공격 "끝"을 찾는 공격 방향 반각 (라디안)
 ## 형태 성질이 만들 수 있는 장판: 날아가는 공격이 지나간 길(form_path)의 불씨·물길뿐 (spec ELEM-10)
 const FORM_ZONES := ["ember", "rill"]
 
@@ -2855,10 +2903,10 @@ func _line(_orbs: Array, d: Vector2, length: float, width: float, f: Callable, o
 ## d 방향 앞쪽의 가장 가까운 구체를 치고 주변으로 튄다. used: 다중 발사 때 같은 첫 대상 피하기
 func _chain(orbs: Array, d: Vector2, l: int, used: Dictionary) -> bool:
 	var first: Orb = null
-	var best := 280.0 * rr(l) * sz()
+	var best: float = SHAPE.chain_len * rr(l) * sz()
 	for o in main.near_t(position, best):
 		var v: Vector2 = o.position - position
-		if not used.has(o) and v.length() < best and absf(d.angle_to(v)) < 0.5:
+		if not used.has(o) and v.length() < best and absf(d.angle_to(v)) < SHAPE.chain_ang:
 			best = v.length()
 			first = o
 	if first == null:
@@ -2867,12 +2915,12 @@ func _chain(orbs: Array, d: Vector2, l: int, used: Dictionary) -> bool:
 	var pts := PackedVector2Array([position + d * RADIUS])
 	var cur := first
 	var hitset := {}
-	for i in 3 + l + mn("bounce"):
+	for i in int(SHAPE.chain_n) + l + mn("bounce"):
 		hitset[cur] = true
 		pts.append(cur.position)
-		hit(cur, 2.2 * pw(l) * multi_k())
+		hit(cur, HIT.chain * pw(l) * multi_k())
 		var nxt: Orb = null
-		var nd := 110.0 * sz()
+		var nd: float = SHAPE.chain_jump * sz()
 		for o in main.near_t(cur.position, nd):
 			if not hitset.has(o) and o.position.distance_to(cur.position) < nd:
 				nd = o.position.distance_to(cur.position)
@@ -3235,13 +3283,13 @@ func _draw_attack() -> void:
 	match pattern:
 		"spray":
 			for d in dirs():
-				_draw_puffs(d, 200.0 * rr(l) * s, 0.35, 34, 2.4, c.lightened(0.4), c, 3.0, 10.0)
+				_draw_puffs(d, SHAPE.spray_len * rr(l) * s, SHAPE.spray_ang, 34, 2.4, c.lightened(0.4), c, 3.0, 10.0)
 		"stream":
 			if fx.get("stream", 0.0) > 0.0:
 				var ls := lanes()
 				var ds := dirs()
 				for i in ds.size():
-					_draw_wave(ds[i], 260.0 * rr(l) * s, 5.0 * s, 0.05, c, 7.0 * s, ls[i])
+					_draw_wave(ds[i], SHAPE.stream_len * rr(l) * s, SHAPE.stream_w * 0.5 * s, 0.05, c, 7.0 * s, ls[i])
 		"laser":
 			var f: float = fx.get("laser", 0.0)
 			var ls := lanes()
@@ -3254,7 +3302,7 @@ func _draw_attack() -> void:
 					draw_line(o2 + d * RADIUS, o2 + d * 2000.0, Color(c, f / 0.3), (10.0 * f / 0.3 + 2.0) * s * wk)
 					draw_line(o2 + d * RADIUS, o2 + d * 2000.0, Color(1, 1, 1, f / 0.3), 3.0 * wk)
 				else:
-					var ch: float = 1.0 - cd.get("p", 0.0) / (2.0 / spd(l))
+					var ch: float = 1.0 - cd.get("p", 0.0) / (BASE_IV.laser / spd(l))
 					draw_circle(d * (RADIUS + 4.0), 2.0 + 4.0 * ch, Color(c, 0.4 + 0.6 * ch))
 		"sonic":
 			var f: float = fx.get("sonic", 0.0)
@@ -3264,7 +3312,7 @@ func _draw_attack() -> void:
 				for d in dirs():
 					for i in 3:
 						var rr := R * clampf(k - i * 0.15, 0.05, 1.0)
-						draw_arc(Vector2.ZERO, rr, d.angle() - 0.5, d.angle() + 0.5, 16, Color(c.lightened(0.3), (1.0 - k) * (1.0 - i * 0.25)), 3.0)
+						draw_arc(Vector2.ZERO, rr, d.angle() - SHAPE.sonic_ang, d.angle() + SHAPE.sonic_ang, 16, Color(c.lightened(0.3), (1.0 - k) * (1.0 - i * 0.25)), 3.0)
 		"clock":
 			var ls := lanes()
 			var ds := dirs()
@@ -3272,8 +3320,8 @@ func _draw_attack() -> void:
 				var d: Vector2 = ds[i]
 				var o2: Vector2 = ls[i]
 				var hd: Vector2 = d.rotated(clock_a())
-				var L := 240.0 * rr(l) * s
-				draw_arc(o2, L, d.angle() - 0.7, d.angle() + 0.7, 24, Color(c, 0.15), 2.0)
+				var L: float = SHAPE.clock_len * rr(l) * s
+				draw_arc(o2, L, d.angle() - SHAPE.clock_arc, d.angle() + SHAPE.clock_arc, 24, Color(c, 0.15), 2.0)
 				draw_line(o2 + hd * RADIUS, o2 + hd * L, Color(c, 0.85), 4.0 * s)
 				draw_line(o2 + hd * RADIUS, o2 + hd * L, Color(1, 1, 1, 0.5), 1.5)
 	# 물이 들어간 반응은 같은 물길 하나 위에 겹쳐 그린다
@@ -3495,13 +3543,13 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 		var lo: Vector2 = o + d.orthogonal() * spread_lane(ks[i])  # 짝수 개 가운데 두 발은 나란히
 		match sp["pat"]:
 			"spray":
-				_r_cone(ci, o, dd, 200.0 * pr * s, 0.35, c)
+				_r_cone(ci, o, dd, SHAPE.spray_len * pr * s, SHAPE.spray_ang, c)
 			"chain":
-				_r_cone(ci, o, dd, 280.0 * pr * s, 0.5, c)
+				_r_cone(ci, o, dd, SHAPE.chain_len * pr * s, SHAPE.chain_ang, c)
 			"stream":
-				_r_band(ci, lo, dd, 0.0, 260.0 * pr * s, 10.0 * s, c)
+				_r_band(ci, lo, dd, 0.0, SHAPE.stream_len * pr * s, SHAPE.stream_w * s, c)
 			"gust":
-				_r_band(ci, lo, dd, 0.0, 420.0 * s * Rules.t("range_gust"), 34.0 * s, c)
+				_r_band(ci, lo, dd, 0.0, Projectile.PROJ.gust_far * s * Rules.t("range_gust"), Projectile.PROJ.gust_r * s, c)
 			"laser":
 				_r_band(ci, lo, dd, 0.0, far, Rules.t("laser_w") * s, c)
 			"wall":
@@ -3520,9 +3568,9 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 			"iron":
 				_r_band(ci, lo, dd, 0.0, far, 12.0 * s, c)
 			"sonic":
-				_r_cone(ci, o, dd, 230.0 * pr * s, 0.5, c)
+				_r_cone(ci, o, dd, SHAPE.sonic_len * pr * s, SHAPE.sonic_ang, c)
 			"clock":
-				_r_cone(ci, o, dd, 240.0 * pr * s, 0.7, c)
+				_r_cone(ci, o, dd, SHAPE.clock_len * pr * s, SHAPE.clock_arc, c)
 			"path":
 				if i == 0:
 					for pts: PackedVector2Array in sp.get("paths", []):
