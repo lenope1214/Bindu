@@ -91,6 +91,7 @@ func _initialize():
 	await _attacks()
 	await _multi_center()
 	_reflex()
+	_reflex_review_regressions()
 	_mods_links()
 	await _mods_area()
 	_waves()
@@ -700,6 +701,80 @@ func _reflex() -> void:
 	t.add_mod("reflex")
 	main._resolve(0.1)
 	ok("MOD-13", is_equal_approx(fixed_hp, 1000.0) and victim.hp < fixed_hp, "반응: 실제 전투 분사 후방 구체 명중 (기존 방향 고정은 0)")
+
+
+# PR #11 리뷰: 기존 검사가 놓친 쿨다운·실제 사거리·처형 경계를 재현한다.
+func _reflex_review_regressions() -> void:
+	_fresh()
+	var c: Vector2 = main.center()
+	var t := _tower(c, Elem.FIRE)
+	t.add(Elem.WOOD, 1)
+	t.eff = t.eff_now()
+	t.add_mod("reflex")
+	t.cd = {"p": 1.0, "burning": 1.0}
+	var de := 0.1 * t.spd_k()
+	t.attack(0.1, [])
+	ok("MOD-13", is_equal_approx(t.cd["burning"], 1.0 - de),
+		"반응 대기: 특수 반응 쿨다운 1회만 감소 (실제 %.4f / 기대 %.4f)" % [t.cd["burning"], 1.0 - de])
+	_fresh()
+	t = _tower(c, Elem.WIND, 3)
+	t.add_mod("reflex")
+	var ranges_ok := true
+	var details := []
+	for pat in ["lob", "gust", "thorn", "iron", "shard"]:
+		t.pattern = pat
+		t.mods["homing"] = 1
+		t.mods["size"] = 5
+		var pr := Projectile.new()
+		pr.setup("blob" if pat == "lob" else pat, t, t.plv, Vector2.RIGHT)
+		pr.form_init()
+		var same := is_equal_approx(t.reflex_range(), pr.max_travel)
+		ranges_ok = ranges_ok and same
+		if not same:
+			details.append("%s 감지%.1f/탄%.1f" % [pat, t.reflex_range(), pr.max_travel])
+		pr.free()
+	ok("MOD-13", ranges_ok, "반응: 바람·크기·유도 보정 뒤 실제 탄 사거리와 일치 %s" % [details])
+	_fresh()
+	Meta.map_id = "storm"
+	Rules.tune["map_on"] = 1.0
+	main.lanes.assign([0.0])
+	t = _tower(c, Elem.WIND, 3)
+	t.pattern = "lob"
+	t.add_mod("reflex")
+	var weather_ok := true
+	var wind := MapRule.wind_dir(main.lanes)
+	for direction in [wind, -wind]:
+		var pr := Projectile.new()
+		pr.setup("blob", t, t.plv, direction)
+		pr.form_init()
+		var target := _orb(c + direction * (pr.max_travel - 1.0), 1000.0)
+		t._update_aim([target], 0.016)
+		weather_ok = weather_ok and t.reflex_target == target
+		target.position = c + direction * (pr.max_travel + 1.0)
+		t._update_aim([target], 0.016)
+		weather_ok = weather_ok and t.reflex_target == null
+		pr.free()
+	ok("MOD-13", weather_ok, "반응 폭풍: 순풍/역풍의 실제 탄 사거리 안만 감지")
+	_fresh()
+	t = _tower(c)
+	t.pattern = "wall"
+	t.add_mod("reflex")
+	var o := _orb(c + Vector2.LEFT * 150.0, 1000.0)
+	t._update_aim([o], 0.016)
+	ok("MOD-13", t.reflex_target == o, "반응 벽: 두 번째 벽이 닿는 150 거리 구체도 감지 (감지 %.1f)" % t.reflex_range())
+	_fresh()
+	t = _tower(c, Elem.DARK)
+	t.add(Elem.METAL, 1)
+	t.eff = t.eff_now()
+	t.add_mod("reflex")
+	o = _orb(c + Vector2.RIGHT * 80.0, 1000.0)
+	o.hp = 100.0
+	main.targets = [o]
+	main._build_grid()
+	t.in_rx = true
+	t.tag = "rx:scythe"
+	RxMore.tick(t, "scythe", 1, [o], 3.1, 1.0)
+	ok("MOD-13", o.hp <= 0.0, "반응+처형 낫: 체력 20%% 아래 구체를 실제 처치 (남은 체력 %.3f)" % o.hp)
 
 
 # ---------- 강화·연계·발동 ----------

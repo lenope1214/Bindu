@@ -2626,8 +2626,9 @@ func _card_full(card: Dictionary) -> Array:
 			out.append(["직선탄 오브젝트에 넣으면 그 공격방식으로 고정, 같은 공격방식에 넣으면 레벨업", D])
 		"mod":
 			if card["id"] == "reflex":
-				out.append(["사거리 안 최근접 구체를 전방위 조준 · 최종 피해 -10%", W])
-				out.append(["오브젝트당 1회 · 그린 궤적·혼불·블랙홀 제외", D])
+				out.append(["전방위 자동 조준 · 최종 피해 -10%", W])
+				out.append(["사거리 안 최근접 구체 · 오브젝트당 1회", D])
+				out.append(["그린 궤적·혼불·블랙홀에는 넣을 수 없음", D])
 				return out
 			out.append([Pat.mdesc(card["id"]), W])
 			out.append(["오브젝트 위에 놓기 · " + ("종류별 %d개, 합쳐 %d개까지" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "쌓을수록 효과 절반씩"), D])

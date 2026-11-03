@@ -1,0 +1,17 @@
+{
+  "scripts/main.gd": "3372496a0be0a5a7bd09c9e675df0199688ec399c9930b42964b818a5582938d",
+  "scripts/card_dock.gd": "d1f28288294af63387039d42e70faea8be6ce75362dabfeaff4ca08a3c24bef1",
+  "scripts/tutorial.gd": "e78c6686e84e0ac4a4fe9472b36827e53506cf1c53bb36ec5aecbdef7a0ab9e1",
+  "scripts/elem.gd": "a0ec955d79fc1be9dc63c6a2786e704731161449c30843b312b340e083f29389",
+  "scripts/pattern.gd": "cf2c358c84d9fba684ed8dc19d1f21d8446fb905a4e9f61a6aa5a942c84595c2",
+  "scripts/tower.gd": "7eabc1f0a53cf1aed42ff6a36d08d8bbdd091209eb920f0242e79db696f867f1",
+  "scripts/orb.gd": "3bb5d4c941ecf6aa43ab775cf155193405639702974106638b9e4aa464a9d326",
+  "scripts/rx_more.gd": "bac9e6b4d3877b9c8f3ee2488563240425bb7b7a9ffe922aec2c28072b5e85e1",
+  "scripts/zone.gd": "b8903b12ad2d8f1d37565e447c541a21693a91f572474d7a8b2f2b76ca331d43",
+  "tools/spec_check.gd": "dc49c865302a85474d49f2d085b9236f50ebcce36c5d0e3e163d6421b5d58abc",
+  "tools/dock_check.gd": "08c4c624291c9b15b16f42fbe667d13e9c4fbe94ff287942a0d5b0ce8be9e8af",
+  "tools/first_play_check.gd": "083fdecee2a866a0a6493b007af0b8c241cb9cc4a3a82912a8c26f9a46e6e148",
+  "tools/reflex_shot.gd": "7a4b643e9c3eebb5655f01f4f442a0d78f8730f4eb7b492f26e753c7618e5241",
+  "tools/run.sh": "279ba4d218ec7007abafc3a8d86ed220efcc351aa1dcc3b576fa3e4d9486748d",
+  "server/app/rule_keys.json": "138cc92d875c12d35f4466a257dc2d4f8716a5b719dc20e7fb7c98f7e48d46e2"
+}
