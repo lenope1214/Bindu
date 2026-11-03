@@ -6495,6 +6495,9 @@ func _on_booted(info: Dictionary) -> void:
 		_apply_rules()
 		_refresh_menu()
 	var latest: Variant = info.get("latest")
+	# 폰·태블릿은 스토어 주소만 연다 (App Store 2.5.2·3.1: 앱 밖에서 빌드를 받게 하지 않음)
+	if latest is Dictionary and OS.has_feature("mobile") and not (str(latest.get("url", "")).begins_with("https://apps.apple.com/") or str(latest.get("url", "")).begins_with("https://play.google.com/")):
+		latest = null
 	if latest is Dictionary and str(latest.get("url", "")) != "" and not updater.busy:
 		var notes := str(latest.get("notes", ""))
 		var url := str(latest["url"])
