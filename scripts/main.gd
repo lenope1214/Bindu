@@ -1762,7 +1762,7 @@ func _update_hud(force := false) -> void:
 		# 맵 규칙·친화 카드 (시험): 칩은 규칙 이름, 말풍선에 규칙과 친화
 		var mc := MAP_AFF_COLOR
 		var rt := MapRule.rule_text()
-		items.append(["tag", mc, rt.get_slice(":", 0), mc, [["맵 규칙 (시험)", W], [rt, W], ["친화 카드 (자주 나옴, 속성·공격방식 피해 +%d%%): %s" % [roundi(Rules.t("map_aff_dmg") * 100), MapRule.aff_text()], D]], false])
+		items.append(["tag", mc, str(Meta.MAPS[Meta.map_id]["name"]) + " 규칙", mc, [["맵 규칙 (시험)", W], [rt, W], ["친화 카드 (자주 나옴, 속성·공격방식 피해 +%d%%): %s" % [roundi(Rules.t("map_aff_dmg") * 100), MapRule.aff_text()], D]], false])
 	if not build_cache.is_empty() and build_cache[0][1] >= BUILD_MIN:
 		# 이번 판 주력: 피해 출처 1위와 몫, 말풍선에 상위 5
 		var bl: Array = [["이번 판 주력 (판 누적 피해 출처)", W]]
@@ -1915,7 +1915,7 @@ func _help_text() -> String:
 		"첫 판은 카드가 단계별로 열려요 (공격방식 3·강화 4·연계 6웨이브)",
 		"처음 생기는 일엔 위쪽에 한 줄 안내 (설정에서 끄기·처음부터 다시 보기)",
 		"튜토리얼: 시작 화면 [튜토리얼]·일시정지에서 항목별로 다시 보기",
-		"도감(시작 화면)에서 ☆로 선호 표시: 그 카드·반응이 선택지에 나오면 반짝여요",
+		"도감(시작 화면)에서 ☆로 선호 표시: 그 카드·조합이 선택지에 나오면 반짝여요",
 	]
 	# 폰·태블릿: 키보드·마우스 안내 대신 버튼·누르기로
 	var touch := [
@@ -1933,7 +1933,7 @@ func _help_text() -> String:
 		"첫 판은 카드가 단계별로 열려요 (공격방식 3·강화 4·연계 6웨이브)",
 		"처음 생기는 일엔 위쪽에 한 줄 안내 (설정에서 끄기·처음부터 다시 보기)",
 		"튜토리얼: 시작 화면 [튜토리얼]·일시정지에서 항목별로 다시 보기",
-		"도감(시작 화면)에서 ☆로 선호 표시: 그 카드·반응이 선택지에 나오면 반짝여요",
+		"도감(시작 화면)에서 ☆로 선호 표시: 그 카드·조합이 선택지에 나오면 반짝여요",
 	]
 	return "\n".join((touch if touch_ui else keys) + [
 		"",
@@ -1945,7 +1945,7 @@ func _help_text() -> String:
 		"보스 웨이브를 넘기면 특성(모든 오브젝트에 붙는 강화) 3개 중 1개 선택",
 		"공격방식은 직선탄일 때 한 번만 정할 수 있고, 같은 것을 넣으면 레벨업",
 		"속성을 많이 겹칠수록 피해는 늘고 공격 속도는 조금씩 느려집니다. 오브젝트가 많을수록 모든 오브젝트의 피해가 늘어요(오브젝트 수 보너스, 5개 +16%% · 10개 +23%%, 늘수록 덜 오름). %s" % mods,
-		"감속은 최대 70%, 밀기는 조금씩만. 기절·속박·빙결은 연달아 걸릴수록 짧아지다가 잠깐 면역",
+		"감속은 최대 70%, 밀기는 조금씩만. 기절·속박·얼림은 연달아 걸릴수록 짧아지다가 잠깐 면역",
 		"화면 밖 구체는 맞지 않습니다. 시작 화면에서 규칙(랭크·도파민 모드)%s과 맵%s을 바꿀 수 있어요" % (["", ""] if touch_ui else ["(↑/↓)", "(←/→)"]),
 		"모드(첫 판 뒤): 어렵게 하면 점수 배율이 오르고, 쉽게 하면 내려가요 (쉽게 모드 판은 기록 따로)",
 	])
@@ -2494,7 +2494,7 @@ func _card_content(card: Dictionary, lvl: int) -> Dictionary:
 			head["e"] = e
 			if card["lv"] == 2:
 				head["lv"] = "Lv2"
-			rows = [{"i": "rider", "t": "적중 · " + Elem.rider(e), "al": 0}, {"i": "trait", "t": "특징 · " + Elem.TRAIT[e], "al": 0}]
+			rows = [{"i": "rider", "t": "효과 · " + Elem.rider(e), "al": 0}, {"i": "trait", "t": "특징 · " + Elem.TRAIT[e], "al": 0}]
 			foot = [["place_new", "새 오브젝트"], ["place_on", "겹치기" + (" %d종" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "")]]
 			var cf := _combo_parts(e)
 			if not cf["els"].is_empty():
@@ -2581,8 +2581,8 @@ func _card_full(card: Dictionary) -> Array:
 	match card["type"]:
 		"elem":
 			var e: int = card["e"]
-			out.append(["적중 효과 (맞힌 구체에) · " + Elem.rider(e), Elem.COLORS[e].lightened(0.3)])
-			out.append(["특징 (오브젝트의 모든 효과를 실어 나름) · " + Elem.TRAIT[e], W])
+			out.append(["효과 (맞힌 구체에) · " + Elem.rider(e), Elem.COLORS[e].lightened(0.3)])
+			out.append(["특징 (이 오브젝트의 효과를 다른 구체로) · " + Elem.TRAIT[e], W])
 			var seen := {}
 			for t in towers.get_children():
 				if not t.can_take({"type": "elem", "e": e}):
@@ -2851,7 +2851,7 @@ func _fav_tag(card: Dictionary) -> String:
 				continue
 			for r in Elem.new_reactions(t.elements, card["e"]):
 				if Meta.favs.has("react:" + str(r["id"])):
-					return "★ 선호 반응: " + str(r["name"])
+					return "★ 선호 조합: " + str(r["name"])
 	return ""
 
 
@@ -3029,7 +3029,7 @@ func _card_guides() -> void:
 	if "link" in types:
 		_guide("link", "새 카드 · 연계: 오브젝트 위에 놓아 주변과 함께 싸워요. 협공은 여러 오브젝트가 같이 맞힌 구체를 터뜨려요")
 	if "trig" in types:
-		_guide("trig", "새 카드 · 발동: 오브젝트 위에 놓으면 조건이 맞을 때 공격이 더 나가요. 여진은 잡은 자리에서 탄이 터지고, 선봉은 체력이 많이 남은 구체를 더 세게 때려요")
+		_guide("trig", "새 카드 · 발동: 오브젝트 위에 놓으면 조건이 맞을 때 공격이 더 나가요. 처치 폭발은 잡은 자리에서 탄이 터지고, 앞줄 강타는 체력이 많이 남은 구체를 더 세게 때려요")
 
 
 ## 띄어쓰기 단위로 줄을 나눈다. Godot 자동 줄바꿈은 한글을 음절마다 끊어 "형\n태"처럼 단어가 잘린다.
@@ -8487,7 +8487,8 @@ func _arm_skill(i: int) -> void:
 		return
 	skill_arm = "" if skill_arm == id else id
 	if skill_arm != "":
-		_show_toast(("%s: 쓸 곳을 누르세요" if touch_ui else "%s: 쓸 곳을 클릭 (우클릭·Esc 취소)") % Skill.NAMES[id])
+		# 이름(집중·붙잡기·낙인)만으로는 무엇을 하는지 몰라 설명을 같이 (2026-11-03)
+		_show_toast(("%s (%s): 쓸 곳을 누르세요" if touch_ui else "%s (%s): 쓸 곳을 클릭 (우클릭·Esc 취소)") % [Skill.NAMES[id], Skill.short(id)])
 
 
 ## p에 기술을 쓴다. 적용할 대상이 없으면 쓰지 않는다 (누른 기술이면 이유를 알림).
@@ -10208,23 +10209,23 @@ func _draw_orb_tooltip() -> void:
 		if o.burn_t > 0.0: parts.append("화상")
 		if o.poison_t > 0.0: parts.append("중독")
 		if o.root_immune > 0.0: parts.append("기절 면역")
-		if o.vuln_t > 0.0: parts.append("약화(받는 피해 +30%)")
+		if o.vuln_t > 0.0: parts.append("받는 피해↑ +30%")
 		if o.slow_timer > 0.0: parts.append("감속")
-		if o.frozen_t > 0.0: parts.append("빙결")
-		if o.tune_t > 0.0: parts.append("울림 %d/3" % int(o.ring))
-		if o.echo_t > 0.0: parts.append("메아리 %d%%" % roundi(o.echo_frac * 100))
-		if o.soul_t > 0.0: parts.append("넋")
+		if o.frozen_t > 0.0: parts.append("얼림")
+		if o.tune_t > 0.0: parts.append("3타 음파 %d/3" % int(o.ring))
+		if o.echo_t > 0.0: parts.append("피해 되풀이 %d%%" % roundi(o.echo_frac * 100))
+		if o.soul_t > 0.0: parts.append("혼불 소환")
 		if o.silence_t > 0.0: parts.append("침묵")
 		if o.resist_e >= 0: parts.append("%s 저항" % Elem.NAMES[o.resist_e])
 		if o.sturdy: parts.append("굳셈(밀기·감속·기절·냉기 절반)")
-		if is_instance_valid(o.bury_src) and o.age <= o.bury_until: parts.append("묻어둠")
+		if is_instance_valid(o.bury_src) and o.age <= o.bury_until: parts.append("다시 맞으면 더")
 		if not o.amp.is_empty():
 			# 받는 피해 증가 (낙인 등, 곱해서 하나로)
 			var k := 1.0
 			for v in o.amp.values():
 				k *= 1.0 + v[0]
 			if k > 1.005:
-				parts.append("약화(받는 피해 +%d%%)" % roundi((k - 1.0) * 100.0))
+				parts.append("받는 피해↑ +%d%%" % roundi((k - 1.0) * 100.0))
 		var fs := roundi(14 * _tip_scale())
 		# 상태가 많으면(보스·후반) 한 줄이 화면·오른쪽 설명 밖으로 나간다: 들어가는 만큼씩 줄을 나눈다
 		var maxw := minf(_right_limit() - 32.0, 620.0 * _tip_scale())
@@ -13427,7 +13428,7 @@ func _gp_fill_slots() -> void:
 	if Garden.best >= 10:
 		return  # 처음 몇 단계만 안내 (목록을 짧게)
 	var hint_l := Label.new()
-	hint_l.text = "칸을 키우면 레벨 구간마다 공격방식·강화·속성이 저절로 붙어요. 속성이 하나 더 붙으면 반응도 생겨요"
+	hint_l.text = "칸을 키우면 레벨 구간마다 공격방식·강화·속성이 저절로 붙어요. 속성이 하나 더 붙으면 조합도 생겨요"
 	hint_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint_l.add_theme_font_size_override("font_size", _gp_fs(13))
 	hint_l.add_theme_color_override("font_color", Color(1, 1, 1, 0.5))

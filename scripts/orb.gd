@@ -311,7 +311,7 @@ func _echo_release() -> void:
 		return
 	_credit(echo_src, hurt(d, false, echo_src), false, "elem:time")
 	if main and d >= 1.0:
-		main.popup(position, d, Elem.COLORS[Elem.TIME], true, "메아리")
+		main.popup(position, d, Elem.COLORS[Elem.TIME], true, "되풀이")
 
 
 ## 시간 메아리를 건다. 이미 기록 중이면 더 큰 비율로만 바꾼다.

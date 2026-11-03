@@ -255,7 +255,7 @@ func _faded() -> Array:
 func _update_side() -> void:
 	var card := preview_card()
 	var title := "전장 안내"
-	var text: String = game.legend.text if not game.legend_hidden else "카드에 마우스를 올리면 적용 대상과 반응을 확인합니다.\n\n카드와 전장은 항상 함께 보입니다."
+	var text: String = game.legend.text if not game.legend_hidden else "카드에 마우스를 올리면 적용 대상과 조합을 확인합니다.\n\n카드와 전장은 항상 함께 보입니다."
 	if not card.is_empty():
 		var cc: Dictionary = game._card_content(card, 0)
 		title = cc["head"]["name"]
@@ -278,7 +278,7 @@ func _update_side() -> void:
 		for row in (full if Meta.card_detail else full.slice(0, 2)):
 			text += str(row[0]) + "\n\n"
 		if not Meta.card_detail:
-			text += "자세히를 켜면 반응·적용 조건을 모두 볼 수 있어요." if game.touch_ui else "자세히(Z)를 켜면 반응·적용 조건을 모두 볼 수 있어요."
+			text += "자세히를 켜면 조합·적용 조건을 모두 볼 수 있어요." if game.touch_ui else "자세히(Z)를 켜면 조합·적용 조건을 모두 볼 수 있어요."
 	elif game.perk_mode and is_instance_valid(hovered) and hovered.get_parent() == game.choice_box and hovered.has_meta("perk_desc"):
 		title = hovered.get_meta("card")[0]["name"]
 		text = hovered.get_meta("perk_desc")

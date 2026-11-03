@@ -10,11 +10,11 @@ class_name Vary
 const EVENTS := {
 	"eclipse": {"name": "일식", "desc": "빛 피해 -{m}%, 어둠 피해 +{p}%"},
 	"white": {"name": "백야", "desc": "어둠 피해 -{m}%, 빛 피해 +{p}%"},
-	"flow": {"name": "기운의 흐름", "desc": "{up} 피해 +{p}%, {down} 피해 -{m}%"},
-	"form": {"name": "형태의 날", "desc": "{up} 피해 +{p}%, {down} 피해 -{m}%"},
+	"flow": {"name": "속성의 날", "desc": "{up} 피해 +{p}%, {down} 피해 -{m}%"},
+	"form": {"name": "공격방식의 날", "desc": "{up} 피해 +{p}%, {down} 피해 -{m}%"},
 	"gold": {"name": "황금 무리", "desc": "처치 점수 x2, 구체 속도 +15%"},
-	"shell": {"name": "굳은 껍질", "desc": "모든 구체가 굳셈(밀기·감속·기절·냉기 절반), 체력 -15%"},
-	"swarm": {"name": "증식", "desc": "모든 구체가 죽으면 둘로 나뉨, 체력 -25%"},
+	"shell": {"name": "굳은 구체", "desc": "모든 구체가 굳셈(밀기·감속·기절·냉기 절반), 체력 -15%"},
+	"swarm": {"name": "둘로 나뉘는 구체", "desc": "모든 구체가 죽으면 둘로 나뉨, 체력 -25%"},
 }
 const EVENT_IDS := ["eclipse", "white", "flow", "form", "gold", "shell", "swarm"]
 const UNSEAL_WAVES := [25, 50]

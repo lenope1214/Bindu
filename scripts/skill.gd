@@ -20,6 +20,11 @@ static func combo_name(i: int) -> String:
 	return "%s + %s" % [NAMES[ids[0]], NAMES[ids[1]]]
 
 
+## 버튼·알림에 붙이는 짧은 뜻
+static func short(id: String) -> String:
+	return {"focus": "오브젝트 공격 속도↑", "hold": "둘레 구체 멈춤", "brand": "둘레 구체 받는 피해↑"}.get(id, "")
+
+
 static func desc(id: String) -> String:
 	match id:
 		"focus":
