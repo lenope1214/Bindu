@@ -1746,7 +1746,7 @@ func _update_hud(force := false) -> void:
 		var ad := Vary.adapt_text()
 		if ad != "":
 			vl.append(["적응 구체: " + ad, Color(1, 0.75, 0.6)])
-		var txt := Vary.ename(Vary.event) if not Vary.event.is_empty() else ("봉인 %d" % Vary.count() if Vary.count() > 0 else "흐름")
+		var txt := Vary.ename(Vary.event) if not Vary.event.is_empty() else ("봉인 %d" % Vary.count() if Vary.count() > 0 else "판 흐름")
 		if ad != "":
 			txt += " · 적응"
 		items.append(["tag", vc, txt, vc, vl, false])
@@ -1761,18 +1761,18 @@ func _update_hud(force := false) -> void:
 		for it in build_cache:
 			bl.append(["%s %d%%" % [src_name(it[0]), roundi(it[1] * 100)], D])
 		bl.append(["주력을 키우는 카드에는 ◎ 표시", BUILD_COLOR])
-		items.append(["build", BUILD_COLOR, "%s %d%%" % [src_name(build_cache[0][0]), roundi(build_cache[0][1] * 100)], Color(0.8, 1, 1), bl, false])
+		items.append(["build", BUILD_COLOR, "주력 %s %d%%" % [src_name(build_cache[0][0]), roundi(build_cache[0][1] * 100)], Color(0.8, 1, 1), bl, false])
 	var nt := towers.get_child_count()
 	if nt > 1:
 		var cb := roundi(Rules.crowd_bonus(nt) * MapRule.crowd_k() * 100)
-		items.append(["crowd", Color(0.6, 0.9, 0.65), "%d  +%d%%" % [nt, cb], Color(0.7, 0.95, 0.75), [["오브젝트 수 보너스: %d개, 피해 +%d%%" % [nt, cb], W]], false])
+		items.append(["crowd", Color(0.6, 0.9, 0.65), "%d개 +%d%%" % [nt, cb], Color(0.7, 0.95, 0.75), [["오브젝트 수 보너스: %d개, 피해 +%d%%" % [nt, cb], W]], false])
 	if phase == Phase.WAVE:
 		items.append(["orb", Color(0.85, 0.85, 0.9), str(to_spawn + _alive_count(orbs)), W, [["남은 구체", W]], false])
 	# 다음 보스까지 남은 웨이브 (보스 웨이브 중이면 "지금")
 	var bl := (ceili(wave / 5.0) * 5 - wave) if phase == Phase.WAVE else (ceili((wave + 1) / 5.0) * 5 - wave)
 	if wave > 0 or phase != Phase.WAVE:
 		var bt := "다음 웨이브 보스" if bl == 1 and phase != Phase.WAVE else ("이번 웨이브 보스" if bl == 0 else "보스까지 %d웨이브" % bl)
-		items.append(["boss", Color(1, 0.6, 0.75), "!" if bl == 0 else str(bl), Color(1, 0.75, 0.85), [[bt, W]], false])
+		items.append(["boss", Color(1, 0.6, 0.75), "보스!" if bl == 0 else "보스까지 %d" % bl, Color(1, 0.75, 0.85), [[bt, W]], false])
 	if not selected.is_empty():
 		items.append(["sel", Color(0.6, 1, 0.7), str(selected.size()), W, [["선택한 오브젝트", W]], false])
 	var first := true
@@ -4745,12 +4745,8 @@ func _draw_over_card() -> void:
 	if touch_ui:
 		c.draw_string(ui_font, Vector2(x0, y + 14.0), "눌러서 대기방으로" if to_lobby else "눌러서 시작 화면으로", HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
 	else:
-		Glyph.ui(c, "click", Vector2(-46.0, y + 9.0), 7.0, dim)
-		c.draw_string(ui_font, Vector2(-34.0, y + 14.0), "· R · Esc", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, dim)
-		if to_lobby:
-			c.draw_string(ui_font, Vector2(30.0, y + 14.0), "대기방", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, dim)
-		else:
-			Glyph.ui(c, "home", Vector2(38.0, y + 9.0), 7.0, dim)
+		# 그림(마우스·집)만으로는 무엇을 누르면 어디로 가는지 알기 어려웠다: 글로
+		c.draw_string(ui_font, Vector2(x0, y + 14.0), "클릭 · R · Esc: " + ("대기방으로" if to_lobby else "시작 화면으로"), HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
 	if absf(over_label.offset_top - (y + 34.0)) > 0.5:
 		over_label.offset_top = y + 34.0  # 남은 글은 카드 바로 아래 (둘 다 화면 가운데 기준)
 		over_label.offset_bottom = y + 184.0
@@ -6409,6 +6405,7 @@ func _toggle_codex() -> void:
 		modes_panel.visible = false
 	if vote_panel.visible:
 		vote_panel.hide_panel()
+	codex_panel.fit(ui_root.size, _phone())
 	codex_panel.toggle()
 	if codex_panel.visible:
 		net.ach_rates()
