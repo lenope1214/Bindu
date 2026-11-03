@@ -43,6 +43,7 @@ var picks_left := 0  # 이번 쉬는 시간에 남은 설치 횟수
 const CARD_DIM_A := 0.65  # 카드 선택 중 전장 위 검은 막 (카드·카드 줄 버튼은 그 위)
 const PLACE_OFF := Color(0.45, 0.45, 0.5, 0.4)  # 카드를 놓는 중 넣을 수 없는 오브젝트
 var card_dim: ColorRect
+var card_dock: CardDock
 var moving: Tower = null  # 위치를 옮기는 중인 오브젝트
 # 오브젝트를 꾹 누르거나 끌면 바로 옮긴다(카드를 고른 뒤에도). 선택된 오브젝트를 끌면 함께 움직인다.
 var press_t: Tower = null
@@ -653,6 +654,8 @@ func arena() -> Rect2:
 ## 지금 화면에 보이는 월드 영역. 화면이 16:9보다 길면(폰) 전장 양옆까지, 4:3이면(태블릿) 위아래까지 보인다.
 func view_rect() -> Rect2:
 	var vs := get_viewport_rect().size
+	if card_dock != null and card_dock.active():
+		return card_dock.world_view()
 	if camera != null and Garden.on and gp != null and gp.visible:
 		return gp_view  # 정원: 목록 패널을 뺀 전장 쪽 (진입 표시·정보창이 패널 밑에 깔리지 않게)
 	if camera == null or is_equal_approx(view_zoom, 1.0):
@@ -663,6 +666,8 @@ func view_rect() -> Rect2:
 
 ## 확대하지 않았을 때 보이는 월드 영역 (확대한 화면이 이 밖으로 나가지 않게).
 func full_view() -> Rect2:
+	if card_dock != null and card_dock.active():
+		return arena()
 	var vs := get_viewport_rect().size
 	return Rect2((Meta.FIELD - vs) / 2.0, vs)
 
@@ -670,6 +675,13 @@ func full_view() -> Rect2:
 ## 전장 확대: 1~ZOOM_MAX배, at(화면 좌표)이 가리키는 월드 점이 그 자리에 남게. 화면은 전장 밖으로 나가지 않는다.
 const ZOOM_MAX := 2.5
 func _zoom_to(z: float, at: Vector2) -> void:
+	if card_dock != null and card_dock.active():
+		var origin := card_dock.screen_board().get_center()
+		var before := center() + view_pan + (at - origin) / (card_dock.fit * view_zoom)
+		view_zoom = clampf(z, 1.0, ZOOM_MAX)
+		view_pan = before - (at - origin) / (card_dock.fit * view_zoom) - center()
+		_clamp_pan()
+		return
 	var vs := get_viewport_rect().size
 	var before := camera.position + (at - vs / 2.0) / view_zoom
 	view_zoom = clampf(z, 1.0, ZOOM_MAX)
@@ -678,11 +690,14 @@ func _zoom_to(z: float, at: Vector2) -> void:
 
 
 func _pan_by(screen_d: Vector2) -> void:
-	view_pan -= screen_d / view_zoom
+	view_pan -= screen_d / (view_zoom * (card_dock.fit if card_dock != null and card_dock.active() else 1.0))
 	_clamp_pan()
 
 
 func _clamp_pan() -> void:
+	if card_dock != null and card_dock.active():
+		card_dock.camera_fit()
+		return
 	var fv := full_view()
 	var hs := get_viewport_rect().size / view_zoom / 2.0
 	var c := center() + view_pan
@@ -734,6 +749,7 @@ func _build_ui() -> void:
 	root.theme = theme
 	layer.add_child(root)
 	ui_root = root
+	card_dock = CardDock.new(self)
 	get_viewport().size_changed.connect(_apply_ui_scale)
 
 	hud = Control.new()
@@ -2271,11 +2287,18 @@ func _set_card_detail(on: bool) -> void:
 
 ## 선택지 카드 버튼을 offer대로 다시 만든다.
 func _show_offer() -> void:
+	var last_preview := card_dock.preview_card() if card_dock != null else {}
+	var retained: Button = null
 	tap_sel = -1
 	for c in choice_box.get_children():
 		c.queue_free()
 	for i in offer.size():
-		choice_box.add_child(_card_button(offer[i], i + 1))
+		var button := _card_button(offer[i], i + 1)
+		choice_box.add_child(button)
+		if offer[i] == last_preview:
+			retained = button
+	if card_dock != null:
+		card_dock.hovered = retained
 
 
 ## 같은 선택지인지 비교하는 키 (레벨은 무시).
@@ -2371,9 +2394,11 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 	head["idx"] = idx
 	var rows: Array = cc["rows"]
 	var foot: Array = cc["foot"]
-	if cc["tip"] != "" and not Meta.card_detail:
+	if cc["tip"] != "" and not Meta.card_detail and Garden.on:
 		b.tooltip_text = cc["tip"]
 	b.set_meta("full", _card_full(card))
+	if not Garden.on:
+		card_dock.watch(b, card)
 	var fit := core_fit(card)
 	if fit != "":
 		rows.append({"t": "◎ 주력 %s 강화" % fit, "fs": 12, "c": BUILD_COLOR})
@@ -2401,6 +2426,8 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 
 
 func _draw_card_foot(b: Button, foot: Array, col: Color) -> void:
+	if not Garden.on:
+		return
 	var fs := 12
 	var c := Color(col, 0.75)
 	var w := 0.0
@@ -2578,6 +2605,8 @@ func _card_full(card: Dictionary) -> Array:
 
 ## [자세히]를 켠 채 카드에 올리면(터치는 한 번 눌러 미리보기) 카드 위에 모든 내용 창.
 func _draw_card_full() -> void:
+	if card_dock != null and card_dock.active():
+		return
 	if not Meta.card_detail or phase != Phase.CHOOSE or perk_mode or cards_hidden or not choice_box.visible or get_tree().paused:
 		return
 	var cs := choice_box.get_children()
@@ -2671,9 +2700,10 @@ func _card_paint(b: Button, head: Dictionary, rows: Array, foot: Array, col: Col
 		if h + pad <= CARD_MAX_H or fs <= 12:
 			break
 		fs -= 1
-	b.custom_minimum_size = Vector2(cw, clampf(h + pad, 170.0, CARD_MAX_H))
+	b.custom_minimum_size = Vector2(cw, clampf(h + pad, 170.0, CARD_MAX_H)) if Garden.on else card_dock.card_size()
 	b.clip_contents = true
 	b.set_meta("card", [head, lay, h, not foot.is_empty()])
+	b.set_meta("card_foot", foot)
 	b.add_to_group("keycap")
 	b.draw.connect(_draw_card.bind(b, col))
 	if not foot.is_empty():
@@ -2681,6 +2711,9 @@ func _card_paint(b: Button, head: Dictionary, rows: Array, foot: Array, col: Col
 
 
 func _draw_card(b: Button, col: Color) -> void:
+	if not Garden.on:
+		card_dock.draw_card(b, col)
+		return
 	var m: Array = b.get_meta("card")
 	var head: Dictionary = m[0]
 	var hc := col.lightened(0.3) if b.is_hovered() else col
@@ -3083,7 +3116,7 @@ func _show_perks() -> void:
 			rows.append({"t": desc, "fs": 16})
 		else:
 			rows.append(big)
-			b.tooltip_text = desc
+			b.tooltip_text = desc if Garden.on else ""
 		if have > 0:
 			rows.append({"pips": mini(have, 8)})
 		if coin != "":
@@ -3092,6 +3125,9 @@ func _show_perks() -> void:
 		b.add_theme_color_override("font_color", Color(1, 0.85, 0.45))
 		b.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
 		b.focus_mode = Control.FOCUS_NONE
+		b.set_meta("perk_desc", desc + ("\n\n" + coin if coin != "" else ""))
+		if not Garden.on:
+			b.mouse_entered.connect(func(): card_dock.hovered = b)
 		b.pressed.connect(_on_perk.bind(pk))
 		_mark_fav(b, sb, sbh, "★ 선호" if Meta.favs.has("perk:" + str(pk["id"])) else "")
 		choice_box.add_child(b)
@@ -3746,7 +3782,7 @@ func _off_legend(r: Rect2) -> Rect2:
 func _info_blockers() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var inv := ui_root.get_global_transform().affine_inverse()
-	for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, guide_label, guide_more, mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, draw_ok_btn]:
+	for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, guide_more,  mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, draw_ok_btn]:
 		if c == null or not c.is_visible_in_tree():
 			continue
 		if (c is Label and str(c.text) == "") or (c == hud and hud_chips.is_empty()):
@@ -3816,6 +3852,10 @@ func _draw_info() -> void:
 	var size := info.size
 	var top := hud.position.y + hud.size.y + 6.0 if hud.visible else 8.0
 	var lo := size.y - 64.0
+	if card_dock.active():
+		top = maxf(top, card_dock.bounds().position.y)
+		lo = card_dock.bounds().end.y
+		size.x = card_dock.bounds().end.x
 	if hud.visible:
 		for ch in hud_chips:
 			tip_rects.append([Rect2(hud.position + ch[0].position, ch[0].size), ch[5]])
@@ -3949,7 +3989,7 @@ func _draw_info() -> void:
 				continue  # 처음 안내 글 위에 걸치지 않게
 			info.draw_arc(tp, rr, 0, TAU, 32, Color(fresh[0]["color"], 0.95), 3.0)
 	# 남은 선택 수: 카드 줄 위 가운데 꼬리표 (2026-10-31: 왼쪽 모서리 "고르기 N"이 뜻이 어렵고 눈에 덜 띄던 것)
-	if phase == Phase.CHOOSE and not perk_mode and choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and not get_tree().paused and not Garden.on:
+	if phase == Phase.CHOOSE and not perk_mode and choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and not get_tree().paused and not Garden.on and not card_dock.active():
 		var inv := ui_root.get_global_transform().affine_inverse()
 		var cb := inv * choice_box.get_global_rect()
 		var x0 := (inv * (choice_box.get_child(0) as Control).get_global_rect()).position.x
@@ -4687,6 +4727,13 @@ func _draw_over_card() -> void:
 ## 두 손가락 벌리기·모으기 = 확대, 두 손가락 끌기 = 이동. PC는 휠 = 확대(커서 쪽), 휠 누른 채 끌기 = 이동.
 ## 처리했으면 true (그 입력은 게임·UI로 넘기지 않는다).
 func _zoom_input(event: InputEvent) -> bool:
+	if card_dock != null and card_dock.active():
+		if event is InputEventMouseButton and card_dock.over_ui(event.position):
+			if event.button_index == MOUSE_BUTTON_MIDDLE and not event.pressed:
+				mid_drag = false
+			return false
+		if event is InputEventScreenTouch and event.pressed and card_dock.over_ui(event.position):
+			return false
 	if title_label == null or title_label.visible or phase == Phase.GAMEOVER or Garden.on:  # 정원은 패널에 맞춰 전장 크기를 정한다
 		touches.clear()
 		pinch_lock = false
@@ -5000,6 +5047,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			title_seen = false
 			_reload()
 		return
+	if card_dock != null and card_dock.over_ui(event.position):
+		return
 	var mpos := get_global_mouse_position()
 	if perk_mode:
 		return
@@ -5077,6 +5126,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## 카드 선택 막을 깔지: 선택지 카드가 펼쳐져 있을 때만 (일시정지 어둠이 있으면 그것만).
 func _card_dim_on() -> bool:
+	if card_dock != null and card_dock.active():
+		return false
 	return phase == Phase.CHOOSE and choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 \
 		and not title_label.visible and not get_tree().paused
 
@@ -9306,6 +9357,7 @@ func _process(delta: float) -> void:
 		hide_btn.offset_bottom = hy + 32.0
 	_garden_layout(cx, by)
 	_skill_ui()
+	card_dock.tick()
 	restart_armed = maxf(restart_armed - delta, 0.0)
 	end_armed = maxf(end_armed - delta, 0.0)
 	if not get_tree().paused and not title_label.visible and phase != Phase.GAMEOVER:
@@ -9929,7 +9981,7 @@ func _update_fx(delta: float) -> void:
 	eclipse_cd = maxf(eclipse_cd - delta, 0.0)
 	if view_zoom > 1.0 and (title_label.visible or phase == Phase.GAMEOVER):
 		_reset_zoom()  # 시작 화면·게임 오버는 1배로
-	if not (Garden.on and gp != null and gp.visible):  # 정원은 목록 패널에 맞춰 _garden_panel_tick이 정한다
+	if not (Garden.on and gp != null and gp.visible) and not card_dock.active():  # 전용 화면 영역의 카메라는 각 레이아웃에서 정한다
 		camera.position = center() + view_pan
 	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 14.0 * shake * (1.0 if Meta.shake_on else 0.0)
 	fx_layer.queue_redraw()
@@ -10635,7 +10687,17 @@ func _draw() -> void:
 			draw_circle(lf[0], 40.0 + k * 34.0, Color(1, 0.15, 0.2, 0.16 * f * (1.0 - k * 0.22)))
 
 	var mpos := get_global_mouse_position()
-	if phase == Phase.CHOOSE and hover_elem >= 0:
+	if card_dock.active():
+		var preview := card_dock.preview_card()
+		if not preview.is_empty():
+			for t: Tower in towers.get_children():
+				if not card_dock.target_ok(t, preview):
+					continue
+				var fresh: Array = Elem.new_reactions(t.eff_now(), preview["e"]) if preview["type"] == "elem" else []
+				var col: Color = fresh[0]["color"] if not fresh.is_empty() else Color(0.65, 0.85, 1.0, 0.7)
+				var radius := Tower.RADIUS + (15.0 + 3.0 * sin(now * 6.7) if not fresh.is_empty() else 7.0)
+				draw_arc(t.position, radius, 0, TAU, 40, col, 3.0 if not fresh.is_empty() else 1.5)
+	elif phase == Phase.CHOOSE and hover_elem >= 0:
 		var pulse2 := 0.5 + 0.5 * sin(now * 6.7)
 		var hcard := {"type": "elem", "e": hover_elem}
 		for t in towers.get_children():

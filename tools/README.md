@@ -79,3 +79,16 @@ godot --headless --path . -s tools/update_check.gd -- 공개키.pem 서명 Bindu
 ```
 
 서명은 `server/app/main.py`의 `release_payload("windows", "9.9.9", "https://github.com/lenope1214/Bindu/releases/download/v9.9.9/Bindu-windows.zip", 해시, 크기)`를 `signing.sign`한 값. 실제 바꿔 끼우기(실행 중인 exe 이름 바꾸기·다시 켜기)는 Windows에서만 확인할 수 있다.
+
+## 하단 카드 도크 전후 비교
+
+`tools/dock_check.gd`는 같은 시드·오브젝트 좌표·선택지를 사용해 PC/폰/태블릿 화면과 실제 Godot 입력 경로를 확인한다.
+실제 저장과 분리된 `BinduTools…` 사본, 온라인·멀티 주소가 빈 설정, native 창에서만 실행한다.
+
+```sh
+godot --path /path/to/isolated-copy --resolution 1280x720 -s tools/dock_check.gd -- /tmp/dock-desktop 1.0
+godot --path /path/to/isolated-copy --resolution 2556x1179 -s tools/dock_check.gd -- /tmp/dock-phone 1.3 phone
+```
+
+기준 main 사본에 같은 검사 파일을 복사하면 before 캡처도 얻을 수 있다. 전장 상태는 같고 레이아웃만 다르다.
+폰/태블릿은 Mac 모의이며 실기기 조작의 증거는 아니다. 캡처와 범위는 `docs/qa/2026-11-03-card-dock/README.md` 참고.

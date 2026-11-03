@@ -40,6 +40,11 @@ static func _collect(c: Node, out: Array) -> void:
 	var ctl := c as Control
 	if not ctl.is_visible_in_tree() or _alpha(ctl) < 0.25:
 		return
+	# 레이아웃 배경은 그 위 자식/형제 컨트롤과 의도적으로 겹친다. 안의 실제 조작·글은 검사한다.
+	if ctl.get_meta("layout_background", false):
+		for k in ctl.get_children():
+			_collect(k, out)
+		return
 	# 그냥 묶음(전체 화면 Control)은 속을 본다
 	if ctl.get_class() == "Control" and not ctl is Container:
 		var gr := ctl.get_global_rect()

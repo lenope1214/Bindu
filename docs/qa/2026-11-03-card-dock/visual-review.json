@@ -1,0 +1,20 @@
+{
+  "round": 3,
+  "score": 92,
+  "verdict": "PASS",
+  "differences": [],
+  "scope": "Self review of 44 native game captures in capture-manifest.json; separate checks of functional layout/input integrity and visual/CJK fidelity. Full game sources match captured source hashes.",
+  "observed": [
+    "No card/board intersection at default zoom",
+    "Stable camera across tested states",
+    "No UI overlap/offscreen/clip detected in after captures",
+    "Compact card summaries use explicit ellipsis; complete text remains in scrollable inspector",
+    "Four profile contact sheets and full-size desktop/phone/tablet views inspected"
+  ],
+  "limitations": [
+    "No independent visual reviewer",
+    "No physical mobile-device run",
+    "No player comprehension study",
+    "Smaller on-screen battlefield is an accepted design tradeoff requiring user review"
+  ]
+}
