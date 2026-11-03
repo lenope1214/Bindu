@@ -1,0 +1,23 @@
+sandbox_extension_issue_file_to_process failed for /tmp/bindu-hold-qa/Godot.app: 1 (Operation not permitted)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+UI ok hover
+DOCK SHOT hover
+CARD COVERED 1
+UI ok detail
+DOCK SHOT detail
+UI ok hidden
+DOCK SHOT hidden
+UI ok place
+DOCK SHOT place
+ok   UI-28 cancel returns to choice
+UI ok ready
+DOCK SHOT ready
+UI ok wave
+DOCK SHOT wave
+UI ok perk
+DOCK SHOT perk
+UI ok settings_expanded
+DOCK SHOT settings_expanded
+DOCK failures=0 revised=false
