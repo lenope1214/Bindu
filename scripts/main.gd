@@ -901,9 +901,10 @@ func _build_ui() -> void:
 
 	apply_btn = Button.new()
 	apply_btn.text = "적용"
+	apply_btn.set_anchors_preset(Control.PRESET_CENTER)
 	apply_btn.focus_mode = Control.FOCUS_NONE
 	apply_btn.add_theme_font_size_override("font_size", 17)
-	# 카드 글 위에 걸치므로 꽉 찬 바탕 (다른 버튼처럼 옅으면 카드 글과 섞인다)
+	# 선택 조작 줄의 기본 동작을 금색으로 강조
 	for st in ["normal", "hover", "pressed"]:
 		var asb := StyleBoxFlat.new()
 		asb.bg_color = Color(1.0, 0.82, 0.4) if st == "normal" else Color(1.0, 0.9, 0.6)
@@ -4223,11 +4224,11 @@ func _draw_boss_path(now: float) -> void:
 	draw_string(ui_font, lp, bm["label"], HORIZONTAL_ALIGNMENT_LEFT, -1, BOSS_FS, Color(1, 0.75, 0.85))
 
 
-## 카드 선택 안내와 터치 [적용]·봉인 칩에 필요한 카드 위 공간 (UI 좌표).
+## 카드 선택 안내·봉인 칩에 필요한 카드 위 공간 (UI 좌표).
 func _choice_headroom() -> float:
 	if phase != Phase.CHOOSE or perk_mode or cards_hidden or Garden.on:
 		return 0.0
-	return CHOICE_HEADER_H + CHOICE_HEADER_GAP + (36.0 if touch_ui else 0.0) + (32.0 if Vary.count() > 0 else 0.0)
+	return CHOICE_HEADER_H + CHOICE_HEADER_GAP + (32.0 if Vary.count() > 0 else 0.0)
 
 
 func _update_choice_header() -> void:
@@ -4240,10 +4241,10 @@ func _update_choice_header() -> void:
 	var last := inv * (choice_box.get_child(choice_box.get_child_count() - 1) as Control).get_global_rect()
 	choice_remaining.text = "%d장 더 선택 가능" % picks_left
 	choice_header.size = Vector2(last.end.x - first.position.x, CHOICE_HEADER_H)
-	choice_header.position = Vector2(first.position.x, first.position.y - CHOICE_HEADER_H - CHOICE_HEADER_GAP - (36.0 if touch_ui else 0.0))
+	choice_header.position = Vector2(first.position.x, first.position.y - CHOICE_HEADER_H - CHOICE_HEADER_GAP)
 
 
-## 폰 [적용] 버튼: 미리보기 중인 카드 오른쪽 위, 카드 줄 전체의 선택 안내 아래.
+## 터치 미리보기의 적용 동작. 위치는 카드 아래 조작 줄에서 함께 정한다.
 func _place_apply_btn() -> void:
 	var cs := choice_box.get_children() if choice_box else []
 	var on := touch_ui and phase == Phase.CHOOSE and not perk_mode and choice_box.visible and not cards_hidden \
@@ -4251,10 +4252,9 @@ func _place_apply_btn() -> void:
 	apply_btn.visible = on
 	if not on:
 		return
-	var r: Rect2 = ui_root.get_global_transform().affine_inverse() * cs[tap_sel].get_global_rect()
-	var w := minf(120.0, r.size.x * 0.5)
-	apply_btn.size = Vector2(w, 34.0)
-	apply_btn.position = Vector2(r.end.x - w - 10.0, maxf(r.position.y - 36.0, 0.0))  # 카드 위: 글 첫 줄을 덮지 않게
+	var head: Dictionary = cs[tap_sel].get_meta("card")[0]
+	apply_btn.text = "%s 적용" % head["name"]
+
 
 
 ## 카드 누르기. 마우스는 바로 고르고(올리면 미리보기), 터치는 한 번 누르면 미리보기(다른 카드는 옅게, 아래에 [적용]),
@@ -9259,10 +9259,13 @@ func _process(delta: float) -> void:
 	var by := choice_box.offset_top + ch * k + 8.0
 	# 카드 밑 한 줄 그림 버튼: [새로고침 N] [필드 보기] [넘기기] [×N]. 없는 버튼 자리는 당겨 가운데 맞춘다
 	var row: Array = []
-	for bt in [reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn]:
+	for bt in [reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, apply_btn]:
 		if bt.visible and not (bt == hide_btn and cards_hidden):
 			row.append(bt)
 	var bw := {reroll_btn: 130.0 if Garden.on else 96.0, card_detail_btn: 104.0, hide_btn: 76.0, skip_btn: 76.0, skip_n_btn: 76.0}
+	if apply_btn.visible:
+		bw = {reroll_btn: 76.0, card_detail_btn: 88.0, hide_btn: 60.0, skip_btn: 60.0, skip_n_btn: 60.0}
+		bw[apply_btn] = maxf(120.0, ui_font.get_string_size(apply_btn.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x + 24.0)
 	var rw := -10.0
 	for bt in row:
 		rw += bw[bt] + 10.0

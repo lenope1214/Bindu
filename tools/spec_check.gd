@@ -1679,6 +1679,15 @@ func _meta_misc() -> void:
 	main.picks_left = 1
 	main._process(0.016)
 	var head_one: bool = main.choice_remaining.text == "1장 더 선택 가능"
+	for card_node in main.choice_box.get_children():
+		if card_node.is_queued_for_deletion():
+			main.choice_box.remove_child(card_node)
+	main.touch_ui = true
+	main.tap_sel = 1
+	main._process(0.016)
+	var apply_row: bool = main.apply_btn.visible and main.apply_btn.text.replace("\u2060", "").ends_with(" 적용") and is_equal_approx(main.apply_btn.offset_top, main.reroll_btn.offset_top)
+	main.tap_sel = -1
+	main.touch_ui = false
 	main.perk_mode = true
 	main._process(0.016)
 	var head_perk: bool = not main.choice_header.visible
@@ -1692,8 +1701,8 @@ func _meta_misc() -> void:
 	main._process(0.016)
 	var dim_off: bool = not main.card_dim.visible and main.phase == main.Phase.PLACE
 	ok("UI-23", dim_on and dim_hide and dim_off, "카드 선택 중 검은 막 %s(카드 위), 필드 보기 %s·카드 고르면 %s 걷힘" % [dim_on, dim_hide, dim_off])
-	ok("UI-28", head_two and head_one and head_perk and head_hide and not main.choice_header.visible,
-		"카드 줄 선택 안내: 2장→1장 갱신, 특성·필드 보기·카드를 고른 뒤 숨김")
+	ok("UI-28", head_two and head_one and apply_row and head_perk and head_hide and not main.choice_header.visible,
+		"카드 줄 선택 안내: 갱신 %s·%s, 적용 줄 %s, 숨김 %s·%s·%s" % [head_two, head_one, apply_row, head_perk, head_hide, not main.choice_header.visible])
 
 	# 카드 넣을 대상: 넣을 수 있는 오브젝트만 밝게, 못 넣는 오브젝트(NO_MOD 등)는 흐리게·선택 불가
 	var bad_t := _tower(main.center() + Vector2(200, 0))
