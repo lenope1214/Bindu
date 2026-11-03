@@ -9,10 +9,12 @@ var side: PanelContainer
 var heading: Label
 var detail: RichTextLabel
 var state: Label
+var focus_btn: Button
 var hovered: Button
 var side_signature := ""
 var board := Rect2()
 var fit := 1.0
+var full_field := false
 
 func _init(main) -> void:
 	game = main
@@ -57,13 +59,22 @@ func _init(main) -> void:
 	column.add_child(detail)
 	panel.visible = false
 	side.visible = false
+	focus_btn = Button.new()
+	focus_btn.focus_mode = Control.FOCUS_NONE
+	focus_btn.add_theme_font_size_override("font_size", 14)
+	focus_btn.pressed.connect(game._toggle_focus_view)
+	focus_btn.z_index = 10
+	game.ui_root.add_child(focus_btn)
 
 func active() -> bool:
+	return available() and not full_field
+
+func available() -> bool:
 	return not Garden.on and game.title_label != null and not game.title_label.visible and game.phase != game.Phase.GAMEOVER
 
 func bounds() -> Rect2:
 	var size: Vector2 = game.ui_root.size
-	var right := clampf(size.x * 0.25, 220.0, 290.0)
+	var right := clampf(size.x * 0.25, 220.0, 290.0) if side != null and side.visible else 0.0
 	return Rect2(8, 48, size.x - right - 24, maxf(80, size.y - HEIGHT - 60))
 
 func screen_board() -> Rect2:
@@ -112,15 +123,34 @@ func card_size() -> Vector2:
 	return Vector2(maxf(120, (game.ui_root.size.x - 24 - (count - 1) * 12) / count), CARD_HEIGHT)
 
 func tick() -> void:
+	if not available():
+		full_field = false
+	var size: Vector2 = game.ui_root.size
+	focus_btn.visible = available() and (game._phone() or full_field)
+	focus_btn.text = "패널 보기" if full_field else "전장 넓게"
+	focus_btn.tooltip_text = "게임 패널 다시 보기 (F)" if full_field else "카드·설명 패널 접기 (F)"
+	if full_field:
+		panel.visible = false
+		side.visible = false
+		focus_btn.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+		focus_btn.position = Vector2(-150, -56)
+		focus_btn.size = Vector2(138, 42)
+		game.choice_box.visible = false
+		game.choice_header.visible = false
+		for c in [game.reroll_btn, game.card_detail_btn, game.hide_btn, game.skip_btn, game.skip_n_btn,
+				game.apply_btn, game.start_btn, game.cancel_btn, game.draw_ok_btn, game.hint,
+				game.skip_badge, game.legend, game.legend_btn, game.dps_panel, game.guide_label, game.guide_more]:
+			c.visible = false
+		return
 	var on := active()
 	var was := panel.visible
 	panel.visible = on
 	side.visible = on
 	if not on:
+		focus_btn.visible = false
 		if was:
 			game._clamp_pan()
 		return
-	var size: Vector2 = game.ui_root.size
 	var field := bounds()
 	panel.position = Vector2(0, size.y - HEIGHT)
 	panel.size = Vector2(size.x, HEIGHT)
@@ -133,6 +163,10 @@ func tick() -> void:
 	camera_fit()
 	var choosing: bool = game.phase == game.Phase.CHOOSE and game.coin_stage == 0
 	var cards: bool = choosing and not game.cards_hidden and game.choice_box.visible
+	game.choice_box.visible = choosing and not game.cards_hidden
+	game.start_btn.visible = game.phase == game.Phase.READY
+	game.cancel_btn.visible = game.phase in [game.Phase.PLACE, game.Phase.AIM, game.Phase.MOVE, game.Phase.DRAW] and not game.get_tree().paused
+	game.draw_ok_btn.visible = game.phase == game.Phase.DRAW and game.draw_wait and not game.get_tree().paused
 	var title := "특성 선택" if game.perk_mode else "카드 선택"
 	state.text = ("특성 선택  ·  하나 선택" if game.perk_mode else "%s  ·  %d장 남음" % [title, game.picks_left]) if choosing else "전투 중" if game.phase == game.Phase.WAVE else "배치 준비"
 	state.position = Vector2(12, 9)
@@ -195,6 +229,11 @@ func tick() -> void:
 	game.ver_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	game.ver_label.position = Vector2(12, size.y - 22)
 	game.skip_badge.position.y = -HEIGHT - 40
+	focus_btn.visible = game._phone()
+	if focus_btn.visible:
+		focus_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		focus_btn.position = Vector2(220, panel.position.y + 4)
+		focus_btn.size = Vector2(118, 34)
 	game._update_choice_header()
 	state.visible = not game.choice_header.visible
 	if game.choice_header.visible:
@@ -206,8 +245,10 @@ func tick() -> void:
 func _update_side() -> void:
 	var card := preview_card()
 	var title := "전장 안내"
-	var text: String = game.legend.text if not game.legend_hidden else "카드에 마우스를 올리면 적용 대상과 반응을 확인합니다.\n\n카드와 전장은 항상 함께 보입니다."
+	var text := ""
+	var has_content := false
 	if not card.is_empty():
+		has_content = true
 		var cc: Dictionary = game._card_content(card, 0)
 		title = cc["head"]["name"]
 		var take := 0
@@ -231,9 +272,32 @@ func _update_side() -> void:
 		if not Meta.card_detail:
 			text += "자세히를 켜면 반응·적용 조건을 모두 볼 수 있어요." if game.touch_ui else "자세히(Z)를 켜면 반응·적용 조건을 모두 볼 수 있어요."
 	elif game.perk_mode and is_instance_valid(hovered) and hovered.get_parent() == game.choice_box and hovered.has_meta("perk_desc"):
+		has_content = true
 		title = hovered.get_meta("card")[0]["name"]
 		text = hovered.get_meta("perk_desc")
+	else:
+		var tower: Tower = null
+		if not over_ui(game.get_viewport().get_mouse_position()):
+			tower = game._tower_at(game.get_global_mouse_position())
+		if tower == null and game.touch_ui and is_instance_valid(game.tip_tower) \
+				and Engine.get_process_frames() - game.tip_frame <= 180:
+			tower = game.tip_tower
+		if tower != null:
+			has_content = true
+			title = tower.title()
+			text = "오브젝트 정보\n\n"
+			for row in tower.basic_lines():
+				text += str(row[0]) + "\n\n"
+			if game._tip_detail_on():
+				text += "공격방식: " + Pat.PATTERNS[tower.pattern]["desc"] + "\n\n"
+				for row in tower.detail_lines():
+					text += str(row[0]) + "\n\n"
+				for rx in tower.reactions():
+					text += str(rx["name"]) + ": " + str(rx["desc"]) + "\n\n"
+			else:
+				text += "Shift를 누르면 공격 수치와 계산 내역을 자세히 볼 수 있어요."
 	var sig: String = title + "|" + text
+	side.visible = active() and has_content
 	if sig != side_signature:
 		heading.text = title
 		detail.text = game._kr_keep(text)

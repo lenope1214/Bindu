@@ -341,6 +341,7 @@ var dps_list: VBoxContainer
 var dps_sig := ""  # 표를 다시 만들지 정하는 요약 (오브젝트·피해가 바뀔 때만)
 var dps_focus: Tower = null  # 표에서 마우스를 올린 오브젝트
 var dps_hidden := OS.has_feature("mobile")  # D: 표 접기 (Meta.dps_fold로 저장)
+var dps_choice_open := false  # 카드 선택 중엔 요약만, D로 상세를 잠깐 펼친다
 # 웨이브 중 실시간 DPS: 게임 시간 DPS_STEP초마다 오브젝트별 누적 피해(dealt)를 적어 두고 최근 DPS_WIN초 차이로 초당 피해 (이동 평균이라 덜 흔들림)
 const DPS_STEP := 0.5
 const DPS_WIN := 5.0
@@ -1314,8 +1315,11 @@ func _build_dps(root: Control) -> void:
 
 
 func _toggle_dps() -> void:
-	dps_hidden = not dps_hidden
-	Meta.dps_fold = dps_hidden
+	if card_dock != null and card_dock.active() and phase == Phase.CHOOSE:
+		dps_choice_open = not dps_choice_open
+	else:
+		dps_hidden = not dps_hidden
+		Meta.dps_fold = dps_hidden
 	dps_sig = ""
 	_save_best()
 
@@ -1422,7 +1426,8 @@ func _refresh_dps() -> void:
 		dv[t] = _dps_of(t)
 	list.sort_custom(func(a, b): return dv[a] > dv[b])
 	# 웨이브 중엔 1초(표본 2개)마다만 고친다: 숫자가 매 프레임 바뀌면 읽을 수 없고 줄 순서도 덜 뒤바뀐다
-	var sig := "%s|%s|%d|%d" % [dps_hidden, live, roundi(room), dps_n / 2 if live else roundi(wave_time)]
+	var folded := dps_hidden or (card_dock != null and card_dock.active() and phase == Phase.CHOOSE and not dps_choice_open)
+	var sig := "%s|%s|%d|%d" % [folded, live, roundi(room), dps_n / 2 if live else roundi(wave_time)]
 	for t in list:
 		sig += "|%d:%s" % [t.get_instance_id(), t.title()]
 		if not live:
@@ -1430,11 +1435,11 @@ func _refresh_dps() -> void:
 	if sig == dps_sig:
 		return
 	dps_sig = sig
-	dps_head.text = _kh(("▶" if dps_hidden else "▼") + (" 실시간 DPS (D)" if live else " 지난 웨이브 DPS (D)"))
+	dps_head.text = _kh(("▶" if folded else "▼") + (" 실시간 DPS (D)" if live else " 지난 웨이브 DPS (D)"))
 	for c in dps_list.get_children():
 		c.queue_free()
-	dps_scroll.visible = not dps_hidden
-	if dps_hidden:
+	dps_scroll.visible = not folded
+	if folded:
 		dps_focus = null
 		dps_panel.size = Vector2.ZERO
 		return
@@ -1802,9 +1807,14 @@ func _update_hud(force := false) -> void:
 	var y := 0.0
 	var right := 0.0
 	hud_chips.clear()
-	for it in items:
+	# 핵심 상태는 항상 먼저, 나머지는 별도 줄로 시각적으로 묶는다.
+	var primary := items.slice(0, mini(3, items.size()))
+	var secondary := items.slice(mini(3, items.size()))
+	for it in primary + secondary:
 		var w := Icons.chip_w(ui_font, it[2], fs)
-		if x > 0.0 and (it[5] or x + w > (hud_w if y == 0.0 else hud_w2)):
+		var core_count := mini(3, items.size())
+		var core_done := hud_chips.size() >= core_count
+		if x > 0.0 and (it[5] or (core_done and y == 0.0) or x + w > (hud_w if y == 0.0 else hud_w2)):
 			x = 0.0
 			y += 34.0
 		hud_chips.append([Rect2(x, y, w, 30.0), it[0], it[1], it[2], it[3], it[4]])
@@ -1897,7 +1907,7 @@ func _help_text() -> String:
 		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 비율 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
 		"왼쪽 위 DPS 표: 웨이브 중엔 최근 5초 실시간 DPS, 쉬는 시간엔 지난 웨이브 DPS와 비율. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기 (저장됨)",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
-		"P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
+		"F: 카드·설명 패널 접고 전체 전장 보기   P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
 		"R: 처음부터 (일시정지 중 두 번) · 게임 오버 뒤 클릭·R·Esc: 시작 화면 (멀티 판은 대기방)",
 		"E: 판 끝내기 (일시정지 중 두 번) — 지금 점수로 게임 오버, 기록·온라인 순위에 올라감",
 		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 이어하기(Enter)로 그 쉬는 시간부터 (새로 시작은 N 두 번)",
@@ -1910,6 +1920,7 @@ func _help_text() -> String:
 	var touch := [
 		"[조작 · 터치]",
 		"카드 누르기: 카드 선택   [새로고침]: 선택지 바꾸기   [필드 보기]: 카드를 내리고 필드 보기",
+		"화면 아래 [전장 넓게] / [패널 보기]: 카드·설명 패널 접기·복구",
 		"[웨이브 n개 넘기기]: 카드 선택을 미루고 웨이브 n개(1·3·5·10)를 연달아 진행, 멈추면 쌓인 특성·카드·새로고침을 한꺼번에 (넘기는 중 아래 표시를 누르면 멈춤)",
 		"속성 카드: 빈 곳을 눌러 설치(직선탄) → 쏠 쪽을 누르거나 끌어서 놓아 방향",
 		"속성 카드를 오브젝트 위에: 속성 겹치기 (%s)" % elems,
@@ -3796,7 +3807,7 @@ func _off_legend(r: Rect2) -> Rect2:
 func _info_blockers() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var inv := ui_root.get_global_transform().affine_inverse()
-	for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, guide_more,  mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, draw_ok_btn]:
+	for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, guide_more,  mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, draw_ok_btn, card_dock.focus_btn]:
 		if c == null or not c.is_visible_in_tree():
 			continue
 		if (c is Label and str(c.text) == "") or (c == hud and hud_chips.is_empty()):
@@ -3890,7 +3901,7 @@ func _draw_info() -> void:
 			boss_li = 0 if Meta.map_id == "line" or boss_plan.is_empty() else _lane_of(boss_plan["a"])
 		var fs := 18
 		# 폰: 배지가 7개까지 겹쳐 전장을 덮었다 → 수와 보스 왕관만, 섞여 나오는 종류는 점 하나(누르면 말풍선)
-		var compact := _phone()
+		var compact := _phone() or (card_dock.active() and phase == Phase.CHOOSE)
 		var blockers := _info_blockers()
 		# 오브젝트도 되도록 가리지 않는다 (배지를 비킬 때 오브젝트 위에 얹히던 것)
 		for t in towers.get_children():
@@ -4506,6 +4517,17 @@ func _toggle_legend() -> void:
 	_save_best()
 
 
+## 카드 도크·설명 칸을 접어 전장을 넓게 보거나 다시 연다 (F·모바일 버튼).
+func _toggle_focus_view() -> void:
+	if card_dock == null or not card_dock.available():
+		return
+	card_dock.full_field = not card_dock.full_field
+	if card_dock.full_field:
+		_clamp_pan()
+	else:
+		card_dock.tick()
+
+
 func _toggle_bar() -> void:
 	bar_open = not bar_open
 	_save_best()
@@ -4521,6 +4543,12 @@ func _update_auto_btn() -> void:
 
 
 func _start_wave() -> void:
+	if not Garden.on and not mp_ghost:
+		var blocked := _wave_start_block_reason()
+		if blocked != "":
+			countdown = -1.0
+			_show_toast(blocked)
+			return
 	if mp_mode == "coop" and not mp_wave_go:
 		countdown = -1.0
 		_mp_coop_ready()
@@ -4593,6 +4621,84 @@ func _start_wave() -> void:
 	hint.text = ""
 	big_banner("웨이브 %d" % wave, Color.WHITE)
 	sfx.play("wave", 0.0)
+
+
+## 모든 다음 웨이브 진입 방향에 적어도 하나의 오브젝트 공격이 닿는지 확인한다.
+## 시작 버튼·Space·자동 시작·넘기기·멀티 호스트가 모두 _start_wave를 지나므로 여기서 막는다.
+func _wave_start_block_reason() -> String:
+	if lanes.is_empty():
+		return ""
+	var w := wave + 1
+	var spread := lane_spread(w)
+	var missed: Array[String] = []
+	for i in lanes.size():
+		if not _wave_lane_covered(lanes[i], w, spread):
+			missed.append(compass(lanes[i]))
+	if missed.is_empty():
+		return ""
+	return "웨이브를 시작할 수 없어요: %s쪽 공격이 닿지 않아요. 오브젝트의 위치나 방향을 맞춰 주세요" % "·".join(missed)
+
+
+## 진입 길을 따라 여러 지점을 살펴 공격 사거리·방향 안에 들어오는 오브젝트를 찾는다.
+func _wave_lane_covered(a: float, w: int, spread: float) -> bool:
+	var path := _orb_path(a)
+	if path.size() < 2:
+		return true
+	var samples: Array[Vector2] = []
+	if Meta.map_id == "line":
+		for y in [-LINE_HALF + 20.0, 0.0, LINE_HALF - 20.0]:
+			var line_path := _orb_path(a, y)
+			for k in range(1, 9):
+				samples.append(line_path[0].lerp(line_path[1], float(k) / 9.0))
+	else:
+		for seg in range(path.size() - 1):
+			var length := path[seg].distance_to(path[seg + 1])
+			var n := maxi(1, ceili(length / 45.0))
+			for k in n:
+				samples.append(path[seg].lerp(path[seg + 1], float(k) / n))
+	for t: Tower in towers.get_children():
+		var reach := _wave_attack_reach(t)
+		if reach <= 0.0:
+			continue
+		for p in samples:
+			var v := p - t.position
+			var dist := v.length()
+			if dist < 8.0 or dist > reach:
+				continue
+			# 자동 조준·중력 우물은 공격 방향을 고정하지 않는다. 나머지는 공격 폭과
+			# 구체의 진입 부채꼴을 함께 고려해 중앙선을 겨눈 공격도 유효하게 판정한다.
+			if t.m("reflex") > 0 or t.pattern == "vortex":
+				return true
+			var half := 0.12
+			match t.pattern:
+				"spray": half = 0.35
+				"chain": half = 0.5
+				"sonic": half = 0.5
+				"clock": half = 0.7
+			var width := atan(18.0 / dist)
+			if absf(t.dir.angle_to(v)) <= maxf(half, width) + spread:
+				return true
+	return false
+
+
+## 기본 공격방식별 유효 사거리. 수치는 실제 공격·사거리 표시와 같은 기준이다.
+func _wave_attack_reach(t: Tower) -> float:
+	if t.m("reflex") > 0:
+		return t.reflex_range()
+	var l := t.plv
+	var s := t.sz()
+	match t.pattern:
+		"shot": return Tower.shot_range(t.total_level(), t.mf("size")) * (1.0 + 0.12 * t.tk(Elem.WIND))
+		"spray": return 200.0 * Tower.reach(l) * s
+		"stream": return 260.0 * Tower.reach(l) * s
+		"chain": return 280.0 * Tower.reach(l) * s
+		"gust": return 420.0 * s * Rules.t("range_gust")
+		"sonic": return t.sonic_r(l)
+		"clock": return 240.0 * Tower.reach(l) * s
+		"lob": return Tower.LOB_RANGE * Tower.reach(l)
+		"vortex": return t.well_range()
+		"wall": return 90.0 * Tower.reach(l) + 32.0 * s
+		_: return 2000.0
 
 
 func _game_over() -> void:
@@ -4944,6 +5050,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if event.keycode == KEY_F11:
 			_toggle_fullscreen()
+		elif event.keycode == KEY_F:
+			_toggle_focus_view()
 		elif event.keycode == KEY_R and get_tree().paused:
 			_pause_restart()
 		elif event.keycode == KEY_E and get_tree().paused:
@@ -10016,6 +10124,8 @@ func _update_fx(delta: float) -> void:
 ## 마우스를 올린 오브젝트의 정보.
 func _draw_tooltip() -> void:
 	tip_orb = null
+	if card_dock != null and card_dock.full_field:
+		return  # 전장 넓게 보기에서는 마우스 정보창도 접는다
 	# 터치는 마우스를 올려 둘 수 없으니, 눌러서 옮기기 시작한 오브젝트의 정보를 보여 준다
 	var touch_move := phase == Phase.MOVE and touch_ui and moving != null
 	# 터치로 방향 바꾸기: 손가락은 쏠 쪽에 있으니 그 오브젝트 정보를 함께 보여 준다 ([자세히]로 수치까지)
@@ -10034,6 +10144,8 @@ func _draw_tooltip() -> void:
 		t = tip_tower
 	if t != null:
 		tip_tower = t
+		if card_dock.active():
+			return  # 카드 도크 사용 중엔 전장 위를 덮지 않고 오른쪽 설명 칸에 표시한다
 	if t == null:
 		_draw_orb_tooltip()
 		return
