@@ -14,9 +14,6 @@ var order: Array[int] = []  # 넣은 순서
 var pattern := Pat.DEFAULT
 var plv := 1  # 공격방식 레벨
 var mods := {}  # 강화 id -> 겹친 수
-var prism := 0
-var prism_flash := 0.0  # 탄이 지나간 순간 프리즘이 번쩍인다 (표시용)
-var prism_fx_cd := 0.0  # 프리즘 번쩍임 연출 대기 (표시용, 0이 되어야 다시 번쩍)
 const PRISM_FX_GAP := 0.8  # 프리즘 연출(번쩍·파편·육각형) 최소 간격 초
 var pincer := 0  # 협공: 여러 오브젝트가 함께 맞힌 구체에 표식 폭발
 var reso := 0
@@ -61,7 +58,7 @@ var rx_dealt := 0.0  # 그중 특수 반응 피해 (측정·표시용)
 var trail_hit := {}  # 지나간 자리 장판: 구체 → 마지막으로 맞은 sim_id (띠가 겹쳐도 한 조각에 한 번)
 var fx_a := 1.0  # 이 오브젝트 탄·장판 진하기 (피해 몫이 작을수록 옅게, main._soften_fx)
 var run_dealt := 0.0  # 지난 웨이브들까지 합친 피해 (게임 오버 요약용)
-## 피해 출처 (DPS 표·판 기록 통계). 키: "hit"(직접 타격, breakdown()이 배율별로 나눔), elem:fire, rx:lava, mod:split, link:pincer ...
+## 피해 출처 (DPS 표·판 기록 통계). 키: "hit"(직접 타격, breakdown()이 배율별로 나눔), elem:fire, share:electric(특징), mod:split, link:pincer ...
 var src := {}  # 이번(또는 지난) 웨이브, 날것
 var chase_n := {}  # 구체 id -> 이 오브젝트의 유도·혼불 탄 몇 개가 쫓는지 (Projectile._chase)
 var run_src := {}  # 지난 웨이브들까지, 나눈 값
@@ -69,34 +66,16 @@ var tag := ""  # 지금 피해를 어느 출처로 셀지 (반응·반응 발사
 var recoil := 0.0  # 발사 반동
 var place_pop := 0.0  # 설치·겹치기 순간 커졌다 줄어드는 연출
 var rocks: Array = []
-var mines: Array = []
 var wisps: Array = []  # 떠 있는 목줄 혼불
 var in_zone := false  # 지금 장판(바닥 효과)으로 때리는 중인지 (후반 구체 갑옷·흐림은 장판 피해를 그대로 받는다)
 var in_rx := false  # 지금 특수 반응 공격 중인지 (hit 피해 계산용)
-var rail_dir := Vector2.RIGHT  # 레일건이 마지막으로 쏜 방향
-var halo_cd := {}  # 광륜: 구체별 다시 맞힐 때까지 남은 시간
-var vine_cd := {}  # 덩굴: 구체별 다시 묶을 때까지 남은 시간
-var zaps: Array = []  # 감전 물길: 이번에 전류가 꽂힌 자리(로컬)
 var clock_ph := 0.0  # 시계침 위상
 var ring_t0 := 0.0  # 울림 음파 초당 상한: 이번 1초 구간 시작
 var ring_n := 0  # 그 구간에 터뜨린 수
 var clock_hit := {}  # 시계침: 이번 한 번 훑는 동안 맞힌 구체 ([바늘 번호, 구체] -> true, 다중 발사 바늘은 따로 센다)
-var glint_d := Vector2.RIGHT  # 잔광: 1.2초 뒤 다시 쏠 방향
-var rewind_q: Array = []  # 되감기 번개: 1초 뒤 다시 칠 구체들
-var earth_rx := {}  # 맞힐 때 붙는 땅 반응 id → 레벨 (용암·독늪·모래시계). attack()마다 갱신
-var bogs: Array = []  # 독늪 늪 (오브젝트당 BOG_MAX개까지)
-var in_form := false  # 지금 형태 성질 효과를 주는 중인지 (자람·무게 보너스를 다시 받지 않게)
-var fe_cd := 0.0  # 형태 성질 "끝" 효과 다시 쓸 때까지 (날아가는 공격)
-var fe2 := 0.0  # 계속 공격하는 형태의 "끝" 효과 다시 쓸 때까지
+var light_cd := 0.0  # 빛 꿰뚫음 다시 쓸 때까지 (Share.pierce)
 var chain_end := Vector2.ZERO  # 연쇄 번개가 마지막으로 친 자리
-## 2026-10-30에 채운 반응들 (RxMore)
-var later: Array = []  # [남은 초, Callable]: 잠시 뒤 한 번 더 (시간 반응 등)
-var rxfx: Array = []  # 즉시 효과 표시 (광선·파동)
-var rxs := {}  # 반응별 상태 (전도 덩굴 대상, 진자 쿨다운)
-var rx_trail_hit := {}  # 반응 띠 sub → {구체: sim_id} (같은 반응 띠가 겹쳐도 한 조각에 한 번)
-var pend_ph := 0.0  # 진자 위상
-var photo_t := 0.0  # 광합성: 공격 속도 증가 남은 시간
-var photo_k := 0.0
+var later: Array = []  # [남은 초, Callable]: 잠시 뒤 효과 (시간 되풀이, Share.on_hit)
 var main: Node
 var owner_id := 0  # 협동 멀티플레이: 놓은 사람 id (0이면 혼자 하는 판)
 var net_id := 0  # 협동 멀티플레이: 기기끼리 같은 오브젝트를 찾는 번호
@@ -133,11 +112,6 @@ func mf(id: String) -> float:
 func mn(id: String) -> int:
 	var f := mf(id)
 	return int(f) + (1 if randf() < f - int(f) else 0)
-
-
-## 형태 성질 세기: 속성 레벨, Lv3까지만 (몰아 넣기보다 나눠 넣기가 이득). Elem.TRAIT
-func tk(e: int) -> float:
-	return mini((eff if not eff.is_empty() else elements).get(e, 0), 3) * Rules.trait_mul
 
 
 func total_level() -> int:
@@ -190,7 +164,7 @@ static var SHADE_T := 3.0  # 어둠 형태 성질 그림자 표식 시간 (2026-
 
 ## 공격 속도 배율: 특성 × 속사 × 바람 버프 ÷ 속성을 겹친 대가 (모두 곱한다). 특수 반응 공격도 이 배율.
 func spd_k() -> float:
-	return spd_mul * (1.0 + Rules.rapid_k * mf("rapid")) * (1.0 + wind_buff) * (1.0 + (photo_k if photo_t > 0.0 else 0.0)) * skill_k() / tax()
+	return spd_mul * (1.0 + Rules.rapid_k * mf("rapid")) * (1.0 + wind_buff) * skill_k() / tax()
 
 
 ## 중앙 기술 집중·흡수 구체가 바꾼 공격 속도 배율.
@@ -505,7 +479,7 @@ func range_text() -> String:
 	var l := plv
 	var s := sz()
 	match pattern:
-		"shot": return "%d (속성 레벨 합이 오를수록 멀리)" % roundi(shot_range(total_level(), mf("size")) * (1.0 + 0.12 * tk(Elem.WIND)))
+		"shot": return "%d (속성 레벨 합이 오를수록 멀리)" % roundi(shot_range(total_level(), mf("size")))
 		"spray": return "%d" % roundi(SHAPE.spray_len * rr(l) * s)
 		"stream": return "%d" % roundi(SHAPE.stream_len * rr(l) * s)
 		"chain": return "%d (튀는 거리 %d)" % [roundi(SHAPE.chain_len * rr(l) * s), roundi(SHAPE.chain_jump * s)]
@@ -513,7 +487,7 @@ func range_text() -> String:
 		"sonic": return "%d" % roundi(sonic_r(l))
 		"clock": return "%d" % roundi(SHAPE.clock_len * rr(l) * s)
 		"lob": return "%d 날아감 (지나간 띠 반지름 %d)" % [roundi(LOB_RANGE * rr(l)), roundi(lob_r(l) * s)]
-		"vortex": return "%d 안 구체 무리에 (우물 반지름 %d)" % [roundi(well_range()), roundi((100.0 + 10.0 * (l - 1)) * s * (1.0 + 0.15 * (tk(Elem.WOOD) + tk(Elem.WIND))))]
+		"vortex": return "%d 안 구체 무리에 (우물 반지름 %d)" % [roundi(well_range()), roundi((100.0 + 10.0 * (l - 1)) * s)]
 		"wall": return "앞 %d~ (벽 %d개)" % [roundi(90.0 * rr(l)), 2 + roundi(mf("multi"))]
 		"wisp": return "목줄 %d (혼불 %d개가 오브젝트 둘레를 지키며 쫓아감)" % [roundi(Projectile.wisp_leash(mf("homing"), rr(l))), wisp_cap()]
 		"path": return "그린 길 최대 %d (갈래 %d/%d)" % [roundi(Pat.path_len(plv)), paths.size(), Pat.path_branches(plv)]
@@ -866,7 +840,7 @@ func add(e: int, n: int) -> String:
 	var names := PackedStringArray()
 	for r in fresh:
 		names.append(r["name"])
-	return "반응: " + ", ".join(names)
+	return "조합: " + ", ".join(names)
 
 
 ## 한 오브젝트에서 같은 속성이 오를 수 있는 최대 레벨 (2026-11-01 사용자 "모든 속성 Lv5 상한"). 정원은 칸 레벨이 성장 축이라 상한 없음
@@ -1083,8 +1057,6 @@ func add_link(id: String) -> String:
 	place_pop = 1.0
 	queue_redraw()
 	match id:
-		"prism":
-			prism += 1
 		"reso":
 			reso += 1
 		"pincer":
@@ -1144,8 +1116,6 @@ func extras_text() -> String:
 	for id in Pat.MOD_IDS:
 		if m(id) > 0:
 			parts.append(Pat.MODS[id]["name"] + ("" if m(id) == 1 else " x%d" % m(id)))
-	if prism > 0:
-		parts.append("프리즘" + ("" if prism == 1 else " x%d" % prism))
 	if reso > 0:
 		parts.append("공명" + ("" if reso == 1 else " x%d" % reso))
 	if pincer > 0:
@@ -1164,7 +1134,7 @@ func spec() -> Dictionary:
 ## 이어하기 저장용.
 func to_save() -> Dictionary:
 	return {"elements": elements, "order": Array(order), "pattern": pattern, "plv": plv, "mods": mods,
-		"prism": prism, "reso": reso, "pincer": pincer, "trigs": trigs, "charge": charge, "third_n": third_n, "star_sum": star_sum, "star_e": star_e, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt,
+		"reso": reso, "pincer": pincer, "trigs": trigs, "charge": charge, "third_n": third_n, "star_sum": star_sum, "star_e": star_e, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt,
 		"src": src, "run_src": run_src, "paths": paths.map(func(p): return Array(p))}
 
 
@@ -1217,7 +1187,6 @@ func load_save(d: Dictionary) -> void:
 		for id in ms:
 			if Pat.MODS.has(id) and _int(ms[id]) > 0:
 				mods[id] = mini(1, _int(ms[id])) if id == "reflex" else _int(ms[id])
-	prism = maxi(0, _int(d.get("prism")))
 	reso = maxi(0, _int(d.get("reso")))
 	pincer = maxi(0, _int(d.get("pincer")))
 	var tgs: Variant = d.get("trigs", {})
@@ -1292,8 +1261,6 @@ static func _float(v: Variant) -> float:
 func _ready_to(key, interval: float, delta: float) -> bool:
 	var v: float = cd.get(key, 0.0) - delta
 	if v <= 0.0:
-		if in_rx and not Rules.rxiv.is_empty():
-			interval *= Rules.rxiv.get(tag, 1.0)  # 반응별 간격 배율 (온라인 패치 rxiv_<반응 id>)
 		cd[key] = interval
 		recoil = 1.0
 		if key == "p":
@@ -1445,15 +1412,9 @@ func fade_fx(delta: float) -> void:
 func attack(delta: float, orbs: Array) -> void:
 	t += delta
 	eff = eff_now()
-	earth_rx.clear()
-	for r in reactions():
-		if r["id"] in ["lava", "swamp", "hourglass"]:
-			earth_rx[r["id"]] = mini(eff.get(r["a"], 1), eff.get(r["b"], 1))
 	for k in fx.keys():
 		fx[k] = maxf(fx[k] - delta, 0.0)
 	recoil = maxf(recoil - delta * 6.0, 0.0)
-	fe_cd = maxf(fe_cd - delta, 0.0)
-	fe2 = maxf(fe2 - delta, 0.0)
 	echo_cd = maxf(echo_cd - delta, 0.0)
 	focus_t = maxf(focus_t - delta, 0.0)
 	jam_imm = maxf(jam_imm - delta, 0.0)
@@ -1545,9 +1506,6 @@ func attack(delta: float, orbs: Array) -> void:
 					cd["p"] = BASE_IV.chain / spd(l)
 					roll_dice()
 					recoil = 1.0
-					if fe2 <= 0.0:
-						fe2 = 2.0
-						form_end(chain_end, aim, true)
 		"wall":
 			rocks = rocks.filter(func(r): return is_instance_valid(r))
 			if _ready_to("p", Rules.t("wall_iv") / spd(l), dp) and rocks.size() < 2 + roundi(mf("multi")):
@@ -1620,8 +1578,7 @@ func attack(delta: float, orbs: Array) -> void:
 				for i in mn("multi"):
 					path_q.append([PATH_GAP * (i + 1), br])
 	_set_fire([1.0, 1.0, ""])
-	_cont_end(orbs, l, s)
-	_reactions(orbs, de, k)
+	_share_tick(delta)
 	nova_fx = maxf(nova_fx - delta, 0.0)
 	for f in feed_fx.keys():
 		if not is_instance_valid(f):
@@ -1684,220 +1641,19 @@ func _pincer(o: Orb) -> void:
 		main.burst(o.position, Color(1.0, 0.55, 0.85), 8, 120.0)
 
 
-## 특수 반응: 두 속성이 함께 있으면 공격방식과 별개로 추가 공격.
-func _reactions(orbs: Array, de: float, k: float) -> void:
-	in_rx = true
-	_reactions_inner(orbs, de, k)
-	in_rx = false
-	tag = ""
-
-
-func _reactions_inner(orbs: Array, de: float, k: float) -> void:
-	for key in halo_cd.keys():
-		halo_cd[key] -= de
-		if halo_cd[key] <= 0.0 or not is_instance_valid(key):
-			halo_cd.erase(key)
-	for key in vine_cd.keys():
-		vine_cd[key] -= de
-		if vine_cd[key] <= 0.0 or not is_instance_valid(key):
-			vine_cd.erase(key)
-	RxMore.pre(self, de)
-	for r in reactions():
-		var l := mini(eff.get(r["a"], 1), eff.get(r["b"], 1))
-		var id: String = r["id"]
-		tag = "rx:" + id
-		match id:
-			"burning":
-				if _ready_to(id, BURN_IV / spd(l), de):
-					main.spawn_proj(self, "log", l, dir)
-			"steam":
-				# 물길 위로 증기: 띠 전체 감속·약화
-				_band(orbs, position, dir, chan_len(l), chan_w(l), func(o):
-					hit(o, 1.2 * pw(l) * de, k)
-					o.slow(0.35, 0.3)
-					o.vuln(0.5))
-			"vine":
-				# 물길 따라 자란 덩굴: 지나가는 구체를 묶는다 (같은 구체는 3초에 한 번)
-				_band(orbs, position, dir, chan_len(l), chan_w(l), func(o):
-					if not vine_cd.has(o):
-						vine_cd[o] = 3.0
-						hit(o, 2.0 * pw(l))
-						o.root(1.2 + 0.25 * (l - 1)))
-			"shock":
-				# 공격 방향으로 흐르는 물길: 0.5초마다 안의 구체에 전류
-				if _ready_to(id, 0.5, de):
-					zaps.clear()
-					fx[id] = 0.15
-					_band(orbs, position, dir, chan_len(l), chan_w(l), func(o):
-						hit(o, 0.9 * pw(l), 0.3)
-						o.slow(0.6, 0.5)
-						zaps.append(o.position - position))
-			"firestorm":
-				if _ready_to(id, 2.5 / spd(l), de):
-					main.spawn_proj(self, "tornado", l, dir)
-			"blizzard":
-				for o in main.near_t(position, 130.0 * reach(l)):
-					if o.position.distance_to(position) < 130.0 * reach(l):
-						hit(o, 1.0 * pw(l) * de, k)
-						o.slow(0.45, 0.3)
-						o.add_chill(0.8 * de)
-			"eclipse":
-				if _ready_to(id, 6.0 / spd(l), de):
-					if main.eclipse_screen():
-						fx[id] = 0.8
-					else:
-						fx["eclipse_small"] = 0.5
-					for o in orbs:
-						hit(o, 3.0 * pw(l))
-						o.vuln(3.0)
-			"mushroom":
-				mines = mines.filter(func(mm): return is_instance_valid(mm))
-				if _ready_to(id, MUSH_IV / spd(l), de) and mines.size() < 4 + l:
-					main.spawn_proj(self, "mushroom", l, dir)
-			"railgun":
-				# 체력이 가장 많은 구체를 조준해 화면 끝까지 관통
-				if not orbs.is_empty() and _ready_to(id, 3.5 / spd(l), de):
-					var best: Orb = null
-					for o in orbs:
-						if best == null or o.hp > best.hp:
-							best = o
-					rail_dir = (best.position - position).normalized()
-					fx[id] = 0.3
-					_line(orbs, rail_dir, 2000.0, 12.0, func(o):
-						hit(o, 6.0 * pw(l))
-						o.stagger(25.0))
-			"halo":
-				# 주위를 도는 빛 칼날: 닿으면 반드시 치명타 (같은 구체는 0.5초에 한 번)
-				for bp in halo_blades(l):
-					for o in main.near(position + bp, 14.0):
-						if not halo_cd.has(o) and o.position.distance_to(position + bp) < 14.0 + o.radius():
-							halo_cd[o] = 0.5
-							hit(o, 1.0 * pw(l), 1.0, {}, true, true)
-			"quake":
-				if _ready_to(id, 3.5 / spd(l), de):
-					fx[id] = 0.4
-					for o in main.near_t(position, 150.0 * reach(l)):
-						if o.position.distance_to(position) < 150.0 * reach(l) + o.radius():
-							hit(o, 2.5 * pw(l))
-							o.root(0.8)
-			"storm":
-				if _ready_to(id, 2.5 / spd(l), de):
-					main.spawn_proj(self, "storm", l, dir)
-			"aurora":
-				if _ready_to(id, 2.5 / spd(l), de):
-					fx[id] = 0.35
-					var done := {}
-					for i in 5:
-						_line(orbs, dir.rotated((i - 2) * 0.22), 300.0 * reach(l), 8.0, func(o):
-							if not done.has(o):
-								done[o] = true
-								hit(o, 2.2 * pw(l))
-								o.add_chill(1.2))
-			"curse":
-				# 표식 구체는 계속 피해를 받는다
-				for o in orbs:
-					if o.curse_owner == self:
-						hit(o, 1.2 * pw(l) * de, k)
-				# 가장 가까운 구체에 표식 (동시에 레벨 수만큼)
-				if _ready_to(id, 2.0 / spd(l), de):
-					var mine := 0
-					var best: Orb = null
-					var bd := 320.0 * reach(l)
-					for o in orbs:
-						if o.curse_lv > 0:
-							if o.curse_owner == self:
-								mine += 1
-							continue
-						var dd: float = o.position.distance_to(position)
-						if dd < bd:
-							bd = dd
-							best = o
-					if best and mine < l:
-						best.curse_lv = l
-						best.curse_owner = self
-			"bell":
-				# 종: 앞쪽 부채꼴에 울림 2번씩 (다음 한 번에 음파가 터진다)
-				if _ready_to(id, 3.5 / spd(l), de):
-					fx[id] = 0.4
-					_cone(orbs, dir, 260.0 * reach(l), 0.6, func(o):
-						hit(o, 2.5 * pw(l))  # 소리가 있어 여기서 울림 1번
-						_ring(o, 1.0))
-			"shatter":
-				# 파쇄: 파동이 냉기를 쌓고, 빙결된 구체는 깨지며 큰 피해·파편 3개
-				if _ready_to(id, 2.5 / spd(l), de):
-					fx[id] = 0.35
-					_cone(orbs, dir, 240.0 * reach(l), 0.5, func(o):
-						if o.frozen_t > 0.0:
-							o.frozen_t = 0.0
-							hit(o, 7.0 * pw(l))
-							main.burst(o.position, Elem.COLORS[Elem.ICE], 10, 160.0)
-							for i in 3:
-								var p: Projectile = main.spawn_proj(self, "frag", l, Vector2.from_angle(randf() * TAU))
-								p.position = o.position
-								p.hit[o] = true
-						else:
-							hit(o, 1.5 * pw(l))
-							o.add_chill(1.0))
-			"silence":
-				if _ready_to(id, 4.0 / spd(l), de):
-					fx[id] = 0.4
-					_cone(orbs, dir, 260.0 * reach(l), 0.6, func(o):
-						hit(o, 2.0 * pw(l))
-						o.silence_t = maxf(o.silence_t, 2.0))
-			"afterimage":
-				# 잔광: 광선, 1.2초 뒤 같은 방향으로 한 번 더
-				if _ready_to(id, 3.0 / spd(l), de):
-					fx[id] = 0.3
-					glint_d = dir
-					cd["afterimage2"] = 1.2
-					_line(orbs, dir, 2000.0, 12.0, func(o): hit(o, 3.0 * pw(l)))
-				var f2: float = cd.get("afterimage2", 0.0)
-				if f2 > 0.0:
-					cd["afterimage2"] = f2 - de
-					if cd["afterimage2"] <= 0.0:
-						fx["afterimage2"] = 0.3
-						_line(orbs, glint_d, 2000.0, 12.0, func(o): hit(o, 3.0 * pw(l)))
-			"rewind":
-				# 되감기 번개: 앞쪽 구체부터 연쇄, 1초 뒤 같은 구체들을 한 번 더
-				if not rewind_q.is_empty():
-					rewind_q[0] -= de
-					if rewind_q[0] <= 0.0:
-						var pts := PackedVector2Array([position])
-						for o in rewind_q[1]:
-							if is_instance_valid(o) and o.hp > 0.0:
-								pts.append(o.position)
-								hit(o, 2.0 * pw(l))
-						if pts.size() > 1:
-							main.bolt(pts)
-						rewind_q = []
-				elif _ready_to(id, 2.5 / spd(l), de):
-					var got := _chain_list(orbs, dir, 280.0 * reach(l), 3 + l)
-					if not got.is_empty():
-						var pts := PackedVector2Array([position])
-						for o in got:
-							pts.append(o.position)
-							hit(o, 2.0 * pw(l))
-						main.bolt(pts)
-						rewind_q = [1.0, got]
-			"styx":
-				# 망자의 강: 물길 안에서 죽으면 반드시 혼불
-				_band(orbs, position, dir, chan_len(l), chan_w(l), func(o):
-					hit(o, Rules.t("styx_dmg") * pw(l) * de, k)
-					o.slow(0.7, 0.3)
-					o.styx_t = 0.3
-					o.styx_lv = l
-					o.styx_src = self)
-			"plague", "spirit":
-				if _ready_to(id, (2.2 if id == "plague" else 2.5) / spd(l), de):
-					for a in [-0.35, 0.35]:
-						var pr: Projectile = main.spawn_proj(self, "ghost", l, dir.rotated(a))
-						pr.dmg = 2.4 * pw(l)
-						pr.ghost = id
-			"prison":
-				if _ready_to(id, Rules.t("prison_iv") / spd(l), de):
-					main.spawn_proj(self, "icebolt", l, dir)
-			_:
-				RxMore.tick(self, id, l, orbs, de, k)
+## 특징 공유: 잠시 뒤 효과(시간 되풀이)·빛줄기 간격 (Share).
+func _share_tick(delta: float) -> void:
+	light_cd = maxf(light_cd - delta, 0.0)
+	if later.is_empty():
+		return
+	var due: Array = []
+	for i in range(later.size() - 1, -1, -1):
+		later[i][0] -= delta
+		if later[i][0] <= 0.0:
+			due.append(later[i][1])
+			later.remove_at(i)
+	for f in due:
+		f.call()
 
 
 ## 중력 우물 자리 n개: 사거리(well_range) 안 구체 중 둘레 110에 구체가 가장 많은 구체 자리. 둘째부터는 앞 자리에서 150 넘게 떨어진 곳
@@ -1919,7 +1675,7 @@ func well_spots(n: int) -> Array:
 
 ## 중력 우물을 떨어뜨리는 사거리 (공격방식 레벨·바람 멀리·사거리 배율)
 func well_range() -> float:
-	return Rules.t("well_range") * rr(plv) * (1.0 + 0.12 * tk(Elem.WIND)) * Rules.t("range_vortex")
+	return Rules.t("well_range") * rr(plv) * Rules.t("range_vortex")
 
 
 ## 벽 바위 k번째 자리(오브젝트 기준). 처음 두 개는 앞으로 한 줄(90·150), 다중 발사로 늘어난 바위는 그 사이 양옆에 번갈아
@@ -1997,74 +1753,10 @@ func chan_w(l: int) -> float:
 	return 20.0 + 3.0 * (l - 1)
 
 
-## 땅 반응은 오브젝트 공격(공격방식)이 맞힐 때 붙는다 (2026-10-30, 앞쪽 가로 벽 대신).
-## 용암: 묻은 구체가 LAVA_FUSE초 뒤(또는 죽을 때) 그 자리에서 터짐. 같은 구체는 터질 때까지 한 번만.
-static var LAVA_FUSE := 2.0
-static var LAVA_DMG := 2.4
-static var LAVA_R := 70.0
-## 독늪: 맞은 구체가 BOG_MARK초 안에 죽으면 그 자리에 늪. 늪 안에서 죽으면 또 늪(번짐), 오브젝트당 BOG_MAX개.
-static var BOG_MARK := 4.0
-static var BOG_MAX := 6
-static var BOG_R := 56.0
-static var BOG_LIFE := 4.0
-## 모래시계: 맞은 구체를 약 1초 전 위치로 되감기 (같은 구체는 SAND_CD초에 한 번, 보스는 절반만), 받은 피해 메아리 50%.
-static var SAND_CD := 3.0
-static var SAND_DMG := 8.0
-
-
-func _earth_on_hit(o: Orb) -> void:
-	if earth_rx.has("lava") and o.lava_t <= 0.0:
-		o.lava_t = LAVA_FUSE
-		o.lava_lv = earth_rx["lava"]
-		o.lava_src = self
-	if earth_rx.has("swamp"):
-		o.bog_t = BOG_MARK
-		o.bog_lv = earth_rx["swamp"]
-		o.bog_src = self
-	if earth_rx.has("hourglass") and o.sand_cd <= 0.0 and o.hp > 0.0:
-		o.sand_cd = SAND_CD
-		var back := o.past_pos()
-		var to := o.position.lerp(back, 0.5 if o.kind == Orb.Kind.BOSS else 1.0)
-		main.burst(o.position, Color(0.85, 0.7, 0.4), 6, 90.0)
-		o.position = to
-		main.burst(to, Color(0.85, 0.7, 0.4), 6, 90.0)
-		o.echo(0.5, 2.0, self)
-		var tg := tag
-		in_rx = true
-		tag = "rx:hourglass"
-		hit(o, SAND_DMG * pw(earth_rx["hourglass"]))
-		in_rx = false
-		tag = tg
-
-
-## 독늪 늪 하나 (자리가 차 있으면 가장 오래된 늪을 없앤다).
-func spawn_bog(p: Vector2, l: int) -> void:
-	bogs = bogs.filter(func(z): return is_instance_valid(z) and not z.is_queued_for_deletion())
-	if bogs.size() >= BOG_MAX:
-		bogs[0].queue_free()
-		bogs.remove_at(0)
-	tag = "rx:swamp"
-	bogs.append(main.spawn_zone("bog", l, p, self))
-	tag = ""
-
-
-## 광륜 칼날 위치(로컬). 레벨마다 하나씩 늘어난다(최대 6).
-func halo_r(l: int) -> float:
-	return 110.0 * reach(l)
-
-
-func halo_blades(l: int) -> Array:
-	var n := mini(1 + l, 6)
-	var out := []
-	for i in n:
-		out.append(Vector2.from_angle(t * 2.4 + TAU * i / n) * halo_r(l))
-	return out
-
-
 ## 반응의 감지 사거리. 공격·정보창과 같은 크기/레벨/사거리 보정을 쓴다.
 func reflex_range(toward := Vector2.ZERO) -> float:
 	var weather := MapRule.wind_k(toward, MapRule.wind_dir(main.lanes)) if main and MapRule.on() else 1.0
-	return reflex_range_of(pattern, plv, total_level(), mf("size"), tk(Elem.WIND), mf("homing"), mf("multi"), weather)
+	return reflex_range_of(pattern, plv, total_level(), mf("size"), 0.0, mf("homing"), mf("multi"), weather)
 
 
 ## Projectile.setup → form_init 순서대로: 유한 탄에 맵 바람, 그 뒤 속성 바람을 적용.
@@ -2145,7 +1837,7 @@ func _update_aim(orbs: Array, delta: float) -> void:
 
 ## 이 오브젝트의 공격이 구체에 닿았을 때. 겹친(나눠 받은) 모든 속성의 부가효과가 붙는다.
 ## k: 부가효과 세기 (한 방=1, 지속 공격=프레임 비례)
-## extra: 프리즘에서 묻어 온 속성, can_split: 파편은 다시 분열하지 않는다
+## extra: 더 얹을 속성 {속성: 레벨} (지금은 쓰는 곳 없음), can_split: 파편은 다시 분열하지 않는다
 func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_crit := false) -> void:
 	if not is_instance_valid(o) or o.hp <= 0.0:
 		return
@@ -2155,8 +1847,6 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		for e in extra:
 			els[e] = maxi(els.get(e, 0), extra[e])
 	var d := dmg * dmg_k(in_rx)
-	if in_rx and not Rules.rxd.is_empty():
-		d *= Rules.rxd.get(tag, 1.0)  # 반응별 피해 배율 (온라인 패치 rxd_<id>)
 	var dx := dice_x if not in_rx else 1.0  # 주사위: 반응 피해에는 안 곱한다
 	d *= dx
 	# 발동: 축적·삼연이 실린 공격(쏘는 순간 바로 맞히는 공격), 마무리(약한 구체)
@@ -2175,10 +1865,8 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 			fm = 1.0 + (fm - 1.0) * 0.5
 		d *= fm
 	var crit := dx >= Rules.dice_top and k >= 1.0  # 대박은 치명타처럼 금색 숫자
-	var lit := false  # 빛 치명타 (확정 치명타 반응은 반응 몫)
+	var lit := false  # 빛 치명타
 	var cc := minf(Rules.light_ch * els.get(Elem.LIGHT, 0), Rules.light_max) if els.has(Elem.LIGHT) else 0.0
-	if o.lucky_t > 0.0:
-		cc += 0.3  # 무지개 물길 위
 	if force_crit or cc > 0.0 and randf() < cc * minf(k, 1.0):
 		d *= Rules.light_mul
 		crit = k >= 1.0
@@ -2190,12 +1878,6 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		mt = d * Rules.metal_dmg * els.get(Elem.METAL, 0)
 		d += mt
 		o.stagger(Rules.metal_stagger * els.get(Elem.METAL, 0) * k)
-	# 형태 성질 자람·무게: 공격방식 공격만 (반응·형태 성질 효과 제외)
-	if not in_rx and not in_form:
-		if els.has(Elem.WOOD):
-			d *= 1.0 + minf(0.04 * tk(Elem.WOOD) * o.position.distance_to(position) / 100.0, 0.2)
-		if els.has(Elem.METAL):
-			o.stagger(o.speed * 0.1 * tk(Elem.METAL) * minf(k, 1.0))
 	# 관통 (탄이 아닌 공격): 갑옷이 빼는 피해를 줄이고 보호막을 더 깎는다
 	var ap := mf("pierce") if not in_rx and m("pierce") > 0 and not pattern in Pat.PROJECTILE else 0.0
 	if o.late != "" and not in_rx and not in_zone:
@@ -2210,7 +1892,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	d = o.hurt(d, crit, self)  # 받는 피해 배율(약점 등)까지 곱한 값
 	if main and not main.wells.is_empty():
 		_well_feed(o, d)
-	o.last_rx = in_rx or tag.begins_with("rx:")
+	o.last_rx = in_rx or tag.begins_with("share:")
 	dealt += d
 	# 별: 둘레 별 오브젝트가 이 피해의 일부를 복사해 별빛으로 모은다 (이 피해는 줄지 않는다)
 	if not in_nova and main and not main.star_towers.is_empty():
@@ -2249,18 +1931,21 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		_notify_allies(o.position)
 	if o.hp <= 0.0 and echo_cd <= 0.0 and tg("echo") > 0:
 		_echo(o)
+	# 효과 (Elem.RIDER). 얼음 오래감은 지속 시간, 나무 자람은 먼 구체일수록 세기를 키운다 (Share)
+	var dm := Share.dur(self)
+	var g := Share.grow(self, o)
 	if els.has(Elem.FIRE):
-		o.burn(Rules.fire_dps * els.get(Elem.FIRE, 0) * rm, Rules.fire_t, self)
+		o.burn(Rules.fire_dps * els.get(Elem.FIRE, 0) * rm * g, Rules.fire_t * dm, self)
 	if els.has(Elem.POISON):
-		o.poison(Rules.poison_dps * els.get(Elem.POISON, 0) * rm, Rules.poison_t, self)
+		o.poison(Rules.poison_dps * els.get(Elem.POISON, 0) * rm * g, Rules.poison_t * dm, self)
 	if els.has(Elem.ICE):
-		o.add_chill(Rules.ice_chill * k * els.get(Elem.ICE, 0))
+		o.add_chill(Rules.ice_chill * k * els.get(Elem.ICE, 0) * g)
 	if els.has(Elem.WATER):
-		o.slow(Rules.water_slow - Rules.water_lv * els.get(Elem.WATER, 0), Rules.water_t)
-	if els.has(Elem.EARTH) and randf() < minf(Rules.earth_ch * els.get(Elem.EARTH, 0), Rules.earth_max) * k * (2.0 if o.mud_t > 0.0 else 1.0):
-		o.root(Rules.earth_t)
+		o.slow(Rules.water_slow - Rules.water_lv * els.get(Elem.WATER, 0), Rules.water_t * dm)
+	if els.has(Elem.EARTH) and randf() < minf(Rules.earth_ch * els.get(Elem.EARTH, 0), Rules.earth_max) * k * g:
+		o.root(Rules.earth_t * dm)
 	if els.has(Elem.DARK):
-		o.vuln(Rules.dark_t, Rules.dark_vuln + Rules.dark_lv * els.get(Elem.DARK, 0))
+		o.vuln(Rules.dark_t * dm, (Rules.dark_vuln + Rules.dark_lv * els.get(Elem.DARK, 0)) * g, self)
 	if els.has(Elem.ELECTRIC) and randf() < Rules.elec_ch * k:
 		main.arc(o, d * Rules.elec_dmg * els.get(Elem.ELECTRIC, 0), self)
 	if els.has(Elem.SOUND):
@@ -2268,19 +1953,23 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		if o.tune_t <= 0.0 or els.get(Elem.SOUND, 0) >= o.tune_lv:
 			o.tune_lv = els.get(Elem.SOUND, 0)
 			o.tune_src = self
-		o.tune_t = Rules.sound_t
+		o.tune_t = maxf(o.tune_t, Rules.sound_t * dm)
 	if o.tune_t > 0.0:
 		_ring(o, minf(k, 1.0))
 	if els.has(Elem.TIME):
-		o.echo(minf(Rules.time_base + Rules.time_lv * els.get(Elem.TIME, 0), Rules.time_max), Rules.time_t, self)
-	if not in_rx and not in_form and not earth_rx.is_empty():
-		_earth_on_hit(o)
+		o.echo(minf(Rules.time_base + Rules.time_lv * els.get(Elem.TIME, 0), Rules.time_max) * minf(g, 1.5), Rules.time_t * dm, self)
 	if els.has(Elem.SOUL):
 		if o.soul_t <= 0.0 or els.get(Elem.SOUL, 0) >= o.soul_lv:
 			o.soul_lv = els.get(Elem.SOUL, 0)
 			o.soul_src = self
-		o.soul_t = Rules.soul_t
-	if not in_rx and not in_form and bounce_cd <= 0.0 and m("bounce") > 0 and not pattern in Pat.PROJECTILE and pattern != "chain" and not tag.begins_with("mod:"):
+		o.soul_t = maxf(o.soul_t, Rules.soul_t * dm)
+	# 특징 공유: 금속 응축 · 빛 꿰뚫음 · 땅 묻어둠 · 시간 되풀이 (나머지 특징은 전류·음파·죽을 때·물길에서)
+	if o.hp > 0.0:
+		Share.condense(self, o, Share.carry_n(self), minf(k, 1.0))
+	if lit:
+		Share.pierce(self, o)
+	Share.on_hit(self, o, false)
+	if not in_rx and bounce_cd <= 0.0 and m("bounce") > 0 and not pattern in Pat.PROJECTILE and pattern != "chain" and not tag.begins_with("mod:"):
 		_area_bounce(o)
 	if can_split and m("split") > 0 and randf() < split_ch() * minf(k, 1.0):
 		for i in 2:
@@ -2601,7 +2290,6 @@ func _supernova(c: Orb) -> void:
 	_notify_allies(c.position)
 
 
-## 행성(별 + 속성 하나): 초신성 뒤 그 속성 효과가 따라붙는다. 피해 몫은 별빛 x star_rx x rx_mul.
 ## 초신성 피해: 보스면 cap에 남은 만큼만 (받는 피해 배율까지 맞춰 줄이고, 깎인 만큼 cap에서 뺀다).
 func nova_hurt(o: Orb, d: float, cap: Dictionary, crit := false) -> float:
 	if o.kind != Orb.Kind.BOSS:
@@ -2630,74 +2318,15 @@ func _nova_dot(o: Orb, total: float, cap: Dictionary) -> float:
 	return t
 
 
-func _nova_follow(at: Vector2, hits: Array, pool: float, cap: Dictionary) -> void:
-	var e := planet()
-	if e < 0 or hits.is_empty():
+func _nova_follow(at: Vector2, hits: Array, _pool: float, _cap: Dictionary) -> void:
+	# 별 모음 (특징 공유): 초신성이 맞힌 구체 모두에 이 오브젝트 효과 (행성이면 그 속성 효과, 그 속성 특징도 붙음)
+	var ks := Share.k(self, Elem.STAR)
+	if ks <= 0.0 or hits.is_empty() or not Share.has_carry(self):
 		return
-	var key: String = "rx:nova_" + Patch.ELEM_KEYS[Elem.ALL.find(e)]
-	var each := pool * Rules.t("star_rx") * Rules.rx_mul / hits.size()
-	var l := lv(e)
 	for o in hits:
-		if not is_instance_valid(o) or o.hp <= 0.0:
-			continue
-		match e:
-			Elem.FIRE:
-				o.burn(_nova_dot(o, each, cap) / 3.0, 3.0, self, true, key)
-				continue
-			Elem.POISON:
-				o.poison(_nova_dot(o, each, cap) / 4.0, 4.0, self, true, key)
-				continue
-			Elem.WOOD:
-				o.root(2.0)
-			Elem.WATER:
-				o.slow(0.4, 3.0)
-			Elem.ELECTRIC:
-				for i in 3:
-					main.arc(o, each / 3.0, self, cap)
-			Elem.WIND:
-				o.knock((o.position - at).normalized() * 80.0)
-			Elem.ICE:
-				if o.root(0.5 if o.kind == Orb.Kind.BOSS else 1.0):
-					o.frozen_t = o.root_timer
-			Elem.DARK:
-				RxMore.amp(o, "nova_dark", 0.4, 4.0)
-			Elem.SOUND:
-				o.tune_src = self
-				o.tune_lv = maxi(o.tune_lv, l)
-				main.sound_pulse(o)
-			Elem.SOUL:
-				o.styx_t = maxf(o.styx_t, 0.5)
-				o.styx_lv = l
-				o.styx_src = self
-		credit(nova_hurt(o, each, cap), key)
-	match e:
-		Elem.LIGHT:
-			# 가운데 구체에 확정 치명타: 그 몫 한 번 더
-			var c: Orb = hits[hits.size() - 1] if hits.size() == 1 else hits[0]
-			for o in hits:
-				if o.position.distance_to(at) < c.position.distance_to(at):
-					c = o
-			if is_instance_valid(c) and c.hp > 0.0:
-				credit(nova_hurt(c, pool * 0.5 * Rules.rx_mul, cap, true), key)
-		Elem.EARTH:
-			for i in 3:
-				var p := at + Vector2.from_angle(randf() * TAU) * randf_range(20.0, 80.0)
-				for o in main.near(p, 50.0):
-					if o.hp > 0.0 and o.position.distance_to(p) < 50.0 + o.radius():
-						credit(nova_hurt(o, each, cap), key)
-				main.burst(p, Elem.COLORS[Elem.EARTH], 10, 160.0)
-		Elem.METAL:
-			for i in 8:
-				var pr: Projectile = main.spawn_proj(self, "frag", plv, Vector2.from_angle(TAU * i / 8.0))
-				pr.src = key
-				pr.position = at
-		Elem.TIME:
-			later.append([1.0, func():
-				for o in main.near(at, NOVA_R + 30.0):
-					if o.hp > 0.0 and o.position.distance_to(at) < NOVA_R + o.radius():
-						credit(nova_hurt(o, pool * 0.5 * Rules.rx_mul / maxf(hits.size(), 1.0), cap), key)
-				main.burst(at, Elem.COLORS[Elem.TIME], 24, 260.0)])
-	main.burst(at, Elem.COLORS[e], 24, 240.0)
+		Share.apply(self, o, Share.STAR_F * ks, "share:star")
+	var e := planet()
+	main.burst(at, Elem.COLORS[e] if e >= 0 else NOVA_COL, 24, 240.0)
 
 
 ## 여진: 잡은 구체 자리에서 작은 탄이 고르게 사방으로 (쏘는 방향은 판마다 조금씩 돈다).
@@ -2714,163 +2343,24 @@ func _echo(o: Orb) -> void:
 		p.hit[o] = true
 
 
-# ---------- 형태 성질 (Elem.TRAIT) ----------
+# ---------- 물 흐름 (Elem.TRAIT 물) ----------
 
-## 계속 공격하는 형태: 2초에 한 번 "끝" 효과. 끝 자리는 사거리 끝(오브젝트에서 늘 같은 거리)이 아니라
-## 공격 방향 안에서 가장 먼 구체 자리다 (ELEM-10). 공격 안에 구체가 없으면 건너뛴다.
-func _cont_end(orbs: Array, l: int, s: float) -> void:
-	if fe2 > 0.0 or orbs.is_empty():
-		return
-	var rng := 0.0
-	var d := aim
-	match pattern:
-		"spray": rng = SHAPE.spray_len * rr(l) * s
-		"stream": rng = SHAPE.stream_len * rr(l) * s
-		"laser": rng = 400.0
-		"sonic": rng = sonic_r(l)
-		"clock":
-			rng = SHAPE.clock_len * rr(l) * s
-			d = aim.rotated(clock_a())
-		_: return
-	var best: Orb = null
-	var bd := -1.0
-	for o in orbs:
-		if not is_instance_valid(o) or o.hp <= 0.0:
-			continue
-		var v: Vector2 = o.position - position
-		var dist := v.length()
-		if dist < rng + o.radius() and dist > bd and (pattern == "sonic" or absf(d.angle_to(v)) < CONT_END_HALF):
-			bd = dist
-			best = o
-	if not best:
-		return
-	fe2 = 2.0
-	form_end(best.position, (best.position - position).normalized(), true)
-
-
-## 공격이 끝난 자리 pos(방향 d)에서 속성마다 형태 성질. big: 날아가는 공격의 재사용 대기(1.5초)를 무시.
-func form_end(pos: Vector2, d: Vector2, big := false) -> void:
-	if not main or not pos.is_finite():
-		return
-	if not big:
-		if fe_cd > 0.0:
-			return
-		fe_cd = 1.5
-	d = d.normalized() if d.length_squared() > 0.0001 else aim
-	var p := pw(plv)
-	var old_tag := tag
-	in_form = true
-	for e in (eff if not eff.is_empty() else elements):
-		var a := tk(e)
-		if a <= 0.0:
-			continue
-		tag = trait_tag(e)
-		match e:
-			Elem.FIRE, Elem.WATER, Elem.ICE, Elem.EARTH, Elem.POISON, Elem.TIME:
-				_form_orbs(e, pos, a, p)
-			Elem.ELECTRIC:
-				var best: Orb = null
-				var bd := 120.0
-				for o in main.near(pos, bd):
-					if o.hp > 0.0 and o.position.distance_to(pos) < bd:
-						bd = o.position.distance_to(pos)
-						best = o
-				if best:
-					hit(best, 0.45 * p * a, 0.5)
-					main.bolt(PackedVector2Array([pos, best.position]))
-			Elem.DARK:
-				for o in main.near(pos, 60.0):
-					if o.hp > 0.0 and o.position.distance_to(pos) < 60.0 + o.radius():
-						o.shade(SHADE_T)
-			Elem.LIGHT:
-				var to := pos + d * 200.0
-				for o in main.near(pos + d * 100.0, 110.0):
-					if o.hp > 0.0 and Geometry2D.get_closest_point_to_segment(o.position, pos, to).distance_to(o.position) < 8.0 + o.radius():
-						hit(o, 0.3 * p * a, 0.5)
-				main.beam(pos, to, Elem.COLORS[Elem.LIGHT])
-			Elem.SOUND:
-				for o in main.near(pos, 50.0):
-					if o.hp > 0.0 and o.position.distance_to(pos) < 50.0 + o.radius():
-						hit(o, 0.25 * p * a, 0.3)
-				if main.pulses.size() < 40:
-					main.pulses.append([pos, 50.0, 0.3])
-			Elem.SOUL:
-				if randf() < 0.1 * a:
-					main.form_ghost(self, pos, 1.5 * p)
-	in_form = false
-	tag = old_tag
-
-
-## 피해 출처 키 (main.src_name이 "형태 성질 불"처럼 보여 준다).
-static func trait_tag(e: int) -> String:
-	return "trait:" + Patch.ELEM_KEYS[Elem.ALL.find(e)]
-
-
-## 날아가는 공격이 지나간 길 (70마다): 불씨·물길.
+## 날아가는 공격이 지나간 길 (70마다): 물이 든 오브젝트면 물길 (밟은 구체에 이 오브젝트 효과, Zone rill).
 func form_path(pos: Vector2) -> void:
+	var a := Share.k(self, Elem.WATER)
+	if a <= 0.0 or not Share.has_carry(self) or main.zones.get_child_count() >= 160:
+		return
 	var old_tag := tag
-	var a := tk(Elem.FIRE)
-	if a > 0.0:
-		tag = trait_tag(Elem.FIRE)
-		_fz("ember", pos, a)
-	a = tk(Elem.WATER)
-	if a > 0.0:
-		tag = trait_tag(Elem.WATER)
-		_fz("rill", pos, a)
+	tag = "share:water"
+	var z: Zone = main.spawn_zone("rill", plv, pos, self)
+	z.amt = a
+	z.life *= Share.dur(self)
+	z.max_life = z.life
 	tag = old_tag
 
 
-## 예전 "끝 자리 장판"(불씨·물길·서리·턱·안개·째깍)은 바닥에 남기지 않고 끝 자리 가까운 구체에 바로 건다.
-## 사거리 끝·착지 자리는 오브젝트에서 고정된 거리라 장판이면 늘 같은 곳에 깔렸다 (2026-11-01, ELEM-10).
-static var FORM_R := 60.0  # 끝 자리에서 구체를 찾는 거리
-static var FORM_N := 3  # 화상·감속·냉기·중독을 거는 구체 수 (가까운 순)
-static var TICK_R := 35.0  # 째깍 폭발 반지름 (main.tick_burst)
-static var TICK_T := 0.6
-static var CONT_END_HALF := 0.6  # 계속 공격 "끝"을 찾는 공격 방향 반각 (라디안)
-## 형태 성질이 만들 수 있는 장판: 날아가는 공격이 지나간 길(form_path)의 불씨·물길뿐 (spec ELEM-10)
-const FORM_ZONES := ["ember", "rill"]
-
-
-func _form_orbs(e: int, pos: Vector2, a: float, p: float) -> void:
-	var cand: Array = []
-	for o in main.near(pos, FORM_R):
-		if o.hp > 0.0 and o.position.distance_to(pos) < FORM_R + o.radius():
-			cand.append(o)
-	if cand.is_empty():
-		return
-	cand.sort_custom(func(x, y): return x.position.distance_squared_to(pos) < y.position.distance_squared_to(pos))
-	var c: Color = Elem.COLORS[e]
-	match e:
-		Elem.FIRE:
-			for o in cand.slice(0, FORM_N):
-				o.burn(0.4 * a * p, 2.5, self, false, tag)
-		Elem.WATER:
-			for o in cand.slice(0, FORM_N):
-				o.slow(0.7, 1.2)
-		Elem.ICE:
-			for o in cand.slice(0, FORM_N):
-				o.add_chill(0.5 * a)
-		Elem.POISON:
-			for o in cand.slice(0, FORM_N):
-				o.poison(0.4 * a * p, 3.0, self, false, tag)
-		Elem.EARTH:
-			cand[0].root(0.5)
-		Elem.TIME:
-			var o: Orb = cand[0]
-			if o.tick_t <= 0.0:
-				o.tick_t = TICK_T
-				o.tick_dmg = 0.25 * p * a
-				o.tick_src = self
-				o.tick_key = tag
-	main.burst(cand[0].position, c, 5, 80.0)
-
-
-## 형태 성질 장판 (지나간 길의 불씨·물길만). 화면의 장판이 많으면 건너뛴다 (후반 부하).
-func _fz(kind: String, pos: Vector2, a: float) -> void:
-	assert(kind in FORM_ZONES)
-	if main.zones.get_child_count() >= 160:
-		return
-	main.spawn_zone(kind, plv, pos, self).amt = a
+## 특징이 만들 수 있는 장판: 날아가는 공격이 지나간 길(form_path)의 물길뿐 (spec ELEM-10)
+const FORM_ZONES := ["rill"]
 
 
 ## d 방향 부채꼴 안의 구체에 효과.
@@ -3053,10 +2543,6 @@ func _process(delta: float) -> void:
 	if place_pop > 0.0:
 		place_pop = maxf(place_pop - delta * 3.0, 0.0)
 		queue_redraw()
-	if prism_fx_cd > 0.0:
-		prism_fx_cd = maxf(prism_fx_cd - delta, 0.0)
-	if prism_flash > 0.0:
-		prism_flash = maxf(prism_flash - delta * 4.0, 0.0)
 		queue_redraw()
 
 
@@ -3069,19 +2555,6 @@ func _draw_body() -> void:
 	draw_set_transform(-dir * recoil * 5.0, 0.0, Vector2(s, s))
 	if place_pop > 0.0:
 		draw_arc(Vector2.ZERO, RADIUS + 20.0 * (1.0 - place_pop), 0, TAU, 32, Color(1, 1, 1, place_pop), 3.0)
-	if prism > 0:
-		var hx := PackedVector2Array()
-		for i in 7:
-			hx.append(Vector2.from_angle(TAU * i / 6.0 + t) * (RADIUS + 6.0 + 3.0 * prism_flash))
-		if prism_flash > 0.0:
-			draw_colored_polygon(hx.slice(0, 6), Color(1, 1, 1, 0.35 * prism_flash))
-		draw_polyline(hx, Color(0.8, 0.95, 1.0, 0.8).lerp(Color.WHITE, prism_flash), 2.0 + 2.0 * prism_flash)
-		# 겹친 프리즘: 바깥으로 반대 방향으로 도는 육각 테두리를 하나씩 더 (최대 3겹)
-		for j in range(1, mini(prism, 3)):
-			var hx2 := PackedVector2Array()
-			for i in 7:
-				hx2.append(Vector2.from_angle(TAU * i / 6.0 + (t if j % 2 == 0 else -t)) * (RADIUS + 6.0 + 5.0 * j + 3.0 * prism_flash))
-			draw_polyline(hx2, Color(0.8, 0.95, 1.0, 0.6 - 0.15 * j).lerp(Color.WHITE, prism_flash), 1.5)
 	if pincer > 0:
 		# 협공: 세 갈래 화살표가 안쪽을 겨눈다
 		for i in 3:
@@ -3324,122 +2797,6 @@ func _draw_attack() -> void:
 				draw_arc(o2, L, d.angle() - SHAPE.clock_arc, d.angle() + SHAPE.clock_arc, 24, Color(c, 0.15), 2.0)
 				draw_line(o2 + hd * RADIUS, o2 + hd * L, Color(c, 0.85), 4.0 * s)
 				draw_line(o2 + hd * RADIUS, o2 + hd * L, Color(1, 1, 1, 0.5), 1.5)
-	# 물이 들어간 반응은 같은 물길 하나 위에 겹쳐 그린다
-	var rxs := reactions()
-	var chan := 0.0
-	var cw := 0.0
-	for r in rxs:
-		if r["id"] in ["steam", "vine", "shock", "styx"]:
-			var rl0 := mini(eff.get(r["a"], 1), eff.get(r["b"], 1))
-			chan = maxf(chan, chan_len(rl0))
-			cw = maxf(cw, chan_w(rl0))
-	if chan > 0.0:
-		_draw_channel(chan, cw)
-	for r in rxs:
-		var rl := mini(eff.get(r["a"], 1), eff.get(r["b"], 1))
-		var n := dir.orthogonal()
-		match r["id"]:
-			"steam":
-				var L := chan_len(rl)
-				for i in 12:
-					var f := fmod(t * 0.6 + i * 0.13, 1.0)
-					var p := dir * L * fmod(i * 0.37 + 0.05, 1.0) + n * sin(i * 1.7) * chan_w(rl) * 0.6 + Vector2(0, -f * 18.0)
-					draw_circle(p, 5.0 + f * 10.0, Color(1, 1, 1, 0.28 * (1.0 - f)))
-			"vine":
-				var L := chan_len(rl)
-				for side in [-1.0, 1.0]:
-					var pts := PackedVector2Array()
-					var steps := maxi(int(L / 12.0), 2)
-					for i in steps + 1:
-						var x := L * i / steps
-						pts.append(dir * x + n * (side * chan_w(rl) * 0.85 + sin(x * 0.06 + t * 2.0 + side) * 4.0))
-					draw_polyline(pts, r["color"], 3.0)
-					for i in range(1, steps, 3):
-						draw_circle(pts[i] + n * side * 4.0, 3.0, r["color"].lightened(0.25))
-			"shock":
-				var L := chan_len(rl)
-				var w := chan_w(rl)
-				for i in 4:
-					var p0 := dir * randf() * L + n * randf_range(-w, w) * 0.8
-					draw_line(p0, p0 + Vector2(randf_range(-14, 14), randf_range(-14, 14)), Color(Elem.COLORS[Elem.ELECTRIC], 0.9), 2.0)
-				if fx.get("shock", 0.0) > 0.0:
-					for zp in zaps:
-						var p0: Vector2 = dir * clampf(zp.dot(dir), 0.0, L)
-						var pts := PackedVector2Array([p0])
-						for s2 in 3:
-							pts.append(p0.lerp(zp, (s2 + 1) / 4.0) + Vector2(randf_range(-5, 5), randf_range(-5, 5)))
-						pts.append(zp)
-						draw_polyline(pts, Elem.COLORS[Elem.ELECTRIC], 2.5)
-			"bell", "shatter", "silence":
-				var f: float = fx.get(r["id"], 0.0)
-				if f > 0.0:
-					var k := 1.0 - f / 0.4
-					var R: float = {"bell": 260.0, "shatter": 240.0, "silence": 260.0}[r["id"]] * reach(rl)
-					var half := 0.5 if r["id"] == "shatter" else 0.6
-					for i in 3:
-						draw_arc(Vector2.ZERO, R * clampf(k - i * 0.12, 0.05, 1.0), dir.angle() - half, dir.angle() + half, 20, Color(r["color"], (1.0 - k) * 0.9), 4.0 - i)
-				if r["id"] == "bell":
-					draw_arc(dir * -4.0, 7.0, dir.angle() + 0.6, dir.angle() + TAU - 0.6, 12, Color(r["color"], 0.8), 2.5)
-			"afterimage":
-				for key in ["afterimage", "afterimage2"]:
-					var f: float = fx.get(key, 0.0)
-					if f > 0.0:
-						var d2 := dir if key == "afterimage" else glint_d
-						draw_line(d2 * RADIUS, d2 * 2000.0, Color(r["color"], f / 0.3 * (1.0 if key == "afterimage" else 0.6)), 9.0 * f / 0.3 + 2.0)
-				if cd.get("afterimage2", 0.0) > 0.0:
-					draw_line(glint_d * RADIUS, glint_d * 2000.0, Color(r["color"], 0.12), 1.5)
-			"styx":
-				var L := chan_len(rl)
-				for i in 6:
-					var f := fmod(t * 0.5 + i / 6.0, 1.0)
-					draw_circle(dir * L * f + n * sin(i * 2.3 + t) * chan_w(rl) * 0.5, 3.5, Color(r["color"].lightened(0.3), 0.7 * (1.0 - f)))
-			"railgun":
-				var f: float = fx.get("railgun", 0.0)
-				if f > 0.0:
-					draw_line(rail_dir * RADIUS, rail_dir * 2000.0, Color(r["color"], f / 0.3), 10.0 * f / 0.3 + 2.0)
-					draw_line(rail_dir * RADIUS, rail_dir * 2000.0, Color(1, 1, 1, f / 0.3), 2.5)
-			"halo":
-				draw_arc(Vector2.ZERO, halo_r(rl), 0, TAU, 48, Color(r["color"], 0.12), 2.0)
-				for bp in halo_blades(rl):
-					var tg: Vector2 = bp.normalized().orthogonal() * 12.0
-					var rd: Vector2 = bp.normalized() * 5.0
-					draw_colored_polygon(PackedVector2Array([bp + tg, bp + rd, bp - tg, bp - rd]), r["color"])
-					draw_circle(bp, 3.0, Color.WHITE)
-			"quake":
-				var f: float = fx.get("quake", 0.0)
-				if f > 0.0:
-					var k2 := 1.0 - f / 0.4
-					var rad := 150.0 * reach(rl) * (0.3 + 0.7 * k2)
-					draw_arc(Vector2.ZERO, rad, 0, TAU, 48, Color(r["color"], 1.0 - k2), 6.0 * (1.0 - k2) + 1.5)
-					for i in 8:
-						var d2 := Vector2.from_angle(TAU * i / 8 + 0.3)
-						draw_line(d2 * RADIUS, d2 * rad + d2.orthogonal() * 8.0 * sin(i * 3.1), Color(0.35, 0.25, 0.15, 1.0 - k2), 3.0)
-			"aurora":
-				var f: float = fx.get("aurora", 0.0)
-				if f > 0.0:
-					var cols := [Color(0.4, 1.0, 0.6), Color(0.4, 0.9, 1.0), Color(0.7, 0.6, 1.0), Color(0.4, 0.9, 1.0), Color(0.4, 1.0, 0.6)]
-					for i in 5:
-						var d2 := dir.rotated((i - 2) * 0.22)
-						draw_line(d2 * RADIUS, d2 * 300.0 * reach(rl), Color(cols[i], f / 0.35 * 0.8), 6.0 * f / 0.35 + 1.5)
-			"blizzard":
-				var rad := 130.0 * reach(rl)
-				draw_circle(Vector2.ZERO, rad, Color(r["color"], 0.08))
-				for i in 24:
-					var a := t * 1.5 + i * 0.7
-					var rr := rad * fmod(i * 0.41 + t * 0.2, 1.0)
-					draw_circle(Vector2(cos(a), sin(a)) * rr, 2.0, Color(1, 1, 1, 0.8))
-			"eclipse":
-				var f: float = fx.get("eclipse", 0.0)
-				if f > 0.0:
-					var k := 1.0 - f / 0.8
-					draw_arc(Vector2.ZERO, 40.0 + k * 1400.0, 0, TAU, 96, Color(r["color"], 0.5 * (1.0 - k)), 6.0 * (1.0 - k) + 1.5)
-					draw_circle(Vector2.ZERO, RADIUS + 10.0, Color(0, 0, 0, 0.4 * (1.0 - k)))
-				# 다른 오브젝트가 방금 화면 연출을 했으면 이 오브젝트 둘레에만 작은 고리
-				var fs: float = fx.get("eclipse_small", 0.0)
-				if fs > 0.0:
-					var ks := 1.0 - fs / 0.5
-					draw_arc(Vector2.ZERO, RADIUS + 6.0 + ks * 60.0, 0, TAU, 48, Color(r["color"], 0.5 * (1.0 - ks)), 3.0)
-	RxMore.draw_tower(self)
 
 
 ## 물길 바닥: 공격 방향으로 흐르는 물.
@@ -3525,14 +2882,14 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 		var mn := float(md.get("multi", 0))
 		if Rules.mod_decay:
 			mn = 2.0 * (1.0 - pow(0.5, mn))
-		var r := reflex_range_of(sp["pat"], l, total, sn, minf(els.get(Elem.WIND, 0), 3) * Rules.trait_mul, md.get("homing", 0), mn)
+		var r := reflex_range_of(sp["pat"], l, total, sn, 0.0, md.get("homing", 0), mn)
 		if MapRule.on() and MapRule.is_map("storm"):
 			var points := PackedVector2Array()
 			var wind_dir := MapRule.wind_dir(ci.get("lanes"))
 			for i in 97:
 				var toward := Vector2.from_angle(TAU * i / 96.0)
 				var weather := MapRule.wind_k(toward, wind_dir)
-				var reach := reflex_range_of(sp["pat"], l, total, sn, minf(els.get(Elem.WIND, 0), 3) * Rules.trait_mul, md.get("homing", 0), mn, weather)
+				var reach := reflex_range_of(sp["pat"], l, total, sn, 0.0, md.get("homing", 0), mn, weather)
 				points.append(o + toward * reach)
 			ci.draw_polyline(points, Color(c, 0.3), 1.5)
 		else:
@@ -3560,8 +2917,7 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 			"vortex":
 				# 중력 우물을 떨어뜨리는 사거리 (Tower.well_range와 같은 계산, 다중 발사여도 원 하나)
 				if i == 0:
-					var wk := 1.0 + 0.12 * mini(els.get(Elem.WIND, 0), 3) * Rules.trait_mul
-					var wr := Rules.t("well_range") * pr * wk * Rules.t("range_vortex")
+					var wr := Rules.t("well_range") * pr * Rules.t("range_vortex")
 					ci.draw_arc(o, wr, 0, TAU, 64, Color(c.r, c.g, c.b, 0.6 * c.a), 1.5)
 			"lob":
 				_r_band(ci, lo, dd, 0.0, LOB_RANGE * pr, lob_r(l) * s, c)
@@ -3588,8 +2944,7 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 				var tl := 0
 				for e in els:
 					tl += els[e]
-				var wr := 1.0 + 0.12 * mini(els.get(Elem.WIND, 0), 3) * Rules.trait_mul
-				_r_band(ci, lo, dd, 0.0, shot_range(tl, md.get("size", 0)) * wr, 6.0 * s, c)
+				_r_band(ci, lo, dd, 0.0, shot_range(tl, md.get("size", 0)), 6.0 * s, c)
 			_:
 				_r_band(ci, lo, dd, 0.0, far, 6.0 * s, c)
 	if els.has(Elem.STAR) and rings:
@@ -3598,50 +2953,6 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 		if focus >= 0 and focus != Elem.STAR:
 			sc.a = 0.35
 		draw_star_ring(ci, o, sc)
-	for r in Elem.reactions_with(els):
-		var rl: int = mini(els[r["a"]], els[r["b"]])
-		var rc: Color = r["color"]
-		if focus != -1 and r["a"] != focus and r["b"] != focus:
-			rc.a = 0.35
-		match r["id"]:
-			"burning":
-				_r_band(ci, o, d, 0.0, BURN_RANGE * reach(rl), BURN_R + BURN_R_LV * (rl - 1), rc)
-			"steam", "vine", "shock", "styx":
-				_r_band(ci, o, d, 0.0, 260.0 * reach(rl), 20.0 + 3.0 * (rl - 1), rc)
-			"bell", "silence":
-				_r_cone(ci, o, d, 260.0 * reach(rl), 0.6, rc)
-			"shatter":
-				_r_cone(ci, o, d, 240.0 * reach(rl), 0.5, rc)
-			"afterimage":
-				_r_band(ci, o, d, 0.0, far, 12.0, rc)
-			"rewind":
-				_r_cone(ci, o, d, 280.0 * reach(rl), 0.5, rc)
-			"plague", "spirit":
-				ci.draw_arc(o, 380.0, 0, TAU, 64, Color(rc.r, rc.g, rc.b, 0.5 * rc.a), 1.5)
-			"firestorm":
-				_r_band(ci, o, d, 0.0, 380.0, 26.0, rc)
-			"blizzard":
-				_r_circle(ci, o, 130.0 * reach(rl), rc)
-			"railgun":
-				_r_circle(ci, o, RADIUS + 14.0, rc)
-			"halo":
-				ci.draw_arc(o, 110.0 * reach(rl), 0, TAU, 48, Color(rc.r, rc.g, rc.b, 0.3 * rc.a), 26.0)
-			"quake":
-				_r_circle(ci, o, 150.0 * reach(rl), rc)
-			"storm":
-				_r_band(ci, o, d, 0.0, 360.0 * reach(rl), 100.0, rc)
-			"aurora":
-				_r_cone(ci, o, d, 300.0 * reach(rl), 0.5, rc)
-			"curse":
-				ci.draw_arc(o, 320.0 * reach(rl), 0, TAU, 64, Color(rc.r, rc.g, rc.b, 0.5 * rc.a), 1.5)
-			"prison":
-				_r_band(ci, o, d, 0.0, PRISON_RANGE * reach(rl), PRISON_R + PRISON_R_LV * (rl - 1), rc)
-			"mushroom":
-				_r_band(ci, o, d, 0.0, MUSH_RANGE * reach(rl), 14.0, rc)
-			"eclipse":
-				ci.draw_rect(Rect2((Meta.FIELD - ci.get_viewport_rect().size) / 2.0, ci.get_viewport_rect().size), Color(rc.r, rc.g, rc.b, 0.05 * rc.a))  # 보이는 화면 전체 (main.view_rect)
-			_:
-				RxMore.range_preview(ci, o, d, r["id"], rl, rc)
 
 
 ## 별 흡수 둘레(star_r): 천천히 도는 얇은 점선 원. 장판처럼 보이지 않게 채우지 않는다.
@@ -3698,7 +3009,7 @@ func preview(card: Dictionary) -> Array:
 			else:
 				out.append("%s + %s" % [title(), Elem.NAMES[e]])
 				out.append("모든 공격에 추가 효과: " + Elem.rider(e))
-				out.append("형태 성질(시험): " + Elem.TRAIT[e])
+				out.append("특징: " + Elem.TRAIT[e])
 				var before := roundi((1.0 - 1.0 / tax()) * 100.0)
 				var after := roundi((1.0 - 1.0 / tax_of(order.size() + 1)) * 100.0)
 				out.append("속성을 겹친 대가: 공격 속도 -%d%% → -%d%%" % [before, after])
@@ -3789,8 +3100,6 @@ static func arrow_merge(a: String, b: String) -> String:
 ## 이 오브젝트에 든 연계 카드 수.
 func link_lv(id: String) -> int:
 	match id:
-		"prism":
-			return prism
 		"reso":
 			return reso
 		"pincer":
@@ -3798,14 +3107,12 @@ func link_lv(id: String) -> int:
 	return 0
 
 
-## 연계 카드를 n장 넣었을 때의 세기 (_check_prisms·dmg_factor·_pincer와 같은 식).
-const LINK_POWER := {"prism": "지나가는 탄 피해", "reso": "가까운 오브젝트 하나당 피해", "pincer": "폭발 피해: 구체 최대 체력의"}
+## 연계 카드를 n장 넣었을 때의 세기 (dmg_factor·_pincer와 같은 식).
+const LINK_POWER := {"reso": "가까운 오브젝트 하나당 피해", "pincer": "폭발 피해: 구체 최대 체력의"}
 
 
 static func link_value(id: String, n: int) -> String:
 	match id:
-		"prism":
-			return "+%d%%" % (20 * n)
 		"reso":
 			return "+%d%%" % (12 * n)
 		"pincer":

@@ -20,8 +20,6 @@ const BASE := [
 	["tax_step", "오브젝트 피해·성장", "속성 종류가 하나 늘 때마다 공격 속도 감소 (도파민 모드 0.25)", "tax_step"],
 	["hp_growth", "구체 기본", "11웨이브부터 웨이브마다 구체 체력 배율 (hp_late_from 웨이브까지)", "hp_growth"],
 	["orb_hp", "구체 기본", "구체 체력 배율 (보호막·별빛 필요량에도 곱함)", "orb_hp"],
-	["trait_mul", "오브젝트 피해·성장", "속성 형태 성질 세기 (속성 레벨 3까지 x 이 값)", "trait_mul"],
-	["rx_mul", "반응 수치", "새 반응 65개의 피해·지속 피해 배율 (별 반응 피해에도 곱함)", "rx_mul"],
 ]
 
 
@@ -40,8 +38,6 @@ static func _base(n: String) -> Variant:
 		"tax_step": return Rules.tax_step
 		"hp_growth": return Rules.hp_growth
 		"orb_hp": return Rules.orb_hp
-		"trait_mul": return Rules.trait_mul
-		"rx_mul": return Rules.rx_mul
 	return null
 
 
@@ -128,12 +124,13 @@ static func build() -> Array:
 			if p in ["dmg_", "spd_", "range_"] and names.has(id):
 				e["g"] = {"dmg_": "공격방식 피해 배율", "spd_": "공격방식 공격 속도 배율", "range_": "공격방식 사거리 배율"}[p]
 				e["d"] = "%s %s (1 = 그대로)" % [names[id], {"dmg_": "피해 배율, 반응 제외", "spd_": "공격 속도 배율", "range_": "사거리 배율"}[p]]
-			elif p == "rxd_" and rx.has(id):
-				e["g"] = "반응 피해 배율"
-				e["d"] = "%s 반응이 맞혀 주는 피해 배율 (1 = 그대로)" % rx[id]
-			elif k.begins_with("rxiv_") and rx.has(k.substr(5)):
-				e["g"] = "반응 간격 배율"
-				e["d"] = "%s 반응이 다시 터지는 간격 배율 (1 = 그대로, 2 = 절반만 터짐)" % rx[k.substr(5)]
+			elif k == "share_mul":
+				e["g"] = "특징 공유"
+				e["d"] = "모든 특징 세기 배율 (1 = 그대로, 0 = 특징 끔)"
+			elif p == "share_" and Patch.ELEM_KEYS.has(id):
+				var el: int = Elem.ALL[Patch.ELEM_KEYS.find(id)]
+				e["g"] = "특징 공유"
+				e["d"] = "%s 특징 '%s' 세기 배율" % [Elem.NAMES[el], Elem.TRAIT[el].get_slice(":", 0)]
 			else:
 				e["g"] = "기타"
 				e["d"] = ""
@@ -147,9 +144,9 @@ static func build() -> Array:
 ## 게임 코드 수치 묶음 이름 (관리 화면 하위 탭은 tools/patch_keys.py TABS가 이 이름으로 나눈다). 변수별이 먼저, 없으면 스크립트별
 const CODE_GROUP := {
 	"Tower.HIT": "공격방식 기본 피해", "Tower.BASE_IV": "공격방식 기본 간격", "Tower.SHAPE": "공격방식 모양", "Orb.KIND": "구체 종류",
-	"Main.SPECIAL": "저항·굳센 구체", "RxMore.IV": "새 반응 간격",
+	"Main.SPECIAL": "저항·굳센 구체",
 	"Tower": "오브젝트 코드 수치", "Projectile": "탄", "Orb": "구체 상태 수치", "Main": "맵·중앙 코드 수치", "Modes": "모드 코드 수치",
-	"RxMore": "새 반응 코드 수치", "Pat": "그린 궤적 코드 수치", "MapRule": "맵 규칙 코드 수치", "Skill": "중앙 기술 코드 수치",
+	"Share": "특징 코드 수치", "Pat": "그린 궤적 코드 수치", "MapRule": "맵 규칙 코드 수치", "Skill": "중앙 기술 코드 수치",
 }
 
 

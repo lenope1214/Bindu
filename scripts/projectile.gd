@@ -21,8 +21,6 @@ var trail := PackedVector2Array()  # 잔상(전역 좌표)
 var pierce_left := 0  # 관통 강화로 더 뚫을 수 있는 수
 var bounces := 0  # 튕김 강화
 var homing := 0.0  # 유도 강화
-var prisms := {}  # 지나온 프리즘 오브젝트
-var prism_els := {}  # 프리즘에서 묻은 속성
 var col := Color.WHITE
 var zap_t := 0.0  # 뇌우: 다음 낙뢰까지
 var src := ""  # 피해 출처 (Tower.src 키, 비면 직접 타격). 쏠 때 오브젝트의 tag를 이어받는다
@@ -31,7 +29,7 @@ var ended := false  # 형태 성질 "끝" 효과를 이미 줬는지
 var path_acc := 0.0  # 지나온 길 (불씨·물길 70마다)
 var zone: Zone  # 지나간 자리 장판 (blob·log)
 var seg_acc := 0.0  # 장판 점 사이 거리
-var ghost := ""  # 혼불(ghost)이 어느 반응에서 나왔는지: plague(중독), spirit(속박), styx, ""(넋)
+var ghost := ""  # (예전 반응 혼불 표시, 이제 늘 "")
 var chase: Orb = null  # 유도·혼불이 쫓는 구체
 var chase_id := 0  # 그 구체 id (구체가 먼저 사라져도 오브젝트 쪽 수를 뺄 수 있게)
 var chase_prev := Vector2.ZERO  # 쫓는 구체의 지난 위치 (속도 어림)
@@ -46,7 +44,6 @@ var route_on := false  # 길 위를 가는 중 (튕기면 길을 벗어나 곧�
 var route_seg := 0  # 지금 지나는 선분
 var route_acc := 0.0  # 그 선분 시작까지의 거리
 var route_speed := 440.0
-var rx := ""  # kind "rx": 2026-10-30에 채운 반응 발사체 (RxMore)
 var look := ""  # 그 모양
 var rxd := {}  # 그 반응 상태 (부메랑·커지기 등)
 
@@ -84,16 +81,6 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO, off := Vector2.ZE
 			speed = P.glob_spd; dmg = P.glob_dmg * p; radius = P.glob_r
 		"iron":
 			speed = P.iron_spd; dmg = H.iron * p; radius = P.iron_r; pierce = true
-		"log":
-			speed = P.log_spd; lob = true; max_travel = Tower.BURN_RANGE * Tower.reach(l)
-		"tornado":
-			speed = P.tornado_spd; dmg = P.tornado_dmg * p; radius = P.tornado_r; continuous = true; max_travel = P.tornado_far
-		"mushroom":
-			speed = P.mushroom_spd; lob = true; max_travel = Tower.MUSH_RANGE * Tower.reach(l)
-		"icebolt":
-			speed = P.icebolt_spd; lob = true; max_travel = Tower.PRISON_RANGE * Tower.reach(l)
-		"storm":
-			speed = P.storm_spd; lob = true; dmg = P.storm_dmg * p; radius = P.storm_r; max_travel = P.storm_far * Tower.reach(l)
 		"wisp":
 			speed = P.wisp_spd; dmg = H.wisp * p; radius = P.wisp_r; max_travel = INF  # 목줄 혼불: 거리 대신 WISP_LIFE초 (finished)
 		"ghost":
@@ -118,9 +105,9 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO, off := Vector2.ZE
 		if max_travel < 2000.0:
 			max_travel *= wk
 	position = tower.position + d * Tower.RADIUS + off
-	if k in ["blob", "log", "icebolt"]:
+	if k == "blob":
 		zone = tower.main.spawn_zone("trail", l, position, tower)
-		zone.trail({"blob": "puddle", "log": "burn", "icebolt": "prison"}[k])
+		zone.trail("puddle")
 		zone.add_pt(position)
 
 
@@ -135,26 +122,19 @@ func set_route(g: PackedVector2Array) -> void:
 	position = g[0]
 
 
-## 공격방식 탄으로 표시하고 바람 형태 성질(멀리)을 붙인다. 그린 궤적은 길이가 정해져 있어 빨라지기만 한다.
+## 공격방식 탄으로 표시한다 (물 흐름: 지나간 길에 물길, Tower.form_path).
 func form_init() -> void:
 	form = true
-	var w := 1.0 + 0.12 * owner_tower.tk(Elem.WIND)
-	vel *= w
-	route_speed *= w
-	if max_travel < 2000.0 and not route_on:
-		max_travel *= w
 
 
-## 형태 성질 "끝" 효과 (탄 하나에 한 번).
+## (예전 형태 성질 "끝" 효과 자리, 2026-11-03 특징 공유로 없어짐)
 func end_form() -> void:
-	if form and not ended and is_instance_valid(owner_tower):
-		ended = true
-		owner_tower.form_end(position, vel)
+	ended = true
 
 
 ## main이 웨이브 중 호출한다(배속이면 한 프레임에 여러 번).
 func step(delta: float) -> void:
-	if not lob and kind != "gust" and kind != "tornado" and not (kind == "rx" and radius > 12.0):
+	if not lob and kind != "gust":
 		trail.append(position)
 		if trail.size() > 7:
 			trail.remove_at(0)
@@ -172,20 +152,12 @@ func step(delta: float) -> void:
 		if seg_acc >= zone.radius * 0.8:
 			seg_acc = 0.0
 			zone.add_pt(position)
-	if kind == "mushroom":
-		_drop_mines(vel.length() * delta)
 	if form and is_instance_valid(owner_tower):
 		path_acc += vel.length() * delta
 		if path_acc >= 70.0:
 			path_acc -= 70.0
 			owner_tower.form_path(position)
-	if is_instance_valid(owner_tower) and not lob and kind != "tornado":
-		_check_prisms()
 	t += delta
-	if kind == "storm":
-		_strike(delta)
-	elif kind == "rx":
-		RxMore.proj_step(self, delta)
 	queue_redraw()
 
 
@@ -204,30 +176,6 @@ func _follow_route(delta: float) -> void:
 	position = np
 
 
-## 뇌우: 구름 아래(radius 안) 구체 하나에 0.35초마다 낙뢰.
-func _strike(delta: float) -> void:
-	zap_t -= delta
-	if zap_t > 0.0 or not is_instance_valid(owner_tower):
-		return
-	zap_t = 0.35
-	var tw := owner_tower
-	var cands: Array = tw.main.near(position, radius).filter(func(o): return o.hp > 0.0 and o.position.distance_to(position) < radius)
-	if cands.is_empty():
-		return
-	var o: Orb = cands.pick_random()
-	tw.in_rx = true
-	tw.tag = src
-	tw.hit(o, dmg)
-	tw.in_rx = false
-	tw.tag = ""
-	var top := position + Vector2(0, -24)
-	var pts := PackedVector2Array([top])
-	for i in 4:
-		pts.append(top.lerp(o.position, (i + 1) / 5.0) + Vector2(randf_range(-10, 10), randf_range(-4, 4)))
-	pts.append(o.position)
-	tw.main.bolt(pts)
-
-
 ## 탄 종류별 속도(초당 px)·반지름·날아가는 거리·피해(반응 탄만, 공격방식 탄 피해는 Tower.HIT).
 ## 온라인 패치 rules "Projectile.PROJ.<이름>". 공격방식 탄 반지름은 크기 강화를 곱한다.
 static var PROJ := {
@@ -240,11 +188,6 @@ static var PROJ := {
 	"frag_spd": 380.0, "frag_r": 4.0, "frag_far": 130.0, "frag_dmg": 1.0,  # 파편탄 파편
 	"glob_spd": 300.0, "glob_r": 7.0, "glob_dmg": 0.6,  # 반응 작은 탄
 	"iron_spd": 200.0, "iron_r": 12.0,  # 철구
-	"log_spd": 240.0,  # 장작 장판 통나무
-	"tornado_spd": 110.0, "tornado_r": 26.0, "tornado_far": 380.0, "tornado_dmg": 1.2,  # 화염 회오리
-	"mushroom_spd": 220.0,  # 버섯 지뢰
-	"icebolt_spd": 300.0,  # 빙결 감옥 얼음 덩이
-	"storm_spd": 75.0, "storm_r": 100.0, "storm_far": 360.0, "storm_dmg": 2.0,  # 폭풍 구름
 	"wisp_spd": 210.0, "wisp_r": 7.0,  # 혼불 (피해는 Tower.HIT.wisp)
 	"ghost_spd": 230.0, "ghost_r": 7.0, "ghost_far": 900.0, "ghost_dmg": 2.4,  # 넋불
 }
@@ -397,36 +340,6 @@ func _drift(lim: float) -> void:
 		vel = vel.rotated(lim * 0.6)
 
 
-## 프리즘: 다른 오브젝트의 프리즘을 지나면 그 속성이 묻고 피해가 오른다.
-func _check_prisms() -> void:
-	for tw in owner_tower.main.prism_towers:
-		if tw != owner_tower and not prisms.has(tw) and tw.position.distance_to(position) < Tower.RADIUS + 10.0 + radius:
-			prisms[tw] = true
-			dmg *= 1.0 + Rules.prism_dmg * tw.prism
-			for e in tw.elements:
-				prism_els[e] = maxi(prism_els.get(e, 0), tw.elements[e])
-			col = col.lerp(tw.color(), 0.5)
-			if tw.prism_fx_cd <= 0.0:  # 번쩍·파편·육각형은 프리즘마다 PRISM_FX_GAP초에 한 번 (피해·속성은 매번)
-				tw.prism_fx_cd = Tower.PRISM_FX_GAP
-				owner_tower.main.burst(position, tw.color(), 4, 80.0)
-				owner_tower.main.refract(tw.position, vel.normalized(), tw.color())
-				tw.prism_flash = 1.0
-
-
-## 독버섯: 굴러가며 MUSH_GAP마다 지뢰 (마지막 하나는 멈춘 자리에, main._land).
-func _drop_mines(dist: float) -> void:
-	seg_acc += dist
-	if seg_acc < Tower.MUSH_GAP or travel >= max_travel or not is_instance_valid(owner_tower):
-		return
-	seg_acc -= Tower.MUSH_GAP
-	var tw := owner_tower
-	if tw.mines.size() >= 4 + level:
-		return
-	tw.tag = src
-	tw.mines.append(tw.main.spawn_zone("mine", level, position, tw))
-	tw.tag = ""
-
-
 func finished() -> bool:
 	if kind == "wisp":
 		return t >= WISP_LIFE
@@ -445,41 +358,24 @@ func on_hit(o: Orb, delta: float) -> bool:
 
 
 func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
-	if tw and (kind == "rx" or ghost in RxMore.GHOSTS):
-		tw.in_rx = true
-		var gone := RxMore.proj_hit(self, o, delta, tw) if kind == "rx" else RxMore.ghost_hit(self, o, tw)
-		tw.in_rx = false
-		return gone
-	if kind == "rx":
-		return false
 	if kind == "wisp":
 		return _wisp_hit(o, tw)
 	if continuous:
 		if tw:
-			tw.in_rx = kind in ["log", "tornado", "mushroom"]
 			tw.hit(o, dmg * delta, delta * 3.0)
-			tw.in_rx = false
 		else:
 			o.hurt(dmg * delta)  # 주인 오브젝트가 사라진 경우
-		o.burn(1.0 * level, 2.0, tw, kind in ["log", "tornado", "mushroom"])
 		return false
 	if hit.has(o):
 		return false
 	hit[o] = true
 	if tw:
-		tw.in_rx = kind in ["log", "tornado", "mushroom"] or ghost in ["plague", "spirit", "styx"] or src.begins_with("rx:")
-		tw.hit(o, dmg * fade_k(), 1.0, prism_els, kind != "frag")
-		tw.in_rx = false
+		tw.hit(o, dmg * fade_k(), 1.0, {}, kind != "frag")
 	else:
 		o.hurt(dmg * fade_k())
 	# 관통·튕김 탄은 처음 맞힌 자리가 "끝"
 	if pierce or pierce_left > 0 or bounces > 0:
 		end_form()
-	match ghost:
-		"plague":
-			o.poison(1.5 * level, 4.0, tw, true)
-		"spirit":
-			o.root(0.7)
 	match kind:
 		"gust":
 			o.knock(vel.normalized().orthogonal() * 20.0 * minf(level, Rules.t("gust_push_lv")))
@@ -529,7 +425,7 @@ func _wisp_hit(o: Orb, tw: Tower) -> bool:
 		_set_chase(null)
 	var fk := fade_k()
 	if tw:
-		tw.hit(o, dmg * fk, 1.0, prism_els)
+		tw.hit(o, dmg * fk, 1.0)
 	else:
 		o.hurt(dmg * fk)
 	return false
@@ -543,19 +439,8 @@ func _draw() -> void:
 			draw_line(trail[i] - position, trail[i + 1] - position, Color(col, 0.5 * a), radius * a * 1.4)
 	var d := vel.normalized()
 	var n := d.orthogonal()
-	if not lob and kind != "gust" and kind != "rx":
+	if not lob and kind != "gust":
 		draw_circle(Vector2.ZERO, radius * 2.2, Color(_trail_color(), 0.12))
-	if not prisms.is_empty():
-		# 프리즘을 지난 탄: 도는 육각 테두리 (지난 프리즘 수만큼 겹)
-		for j in mini(prisms.size(), 3):
-			var hx := PackedVector2Array()
-			var rr := radius * 1.6 + 5.0 + 4.0 * j
-			for i in 7:
-				hx.append(Vector2.from_angle(TAU * i / 6.0 + t * (6.0 if j % 2 == 0 else -6.0)) * rr)
-			draw_polyline(hx, Color(col.lerp(Color.WHITE, 0.6), 0.85 - 0.2 * j), 1.5)
-	if kind == "rx":
-		RxMore.draw_proj(self)
-		return
 	match kind:
 		"thorn":
 			draw_colored_polygon(PackedVector2Array([d * 12, -d * 8 - n * 4, -d * 4, -d * 8 + n * 4]), col)
@@ -581,36 +466,8 @@ func _draw() -> void:
 			draw_circle(Vector2.ZERO, radius, Elem.COLORS[Elem.METAL])
 			draw_circle(Vector2.ZERO, radius * 0.55, col)
 			draw_arc(Vector2.ZERO, radius, 0, TAU, 20, Color(0.3, 0.3, 0.35), 2.0)
-		"log":
-			var s := 1.0 + sin(travel / max_travel * PI) * 0.8
-			var rot := Transform2D(t * 8.0, Vector2.ZERO)
-			var pts := PackedVector2Array([Vector2(-10, -4) * s, Vector2(10, -4) * s, Vector2(10, 4) * s, Vector2(-10, 4) * s])
-			draw_colored_polygon(rot * pts, Color(0.55, 0.33, 0.15))
-			draw_circle(rot * Vector2(6 * s, 0), 3.5 * s, Elem.COLORS[Elem.FIRE])
-		"tornado":
-			draw_circle(Vector2.ZERO, radius, Color(1.0, 0.45, 0.1, 0.15))
-			for i in 18:
-				var a := t * 10.0 + i * 0.7
-				var rr := radius * (0.2 + 0.045 * i)
-				var y := -i * 1.5 + 12.0
-				draw_circle(Vector2(cos(a) * rr, sin(a) * rr * 0.45 + y), 3.0 + i * 0.25, Color(1.0, 0.3 + 0.035 * i, 0.08, 0.85 - i * 0.03))
-		"mushroom":
-			var s := 1.0 + sin(travel / max_travel * PI) * 0.8
-			_draw_mushroom(self, s)
-		"icebolt":
-			var ic := Color(0.45, 0.5, 0.95)
-			draw_circle(Vector2.ZERO, 9.0, ic)
-			for i in 6:
-				var d2 := Vector2.from_angle(TAU * i / 6.0 + t * 3.0)
-				draw_line(d2 * 6.0, d2 * 13.0, Color(0.8, 0.85, 1.0), 2.0)
 		"wisp", "ghost":
 			var gc: Color = Elem.COLORS[Elem.SOUL] if kind == "ghost" else col
-			if ghost == "plague":
-				gc = Elem.COLORS[Elem.POISON]
-			elif ghost == "spirit":
-				gc = Elem.COLORS[Elem.WOOD].lightened(0.3)
-			elif ghost in RxMore.GHOSTS:
-				gc = RxMore.color(ghost if ghost != "samsara2" else "samsara")
 			var fl := 1.0 + 0.15 * sin(t * 18.0)
 			if kind == "wisp":
 				var fk := fade_k()
@@ -619,25 +476,11 @@ func _draw() -> void:
 			draw_colored_polygon(PackedVector2Array([-d * radius * 2.6 * fl, n * radius * 0.9, d * radius, -n * radius * 0.9]), Color(gc, 0.45))
 			draw_circle(Vector2.ZERO, radius * fl, gc)
 			draw_circle(d * radius * 0.2, radius * 0.45, Color(1, 1, 1, 0.8))
-		"storm":
-			var fade := clampf((max_travel - travel) / 40.0, 0.0, 1.0)
-			draw_circle(Vector2(0, 30), radius * 0.9, Color(0.6, 0.65, 0.9, 0.06 * fade))
-			for i in 7:
-				var p := Vector2(cos(i * 0.9 + t * 0.6) * 26.0, sin(i * 1.7) * 7.0 - 24.0)
-				draw_circle(p, 15.0 + 4.0 * sin(i * 2.1 + t), Color(0.55, 0.58, 0.72, 0.85 * fade))
-			for i in 4:
-				draw_circle(Vector2(-24 + i * 16, -30), 9.0, Color(0.75, 0.78, 0.9, 0.7 * fade))
 
 
 func _trail_color() -> Color:
 	match kind:
-		"shot", "path", "thorn", "shard", "frag", "iron", "blob", "wisp", "rx": return col
+		"shot", "path", "thorn", "shard", "frag", "iron", "blob", "wisp": return col
 		"ghost": return Elem.COLORS[Elem.SOUL]
 		"glob": return Elem.COLORS[Elem.POISON]
 	return Color.WHITE
-
-
-static func _draw_mushroom(ci: CanvasItem, s: float) -> void:
-	ci.draw_rect(Rect2(Vector2(-2, 0) * s, Vector2(4, 6) * s), Color(0.95, 0.9, 0.8))
-	ci.draw_circle(Vector2.ZERO, 6.0 * s, Color(0.8, 0.5, 0.95))
-	ci.draw_circle(Vector2(-2, -2) * s, 1.5 * s, Elem.COLORS[Elem.POISON])

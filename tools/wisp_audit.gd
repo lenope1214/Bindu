@@ -118,18 +118,13 @@ func _run(j: Dictionary) -> Dictionary:
 		for i in j["tn"]:
 			t.add_trig(j["trig"])
 	if j.has("link"):
-		# 연계 짝: 옆(50)에 금속 직선탄 하나. 프리즘은 짝에 두고 혼불이 지나가게, 공명·협공은 혼불 쪽에
+		# 연계 짝: 옆(50)에 금속 직선탄 하나. 공명·협공은 혼불 쪽에
 		main.picked = {"e": Elem.METAL, "lv": 3}
 		var pp: Vector2 = c + ld * 100.0 + ld.orthogonal() * 45.0
-		if j["link"] == "prism":
-			pp = c + ld * 150.0
 		main._place_tower(pp, ld)
 		var pt = main.towers.get_child(main.towers.get_child_count() - 1)
 		for i in j["ln"]:
-			if j["link"] == "prism":
-				pt.add_link("prism")
-			else:
-				t.add_link(j["link"])
+			t.add_link(j["link"])
 	t.dealt = 0.0; t.rx_dealt = 0.0; t.src = {}
 	main.kills = 0
 	var born := {}

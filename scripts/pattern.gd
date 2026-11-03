@@ -155,11 +155,10 @@ static func no_mods(pat: String) -> PackedStringArray:
 
 const LINKS := {
 	"pincer": {"name": "협공", "desc": "다른 오브젝트가 맞힌 구체를 {pincer_t}초 안에 이 오브젝트도 맞히면 터져서 그 구체 최대 체력의 10% 피해"},
-	"prism": {"name": "프리즘", "desc": "다른 오브젝트의 탄이 지나가면 이 속성이 묻고 피해 +{prism_dmg%}%"},
 	"reso": {"name": "공명", "desc": "가까이(거리 {reso_r} 안) 있는 다른 오브젝트 하나당 피해 +{reso_k%}%"},
 }
 
-const LINK_IDS := ["pincer", "prism", "reso"]
+const LINK_IDS := ["pincer", "reso"]  # 프리즘(속성 나눠 주기)은 2026-11-03 특징 공유로 삭제
 
 ## 발동: 기본 공격과 별개로, 조건이 맞을 때 추가로 터지는 공격 (Tower.trigs). 겹치면 세진다.
 const TRIGS := {
@@ -168,7 +167,7 @@ const TRIGS := {
 	"charge": {"name": "축적", "desc": "거리 {charge_r} 안에서 구체가 15마리 죽으면(누가 잡든, 특수 2·보스 8) 다음 공격이 x5 강타. 웨이브가 넘어가도 유지"},
 	"third": {"name": "삼연", "desc": "3번째 공격마다 피해 x1.8 (탄은 크기도 x{third_size}). 계속 뿜는 공격은 1.5초마다 잠깐"},
 	"finish": {"name": "마무리", "desc": "체력이 {finish_hp%}% 아래인 구체에 피해 x{finish_mul} (보스는 절반). 다른 오브젝트가 깎은 구체에 강해요"},
-	"answer": {"name": "호응", "desc": "거리 {answer_r} 안 다른 오브젝트의 발동·특수 반응이 터지면 그쪽으로 한 발 더 ({answer_cd}초에 한 번)"},
+	"answer": {"name": "호응", "desc": "거리 {answer_r} 안 다른 오브젝트의 발동이 터지면 그쪽으로 한 발 더 ({answer_cd}초에 한 번)"},
 }
 
 const TRIG_IDS := ["echo", "vanguard", "charge", "third", "finish", "answer"]

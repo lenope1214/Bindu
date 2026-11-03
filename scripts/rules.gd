@@ -36,9 +36,6 @@ static var hp_growth := 1.05  # 11웨이브부터 웨이브마다 구체 체력 
 static var resist_from := 10  # 저항 구체가 나오는 웨이브
 static var sturdy_from := 13  # 굳센 구체가 나오는 웨이브
 static var orb_hp := 1.0  # 구체 체력 배율 (온라인 패치로만 바뀜)
-static var trait_mul := 1.0  # 속성 형태 성질 세기 (Elem.TRAIT)
-static var rx_mul := RX_MUL  # 2026-10-30에 채운 반응 65개(RxMore)의 피해·지속 피해 배율
-const RX_MUL := 0.5
 ## 조합 효율 측정(2026-10-30, docs/combo-efficiency)으로 고친 수치. 온라인 패치 rules의 같은 키로 덮어쓴다.
 const TUNE := {
 	# 오브젝트 상한
@@ -72,12 +69,6 @@ const TUNE := {
 	"sound_cd": 1.0,  # 소리 울림 음파: 한 구체에서 다시 터질 수 있을 때까지(초)
 	"sound_pulse": 1.2,  # 소리 울림 음파 피해 (x 위력, 울림이 3번 쌓이면 둘레에 터짐)
 	"sound_rate": 3.0,  # 소리 울림 음파: 오브젝트 하나가 1초에 터뜨릴 수 있는 최대 수
-	"loud_mul": 1.2,  # 소리 울림 음파: 울림 균열 위 구체가 받는 음파 피해 배율
-	# 반응 수치 (반응 하나만 쓰는 값)
-	"strip_ring": 0.2,  # 울림 균열(땅+소리)·메아리 물결(물+소리) 띠가 초당 쌓는 울림 (3이면 음파)
-	"prison_iv": 5.0,  # 빙결 감옥(얼음+땅): 얼음 덩이를 쏘는 간격(초, 공격 속도로 나눔)
-	"prison_dmg": 3.0,  # 빙결 감옥: 구체를 가둘 때 피해 (x 위력)
-	"styx_dmg": 1.5,  # 망자의 강(물+영혼): 물길 위 구체가 받는 초당 피해 (x 위력)
 	# 판마다 다른 흐름 (2026-10-31, 시험, scripts/vary.gd)
 	"vary_on": 1.0,  # 0이면 웨이브 이벤트·적응 구체를 끔 (봉인은 모드 '봉인'에서만)
 	"vary_seal_elem": 3.0,  # 봉인: 판 시작 때 선택지에서 빼는 속성 수 (25·50웨이브에 하나씩 풀림)
@@ -197,7 +188,7 @@ const STAT := {
 	"lv_dmg": 0.5,  # 레벨이 1 오를 때마다 위력 + (공격방식 레벨, 반응·부가효과는 그 속성 레벨)
 	"lv_spd": 0.2,  # 공격방식 레벨이 1 오를 때마다 공격 속도 +
 	"lv_reach": 0.1,  # 공격방식 레벨이 1 오를 때마다 사거리 +
-	"dmg_base": 1.43,  # 모든 오브젝트 기본 피해 배율
+	"dmg_base": 2.1,  # 모든 오브젝트 기본 피해 배율
 	"dmg_sum": 0.35,  # 오브젝트에 든 속성 레벨 합이 1 늘 때마다 피해 + (반응 제외)
 	# 공격방식 수치
 	"shot_range": 400.0,  # 직선탄 사거리(px)
@@ -262,7 +253,6 @@ const STAT := {
 	# 연계
 	"reso_k": 0.12,  # 공명: 둘레 다른 오브젝트 하나당 피해 + (x 공명 수)
 	"reso_r": 150.0,  # 공명: 둘레 거리(px)
-	"prism_dmg": 0.2,  # 프리즘: 지나간 탄 피해 + (x 프리즘 수)
 	"pincer_t": 3.0,  # 협공: 두 오브젝트가 이 시간(초) 안에 같은 구체를 맞히면 폭발 (세기는 pincer_frac)
 	"pincer_cd": 1.5,  # 협공: 같은 구체에서 다시 터질 때까지(초)
 	# 발동
@@ -293,7 +283,6 @@ const STAT := {
 	"star_pure": 1.5,  # 별: 별만 든 오브젝트(순수 별)의 모으는 비율 배율
 	"star_need": 8.0,  # 별: 초신성까지 필요한 별빛 (이번 웨이브 구체 체력 x 값)
 	"star_mul": 3.0,  # 별: 초신성 피해 (모은 별빛 x 값)
-	"star_rx": 0.3,  # 별 반응: 초신성에 따라붙는 피해 (초신성 x 값 x rx_mul)
 	"star_boss_cap": 0.15,  # 보스는 초신성 한 번에 최대 체력의 이 비율까지만 깎임
 	"star_max": 3.0,  # 별이 든 오브젝트(별·행성 합쳐) 최대 수
 	"planet_max": 3.0,  # 행성 최대 수 (같은 행성은 한 판에 하나)
@@ -305,16 +294,31 @@ const STAT := {
 }
 
 
-## TUNE + STAT + 공격방식마다 dmg_/spd_/range_<id>(배율 1) + 반응마다 rxd_<id>(피해 배율 1).
+## TUNE + STAT + 공격방식마다 dmg_/spd_/range_<id>(배율 1) + 특징 공유 share_mul·share_<속성>(특징마다 세기 배율, 기본은 SHARE).
 static func defaults() -> Dictionary:
 	var d := TUNE.merged(STAT)
 	for id in Pat.ALL_IDS:
 		for p in ["dmg_", "spd_", "range_"]:
 			d[p + id] = 1.0
-	for r in Elem.REACTIONS:
-		d["rxd_" + r["id"]] = 1.0
-		d["rxiv_" + r["id"]] = 1.0
+	d["share_mul"] = 1.5  # 고정 반응을 뺀 만큼 (2026-11-03 웨이브 단계 봇, 기본 피해 1.43→2.1과 함께)
+	for key in Patch.ELEM_KEYS:
+		if key != "soul":  # 영혼 쫓아감은 혼불이 주인 공격을 그대로 쓴다 (세기 배율 없음)
+			d["share_" + key] = SHARE.get(key, 1.0)
 	return d
+
+
+## 특징 세기 차등 (2026-11-03). 피해를 직접 늘리는 특징은 낮게, 드물게 터지는 특징은 높게. 없는 속성은 1.
+## 온라인 패치 rules.share_<속성>이 이 값을 덮어쓴다.
+const SHARE := {
+	"fire": 0.8,  # 타오름: 화상이 끝나거나 죽을 때 불꽃 (피해)
+	"electric": 0.8,  # 튐: 번개가 튀는 구체마다 (피해)
+	"metal": 0.7,  # 응축: 효과 하나당 추가 피해 (피해)
+	"poison": 0.9,  # 전염: 중독된 채 죽으면 둘레 (지속 피해)
+	"time": 0.9,  # 되풀이: 맞힐 때마다 0.8초 뒤 다시 (자주 터짐)
+	"earth": 1.1,  # 묻어둠: 2초 안에 다시 맞아야 터짐
+	"light": 1.1,  # 꿰뚫음: 치명타 때만
+	"dark": 1.2,  # 끌어당김: 약화된 채 죽을 때만
+}
 
 
 static var DEFAULTS := defaults()
@@ -366,15 +370,14 @@ static var bounce_hit: float = STAT["bounce_hit"]
 static var pierce_shield: float = STAT["pierce_shield"]
 static var pierce_armor: float = STAT["pierce_armor"]
 static var homing_k: float = STAT["homing_k"]
-static var prism_dmg: float = STAT["prism_dmg"]
 static var pincer_t: float = STAT["pincer_t"]
 static var late_armor_break: float = TUNE["late_armor_break"]
 static var late_armor_floor: float = TUNE["late_armor_floor"]
 static var late_armor_min: float = TUNE["late_armor_min"]
 static var late_phase_on: float = TUNE["late_phase_on"]
 static var late_phase_dmg: float = TUNE["late_phase_dmg"]
-static var rxiv := {}  # "rx:<반응 id>" → 다시 터지는 간격 배율 (1이 아닌 것만, Tower._ready_to)
-static var rxd := {}  # "rx:<반응 id>" → 피해 배율 (1이 아닌 것만)
+static var share_mul := 1.0  # 특징 공유 전체 세기 (Share.k)
+static var share_k := {}  # 속성 → 그 특징 세기 배율 (1이 아닌 것만)
 
 
 static func _cache() -> void:
@@ -424,22 +427,18 @@ static func _cache() -> void:
 	pierce_shield = tune["pierce_shield"]
 	pierce_armor = tune["pierce_armor"]
 	homing_k = tune["homing_k"]
-	prism_dmg = tune["prism_dmg"]
 	pincer_t = tune["pincer_t"]
 	late_armor_break = tune["late_armor_break"]
 	late_armor_floor = tune["late_armor_floor"]
 	late_armor_min = tune["late_armor_min"]
 	late_phase_on = tune["late_phase_on"]
 	late_phase_dmg = tune["late_phase_dmg"]
-	rxd.clear()
-	rxiv.clear()
-	for r in Elem.REACTIONS:
-		var v: float = tune["rxd_" + r["id"]]
+	share_mul = tune["share_mul"]
+	share_k.clear()
+	for i in Patch.ELEM_KEYS.size():
+		var v: float = tune.get("share_" + Patch.ELEM_KEYS[i], 1.0)
 		if v != 1.0:
-			rxd["rx:" + r["id"]] = v
-		var iv: float = tune["rxiv_" + r["id"]]
-		if iv != 1.0:
-			rxiv["rx:" + r["id"]] = maxf(0.05, iv)
+			share_k[Elem.ALL[i]] = v
 
 
 static func t(k: String) -> float:
@@ -492,8 +491,6 @@ static func apply(v: int) -> void:
 	resist_from = 10
 	sturdy_from = 13
 	orb_hp = 1.0
-	trait_mul = 1.0
-	rx_mul = RX_MUL
 	tune = DEFAULTS.duplicate()
 	match version:
 		1:
@@ -523,7 +520,7 @@ static func apply(v: int) -> void:
 ## 목록·설명은 tools/rule_keys.gd가 만든다 (관리 화면 수치 편집 표).
 const CODE := {
 	"Tower": "res://scripts/tower.gd", "Projectile": "res://scripts/projectile.gd", "Orb": "res://scripts/orb.gd",
-	"Main": "res://scripts/main.gd", "Modes": "res://scripts/modes.gd", "RxMore": "res://scripts/rx_more.gd",
+	"Main": "res://scripts/main.gd", "Modes": "res://scripts/modes.gd", "Share": "res://scripts/share.gd",
 	"Pat": "res://scripts/pattern.gd", "MapRule": "res://scripts/maprule.gd", "Skill": "res://scripts/skill.gd",
 }
 static var _code_orig := {}  # "Tower.HIT" → 패치 전 값 (처음 바꿀 때 기억해 두고, 다음 apply마다 되돌린다)
@@ -601,5 +598,3 @@ static func _apply_patch(p: Dictionary) -> void:
 			"tax_step": tax_step = float(v)
 			"hp_growth": hp_growth = maxf(1.0, float(v))
 			"orb_hp": orb_hp = maxf(0.1, float(v))
-			"trait_mul": trait_mul = maxf(0.0, float(v))
-			"rx_mul": rx_mul = maxf(0.0, float(v))

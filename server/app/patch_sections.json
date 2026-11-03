@@ -30,14 +30,11 @@
   },
   {
    "id": "rx",
-   "name": "반응",
-   "cls": "Elem.REACTIONS · RxMore",
+   "name": "특징 공유",
+   "cls": "Share · Elem.TRAIT",
    "groups": [
-    "반응 수치",
-    "반응 피해 배율",
-    "반응 간격 배율",
-    "새 반응 간격",
-    "새 반응 코드 수치"
+    "특징 공유",
+    "특징 코드 수치"
    ],
    "sections": []
   },

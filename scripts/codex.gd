@@ -6,7 +6,7 @@ extends PanelContainer
 ## ★로 선호 표시(Meta.favs) → 판 중 선택지에 나오면 카드가 반짝인다 (Sparkle).
 
 const CATS := [
-	["elem", "속성"], ["pat", "공격방식"], ["mod", "강화"], ["link", "연계"], ["trig", "발동"], ["react", "특수 반응"], ["perk", "특성"], ["ach", "업적"],
+	["elem", "속성"], ["pat", "공격방식"], ["mod", "강화"], ["link", "연계"], ["trig", "발동"], ["react", "조합"], ["perk", "특성"], ["ach", "업적"],
 ]
 ## 업적 보유율 {id: 0~1} (서버 /v1/ach_rates, main이 넣는다. 비면 안 보임)
 static var rates := {}
@@ -35,7 +35,7 @@ func entries(c: String) -> Array:
 			for e in Elem.ALL:
 				var ps := Elem.partners(e)
 				out.append({"key": card_key({"type": "elem", "e": e}), "name": Elem.NAMES[e], "color": Elem.COLORS[e],
-					"desc": "같은 색 공격방식 카드: %s (속성과 따로 나오는 카드, 직선탄 오브젝트에 넣음)\n추가 효과: %s\n형태 성질(시험): %s%s" % [Elem.FORM.get(e, "-"), Elem.rider(e) if Elem.RIDER.has(e) else "-", Elem.TRAIT.get(e, "-"), "\n반응: " + ", ".join(ps) if not ps.is_empty() else ""]})
+					"desc": "같은 색 공격방식 카드: %s (속성과 따로 나오는 카드, 직선탄 오브젝트에 넣음)\n추가 효과: %s\n특징: %s%s" % [Elem.FORM.get(e, "-"), Elem.rider(e) if Elem.RIDER.has(e) else "-", Elem.TRAIT.get(e, "-"), "\n조합: " + ", ".join(ps) if not ps.is_empty() else ""]})
 		"pat":
 			for id in Pat.ALL_IDS:
 				if id != Pat.DEFAULT:  # 직선탄은 카드로 나오지 않는다

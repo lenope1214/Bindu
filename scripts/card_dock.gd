@@ -267,7 +267,7 @@ func _update_side() -> void:
 			take += 1
 			if card["type"] == "elem" and not Elem.new_reactions(t.eff_now(), card["e"]).is_empty():
 				reaction += 1
-		text = "적용 가능 %d곳 · 새 반응 %d곳\n얇은 고리: 적용 · 빛나는 고리: 새 반응\n\n" % [take, reaction]
+		text = "적용 가능 %d곳 · 새 조합 %d곳\n얇은 고리: 적용 · 빛나는 고리: 새 조합\n\n" % [take, reaction]
 		var full: Array = game._card_full(card)
 		var fit_name: String = game.core_fit(card)
 		if fit_name != "":

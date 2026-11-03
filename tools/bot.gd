@@ -21,6 +21,11 @@ var picks_w := -1
 var skip_w := -1
 var dumped := false
 var modes_set := false
+var stages: Array = []  # STAGES: 잴 웨이브 (그 사이 웨이브는 전투 없이 넘기고 선택지만 고른다)
+var stage_w := -1  # 지금 재는 웨이브
+var stage_ms := 0
+var fast_now := false  # 지금 사이 웨이브를 빨리 넘기는 중
+var core0 := -1  # 재기 전 중앙 최대 체력
 
 
 ## MODES=rush,steel: 첫 프레임에 모드를 켠다 (없으면 모두 끔: 시험 저장에 남은 모드가 섞이지 않게).
@@ -71,6 +76,8 @@ func _process(_d):
 		for t in main.towers.get_children():
 			print("  TW ", t.title(), " @", t.position, " ", t.extras_text(), " rx=", t.reactions().map(func(r): return r["name"]))
 		quit()
+	if OS.get_environment("STAGES") != "" and _stages():
+		return true
 	if OS.get_environment("GOD") != "":
 		if main.phase == 0 and main.wave != god_w:
 			if god_w >= 0:
@@ -104,6 +111,8 @@ func _process(_d):
 		print("W", main.wave, " picks=", main.picks_left, " rr=", main.rerolls_left, " perk=", main.perk_mode, " core=", main.core_hp, " lanes=", main.lanes.map(func(a): return int(rad_to_deg(a))), " ", info)
 	main.auto_start = true
 	main.game_speed = float(OS.get_environment("SPEED")) if OS.get_environment("SPEED") != "" else 1.0
+	if fast_now:
+		main.game_speed = float(OS.get_environment("FAST_SPEED")) if OS.get_environment("FAST_SPEED") != "" else 16.0
 	if main.phase == 7: main._cancel_step()  # 그린 궤적: 봇은 길을 못 그려 곧은 기본 길 그대로
 	if main.phase == 6: main._start_wave()
 	# SKIP=3: SKIP_FROM(기본 8)웨이브부터 웨이브 넘기기를 3개씩 쓰고, 멈추면 쌓인 것을 다 고른 뒤 다시 넘긴다
@@ -319,3 +328,59 @@ func _force_offer():
 			o["id"] = OS.get_environment("BOT_PAT")
 		elif o["type"] == "mod" and OS.get_environment("BOT_MOD") != "":
 			o["id"] = OS.get_environment("BOT_MOD")
+
+
+## STAGES=5,10,...(1이면 기본 목록): 잴 웨이브만 실제로 싸우고, 사이 웨이브는 나온 구체를 바로 처치해(처치 보상은 그대로) 쉬는 시간 선택지만 빠르게 고른다.
+## 그 웨이브까지 받은 만큼의 카드·특성(웨이브에 맞는 Lv2 확률 그대로)으로 그 웨이브를 치른 결과를 STAGE 줄로 남긴다.
+## 재는 웨이브는 중앙이 죽지 않고(새어 든 피해만 기록), 마지막 웨이브를 재면 끝.
+const STAGE_DEFAULT := [5, 10, 15, 20, 30, 40, 50, 75, 100, 150, 200]
+func _stages() -> bool:
+	if stages.is_empty():
+		var env := OS.get_environment("STAGES")
+		stages = STAGE_DEFAULT.duplicate() if env == "1" else Array(env.split(",", false)).map(func(x): return int(x))
+	fast_now = false
+	if main.phase == 3:
+		if main.wave in stages:
+			if stage_w != main.wave:
+				stage_w = main.wave
+				stage_ms = frames
+				if core0 < 0:
+					core0 = main.core_max
+				main.core_hp = 99999
+				main.core_max = 99999
+				for t in main.towers.get_children():
+					t.dealt = 0.0
+					t.src = {}
+		else:
+			# 사이 웨이브: 나온 구체를 바로 처치한다 (점수·보스 처치 새로고침·중앙 회복·분열 등 처치 보상은 그대로 생김)
+			fast_now = true
+			for o in main.live_orbs:
+				if is_instance_valid(o) and o.hp > 0.0:
+					o.hp = 0.0
+			main.core_hp = maxi(main.core_hp, main.core_max)
+	elif stage_w >= 0 and main.wave != stage_w:
+		var lost: int = 0
+		var leaked: int = 0
+		for e in (main.leak_log if "leak_log" in main else []):
+			if e["w"] == stage_w:
+				leaked = e["n"]
+				lost = e["dmg"]
+				if OS.get_environment("STAGE_LOG") != "":
+					print("STAGELEAK w=%d kinds=%s" % [stage_w, JSON.stringify(e["kinds"])])
+					for t in main.towers.get_children():
+						print("STAGETW %s dealt=%.0f src=%s" % [t.title(), t.dealt, JSON.stringify(t.src)])
+		var dealt := 0.0
+		var share := 0.0
+		for t in main.towers.get_children():
+			dealt += t.dealt
+			for k in t.src:
+				if str(k).begins_with("share:"):
+					share += t.src[k]
+		print("STAGE w=%d n=%d leaked=%d lost=%d secs=%.1f towers=%d share=%.3f" % [stage_w, main.wave_size(stage_w), leaked, lost, (frames - stage_ms) / 60.0 * main.game_speed, main.towers.get_child_count(), share / maxf(dealt, 1.0)])
+		main.core_max = core0
+		main.core_hp = core0
+		if stage_w >= stages.max():
+			print("RESULT wave=", stage_w, " score=", main.score, " mul=", Modes.mul())
+			return true
+		stage_w = -1
+	return false

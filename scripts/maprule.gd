@@ -8,7 +8,7 @@ class_name MapRule
 ## 수치는 온라인 패치 rules의 map_* 키 (Rules.TUNE).
 
 const AFF := {
-	"plain": {"elem": [Elem.WOOD, Elem.EARTH], "pat": ["wall"], "mod": [], "link": ["pincer", "prism", "reso"]},
+	"plain": {"elem": [Elem.WOOD, Elem.EARTH], "pat": ["wall"], "mod": [], "link": ["pincer", "reso"]},
 	"spiral": {"elem": [Elem.WIND, Elem.TIME], "pat": ["vortex", "clock"], "mod": ["bounce"], "link": []},
 	"cross": {"elem": [Elem.METAL, Elem.FIRE], "pat": ["laser", "stream", "thorn", "iron"], "mod": ["pierce"], "link": []},
 	"storm": {"elem": [Elem.ELECTRIC, Elem.SOUND], "pat": ["sonic", "chain", "gust"], "mod": ["multi"], "link": []},
