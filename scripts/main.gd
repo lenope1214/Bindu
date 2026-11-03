@@ -2212,6 +2212,10 @@ func _make_choices() -> void:
 	while offer.size() < want and guard < 50:
 		guard += 1
 		var card := _roll_card()
+		if card.is_empty():
+			break
+		if not _card_enabled(card):
+			continue
 		# 넣을 곳이 없는 공격방식·강화 카드는 내지 않는다
 		if card["type"] in ["pat", "mod", "trig"] and not _my_towers().any(func(t): return t.can_take(card)):
 			continue
@@ -2224,12 +2228,20 @@ func _make_choices() -> void:
 		elif card.get("lv", 1) > same[0].get("lv", 1):
 			offer[offer.find(same[0])] = card
 	# 영웅 Lv5: 일반 판 첫 쉬는 시간에 영웅 속성 카드 보장
-	if wave == 0 and Garden.hero_card() and not offer.any(func(cd): return cd["type"] == "elem" and cd["e"] == Garden.hero_e):
-		offer[0] = {"type": "elem", "e": Garden.hero_e, "lv": 1}
+	if wave == 0 and Garden.hero_card() and _card_enabled({"type": "elem", "e": Garden.hero_e}) and not offer.any(func(cd): return cd["type"] == "elem" and cd["e"] == Garden.hero_e):
+		if offer.is_empty():
+			offer.append({"type": "elem", "e": Garden.hero_e, "lv": 1})
+		else:
+			offer[0] = {"type": "elem", "e": Garden.hero_e, "lv": 1}
 	# 속성 카드(새 오브젝트를 놓을 수 있는 카드)는 최소 1장
 	if not offer.any(func(cd): return cd["type"] == "elem"):
-		var pool: Array = Vary.open("elem", Elem.ALL).filter(func(e): return not _star_blocked({"type": "elem", "e": e}))
-		offer[randi() % offer.size()] = {"type": "elem", "e": MapRule.pick("elem", pool) if not pool.is_empty() else Elem.FIRE, "lv": 1}
+		var pool: Array = Vary.open("elem", Elem.ALL).filter(func(e): return _card_enabled({"type": "elem", "e": e}) and not _star_blocked({"type": "elem", "e": e}))
+		if not pool.is_empty():
+			var fallback := {"type": "elem", "e": MapRule.pick("elem", pool), "lv": 1}
+			if offer.is_empty():
+				offer.append(fallback)
+			else:
+				offer[randi() % offer.size()] = fallback
 	if tutor:
 		_tutor_offer()
 	_show_offer()
@@ -2311,7 +2323,7 @@ func _tutor_card(k: String) -> Dictionary:
 	ids.shuffle()
 	for id in ids:
 		var cd := {"type": k, "id": id}
-		if k == "link" or towers.get_children().any(func(t): return t.can_take(cd)):
+		if _card_enabled(cd) and (k == "link" or towers.get_children().any(func(t): return t.can_take(cd))):
 			return cd
 	return {}
 
@@ -2354,34 +2366,63 @@ func _card_key(card: Dictionary) -> String:
 	return "%s:%s" % [card["type"], card.get("e", card.get("id", ""))]
 
 
+## 온라인 패치의 카드 사용 여부. 미지정 카드는 기존처럼 사용한다.
+func _card_enabled(card: Dictionary) -> bool:
+	var kind := str(card.get("type", ""))
+	var id := str(card.get("id", ""))
+	if kind == "elem":
+		var e := int(card.get("e", -1))
+		if e < 0 or e >= Patch.ELEM_KEYS.size():
+			return false
+		id = Patch.ELEM_KEYS[e]
+	return Patch.num("card_enabled", "%s.%s" % [kind, id], 1.0) >= 0.5
+
+
 ## 선택지 한 장: 속성 / 공격방식 / 강화 / 연계 중 하나.
 func _roll_card() -> Dictionary:
-	var n := _my_towers().size()
-	if n > 0 and wave > 0 and _card_open("pat") and _path_takers() and not Garden.on:  # 정원(방치형)은 손으로 그려야 해서 안 나옴
-		# 그린 궤적: 카드당 0.7%, 이 판에 궤적이 있으면 1.2% (여러 번 나와야 쓸모 있는 공격)
-		var has := _my_towers().any(func(t): return t.pattern == "path")
-		if randf() < (Patch.num("cards", "path_again", Pat.PATH_CHANCE_AGAIN) if has else Patch.num("cards", "path", Pat.PATH_CHANCE)):
+	var ts := _my_towers()
+	var n := ts.size()
+	var elems: Array = Vary.open("elem", Elem.ALL).filter(func(e): return _card_enabled({"type": "elem", "e": e}))
+	if elems.is_empty():
+		return {}
+	var patterns: Array = Vary.open("pat", Pat.PATTERN_IDS.slice(1)).filter(func(id):
+		var cd := {"type": "pat", "id": id}
+		return _card_enabled(cd) and ts.any(func(t): return t.can_take(cd)))
+	var mods: Array = Pat.MOD_IDS.filter(func(id):
+		var cd := {"type": "mod", "id": id}
+		return _card_enabled(cd) and ts.any(func(t): return t.can_take(cd)))
+	var trigs: Array = Pat.TRIG_IDS.filter(func(id):
+		var cd := {"type": "trig", "id": id}
+		return _card_enabled(cd) and ts.any(func(t): return t.can_take(cd)))
+	var links: Array = (Pat.LINK_IDS if n >= 2 else ["prism", "reso"]).filter(func(id):
+		return _card_enabled({"type": "link", "id": id}) and not Vary.is_sealed("link", id))
+	if n > 0 and wave > 0 and _card_open("pat") and _path_takers() and not Garden.on and _card_enabled({"type": "pat", "id": "path"}):
+		var has := ts.any(func(t): return t.pattern == "path")
+		var chance := Patch.num("cards", "path_again", Pat.PATH_CHANCE_AGAIN) if has else Patch.num("cards", "path", Pat.PATH_CHANCE)
+		if randf() < chance:
 			return {"type": "pat", "id": "path"}
-	# 종류 비율 (온라인 패치 cards로 바뀔 수 있음): 속성 42%, 공격방식 25%, 강화 23%, 연계 10%, 발동 12% (합으로 나눔)
+	# 비활성 카드와 현재 넣을 수 없는 카드는 확률 풀에서 빼고 남은 종류끼리 비율을 다시 맞춘다.
 	var we := Patch.num("cards", "elem", 0.42)
-	var wp := Patch.num("cards", "pat", 0.25) if _card_open("pat") else 0.0
-	var wm := Patch.num("cards", "mod", 0.23) if _card_open("mod") else 0.0
-	var wt := Patch.num("cards", "trig", 0.12) if _card_open("trig") else 0.0
-	var r := randf() * (we + wp + wm + wt + (Patch.num("cards", "link", 0.10) if _card_open("link") else 0.0))
-	if n == 0 or (wave == 0 and not Garden.on) or r < we:  # 정원은 웨이브 0으로 물러나도 다른 카드가 나오게
-		var lv := 2 if randf() < _lv2_chance() else 1
-		return {"type": "elem", "e": MapRule.pick("elem", Vary.open("elem", Elem.ALL)), "lv": lv}
-	if r < we + wp:
-		return {"type": "pat", "id": MapRule.pick("pat", Vary.open("pat", Pat.PATTERN_IDS.slice(1)))}
-	if r < we + wp + wm:
-		return {"type": "mod", "id": MapRule.pick("mod", Pat.MOD_IDS)}
-	if r < we + wp + wm + wt:
-		return {"type": "trig", "id": Pat.TRIG_IDS.pick_random()}
-	var ids: Array = Pat.LINK_IDS.duplicate() if n >= 2 else ["prism", "reso"]
-	ids = ids.filter(func(id): return not Vary.is_sealed("link", id))
-	if ids.is_empty():
-		return {"type": "elem", "e": MapRule.pick("elem", Vary.open("elem", Elem.ALL)), "lv": 1}
-	return {"type": "link", "id": MapRule.pick("link", ids)}
+	var wp := Patch.num("cards", "pat", 0.25) if _card_open("pat") and not patterns.is_empty() else 0.0
+	var wm := Patch.num("cards", "mod", 0.23) if _card_open("mod") and not mods.is_empty() else 0.0
+	var wt := Patch.num("cards", "trig", 0.12) if _card_open("trig") and not trigs.is_empty() else 0.0
+	var wl := Patch.num("cards", "link", 0.10) if _card_open("link") and not links.is_empty() else 0.0
+	var total := we + wp + wm + wt + wl
+	if n == 0 or (wave == 0 and not Garden.on) or total <= 0.0:
+		return {"type": "elem", "e": MapRule.pick("elem", elems), "lv": 2 if randf() < _lv2_chance() else 1}
+	var r := randf() * total
+	if r < we:
+		return {"type": "elem", "e": MapRule.pick("elem", elems), "lv": 2 if randf() < _lv2_chance() else 1}
+	r -= we
+	if r < wp:
+		return {"type": "pat", "id": MapRule.pick("pat", patterns)}
+	r -= wp
+	if r < wm:
+		return {"type": "mod", "id": MapRule.pick("mod", mods)}
+	r -= wm
+	if r < wt:
+		return {"type": "trig", "id": trigs.pick_random()}
+	return {"type": "link", "id": MapRule.pick("link", links)}
 
 
 ## 그린 궤적 카드를 넣을 오브젝트가 있는지 (궤적 레벨업, 또는 4개 미만일 때 직선탄).
@@ -3084,6 +3125,11 @@ func _lv2_chance() -> float:
 
 func _start_perk() -> void:
 	var pool := _perk_pool()
+	if pool.is_empty():
+		bank_perks = 0
+		_show_toast("사용 가능한 특성 카드가 없어 이번 선택을 건너뜁니다")
+		_start_choose(not rest_ready)
+		return
 	pool.shuffle()
 	perk_offer = pool.slice(0, 4 if Garden.boosted and Garden.lv("fruit") >= 1 else 3)  # 씨앗 나무 열매 1: 특성 선택지 4개
 	_show_perks()
@@ -3094,7 +3140,7 @@ func _start_perk() -> void:
 
 ## 지금 선택지에 나올 수 있는 특성들
 func _perk_pool() -> Array:
-	var pool: Array = PERKS.duplicate()
+	var pool: Array = PERKS.filter(func(pk): return _card_enabled({"type": "perk", "id": pk["id"]}))
 	if Modes.has("narrow"):
 		pool = pool.filter(func(pk): return not pk["id"] in ["reroll", "coin"])  # 외길: 새로고침이 없으니 쓸모없는 특성은 빼고 (동전 뒷면도 새로고침)
 	if coin_next != "":
@@ -8028,7 +8074,7 @@ func _continue_run() -> void:
 			perk_offer = []
 			for id in g.call("perk_offer", []):
 				for pk in PERKS:
-					if pk["id"] == id:
+					if pk["id"] == id and _card_enabled({"type": "perk", "id": id}):
 						perk_offer.append(pk)
 			if perk_offer.is_empty():
 				_start_perk()
@@ -12947,18 +12993,29 @@ func _garden_fill() -> void:
 		for e in t.order:
 			if not e in used:
 				used.append(e)
-	var es: Array = Elem.ALL.duplicate()
+	var es: Array = Elem.ALL.filter(func(e): return _card_enabled({"type": "elem", "e": e}))
+	var used_enabled: Array = used.filter(func(e): return _card_enabled({"type": "elem", "e": e}))
+	if not used_enabled.is_empty():
+		var preferred: int = used_enabled.pick_random()
+		es.erase(preferred)
+		used_enabled.erase(preferred)
+		offer.append({"type": "elem", "e": preferred, "lv": 1})
+		used_enabled.shuffle()
+		for e in used_enabled:
+			if offer.size() >= Garden.SHOP_ELEMS:
+				break
+			offer.append({"type": "elem", "e": e, "lv": 1})
 	es.shuffle()
-	if not used.is_empty():
-		var u: int = used.pick_random()
-		es.erase(u)
-		es.push_front(u)
-	for i in Garden.SHOP_ELEMS:
-		offer.append({"type": "elem", "e": es[i], "lv": 1})
+	for e in es:
+		if offer.size() >= Garden.SHOP_ELEMS:
+			break
+		offer.append({"type": "elem", "e": e, "lv": 1})
 	var guard := 0
 	while offer.size() < Garden.SHOP_ELEMS + Garden.SHOP_OTHERS and guard < 60 and towers.get_child_count() > 0:
 		guard += 1
 		var cd := _roll_card()
+		if not _card_enabled(cd):
+			continue
 		if cd["type"] == "elem":
 			continue
 		if cd["type"] in ["pat", "mod", "trig"] and not towers.get_children().any(func(t): return t.can_take(cd)):
@@ -13816,10 +13873,11 @@ func _apply_tree() -> void:
 	if Garden.lv("leaf") >= 1:
 		bonus_rerolls += 1
 	if Garden.lv("fruit") >= 2:
-		var pool: Array = PERKS.filter(func(pk): return not (pk["id"] == "reroll" and Modes.has("narrow")))
-		var pk: Dictionary = pool.pick_random()
-		_grant_perk(pk["id"])
-		_show_toast("씨앗 나무 열매: 특성 '%s'로 시작" % pk["name"])
+		var pool: Array = PERKS.filter(func(pk): return _card_enabled({"type": "perk", "id": pk["id"]}) and not (pk["id"] == "reroll" and Modes.has("narrow")))
+		if not pool.is_empty():
+			var pk: Dictionary = pool.pick_random()
+			_grant_perk(pk["id"])
+			_show_toast("씨앗 나무 열매: 특성 '%s'로 시작" % pk["name"])
 	call_deferred("_place_bonsai")
 
 

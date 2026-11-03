@@ -11,6 +11,7 @@ var detail: RichTextLabel
 var state: Label
 var focus_btn: Button
 var hovered: Button
+var inspected_tower: Tower
 var side_signature := ""
 var board := Rect2()
 var fit := 1.0
@@ -248,6 +249,7 @@ func _update_side() -> void:
 	var text := ""
 	var has_content := false
 	if not card.is_empty():
+		inspected_tower = null
 		has_content = true
 		var cc: Dictionary = game._card_content(card, 0)
 		title = cc["head"]["name"]
@@ -272,13 +274,20 @@ func _update_side() -> void:
 		if not Meta.card_detail:
 			text += "자세히를 켜면 반응·적용 조건을 모두 볼 수 있어요." if game.touch_ui else "자세히(Z)를 켜면 반응·적용 조건을 모두 볼 수 있어요."
 	elif game.perk_mode and is_instance_valid(hovered) and hovered.get_parent() == game.choice_box and hovered.has_meta("perk_desc"):
+		inspected_tower = null
 		has_content = true
 		title = hovered.get_meta("card")[0]["name"]
 		text = hovered.get_meta("perk_desc")
 	else:
-		var tower: Tower = null
-		if not over_ui(game.get_viewport().get_mouse_position()):
-			tower = game._tower_at(game.get_global_mouse_position())
+		var mouse := game.get_viewport().get_mouse_position()
+		var over_inspector := side.get_global_rect().has_point(mouse)
+		var tower: Tower = game._tower_at(game.get_global_mouse_position()) if not over_ui(mouse) else null
+		if tower != null:
+			inspected_tower = tower
+		elif over_inspector and is_instance_valid(inspected_tower):
+			tower = inspected_tower
+		else:
+			inspected_tower = null
 		if tower == null and game.touch_ui and is_instance_valid(game.tip_tower) \
 				and Engine.get_process_frames() - game.tip_frame <= 180:
 			tower = game.tip_tower

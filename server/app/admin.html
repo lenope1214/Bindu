@@ -92,7 +92,7 @@
 </section>
 
 <section id="patch">
-  <p class="dim">게임이 켜질 때 받는 수치 덮어쓰기입니다. 쓸 수 있는 키: rules, rules_desc, perks, perk_desc, cards, elem_dmg, pat_dmg, modes, message (server/README.md 참고).</p>
+  <p class="dim">게임이 켜질 때 받는 수치 덮어쓰기입니다. 쓸 수 있는 키: rules, rules_desc, perks, perk_desc, cards, card_enabled, elem_dmg, pat_dmg, modes, message (server/README.md 참고).</p>
   <h2>수치 편집 (rules)</h2>
   <p class="dim">게임은 켜진 패치 중 가장 최근 것 하나만 받습니다. 지금 값을 이어 가려면 먼저 [켜진 패치 불러오기]로 바탕을 채운 뒤 바꾸세요. 새 값 칸에 넣으면 아래 JSON의 rules에 바로 들어가고, 비우면 빠집니다 (기본값으로).</p>
   <div class="row">
@@ -104,10 +104,15 @@
     <span class="dim" id="k-count"></span>
   </div>
   <div class="tbl" id="t-keys" style="max-height:520px; overflow-y:auto; margin-bottom:12px"></div>
+  <h2>카드 사용 여부 (card_enabled)</h2>
+  <p class="dim">카드별 1은 사용, 0은 미사용입니다. 빈칸은 기본값(사용)으로 돌아갑니다. 새 오브젝트를 만들 수 있도록 속성 카드는 하나 이상 사용 상태여야 합니다.</p>
+  <div class="row"><input id="c-find" placeholder="카드 이름 찾기" size="26"><select id="c-group"><option value="">종류 전체</option></select><label><input type="checkbox" id="c-changed"> 바꾼 것만</label><span class="dim" id="c-count"></span></div>
+  <div class="tbl" id="t-card-enable" style="max-height:520px; overflow-y:auto; margin-bottom:12px"></div>
   <h2>패치 JSON</h2>
   <textarea id="p-data">{
   "rules": {"all": {}, "1": {}},
   "perks": {},
+  "card_enabled": {},
   "elem_dmg": {},
   "message": ""
 }</textarea>
@@ -272,6 +277,14 @@ document.querySelectorAll("[data-csv]").forEach(b => b.onclick = async () => {
 
 // 수치 편집: 키 목록(/admin/rule_keys) + 패치 JSON의 rules[대상]을 표로. JSON 칸이 원본이고 표는 그걸 읽고 고친다.
 let KEYS = null, PATCHES = [];
+const CARD_OPTIONS = [
+  ...[["불","fire"],["나무","wood"],["물","water"],["전기","electric"],["바람","wind"],["얼음","ice"],["땅","earth"],["어둠","dark"],["빛","light"],["독","poison"],["금속","metal"],["소리","sound"],["시간","time"],["영혼","soul"],["별","star"]].map(([n,k]) => ["elem",k,"속성",n]),
+  ...[["분사","spray"],["관통 연사","thorn"],["물줄기","stream"],["연쇄 번개","chain"],["돌풍","gust"],["파편탄","shard"],["벽","wall"],["블랙홀","vortex"],["레이저","laser"],["투척 장판","lob"],["철구","iron"],["음파","sonic"],["시계침","clock"],["혼불","wisp"],["그린 궤적","path"]].map(([n,k]) => ["pat",k,"공격방식",n]),
+  ...[["다중 발사","multi"],["분열","split"],["유도","homing"],["튕김","bounce"],["크기","size"],["속사","rapid"],["관통","pierce"],["주사위","dice"],["반응","reflex"]].map(([n,k]) => ["mod",k,"강화",n]),
+  ...[["여진","echo"],["선봉","vanguard"],["축적","charge"],["삼연","third"],["마무리","finish"],["호응","answer"]].map(([n,k]) => ["trig",k,"발동",n]),
+  ...[["협공","pincer"],["프리즘","prism"],["공명","reso"]].map(([n,k]) => ["link",k,"연계",n]),
+  ...[["화력","power"],["속사","haste"],["원거리","reach"],["단단한 중앙","core"],["넉넉한 선택","reroll"],["행운","luck"],["회복","regen"],["끈적한 공간","slow"],["조화","harmony"],["운명의 동전","coin"],["실드","shield"],["성벽","rampart"],["반격 파동","riposte"],["빠른 손","quick"],["넘친 회복","overflow"]].map(([n,k]) => ["perk",k,"특성",n]),
+];
 function pdata() { try { return JSON.parse($("p-data").value); } catch (e) { return null; } }
 function keyRows() {
   const d = pdata(), sc = $("k-scope").value;
@@ -299,27 +312,52 @@ function setKey(k, v) {
   $("p-data").value = JSON.stringify(d, null, 2);
   keyRows();
 }
+function cardRows() {
+  const d = pdata(), q = $("c-find").value.trim().toLowerCase(), g = $("c-group").value, only = $("c-changed").checked;
+  const cur = d && d.card_enabled && typeof d.card_enabled === "object" && !Array.isArray(d.card_enabled) ? d.card_enabled : {};
+  const rows = CARD_OPTIONS.filter(([kind,id,group,name]) => (!g || group === g) && (!q || `${name} ${id} ${group}`.toLowerCase().includes(q)) && (!only || `${kind}.${id}` in cur));
+  $("c-count").textContent = `${rows.length}개` + (d ? "" : " · JSON 형식 오류");
+  $("t-card-enable").innerHTML = `<table><thead><tr><th>종류</th><th>카드</th><th>키</th><th>기본</th><th>새 값 (0/1)</th></tr></thead><tbody>` +
+    rows.map(([kind,id,group,name]) => { const key = `${kind}.${id}`; return `<tr class="${key in cur ? "set" : ""}"><td>${esc(group)}</td><td>${esc(name)}</td><td>${esc(key)}</td><td class="num">1</td><td><input data-card-k="${esc(key)}" type="number" min="0" max="1" step="1" value="${key in cur ? esc(cur[key]) : ""}" placeholder="1"></td></tr>`; }).join("") + "</tbody></table>";
+  $("t-card-enable").querySelectorAll("input").forEach(i => i.onchange = () => setCardEnabled(i.dataset.cardK, i.value.trim()));
+}
+function setCardEnabled(key, value) {
+  const d = pdata();
+  if (!d) { say("JSON 형식 오류: 아래 JSON부터 고치세요"); return; }
+  if (!d.card_enabled || typeof d.card_enabled !== "object" || Array.isArray(d.card_enabled)) d.card_enabled = {};
+  if (value === "") delete d.card_enabled[key];
+  else if (value !== "0" && value !== "1") { say(`${key}: 0 또는 1만 입력할 수 있어요`); cardRows(); return; }
+  else d.card_enabled[key] = Number(value);
+  if (Object.keys(d.card_enabled).length === 0) delete d.card_enabled;
+  $("p-data").value = JSON.stringify(d, null, 2);
+  cardRows();
+}
+$("c-group").innerHTML += [...new Set(CARD_OPTIONS.map(e => e[2]))].map(g => `<option>${esc(g)}</option>`).join("");
+["c-group", "c-changed"].forEach(id => $(id).onchange = cardRows);
+$("c-find").oninput = cardRows;
 async function loadKeys() {
   if (!KEYS) {
     KEYS = await api("/admin/rule_keys");
     $("k-group").innerHTML = `<option value="">묶음 전체</option>` + [...new Set(KEYS.map(e => e.g))].map(g => `<option>${esc(g)}</option>`).join("");
   }
   keyRows();
+  cardRows();
 }
 ["k-scope", "k-group", "k-changed"].forEach(id => $(id).onchange = keyRows);
 $("k-find").oninput = keyRows;
-$("p-data").addEventListener("input", () => { if (KEYS) keyRows(); });
+$("p-data").addEventListener("input", () => { if (KEYS) keyRows(); cardRows(); });
 $("k-load").onclick = () => {
   const p = PATCHES.find(x => x.active);
   if (!p) { say("켜진 패치 없음"); return; }
   $("p-data").value = JSON.stringify(p.data, null, 2);
   $("p-notes").value = `패치 ${p.id} 이어서: `;
   $("p-min").value = p.min_game; $("p-max").value = p.max_game || "";
-  say(`패치 ${p.id} 불러옴`); keyRows();
+  say(`패치 ${p.id} 불러옴`); keyRows(); cardRows();
 };
 
 async function loadPatches() {
   loadKeys();
+  cardRows();
   const ps = PATCHES = await api("/admin/patches");
   table($("t-patches"), ps, [["번호", r => r.id, 1], ["날짜", r => kst(r.created)], ["메모", r => esc(r.notes)], ["게임 버전", r => `${r.min_game} ~ ${r.max_game || ""}`], ["시즌", r => r.season, 1],
     ["상태", (r, raw) => raw ? +r.active : `<button class="sub" onclick="togglePatch(${r.id}, ${!r.active})">${r.active ? "켜짐 → 끄기" : "꺼짐 → 켜기"}</button>`]]);
