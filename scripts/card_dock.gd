@@ -280,7 +280,9 @@ func _update_side() -> void:
 		text = hovered.get_meta("perk_desc")
 	else:
 		var mouse := game.get_viewport().get_mouse_position()
-		var over_inspector := side.get_global_rect().has_point(mouse)
+		# 전장과 설명 패널 사이의 여백을 지날 때 호버 대상을 먼저 지우면,
+		# 패널에 도착하기 전에 설명이 사라져 긴 내용을 스크롤할 수 없다.
+		var over_inspector := side.get_global_rect().grow(24.0).has_point(mouse)
 		var tower: Tower = game._tower_at(game.get_global_mouse_position()) if not over_ui(mouse) else null
 		if tower != null:
 			inspected_tower = tower
