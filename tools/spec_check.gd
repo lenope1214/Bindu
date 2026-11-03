@@ -1642,25 +1642,32 @@ func _meta_misc() -> void:
 	var quit_btn: bool = main.home_box.find_children("*", "Button", true, false).any(func(b): return b.tooltip_text == "게임 종료") == OS.has_feature("pc")
 	ok("UI-21", home0 and tiles_ok and prep1 and main.home_box.visible and skins_set and quit_btn, "첫 화면 %s·타일 %s, 준비 화면 %s, 모양은 설정 %s, 종료(PC만) %s" % [home0, tiles_ok, prep1, skins_set, quit_btn])
 
-	# 카드 설명 세 단계: 기본 간소화(속성은 효과 이름만, 괄호 덧붙임 뺌) → [자세히] 전체 → 자세히 + 올리기 창(반응 설명까지)
+	# 기본 설명은 효과 문장이고, 자세히와 반응·레벨업 정보는 남는다. 첫 판에 한정하지 않는다.
 	var was_d := Meta.card_detail
 	Meta.card_detail = false
-	var s0: Dictionary = main._card_content({"type": "elem", "e": Elem.WATER, "lv": 1}, 0)
-	var m0: Dictionary = main._card_content({"type": "mod", "id": "multi"}, 0)
-	var m1: Dictionary = main._card_content({"type": "mod", "id": "multi"}, 1)
 	var full: Array = main._card_full({"type": "elem", "e": Elem.WATER, "lv": 1})
-	# 속성마다 적중 효과·형태 성질 짧은 이름: 둘이 다르고 4글자 이하(간소화 카드에서 잘리지 않게), 꼬리표 적중/형태
-	var names_ok := true
-	for e in Elem.ALL:
-		var rn := Elem.rider_name(e)
-		var tn := Elem.trait_name(e)
-		if rn == tn or rn.length() > 4 or tn.length() > 4:
-			names_ok = false
-			print("  이름 문제: %s %s / %s" % [Elem.NAMES[e], rn, tn])
-	var pr: Array = s0["rows"][0].get("pair", [])
-	names_ok = names_ok and pr.size() == 2 and pr[0][2] == "적중" and pr[1][2] == "형태"
-	var simple_ok: bool = names_ok and s0["rows"][0].has("pair") and not str(m0["rows"][0]["t"]).contains("(") and str(m1["rows"][0]["t"]).contains("(")
-	var full_ok: bool = full.any(func(l): return str(l[0]).begins_with("반응 ")) and full.size() > s0["rows"].size()
+	var basic_ok := true
+	var wave_before: int = main.wave
+	for w in [0, 12, 50]:
+		main.wave = w
+		for e in Elem.ALL:
+			var basic: Dictionary = main._card_content({"type": "elem", "e": e, "lv": 1}, 0)
+			var text: String = basic["rows"][0].get("t", "")
+			basic_ok = basic_ok and text.length() >= 10 and not basic["rows"][0].has("pair") and not text.contains("적중 ·") and not text.contains("형태 ·")
+	main.wave = wave_before
+	var ice: String = main._card_content({"type": "elem", "e": Elem.ICE, "lv": 1}, 0)["rows"][0]["t"]
+	var earth: String = main._card_content({"type": "elem", "e": Elem.EARTH, "lv": 1}, 0)["rows"][0]["t"]
+	var star: String = main._card_content({"type": "elem", "e": Elem.STAR, "lv": 1}, 0)["rows"][0]["t"]
+	var conditions: bool = ice.contains("쌓아") and earth.contains("확률") and star.contains("복사") and star.contains("다 차면")
+	var s0: Dictionary = main._card_content({"type": "elem", "e": Elem.WATER, "lv": 1}, 0)
+	var combo_ok: bool = s0["rows"].any(func(r): return r.has("els"))
+	var multi: Dictionary = main._card_content({"type": "mod", "id": "multi"}, 0)
+	var finish: Dictionary = main._card_content({"type": "trig", "id": "finish"}, 0)
+	var reso: Dictionary = main._card_content({"type": "link", "id": "reso"}, 0)
+	var cata: Dictionary = main._card_content({"type": "cata", "id": "pat"}, 0)
+	conditions = conditions and multi["rows"][0]["t"].contains("피해는 줄어") and multi["rows"][0]["t"].contains("벽·블랙홀·투척 장판") and finish["rows"][0]["t"].contains("보스") and reso["rows"][0]["t"].contains("거리") and cata["rows"].size() == 3
+	var detail: Dictionary = main._card_content({"type": "mod", "id": "multi"}, 1)
+	var full_ok: bool = full.any(func(l): return str(l[0]).begins_with("반응 ")) and full.any(func(l): return str(l[0]).begins_with("형태 성질")) and detail["rows"][0]["t"].contains("(")
 	main._set_card_detail(true)
 	var on_ok: bool = Meta.card_detail and main.card_detail_btn.button_pressed
 	Meta.card_detail = false
@@ -1668,7 +1675,7 @@ func _meta_misc() -> void:
 	var no_floating_tip := plain_card.tooltip_text == ""
 	plain_card.free()
 	main._set_card_detail(was_d)
-	ok("UI-20", simple_ok and full_ok and on_ok and no_floating_tip, "카드 요약·오른쪽 상세 전환, 전체 조건·반응 설명 보존, 전장 위 카드 툴팁 없음")
+	ok("UI-20", basic_ok and conditions and combo_ok and full_ok and on_ok, "카드 기본 효과: 15속성·0/12/50웨이브 %s, 조건 %s, 반응 그림 %s, 자세히 보존 %s" % [basic_ok, conditions, combo_ok, full_ok])
 
 	# 카드 선택 막: 선택지가 펼쳐져 있으면 검은 막(카드·카드 줄 버튼은 그 위), 필드 보기·카드를 고르면 곧바로 걷힘
 	_fresh(3)
