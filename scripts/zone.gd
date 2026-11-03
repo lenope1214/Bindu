@@ -421,7 +421,7 @@ func _hit(o: Orb, amount: float, k: float) -> void:
 
 
 func _hurt(o: Orb, amount: float) -> void:
-	amount = o.hurt(amount)
+	amount = o.hurt(amount, false, owner_tower)
 	o.last_rx = kind in ["trail", "mine", "boom"] or src.begins_with("rx:")
 	if is_instance_valid(owner_tower):
 		owner_tower.credit(amount, src if src != "" else "hit")

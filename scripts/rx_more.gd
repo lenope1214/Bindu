@@ -506,8 +506,9 @@ static func _raw(t: Tower, o: Orb, d: float, mul := true) -> void:
 	if d <= 0.0:
 		return
 	if mul:
-		d = o.hurt(d)
+		d = o.hurt(d, false, t)
 	else:
+		d *= t.final_damage_mul()
 		o.hp -= d
 	o.last_rx = true
 	t.credit(d, t.tag if t.tag != "" else "hit")

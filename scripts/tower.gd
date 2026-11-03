@@ -51,6 +51,7 @@ var notify_cd := 0.0  # 반응이 터졌다고 둘레에 알리는 간격 (호�
 var wind_buff := 0.0  # 둘레 바람 오브젝트가 주는 공격 속도 (main이 매 계산마다 정함)
 var eff := {}  # 지금 쓰는 속성 (매 프레임 갱신)
 var dir := Vector2.RIGHT
+var reflex_target: Orb = null
 var aim := Vector2.RIGHT  # 유도 강화로 살짝 돈 실제 공격 방향
 var cd := {}  # 공격별 쿨다운
 var fx := {}  # 공격별 이펙트 남은 시간
@@ -450,6 +451,8 @@ func spd_parts_text() -> String:
 
 ## 사거리 (글자). draw_range·attack()과 같은 값.
 func range_text() -> String:
+	if m("reflex") > 0:
+		return "%d 안 전방위 자동 조준" % roundi(reflex_range())
 	var l := plv
 	var s := sz()
 	match pattern:
@@ -490,6 +493,7 @@ func hit_calc() -> Dictionary:
 	var wood: float = 1.0 + Rules.wood_dmg * mini(els.get(Elem.WOOD, 0), int(Rules.wood_cap))
 	one *= wood
 	# 금속: 맞힌 피해 +metal_dmg/레벨 (2026-11-01 예전 고정 +0.4/레벨은 후반에 거의 0이었다)
+	one *= final_damage_mul()
 	var metal: float = one * Rules.metal_dmg * els.get(Elem.METAL, 0)
 	return {"one": one, "metal": metal, "bh": bh, "f": f, "mk_on": mk_on, "wood": wood, "shots": shots}
 
@@ -840,10 +844,19 @@ func can_take(card: Dictionary) -> bool:
 		"pat":
 			return can_pattern(card["id"])
 		"mod":
-			return m(card["id"]) < Rules.max_mod and mod_count() < Rules.mod_total and mod_useless(card["id"]).is_empty()
+			return m(card["id"]) < mod_cap(card["id"]) and mod_count() < Rules.mod_total and mod_useless(card["id"]).is_empty()
 		"trig":
 			return tg(card["id"]) < int(Rules.t("trig_max"))
 	return true
+
+
+func mod_cap(id: String) -> int:
+	return 1 if id == "reflex" else Rules.max_mod
+
+
+## 최종 피해 감산: 공격방식·반응·지속 피해의 마지막 피해 처리에서 한 번 적용.
+func final_damage_mul() -> float:
+	return 0.9 if m("reflex") > 0 else 1.0
 
 
 ## 든 강화 합계 (Rules.mod_total까지).
@@ -894,7 +907,7 @@ func refuse_text(card: Dictionary) -> String:
 				return why
 			if mod_count() >= Rules.mod_total:
 				return "강화는 한 오브젝트에 %d개까지예요. 다른 오브젝트에 넣으세요" % Rules.mod_total
-			return "%s은(는) %d개까지 쌓을 수 있어요" % [Pat.MODS[card["id"]]["name"], Rules.max_mod]
+			return "%s은(는) %d개까지 쌓을 수 있어요" % [Pat.MODS[card["id"]]["name"], mod_cap(card["id"])]
 		"trig":
 			return "%s은(는) %d개까지 쌓을 수 있어요" % [Pat.TRIGS[card["id"]]["name"], int(Rules.t("trig_max"))]
 	return ""
@@ -997,6 +1010,8 @@ func cataclysm_pattern() -> void:
 
 
 func add_mod(id: String) -> String:
+	if id == "reflex" and not can_take({"type": "mod", "id": id}):
+		return refuse_text({"type": "mod", "id": id})
 	mods[id] = m(id) + 1
 	place_pop = 1.0
 	queue_redraw()
@@ -1015,6 +1030,8 @@ func mod_effect(id: String) -> String:
 func _mod_effect(id: String) -> String:
 	var f := mf(id)
 	match id:
+		"reflex":
+			return "전방위 자동 조준 · 최종 피해 -10% · 최대 1개"
 		"multi":
 			if pattern == "wall":
 				return "벽 최대 %d개" % (2 + roundi(f))
@@ -1183,7 +1200,7 @@ func load_save(d: Dictionary) -> void:
 	if ms is Dictionary:
 		for id in ms:
 			if Pat.MODS.has(id) and _int(ms[id]) > 0:
-				mods[id] = _int(ms[id])
+				mods[id] = mini(1, _int(ms[id])) if id == "reflex" else _int(ms[id])
 	prism = maxi(0, _int(d.get("prism")))
 	reso = maxi(0, _int(d.get("reso")))
 	pincer = maxi(0, _int(d.get("pincer")))
@@ -1461,7 +1478,11 @@ func attack(delta: float, orbs: Array) -> void:
 				burst_key = f[2]
 		if burst_t > 0.0:
 			_set_fire([burst_mul, burst_size, burst_key])
-	match pattern:
+	var can_fire := m("reflex") == 0 or is_instance_valid(reflex_target)
+	if not can_fire:
+		for key in cd:
+			cd[key] = maxf(0.0, cd[key] - dp)
+	match pattern if can_fire else "":
 		"gust":
 			# 다중 발사: 부채꼴로 벌리지 않고 같은 방향으로 나란히 (넓은 돌풍이 길목 밖으로 빠지지 않게, 2026-11-01)
 			if _ready_to("p", BASE_IV[pattern] / spd(l), dp):
@@ -1637,7 +1658,7 @@ func _pincer(o: Orb) -> void:
 	if o.kind == Orb.Kind.BOSS:
 		f *= 0.25
 	var d := o.max_hp * f
-	d = o.hurt(d, false)
+	d = o.hurt(d, false, self)
 	credit(d, "link:pincer")
 	if main:
 		main.popup(o.position, d, Color(1.0, 0.55, 0.85), true, "협공")
@@ -2021,8 +2042,44 @@ func halo_blades(l: int) -> Array:
 	return out
 
 
+## 반응의 감지 사거리. 공격·정보창과 같은 크기/레벨/사거리 보정을 쓴다.
+func reflex_range() -> float:
+	return reflex_range_of(pattern, plv, total_level(), mf("size"), tk(Elem.WIND), mf("homing"))
+
+
+static func reflex_range_of(pat: String, l: int, total: int, size_n: float, wind: float, homing: float) -> float:
+	var s := 1.0 + Rules.size_k * size_n
+	var r := rr_of(pat, l)
+	match pat:
+		"shot": return shot_range(total, size_n) * (1.0 + 0.12 * wind)
+		"spray": return 200.0 * r * s
+		"stream": return 260.0 * r * s
+		"chain": return 280.0 * r * s
+		"gust": return 420.0 * s * Rules.t("range_gust")
+		"sonic": return 230.0 * r * s
+		"clock": return 240.0 * r * s
+		"lob": return LOB_RANGE * r
+		"wall": return 90.0 * r + 28.0 * s
+	if homing > 0.0 and pat in Pat.PROJECTILE:
+		return Projectile.HOMING_TRAVEL
+	return 2000.0  # 화면 끝까지 날아가는 탄·레이저
+
+
 ## 유도 강화: 범위·광선 공격은 앞쪽 가장 가까운 구체 쪽으로 방향이 돈다(최대 0.1라디안씩).
 func _update_aim(orbs: Array, delta: float) -> void:
+	if m("reflex") > 0:
+		reflex_target = null
+		var best := reflex_range()
+		for o in orbs:
+			if not is_instance_valid(o) or o.hp <= 0.0:
+				continue
+			var dist: float = o.position.distance_to(position)
+			if dist <= best:
+				best = dist
+				reflex_target = o
+		if reflex_target != null and best > 0.001:
+			aim = (reflex_target.position - position).normalized()
+		return
 	var n := mf("homing")
 	if n == 0.0 or pattern in Pat.PROJECTILE:
 		aim = dir
@@ -2116,8 +2173,8 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	d *= rm
 	if ap > 0.0 and o.shield > 0.0:
 		# 남은 보호막이 0이 되면 hurt()가 깨지는 효과를 내도록 아주 조금 남긴다
-		o.shield = maxf(o.shield - d * Rules.pierce_shield * ap, 0.001)
-	d = o.hurt(d, crit)  # 받는 피해 배율(약점 등)까지 곱한 값
+		o.shield = maxf(o.shield - d * Rules.pierce_shield * ap * final_damage_mul(), 0.001)
+	d = o.hurt(d, crit, self)  # 받는 피해 배율(약점 등)까지 곱한 값
 	if main and not main.wells.is_empty():
 		_well_feed(o, d)
 	o.last_rx = in_rx or tag.begins_with("rx:")
@@ -2137,7 +2194,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	var key := tag if tag != "" else "hit"
 	var rest := d
 	if mt > 0.0:
-		mt *= rm
+		mt *= rm * final_damage_mul()
 		rest -= mt
 		src["elem:metal"] = src.get("elem:metal", 0.0) + mt
 	if dx > 1.0:
@@ -2515,7 +2572,7 @@ func _supernova(c: Orb) -> void:
 ## 초신성 피해: 보스면 cap에 남은 만큼만 (받는 피해 배율까지 맞춰 줄이고, 깎인 만큼 cap에서 뺀다).
 func nova_hurt(o: Orb, d: float, cap: Dictionary, crit := false) -> float:
 	if o.kind != Orb.Kind.BOSS:
-		return o.hurt(d, crit)
+		return o.hurt(d, crit, self)
 	if not cap.has(o):
 		cap[o] = o.max_hp * Rules.t("star_boss_cap")
 	var left: float = cap[o]
@@ -2524,7 +2581,7 @@ func nova_hurt(o: Orb, d: float, cap: Dictionary, crit := false) -> float:
 	var k := o.hurt_mul()
 	if d * k > left:
 		d = left / maxf(k, 0.001)
-	var got := o.hurt(d, crit)
+	var got := o.hurt(d, crit, self)
 	cap[o] = maxf(left - got, 0.0)
 	return got
 
@@ -3425,6 +3482,15 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 		c = Elem.COLORS[els.keys()[0]]
 	if focus >= 0:
 		c.a = 0.35
+	if md.get("reflex", 0) > 0:
+		var total := 0
+		for e in els:
+			total += int(els[e])
+		var sn := float(md.get("size", 0))
+		if Rules.mod_decay:
+			sn = 2.0 * (1.0 - pow(0.5, sn))
+		var r := reflex_range_of(sp["pat"], l, total, sn, minf(els.get(Elem.WIND, 0), 3) * Rules.trait_mul, md.get("homing", 0))
+		ci.draw_arc(o, r, 0.0, TAU, 96, Color(c, 0.3), 1.5)
 	var ks := spread_ks(n)
 	for i in n:
 		var dd := d.rotated(spread_a(ks[i]))
@@ -3621,7 +3687,7 @@ func preview(card: Dictionary) -> Array:
 		"mod":
 			var id: String = card["id"]
 			sp["mods"][id] = m(id) + 1
-			out.append("%s %d → %d" % [Pat.MODS[id]["name"], m(id), m(id) + 1] + (" (최대 %d)" % Rules.max_mod if Rules.max_mod < Rules.NO_CAP else "") + ("  효과 x%.2f → x%.2f" % [mf(id), 2.0 * (1.0 - pow(0.5, m(id) + 1))] if Rules.mod_decay else "") )
+			out.append("%s %d → %d" % [Pat.MODS[id]["name"], m(id), m(id) + 1] + (" (최대 %d)" % mod_cap(id) if mod_cap(id) < Rules.NO_CAP else "") + ("  효과 x%.2f → x%.2f" % [mf(id), 2.0 * (1.0 - pow(0.5, m(id) + 1))] if Rules.mod_decay and id != "reflex" else "") )
 			if Rules.mod_total < Rules.NO_CAP:
 				out.append("강화 합계 %d → %d (한 오브젝트 %d개까지)" % [mod_count(), mod_count() + 1, Rules.mod_total])
 			var before := mod_effect(id) if m(id) > 0 else "없음"

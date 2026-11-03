@@ -2488,8 +2488,8 @@ func _card_content(card: Dictionary, lvl: int) -> Dictionary:
 		"mod":
 			var id: String = card["id"]
 			head["name"] = Pat.MODS[id]["name"]
-			rows = [{"t": Pat.mdesc(id)}]
-			foot = [["place_on", "위에 놓기 · " + ("종류별 %d · 합 %d" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "쌓을수록 절반")]]
+			rows = [{"t": "사거리 안 가까운 구체를 전방위 조준 · 최종 피해 -10% · 오브젝트당 1회" if id == "reflex" else Pat.mdesc(id)}]
+			foot = [["place_on", "오브젝트당 1회" if id == "reflex" else "위에 놓기 · " + ("종류별 %d · 합 %d" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "쌓을수록 절반")]]
 		"link":
 			var id: String = card["id"]
 			head["name"] = Pat.LINKS[id]["name"]
@@ -2575,6 +2575,10 @@ func _card_full(card: Dictionary) -> Array:
 					out.append(["%s Lv%d → Lv%d 가능" % [Pat.pname(id), t.plv, t.plv + 1], D])
 			out.append(["직선탄 오브젝트에 넣으면 그 공격방식으로 고정, 같은 공격방식에 넣으면 레벨업", D])
 		"mod":
+			if card["id"] == "reflex":
+				out.append(["사거리 안 최근접 구체를 전방위 조준 · 최종 피해 -10%", W])
+				out.append(["오브젝트당 1회 · 그린 궤적·혼불·블랙홀 제외", D])
+				return out
 			out.append([Pat.mdesc(card["id"]), W])
 			out.append(["오브젝트 위에 놓기 · " + ("종류별 %d개, 합쳐 %d개까지" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "쌓을수록 효과 절반씩"), D])
 		"link":
@@ -8567,7 +8571,7 @@ func spawn_rock(t: Tower, l: int) -> void:
 	var inner := arena().grow(-100.0)
 	# 빈 자리 중 앞쪽부터 (Tower.rock_slot). 가장자리에 밀려 같은 자리에 겹치는 바위는 세우지 않는다
 	for k in 2 + roundi(t.mf("multi")):
-		var p := (t.position + Tower.rock_slot(t.dir, k, l)).clamp(inner.position, inner.end)
+		var p := (t.position + Tower.rock_slot(t.aim if t.m("reflex") > 0 else t.dir, k, l)).clamp(inner.position, inner.end)
 		if not t.rocks.any(func(r): return r.position.distance_to(p) < 40.0):
 			t.rocks.append(spawn_zone("rock", l, p, t))
 			return
@@ -8588,7 +8592,7 @@ func sound_pulse(o: Orb) -> void:
 	var tox: Tower = o.toxring_src if o.toxring_t > 0.0 and is_instance_valid(o.toxring_src) else null
 	for other in near(o.position, r + 30.0):
 		if other.hp > 0.0 and other.position.distance_to(o.position) < r + other.radius():
-			var got: float = other.hurt(dmg)
+			var got: float = other.hurt(dmg, false, tw)
 			if tw:
 				tw.credit(got, "elem:sound")
 			if tox:
@@ -8659,7 +8663,7 @@ func arc(from: Orb, dmg: float, src: Tower = null, cap = null) -> void:  # cap: 
 				bd = d
 				best = o
 	if best:
-		var got: float = src.nova_hurt(best, dmg, cap) if src and cap is Dictionary else best.hurt(dmg)
+		var got: float = src.nova_hurt(best, dmg, cap) if src and cap is Dictionary else best.hurt(dmg, false, src)
 		if src:
 			src.credit(got, "elem:electric")
 		if arcs.size() < 80:
@@ -9757,7 +9761,7 @@ func _curse_burst(o: Orb) -> void:
 			continue
 		var d: float = other.position.distance_to(o.position)
 		if d < 100.0 + other.radius():
-			var got: float = other.hurt(dmg)
+			var got: float = other.hurt(dmg, false, tw)
 			other.last_rx = true
 			if tw:
 				tw.credit(got, "rx:curse")

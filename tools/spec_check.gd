@@ -90,6 +90,7 @@ func _initialize():
 	_patterns()
 	await _attacks()
 	await _multi_center()
+	_reflex()
 	_mods_links()
 	await _mods_area()
 	_waves()
@@ -583,6 +584,122 @@ func _mods_area() -> void:
 	main.phase = main.Phase.CHOOSE
 	_clear()
 	ok("MOD-10", same, "돌풍 다중 2개: 돌풍 %d개가 같은 방향으로 나란히" % dirs.size())
+
+
+# 반응: 기존 방향 고정과 다른 전방위 조준·최종 감산·모드/저장 경계.
+func _reflex() -> void:
+	_fresh()
+	var c: Vector2 = main.center()
+	var card := {"type": "mod", "id": "reflex"}
+	var t := _tower(c + Vector2(-100, 0), Elem.WIND)
+	var other := _tower(c + Vector2(100, 0), Elem.WATER)
+	var selectable: bool = main.towers.get_children().any(func(tw): return tw.can_take(card))
+	t.add_mod("reflex")
+	t.add_mod("reflex")
+	var cap_ok := t.m("reflex") == 1 and not t.can_take(card) and other.can_take(card) and t.refuse_text(card).contains("1개")
+	Meta.rules = 3
+	main._apply_rules()
+	cap_ok = cap_ok and not t.can_take(card)
+	Meta.rules = 1
+	main._apply_rules()
+	var restored := Tower.new()
+	restored.load_save(t.to_save())
+	var save_ok := restored.m("reflex") == 1 and not restored.can_take(card)
+	restored.free()
+	var blocked := true
+	for pat in ["path", "wisp", "vortex"]:
+		blocked = blocked and not t.can_pattern(pat) and not Pat.mod_ok(pat, "reflex")
+	ok("MOD-13", selectable and cap_ok and save_ok and blocked, "반응: 카드 후보·오브젝트당 1개(랭크/도파민)·저장 복원·무효 조합")
+	# 사거리 밖·죽은 구체 무시, 뒤·옆의 최근접 구체로 즉시 회전. 유도와 함께도 동일.
+	var far := _orb(t.position + Vector2.RIGHT * (t.reflex_range() + 1.0), 1000.0)
+	var dead := _orb(t.position + Vector2.RIGHT * 10.0, 0.0)
+	var back := _orb(t.position + Vector2.LEFT * 100.0, 1000.0)
+	var side := _orb(t.position + Vector2.DOWN * 80.0, 1000.0)
+	t._update_aim([far, dead], 0.016)
+	var no_target := t.reflex_target == null
+	t._update_aim([far, dead, back], 0.016)
+	var back_ok := t.aim.is_equal_approx(Vector2.LEFT) and t.dir == Vector2.RIGHT
+	t.add_mod("homing")
+	t._update_aim([back, side], 0.016)
+	ok("MOD-13", no_target and back_ok and t.reflex_target == side and t.aim.is_equal_approx(Vector2.DOWN), "반응: 사거리 밖/죽은 구체 제외·후방 조준·최근접 전환·유도 공존")
+	# 사거리 밖이면 탄을 아끼며 쿨다운만 진행, 들어오면 바로 발사.
+	t.cd["p"] = 0.1
+	t.attack(0.2, [far])
+	var wait_ok: bool = main.projectiles.get_child_count() == 0 and is_zero_approx(t.cd["p"])
+	t.attack(0.016, [back])
+	var shot_ok: bool = main.projectiles.get_child_count() == 1 and main.projectiles.get_child(0).vel.x < 0.0
+	ok("MOD-13", wait_ok and shot_ok, "반응: 사거리 밖 발사 없음·대기 중 쿨다운·진입 즉시 후방 발사")
+	# 직접·반응·갑옷·보호막·화상·중독의 실제 체력/보호막 감소량.
+	var damage_ok := true
+	t.mods.erase("reflex")
+	t.eff = {Elem.WIND: 1}
+	var victim := _orb(c + Vector2(0, -200), 10000.0)
+	for rx in [false, true]:
+		t.in_rx = rx
+		var before := victim.hp
+		t.hit(victim, 100.0)
+		var normal := before - victim.hp
+		t.mods["reflex"] = 1
+		before = victim.hp
+		t.hit(victim, 100.0)
+		damage_ok = damage_ok and is_equal_approx(before - victim.hp, normal * 0.9)
+		t.mods.erase("reflex")
+	t.in_rx = false
+	t.mods["reflex"] = 1
+	victim.shield = 100.0
+	victim.hurt(10.0, false, t)
+	damage_ok = damage_ok and is_equal_approx(victim.shield, 91.0)
+	t.pattern = "spray"
+	t.mods["pierce"] = 1
+	t.mods.erase("reflex")
+	victim.shield = 1000.0
+	t.hit(victim, 10.0)
+	var shield_loss := 1000.0 - victim.shield
+	t.mods["reflex"] = 1
+	victim.shield = 1000.0
+	t.hit(victim, 10.0)
+	damage_ok = damage_ok and is_equal_approx(1000.0 - victim.shield, shield_loss * 0.9)
+	t.mods.erase("pierce")
+	t.pattern = "shot"
+	victim.shield = 0.0
+	victim.burn(10.0, 2.0, t)
+	victim.poison(10.0, 2.0, t)
+	var hp := victim.hp
+	victim.step(0.1)
+	damage_ok = damage_ok and is_equal_approx(hp - victim.hp, 1.8)
+	victim.late = "armor"
+	victim.armor = 5.0
+	t.mods.erase("reflex")
+	hp = victim.hp
+	t.hit(victim, 100.0)
+	var armored := hp - victim.hp
+	victim.armor_hits = 0.0
+	t.mods["reflex"] = 1
+	hp = victim.hp
+	t.hit(victim, 100.0)
+	damage_ok = damage_ok and is_equal_approx(hp - victim.hp, armored * 0.9)
+	ok("MOD-13", damage_ok, "반응: 직접/특수 반응/보호막/화상/중독/갑옷 뒤 최종 피해 x0.9")
+	# 방향을 쓰는 모든 공격방식에서 후방 조준, 범위 미리보기와 실제 수치 일치.
+	var patterns_ok := true
+	for pat in Pat.ALL_IDS:
+		if not Pat.mod_ok(pat, "reflex"):
+			continue
+		t.pattern = pat
+		t._update_aim([back], 0.016)
+		patterns_ok = patterns_ok and t.reflex_target == back and t.aim.is_equal_approx(Vector2.LEFT)
+	var content: Dictionary = main._card_content(card, 1)
+	var text_ok: bool = content["foot"][0][1].contains("1회") and content["rows"][0]["t"].contains("-10%")
+	ok("MOD-13", patterns_ok and text_ok, "반응: 방향 공격 13종 후방 조준·카드 앞면 1회/피해 감산 안내")
+	# 실제 전투 경로에서 방향 고정 분사는 후방에 0, 반응은 피해 발생.
+	_fresh()
+	t = _tower(c + Vector2(-100, 0), Elem.WATER)
+	t.set_pattern("spray")
+	victim = _orb(t.position + Vector2.LEFT * 100.0, 1000.0)
+	main._resolve(0.1)
+	var fixed_hp := victim.hp
+	t.add_mod("reflex")
+	main._resolve(0.1)
+	ok("MOD-13", is_equal_approx(fixed_hp, 1000.0) and victim.hp < fixed_hp, "반응: 실제 전투 분사 후방 구체 명중 (기존 방향 고정은 0)")
 
 
 # ---------- 강화·연계·발동 ----------
