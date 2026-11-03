@@ -195,6 +195,9 @@ var tutor := false  # 이번 판이 첫 판 안내 판인지: 카드 종류를 �
 var tutor_given := {}  # 첫 판에 새로 연 카드 종류를 선택지에 한 번 넣었는지 (종류 -> true)
 var guide_label: Label  # 처음 생기는 일 한 줄 안내 (위쪽 가운데)
 var guide_lines: Array[String] = []
+var guide_topic := ""
+var guide_priority := 0
+var guide_more: Button
 var guide_t := 0.0  # 남은 시간. 음수면 웨이브가 시작될 때까지
 var wave_resist := -1  # 다음 웨이브 저항 속성 (-1: 없음)
 var legend_btn: Button
@@ -311,7 +314,7 @@ var vote_btn: Button  # 시작 화면 [투표]: 투표 API가 있는 서버일 �
 var vote_over_btn: Button  # 판 끝난 화면 [다음 패치 투표]
 var tut: Tutorial  # 튜토리얼 카드·다시 보기 목록 (시작 화면 [튜토리얼]·일시정지)
 var tut_queue: Array[String] = []  # 판에서 처음 생겨서 띄울 항목 (쉬는 시간·시작 화면에서 띄움)
-var tut_first := false  # 이 기기에서 처음 켰다: 시작 화면이 뜨면 기본 항목을 무조건
+var tut_first := false  # 이 기기에서 첫 소개가 아직 완료되지 않음
 var tut_paused := false  # 튜토리얼을 띄우느라 판을 멈췄다 (닫으면 다시 진행)
 var modes_btn: Button
 var modes_head: Label
@@ -786,6 +789,14 @@ func _build_ui() -> void:
 	guide_label.add_theme_stylebox_override("normal", gsb)
 	guide_label.visible = false
 	root.add_child(guide_label)
+	guide_more = Button.new()
+	guide_more.text = "더 알아보기"
+	guide_more.focus_mode = Control.FOCUS_NONE
+	guide_more.z_index = 2
+	guide_more.custom_minimum_size = Vector2(130, 32)
+	guide_more.visible = false
+	guide_more.pressed.connect(_open_guide_details)
+	root.add_child(guide_more)
 
 	# 카드 선택 중 전장·점수 줄·설명을 어둡게 (카드·카드 줄 버튼·알림·안내는 z 2로 그 위). 마우스는 통과
 	card_dim = ColorRect.new()
@@ -2584,7 +2595,9 @@ func _draw_card_full() -> void:
 	var row: Rect2 = inv * choice_box.get_global_rect()
 	var top_lim := (hud.position.y + hud.size.y + 6.0) if hud.visible else 8.0
 	var bot_lim := info.size.y - 8.0
-	var w := 420.0
+	var side_room := info.size.x - row.end.x - 20.0
+	var beside_guide := guide_label.visible and side_room >= 260.0
+	var w := minf(420.0, side_room) if beside_guide else 420.0
 	var fs := 14
 	var rows: Array = []
 	var lh := 0.0
@@ -2602,7 +2615,10 @@ func _draw_card_full() -> void:
 		fs -= 1
 	var x := clampf(cr.get_center().x - w / 2.0, 8.0, info.size.x - w - 8.0)
 	var y := row.position.y - h - (44.0 if touch_ui else 30.0)  # 카드 줄 위 (고르기 꼬리표·[적용] 위)
-	if y < top_lim:
+	if beside_guide:
+		x = row.end.x + 12.0
+		y = clampf(row.position.y, top_lim, bot_lim - h)
+	elif y < top_lim:
 		y = clampf(row.end.y + 50.0, top_lim, bot_lim - h)  # 위에 자리가 없으면 아래 버튼 줄 밑, 화면 안으로
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.04, 0.05, 0.08, 0.96)
@@ -2803,40 +2819,69 @@ func _choose_hint() -> String:
 
 # ---------- 튜토리얼 ----------
 
-## 판에서 처음 생긴 일(_guide id 등) → 그 튜토리얼 항목을 이 기기에서 아직 안 봤으면 띄울 줄에 넣는다.
-## 안내 끄기(설정)를 따르고, 멀티 판(멈출 수 없음)·정원(지켜보는 판)에서는 띄우지 않는다.
-func _tut_event(id: String) -> void:
-	var tp: String = Tutorial.ON_EVENT.get(id, "")
-	if tp == "" or not Meta.guide_on or mp_mode != "" or Garden.on or Tutorial.seen.has(tp) or tut_queue.has(tp):
-		return
-	tut_queue.append(tp)
+## 자동 튜토리얼 모달은 예약하지 않는다. 기존 이벤트 호출부는 짧은 안내와 함께 유지한다.
+func _tut_event(_id: String) -> void:
+	# 판 중 설명은 _guide가 담당한다. 상세 설명은 직접 열 때만 seen으로 기록한다.
+	pass
 
 
-## 띄울 때가 되면 띄운다: 처음 켠 기기는 시작 화면에서 기본 항목, 판에서 생긴 항목은 쉬는 시간(카드 고르기)이나 시작 화면에서.
 func _tut_tick() -> void:
 	if tut.visible or DisplayServer.get_name() == "headless":
 		return
 	var panels := settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible or vote_panel.visible or mp_panel.visible or tree_panel.visible
 	if panels:
 		return
-	if tut_first:
-		if title_label.visible:
-			tut_first = false
-			_open_tut(Tutorial.FIRST, true)
-		return
-	if tut_queue.is_empty():
-		return
-	var ok := title_label.visible or (phase == Phase.CHOOSE and not get_tree().paused and coin_stage == 0 and skip_left == 0 and mp_mode == "")
-	if not ok:
-		return
-	var ids: Array = tut_queue.filter(func(x): return not Tutorial.seen.has(x))
+	if tut_first and title_label.visible:
+		tut_first = false
+		tut.touch = touch_ui
+		tut.phone = _phone()
+		tut.open_welcome()
 	tut_queue.clear()
-	if ids.is_empty():
+
+
+func _first_action_text() -> String:
+	if (Meta.games > 0 and not tutor) or wave != 0 or Garden.on or mp_mode != "" or not Meta.guide_on:
+		return ""
+	match phase:
+		Phase.CHOOSE:
+			if perk_mode:
+				return ""
+			if cards_hidden:
+				return "선택지를 다시 열어 카드를 고르세요."
+			if touch_ui and tap_sel >= 0:
+				return "선택한 카드를 적용하세요."
+			return "카드를 한 장 더 고르세요." if towers.get_child_count() > 0 else "카드를 하나 고르세요."
+		Phase.PLACE:
+			return "빨간 길목 쪽 빈 곳에 놓으세요."
+		Phase.AIM:
+			return "구체가 오는 쪽으로 방향을 정하세요."
+		Phase.READY:
+			return "웨이브를 시작하세요."
+		Phase.MOVE:
+			return "옮길 곳에 놓으세요. 취소하면 돌아가요."
+	return ""
+
+
+func _open_guide_details() -> void:
+	if guide_topic == "":
 		return
-	if not title_label.visible:
-		get_tree().paused = true  # 고르는 동안은 시간이 안 가지만 자동 시작·배속 등이 돌지 않게
+	if not get_tree().paused and not title_label.visible:
+		get_tree().paused = true
 		tut_paused = true
-	_open_tut(ids)
+	_open_tut([guide_topic])
+
+
+func _update_action_guide() -> void:
+	var action := _first_action_text()
+	if action != "" and not title_label.visible and not (settings_panel.visible or records_panel.visible or help_label.visible or notes_panel.visible or modes_panel.visible or codex_panel.visible or vote_panel.visible or mp_panel.visible or tree_panel.visible or tut.visible):
+		guide_label.text = _kr_keep(action)
+		guide_label.reset_size()
+		guide_topic = "cards" if phase == Phase.CHOOSE else "goal" if phase == Phase.READY else "place"
+		guide_label.visible = not get_tree().paused and not tut.visible
+		# 같은 조작을 화면 위 안내와 아래 긴 조작문으로 중복 설명하지 않는다.
+		hint.text = ""
+	guide_more.visible = guide_label.visible and guide_topic != ""
+	guide_more.position = Vector2(guide_label.position.x, guide_label.get_rect().end.y + 6.0)
 
 
 func _open_tut(ids: Array, first := false) -> void:
@@ -2862,24 +2907,36 @@ func _on_tut_closed() -> void:
 # ---------- 처음 안내 ----------
 
 ## 처음 생기는 일에 한 줄 안내. 안내마다 한 번만(Meta.guide_seen), 설정에서 끌 수 있다.
-## 쉬는 시간 안내는 웨이브가 시작될 때까지, 웨이브 중 안내는 8초 보인다(쉬는 시간 안내가 붙으면 함께 남음). 많아야 3개.
+## 쉬는 시간은 웨이브 시작까지, 웨이브 중은 8초. 한 번에 하나만, 위험 경고를 일반 안내보다 우선한다.
 func _guide(id: String, text: String) -> void:
-	_tut_event(id)
-	if not Meta.guide_on or Meta.guide_seen.has(id) or title_label.visible:
+	if not Meta.guide_on or Meta.guide_seen.has(id) or title_label.visible or _first_action_text() != "":
 		return
-	var first := Meta.guide_seen.is_empty()
+	var priority := 3 if id == "boss" else 2 if id in ["resist", "sturdy", "jam", "leak"] else 1
+	if not guide_lines.is_empty() and priority < guide_priority:
+		return  # 판단에 필요한 경고를 일반 설명이 덮지 않는다. 보여 주지 않은 항목은 seen으로 기록하지 않는다.
+	var short := {
+		"stack": "같은 속성은 레벨업, 다른 속성은 효과를 더해요.",
+		"boss": "다음 웨이브에 보스가 와요. 분홍 경로를 확인하세요.",
+		"resist": "저항 속성 외의 공격도 준비하세요.",
+		"sturdy": "굳센 구체는 이동 방해에 강해요.",
+		"ley": "청록 고리 위 오브젝트는 피해가 늘어요.",
+		"jam": "방해 구체가 와요. 오브젝트를 나눠 배치하세요.",
+		"pat": "새 공격방식: 직선탄 오브젝트에 넣어 공격을 바꿔요.",
+		"mod": "새 강화: 오브젝트에 넣어 공격을 강화해요.",
+		"trig": "새 발동: 조건이 맞으면 추가 효과가 나와요.",
+		"link": "새 연계: 주변 오브젝트와 함께 싸워요.",
+		"skill": "웨이브 중 기술 버튼으로 전투를 도울 수 있어요.",
+		"leak": "구체가 중앙에 닿았어요. 빈 길목을 보강하세요.",
+		"lanes": "빨간 부채꼴이 구체가 들어오는 길목이에요.",
+	}
+	var line: String = short.get(id, text.get_slice(". ", 0))
 	Meta.guide_seen[id] = true
 	_save_best()
-	guide_lines.append(text)
-	if first:
-		guide_lines.append(_kh("이런 안내는 처음 한 번만 나와요. 설정(O)에서 끌 수 있어요"))
-	while guide_lines.size() > 3:
-		guide_lines.pop_front()
+	guide_lines.assign([line])
+	guide_priority = priority
+	guide_topic = Tutorial.ON_EVENT.get(id, "goal" if id == "lanes" else "")
 	guide_t = 8.0 if phase == Phase.WAVE else -1.0
-	var out := PackedStringArray()
-	for g in guide_lines:
-		out.append(_wrap_words(g, minf(570.0, ui_root.size.x - 40.0), 16))  # 세로 화면(정원)은 폭이 좁다
-	guide_label.text = "\n".join(out)
+	guide_label.text = _kr_keep(_wrap_words(line, minf(570.0, ui_root.size.x - 40.0), 16))
 	guide_label.reset_size()
 
 
@@ -3689,7 +3746,7 @@ func _off_legend(r: Rect2) -> Rect2:
 func _info_blockers() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var inv := ui_root.get_global_transform().affine_inverse()
-	for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, guide_label, mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, draw_ok_btn]:
+	for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, guide_label, guide_more, mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, draw_ok_btn]:
 		if c == null or not c.is_visible_in_tree():
 			continue
 		if (c is Label and str(c.text) == "") or (c == hud and hud_chips.is_empty()):
@@ -5516,6 +5573,7 @@ func _build_menu(root: Control) -> void:
 	tut.z_index = 23  # 일시정지 어둠(20)·다른 창(22) 위에
 	tut.setup(rsb.duplicate(), func(): help_label.visible = true)
 	tut.closed.connect(_on_tut_closed)
+	tut.play_requested.connect(func(): _set_prep(true))
 	root.add_child(tut)
 
 	settings_panel = PanelContainer.new()
@@ -5637,7 +5695,7 @@ func _build_menu(root: Control) -> void:
 	gr.focus_mode = Control.FOCUS_NONE
 	gr.pressed.connect(func():
 		Meta.guide_seen = {}
-		Tutorial.seen = {}  # 튜토리얼 항목도 처음 생길 때 다시 (기기에서 처음 켤 때 보는 기본 항목은 그대로 지남)
+		Tutorial.seen = {}  # 직접 열어 본 항목 기록만 초기화. 첫 소개 완료(done)는 보존
 		Tutorial.save_file()
 		Meta.guide_on = true
 		Meta.tutor_next = true
@@ -9016,7 +9074,7 @@ func _process(delta: float) -> void:
 		if guide_t <= 0.0:
 			guide_lines.clear()
 			guide_t = 0.0
-	guide_label.visible = not guide_lines.is_empty() and not title_label.visible and phase != Phase.GAMEOVER and not get_tree().paused and not help_label.visible and not settings_panel.visible and not records_panel.visible and not notes_panel.visible and not modes_panel.visible and not codex_panel.visible and not vote_panel.visible
+	guide_label.visible = Meta.guide_on and not guide_lines.is_empty() and not title_label.visible and phase != Phase.GAMEOVER and not get_tree().paused and not help_label.visible and not settings_panel.visible and not records_panel.visible and not notes_panel.visible and not modes_panel.visible and not codex_panel.visible and not vote_panel.visible
 	# 글자를 키운(설정) 좁은 화면에서 펼친 버튼 줄이 왼쪽 아래 안내 글에 닿으면 안내 글을 버튼 줄 앞까지로 줄인다.
 	# 줄이 늘면 위로 자라고, 다음 웨이브 미리보기는 그 위에 붙는다
 	var hw := 590.0
@@ -9040,6 +9098,7 @@ func _process(delta: float) -> void:
 	_beside_legend(guide_label, 0.0)
 	if gp and gp.visible and gp.get_rect().position.x > 0.0:  # 정원 가로 화면: 오른쪽 상점 창 밑으로 들어가지 않게
 		guide_label.position.x = maxf(8.0, minf(guide_label.position.x, gp.get_rect().position.x - 8.0 - guide_label.size.x))
+	_update_action_guide()
 	# 왼쪽 위 DPS 표를 펼쳐 두면 알림이 표 위에 겹치던 것 (글자 115% 이상·표가 길 때): 표와 오른쪽 설명 사이에 두고,
 	# 글이 그 폭보다 길면 두 줄로 접는다 (예전엔 표 아래로 내려 카드 줄 밑에 깔렸다: 봉인·이벤트 알림)
 	if toast.visible:
@@ -9199,7 +9258,7 @@ func _process(delta: float) -> void:
 	if dps_panel.visible and ui_root.size.x / 2.0 + cx - 365.0 < 320.0:
 		floor_y += 44.0 + 48.0 + 6.0  # 왼쪽 위 DPS 표(머리 + 2줄, 나머지는 굴려 봄)를 덮지 않게
 	if guide_label.visible:
-		floor_y = maxf(floor_y, guide_label.position.y + guide_label.size.y + 26.0)  # 처음 안내 글이 카드 글 뒤로 겹치던 것 (고르기 꼬리표 자리 포함)
+		floor_y = maxf(floor_y, (guide_more.get_rect().end.y if guide_more.visible else guide_label.get_rect().end.y) + 26.0)  # 처음 안내 글이 카드 글 뒤로 겹치던 것 (고르기 꼬리표 자리 포함)
 	var need := ch + 8.0 + 40.0 + (84.0 if Garden.on else 0.0)
 	var k := clampf(minf((lim - floor_y) / need, kw), minf(0.7, kw), 1.0)
 	cx = minf(cx, room - half * k - ui_root.size.x / 2.0)

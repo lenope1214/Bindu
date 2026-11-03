@@ -2032,24 +2032,28 @@ func _mp_more() -> void:
 # ---------- 튜토리얼 ----------
 
 func _tutorial() -> void:
-	# TUT-01: 기기 파일에만 저장, 처음이면 need_first, 닫으면(건너뛰기 포함) 기본 항목까지 본 것으로
+	# TUT-01: 첫 소개 완료와 상세 항목 열람을 기기 파일에서 분리한다.
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(Tutorial.PATH))
 	Tutorial.load_file()
 	var first := Tutorial.need_first()
-	main._open_tut(Tutorial.FIRST, true)
-	var showed: bool = main.tut.visible and main.tut.btn_close.text == "건너뛰기"
+	main.tut.open_welcome()
+	var showed: bool = main.tut.visible and main.tut.mode == "welcome" and main.tut.queue.is_empty() and main.tut.btn_next.text == "플레이하며 배우기"
 	main.tut.close()
 	Tutorial.done = false
 	Tutorial.seen = {}
 	Tutorial.load_file()
-	var after := not Tutorial.need_first() and Tutorial.FIRST.all(func(id): return Tutorial.seen.has(id))
+	var after := not Tutorial.need_first() and Tutorial.seen.is_empty()
+	main.tut.open_welcome()
+	main.tut._close_or_details()
+	var optional: bool = main.tut.mode == "pages" and Tutorial.seen.has("goal") and not Tutorial.seen.has("place")
+	main.tut.close()
 	main._save_best()
 	var best := ConfigFile.new()
 	best.load(Meta.SAVE_PATH)
 	var prog := JSON.stringify(Progress.build())
-	ok("TUT-01", Tutorial.PATH == "user://device.cfg" and first and showed and after and not best.has_section("tutorial") and not prog.contains("tutorial"),
-		"첫 진입 %s, 건너뛰기 %s, 닫은 뒤 다시 안 뜸 %s, best.cfg·계정 진행엔 없음" % [first, showed, after])
-	# TUT-02: 항목 15개, id 겹침 없음, 장마다 그림 함수, 터치 글엔 키·클릭 말 없음, 모든 항목이 첫 진입이나 처음 나올 때로 뜸
+	ok("TUT-01", Tutorial.PATH == "user://device.cfg" and first and showed and after and optional and not best.has_section("tutorial") and not prog.contains("tutorial"),
+		"첫 목표 한 문장 %s, 소개 완료와 설명 열람 분리 %s, 선택형 설명 %s, 기기 파일만 사용" % [showed, after, optional])
+	# TUT-02: 수동 상세 항목 15개, id·그림·터치 문구·안내 연결 목록 정합성
 	var ids := {}
 	var bad := []
 	for tp in Tutorial.TOPICS:
@@ -2069,27 +2073,24 @@ func _tutorial() -> void:
 		if not ids.has(v):
 			bad.append("모르는 항목 " + v)
 	ok("TUT-02", Tutorial.TOPICS.size() == 15 and ids.size() == 15 and bad.is_empty(), "항목 %d개, 문제 %s" % [ids.size(), str(bad)])
-	# TUT-03: 처음 생긴 일이면 한 번만 줄에 넣고, 안내 끄기·멀티·이미 본 항목은 넣지 않음. 띄우면 본 것으로, 판을 멈췄으면 닫을 때 다시 진행
+	# 자동 이벤트는 더 이상 모달을 예약하거나 읽음으로 기록하지 않는다.
 	Tutorial.seen = {}
 	main.tut_queue.clear()
 	Meta.guide_on = true
 	main.mp_mode = ""
+	main.wave = 4
+	Meta.guide_seen.erase("boss")
+	Meta.guide_seen.erase("mod")
+	main.guide_lines.clear()
 	main._tut_event("pat")
-	main._tut_event("pat")
-	main._tut_event("nothing")
-	var once: bool = main.tut_queue == ["pat"]
 	main._guide("boss", "보스 안내")
-	var via_guide: bool = main.tut_queue.has("boss")
+	main._guide("mod", "일반 안내")
+	var single: bool = main.guide_lines.size() == 1 and main.guide_lines[0].contains("보스") and not Meta.guide_seen.has("mod")
+	var quiet: bool = main.tut_queue.is_empty() and Tutorial.seen.is_empty() and not paused
 	Meta.guide_on = false
-	main._tut_event("mod")
+	main._process(0.0)
+	var hidden_off: bool = not main.guide_label.visible and not main.guide_more.visible and not main.guide_lines.is_empty()
 	Meta.guide_on = true
-	main.mp_mode = "vs"
-	main._tut_event("mod")
-	main.mp_mode = ""
-	Tutorial.seen["link"] = true
-	main._tut_event("link")
-	var skipped: bool = not main.tut_queue.has("mod") and not main.tut_queue.has("link")
-	main.tut_queue.clear()
 	main.tut_paused = true
 	paused = true
 	main._open_tut(["pat"])
@@ -2098,7 +2099,40 @@ func _tutorial() -> void:
 	main.tut._next()
 	var resumed: bool = not main.tut.visible and not paused and not main.tut_paused
 	paused = false
-	ok("TUT-03", once and via_guide and skipped and marked and resumed, "한 번만 %s, _guide에서 %s, 끄기·멀티·본 것 빼기 %s, 본 것 표시 %s, 닫으면 판 진행 %s" % [once, via_guide, skipped, marked, resumed])
+	ok("TUT-03", single and quiet and marked and resumed and hidden_off, "단일 안내·경고 우선 %s, 자동 모달 없음 %s, 직접 열람만 기록 %s·닫으면 복귀 %s" % [single, quiet, marked, resumed])
+	var games0 := Meta.games
+	Meta.games = 0
+	main.wave = 0
+	main.phase = main.Phase.CHOOSE
+	main.perk_mode = false
+	main.cards_hidden = false
+	main.touch_ui = true
+	main.tap_sel = 0
+	var preview: bool = main._first_action_text() == "선택한 카드를 적용하세요."
+	main.tap_sel = -1
+	main.phase = main.Phase.PLACE
+	var place: bool = main._first_action_text().contains("빈 곳")
+	main.phase = main.Phase.AIM
+	var aim: bool = main._first_action_text().contains("방향")
+	main._cancel_step()
+	var cancel: bool = main.phase == main.Phase.PLACE and main._first_action_text().contains("빈 곳")
+	main.phase = main.Phase.READY
+	var ready: bool = main._first_action_text() == "웨이브를 시작하세요."
+	main.wave = 1
+	var finished: bool = main._first_action_text() == ""
+	main.wave = 0
+	Meta.games = 1
+	main.tutor = false
+	var veteran: bool = main._first_action_text() == ""
+	main.tutor = true
+	var reset: bool = main._first_action_text().contains("웨이브")
+	Meta.guide_on = false
+	var off: bool = main._first_action_text() == ""
+	Meta.guide_on = true
+	Meta.games = games0
+	main.tutor = false
+	main.touch_ui = false
+	ok("TUT-06", preview and place and aim and cancel and ready and finished and veteran and reset and off, "첫 행동: 터치 확정·설치·방향·취소·시작을 실제 상태에 따라 안내")
 	# TUT-04: 시작 화면·일시정지의 [튜토리얼] 버튼, 목록 15개 + 전체 보기, ✓, 항목 → 카드 → 목록으로, 전체 보기 → 도움말
 	var title_btn := false
 	for b in main.title_box.find_children("*", "Button", true, false):
