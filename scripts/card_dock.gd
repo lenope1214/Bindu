@@ -159,7 +159,7 @@ func tick() -> void:
 			continue
 		if b == game.apply_btn:
 			b.visible = cards and game.tap_sel >= 0
-		var w := 132.0 if b == game.apply_btn else 78.0 if b == game.card_detail_btn else 64.0
+		var w := maxf(132.0, b.get_combined_minimum_size().x) if b == game.apply_btn else 78.0 if b == game.card_detail_btn else 64.0
 		x -= w
 		b.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		b.position = Vector2(x, panel.position.y + 4)
@@ -169,7 +169,7 @@ func tick() -> void:
 		game.hide_btn.tooltip_text = "카드 다시 보기 (V)"
 	if game.zoom_btn.visible:
 		game.zoom_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		game.zoom_btn.position = Vector2(220, panel.position.y + 4)
+		game.zoom_btn.position = Vector2(150, size.y - 48)
 		game.zoom_btn.size = Vector2(132, 34)
 		game.zoom_btn.z_index = 2
 	for i in game.skill_btns.size():
@@ -195,6 +195,12 @@ func tick() -> void:
 	game.ver_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	game.ver_label.position = Vector2(12, size.y - 22)
 	game.skip_badge.position.y = -HEIGHT - 40
+	game._update_choice_header()
+	state.visible = not game.choice_header.visible
+	if game.choice_header.visible:
+		game.choice_header.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		game.choice_header.position = Vector2(12, panel.position.y + 4)
+		game.choice_header.size = Vector2(maxf(240, minf(340, x - 24)), 34)
 	_update_side()
 
 func _update_side() -> void:
@@ -234,6 +240,21 @@ func _update_side() -> void:
 		detail.scroll_to_line(0)
 		side_signature = sig
 
+func summary_text(b: Button) -> String:
+	var summary := ""
+	if b.has_meta("perk_desc"):
+		return b.get_meta("perk_desc")
+	if b.has_meta("summary"):
+		for row: Dictionary in b.get_meta("summary"):
+			if row.has("t"):
+				summary += ("\n" if summary != "" else "") + str(row["t"])
+		return summary
+	if b.has_meta("full"):
+		var full: Array = b.get_meta("full")
+		for i in mini(2, full.size()):
+			summary += ("\n" if i else "") + str(full[i][0])
+	return summary
+
 func draw_card(b: Button, col: Color) -> void:
 	var m: Array = b.get_meta("card")
 	var h: Dictionary = m[0]
@@ -248,13 +269,7 @@ func draw_card(b: Button, col: Color) -> void:
 	b.draw_string(font, Vector2(36, 28), name, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 64, 18, col.lightened(0.2))
 	if not game.touch_ui:
 		Glyph.keycap(b, font, Vector2(b.size.x - 8, 8), str(h["idx"]))
-	var summary := ""
-	if b.has_meta("perk_desc"):
-		summary = b.get_meta("perk_desc")
-	elif b.has_meta("full"):
-		var lines: Array = b.get_meta("full")
-		for i in mini(2, lines.size()):
-			summary += ("\n" if i else "") + str(lines[i][0])
+	var summary := summary_text(b)
 	var lines: PackedStringArray = game._wrap_words(game._kr_keep(summary), b.size.x - 28, 14).split("\n")
 	var visible_lines := mini(2, lines.size())
 	for i in visible_lines:

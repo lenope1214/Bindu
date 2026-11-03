@@ -1759,33 +1759,41 @@ func _meta_misc() -> void:
 	var quit_btn: bool = main.home_box.find_children("*", "Button", true, false).any(func(b): return b.tooltip_text == "게임 종료") == OS.has_feature("pc")
 	ok("UI-21", home0 and tiles_ok and prep1 and main.home_box.visible and skins_set and quit_btn, "첫 화면 %s·타일 %s, 준비 화면 %s, 모양은 설정 %s, 종료(PC만) %s" % [home0, tiles_ok, prep1, skins_set, quit_btn])
 
-	# 카드 설명 세 단계: 기본 간소화(속성은 효과 이름만, 괄호 덧붙임 뺌) → [자세히] 전체 → 자세히 + 올리기 창(반응 설명까지)
+	# 기본 설명은 효과 문장이고, 자세히와 반응·레벨업 정보는 남는다. 첫 판에 한정하지 않는다.
 	var was_d := Meta.card_detail
 	Meta.card_detail = false
-	var s0: Dictionary = main._card_content({"type": "elem", "e": Elem.WATER, "lv": 1}, 0)
-	var m0: Dictionary = main._card_content({"type": "mod", "id": "multi"}, 0)
-	var m1: Dictionary = main._card_content({"type": "mod", "id": "multi"}, 1)
 	var full: Array = main._card_full({"type": "elem", "e": Elem.WATER, "lv": 1})
-	# 속성마다 적중 효과·형태 성질 짧은 이름: 둘이 다르고 4글자 이하(간소화 카드에서 잘리지 않게), 꼬리표 적중/형태
-	var names_ok := true
-	for e in Elem.ALL:
-		var rn := Elem.rider_name(e)
-		var tn := Elem.trait_name(e)
-		if rn == tn or rn.length() > 4 or tn.length() > 4:
-			names_ok = false
-			print("  이름 문제: %s %s / %s" % [Elem.NAMES[e], rn, tn])
-	var pr: Array = s0["rows"][0].get("pair", [])
-	names_ok = names_ok and pr.size() == 2 and pr[0][2] == "적중" and pr[1][2] == "형태"
-	var simple_ok: bool = names_ok and s0["rows"][0].has("pair") and not str(m0["rows"][0]["t"]).contains("(") and str(m1["rows"][0]["t"]).contains("(")
-	var full_ok: bool = full.any(func(l): return str(l[0]).begins_with("반응 ")) and full.size() > s0["rows"].size()
+	var basic_ok := true
+	var wave_before: int = main.wave
+	for w in [0, 12, 50]:
+		main.wave = w
+		for e in Elem.ALL:
+			var basic: Dictionary = main._card_content({"type": "elem", "e": e, "lv": 1}, 0)
+			var text: String = basic["rows"][0].get("t", "")
+			basic_ok = basic_ok and text.length() >= 10 and not basic["rows"][0].has("pair") and not text.contains("적중 ·") and not text.contains("형태 ·")
+	main.wave = wave_before
+	var ice: String = main._card_content({"type": "elem", "e": Elem.ICE, "lv": 1}, 0)["rows"][0]["t"]
+	var earth: String = main._card_content({"type": "elem", "e": Elem.EARTH, "lv": 1}, 0)["rows"][0]["t"]
+	var star: String = main._card_content({"type": "elem", "e": Elem.STAR, "lv": 1}, 0)["rows"][0]["t"]
+	var conditions: bool = ice.contains("쌓아") and earth.contains("확률") and star.contains("복사") and star.contains("다 차면")
+	var s0: Dictionary = main._card_content({"type": "elem", "e": Elem.WATER, "lv": 1}, 0)
+	var combo_ok: bool = s0["rows"].any(func(r): return r.has("els"))
+	var multi: Dictionary = main._card_content({"type": "mod", "id": "multi"}, 0)
+	var finish: Dictionary = main._card_content({"type": "trig", "id": "finish"}, 0)
+	var reso: Dictionary = main._card_content({"type": "link", "id": "reso"}, 0)
+	var cata: Dictionary = main._card_content({"type": "cata", "id": "pat"}, 0)
+	conditions = conditions and multi["rows"][0]["t"].contains("피해는 줄어") and multi["rows"][0]["t"].contains("벽·블랙홀·투척 장판") and finish["rows"][0]["t"].contains("보스") and reso["rows"][0]["t"].contains("거리") and cata["rows"].size() == 3
+	var detail: Dictionary = main._card_content({"type": "mod", "id": "multi"}, 1)
+	var full_ok: bool = full.any(func(l): return str(l[0]).begins_with("반응 ")) and full.any(func(l): return str(l[0]).begins_with("형태 성질")) and detail["rows"][0]["t"].contains("(")
 	main._set_card_detail(true)
 	var on_ok: bool = Meta.card_detail and main.card_detail_btn.button_pressed
 	Meta.card_detail = false
 	var plain_card: Button = main._card_button({"type":"elem", "e":Elem.WATER, "lv":1}, 1)
 	var no_floating_tip := plain_card.tooltip_text == ""
+	var dock_brief: bool = main.card_dock.summary_text(plain_card).contains(Elem.BRIEF[Elem.WATER])
 	plain_card.free()
 	main._set_card_detail(was_d)
-	ok("UI-20", simple_ok and full_ok and on_ok and no_floating_tip, "카드 요약·오른쪽 상세 전환, 전체 조건·반응 설명 보존, 전장 위 카드 툴팁 없음")
+	ok("UI-20", basic_ok and conditions and combo_ok and full_ok and on_ok and no_floating_tip and dock_brief, "카드 기본 효과: 15속성·0/12/50웨이브 %s, 조건 %s, 반응 그림 %s, 자세히 보존 %s" % [basic_ok, conditions, combo_ok, full_ok])
 
 	# 카드 선택 막: 선택지가 펼쳐져 있으면 검은 막(카드·카드 줄 버튼은 그 위), 필드 보기·카드를 고르면 곧바로 걷힘
 	_fresh(3)
@@ -1793,14 +1801,37 @@ func _meta_misc() -> void:
 	main._start_choose()
 	main._process(0.016)
 	var dim_on: bool = not main.card_dim.visible and main.card_dock.panel.visible and main.card_dock.side.visible
+	main.picks_left = 2
+	main._process(0.016)
+	var head_two: bool = main.choice_header.visible and main.choice_remaining.text == "2장 더 선택 가능" and main.choice_header.z_index > main.card_dim.z_index
+	main.picks_left = 1
+	main._process(0.016)
+	var head_one: bool = main.choice_remaining.text == "1장 더 선택 가능"
+	for card_node in main.choice_box.get_children():
+		if card_node.is_queued_for_deletion():
+			main.choice_box.remove_child(card_node)
+	main.touch_ui = true
+	main.tap_sel = 1
+	main._process(0.016)
+	var apply_row: bool = main.apply_btn.get_meta("choice_icon", {}) == main.choice_box.get_child(1).get_meta("card")[0] and main.apply_btn.visible and main.apply_btn.text.replace("\u2060", "").ends_with(" 적용") and is_equal_approx(main.apply_btn.offset_top, main.reroll_btn.offset_top)
+	main.tap_sel = -1
+	main.touch_ui = false
+	main.perk_mode = true
+	main._process(0.016)
+	var head_perk: bool = not main.choice_header.visible
+	main.perk_mode = false
 	main._set_cards_hidden(true)
 	main._process(0.016)
 	var dim_hide: bool = not main.card_dim.visible
+	var head_hide: bool = not main.choice_header.visible
 	main._set_cards_hidden(false)
 	main._on_pick({"type": "mod", "id": "pierce"})
 	main._process(0.016)
 	var dim_off: bool = not main.card_dim.visible and main.phase == main.Phase.PLACE
 	ok("UI-23", dim_on and dim_hide and dim_off, "일반 판 카드 선택 시 전장 어둠 없음 %s, 필드 보기 %s·카드 고른 뒤 %s 유지" % [dim_on, dim_hide, dim_off])
+	ok("UI-30", head_two and head_one and apply_row and head_perk and head_hide and not main.choice_header.visible,
+		"카드 줄 선택 안내: 갱신 %s·%s, 적용 줄 %s, 숨김 %s·%s·%s" % [head_two, head_one, apply_row, head_perk, head_hide, not main.choice_header.visible])
+
 
 
 	main.shake = 0.0
@@ -1833,6 +1864,7 @@ func _meta_misc() -> void:
 	dt.owner_id = 0
 	ok("UI-29", target_good and target_capped and ownership and requested, "카드 미리보기 적용 상한·협동 소유권·요청 속성 구분")
 	main.phase = main.Phase.PLACE
+
 
 	# 카드 넣을 대상: 넣을 수 있는 오브젝트만 밝게, 못 넣는 오브젝트(NO_MOD 등)는 흐리게·선택 불가
 	var bad_t := _tower(main.center() + Vector2(200, 0))
@@ -2184,24 +2216,28 @@ func _mp_more() -> void:
 # ---------- 튜토리얼 ----------
 
 func _tutorial() -> void:
-	# TUT-01: 기기 파일에만 저장, 처음이면 need_first, 닫으면(건너뛰기 포함) 기본 항목까지 본 것으로
+	# TUT-01: 첫 소개 완료와 상세 항목 열람을 기기 파일에서 분리한다.
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(Tutorial.PATH))
 	Tutorial.load_file()
 	var first := Tutorial.need_first()
-	main._open_tut(Tutorial.FIRST, true)
-	var showed: bool = main.tut.visible and main.tut.btn_close.text == "건너뛰기"
+	main.tut.open_welcome()
+	var showed: bool = main.tut.visible and main.tut.mode == "welcome" and main.tut.queue.is_empty() and main.tut.btn_next.text == "플레이하며 배우기"
 	main.tut.close()
 	Tutorial.done = false
 	Tutorial.seen = {}
 	Tutorial.load_file()
-	var after := not Tutorial.need_first() and Tutorial.FIRST.all(func(id): return Tutorial.seen.has(id))
+	var after := not Tutorial.need_first() and Tutorial.seen.is_empty()
+	main.tut.open_welcome()
+	main.tut._close_or_details()
+	var optional: bool = main.tut.mode == "pages" and Tutorial.seen.has("goal") and not Tutorial.seen.has("place")
+	main.tut.close()
 	main._save_best()
 	var best := ConfigFile.new()
 	best.load(Meta.SAVE_PATH)
 	var prog := JSON.stringify(Progress.build())
-	ok("TUT-01", Tutorial.PATH == "user://device.cfg" and first and showed and after and not best.has_section("tutorial") and not prog.contains("tutorial"),
-		"첫 진입 %s, 건너뛰기 %s, 닫은 뒤 다시 안 뜸 %s, best.cfg·계정 진행엔 없음" % [first, showed, after])
-	# TUT-02: 항목 15개, id 겹침 없음, 장마다 그림 함수, 터치 글엔 키·클릭 말 없음, 모든 항목이 첫 진입이나 처음 나올 때로 뜸
+	ok("TUT-01", Tutorial.PATH == "user://device.cfg" and first and showed and after and optional and not best.has_section("tutorial") and not prog.contains("tutorial"),
+		"첫 목표 한 문장 %s, 소개 완료와 설명 열람 분리 %s, 선택형 설명 %s, 기기 파일만 사용" % [showed, after, optional])
+	# TUT-02: 수동 상세 항목 15개, id·그림·터치 문구·안내 연결 목록 정합성
 	var ids := {}
 	var bad := []
 	for tp in Tutorial.TOPICS:
@@ -2221,27 +2257,24 @@ func _tutorial() -> void:
 		if not ids.has(v):
 			bad.append("모르는 항목 " + v)
 	ok("TUT-02", Tutorial.TOPICS.size() == 15 and ids.size() == 15 and bad.is_empty(), "항목 %d개, 문제 %s" % [ids.size(), str(bad)])
-	# TUT-03: 처음 생긴 일이면 한 번만 줄에 넣고, 안내 끄기·멀티·이미 본 항목은 넣지 않음. 띄우면 본 것으로, 판을 멈췄으면 닫을 때 다시 진행
+	# 자동 이벤트는 더 이상 모달을 예약하거나 읽음으로 기록하지 않는다.
 	Tutorial.seen = {}
 	main.tut_queue.clear()
 	Meta.guide_on = true
 	main.mp_mode = ""
+	main.wave = 4
+	Meta.guide_seen.erase("boss")
+	Meta.guide_seen.erase("mod")
+	main.guide_lines.clear()
 	main._tut_event("pat")
-	main._tut_event("pat")
-	main._tut_event("nothing")
-	var once: bool = main.tut_queue == ["pat"]
 	main._guide("boss", "보스 안내")
-	var via_guide: bool = main.tut_queue.has("boss")
+	main._guide("mod", "일반 안내")
+	var single: bool = main.guide_lines.size() == 1 and main.guide_lines[0].contains("보스") and not Meta.guide_seen.has("mod")
+	var quiet: bool = main.tut_queue.is_empty() and Tutorial.seen.is_empty() and not paused
 	Meta.guide_on = false
-	main._tut_event("mod")
+	main._process(0.0)
+	var hidden_off: bool = not main.guide_label.visible and not main.guide_more.visible and not main.guide_lines.is_empty()
 	Meta.guide_on = true
-	main.mp_mode = "vs"
-	main._tut_event("mod")
-	main.mp_mode = ""
-	Tutorial.seen["link"] = true
-	main._tut_event("link")
-	var skipped: bool = not main.tut_queue.has("mod") and not main.tut_queue.has("link")
-	main.tut_queue.clear()
 	main.tut_paused = true
 	paused = true
 	main._open_tut(["pat"])
@@ -2250,7 +2283,40 @@ func _tutorial() -> void:
 	main.tut._next()
 	var resumed: bool = not main.tut.visible and not paused and not main.tut_paused
 	paused = false
-	ok("TUT-03", once and via_guide and skipped and marked and resumed, "한 번만 %s, _guide에서 %s, 끄기·멀티·본 것 빼기 %s, 본 것 표시 %s, 닫으면 판 진행 %s" % [once, via_guide, skipped, marked, resumed])
+	ok("TUT-03", single and quiet and marked and resumed and hidden_off, "단일 안내·경고 우선 %s, 자동 모달 없음 %s, 직접 열람만 기록 %s·닫으면 복귀 %s" % [single, quiet, marked, resumed])
+	var games0 := Meta.games
+	Meta.games = 0
+	main.wave = 0
+	main.phase = main.Phase.CHOOSE
+	main.perk_mode = false
+	main.cards_hidden = false
+	main.touch_ui = true
+	main.tap_sel = 0
+	var preview: bool = main._first_action_text() == "선택한 카드를 적용하세요."
+	main.tap_sel = -1
+	main.phase = main.Phase.PLACE
+	var place: bool = main._first_action_text().contains("빈 곳")
+	main.phase = main.Phase.AIM
+	var aim: bool = main._first_action_text().contains("방향")
+	main._cancel_step()
+	var cancel: bool = main.phase == main.Phase.PLACE and main._first_action_text().contains("빈 곳")
+	main.phase = main.Phase.READY
+	var ready: bool = main._first_action_text() == "웨이브를 시작하세요."
+	main.wave = 1
+	var finished: bool = main._first_action_text() == ""
+	main.wave = 0
+	Meta.games = 1
+	main.tutor = false
+	var veteran: bool = main._first_action_text() == ""
+	main.tutor = true
+	var reset: bool = main._first_action_text().contains("웨이브")
+	Meta.guide_on = false
+	var off: bool = main._first_action_text() == ""
+	Meta.guide_on = true
+	Meta.games = games0
+	main.tutor = false
+	main.touch_ui = false
+	ok("TUT-06", preview and place and aim and cancel and ready and finished and veteran and reset and off, "첫 행동: 터치 확정·설치·방향·취소·시작을 실제 상태에 따라 안내")
 	# TUT-04: 시작 화면·일시정지의 [튜토리얼] 버튼, 목록 15개 + 전체 보기, ✓, 항목 → 카드 → 목록으로, 전체 보기 → 도움말
 	var title_btn := false
 	for b in main.title_box.find_children("*", "Button", true, false):
