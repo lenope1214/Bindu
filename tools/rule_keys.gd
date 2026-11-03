@@ -144,8 +144,13 @@ static func build() -> Array:
 	return out
 
 
-const CODE_LABEL := {"Tower": "오브젝트", "Projectile": "탄", "Orb": "구체", "Main": "맵·중앙", "Modes": "모드", "RxMore": "새 반응",
-	"Pat": "그린 궤적", "MapRule": "맵 규칙", "Skill": "중앙 기술"}
+## 게임 코드 수치 묶음 이름 (관리 화면 하위 탭은 tools/patch_keys.py TABS가 이 이름으로 나눈다). 변수별이 먼저, 없으면 스크립트별
+const CODE_GROUP := {
+	"Tower.HIT": "공격방식 기본 피해", "Tower.BASE_IV": "공격방식 기본 간격", "Tower.SHAPE": "공격방식 모양", "Orb.KIND": "구체 종류",
+	"Main.SPECIAL": "저항·굳센 구체", "RxMore.IV": "새 반응 간격",
+	"Tower": "오브젝트 코드 수치", "Projectile": "탄", "Orb": "구체 상태 수치", "Main": "맵·중앙 코드 수치", "Modes": "모드 코드 수치",
+	"RxMore": "새 반응 코드 수치", "Pat": "그린 궤적 코드 수치", "MapRule": "맵 규칙 코드 수치", "Skill": "중앙 기술 코드 수치",
+}
 
 
 ## 사전 묶음 이름: 설명 첫 마디 (없으면 변수 이름)
@@ -186,7 +191,7 @@ static func _code(names: Dictionary) -> Array:
 			var val: Variant = sc.get(name)
 			var ci := line.find("  # ")
 			var desc := line.substr(ci + 4).strip_edges() if ci >= 0 else doc
-			var g: String = CODE_LABEL[cls]
+			var g: String = CODE_GROUP.get(cls + "." + name, CODE_GROUP[cls])
 			var key0: String = cls + "." + name
 			if val is float or val is int:
 				out.append({"k": key0, "g": g, "d": desc, "v": _num(val)})
@@ -213,7 +218,7 @@ static func _code(names: Dictionary) -> Array:
 					var sd: String = dc.get(sub, "")
 					if sd == "" and names.has(sub):
 						sd = names[sub]
-					out.append({"k": "%s.%s" % [key0, sub], "g": "%s · %s" % [g, _short(doc, name)], "d": sd if sd != "" else sub, "v": _num(val[sub])})
+					out.append({"k": "%s.%s" % [key0, sub], "g": g, "d": sd if sd != "" else sub, "v": _num(val[sub])})
 				i = j
 			i += 1
 	return out
