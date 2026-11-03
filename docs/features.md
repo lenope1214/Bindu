@@ -211,7 +211,7 @@
 | PATCH-01 | 온라인 밸런스 패치 | 서버 패치의 아는 키만 적용, 모르는 키·틀린 형식 무시, 새 판부터 | spec, online |
 | PATCH-03 | 게임 코드 수치 패치 | rules 키 "<이름>.<변수>[.<칸>]"(Tower·Projectile·Orb·Main·Modes·RxMore·Pat·MapRule·Skill의 대문자 static var: 공격방식 피해 HIT·간격 BASE_IV·모양 SHAPE, 탄 PROJ, 구체 KIND, 반응 IV 등)로 덮어씀, 반응별 간격 배율 rxiv_<id>. 모르는 이름·칸·숫자 아닌 값은 무시, 패치를 빼면 원래대로. 관리 화면 수치 편집 표에 전부 나옴(tools/run.sh rulekeys) | spec, patchkeys |
 | PATCH-02 | 패치 서명 | 서명이 맞는 패치만 받음 | online |
-| PATCH-03 | 관리 화면 패치 편집 | 관리 화면 [패치] 탭이 게임 코드 클래스별 하위 탭(오브젝트·반응·카드·구체·특성·중앙 기술·맵·판 흐름·모드·멀티·정원·글)으로 나뉘고, 칸마다 키·설명·기본값·새 값 표. rules 키 목록은 server/app/rule_keys.json(tools/run.sh rulekeys), 탭·rules 밖 칸은 server/app/patch_sections.json(python3 tools/patch_keys.py). 코드가 읽는 키가 표에 없거나 rules 묶음이 어느 탭에도 없으면 점검 실패 | server, patchkeys |
+| PATCH-03 | 관리 화면 패치 편집 | 관리 화면 [패치] 탭이 게임 코드 클래스별 하위 탭(오브젝트·반응·카드·구체·특성·중앙 기술·맵·판 흐름·모드·멀티·정원·글)으로 나뉘고, 표는 묶음마다 제목 줄(누르면 접힘), 같은 대상(설명의 '대상:')이 여럿이면 작은 제목, 줄마다 굵은 이름 → 기본값 → 새 값(단위), 이름 아래 작게 덧붙임·키. rules 키 목록은 server/app/rule_keys.json(tools/run.sh rulekeys), 탭·rules 밖 칸은 server/app/patch_sections.json(python3 tools/patch_keys.py). 코드가 읽는 키가 표에 없거나 rules 묶음이 어느 탭에도 없으면 점검 실패 | server, patchkeys |
 
 ## 이어하기·기록
 

@@ -38,6 +38,15 @@
   #t-keys th { position:sticky; top:0; background:var(--panel); cursor:default; }
   #t-keys input.txt { width:260px; text-align:left; }
   #t-keys td.key { font-family:ui-monospace, Menlo, monospace; font-size:12px; }
+  #t-keys table { width:auto; min-width:min(100%, 760px); }
+  #t-keys td.name { white-space:normal; min-width:320px; max-width:620px; }
+  #t-keys td.name b { font-weight:600; font-size:14px; }
+  #t-keys td.name .sub { color:var(--dim); font-size:12px; margin-top:2px; }
+  #t-keys td.name code { font-family:ui-monospace, Menlo, monospace; font-size:11px; color:#7f8799; }
+  #t-keys .unit { color:var(--dim); font-size:12px; margin-left:6px; }
+  #t-keys tr.gh td { background:#1f2430; color:var(--accent); font-weight:600; cursor:pointer; position:sticky; top:33px; z-index:1; }
+  #t-keys tr.gh td small { color:var(--dim); font-weight:400; margin-left:8px; }
+  #t-keys tr.sh td { color:#9fc3ff; font-weight:600; font-size:12px; padding:4px 10px 2px 22px; background:#191d27; border-bottom:0; }
   #ptabs button small { color:var(--accent); margin-left:4px; }
   #ptabs button i { font-style:normal; color:var(--dim); font-size:11px; margin-left:4px; }
 </style>
@@ -312,23 +321,57 @@ function fillGroups() {
   $("k-group").innerHTML = `<option value="">묶음 전체</option>` + gs.map(g => `<option>${esc(g)}</option>`).join("");
   if (gs.includes(keep)) $("k-group").value = keep;
 }
+// 설명 "대상: 이름 (덧붙임)" → 대상·이름·덧붙임·단위. 대상은 묶음 안 작은 제목, 이름은 굵게 첫 열에.
+function subjOf(r) {
+  const d = String(r.d || ""), c = d.indexOf(": ");
+  return c > 0 && c <= 14 && !/[(=]/.test(d.slice(0, c)) ? d.slice(0, c) : "";
+}
+function nameOf(r, many) {  // many: 같은 묶음에 같은 대상이 둘 이상일 때만 대상을 떼어 작은 제목으로
+  let d = String(r.d || ""), subj = subjOf(r);
+  if (subj && many(subj)) d = d.slice(subj.length + 2); else subj = "";
+  let main = d, extra = "";
+  const p = d.indexOf(" (");
+  if (p > 0) { main = d.slice(0, p); extra = d.slice(p + 1); }
+  const m = /\((초|px|라디안)[,)]/.exec(d) || /\((초|px)\b/.exec(d);
+  const unit = m ? m[1] : /배율/.test(main) ? "배" : /확률|비율/.test(main) ? "비율" : /웨이브$/.test(main) ? "웨이브" : "";
+  return {subj, main: main || r.k, extra, unit};
+}
+let FOLD = new Set();
+try { FOLD = new Set(JSON.parse(localStorage.getItem("bindu_pfold") || "[]")); } catch (e) {}
 function keyRows() {
   const d = pdata(), sc = $("k-scope").value;
   const q = $("k-find").value.trim().toLowerCase(), g = $("k-group").value, only = $("k-changed").checked;
   const rows = ROWS.filter(r => (PTAB === "all" || r.tab === PTAB) && (!g || r.g === g) && (!q || (r.s + "." + r.k + " " + r.d + " " + r.g).toLowerCase().includes(q)) && (!only || has(curOf(d, r, sc))));
   $("k-count").textContent = `${rows.length}개` + (d ? "" : " · JSON 형식 오류: 고치기 전엔 표가 안 바뀜");
   const def = r => r.s === "rules" && sc === "3" && "v3" in r ? r.v3 : r.v;
-  const allCol = sc !== "all";
-  $("t-keys").innerHTML = `<table><thead><tr><th>묶음</th><th>키</th><th>설명</th><th>기본</th>${allCol ? "<th>all 값</th>" : ""}<th>새 값</th></tr></thead><tbody>` +
-    rows.map((r, i) => {
-      const cur = curOf(d, r, sc), key = r.s === "rules" ? r.k : r.single ? r.k : `${r.s}.${r.k}`;
-      // 글 칸은 기본 글이 길어 설명 아래에 줄바꿈해 보여 준다
+  const allCol = sc !== "all", cols = allCol ? 4 : 3, open = q !== "" || only;  // 찾기·바꾼 것만일 땐 접힌 묶음도 펼침
+  const byG = new Map();
+  rows.forEach((r, i) => { if (!byG.has(r.g)) byG.set(r.g, []); byG.get(r.g).push(i); });
+  let html = `<table><thead><tr><th>항목</th><th>기본</th>${allCol ? "<th>all 값</th>" : ""}<th>새 값</th></tr></thead><tbody>`;
+  for (const [grp, idx] of byG) {
+    const nset = idx.filter(i => has(curOf(d, rows[i], sc))).length, shut = !open && FOLD.has(grp);
+    html += `<tr class="gh" data-g="${esc(grp)}"><td colspan="${cols}">${shut ? "▸" : "▾"} ${esc(grp)}<small>${idx.length}개${nset ? ` · 바꿈 ${nset}` : ""}</small></td></tr>`;
+    if (shut) continue;
+    let lastSubj = "";
+    const cnt = {};
+    idx.forEach(i => { const sj = subjOf(rows[i]); if (sj) cnt[sj] = (cnt[sj] || 0) + 1; });
+    for (const i of idx) {
+      const r = rows[i], cur = curOf(d, r, sc), key = r.s === "rules" ? r.k : r.single ? r.k : `${r.s}.${r.k}`, n = nameOf(r, sj => cnt[sj] > 1);
+      if (n.subj && n.subj !== lastSubj) html += `<tr class="sh"><td colspan="${cols}">${esc(n.subj)}</td></tr>`;
+      lastSubj = n.subj;
       const dv = r.text ? '<span class="dim">글</span>' : def(r) + ("v3" in r && sc === "all" ? ` <span class="dim">(도파민 ${r.v3})</span>` : "");
-      const desc = esc(r.d) + (r.text && def(r) !== "" ? `<br><span style="color:var(--text)">기본: ${esc(def(r))}</span>` : "");
-      return `<tr class="${has(cur) ? "set" : ""}"><td>${esc(r.g)}</td><td class="key">${esc(key)}</td><td class="desc">${desc}</td><td class="num">${dv}</td>` +
+      const sub = [n.extra ? esc(n.extra) : "", r.text && def(r) !== "" ? `<span style="color:var(--text)">기본: ${esc(def(r))}</span>` : "", `<code>${esc(key)}</code>`].filter(x => x).join(" · ");
+      html += `<tr class="${has(cur) ? "set" : ""}"><td class="name"><b>${esc(n.main)}</b><div class="sub">${sub}</div></td><td class="num">${dv}</td>` +
         (allCol ? `<td class="num">${r.s === "rules" ? (curOf(d, r, "all") ?? "") : '<span class="dim">공통</span>'}</td>` : "") +
-        `<td><input data-i="${i}" class="${r.text ? "txt" : ""}" value="${has(cur) ? esc(cur) : ""}" placeholder="${r.text ? "" : esc(def(r))}" ${r.text ? "" : 'inputmode="decimal"'}></td></tr>`;
-    }).join("") + "</tbody></table>";
+        `<td style="white-space:nowrap"><input data-i="${i}" class="${r.text ? "txt" : ""}" value="${has(cur) ? esc(cur) : ""}" placeholder="${r.text ? "" : esc(def(r))}" ${r.text ? "" : 'inputmode="decimal"'}>${n.unit && !r.text ? `<span class="unit">${n.unit}</span>` : ""}</td></tr>`;
+    }
+  }
+  $("t-keys").innerHTML = html + "</tbody></table>";
+  $("t-keys").querySelectorAll("tr.gh").forEach(tr => tr.onclick = () => {
+    const k = tr.dataset.g; FOLD.has(k) ? FOLD.delete(k) : FOLD.add(k);
+    try { localStorage.setItem("bindu_pfold", JSON.stringify([...FOLD])); } catch (e) {}
+    keyRows();
+  });
   $("t-keys").querySelectorAll("input").forEach(inp => inp.onchange = () => { const v = inp.value.trim(); setTimeout(() => setKey(rows[+inp.dataset.i], v)); });  // 표를 다시 그리다 지워지는 칸의 blur가 겹치지 않게
   drawPtabs();
 }
