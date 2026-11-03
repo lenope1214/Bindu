@@ -17,6 +17,7 @@
 #   modes [규칙=1] [판 수=32] [모드...]   모드마다 같은 시드로 모드 없는 판과 비교: 웨이브 차이·점수 손익분기 배율
 #   spec                                   docs/features.md의 기대 동작 자동 점검 (tools/spec_check.gd)
 #   rulekeys                               관리자 페이지 수치 표 목록(server/app/rule_keys.json)을 Rules에서 다시 만듦 (VERIFY=1이면 비교만, check에 포함)
+#   patchkeys                              관리자 페이지 [패치] 하위 탭·특성·카드·모드·정원 칸 목록(server/app/patch_sections.json)을 다시 만듦 (VERIFY=1이면 비교만, check에 포함)
 #   notes                                  CHANGELOG(게임 안 패치노트)에 패치 키·코드 이름·경로·해시·요청 인용이 없는지 (docs/changelog-rules.md)
 #   check                                  배포 전 한 번에: spec + 그린 궤적 + 무작위 입력 + 이어하기 (실패하면 끝 코드 1)
 # 환경 변수: SPEED(배속, 기본 4) SMART(기본 1: 사람처럼 중앙 가까이에서 길목을 겨눔, 0이면 예전 봇) VARY(0이면 판마다 다른 흐름 끔: 봉인·이벤트·적응 켬/끔 비교)
@@ -251,6 +252,10 @@ case "$CMD" in
 	notes)
 		python3 "$ROOT/tools/notes_check.py"
 		;;
+	patchkeys)
+		# Godot 없이 돈다 (게임 코드를 글로 읽음)
+		if [ "${VERIFY:-0}" = "1" ]; then python3 "$ROOT/tools/patch_keys.py" --check; else python3 "$ROOT/tools/patch_keys.py"; fi
+		;;
 	rulekeys)
 		# 관리자 페이지 수치 표(server/app/rule_keys.json)를 지금 Rules에서 다시 만든다. VERIFY=1이면 쓰지 않고 같은지만
 		D=$(copy_project "$$")
@@ -292,6 +297,7 @@ case "$CMD" in
 		grep -q "^PATCHCHECK ok" "$D/pk.txt" && echo "patch keys 통과" || { grep -E "^FAIL|SCRIPT ERROR" "$D/pk.txt" | head -5; bad="$bad patchkeys"; }
 		rm -rf "$D"
 		VERIFY=1 "$0" rulekeys || bad="$bad rulekeys"
+		VERIFY=1 "$0" patchkeys || bad="$bad patchkeys"
 		GC=$("$0" gcheck)
 		echo "$GC" | grep -E "^FAIL|SCRIPT ERROR" | head -5
 		echo "$GC" | grep -q "RESULT fails=0" && echo "gcheck 통과" || bad="$bad gcheck"

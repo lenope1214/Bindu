@@ -36,6 +36,10 @@
   #t-keys input { width:90px; padding:3px 6px; text-align:right; }
   #t-keys tr.set td { background:#232a1c; }
   #t-keys th { position:sticky; top:0; background:var(--panel); cursor:default; }
+  #t-keys input.txt { width:260px; text-align:left; }
+  #t-keys td.key { font-family:ui-monospace, Menlo, monospace; font-size:12px; }
+  #ptabs button small { color:var(--accent); margin-left:4px; }
+  #ptabs button i { font-style:normal; color:var(--dim); font-size:11px; margin-left:4px; }
 </style>
 </head>
 <body>
@@ -92,18 +96,19 @@
 </section>
 
 <section id="patch">
-  <p class="dim">게임이 켜질 때 받는 수치 덮어쓰기입니다. 쓸 수 있는 키: rules, rules_desc, perks, perk_desc, cards, elem_dmg, pat_dmg, modes, message (server/README.md 참고).</p>
-  <h2>수치 편집 (rules)</h2>
-  <p class="dim">게임은 켜진 패치 중 가장 최근 것 하나만 받습니다. 지금 값을 이어 가려면 먼저 [켜진 패치 불러오기]로 바탕을 채운 뒤 바꾸세요. 새 값 칸에 넣으면 아래 JSON의 rules에 바로 들어가고, 비우면 빠집니다 (기본값으로).</p>
+  <p class="dim">게임이 켜질 때 받는 수치 덮어쓰기입니다. 탭은 게임 코드의 클래스(괄호)별로 나눴고, 칸 이름(키)은 패치 JSON에 들어가는 이름 그대로입니다 (server/README.md 참고).</p>
+  <p class="dim">게임은 켜진 패치 중 가장 최근 것 하나만 받습니다. 지금 값을 이어 가려면 먼저 [켜진 패치 불러오기]로 바탕을 채운 뒤 바꾸세요. 새 값 칸에 넣으면 아래 JSON에 바로 들어가고, 비우면 빠집니다 (기본값으로).</p>
+  <nav id="ptabs" class="row"></nav>
+  <p class="dim" id="ptab-note"></p>
   <div class="row">
-    <select id="k-scope"><option value="all">모든 규칙 (all)</option><option value="1">랭크만 (1)</option><option value="3">도파민 모드만 (3)</option></select>
+    <select id="k-scope" title="rules 칸(규칙 버전별)만 해당. 특성·카드·모드 등은 모든 규칙 공통"><option value="all">모든 규칙 (all)</option><option value="1">랭크만 (1)</option><option value="3">도파민 모드만 (3)</option></select>
     <select id="k-group"><option value="">묶음 전체</option></select>
     <input id="k-find" placeholder="키·설명 찾기 (예: 레이저, laser)" size="26">
     <label><input type="checkbox" id="k-changed"> 바꾼 것만</label>
     <button class="sub" id="k-load">켜진 패치 불러오기</button>
     <span class="dim" id="k-count"></span>
   </div>
-  <div class="tbl" id="t-keys" style="max-height:520px; overflow-y:auto; margin-bottom:12px"></div>
+  <div class="tbl" id="t-keys" style="max-height:560px; overflow-y:auto; margin-bottom:12px"></div>
   <h2>패치 JSON</h2>
   <textarea id="p-data">{
   "rules": {"all": {}, "1": {}},
@@ -270,39 +275,84 @@ document.querySelectorAll("[data-csv]").forEach(b => b.onclick = async () => {
   a.download = `bindu_${b.dataset.csv}.csv`; a.click();
 });
 
-// 수치 편집: 키 목록(/admin/rule_keys) + 패치 JSON의 rules[대상]을 표로. JSON 칸이 원본이고 표는 그걸 읽고 고친다.
-let KEYS = null, PATCHES = [];
+// 수치 편집: 키 목록(/admin/rule_keys = rules, /admin/patch_sections = 하위 탭·특성·카드·모드·정원 등) + 패치 JSON을 표로.
+// JSON 칸이 원본이고 표는 그걸 읽고 고친다. rules 칸은 대상(all/1/3)별, 나머지 칸은 규칙 공통.
+let KEYS = null, SECT = null, ROWS = [], PTAB = "obj", PATCHES = [];
+try { PTAB = localStorage.getItem("bindu_ptab") || "obj"; } catch (e) {}
 function pdata() { try { return JSON.parse($("p-data").value); } catch (e) { return null; } }
+function buildRows() {
+  const tabOf = {};
+  SECT.tabs.forEach(t => { t.groups.forEach(g => tabOf["r:" + g] = t.id); t.sections.forEach(n => tabOf["s:" + n] = t.id); });
+  ROWS = KEYS.map(e => Object.assign({s: "rules", tab: tabOf["r:" + e.g] || "etc"}, e));
+  for (const [n, sec] of Object.entries(SECT.sections))
+    sec.keys.forEach(e => ROWS.push({s: n, k: e.k, g: sec.name + (e.g ? " · " + e.g : ""), d: e.d, v: e.v, text: sec.type === "text", single: !!sec.single, tab: tabOf["s:" + n] || "etc"}));
+}
+function curOf(d, r, sc) {
+  if (!d) return undefined;
+  if (r.s === "rules") return ((d.rules || {})[sc] || {})[r.k];
+  return r.single ? d[r.k] : (d[r.s] || {})[r.k];
+}
+function has(v) { return v !== undefined && v !== "" && v !== null; }
+function drawPtabs() {
+  const d = pdata(), sc = $("k-scope").value;
+  const n = t => ROWS.filter(r => (t === "all" || r.tab === t) && has(curOf(d, r, r.s === "rules" ? sc : ""))).length;
+  const tabs = [{id: "all", name: "전체", cls: ""}].concat(SECT.tabs);
+  $("ptabs").innerHTML = tabs.map(t => `<button data-p="${t.id}" class="${t.id === PTAB ? "on" : ""}" title="${esc(t.cls)}">${esc(t.name)}${t.cls ? `<i>${esc(t.cls)}</i>` : ""}${n(t.id) ? `<small>${n(t.id)}</small>` : ""}</button>`).join("");
+  $("ptabs").querySelectorAll("button").forEach(b => b.onclick = () => {
+    PTAB = b.dataset.p; try { localStorage.setItem("bindu_ptab", PTAB); } catch (e) {}
+    $("k-group").value = ""; fillGroups(); keyRows();
+  });
+  const t = SECT.tabs.find(x => x.id === PTAB);
+  const notes = t ? t.sections.map(n => SECT.sections[n].note ? `${SECT.sections[n].name}: ${SECT.sections[n].note}` : "").filter(x => x) : [];
+  $("ptab-note").textContent = t ? `게임 코드: ${t.cls}` + (notes.length ? " · " + notes.join(" · ") : "") : "모든 탭의 칸을 한꺼번에 봅니다.";
+}
+function fillGroups() {
+  const gs = [...new Set(ROWS.filter(r => PTAB === "all" || r.tab === PTAB).map(r => r.g))];
+  const keep = $("k-group").value;
+  $("k-group").innerHTML = `<option value="">묶음 전체</option>` + gs.map(g => `<option>${esc(g)}</option>`).join("");
+  if (gs.includes(keep)) $("k-group").value = keep;
+}
 function keyRows() {
   const d = pdata(), sc = $("k-scope").value;
-  const cur = (d && d.rules && d.rules[sc]) || {}, all = (d && d.rules && d.rules.all) || {};
   const q = $("k-find").value.trim().toLowerCase(), g = $("k-group").value, only = $("k-changed").checked;
-  const rows = KEYS.filter(e => (!g || e.g === g) && (!q || (e.k + " " + e.d + " " + e.g).toLowerCase().includes(q)) && (!only || e.k in cur));
+  const rows = ROWS.filter(r => (PTAB === "all" || r.tab === PTAB) && (!g || r.g === g) && (!q || (r.s + "." + r.k + " " + r.d + " " + r.g).toLowerCase().includes(q)) && (!only || has(curOf(d, r, sc))));
   $("k-count").textContent = `${rows.length}개` + (d ? "" : " · JSON 형식 오류: 고치기 전엔 표가 안 바뀜");
-  const def = e => sc === "3" && "v3" in e ? e.v3 : e.v;
-  $("t-keys").innerHTML = `<table><thead><tr><th>묶음</th><th>키</th><th>설명</th><th>기본</th>${sc === "all" ? "" : "<th>all 값</th>"}<th>새 값</th></tr></thead><tbody>` +
-    rows.map(e => `<tr class="${e.k in cur ? "set" : ""}"><td>${esc(e.g)}</td><td>${esc(e.k)}</td><td class="desc">${esc(e.d)}</td><td class="num">${def(e)}${"v3" in e && sc === "all" ? ` <span class="dim">(도파민 ${e.v3})</span>` : ""}</td>` +
-      (sc === "all" ? "" : `<td class="num">${e.k in all ? all[e.k] : ""}</td>`) +
-      `<td><input data-k="${esc(e.k)}" value="${e.k in cur ? esc(cur[e.k]) : ""}" placeholder="${def(e)}" inputmode="decimal"></td></tr>`).join("") + "</tbody></table>";
-  $("t-keys").querySelectorAll("input").forEach(i => i.onchange = () => setKey(i.dataset.k, i.value.trim()));
+  const def = r => r.s === "rules" && sc === "3" && "v3" in r ? r.v3 : r.v;
+  const allCol = sc !== "all";
+  $("t-keys").innerHTML = `<table><thead><tr><th>묶음</th><th>키</th><th>설명</th><th>기본</th>${allCol ? "<th>all 값</th>" : ""}<th>새 값</th></tr></thead><tbody>` +
+    rows.map((r, i) => {
+      const cur = curOf(d, r, sc), key = r.s === "rules" ? r.k : r.single ? r.k : `${r.s}.${r.k}`;
+      // 글 칸은 기본 글이 길어 설명 아래에 줄바꿈해 보여 준다
+      const dv = r.text ? '<span class="dim">글</span>' : def(r) + ("v3" in r && sc === "all" ? ` <span class="dim">(도파민 ${r.v3})</span>` : "");
+      const desc = esc(r.d) + (r.text && def(r) !== "" ? `<br><span style="color:var(--text)">기본: ${esc(def(r))}</span>` : "");
+      return `<tr class="${has(cur) ? "set" : ""}"><td>${esc(r.g)}</td><td class="key">${esc(key)}</td><td class="desc">${desc}</td><td class="num">${dv}</td>` +
+        (allCol ? `<td class="num">${r.s === "rules" ? (curOf(d, r, "all") ?? "") : '<span class="dim">공통</span>'}</td>` : "") +
+        `<td><input data-i="${i}" class="${r.text ? "txt" : ""}" value="${has(cur) ? esc(cur) : ""}" placeholder="${r.text ? "" : esc(def(r))}" ${r.text ? "" : 'inputmode="decimal"'}></td></tr>`;
+    }).join("") + "</tbody></table>";
+  $("t-keys").querySelectorAll("input").forEach(inp => inp.onchange = () => { const v = inp.value.trim(); setTimeout(() => setKey(rows[+inp.dataset.i], v)); });  // 표를 다시 그리다 지워지는 칸의 blur가 겹치지 않게
+  drawPtabs();
 }
-function setKey(k, v) {
+function setKey(r, v) {
   const d = pdata();
   if (!d) { say("JSON 형식 오류: 아래 JSON부터 고치세요"); return; }
-  const sc = $("k-scope").value;
-  d.rules = d.rules || {};
-  d.rules[sc] = d.rules[sc] || {};
-  if (v === "") delete d.rules[sc][k];
-  else if (k === "mod_decay") d.rules[sc][k] = v === "true" || v === "1";
+  let box, k = r.k;
+  if (r.s === "rules") { const sc = $("k-scope").value; d.rules = d.rules || {}; box = d.rules[sc] = d.rules[sc] || {}; }
+  else if (r.single) box = d;
+  else box = d[r.s] = d[r.s] || {};
+  if (v === "") delete box[k];
+  else if (r.text) box[k] = v;
   else if (isNaN(+v)) { say(`${k}: 숫자가 아님`); keyRows(); return; }
-  else d.rules[sc][k] = +v;
+  else box[k] = +v;
+  if (!r.single && r.s !== "rules" && !Object.keys(box).length) delete d[r.s];
   $("p-data").value = JSON.stringify(d, null, 2);
   keyRows();
 }
 async function loadKeys() {
   if (!KEYS) {
-    KEYS = await api("/admin/rule_keys");
-    $("k-group").innerHTML = `<option value="">묶음 전체</option>` + [...new Set(KEYS.map(e => e.g))].map(g => `<option>${esc(g)}</option>`).join("");
+    [KEYS, SECT] = await Promise.all([api("/admin/rule_keys"), api("/admin/patch_sections")]);
+    buildRows();
+    if (PTAB !== "all" && !SECT.tabs.some(t => t.id === PTAB)) PTAB = "obj";
+    fillGroups();
   }
   keyRows();
 }

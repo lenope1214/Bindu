@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app import signing, validate  # noqa: E402
-from app.main import app  # noqa: E402
+from app.main import PATCH_KEYS, app  # noqa: E402
 
 PUB = signing.generate_keypair(os.environ["PATCH_KEY_PATH"])
 A = {"Authorization": "Bearer adm"}
@@ -49,6 +49,10 @@ def test_flow():
         assert c.get("/admin/rule_keys").status_code == 401
         ks = {e["k"]: e for e in c.get("/admin/rule_keys", headers=A).json()}
         assert ks["laser_w"]["v"] == 21 and ks["max_elems"]["v3"] == 99 and "dmg_laser" in ks
+        assert c.get("/admin/patch_sections").status_code == 401
+        ps = c.get("/admin/patch_sections", headers=A).json()
+        assert {t["id"] for t in ps["tabs"]} >= {"obj", "card", "rx", "orb"} and set(ps["sections"]) <= PATCH_KEYS
+        assert {g for t in ps["tabs"] for g in t["groups"]} == {e["g"] for e in ks.values()}
         assert c.post("/admin/patches", json={"data": {"bogus": 1}}, headers=A).status_code == 422
         r = c.post("/admin/patches", json={"data": {"rules": {"1": {"max_mod": 4}}, "perks": {"power": 0.2}}, "notes": "t", "min_game": "0.4.25"}, headers=A).json()
         assert r == {"id": 1, "season": 1}

@@ -4,23 +4,24 @@ extends SceneTree
 # 사용: tools/run.sh rulekeys   (만들어 server/app/rule_keys.json에 씀, run.sh check는 같은지 비교)
 # 직접: godot --headless --path . -s tools/rule_keys.gd  → 프로젝트 폴더에 rule_keys.json
 
-## Rules.apply가 직접 바꾸는 기본 변수 (TUNE·STAT 밖). [키, 설명, Rules 변수 이름]
+## Rules.apply가 직접 바꾸는 기본 변수 (TUNE·STAT 밖). [키, 묶음, 설명, Rules 변수 이름]
+## 묶음은 관리자 페이지 탭을 정한다 (tools/patch_keys.py의 TABS).
 const BASE := [
-	["max_elems", "한 오브젝트에 넣을 수 있는 속성 종류 (도파민 모드 99)", "max_elems"],
-	["max_mod", "강화 종류마다 쌓을 수 있는 수 (도파민 모드 99)", "max_mod"],
-	["mod_total", "한 오브젝트에 넣을 수 있는 강화 합계 (도파민 모드 99)", "mod_total"],
-	["picks", "쉬는 시간마다 고르는 카드 수", "picks"],
-	["open_picks", "처음 두 쉬는 시간에 고르는 카드 수", "open_picks"],
-	["resist_from", "저항 구체가 나오는 웨이브", "resist_from"],
-	["sturdy_from", "굳센 구체가 나오는 웨이브", "sturdy_from"],
-	["crowd_log", "오브젝트 수 보너스 계수: 모든 피해 x(1 + 값 x ln(오브젝트 수))", "crowd"],
-	["pincer_frac", "협공 표식 폭발: 구체 최대 체력 대비", "pincer_frac"],
-	["orb_mul", "웨이브 구체 수 배율", "orb_mul"],
-	["tax_step", "속성 종류 하나당 공격 속도 감소 (도파민 모드 0.25)", "tax_step"],
-	["hp_growth", "11웨이브부터 웨이브마다 구체 체력 배율", "hp_growth"],
-	["orb_hp", "구체 체력 배율", "orb_hp"],
-	["trait_mul", "속성 형태 성질 세기", "trait_mul"],
-	["rx_mul", "새 반응 65개의 피해·지속 피해 배율", "rx_mul"],
+	["max_elems", "오브젝트 상한", "한 오브젝트에 넣을 수 있는 속성 종류 (도파민 모드 99)", "max_elems"],
+	["max_mod", "오브젝트 상한", "강화 종류마다 한 오브젝트에 쌓을 수 있는 수 (도파민 모드 99)", "max_mod"],
+	["mod_total", "오브젝트 상한", "한 오브젝트에 넣을 수 있는 강화 합계 (도파민 모드 99)", "mod_total"],
+	["picks", "카드 수", "쉬는 시간마다 고르는 카드 수 (모드 '두 장'이면 +1)", "picks"],
+	["open_picks", "카드 수", "처음 두 쉬는 시간(웨이브 0·1 뒤)에 고르는 카드 수", "open_picks"],
+	["resist_from", "구체 기본", "저항 구체가 나오는 웨이브 (모드 '이른 위협'이면 3 일찍)", "resist_from"],
+	["sturdy_from", "구체 기본", "굳센 구체가 나오는 웨이브 (모드 '이른 위협'이면 3 일찍)", "sturdy_from"],
+	["crowd_log", "오브젝트 피해·성장", "오브젝트 수 보너스 계수: 모든 피해 x(1 + 값 x ln(오브젝트 수))", "crowd"],
+	["pincer_frac", "연계", "협공 폭발 피해: 구체 최대 체력 대비", "pincer_frac"],
+	["orb_mul", "구체 기본", "웨이브 구체 수 배율", "orb_mul"],
+	["tax_step", "오브젝트 피해·성장", "속성 종류가 하나 늘 때마다 공격 속도 감소 (도파민 모드 0.25)", "tax_step"],
+	["hp_growth", "구체 기본", "11웨이브부터 웨이브마다 구체 체력 배율 (hp_late_from 웨이브까지)", "hp_growth"],
+	["orb_hp", "구체 기본", "구체 체력 배율 (보호막·별빛 필요량에도 곱함)", "orb_hp"],
+	["trait_mul", "오브젝트 피해·성장", "속성 형태 성질 세기 (속성 레벨 3까지 x 이 값)", "trait_mul"],
+	["rx_mul", "반응 수치", "새 반응 65개의 피해·지속 피해 배율 (별 반응 피해에도 곱함)", "rx_mul"],
 ]
 
 
@@ -103,11 +104,11 @@ static func build() -> Array:
 	Rules.apply(3)
 	var r3 := {}
 	for b in BASE:
-		r3[b[0]] = _base(b[2])
+		r3[b[0]] = _base(b[3])
 	Rules.apply(1)
 	for b in BASE:
-		var e := {"k": b[0], "g": "규칙 기본", "d": b[1], "v": _num(_base(b[2]))}
-		if r3[b[0]] != _base(b[2]):
+		var e := {"k": b[0], "g": b[1], "d": b[2], "v": _num(_base(b[3]))}
+		if r3[b[0]] != _base(b[3]):
 			e["v3"] = _num(r3[b[0]])
 		out.append(e)
 	var names := {}
