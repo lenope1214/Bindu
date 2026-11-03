@@ -508,7 +508,7 @@ static func _raw(t: Tower, o: Orb, d: float, mul := true) -> void:
 	if mul:
 		d = o.hurt(d, false, t)
 	else:
-		d *= t.final_damage_mul()
+		# 처형 낫의 조건부 즉사: 피해 배율로 남은 체력을 남기지 않는다.
 		o.hp -= d
 	o.last_rx = true
 	t.credit(d, t.tag if t.tag != "" else "hit")

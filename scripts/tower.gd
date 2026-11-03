@@ -452,7 +452,7 @@ func spd_parts_text() -> String:
 ## 사거리 (글자). draw_range·attack()과 같은 값.
 func range_text() -> String:
 	if m("reflex") > 0:
-		return "%d 안 전방위 자동 조준" % roundi(reflex_range())
+		return "%d 안 전방위 자동 조준" % roundi(reflex_range()) + (" (폭풍 바람에 따라 변함)" if MapRule.on() and MapRule.is_map("storm") else "")
 	var l := plv
 	var s := sz()
 	match pattern:
@@ -1479,9 +1479,9 @@ func attack(delta: float, orbs: Array) -> void:
 		if burst_t > 0.0:
 			_set_fire([burst_mul, burst_size, burst_key])
 	var can_fire := m("reflex") == 0 or is_instance_valid(reflex_target)
-	if not can_fire:
-		for key in cd:
-			cd[key] = maxf(0.0, cd[key] - dp)
+	if not can_fire and cd.has("p"):
+		# 기본 공격만 건너뛰었으므로 그 쿨다운만 진행. 반응은 아래 _reactions에서 한 번 진행한다.
+		cd["p"] = maxf(0.0, cd["p"] - dp)
 	match pattern if can_fire else "":
 		"gust":
 			# 다중 발사: 부채꼴로 벌리지 않고 같은 방향으로 나란히 (넓은 돌풍이 길목 밖으로 빠지지 않게, 2026-11-01)
@@ -2043,25 +2043,39 @@ func halo_blades(l: int) -> Array:
 
 
 ## 반응의 감지 사거리. 공격·정보창과 같은 크기/레벨/사거리 보정을 쓴다.
-func reflex_range() -> float:
-	return reflex_range_of(pattern, plv, total_level(), mf("size"), tk(Elem.WIND), mf("homing"))
+func reflex_range(toward := Vector2.ZERO) -> float:
+	var weather := MapRule.wind_k(toward, MapRule.wind_dir(main.lanes)) if main and MapRule.on() else 1.0
+	return reflex_range_of(pattern, plv, total_level(), mf("size"), tk(Elem.WIND), mf("homing"), mf("multi"), weather)
 
 
-static func reflex_range_of(pat: String, l: int, total: int, size_n: float, wind: float, homing: float) -> float:
+## Projectile.setup → form_init 순서대로: 유한 탄에 맵 바람, 그 뒤 속성 바람을 적용.
+static func _reflex_flight_range(travel: float, wind: float, weather: float) -> float:
+	if travel < 2000.0:
+		travel *= weather
+	if travel < 2000.0:
+		travel *= 1.0 + 0.12 * wind
+	return travel
+
+
+static func reflex_range_of(pat: String, l: int, total: int, size_n: float, wind: float, homing: float, multi: float = 0.0, weather: float = 1.0) -> float:
 	var s := 1.0 + Rules.size_k * size_n
 	var r := rr_of(pat, l)
 	match pat:
-		"shot": return shot_range(total, size_n) * (1.0 + 0.12 * wind)
+		"shot": return _reflex_flight_range(shot_range(total, size_n), wind, weather)
 		"spray": return 200.0 * r * s
 		"stream": return 260.0 * r * s
 		"chain": return 280.0 * r * s
-		"gust": return 420.0 * s * Rules.t("range_gust")
+		"gust": return _reflex_flight_range(420.0 * Rules.t("range_gust"), wind, weather)
 		"sonic": return 230.0 * r * s
 		"clock": return 240.0 * r * s
-		"lob": return LOB_RANGE * r
-		"wall": return 90.0 * r + 28.0 * s
+		"lob": return _reflex_flight_range(LOB_RANGE * r, wind, weather)
+		"wall":
+			var farthest := 0.0
+			for k in 2 + roundi(multi):
+				farthest = maxf(farthest, rock_slot(Vector2.RIGHT, k, l).length())
+			return farthest + 28.0 * s
 	if homing > 0.0 and pat in Pat.PROJECTILE:
-		return Projectile.HOMING_TRAVEL
+		return _reflex_flight_range(Projectile.HOMING_TRAVEL, wind, weather)
 	return 2000.0  # 화면 끝까지 날아가는 탄·레이저
 
 
@@ -2069,12 +2083,12 @@ static func reflex_range_of(pat: String, l: int, total: int, size_n: float, wind
 func _update_aim(orbs: Array, delta: float) -> void:
 	if m("reflex") > 0:
 		reflex_target = null
-		var best := reflex_range()
+		var best := INF
 		for o in orbs:
 			if not is_instance_valid(o) or o.hp <= 0.0:
 				continue
 			var dist: float = o.position.distance_to(position)
-			if dist <= best:
+			if dist <= best and dist <= reflex_range(o.position - position):
 				best = dist
 				reflex_target = o
 		if reflex_target != null and best > 0.001:
@@ -3489,8 +3503,21 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 		var sn := float(md.get("size", 0))
 		if Rules.mod_decay:
 			sn = 2.0 * (1.0 - pow(0.5, sn))
-		var r := reflex_range_of(sp["pat"], l, total, sn, minf(els.get(Elem.WIND, 0), 3) * Rules.trait_mul, md.get("homing", 0))
-		ci.draw_arc(o, r, 0.0, TAU, 96, Color(c, 0.3), 1.5)
+		var mn := float(md.get("multi", 0))
+		if Rules.mod_decay:
+			mn = 2.0 * (1.0 - pow(0.5, mn))
+		var r := reflex_range_of(sp["pat"], l, total, sn, minf(els.get(Elem.WIND, 0), 3) * Rules.trait_mul, md.get("homing", 0), mn)
+		if MapRule.on() and MapRule.is_map("storm"):
+			var points := PackedVector2Array()
+			var wind_dir := MapRule.wind_dir(ci.get("lanes"))
+			for i in 97:
+				var toward := Vector2.from_angle(TAU * i / 96.0)
+				var weather := MapRule.wind_k(toward, wind_dir)
+				var reach := reflex_range_of(sp["pat"], l, total, sn, minf(els.get(Elem.WIND, 0), 3) * Rules.trait_mul, md.get("homing", 0), mn, weather)
+				points.append(o + toward * reach)
+			ci.draw_polyline(points, Color(c, 0.3), 1.5)
+		else:
+			ci.draw_arc(o, r, 0.0, TAU, 96, Color(c, 0.3), 1.5)
 	var ks := spread_ks(n)
 	for i in n:
 		var dd := d.rotated(spread_a(ks[i]))
