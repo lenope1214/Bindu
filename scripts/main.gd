@@ -903,12 +903,15 @@ func _build_ui() -> void:
 	apply_btn.text = "적용"
 	apply_btn.set_anchors_preset(Control.PRESET_CENTER)
 	apply_btn.focus_mode = Control.FOCUS_NONE
+	apply_btn.draw.connect(_draw_apply_icon)
 	apply_btn.add_theme_font_size_override("font_size", 17)
 	# 선택 조작 줄의 기본 동작을 금색으로 강조
 	for st in ["normal", "hover", "pressed"]:
 		var asb := StyleBoxFlat.new()
 		asb.bg_color = Color(1.0, 0.82, 0.4) if st == "normal" else Color(1.0, 0.9, 0.6)
 		asb.set_corner_radius_all(6)
+		asb.content_margin_left = 38
+		asb.content_margin_right = 12
 		apply_btn.add_theme_stylebox_override(st, asb)
 	for fc in ["font_color", "font_hover_color", "font_pressed_color"]:
 		apply_btn.add_theme_color_override(fc, Color(0.12, 0.09, 0.02))
@@ -4259,6 +4262,24 @@ func _place_apply_btn() -> void:
 		return
 	var head: Dictionary = cs[tap_sel].get_meta("card")[0]
 	apply_btn.text = "%s 적용" % head["name"]
+	apply_btn.set_meta("choice_icon", head.duplicate())
+	apply_btn.queue_redraw()
+
+
+## 카드와 같은 벡터 그림을 금색 버튼의 글자 왼쪽에 그린다.
+func _draw_apply_icon() -> void:
+	var head: Dictionary = apply_btn.get_meta("choice_icon", {})
+	if head.is_empty():
+		return
+	var tw := ui_font.get_string_size(apply_btn.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x
+	var c := Vector2((apply_btn.size.x - tw - 26.0) / 2.0 + 9.0, apply_btn.size.y / 2.0)
+	var ink := Color(0.12, 0.09, 0.02)
+	if head.has("e"):
+		Glyph.elem(apply_btn, head["e"], c, 9.0, ink)
+	elif head.has("pat"):
+		Glyph.pat(apply_btn, head["pat"], c, 9.0, ink)
+	else:
+		Glyph.kind(apply_btn, head["kind"], c, 9.0, ink)
 
 
 
@@ -9270,7 +9291,7 @@ func _process(delta: float) -> void:
 	var bw := {reroll_btn: 130.0 if Garden.on else 96.0, card_detail_btn: 104.0, hide_btn: 76.0, skip_btn: 76.0, skip_n_btn: 76.0}
 	if apply_btn.visible:
 		bw = {reroll_btn: 76.0, card_detail_btn: 88.0, hide_btn: 60.0, skip_btn: 60.0, skip_n_btn: 60.0}
-		bw[apply_btn] = maxf(120.0, ui_font.get_string_size(apply_btn.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x + 24.0)
+		bw[apply_btn] = maxf(120.0, ui_font.get_string_size(apply_btn.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x + 50.0)
 	var rw := -10.0
 	for bt in row:
 		rw += bw[bt] + 10.0

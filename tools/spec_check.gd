@@ -1685,7 +1685,7 @@ func _meta_misc() -> void:
 	main.touch_ui = true
 	main.tap_sel = 1
 	main._process(0.016)
-	var apply_row: bool = main.apply_btn.visible and main.apply_btn.text.replace("\u2060", "").ends_with(" 적용") and is_equal_approx(main.apply_btn.offset_top, main.reroll_btn.offset_top)
+	var apply_row: bool = main.apply_btn.get_meta("choice_icon", {}) == main.choice_box.get_child(1).get_meta("card")[0] and main.apply_btn.visible and main.apply_btn.text.replace("\u2060", "").ends_with(" 적용") and is_equal_approx(main.apply_btn.offset_top, main.reroll_btn.offset_top)
 	main.tap_sel = -1
 	main.touch_ui = false
 	main.perk_mode = true
