@@ -2409,7 +2409,7 @@ func _draw_card_foot(b: Button, foot: Array, col: Color) -> void:
 		x += 18.0 + ui_font.get_string_size(f[1], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 12.0
 
 
-## 카드 앞면 내용 {head, rows, foot, tip}. lvl 0 = 간소화(효과 이름·괄호 뺀 한 줄), 1 = 자세히(전체 설명).
+## 카드 앞면 내용 {head, rows, foot, tip}. lvl 0 = 기본 주효과, 1 = 자세히(전체 설명).
 func _card_content(card: Dictionary, lvl: int) -> Dictionary:
 	var head := {"kind": card["type"], "name": ""}
 	var rows: Array = []
@@ -2480,26 +2480,26 @@ func _card_content(card: Dictionary, lvl: int) -> Dictionary:
 	return {"head": head, "rows": rows, "foot": foot, "tip": tip}
 
 
-## 간소화: 속성은 효과 이름 두 개(가시 · 자람)만, 나머지는 괄호를 뺀 짧은 설명. 짝 속성·레벨업 칩은 그대로.
+## 기본 카드에는 효과를 설명하는 문장을 남긴다. 모든 웨이브에서 같은 내용이며 자세히는 보존한다.
 func _card_simple(card: Dictionary, rows: Array) -> Array:
 	var out: Array = []
 	if card["type"] == "elem":
-		var e: int = card["e"]
-		# [그림, 이름, 꼬리표]: 적중 = 맞힌 구체에 거는 효과, 형태 = 공격 모양(지나간 길·끝 자리)에 붙는 성질
-		out.append({"pair": [["rider", Elem.rider_name(e), "적중"], ["trait", Elem.trait_name(e), "형태"]]})
+		out.append({"t": Elem.BRIEF[card["e"]]})
 		for r in rows:
 			if r.has("els") or r.has("chip"):
 				out.append(r)
 		return out
+	if card["type"] == "cata":
+		return rows  # 다시 뽑는 대상·레벨 유지·즉시 발동 조건을 생략하지 않는다.
 	var first := true
 	for r in rows:
 		if not r.has("t"):
 			out.append(r)
 		elif r.has("fs"):
 			if r.get("c", Color.WHITE) != Color(1, 1, 1, 0.55):
-				out.append(r)  # "넣을 수 있는 오브젝트 없음" 같은 경고는 남긴다
+				out.append(r)  # 넣을 수 없는 대상 경고는 남긴다.
 		elif first:
-			out.append({"t": _short(r["t"])})
+			out.append({"t": Pat.brief(card["type"], card["id"], r["t"])})
 			first = false
 	return out
 
