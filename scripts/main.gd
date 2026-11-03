@@ -9242,6 +9242,7 @@ func _spawn_child(parent: Orb) -> void:
 	o.position = parent.position + Vector2(randf_range(-14, 14), randf_range(-14, 14))
 	o.from_a = parent.from_a
 	o.target = parent.target
+	o.swirl = parent.swirl
 	o.lane_k = parent.lane_k
 	o.setup(Orb.Kind.NORMAL, maxf(1.0, ceilf(parent.max_hp * 0.4)), parent.speed * 1.1 / (orb_speed_mul * Modes.speed()))
 	o.resist_e = parent.resist_e
