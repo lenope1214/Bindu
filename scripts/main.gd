@@ -9390,7 +9390,7 @@ func _process(delta: float) -> void:
 		hide_btn.offset_bottom = hy + 32.0
 	_garden_layout(cx, by)
 	_skill_ui()
-	card_dock.tick()
+	card_dock.tick(delta)
 	restart_armed = maxf(restart_armed - delta, 0.0)
 	end_armed = maxf(end_armed - delta, 0.0)
 	if not get_tree().paused and not title_label.visible and phase != Phase.GAMEOVER:

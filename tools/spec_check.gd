@@ -1928,13 +1928,26 @@ func _meta_misc() -> void:
 	main._process(0.0)
 	var transform: Transform2D = main.get_canvas_transform()
 	var stable := true
-	for stage in [main.Phase.AIM, main.Phase.READY, main.Phase.WAVE, main.Phase.CHOOSE]:
+	for stage in [main.Phase.AIM, main.Phase.READY, main.Phase.CHOOSE]:
 		main.phase = stage
 		main._process(0.0)
 		stable = stable and main.get_canvas_transform().is_equal_approx(transform)
 	var board: Rect2 = main.card_dock.screen_board()
-	ok("UI-28", stable and main.arena().size == Meta.FIELD and board.grow(1).encloses(main.get_canvas_transform() * main.arena())
-		and not board.intersects(main.card_dock.panel.get_global_rect()), "전장 전체가 도크 위에 표시되고 단계 전환에서 카메라 고정·논리 전장 유지")
+	var docked: bool = main.card_dock.panel.visible and main.card_dock.side.visible and not board.intersects(main.card_dock.panel.get_global_rect())
+	var enclosed: bool = board.grow(1).encloses(main.get_canvas_transform() * main.arena())
+	# 웨이브 중: 도크·정보 영역이 흐려지며 빠지고 전장 칸이 화면 전체로, 끝나면 다시 도크
+	main.phase = main.Phase.WAVE
+	main._process(main.card_dock.WAVE_FADE * 0.5)
+	var mid: float = main.card_dock.panel.modulate.a
+	main._process(main.card_dock.WAVE_FADE)
+	var full_rect: Rect2 = main.ui_root.get_global_transform() * Rect2(Vector2.ZERO, main.ui_root.size)
+	var wave_full: bool = not main.card_dock.panel.visible and not main.card_dock.side.visible and main.card_dock.screen_board().is_equal_approx(full_rect) and mid > 0.0 and mid < 1.0
+	var wave_fit: bool = main.card_dock.screen_board().grow(1).encloses(main.get_canvas_transform() * main.arena())
+	main.phase = main.Phase.CHOOSE
+	main._process(main.card_dock.WAVE_FADE)
+	var dock_back: bool = main.card_dock.panel.visible and main.card_dock.panel.modulate.a == 1.0 and main.get_canvas_transform().is_equal_approx(transform)
+	ok("UI-28", stable and main.arena().size == Meta.FIELD and enclosed and docked and wave_full and wave_fit and dock_back,
+		"쉬는 시간 전장 전체가 도크 위·카메라 고정 %s, 웨이브 중 도크 빠짐·전체 화면 %s(중간 %.2f), 끝나면 복귀 %s" % [stable and enclosed and docked, wave_full and wave_fit, mid, dock_back])
 	var preview := {"type": "elem", "e": Elem.WATER, "lv": 1}
 	var target_good: bool = main.card_dock.target_ok(dt, preview)
 	dt.add(Elem.ICE, 1)

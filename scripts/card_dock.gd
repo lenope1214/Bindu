@@ -3,6 +3,7 @@ extends RefCounted
 ## 일반 판의 고정 하단 도크. 전장 규칙은 그대로 두고 표시 영역과 입력만 분리한다.
 const HEIGHT := 188.0
 const CARD_HEIGHT := 94.0
+const WAVE_FADE := 0.4  # 웨이브 중 도크·정보 영역이 빠지고 전장이 전체 화면으로 커지는 시간(초)
 var game
 var panel: Panel
 var side: PanelContainer
@@ -13,6 +14,7 @@ var hovered: Button
 var side_signature := ""
 var board := Rect2()
 var fit := 1.0
+var wave_t := 0.0  # 0 = 도크 펼침(쉬는 시간), 1 = 웨이브 중 전체 화면
 
 func _init(main) -> void:
 	game = main
@@ -61,10 +63,28 @@ func _init(main) -> void:
 func active() -> bool:
 	return not Garden.on and game.title_label != null and not game.title_label.visible and game.phase != game.Phase.GAMEOVER
 
-func bounds() -> Rect2:
+## 도크를 펼쳤을 때 전장 칸 (UI 좌표).
+func dock_bounds() -> Rect2:
 	var size: Vector2 = game.ui_root.size
 	var right := clampf(size.x * 0.25, 220.0, 290.0)
 	return Rect2(8, 48, size.x - right - 24, maxf(80, size.y - HEIGHT - 60))
+
+## 웨이브 중 도크가 빠진 정도 (0~1, 부드럽게).
+func wave_e() -> float:
+	return smoothstep(0.0, 1.0, wave_t)
+
+## 지금 전장 칸: 쉬는 시간엔 도크 위, 웨이브 중엔 화면 전체로 커진다.
+func bounds() -> Rect2:
+	var d := dock_bounds()
+	var e := wave_e()
+	if e <= 0.0:
+		return d
+	var full := Rect2(Vector2.ZERO, game.ui_root.size)
+	return Rect2(d.position.lerp(full.position, e), d.size.lerp(full.size, e))
+
+## 웨이브 중이면 도크를 빼 전체 화면 (일시정지 중에도 유지).
+func wave_full() -> bool:
+	return game.phase == game.Phase.WAVE
 
 func screen_board() -> Rect2:
 	return game.ui_root.get_global_transform() * bounds()
@@ -111,21 +131,32 @@ func card_size() -> Vector2:
 	var count := maxi(game.offer.size(), 3)
 	return Vector2(maxf(120, (game.ui_root.size.x - 24 - (count - 1) * 12) / count), CARD_HEIGHT)
 
-func tick() -> void:
+func tick(delta := 0.0) -> void:
 	var on := active()
-	var was := panel.visible
-	panel.visible = on
-	side.visible = on
+	var was := panel.visible or side.visible or wave_t > 0.0
 	if not on:
+		panel.visible = false
+		side.visible = false
+		wave_t = 0.0
 		if was:
+			for c: Control in _faded():
+				c.modulate.a = 1.0
 			game._clamp_pan()
 		return
+	wave_t = move_toward(wave_t, 1.0 if wave_full() else 0.0, delta / WAVE_FADE)
+	var e := wave_e()
+	var shown := e < 0.99
+	panel.visible = shown
+	side.visible = shown
 	var size: Vector2 = game.ui_root.size
-	var field := bounds()
-	panel.position = Vector2(0, size.y - HEIGHT)
+	var field := dock_bounds()
+	var dock_y := size.y - HEIGHT
+	panel.position = Vector2(0, dock_y + 36.0 * e)  # 아래로 살짝 내려가며 사라짐
 	panel.size = Vector2(size.x, HEIGHT)
-	side.position = Vector2(field.end.x + 8, 48)
-	side.size = Vector2(size.x - side.position.x - 8, size.y - HEIGHT - 60)
+	panel.modulate.a = 1.0 - e
+	side.position = Vector2(field.end.x + 8 + 36.0 * e, 48)  # 오른쪽으로 살짝 빠지며 사라짐
+	side.size = Vector2(size.x - field.end.x - 16, size.y - HEIGHT - 60)
+	side.modulate.a = 1.0 - e
 	game.legend.visible = false
 	game.card_dim.visible = false
 	for c: Control in [game.bar_box, game.hint, game.ver_label, game.start_btn, game.cancel_btn, game.draw_ok_btn, game.skip_badge]:
@@ -172,11 +203,17 @@ func tick() -> void:
 		game.zoom_btn.position = Vector2(150, size.y - 48)
 		game.zoom_btn.size = Vector2(132, 34)
 		game.zoom_btn.z_index = 2
+	# 도크가 빠지면 기술 버튼은 화면 오른쪽 아래, 접힌 설정 버튼 줄 왼쪽에 떠 있다
+	var skill_end := size.x - 12.0
+	if game.bar_box.visible:
+		var br: Rect2 = game.bar_box.get_rect()
+		if br.end.y > size.y - 70.0:
+			skill_end = lerpf(skill_end, minf(skill_end, br.position.x - 12.0), e)
 	for i in game.skill_btns.size():
 		var b: Button = game.skill_btns[i]
 		b.z_index = 2
 		b.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		b.position = Vector2(size.x - 12 - game.skill_btns.size() * 176 + i * 176, panel.position.y + 66)
+		b.position = Vector2(skill_end - game.skill_btns.size() * 176 + i * 176, lerpf(dock_y + 66, size.y - 62, e))
 		b.size = Vector2(166, 50)
 	game.hint.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	game.hint.position = Vector2(16, panel.position.y + 46)
@@ -194,14 +231,26 @@ func tick() -> void:
 		b.size = Vector2(action_width, 44)
 	game.ver_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	game.ver_label.position = Vector2(12, size.y - 22)
-	game.skip_badge.position.y = -HEIGHT - 40
+	game.skip_badge.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	game.skip_badge.position = Vector2((size.x - game.skip_badge.size.x) / 2.0, lerpf(dock_y - game.skip_badge.size.y - 8, size.y - 62 - game.skip_badge.size.y - 10, e))
 	game._update_choice_header()
 	state.visible = not game.choice_header.visible
 	if game.choice_header.visible:
 		game.choice_header.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		game.choice_header.position = Vector2(12, panel.position.y + 4)
 		game.choice_header.size = Vector2(maxf(240, minf(340, x - 24)), 34)
-	_update_side()
+	# 도크에 붙은 조작(카드 줄·버튼·안내)도 도크와 같이 흐려진다. 카드 줄은 main이 매 프레임 정한 값(일시정지 0.25)에 곱함
+	var fade := 1.0 - e
+	game.choice_box.modulate.a *= fade
+	for c: Control in _faded():
+		c.modulate.a = fade
+	if not shown:
+		game.hint.visible = false
+	if shown:
+		_update_side()
+
+func _faded() -> Array:
+	return [state, game.hint, game.ver_label, game.choice_header, game.skip_n_btn, game.skip_btn, game.hide_btn, game.card_detail_btn, game.reroll_btn, game.apply_btn, game.start_btn, game.cancel_btn, game.draw_ok_btn]
 
 func _update_side() -> void:
 	var card := preview_card()
