@@ -247,14 +247,14 @@ func step(delta: float) -> void:
 	chill = maxf(chill - 0.4 * delta, 0.0)
 	if burn_t > 0.0:
 		burn_t -= delta
-		_credit(burn_src, hurt(burn_dps * delta), burn_rx, burn_key)
+		_credit(burn_src, hurt(burn_dps * delta, false, burn_src), burn_rx, burn_key)
 		last_rx = burn_rx
 	if poison_t > 0.0:
 		poison_t -= delta
 		var pd := poison_dps * delta * (2.0 if swamp_t > 0.0 else 1.0)
 		if smog_t > 0.0 and burn_t > 0.0 or frostpo_t > 0.0 and frozen_t > 0.0:
 			pd *= 2.0
-		_credit(poison_src, hurt(pd), poison_rx, poison_key)
+		_credit(poison_src, hurt(pd, false, poison_src), poison_rx, poison_key)
 		last_rx = poison_rx
 	# 피해 숫자는 0.35초마다 묶어서 표시
 	pop_t -= delta
@@ -330,7 +330,9 @@ func hurt_mul() -> float:
 	return m
 
 
-func hurt(amount: float, crit := false) -> float:
+func hurt(amount: float, crit := false, source = null) -> float:
+	if is_instance_valid(source):
+		amount *= source.final_damage_mul()
 	var d := amount * (1.5 if prison_t > 0.0 else 1.0 + vuln_k if vuln_t > 0.0 else 1.0)
 	last_rx = false
 	if not amp.is_empty():
@@ -367,7 +369,7 @@ func _echo_release() -> void:
 	echo_amt = 0.0
 	if d <= 0.0 or hp <= 0.0:
 		return
-	_credit(echo_src, hurt(d), false, "elem:time")
+	_credit(echo_src, hurt(d, false, echo_src), false, "elem:time")
 	if main and d >= 1.0:
 		main.popup(position, d, Elem.COLORS[Elem.TIME], true, "메아리")
 
