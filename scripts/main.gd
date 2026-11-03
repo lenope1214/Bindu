@@ -3777,11 +3777,20 @@ func _th(t: String) -> String:
 
 ## 위쪽 가운데 글(알림·처음 안내)을 가운데에 두되, 오른쪽 설명이 떠 있으면 그 왼쪽까지만 (글자를 키우면 글 끝이 설명 밑에 깔리던 것).
 ## 글이 정한 폭보다 길면 Label이 오른쪽으로만 늘어나 가운데에서 벗어나던 것도 함께 맞춘다.
+## 전장 가운데 글(알림·큰 글)이 넘지 말아야 할 오른쪽 끝: 오른쪽 설명, 쉬는 시간 카드 정보 칸(도크 오른쪽)
+func _right_panel_x() -> float:
+	var x := ui_root.size.x
+	if legend.visible:
+		x = minf(x, legend.get_rect().position.x)
+	if card_dock != null and card_dock.side != null and card_dock.side.visible and card_dock.side.modulate.a > 0.05:
+		x = minf(x, card_dock.side.get_rect().position.x)
+	return x
+
+
 func _beside_legend(c: Control, min_w: float) -> void:
 	var w := maxf(min_w, c.get_combined_minimum_size().x)
 	var x := (ui_root.size.x - w) / 2.0
-	if legend.visible:
-		x = minf(x, legend.get_rect().position.x - 8.0 - w)
+	x = minf(x, _right_panel_x() - 8.0 - w)
 	c.position.x = maxf(x, 8.0)
 	c.size.x = w
 
@@ -9186,7 +9195,7 @@ func _process(delta: float) -> void:
 	# 글이 그 폭보다 길면 두 줄로 접는다 (예전엔 표 아래로 내려 카드 줄 밑에 깔렸다: 봉인·이벤트 알림)
 	if toast.visible:
 		var left := 8.0
-		var right := legend.get_rect().position.x - 8.0 if legend.visible else ui_root.size.x - 8.0
+		var right := _right_panel_x() - 8.0
 		if Garden.on and gp != null and gp.visible and not gp_portrait:
 			right = minf(right, gp.position.x - 8.0)  # 정원 가로: 목록 패널 왼쪽
 		if dps_panel.visible and dps_panel.get_rect().end.y > toast.position.y:
@@ -9203,8 +9212,13 @@ func _process(delta: float) -> void:
 	banner.position.y = maxf(ui_root.size.y / 2.0 - 140.0, hud.position.y + hud.size.y + 12.0)
 	if toast.visible and toast.text != "":
 		banner.position.y = maxf(banner.position.y, toast.get_rect().end.y + 4.0)  # 점수 줄이 세 줄일 때 알림과 겹치던 것
+	if guide_more.visible:
+		banner.position.y = maxf(banner.position.y, guide_more.get_rect().end.y + 4.0)  # [더 알아보기]가 "특성 선택" 큰 글 위에 걸치던 것
 	# 큰 글은 정원 가로 화면이면 목록 패널 왼쪽 전장 가운데 (패널 밑으로 글 끝이 들어갔다)
 	var ban_w := gp.position.x if Garden.on and gp != null and gp.visible and not gp_portrait else ui_root.size.x
+	var ban_full := ui_font.get_string_size(banner.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x
+	if ban_w / 2.0 + minf(ban_full, 800.0) / 2.0 > _right_panel_x() - 8.0:
+		ban_w = minf(ban_w, _right_panel_x() - 8.0)  # 긴 큰 글이 오른쪽 설명 위로 넘치던 것 (폰 "웨이브 3개 넘기기")
 	banner.size.x = minf(800.0, ban_w - 16.0)
 	banner.position.x = (ban_w - banner.size.x) / 2.0
 	banner.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if ui_font.get_string_size(banner.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x > banner.size.x else TextServer.AUTOWRAP_OFF
@@ -10048,7 +10062,7 @@ func _draw_tooltip() -> void:
 		_draw_orb_tooltip()
 		return
 	tip_frame = Engine.get_process_frames()
-	var z: float = Meta.ui_scale
+	var z: float = _tip_scale()
 	var fs := roundi(14 * z)
 	var lh := 18.0 * z
 	var maxw := minf(620.0 * z, _right_limit() - 24.0)  # 이보다 긴 줄은 접는다 (속성이 많으면 화면 밖으로 나가던 것)
@@ -10202,9 +10216,14 @@ func _tip_icon(id: String, c: Vector2, s: float, col: Color) -> void:
 		_: Glyph.ui(fx_layer, id, c, s, Color(col, 1.0))
 
 
+## 정보창 글 배율: 폰은 화면이 작아 다른 글보다 14px 정보창이 유난히 작게 읽혔다
+func _tip_scale() -> float:
+	return Meta.ui_scale * (1.2 if _phone() else 1.0)
+
+
 ## 정보창 맨 아래 조작 줄 (마우스): [왼쪽 단추] 방향 · [끌기] 옮기기 · [Shift] 자세히.
 func _draw_tip_ctrl(at: Vector2, fs: int, lh: float, path: bool, acts: bool) -> void:
-	var z: float = Meta.ui_scale
+	var z: float = _tip_scale()
 	var f := maxi(11, fs - 2)
 	var x := at.x
 	var y := at.y + lh * 0.5
@@ -10320,9 +10339,9 @@ func _draw_orb_tooltip() -> void:
 				k *= 1.0 + v[0]
 			if k > 1.005:
 				parts.append("반응 약화(받는 피해 +%d%%)" % roundi((k - 1.0) * 100.0))
-		var fs := roundi(14 * Meta.ui_scale)
+		var fs := roundi(14 * _tip_scale())
 		# 상태가 많으면(보스·후반) 한 줄이 화면·오른쪽 설명 밖으로 나간다: 들어가는 만큼씩 줄을 나눈다
-		var maxw := minf(_right_limit() - 32.0, 620.0 * Meta.ui_scale)
+		var maxw := minf(_right_limit() - 32.0, 620.0 * _tip_scale())
 		var rows: Array[String] = [""]
 		for part in parts:
 			var cand: String = part if rows[-1] == "" else rows[-1] + " · " + part
@@ -13697,6 +13716,10 @@ func _garden_layout(cx: float, by: float) -> void:
 			start_btn.position = Vector2(-110, -100)
 			start_btn.size = Vector2(220, 44)
 		return
+	if detail_btn.anchor_top != 1.0:  # 일반 판 도크가 줄에 옮겨 둔 [자세히]를 정원에서는 원래 자리로
+		detail_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+		detail_btn.position = Vector2(-70.0 - 130.0, -100.0)
+		detail_btn.size = Vector2(120, 40)
 	return  # 정원: 다음 웨이브·환생·분재는 목록 패널 안 (_garden_panel_tick)
 
 

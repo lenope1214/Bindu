@@ -200,7 +200,7 @@ func tick(delta := 0.0) -> void:
 		game.hide_btn.tooltip_text = "카드 다시 보기 (V)"
 	if game.zoom_btn.visible:
 		game.zoom_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		game.zoom_btn.position = Vector2(150, size.y - 48)
+		game.zoom_btn.position = Vector2(maxf(150.0, 12.0 + game.ver_label.get_combined_minimum_size().x + 12.0), size.y - 48)  # 왼쪽 아래 버전 글 옆 (겹치던 것)
 		game.zoom_btn.size = Vector2(132, 34)
 		game.zoom_btn.z_index = 2
 	# 도크가 빠지면 기술 버튼은 화면 오른쪽 아래, 접힌 설정 버튼 줄 왼쪽에 떠 있다
@@ -222,7 +222,7 @@ func tick(delta := 0.0) -> void:
 	if game.phase == game.Phase.WAVE:
 		game.hint.text = "기술을 사용하거나 전장의 구체·오브젝트를 확인하세요."
 		game.hint.size.x = maxf(150, size.x - 410)
-	var actions: Array = [game.start_btn, game.cancel_btn, game.draw_ok_btn].filter(func(b): return b.visible)
+	var actions: Array = [game.detail_btn, game.start_btn, game.cancel_btn, game.draw_ok_btn].filter(func(b): return b.visible)  # [자세히/간단히]도 같은 줄에 (안내 글 위에 떠 있던 것)
 	var action_width := (280.0 - maxf(0, actions.size() - 1) * 8) / maxi(1, actions.size())
 	for i in actions.size():
 		var b: Button = actions[i]
@@ -327,9 +327,9 @@ func draw_card(b: Button, col: Color) -> void:
 			while line.length() > 0 and font.get_string_size(line + "…", HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x > b.size.x - 28:
 				line = line.left(-1)
 			line += "…"
-		b.draw_string(font, Vector2(14, 51 + 18 * i), line, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 28, 14, Color("d2dae6"))
+		b.draw_string(font, Vector2(14, 49 + 17 * i), line, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 28, 14, Color("d2dae6"))
 	var foot := "특성 · 상세는 오른쪽에서 확인"
 	var destinations: Array = b.get_meta("card_foot", [])
 	if not destinations.is_empty():
 		foot = " · ".join(destinations.map(func(it): return it[1]))
-	b.draw_string(font, Vector2(14, 86), foot, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 28, 11, Color("8294aa"))
+	b.draw_string(font, Vector2(14, 88), foot, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 28, 11, Color("8294aa"))
