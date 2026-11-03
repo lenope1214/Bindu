@@ -166,6 +166,10 @@ var banner: Label
 var banner_t := 0.0
 var banner_queue: Array = []  # 앞 글자가 떠 있는 동안 들어온 글자 [글, 색]
 var choice_box: HBoxContainer
+var choice_header: PanelContainer  # 카드 한 장의 설명과 구분되는 카드 줄 전체의 선택 안내
+var choice_remaining: Label
+const CHOICE_HEADER_H := 36.0
+const CHOICE_HEADER_GAP := 18.0
 const CARD_MAX_H := 250.0  # 선택지 카드 최대 높이 (넘으면 글자를 줄인다)
 var over_label: Label
 var over_card: Control  # 게임 오버 그림 카드 (over_data를 그림)
@@ -822,6 +826,36 @@ func _build_ui() -> void:
 	choice_box.add_theme_constant_override("separation", 20)  # 정원 상점 4장은 166×4 + 20×3 = 724 (줄 폭 730)
 	choice_box.alignment = BoxContainer.ALIGNMENT_CENTER  # 카드가 2장일 때도 가운데
 	root.add_child(choice_box)
+	choice_header = PanelContainer.new()
+	choice_header.z_index = 2
+	choice_header.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	choice_header.visible = false
+	var chs := StyleBoxFlat.new()
+	chs.bg_color = Color(0.06, 0.07, 0.1, 0.98)
+	chs.border_color = Color(1, 1, 1, 0.18)
+	chs.set_border_width_all(1)
+	chs.set_corner_radius_all(6)
+	chs.content_margin_left = 14
+	chs.content_margin_right = 14
+	chs.content_margin_top = 6
+	chs.content_margin_bottom = 6
+	choice_header.add_theme_stylebox_override("panel", chs)
+	var chr := HBoxContainer.new()
+	chr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chr.add_theme_constant_override("separation", 20)
+	choice_header.add_child(chr)
+	var cht := Label.new()
+	cht.text = "카드 선택"
+	cht.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cht.add_theme_font_size_override("font_size", 16)
+	cht.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chr.add_child(cht)
+	choice_remaining = Label.new()
+	choice_remaining.add_theme_font_size_override("font_size", 16)
+	choice_remaining.add_theme_color_override("font_color", Color(1, 0.88, 0.5))
+	choice_remaining.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chr.add_child(choice_remaining)
+	root.add_child(choice_header)
 
 	legend = Label.new()
 	legend.set_anchors_preset(Control.PRESET_TOP_RIGHT)
@@ -883,13 +917,17 @@ func _build_ui() -> void:
 
 	apply_btn = Button.new()
 	apply_btn.text = "적용"
+	apply_btn.set_anchors_preset(Control.PRESET_CENTER)
 	apply_btn.focus_mode = Control.FOCUS_NONE
+	apply_btn.draw.connect(_draw_apply_icon)
 	apply_btn.add_theme_font_size_override("font_size", 17)
-	# 카드 글 위에 걸치므로 꽉 찬 바탕 (다른 버튼처럼 옅으면 카드 글과 섞인다)
+	# 선택 조작 줄의 기본 동작을 금색으로 강조
 	for st in ["normal", "hover", "pressed"]:
 		var asb := StyleBoxFlat.new()
 		asb.bg_color = Color(1.0, 0.82, 0.4) if st == "normal" else Color(1.0, 0.9, 0.6)
 		asb.set_corner_radius_all(6)
+		asb.content_margin_left = 38
+		asb.content_margin_right = 12
 		apply_btn.add_theme_stylebox_override(st, asb)
 	for fc in ["font_color", "font_hover_color", "font_pressed_color"]:
 		apply_btn.add_theme_color_override(fc, Color(0.12, 0.09, 0.02))
@@ -1360,7 +1398,7 @@ func _refresh_dps() -> void:
 	dps_panel.position.y = top
 	var bottom := _bottom_free()
 	if choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and choice_box.get_rect().position.x < 320.0:
-		bottom = minf(bottom, choice_box.get_rect().position.y - 24.0)  # 카드 왼쪽 끝·고르기 꼬리표를 덮지 않게 (넘치면 굴려 본다)
+		bottom = minf(bottom, choice_box.get_rect().position.y - maxf(24.0, _choice_headroom() + 4.0))  # 카드·선택 안내를 덮지 않게 (넘치면 굴려 본다)
 	if apply_btn.visible and apply_btn.get_rect().position.x < dps_panel.get_rect().end.x:
 		bottom = minf(bottom, apply_btn.get_rect().position.y - 28.0)  # 폰 [적용] 버튼(누른 카드 위)을 덮지 않게
 	if guide_label.visible and guide_label.get_rect().position.x < 320.0:
@@ -2613,7 +2651,9 @@ func _draw_card_full() -> void:
 	var row: Rect2 = inv * choice_box.get_global_rect()
 	var top_lim := (hud.position.y + hud.size.y + 6.0) if hud.visible else 8.0
 	var bot_lim := info.size.y - 8.0
-	var w := 420.0
+	var side_room := info.size.x - row.end.x - 20.0
+	var beside := touch_ui and side_room >= 260.0
+	var w := minf(420.0, side_room) if beside else 420.0
 	var fs := 14
 	var rows: Array = []
 	var lh := 0.0
@@ -2630,9 +2670,12 @@ func _draw_card_full() -> void:
 			break
 		fs -= 1
 	var x := clampf(cr.get_center().x - w / 2.0, 8.0, info.size.x - w - 8.0)
-	var y := row.position.y - h - (44.0 if touch_ui else 30.0)  # 카드 줄 위 (고르기 꼬리표·[적용] 위)
-	if y < top_lim:
-		y = clampf(row.end.y + 50.0, top_lim, bot_lim - h)  # 위에 자리가 없으면 아래 버튼 줄 밑, 화면 안으로
+	var y := row.position.y - h - _choice_headroom() - 10.0  # 카드 선택 안내·봉인·[적용] 위
+	if beside:
+		x = row.end.x + 12.0
+		y = clampf(row.position.y, top_lim, bot_lim - h)
+	elif y < top_lim:
+		y = maxf(top_lim, row.end.y - h - 8.0)  # 조작 줄은 가리지 않고 카드 영역 안에서 펼친다
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.04, 0.05, 0.08, 0.96)
 	sb.border_color = Color(1, 0.85, 0.5, 0.5)
@@ -3725,7 +3768,7 @@ func _off_legend(r: Rect2) -> Rect2:
 func _info_blockers() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var inv := ui_root.get_global_transform().affine_inverse()
-	for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, draw_ok_btn]:
+for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, choice_header, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, draw_ok_btn]:
 		if c == null or not c.is_visible_in_tree():
 			continue
 		if (c is Label and str(c.text) == "") or (c == hud and hud_chips.is_empty()):
@@ -3947,7 +3990,7 @@ func _draw_info() -> void:
 		Icons.chip(info, ui_font, r, "", Color.WHITE, txt, Color(1, 0.88, 0.5), 16, Color(0.12, 0.1, 0.04, 0.97), Color(1, 0.82, 0.4, 0.8))
 		tip_rects.append([r, [["이번 쉬는 시간에 카드를 %d장 더 선택할 수 있어요" % picks_left, Color(1, 0.9, 0.6)]]])
 		if Vary.count() > 0:
-			var sr := _draw_seal_chip(info, (x0 + x1) / 2.0, r.position.y - 6.0)
+			var sr := _draw_seal_chip(info, r.get_center().x, r.position.y - 6.0)
 			tip_rects.append([sr, [["봉인 모드: 이번 판 선택지에 안 나오는 카드", Color(0.8, 0.8, 1.0)], [Vary.sealed_text(), Color(1, 1, 1, 0.9)], ["25·50웨이브에 하나씩 풀려요", Color(1, 1, 1, 0.6)]]])
 	_draw_card_full()
 	# 말풍선: 마우스를 올린 칩·배지 (터치는 누른 것)
@@ -4240,7 +4283,27 @@ func _draw_boss_path(now: float) -> void:
 	draw_string(ui_font, lp, bm["label"], HORIZONTAL_ALIGNMENT_LEFT, -1, BOSS_FS, Color(1, 0.75, 0.85))
 
 
-## 폰 [적용] 버튼: 미리보기 중인 카드 오른쪽 위 모서리에 걸친다 (왼쪽 위는 고르기 꼬리표, 카드 아래는 새로고침 줄)
+## 카드 선택 안내·봉인 칩에 필요한 카드 위 공간 (UI 좌표).
+func _choice_headroom() -> float:
+	if phase != Phase.CHOOSE or perk_mode or cards_hidden or Garden.on:
+		return 0.0
+	return CHOICE_HEADER_H + CHOICE_HEADER_GAP + (32.0 if Vary.count() > 0 else 0.0)
+
+
+func _update_choice_header() -> void:
+	choice_header.visible = phase == Phase.CHOOSE and not perk_mode and choice_box.visible and not cards_hidden \
+		and choice_box.get_child_count() > 0 and not title_label.visible and not get_tree().paused and not Garden.on
+	if not choice_header.visible:
+		return
+	var inv := ui_root.get_global_transform().affine_inverse()
+	var first := inv * (choice_box.get_child(0) as Control).get_global_rect()
+	var last := inv * (choice_box.get_child(choice_box.get_child_count() - 1) as Control).get_global_rect()
+	choice_remaining.text = "%d장 더 선택 가능" % picks_left
+	choice_header.size = Vector2(last.end.x - first.position.x, CHOICE_HEADER_H)
+	choice_header.position = Vector2(first.position.x, first.position.y - CHOICE_HEADER_H - CHOICE_HEADER_GAP)
+
+
+## 터치 미리보기의 적용 동작. 위치는 카드 아래 조작 줄에서 함께 정한다.
 func _place_apply_btn() -> void:
 	var cs := choice_box.get_children() if choice_box else []
 	var on := touch_ui and phase == Phase.CHOOSE and not perk_mode and choice_box.visible and not cards_hidden \
@@ -4248,10 +4311,27 @@ func _place_apply_btn() -> void:
 	apply_btn.visible = on
 	if not on:
 		return
-	var r: Rect2 = ui_root.get_global_transform().affine_inverse() * cs[tap_sel].get_global_rect()
-	var w := minf(120.0, r.size.x * 0.5)
-	apply_btn.size = Vector2(w, 34.0)
-	apply_btn.position = Vector2(r.end.x - w - 10.0, maxf(r.position.y - 36.0, 0.0))  # 카드 위: 글 첫 줄을 덮지 않게
+	var head: Dictionary = cs[tap_sel].get_meta("card")[0]
+	apply_btn.text = "%s 적용" % head["name"]
+	apply_btn.set_meta("choice_icon", head.duplicate())
+	apply_btn.queue_redraw()
+
+
+## 카드와 같은 벡터 그림을 금색 버튼의 글자 왼쪽에 그린다.
+func _draw_apply_icon() -> void:
+	var head: Dictionary = apply_btn.get_meta("choice_icon", {})
+	if head.is_empty():
+		return
+	var tw := ui_font.get_string_size(apply_btn.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x
+	var c := Vector2((apply_btn.size.x - tw - 26.0) / 2.0 + 9.0, apply_btn.size.y / 2.0)
+	var ink := Color(0.12, 0.09, 0.02)
+	if head.has("e"):
+		Glyph.elem(apply_btn, head["e"], c, 9.0, ink)
+	elif head.has("pat"):
+		Glyph.pat(apply_btn, head["pat"], c, 9.0, ink)
+	else:
+		Glyph.kind(apply_btn, head["kind"], c, 9.0, ink)
+
 
 
 ## 카드 누르기. 마우스는 바로 고르고(올리면 미리보기), 터치는 한 번 누르면 미리보기(다른 카드는 옅게, 아래에 [적용]),
@@ -9250,7 +9330,8 @@ func _process(delta: float) -> void:
 	if dps_panel.visible and ui_root.size.x / 2.0 + cx - 365.0 < 320.0:
 		floor_y += 44.0 + 48.0 + 6.0  # 왼쪽 위 DPS 표(머리 + 2줄, 나머지는 굴려 봄)를 덮지 않게
 	if guide_label.visible:
-		floor_y = maxf(floor_y, guide_label.position.y + guide_label.size.y + 26.0)  # 처음 안내 글이 카드 글 뒤로 겹치던 것 (고르기 꼬리표 자리 포함)
+		floor_y = maxf(floor_y, guide_label.position.y + guide_label.size.y + (8.0 if _choice_headroom() > 0.0 else 26.0))
+	floor_y += _choice_headroom()  # 첫 판 안내·DPS 표 아래에 선택 안내와 터치 적용·봉인 칩 자리 확보
 	var need := ch + 8.0 + 40.0 + (84.0 if Garden.on else 0.0)
 	var k := clampf(minf((lim - floor_y) / need, kw), minf(0.7, kw), 1.0)
 	cx = minf(cx, room - half * k - ui_root.size.x / 2.0)
@@ -9262,13 +9343,17 @@ func _process(delta: float) -> void:
 	choice_box.scale = Vector2(k, k)
 	choice_box.offset_top = ctop - mid
 	choice_box.offset_bottom = choice_box.offset_top + ch
+	_update_choice_header()
 	var by := choice_box.offset_top + ch * k + 8.0
 	# 카드 밑 한 줄 그림 버튼: [새로고침 N] [필드 보기] [넘기기] [×N]. 없는 버튼 자리는 당겨 가운데 맞춘다
 	var row: Array = []
-	for bt in [reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn]:
+	for bt in [reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, apply_btn]:
 		if bt.visible and not (bt == hide_btn and cards_hidden):
 			row.append(bt)
 	var bw := {reroll_btn: 130.0 if Garden.on else 96.0, card_detail_btn: 104.0, hide_btn: 76.0, skip_btn: 76.0, skip_n_btn: 76.0}
+	if apply_btn.visible:
+		bw = {reroll_btn: 76.0, card_detail_btn: 88.0, hide_btn: 60.0, skip_btn: 60.0, skip_n_btn: 60.0}
+		bw[apply_btn] = maxf(120.0, ui_font.get_string_size(apply_btn.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x + 50.0)
 	var rw := -10.0
 	for bt in row:
 		rw += bw[bt] + 10.0

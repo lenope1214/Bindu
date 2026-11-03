@@ -1679,6 +1679,7 @@ func _meta_misc() -> void:
 	main._set_cards_hidden(true)
 	main._process(0.016)
 	var dim_hide: bool = not main.card_dim.visible
+	var head_hide: bool = not main.choice_header.visible
 	main._set_cards_hidden(false)
 	main._on_pick({"type": "mod", "id": "pierce"})
 	main._process(0.016)
