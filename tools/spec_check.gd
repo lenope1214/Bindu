@@ -1663,35 +1663,19 @@ func _meta_misc() -> void:
 	var full_ok: bool = full.any(func(l): return str(l[0]).begins_with("반응 ")) and full.size() > s0["rows"].size()
 	main._set_card_detail(true)
 	var on_ok: bool = Meta.card_detail and main.card_detail_btn.button_pressed
+	Meta.card_detail = false
+	var plain_card: Button = main._card_button({"type":"elem", "e":Elem.WATER, "lv":1}, 1)
+	var no_floating_tip := plain_card.tooltip_text == ""
+	plain_card.free()
 	main._set_card_detail(was_d)
-	ok("UI-20", simple_ok and full_ok and on_ok, "카드 설명: 기본 간소화 · [자세히] 전체 · 자세히 + 올리기(터치는 한 번 누르기) 창에 반응 설명까지")
+	ok("UI-20", simple_ok and full_ok and on_ok and no_floating_tip, "카드 요약·오른쪽 상세 전환, 전체 조건·반응 설명 보존, 전장 위 카드 툴팁 없음")
 
 	# 카드 선택 막: 선택지가 펼쳐져 있으면 검은 막(카드·카드 줄 버튼은 그 위), 필드 보기·카드를 고르면 곧바로 걷힘
 	_fresh(3)
 	var dt := _tower(main.center() + Vector2(-200, 0))
 	main._start_choose()
 	main._process(0.016)
-	var dim_on: bool = main.card_dim.visible and is_equal_approx(main.card_dim.color.a, main.CARD_DIM_A) and main.choice_box.z_index > main.card_dim.z_index \
-		and main.reroll_btn.z_index > main.card_dim.z_index and main.card_dim.mouse_filter == Control.MOUSE_FILTER_IGNORE
-	main.picks_left = 2
-	main._process(0.016)
-	var head_two: bool = main.choice_header.visible and main.choice_remaining.text == "2장 더 선택 가능" and main.choice_header.z_index > main.card_dim.z_index
-	main.picks_left = 1
-	main._process(0.016)
-	var head_one: bool = main.choice_remaining.text == "1장 더 선택 가능"
-	for card_node in main.choice_box.get_children():
-		if card_node.is_queued_for_deletion():
-			main.choice_box.remove_child(card_node)
-	main.touch_ui = true
-	main.tap_sel = 1
-	main._process(0.016)
-	var apply_row: bool = main.apply_btn.get_meta("choice_icon", {}) == main.choice_box.get_child(1).get_meta("card")[0] and main.apply_btn.visible and main.apply_btn.text.replace("\u2060", "").ends_with(" 적용") and is_equal_approx(main.apply_btn.offset_top, main.reroll_btn.offset_top)
-	main.tap_sel = -1
-	main.touch_ui = false
-	main.perk_mode = true
-	main._process(0.016)
-	var head_perk: bool = not main.choice_header.visible
-	main.perk_mode = false
+	var dim_on: bool = not main.card_dim.visible and main.card_dock.panel.visible and main.card_dock.side.visible
 	main._set_cards_hidden(true)
 	main._process(0.016)
 	var dim_hide: bool = not main.card_dim.visible
@@ -1700,9 +1684,39 @@ func _meta_misc() -> void:
 	main._on_pick({"type": "mod", "id": "pierce"})
 	main._process(0.016)
 	var dim_off: bool = not main.card_dim.visible and main.phase == main.Phase.PLACE
-	ok("UI-23", dim_on and dim_hide and dim_off, "카드 선택 중 검은 막 %s(카드 위), 필드 보기 %s·카드 고르면 %s 걷힘" % [dim_on, dim_hide, dim_off])
-	ok("UI-28", head_two and head_one and apply_row and head_perk and head_hide and not main.choice_header.visible,
-		"카드 줄 선택 안내: 갱신 %s·%s, 적용 줄 %s, 숨김 %s·%s·%s" % [head_two, head_one, apply_row, head_perk, head_hide, not main.choice_header.visible])
+	ok("UI-23", dim_on and dim_hide and dim_off, "일반 판 카드 선택 시 전장 어둠 없음 %s, 필드 보기 %s·카드 고른 뒤 %s 유지" % [dim_on, dim_hide, dim_off])
+
+
+	main.shake = 0.0
+	main._process(0.0)
+	main._process(0.0)
+	var transform: Transform2D = main.get_canvas_transform()
+	var stable := true
+	for stage in [main.Phase.AIM, main.Phase.READY, main.Phase.WAVE, main.Phase.CHOOSE]:
+		main.phase = stage
+		main._process(0.0)
+		stable = stable and main.get_canvas_transform().is_equal_approx(transform)
+	var board: Rect2 = main.card_dock.screen_board()
+	ok("UI-28", stable and main.arena().size == Meta.FIELD and board.grow(1).encloses(main.get_canvas_transform() * main.arena())
+		and not board.intersects(main.card_dock.panel.get_global_rect()), "전장 전체가 도크 위에 표시되고 단계 전환에서 카메라 고정·논리 전장 유지")
+	var preview := {"type": "elem", "e": Elem.WATER, "lv": 1}
+	var target_good: bool = main.card_dock.target_ok(dt, preview)
+	dt.add(Elem.ICE, 1)
+	dt.add(Elem.ELECTRIC, 1)
+	var target_capped: bool = not main.card_dock.target_ok(dt, preview)
+	main.mp_mode = "coop"
+	var old_my_id: int = main.mp.my_id
+	main.mp.my_id = 1
+	dt.owner_id = 2
+	dt.req_e = -1
+	var ownership: bool = not main.card_dock.target_ok(dt, {"type":"mod", "id":"rapid"})
+	dt.req_e = Elem.FIRE
+	var requested: bool = main.card_dock.target_ok(dt, {"type":"elem", "e":Elem.FIRE, "lv":1})
+	main.mp_mode = ""
+	main.mp.my_id = old_my_id
+	dt.owner_id = 0
+	ok("UI-29", target_good and target_capped and ownership and requested, "카드 미리보기 적용 상한·협동 소유권·요청 속성 구분")
+	main.phase = main.Phase.PLACE
 
 	# 카드 넣을 대상: 넣을 수 있는 오브젝트만 밝게, 못 넣는 오브젝트(NO_MOD 등)는 흐리게·선택 불가
 	var bad_t := _tower(main.center() + Vector2(200, 0))
