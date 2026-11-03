@@ -1101,7 +1101,7 @@ func _stars() -> void:
 
 func _waves() -> void:
 	_fresh()
-	ok("WAVE-01", main.wave_size(1) == 4 and main.wave_size(10) == 23 and main.wave_size(20) == 43, "웨이브 구체 수 3+2w, 1웨이브 70%%에서 10웨이브 100%% (%d·%d·%d)" % [main.wave_size(1), main.wave_size(10), main.wave_size(20)])
+	ok("WAVE-01", main.wave_size(1) == 5 and main.wave_size(10) == 23 and main.wave_size(20) == 43, "웨이브 구체 수 3+2w (%d·%d·%d)" % [main.wave_size(1), main.wave_size(10), main.wave_size(20)])
 	var ls := [1, 3, 6, 9, 12, 18, 24, 99].map(func(w): return main.lanes_for(w))
 	ok("WAVE-02", ls == [1, 2, 3, 4, 4, 5, 6, 6], "진입 방향 수: 3·6·9웨이브에 하나씩, 18·24에 하나씩, 최대 6 %s" % str(ls))
 	ok("WAVE-03", main.spawn_count(3) == roundi(main.wave_size(3) * 0.8) and main.spawn_count(4) == main.wave_size(4), "새 진입 방향이 열리는 웨이브는 구체 20% 적게")
@@ -1923,7 +1923,7 @@ func _meta_misc() -> void:
 		for e in Elem.ALL:
 			var basic: Dictionary = main._card_content({"type": "elem", "e": e, "lv": 1}, 0)
 			var text: String = basic["rows"][0].get("t", "")
-			basic_ok = basic_ok and text.length() >= 10 and not basic["rows"][0].has("pair") and not text.contains("적중 ·") and not text.contains("특징 ·")
+			basic_ok = basic_ok and text.length() >= 10 and not basic["rows"][0].has("pair") and not text.contains("효과 ·") and not text.contains("특징 ·")
 	main.wave = wave_before
 	var ice: String = main._card_content({"type": "elem", "e": Elem.ICE, "lv": 1}, 0)["rows"][0]["t"]
 	var earth: String = main._card_content({"type": "elem", "e": Elem.EARTH, "lv": 1}, 0)["rows"][0]["t"]

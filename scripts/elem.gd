@@ -45,7 +45,7 @@ static func draw_symbol(ci: CanvasItem, _font: Font, c: Vector2, e: int, fs: int
 const FORM := {
 	FIRE: "화염 방사 (부채꼴 지속 피해)",
 	WOOD: "관통 가시 연사",
-	WATER: "물줄기 (경직)",
+	WATER: "물줄기 (멈춰 세움)",
 	ELECTRIC: "연쇄 번개",
 	WIND: "돌풍 (옆으로 밀기)",
 	ICE: "얼음 탄 (맞으면 파편 3개)",
@@ -65,28 +65,21 @@ const FORM := {
 ## 세기는 특징 속성 레벨 Lv1 60% · Lv2 80% · Lv3 이상 100% (Share.k). 실어 나르는 비율은 Share 상수.
 ## 나무·바람·빛·별의 효과는 오브젝트에 걸려서 실어 나르지 않는다 (CARRY 밖). 이 넷은 특징으로만 섞인다.
 const TRAIT := {
-	FIRE: "타오름: 효과가 걸린 구체의 화상이 끝나거나 죽을 때 불꽃이 터져 주변 구체에 효과 40%",
-	WOOD: "자람: 오브젝트에서 멀리 맞힐수록 효과가 세짐 (100마다 +6%, 최대 +30%)",
-	WATER: "흐름: 날아가는 공격이 지나간 길에 물길(2초), 밟은 구체에 효과 30%",
-	ELECTRIC: "튐: 전류가 튈 때 효과도 옆 구체로 튐 50%",
-	WIND: "넓힘: 튐·퍼짐·전염·불꽃·끌어당김·빛줄기 범위 +40%",
-	ICE: "오래감: 효과 지속 시간 x1.5",
-	EARTH: "묻어둠: 효과가 구체에 묻어, 2초 안에 다시 맞으면 효과 70% 한 번 더",
-	DARK: "끌어당김: 약화된 구체가 죽으면 주변 구체를 그 자리로 끌고 효과 30%",
-	LIGHT: "꿰뚫음: 치명타가 나면 그 뒤 일직선 구체들에 효과 40%",
-	POISON: "전염: 중독된 구체가 죽으면 주변 구체에 효과 50%",
-	METAL: "응축: 효과를 걸 때마다 효과 수만큼 추가 피해 (하나당 위력의 12%)",
-	SOUND: "퍼짐: 울림 음파가 터질 때 음파에 닿은 구체에 효과 50%",
-	TIME: "되풀이: 0.8초 뒤 같은 구체에 효과 50% 한 번 더",
-	SOUL: "쫓아감: 넋 혼불이 이 오브젝트의 공격처럼 맞혀 모든 효과를 그대로 건다",
-	STAR: "모음: 초신성이 맞힌 구체 모두에 효과 100%",
-}
-
-## 짝 이름에 쓰는 특징 꾸밈말 ("튀는 화상")
-const TRAIT_ADJ := {
-	FIRE: "타오르는", WOOD: "자라는", WATER: "흐르는", ELECTRIC: "튀는", WIND: "넓은", ICE: "오래가는",
-	EARTH: "묻어 둔", DARK: "끌어당기는", LIGHT: "꿰뚫는", POISON: "번지는", METAL: "응축된",
-	SOUND: "퍼지는", TIME: "되풀이되는", SOUL: "쫓아가는", STAR: "모인",
+	FIRE: "죽으면 불꽃: 효과가 걸린 구체의 화상이 끝나거나 죽을 때 불꽃이 터져 주변 구체에 효과 40%",
+	WOOD: "멀수록 셈: 오브젝트에서 멀리 맞힐수록 효과가 세짐 (100마다 +6%, 최대 +30%)",
+	WATER: "물길에 남김: 날아가는 공격이 지나간 길에 물길(2초), 밟은 구체에 효과 30%",
+	ELECTRIC: "번개로 옮김: 번개가 튈 때 효과도 옆 구체로 튐 50%",
+	WIND: "범위 넓힘: 번개·음파·전염·불꽃·끌어모음·빛줄기 범위 +40%",
+	ICE: "오래 지속: 효과 지속 시간 x1.5",
+	EARTH: "다시 맞으면 더: 효과가 구체에 묻어, 2초 안에 다시 맞으면 효과 70% 한 번 더",
+	DARK: "죽으면 끌어모음: 받는 피해↑가 걸린 구체가 죽으면 주변 구체를 그 자리로 끌고 효과 30%",
+	LIGHT: "치명타 관통: 치명타가 나면 그 뒤 일직선 구체들에 효과 40%",
+	POISON: "죽으면 전염: 중독된 구체가 죽으면 주변 구체에 효과 50%",
+	METAL: "효과 수만큼 피해: 효과를 걸 때마다 효과 수만큼 추가 피해 (하나당 위력의 12%)",
+	SOUND: "음파로 퍼짐: 3타 음파가 터질 때 음파에 닿은 구체에 효과 50%",
+	TIME: "조금 뒤 한 번 더: 0.8초 뒤 같은 구체에 효과 50% 한 번 더",
+	SOUL: "혼불이 실어 감: 소환된 혼불이 이 오브젝트의 공격처럼 맞혀 모든 효과를 그대로 건다",
+	STAR: "초신성에 실음: 초신성이 맞힌 구체 모두에 효과 100%",
 }
 
 ## 특징이 실어 나를 수 있는 효과(구체에 걸리는 적중 효과)
@@ -132,20 +125,20 @@ static func rider(e: int) -> String:
 ## 부가효과: 같은 오브젝트의 모든 공격에 붙는다
 const RIDER := {
 	FIRE: "화상: 한동안 계속 피해",
-	WOOD: "가시: 이 오브젝트가 주는 피해 +{wood_dmg%}% (레벨마다)",
+	WOOD: "피해 증가: 이 오브젝트가 주는 피해 +{wood_dmg%}% (레벨마다)",
 	WATER: "감속: 느려짐 (레벨이 높을수록 더)",
-	ELECTRIC: "전류: 주변 구체로 튐 (확률 {elec_ch%}%)",
-	WIND: "순풍: 둘레({wind_range}) 다른 오브젝트 공격 속도 +{wind_buff%}%/레벨 (가장 큰 바람 하나만)",
-	ICE: "빙결: 냉기가 쌓이면 잠깐 멈춤",
+	ELECTRIC: "번개 튐: 주변 구체로 번개가 튐 (확률 {elec_ch%}%)",
+	WIND: "주변 가속: 둘레({wind_range}) 다른 오브젝트 공격 속도 +{wind_buff%}%/레벨 (가장 큰 바람 하나만)",
+	ICE: "얼림: 냉기가 쌓이면 잠깐 멈춤",
 	EARTH: "기절: 레벨마다 확률 +{earth_ch%}%, 최대 {earth_max%}%",
-	DARK: "약화: {dark_t}초간 받는 피해 +{dark_vuln%}% (레벨마다 +{dark_lv%}%)",
+	DARK: "받는 피해↑: {dark_t}초간 받는 피해 +{dark_vuln%}% (레벨마다 +{dark_lv%}%)",
 	LIGHT: "치명타: 피해 {light_mul}배 (레벨마다 확률 +{light_ch%}%, 최대 {light_max%}%)",
 	POISON: "중독: 죽으면 주변에 전염",
-	METAL: "경직: 맞힌 피해 +{metal_dmg%}% (레벨마다) + 제자리에 잠깐 멈춤",
-	SOUND: "울림: {sound_t}초간 어느 오브젝트에 맞든 3번째마다 주변에 음파",
-	TIME: "메아리: {time_t}초간 받은 피해의 일부를 한 번 더 받음",
-	SOUL: "넋: {soul_t}초 안에 죽으면 확률로 혼불이 나와 다른 구체를 쫓음",
-	STAR: "별빛: 둘레({star_r}) 다른 오브젝트 피해의 {star_take%}%(+{star_lv%}%/레벨)를 복사해 모으고, 다 차면 초신성 (별만 들면 x{star_pure}, 보스는 한 번에 체력 {star_boss_cap%}%까지)",
+	METAL: "일격·멈칫: 맞힌 피해 +{metal_dmg%}% (레벨마다) + 제자리에 잠깐 멈춤",
+	SOUND: "3타 음파: {sound_t}초간 어느 오브젝트에 맞든 3번째마다 주변에 음파",
+	TIME: "피해 되풀이: {time_t}초간 받은 피해의 일부를 한 번 더 받음",
+	SOUL: "혼불 소환: {soul_t}초 안에 죽으면 확률로 혼불이 나와 다른 구체를 쫓음",
+	STAR: "피해 모으기: 둘레({star_r}) 다른 오브젝트 피해의 {star_take%}%(+{star_lv%}%/레벨)를 복사해 모으고, 다 차면 초신성 (별만 들면 x{star_pure}, 보스는 한 번에 체력 {star_boss_cap%}%까지)",
 }
 
 ## 두 속성 짝 105개 (id는 도감 저장과 맞추려고 예전 특수 반응 id를 그대로 쓴다). 이름·설명은 특징 공유에서 만든다 (_build_pairs)
@@ -269,13 +262,14 @@ static func _build_pairs() -> Array:
 	return out
 
 
-## 짝 이름: "튀는 화상"처럼 한쪽 특징 + 다른 쪽 효과 (실어 나를 효과가 없으면 두 특징 이름)
+## 짝 이름: "화상 · 번개로 옮김"처럼 한쪽 효과 + 다른 쪽 특징 (실어 나를 효과가 없으면 두 특징 이름)
 static func pair_name(a: int, b: int) -> String:
+	# 2026-11-03: 꾸밈말("타오르는 메아리")은 뜻을 알기 어려워 "효과 · 특징" 그대로 잇는다 ("피해 되풀이 · 죽으면 불꽃")
 	if b in CARRY:
-		return "%s %s" % [TRAIT_ADJ[a], rider_name(b)]
+		return "%s · %s" % [rider_name(b), trait_name(a)]
 	if a in CARRY:
-		return "%s %s" % [TRAIT_ADJ[b], rider_name(a)]
-	return "%s·%s" % [trait_name(a), trait_name(b)]
+		return "%s · %s" % [rider_name(a), trait_name(b)]
+	return "%s · %s" % [trait_name(a), trait_name(b)]
 
 
 ## 짝 설명: 두 방향을 모두 적는다.
@@ -283,9 +277,9 @@ static func pair_desc(a: int, b: int) -> String:
 	var parts := PackedStringArray()
 	for d in [[a, b], [b, a]]:
 		if d[1] in CARRY:
-			parts.append("%s의 %s → %s %s" % [NAMES[d[0]], trait_name(d[0]), NAMES[d[1]], rider_name(d[1])])
+			parts.append("%s(%s) → %s(%s)" % [rider_name(d[1]), NAMES[d[1]], trait_name(d[0]), NAMES[d[0]]])
 	if parts.is_empty():
-		return "%s %s · %s %s (실어 나를 효과 없이 특징끼리)" % [NAMES[a], trait_name(a), NAMES[b], trait_name(b)]
+		return "%s(%s) · %s(%s) (특징끼리)" % [trait_name(a), NAMES[a], trait_name(b), NAMES[b]]
 	return " · ".join(parts)
 
 

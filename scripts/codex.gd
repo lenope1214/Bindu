@@ -57,7 +57,7 @@ func entries(c: String) -> Array:
 			for r in seen + Elem.REACTIONS.filter(func(r): return not Meta.codex.has(r["id"])):
 				out.append({"key": "react:" + str(r["id"]), "name": r["name"], "color": r.get("color", Color.WHITE),
 					"sub": "%s + %s%s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], "" if Meta.codex.has(r["id"]) else "   · 아직 못 만남"],
-					"desc": "%s\n선호하면 이 반응을 만들 수 있는 속성 카드가 반짝여요" % r["desc"]})
+					"desc": "%s\n선호하면 이 조합을 만들 수 있는 속성 카드가 반짝여요" % r["desc"]})
 		"perk":
 			for pk in perks:
 				out.append({"key": "perk:" + str(pk["id"]), "name": pk["name"], "desc": pk["desc"], "color": FAV_COLOR})
