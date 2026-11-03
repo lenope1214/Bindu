@@ -1,7 +1,7 @@
 class_name Tutorial
 extends Control
-## 튜토리얼: 항목(TOPICS)마다 그림 + 설명 카드 몇 장. 기기마다 처음 켜면 기본 항목(FIRST)을 무조건 띄우고,
-## 나머지 항목은 판에서 처음 생길 때(main._tut_event) 한 번 띄운다. 시작 화면 [튜토리얼]·일시정지에서 항목별로 다시 본다.
+## 첫 실행은 목표 한 문장과 플레이/상세 선택. TOPICS의 전체 설명은 직접 열 때만 표시한다.
+## 시작 화면 [튜토리얼]·일시정지와 게임 안내의 [더 알아보기]에서 항목별로 본다.
 ## 본 기록은 이 기기 파일(user://device.cfg)에만 남긴다: 계정 진행(Progress)·best.cfg에 넣지 않아 새 기기에선 다시 뜬다.
 
 const PATH := "user://device.cfg"
@@ -88,11 +88,12 @@ const TOPICS := [
 	]},
 ]
 
-static var done := false  # 이 기기에서 처음 튜토리얼을 띄웠나
+static var done := false  # 이 기기의 첫 소개를 닫았는가 (상세 열람 seen과 별개)
 static var seen := {}  # 이 기기에서 본 항목 id -> true
 static var loaded := false
 
 signal closed
+signal play_requested
 
 var touch := false
 var phone := false
@@ -226,7 +227,7 @@ func setup(sb: StyleBox, help: Callable) -> void:
 	btn_prev = _btn(row, "◀ 이전", _prev)
 	btn_next = _btn(row, "다음 ▶", _next)
 	btn_list = _btn(row, "목록", open_list)
-	btn_close = _btn(row, "닫기", close)
+	btn_close = _btn(row, "닫기", _close_or_details)
 
 
 func _btn(row: Container, text: String, f: Callable) -> Button:
@@ -275,6 +276,26 @@ func open_list() -> void:
 	_refresh()
 
 
+## 첫 실행은 목표 한 문장만. 설명 열람 여부와 첫 소개 완료를 분리한다.
+func open_welcome() -> void:
+	mode = "welcome"
+	first_run = true
+	from_list = false
+	visible = true
+	queue = []
+	t = 0.0
+	_refresh()
+
+
+func _close_or_details() -> void:
+	if mode == "welcome":
+		done = true
+		save_file()
+		open_topics(FIRST)
+	else:
+		close()
+
+
 ## 항목들을 이어서 본다. first: 기기에서 처음 켰을 때 (닫으면 done, [건너뛰기]).
 func open_topics(ids: Array, first := false) -> void:
 	first_run = first
@@ -307,6 +328,10 @@ func cur_topic() -> Dictionary:
 
 
 func _next() -> void:
+	if mode == "welcome":
+		close()
+		play_requested.emit()
+		return
 	var tp := cur_topic()
 	if tp.is_empty():
 		return
@@ -342,8 +367,6 @@ func close() -> void:
 	visible = false
 	if first_run:
 		done = true
-		for id in FIRST:  # 건너뛰어도 본 것으로 (판에서 다시 띄우지 않게)
-			seen[id] = true
 		save_file()
 	first_run = false
 	mode = ""
@@ -357,6 +380,23 @@ func _last() -> bool:
 
 
 func _refresh() -> void:
+	if mode == "welcome":
+		pages_box.visible = true
+		list_box.visible = false
+		btn_prev.visible = false
+		btn_list.visible = false
+		btn_next.visible = true
+		btn_next.disabled = false
+		btn_close.visible = true
+		head.text = "중앙을 지키세요"
+		count.text = ""
+		body.text = PatchNotes.kr_keep("다가오는 구체를 막아 중앙을 지키세요.")
+		btn_next.text = "플레이하며 배우기"
+		btn_close.text = "자세한 설명"
+		for b: Button in [btn_next, btn_close]:
+			b.custom_minimum_size = Vector2(170 if phone else 150, 60 if phone else 44)
+		pic.queue_redraw()
+		return
 	var lst := mode == "list"
 	pages_box.visible = not lst
 	list_box.visible = lst
@@ -399,7 +439,7 @@ func _process(delta: float) -> void:
 	panel.position = ((avail - panel.size) / 2.0).floor()
 	body.add_theme_font_size_override("font_size", 20 if phone else 18)
 	body.custom_minimum_size.x = minf(w - 48.0, 760.0)  # 읽기 좋은 폭 (넓은 폰 화면에서 한 줄이 1500px까지 늘어났다)
-	if mode == "pages":
+	if mode in ["pages", "welcome"]:
 		pic.queue_redraw()
 
 
@@ -417,7 +457,7 @@ func _input(event: InputEvent) -> void:
 				else:
 					close()
 			KEY_RIGHT, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
-				if mode == "pages":
+				if mode in ["pages", "welcome"]:
 					_next()
 			KEY_LEFT:
 				if mode == "pages":
@@ -466,6 +506,9 @@ func _draw_pic() -> void:
 	pic.draw_rect(r, Color(0.05, 0.06, 0.1, 0.9))
 	_s = minf(r.size.x / 560.0, r.size.y / 240.0)
 	_o = (r.size - Vector2(560, 240) * _s) / 2.0
+	if mode == "welcome":
+		_pic_goal()
+		return
 	var tp := cur_topic()
 	if tp.is_empty():
 		return
