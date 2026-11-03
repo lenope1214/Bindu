@@ -97,7 +97,7 @@ main에 `server/` 변경이 올라오면 집 PC가 5분 안에 알아서 다시 
   "rules_desc": {"1": "속성 3종 · 강화 종류별 4개 · 11웨이브부터 체력 +6%씩"},
   "perks": {"power": 0.18, "slow": 0.1},
   "perk_desc": {"power": "모든 피해 +18%", "slow": "모든 구체 이동 속도 -10%"},
-  "cards": {"elem": 0.42, "pat": 0.25, "mod": 0.23, "link": 0.10, "cata": 0.01, "lv2_base": 0.2, "lv2_wave": 0.02, "lv2_max": 0.5},
+  "cards": {"elem": 0.42, "pat": 0.25, "mod": 0.23, "link": 0.10, "lv2_base": 0.2, "lv2_wave": 0.02, "lv2_max": 0.5},
   "elem_dmg": {"electric": 0.9, "water": 1.1},
   "pat_dmg": {"laser": 1.15},
   "message": "시즌 2 시작! 전기 하향, 물 상향"
@@ -111,7 +111,7 @@ main에 `server/` 변경이 올라오면 집 PC가 5분 안에 알아서 다시 
 | `rules_desc."N"` | 시작 화면 규칙 설명 |
 | `perks` | 특성 수치: `power` 0.15, `haste` 0.12, `reach` 0.12, `core` 3, `reroll` 1, `luck` 0.2, `regen` 1(처음 고른 회복의 웨이브당 체력), `regen_more` 0.5(겹친 회복 하나당, 소수 가능), `slow` 0.08, `harmony` 0.5·`harmony_cap` 0.2(조화가 올려 주는 공격 속도 상한), `shield` 1·`shield_max` 3·`shield_all` 4(실드), `rampart` 1·`rampart_max` 4·`rampart_push` 140(성벽), `riposte` 0.6(보통 구체 체력 배)·`riposte_more` 0.5·`riposte_r` 160(반격 파동), `overflow` 2(넘친 회복 실드 최대) |
 | `perk_desc` | 특성 카드 설명 (수치를 바꾸면 같이 바꾸기) |
-| `cards` | 카드 종류 비율(`elem`·`pat`·`mod`·`link`, 합이 1이 아니어도 됨), 대격변 확률 `cata`, Lv2 확률 `lv2_base + lv2_wave × 웨이브`(최대 `lv2_max`) |
+| `cards` | 카드 종류 비율(`elem`·`pat`·`mod`·`link`, 합이 1이 아니어도 됨), Lv2 확률 `lv2_base + lv2_wave × 웨이브`(최대 `lv2_max`) |
 | `elem_dmg` | 속성별 피해 배율. 오브젝트에 넣은 속성마다 곱함. 키: fire wood water electric wind ice earth dark light poison metal sound time soul |
 | `pat_dmg` | 공격방식별 피해 배율. 키: shot spray thorn stream chain gust shard wall vortex laser lob iron sonic clock wisp |
 | `modes` | 모드 점수 배율 (값이 배율 자체, 예 `{"rush": 1.4}`). 키: rush swarm steel glass narrow early angry seal stroll fort three soft ease. 서버 점수 상한도 같은 값을 씀 (`docs/modes.md`) |

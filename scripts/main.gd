@@ -19,7 +19,7 @@ const RUN_PATH := "user://run.cfg"  # 이어하기: 쉬는 시간마다 저장, 
 const RUN_FORMAT := 1
 const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 방향 바꾸기   끌기: 옮기기"
 ## 첫 판: 카드 종류가 열리는 웨이브 (그 웨이브 앞 쉬는 시간부터 나온다). 속성은 처음부터
-const TUTOR_OPEN := {"pat": 3, "mod": 4, "trig": 5, "link": 6, "cata": 6}
+const TUTOR_OPEN := {"pat": 3, "mod": 4, "trig": 5, "link": 6}
 const PLACE_HINT := "클릭: 설치 (오브젝트 위면 속성 겹치기)   오브젝트 꾹 누르기·끌기: 옮기기\n우클릭/Esc: 카드 다시 선택"
 
 var phase := Phase.CHOOSE
@@ -1945,10 +1945,9 @@ func _ver_text() -> String:
 	return "빈두 v%s · 규칙 %s" % [ProjectSettings.get_setting("application/config/version", "?"), Rules.NAMES[Meta.rules]]
 
 
-## 웨이브 구체 수: 3 + 2w. 첫 웨이브는 70%에서 시작해 10웨이브에 100%가 된다 (초반에 판이 끝나지 않게).
-## orb_n_cap_w웨이브(150 = 303개)에서 멈춘다 (넘는 몫은 count_k로 체력에).
+## 웨이브 구체 수: 기존 공식 3 + 2w. 150웨이브 이후에는 기존처럼 수를 고정하고 초과 몫은 체력으로 반영한다.
 static func wave_size(w: int) -> int:
-	return roundi((3 + mini(w, int(Rules.t("orb_n_cap_w"))) * 2) * lerpf(0.7, 1.0, clampf((w - 1) / 9.0, 0.0, 1.0)))
+	return 3 + mini(w, int(Rules.t("orb_n_cap_w"))) * 2
 
 
 ## 실제로 나오는 구체 수 (규칙 버전 배율, 십자로 맵 1.5배). 미리보기와 웨이브가 같은 값을 쓴다.
@@ -2352,14 +2351,6 @@ func _roll_card() -> Dictionary:
 		var has := _my_towers().any(func(t): return t.pattern == "path")
 		if randf() < (Patch.num("cards", "path_again", Pat.PATH_CHANCE_AGAIN) if has else Patch.num("cards", "path", Pat.PATH_CHANCE)):
 			return {"type": "pat", "id": "path"}
-	var cata := Patch.num("cards", "cata", 0.01)
-	if n > 0 and wave > 0 and _card_open("cata") and mp_mode != "coop":  # 협동: 친구 오브젝트까지 뒤섞여서 빼기
-		# 대격변: 각각 1%
-		var c := randf()
-		if c < cata:
-			return {"type": "cata", "id": "elem"}
-		if c < cata * 2.0:
-			return {"type": "cata", "id": "pat"}
 	# 종류 비율 (온라인 패치 cards로 바뀔 수 있음): 속성 42%, 공격방식 25%, 강화 23%, 연계 10%, 발동 12% (합으로 나눔)
 	var we := Patch.num("cards", "elem", 0.42)
 	var wp := Patch.num("cards", "pat", 0.25) if _card_open("pat") else 0.0
@@ -2392,7 +2383,6 @@ func _card_color(card: Dictionary) -> Color:
 		"elem": return Elem.COLORS[card["e"]]
 		"pat": return Pat.pcolor(card["id"]).lightened(0.15)
 		"mod": return Color(1, 0.82, 0.4)
-		"cata": return Color(1, 0.45, 0.9)
 		"trig": return Pat.TRIG_COLOR
 	return Color(0.55, 0.9, 1.0)
 
@@ -2413,13 +2403,6 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 		sb.set_border_width_all(4)
 		sb.border_color = col
 		sbh.bg_color = Color(0.3, 0.24, 0.08, 0.98)
-		sbh.set_border_width_all(4)
-		sbh.border_color = col.lightened(0.3)
-	if card["type"] == "cata":
-		sb.bg_color = Color(0.2, 0.06, 0.2, 0.97)
-		sb.set_border_width_all(4)
-		sb.border_color = col
-		sbh.bg_color = Color(0.3, 0.1, 0.3, 0.98)
 		sbh.set_border_width_all(4)
 		sbh.border_color = col.lightened(0.3)
 	b.add_theme_stylebox_override("normal", sb)
@@ -2494,13 +2477,6 @@ func _card_content(card: Dictionary, lvl: int) -> Dictionary:
 	var tip := ""
 	var dim := Color(1, 1, 1, 0.55)
 	match card["type"]:
-		"cata":
-			head["name"] = "대격변: " + ("속성" if card["id"] == "elem" else "공격방식")
-			if card["id"] == "elem":
-				rows = [{"t": "설치된 모든 오브젝트의 속성을 하나씩 무작위로 다시 뽑는다"}, {"t": "같은 속성이 나오면 레벨 +1"}]
-			else:
-				rows = [{"t": "모든 오브젝트의 공격방식을 직선탄을 뺀 무작위로 바꾼다"}, {"t": "고정·직선탄도 바뀜, 레벨 유지"}]
-			rows.append({"t": "희귀 1% · 고르면 바로 발동", "fs": 12, "c": dim})
 		"elem":
 			var e: int = card["e"]
 			head["name"] = Elem.NAMES[e]
@@ -2638,12 +2614,6 @@ func _card_full(card: Dictionary) -> Array:
 		"trig":
 			out.append([Pat.tdesc(card["id"]), W])
 			out.append(["오브젝트 위에 놓기 · 종류별 5개까지", D])
-		"cata":
-			if card["id"] == "elem":
-				out.append(["설치된 모든 오브젝트의 속성을 하나씩 무작위로 다시 뽑는다. 같은 속성이 나오면 레벨 +1", W])
-			else:
-				out.append(["모든 오브젝트의 공격방식을 직선탄을 뺀 무작위로 바꾼다. 고정·직선탄도 바뀌고 레벨은 유지", W])
-			out.append(["희귀 1% · 고르면 바로 발동", D])
 	return out
 
 
@@ -4407,9 +4377,6 @@ func _tap_hover() -> void:
 func _on_pick(card: Dictionary) -> void:
 	tap_sel = -1
 	_tap_hover()
-	if card["type"] == "cata":
-		_cataclysm(card["id"])
-		return
 	picked = card
 	hover_elem = -1
 	choice_box.visible = false
@@ -4418,26 +4385,7 @@ func _on_pick(card: Dictionary) -> void:
 	hint.text = _th(_place_hint())
 
 
-## 대격변: 고르는 즉시 모든 오브젝트에 발동.
-func _cataclysm(id: String) -> void:
-	hover_elem = -1
-	choice_box.visible = false
-	reroll_btn.visible = false
-	var ts := towers.get_children()
-	for t in ts:
-		if id == "elem":
-			t.cataclysm_elements()
-		else:
-			t.cataclysm_pattern()
-		t.eff = t.eff_now()
-		burst(t.position, Color(1, 0.45, 0.9), 16, 220.0)
-	shake = maxf(shake, 2.0)
-	sfx.play("boss")
-	big_banner("대격변! " + ("속성이 뒤섞였다" if id == "elem" else "공격방식이 뒤섞였다"), Color(1, 0.45, 0.9))
-	_after_place({"type": "cata", "id": id})
-
-
-## 통계용 카드 이름: elem:fire, pat:spray, mod:rapid, link:prism, cata:elem
+## 통계용 카드 이름: elem:fire, pat:spray, mod:rapid, link:prism
 func _stat_key(card: Dictionary) -> String:
 	if card.get("type", "") == "elem":
 		return "elem:" + Patch.ELEM_KEYS[Elem.ALL.find(card["e"])]
@@ -4459,7 +4407,7 @@ func _place_hint() -> String:
 	return "넣을 오브젝트를 클릭   꾹 누르기·끌기: 옮기기\n우클릭/Esc: 카드 다시 선택"
 
 
-## card: 이번에 넣은 카드 (대격변은 picked를 거치지 않아 따로 넘긴다).
+## card: 이번에 넣은 카드.
 func _after_place(card: Dictionary = {}) -> void:
 	if Garden.on:
 		_garden_bought()
@@ -7838,7 +7786,7 @@ func _valid_card(cd: Variant) -> bool:
 		"mod": return Pat.MODS.has(cd.get("id"))
 		"link": return Pat.LINKS.has(cd.get("id"))
 		"trig": return Pat.TRIGS.has(cd.get("id"))
-		"cata": return cd.get("id") in ["elem", "pat"]
+		"cata": return false  # 예전 저장된 대격변 선택지 복원 방지
 	return false
 
 
@@ -11608,7 +11556,7 @@ func _mp_auto_rest() -> void:
 func _mp_auto_pick() -> bool:
 	var mine: Array = _my_towers()
 	for o in offer:
-		if o["type"] == "cata" or (o["type"] == "pat" and str(o.get("id", "")) == "path"):
+		if o["type"] == "pat" and str(o.get("id", "")) == "path":
 			continue
 		if o["type"] == "elem":
 			for t in mine:
@@ -12899,7 +12847,7 @@ func _garden_fill() -> void:
 	while offer.size() < Garden.SHOP_ELEMS + Garden.SHOP_OTHERS and guard < 60 and towers.get_child_count() > 0:
 		guard += 1
 		var cd := _roll_card()
-		if cd["type"] in ["elem", "cata"]:
+		if cd["type"] == "elem":
 			continue
 		if cd["type"] in ["pat", "mod", "trig"] and not towers.get_children().any(func(t): return t.can_take(cd)):
 			continue
