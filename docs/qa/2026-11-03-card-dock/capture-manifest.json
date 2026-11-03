@@ -1,0 +1,121 @@
+{
+  "date": "2026-11-03",
+  "baseline_revision": "0c8e15bf987ce54397daeaf31a898c9245117339",
+  "engine": "Godot 4.7.2 / macOS arm64 / native Compatibility renderer",
+  "capture_method": "isolated BinduTools copies, server and multiplayer URL empty; same seed, offer, object coordinates; signals plus separate native Input.parse_input_event checks",
+  "game_source_sha256": {
+    "scripts/main.gd": "37a10c21422c28575326f1e5b02da44e54c0534e110d013e071273208f354fcd",
+    "scripts/card_dock.gd": "161a4ce4b26f6b3706c6b4c3390573c01f21344f9a9d289ad6bc6b2e014cc71e",
+    "tools/dock_check.gd": "08c4c624291c9b15b16f42fbe667d13e9c4fbe94ff287942a0d5b0ce8be9e8af"
+  },
+  "profiles": [
+    {
+      "profile": "desktop",
+      "after_captures": 11,
+      "after_ui_errors": 0,
+      "before_centers_covered": 2,
+      "after_centers_covered": 0
+    },
+    {
+      "profile": "large",
+      "after_captures": 11,
+      "after_ui_errors": 0,
+      "before_centers_covered": 1,
+      "after_centers_covered": 0
+    },
+    {
+      "profile": "phone",
+      "after_captures": 11,
+      "after_ui_errors": 0,
+      "before_centers_covered": 3,
+      "after_centers_covered": 0
+    },
+    {
+      "profile": "tablet",
+      "after_captures": 11,
+      "after_ui_errors": 0,
+      "before_centers_covered": 1,
+      "after_centers_covered": 0
+    }
+  ],
+  "captures": [
+    {
+      "file": "after-desktop.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "a41d4918caf0730cfcbc665491d1fccd1ddda2ff7004c471936abbe3433f2ac3"
+    },
+    {
+      "file": "after-detail.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "7df17558ec6467bc46c9b870847d427886b74a0e3aba3812e6a1075f2d510a20"
+    },
+    {
+      "file": "after-large.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "08c5cf4275824cc6feef9d61378948d8fb622f2276fccef931d928a365fd3813"
+    },
+    {
+      "file": "after-phone.png",
+      "width": 2556,
+      "height": 1180,
+      "sha256": "0a395d3bfff19c12b51f6a4977f2161394b9d126ef8db557ed5921f3417ae03c"
+    },
+    {
+      "file": "after-tablet.png",
+      "width": 1366,
+      "height": 1024,
+      "sha256": "e618b8065376d83da0c335452d96e746b169b2aa16a2010f8cedb3f6b46a6e0d"
+    },
+    {
+      "file": "after-wave.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "9a18af4d9749232121a9c5e1fb95aba98341cf143cdd0232665597c9c11e5dbb"
+    },
+    {
+      "file": "before-desktop.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "2589002470e92b2b00ae623019eb6c87da2763ea87643406b447a12652567f80"
+    },
+    {
+      "file": "before-detail.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "d2db7ebc4a01b516ceca4ed7cd962cb10a5b91bc1cf062f00e40c6b489009e32"
+    },
+    {
+      "file": "before-large.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "93cbb5d3a12411f1f73cd15788387e1e8cae80f6bf6a0c7331709ff628e75a48"
+    },
+    {
+      "file": "before-phone.png",
+      "width": 2556,
+      "height": 1180,
+      "sha256": "5a546ad7fa98b10e6cfc2808aa0b3fd1423acc9a88cd5893c4b42a5886d3dbc8"
+    },
+    {
+      "file": "before-tablet.png",
+      "width": 1366,
+      "height": 1024,
+      "sha256": "1e0c0c8de94de950561e0410275393368e6732de8bb8c8887952eeaacbd01792"
+    },
+    {
+      "file": "before-wave.png",
+      "width": 1280,
+      "height": 720,
+      "sha256": "92b1ec536b41a976080d899665b6b951cbda2531532de3f2f68735a836c3be4f"
+    }
+  ],
+  "scope_limits": [
+    "Phone/tablet are Mac simulations",
+    "No physical mobile-device run",
+    "No deployment or novice-player study",
+    "No independent visual reviewer"
+  ]
+}
