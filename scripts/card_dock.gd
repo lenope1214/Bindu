@@ -203,14 +203,21 @@ func world_view() -> Rect2:
 	var size: Vector2 = screen_board().size / maxf(0.01, fit * game.view_zoom)
 	return Rect2(game.center() + game.view_pan - size / 2.0, size)
 
-func over_ui(p: Vector2) -> bool:
+func over_ui(p: Vector2, include_info := true) -> bool:
 	if not active():
 		return false
 	for c: Control in [panel, footer, side, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
-			game.hud, game.dps_panel, game.range_btn, game.zoom_btn,
-			game.guide_more, game.skip_btn, game.skip_n_btn, game.pause_box, game.paused_label]:
+			game.dps_panel, game.range_btn, game.zoom_btn,
+			game.guide_more, game.skip_btn, game.skip_n_btn, game.pause_box, game.paused_label, game.mp_bar, game.coin_fx]:
 		if c != null and c.is_visible_in_tree() and c.get_global_rect().has_point(p):
 			return true
+	var hovered_control: Control = game.get_viewport().gui_get_hovered_control()
+	while hovered_control != null and hovered_control != game.ui_root:
+		if hovered_control is BaseButton and hovered_control.is_visible_in_tree() and hovered_control.get_global_rect().has_point(p):
+			return true
+		hovered_control = hovered_control.get_parent() as Control
+	if include_info and ((game.hud.is_visible_in_tree() and game.hud.get_global_rect().has_point(p)) or game._info_tip_at(p) >= 0):
+		return true
 	var bar_rect := Rect2()
 	for c: Control in game.bar_box.get_children():
 		if c.is_visible_in_tree():

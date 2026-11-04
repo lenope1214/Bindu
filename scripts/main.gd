@@ -141,6 +141,8 @@ var _hint_kept := ""  # 낱말 붙임(_kr_keep)을 넣은 아래 안내 글
 var _badge_memo := {}  # _free_badge 답 (입력 hash → Rect2)
 var _badge_cands: Array[Vector2] = []  # _free_badge가 볼 자리 (안쪽 칸, 옆 칸), 가까운 순
 var info_rects: Array = []  # 이번 프레임 info에 그린 배지 [이름, Rect2(UI 좌표)] (화면 배치 점검 tools/ui_check.gd)
+var info_mouse_capture := false
+var info_touch_capture := -1
 var tip_pin := -1  # 터치로 누른 말풍선 (tip_rects 번호)
 var wave_info: Array = []  # 다음 웨이브 자세한 안내 [[글, 색]] (배지에 올리면 보임)
 var wave_kinds: Array = []  # 다음 웨이브에 섞여 나오는 구체 [아이콘, 색, 처음 등장?]
@@ -585,6 +587,8 @@ func _notification(what: int) -> void:
 		touches.clear()
 		pinch_lock = false
 		mid_drag = false
+		info_mouse_capture = false
+		info_touch_capture = -1
 	# 창을 닫거나 (모바일) 앱이 뒤로 가면 지금 쉬는 시간 상태를 한 번 더 저장 (옮긴 위치까지)
 	if (what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED) and towers and title_label:
 		_save_run()
@@ -4725,37 +4729,69 @@ func _pointer_world() -> Vector2:
 
 ## 터치에서 흉내 낸 마우스는 장치 번호 EMULATION으로 구분한다.
 func _input(event: InputEvent) -> void:
+	var was_touch := touch_ui
 	if event is InputEventMouse:
 		pointer_position = event.position
-	if mp_mode != "" and ((event is InputEventMouseButton or event is InputEventScreenTouch or event is InputEventKey) and event.pressed):
-		_mp_presence()
-	if card_dock != null and card_dock.handle_input(event):
-		get_viewport().set_input_as_handled()
-		return
-	if _zoom_input(event):
-		get_viewport().set_input_as_handled()
-		return
-	var was_touch := touch_ui
 	if event is InputEventScreenTouch or event is InputEventScreenDrag:
-		touch_tip_t = TOUCH_TIP_SEC
-	if event is InputEventScreenTouch:
+		pointer_position = event.position
 		touch_ui = true
-		if event.pressed:
-			# 칩·배지를 누르면 말풍선 (다시 누르거나 다른 곳을 누르면 닫힘)
-			var p: Vector2 = ui_root.get_global_transform().affine_inverse() * event.position
-			var was := tip_pin
-			tip_pin = -1
-			for i in tip_rects.size():
-				if tip_rects[i][0].has_point(p):
-					tip_pin = -1 if was == i else i
-					get_viewport().set_input_as_handled()
-					break
+		touch_tip_t = TOUCH_TIP_SEC
 	elif event is InputEventMouseMotion and event.device != InputEvent.DEVICE_ID_EMULATION:
 		touch_ui = false
 	if touch_ui != was_touch:
-		get_tree().call_group("keycap", "queue_redraw")  # 모서리 단축키 상자는 터치에서 숨긴다
-	if touch_ui != was_touch and legend:
-		_refresh_legend()  # 설명의 키 안내(도감 K)를 터치·마우스에 맞게
+		get_tree().call_group("keycap", "queue_redraw")
+		if legend:
+			_refresh_legend()
+	if mp_mode != "" and ((event is InputEventMouseButton or event is InputEventScreenTouch or event is InputEventKey) and event.pressed):
+		_mp_presence()
+	if _info_input(event) or (card_dock != null and card_dock.handle_input(event)) or _zoom_input(event):
+		get_viewport().set_input_as_handled()
+
+
+func _info_tip_at(screen: Vector2) -> int:
+	var at := ui_root.get_global_transform().affine_inverse() * screen
+	for i in range(tip_rects.size() - 1, -1, -1):
+		if tip_rects[i][0].has_point(at):
+			return i
+	return -1
+
+
+## 원래 터치와 흉내 낸 마우스의 누름/뗌을 각각 소비해 뒤 전장으로 넘기지 않는다.
+func _info_input(event: InputEvent) -> bool:
+	if card_dock == null or card_dock.input_blocked():
+		info_mouse_capture = false
+		info_touch_capture = -1
+		return false
+	if event is InputEventMouseMotion and info_mouse_capture:
+		return true
+	if event is InputEventScreenDrag and event.index == info_touch_capture:
+		return true
+	var mouse: bool = event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT
+	var touch: bool = event is InputEventScreenTouch
+	if mouse and not event.pressed and info_mouse_capture:
+		info_mouse_capture = false
+		return true
+	if touch and not event.pressed and event.index == info_touch_capture:
+		info_touch_capture = -1
+		return true
+	if not (mouse or touch) or not event.pressed:
+		return false
+	var at: Vector2 = (event as InputEventScreenTouch).position if touch else (event as InputEventMouseButton).position
+	var was := tip_pin
+	if touch:
+		tip_pin = -1
+	if card_dock.over_ui(at, false):
+		return false
+	var hit := _info_tip_at(at)
+	if hit < 0:
+		return false
+	_abort_touch_action()
+	if touch:
+		info_touch_capture = event.index
+		tip_pin = -1 if was == hit else hit
+	else:
+		info_mouse_capture = true
+	return true
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -4896,6 +4932,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_P or event.keycode == KEY_ESCAPE:
 			_toggle_pause()
 	if get_tree().paused:
+		return
+	if event is InputEventMouseButton and not card_dock.input_blocked() and card_dock.over_ui(event.position):
+		if not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			_drop_press()
+			boxing = false
+			aim_hold = false
 		return
 	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_RIGHT and aim_right:
 		aim_right = false
@@ -5149,7 +5191,7 @@ func _begin_press(t: Tower, mpos: Vector2) -> void:
 func _update_press() -> void:
 	if not press_t:
 		return
-	if get_tree().paused or not phase in [Phase.PLACE, Phase.CHOOSE, Phase.READY] or not is_instance_valid(press_t) or not _mine(press_t):
+	if card_dock.input_blocked() or not phase in [Phase.PLACE, Phase.CHOOSE, Phase.READY] or not is_instance_valid(press_t) or not _mine(press_t):
 		_drop_press()
 		return
 	var mpos := _pointer_world()
@@ -5179,6 +5221,10 @@ func _update_press() -> void:
 
 ## 누른 오브젝트에서 손을 뗐을 때: 끌었으면 그 자리에 두고, 짧은 클릭이면 원래 클릭 동작.
 func _release_press() -> void:
+	if card_dock.input_blocked() or card_dock.over_ui(_pointer_screen()):
+		_drop_press()
+		_restore_hint()
+		return
 	var t := press_t
 	press_t = null
 	if not is_instance_valid(t) or not phase in [Phase.PLACE, Phase.CHOOSE, Phase.READY]:
@@ -5244,6 +5290,9 @@ func _drop_press() -> void:
 ## 선택 상자를 놓았을 때: 상자 안 오브젝트 선택 (Shift/Ctrl: 기존 선택에 더함). 짧은 클릭이면 선택 해제.
 func _finish_box() -> void:
 	boxing = false
+	if card_dock.input_blocked() or card_dock.over_ui(_pointer_screen()):
+		_restore_hint()
+		return
 	var r := Rect2(box_start, _pointer_world() - box_start).abs()
 	var add := Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META)
 	if not add:
@@ -10371,7 +10420,7 @@ func _draw() -> void:
 			if is_instance_valid(t):
 				Tower.draw_range(self, t.position, t.dir, t.spec())
 	elif phase in [Phase.CHOOSE, Phase.WAVE, Phase.READY]:
-		var hov := _tower_at(mpos)
+		var hov := _tower_at(mpos) if not card_dock.over_ui(_pointer_screen()) else null
 		if hov == null:
 			hov = _ring_target()
 		if hov:

@@ -2332,6 +2332,21 @@ func _meta_misc() -> void:
 	var board: Rect2 = main.card_dock.screen_board()
 	ok("UI-28", stable and main.arena().size == Meta.FIELD and board.grow(1).encloses(main.get_canvas_transform() * main.arena())
 		and board.size.is_equal_approx(main.get_viewport_rect().size), "패널과 독립된 전체 화면 전장: 단계 전환에서 카메라 고정·논리 전장 유지")
+	var saved_tips: Array = main.tip_rects.duplicate()
+	var saved_pin: int = main.tip_pin
+	var info_point: Vector2 = main.get_canvas_transform() * main.center()
+	var info_at: Vector2 = main.ui_root.get_global_transform().affine_inverse() * info_point
+	main.tip_rects.clear()
+	main.tip_rects.append([Rect2(info_at - Vector2(10, 10), Vector2(20, 20)), [["정보", Color.WHITE]]])
+	var info_touch := InputEventScreenTouch.new()
+	info_touch.position = info_point
+	info_touch.pressed = true
+	var captured_info: bool = main._info_input(info_touch) and main.info_touch_capture == 0 and main.card_dock.over_ui(info_point)
+	info_touch.pressed = false
+	var released_info: bool = main._info_input(info_touch) and main.info_touch_capture == -1
+	main.tip_rects = saved_tips
+	main.tip_pin = saved_pin
+	ok("UI-28", captured_info and released_info, "그려진 정보 요소도 터치 누름·뗌을 소비해 전장으로 통과하지 않음")
 	var preview := {"type": "elem", "e": Elem.WATER, "lv": 1}
 	var target_good: bool = main.card_dock.target_ok(dt, preview)
 	dt.add(Elem.ICE, 1)
@@ -2400,6 +2415,7 @@ func _meta_misc() -> void:
 	main.phase = main.Phase.READY
 	main.press_t = dt
 	main.dragging = false
+	main.pointer_position = main.get_canvas_transform() * dt.position
 	main._release_press()
 	dock._update_side()
 	dock.tick()

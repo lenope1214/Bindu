@@ -36,6 +36,8 @@ func _initialize() -> void:
 		await direction_case()
 	if which in ["all", "pause-inspector"]:
 		await pause_inspector_case()
+	if which in ["all", "overlap"]:
+		await overlap_case()
 	print("USABILITY case=%s failures=%d ui=%d" % [which, fails, ui_errors])
 	quit(1 if fails > 0 or ui_errors > 0 else 0)
 
@@ -84,6 +86,7 @@ func ownership_case() -> void:
 	ok("MP-07", target.position != mine_origin and refused.position == other_origin, "내 것만 이동 확정, 친구 좌표 보존")
 	main.selected.clear()
 	main.mp_mode = ""
+	main.mp_bar.hide()
 
 func pause_input_case() -> void:
 	await fixture()
@@ -164,3 +167,80 @@ func pause_inspector_case() -> void:
 	await mouse_button(world(target.position), false)
 	ok("UI-07", paused and target.position == origin and main.press_t == null, "진행 중 드래그도 정지하면 원위치로 취소")
 	await key(KEY_P)
+
+func overlap_tip(rect: Rect2) -> void:
+	main.tip_rects.clear()
+	main.tip_rects.append([main.ui_root.get_global_transform().affine_inverse() * rect, [["겹침 정보", Color.WHITE]]])
+	main.tip_pin = -1
+
+func overlap_case() -> void:
+	for touch_mode in [false, true]:
+		for run in 3:
+			await fixture()
+			var button: Button = main.card_dock.focus_btn
+			var at := button.get_global_rect().get_center()
+			target.position = main.get_canvas_transform().affine_inverse() * at
+			var count := [0]
+			var pressed := func(): count[0] += 1
+			button.pressed.connect(pressed)
+			overlap_tip(button.get_global_rect())
+			Input.emulate_mouse_from_touch = true
+			if touch_mode:
+				var event := InputEventScreenTouch.new()
+				event.position = at
+				event.pressed = true
+				VirtualInput.send(event)
+				event = event.duplicate()
+				event.pressed = false
+				VirtualInput.send(event)
+			else:
+				var event := InputEventMouseButton.new()
+				event.position = at
+				event.button_index = MOUSE_BUTTON_LEFT
+				event.pressed = true
+				VirtualInput.send(event)
+				event = event.duplicate()
+				event.pressed = false
+				VirtualInput.send(event)
+			ok("UI-28", count[0] == 1 and main.tip_pin == -1 and main.selected.is_empty() and main.press_t == null, "버튼·배지·오브젝트 겹침은 버튼 한 번만: touch=%s 회차=%d" % [touch_mode, run])
+			button.pressed.disconnect(pressed)
+			await settle()
+	for emulate in [true, false]:
+		for run in 3:
+			await fixture()
+			target.position = Vector2(220, 300)
+			var at := world(target.position)
+			overlap_tip(Rect2(at - Vector2(30, 18), Vector2(60, 36)))
+			Input.emulate_mouse_from_touch = emulate
+			var event := InputEventScreenTouch.new()
+			event.position = at
+			event.pressed = true
+			VirtualInput.send(event)
+			event = event.duplicate()
+			event.pressed = false
+			VirtualInput.send(event)
+			ok("UI-28", main.tip_pin == 0 and main.selected.is_empty() and main.press_t == null and not main.info_mouse_capture and main.info_touch_capture == -1, "배지·오브젝트 겹침은 배지만: emulate=%s 회차=%d" % [emulate, run])
+			await settle()
+	Input.emulate_mouse_from_touch = true
+	await fixture()
+	main._set_cards_hidden(true)
+	target.position = Vector2(220, 300)
+	await settle()
+	var origin := target.position
+	await mouse_button(world(target.position), true)
+	await mouse_move(main.card_dock.focus_btn.get_global_rect().get_center(), true)
+	await mouse_button(main.card_dock.focus_btn.get_global_rect().get_center(), false)
+	ok("UI-28", target.position == origin and main.phase == main.Phase.CHOOSE and main.press_t == null, "전장 드래그를 버튼 위에서 놓으면 이동 취소")
+	await fixture()
+	await mouse_click(card_center())
+	var cancel_at: Vector2 = main.cancel_btn.get_global_rect().get_center()
+	target.position = main.get_canvas_transform().affine_inverse() * cancel_at
+	await mouse_click(cancel_at)
+	ok("UI-28", main.phase == main.Phase.CHOOSE and main.picks_left == 2 and target.m("pierce") == 0 and main.selected.is_empty(), "카드 취소 버튼과 뒤 대상이 겹쳐도 취소만 실행")
+
+	main.help_label.visible = true
+	await settle()
+	var outside: Vector2 = main.ui_root.get_global_transform() * Vector2(4, 100)
+	overlap_tip(Rect2(outside - Vector2(8, 8), Vector2(16, 16)))
+	await mouse_click(outside)
+	ok("UI-28", not main.help_label.visible and main.selected.is_empty(), "모달 밖 클릭은 창만 닫고 뒤 정보·전장을 누르지 않음")
