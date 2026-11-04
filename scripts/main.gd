@@ -177,6 +177,9 @@ var fast_speed := 2.0  # Space로 켜는 배속
 var paused_label: Label
 var pause_box: HBoxContainer  # 일시정지 창 아래 버튼 (계속·시작 화면·끄기)
 var pause_dim: ColorRect
+var perk_press: Button = null  # 누르고 있는 특성 카드 (길게 누르기)
+var perk_peek: Button = null  # 길게 눌러 자세히를 띄운 특성 카드 (손을 떼도 고르지 않음)
+var panel_scroll := {}  # 폰: 창 → 안 굴림 칸 (_phone_scroll)
 var legend_hidden := OS.has_feature("mobile")  # 폰·태블릿은 필드가 좁아 접어 두고 시작 (버튼으로 열면 저장)
 var bar_open := false  # 오른쪽 아래 설정 버튼(소리·자동 시작·일시정지·배속)을 펼쳤는지. 접으면 펼치기 버튼만 남는다
 var bar_btn: Button
@@ -461,6 +464,8 @@ static var mp_keep: Mp = null
 static var mp_back := false
 static var mp_back_msg := ""
 var home_box: VBoxContainer  # 시작 화면 첫 화면: 이어하기·큰 타일(일반 판·멀티)·그림 버튼 줄
+var prep_cols: GridContainer  # 준비 화면: [맵 카드 | 규칙·기술·모드·시작] 두 칸 또는 위아래 (_prep_layout)
+var prep_right: VBoxContainer
 var prep_box: VBoxContainer  # [일반 판]을 누르면: 맵·규칙·모드 + 시작 (Esc 뒤로)
 var prep_title: Label
 var prep_back: Button  # 준비 화면 왼쪽 위 [뒤로]
@@ -782,6 +787,18 @@ func _build_ui() -> void:
 	guide_more.focus_mode = Control.FOCUS_NONE
 	guide_more.z_index = 2
 	guide_more.custom_minimum_size = Vector2(130, 32)
+	# 안내 말풍선과 같은 노란 테두리 버튼: 예전엔 테두리 없는 글처럼 보여 누를 수 있는지 몰랐다
+	for st in ["normal", "hover", "pressed"]:
+		var mb := StyleBoxFlat.new()
+		mb.bg_color = Color(0.08, 0.07, 0.04, 0.9) if st == "normal" else Color(0.18, 0.15, 0.07, 0.95)
+		mb.border_color = Color(1, 0.82, 0.4, 0.7)
+		mb.set_border_width_all(1)
+		mb.set_corner_radius_all(6)
+		mb.set_content_margin_all(6)
+		guide_more.add_theme_stylebox_override(st, mb)
+	guide_more.add_theme_color_override("font_color", Color(1, 0.88, 0.55))
+	guide_more.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.75))
+	guide_more.text = "더 알아보기 ›"
 	guide_more.visible = false
 	guide_more.pressed.connect(_open_guide_details)
 	root.add_child(guide_more)
@@ -1745,13 +1762,63 @@ func _safe_pad() -> Rect2:
 
 
 ## 화면보다 커지는 창(줄이 많거나 글자를 키웠을 때)은 줄여서 맞춘다. 가운데 창이라 위아래 여백이 같고, 아래는 버튼 줄을 비운다.
+## 세로로만 굴리는 칸에 넣는다 (가로는 내용 폭 그대로)
+func _vscroll(inner: Control) -> ScrollContainer:
+	var sc := ScrollContainer.new()
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sc.size_flags_horizontal = inner.size_flags_horizontal
+	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sc.add_child(inner)
+	return sc
+
+
+## 폰: 창 안 내용을 굴림 칸으로 옮긴다. _fit_panels가 창을 줄이는 대신 굴림 칸 높이를 화면에 맞춘다
+func _phone_scroll(p: PanelContainer) -> void:
+	if not _phone():
+		return
+	var inner: Control = p.get_child(0)
+	p.remove_child(inner)
+	var sc := _vscroll(inner)
+	p.add_child(sc)
+	panel_scroll[p] = sc
+
+
 func _fit_panels() -> void:
+	if title_box.visible:
+		_prep_layout()
+		if modes_btn.get_child_count() > 0:
+			# 모드 줄 작은 설명이 두 줄로 접히면 버튼도 키운다 (버튼은 안 글 높이를 따라 크지 않는다)
+			var mh := (modes_btn.get_child(0) as Control).get_combined_minimum_size().y + 8.0
+			modes_btn.custom_minimum_size.y = maxf(64.0 if _phone() else 56.0, mh)
 	for c: Control in [title_box, help_scroll, records_panel, settings_panel, notes_panel, modes_panel, codex_panel, vote_panel]:
 		if not c.is_visible_in_tree():
 			continue
+		if panel_scroll.has(c):
+			# 폰: 줄이지 않고 화면 높이까지만 키운 뒤 안을 굴린다 (줄이면 글자 6~7pt·토글이 손가락보다 작았다)
+			var sc: ScrollContainer = panel_scroll[c]
+			var want := minf(sc.get_child(0).get_combined_minimum_size().y, ui_root.size.y - 24.0 - 40.0)
+			if absf(sc.custom_minimum_size.y - want) > 0.5:
+				sc.custom_minimum_size.y = want
+				var ph := want + 40.0
+				c.offset_top = -ph / 2.0
+				c.offset_bottom = ph / 2.0
+			c.scale = Vector2.ONE
+			continue
+		if c == records_panel and board_box.visible and _phone():
+			c.scale = Vector2.ONE  # 리더보드는 _board_fit이 화면에 맞추고 안을 굴린다
+			continue
+		if c == records_panel and not board_box.visible:
+			# 맵별 기록: 창 높이를 글 높이에 맞춘다 (예전엔 610 고정이라 아래 절반이 빈칸)
+			var rh := clampf(records_panel.get_line_count() * records_panel.get_line_height() + 40.0, 160.0, 610.0)
+			if absf(records_panel.offset_bottom - records_panel.offset_top - rh) > 0.5:
+				records_panel.offset_top = -rh / 2.0 - 20.0
+				records_panel.offset_bottom = rh / 2.0 - 20.0
 		var h: float = c.get_combined_minimum_size().y if c == title_box else c.size.y
 		# 글자 크기와 상관없이: 줄이 많으면 시작 화면 아래 버튼 줄·도움말·기록 창이 화면 밖으로 잘리던 것 (아래 구석 버전·소리 버튼 자리를 비운다)
 		var k := minf(1.0, (ui_root.size.y - (110.0 if c == title_box else 100.0)) / maxf(1.0, h))
+		if c == title_box:
+			k = minf(k, (ui_root.size.x - 24.0) / maxf(1.0, c.get_combined_minimum_size().x))
 		c.pivot_offset = c.size / 2.0
 		c.scale = Vector2(k, k)
 
@@ -3130,7 +3197,22 @@ func _show_perks() -> void:
 		b.focus_mode = Control.FOCUS_NONE
 		b.set_meta("perk_desc", desc + ("\n\n" + coin if coin != "" else ""))
 		b.mouse_entered.connect(func(): card_dock.hovered = b)
-		b.pressed.connect(_on_perk.bind(pk))
+		# 터치는 올리기가 없어 누르면 바로 골라졌다: 길게 누르면(0.45초) 고르지 않고 오른쪽에 자세히
+		b.gui_input.connect(func(ev: InputEvent):
+			if touch_ui and (ev is InputEventScreenTouch or (ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT)):
+				if ev.pressed:
+					perk_press = b
+					get_tree().create_timer(0.45).timeout.connect(func():
+						if perk_press == b and is_instance_valid(b) and perk_mode:
+							perk_peek = b
+							card_dock.hovered = b)
+				else:
+					perk_press = null)
+		b.pressed.connect(func():
+			if perk_peek == b:
+				perk_peek = null  # 길게 눌러 본 것: 고르지 않음
+				return
+			_on_perk(pk))
 		_mark_fav(b, sb, sbh, "★ 선호" if Meta.favs.has("perk:" + str(pk["id"])) else "")
 		choice_box.add_child(b)
 	cards_hidden = false
@@ -5597,6 +5679,23 @@ func _build_menu(root: Control) -> void:
 	prep_box.add_child(new_btn)
 	_icon_btn(new_btn, func(): return ["play", Color(1, 0.9, 0.6)])
 	_keycap(new_btn, "Enter")
+	# 맵 카드와 규칙·기술·모드·시작 묶음: 화면이 넓으면 두 칸(_prep_layout), 좁으면 위아래.
+	# 한 줄로 쌓으면 화면 높이를 넘어 준비 화면 전체가 줄었다 (PC 0.87배·폰 0.69배, 설명 글 9~11px)
+	prep_cols = GridContainer.new()
+	prep_cols.add_theme_constant_override("h_separation", 12)
+	prep_cols.add_theme_constant_override("v_separation", 10)
+	prep_right = VBoxContainer.new()
+	prep_right.add_theme_constant_override("separation", 10)
+	prep_right.alignment = BoxContainer.ALIGNMENT_CENTER
+	var kids := prep_box.get_children()
+	for k: Control in kids:
+		prep_box.remove_child(k)
+	prep_cols.add_child(kids[0])
+	for k: Control in kids.slice(1):
+		prep_right.add_child(k)
+	prep_cols.add_child(prep_right)
+	prep_box.add_child(prep_cols)
+	_prep_layout()
 	prep_back = Button.new()
 	prep_back.text = "◀ 뒤로 (Esc)"
 	prep_back.add_to_group("key_hint")
@@ -5951,6 +6050,7 @@ func _build_menu(root: Control) -> void:
 				c.custom_minimum_size.y = maxf(c.custom_minimum_size.y, 52.0)
 			if c is CheckButton:
 				c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_phone_scroll(settings_panel)
 	_refresh_menu()
 
 
@@ -6048,6 +6148,27 @@ func _set_prep(on: bool) -> void:
 const PREP_W := 640.0
 
 
+## 준비 화면 칸: 화면 폭이 맵 카드 + 오른쪽 묶음(520)을 나란히 둘 만큼이면 두 칸
+func _prep_layout() -> void:
+	if prep_cols == null:
+		return
+	# 오른쪽 칸 폭: 남는 폭에 맞춰 420~520 (폰 가로 글자 130%는 UI 폭 약 1120)
+	# 조금 모자라면 _fit_panels가 폭에 맞춰 살짝 줄인다 (한 칸으로 두면 높이 탓에 0.57배까지 줄었다)
+	var rw := clampf(ui_root.size.x - PREP_W - 12.0 - 24.0, 420.0, 520.0)
+	var two := ui_root.size.x >= 960.0
+	var w := floorf(rw) if two else PREP_W
+	if prep_cols.columns == (2 if two else 1) and prep_cols.get_meta("laid", -1.0) == w:
+		return
+	prep_cols.set_meta("laid", w)
+	prep_cols.columns = 2 if two else 1
+	for k: Control in prep_right.get_children():
+		k.custom_minimum_size.x = w
+		k.size_flags_horizontal = Control.SIZE_FILL if two else Control.SIZE_SHRINK_CENTER  # 긴 글로 넓어진 줄에 다른 줄도 폭을 맞춘다
+	for l: Control in prep_right.find_children("*", "Label", true, false):
+		if l.has_meta("sub_w"):
+			l.custom_minimum_size.x = w - 220.0
+
+
 func _prep_sb(hov := false) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.1, 0.12, 0.16) if hov else Color(0.07, 0.085, 0.115)
@@ -6083,7 +6204,8 @@ func _prep_sub() -> Label:
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l.custom_minimum_size = Vector2(PREP_W - 220.0, 0)
-	l.add_theme_font_size_override("font_size", 13)
+	l.set_meta("sub_w", true)
+	l.add_theme_font_size_override("font_size", 14)
 	l.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
 	return l
 
@@ -6863,7 +6985,10 @@ func _build_board() -> void:
 	var left := VBoxContainer.new()
 	board_left = left  # 폭은 _board_fit이 화면 폭에 맞춰 정한다
 	left.add_theme_constant_override("separation", 12)
-	body.add_child(left)
+	if ph:
+		body.add_child(_vscroll(left))  # 폰: 창을 줄이지 않고 필터·순위를 굴려 본다 (줄이면 글자가 7pt 남짓)
+	else:
+		body.add_child(left)
 	board_chips = {}
 	for g in [["map", "맵"], ["rules", "규칙"], ["kind", "기록"], ["season", "시즌"]]:
 		var gl := Label.new()
@@ -6906,7 +7031,11 @@ func _build_board() -> void:
 	board_rows = VBoxContainer.new()
 	board_rows.add_theme_constant_override("separation", 2)
 	board_rows.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	right.add_child(board_rows)
+	if ph:
+		board_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		right.add_child(_vscroll(board_rows))
+	else:
+		right.add_child(board_rows)
 	# 맨 아래: 안내 + [신고·차단] (App Store 1.2)
 	var foot := HBoxContainer.new()
 	board_box.add_child(foot)
@@ -7102,7 +7231,7 @@ func _draw_board() -> void:
 func _board_fit() -> void:
 	var ph := _phone()
 	var w := minf(ui_root.size.x - 40.0, 1400.0 if ph else 1140.0)  # 폰은 가로로 넓게 써서 닉네임 칸을 넓힌다
-	var h := 560.0 if not ph else 590.0
+	var h := 560.0 if not ph else minf(590.0, ui_root.size.y - 24.0)  # 폰: 화면 높이에 맞추고 안은 굴려 본다
 	board_narrow = w < 1100.0  # 글자를 키운 PC·폰: 필터 칸과 표 열을 좁힌다
 	board_left.custom_minimum_size.x = 300.0 if board_narrow else 380.0
 	records_panel.offset_left = -w / 2.0
@@ -7589,6 +7718,7 @@ func _build_modes(root: Control, sb: StyleBox) -> void:
 		b.custom_minimum_size = Vector2(0, 40)
 		b.pressed.connect(spec[1])
 		row.add_child(b)
+	_phone_scroll(modes_panel)
 
 
 func _toggle_modes() -> void:
@@ -9005,7 +9135,9 @@ func _process(delta: float) -> void:
 		if guide_t <= 0.0:
 			guide_lines.clear()
 			guide_t = 0.0
-	guide_label.visible = Meta.guide_on and not guide_lines.is_empty() and not title_label.visible and phase != Phase.GAMEOVER and not get_tree().paused and not help_label.visible and not settings_panel.visible and not records_panel.visible and not notes_panel.visible and not modes_panel.visible and not codex_panel.visible and not vote_panel.visible
+	guide_label.visible = Meta.guide_on and not guide_lines.is_empty() and not title_label.visible and phase != Phase.GAMEOVER and not get_tree().paused and not help_label.visible and not settings_panel.visible and not records_panel.visible and not notes_panel.visible and not modes_panel.visible and not codex_panel.visible and not vote_panel.visible and skill_arm == ""  # 기술 조준 중엔 위 가운데 조준 안내만 (글이 겹겹이 쌓였다)
+	if not guide_label.visible:
+		guide_more.visible = false  # 안내가 꺼졌는데 [더 알아보기]만 남던 것
 	# 글자를 키운(설정) 좁은 화면에서 펼친 버튼 줄이 왼쪽 아래 안내 글에 닿으면 안내 글을 버튼 줄 앞까지로 줄인다.
 	# 줄이 늘면 위로 자라고, 다음 웨이브 미리보기는 그 위에 붙는다
 	var hw := 590.0

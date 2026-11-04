@@ -629,7 +629,7 @@ func draw_card(b: Button, col: Color) -> void:
 				line = line.left(-1)
 			line += "…"
 		b.draw_string(font, Vector2(14, 51 + 18 * i), line, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 28, 14, Color("d2dae6"))
-	var foot := "특성 · 상세는 오른쪽에서 확인"
+	var foot := "특성 · 길게 누르면 자세히" if game.touch_ui else "특성 · 올리면 오른쪽에 자세히"
 	var destinations: Array = b.get_meta("card_foot", [])
 	if not destinations.is_empty():
 		foot = " · ".join(destinations.map(func(it): return it[1]))
