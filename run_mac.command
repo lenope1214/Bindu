@@ -38,9 +38,10 @@ if [[ "${LOCAL:-}" != "1" ]]; then
     fi
   elif git -C "$MAIN_DIR" fetch --depth 1 origin main; then
     # 전용 사본이라 강제로 맞춰도 됨 (.godot 임포트 캐시는 gitignore라 유지)
-    git -C "$MAIN_DIR" checkout -q -B main FETCH_HEAD
-    git -C "$MAIN_DIR" reset -q --hard FETCH_HEAD
+    # Godot가 만든 .uid 등 추적 안 하는 파일이 새 main의 파일과 겹쳐도 막히지 않게 먼저 치우고 -f
     git -C "$MAIN_DIR" clean -qfd
+    git -C "$MAIN_DIR" checkout -qf -B main FETCH_HEAD
+    git -C "$MAIN_DIR" reset -q --hard FETCH_HEAD
   else
     echo "main을 새로 받지 못해 마지막으로 받은 버전으로 실행합니다." >&2
   fi
