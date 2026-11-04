@@ -15,6 +15,8 @@ var continuous := false  # 화염 회오리: 닿아 있는 동안 계속 피해
 var hit := {}
 var travel := 0.0
 var max_travel := 2000.0
+var far_from := INF  # 직선탄·돌풍: 이만큼 날아간 뒤부터 피해가 줄어든다 (Tower.far_k)
+var flown := 0.0  # 쏜 뒤 날아간 거리 (튕겨도 이어 셈)
 var t := 0.0
 var turned := 0.0  # 유도로 휜 각도 합 (라디안, fade_k)
 var trail := PackedVector2Array()  # 잔상(전역 좌표)
@@ -63,7 +65,7 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO, off := Vector2.ZE
 	var H := Tower.HIT
 	match k:
 		"shot":
-			speed = P.shot_spd; dmg = H.shot * p; radius = P.shot_r; max_travel = Tower.shot_range(tower.total_level(), tower.mf("size"))
+			speed = P.shot_spd; dmg = H.shot * p; radius = P.shot_r; far_from = Tower.far_start_of(k, l, tower.total_level(), tower.mf("size"))
 		"path":
 			speed = P.path_spd; dmg = H.path * p; radius = P.path_r
 		"blob":
@@ -72,7 +74,7 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO, off := Vector2.ZE
 		"thorn":
 			speed = P.thorn_spd; dmg = H.thorn * p; radius = P.thorn_r; pierce = true
 		"gust":
-			speed = P.gust_spd; dmg = H.gust * p; radius = P.gust_r; pierce = true; max_travel = P.gust_far * Rules.t("range_gust")
+			speed = P.gust_spd; dmg = H.gust * p; radius = P.gust_r; pierce = true; far_from = Tower.far_start_of(k, l, tower.total_level(), tower.mf("size"))
 		"shard":
 			speed = P.shard_spd; dmg = H.shard * p; radius = P.shard_r
 		"frag":
@@ -104,6 +106,7 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO, off := Vector2.ZE
 		vel *= wk
 		if max_travel < 2000.0:
 			max_travel *= wk
+		far_from *= wk
 	position = tower.position + d * Tower.RADIUS + off
 	if k == "blob":
 		zone = tower.main.spawn_zone("trail", l, position, tower)
@@ -147,6 +150,7 @@ func step(delta: float) -> void:
 	else:
 		position += vel * delta
 		travel += vel.length() * delta
+		flown += vel.length() * delta
 	if zone and is_instance_valid(zone):
 		seg_acc += vel.length() * delta
 		if seg_acc >= zone.radius * 0.8:
@@ -369,10 +373,11 @@ func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 	if hit.has(o):
 		return false
 	hit[o] = true
+	var fk := fade_k() * Tower.far_k(flown, far_from)
 	if tw:
-		tw.hit(o, dmg * fade_k(), 1.0, {}, kind != "frag")
+		tw.hit(o, dmg * fk, 1.0, {}, kind != "frag")
 	else:
-		o.hurt(dmg * fade_k())
+		o.hurt(dmg * fk)
 	# 관통·튕김 탄은 처음 맞힌 자리가 "끝"
 	if pierce or pierce_left > 0 or bounces > 0:
 		end_form()

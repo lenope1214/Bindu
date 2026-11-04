@@ -480,11 +480,9 @@ func range_text() -> String:
 	var l := plv
 	var s := sz()
 	match pattern:
-		"shot": return "%d (속성 레벨 합이 오를수록 멀리)" % roundi(shot_range(total_level(), mf("size")))
+		"shot", "gust", "stream": return "화면 끝까지 (%d부터 약해짐%s)" % [roundi(far_start()), ", 속성 레벨 합이 오를수록 멀리" if pattern == "shot" else ""]
+		"chain": return "화면 끝까지 (%d부터 약해짐, 튀는 거리 %d)" % [roundi(far_start()), roundi(SHAPE.chain_jump * s)]
 		"spray": return "%d" % roundi(SHAPE.spray_len * rr(l) * s)
-		"stream": return "%d" % roundi(SHAPE.stream_len * rr(l) * s)
-		"chain": return "%d (튀는 거리 %d)" % [roundi(SHAPE.chain_len * rr(l) * s), roundi(SHAPE.chain_jump * s)]
-		"gust": return "%d" % roundi(Projectile.PROJ.gust_far * s * Rules.t("range_gust"))
 		"sonic": return "%d" % roundi(sonic_r(l))
 		"clock": return "%d" % roundi(SHAPE.clock_len * rr(l) * s)
 		"lob": return "%d 날아감 (지나간 띠 반지름 %d)" % [roundi(LOB_RANGE * rr(l)), roundi(lob_r(l) * s)]
@@ -636,6 +634,33 @@ static func reach(l: int) -> float:
 ## 직선탄 사거리: 속성 레벨 합 n으로 늘어난다 (직선탄은 공격방식 레벨이 늘 1). 원거리 특성·크기 강화 포함, 바람(멀리)은 쏠 때 따로.
 static func shot_range(n: int, size_n: float) -> float:
 	return (Rules.t("shot_range") + Rules.t("shot_range_lv") * maxi(n - 1, 0)) * reach_mul * (1.0 + Rules.size_k * size_n) * Rules.t("range_shot")
+
+
+## 방향성 공격(직선탄·돌풍·물줄기·연쇄 번개)은 화면 끝까지 닿고, 감소 시작 거리부터 far_len 동안 피해가 far_min까지 곧게 줄어든다.
+const FAR_PATS := ["shot", "gust", "stream", "chain"]
+const FAR := 1600.0  # 화면 끝까지 (전장 1280x720 대각선보다 김)
+
+
+## 거리 d에서 피해 몫 (감소 시작 거리 start 안은 1).
+static func far_k(d: float, start: float) -> float:
+	if d <= start:
+		return 1.0
+	return maxf(Rules.far_min, 1.0 - (1.0 - Rules.far_min) * (d - start) / maxf(Rules.far_len, 1.0))
+
+
+## 감소 시작 거리: 예전 사거리 그대로 (공격방식 레벨·크기 강화·원거리 특성·range_<id> 포함, 바람은 쏠 때 따로). 대상이 아니면 INF.
+static func far_start_of(pat: String, l: int, total: int, size_n: float) -> float:
+	var s := 1.0 + Rules.size_k * size_n
+	match pat:
+		"shot": return shot_range(total, size_n)
+		"gust": return Projectile.PROJ.gust_far * s * Rules.t("range_gust")
+		"stream": return SHAPE.stream_len * rr_of(pat, l) * s
+		"chain": return SHAPE.chain_len * rr_of(pat, l) * s
+	return INF
+
+
+func far_start() -> float:
+	return far_start_of(pattern, plv, total_level(), mf("size"))
 
 
 ## 크기 강화 배율.
@@ -1490,9 +1515,11 @@ func attack(delta: float, orbs: Array) -> void:
 				var ls := lanes()
 				var ds := dirs()
 				for i in ds.size():
-					_line(orbs, ds[i], SHAPE.stream_len * rr(l) * s, SHAPE.stream_w * s, func(o):
-						hit(o, HIT.stream * pw(l) * dp * mk, kp)
-						o.stagger(SHAPE.stream_stop * dp), ls[i])
+					var fs := far_start()
+					_line(orbs, ds[i], FAR, SHAPE.stream_w * s, func(o):
+						var fk := far_k(o.position.distance_to(position), fs)
+						hit(o, HIT.stream * pw(l) * dp * mk * fk, kp)
+						o.stagger(SHAPE.stream_stop * dp * fk), ls[i])
 		"chain":
 			if cd.get("p", 0.0) > 0.0:
 				cd["p"] -= dp
@@ -1778,7 +1805,7 @@ static func reflex_range_of(pat: String, l: int, total: int, size_n: float, wind
 		"spray": return 200.0 * r * s
 		"stream": return 260.0 * r * s
 		"chain": return 280.0 * r * s
-		"gust": return _reflex_flight_range(Projectile.PROJ.gust_far * Rules.t("range_gust"), wind, weather)
+		"gust": return _reflex_flight_range(far_start_of("gust", l, total, size_n), wind, weather)  # 화면 끝까지 날지만 감지는 감소 시작 거리까지
 		"sonic": return 230.0 * r * s
 		"clock": return 240.0 * r * s
 		"lob": return _reflex_flight_range(LOB_RANGE * r, wind, weather)
@@ -2397,7 +2424,7 @@ func _line(_orbs: Array, d: Vector2, length: float, width: float, f: Callable, o
 ## d 방향 앞쪽의 가장 가까운 구체를 치고 주변으로 튄다. used: 다중 발사 때 같은 첫 대상 피하기
 func _chain(orbs: Array, d: Vector2, l: int, used: Dictionary) -> bool:
 	var first: Orb = null
-	var best: float = SHAPE.chain_len * rr(l) * sz()
+	var best: float = FAR
 	for o in main.near_t(position, best):
 		var v: Vector2 = o.position - position
 		if not used.has(o) and v.length() < best and absf(d.angle_to(v)) < SHAPE.chain_ang:
@@ -2406,13 +2433,14 @@ func _chain(orbs: Array, d: Vector2, l: int, used: Dictionary) -> bool:
 	if first == null:
 		return false
 	used[first] = true
+	var fk := far_k(best, far_start())  # 첫 대상이 멀면 번개 전체가 약해진다
 	var pts := PackedVector2Array([position + d * RADIUS])
 	var cur := first
 	var hitset := {}
 	for i in int(SHAPE.chain_n) + l + mn("bounce"):
 		hitset[cur] = true
 		pts.append(cur.position)
-		hit(cur, HIT.chain * pw(l) * multi_k())
+		hit(cur, HIT.chain * pw(l) * multi_k() * fk)
 		var nxt: Orb = null
 		var nd: float = SHAPE.chain_jump * sz()
 		for o in main.near_t(cur.position, nd):
@@ -2766,7 +2794,7 @@ func _draw_attack() -> void:
 				var ls := lanes()
 				var ds := dirs()
 				for i in ds.size():
-					_draw_wave(ds[i], SHAPE.stream_len * rr(l) * s, SHAPE.stream_w * 0.5 * s, 0.05, c, 7.0 * s, ls[i])
+					_draw_wave(ds[i], FAR, SHAPE.stream_w * 0.5 * s, 0.05, c, 7.0 * s, ls[i])
 		"laser":
 			var f: float = fx.get("laser", 0.0)
 			var ls := lanes()
@@ -2906,11 +2934,17 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 			"spray":
 				_r_cone(ci, o, dd, SHAPE.spray_len * pr * s, SHAPE.spray_ang, c)
 			"chain":
-				_r_cone(ci, o, dd, SHAPE.chain_len * pr * s, SHAPE.chain_ang, c)
+				var fs: float = SHAPE.chain_len * pr * s
+				_r_cone(ci, o, dd, fs, SHAPE.chain_ang, c)
+				_r_far(ci, o, dd, fs, far, 0.0, c, SHAPE.chain_ang)
 			"stream":
-				_r_band(ci, lo, dd, 0.0, SHAPE.stream_len * pr * s, SHAPE.stream_w * s, c)
+				var fs: float = SHAPE.stream_len * pr * s
+				_r_band(ci, lo, dd, 0.0, fs, SHAPE.stream_w * s, c)
+				_r_far(ci, lo, dd, fs, far, SHAPE.stream_w * s, c)
 			"gust":
-				_r_band(ci, lo, dd, 0.0, Projectile.PROJ.gust_far * s * Rules.t("range_gust"), Projectile.PROJ.gust_r * s, c)
+				var fs: float = Projectile.PROJ.gust_far * s * Rules.t("range_gust")
+				_r_band(ci, lo, dd, 0.0, fs, Projectile.PROJ.gust_r * s, c)
+				_r_far(ci, lo, dd, fs, far, Projectile.PROJ.gust_r * s, c)
 			"laser":
 				_r_band(ci, lo, dd, 0.0, far, Rules.t("laser_w") * s, c)
 			"wall":
@@ -2948,7 +2982,9 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 				var tl := 0
 				for e in els:
 					tl += els[e]
-				_r_band(ci, lo, dd, 0.0, shot_range(tl, md.get("size", 0)), 6.0 * s, c)
+				var fs := shot_range(tl, md.get("size", 0))
+				_r_band(ci, lo, dd, 0.0, fs, 6.0 * s, c)
+				_r_far(ci, lo, dd, fs, far, 6.0 * s, c)
 			_:
 				_r_band(ci, lo, dd, 0.0, far, 6.0 * s, c)
 	if els.has(Elem.STAR) and rings:
@@ -2976,6 +3012,22 @@ static func _r_cone(ci: CanvasItem, o: Vector2, d: Vector2, rng: float, half: fl
 	ci.draw_colored_polygon(pts, Color(c.r, c.g, c.b, 0.14 * c.a))
 	pts.append(o)
 	ci.draw_polyline(pts, Color(c.r, c.g, c.b, 0.6 * c.a), 1.5)
+
+
+## 감소 시작 거리 너머(약해지는 구간): 옅은 띠(half_w) 또는 옅은 부채꼴(half_ang)을 화면 끝까지.
+static func _r_far(ci: CanvasItem, o: Vector2, d: Vector2, from: float, to: float, half_w: float, c: Color, half_ang := 0.0) -> void:
+	if from >= to:
+		return
+	var fc := Color(c.r, c.g, c.b, c.a * 0.35)
+	if half_ang <= 0.0:
+		_r_band(ci, o, d, from, to, half_w, fc)
+		return
+	var pts := PackedVector2Array()
+	for k in 13:
+		pts.append(o + d.rotated(lerpf(-half_ang, half_ang, k / 12.0)) * from)
+	for k in 13:
+		pts.append(o + d.rotated(lerpf(half_ang, -half_ang, k / 12.0)) * to)
+	ci.draw_colored_polygon(pts, Color(fc.r, fc.g, fc.b, 0.14 * fc.a))
 
 
 static func _r_band(ci: CanvasItem, o: Vector2, d: Vector2, from: float, to: float, half_w: float, c: Color) -> void:

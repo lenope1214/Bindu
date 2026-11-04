@@ -640,7 +640,47 @@ func _attacks() -> void:
 	_clear()
 	_well()
 	_fade()
+	await _far()
 	ok("PAT-04", silent.is_empty(), "공격방식 %d개 모두 앞에서 다가오는 구체에 피해 (못 맞힘: %s)" % [Pat.PATTERN_IDS.size(), str(silent)])
+
+
+## 방향성 공격 화면 끝까지 (2026-11-04): 직선탄·돌풍·물줄기·연쇄 번개가 예전 사거리 밖(700) 구체도 맞히고, 그 거리에선 피해가 줄어든다
+func _far() -> void:
+	var c: Vector2 = main.center()
+	var reach := []
+	var weak := []
+	for p in Tower.FAR_PATS:
+		var dealt := []
+		for dist in [150.0, 700.0]:
+			_fresh(5)
+			_clear()
+			var t := _tower(c + Vector2(400, 0), Elem.FIRE, 1, Vector2.LEFT)
+			if p != "shot":
+				t.set_pattern(p)
+			var o := _orb(c + Vector2(400 - dist, 0), 99999.0, Orb.Kind.NORMAL, 0.1)
+			main.wave_active = true
+			main.phase = main.Phase.WAVE
+			main.to_spawn = 0
+			for i in 480:
+				main._sim_step(1.0 / 60.0)
+				if not is_instance_valid(o) or o.hp < o.max_hp:
+					break
+			for i in 30:  # 첫 피해 뒤 조금 더 (물줄기·연속 피해 몫)
+				main._sim_step(1.0 / 60.0)
+			dealt.append(o.max_hp - o.hp if is_instance_valid(o) else 0.0)
+			await process_frame
+		if dealt[1] <= 0.0:
+			reach.append(p)
+		elif dealt[1] >= dealt[0] * 0.9:
+			weak.append(p)
+	main.wave_active = false
+	main.phase = main.Phase.CHOOSE
+	_clear()
+	var st := Tower.far_start_of("shot", 1, 1, 0.0)
+	var math := Tower.far_k(st, st) == 1.0 and is_equal_approx(Tower.far_k(st + Rules.far_len * 0.5, st), 1.0 - (1.0 - Rules.far_min) * 0.5) \
+		and is_equal_approx(Tower.far_k(st + 5000.0, st), Rules.far_min) and Tower.far_start_of("spray", 1, 1, 0.0) == INF
+	ok("PAT-07", reach.is_empty() and weak.is_empty() and math,
+		"방향성 공격 화면 끝까지 + 멀면 약해짐 (못 닿음: %s, 안 약해짐: %s, 감소식 %s)" % [str(reach), str(weak), str(math)])
 
 
 ## 블랙홀 중력 우물 (2026-11-01): 사거리 안 구체가 가장 빽빽한 곳에 떨어지고, 안 구체가 남에게 받은 피해 20%를 모았다가 끝에 나눠 넣음
@@ -956,10 +996,11 @@ func _reflex_review_regressions() -> void:
 		var pr := Projectile.new()
 		pr.setup("blob" if pat == "lob" else pat, t, t.plv, Vector2.RIGHT)
 		pr.form_init()
-		var same := is_equal_approx(t.reflex_range(), pr.max_travel)
+		var want := pr.far_from if pat in Tower.FAR_PATS else pr.max_travel  # 화면 끝까지 가는 방향성 공격은 감소 시작 거리까지 감지
+		var same := is_equal_approx(t.reflex_range(), want)
 		ranges_ok = ranges_ok and same
 		if not same:
-			details.append("%s 감지%.1f/탄%.1f" % [pat, t.reflex_range(), pr.max_travel])
+			details.append("%s 감지%.1f/탄%.1f" % [pat, t.reflex_range(), want])
 		pr.free()
 	ok("MOD-13", ranges_ok, "반응: 바람·크기·유도 보정 뒤 실제 탄 사거리와 일치 %s" % [details])
 	_fresh()

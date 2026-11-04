@@ -193,6 +193,8 @@ const STAT := {
 	# 공격방식 수치
 	"shot_range": 400.0,  # 직선탄 사거리(px)
 	"shot_range_lv": 50.0,  # 속성 레벨 합이 1 늘 때마다 직선탄 사거리 +(px)
+	"far_len": 400.0,  # 직선탄·돌풍·물줄기·연쇄 번개: 감소 시작 거리(옛 사거리)를 넘어 이 거리(px) 동안 피해가 줄어든다
+	"far_min": 0.5,  # 위 감소가 멈추는 피해 몫(하한)
 	"laser_w": 21.0,  # 레이저 판정 반폭(px, 크기 강화 곱, 구체 반지름 더함). 빛줄기 두께도 이 값에 맞춰 커짐
 	# 강화
 	"multi_dmg": 0.55,  # 다중 발사: 1개일 때 한 발 피해 배율
@@ -329,6 +331,8 @@ static var lv_spd: float = STAT["lv_spd"]
 static var lv_reach: float = STAT["lv_reach"]
 static var rapid_k: float = STAT["rapid_k"]
 static var size_k: float = STAT["size_k"]
+static var far_len: float = STAT["far_len"]
+static var far_min: float = STAT["far_min"]
 static var size_dmg: float = STAT["size_dmg"]
 static var fire_dps: float = STAT["fire_dps"]
 static var fire_t: float = STAT["fire_t"]
@@ -386,6 +390,8 @@ static func _cache() -> void:
 	lv_reach = tune["lv_reach"]
 	rapid_k = tune["rapid_k"]
 	size_k = tune["size_k"]
+	far_len = tune["far_len"]
+	far_min = tune["far_min"]
 	size_dmg = tune["size_dmg"]
 	fire_dps = tune["fire_dps"]
 	fire_t = tune["fire_t"]
