@@ -208,7 +208,7 @@ func over_ui(p: Vector2) -> bool:
 		return false
 	for c: Control in [panel, footer, side, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
 			game.hud, game.dps_panel, game.range_btn, game.zoom_btn,
-			game.guide_more, game.skip_btn, game.skip_n_btn]:
+			game.guide_more, game.skip_btn, game.skip_n_btn, game.pause_box, game.paused_label]:
 		if c != null and c.is_visible_in_tree() and c.get_global_rect().has_point(p):
 			return true
 	var bar_rect := Rect2()
@@ -226,8 +226,8 @@ func carrying() -> bool:
 	return active() and not game.picked.is_empty() and game.moving == null \
 		and game.phase in [game.Phase.PLACE, game.Phase.AIM]
 
-func input_blocked() -> bool:
-	return not active() or game.get_tree().paused or game.tut.visible or game.settings_panel.visible \
+func input_blocked(include_pause := true) -> bool:
+	return not active() or (include_pause and game.get_tree().paused) or game.tut.visible or game.settings_panel.visible \
 		or game.help_label.visible or game.notes_panel.visible or game.codex_panel.visible \
 		or game.vote_panel.visible or game.records_panel.visible
 
@@ -427,7 +427,10 @@ func tick() -> void:
 		game.choice_header.size = Vector2(maxf(240, minf(340, x - 24)), CONTROL_HEIGHT)
 	_update_side()
 	# 상세는 필요할 때 떠 있는 패널로 읽는다. 표시 여부는 전장 크기에 영향을 주지 않는다.
-	side.visible = side.visible and not carrying() and not blocked
+	side.visible = side.visible and not carrying() and not input_blocked(false)
+	side.z_index = 21 if game.get_tree().paused else 1
+	if side.visible and game.get_tree().paused:
+		game.ui_root.move_child(side, game.ui_root.get_child_count() - 1)  # GUI 입력 순서도 일시정지 막 위로 올린다.
 	game.detail_btn.visible = side.visible and shown_tower != null and game.touch_ui
 	game.start_btn.visible = game.phase == game.Phase.READY and not blocked
 	game.cancel_btn.visible = game.phase in [game.Phase.PLACE, game.Phase.AIM, game.Phase.MOVE] and not blocked
@@ -598,7 +601,7 @@ func _update_side() -> void:
 					text += ("\n\n" if text != "" else "") + str(rx["name"]) + ": " + str(rx["desc"])
 	if pic.mode != "" and ((pic.mode == "tower" and shown_tower == null) or (pic.mode == "card" and card.is_empty())):
 		pic.clear()
-	direction_btn.visible = shown_tower != null and game.selected.size() == 1 and shown_tower == game.selected[0] and game._mine(shown_tower) and game.phase in [game.Phase.CHOOSE, game.Phase.READY]
+	direction_btn.visible = shown_tower != null and game.selected.size() == 1 and shown_tower == game.selected[0] and game._mine(shown_tower) and game.phase in [game.Phase.CHOOSE, game.Phase.READY] and not game.get_tree().paused
 	heading.visible = not (game.touch_ui and pic.mode == "tower")
 	detail.visible = text != ""
 	var sig: String = title + "|" + text + ("|" + str(tower.get_instance_id()) if is_instance_valid(tower) and card.is_empty() else "")
@@ -633,7 +636,7 @@ func _place_side(size: Vector2, cards: bool) -> void:
 	for v in parts:
 		want += v
 	var cands := [Rect2(size.x - w - 12.0, top, w, 0.0), Rect2(12.0, ltop, w, 0.0)]
-	for control: Control in [game.toast, game.banner]:
+	for control: Control in [game.toast, game.banner, game.paused_label, game.pause_box]:
 		if not control.is_visible_in_tree():
 			continue
 		var overlay := control.get_rect()

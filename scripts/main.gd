@@ -5149,7 +5149,7 @@ func _begin_press(t: Tower, mpos: Vector2) -> void:
 func _update_press() -> void:
 	if not press_t:
 		return
-	if not phase in [Phase.PLACE, Phase.CHOOSE, Phase.READY] or not is_instance_valid(press_t) or not _mine(press_t):
+	if get_tree().paused or not phase in [Phase.PLACE, Phase.CHOOSE, Phase.READY] or not is_instance_valid(press_t) or not _mine(press_t):
 		_drop_press()
 		return
 	var mpos := _pointer_world()
@@ -7983,6 +7983,8 @@ func _toggle_pause() -> void:
 	if phase == Phase.GAMEOVER or title_label.visible:
 		return
 	get_tree().paused = not get_tree().paused
+	if get_tree().paused:
+		_abort_touch_action()
 	paused_label.visible = get_tree().paused
 	pause_box.visible = get_tree().paused
 	paused_label.text = _pause_text()
@@ -8963,7 +8965,7 @@ func _process(delta: float) -> void:
 	_soften_fx()
 	queue_redraw()
 	info.queue_redraw()
-	if phase == Phase.MOVE and moving:
+	if phase == Phase.MOVE and moving and not get_tree().paused:
 		moving.position = _pointer_world().clamp(field_rect().position, field_rect().end)
 	_update_press()
 	if boxing and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
@@ -10335,7 +10337,7 @@ func _draw() -> void:
 		var d := _aim_dir(place_pos)
 		if d != Vector2.ZERO:
 			Tower.draw_range(self, place_pos, d, sp)
-			if moving:
+			if moving and not get_tree().paused:
 				moving.set_attack_direction(d)
 			draw_line(place_pos, place_pos + d * (Tower.RADIUS + 14.0), Color.WHITE, 3.0)
 	# 마우스를 올린 오브젝트의 공격 범위

@@ -2470,6 +2470,16 @@ func _meta_misc() -> void:
 	main.tip_detail = false
 	dock.close_inspector()
 	ok("UI-16", touch_detail_btn and touch_detail_kept, "터치 인스펙터는 시간 경과 후에도 유지, 헤더 자세히로 상세 수치 전환")
+	main.phase = main.Phase.READY
+	main.card_dock.inspected_tower = dt
+	main.selected = [dt]
+	main._toggle_pause()
+	main._process(0.0)
+	var paused_reading: bool = dock.side.visible and dock.side.z_index > main.pause_dim.z_index and not dock.direction_btn.visible and main._ring_target() == null
+	main._edit_selected_direction()
+	var paused_no_edit: bool = main.phase == main.Phase.READY and main.moving == null
+	main._toggle_pause()
+	ok("UI-07", paused_reading and paused_no_edit, "정지 중 인스펙터는 막 위에서 열람 가능, 방향 편집은 금지")
 	main.phase = main.Phase.PLACE
 
 

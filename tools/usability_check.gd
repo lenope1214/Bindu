@@ -34,6 +34,8 @@ func _initialize() -> void:
 		await pause_input_case()
 	if which in ["all", "direction"]:
 		await direction_case()
+	if which in ["all", "pause-inspector"]:
+		await pause_inspector_case()
 	print("USABILITY case=%s failures=%d ui=%d" % [which, fails, ui_errors])
 	quit(1 if fails > 0 or ui_errors > 0 else 0)
 
@@ -115,3 +117,50 @@ func direction_case() -> void:
 		await mouse_click(world(Vector2(650, 240)))
 		ok("UI-05", main.phase == main.Phase.CHOOSE and main.selected.is_empty() and not main.card_dock.side.visible and main.card_dock.preview_card().is_empty() and main.tap_sel == -1 and main.cards_hidden == folded, "방향 확정은 이전 카드 미리보기 없이 종료: %s" % folded)
 		await snap("direction-finished-%s" % folded)
+
+func pause_inspector_case() -> void:
+	await fixture()
+	target.position = Vector2(220, 300)
+	for e in Elem.ALL:
+		target.add(e, 1)
+	target.eff = target.eff_now()
+	main._set_cards_hidden(true)
+	await mouse_move(world(target.position))
+	await key(KEY_P)
+	ok("UI-07", paused and main.card_dock.side.visible and main.card_dock.side.z_index > main.pause_dim.z_index and not main.card_dock.direction_btn.visible, "일시정지 중에도 인스펙터를 메뉴 위에서 읽기 전용 표시")
+	Input.emulate_mouse_from_touch = true
+	var at: Vector2 = main.detail_btn.get_global_rect().get_center()
+	# 마우스 호버에서 터치 열람으로 바꾼 뒤 실제 헤더 버튼을 누른다.
+	main.touch_ui = true
+	await settle()
+	at = main.detail_btn.get_global_rect().get_center()
+	var clicks := [0]
+	var counted := func(): clicks[0] += 1
+	main.detail_btn.pressed.connect(counted)
+	await touch(at, true)
+	await touch(at, false)
+	ok("UI-07", paused and clicks[0] == 1 and main._tip_detail_on() and main.card_dock.shown_tower == target, "정지 중 터치 자세히도 대상을 유지")
+	main.detail_btn.pressed.disconnect(counted)
+	var before: int = main.card_dock.scroll.scroll_vertical
+	for i in 10:
+		var wheel := InputEventMouseButton.new()
+		wheel.position = main.card_dock.scroll.get_global_rect().get_center()
+		wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
+		wheel.pressed = true
+		VirtualInput.send(wheel)
+		wheel = wheel.duplicate()
+		wheel.pressed = false
+		VirtualInput.send(wheel)
+		await settle()
+	ok("UI-07", main.card_dock.scroll.scroll_vertical > before and paused, "정지 중 상세 스크롤 가능")
+	await snap("paused-inspector")
+	await key(KEY_P)
+	await mouse_move(world(Vector2(650, 240)))
+	await mouse_click(world(target.position))
+	var origin := target.position
+	await mouse_button(world(target.position), true)
+	await mouse_move(world(target.position) + Vector2(80, -60), true)
+	await key(KEY_P)
+	await mouse_button(world(target.position), false)
+	ok("UI-07", paused and target.position == origin and main.press_t == null, "진행 중 드래그도 정지하면 원위치로 취소")
+	await key(KEY_P)
