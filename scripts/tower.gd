@@ -480,7 +480,7 @@ func range_text() -> String:
 		"spray": return "%d" % roundi(SHAPE.spray_len * rr(l) * s)
 		"sonic": return "%d" % roundi(sonic_r(l))
 		"clock": return "%d" % roundi(SHAPE.clock_len * rr(l) * s)
-		"lob": return "%d 날아감 (지나간 띠 반지름 %d)" % [roundi(LOB_RANGE * rr(l)), roundi(lob_r(l) * s)]
+		"lob": return "화면 끝까지 (%d부터 약해짐, 지나간 띠 반지름 %d)" % [roundi(far_start()), roundi(lob_r(l) * s)]
 		"vortex": return "%d 안 구체 무리에 (우물 반지름 %d)" % [roundi(well_range()), roundi((100.0 + 10.0 * (l - 1)) * s)]
 		"wall": return "앞 %d~ (벽 %d개)" % [roundi(90.0 * rr(l)), 2 + roundi(mf("multi"))]
 		"wisp": return "목줄 %d (혼불 %d개가 오브젝트 둘레를 지키며 쫓아감)" % [roundi(Projectile.wisp_leash(mf("homing"), rr(l))), wisp_cap()]
@@ -659,8 +659,9 @@ static func shot_range(n: int, size_n: float) -> float:
 	return (Rules.t("shot_range") + Rules.t("shot_range_lv") * maxi(n - 1, 0)) * reach_mul * (1.0 + Rules.size_k * size_n) * Rules.t("range_shot")
 
 
-## 방향성 공격(직선탄·돌풍·물줄기·연쇄 번개)은 화면 끝까지 닿고, 감소 시작 거리부터 far_len 동안 피해가 far_min까지 곧게 줄어든다.
-const FAR_PATS := ["shot", "gust", "stream", "chain"]
+## 방향성 공격(직선탄·돌풍·물줄기·연쇄 번개·투척 장판)은 화면 끝까지 닿고, 감소 시작 거리부터 far_len 동안 피해가 far_min까지 곧게 줄어든다.
+## 투척 장판은 탄이 끝까지 날아가고, 예전 사거리 너머에 남긴 띠가 약하다 (Zone.add_pt의 몫).
+const FAR_PATS := ["shot", "gust", "stream", "chain", "lob"]
 const FAR := 1600.0  # 화면 끝까지 (전장 1280x720 대각선보다 김)
 
 
@@ -679,6 +680,7 @@ static func far_start_of(pat: String, l: int, total: int, size_n: float) -> floa
 		"gust": return Projectile.PROJ.gust_far * s * Rules.t("range_gust")
 		"stream": return SHAPE.stream_len * rr_of(pat, l) * s
 		"chain": return SHAPE.chain_len * rr_of(pat, l) * s
+		"lob": return LOB_RANGE * rr_of(pat, l)
 	return INF
 
 
@@ -2881,7 +2883,9 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 					var wr := Rules.t("well_range") * pr * Rules.t("range_vortex")
 					ci.draw_arc(o, wr, 0, TAU, 64, Color(c.r, c.g, c.b, 0.6 * c.a), 1.5)
 			"lob":
-				_r_band(ci, lo, dd, 0.0, LOB_RANGE * pr, lob_r(l) * s, c)
+				var fs: float = LOB_RANGE * pr
+				_r_band(ci, lo, dd, 0.0, fs, lob_r(l) * s, c)
+				_r_far(ci, lo, dd, fs, far, lob_r(l) * s, c)
 			"iron":
 				_r_band(ci, lo, dd, 0.0, far, 12.0 * s, c)
 			"sonic":

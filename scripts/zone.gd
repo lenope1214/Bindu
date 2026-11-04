@@ -32,6 +32,8 @@ var absorb := 0.0  # 중력 우물: 모으는 비율
 var sub := ""  # trail: puddle·burn
 var pts := PackedVector2Array()  # trail: 지나온 점 (오래된 것부터)
 var born := PackedFloat32Array()  # trail: 점이 생긴 시각 (t)
+var pk := PackedFloat32Array()  # trail: 점마다 피해 몫 (투척 장판이 멀리 남긴 점은 약함, Tower.far_k)
+var orb_k := {}  # trail: trail_orbs가 고른 구체마다 닿은 점 중 가장 센 몫
 var feeding := true  # trail: 탄이 아직 날아가며 점을 더하는 중
 var dps := 0.0  # trail: 안에 있는 구체에 초당 피해 (레벨 배율 전)
 
@@ -72,15 +74,17 @@ func trail(s: String) -> void:
 	position = Vector2.ZERO
 
 
-func add_pt(p: Vector2) -> void:
+func add_pt(p: Vector2, k := 1.0) -> void:
 	pts.append(p)
 	born.append(t)
+	pk.append(k)
 	life = max_life
 
 
 ## 지나간 자리 장판 안의 구체. 점들이 걸친 격자 칸을 한 번씩만 모아 그 안의 구체를 점과 비교한다.
 func trail_orbs(main) -> Array:
 	var out: Array = []
+	orb_k.clear()
 	if pts.is_empty():
 		return out
 	var g: float = main.GRID
@@ -99,10 +103,15 @@ func trail_orbs(main) -> Array:
 				continue
 			var rr: float = radius + o.radius()
 			rr *= rr
-			for p in pts:
-				if o.position.distance_squared_to(p) < rr:
-					out.append(o)
-					break
+			var best := -1.0
+			for i in pts.size():
+				if pk[i] > best and o.position.distance_squared_to(pts[i]) < rr:
+					best = pk[i]
+					if best >= 1.0:
+						break
+			if best >= 0.0:
+				out.append(o)
+				orb_k[o] = best
 	return out
 
 
@@ -152,7 +161,7 @@ func affect(orbs: Array, delta: float) -> void:
 				if owner_tower.trail_hit.size() > 300:
 					owner_tower.trail_hit.clear()  # 죽은 구체가 쌓이지 않게 (한 조각의 중복만 막으면 됨)
 				owner_tower.trail_hit[o] = owner_tower.main.sim_id
-				_hit(o, dps * _p() * delta * _rapid(), delta * 3.0)
+				_hit(o, dps * _p() * delta * _rapid() * orb_k.get(o, 1.0), delta * 3.0)
 			"vortex":
 				# 중력 우물: 가운데로 끈다 (안에서 죽은 구체마다 +10%, 최대 +50%), 가운데 둘레는 느리게
 				var v: Vector2 = position - o.position
@@ -190,6 +199,7 @@ func step(delta: float) -> void:
 		if drop > 0:
 			pts = pts.slice(drop)
 			born = born.slice(drop)
+			pk = pk.slice(drop)
 		if pts.is_empty() and not feeding:
 			queue_free()
 		queue_redraw()

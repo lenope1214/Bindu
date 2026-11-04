@@ -1016,10 +1016,10 @@ func _reflex_review_regressions() -> void:
 		var pr := Projectile.new()
 		pr.setup("blob", t, t.plv, direction)
 		pr.form_init()
-		var target := _orb(c + direction * (pr.max_travel - 1.0), 1000.0)
+		var target := _orb(c + direction * (pr.far_from - 1.0), 1000.0)  # 투척 장판은 화면 끝까지 날고 감지는 감소 시작 거리까지
 		t._update_aim([target], 0.016)
 		weather_ok = weather_ok and t.reflex_target == target
-		target.position = c + direction * (pr.max_travel + 1.0)
+		target.position = c + direction * (pr.far_from + 1.0)
 		t._update_aim([target], 0.016)
 		weather_ok = weather_ok and t.reflex_target == null
 		pr.free()
