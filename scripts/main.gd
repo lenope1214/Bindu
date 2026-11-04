@@ -4336,6 +4336,10 @@ func _toggle_legend() -> void:
 func _toggle_focus_view() -> void:
 	if card_dock == null or not card_dock.available() or card_dock.carrying():
 		return
+	if cards_hidden:
+		_set_cards_hidden(false)
+		card_dock.tick()
+		return
 	card_dock.full_field = not card_dock.full_field
 	if card_dock.full_field:
 		_clamp_pan()

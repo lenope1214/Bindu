@@ -440,8 +440,8 @@ func tick() -> void:
 		game.zoom_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		game.zoom_btn.position = Vector2(12, maxf(64, game.hud.get_rect().end.y + 8))
 		game.zoom_btn.size = Vector2(132, 34)
-	focus_btn.visible = not blocked and choosing and (game._phone() or full_field)
-	focus_btn.text = "카드 보기" if full_field else "카드 접기"
+	focus_btn.visible = not blocked and choosing
+	focus_btn.text = "카드 보기" if full_field or game.cards_hidden else "카드 접기"
 	focus_btn.tooltip_text = "카드 패널 보기/접기 (F)"
 	focus_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	focus_btn.position = Vector2(12, size.y - 48)

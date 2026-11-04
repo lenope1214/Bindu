@@ -2265,6 +2265,25 @@ func _meta_misc() -> void:
 	main._process(0.016)
 	var dim_hide: bool = not main.card_dim.visible
 	var head_hide: bool = not main.choice_header.visible
+	var fold_offer: Array = main.offer.duplicate(true)
+	var fold_left: int = main.picks_left
+	var fold_ok := true
+	main._set_cards_hidden(false)
+	main._process(0.0)
+	fold_ok = main.card_dock.focus_btn.visible and main.card_dock.focus_btn.text == "카드 접기"
+	for i in 3:
+		main.card_dock.focus_btn.pressed.emit()
+		main._process(0.0)
+		fold_ok = fold_ok and main.card_dock.full_field and not main.card_dock.panel.visible and not main.card_dock.side.visible and main.card_dock.focus_btn.text == "카드 보기"
+		main.card_dock.focus_btn.pressed.emit()
+		main._process(0.0)
+		fold_ok = fold_ok and main.card_dock.panel.visible and main.offer == fold_offer and main.picks_left == fold_left
+	main._set_cards_hidden(true)
+	main._process(0.0)
+	fold_ok = fold_ok and main.card_dock.focus_btn.text == "카드 보기"
+	main.card_dock.focus_btn.pressed.emit()
+	main._process(0.0)
+	fold_ok = fold_ok and not main.cards_hidden and not main.card_dock.full_field and main.card_dock.panel.visible
 	var toggles := true
 	var same_offer: Array = main.offer.duplicate(true)
 	for i in 4:
@@ -2278,7 +2297,7 @@ func _meta_misc() -> void:
 	main._on_pick({"type": "mod", "id": "pierce"})
 	main._process(0.016)
 	var dim_off: bool = not main.card_dim.visible and main.phase == main.Phase.PLACE
-	ok("UI-23", toggles and dim_on and dim_hide and dim_off, "일반 판 카드 선택 시 전장 어둠 없음 %s, 필드 보기 %s·카드 고른 뒤 %s 유지" % [dim_on, dim_hide, dim_off])
+	ok("UI-23", fold_ok and toggles and dim_on and dim_hide and dim_off, "일반 판 카드 선택 시 전장 어둠 없음 %s, 필드 보기 %s·카드 고른 뒤 %s 유지" % [dim_on, dim_hide, dim_off])
 	var controls: bool = main.speed_btn.get_parent() == main.speed_group and main.speed_pick.get_parent() == main.speed_group and main.speed_group.get_theme_constant("separation") == 0 and main.card_detail_btn.theme == main.bar_box.theme and main.speed_pick.get_theme_stylebox("normal").bg_color == main.reroll_btn.get_theme_stylebox("normal").bg_color and main.fx_pick.get_popup().get_theme_stylebox("panel") is StyleBoxFlat
 	ok("UI-30", controls and bottom_controls and icon_fits and head_two and head_one and no_apply and head_perk and head_hide and not main.choice_header.visible,
 		"카드 줄 선택 안내: 갱신 %s·%s, 중간 적용 버튼 없음 %s, 숨김 %s·%s·%s" % [head_two, head_one, no_apply, head_perk, head_hide, not main.choice_header.visible])
