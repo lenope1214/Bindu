@@ -12,6 +12,8 @@ var state: Label
 var focus_btn: Button
 var hovered: Button
 var inspected_tower: Tower
+var shown_tower: Tower  # 설명창이 지금 보여 주는 오브젝트 (이 오브젝트는 절대 가리지 않는다)
+var side_left := false  # 설명창이 왼쪽 위에 떠 있는지 (오브젝트를 덜 가리는 쪽)
 var side_signature := ""
 var board := Rect2()
 var fit := 1.0
@@ -131,10 +133,11 @@ func world_view() -> Rect2:
 func over_ui(p: Vector2) -> bool:
 	if not active():
 		return false
-	for c: Control in [panel, side, focus_btn, game.cancel_btn, game.start_btn, game.draw_ok_btn,
+	# 설명창 밑에 오브젝트가 있으면 설명창은 마우스를 받지 않는다 (그 오브젝트를 올리고 누를 수 있게, 올리면 설명창이 반대쪽으로 비킨다)
+	for c: Control in [panel, side if side.mouse_filter != Control.MOUSE_FILTER_IGNORE else null, focus_btn, game.cancel_btn, game.start_btn, game.draw_ok_btn,
 			game.bar_box, game.hud, game.dps_panel, game.legend_btn, game.range_btn, game.zoom_btn,
 			game.guide_more, game.hide_btn, game.skip_btn, game.skip_n_btn]:
-		if c.is_visible_in_tree() and c.get_global_rect().has_point(p):
+		if c != null and c.is_visible_in_tree() and c.get_global_rect().has_point(p):
 			return true
 	for c: Control in game.skill_btns:
 		if c.is_visible_in_tree() and c.get_global_rect().has_point(p):
@@ -347,10 +350,7 @@ func tick() -> void:
 	_update_side()
 	# 상세는 필요할 때 떠 있는 패널로 읽는다. 표시 여부는 전장 크기에 영향을 주지 않는다.
 	side.visible = side.visible and not carrying() and not full_field and not blocked
-	var right := clampf(size.x * 0.28, 240.0, 330.0)
-	side.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	side.position = Vector2(size.x - right - 12, maxf(60, game.hud.get_rect().end.y + 8))
-	side.size = Vector2(right, maxf(100, (panel.position.y - 12 if cards else size.y - 64) - side.position.y))
+	_place_side(size, cards)
 	game.start_btn.visible = game.phase == game.Phase.READY and not blocked
 	game.cancel_btn.visible = game.phase in [game.Phase.PLACE, game.Phase.AIM, game.Phase.MOVE, game.Phase.DRAW] and not blocked
 	game.draw_ok_btn.visible = game.phase == game.Phase.DRAW and game.draw_wait and not blocked
@@ -427,6 +427,7 @@ func _update_side() -> void:
 	var title := "전장 안내"
 	var text := ""
 	var has_content := false
+	shown_tower = null
 	if not card.is_empty():
 		inspected_tower = null
 		has_content = true
@@ -472,6 +473,7 @@ func _update_side() -> void:
 		if tower == null and game.touch_ui and is_instance_valid(game.tip_tower) \
 				and Engine.get_process_frames() - game.tip_frame <= 180:
 			tower = game.tip_tower
+		shown_tower = tower
 		if tower != null:
 			has_content = true
 			title = tower.title()
@@ -493,6 +495,49 @@ func _update_side() -> void:
 		detail.text = game._kr_keep(text)
 		detail.scroll_to_line(0)
 		side_signature = sig
+
+## 설명창 자리: 오른쪽 기둥 대신 내용 높이만큼만, 오른쪽 위·왼쪽 위 중 오브젝트를 덜 가리는 쪽에 뜬다.
+## 보고 있는 오브젝트(shown_tower)는 가리지 않는다. 비슷하면 지금 쪽에 머문다(왔다 갔다 하지 않게).
+func _place_side(size: Vector2, cards: bool) -> void:
+	var w := clampf(size.x * 0.28, 240.0, 330.0)
+	side.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	var top := maxf(60.0, game.hud.get_rect().end.y + 8.0)
+	var bottom: float = panel.position.y - 12.0 if cards else size.y - 64.0
+	var ltop := top
+	for c: Control in [game.dps_panel, game.zoom_btn]:
+		if c.is_visible_in_tree():
+			ltop = maxf(ltop, c.get_rect().end.y + 8.0)
+	var sb: StyleBox = side.get_theme_stylebox("panel")
+	var want: float = heading.get_combined_minimum_size().y + 12.0 + detail.get_content_height() + sb.get_minimum_size().y + 4.0
+	var cands := [Rect2(size.x - w - 12.0, top, w, 0.0), Rect2(12.0, ltop, w, 0.0)]
+	var scores := []
+	var inv: Transform2D = game.ui_root.get_global_transform().affine_inverse()
+	var canvas: Transform2D = game.get_viewport().get_canvas_transform()
+	var pad: float = 26.0 * fit * game.view_zoom
+	for i in cands.size():
+		var r: Rect2 = cands[i]
+		r.size.y = clampf(want, 100.0, maxf(100.0, bottom - r.position.y))
+		cands[i] = r
+		var sc := 0.0
+		for t: Tower in game.towers.get_children():
+			var at: Vector2 = inv * (canvas * t.global_position)
+			if r.grow(pad).has_point(at):
+				sc += 100.0 if t == shown_tower else 1.0
+		if r.size.y < want - 1.0:
+			sc += 0.5  # 다 안 들어가 스크롤해야 하는 쪽은 조금 덜 고른다
+		scores.append(sc)
+	var cur := 1 if side_left else 0
+	if scores[1 - cur] < scores[cur]:
+		cur = 1 - cur
+	side_left = cur == 1
+	var pick: Rect2 = cands[cur]
+	side.position = pick.position
+	side.size = pick.size
+	# 고른 자리에도 오브젝트가 깔려 있으면 마우스를 통과시켜 그 오브젝트를 올리고 누를 수 있게
+	var under: bool = scores[cur] >= 1.0
+	side.mouse_filter = Control.MOUSE_FILTER_IGNORE if under else Control.MOUSE_FILTER_STOP
+	detail.mouse_filter = Control.MOUSE_FILTER_IGNORE if under else Control.MOUSE_FILTER_STOP
+
 
 func summary_text(b: Button) -> String:
 	var summary := ""

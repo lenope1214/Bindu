@@ -1924,7 +1924,7 @@ func _help_text() -> String:
 		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 비율 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
 		"왼쪽 위 DPS 표: 웨이브 중엔 최근 5초 실시간 DPS, 쉬는 시간엔 지난 웨이브 DPS와 비율. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기 (저장됨)",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
-		"F: 카드·설명 패널 접고 전체 전장 보기   P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
+		"F: 카드·설명 패널 접고 전체 전장 보기   P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 정원 설명 보기·숨기기   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
 		"R: 처음부터 (일시정지 중 두 번) · 게임 오버 뒤 클릭·R·Esc: 시작 화면 (멀티 판은 대기방)",
 		"E: 판 끝내기 (일시정지 중 두 번) — 지금 점수로 게임 오버, 기록·온라인 순위에 올라감",
 		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 이어하기(Enter)로 그 쉬는 시간부터 (새로 시작은 N 두 번)",
@@ -5135,7 +5135,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			skill_arm = ""
 		elif event.keycode == KEY_H:
 			help_label.visible = not help_label.visible
-		elif event.keycode == KEY_TAB:
+		elif event.keycode == KEY_TAB and not (card_dock != null and card_dock.active()):
 			_toggle_legend()
 		elif event.keycode in [KEY_1, KEY_2, KEY_3, KEY_4, KEY_KP_1, KEY_KP_2, KEY_KP_3, KEY_KP_4] and phase == Phase.CHOOSE and help_label.visible == false and not get_tree().paused:
 			var i: int = event.keycode - (KEY_KP_1 if event.keycode >= KEY_KP_1 else KEY_1)
@@ -9394,7 +9394,8 @@ func _process(delta: float) -> void:
 	banner.visible = banner_t > 0.0
 	banner.modulate.a = clampf(banner_t / 0.4, 0.0, 1.0)
 	legend.visible = phase in [Phase.CHOOSE, Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.READY] and not title_label.visible
-	legend_btn.visible = legend.visible
+	# 카드 도크가 있는 일반 판은 속성표(legend)를 쓰지 않는다 → Tab 버튼도 숨김 (정원만 남음)
+	legend_btn.visible = legend.visible and not (card_dock != null and card_dock.active())
 	range_btn.visible = touch_ui and not title_label.visible and phase != Phase.GAMEOVER
 	zoom_btn.visible = view_zoom > 1.01 and not title_label.visible
 	zoom_btn.text = "확대 풀기 x%.1f" % view_zoom

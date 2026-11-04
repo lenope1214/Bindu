@@ -2291,6 +2291,25 @@ func _meta_misc() -> void:
 	main.mp.my_id = old_my_id
 	dt.owner_id = 0
 	ok("UI-29", target_good and target_capped and ownership and requested, "카드 미리보기 적용 상한·협동 소유권·요청 속성 구분")
+	# UI-32: 설명창은 내용 높이만큼, 보고 있는 오브젝트를 가리지 않는 위쪽 구석에
+	var dock = main.card_dock
+	var ui_size: Vector2 = main.ui_root.size
+	var to_world := func(u: Vector2) -> Vector2:
+		return main.get_canvas_transform().affine_inverse() * (main.ui_root.get_global_transform() * u)
+	var keep_pos: Vector2 = dt.position
+	var side_ok := true
+	for u in [Vector2(ui_size.x - 120.0, 160.0), Vector2(120.0, 200.0)]:
+		dt.position = to_world.call(u)
+		dock.shown_tower = dt
+		dock.heading.text = "직선탄"
+		dock.detail.text = "피해 1\n\n초당 1번"
+		dock._place_side(ui_size, false)
+		var at: Vector2 = main.ui_root.get_global_transform().affine_inverse() * (main.get_canvas_transform() * dt.global_position)
+		side_ok = side_ok and not dock.side.get_rect().has_point(at) and dock.side.size.y < ui_size.y * 0.6
+	dt.position = keep_pos
+	dock.shown_tower = null
+	var tab_hidden: bool = not main.legend_btn.visible
+	ok("UI-32", side_ok and tab_hidden, "설명창 내용 높이·보는 오브젝트 반대쪽 구석, 일반 판 Tab 버튼 없음")
 	main.phase = main.Phase.PLACE
 
 
