@@ -2417,6 +2417,14 @@ func _meta_misc() -> void:
 	var edits_selected: bool = main.phase == main.Phase.AIM and main.moving == dt
 	main._cancel_step()
 	var cancel_restores: bool = main.phase == main.Phase.READY and main.selected == [dt] and dt.dir == original_dir and dock.inspected_tower == dt
+	main.phase = main.Phase.CHOOSE
+	main.cards_hidden = true
+	main.picked = main.offer[0]
+	main._start_move(dt)
+	main.moving = null
+	main._end_move()
+	var finished_clean: bool = main.cards_hidden and main.selected.is_empty() and dock.inspected_tower == null and dock.hovered == null and main.tap_sel == -1
+	main.cards_hidden = false
 	dock.close_inspector()
 	main.selected = [dt]
 	main._on_pick({"type": "mod", "id": "multi"})
@@ -2433,7 +2441,7 @@ func _meta_misc() -> void:
 	main.phase = old_phase
 	main.guide_label.visible = status_guide_visible
 	ok("UI-35", selection_status and edit_status and carry_status and touch_status and deleted_selection, "선택·편집·카드 상태 %s/%s/%s · 터치 %s · 삭제 %s" % [selection_status, edit_status, carry_status, touch_status, deleted_selection])
-	ok("UI-05", click_selects and wave_readonly and edits_selected and cancel_restores, "클릭은 선택, 쉬는 시간의 명시적 방향 편집·취소 복원, 전투 중 읽기 전용")
+	ok("UI-05", click_selects and wave_readonly and edits_selected and cancel_restores and finished_clean, "클릭은 선택, 쉬는 시간의 명시적 방향 편집·취소 복원, 전투 중 읽기 전용")
 	# UI-33: 설명창 그림 (오브젝트 정보: 미리보기·숫자 타일, 자세히: 곱셈 사슬·배율 막대 / 카드: 미리보기·타일)
 	var pic: InfoPanel = dock.pic
 	pic.show_tower(dt, false, 0.3, "이번 웨이브 몫", 300.0)

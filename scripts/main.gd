@@ -61,6 +61,7 @@ var hide_btn: Button
 var card_detail_btn: Button  # 선택지 카드 [자세히] 켜기·끄기 (Meta.card_detail)
 var move_orig_pos := Vector2.ZERO
 var move_orig_dir := Vector2.RIGHT
+var move_cards_hidden := false
 var move_return := Phase.CHOOSE  # 옮기기를 끝내면 돌아갈 단계
 var auto_start := false  # 끄면 설치 후 Space로 웨이브 시작
 var auto_btn: Button
@@ -7946,18 +7947,21 @@ func _back_to_choose() -> void:
 
 ## 방향 바꾸기를 끝내고 원래 단계로.
 func _end_move() -> void:
-	selected.clear()
-	card_dock.inspected_tower = null
-	tip_tower = null
+	card_dock.clear_gesture()
+	card_dock.close_inspector()
 	aim_right = false
 	if move_return == Phase.READY:
 		_enter_ready()
 	else:
-		_back_to_choose()
+		phase = Phase.CHOOSE
+		_set_cards_hidden(move_cards_hidden)
+		_restore_hint()
+		_save_run()
 
 
 ## 선택한 오브젝트의 [방향 변경] 또는 우클릭 끌기로 제자리 방향을 편집한다.
 func _start_move(t: Tower) -> void:
+	move_cards_hidden = cards_hidden
 	move_return = phase
 	start_btn.visible = false
 	moving = t

@@ -32,6 +32,8 @@ func _initialize() -> void:
 		await ownership_case()
 	if which in ["all", "pause-input"]:
 		await pause_input_case()
+	if which in ["all", "direction"]:
+		await direction_case()
 	print("USABILITY case=%s failures=%d ui=%d" % [which, fails, ui_errors])
 	quit(1 if fails > 0 or ui_errors > 0 else 0)
 
@@ -96,3 +98,20 @@ func pause_input_case() -> void:
 	await key(KEY_P)
 	await key(KEY_S)
 	ok("UI-10", not paused and main.phase == main.Phase.READY and main.skip_left > 0 and main.bank_picks.size() == 2, "재개 후 같은 S 키로 정상 넘기기")
+
+func direction_case() -> void:
+	for folded in [false, true]:
+		await fixture()
+		target.position = Vector2(220, 300)
+		await mouse_click(card_center(1))
+		await key(KEY_ESCAPE)
+		main._set_card_detail(true)
+		main._set_cards_hidden(folded)
+		await mouse_click(world(target.position))
+		await mouse_click(main.card_dock.direction_btn.get_global_rect().get_center())
+		await key(KEY_ESCAPE)
+		ok("UI-05", main.cards_hidden == folded and main.selected == [target], "방향 취소는 카드 접힘·오브젝트 선택 복원: %s" % folded)
+		await mouse_click(main.card_dock.direction_btn.get_global_rect().get_center())
+		await mouse_click(world(Vector2(650, 240)))
+		ok("UI-05", main.phase == main.Phase.CHOOSE and main.selected.is_empty() and not main.card_dock.side.visible and main.card_dock.preview_card().is_empty() and main.tap_sel == -1 and main.cards_hidden == folded, "방향 확정은 이전 카드 미리보기 없이 종료: %s" % folded)
+		await snap("direction-finished-%s" % folded)
