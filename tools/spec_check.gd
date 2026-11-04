@@ -2200,6 +2200,36 @@ func _meta_misc() -> void:
 	var dock_brief: bool = main.card_dock.summary_text(plain_card).contains(Elem.BRIEF[Elem.WATER])
 	plain_card.free()
 	main._set_card_detail(was_d)
+	# 공유 원문뿐 아니라 카드별 별도 설명·도감으로 가는 전체 문장도 검사한다. 수치 라벨은 허용한다.
+	var copy_texts: Array[String] = []
+	for e in Elem.ALL:
+		copy_texts.append_array([Elem.BRIEF[e], Elem.rider(e), Elem.TRAIT[e]])
+	for defs in [Pat.PATTERNS, Pat.MODS, Pat.LINKS, Pat.TRIGS]:
+		for id in defs:
+			copy_texts.append(Rules.fmt(defs[id]["desc"]))
+	for kind in Pat.BRIEF:
+		for id in Pat.BRIEF[kind]:
+			copy_texts.append(Pat.brief(kind, id, ""))
+	for pk in main.PERKS:
+		copy_texts.append(pk["desc"])
+	for rule in Elem.AFF_RULES:
+		copy_texts.append(rule[5])
+	copy_texts.append(Elem.SAME_AFF[3])
+	for kind in ["pat", "mod", "link", "trig"]:
+		var defs: Dictionary = {"pat": Pat.PATTERNS, "mod": Pat.MODS, "link": Pat.LINKS, "trig": Pat.TRIGS}[kind]
+		for id in defs:
+			var card := {"type": kind, "id": id}
+			for lvl in [0, 1]:
+				for row in main._card_content(card, lvl)["rows"]:
+					copy_texts.append(row.get("t", ""))
+			for row in main._card_full(card):
+				copy_texts.append(row[0])
+	var old_ending := RegEx.create_from_string("(한다|된다|쏜다|뿜는다|세운다|튄다|민다|갈라진다|막는다|남는다|훑는다|건다|줄어듦|세짐|느려짐|쫓음|받음|못 넣음|넣을 수 없음)([. ,)\\n]|$)")
+	var copy_ok := copy_texts.all(func(text): return old_ending.search(text) == null)
+	ok("UI-20", copy_ok, "카드·특성·도감 공유 원문과 요약·상세: 해요체, 수치 라벨 허용 (%d줄)" % copy_texts.size())
+	var unit_text := "12개까지 1.5초 40%를"
+	var kept_units := PatchNotes.kr_keep(unit_text)
+	ok("UI-20", kept_units.contains("2\u2060개") and kept_units.contains("5\u2060초") and kept_units.contains("0\u2060%\u2060를") and kept_units.replace("\u2060", "") == unit_text and PatchNotes.kr_keep(kept_units) == kept_units, "숫자·단위 줄바꿈 방지: 원문 보존·중복 적용 안전")
 	ok("UI-20", basic_ok and conditions and combo_ok and full_ok and on_ok and no_floating_tip and dock_brief, "카드 기본 효과: 15속성·0/12/50웨이브 %s, 조건 %s, 반응 그림 %s, 자세히 보존 %s" % [basic_ok, conditions, combo_ok, full_ok])
 
 	# 카드 선택 막: 선택지가 펼쳐져 있으면 검은 막(카드·카드 줄 버튼은 그 위), 필드 보기·카드를 고르면 곧바로 걷힘

@@ -6,3 +6,5 @@
 - 배포 전: `GODOT=<godot> tools/run.sh check`가 `CHECK 통과`이고, `tools/shot.gd` 스크린샷(글자 1.0·1.3, touch)에 겹침·잘림·글 깨짐이 없을 때 배포한다.
 - 점검 도구 설명은 `tools/README.md`.
 - `CHANGELOG.md`는 게임 안 패치노트로 플레이어에게 그대로 보인다(main push 즉시 배포된 게임에도). 플레이어용 문장만 쓰고 패치 키(`rules.…`)·코드 이름·파일 경로·커밋 해시·요청/제보 인용은 넣지 않는다. 규칙은 `docs/changelog-rules.md`, 검사는 `python3 tools/notes_check.py`(run.sh check에 포함). CHANGELOG를 고친 커밋은 push 전에 이 검사를 돌린다.
+
+- 카드 요약·상세·도감 문체는 `docs/writing-guide.md`를 따른다. 설명 문장은 해요체, 수치·라벨은 생략형, 조작 안내는 `~하세요.`로 쓴다. 수치·조건·예외를 보존하고 줄바꿈을 확인한다.

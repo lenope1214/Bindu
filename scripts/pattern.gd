@@ -7,21 +7,21 @@ const DEFAULT := "shot"
 
 ## 공격방식. from: 이 형태를 가져온 원래 속성(아이콘 색 참고용)
 const PATTERNS := {
-	"shot": {"name": "직선탄", "desc": "정한 방향으로 탄을 쏜다", "from": -1},
-	"spray": {"name": "분사", "desc": "부채꼴로 계속 뿜는다 (지속 피해)", "from": Elem.FIRE},
-	"thorn": {"name": "관통 연사", "desc": "작은 가시를 빠르게 쏜다 (관통)", "from": Elem.WOOD},
-	"stream": {"name": "물줄기", "desc": "주기적으로 길게 뿜어 맞은 구체를 멈춰 세운다", "from": Elem.WATER},
-	"chain": {"name": "연쇄 번개", "desc": "앞쪽 구체를 치고 주변으로 튄다", "from": Elem.ELECTRIC},
-	"gust": {"name": "돌풍", "desc": "넓은 바람이 지나가며 옆으로 민다", "from": Elem.WIND},
-	"shard": {"name": "파편탄", "desc": "맞으면 파편 3개로 갈라진다", "from": Elem.ICE},
-	"wall": {"name": "벽", "desc": "앞에 바위 벽을 세워 막는다. 무너질 때 둘레에 돌 파편", "from": Elem.EARTH},
-	"vortex": {"name": "블랙홀", "desc": "구체가 가장 많이 모인 곳에 중력 우물을 떨어뜨려 가운데로 끌어모은다. 안에 든 구체가 다른 오브젝트에게 받은 피해 일부를 빨아들였다가 끝에 터지며 나눠 넣는다", "from": Elem.DARK},
-	"laser": {"name": "레이저", "desc": "충전 후 화면 끝까지 관통", "from": Elem.LIGHT},
-	"lob": {"name": "투척 장판", "desc": "느린 탄이 지나간 자리에 속성 장판이 남는다 (유도하면 휜 길 그대로)", "from": Elem.POISON},
-	"iron": {"name": "철구", "desc": "느리고 무거운 관통탄", "from": Elem.METAL},
-	"sonic": {"name": "음파", "desc": "부채꼴로 퍼지는 파동 (관통, 멀수록 약함)", "from": Elem.SOUND},
-	"clock": {"name": "시계침", "desc": "앞쪽을 바늘이 왕복하며 훑는다", "from": Elem.TIME},
-	"wisp": {"name": "혼불", "desc": "오브젝트 곁을 떠돌며 가까이 온 구체를 쫓아 때리는 혼불 2개", "from": Elem.SOUL},
+	"shot": {"name": "직선탄", "desc": "정한 방향으로 탄을 쏴요.", "from": -1},
+	"spray": {"name": "분사", "desc": "부채꼴로 계속 뿜어요. (지속 피해)", "from": Elem.FIRE},
+	"thorn": {"name": "관통 연사", "desc": "작은 가시를 빠르게 쏴요. (관통)", "from": Elem.WOOD},
+	"stream": {"name": "물줄기", "desc": "주기적으로 길게 뿜어 맞은 구체를 멈춰 세워요.", "from": Elem.WATER},
+	"chain": {"name": "연쇄 번개", "desc": "앞쪽 구체를 치고 주변으로 튀어요.", "from": Elem.ELECTRIC},
+	"gust": {"name": "돌풍", "desc": "넓은 바람이 지나가며 옆으로 밀어요.", "from": Elem.WIND},
+	"shard": {"name": "파편탄", "desc": "맞으면 파편 3개로 갈라져요.", "from": Elem.ICE},
+	"wall": {"name": "벽", "desc": "앞에 바위 벽을 세워 막아요. 무너질 때 둘레에 돌 파편이 나와요.", "from": Elem.EARTH},
+	"vortex": {"name": "블랙홀", "desc": "구체가 가장 많이 모인 곳에 중력 우물을 떨어뜨려 가운데로 끌어모아요. 안에 든 구체가 다른 오브젝트에게 받은 피해 일부를 빨아들였다가 끝에 터지며 나눠 넣어요.", "from": Elem.DARK},
+	"laser": {"name": "레이저", "desc": "충전 후 화면 끝까지 관통해요.", "from": Elem.LIGHT},
+	"lob": {"name": "투척 장판", "desc": "느린 탄이 지나간 자리에 속성 장판이 남아요. 유도하면 휜 길 그대로 남아요.", "from": Elem.POISON},
+	"iron": {"name": "철구", "desc": "느리고 무거운 관통탄을 쏴요.", "from": Elem.METAL},
+	"sonic": {"name": "음파", "desc": "부채꼴로 퍼지는 파동이에요. 관통하고, 멀수록 약해져요.", "from": Elem.SOUND},
+	"clock": {"name": "시계침", "desc": "앞쪽을 바늘이 왕복하며 훑어요.", "from": Elem.TIME},
+	"wisp": {"name": "혼불", "desc": "오브젝트 곁을 떠돌며 가까이 온 구체를 쫓아 때리는 혼불 2개가 나와요.", "from": Elem.SOUL},
 }
 
 const PATTERN_IDS := ["shot", "spray", "thorn", "stream", "chain", "gust", "shard", "wall", "vortex", "laser", "lob", "iron", "sonic", "clock", "wisp"]
@@ -36,15 +36,15 @@ const PROJECTILE := ["shot", "thorn", "gust", "shard", "iron", "wisp"]
 
 ## "피해 +N%"의 공백은 줄바꿈하지 않는 공백(U+00A0): 카드에서 숫자만 다음 줄로 넘어가지 않게
 const MODS := {
-	"reflex": {"name": "자동 조준", "desc": "공격 방향을 고정하지 않고 사거리 안 가장 가까운 구체를 향해 공격한다. 최종 피해 -10%. 오브젝트마다 1번만 선택 가능. 혼불·블랙홀에는 못 넣음"},
-	"multi": {"name": "다중 발사", "desc": "공격이 1개 더 나간다 (하나하나는 피해 {multi_dmg%}%, 많이 쌓을수록 조금씩 줄어듦)"},
-	"split": {"name": "분열", "desc": "맞은 구체에서 약한 파편 2개가 튄다 (1개마다 확률 +{split_ch%}%, 최대 {split_max%}%). 벽·투척 장판에는 못 넣음"},
-	"homing": {"name": "유도", "desc": "탄이 구체 쪽으로 천천히 휜다(많이 휠수록 피해가 줄어 최저 {homing_fade_min%}%). 범위 공격은 구체 쪽으로 조금 돈다. 한 구체는 탄 2개까지만 쫓고, 못 따라잡으면 다른 구체로. 혼불은 목줄 +15%. 벽·시계침·연쇄 번개에는 못 넣음"},
-	"bounce": {"name": "튕김", "desc": "탄이 가까운 구체로 튄다(튕긴 탄 피해 {bounce_hit%}%). 번개는 1번 더 튄다. 그 밖의 공격은 맞힌 구체에서 작은 탄이 1개 더 튄다({bounce_iv}초마다)"},
+	"reflex": {"name": "자동 조준", "desc": "공격 방향을 고정하지 않고 사거리 안 가장 가까운 구체를 향해 공격해요. 최종 피해 -10%. 오브젝트마다 1번만 선택할 수 있어요. 혼불·블랙홀에는 못 넣어요."},
+	"multi": {"name": "다중 발사", "desc": "공격이 1개 더 나가요. (하나하나는 피해 {multi_dmg%}%, 많이 쌓을수록 조금씩 줄어요.)"},
+	"split": {"name": "분열", "desc": "맞은 구체에서 약한 파편 2개가 튀어요. (1개마다 확률 +{split_ch%}%, 최대 {split_max%}%) 벽·투척 장판에는 못 넣어요."},
+	"homing": {"name": "유도", "desc": "탄이 구체 쪽으로 천천히 휘어요. (많이 휠수록 피해가 줄어 최저 {homing_fade_min%}%) 범위 공격은 구체 쪽으로 조금 돌아요. 한 구체는 탄 2개까지만 쫓고, 못 따라잡으면 다른 구체를 쫓아요. 혼불은 목줄 +15%. 벽·시계침·연쇄 번개에는 못 넣어요."},
+	"bounce": {"name": "튕김", "desc": "탄이 가까운 구체로 튀어요. (튕긴 탄 피해 {bounce_hit%}%) 번개는 1번 더 튀어요. 그 밖의 공격은 맞힌 구체에서 작은 탄이 1개 더 튀어요. ({bounce_iv}초마다)"},
 	"size": {"name": "크기", "desc": "탄 크기·범위·사거리 +{size_k%}% (탄을 쏘는 공격은 피해도 +{size_dmg%}%)"},
 	"rapid": {"name": "속사", "desc": "공격 속도 +{rapid_k%}%"},
-	"pierce": {"name": "관통", "desc": "탄이 1개 더 뚫는다(뚫을 때마다 피해 x{pierce_hit}). 그 밖의 공격은 피해 +{pierce_dmg%}%, 보호막을 {pierce_shield%}% 더 깎고 갑옷을 {pierce_armor%}% 무시"},
-	"dice": {"name": "주사위", "desc": "공격할 때마다 주사위: 4~5는 피해 x{dice_mid}, 6은 x{dice_top} 대박 (다음 공격까지). 1~3은 그대로. 더 넣으면 주사위가 늘어 높은 눈을 쓴다(3개까지). 대박은 8번 안에 꼭. 반응 피해 제외 (시험)"},
+	"pierce": {"name": "관통", "desc": "탄이 1개 더 뚫어요. (뚫을 때마다 피해 x{pierce_hit}) 그 밖의 공격은 피해 +{pierce_dmg%}%, 보호막을 {pierce_shield%}% 더 깎고 갑옷을 {pierce_armor%}% 무시해요."},
+	"dice": {"name": "주사위", "desc": "공격할 때마다 주사위를 굴려요. 4~5는 피해 x{dice_mid}, 6은 x{dice_top} 대박이에요. (다음 공격까지) 1~3은 그대로예요. 더 넣으면 주사위가 늘어 높은 눈을 써요. (3개까지) 대박은 8번 안에 꼭 나와요. 반응 피해는 제외해요. (시험)"},
 }
 
 const MOD_IDS := ["multi", "split", "homing", "bounce", "size", "rapid", "pierce", "dice", "reflex"]
@@ -110,16 +110,16 @@ static func no_mod_why(pat: String, mod: String) -> String:
 		return ""
 	match mod:
 		"pierce", "bounce":
-			return "%s은(는) 원래 모두 뚫고 나가서 %s이(가) 효과가 없어요" % [pname(pat), MODS[mod]["name"]]
+			return "%s은(는) 원래 모두 뚫고 나가서 %s이(가) 효과가 없어요." % [pname(pat), MODS[mod]["name"]]
 		"homing":
 			if pat == "wisp":
-				return "%s은(는) 원래 구체를 쫓아가서 유도를 넣을 수 없어요" % pname(pat)
+				return "%s은(는) 원래 구체를 쫓아가서 유도를 넣을 수 없어요." % pname(pat)
 			if pat in ["clock", "chain"]:
-				return "%s은(는) 범위를 훑는 공격이라 유도가 효과가 없어요" % pname(pat)
-			return "%s은(는) 정한 방향에만 세워져서 유도가 효과가 없어요" % pname(pat)
+				return "%s은(는) 범위를 훑는 공격이라 유도가 효과가 없어요." % pname(pat)
+			return "%s은(는) 정한 방향에만 세워져서 유도가 효과가 없어요." % pname(pat)
 		"split":
-			return "%s은(는) 바닥에 남아 때리는 공격이라 분열이 일어나지 않아요" % pname(pat)
-	return "%s에는 %s이(가) 효과가 없어요" % [pname(pat), MODS[mod]["name"]]
+			return "%s은(는) 바닥에 남아 때리는 공격이라 분열이 일어나지 않아요." % pname(pat)
+	return "%s에는 %s이(가) 효과가 없어요." % [pname(pat), MODS[mod]["name"]]
 
 
 ## 이 공격방식에 넣을 수 없는 강화 이름들 (설명용).
@@ -131,7 +131,7 @@ static func no_mods(pat: String) -> PackedStringArray:
 	return out
 
 const LINKS := {
-	"pincer": {"name": "협공", "desc": "다른 오브젝트가 맞힌 구체를 {pincer_t}초 안에 이 오브젝트도 맞히면 터져서 그 구체 최대 체력의 10% 피해"},
+	"pincer": {"name": "협공", "desc": "다른 오브젝트가 맞힌 구체를 {pincer_t}초 안에 이 오브젝트도 맞히면 터져서 그 구체 최대 체력의 10% 피해를 줘요."},
 	"reso": {"name": "공명", "desc": "가까이(거리 {reso_r} 안) 있는 다른 오브젝트 하나당 피해 +{reso_k%}%"},
 }
 
@@ -139,12 +139,12 @@ const LINK_IDS := ["pincer", "reso"]  # 프리즘(속성 나눠 주기)은 2026-
 
 ## 발동: 기본 공격과 별개로, 조건이 맞을 때 추가로 터지는 공격 (Tower.trigs). 겹치면 세진다.
 const TRIGS := {
-	"echo": {"name": "처치 폭발", "desc": "이 오브젝트가 맞혀 구체를 잡으면 그 자리에서 작은 탄 {echo_n}개가 사방으로 ({echo_cd}초에 한 번)"},
-	"vanguard": {"name": "앞줄 강타", "desc": "체력 {van_hp%}% 이상인 구체에 피해 x{van_mul} (장마다 +{van_add}, 보스는 절반). 마무리의 반대: 앞쪽에서 먼저 때리는 오브젝트에"},
-	"charge": {"name": "모아 강타", "desc": "거리 {charge_r} 안에서 구체가 15마리 죽으면(누가 잡든, 특수 2·보스 8) 다음 공격이 x5 강타. 웨이브가 넘어가도 유지"},
-	"third": {"name": "3타 강타", "desc": "3번째 공격마다 피해 x1.8 (탄은 크기도 x{third_size}). 계속 뿜는 공격은 1.5초마다 잠깐"},
-	"finish": {"name": "마무리", "desc": "체력이 {finish_hp%}% 아래인 구체에 피해 x{finish_mul} (보스는 절반). 다른 오브젝트가 깎은 구체에 강해요"},
-	"answer": {"name": "따라 쏘기", "desc": "거리 {answer_r} 안 다른 오브젝트의 발동이 터지면 그쪽으로 한 발 더 ({answer_cd}초에 한 번)"},
+	"echo": {"name": "처치 폭발", "desc": "이 오브젝트가 맞혀 구체를 잡으면 그 자리에서 작은 탄 {echo_n}개가 사방으로 나가요. ({echo_cd}초에 한 번)"},
+	"vanguard": {"name": "앞줄 강타", "desc": "체력 {van_hp%}% 이상인 구체에 피해 x{van_mul} (장마다 +{van_add}, 보스는 절반). 마무리의 반대예요. 앞쪽에서 먼저 때리는 오브젝트에 넣으면 좋아요."},
+	"charge": {"name": "모아 강타", "desc": "거리 {charge_r} 안에서 구체가 15마리 죽으면(누가 잡든, 특수 2·보스 8) 다음 공격이 x5 강타가 돼요. 웨이브가 넘어가도 유지돼요."},
+	"third": {"name": "3타 강타", "desc": "3번째 공격마다 피해 x1.8 (탄은 크기도 x{third_size}). 계속 뿜는 공격은 1.5초마다 잠깐 강해져요."},
+	"finish": {"name": "마무리", "desc": "체력이 {finish_hp%}% 아래인 구체에 피해 x{finish_mul} (보스는 절반). 다른 오브젝트가 깎은 구체에 강해요."},
+	"answer": {"name": "따라 쏘기", "desc": "거리 {answer_r} 안 다른 오브젝트의 발동이 터지면 그쪽으로 한 발 더 쏴요. ({answer_cd}초에 한 번)"},
 }
 
 const TRIG_IDS := ["echo", "vanguard", "charge", "third", "finish", "answer"]

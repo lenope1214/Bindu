@@ -208,18 +208,18 @@ const PERKS := [
 	{"id": "power", "name": "화력", "desc": "모든 피해 +15%"},
 	{"id": "haste", "name": "속사", "desc": "모든 공격 속도 +12%"},
 	{"id": "reach", "name": "원거리", "desc": "모든 사거리 +12%"},
-	{"id": "core", "name": "단단한 중앙", "desc": "중앙 최대 체력 +3, 모두 회복"},
+	{"id": "core", "name": "단단한 중앙", "desc": "중앙 최대 체력 +3, 체력을 모두 회복해요."},
 	{"id": "reroll", "name": "넉넉한 선택", "desc": "쉬는 시간마다 새로고침 +1"},
 	{"id": "luck", "name": "행운", "desc": "속성 카드가 Lv2로 나올 확률 +20%"},
 	{"id": "regen", "name": "회복", "desc": "웨이브를 마칠 때마다 중앙 체력 +1 (겹쳐 고르면 하나당 +0.5)"},
 	{"id": "slow", "name": "끈적한 공간", "desc": "모든 구체 이동 속도 -8%"},
-	{"id": "harmony", "name": "조화", "desc": "속성을 여러 종류 겹쳐 생기는 공격 속도 감소가 절반으로 (한 번만, 공격 속도 최대 +20%)"},
-	{"id": "coin", "name": "운명의 동전", "desc": "동전을 던지고 특성 3개를 새로 받아요. 앞면: 고른 특성이 두 번 적용. 뒷면: 한 번 적용 + 이번 쉬는 시간 새로고침 +2"},
-	{"id": "shield", "name": "실드", "desc": "웨이브를 시작할 때마다 중앙 실드 1칸 (겹치면 +1, 최대 3). 맞으면 체력 대신 실드가 깎이고, 다음 웨이브로 넘어가지 않아요"},
+	{"id": "harmony", "name": "조화", "desc": "속성을 여러 종류 겹쳐 생기는 공격 속도 감소가 절반이 돼요. (한 번만, 공격 속도 최대 +20%)"},
+	{"id": "coin", "name": "운명의 동전", "desc": "동전을 던지고 특성 3개를 새로 받아요. 앞면: 고른 특성이 두 번 적용돼요. 뒷면: 한 번 적용돼요. 이번 쉬는 시간 새로고침 +2"},
+	{"id": "shield", "name": "실드", "desc": "웨이브를 시작할 때마다 중앙 실드 1칸 (겹치면 +1, 최대 3). 맞으면 체력 대신 실드가 깎이고, 다음 웨이브로 넘어가지 않아요."},
 	{"id": "rampart", "name": "성벽", "desc": "웨이브마다 중앙 앞에 바위 벽: 다가온 구체를 한 번 밀어내고 한 조각씩 부서져요. 조각 수 = 벽 오브젝트 레벨 합 + 1 (겹치면 +1, 최대 4)"},
-	{"id": "riposte", "name": "반격 파동", "desc": "중앙이 맞을 때마다(실드 포함) 파동이 퍼져 가까운 구체를 밀어내고 피해 (겹치면 피해 +50%)"},
+	{"id": "riposte", "name": "반격 파동", "desc": "중앙이 맞을 때마다(실드 포함) 파동이 퍼져 가까운 구체를 밀어내고 피해를 줘요. (겹치면 피해 +50%)"},
 	{"id": "quick", "name": "빠른 손", "desc": "중앙 기술을 다시 쓰기까지 -20% (겹치면 곱)"},
-	{"id": "overflow", "name": "넘친 회복", "desc": "체력이 가득할 때 받은 회복은 실드로 쌓여요 (회복 특성·보스 처치, 최대 2, 웨이브가 지나도 남음)"},
+	{"id": "overflow", "name": "넘친 회복", "desc": "체력이 가득할 때 받은 회복은 실드로 쌓여요. (회복 특성·보스 처치, 최대 2, 웨이브가 지나도 남아요.)"},
 ]
 var perks := {}  # id → 고른 횟수
 # 중앙 기술 (Skill): 이번 판 기술 두 개, 다시 쓰기까지 남은 게임 시간, 누를 자리를 기다리는 기술, 효과 그림 [자리, 반지름, 남은 시간, 색]
@@ -2433,7 +2433,7 @@ func _card_content(card: Dictionary, lvl: int) -> Dictionary:
 		"mod":
 			var id: String = card["id"]
 			head["name"] = Pat.MODS[id]["name"]
-			rows = [{"t": "사거리 안 가까운 구체를 전방위 조준 · 최종 피해 -10% · 오브젝트당 1회" if id == "reflex" else Pat.mdesc(id)}]
+			rows = [{"t": "사거리 안 가까운 구체를 전방위로 조준해요. 최종 피해 -10% · 오브젝트당 1회" if id == "reflex" else Pat.mdesc(id)}]
 			foot = [["place_on", "오브젝트당 1회" if id == "reflex" else "위에 놓기 · " + ("종류별 %d · 합 %d" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "쌓을수록 절반")]]
 		"link":
 			var id: String = card["id"]
@@ -2516,12 +2516,12 @@ func _card_full(card: Dictionary) -> Array:
 			for t in towers.get_children():
 				if t.pattern == id:
 					out.append(["%s Lv%d → Lv%d 가능" % [Pat.pname(id), t.plv, t.plv + 1], D])
-			out.append(["직선탄 오브젝트에 넣으면 그 공격방식으로 고정, 같은 공격방식에 넣으면 레벨업", D])
+			out.append(["직선탄 오브젝트에 넣으면 그 공격방식으로 고정돼요. 같은 공격방식에 넣으면 레벨업해요.", D])
 		"mod":
 			if card["id"] == "reflex":
-				out.append(["전방위 자동 조준 · 최종 피해 -10%", W])
+				out.append(["전방위로 자동 조준해요. 최종 피해 -10%", W])
 				out.append(["사거리 안 최근접 구체 · 오브젝트당 1회", D])
-				out.append(["혼불·블랙홀에는 넣을 수 없음", D])
+				out.append(["혼불·블랙홀에는 넣을 수 없어요.", D])
 				return out
 			out.append([Pat.mdesc(card["id"]), W])
 			out.append(["오브젝트 위에 놓기 · " + ("종류별 %d개, 합쳐 %d개까지" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "쌓을수록 효과 절반씩"), D])
