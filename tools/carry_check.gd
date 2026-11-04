@@ -33,6 +33,7 @@ func _initialize() -> void:
 	await process_frame
 	main._hide_title()
 	Meta.ui_scale = float(args[1])
+	Meta.skip_n = 1
 	seed(17)
 	main.set_process(false)
 	main.auto_start = false
@@ -40,6 +41,28 @@ func _initialize() -> void:
 	await fixture()
 	print("GEOMETRY size=", root.size, " field=", main.get_viewport_rect(), " final=", root.get_final_transform(), " canvas=", root.canvas_transform, " screen=", root.get_screen_transform())
 	await snap("browse")
+	ok("SKIP-03", main.card_dock.skip_group.visible and is_equal_approx(main.skip_btn.get_global_rect().end.x, main.skip_n_btn.get_global_rect().position.x), "넘기기 실행·개수 버튼을 간격 없는 한 그룹으로 배치")
+	for n in [3, 5, 10, 1]:
+		await mouse_click(main.skip_n_btn.get_global_rect().get_center())
+		ok("SKIP-03", Meta.skip_n == n and main.phase == main.Phase.CHOOSE and main.picks_left == 2, "그룹의 개수 버튼은 개수만 변경: %d" % n)
+		if n == 10:
+			await snap("skip-ten")
+	main.bar_open = true
+	main._set_card_detail(true)
+	await snap("browse-expanded")
+	var icon_center: Vector2 = main._button_icon_center(main.card_detail_btn)
+	ok("UI-30", Rect2(Vector2.ZERO, main.card_detail_btn.size).grow(-8).encloses(Rect2(icon_center - Vector2(9, 9), Vector2(18, 18))), "자세히 아이콘은 버튼 내부 여백 안에 배치")
+	ok("UI-30", is_equal_approx(main.bar_box.position.y - main.card_dock.footer.position.y, 12) and is_equal_approx(main.ui_root.size.y - main.bar_box.get_rect().end.y, 12), "옵션 줄 위아래 여백 각각 12")
+	for entry in [[main.reroll_btn, "Q"], [main.card_detail_btn, "Z"], [main.skip_btn, "S"], [main.hide_btn, "V"]]:
+		var button: Button = entry[0]
+		var content_right: float = main._button_icon_center(button).x + 9
+		if button.text != "":
+			content_right += 8 + button.get_theme_font("font").get_string_size(button.text, HORIZONTAL_ALIGNMENT_LEFT, -1, button.get_theme_font_size("font_size")).x
+		var shortcut_left: float = button.size.x - 3 - 8 - main.ui_font.get_string_size(entry[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 9).x
+		ok("UI-30", content_right + 4 <= shortcut_left, "아이콘·텍스트와 단축키 사이 여백: " + entry[1])
+	main._set_card_detail(false)
+	main.bar_open = false
+	await settle()
 	if not main.card_dock.has_method("carrying"):
 		print("CARRY BASELINE captured")
 		quit(0)

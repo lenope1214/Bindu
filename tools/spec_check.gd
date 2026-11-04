@@ -2211,6 +2211,10 @@ func _meta_misc() -> void:
 	main.picks_left = 2
 	main._process(0.016)
 	var head_two: bool = main.choice_header.visible and main.choice_remaining.text == "2장 더 선택 가능" and main.choice_header.z_index > main.card_dim.z_index
+	var bottom_controls: bool = is_equal_approx(main.bar_box.position.y - main.card_dock.footer.position.y, 12) and is_equal_approx(main.ui_root.size.y - main.bar_box.get_rect().end.y, 12)
+	var detail_icon: Vector2 = main._button_icon_center(main.card_detail_btn)
+	var icon_fits: bool = Rect2(Vector2.ZERO, main.card_detail_btn.size).grow(-8).encloses(Rect2(detail_icon - Vector2(9, 9), Vector2(18, 18)))
+
 	main.picks_left = 1
 	main._process(0.016)
 	var head_one: bool = main.choice_remaining.text == "1장 더 선택 가능"
@@ -2237,7 +2241,7 @@ func _meta_misc() -> void:
 	var dim_off: bool = not main.card_dim.visible and main.phase == main.Phase.PLACE
 	ok("UI-23", dim_on and dim_hide and dim_off, "일반 판 카드 선택 시 전장 어둠 없음 %s, 필드 보기 %s·카드 고른 뒤 %s 유지" % [dim_on, dim_hide, dim_off])
 	var controls: bool = main.card_detail_btn.theme == main.bar_box.theme and main.speed_pick.get_theme_stylebox("normal").bg_color == main.reroll_btn.get_theme_stylebox("normal").bg_color and main.fx_pick.get_popup().get_theme_stylebox("panel") is StyleBoxFlat
-	ok("UI-30", controls and head_two and head_one and no_apply and head_perk and head_hide and not main.choice_header.visible,
+	ok("UI-30", controls and bottom_controls and icon_fits and head_two and head_one and no_apply and head_perk and head_hide and not main.choice_header.visible,
 		"카드 줄 선택 안내: 갱신 %s·%s, 중간 적용 버튼 없음 %s, 숨김 %s·%s·%s" % [head_two, head_one, no_apply, head_perk, head_hide, not main.choice_header.visible])
 
 
@@ -2380,7 +2384,8 @@ func _meta_misc() -> void:
 	main._enter_ready()
 	main.countdown = -1.0
 	main._update_skip_ui()
-	var ready_btn: bool = main.skip_btn.visible
+	main.card_dock.tick()
+	var ready_btn: bool = main.skip_btn.visible and main.card_dock.skip_group.visible and is_equal_approx(main.skip_btn.get_rect().end.x, main.skip_n_btn.position.x) and main.skip_btn.text == "넘기기" and main.skip_n_btn.text == "3개 ▸"
 	main._on_skip()
 	ok("SKIP-03", ready_btn and main.skip_left == 3 and main.bank_picks.is_empty() and main.phase == main.Phase.READY, "웨이브 시작 대기에서도 넘기기 (버튼 %s, 남은 %d)" % [ready_btn, main.skip_left])
 	main.skip_left = 0

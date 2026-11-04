@@ -944,9 +944,9 @@ func _build_ui() -> void:
 	bar.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	bar.alignment = BoxContainer.ALIGNMENT_END
 	bar.offset_left = -616.0
-	bar.offset_right = -16.0
-	bar.offset_top = -50.0
-	bar.offset_bottom = -14.0
+	bar.offset_right = -12.0
+	bar.offset_top = -48.0
+	bar.offset_bottom = -12.0
 	bar.add_theme_constant_override("separation", 8)
 	root.add_child(bar)
 	bar_box = bar
@@ -1032,6 +1032,17 @@ func _build_ui() -> void:
 	root.add_child(aim_ok_btn)
 	for button: Button in [reroll_btn, skip_btn, skip_n_btn, hide_btn, card_detail_btn, start_btn, cancel_btn, aim_ok_btn]:
 		button.theme = card_dock.controls_theme
+	for button: Button in [skip_btn, skip_n_btn]:
+		for state_name in ["normal", "hover", "pressed", "hover_pressed", "disabled", "focus"]:
+			var segment: StyleBoxFlat = button.get_theme_stylebox(state_name).duplicate()
+			if button == skip_btn:
+				segment.corner_radius_top_right = 0
+				segment.corner_radius_bottom_right = 0
+				segment.border_width_right = 0
+			else:
+				segment.corner_radius_top_left = 0
+				segment.corner_radius_bottom_left = 0
+			button.add_theme_stylebox_override(state_name, segment)
 	detail_btn = Button.new()
 	detail_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	detail_btn.position = Vector2(-70.0 - 130.0, -100.0)  # 취소 왼쪽
@@ -2085,7 +2096,8 @@ func _update_skip_ui() -> void:
 	if show_btn:
 		var n := int(Meta.skip_n)
 		skip_btn.tooltip_text = "웨이브 %d개 넘기기 (S)\n카드 선택을 미루고 웨이브를 연달아 진행합니다. 미룬 카드·새로고침·특성은 멈춘 뒤 한꺼번에 고릅니다\n중앙이 위험해지면(설정) 그 웨이브가 끝나고 멈춥니다" % n
-		skip_n_btn.text = "×%d ▸" % n
+		skip_btn.text = "넘기기"
+		skip_n_btn.text = "%d개 ▸" % n
 	skip_badge.visible = skip_left > 0 and phase in [Phase.WAVE, Phase.READY] and not title_label.visible
 	if skip_badge.visible:
 		var done := skip_total - skip_left + 1
@@ -4233,18 +4245,28 @@ func _start_wave_from_ready() -> void:
 
 ## 버튼 위에 아이콘을 그린다. 글이 있으면 왼쪽, 없으면 가운데. icon은 [아이콘, 색]을 돌려준다.
 func _icon_btn(b: Button, icon: Callable) -> void:
+	# 벡터 아이콘을 덧그려도 native 버튼이 글 옆의 아이콘 공간을 확보하게 한다.
+	var image := Image.create(18, 18, false, Image.FORMAT_RGBA8)
+	image.fill(Color.TRANSPARENT)
+	b.icon = ImageTexture.create_from_image(image)
+	b.add_theme_constant_override("h_separation", 8)
 	b.draw.connect(func():
 		var ic: Array = icon.call()
-		var x := b.size.x / 2.0
-		if b.text != "":
-			# 가운데 맞춘 글 바로 왼쪽
-			var tw := b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x
-			x = (b.size.x - tw) / 2.0 - 13.0
-		Glyph.ui(b, ic[0], Vector2(x, b.size.y / 2.0), 8.5, ic[1]))
+		Glyph.ui(b, ic[0], _button_icon_center(b), 8.5, ic[1]))
+
+
+func _button_icon_center(b: Button) -> Vector2:
+	var style := b.get_theme_stylebox("normal")
+	var left := style.get_content_margin(SIDE_LEFT)
+	var width := b.size.x - left - style.get_content_margin(SIDE_RIGHT)
+	var text_width := b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x
+	var content_width := 18.0 + (text_width + b.get_theme_constant("h_separation") if b.text != "" else 0.0)
+	return Vector2(left + (width - content_width) / 2.0 + 9, b.size.y / 2.0)
 
 
 ## 버튼 오른쪽 위 모서리에 작은 단축키 상자 (터치 화면에선 안 그림). key는 글 또는 글을 돌려주는 Callable.
 func _keycap(b: Button, key: Variant) -> void:
+	b.theme_type_variation = "ShortcutButton"
 	b.add_to_group("keycap")
 	b.draw.connect(func():
 		var k: String = key.call() if key is Callable else key
