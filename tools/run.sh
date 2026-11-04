@@ -16,6 +16,7 @@
 #   spec                                   docs/features.md의 기대 동작 자동 점검 (tools/spec_check.gd)
 #   rulekeys                               관리자 페이지 수치 표 목록(server/app/rule_keys.json)을 Rules에서 다시 만듦 (VERIFY=1이면 비교만, check에 포함)
 #   patchkeys                              관리자 페이지 [패치] 하위 탭·특성·카드·모드 칸 목록(server/app/patch_sections.json)을 다시 만듦 (VERIFY=1이면 비교만, check에 포함)
+#   tutplay                                플레이 튜토리얼 23단계를 직접·건너뛰기·장 고르기로 끝까지 (tools/tut_play_check.gd)
 #   notes                                  CHANGELOG(게임 안 패치노트)에 패치 키·코드 이름·경로·해시·요청 인용이 없는지 (docs/changelog-rules.md)
 #   check                                  배포 전 한 번에: spec + 무작위 입력 + 이어하기 (실패하면 끝 코드 1)
 # 환경 변수: SPEED(배속, 기본 4) SMART(기본 1: 사람처럼 중앙 가까이에서 길목을 겨눔, 0이면 예전 봇) VARY(0이면 판마다 다른 흐름 끔: 봉인·이벤트·적응 켬/끔 비교)
@@ -243,6 +244,18 @@ case "$CMD" in
 		cd / && rm -rf "$D"
 		exit $r
 		;;
+	tutplay)
+		# 플레이 튜토리얼: 23단계 직접 해내기(PC·터치)·건너뛰기만·장 고르기, 끝나면 기록·설정 그대로
+		D=$(copy_project "$$")
+		cd "$D"
+		r=0
+		T 600 "$G" --headless --fixed-fps 60 --path . -s tools/tut_play_check.gd > tp.txt 2>&1 || r=1
+		grep -E "^(ok|FAIL|TUTPLAY)|SCRIPT ERROR|Parse Error|^ERROR:" tp.txt || true
+		grep -q "^TUTPLAY 통과" tp.txt || r=1
+		grep -qE 'SCRIPT ERROR|Parse Error|^ERROR:' tp.txt && r=1
+		cd / && rm -rf "$D"
+		exit $r
+		;;
 	notes)
 		python3 "$ROOT/tools/notes_check.py"
 		;;
@@ -271,6 +284,8 @@ case "$CMD" in
 		if python3 "$ROOT/tools/notes_check.py" > /tmp/bindu_check_notes.txt 2>&1; then echo "notes 통과"; else grep -E "^FAIL|^NOTES" /tmp/bindu_check_notes.txt | head -10; bad="$bad notes"; fi
 		"$0" spec > /tmp/bindu_check_spec.txt 2>&1 || bad="$bad spec"
 		grep -E "^FAIL|^SPEC|SCRIPT ERROR|Parse Error|^ERROR:" /tmp/bindu_check_spec.txt || true
+		"$0" tutplay > /tmp/bindu_check_tutplay.txt 2>&1 || bad="$bad tutplay"
+		grep -E "^FAIL|^TUTPLAY|SCRIPT ERROR|Parse Error|^ERROR:" /tmp/bindu_check_tutplay.txt || true
 		F=$("$0" fuzz 4 3000) || bad="$bad fuzz"
 		echo "$F" | grep "^시드"
 		echo "$F" | grep "^시드" | grep -qv "오류 0개" && bad="$bad fuzz"

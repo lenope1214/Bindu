@@ -89,11 +89,12 @@ const TOPICS := [
 ]
 
 static var done := false  # 이 기기의 첫 소개를 닫았는가 (상세 열람 seen과 별개)
+static var play_done := false  # 이 기기에서 플레이 튜토리얼을 해 봤는가 (첫 판 행동 안내를 띄우지 않는다, TUT-06)
 static var seen := {}  # 이 기기에서 본 항목 id -> true
 static var loaded := false
 
 signal closed
-signal play_requested
+signal play_requested(ch: int)  # 플레이 튜토리얼 시작 (장 0~3)
 
 var touch := false
 var phone := false
@@ -115,6 +116,7 @@ var body: Label
 var pages_box: VBoxContainer
 var list_box: VBoxContainer
 var grid: GridContainer
+var play_row: HFlowContainer  # 목록 맨 위: 플레이 튜토리얼 처음부터·장 고르기
 var btn_prev: Button
 var btn_next: Button
 var btn_close: Button
@@ -126,9 +128,11 @@ static func load_file() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(PATH) != OK:
 		done = false
+		play_done = false
 		seen = {}
 		return
 	done = cfg.get_value("tutorial", "done", false)
+	play_done = cfg.get_value("tutorial", "play_done", false)
 	var s = cfg.get_value("tutorial", "seen", {})
 	seen = s if s is Dictionary else {}
 
@@ -137,6 +141,7 @@ static func save_file() -> void:
 	var cfg := ConfigFile.new()
 	cfg.load(PATH)  # 나중에 이 파일에 다른 기기 전용 값이 생겨도 지우지 않게
 	cfg.set_value("tutorial", "done", done)
+	cfg.set_value("tutorial", "play_done", play_done)
 	cfg.set_value("tutorial", "seen", seen)
 	cfg.save(PATH)
 
@@ -209,7 +214,12 @@ func setup(sb: StyleBox, help: Callable) -> void:
 
 	list_box = VBoxContainer.new()
 	list_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	list_box.add_theme_constant_override("separation", 10)
 	v.add_child(list_box)
+	play_row = HFlowContainer.new()
+	play_row.add_theme_constant_override("h_separation", 8)
+	play_row.add_theme_constant_override("v_separation", 8)
+	list_box.add_child(play_row)
 	var sc := ScrollContainer.new()
 	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -226,7 +236,7 @@ func setup(sb: StyleBox, help: Callable) -> void:
 	v.add_child(row)
 	btn_prev = _btn(row, "◀ 이전", _prev)
 	btn_next = _btn(row, "다음 ▶", _next)
-	btn_list = _btn(row, "목록", open_list)
+	btn_list = _btn(row, "목록", _list_or_skip)
 	btn_close = _btn(row, "닫기", _close_or_details)
 
 
@@ -248,6 +258,7 @@ func open_list() -> void:
 	for c in grid.get_children():
 		c.free()  # 바로 지운다 (목록 버튼이 아닌 곳에서만 불림)
 	grid.columns = 3 if size.x >= 760.0 else 2
+	_fill_play_row()
 	for i in TOPICS.size():
 		var tp: Dictionary = TOPICS[i]
 		var id: String = tp["id"]
@@ -276,6 +287,27 @@ func open_list() -> void:
 	_refresh()
 
 
+## 목록 맨 위 줄: [플레이 튜토리얼 처음부터] + 장마다 버튼 (TUT-09).
+func _fill_play_row() -> void:
+	for c in play_row.get_children():
+		c.free()
+	for ch in TutPlay.CHAPTERS.size() + 1:
+		var pb := Button.new()
+		if ch == 0:
+			pb.text = "▶ 플레이 튜토리얼 처음부터" + ("  ✓" if play_done else "")
+		else:
+			pb.text = "%d장 · %s" % [ch, TutPlay.CHAPTERS[ch - 1]]
+		pb.focus_mode = Control.FOCUS_NONE
+		pb.custom_minimum_size = Vector2(0, 52 if phone else 40)
+		pb.add_theme_color_override("font_color", Color(0.55, 0.92, 0.95))
+		pb.add_theme_font_size_override("font_size", 17 if ch == 0 else 15)
+		var chi: int = maxi(ch - 1, 0)
+		pb.pressed.connect(func():
+			close()
+			play_requested.emit(chi))
+		play_row.add_child(pb)
+
+
 ## 첫 실행은 목표 한 문장만. 설명 열람 여부와 첫 소개 완료를 분리한다.
 func open_welcome() -> void:
 	mode = "welcome"
@@ -285,6 +317,14 @@ func open_welcome() -> void:
 	queue = []
 	t = 0.0
 	_refresh()
+
+
+## [목록] (첫 소개에서는 [건너뛰기]: 소개만 닫고 바로 시작 화면)
+func _list_or_skip() -> void:
+	if mode == "welcome":
+		close()
+	else:
+		open_list()
 
 
 func _close_or_details() -> void:
@@ -330,7 +370,7 @@ func cur_topic() -> Dictionary:
 func _next() -> void:
 	if mode == "welcome":
 		close()
-		play_requested.emit()
+		play_requested.emit(0)
 		return
 	var tp := cur_topic()
 	if tp.is_empty():
@@ -384,7 +424,8 @@ func _refresh() -> void:
 		pages_box.visible = true
 		list_box.visible = false
 		btn_prev.visible = false
-		btn_list.visible = false
+		btn_list.visible = true
+		btn_list.text = "건너뛰기"
 		btn_next.visible = true
 		btn_next.disabled = false
 		btn_close.visible = true
@@ -393,11 +434,12 @@ func _refresh() -> void:
 		body.text = PatchNotes.kr_keep("다가오는 구체를 막아 중앙을 지키세요.")
 		btn_next.text = "플레이하며 배우기"
 		btn_close.text = "자세한 설명"
-		for b: Button in [btn_next, btn_close]:
+		for b: Button in [btn_next, btn_close, btn_list]:
 			b.custom_minimum_size = Vector2(170 if phone else 150, 60 if phone else 44)
 		pic.queue_redraw()
 		return
 	var lst := mode == "list"
+	btn_list.text = "목록"
 	pages_box.visible = not lst
 	list_box.visible = lst
 	btn_prev.visible = not lst

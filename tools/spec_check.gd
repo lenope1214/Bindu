@@ -2812,6 +2812,104 @@ func _tutorial() -> void:
 	var helped: bool = not main.tut.visible and main.help_label.visible
 	main.help_label.visible = false
 	ok("TUT-04", title_btn and pause_btn and listed and opened and back and helped, "시작 화면 %s, 일시정지 %s, 목록 %s, 항목 열기 %s, 목록으로 %s, 전체 보기 %s" % [title_btn, pause_btn, listed, opened, back, helped])
+	_tut_play()
+
+
+## 플레이 튜토리얼 (흐름 전체는 tools/run.sh tutplay)
+func _tut_play() -> void:
+	# TUT-07: 4장 23단계, 장 첫 단계, 카드 단계의 카드가 실제 카드, 쉬는 시간 고르는 수, 정해진 길목
+	var ids := {}
+	var bad := []
+	for i in TutPlay.STEPS.size():
+		var st: Dictionary = TutPlay.STEPS[i]
+		ids[st["id"]] = true
+		if st.has("card"):
+			var cd: Dictionary = st["card"]
+			var known: bool = cd["type"] == "elem" and cd["e"] in Elem.ALL or cd["type"] == "pat" and cd["id"] in Pat.PATTERN_IDS \
+				or cd["type"] == "mod" and cd["id"] in Pat.MOD_IDS or cd["type"] == "trig" and cd["id"] in Pat.TRIG_IDS or cd["type"] == "link" and cd["id"] in Pat.LINK_IDS
+			if not known:
+				bad.append(st["id"] + ":카드")
+	for c in TutPlay.CHAPTERS.size():
+		if TutPlay.STEPS[TutPlay.CH_START[c]]["ch"] != c or TutPlay.CH_START[c] > 0 and TutPlay.STEPS[TutPlay.CH_START[c] - 1]["ch"] == c:
+			bad.append("장 %d 시작" % (c + 1))
+	var tp := TutPlay.new()
+	tp.m = main
+	var picks: bool = tp.rest_picks(0) == 1 and tp.rest_picks(1) == 2 and tp.rest_picks(2) == 2 and tp.rest_picks(3) == 2 and tp.rest_picks(4) == -1
+	var lanes: bool = TutPlay.lanes_for(1) == [0.0] and TutPlay.lanes_for(3).size() == 2 and TutPlay.lanes_for(6).size() == 3
+	_fresh(1)
+	_tower(main.core() + Vector2(170, 0))
+	tp.idx = 7  # 속성 겹치기
+	var water := {"type": "elem", "e": Elem.WATER, "lv": 1}
+	var offer: Array = tp.offer([{"type": "elem", "e": Elem.ICE, "lv": 1}, {"type": "elem", "e": Elem.EARTH, "lv": 1}, water])
+	var fixed: bool = offer.size() == 3 and offer[1] == water and tp.want_card() == water
+	var refuse: bool = not tp.allow_pick(offer[0]) and tp.allow_pick(water)
+	main.picked = water
+	var place_ok: bool = not tp.allow_place(null) and tp.allow_place(main.towers.get_child(0))
+	main.picked = {}
+	_clear()
+	tp.free()
+	ok("TUT-07", TutPlay.STEPS.size() == 23 and ids.size() == 23 and TutPlay.CHAPTERS.size() == 4 and bad.is_empty() and picks and lanes and fixed and refuse and place_ok and not ids.has("path") and not ids.has("garden"),
+		"단계 %d·장 %d, 문제 %s, 고르는 수 %s, 길목 %s, 정해진 카드·흐린 카드 %s·%s, 놓을 곳 %s" % [ids.size(), TutPlay.CHAPTERS.size(), str(bad), picks, lanes, fixed, refuse, place_ok])
+	# TUT-08: 단계마다 이름·글, 터치 글엔 키·클릭 말 없음, 안내 칸 버튼
+	var words := []
+	for st in TutPlay.STEPS:
+		if st["id"] == "end":
+			continue
+		var tt: String = st.get("touch", st["pc"])
+		if st["name"] == "" or st["pc"] == "":
+			words.append(st["id"] + ":빈 글")
+		for w in ["클릭", "Shift", "Esc", "Alt", "휠", "Space", "Tab", "(Z)", "(S)", "Q로", "V로", "P로", "1·2"]:
+			if tt.contains(w):
+				words.append(st["id"] + ":" + w)
+	var tp2 := TutPlay.new()
+	tp2.m = main
+	tp2._build_panel()
+	var btns: bool = tp2.btn_skip != null and tp2.btn_all != null and tp2.btn_ok != null
+	tp2.free()
+	ok("TUT-08", words.is_empty() and btns, "터치 글 문제 %s, 건너뛰기·전체 건너뛰기 버튼 %s" % [str(words), btns])
+	# TUT-09: 목록 맨 위 처음부터 + 장 4개, 첫 소개 [건너뛰기]
+	main._open_tut_list()
+	var row: int = main.tut.play_row.get_child_count()
+	var asked := [-1]
+	var cb := func(ch): asked[0] = ch
+	main.tut.play_requested.disconnect(main._play_tutorial)
+	main.tut.play_requested.connect(cb)
+	(main.tut.play_row.get_child(3) as Button).pressed.emit()
+	var chosen: bool = asked[0] == 2 and not main.tut.visible
+	main.tut.open_welcome()
+	var skip_btn: bool = main.tut.btn_list.visible and main.tut.btn_list.text == "건너뛰기"
+	main.tut._list_or_skip()
+	var closed: bool = not main.tut.visible
+	main.tut.play_requested.disconnect(cb)
+	main.tut.play_requested.connect(main._play_tutorial)
+	var starts: bool = TutPlay.CH_START == [0, 7, 16, 21]
+	ok("TUT-09", row == 5 and chosen and skip_btn and closed and starts, "목록 맨 위 %d개, 3장 버튼 → 장 %d, 첫 소개 [건너뛰기] %s·닫힘 %s" % [row, asked[0], skip_btn, closed])
+	# TUT-10: 연습 판 설정 바꾸기·되돌리기, 저장은 원래 값, 이어하기·업적 없음
+	var keep := [Meta.map_id, Meta.rules, Array(Meta.modes), Meta.skill_set, Meta.skip_n]
+	Meta.map_id = "cross"
+	Meta.rules = 3
+	Meta.skill_set = 2
+	TutPlay.enter_meta()
+	var inside: bool = TutPlay.on and Meta.map_id == "plain" and Meta.rules == 1 and Meta.skill_set == 0 and Modes.on.is_empty() and Ach.mp == "tut"
+	TutPlay.swap()
+	var swapped: bool = Meta.map_id == "cross" and Meta.rules == 3
+	TutPlay.swap()
+	var back_in: bool = Meta.map_id == "plain"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(main.RUN_PATH))
+	main.phase = main.Phase.CHOOSE
+	main._save_run()
+	var no_run: bool = not FileAccess.file_exists(main.RUN_PATH)
+	var ach0 := Meta.achieved.size()
+	main._achieve("first")
+	var no_ach: bool = Meta.achieved.size() == ach0
+	TutPlay.leave_meta()
+	var out: bool = not TutPlay.on and Meta.map_id == "cross" and Meta.rules == 3 and Meta.skill_set == 2 and Ach.mp == ""
+	Meta.map_id = keep[0]
+	Meta.rules = keep[1]
+	Meta.modes = keep[2]
+	Meta.skill_set = keep[3]
+	Meta.skip_n = keep[4]
+	ok("TUT-10", inside and swapped and back_in and no_run and no_ach and out, "연습 판 설정 %s, 저장은 원래 값 %s·%s, 이어하기 없음 %s, 업적 없음 %s, 되돌림 %s" % [inside, swapped, back_in, no_run, no_ach, out])
 
 
 # ---------- 다음 패치 투표 ----------

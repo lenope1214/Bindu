@@ -308,6 +308,7 @@ var vote_panel: Vote  # 다음 패치 투표 (시작 화면 V, 판 끝난 화면
 var vote_btn: Button  # 시작 화면 [투표]: 투표 API가 있는 서버일 때만
 var vote_over_btn: Button  # 판 끝난 화면 [다음 패치 투표]
 var tut: Tutorial  # 튜토리얼 카드·다시 보기 목록 (시작 화면 [튜토리얼]·일시정지)
+var tplay: TutPlay = null  # 플레이 튜토리얼 연습 판의 안내 칸 (TutPlay.on일 때만)
 var tut_queue: Array[String] = []  # 판에서 처음 생겨서 띄울 항목 (쉬는 시간·시작 화면에서 띄움)
 var tut_first := false  # 이 기기에서 첫 소개가 아직 완료되지 않음
 var tut_paused := false  # 튜토리얼을 띄우느라 판을 멈췄다 (닫으면 다시 진행)
@@ -480,6 +481,8 @@ func _ready() -> void:
 	if Meta.games == 0:
 		Meta.rules = 1  # 첫 판은 기본 규칙 (규칙 고르기는 첫 판 뒤에 보인다)
 	Modes.set_on(Meta.modes if Meta.games > 0 else [])  # 모드도 첫 판 뒤에 열린다
+	if TutPlay.pending >= 0:
+		TutPlay.enter_meta()  # 플레이 튜토리얼: 평원·랭크·모드 없음 (저장할 때는 원래 값으로)
 	_apply_rules()
 	zones = _layer("Zones")
 	towers = _layer("Towers")
@@ -553,7 +556,9 @@ func _ready() -> void:
 	_on_booted(Net.info)  # 다시 시작했을 때: 이미 받아 둔 새 버전·공지
 	# 창 제목에도 한글 이름과 버전 (작업 표시줄에서 어떤 빌드인지 보이게)
 	get_window().title = "빈두 v%s" % ProjectSettings.get_setting("application/config/version", "?")
-	if mp_back:
+	if TutPlay.on and TutPlay.pending >= 0:
+		_start_tut_play(TutPlay.pending)
+	elif mp_back:
 		_mp_back_lobby()
 	elif title_seen or DisplayServer.get_name() == "headless":
 		_start_choose()
@@ -564,6 +569,9 @@ func _ready() -> void:
 		_refresh_continue()
 		hint.text = ""
 		net.check()  # 시작 화면이 뜰 때마다 새 버전 확인 (처음 켤 때는 Net이 이미 묻는 중)
+		if TutPlay.then_play:
+			TutPlay.then_play = false
+			_set_prep(true)  # 튜토리얼 끝 [첫 판 시작]: 일반 판 준비 화면
 
 
 ## 창이 포커스를 잃어도 판은 계속 진행된다 (직접 조작이 없으니 멈추지 않음).
@@ -1924,10 +1932,10 @@ static func lanes_for(w: int) -> int:
 func _start_choose(new_round := true) -> void:
 	if new_round and wave == 0:
 		# 새 판. 헤드리스(봇·점검)는 늘 모두 열린 채로
-		tutor = Meta.tutor_next and DisplayServer.get_name() != "headless"
+		tutor = Meta.tutor_next and DisplayServer.get_name() != "headless" and not TutPlay.on
 		tutor_given = {}
 		start_modes()
-		Vary.new_run(mp_mode == "" and not tutor)
+		Vary.new_run(mp_mode == "" and not tutor and not TutPlay.on)
 		if Vary.count() > 0:
 			_show_toast("봉인: " + Vary.sealed_text())
 			toast_timer = 5.0  # 카드 줄 위 봉인 칩에도 계속 보임 (_draw_seal_chip)
@@ -1969,6 +1977,8 @@ func _new_rest() -> void:
 		_plan_boss()
 	_mp_rest_begin()
 	picks_left = maxi(Rules.open_picks, Rules.picks) if wave <= 1 else Rules.picks  # 처음 두 번의 쉬는 시간은 2개씩, 그 뒤 1개 (모드 '두 장'이면 계속 2개)
+	if TutPlay.on and tplay != null and tplay.rest_picks(wave) >= 0:
+		picks_left = tplay.rest_picks(wave)  # 플레이 튜토리얼: 그 쉬는 시간의 카드 단계 수
 	rerolls_left = Modes.rerolls(1 + bonus_rerolls + perks.get("reroll", 0) * int(_perk_val("reroll")))
 	bonus_rerolls = 0
 
@@ -1985,6 +1995,9 @@ func _can_skip() -> bool:
 ## 선택지(또는 특성) 화면에서 넘기기: 이번 쉬는 시간의 고르기를 쌓아 두고 웨이브를 시작한다.
 func _on_skip() -> void:
 	if phase not in [Phase.CHOOSE, Phase.READY] or not _can_skip() or title_label.visible:
+		return
+	if TutPlay.on and tplay != null and not tplay.allow_skip():
+		_show_toast("웨이브 넘기기는 튜토리얼 마지막 장에서 해 봐요")
 		return
 	if perk_mode:
 		perk_mode = false
@@ -2154,6 +2167,8 @@ func _make_choices() -> void:
 				offer[randi() % offer.size()] = fallback
 	if tutor:
 		_tutor_offer()
+	if TutPlay.on and tplay != null:
+		offer = tplay.offer(offer)  # 연습 판: 이번 단계 카드 + 흐린 카드 두 장
 	_show_offer()
 	_card_guides()
 
@@ -2688,7 +2703,7 @@ func _tut_tick() -> void:
 
 
 func _first_action_text() -> String:
-	if (Meta.games > 0 and not tutor) or wave != 0 or mp_mode != "" or not Meta.guide_on:
+	if TutPlay.on or Tutorial.play_done or (Meta.games > 0 and not tutor) or wave != 0 or mp_mode != "" or not Meta.guide_on:
 		return ""
 	match phase:
 		Phase.CHOOSE:
@@ -2750,11 +2765,41 @@ func _on_tut_closed() -> void:
 		get_tree().paused = false
 
 
+## [플레이하며 배우기]·목록의 [플레이 튜토리얼]: 화면을 다시 불러 연습 판으로 (ch: 장 0~3).
+## 진행 중인 판은 쉬는 시간 저장이 그대로 남아 시작 화면 [이어하기]로 돌아갈 수 있다.
+func _play_tutorial(ch := 0) -> void:
+	if mp_mode != "":
+		return
+	_save_run()
+	get_tree().paused = false
+	if TutPlay.on:
+		TutPlay.leave_meta()
+	TutPlay.pending = ch
+	_reload()
+
+
+## 다시 불러온 뒤 (_ready): 시작 화면을 닫고 연습 판의 첫 쉬는 시간을 연다.
+func _start_tut_play(ch: int) -> void:
+	TutPlay.pending = -1
+	_hide_title()
+	title_seen = false  # 연습 판을 마치면 시작 화면으로
+	tplay = TutPlay.new()
+	tplay.z_index = 19  # 카드·전장 위, 일시정지 어둠(20)·창 아래 (끝내기 확인은 그 위)
+	ui_root.add_child(tplay)
+	lanes.clear()
+	wave = 0
+	Ach.mp = "tut"  # _ready가 멀티 표시를 지운 뒤라 다시 (누적 수·도감 수집이 오르지 않게)
+	tplay.setup(self, ch)
+	_start_choose()
+
+
 # ---------- 처음 안내 ----------
 
 ## 처음 생기는 일에 한 줄 안내. 안내마다 한 번만(Meta.guide_seen), 설정에서 끌 수 있다.
 ## 쉬는 시간은 웨이브 시작까지, 웨이브 중은 8초. 한 번에 하나만, 위험 경고를 일반 안내보다 우선한다.
 func _guide(id: String, text: String) -> void:
+	if TutPlay.on:
+		return  # 연습 판은 위 안내 칸이 대신한다
 	if not Meta.guide_on or Meta.guide_seen.has(id) or title_label.visible or _first_action_text() != "":
 		return
 	var priority := 3 if id == "boss" else 2 if id in ["resist", "sturdy", "jam", "leak"] else 1
@@ -2878,6 +2923,10 @@ func _start_perk() -> void:
 		return
 	pool.shuffle()
 	perk_offer = pool.slice(0, 3)
+	if TutPlay.on and not perk_offer.any(func(pk): return pk["id"] == "coin"):
+		var coin: Array = pool.filter(func(pk): return pk["id"] == "coin")
+		if not coin.is_empty() and not perk_offer.is_empty():
+			perk_offer[perk_offer.size() - 1] = coin[0]  # 연습 판: 운명의 동전도 한 번 보여 준다
 	_show_perks()
 	if coin_next == "":
 		big_banner("특성 선택", Color(1, 0.85, 0.45))
@@ -3313,6 +3362,9 @@ func _update_reroll_btn() -> void:
 
 ## 진입 방향은 웨이브마다 조금씩 늘고, 가끔 하나가 옮겨 간다.
 func _roll_lanes() -> void:
+	if TutPlay.on:
+		lanes.assign(TutPlay.lanes_for(wave + 1))  # 연습 판: 정해진 길목
+		return
 	var n := lanes_for(wave + 1)
 	if Meta.map_id == "line":
 		# 회랑: 한쪽 끝 하나 (각도는 중앙 점에서 구체가 오는 쪽)
@@ -4164,6 +4216,8 @@ func _tap_hover() -> void:
 
 
 func _on_pick(card: Dictionary) -> void:
+	if TutPlay.on and tplay != null and not tplay.allow_pick(card):
+		return
 	_save_run()  # 카드를 들고 앱을 닫아도 적용 전 목록과 남은 선택을 복원한다.
 	tap_sel = -1
 	_tap_hover()
@@ -4317,7 +4371,11 @@ func _update_auto_btn() -> void:
 func _start_wave() -> void:
 	# 멀티는 준비 동기화·잠수 자동 진행을 우선한다. 한 기기의 배치로 시작을 거부하면
 	# 호스트의 wave 통지와 실제 단계가 달라지거나 대결이 무기한 멈출 수 있다.
-	if mp_mode == "":
+	var forced := TutPlay.on and tplay != null and tplay.force_start
+	if TutPlay.on and tplay != null and not tplay.can_start():
+		countdown = -1.0
+		return
+	if mp_mode == "" and not forced:
 		var blocked := _wave_start_block_reason()
 		if blocked != "":
 			countdown = -1.0
@@ -4976,6 +5034,8 @@ func _drop_carried_card(screen: Vector2) -> void:
 
 func _place_card_at(mpos: Vector2, direct := false) -> void:
 	var target := _tower_at(mpos)
+	if TutPlay.on and tplay != null and not tplay.allow_place(target):
+		return
 	if target and not _place_ok(target):
 		# 넣을 수 없는 오브젝트는 흐리게 그리고 누르거나 끌 수 없다 (이유만 알림)
 		_show_toast(_place_refuse(target))
@@ -5500,7 +5560,7 @@ func _build_menu(root: Control) -> void:
 	tut.z_index = 23  # 일시정지 어둠(20)·다른 창(22) 위에
 	tut.setup(rsb.duplicate(), func(): help_label.visible = true)
 	tut.closed.connect(_on_tut_closed)
-	tut.play_requested.connect(func(): _set_prep(true))
+	tut.play_requested.connect(_play_tutorial)
 	root.add_child(tut)
 
 	settings_panel = PanelContainer.new()
@@ -6461,7 +6521,7 @@ static func _new_run_id() -> String:
 ## 판 기록(점수·특성·선택지·지금 구성)을 서버로. 설정에서 끄면 보내지 않는다.
 ## done=false: 5웨이브마다 보내는 진행 중 기록. 서버는 같은 판 번호(run)면 한 줄을 고친다.
 func _submit_run(done := true) -> void:
-	if not Net.enabled() or mp_mode != "":
+	if not Net.enabled() or mp_mode != "" or TutPlay.on:
 		return
 	var ts := towers.get_children()
 	var total := 0.0
@@ -7457,6 +7517,8 @@ func _apply_volume() -> void:
 
 ## 업적 달성 처리: 배너와 소리, 해금 안내.
 func _achieve(id: String) -> void:
+	if TutPlay.on:
+		return  # 연습 판은 업적이 없다
 	if mp_mode != "" and not Ach.is_mp(id):
 		return  # 멀티 판은 멀티 업적만
 	if not Meta.achieve(id):
@@ -7502,7 +7564,7 @@ func _check_progress() -> void:
 		var rs: Array = t.reactions()
 		Ach.on_reactions(rs.map(func(r): return r["id"]))
 		for r in rs:
-			if mp_mode == "" and Meta.discover(r["id"]):
+			if mp_mode == "" and not TutPlay.on and Meta.discover(r["id"]):
 				_show_toast("조합 도감에 추가: " + r["name"])
 				_save_best()
 				_refresh_legend()
@@ -7540,8 +7602,8 @@ func _hide_title() -> void:
 
 ## 쉬는 시간마다 판을 저장한다. 웨이브 중에 끄면 그 웨이브 앞 쉬는 시간부터 이어진다.
 func _save_run() -> void:
-	if mp_mode != "":
-		return  # 멀티플레이 판은 이어하기가 없다
+	if mp_mode != "" or TutPlay.on:
+		return  # 멀티플레이 판·연습 판은 이어하기가 없다
 	if title_label.visible or not phase in [Phase.CHOOSE, Phase.READY] or press_t or dragging or coin_stage > 0:
 		return
 	var ts := towers.get_children()
@@ -7917,6 +7979,10 @@ func _toggle_pause() -> void:
 func _pause_restart() -> void:
 	if restart_armed > 0.0:
 		get_tree().paused = false
+		if TutPlay.on and tplay != null:
+			var ch := tplay.start_ch
+			TutPlay.leave_meta()
+			TutPlay.pending = ch  # 연습 판: 그 장 처음부터
 		_reload()
 	else:
 		restart_armed = 2.0
@@ -7926,6 +7992,8 @@ func _pause_restart() -> void:
 ## 일시정지 글: 지금 나가면 어디서부터 이어지는지도 알려 준다. 키는 아래 그림 버튼 모서리에.
 func _pause_text() -> String:
 	var keys := "일시정지"
+	if TutPlay.on:
+		return keys + "\n연습 판이에요. 기록·업적은 남지 않아요"
 	if phase == Phase.WAVE:
 		return keys + "\n지금 나가면 웨이브 %d 앞 쉬는 시간부터 이어집니다" % wave
 	return keys + "\n지금 나가도 이 쉬는 시간부터 이어서 할 수 있어요"
@@ -7934,6 +8002,10 @@ func _pause_text() -> String:
 ## 일시정지에서 판 끝내기: 두 번 누르면 지금 점수로 게임 오버 (기록 저장·온라인 전송은 보통 게임 오버와 같다).
 ## 실수로 누르지 않게 처음 누르면 안내만 한다.
 func _end_run() -> void:
+	if TutPlay.on and tplay != null:
+		_toggle_pause()
+		tplay.ask_quit()  # 연습 판: 튜토리얼 끝내기 확인
+		return
 	if end_armed <= 0.0:
 		end_armed = 3.0
 		paused_label.text = _pause_text() + "\n판 끝내기를 한 번 더 누르면 지금 점수 %s로 끝냅니다 (기록·순위에 올라가요)" % num(score)
@@ -7950,7 +8022,12 @@ func _end_run() -> void:
 ## 일시정지에서 시작 화면으로 가거나 게임을 끈다. 쉬는 시간이면 지금 상태를 저장하고,
 ## 웨이브 중이면 그 웨이브 앞 쉬는 시간의 저장이 남는다 (시작 화면의 이어하기).
 func _leave(quit_game: bool) -> void:
+	if TutPlay.on and tplay != null and not quit_game:
+		tplay.finish(false)  # 연습 판에서 시작 화면으로 = 튜토리얼 끝내기
+		return
 	_save_run()
+	if quit_game:
+		TutPlay.leave_meta()
 	get_tree().paused = false
 	if quit_game:
 		get_tree().quit()
@@ -8760,6 +8837,8 @@ func _process(delta: float) -> void:
 		hint.text = _kr_keep(hint.text)  # 줄이 접힐 때 한글 낱말 중간("방향 바/꾸기")에서 끊기지 않게
 		_hint_kept = hint.text
 	toast.position.y = maxf(100.0, hud.position.y + hud.size.y + 36.0)  # 점수 줄이 길어져도 보스 체력 막대 아래
+	if tplay != null:
+		toast.position.y = maxf(toast.position.y, tplay.panel_bottom() + 8.0)  # 연습 판 안내 칸 아래
 	# 안내·큰 글자도 점수 줄이 길어지거나 글자를 키우면(설정) 그 아래로 밀어 겹치지 않게
 	guide_label.position.y = maxf(140.0, toast.position.y + 40.0)
 	_beside_legend(guide_label, 0.0)
@@ -9060,7 +9139,7 @@ func _sim_step(delta: float) -> void:
 		_achieve("first")
 		Ach.on_wave_clear(wave, wave_dmg, core_hp, core_max)
 		_ach_check()
-		if wave >= 5 and mp_mode == "":
+		if wave >= 5 and mp_mode == "" and not TutPlay.on:
 			Meta.map_best[Meta.run_key()] = [maxi(Meta.best_of(Meta.run_key())[0], wave), maxi(Meta.best_of(Meta.run_key())[1], score)]
 			if Meta.MAP_IDS.all(func(id): return id in Meta.TRIAL_MAPS or Meta.best_of(Meta.key(id))[0] >= 5):
 				_achieve("allmaps")
@@ -9349,6 +9428,8 @@ func _resolve(delta: float) -> void:
 				o.queue_free()
 				continue
 			core_hp -= dmg
+			if TutPlay.on:
+				core_hp = maxi(core_hp, 1)  # 연습 판은 지지 않는다
 			sfx.play("core", 0.0)
 			shake = 0.25 + 0.1 * dmg
 			core_flash = 0.4
@@ -10486,6 +10567,7 @@ func _load_best() -> void:
 
 
 func _save_best() -> void:
+	TutPlay.swap()  # 연습 판: 원래 맵·규칙·모드로 저장
 	var cfg := ConfigFile.new()
 	var b := Meta.best_of(Meta.run_key())
 	if best_wave > b[0] or best_score > b[1]:
@@ -10497,6 +10579,7 @@ func _save_best() -> void:
 	cfg.set_value("option", "muted", sfx.muted)
 	cfg.set_value("option", "fast_speed", fast_speed)
 	cfg.save(SAVE_PATH)
+	TutPlay.swap()
 
 
 # ---------- 멀티플레이 ----------
