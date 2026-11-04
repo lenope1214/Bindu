@@ -2340,6 +2340,14 @@ func _meta_misc() -> void:
 	main._reset_zoom()
 	ok("UI-18", lock1 and zin and unlocked and is_equal_approx(main.view_zoom, 1.0) and main.arena().size == Meta.FIELD, "두 손가락 벌리기 = 전장 확대(x%.1f), 확대 중 누르기는 게임에 안 넘어감, [확대 풀기] = 1배, 전장 크기 그대로" % main.view_zoom)
 
+	main._zoom_to(0.1, Vector2(100, 100))
+	main._process(0.0)
+	var zoom_min: bool = is_equal_approx(main.view_zoom, 0.5) and main.view_pan.is_zero_approx() and main.zoom_btn.visible
+	main._zoom_to(9.0, Vector2(100, 100))
+	var zoom_max: bool = is_equal_approx(main.view_zoom, 2.5)
+	main._reset_zoom()
+	ok("UI-18", zoom_min and zoom_max and is_equal_approx(main.view_zoom, 1.0), "0.5~2.5배 제한·축소 중앙 정렬·복귀 버튼")
+
 	# 글 대신 그림: 카드는 버튼 글 없이 그림 머리(속성 카드는 속성 그림·Lv 배지), 짝 속성 줄·숫자 특성은 그림 + 숫자,
 	# 시작 화면·일시정지는 그림 버튼(이름은 말풍선), 오른쪽 설명 앞줄마다 그림
 	_fresh(3)

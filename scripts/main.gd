@@ -653,19 +653,20 @@ func full_view() -> Rect2:
 	return Rect2((Meta.FIELD - vs) / 2.0, vs)
 
 
-## 전장 확대: 1~ZOOM_MAX배, at(화면 좌표)이 가리키는 월드 점이 그 자리에 남게. 화면은 전장 밖으로 나가지 않는다.
+## 전장 확대: ZOOM_MIN~ZOOM_MAX배, at(화면 좌표)이 가리키는 월드 점이 그 자리에 남게. 축소하면 전장을 중앙에 두고, 확대하면 전장 밖으로 이동하지 않는다.
+const ZOOM_MIN := 0.5
 const ZOOM_MAX := 2.5
 func _zoom_to(z: float, at: Vector2) -> void:
 	if card_dock != null and card_dock.active():
 		var origin := card_dock.screen_board().get_center()
 		var before := center() + view_pan + (at - origin) / (card_dock.fit * view_zoom)
-		view_zoom = clampf(z, 1.0, ZOOM_MAX)
+		view_zoom = clampf(z, ZOOM_MIN, ZOOM_MAX)
 		view_pan = before - (at - origin) / (card_dock.fit * view_zoom) - center()
 		_clamp_pan()
 		return
 	var vs := get_viewport_rect().size
 	var before := camera.position + (at - vs / 2.0) / view_zoom
-	view_zoom = clampf(z, 1.0, ZOOM_MAX)
+	view_zoom = clampf(z, ZOOM_MIN, ZOOM_MAX)
 	view_pan = before - (at - vs / 2.0) / view_zoom - center()
 	_clamp_pan()
 
@@ -680,7 +681,7 @@ func _clamp_pan() -> void:
 		card_dock.camera_fit()
 		return
 	var fv := full_view()
-	var hs := get_viewport_rect().size / view_zoom / 2.0
+	var hs := (get_viewport_rect().size / view_zoom / 2.0).min(fv.size / 2.0)
 	var c := center() + view_pan
 	c.x = clampf(c.x, fv.position.x + hs.x, fv.end.x - hs.x)
 	c.y = clampf(c.y, fv.position.y + hs.y, fv.end.y - hs.y)
@@ -9259,7 +9260,7 @@ func _process(delta: float) -> void:
 	banner.modulate.a = clampf(banner_t / 0.4, 0.0, 1.0)
 	legend.visible = phase in [Phase.CHOOSE, Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.READY] and not title_label.visible
 	range_btn.visible = touch_ui and not title_label.visible and phase != Phase.GAMEOVER
-	zoom_btn.visible = view_zoom > 1.01 and not title_label.visible
+	zoom_btn.visible = not is_equal_approx(view_zoom, 1.0) and not title_label.visible
 	zoom_btn.text = "확대 풀기 x%.1f" % view_zoom
 	range_btn.text = "범위 끄기" if range_all else "범위 보기"
 	legend.visible = legend.visible and not legend_hidden
@@ -9924,8 +9925,7 @@ func _update_fx(delta: float) -> void:
 	skill_fx = skill_fx.filter(func(q): return q[2] > 0.0)
 	eclipse_flash = maxf(eclipse_flash - delta, 0.0)
 	eclipse_cd = maxf(eclipse_cd - delta, 0.0)
-	side_big_t = maxf(side_big_t - delta * game_speed, 0.0)
-	if view_zoom > 1.0 and (title_label.visible or phase == Phase.GAMEOVER):
+	if not is_equal_approx(view_zoom, 1.0) and (title_label.visible or phase == Phase.GAMEOVER):
 		_reset_zoom()  # 시작 화면·게임 오버는 1배로
 	if not card_dock.active():  # 도크 전용 화면 영역의 카메라는 도크 레이아웃에서 정한다
 
