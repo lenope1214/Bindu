@@ -144,7 +144,7 @@ func over_ui(p: Vector2) -> bool:
 		return false
 	# 설명창 밑에 오브젝트가 있으면 설명창은 마우스를 받지 않는다 (그 오브젝트를 올리고 누를 수 있게, 올리면 설명창이 반대쪽으로 비킨다)
 	for c: Control in [panel, side if side.mouse_filter != Control.MOUSE_FILTER_IGNORE else null, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
-			game.bar_box, game.hud if not _tower_under(p) else null, game.dps_panel, game.range_btn, game.zoom_btn,
+			game.bar_box, game.hud if not _tower_under(p) else null, game.dps_panel if not (_tower_under(p) and game.dps_drag == 0) else null, game.range_btn, game.zoom_btn,
 			game.guide_more, game.hide_btn, game.skip_btn, game.skip_n_btn]:
 		if c != null and c.is_visible_in_tree() and c.get_global_rect().has_point(p):
 			return true
@@ -153,7 +153,7 @@ func over_ui(p: Vector2) -> bool:
 			return true
 	return false
 
-## 점수 줄 칩은 누를 데가 없는 그림이라, 그 밑에 오브젝트가 있으면 오브젝트가 먼저 (누르기·옮기기·방향 바꾸기)
+## 점수 줄 칩·DPS 표 밑에 오브젝트가 있으면 오브젝트가 먼저 (누르기·옮기기·방향 바꾸기). DPS 표는 main._refresh_dps가 마우스도 통과시킨다
 func _tower_under(p: Vector2) -> bool:
 	return game._tower_at(game.get_canvas_transform().affine_inverse() * p) != null
 
@@ -521,9 +521,18 @@ func _place_side(size: Vector2, cards: bool) -> void:
 	var top := maxf(60.0, game.hud.get_rect().end.y + 8.0)
 	var bottom: float = panel.position.y - 12.0 if cards else size.y - 64.0
 	var ltop := top
-	for c: Control in [game.dps_panel, game.zoom_btn]:
-		if c.is_visible_in_tree():
-			ltop = maxf(ltop, c.get_rect().end.y + 8.0)
+	var rtop := top
+	if game.zoom_btn.is_visible_in_tree():
+		ltop = maxf(ltop, game.zoom_btn.get_rect().end.y + 8.0)
+	# DPS 표(옮길 수 있음)가 위쪽 구석 기둥에 있으면 그 아래부터, 다른 곳에 있으면 겹치는 쪽을 덜 고른다
+	var dr := Rect2()
+	if game.dps_panel.is_visible_in_tree():
+		dr = game.dps_panel.get_rect()
+		if dr.position.y < top + 60.0:
+			if dr.position.x < 12.0 + w:
+				ltop = maxf(ltop, dr.end.y + 8.0)
+			if dr.end.x > size.x - w - 12.0:
+				rtop = maxf(rtop, dr.end.y + 8.0)
 	var sb: StyleBox = side.get_theme_stylebox("panel")
 	var parts := []
 	if heading.visible:
@@ -535,7 +544,7 @@ func _place_side(size: Vector2, cards: bool) -> void:
 	var want: float = sb.get_minimum_size().y + 4.0 + 12.0 * maxf(0, parts.size() - 1)
 	for v in parts:
 		want += v
-	var cands := [Rect2(size.x - w - 12.0, top, w, 0.0), Rect2(12.0, ltop, w, 0.0)]
+	var cands := [Rect2(size.x - w - 12.0, rtop, w, 0.0), Rect2(12.0, ltop, w, 0.0)]
 	var scores := []
 	var inv: Transform2D = game.ui_root.get_global_transform().affine_inverse()
 	var canvas: Transform2D = game.get_viewport().get_canvas_transform()
@@ -551,6 +560,8 @@ func _place_side(size: Vector2, cards: bool) -> void:
 				sc += 100.0 if t == shown_tower else 1.0
 		if r.size.y < want - 1.0:
 			sc += 0.5  # 다 안 들어가 스크롤해야 하는 쪽은 조금 덜 고른다
+		if dr.has_area() and r.intersects(dr):
+			sc += 50.0  # 옮겨 둔 DPS 표를 덮는 쪽
 		scores.append(sc)
 	var cur := 1 if side_left else 0
 	if scores[1 - cur] < scores[cur]:

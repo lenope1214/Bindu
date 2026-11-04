@@ -2475,6 +2475,34 @@ func _meta_misc() -> void:
 		var c0: Rect2 = main.hud_chips[0][0]
 		var p: Vector2 = main._dps_place(main.hud.position + c0.position)
 		dodge = p.y >= main.hud.position.y + c0.end.y
+	# 표 밑에 오브젝트가 깔린 자리를 누르면 오브젝트가 먼저 (점수 줄과 같은 규칙), 빈 자리는 표가 받음
+	var pv0: bool = main.dps_panel.visible
+	main.dps_panel.visible = true
+	main.dps_panel.position = Vector2(10, 100)
+	main.dps_panel.size = Vector2(300, 160)
+	var sp: Vector2 = main.dps_panel.get_global_rect().get_center()
+	var wpos: Vector2 = main.get_canvas_transform().affine_inverse() * sp
+	var n0: int = main.towers.get_child_count()
+	main.picked = {"e": Elem.FIRE, "lv": 1}
+	main._place_tower(wpos, Vector2.RIGHT)
+	main.picked = {}
+	var ut: Node = main.towers.get_child(main.towers.get_child_count() - 1) if main.towers.get_child_count() > n0 else null
+	var under_ok := false
+	if ut != null:
+		ut.position = wpos
+		var ev := InputEventMouseButton.new()
+		ev.button_index = MOUSE_BUTTON_LEFT
+		ev.pressed = true
+		ev.position = sp
+		main._input(ev)
+		var passes: bool = main.dps_head.mouse_filter == Control.MOUSE_FILTER_IGNORE and not main.card_dock.over_ui(sp)
+		ut.position = Vector2(-9999, -9999)
+		main._input(ev)
+		var blocks: bool = main.dps_head.mouse_filter == Control.MOUSE_FILTER_STOP and main.card_dock.over_ui(sp)
+		under_ok = passes and blocks
+		ut.free()
+	main.dps_panel.visible = pv0
+	ok("DPS-03", under_ok, "DPS 표 밑 오브젝트는 누를 수 있고, 빈 표 자리는 표가 받음")
 	ok("DPS-03", tap_ok and picked and dropped and dodge, "DPS 표 옮기기: 짧게 누르기=접기 %s, 끌기=집기 %s, 놓기=자리 저장 %s, 점수 줄 비킴 %s" % [tap_ok, picked, dropped, dodge])
 	_clear()
 

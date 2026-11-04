@@ -1255,6 +1255,18 @@ func _build_dps(root: Control) -> void:
 	root.add_child(dps_panel)
 
 
+## 표 전체(판·제목·줄)가 마우스를 받을지. 끄면 밑의 오브젝트가 받는다.
+func _dps_mouse(on: bool) -> void:
+	var f := Control.MOUSE_FILTER_STOP if on else Control.MOUSE_FILTER_IGNORE
+	if dps_head.mouse_filter == f:
+		return
+	dps_panel.mouse_filter = f
+	dps_head.mouse_filter = f
+	dps_scroll.mouse_filter = f if on else Control.MOUSE_FILTER_IGNORE
+	for r in dps_list.get_children():
+		(r as Control).mouse_filter = f
+
+
 ## 제목 줄 누르기: 놓을 때 옮기지 않았으면 접기·펴기, 꾹 누르거나(DPS_HOLD) 끌면(DPS_DRAG_MIN) 표를 집어 옮긴다.
 func _dps_head_input(e: InputEvent) -> void:
 	var par := dps_panel.get_parent() as Control
@@ -1437,6 +1449,9 @@ func _refresh_dps() -> void:
 				under = true
 				break
 	dps_panel.modulate.a = 0.4 if under and dps_drag != 2 else 1.0
+	# 누르는 자리 밑에 오브젝트가 있으면 표가 마우스를 받지 않아 오브젝트를 먼저 누르고 옮긴다 (점수 줄과 같은 규칙, UI-34)
+	var pass_thru := dps_drag == 0 and _tower_at(get_global_mouse_position()) != null and pr.has_point(get_global_mouse_position())
+	_dps_mouse(not pass_thru)
 	# 기본: 점수 줄 아래, 왼쪽 아래 안내 글 위까지. 옮겨 뒀으면 그 자리(줄 수는 화면 아래까지)
 	var home := _dps_home()
 	var top := home.y
@@ -1491,7 +1506,9 @@ func _refresh_dps() -> void:
 	for t in list:
 		total += dv[t]
 	for i in list.size():
-		dps_list.add_child(_dps_row(list[i], i + 1, dv[list[i]], total, live))
+		var row := _dps_row(list[i], i + 1, dv[list[i]], total, live)
+		row.mouse_filter = dps_head.mouse_filter
+		dps_list.add_child(row)
 	var rows := list.size() * 24.0
 	dps_scroll.custom_minimum_size.y = minf(rows, room)
 	dps_panel.size = Vector2.ZERO  # 줄이 줄면 판도 줄인다
@@ -4890,6 +4907,11 @@ func _abort_touch_action() -> void:
 
 ## 터치인지 마우스인지 기억한다 (터치에서 흉내 낸 마우스 움직임은 장치 번호가 EMULATION).
 func _input(event: InputEvent) -> void:
+	# 누르는 순간 DPS 표 밑 오브젝트를 다시 본다 (터치는 누르기 전 마우스 자리가 옛 자리라 지난 프레임 판정이 틀릴 수 있다)
+	if dps_panel != null and dps_panel.visible and dps_drag == 0 and ((event is InputEventMouseButton or event is InputEventScreenTouch) and event.pressed):
+		var wp: Vector2 = get_canvas_transform().affine_inverse() * event.position
+		var pr := get_canvas_transform().affine_inverse() * dps_panel.get_global_rect()
+		_dps_mouse(not (pr.has_point(wp) and _tower_at(wp) != null))
 	if mp_mode != "" and ((event is InputEventMouseButton or event is InputEventScreenTouch or event is InputEventKey) and event.pressed):
 		_mp_presence()
 	if card_dock != null and card_dock.handle_input(event):
