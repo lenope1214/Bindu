@@ -792,11 +792,7 @@ func _build_ui() -> void:
 	choice_header.z_index = 2
 	choice_header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	choice_header.visible = false
-	var chs := StyleBoxFlat.new()
-	chs.bg_color = Color(0.06, 0.07, 0.1, 0.98)
-	chs.border_color = Color(1, 1, 1, 0.18)
-	chs.set_border_width_all(1)
-	chs.set_corner_radius_all(6)
+	var chs := CardDock.surface()
 	chs.content_margin_left = 14
 	chs.content_margin_right = 14
 	chs.content_margin_top = 6
@@ -954,6 +950,7 @@ func _build_ui() -> void:
 	bar.add_theme_constant_override("separation", 8)
 	root.add_child(bar)
 	bar_box = bar
+	bar.theme = card_dock.controls_theme
 	# 글 대신 아이콘 (이름·단축키는 올리면 말풍선)
 	fx_pick = OptionButton.new()
 	for i in FX_DPS.size():
@@ -1033,6 +1030,8 @@ func _build_ui() -> void:
 			_confirm_aim())
 	aim_ok_btn.visible = false
 	root.add_child(aim_ok_btn)
+	for button: Button in [reroll_btn, skip_btn, skip_n_btn, hide_btn, card_detail_btn, start_btn, cancel_btn, aim_ok_btn]:
+		button.theme = card_dock.controls_theme
 	detail_btn = Button.new()
 	detail_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	detail_btn.position = Vector2(-70.0 - 130.0, -100.0)  # 취소 왼쪽
@@ -2343,13 +2342,10 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 	var col := _card_color(card)
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(230 if offer.size() <= 3 else 166, 170)
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.1, 0.11, 0.15, 0.96)
+	var sb := CardDock.surface()
 	sb.border_color = Color(col, 0.6)
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(6)
 	var sbh := sb.duplicate()
-	sbh.bg_color = Color(0.16, 0.17, 0.22, 0.98)
+	sbh.bg_color = Color("223149")
 	b.add_theme_stylebox_override("normal", sb)
 	b.add_theme_stylebox_override("hover", sbh)
 	b.add_theme_stylebox_override("pressed", sbh)
@@ -3588,7 +3584,7 @@ func _off_legend(r: Rect2) -> Rect2:
 func _info_blockers() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var inv := ui_root.get_global_transform().affine_inverse()
-	for c: Control in [hud, dps_panel, legend, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, guide_more,  mp_bar, ver_label, hint, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, aim_ok_btn, card_dock.focus_btn, card_dock.panel, card_dock.side, card_dock.held_chip]:
+	for c: Control in [hud, dps_panel, legend, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, guide_more,  mp_bar, ver_label, hint, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, aim_ok_btn, card_dock.focus_btn, card_dock.panel, card_dock.side, card_dock.footer]:
 		if c == null or not c.is_visible_in_tree():
 			continue
 		if (c is Label and str(c.text) == "") or (c == hud and hud_chips.is_empty()):
@@ -3662,8 +3658,7 @@ func _draw_info() -> void:
 	var lo := size.y - 64.0
 	if card_dock.active():
 		top = maxf(top, card_dock.bounds().position.y)
-		lo = card_dock.bounds().end.y
-		size.x = card_dock.bounds().end.x
+		lo = size.y - 8.0
 	if hud.visible:
 		for ch in hud_chips:
 			tip_rects.append([Rect2(hud.position + ch[0].position, ch[0].size), ch[5]])
@@ -3726,6 +3721,11 @@ func _draw_info() -> void:
 			if far > 70.0 and far < 240.0:  # 너무 멀면 선이 화면을 가로질러 더 어지럽다 (글자 130%·길목 7곳)
 				# UI를 피해 화살표에서 멀리 비켜났으면 화살표 쪽으로 옅은 선 (어느 길목 배지인지 보이게)
 				var tip: Vector2 = xf * arr[0]
+				# 카드 뒤의 화살표까지 잇는 선은 패널 윗변에서 멈춘다.
+				if card_dock.panel.visible and tip.y > card_dock.panel.position.y:
+					var from := r.get_center()
+					var fraction := (card_dock.panel.position.y - 8 - from.y) / maxf(1, tip.y - from.y)
+					tip = from.lerp(tip, clampf(fraction, 0, 1))
 				var c0 := r.get_center()
 				var e0 := c0 + (tip - c0).normalized() * minf(r.size.x, r.size.y) * 0.5
 				info.draw_dashed_line(e0, tip - (tip - c0).normalized() * 14.0, Color(1, 0.4, 0.45, 0.35), 2.0, 6.0)
@@ -10252,10 +10252,10 @@ func _draw() -> void:
 			draw_circle(at, Tower.RADIUS, Color(col, 0.4))
 			var near := at.distance_to(c) < 50.0
 			var lbl := "중앙과 너무 가까움" if near else "새로 설치 (직선탄)"
-			draw_string(ui_font, at + Vector2(-40, Tower.RADIUS + 20), lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 0.5, 0.5) if near else Color(1, 1, 1, 0.7))
+			_draw_place_label(at + Vector2(-40, Tower.RADIUS + 20), lbl, Color(1, 0.5, 0.5) if near else Color(1, 1, 1, 0.7))
 		else:
 			draw_arc(mpos, 10.0, 0, TAU, 20, Color(col, 0.8), 2.0)
-			draw_string(ui_font, mpos + Vector2(-50, 28), "오브젝트 위에 놓기", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 1, 1, 0.7))
+			_draw_place_label(mpos + Vector2(-50, 28), "오브젝트 위에 놓기", Color(1, 1, 1, 0.7))
 	elif phase == Phase.AIM:
 		var sp: Dictionary = moving.spec() if moving else {"els": {picked["e"]: picked["lv"]}, "pat": Pat.DEFAULT, "plv": 1, "mods": {}}
 		var col: Color = Elem.COLORS[sp["els"].keys()[0]]
@@ -10321,6 +10321,14 @@ func _draw() -> void:
 		var r := Rect2(box_start, mpos - box_start).abs()
 		draw_rect(r, Color(0.5, 0.9, 1.0, 0.08))
 		draw_rect(r, Color(0.5, 0.9, 1.0, 0.8), false, 1.5)
+
+
+func _draw_place_label(at: Vector2, text: String, color: Color) -> void:
+	var visible := view_rect().grow(-8)
+	var width := ui_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+	at.x = clampf(at.x, visible.position.x, maxf(visible.position.x, visible.end.x - width))
+	at.y = clampf(at.y, visible.position.y + 14, visible.end.y)
+	draw_string(ui_font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, color)
 
 
 ## 카드를 넣을 오브젝트에 올렸을 때의 설명 글 (main._draw가 place_note에 담고, 오브젝트 위에 보이게 fx_layer가 그린다).

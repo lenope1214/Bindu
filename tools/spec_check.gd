@@ -2038,7 +2038,7 @@ func _carry_cards() -> void:
 	main.touch_ui = true
 	main._on_card_tap(card, 0)
 	main._process(0.0)
-	var held: bool = main.phase == main.Phase.PLACE and main.card_dock.held_chip.visible and not main.card_dock.panel.visible and not main.card_dock.side.visible and not main.choice_box.visible
+	var held: bool = main.phase == main.Phase.PLACE and main.card_dock.carrying() and not main.card_dock.panel.visible and not main.card_dock.side.visible and not main.choice_box.visible
 	var independent: bool = zoomed.is_equal_approx(main.get_canvas_transform()) and is_equal_approx(main.view_zoom, 1.4)
 	var before: int = main.picks_left
 	main._drop_carried_card(Vector2(-100, -100))
@@ -2049,6 +2049,10 @@ func _carry_cards() -> void:
 	main._cancel_step()
 	main._process(0.0)
 	var cancel: bool = main.offer == offers and main.picks_left == before and main.phase == main.Phase.CHOOSE and main.choice_box.visible and main.tap_sel == 0 and zoomed.is_equal_approx(main.get_canvas_transform())
+	main._on_card_tap(offers[1], 1)
+	main._process(0.0)
+	var chip: bool = main.card_dock.carrying() and not main.ui_root.has_node("CarriedCard")
+	main._cancel_step()
 	main._on_card_tap(card, 0)
 	main._drop_carried_card(main.get_canvas_transform() * target.position)
 	var applied: bool = target.m("pierce") == 1 and main.picks_left == before - 1
@@ -2064,8 +2068,8 @@ func _carry_cards() -> void:
 	Meta.ui_scale = scale0
 	main._apply_ui_scale()
 	main.touch_ui = false
-	ok("UI-31", held and independent and scale_independent and refused and cancel and applied and resume,
-		"카드 들기: 목록 접힘 %s·카메라 독립 %s·글자 배율 독립 %s·무효 드롭 보존 %s·취소 복원 %s·1회 적용 %s·이어하기 %s" % [held, independent, scale_independent, refused, cancel, applied, resume])
+	ok("UI-31", held and chip and independent and scale_independent and refused and cancel and applied and resume,
+		"카드 들기: 카드 이름 말풍선 없음 %s·목록 접힘 %s·카메라 독립 %s·글자 배율 독립 %s·무효 드롭 보존 %s·취소 복원 %s·1회 적용 %s·이어하기 %s" % [chip, held, independent, scale_independent, refused, cancel, applied, resume])
 
 
 # ---------- 기록·도감·화면 글 ----------
@@ -2232,7 +2236,8 @@ func _meta_misc() -> void:
 	main._process(0.016)
 	var dim_off: bool = not main.card_dim.visible and main.phase == main.Phase.PLACE
 	ok("UI-23", dim_on and dim_hide and dim_off, "일반 판 카드 선택 시 전장 어둠 없음 %s, 필드 보기 %s·카드 고른 뒤 %s 유지" % [dim_on, dim_hide, dim_off])
-	ok("UI-30", head_two and head_one and no_apply and head_perk and head_hide and not main.choice_header.visible,
+	var controls: bool = main.card_detail_btn.theme == main.bar_box.theme and main.speed_pick.get_theme_stylebox("normal").bg_color == main.reroll_btn.get_theme_stylebox("normal").bg_color and main.fx_pick.get_popup().get_theme_stylebox("panel") is StyleBoxFlat
+	ok("UI-30", controls and head_two and head_one and no_apply and head_perk and head_hide and not main.choice_header.visible,
 		"카드 줄 선택 안내: 갱신 %s·%s, 중간 적용 버튼 없음 %s, 숨김 %s·%s·%s" % [head_two, head_one, no_apply, head_perk, head_hide, not main.choice_header.visible])
 
 

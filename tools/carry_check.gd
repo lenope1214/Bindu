@@ -24,7 +24,6 @@ func _initialize() -> void:
 	Tutorial.done = true
 	Meta.games = 5
 	Meta.guide_on = false
-	Meta.ui_scale = float(args[1])
 	Meta.sim_phone = phone
 	Meta.sim_safe = Rect2(86, 0, 86, 38) if phone else Rect2()
 	for id in Meta.ACHIEVEMENTS:
@@ -33,6 +32,7 @@ func _initialize() -> void:
 	root.add_child(main)
 	await process_frame
 	main._hide_title()
+	Meta.ui_scale = float(args[1])
 	seed(17)
 	main.set_process(false)
 	main.auto_start = false
@@ -48,7 +48,7 @@ func _initialize() -> void:
 	camera_ready = true
 	ok("UI-31", main.camera.zoom.x >= 0.99, "1280×720 전장 원래 크기 이상·UI 배율로 축소하지 않음")
 	await mouse_click(card_center())
-	ok("UI-31", held() and main.picks_left == 2, "실제 카드 클릭: 미소비·목록/상세 접힘·작은 카드 표시")
+	ok("UI-31", held() and main.picks_left == 2, "실제 카드 클릭: 미소비·목록/상세 접힘·이름 말풍선 없음")
 	await mouse_move(world(target.position))
 	await snap("held-target")
 	ok("UI-25", not main.hint.visible, "대상 미리보기 위에 하단 조작 안내를 겹쳐 쓰지 않음")
@@ -134,6 +134,19 @@ func _initialize() -> void:
 	await key(KEY_P)
 	await fixture()
 	var empty_at := Vector2(450, 400)
+	await mouse_click(card_center(1))
+	await mouse_move(world(empty_at))
+	ok("UI-31", main.card_dock.carrying() and not main.ui_root.has_node("CarriedCard"), "속성 카드 이름 말풍선 없이 설치 안내만 표시")
+	await snap("element-place")
+	await mouse_move(world(main.center()))
+	await snap("element-near-core")
+	main._zoom_to(1.5, main.get_viewport_rect().size / 2)
+	await mouse_move(Vector2(main.get_viewport_rect().size.x - 4, 90))
+	camera_ready = false
+	await snap("element-edge-zoom")
+	camera_ready = true
+	main._reset_zoom()
+	await key(KEY_ESCAPE)
 	await drag_to(world(empty_at), 1)
 	ok("UI-31", main.phase == main.Phase.AIM and main.towers.get_child_count() == 2 and main.picks_left == 2, "속성 카드 드롭: 방향 확정 전에는 새 오브젝트·횟수 소비 없음")
 	await snap("element-aim")
@@ -152,6 +165,8 @@ func _initialize() -> void:
 	var direction: Vector2 = world(empty_at + Vector2(-120, -60))
 	await touch(direction, true)
 	await touch(direction, false)
+	ok("UI-31", main.phase == main.Phase.AIM and main.aim_ok_btn.visible, "터치 방향 선택 뒤 확정 버튼 표시")
+	await mouse_click(main.aim_ok_btn.get_global_rect().get_center())
 	ok("UI-31", main.towers.get_child_count() == 3 and main.picks_left == 1, "터치 속성 드래그 후 방향 터치로 실제 설치")
 	await fixture()
 	main._zoom_to(1.5, main.get_viewport_rect().size / 2)
@@ -180,6 +195,11 @@ func _initialize() -> void:
 	main.banner_t = 0
 	main.banner_queue.clear()
 	await snap("wave")
+	main.bar_open = true
+	await settle()
+	await mouse_click(main.fx_pick.get_global_rect().get_center())
+	await snap("options")
+	main.fx_pick.get_popup().hide()
 	print("CARRY failures=%d ui=%d" % [fails, ui_errors])
 	quit(1 if fails + ui_errors > 0 else 0)
 
@@ -208,7 +228,7 @@ func fixture() -> void:
 	await settle()
 
 func held() -> bool:
-	return main.phase == main.Phase.PLACE and not main.choice_box.visible and not main.card_dock.panel.visible and not main.card_dock.side.visible and main.card_dock.held_chip.visible
+	return main.phase == main.Phase.PLACE and not main.choice_box.visible and not main.card_dock.panel.visible and not main.card_dock.side.visible and main.card_dock.carrying()
 
 func card_center(index := 0) -> Vector2:
 	return main.choice_box.get_child(index).get_global_rect().get_center()

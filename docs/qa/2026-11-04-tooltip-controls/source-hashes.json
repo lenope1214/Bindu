@@ -1,0 +1,8 @@
+{
+  "scripts/card_dock.gd": "be208c926a07d81a08ba65a5deb7ba5181a2b7cde1e27911591181d594f23ba8",
+  "scripts/main.gd": "ddb574879f540e3112d370dd11377153cbefb40abf4e93cafadf464b87d8335c",
+  "tools/carry_check.gd": "da52e29d55d4611b3875db0457cf2eb0797defe7c459adb206345a12cf7ad218",
+  "tools/spec_check.gd": "43d764bc42ab75eab210fd588f3fa532b720db7f87d3eefaa17b9678ec4613cc",
+  "docs/features.md": "a57dd8e3bf3c1f821798e7eab18aef7a4a287e1103380eb49c9ce8e847d529de",
+  "docs/design/carry-card.md": "e267f635ec37ce16896010fee819fb02e55cc6de0380aa33340eb838668d1487"
+}

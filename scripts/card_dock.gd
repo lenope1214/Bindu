@@ -5,6 +5,8 @@ const HEIGHT := 188.0
 const CARD_HEIGHT := 94.0
 var game
 var panel: Panel
+var footer: Panel
+var controls_theme := make_controls_theme()
 var side: PanelContainer
 var heading: Label
 var detail: RichTextLabel
@@ -20,8 +22,6 @@ var side_signature := ""
 var board := Rect2()
 var fit := 1.0
 var full_field := false
-var held_chip: PanelContainer
-var held_name: Label
 var pointer := Vector2.ZERO
 var pending_card := {}
 var press_origin := Vector2.ZERO
@@ -30,6 +30,42 @@ var card_dragging := false
 var suppress_tap := false
 var touch_capture := false
 var touch_position := Vector2.ZERO
+
+static func surface() -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color("151e2c")
+	box.border_color = Color("344358")
+	box.set_border_width_all(1)
+	box.set_corner_radius_all(6)
+	box.set_content_margin_all(8)
+	return box
+
+static func make_controls_theme() -> Theme:
+	var theme := Theme.new()
+	for type in ["Button", "OptionButton"]:
+		for state_name in ["normal", "hover", "pressed", "hover_pressed", "disabled", "focus"]:
+			var box := surface()
+			if state_name == "focus":
+				box.bg_color = Color.TRANSPARENT
+				box.border_color = Color("7798be")
+			elif state_name == "hover":
+				box.bg_color = Color("223149")
+				box.border_color = Color("7798be")
+			elif state_name in ["pressed", "hover_pressed"]:
+				box.bg_color = Color("2a3945")
+				box.border_color = Color("e6c476")
+			elif state_name == "disabled":
+				box.bg_color = Color("101722")
+			theme.set_stylebox(state_name, type, box)
+		for color_name in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color", "font_hover_pressed_color"]:
+			theme.set_color(color_name, type, Color("e1e9f4"))
+		theme.set_color("font_disabled_color", type, Color("78889d"))
+		theme.set_font_size("font_size", type, 15)
+	theme.set_stylebox("panel", "PopupMenu", surface())
+	var hover := surface()
+	hover.bg_color = Color("223149")
+	theme.set_stylebox("hover", "PopupMenu", hover)
+	return theme
 
 func _init(main) -> void:
 	game = main
@@ -43,6 +79,12 @@ func _init(main) -> void:
 	bg.border_width_top = 1
 	panel.add_theme_stylebox_override("panel", bg)
 	game.ui_root.add_child(panel)
+	footer = Panel.new()
+	footer.name = "ControlBarSurface"
+	footer.set_meta("layout_background", true)
+	footer.z_index = 1
+	footer.add_theme_stylebox_override("panel", bg)
+	game.ui_root.add_child(footer)
 	state = Label.new()
 	state.add_theme_font_size_override("font_size", 16)
 	state.add_theme_color_override("font_color", Color("d9e5f5"))
@@ -82,33 +124,12 @@ func _init(main) -> void:
 	panel.visible = false
 	side.visible = false
 	focus_btn = Button.new()
+	focus_btn.theme = controls_theme
 	focus_btn.focus_mode = Control.FOCUS_NONE
 	focus_btn.add_theme_font_size_override("font_size", 14)
 	focus_btn.pressed.connect(game._toggle_focus_view)
 	focus_btn.z_index = 10
 	game.ui_root.add_child(focus_btn)
-	held_chip = PanelContainer.new()
-	held_chip.name = "CarriedCard"
-	held_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	held_chip.z_index = 20
-	var chip_style := bg.duplicate()
-	chip_style.border_width_top = 1
-	chip_style.set_content_margin_all(9)
-	held_chip.add_theme_stylebox_override("panel", chip_style)
-	game.ui_root.add_child(held_chip)
-	var row := HBoxContainer.new()
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	held_chip.add_child(row)
-	var icon := Control.new()
-	icon.custom_minimum_size = Vector2(24, 24)
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon.draw.connect(func(): _draw_held_icon(icon))
-	row.add_child(icon)
-	held_name = Label.new()
-	held_name.add_theme_font_size_override("font_size", 15)
-	held_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(held_name)
-	held_chip.hide()
 
 func active() -> bool:
 	return available()
@@ -143,7 +164,7 @@ func over_ui(p: Vector2) -> bool:
 	if not active():
 		return false
 	# 설명창 밑에 오브젝트가 있으면 설명창은 마우스를 받지 않는다 (그 오브젝트를 올리고 누를 수 있게, 올리면 설명창이 반대쪽으로 비킨다)
-	for c: Control in [panel, side if side.mouse_filter != Control.MOUSE_FILTER_IGNORE else null, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
+	for c: Control in [panel, footer, side if side.mouse_filter != Control.MOUSE_FILTER_IGNORE else null, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
 			game.bar_box, game.hud, game.dps_panel, game.range_btn, game.zoom_btn,
 			game.guide_more, game.hide_btn, game.skip_btn, game.skip_n_btn]:
 		if c != null and c.is_visible_in_tree() and c.get_global_rect().has_point(p):
@@ -166,18 +187,6 @@ func clear_gesture() -> void:
 	pending_card = {}
 	pointer_id = -2
 	card_dragging = false
-
-func _draw_held_icon(icon: Control) -> void:
-	if not carrying():
-		return
-	var head: Dictionary = game._card_content(game.picked, 0)["head"]
-	var col: Color = game._card_color(game.picked)
-	if head.has("e"):
-		Glyph.elem(icon, head["e"], Vector2(12, 12), 8, col)
-	elif head.has("pat"):
-		Glyph.pat(icon, head["pat"], Vector2(12, 12), 8, col)
-	else:
-		Glyph.kind(icon, head["kind"], Vector2(12, 12), 8, col)
 
 func _card_gui_input(event: InputEvent, b: Button, card: Dictionary) -> void:
 	if input_blocked() or game.phase != game.Phase.CHOOSE or game.perk_mode or card["type"] == "cata":
@@ -299,8 +308,8 @@ func tick() -> void:
 		full_field = false
 		clear_gesture()
 		panel.hide()
+		footer.hide()
 		side.hide()
-		held_chip.hide()
 		focus_btn.hide()
 		game.ver_label.show()
 		return
@@ -309,6 +318,9 @@ func tick() -> void:
 	var blocked := input_blocked()
 	var choosing: bool = game.phase == game.Phase.CHOOSE and game.coin_stage == 0
 	var cards: bool = choosing and not game.cards_hidden and not full_field and not blocked
+	footer.visible = cards
+	footer.position = Vector2(0, size.y - 50)
+	footer.size = Vector2(size.x, 50)
 	panel.visible = cards
 	game.choice_box.visible = cards
 	game.apply_btn.hide()  # 일반 판은 한 번 눌러 들고, 전장의 대상으로 확정한다.
@@ -403,7 +415,7 @@ func tick() -> void:
 		button.size = Vector2(140, 44)
 	if game.zoom_btn.visible:
 		game.zoom_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		game.zoom_btn.position = Vector2(12, 64)
+		game.zoom_btn.position = Vector2(12, maxf(64, game.hud.get_rect().end.y + 8))
 		game.zoom_btn.size = Vector2(132, 34)
 	focus_btn.visible = not blocked and choosing and (game._phone() or full_field)
 	focus_btn.text = "카드 보기" if full_field else "카드 접기"
@@ -420,15 +432,6 @@ func tick() -> void:
 	if full_field:
 		game.dps_panel.hide()
 	game.skip_badge.position.y = -HEIGHT - 40 if cards else -100
-	held_chip.visible = carrying() and not blocked
-	if held_chip.visible:
-		var head: Dictionary = game._card_content(game.picked, 0)["head"]
-		held_name.text = head["name"] + (" " + head["lv"] if head.has("lv") else "")
-		held_chip.reset_size()
-		var at: Vector2 = game.ui_root.get_global_transform().affine_inverse() * pointer
-		var offset := Vector2(-held_chip.size.x / 2, -80) if game.touch_ui else Vector2(20, 24)
-		held_chip.position = (at + offset).clamp(Vector2(8, 8), (size - held_chip.size - Vector2(8, 8)).max(Vector2(8, 8)))
-		held_chip.get_child(0).get_child(0).queue_redraw()
 
 func _update_side() -> void:
 	var card := preview_card()
