@@ -30,6 +30,8 @@ func _initialize() -> void:
 		await detail_case()
 	if which in ["all", "ownership"]:
 		await ownership_case()
+	if which in ["all", "pause-input"]:
+		await pause_input_case()
 	print("USABILITY case=%s failures=%d ui=%d" % [which, fails, ui_errors])
 	quit(1 if fails > 0 or ui_errors > 0 else 0)
 
@@ -78,3 +80,19 @@ func ownership_case() -> void:
 	ok("MP-07", target.position != mine_origin and refused.position == other_origin, "내 것만 이동 확정, 친구 좌표 보존")
 	main.selected.clear()
 	main.mp_mode = ""
+
+func pause_input_case() -> void:
+	await fixture()
+	var original_offer: Array = main.offer.duplicate(true)
+	var original_rerolls: int = main.rerolls_left
+	await key(KEY_P)
+	for code in [KEY_S, KEY_Q, KEY_SPACE, KEY_1]:
+		await key(code)
+	main._on_skip()
+	main._on_reroll()
+	ok("UI-10", paused and main.phase == main.Phase.CHOOSE and main.picks_left == 2 and main.rerolls_left == original_rerolls and main.offer == original_offer and main.skip_left == 0, "정지 중 게임 단축키·직접 넘기기/새로고침 호출 차단")
+	await key(KEY_M)
+	ok("UI-10", paused, "정지 중 소리 조작은 정지를 풀지 않음")
+	await key(KEY_P)
+	await key(KEY_S)
+	ok("UI-10", not paused and main.phase == main.Phase.READY and main.skip_left > 0 and main.bank_picks.size() == 2, "재개 후 같은 S 키로 정상 넘기기")

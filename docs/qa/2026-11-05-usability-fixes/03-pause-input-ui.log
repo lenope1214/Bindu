@@ -1,0 +1,7 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+ok   UI-10 정지 중 게임 단축키·직접 넘기기/새로고침 호출 차단
+ok   UI-10 정지 중 소리 조작은 정지를 풀지 않음
+ok   UI-10 재개 후 같은 S 키로 정상 넘기기
+USABILITY case=pause-input failures=0 ui=0

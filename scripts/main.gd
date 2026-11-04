@@ -1993,7 +1993,7 @@ func _can_skip() -> bool:
 
 ## 선택지(또는 특성) 화면에서 넘기기: 이번 쉬는 시간의 고르기를 쌓아 두고 웨이브를 시작한다.
 func _on_skip() -> void:
-	if phase not in [Phase.CHOOSE, Phase.READY] or not _can_skip() or title_label.visible:
+	if phase not in [Phase.CHOOSE, Phase.READY] or not _can_skip() or title_label.visible or get_tree().paused:
 		return
 	if perk_mode:
 		perk_mode = false
@@ -3287,7 +3287,7 @@ func _perk_text() -> String:
 
 
 func _on_reroll() -> void:
-	if phase != Phase.CHOOSE:
+	if phase != Phase.CHOOSE or get_tree().paused:
 		return
 	if rerolls_left <= 0:
 		_show_toast("이번 쉬는 시간의 새로고침을 다 썼어요")  # Q를 눌러도 아무 일이 없던 것
@@ -4825,6 +4825,8 @@ func _unhandled_input(event: InputEvent) -> void:
 					_toggle_fullscreen()
 				KEY_M:
 					_toggle_mute()  # 시작 화면에도 소리 버튼이 보인다
+			return
+		if get_tree().paused and event.keycode not in [KEY_ESCAPE, KEY_P, KEY_R, KEY_E, KEY_T, KEY_X, KEY_H, KEY_M, KEY_D, KEY_F11]:
 			return
 		if event.keycode == KEY_ESCAPE and phase == Phase.GAMEOVER:
 			if Time.get_ticks_msec() - over_ms > 800:

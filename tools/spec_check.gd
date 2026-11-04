@@ -2531,6 +2531,19 @@ func _meta_misc() -> void:
 	Meta.skip_n = 3
 	main._update_skip_ui()
 	var skip_forecast: bool = "카드 선택 2회 보류" in main.skip_btn.tooltip_text
+	main.get_tree().paused = true
+	var paused_offer: Array = main.offer.duplicate(true)
+	var paused_rerolls: int = main.rerolls_left
+	for code in [KEY_S, KEY_Q, KEY_SPACE, KEY_1]:
+		var paused_key := InputEventKey.new()
+		paused_key.keycode = code
+		paused_key.pressed = true
+		main._unhandled_input(paused_key)
+	main._on_skip()
+	main._on_reroll()
+	var paused_unchanged: bool = main.phase == main.Phase.CHOOSE and main.picks_left == 2 and main.rerolls_left == paused_rerolls and main.offer == paused_offer and main.skip_left == 0
+	main.get_tree().paused = false
+	ok("UI-10", paused_unchanged, "일시정지 중 선택·새로고침·넘기기·시작 입력은 상태를 바꾸지 않음")
 	main._on_skip()
 	ok("SKIP-02", skip_forecast and main.skip_left == 3 and main.bank_picks.size() == 2, "넘기기: 이번 고르기를 쌓아 두고 n웨이브 진행 (남은 %d, 쌓인 고르기 %d)" % [main.skip_left, main.bank_picks.size()])
 	main.skip_left = 0
