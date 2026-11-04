@@ -1168,6 +1168,8 @@ func _build_ui() -> void:
 	over_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
 	over_label.visible = false
 	root.add_child(over_label)
+	# 글이 바뀌어 다시 그려지면(온라인 순위가 나중에 붙는 등) 그림 카드 바탕 높이·나가는 법 줄도 다시
+	over_label.draw.connect(func(): if over_card: over_card.queue_redraw())
 	# 판 끝난 화면: 다음 패치 투표 (투표 API가 있는 서버일 때만, 자리는 over_label 바로 아래로 매 프레임 맞춤)
 	vote_over_btn = Button.new()
 	vote_over_btn.set_anchors_preset(Control.PRESET_CENTER)
@@ -1190,6 +1192,7 @@ func _build_ui() -> void:
 	over_card.add_to_group("keycap")  # 터치·마우스가 바뀌면 나가는 법 줄을 다시
 	over_card.visible = false
 	root.add_child(over_card)
+	root.move_child(over_card, over_label.get_index())  # 바탕이 남은 글(over_label)을 덮지 않게 글 밑에
 
 	dps_hidden = Meta.dps_fold
 	_build_dps(root)
@@ -4764,6 +4767,16 @@ func _draw_over_card() -> void:
 		ach_rows[-1].append([a, aw])
 		ach_w[-1] += aw + 6.0
 	var bh := 84.0 + 96.0 + 50.0 + ach_rows.size() * 30.0 + 34.0
+	# 아래 남은 글(over_label: 모드·최다 피해·피해 출처)까지 바탕에 넣는다: 예전엔 바탕 밖 전장 위에 떠 읽기 어려웠다
+	var lab_h := 0.0
+	if over_label.text != "" and over_label.get_line_count() > 0:
+		lab_h = over_label.get_line_count() * over_label.get_line_height() + 10.0
+	bh += lab_h
+	# 점수 줄 아래에서 시작 (폰 글자 1.3이면 화면 높이가 줄어 제목이 점수 줄 둘째 줄을 덮었다), 아래 버튼 줄 위까지
+	var top_free := _dps_home().y - c.position.y
+	var bottom_free := (c.get_parent() as Control).size.y - 56.0 - c.position.y
+	if y - 6.0 < top_free:
+		y = maxf(minf(top_free, bottom_free - bh), y - 6.0) + 6.0
 	var bg := StyleBoxFlat.new()
 	bg.bg_color = Color(0.03, 0.04, 0.06, 0.82)
 	bg.set_corner_radius_all(12)
@@ -4812,17 +4825,18 @@ func _draw_over_card() -> void:
 			c.draw_string(ui_font, r.position + Vector2(26, 17), it[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
 			x += it[1] + 6.0
 	y += ach_rows.size() * 30.0
-	# 나가는 법
+	# 남은 글(over_label)은 배지 바로 아래, 나가는 법은 그 아래 바탕 끝 줄
+	if absf(over_label.offset_top - (y + 4.0)) > 0.5:
+		over_label.offset_top = y + 4.0  # (둘 다 화면 가운데 기준)
+		over_label.offset_bottom = y + 154.0
 	var dim := Color(1, 1, 1, 0.5)
 	var to_lobby := mp_mode != "" and mp.active()  # 멀티 판: 방이 남아 있으면 대기방으로
+	var hy := y + lab_h + 14.0
 	if touch_ui:
-		c.draw_string(ui_font, Vector2(x0, y + 14.0), "눌러서 대기방으로" if to_lobby else "눌러서 시작 화면으로", HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
+		c.draw_string(ui_font, Vector2(x0, hy), "눌러서 대기방으로" if to_lobby else "눌러서 시작 화면으로", HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
 	else:
 		# 그림(마우스·집)만으로는 무엇을 누르면 어디로 가는지 알기 어려웠다: 글로
-		c.draw_string(ui_font, Vector2(x0, y + 14.0), "클릭 · R · Esc: " + ("대기방으로" if to_lobby else "시작 화면으로"), HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
-	if absf(over_label.offset_top - (y + 34.0)) > 0.5:
-		over_label.offset_top = y + 34.0  # 남은 글은 카드 바로 아래 (둘 다 화면 가운데 기준)
-		over_label.offset_bottom = y + 184.0
+		c.draw_string(ui_font, Vector2(x0, hy), "클릭 · R · Esc: " + ("대기방으로" if to_lobby else "시작 화면으로"), HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
 
 
 # ---------- 입력 ----------
@@ -6723,10 +6737,12 @@ func _on_run_sent(res: Dictionary) -> void:
 	var rk: Variant = res.get("rank")
 	if int(res.get("season", 0)) == 0:
 		over_label.text += _kr_keep("\n(지난 버전으로 한 판이라 이번 시즌 리더보드에는 들어가지 않아요)")
+		over_card.queue_redraw()
 	elif rk is Dictionary:
 		var season: Variant = Net.info.get("season")
 		var sname := str(season.get("name", "")) if season is Dictionary else ""
 		over_label.text += "\n온라인 순위%s: %s%d위 (최고 점수 %s)" % [" (쉽게 모드)" if Modes.easy() else "", sname + " " if sname != "" else "", int(rk["rank"]), num(int(rk["score"]))]
+		over_card.queue_redraw()
 
 
 ## 시작 화면 리더보드 (2026-11-01 개편): 왼쪽 필터(맵·규칙·기록·시즌 칩을 모두 펼쳐 한 번에 고름), 오른쪽 순위 표(전체/이번 주 탭).
@@ -9086,7 +9102,7 @@ func _process(delta: float) -> void:
 	vote_over_btn.visible = over_label.visible and phase == Phase.GAMEOVER and mp_mode == "" and Net.vote_ok() and not vote_panel.visible
 	if vote_over_btn.visible:
 		var lh := over_label.get_line_count() * over_label.get_line_height() if over_label.text != "" else 0
-		vote_over_btn.position = Vector2(over_label.position.x + (over_label.size.x - vote_over_btn.size.x) / 2.0, over_label.position.y + lh + 10.0)
+		vote_over_btn.position = Vector2(over_label.position.x + (over_label.size.x - vote_over_btn.size.x) / 2.0, over_label.position.y + lh + 34.0)  # 바탕 끝 나가는 법 줄 아래
 	hud.visible = not title_label.visible  # 시작 화면엔 메뉴에 최고 기록이 따로 있다
 	# 시작 화면에서 일시정지·배속 버튼을 누르면 메뉴 위에 일시정지 창이 뜨던 문제
 	# 게임 중엔 펼쳤을 때만 보인다 (단축키 M·P·Space는 접어도 된다). 시작 화면엔 소리·자동 시작만

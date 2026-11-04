@@ -407,9 +407,15 @@ func tick() -> void:
 		button.size = Vector2(140, 44)
 	if game.zoom_btn.visible:
 		game.zoom_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		game.zoom_btn.position = Vector2(12, 64)
+		# 점수 줄 첫 줄(웨이브·점수·중앙 체력) 오른쪽 빈자리: 예전 (12, 64)는 둘째 줄 칩(모드·맵 규칙)을 덮었다
+		var row1 := 0.0
+		for ch in game.hud_chips:
+			if (ch[0] as Rect2).position.y < 1.0:
+				row1 = maxf(row1, (ch[0] as Rect2).end.x)
+		game.zoom_btn.position = Vector2(game.hud.position.x + row1 + 10.0, maxf(game.hud.position.y - 2.0, 4.0)) if game.hud.visible else Vector2(12, 8)
 		game.zoom_btn.size = Vector2(132, 34)
-	focus_btn.visible = not blocked and choosing and (game._phone() or full_field)
+	# 선택지를 내려 둔 동안(V)은 [선택지 보기] 하나만: [카드 접기]가 함께 떠 이미 접힌 카드를 접으라고 했다
+	focus_btn.visible = not blocked and choosing and (game._phone() or full_field) and not (game.cards_hidden and not full_field)
 	focus_btn.text = "카드 보기" if full_field else "카드 접기"
 	focus_btn.tooltip_text = "카드 패널 보기/접기 (F)"
 	focus_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
@@ -423,8 +429,10 @@ func tick() -> void:
 		game.hide_btn.size = Vector2(160, 40)
 	if full_field:
 		game.dps_panel.hide()
-	game.skip_badge.position.y = -HEIGHT - 40 if cards else -100
-	held_chip.visible = carrying() and not blocked
+	# 넘기는 중 표시: 카드 패널 위 / 없으면 웨이브 시작 버튼 줄 위 (예전 -100은 화면 위 밖이라 넘기는 동안 보이지 않았다)
+	game.skip_badge.position = Vector2((size.x - game.skip_badge.size.x) / 2.0, size.y - HEIGHT - 40 if cards else size.y - 100)
+	# 오브젝트에 올려 설명 상자(place_note)가 뜬 동안엔 숨긴다: 커서 옆 칩이 상자 아래 줄을 가렸다 (상자 첫 줄이 카드 이름)
+	held_chip.visible = carrying() and not blocked and game.place_note.is_empty()
 	if held_chip.visible:
 		var head: Dictionary = game._card_content(game.picked, 0)["head"]
 		held_name.text = head["name"] + (" " + head["lv"] if head.has("lv") else "")
