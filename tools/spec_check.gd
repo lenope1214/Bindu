@@ -2303,6 +2303,18 @@ func _meta_misc() -> void:
 	dock.shown_tower = null
 	var tab_hidden: bool = not "legend_btn" in main
 	ok("UI-32", side_ok and tab_hidden, "설명창 내용 높이·보는 오브젝트 반대쪽 구석, 일반 판 Tab 버튼 없음")
+	# UI-34: 점수 줄 칩 밑에 깔린 오브젝트는 점수 줄이 막지 않는다
+	var hud_ok := true
+	if main.hud.is_visible_in_tree() and main.hud.size.x > 40.0:
+		var hp: Vector2 = main.hud.get_global_rect().position + Vector2(20.0, main.hud.size.y / 2.0)
+		var keep_hp: Vector2 = dt.position
+		dt.position = Vector2(-9999, -9999)
+		var blocked_empty: bool = dock.over_ui(hp) or main._tower_at(main.get_canvas_transform().affine_inverse() * hp) != null
+		dt.position = main.get_canvas_transform().affine_inverse() * hp
+		var free_tower: bool = not dock.over_ui(hp)
+		dt.position = keep_hp
+		hud_ok = blocked_empty and free_tower
+	ok("UI-34", hud_ok, "점수 줄 밑 오브젝트는 누를 수 있고, 빈 칩 자리는 막힘")
 	# UI-33: 설명창 그림 (오브젝트 정보: 미리보기·숫자 타일, 자세히: 곱셈 사슬·배율 막대 / 카드: 미리보기·타일)
 	var pic: InfoPanel = dock.pic
 	pic.show_tower(dt, false, 0.3, "이번 웨이브 몫", 300.0)

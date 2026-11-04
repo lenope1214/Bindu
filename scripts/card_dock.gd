@@ -144,7 +144,7 @@ func over_ui(p: Vector2) -> bool:
 		return false
 	# 설명창 밑에 오브젝트가 있으면 설명창은 마우스를 받지 않는다 (그 오브젝트를 올리고 누를 수 있게, 올리면 설명창이 반대쪽으로 비킨다)
 	for c: Control in [panel, side if side.mouse_filter != Control.MOUSE_FILTER_IGNORE else null, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
-			game.bar_box, game.hud, game.dps_panel, game.range_btn, game.zoom_btn,
+			game.bar_box, game.hud if not _tower_under(p) else null, game.dps_panel, game.range_btn, game.zoom_btn,
 			game.guide_more, game.hide_btn, game.skip_btn, game.skip_n_btn]:
 		if c != null and c.is_visible_in_tree() and c.get_global_rect().has_point(p):
 			return true
@@ -152,6 +152,10 @@ func over_ui(p: Vector2) -> bool:
 		if c.is_visible_in_tree() and c.get_global_rect().has_point(p):
 			return true
 	return false
+
+## 점수 줄 칩은 누를 데가 없는 그림이라, 그 밑에 오브젝트가 있으면 오브젝트가 먼저 (누르기·옮기기·방향 바꾸기)
+func _tower_under(p: Vector2) -> bool:
+	return game._tower_at(game.get_canvas_transform().affine_inverse() * p) != null
 
 func carrying() -> bool:
 	return active() and not game.picked.is_empty() and game.moving == null \
