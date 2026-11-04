@@ -1,0 +1,34 @@
+1. SCREEN RECORDING
+A screen recording from a physical iPhone on the latest iOS is attached (App Review Information > Attachment). It starts at app launch and shows a normal game, the menus, the leaderboard with report/block, multiplayer, and data deletion in Settings. There is no login, no account registration and no paid content.
+
+2. PURPOSE AND AUDIENCE
+Bindu is a roguelike tower-defense strategy game for casual and strategy players (9+). Orbs move toward a point in the center; the player places geometric towers and after each wave picks a card that adds an element (fire, water, lightning...), changes the attack pattern or adds a modifier. Combining cards creates a different build every run. Runs take 5-30 minutes; no ads, no purchases.
+
+3. HOW TO ACCESS FEATURES
+No login, credentials or sample files are needed; everything works right after launch. The UI is Korean. Main buttons:
+- 일반 판 (Normal game): start. Tap a tower to aim, drag to move. Between waves tap a card, then tap a tower.
+- 이어하기 (Continue): resume an unfinished game.
+- 기록 (Records), 도감 (Codex): local progress.
+- 순위 (Leaderboard): online best scores per season.
+- 투표 (Vote): vote which cards to buff or nerf next patch.
+- 멀티플레이 (Multiplayer): optional versus/co-op for up to 4 players via a room code. Joining needs a second device (iPhone, Android, Windows or Mac); one device can still create a room and see the lobby.
+- 설정 (Settings): sound, optional nickname, "기록 보내기" (send anonymous records) toggle, "내 온라인 데이터 지우기" (delete my online data).
+Offline, the game still works fully; only online features are hidden.
+
+ACCOUNTS
+No registration or sign-in. On first launch the app creates a random anonymous ID so scores and progress can be saved on our server. Settings > 내 온라인 데이터 지우기 deletes all server-side data (progress, votes, name and scores on the leaderboard). Privacy policy: https://bindu.anon-chat.kr/privacy
+
+USER-GENERATED CONTENT
+The only user content is an optional nickname (max 12 characters) shown on the leaderboard and in multiplayer rooms. Nicknames are filtered for objectionable words. The leaderboard's "신고·차단" (Report/Block) button lists the players shown, each with "신고" (Report) and "차단" (Block); players in a multiplayer room have the same buttons. Block hides that player's name on the device and removes them from rooms the blocking player hosts. Reports are reviewed within 24 hours; offending names are removed and the device banned. Contact: anon.chat.kr@gmail.com
+
+4. EXTERNAL SERVICES
+- Our own server https://bindu.anon-chat.kr (self-hosted FastAPI + PostgreSQL behind Cloudflare Tunnel): leaderboard, anonymous statistics and error logs, progress backup, the vote, reports, and signed balance-data patches (JSON numbers only; no executable code is downloaded).
+- Cloudflare Workers: multiplayer room codes. Cloudflare Realtime TURN/STUN: WebRTC relay.
+- Godot Engine and godot-webrtc-native (MIT).
+No ads, analytics SDKs, third-party login, payments or AI services.
+
+5. REGIONAL DIFFERENCES
+None. The app works the same in all regions; the UI is Korean everywhere.
+
+6. REGULATED / THIRD-PARTY MATERIAL
+Not applicable. No regulated industry and no third-party protected material. Graphics are original and drawn in code (the app icon was made with AI assistance).

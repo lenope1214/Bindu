@@ -237,6 +237,6 @@ func _orb_tip() -> void:
 	var o = main.orbs.get_child(0)
 	o.position = main.get_canvas_transform().affine_inverse() * Vector2(760, 440)  # 막 나온 구체는 화면 끝이라 가운데로
 	o.shield = 30.0; o.splits = true; o.burn_t = 2.0; o.poison_t = 2.0; o.vuln_t = 2.0; o.slow_timer = 2.0
-	o.silence_t = 2.0; o.resist_e = 0; o.sturdy = true; o.echo_t = 2.0; o.bury_src = main.towers.get_child(0) if main.towers.get_child_count() > 0 else null; o.bury_until = 99.0
+	o.silence_t = 2.0; o.resist_e = 0; o.sturdy = true; o.echo_t = 2.0; o.vine = 2.0
 	o.root_timer = 30.0  # 제자리에
 	VirtualInput.move(o.get_global_transform_with_canvas().origin)

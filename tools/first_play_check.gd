@@ -36,7 +36,9 @@ func _initialize():
 	main.tut.close()
 	main.tut.open_welcome()
 	main.tut.btn_next.pressed.emit()
-	ok("TUT-01", main.prep_box.visible and Tutorial.done, "play enters preparation without resetting existing run")
+	ok("TUT-01", TutPlay.pending == 0 and Tutorial.done, "play starts the play tutorial practice run")
+	TutPlay.pending = -1  # 여기서는 첫 일반 판 흐름(TUT-06)을 이어서 본다
+	main._set_prep(true)
 	main._close_title()
 	main.auto_start = false
 	main.set_process(false)

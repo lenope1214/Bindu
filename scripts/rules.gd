@@ -252,6 +252,13 @@ const STAT := {
 	"soul_base": 0.2,  # 영혼: 넋 표식이 있는 구체가 죽을 때 혼불이 나올 확률 기본
 	"soul_lv": 0.08,  # 영혼: 영혼 레벨마다 혼불 확률 +
 	"soul_max": 0.6,  # 영혼: 혼불 확률 최대
+	"blood_dmg": 1.6,  # 피: 출혈 피해 (구체가 100px 움직일 때마다, x 피 레벨)
+	"blood_t": 3.0,  # 피: 출혈 시간(초)
+	"illu_ch": 0.06,  # 환영: 현혹 확률 (x 환영 레벨)
+	"illu_max": 0.3,  # 환영: 현혹 확률 최대
+	"illu_t": 0.8,  # 환영: 왔던 길을 되돌아 걷는 시간(초, 보스는 절반)
+	"illu_cd": 2.0,  # 환영: 같은 구체가 다시 현혹될 때까지(초)
+	"illu_spd": 0.6,  # 환영: 되돌아 걷는 속도 (이동 속도 x 값)
 	# 연계
 	"reso_k": 0.12,  # 공명: 둘레 다른 오브젝트 하나당 피해 + (x 공명 수)
 	"reso_r": 150.0,  # 공명: 둘레 거리(px)
@@ -320,6 +327,7 @@ const SHARE := {
 	"earth": 1.1,  # 묻어둠: 2초 안에 다시 맞아야 터짐
 	"light": 1.1,  # 꿰뚫음: 치명타 때만
 	"dark": 1.2,  # 끌어당김: 약화된 채 죽을 때만
+	"blood": 0.9,  # 핏자국: 뒤따르는 구체가 많을수록 자주 (2026-11-04)
 }
 
 
@@ -362,6 +370,13 @@ static var time_lv: float = STAT["time_lv"]
 static var time_max: float = STAT["time_max"]
 static var time_t: float = STAT["time_t"]
 static var soul_t: float = STAT["soul_t"]
+static var blood_dmg: float = STAT["blood_dmg"]
+static var blood_t: float = STAT["blood_t"]
+static var illu_ch: float = STAT["illu_ch"]
+static var illu_max: float = STAT["illu_max"]
+static var illu_t: float = STAT["illu_t"]
+static var illu_cd: float = STAT["illu_cd"]
+static var illu_spd: float = STAT["illu_spd"]
 static var split_ch: float = STAT["split_ch"]
 static var split_max: float = STAT["split_max"]
 static var multi_dmg: float = STAT["multi_dmg"]
@@ -421,6 +436,13 @@ static func _cache() -> void:
 	time_max = tune["time_max"]
 	time_t = tune["time_t"]
 	soul_t = tune["soul_t"]
+	blood_dmg = tune["blood_dmg"]
+	blood_t = tune["blood_t"]
+	illu_ch = tune["illu_ch"]
+	illu_max = tune["illu_max"]
+	illu_t = tune["illu_t"]
+	illu_cd = tune["illu_cd"]
+	illu_spd = tune["illu_spd"]
 	split_ch = tune["split_ch"]
 	split_max = tune["split_max"]
 	multi_dmg = tune["multi_dmg"]

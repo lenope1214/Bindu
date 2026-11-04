@@ -39,6 +39,7 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh ui shot.gd /tmp/
 | `late_shot.gd` | `tools/run.sh ui late_shot.gd <폴더> [글자 크기] [touch]`: 후반 구체 다섯 종 안내(100·500웨이브 배지)·전장 위 모양(깜빡 예고·갑옷 깨짐·치유 맥동·흐림·포식 입) | PNG |
 | `board_shot.gd` | `tools/run.sh ui board_shot.gd <폴더> [글자 크기] [touch] [phone]`: 서버 없이 순위를 채워 리더보드 기본·이번 주·지난 시즌·빈 기록·신고·차단 창 스크린샷. 사본의 online_config SERVER_URL은 http://127.0.0.1:9로 | PNG |
 | `map_shot.gd` | `tools/run.sh ui map_shot.gd <폴더> [글자 크기] [touch]`: 맵 규칙 준비 화면 맵 줄(맵 5개)·친화 카드 선택지·십자로 길목 띠·폭풍 바람 스크린샷 | PNG |
+| `newelem_shot.gd` | `tools/run.sh ui newelem_shot.gd <폴더> [글자 크기] [touch] [phone]`: 새 속성 피·환영 카드 선택지·카드 자세히·출혈·현혹 표시와 핏자국 전장·정보창·도감 속성 탭 | PNG, `UI` 줄 |
 | `mp_signal.gd` | `godot --headless -s tools/mp_signal.gd -- [포트=8790]`: 멀티플레이 중개 Worker(server/mp-worker)와 같은 약속의 로컬 서버. 게임·도구는 `BINDU_MP_URL=http://127.0.0.1:8790` | 로그 |
 | `mp_conn_test.gd` | 두 프로세스로 `-- host <코드 파일>` / `-- join <코드 파일>` (BINDU_MP_URL 필요): WebRTC로 이어져 메시지를 주고받고 핑을 재는지 | `MPCONN ok ... ping=Nms` / `MPCONN FAIL` |
 | `mp_play.gd` | 두(이상) 프로세스로 봇 판: `MP_ROLE=host\|join MP_MODE=vs\|coop MP_FILE=<코드 파일> MP_WAVES=8 MP_N=<참가 인원>` + BINDU_MP_URL (`MP_IDLE=<역할>`이면 그 역할은 아무것도 안 함: 잠수 처리 시험). 대결은 웨이브마다 진입 방향이 같은지, 협동은 웨이브·점수·오브젝트가 같은지 | 웨이브마다 `MPW`·`MPDEALT`(주인별 피해), 끝에 `MPPLAY` |
@@ -48,8 +49,10 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh ui shot.gd /tmp/
 | `carry_check.gd` | `tools/run.sh ui carry_check.gd <출력 폴더> <글자 배율> [phone]`: 서버 주소를 비운 native 사본에서 가상 카드 클릭·드래그·터치, 무효 대상·취소·앱 전환·확대·중복 소비 방지·카메라 독립·UI 검사 | PNG·ok/FAIL·CARRY failures |
 | `first_play_check.gd` | 저장 분리 사본(`config/name`은 BinduTools로 시작)에서 `tools/run.sh ui first_play_check.gd <캡처 폴더> <글자 배율> [touch]`: 첫 기기 진입·선택형 설명·첫 2회 배치·취소·이어하기·웨이브 시작 확인. 창 필요, 실제 게임 저장에서는 실행 거부 | 항목별 ok/FAIL, 캡처 PNG, `NATIVE FIRST failures=0` |
 | `spec` | [docs/features.md](../docs/features.md)에서 검사가 spec인 기능마다 기대 동작을 확인(tools/spec_check.gd), 끝에 문서와 대조 | 기능별 ok/FAIL, 실패가 있으면 끝 코드 1 |
+| `tutplay` | 플레이 튜토리얼(tools/tut_play_check.gd)을 직접 해내기(PC·터치)·[건너뛰기]만·3장부터 장 고르기로 끝까지 돌리고, 끝난 뒤 이어하기·판 수·누적 수·업적·맵·규칙·모드가 그대로인지 | 항목별 ok/FAIL, `TUTPLAY 통과`, 끝 코드 |
+| `tut_play_shot.gd` | `tools/run.sh ui tut_play_shot.gd <폴더> [글자 크기] [touch] [phone]`: 플레이 튜토리얼 단계별 화면 PNG (안내 칸·강조·카드 겹침) | PNG, `UI OVERLAP` 줄 |
 | `notes` | `python3 tools/notes_check.py`: CHANGELOG(게임 안 패치노트)에 패치 키·코드 이름·파일 경로·서버 API 경로·커밋 해시·백틱·요청/제보 인용이 없는지 ([docs/changelog-rules.md](../docs/changelog-rules.md)). Godot 필요 없음 | 걸린 줄마다 `FAIL CHANGELOG.md:<줄> <이유>`, 끝 줄 `NOTES ok` |
-| `check` | 배포 전 한 번에: 패치노트 검사 + spec + 무작위 입력 4판 + 이어하기 13웨이브 + 온라인 서명 + 패치 키 + 서버 pytest(패키지가 있을 때). 4~5분. 이어하기는 13웨이브 도달과 4·8·12웨이브 복원 모두 필수 | `CHECK 통과` / `CHECK 실패: <항목>`, 끝 코드 |
+| `check` | 배포 전 한 번에: 패치노트 검사 + spec + 플레이 튜토리얼 + 무작위 입력 4판 + 이어하기 13웨이브 + 온라인 서명 + 패치 키 + 서버 pytest(패키지가 있을 때). 4~5분. 이어하기는 13웨이브 도달과 4·8·12웨이브 복원 모두 필수 | `CHECK 통과` / `CHECK 실패: <항목>`, 끝 코드 |
 | `patch_keys_check.gd` | `godot --headless --path . -s tools/patch_keys_check.gd`: 온라인 패치 rules의 오브젝트 수치 키(공격방식별 피해·속도·사거리, 강화·속성 수치, 규칙별 덮어쓰기)가 실제 값·설명 글에 먹는지 | 항목별 ok/FAIL, 끝 줄 `PATCHCHECK ok` |
 | `perf` | 후반 부하(오브젝트 16개, 속성 3종·강화 10개씩, 구체 400개)를 1·4·8배속으로 600프레임씩 | 프레임 시간 평균·95%·최대, 화면 위 구체·탄·장판 수 |
 

@@ -74,6 +74,10 @@ var ring_t0 := 0.0  # 울림 음파 초당 상한: 이번 1초 구간 시작
 var ring_n := 0  # 그 구간에 터뜨린 수
 var clock_hit := {}  # 시계침: 이번 한 번 훑는 동안 맞힌 구체 ([바늘 번호, 구체] -> true, 다중 발사 바늘은 따로 센다)
 var light_cd := 0.0  # 빛 꿰뚫음 다시 쓸 때까지 (Share.pierce)
+var mirror_cd := 0.0  # 환영 비춤 다시 쓸 때까지 (Share.mark)
+var mirror_src: Object = null  # 옆 환영 오브젝트가 비춘 상: 다음 공격에 그 오브젝트 효과 (Share.reflect)
+var mirror_t := 0.0
+var mirror_f := 0.0
 var aff_cd := 0.0  # 상성 둘레 효과(눈보라·비바람·증기) 다시 쓸 때까지 (Share.aff_hit)
 var chain_end := Vector2.ZERO  # 연쇄 번개가 마지막으로 친 자리
 var later: Array = []  # [남은 초, Callable]: 잠시 뒤 효과 (시간 되풀이, Share.on_hit)
@@ -480,7 +484,7 @@ func range_text() -> String:
 		"spray": return "%d" % roundi(SHAPE.spray_len * rr(l) * s)
 		"sonic": return "%d" % roundi(sonic_r(l))
 		"clock": return "%d" % roundi(SHAPE.clock_len * rr(l) * s)
-		"lob": return "%d 날아감 (지나간 띠 반지름 %d)" % [roundi(LOB_RANGE * rr(l)), roundi(lob_r(l) * s)]
+		"lob": return "화면 끝까지 (%d부터 약해짐, 지나간 띠 반지름 %d)" % [roundi(far_start()), roundi(lob_r(l) * s)]
 		"vortex": return "%d 안 구체 무리에 (우물 반지름 %d)" % [roundi(well_range()), roundi((100.0 + 10.0 * (l - 1)) * s)]
 		"wall": return "앞 %d~ (벽 %d개)" % [roundi(90.0 * rr(l)), 2 + roundi(mf("multi"))]
 		"wisp": return "목줄 %d (혼불 %d개가 오브젝트 둘레를 지키며 쫓아감)" % [roundi(Projectile.wisp_leash(mf("homing"), rr(l))), wisp_cap()]
@@ -659,8 +663,9 @@ static func shot_range(n: int, size_n: float) -> float:
 	return (Rules.t("shot_range") + Rules.t("shot_range_lv") * maxi(n - 1, 0)) * reach_mul * (1.0 + Rules.size_k * size_n) * Rules.t("range_shot")
 
 
-## 방향성 공격(직선탄·돌풍·물줄기·연쇄 번개)은 화면 끝까지 닿고, 감소 시작 거리부터 far_len 동안 피해가 far_min까지 곧게 줄어든다.
-const FAR_PATS := ["shot", "gust", "stream", "chain"]
+## 방향성 공격(직선탄·돌풍·물줄기·연쇄 번개·투척 장판)은 화면 끝까지 닿고, 감소 시작 거리부터 far_len 동안 피해가 far_min까지 곧게 줄어든다.
+## 투척 장판은 탄이 끝까지 날아가고, 예전 사거리 너머에 남긴 띠가 약하다 (Zone.add_pt의 몫).
+const FAR_PATS := ["shot", "gust", "stream", "chain", "lob"]
 const FAR := 1600.0  # 화면 끝까지 (전장 1280x720 대각선보다 김)
 
 
@@ -679,6 +684,7 @@ static func far_start_of(pat: String, l: int, total: int, size_n: float) -> floa
 		"gust": return Projectile.PROJ.gust_far * s * Rules.t("range_gust")
 		"stream": return SHAPE.stream_len * rr_of(pat, l) * s
 		"chain": return SHAPE.chain_len * rr_of(pat, l) * s
+		"lob": return LOB_RANGE * rr_of(pat, l)
 	return INF
 
 
@@ -1610,6 +1616,11 @@ func _pincer(o: Orb) -> void:
 ## 특징 공유: 잠시 뒤 효과(시간 되풀이)·빛줄기 간격 (Share).
 func _share_tick(delta: float) -> void:
 	light_cd = maxf(light_cd - delta, 0.0)
+	mirror_cd = maxf(mirror_cd - delta, 0.0)
+	if mirror_t > 0.0:
+		mirror_t -= delta
+		if mirror_t <= 0.0:
+			mirror_src = null
 	aff_cd = maxf(aff_cd - delta, 0.0)
 	if later.is_empty():
 		return
@@ -1838,7 +1849,8 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		d *= Rules.light_mul
 		crit = k >= 1.0
 		lit = not force_crit
-	if els.has(Elem.WOOD):
+	if els.has(Elem.WOOD) and o.vine > 0.0:
+		# 나무 휘감기: 덩굴이 감긴 구체에 가시 피해
 		d *= 1.0 + Rules.wood_dmg * mini(els.get(Elem.WOOD, 0), int(Rules.wood_cap)) * Share.am(self, Elem.WOOD)
 	var mt := 0.0
 	if els.has(Elem.METAL):
@@ -1910,6 +1922,12 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		o.add_chill(Rules.ice_chill * k * els.get(Elem.ICE, 0) * g * Share.am(self, Elem.ICE), dm)
 	if els.has(Elem.WATER):
 		o.slow(Share.slow_f(els.get(Elem.WATER, 0), Share.am(self, Elem.WATER)), Rules.water_t * dm)
+	if els.has(Elem.WOOD):
+		o.entangle(Share.WOOD_VINE * els.get(Elem.WOOD, 0) * minf(k, 1.0) * Share.am(self, Elem.WOOD), dm)
+	if els.has(Elem.WIND) and o.hp > 0.0:
+		var away := o.position - position
+		if away.length() > 0.5:
+			o.knock(away.normalized() * Share.WIND_HIT * els.get(Elem.WIND, 0) * minf(k, 1.0) * Share.am(self, Elem.WIND))
 	if els.has(Elem.EARTH) and randf() < Share.root_ch(self, els.get(Elem.EARTH, 0)) * k * g:
 		o.root(Rules.earth_t * dm)
 	if els.has(Elem.DARK):
@@ -1931,6 +1949,10 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 			o.soul_lv = els.get(Elem.SOUL, 0)
 			o.soul_src = self
 		o.soul_t = maxf(o.soul_t, Rules.soul_t * dm)
+	if els.has(Elem.BLOOD):
+		o.bleed(Share.bleed_k(self, els.get(Elem.BLOOD, 0), rm) * g, Rules.blood_t * dm, self, "elem:blood", Share.has(self, "sepsis"))
+	if els.has(Elem.ILLUSION) and o.hp > 0.0 and randf() < Share.illu_ch(self, els.get(Elem.ILLUSION, 0)) * minf(k, 1.0) * minf(g, 1.5):
+		o.confuse(Rules.illu_t * dm, Share.has(self, "nightmare"))
 	# 특징 공유: 금속 응축 · 빛 꿰뚫음 · 땅 묻어둠 · 시간 되풀이 (나머지 특징은 전류·음파·죽을 때·물길에서)
 	if o.hp > 0.0:
 		Share.condense(self, o, Share.carry_n(self), minf(k, 1.0))
@@ -1938,6 +1960,9 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		Share.pierce(self, o)
 	Share.aff_hit(self, o, k, lit, had_chill)
 	Share.on_hit(self, o, false)
+	Share.mark(self, o)
+	if not in_rx and mirror_src != null and mirror_t > 0.0:
+		Share.reflect(self, o)
 	if not in_rx and bounce_cd <= 0.0 and m("bounce") > 0 and not pattern in Pat.PROJECTILE and pattern != "chain" and not tag.begins_with("mod:"):
 		_area_bounce(o)
 	if can_split and m("split") > 0 and randf() < split_ch() * minf(k, 1.0):
@@ -2293,7 +2318,7 @@ func _nova_follow(at: Vector2, hits: Array, _pool: float, _cap: Dictionary) -> v
 	if ks <= 0.0 or hits.is_empty() or not Share.has_carry(self):
 		return
 	for o in hits:
-		Share.apply(self, o, Share.STAR_F * ks, "share:star")
+		Share.carry(self, o, Share.STAR_F * ks, "share:star", at, o.position.distance_to(at) / 200.0)
 	var e := planet()
 	main.burst(at, Elem.COLORS[e] if e >= 0 else NOVA_COL, 24, 240.0)
 
@@ -2881,7 +2906,9 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 					var wr := Rules.t("well_range") * pr * Rules.t("range_vortex")
 					ci.draw_arc(o, wr, 0, TAU, 64, Color(c.r, c.g, c.b, 0.6 * c.a), 1.5)
 			"lob":
-				_r_band(ci, lo, dd, 0.0, LOB_RANGE * pr, lob_r(l) * s, c)
+				var fs: float = LOB_RANGE * pr
+				_r_band(ci, lo, dd, 0.0, fs, lob_r(l) * s, c)
+				_r_far(ci, lo, dd, fs, far, lob_r(l) * s, c)
 			"iron":
 				_r_band(ci, lo, dd, 0.0, far, 12.0 * s, c)
 			"sonic":

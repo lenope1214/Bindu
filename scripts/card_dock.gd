@@ -207,16 +207,16 @@ func over_ui(p: Vector2, include_info := true) -> bool:
 	if not active():
 		return false
 	for c: Control in [panel, footer, side, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
-			game.dps_panel, game.range_btn, game.zoom_btn,
+			game.dps_panel if not (_tower_under(p) and game.dps_drag == 0) else null, game.range_btn, game.zoom_btn,
 			game.guide_more, game.skip_btn, game.skip_n_btn, game.pause_box, game.paused_label, game.mp_bar, game.coin_fx]:
 		if c != null and c.is_visible_in_tree() and c.get_global_rect().has_point(p):
 			return true
 	var hovered_control: Control = game.get_viewport().gui_get_hovered_control()
 	while hovered_control != null and hovered_control != game.ui_root:
-		if hovered_control is BaseButton and hovered_control.is_visible_in_tree() and hovered_control.get_global_rect().has_point(p):
+		if hovered_control is BaseButton and hovered_control.mouse_filter != Control.MOUSE_FILTER_IGNORE and hovered_control.is_visible_in_tree() and hovered_control.get_global_rect().has_point(p):
 			return true
 		hovered_control = hovered_control.get_parent() as Control
-	if include_info and ((game.hud.is_visible_in_tree() and game.hud.get_global_rect().has_point(p)) or game._info_tip_at(p) >= 0):
+	if include_info and ((game.hud.is_visible_in_tree() and game.hud.get_global_rect().has_point(p) and not _tower_under(p)) or game._info_tip_at(p) >= 0):
 		return true
 	var bar_rect := Rect2()
 	for c: Control in game.bar_box.get_children():
@@ -228,6 +228,10 @@ func over_ui(p: Vector2, include_info := true) -> bool:
 		if c.is_visible_in_tree() and c.get_global_rect().has_point(p):
 			return true
 	return false
+
+## 점수 줄 칩·DPS 표 밑에 오브젝트가 있으면 오브젝트가 먼저 (누르기·옮기기·방향 바꾸기). DPS 표는 main._refresh_dps가 마우스도 통과시킨다
+func _tower_under(p: Vector2) -> bool:
+	return game._tower_at(game.get_canvas_transform().affine_inverse() * p) != null
 
 func carrying() -> bool:
 	return active() and not game.picked.is_empty() and game.moving == null \
@@ -481,7 +485,12 @@ func tick() -> void:
 		button.size = Vector2(140, 44)
 	if game.zoom_btn.visible:
 		game.zoom_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		game.zoom_btn.position = Vector2(12, maxf(64, game.hud.get_rect().end.y + 8))
+		# 점수 줄 첫 줄(웨이브·점수·중앙 체력) 오른쪽 빈자리: 예전 (12, 64)는 둘째 줄 칩(모드·맵 규칙)을 덮었다
+		var row1 := 0.0
+		for ch in game.hud_chips:
+			if (ch[0] as Rect2).position.y < 1.0:
+				row1 = maxf(row1, (ch[0] as Rect2).end.x)
+		game.zoom_btn.position = Vector2(game.hud.position.x + row1 + 10.0, maxf(game.hud.position.y - 2.0, 4.0)) if game.hud.visible else Vector2(12, 8)
 		game.zoom_btn.size = Vector2(132, 34)
 	focus_btn.visible = not blocked and choosing
 	focus_btn.text = "카드 보기" if game.cards_hidden else "카드 접기"
@@ -490,7 +499,7 @@ func tick() -> void:
 	focus_btn.position = Vector2(12, size.y - 48)
 	focus_btn.size = Vector2(110, CONTROL_HEIGHT)
 	game.ver_label.visible = not focus_btn.visible
-	game.skip_badge.position.y = -HEIGHT - 40 if cards else -100
+	game.skip_badge.position = Vector2((size.x - game.skip_badge.size.x) / 2.0, size.y - HEIGHT - 40 if cards else size.y - 100)
 
 func operation_text() -> String:
 	game.selected = game.selected.filter(func(t): return is_instance_valid(t) and not t.is_queued_for_deletion())
@@ -629,9 +638,18 @@ func _place_side(size: Vector2, cards: bool) -> void:
 	if game.hint.visible:
 		bottom = minf(bottom, game.hint.position.y - 8)
 	var ltop := top
-	for c: Control in [game.dps_panel, game.zoom_btn]:
-		if c.is_visible_in_tree():
-			ltop = maxf(ltop, c.get_rect().end.y + 8.0)
+	var rtop := top
+	if game.zoom_btn.is_visible_in_tree():
+		ltop = maxf(ltop, game.zoom_btn.get_rect().end.y + 8.0)
+	# DPS 표(옮길 수 있음)가 위쪽 구석 기둥에 있으면 그 아래부터, 다른 곳에 있으면 겹치는 쪽을 덜 고른다
+	var dr := Rect2()
+	if game.dps_panel.is_visible_in_tree():
+		dr = game.dps_panel.get_rect()
+		if dr.position.y < top + 60.0:
+			if dr.position.x < 12.0 + w:
+				ltop = maxf(ltop, dr.end.y + 8.0)
+			if dr.end.x > size.x - w - 12.0:
+				rtop = maxf(rtop, dr.end.y + 8.0)
 	var sb: StyleBox = side.get_theme_stylebox("panel")
 	var parts := []
 	parts.append(inspector_header.get_combined_minimum_size().y)
@@ -642,7 +660,7 @@ func _place_side(size: Vector2, cards: bool) -> void:
 	var want: float = sb.get_minimum_size().y + 4.0 + 12.0 * maxf(0, parts.size() - 1)
 	for v in parts:
 		want += v
-	var cands := [Rect2(size.x - w - 12.0, top, w, 0.0), Rect2(12.0, ltop, w, 0.0)]
+	var cands := [Rect2(size.x - w - 12.0, rtop, w, 0.0), Rect2(12.0, ltop, w, 0.0)]
 	for control: Control in [game.toast, game.banner, game.paused_label, game.pause_box]:
 		if not control.is_visible_in_tree():
 			continue
@@ -667,6 +685,8 @@ func _place_side(size: Vector2, cards: bool) -> void:
 				sc += 100.0 if t == shown_tower else 1.0
 		if r.size.y < want - 1.0:
 			sc += 0.5  # 다 안 들어가 스크롤해야 하는 쪽은 조금 덜 고른다
+		if dr.has_area() and r.intersects(dr):
+			sc += 50.0  # 옮겨 둔 DPS 표를 덮는 쪽
 		scores.append(sc)
 	var cur := 1 if side_left else 0
 	if scores[1 - cur] < scores[cur]:
@@ -725,7 +745,7 @@ func draw_card(b: Button, col: Color) -> void:
 				line = line.left(-1)
 			line += "…"
 		b.draw_string(font, Vector2(14, 51 + 18 * i), line, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 28, 14, Color("d2dae6"))
-	var foot := "특성 · 상세는 오른쪽에서 확인"
+	var foot := "특성 · 길게 누르면 자세히" if game.touch_ui else "특성 · 올리면 오른쪽에 자세히"
 	var destinations: Array = b.get_meta("card_foot", [])
 	if not destinations.is_empty():
 		foot = " · ".join(destinations.map(func(it): return it[1]))

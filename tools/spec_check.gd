@@ -231,7 +231,7 @@ func _elements() -> void:
 	Meta.rules = 1
 	main._apply_rules()
 
-	# 두 속성 짝 105개: 고정 반응이 아니라 특징 이름표 (도감·업적용)
+	# 두 속성 짝 136개: 고정 반응이 아니라 특징 이름표 (도감·업적용)
 	var missing := []
 	var ids := {}
 	for i in Elem.ALL.size():
@@ -242,14 +242,14 @@ func _elements() -> void:
 			for r in rs:
 				ids[r["id"]] = true
 	var traits_ok := Elem.ALL.all(func(e): return Elem.TRAIT.has(e) and Elem.trait_name(e) != "")
-	ok("ELEM-05", missing.is_empty() and ids.size() == 105 and Elem.REACTIONS.size() == 105 and traits_ok, "속성 15종 모두 특징이 있고, 두 속성 짝 105개 모두 도감 이름이 있음 (빠짐 %s, 짝 %d)" % [str(missing), ids.size()])
+	ok("ELEM-05", missing.is_empty() and ids.size() == 136 and Elem.REACTIONS.size() == 136 and traits_ok, "속성 17종 모두 특징이 있고, 두 속성 짝 136개 모두 도감 이름이 있음 (빠짐 %s, 짝 %d)" % [str(missing), ids.size()])
 
 	t.eff = t.eff_now()
 	var fresh := Elem.new_reactions({Elem.FIRE: 1}, Elem.WOOD)
 	ok("ELEM-06", fresh.size() == 1 and t.reactions().size() == 3, "속성을 더해 새 짝이 생기면 알림·도감, 3종이면 짝 3개")
 
 	var no_rider := Elem.ALL.filter(func(e): return Elem.rider(e).is_empty())
-	ok("ELEM-07", no_rider.is_empty() and Elem.ALL.size() == 15, "속성 15종 모두 부가효과 설명이 있음")
+	ok("ELEM-07", no_rider.is_empty() and Elem.ALL.size() == 17, "속성 17종 모두 부가효과 설명이 있음")
 	_elem_lv5()
 	_no_fixed_zone()
 	_share()
@@ -295,7 +295,7 @@ func _no_fixed_zone() -> void:
 	for pat in Pat.PATTERN_IDS:
 		_clear()
 		var pt := _tower(c + Vector2(-60, 0), Elem.WATER, 3, Vector2.LEFT)
-		for e in [Elem.FIRE, Elem.POISON, Elem.ICE]:
+		for e in [Elem.FIRE, Elem.POISON, Elem.ICE, Elem.BLOOD]:
 			pt.add(e, 3)
 		if pat != "shot":
 			pt.set_pattern(pat)
@@ -308,7 +308,7 @@ func _no_fixed_zone() -> void:
 			for z in main.zones.get_children():
 				kinds[z.kind] = true
 		for k in kinds:
-			var allowed: bool = k in ZONE_OK or (k in Tower.FORM_ZONES and pat not in CONT_PATS)
+			var allowed: bool = k in ZONE_OK or k in Zone.ORB_PATH or (k in Tower.FORM_ZONES and pat not in CONT_PATS)
 			if not allowed:
 				bad.append("%s:%s" % [pat, k])
 	main.wave_active = false
@@ -316,7 +316,7 @@ func _no_fixed_zone() -> void:
 	_clear()
 	Meta.rules = 1
 	main._apply_rules()
-	ok("ELEM-10", bad.is_empty(), "고정 거리 장판 없음: 장판 종류는 지나간 자리·블랙홀·벽·물길뿐, 물길은 날아가는 공격에만 (어긋남 %s)" % str(bad))
+	ok("ELEM-10", bad.is_empty(), "고정 거리 장판 없음: 장판 종류는 지나간 자리·블랙홀·벽·물길·핏자국뿐, 물길은 날아가는 공격에만, 핏자국은 구체가 지나간 길에만 (어긋남 %s)" % str(bad))
 
 
 ## 특징 공유 (2026-11-03): 특징이 같은 오브젝트의 다른 속성 효과를 실어 나른다. 실어 나른 효과는 특징을 다시 타지 않는다.
@@ -347,10 +347,10 @@ func _share() -> void:
 	main.arc(a1, 1.0, et)
 	var arc_ok: bool = a2.burn_t > 0.0 and a2.burn_rx
 	ok("SHR-02", arc_ok, "전기 튐: 튄 전류가 같은 오브젝트의 화상도 옮김, 옮긴 효과는 1세대만 (화상 %.1f초, 표시 %s)" % [a2.burn_t, a2.burn_rx])
-	# 1세대: 옮긴 화상이 끝나도 불꽃(타오름)이 다시 터지지 않음
-	var a3 := _orb(c + Vector2(70, 0), 1e6)
+	# 1세대: 옮긴 화상은 다시 번지지 않음
+	var a3 := _orb(c + Vector2(62, 0), 1e6)
 	_grid.call()
-	Share.flare(a2)
+	Share.spread(a2)
 	ok("SHR-03", a3.burn_t <= 0.0, "실어 나른 효과는 특징을 다시 타지 않음 (끝없는 연쇄 없음)")
 	_clear()
 	# 독 전염: 독+얼음 → 중독된 구체가 죽으면 둘레에 냉기
@@ -364,18 +364,21 @@ func _share() -> void:
 	Share.contagion(p1)
 	ok("SHR-04", p2.chill > 0.0 and p2.poison_t > 0.0, "독 전염: 중독된 구체가 죽으면 둘레에 독·냉기 (냉기 %.2f)" % p2.chill)
 	_clear()
-	# 땅 묻어둠: 땅+불이 맞힌 뒤 2초 안에 다른 오브젝트가 맞혀도 묻은 화상이 터짐
+	# 땅 다짐: 자리(불 번짐)에 닿은 구체가 확률로 묶임, 자리가 없으면 맞은 구체가
 	var gt := _tower(c + Vector2(-200, 0), Elem.EARTH, 3)
 	gt.add(Elem.FIRE, 1)
 	gt.eff = gt.eff_now()
-	var other := _tower(c + Vector2(-200, 150), Elem.WATER, 1)
+	var solo := _tower(c + Vector2(-200, 150), Elem.EARTH, 3)
 	var b1 := _orb(c, 1e6)
+	var b2 := _orb(c + Vector2(0, 150), 1e6)
 	_grid.call()
-	gt.hit(b1, 1.0)
-	var buried: bool = b1.bury_src == gt
-	b1.burn_t = 0.0
-	other.hit(b1, 1.0)
-	ok("SHR-05", buried and b1.burn_t > 0.0, "땅 묻어둠: 묻어 둔 효과가 2초 안에 다시 맞으면 터짐 (묻음 %s, 화상 %.1f)" % [buried, b1.burn_t])
+	var ech := Share.EARTH_CH
+	Share.EARTH_CH = 100.0
+	Share.carry(gt, b1, 0.3, "share:fire", c + Vector2(-30, 0), 0.3)
+	b2.root_immune = 0.0
+	Share.on_hit(solo, b2, false)
+	Share.EARTH_CH = ech
+	ok("SHR-05", b1.root_timer > 0.0 and b2.root_timer > 0.0, "땅 다짐: 자리에 닿은 구체·자리가 없으면 맞은 구체가 확률로 묶임 (%.2f, %.2f)" % [b1.root_timer, b2.root_timer])
 	_clear()
 	# 시간 되풀이: 0.8초 뒤 같은 구체에 효과 한 번 더
 	var tt := _tower(c + Vector2(-200, 0), Elem.TIME, 3)
@@ -448,16 +451,19 @@ func _share() -> void:
 		rill.affect([f1], 0.1)
 	ok("SHR-11", rill != null and f1.burn_t > 0.0, "물 흐름: 지나간 길 물길을 밟은 구체에 효과 (물길 %s, 화상 %.1f)" % [rill != null, f1.burn_t])
 	_clear()
-	# 특징만 있고 실어 나를 효과가 없으면 아무 일도 없음 (나무+바람)
-	var nt := _tower(c + Vector2(-200, 0), Elem.WOOD, 3)
+	# 특징만 있고 실어 나를 효과가 없으면 아무 일도 없음 (바람+빛)
+	var nt := _tower(c + Vector2(-200, 0), Elem.LIGHT, 3)
 	nt.add(Elem.WIND, 1)
 	nt.eff = nt.eff_now()
 	var none := not Share.has_carry(nt)
 	nt.add(Elem.FIRE, 1)
 	nt.eff = nt.eff_now()
-	ok("SHR-12", none and Share.has_carry(nt), "나무·바람·빛·별 효과는 오브젝트에 걸려 실어 나르지 않음")
+	ok("SHR-12", none and Share.has_carry(nt), "바람·빛·별 효과는 오브젝트·맞힌 순간에만 걸려 실어 나르지 않음")
 	_clear()
 	_affinity(c)
+	_real(c)
+	_clear()
+	_new_elems(c)
 
 
 ## 상성 (꼬리표, 2026-11-04)
@@ -475,8 +481,8 @@ func _affinity(c: Vector2) -> void:
 	var tags_ok := true
 	for e in Elem.ALL:
 		tags_ok = tags_ok and Elem.TAGS.has(e) and Elem.TAGS[e].size() in [1, 2]
-	ok("AFF-01", tags_ok and ns == 20 and nw == 11 and Elem.aff_of(Elem.WATER, Elem.ELECTRIC)["strong"] and Elem.aff_of(Elem.FIRE, Elem.WATER)["weak"]
-		and Elem.aff_of(Elem.FIRE, Elem.ELECTRIC)["ids"].is_empty(), "꼬리표 규칙으로 105짝 분류: 강 %d·약 %d (물+전기 강, 불+물 약, 불+전기 보통)" % [ns, nw])
+	ok("AFF-01", tags_ok and ns == 26 and nw == 15 and Elem.aff_of(Elem.WATER, Elem.ELECTRIC)["strong"] and Elem.aff_of(Elem.FIRE, Elem.WATER)["weak"]
+		and Elem.aff_of(Elem.FIRE, Elem.ELECTRIC)["ids"].is_empty(), "꼬리표 규칙으로 136짝 분류: 강 %d·약 %d (물+전기 강, 불+물 약, 불+전기 보통)" % [ns, nw])
 	# 강: 특징 세기 x AFF_CARRY, 효과 세기 x AFF_EFF
 	var st := _tower(c + Vector2(-200, 0), Elem.WATER, 3)
 	st.add(Elem.ELECTRIC, 1)
@@ -559,9 +565,6 @@ func _affinity(c: Vector2) -> void:
 	mt.add(Elem.FIRE, 1)
 	mt.eff = mt.eff_now()
 	var m1 := _orb(c + Vector2(0, 200), 1e6, Orb.Kind.NORMAL, 50.0)
-	var et := _tower(c + Vector2(200, 0), Elem.EARTH, 3)
-	et.add(Elem.FIRE, 1)
-	et.eff = et.eff_now()
 	var b1 := _orb(c + Vector2(0, -200), 1e6)
 	_grid.call()
 	ft.form_path(c)
@@ -573,19 +576,102 @@ func _affinity(c: Vector2) -> void:
 		rill.affect([f1], 0.1)
 	var st0 := m1.stagger_t
 	Share.condense(mt, m1, 2, 1.0)
-	b1.bury_src = et
-	b1.bury_until = b1.age + 2.0
-	b1.root_timer = 0.0
-	Share.on_hit(ft, b1, true)
+	b1.root_timer = 0.1
 	var fz := _orb(c + Vector2(200, 200), 1e6)
 	fz.add_chill(3.0, 1.5)
 	ok("AFF-10", rill != null and f1.slow_factor <= Share.RILL_SLOW + 0.001 and m1.stagger_t > st0 and b1.root_timer > 0.0 and fz.root_timer > 1.0,
-		"특징 제어: 물길 감속 %.2f · 응축 멈칫 · 묻어둠 묶음 %.2f · 빙결 %.2f초" % [f1.slow_factor if rill else 1.0, b1.root_timer, fz.root_timer])
+		"특징 제어: 물길 감속 %.2f · 응축 멈칫 · (다짐은 SHR-05) %.2f · 빙결 %.2f초" % [f1.slow_factor if rill else 1.0, b1.root_timer, fz.root_timer])
 	_clear()
 	# 화면 글: 짝 이름표에 상성, 오브젝트 상성 줄
 	var shock: Dictionary = Elem.reaction_of(Elem.WATER, Elem.ELECTRIC)
 	ok("AFF-11", shock.get("aff", "") == "strong" and Elem.aff_label(Elem.WATER, Elem.ELECTRIC) == "감전(강)" and Elem.aff_text(Elem.FIRE, Elem.WATER).begins_with("상성 증기(약)")
 		and main.src_name("aff:thermo") == "상성 온도 충격", "도감·정보창 상성 글 (%s)" % Elem.aff_label(Elem.WATER, Elem.ELECTRIC))
+
+
+## 실제 연상 개편 (2026-11-04): 나르는 특징(자리) · 바꾸는 특징 · 휘감기 · 밀쳐냄 · 불 번짐 · 이름 있는 자리
+func _real(c: Vector2) -> void:
+	var _grid := func():
+		main.targets = main.orbs.get_children()
+		main._build_grid()
+	var all_e: Array = Share.SITE_E + Share.MOD_E
+	var split_ok: bool = Share.SITE_E.size() == 11 and Share.MOD_E.size() == 6 and Elem.ALL.all(func(e): return all_e.count(e) == 1)
+	ok("REAL-01", split_ok, "특징 17개 = 나르는 11 + 바꾸는 6 (겹침 없음)")
+	var at := c + Vector2(-40, 0)
+	var mk := func(e2: int) -> Tower:
+		var tw := _tower(c + Vector2(-260, 0), Elem.FIRE, 1)
+		tw.add(e2, 3)
+		tw.eff = tw.eff_now()
+		return tw
+	# 자람: 자리 끝에 닿은 구체가 묶이고 효과가 셈
+	var wt: Tower = mk.call(Elem.WOOD)
+	var o1 := _orb(c, 1e6)
+	var o0 := _orb(c + Vector2(0, 120), 1e6)
+	_grid.call()
+	Share.carry(wt, o0, 0.3, "share:fire", at, 0.0)
+	Share.carry(wt, o1, 0.3, "share:fire", at, 1.0)
+	ok("REAL-02", o1.root_timer > 0.0 and o0.root_timer <= 0.0 and o1.burn_dps > o0.burn_dps, "자람: 자리 끝은 덩굴이 묶고 효과가 셈 (화상 %.2f > %.2f)" % [o1.burn_dps, o0.burn_dps])
+	_clear()
+	# 실림: 자리 가운데에서 바깥으로 밀림
+	var nt: Tower = mk.call(Elem.WIND)
+	var o2 := _orb(c, 1e6)
+	_grid.call()
+	var x0 := o2.position.x
+	Share.carry(nt, o2, 0.3, "share:fire", at, 0.5)
+	ok("REAL-03", o2.position.x > x0, "실림: 자리에 닿은 구체를 바깥으로 밀어냄 (%.1f)" % (o2.position.x - x0))
+	_clear()
+	# 얼림·날선·되풀이
+	var it: Tower = mk.call(Elem.ICE)
+	var mt: Tower = mk.call(Elem.METAL)
+	var tt: Tower = mk.call(Elem.TIME)
+	var o3 := _orb(c, 1e6)
+	var o4 := _orb(c + Vector2(0, 100), 1e6, Orb.Kind.NORMAL, 50.0)
+	var o5 := _orb(c + Vector2(0, -100), 1e6)
+	_grid.call()
+	Share.carry(it, o3, 0.3, "share:fire", at, 0.5)
+	Share.carry(mt, o4, 0.3, "share:fire", at, 0.5)
+	var n0 := tt.later.size()
+	Share.carry(tt, o5, 0.3, "share:fire", at, 0.5)
+	ok("REAL-04", o3.chill > 0.0 and mt.src.get("share:metal", 0.0) > 0.0 and o4.stagger_t > 0.0 and tt.later.size() > n0,
+		"얼림 냉기 %.2f · 날선 피해 %.1f·멈칫 · 되풀이 예약" % [o3.chill, mt.src.get("share:metal", 0.0)])
+	_clear()
+	# 불 번짐: 타는 구체에 닿은 구체에 옮겨 붙음 (옮은 불은 다시 안 번짐)
+	var ft := _tower(c + Vector2(-260, 0), Elem.FIRE, 3)
+	var f1 := _orb(c, 1e6)
+	var f2 := _orb(c + Vector2(f1.radius() * 2.0 + 10.0, 0), 1e6)
+	var f3 := _orb(c + Vector2(400, 0), 1e6)
+	_grid.call()
+	ft.hit(f1, 1.0)
+	Share.spread(f1)
+	ok("REAL-05", f2.burn_t > 0.0 and f2.burn_rx and f3.burn_t <= 0.0, "불 번짐: 닿은 구체에 옮겨 붙음, 먼 구체는 그대로")
+	_clear()
+	# 나무 휘감기: 3번 감기면 묶임, 감긴 구체에만 가시 피해
+	var vt := _tower(c + Vector2(-260, 0), Elem.WOOD, 1)
+	var v1 := _orb(c, 1e9)
+	_grid.call()
+	var h0 := v1.hp
+	vt.hit(v1, 10.0)
+	var first := h0 - v1.hp
+	h0 = v1.hp
+	vt.hit(v1, 10.0)
+	var second := h0 - v1.hp
+	vt.hit(v1, 10.0)
+	ok("REAL-06", second > first and v1.root_timer > 0.0, "휘감기: 감긴 구체에 더 아프고(%.1f > %.1f) 3번째에 묶임" % [second, first])
+	_clear()
+	# 바람 밀쳐냄: 맞은 구체가 오브젝트 반대쪽으로, 순풍(둘레 공격 속도)은 없음
+	var wn := _tower(c + Vector2(-260, 0), Elem.WIND, 3)
+	var buddy := _tower(c + Vector2(-260, 80), Elem.FIRE, 1)
+	var w1 := _orb(c, 1e6)
+	_grid.call()
+	var wx := w1.position.x
+	wn.hit(w1, 1.0)
+	main._wind_buffs()
+	ok("REAL-07", w1.position.x > wx and buddy.wind_buff == 0.0, "밀쳐냄: 맞은 구체가 밀림 (%.1f), 순풍 없음" % (w1.position.x - wx))
+	_clear()
+	# 이름 있는 자리
+	var ns := Share.new_sites({Elem.WATER: 1}, Elem.WOOD)
+	ok("REAL-08", Share.NAMED.size() == 10 and Share.site_name(Elem.WATER, Elem.WOOD) == "덩굴 길" and ns.has("덩굴 길")
+		and Share.site_name(Elem.FIRE, Elem.METAL) == "날선 불" and Share.sites_of({Elem.FIRE: 1, Elem.ICE: 1}).size() == 1,
+		"자리 이름: 이름 있는 칸 10개, 나머지는 꾸밈말+자리 (%s)" % ", ".join(ns))
 
 
 # ---------- 공격방식 ----------
@@ -1016,10 +1102,10 @@ func _reflex_review_regressions() -> void:
 		var pr := Projectile.new()
 		pr.setup("blob", t, t.plv, direction)
 		pr.form_init()
-		var target := _orb(c + direction * (pr.max_travel - 1.0), 1000.0)
+		var target := _orb(c + direction * (pr.far_from - 1.0), 1000.0)  # 투척 장판은 화면 끝까지 날고 감지는 감소 시작 거리까지
 		t._update_aim([target], 0.016)
 		weather_ok = weather_ok and t.reflex_target == target
-		target.position = c + direction * (pr.max_travel + 1.0)
+		target.position = c + direction * (pr.far_from + 1.0)
 		t._update_aim([target], 0.016)
 		weather_ok = weather_ok and t.reflex_target == null
 		pr.free()
@@ -1604,6 +1690,24 @@ func _perks() -> void:
 	main.coin_next = ""
 	main.perk_mode = false
 
+	# 특성 새로고침: 특성 고를 때마다 1번, 다른 특성으로 3개, 카드 새로고침 수는 그대로
+	main.rerolls_left = 2
+	main._start_perk()
+	var pr0: int = main.perk_rerolls
+	var before: Array = main.perk_offer.map(func(p): return p["id"])
+	var shown: bool = main.reroll_btn.visible
+	main._on_reroll()
+	var after: Array = main.perk_offer.map(func(p): return p["id"])
+	var diff: bool = after.size() == 3 and not after.any(func(id): return id in before)
+	var gone: bool = main.perk_rerolls == 0 and not main.reroll_btn.visible
+	main._on_reroll()  # 다 쓰면 그대로
+	var same: bool = main.perk_offer.map(func(p): return p["id"]) == after
+	main._start_perk()  # 다음 특성 선택에는 다시 1번
+	var pr1: int = main.perk_rerolls
+	ok("PERK-12", pr0 == 1 and shown and diff and gone and same and pr1 == 1 and main.rerolls_left == 2 and main.perk_mode,
+		"특성 새로고침: 선택마다 1번(%d·%d), 다른 특성 3개, 다 쓰면 버튼 숨김, 카드 새로고침 %d 그대로" % [pr0, pr1, main.rerolls_left])
+	main.perk_mode = false
+
 
 	_core_guard()
 
@@ -1858,7 +1962,7 @@ func _maps() -> void:
 		if e in MapRule.aff("elem"):
 			aff += cnt.get(e, 0) / 3.0
 		else:
-			other += cnt.get(e, 0) / 11.0
+			other += cnt.get(e, 0) / float(Elem.ALL.size() - 4)  # 친화 3개·별 빼고 (속성 수가 늘어도 맞게)
 	var k := 1.0 + Rules.t("map_aff_dmg")
 	var mul_ok := is_equal_approx(MapRule.tower_mul({Elem.ICE: 2}, "lob"), k * k) and is_equal_approx(MapRule.tower_mul({Elem.ICE: 1, Elem.FIRE: 1}, "shot"), 1.0 + Rules.t("map_aff_dmg") / 2.0) and MapRule.tower_mul({Elem.FIRE: 1}, "wisp") == 1.0
 	ok("MAPX-01", aff > other * 1.25 and mul_ok and MapRule.card_aff({"type": "mod", "id": "size"}) and MapRule.aff_text() != "", "친화 카드: 더 자주(장당 %.0f vs %.0f), 피해 +15%%(속성 레벨 몫·공격방식)" % [aff, other])
@@ -2465,6 +2569,18 @@ func _meta_misc() -> void:
 	main.guide_label.visible = status_guide_visible
 	ok("UI-35", selection_status and edit_status and carry_status and touch_status and deleted_selection and state_before_guide and guide_priority, "선택·편집·카드 상태 %s/%s/%s · 터치 %s · 삭제 %s" % [selection_status, edit_status, carry_status, touch_status, deleted_selection])
 	ok("UI-05", click_selects and wave_readonly and edits_selected and cancel_restores and finished_clean, "클릭은 선택, 쉬는 시간의 명시적 방향 편집·취소 복원, 전투 중 읽기 전용")
+	# UI-36: 점수 줄 칩 밑에 깔린 오브젝트는 점수 줄이 막지 않는다
+	var hud_ok := true
+	if main.hud.is_visible_in_tree() and main.hud.size.x > 40.0:
+		var hp: Vector2 = main.hud.get_global_rect().position + Vector2(20.0, main.hud.size.y / 2.0)
+		var keep_hp: Vector2 = dt.position
+		dt.position = Vector2(-9999, -9999)
+		var blocked_empty: bool = dock.over_ui(hp) or main._tower_at(main.get_canvas_transform().affine_inverse() * hp) != null
+		dt.position = main.get_canvas_transform().affine_inverse() * hp
+		var free_tower: bool = not dock.over_ui(hp)
+		dt.position = keep_hp
+		hud_ok = blocked_empty and free_tower
+	ok("UI-36", hud_ok, "점수 줄 밑 오브젝트는 누를 수 있고, 빈 칩 자리는 막힘")
 	# UI-33: 설명창 그림 (오브젝트 정보: 미리보기·숫자 타일, 자세히: 곱셈 사슬·배율 막대 / 카드: 미리보기·타일)
 	var pic: InfoPanel = dock.pic
 	pic.show_tower(dt, false, 0.3, "이번 웨이브 몫", 300.0)
@@ -2638,6 +2754,62 @@ func _meta_misc() -> void:
 	stale_row.mouse_exited.emit()
 	ok("DPS-02", main.dps_focus == null, "오브젝트가 삭제된 옛 DPS 줄에 올려도 해제된 참조를 읽지 않음")
 	stale_row.queue_free()
+	# 표 옮기기: 제목 줄 짧게 누르면 접기·펴기, 끌거나 꾹 누르면 집어 들고, 놓은 자리는 비율로 저장, 점수 줄과 겹치면 비킴
+	var h0: bool = main.dps_hidden
+	var dn := InputEventMouseButton.new()
+	dn.button_index = MOUSE_BUTTON_LEFT
+	dn.pressed = true
+	var up := InputEventMouseButton.new()
+	up.button_index = MOUSE_BUTTON_LEFT
+	up.pressed = false
+	main._dps_head_input(dn)
+	main._dps_head_input(up)
+	var tap_ok: bool = main.dps_hidden != h0 and main.dps_drag == 0
+	main._toggle_dps()
+	main._dps_head_input(dn)
+	main.dps_press = main.dps_panel.get_parent().get_local_mouse_position() + Vector2(50, 0)  # 누른 뒤 50 끈 것처럼
+	var mv := InputEventMouseMotion.new()
+	main._dps_head_input(mv)
+	var picked: bool = main.dps_drag == 2
+	var hp0: Vector2 = Meta.dps_pos
+	main._dps_head_input(up)
+	var dropped: bool = main.dps_drag == 0 and main.dps_hidden == h0 and (Meta.dps_pos == Vector2(-1, -1) or (Meta.dps_pos.x >= 0.0 and Meta.dps_pos.x <= 1.0 and Meta.dps_pos.y >= 0.0 and Meta.dps_pos.y <= 1.0))
+	Meta.dps_pos = hp0
+	main._update_hud(true)
+	var dodge := true
+	if main.hud.visible and not main.hud_chips.is_empty():
+		var c0: Rect2 = main.hud_chips[0][0]
+		var p: Vector2 = main._dps_place(main.hud.position + c0.position)
+		dodge = p.y >= main.hud.position.y + c0.end.y
+	# 표 밑에 오브젝트가 깔린 자리를 누르면 오브젝트가 먼저 (점수 줄과 같은 규칙), 빈 자리는 표가 받음
+	var pv0: bool = main.dps_panel.visible
+	main.dps_panel.visible = true
+	main.dps_panel.position = Vector2(10, 100)
+	main.dps_panel.size = Vector2(300, 160)
+	var sp: Vector2 = main.dps_panel.get_global_rect().get_center()
+	var wpos: Vector2 = main.get_canvas_transform().affine_inverse() * sp
+	var n0: int = main.towers.get_child_count()
+	main.picked = {"e": Elem.FIRE, "lv": 1}
+	main._place_tower(wpos, Vector2.RIGHT)
+	main.picked = {}
+	var ut: Node = main.towers.get_child(main.towers.get_child_count() - 1) if main.towers.get_child_count() > n0 else null
+	var under_ok := false
+	if ut != null:
+		ut.position = wpos
+		var ev := InputEventMouseButton.new()
+		ev.button_index = MOUSE_BUTTON_LEFT
+		ev.pressed = true
+		ev.position = sp
+		main._input(ev)
+		var passes: bool = main.dps_head.mouse_filter == Control.MOUSE_FILTER_IGNORE and not main.card_dock.over_ui(sp)
+		ut.position = Vector2(-9999, -9999)
+		main._input(ev)
+		var blocks: bool = main.dps_head.mouse_filter == Control.MOUSE_FILTER_STOP and main.card_dock.over_ui(sp)
+		under_ok = passes and blocks
+		ut.free()
+	main.dps_panel.visible = pv0
+	ok("DPS-03", under_ok, "DPS 표 밑 오브젝트는 누를 수 있고, 빈 표 자리는 표가 받음")
+	ok("DPS-03", tap_ok and picked and dropped and dodge, "DPS 표 옮기기: 짧게 누르기=접기 %s, 끌기=집기 %s, 놓기=자리 저장 %s, 점수 줄 비킴 %s" % [tap_ok, picked, dropped, dodge])
 	_clear()
 
 	# 피해 1~3위 왕관·메달: 쉬는 시간 지난 웨이브 피해 순, 2개면 1위만, 1위가 바뀌면 왕관이 날아감, 설정으로 끔
@@ -3039,6 +3211,104 @@ func _tutorial() -> void:
 	var helped: bool = not main.tut.visible and main.help_label.visible
 	main.help_label.visible = false
 	ok("TUT-04", title_btn and pause_btn and listed and opened and back and helped, "시작 화면 %s, 일시정지 %s, 목록 %s, 항목 열기 %s, 목록으로 %s, 전체 보기 %s" % [title_btn, pause_btn, listed, opened, back, helped])
+	_tut_play()
+
+
+## 플레이 튜토리얼 (흐름 전체는 tools/run.sh tutplay)
+func _tut_play() -> void:
+	# TUT-07: 4장 23단계, 장 첫 단계, 카드 단계의 카드가 실제 카드, 쉬는 시간 고르는 수, 정해진 길목
+	var ids := {}
+	var bad := []
+	for i in TutPlay.STEPS.size():
+		var st: Dictionary = TutPlay.STEPS[i]
+		ids[st["id"]] = true
+		if st.has("card"):
+			var cd: Dictionary = st["card"]
+			var known: bool = cd["type"] == "elem" and cd["e"] in Elem.ALL or cd["type"] == "pat" and cd["id"] in Pat.PATTERN_IDS \
+				or cd["type"] == "mod" and cd["id"] in Pat.MOD_IDS or cd["type"] == "trig" and cd["id"] in Pat.TRIG_IDS or cd["type"] == "link" and cd["id"] in Pat.LINK_IDS
+			if not known:
+				bad.append(st["id"] + ":카드")
+	for c in TutPlay.CHAPTERS.size():
+		if TutPlay.STEPS[TutPlay.CH_START[c]]["ch"] != c or TutPlay.CH_START[c] > 0 and TutPlay.STEPS[TutPlay.CH_START[c] - 1]["ch"] == c:
+			bad.append("장 %d 시작" % (c + 1))
+	var tp := TutPlay.new()
+	tp.m = main
+	var picks: bool = tp.rest_picks(0) == 1 and tp.rest_picks(1) == 2 and tp.rest_picks(2) == 2 and tp.rest_picks(3) == 2 and tp.rest_picks(4) == -1
+	var lanes: bool = TutPlay.lanes_for(1) == [0.0] and TutPlay.lanes_for(3).size() == 2 and TutPlay.lanes_for(6).size() == 3
+	_fresh(1)
+	_tower(main.core() + Vector2(170, 0))
+	tp.idx = 7  # 속성 겹치기
+	var water := {"type": "elem", "e": Elem.WATER, "lv": 1}
+	var offer: Array = tp.offer([{"type": "elem", "e": Elem.ICE, "lv": 1}, {"type": "elem", "e": Elem.EARTH, "lv": 1}, water])
+	var fixed: bool = offer.size() == 3 and offer[1] == water and tp.want_card() == water
+	var refuse: bool = not tp.allow_pick(offer[0]) and tp.allow_pick(water)
+	main.picked = water
+	var place_ok: bool = not tp.allow_place(null) and tp.allow_place(main.towers.get_child(0))
+	main.picked = {}
+	_clear()
+	tp.free()
+	ok("TUT-07", TutPlay.STEPS.size() == 23 and ids.size() == 23 and TutPlay.CHAPTERS.size() == 4 and bad.is_empty() and picks and lanes and fixed and refuse and place_ok and not ids.has("path") and not ids.has("garden"),
+		"단계 %d·장 %d, 문제 %s, 고르는 수 %s, 길목 %s, 정해진 카드·흐린 카드 %s·%s, 놓을 곳 %s" % [ids.size(), TutPlay.CHAPTERS.size(), str(bad), picks, lanes, fixed, refuse, place_ok])
+	# TUT-08: 단계마다 이름·글, 터치 글엔 키·클릭 말 없음, 안내 칸 버튼
+	var words := []
+	for st in TutPlay.STEPS:
+		if st["id"] == "end":
+			continue
+		var tt: String = st.get("touch", st["pc"])
+		if st["name"] == "" or st["pc"] == "":
+			words.append(st["id"] + ":빈 글")
+		for w in ["클릭", "Shift", "Esc", "Alt", "휠", "Space", "Tab", "(Z)", "(S)", "Q로", "V로", "P로", "1·2"]:
+			if tt.contains(w):
+				words.append(st["id"] + ":" + w)
+	var tp2 := TutPlay.new()
+	tp2.m = main
+	tp2._build_panel()
+	var btns: bool = tp2.btn_skip != null and tp2.btn_all != null and tp2.btn_ok != null
+	tp2.free()
+	ok("TUT-08", words.is_empty() and btns, "터치 글 문제 %s, 건너뛰기·전체 건너뛰기 버튼 %s" % [str(words), btns])
+	# TUT-09: 목록 맨 위 처음부터 + 장 4개, 첫 소개 [건너뛰기]
+	main._open_tut_list()
+	var row: int = main.tut.play_row.get_child_count()
+	var asked := [-1]
+	var cb := func(ch): asked[0] = ch
+	main.tut.play_requested.disconnect(main._play_tutorial)
+	main.tut.play_requested.connect(cb)
+	(main.tut.play_row.get_child(3) as Button).pressed.emit()
+	var chosen: bool = asked[0] == 2 and not main.tut.visible
+	main.tut.open_welcome()
+	var skip_btn: bool = main.tut.btn_list.visible and main.tut.btn_list.text == "건너뛰기"
+	main.tut._list_or_skip()
+	var closed: bool = not main.tut.visible
+	main.tut.play_requested.disconnect(cb)
+	main.tut.play_requested.connect(main._play_tutorial)
+	var starts: bool = TutPlay.CH_START == [0, 7, 16, 21]
+	ok("TUT-09", row == 5 and chosen and skip_btn and closed and starts, "목록 맨 위 %d개, 3장 버튼 → 장 %d, 첫 소개 [건너뛰기] %s·닫힘 %s" % [row, asked[0], skip_btn, closed])
+	# TUT-10: 연습 판 설정 바꾸기·되돌리기, 저장은 원래 값, 이어하기·업적 없음
+	var keep := [Meta.map_id, Meta.rules, Array(Meta.modes), Meta.skill_set, Meta.skip_n]
+	Meta.map_id = "cross"
+	Meta.rules = 3
+	Meta.skill_set = 2
+	TutPlay.enter_meta()
+	var inside: bool = TutPlay.on and Meta.map_id == "plain" and Meta.rules == 1 and Meta.skill_set == 0 and Modes.on.is_empty() and Ach.mp == "tut"
+	TutPlay.swap()
+	var swapped: bool = Meta.map_id == "cross" and Meta.rules == 3
+	TutPlay.swap()
+	var back_in: bool = Meta.map_id == "plain"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(main.RUN_PATH))
+	main.phase = main.Phase.CHOOSE
+	main._save_run()
+	var no_run: bool = not FileAccess.file_exists(main.RUN_PATH)
+	var ach0 := Meta.achieved.size()
+	main._achieve("first")
+	var no_ach: bool = Meta.achieved.size() == ach0
+	TutPlay.leave_meta()
+	var out: bool = not TutPlay.on and Meta.map_id == "cross" and Meta.rules == 3 and Meta.skill_set == 2 and Ach.mp == ""
+	Meta.map_id = keep[0]
+	Meta.rules = keep[1]
+	Meta.modes = keep[2]
+	Meta.skill_set = keep[3]
+	Meta.skip_n = keep[4]
+	ok("TUT-10", inside and swapped and back_in and no_run and no_ach and out, "연습 판 설정 %s, 저장은 원래 값 %s·%s, 이어하기 없음 %s, 업적 없음 %s, 되돌림 %s" % [inside, swapped, back_in, no_run, no_ach, out])
 
 
 # ---------- 다음 패치 투표 ----------
@@ -3550,3 +3820,96 @@ func _late_curve() -> void:
 	var n_ok: bool = main.wave_size(150) == 303 and main.wave_size(400) == 303 and main.wave_size(100) == 203
 	var s_ok: bool = main.orb_base_speed(100) == 330.0 and main.orb_base_speed(450) == 1380.0 and main.orb_base_speed(600) == 1380.0
 	ok("WAVE-12", hp_ok and n_ok and s_ok, "후반 곡선: 체력 150까지 x1.05·뒤 x1.03(+수 상한 몫) %s, 구체 수 303 상한 %s, 속도 450웨이브 값 1380 상한 %s" % [hp_ok, n_ok, s_ok])
+
+
+## 새 속성 피·환영 (2026-11-04)
+func _new_elems(c: Vector2) -> void:
+	var _grid := func():
+		main.targets = main.orbs.get_children()
+		main._build_grid()
+	# 피 출혈: 움직인 만큼 피해, 멈추면 피해 없음
+	var bt := _tower(c + Vector2(-300, -200), Elem.BLOOD, 2)
+	var mv := _orb(c + Vector2(-300, 0), 1e6, Orb.Kind.NORMAL, 60.0)
+	var st := _orb(c + Vector2(0, -250), 1e6)
+	_grid.call()
+	bt.hit(mv, 0.0)
+	bt.hit(st, 0.0)
+	var hm := mv.hp
+	var hs := st.hp
+	for i in 30:
+		mv.step(1.0 / 60.0)
+		st.step(1.0 / 60.0)
+	var want := Rules.blood_dmg * 2 * 30.0 / 100.0 * bt.final_damage_mul()
+	var lost := hm - mv.hp
+	ok("ELEM-14", mv.bleed_t > 0.0 and absf(lost - want) < want * 0.15 and hs == st.hp and bt.src.has("elem:blood"),
+		"피 출혈: 30px 움직이면 %.2f (기대 %.2f), 멈춘 구체 피해 %.2f" % [lost, want, hs - st.hp])
+	_clear()
+	# 피 핏자국: 맞은 구체가 지나간 길에 핏자국, 뒤따라 밟은 구체에 효과, 남긴 구체는 안 밟음
+	var gt := _tower(c + Vector2(-300, -200), Elem.BLOOD, 3)
+	gt.add(Elem.FIRE, 1)
+	gt.eff = gt.eff_now()
+	var lead := _orb(c + Vector2(-300, 0), 1e6, Orb.Kind.NORMAL, 60.0)
+	var back := _orb(c + Vector2(-400, 0), 1e6)
+	_grid.call()
+	gt.hit(lead, 0.0)
+	for i in 60:
+		lead.step(1.0 / 60.0)
+	var gore: Zone = null
+	for z in main.zones.get_children():
+		if z.kind == "gore":
+			gore = z
+	var self_ok := true
+	if gore:
+		lead.burn_t = 0.0
+		gore.affect([lead], 0.1)
+		self_ok = lead.burn_t == 0.0
+		back.position = gore.position
+		gore.affect([back], 0.1)
+	ok("ELEM-14", lead.gore_src == gt and gore != null and back.burn_t > 0.0 and self_ok and back.bleed_t > 0.0,
+		"피 핏자국: 구체가 지나간 길에 핏자국(%s), 밟은 뒤 구체 화상 %.1f·출혈 %.1f, 남긴 구체는 안 밟음 %s" % [gore != null, back.burn_t, back.bleed_t, self_ok])
+	_clear()
+	# 환영 현혹: 왔던 길을 되돌아 걸음, 같은 구체는 쿨, 보스 절반
+	var co := _orb(c + Vector2(-300, 0), 1e6, Orb.Kind.NORMAL, 60.0)
+	var d0 := co.position.distance_to(co.target)
+	var got := co.confuse(Rules.illu_t)
+	for i in 20:
+		co.step(1.0 / 60.0)
+	var d1 := co.position.distance_to(co.target)
+	var again := co.confuse(Rules.illu_t)
+	var boss := _orb(c + Vector2(300, 0), 1e6, Orb.Kind.BOSS, 60.0)
+	boss.confuse(Rules.illu_t)
+	var it := _tower(c + Vector2(-300, -200), Elem.ILLUSION, 9)
+	ok("ELEM-15", got and d1 > d0 and not again and is_equal_approx(boss.confuse_t, Rules.illu_t * 0.5) and is_equal_approx(Share.illu_ch(it, 9), Rules.illu_max),
+		"환영 현혹: 되돌아 걸음 (거리 %.0f → %.0f), 다시 걸기 막힘, 보스 %.2f초, 확률 최대 %d%%" % [d0, d1, boss.confuse_t, roundi(Rules.illu_max * 100)])
+	_clear()
+	# 환영 비춤: 옆 오브젝트의 다음 공격에 이 오브젝트 효과, 한 번 쓰면 사라짐
+	var mt := _tower(c + Vector2(-300, -200), Elem.ILLUSION, 3)
+	mt.add(Elem.FIRE, 1)
+	mt.eff = mt.eff_now()
+	var nb := _tower(c + Vector2(-200, -200), Elem.WOOD, 1)
+	var far := _tower(c + Vector2(300, 200), Elem.WOOD, 1)
+	var m1 := _orb(c, 1e6)
+	var m2 := _orb(c + Vector2(0, 100), 1e6)
+	_grid.call()
+	mt.hit(m1, 0.0)
+	var lit := nb.mirror_src == mt and far.mirror_src == null
+	nb.hit(m2, 0.0)
+	ok("ELEM-15", lit and m2.burn_t > 0.0 and nb.mirror_src == null,
+		"환영 비춤: 둘레 220 안 가장 가까운 오브젝트에 비침(%s), 그 오브젝트 다음 공격에 화상 %.1f, 쓰면 사라짐" % [lit, m2.burn_t])
+	_clear()
+	# 상성
+	var ab := Elem.aff_of(Elem.BLOOD, Elem.POISON)
+	var ai := Elem.aff_of(Elem.BLOOD, Elem.ICE)
+	var at := _tower(c + Vector2(-300, -200), Elem.BLOOD, 1)
+	at.add(Elem.ICE, 1)
+	at.eff = at.eff_now()
+	var nm := _orb(c, 1e6, Orb.Kind.NORMAL, 60.0)
+	nm.vuln(2.0, 0.2)
+	var h0 := nm.hurt_mul()
+	nm.confuse(Rules.illu_t, true)
+	var h1 := nm.hurt_mul()
+	ok("ELEM-16", ab["strong"] and ai["weak"] and Elem.aff_of(Elem.BLOOD, Elem.DARK)["ids"].has("hunger") and Elem.aff_of(Elem.BLOOD, Elem.WOOD)["ids"].has("stanch")
+		and Elem.aff_of(Elem.ILLUSION, Elem.SOUND)["ids"].has("phantasm") and Elem.aff_of(Elem.ILLUSION, Elem.SOUL)["ids"].has("nightmare") and Elem.aff_of(Elem.ILLUSION, Elem.STAR)["ids"].has("mirage")
+		and is_equal_approx(Share.am(at, Elem.BLOOD), Share.AFF_WEAK) and is_equal_approx(h1 - 1.0, (h0 - 1.0) * Share.NIGHTMARE),
+		"피·환영 상성: 패혈·굶주림·응고·지혈·환청·악몽·신기루, 응고 출혈 x%.1f, 악몽 받는 피해↑ %.2f → %.2f" % [Share.am(at, Elem.BLOOD), h0, h1])
+	_clear()

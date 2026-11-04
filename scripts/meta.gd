@@ -62,6 +62,7 @@ static var rank_on := true  # 피해 1~3위 오브젝트에 왕관·은/동 메�
 static var fx_low := false  # 효과 줄이기: 형태 성질·반응 장판과 터지는 효과를 옅게, 많이 겹칠수록 더 옅게 (기본 끔)
 static var fx_dps := 2  # 피해 몫이 작은 오브젝트의 탄·장판을 옅게: 0 그대로 · 1 조금 · 2 보통 · 3 많이 (아래 버튼 줄)
 static var dps_fold := OS.has_feature("mobile")  # 왼쪽 위 DPS 표 접기 (D·표 제목). 폰·태블릿은 접어 두고 시작, 바꾸면 저장
+static var dps_pos := Vector2(-1, -1)  # DPS 표를 옮겨 둔 자리 (화면 안 빈 폭 비율 0~1, 음수면 기본 왼쪽 위). 제목 줄을 꾹 누르거나 끌어 옮긴다
 static var skip_n := 3  # 웨이브 넘기기 한 번에 넘길 웨이브 수 (1·3·5·10)
 static var skill_set := 0  # 중앙 기술 묶음 (Skill.SETS 번호, 일반 판 준비 화면)
 static var skill_auto := false  # 중앙 기술 자동 사용 (설정)
@@ -175,6 +176,7 @@ static func load_into(cfg: ConfigFile) -> void:
 	card_detail = val(cfg, "settings", "card_detail", false)
 	fx_dps = clampi(val(cfg, "settings", "fx_dps", 2), 0, 3)
 	dps_fold = val(cfg, "settings", "dps_fold", OS.has_feature("mobile"))
+	dps_pos = val(cfg, "settings", "dps_pos", Vector2(-1, -1))
 	online_on = val(cfg, "online", "on", true)
 	nickname = val(cfg, "online", "nickname", "")
 	blocked = val(cfg, "online", "blocked", {})
@@ -242,6 +244,7 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("settings", "card_detail", card_detail)
 	cfg.set_value("settings", "fx_dps", fx_dps)
 	cfg.set_value("settings", "dps_fold", dps_fold)
+	cfg.set_value("settings", "dps_pos", dps_pos)
 	cfg.set_value("settings", "ui_scale", ui_scale)
 	cfg.set_value("online", "on", online_on)
 	cfg.set_value("online", "nickname", nickname)

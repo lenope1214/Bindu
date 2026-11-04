@@ -38,6 +38,10 @@ func _initialize() -> void:
 		await pause_inspector_case()
 	if which in ["all", "overlap"]:
 		await overlap_case()
+	if which in ["all", "hud"]:
+		await hud_case()
+	if which in ["all", "perk"]:
+		await perk_case()
 	print("USABILITY case=%s failures=%d ui=%d" % [which, fails, ui_errors])
 	quit(1 if fails > 0 or ui_errors > 0 else 0)
 
@@ -244,3 +248,40 @@ func overlap_case() -> void:
 	overlap_tip(Rect2(outside - Vector2(8, 8), Vector2(16, 16)))
 	await mouse_click(outside)
 	ok("UI-28", not main.help_label.visible and main.selected.is_empty(), "모달 밖 클릭은 창만 닫고 뒤 정보·전장을 누르지 않음")
+
+func hud_case() -> void:
+	for touch_mode in [false, true]:
+		await fixture()
+		main._set_cards_hidden(true)
+		await settle()
+		var at: Vector2 = main.hud.get_global_rect().position + Vector2(20, main.hud.get_global_rect().size.y / 2.0)
+		target.position = main.get_canvas_transform().affine_inverse() * at
+		main.tip_pin = -1
+		if touch_mode:
+			Input.emulate_mouse_from_touch = true
+			await touch(at, true)
+			await touch(at, false)
+		else:
+			await mouse_click(at)
+		ok("UI-36", main.selected == [target] and main.tip_pin == -1 and main.phase == main.Phase.CHOOSE, "점수 줄 밑 오브젝트는 단독 선택하고 칩은 함께 누르지 않음: %s" % touch_mode)
+
+func perk_case() -> void:
+	await fixture()
+	main.perk_offer.assign(main.PERKS.filter(func(pk): return pk["id"] != "coin").slice(0, 3))
+	main._show_perks()
+	main.banner_t = 0
+	main.banner_queue.clear()
+	await settle()
+	Input.emulate_mouse_from_touch = true
+	var at: Vector2 = main.choice_box.get_child(0).get_global_rect().get_center()
+	var before: Dictionary = main.perks.duplicate(true)
+	await touch(at, true)
+	await create_timer(0.55).timeout
+	await settle()
+	ok("UI-16", main.card_dock.side.visible and main.perk_peek != null and main.perks == before, "특성 길게 누르기는 적용 없이 상세 열람")
+	await snap("perk-long-press")
+	await touch(at, false)
+	ok("UI-16", main.perk_mode and main.perks == before, "길게 누른 손을 떼어도 특성을 적용하지 않음")
+	await touch(at, true)
+	await touch(at, false)
+	ok("UI-16", main.perks != before, "이후 짧은 터치는 특성 한 번 적용")

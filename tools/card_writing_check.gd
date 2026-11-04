@@ -98,7 +98,8 @@ func snap(tag: String):
 	await settle()
 	var dock = main.card_dock
 	var has_detail: bool = Meta.card_detail or main.perk_mode
-	ok("UI-20", not has_detail or (dock.side.visible and dock.heading.text == expected_name and expected_rows.all(func(row): return dock.detail.text.contains(main._kr_keep(row)))), tag + " full text visible")
+	var title_ok: bool = dock.heading.text == expected_name if main.perk_mode else dock.heading.text == "카드 정보" and dock.pic.head.get("name", "") == expected_name
+	ok("UI-20", not has_detail or (dock.side.visible and title_ok and expected_rows.all(func(row): return dock.detail.text.contains(main._kr_keep(row)))), tag + " full text visible")
 	var hbar: HScrollBar = dock.scroll.get_h_scroll_bar()
 	ok("UI-20", not has_detail or hbar.max_value <= hbar.page + 1.0, tag + " no horizontal overflow")
 	ok("UI-20", not has_detail or dock.detail.size.y + 1.0 >= dock.detail.get_content_height(), tag + " text height fits")

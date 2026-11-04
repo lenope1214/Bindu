@@ -62,7 +62,7 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO, off := Vector2.ZE
 		"shot":
 			speed = P.shot_spd; dmg = H.shot * p; radius = P.shot_r; far_from = Tower.far_start_of(k, l, tower.total_level(), tower.mf("size"))
 		"blob":
-			speed = P.blob_spd; lob = true; max_travel = Tower.LOB_RANGE * Tower.rr_of("lob", l)
+			speed = P.blob_spd; lob = true; max_travel = 2000.0; far_from = Tower.far_start_of("lob", l, tower.total_level(), tower.mf("size"))
 			homing = tower.mf("homing")  # 휜 길 그대로 장판이 깔린다
 		"thorn":
 			speed = P.thorn_spd; dmg = H.thorn * p; radius = P.thorn_r; pierce = true
@@ -85,7 +85,7 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO, off := Vector2.ZE
 		pierce_left = tower.mn("pierce")
 		bounces = tower.mn("bounce")
 		homing = tower.mf("homing")
-		if homing > 0.0 and max_travel >= 2000.0:
+		if homing > 0.0 and (max_travel >= 2000.0 or k == "blob"):
 			max_travel = HOMING_TRAVEL  # 끝까지 가는 관통탄(철구·관통 연사)이 유도로 전장 안을 맴돌며 끝없이 쫓지 않게
 	if tower.fire_boost > 1.0 and k != "frag":
 		# 축적·삼연이 실린 탄: 피해·크기가 커지고, 피해는 그 발동 몫으로 센다
@@ -134,7 +134,8 @@ func step(delta: float) -> void:
 		seg_acc += vel.length() * delta
 		if seg_acc >= zone.radius * 0.8:
 			seg_acc = 0.0
-			zone.add_pt(position)
+			if not is_instance_valid(owner_tower) or owner_tower.main.field_rect().grow(zone.radius).has_point(position):  # 전장 밖엔 띠를 남기지 않는다
+				zone.add_pt(position, Tower.far_k(flown, far_from))  # 투척 장판: 예전 사거리 너머 띠는 약하다
 	if form and is_instance_valid(owner_tower):
 		path_acc += vel.length() * delta
 		if path_acc >= 70.0:
