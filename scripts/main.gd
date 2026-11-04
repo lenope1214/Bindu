@@ -2093,9 +2093,10 @@ func _update_skip_ui() -> void:
 	hint.visible = not (show_btn and hint.get_global_rect().intersects(skip_btn.get_global_rect()))
 	if show_btn:
 		var n := int(Meta.skip_n)
-		skip_btn.tooltip_text = "웨이브 %d개 넘기기 (S)\n카드 선택을 미루고 웨이브를 연달아 진행합니다. 미룬 카드·새로고침·특성은 멈춘 뒤 한꺼번에 고릅니다\n중앙이 위험해지면(설정) 그 웨이브가 끝나고 멈춥니다" % n
+		var deferred := "특성 선택 1회 보류" if perk_mode else "카드 선택 %d회 보류 · 새로고침 %d회 보류" % [picks_left, rerolls_left]
+		skip_btn.tooltip_text = "%d웨이브 넘기기 (S)\n%s\n미룬 카드·새로고침·특성은 멈춘 뒤 한꺼번에 고릅니다. 중앙이 위험해지면(설정) 그 웨이브가 끝나고 멈춥니다" % [n, deferred]
 		skip_btn.text = "넘기기"
-		skip_n_btn.text = "%d개 ▸" % n
+		skip_n_btn.text = "%d웨이브 ▸" % n
 	skip_badge.visible = skip_left > 0 and phase in [Phase.WAVE, Phase.READY] and not title_label.visible
 	if skip_badge.visible:
 		var done := skip_total - skip_left + 1

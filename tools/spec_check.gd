@@ -2493,8 +2493,10 @@ func _meta_misc() -> void:
 	main.phase = main.Phase.CHOOSE
 	main.picks_left = 2
 	Meta.skip_n = 3
+	main._update_skip_ui()
+	var skip_forecast: bool = "카드 선택 2회 보류" in main.skip_btn.tooltip_text
 	main._on_skip()
-	ok("SKIP-02", main.skip_left == 3 and main.bank_picks.size() == 2, "넘기기: 이번 고르기를 쌓아 두고 n웨이브 진행 (남은 %d, 쌓인 고르기 %d)" % [main.skip_left, main.bank_picks.size()])
+	ok("SKIP-02", skip_forecast and main.skip_left == 3 and main.bank_picks.size() == 2, "넘기기: 이번 고르기를 쌓아 두고 n웨이브 진행 (남은 %d, 쌓인 고르기 %d)" % [main.skip_left, main.bank_picks.size()])
 	main.skip_left = 0
 	main.bank_picks = []
 	# 카드를 다 고른 뒤(웨이브 시작 대기)에도 넘기기: 버튼이 보이고, 누르면 넘기기 시작
@@ -2503,7 +2505,7 @@ func _meta_misc() -> void:
 	main.countdown = -1.0
 	main._update_skip_ui()
 	main.card_dock.tick()
-	var ready_btn: bool = main.skip_btn.visible and main.card_dock.skip_group.visible and is_equal_approx(main.skip_btn.get_rect().end.x, main.skip_n_btn.position.x) and main.skip_btn.text == "넘기기" and main.skip_n_btn.text == "3개 ▸"
+	var ready_btn: bool = main.skip_btn.visible and main.card_dock.skip_group.visible and is_equal_approx(main.skip_btn.get_rect().end.x, main.skip_n_btn.position.x) and main.skip_btn.text == "넘기기" and main.skip_n_btn.text == "3웨이브 ▸"
 	main._on_skip()
 	ok("SKIP-03", ready_btn and main.skip_left == 3 and main.bank_picks.is_empty() and main.phase == main.Phase.READY, "웨이브 시작 대기에서도 넘기기 (버튼 %s, 남은 %d)" % [ready_btn, main.skip_left])
 	main.skip_left = 0

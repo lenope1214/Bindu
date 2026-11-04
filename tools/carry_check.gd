@@ -56,7 +56,7 @@ func _initialize() -> void:
 	ok("SKIP-03", main.card_dock.skip_group.visible and is_equal_approx(main.skip_btn.get_global_rect().end.x, main.skip_n_btn.get_global_rect().position.x), "넘기기 실행·개수 버튼을 간격 없는 한 그룹으로 배치")
 	for n in [3, 5, 10, 1]:
 		await mouse_click(main.skip_n_btn.get_global_rect().get_center())
-		ok("SKIP-03", Meta.skip_n == n and main.phase == main.Phase.CHOOSE and main.picks_left == 2, "그룹의 개수 버튼은 개수만 변경: %d" % n)
+		ok("SKIP-03", Meta.skip_n == n and main.skip_n_btn.text == "%d웨이브 ▸" % n and "카드 선택 2회 보류" in main.skip_btn.tooltip_text and main.phase == main.Phase.CHOOSE and main.picks_left == 2, "그룹의 개수 버튼은 개수만 변경: %d" % n)
 		if n == 10:
 			await snap("skip-ten")
 	main.bar_open = true

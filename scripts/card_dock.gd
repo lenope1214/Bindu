@@ -6,7 +6,7 @@ const CONTROL_HEIGHT := 36.0
 const HEADER_HEIGHT := CONTROL_HEIGHT + 16.0
 const FOOTER_HEIGHT := CONTROL_HEIGHT + 24.0
 const HEIGHT := HEADER_HEIGHT + CARD_HEIGHT + 8.0 + FOOTER_HEIGHT
-const SKIP_WIDTH := 184.0
+const SKIP_WIDTH := 204.0
 var game
 var panel: Panel
 var footer: Panel
@@ -486,7 +486,7 @@ func layout_skip(at: Vector2, height: float) -> void:
 		var button: Button = [game.skip_btn, game.skip_n_btn][i]
 		button.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		button.position = at + Vector2(108 if i == 1 else 0, 0)
-		button.size = Vector2(76 if i == 1 else 108, height)
+		button.size = Vector2(96 if i == 1 else 108, height)
 
 
 func close_inspector() -> void:
