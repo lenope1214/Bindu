@@ -2016,7 +2016,7 @@ func _carry_cards() -> void:
 	main.auto_start = false
 	main.shake = 0.0
 	Meta.card_detail = false
-	main.card_dock.full_field = false
+	main.cards_hidden = false
 	var target := _tower(Vector2(420, 520), Elem.WATER)
 	var bad := _tower(Vector2(860, 520), Elem.WATER)
 	bad.set_pattern("thorn")
@@ -2286,11 +2286,11 @@ func _meta_misc() -> void:
 	var fold_ok := true
 	main._set_cards_hidden(false)
 	main._process(0.0)
-	fold_ok = main.card_dock.focus_btn.visible and main.card_dock.focus_btn.text == "카드 접기"
+	fold_ok = main.hide_btn == main.card_dock.focus_btn and main.card_dock.focus_btn.visible and main.card_dock.focus_btn.text == "카드 접기"
 	for i in 3:
 		main.card_dock.focus_btn.pressed.emit()
 		main._process(0.0)
-		fold_ok = fold_ok and main.card_dock.full_field and not main.card_dock.panel.visible and not main.card_dock.side.visible and main.card_dock.focus_btn.text == "카드 보기"
+		fold_ok = fold_ok and main.cards_hidden and not main.card_dock.panel.visible and not main.card_dock.side.visible and main.card_dock.focus_btn.text == "카드 보기"
 		main.card_dock.focus_btn.pressed.emit()
 		main._process(0.0)
 		fold_ok = fold_ok and main.card_dock.panel.visible and main.offer == fold_offer and main.picks_left == fold_left
@@ -2299,7 +2299,7 @@ func _meta_misc() -> void:
 	fold_ok = fold_ok and main.card_dock.focus_btn.text == "카드 보기"
 	main.card_dock.focus_btn.pressed.emit()
 	main._process(0.0)
-	fold_ok = fold_ok and not main.cards_hidden and not main.card_dock.full_field and main.card_dock.panel.visible
+	fold_ok = fold_ok and not main.cards_hidden and main.card_dock.panel.visible
 	var toggles := true
 	var same_offer: Array = main.offer.duplicate(true)
 	for i in 4:

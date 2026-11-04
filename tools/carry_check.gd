@@ -65,7 +65,7 @@ func _initialize() -> void:
 	var icon_center: Vector2 = main._button_icon_center(main.card_detail_btn)
 	ok("UI-30", Rect2(Vector2.ZERO, main.card_detail_btn.size).grow(-8).encloses(Rect2(icon_center - Vector2(9, 9), Vector2(18, 18))), "자세히 아이콘은 버튼 내부 여백 안에 배치")
 	ok("UI-30", is_equal_approx(main.bar_box.position.y - main.card_dock.footer.position.y, 12) and is_equal_approx(main.ui_root.size.y - main.bar_box.get_rect().end.y, 12), "옵션 줄 위아래 여백 각각 12")
-	for entry in [[main.reroll_btn, "Q"], [main.card_detail_btn, "Z"], [main.skip_btn, "S"], [main.hide_btn, "V"]]:
+	for entry in [[main.reroll_btn, "Q"], [main.card_detail_btn, "Z"], [main.skip_btn, "S"]]:
 		var button: Button = entry[0]
 		var content_right: float = main._button_icon_center(button).x + 9
 		if button.text != "":
@@ -258,7 +258,7 @@ func panel_regressions() -> void:
 	main.bar_open = true
 	await key(KEY_F)
 	await key(KEY_V)
-	ok("UI-23", main.card_dock.panel.visible and not main.card_dock.full_field, "F로 접은 패널도 V로 복원")
+	ok("UI-23", main.card_dock.panel.visible and not main.cards_hidden, "F로 접은 패널도 V로 복원")
 	await snap("toggle-restored")
 	main._set_card_detail(true)
 	await mouse_move(card_center())
@@ -363,7 +363,7 @@ func fixture() -> void:
 	main._drop_press()
 	main.moving = null
 	main.selected.clear()
-	main.card_dock.full_field = false
+	main.cards_hidden = false
 	if main.card_dock.has_method("clear_gesture"):
 		main.card_dock.clear_gesture()
 	main._reset_zoom()

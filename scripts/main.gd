@@ -914,16 +914,7 @@ func _build_ui() -> void:
 	skip_badge.visible = false
 	root.add_child(skip_badge)
 
-	hide_btn = Button.new()
-	hide_btn.focus_mode = Control.FOCUS_NONE
-	hide_btn.add_theme_font_size_override("font_size", 14)
-	hide_btn.pressed.connect(_toggle_cards_hidden)
-	# 펼쳐 있을 때는 눈 그림만 (내려 두면 화면 위 "선택지 보기" 글)
-	_icon_btn(hide_btn, func(): return ["none" if cards_hidden else "eye", Color(1, 1, 1, 0.85)])
-	_keycap(hide_btn, func(): return "" if cards_hidden else "V")
-	hide_btn.visible = false
-	hide_btn.z_index = 2  # 카드 선택 막(card_dim) 위
-	root.add_child(hide_btn)
+	hide_btn = card_dock.focus_btn  # V·F·화면 버튼이 같은 컨트롤을 사용한다.
 	card_detail_btn = Button.new()
 	card_detail_btn.set_anchors_preset(Control.PRESET_CENTER)
 	card_detail_btn.focus_mode = Control.FOCUS_NONE
@@ -3312,14 +3303,13 @@ func _on_reroll() -> void:
 func _toggle_cards_hidden() -> void:
 	if card_dock.input_blocked():
 		return
-	_set_cards_hidden(not (cards_hidden or card_dock.full_field))
+	_set_cards_hidden(not cards_hidden)
 
 
 func _set_cards_hidden(h: bool) -> void:
 	if phase != Phase.CHOOSE:
 		return
 	cards_hidden = h
-	card_dock.full_field = false
 	choice_box.visible = not h
 	hover_elem = -1
 	_tap_hover()  # 다시 올리면 터치로 고르던 카드 미리보기도 다시
@@ -4334,17 +4324,7 @@ func _toggle_legend() -> void:
 
 ## 카드 도크·설명 칸을 접어 전장을 넓게 보거나 다시 연다 (F·모바일 버튼).
 func _toggle_focus_view() -> void:
-	if card_dock == null or not card_dock.available() or card_dock.carrying():
-		return
-	if cards_hidden:
-		_set_cards_hidden(false)
-		card_dock.tick()
-		return
-	card_dock.full_field = not card_dock.full_field
-	if card_dock.full_field:
-		_clamp_pan()
-	else:
-		card_dock.tick()
+	_toggle_cards_hidden()
 
 
 func _toggle_bar() -> void:
@@ -7920,7 +7900,6 @@ func _cancel_step() -> void:
 ## 선택지를 그대로 둔 채 오브젝트 고르기로 돌아간다.
 func _back_to_choose() -> void:
 	card_dock.clear_gesture()
-	card_dock.full_field = false
 	cards_hidden = false
 	tap_sel = offer.find(picked)
 	for button: Button in choice_box.get_children():
@@ -8954,16 +8933,11 @@ func _process(delta: float) -> void:
 	_update_press()
 	if boxing and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_finish_box()  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
-	hide_btn.visible = phase == Phase.CHOOSE and not title_label.visible and coin_stage == 0
-	card_detail_btn.visible = hide_btn.visible and not cards_hidden and not perk_mode
+	card_detail_btn.visible = phase == Phase.CHOOSE and not title_label.visible and coin_stage == 0 and not cards_hidden and not perk_mode
 	_update_skip_ui()
 	cancel_btn.visible = phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] and not title_label.visible and not get_tree().paused
-	hide_btn.text = _kh("▲ 선택지 보기 (V)") if cards_hidden else ""
-	hide_btn.tooltip_text = "선택지를 다시 올린다" if cards_hidden else "필드 보기 (V): 선택지를 내리고 카드에 가려진 필드를 본다"
 	if speed_btn.visible:
 		speed_btn.queue_redraw()
-	# 펼쳐 있으면 카드 바로 아래 새로고침 버튼 옆, 내려 두면 화면 위쪽 가운데
-	hide_btn.set_anchors_preset(Control.PRESET_CENTER_TOP if cards_hidden else Control.PRESET_CENTER)
 	# 카드 줄은 오른쪽 설명을 피해 왼쪽으로 비켜 있다. 설명을 숨기면 가운데로, 버튼도 카드 가운데에 맞춘다
 	var cx := 0.0 if legend_hidden else -75.0
 	# 카드 4장이 오른쪽 설명 밑으로 들어가면(글자 크게) 쉬는 시간 동안 설명을 접고 가운데로
@@ -8999,8 +8973,8 @@ func _process(delta: float) -> void:
 	var by := choice_box.offset_top + ch * k + 8.0
 	# 카드 밑 한 줄 그림 버튼: [새로고침 N] [필드 보기] [넘기기] [×N]. 없는 버튼 자리는 당겨 가운데 맞춘다
 	var row: Array = []
-	for bt in [reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, apply_btn]:
-		if bt.visible and not (bt == hide_btn and cards_hidden):
+	for bt in [reroll_btn, card_detail_btn, skip_btn, skip_n_btn, apply_btn]:
+		if bt.visible:
 			row.append(bt)
 	var bw := {reroll_btn: 96.0, card_detail_btn: 104.0, hide_btn: 76.0, skip_btn: 76.0, skip_n_btn: 76.0}
 	if apply_btn.visible:
@@ -9027,12 +9001,6 @@ func _process(delta: float) -> void:
 			bt.offset_top = sy
 			bt.offset_bottom = sy + 40.0
 			sx += 86.0
-	if cards_hidden:
-		var hy := maxf(96.0, hud.position.y + hud.size.y + 8.0)  # 내려 둘 때는 점수 줄 아래
-		hide_btn.offset_left = -130.0
-		hide_btn.offset_right = 130.0
-		hide_btn.offset_top = hy
-		hide_btn.offset_bottom = hy + 32.0
 	_start_btn_layout()
 	_skill_ui()
 	card_dock.tick()
@@ -9555,7 +9523,7 @@ func _update_fx(delta: float) -> void:
 ## 마우스를 올린 오브젝트의 정보.
 func _draw_tooltip() -> void:
 	tip_orb = null
-	if card_dock != null and card_dock.full_field:
+	if card_dock != null and cards_hidden:
 		return  # 전장 넓게 보기에서는 마우스 정보창도 접는다
 	# 터치는 마우스를 올려 둘 수 없으니, 눌러서 옮기기 시작한 오브젝트의 정보를 보여 준다
 	var touch_move := phase == Phase.MOVE and touch_ui and moving != null

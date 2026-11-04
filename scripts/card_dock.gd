@@ -26,7 +26,6 @@ var side_left := false  # 설명창이 왼쪽 위에 떠 있는지 (오브젝트
 var side_signature := ""
 var board := Rect2()
 var fit := 1.0
-var full_field := false
 var pointer := Vector2.ZERO
 var pending_card := {}
 var press_origin := Vector2.ZERO
@@ -183,7 +182,7 @@ func over_ui(p: Vector2) -> bool:
 		return false
 	for c: Control in [panel, footer, side, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
 			game.hud, game.dps_panel, game.range_btn, game.zoom_btn,
-			game.guide_more, game.hide_btn, game.skip_btn, game.skip_n_btn]:
+			game.guide_more, game.skip_btn, game.skip_n_btn]:
 		if c != null and c.is_visible_in_tree() and c.get_global_rect().has_point(p):
 			return true
 	var bar_rect := Rect2()
@@ -329,7 +328,6 @@ func card_size() -> Vector2:
 
 func tick() -> void:
 	if not available():
-		full_field = false
 		clear_gesture()
 		inspected_tower = null
 		hovered = null
@@ -344,7 +342,7 @@ func tick() -> void:
 	var size: Vector2 = game.ui_root.size
 	var blocked := input_blocked()
 	var choosing: bool = game.phase == game.Phase.CHOOSE and game.coin_stage == 0
-	var cards: bool = choosing and not game.cards_hidden and not full_field and not blocked
+	var cards: bool = choosing and not game.cards_hidden and not blocked
 	footer.visible = cards
 	footer.position = Vector2(0, size.y - FOOTER_HEIGHT)
 	footer.size = Vector2(size.x, FOOTER_HEIGHT)
@@ -382,11 +380,11 @@ func tick() -> void:
 		x -= SKIP_WIDTH
 		layout_skip(Vector2(x, panel.position.y + 8), CONTROL_HEIGHT)
 		x -= 8
-	for button: Button in [game.hide_btn, game.card_detail_btn, game.reroll_btn]:
-		button.visible = choosing and not full_field and not blocked if button == game.hide_btn else button.visible and cards
+	for button: Button in [game.card_detail_btn, game.reroll_btn]:
+		button.visible = button.visible and cards
 		if not button.visible:
 			continue
-		var w := 96.0 if button == game.card_detail_btn else (64.0 if button == game.hide_btn else 80.0)
+		var w := 96.0 if button == game.card_detail_btn else 80.0
 		x -= w
 		button.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		button.position = Vector2(x, panel.position.y + 8)
@@ -403,7 +401,7 @@ func tick() -> void:
 		game.choice_header.size = Vector2(maxf(240, minf(340, x - 24)), CONTROL_HEIGHT)
 	_update_side()
 	# 상세는 필요할 때 떠 있는 패널로 읽는다. 표시 여부는 전장 크기에 영향을 주지 않는다.
-	side.visible = side.visible and not carrying() and not full_field and not blocked
+	side.visible = side.visible and not carrying() and not game.cards_hidden and not blocked
 	_place_side(size, cards)
 	game.start_btn.visible = game.phase == game.Phase.READY and not blocked
 	game.cancel_btn.visible = game.phase in [game.Phase.PLACE, game.Phase.AIM, game.Phase.MOVE] and not blocked
@@ -447,20 +445,12 @@ func tick() -> void:
 		game.zoom_btn.position = Vector2(12, maxf(64, game.hud.get_rect().end.y + 8))
 		game.zoom_btn.size = Vector2(132, 34)
 	focus_btn.visible = not blocked and choosing
-	focus_btn.text = "카드 보기" if full_field or game.cards_hidden else "카드 접기"
-	focus_btn.tooltip_text = "카드 패널 보기/접기 (F)"
+	focus_btn.text = "카드 보기" if game.cards_hidden else "카드 접기"
+	focus_btn.tooltip_text = "카드 패널 보기/접기 (F / V)"
 	focus_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	focus_btn.position = Vector2(12, size.y - 48)
 	focus_btn.size = Vector2(110, CONTROL_HEIGHT)
 	game.ver_label.visible = not focus_btn.visible
-	if choosing and game.cards_hidden and not full_field and not blocked:
-		game.hide_btn.show()
-		game.hide_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		var show_width: float = maxf(180, game.hide_btn.get_combined_minimum_size().x)
-		game.hide_btn.position = Vector2((size.x - show_width) / 2, action_y)
-		game.hide_btn.size = Vector2(show_width, 44)
-	if full_field:
-		game.dps_panel.hide()
 	game.skip_badge.position.y = -HEIGHT - 40 if cards else -100
 
 func layout_skip(at: Vector2, height: float) -> void:
