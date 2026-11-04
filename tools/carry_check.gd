@@ -38,6 +38,12 @@ func _initialize() -> void:
 	main.set_process(false)
 	main.auto_start = false
 	main._apply_ui_scale()
+	DisplayServer.window_move_to_foreground()
+	await create_timer(0.2).timeout
+	await fixture()
+	await mouse_click(world(main.center()))
+	await fixture()
+	await panel_regressions()
 	await fixture()
 	print("GEOMETRY size=", root.size, " field=", main.get_viewport_rect(), " final=", root.get_final_transform(), " canvas=", root.canvas_transform, " screen=", root.get_screen_transform())
 	await snap("browse")
@@ -218,6 +224,7 @@ func _initialize() -> void:
 	main.banner_t = 0
 	main.banner_queue.clear()
 	await snap("wave")
+	await speed_regressions()
 	main.bar_open = true
 	await settle()
 	await mouse_click(main.fx_pick.get_global_rect().get_center())
@@ -225,6 +232,95 @@ func _initialize() -> void:
 	main.fx_pick.get_popup().hide()
 	print("CARRY failures=%d ui=%d" % [fails, ui_errors])
 	quit(1 if fails + ui_errors > 0 else 0)
+
+func panel_regressions() -> void:
+	var same_offer: Array = main.offer.duplicate(true)
+	for i in 3:
+		main.bar_open = i % 2 == 1
+		await settle()
+		await mouse_click(main.hide_btn.get_global_rect().get_center())
+		ok("UI-23", main.cards_hidden and not main.card_dock.panel.visible, "버튼으로 선택지 닫기 %d" % i)
+		ok("UI-23", not main.bar_open or not main.hide_btn.get_global_rect().intersects(main.bar_box.get_global_rect()), "복원 버튼과 펼친 설정 줄 분리 %d" % i)
+		await mouse_click(main.hide_btn.get_global_rect().get_center())
+		ok("UI-23", not main.cards_hidden and main.card_dock.panel.visible, "복원 버튼의 press/release로 다시 열기 %d" % i)
+		await key(KEY_V)
+		ok("UI-23", main.cards_hidden and not main.card_dock.panel.visible, "V로 선택지 닫기 %d" % i)
+		await key(KEY_V)
+		ok("UI-23", not main.cards_hidden and main.card_dock.panel.visible and main.offer == same_offer and main.picks_left == 2, "V로 같은 선택지·장수 복원 %d" % i)
+	main.bar_open = true
+	await key(KEY_F)
+	await key(KEY_V)
+	ok("UI-23", main.card_dock.panel.visible and not main.card_dock.full_field, "F로 접은 패널도 V로 복원")
+	await snap("toggle-restored")
+	main._set_card_detail(true)
+	await mouse_move(card_center())
+	await mouse_move(world(main.center()))
+	ok("UI-32", main.card_dock.pic.mode == "card", "카드 호버 종료 뒤 미리보기 유지")
+	await key(KEY_V)
+	for e in Elem.ALL:
+		target.add(e, 1)
+	target.eff = target.eff_now()
+	await key(KEY_SHIFT)
+	await mouse_move(world(target.position))
+	ok("UI-32", main.card_dock.shown_tower == target, "유지된 카드 미리보기를 새 오브젝트 정보로 교체")
+	await mouse_move(world(main.center()))
+	ok("UI-32", main.card_dock.side.visible and main.card_dock.shown_tower == target, "오브젝트와 패널 사이 빈 공간에서도 상세 유지")
+	await mouse_move(main.card_dock.side.get_global_rect().get_center())
+	await snap("inspector-retained")
+	ok("UI-32", main.card_dock.shown_tower == target and main.card_dock.side.mouse_filter == Control.MOUSE_FILTER_STOP, "인스펙터 안으로 이동해도 대상·입력 유지")
+	var before: int = main.card_dock.scroll.scroll_vertical
+	for i in 8:
+		var wheel := InputEventMouseButton.new()
+		wheel.position = root.get_final_transform() * main.card_dock.side.get_global_rect().get_center()
+		wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
+		wheel.pressed = true
+		Input.parse_input_event(wheel)
+		wheel = wheel.duplicate()
+		wheel.pressed = false
+		Input.parse_input_event(wheel)
+		await settle()
+	ok("UI-32", main.card_dock.scroll.scroll_vertical > before and main.card_dock.shown_tower == target, "유지된 오브젝트 상세를 실제 휠로 스크롤")
+	await snap("inspector-scrolled")
+	refused.position = Vector2(640, 300)
+	await mouse_move(world(refused.position))
+	ok("UI-32", main.card_dock.shown_tower == refused, "다른 오브젝트 호버로 상세 교체")
+	var release := InputEventKey.new()
+	release.keycode = KEY_SHIFT
+	release.pressed = false
+	Input.parse_input_event(release)
+	await key(KEY_V)
+	await mouse_move(card_center(1))
+	ok("UI-32", main.card_dock.pic.mode == "card" and main.card_dock.inspected_tower == null and main.card_dock.pic.card.get("e", -1) == Elem.FIRE, "새 카드 호버로 오브젝트 상세 교체")
+	await mouse_click(card_center(1))
+	ok("UI-32", held() and not main.card_dock.side.visible, "카드 선택 시 상세 숨김·카드 들기 유지")
+	await key(KEY_ESCAPE)
+	await key(KEY_V)
+	await mouse_move(world(target.position))
+	await mouse_move(world(main.center()))
+	target.queue_free()
+	await settle()
+	ok("UI-32", not main.card_dock.side.visible and main.card_dock.inspected_tower == null, "삭제된 오브젝트 상세 참조 해제")
+
+
+func speed_regressions() -> void:
+	main.bar_open = true
+	main.game_speed = 1.0
+	main.fast_speed = 2.0
+	main._update_speed_btn()
+	await settle()
+	ok("UI-30", is_equal_approx(main.speed_btn.get_global_rect().end.x, main.speed_pick.get_global_rect().position.x), "배속 실행·선택을 간격 없는 연결 그룹으로 배치")
+	await mouse_click(main.speed_pick.get_global_rect().get_center())
+	ok("UI-30", main.speed_pick.get_popup().visible, "배속 그룹의 셀렉트를 실제 클릭으로 열기")
+	main.speed_pick.get_popup().index_pressed.emit(main.SPEEDS.size() - 1)
+	main.speed_pick.get_popup().hide()
+	await settle()
+	ok("UI-30", main.fast_speed == main.SPEEDS[-1] and main.game_speed == 1.0, "배속 셀렉트 선택만으로 실행 속도를 켜지 않음")
+	await mouse_click(main.speed_btn.get_global_rect().get_center())
+	ok("UI-30", main.game_speed == main.fast_speed, "그룹 실행 버튼으로 선택한 배속 적용")
+	await key(KEY_SPACE)
+	ok("UI-30", main.game_speed == 1.0, "Space로 기본 배속 복귀")
+	await snap("speed-group")
+
 
 func fixture() -> void:
 	paused = false

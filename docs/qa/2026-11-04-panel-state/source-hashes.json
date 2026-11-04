@@ -1,0 +1,11 @@
+{
+  "scripts/card_dock.gd": "97526054d1adab59348a351c4f1f91080947c15bb61a3392356aea1f8b0ee185",
+  "scripts/main.gd": "9d15ca6a086ebacd6dc0e014fac20bb4e28b6f3af60f4d827caa659d027e9ad1",
+  "scripts/info_panel.gd": "36d59903455a761f6b176f72d6e235967858804f9be43947e11e40138ac4d12f",
+  "scripts/elem.gd": "bd3bf86a54a9484f2cc9ad78d68d988a0e6276650dba18f0416729c023b63df0",
+  "scripts/pattern.gd": "3ce3a95267ff1acace3547a92f5221366d7fc38c5de0dadc38b7b4fc9e9a4193",
+  "tools/carry_check.gd": "6c0ff69eaac72982e88af4f05eacd1ac57493f20c2744b1373a0ac0fbf245b72",
+  "tools/spec_check.gd": "541d5b17025592ddc920d96dcc574de3b62948f988e55e0ae9af6706f113303b",
+  "docs/features.md": "9b8c2d326c25ad82d0b02549caced40c8da619fabf95ffe350a9cbd7036e9272",
+  "docs/design/carry-card.md": "1fc5c24f5520abd50977e21d8a095a53746b90f28f1f4cb8f9d8d1c88f336e56"
+}

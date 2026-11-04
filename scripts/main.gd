@@ -170,6 +170,7 @@ var skip_n_btn: Button  # 넘길 웨이브 수 바꾸기
 var skip_badge: Button  # 넘기는 중 표시, 누르면 멈추기
 var pause_btn: Button
 var speed_btn: Button
+var speed_group: HBoxContainer
 var speed_pick: OptionButton
 const SPEEDS := [2.0, 3.0, 4.0, 6.0, 8.0]
 var game_speed := 1.0  # 지금 배속
@@ -916,7 +917,7 @@ func _build_ui() -> void:
 	hide_btn = Button.new()
 	hide_btn.focus_mode = Control.FOCUS_NONE
 	hide_btn.add_theme_font_size_override("font_size", 14)
-	hide_btn.pressed.connect(func(): _set_cards_hidden(not cards_hidden))
+	hide_btn.pressed.connect(_toggle_cards_hidden)
 	# 펼쳐 있을 때는 눈 그림만 (내려 두면 화면 위 "선택지 보기" 글)
 	_icon_btn(hide_btn, func(): return ["none" if cards_hidden else "eye", Color(1, 1, 1, 0.85)])
 	_keycap(hide_btn, func(): return "" if cards_hidden else "V")
@@ -939,6 +940,7 @@ func _build_ui() -> void:
 	root.add_child(card_detail_btn)
 
 	var bar := HBoxContainer.new()
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bar.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	# 버튼이 늘어나도 오른쪽 여백(16)을 지키고 왼쪽으로 자란다
 	bar.grow_horizontal = Control.GROW_DIRECTION_BEGIN
@@ -981,11 +983,15 @@ func _build_ui() -> void:
 	pause_btn.pressed.connect(_toggle_pause)
 	_icon_btn(pause_btn, func(): return ["pause", Color(1, 1, 1, 0.9)])
 	bar.add_child(pause_btn)
+	speed_group = HBoxContainer.new()
+	speed_group.name = "SpeedControls"
+	speed_group.add_theme_constant_override("separation", 0)
+	bar.add_child(speed_group)
 	speed_btn = Button.new()
 	speed_btn.custom_minimum_size = Vector2(72, 36)
 	speed_btn.pressed.connect(_toggle_speed)
 	_icon_btn(speed_btn, func(): return ["speed", Color(1, 0.85, 0.45) if game_speed > 1.0 else Color(1, 1, 1, 0.9)])
-	bar.add_child(speed_btn)
+	speed_group.add_child(speed_btn)
 	speed_pick = OptionButton.new()
 	for sp in SPEEDS:
 		speed_pick.add_item("x%d" % roundi(sp))
@@ -993,7 +999,7 @@ func _build_ui() -> void:
 	speed_pick.focus_mode = Control.FOCUS_NONE
 	speed_pick.tooltip_text = "빠르게 할 때 배속 (Space로 1배속과 오감)"
 	speed_pick.item_selected.connect(_on_speed_pick)
-	bar.add_child(speed_pick)
+	speed_group.add_child(speed_pick)
 	# 맨 오른쪽: 접으면 이것만 남고, 펼치면 왼쪽으로 버튼이 늘어선다
 	bar_btn = Button.new()
 	bar_btn.custom_minimum_size = Vector2(96, 36)
@@ -1032,17 +1038,18 @@ func _build_ui() -> void:
 	root.add_child(aim_ok_btn)
 	for button: Button in [reroll_btn, skip_btn, skip_n_btn, hide_btn, card_detail_btn, start_btn, cancel_btn, aim_ok_btn]:
 		button.theme = card_dock.controls_theme
-	for button: Button in [skip_btn, skip_n_btn]:
-		for state_name in ["normal", "hover", "pressed", "hover_pressed", "disabled", "focus"]:
-			var segment: StyleBoxFlat = button.get_theme_stylebox(state_name).duplicate()
-			if button == skip_btn:
-				segment.corner_radius_top_right = 0
-				segment.corner_radius_bottom_right = 0
-				segment.border_width_right = 0
-			else:
-				segment.corner_radius_top_left = 0
-				segment.corner_radius_bottom_left = 0
-			button.add_theme_stylebox_override(state_name, segment)
+	for pair in [[skip_btn, skip_n_btn], [speed_btn, speed_pick]]:
+		for button: Button in pair:
+			for state_name in ["normal", "hover", "pressed", "hover_pressed", "disabled", "focus"]:
+				var segment: StyleBoxFlat = button.get_theme_stylebox(state_name).duplicate()
+				if button == pair[0]:
+					segment.corner_radius_top_right = 0
+					segment.corner_radius_bottom_right = 0
+					segment.border_width_right = 0
+				else:
+					segment.corner_radius_top_left = 0
+					segment.corner_radius_bottom_left = 0
+				button.add_theme_stylebox_override(state_name, segment)
 	detail_btn = Button.new()
 	detail_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	detail_btn.position = Vector2(-70.0 - 130.0, -100.0)  # 취소 왼쪽
@@ -2951,7 +2958,9 @@ func _show_perks() -> void:
 		b.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
 		b.focus_mode = Control.FOCUS_NONE
 		b.set_meta("perk_desc", desc + ("\n\n" + coin if coin != "" else ""))
-		b.mouse_entered.connect(func(): card_dock.hovered = b)
+		b.mouse_entered.connect(func():
+			card_dock.inspected_tower = null
+			card_dock.hovered = b)
 		b.pressed.connect(_on_perk.bind(pk))
 		_mark_fav(b, sb, sbh, "★ 선호" if Meta.favs.has("perk:" + str(pk["id"])) else "")
 		choice_box.add_child(b)
@@ -3300,10 +3309,17 @@ func _on_reroll() -> void:
 
 ## 새로고침 버튼: 남은 횟수를 같이 보여 준다.
 ## 선택지 내리기·올리기 (V): 카드에 가려진 필드를 본다. 마우스를 올린 오브젝트 범위·정보는 그대로 보인다.
+func _toggle_cards_hidden() -> void:
+	if card_dock.input_blocked():
+		return
+	_set_cards_hidden(not (cards_hidden or card_dock.full_field))
+
+
 func _set_cards_hidden(h: bool) -> void:
 	if phase != Phase.CHOOSE:
 		return
 	cards_hidden = h
+	card_dock.full_field = false
 	choice_box.visible = not h
 	hover_elem = -1
 	_tap_hover()  # 다시 올리면 터치로 고르던 카드 미리보기도 다시
@@ -4184,6 +4200,7 @@ func _on_pick(card: Dictionary) -> void:
 	choice_box.visible = false
 	reroll_btn.visible = false
 	phase = Phase.PLACE
+	card_dock.inspected_tower = null
 	hint.text = _th(_place_hint())
 	if card_dock.active():
 		card_dock.tick()
@@ -4846,7 +4863,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			elif phase in [Phase.CHOOSE, Phase.READY]:
 				_on_skip()
 		elif event.keycode == KEY_V and phase == Phase.CHOOSE:
-			_set_cards_hidden(not cards_hidden)
+			_toggle_cards_hidden()
 		elif event.keycode == KEY_Z and phase == Phase.CHOOSE and not perk_mode:
 			_set_card_detail(not Meta.card_detail)
 		elif event.keycode == KEY_D and phase in [Phase.CHOOSE, Phase.READY, Phase.WAVE]:
@@ -8873,6 +8890,7 @@ func _process(delta: float) -> void:
 	mute_btn.visible = not in_game or bar_open
 	auto_btn.visible = not in_game or bar_open
 	pause_btn.visible = in_game and bar_open
+	speed_group.visible = in_game and bar_open
 	speed_btn.visible = in_game and bar_open
 	speed_pick.visible = in_game and bar_open
 	fx_pick.visible = in_game and bar_open

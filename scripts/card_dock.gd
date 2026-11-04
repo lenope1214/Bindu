@@ -181,8 +181,7 @@ func world_view() -> Rect2:
 func over_ui(p: Vector2) -> bool:
 	if not active():
 		return false
-	# 설명창 밑에 오브젝트가 있으면 설명창은 마우스를 받지 않는다 (그 오브젝트를 올리고 누를 수 있게, 올리면 설명창이 반대쪽으로 비킨다)
-	for c: Control in [panel, footer, side if side.mouse_filter != Control.MOUSE_FILTER_IGNORE else null, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
+	for c: Control in [panel, footer, side, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
 			game.bar_box, game.hud, game.dps_panel, game.range_btn, game.zoom_btn,
 			game.guide_more, game.hide_btn, game.skip_btn, game.skip_n_btn]:
 		if c != null and c.is_visible_in_tree() and c.get_global_rect().has_point(p):
@@ -298,7 +297,7 @@ func handle_input(event: InputEvent) -> bool:
 	return motion and card_dragging
 
 func preview_card() -> Dictionary:
-	if not active() or game.phase != game.Phase.CHOOSE or game.perk_mode or game.cards_hidden:
+	if not active() or game.phase != game.Phase.CHOOSE or game.perk_mode or game.cards_hidden or is_instance_valid(inspected_tower):
 		return {}
 	if game.touch_ui and game.tap_sel >= 0 and game.tap_sel < game.offer.size():
 		return game.offer[game.tap_sel]
@@ -313,6 +312,7 @@ func watch(b: Button, card: Dictionary) -> void:
 	b.set_meta("offer_card", card)
 	b.mouse_entered.connect(func():
 		if not game.touch_ui:
+			inspected_tower = null
 			hovered = b)
 	b.gui_input.connect(_card_gui_input.bind(b, card))
 	# 상세 영역으로 마우스를 옮겨도 읽던 카드와 강조를 유지한다. 다른 카드는 진입 시 교체한다.
@@ -325,6 +325,8 @@ func tick() -> void:
 	if not available():
 		full_field = false
 		clear_gesture()
+		inspected_tower = null
+		hovered = null
 		panel.hide()
 		footer.hide()
 		skip_group.hide()
@@ -375,7 +377,7 @@ func tick() -> void:
 		layout_skip(Vector2(x, panel.position.y + 8), CONTROL_HEIGHT)
 		x -= 8
 	for button: Button in [game.hide_btn, game.card_detail_btn, game.reroll_btn]:
-		button.visible = button.visible and cards
+		button.visible = choosing and not full_field and not blocked if button == game.hide_btn else button.visible and cards
 		if not button.visible:
 			continue
 		var w := 96.0 if button == game.card_detail_btn else (64.0 if button == game.hide_btn else 80.0)
@@ -448,8 +450,9 @@ func tick() -> void:
 	if choosing and game.cards_hidden and not full_field and not blocked:
 		game.hide_btn.show()
 		game.hide_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		game.hide_btn.position = Vector2((size.x - 160) / 2, size.y - 48)
-		game.hide_btn.size = Vector2(160, 40)
+		var show_width: float = maxf(180, game.hide_btn.get_combined_minimum_size().x)
+		game.hide_btn.position = Vector2((size.x - show_width) / 2, action_y)
+		game.hide_btn.size = Vector2(show_width, 44)
 	if full_field:
 		game.dps_panel.hide()
 	game.skip_badge.position.y = -HEIGHT - 40 if cards else -100
@@ -465,6 +468,11 @@ func layout_skip(at: Vector2, height: float) -> void:
 
 
 func _update_side() -> void:
+	var mouse: Vector2 = game.get_viewport().get_mouse_position()
+	var tower: Tower = game._tower_at(game.get_global_mouse_position()) if not over_ui(mouse) else null
+	if tower != null:
+		hovered = null
+		inspected_tower = tower
 	var card := preview_card()
 	var title := "전장 안내"
 	var text := ""
@@ -503,14 +511,7 @@ func _update_side() -> void:
 		title = hovered.get_meta("card")[0]["name"]
 		text = hovered.get_meta("perk_desc")
 	else:
-		var mouse: Vector2 = game.get_viewport().get_mouse_position()
-		# 전장과 설명 패널 사이의 여백을 지날 때 호버 대상을 먼저 지우면,
-		# 패널에 도착하기 전에 설명이 사라져 긴 내용을 스크롤할 수 없다.
-		var over_inspector := side.get_global_rect().grow(24.0).has_point(mouse)
-		var tower: Tower = game._tower_at(game.get_global_mouse_position()) if not over_ui(mouse) else null
-		if tower != null:
-			inspected_tower = tower
-		elif over_inspector and is_instance_valid(inspected_tower):
+		if is_instance_valid(inspected_tower) and not inspected_tower.is_queued_for_deletion() and inspected_tower.get_parent() == game.towers:
 			tower = inspected_tower
 		else:
 			inspected_tower = null
@@ -535,7 +536,7 @@ func _update_side() -> void:
 		pic.clear()
 	heading.visible = pic.mode == ""
 	detail.visible = text != ""
-	var sig: String = title + "|" + text
+	var sig: String = title + "|" + text + ("|" + str(tower.get_instance_id()) if is_instance_valid(tower) and card.is_empty() else "")
 	side.visible = active() and has_content and (card.is_empty() or Meta.card_detail)
 	if sig != side_signature:
 		heading.text = title
@@ -566,6 +567,15 @@ func _place_side(size: Vector2, cards: bool) -> void:
 	for v in parts:
 		want += v
 	var cands := [Rect2(size.x - w - 12.0, top, w, 0.0), Rect2(12.0, ltop, w, 0.0)]
+	for control: Control in [game.toast, game.banner]:
+		if not control.is_visible_in_tree():
+			continue
+		var overlay := control.get_rect()
+		for i in cands.size():
+			var candidate: Rect2 = cands[i]
+			if overlay.position.x < candidate.end.x and overlay.end.x > candidate.position.x:
+				candidate.position.y = maxf(candidate.position.y, overlay.end.y + 8)
+				cands[i] = candidate
 	var scores := []
 	var inv: Transform2D = game.ui_root.get_global_transform().affine_inverse()
 	var canvas: Transform2D = game.get_viewport().get_canvas_transform()
@@ -589,11 +599,10 @@ func _place_side(size: Vector2, cards: bool) -> void:
 	var pick: Rect2 = cands[cur]
 	side.position = pick.position
 	side.size = pick.size
-	# 고른 자리에도 오브젝트가 깔려 있으면 마우스를 통과시켜 그 오브젝트를 올리고 누를 수 있게
-	var under: bool = scores[cur] >= 1.0
-	side.mouse_filter = Control.MOUSE_FILTER_IGNORE if under else Control.MOUSE_FILTER_STOP
-	detail.mouse_filter = Control.MOUSE_FILTER_IGNORE if under else Control.MOUSE_FILTER_PASS
-	scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE if under else Control.MOUSE_FILTER_STOP
+	# 읽는 패널의 클릭·스크롤은 뒤 전장으로 넘기지 않는다.
+	side.mouse_filter = Control.MOUSE_FILTER_STOP
+	detail.mouse_filter = Control.MOUSE_FILTER_PASS
+	scroll.mouse_filter = Control.MOUSE_FILTER_STOP
 
 
 ## 설명창 그림 폭: 설명창 폭에서 안쪽 여백을 뺀 값.

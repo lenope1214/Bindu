@@ -2265,12 +2265,21 @@ func _meta_misc() -> void:
 	main._process(0.016)
 	var dim_hide: bool = not main.card_dim.visible
 	var head_hide: bool = not main.choice_header.visible
+	var toggles := true
+	var same_offer: Array = main.offer.duplicate(true)
+	for i in 4:
+		main._set_cards_hidden(false)
+		main._process(0.0)
+		toggles = toggles and main.card_dock.panel.visible and not main.cards_hidden
+		main._set_cards_hidden(true)
+		main._process(0.0)
+		toggles = toggles and not main.card_dock.panel.visible and main.hide_btn.visible and main.offer == same_offer
 	main._set_cards_hidden(false)
 	main._on_pick({"type": "mod", "id": "pierce"})
 	main._process(0.016)
 	var dim_off: bool = not main.card_dim.visible and main.phase == main.Phase.PLACE
-	ok("UI-23", dim_on and dim_hide and dim_off, "일반 판 카드 선택 시 전장 어둠 없음 %s, 필드 보기 %s·카드 고른 뒤 %s 유지" % [dim_on, dim_hide, dim_off])
-	var controls: bool = main.card_detail_btn.theme == main.bar_box.theme and main.speed_pick.get_theme_stylebox("normal").bg_color == main.reroll_btn.get_theme_stylebox("normal").bg_color and main.fx_pick.get_popup().get_theme_stylebox("panel") is StyleBoxFlat
+	ok("UI-23", toggles and dim_on and dim_hide and dim_off, "일반 판 카드 선택 시 전장 어둠 없음 %s, 필드 보기 %s·카드 고른 뒤 %s 유지" % [dim_on, dim_hide, dim_off])
+	var controls: bool = main.speed_btn.get_parent() == main.speed_group and main.speed_pick.get_parent() == main.speed_group and main.speed_group.get_theme_constant("separation") == 0 and main.card_detail_btn.theme == main.bar_box.theme and main.speed_pick.get_theme_stylebox("normal").bg_color == main.reroll_btn.get_theme_stylebox("normal").bg_color and main.fx_pick.get_popup().get_theme_stylebox("panel") is StyleBoxFlat
 	ok("UI-30", controls and bottom_controls and icon_fits and head_two and head_one and no_apply and head_perk and head_hide and not main.choice_header.visible,
 		"카드 줄 선택 안내: 갱신 %s·%s, 중간 적용 버튼 없음 %s, 숨김 %s·%s·%s" % [head_two, head_one, no_apply, head_perk, head_hide, not main.choice_header.visible])
 
@@ -2323,7 +2332,14 @@ func _meta_misc() -> void:
 	dt.position = keep_pos
 	dock.shown_tower = null
 	var tab_hidden: bool = not "legend_btn" in main
-	ok("UI-32", side_ok and tab_hidden, "설명창 내용 높이·보는 오브젝트 반대쪽 구석, 일반 판 Tab 버튼 없음")
+	var old_phase = main.phase
+	main.phase = main.Phase.READY
+	dock.hovered = null
+	dock.inspected_tower = dt
+	dock._update_side()
+	var retained_tower: bool = dock.shown_tower == dt and dock.side.visible and dock.scroll.mouse_filter == Control.MOUSE_FILTER_STOP
+	main.phase = old_phase
+	ok("UI-32", side_ok and retained_tower and tab_hidden, "설명창 내용 높이·보는 오브젝트 반대쪽 구석, 일반 판 Tab 버튼 없음")
 	# UI-33: 설명창 그림 (오브젝트 정보: 미리보기·숫자 타일, 자세히: 곱셈 사슬·배율 막대 / 카드: 미리보기·타일)
 	var pic: InfoPanel = dock.pic
 	pic.show_tower(dt, false, 0.3, "이번 웨이브 몫", 300.0)
