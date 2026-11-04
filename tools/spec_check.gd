@@ -2448,6 +2448,20 @@ func _meta_misc() -> void:
 	var card_ok: bool = pic.mode == "card" and pic.custom_minimum_size.y > 150.0
 	pic.clear()
 	ok("UI-33", h_basic > 200.0 and h_more > h_basic and chain_ok and card_ok, "설명창 그림: 기본 %d · 자세히 %d · 사슬 끝 %s" % [h_basic, h_more, chain_end])
+	main.phase = main.Phase.READY
+	main.touch_ui = true
+	main.countdown = -1.0
+	main.card_dock.inspected_tower = dt
+	main.tip_frame = -10
+	main._process(4.0)
+	var touch_detail_btn: bool = main.detail_btn.is_visible_in_tree() and main.detail_btn.get_parent() == dock.inspector_header
+	main.detail_btn.pressed.emit()
+	main._process(0.0)
+	var touch_detail_kept: bool = main._tip_detail_on() and dock.shown_tower == dt and main._ring_target() == dt and dock.pic.detail
+	main.touch_ui = false
+	main.tip_detail = false
+	dock.close_inspector()
+	ok("UI-16", touch_detail_btn and touch_detail_kept, "터치 인스펙터는 시간 경과 후에도 유지, 헤더 자세히로 상세 수치 전환")
 	main.phase = main.Phase.PLACE
 
 

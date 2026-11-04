@@ -1044,16 +1044,15 @@ func _build_ui() -> void:
 					segment.corner_radius_bottom_left = 0
 				button.add_theme_stylebox_override(state_name, segment)
 	detail_btn = Button.new()
-	detail_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	detail_btn.position = Vector2(-70.0 - 130.0, -100.0)  # 취소 왼쪽
-	detail_btn.size = Vector2(120, 40)
-	detail_btn.add_theme_font_size_override("font_size", 18)
+	detail_btn.theme = card_dock.controls_theme
+	detail_btn.custom_minimum_size = Vector2(64, 36)
 	detail_btn.focus_mode = Control.FOCUS_NONE
 	detail_btn.pressed.connect(func():
 		tip_detail = not tip_detail
 		touch_tip_t = TOUCH_TIP_SEC * 3.0)  # 자세히는 읽을 게 많아 더 오래
 	detail_btn.visible = false
-	root.add_child(detail_btn)
+	card_dock.inspector_header.add_child(detail_btn)
+	card_dock.inspector_header.move_child(detail_btn, 1)
 	for b in [pause_btn, speed_btn, reroll_btn, skip_btn, skip_n_btn, skip_badge, auto_btn, start_btn, mute_btn, cancel_btn, bar_btn]:
 		b.focus_mode = Control.FOCUS_NONE
 	_update_auto_btn()
@@ -8786,8 +8785,8 @@ func _process(delta: float) -> void:
 	if coin_stage > 0 and not get_tree().paused:
 		_coin_step(delta)
 	touch_tip_t -= delta
-	# 터치 [자세히]: 오브젝트 정보창이 떠 있는 동안만 (취소 버튼 왼쪽)
-	var tip_on := touch_ui and Engine.get_process_frames() - tip_frame <= 2 and not title_label.visible
+	# 터치 자세히는 유지 중인 인스펙터를 기준으로 표시한다.
+	var tip_on := touch_ui and not title_label.visible and (is_instance_valid(card_dock.inspected_tower) if card_dock.active() else Engine.get_process_frames() - tip_frame <= 2)
 	if touch_ui or phase == Phase.PLACE:
 		fx_layer.queue_redraw()  # PLACE: 올린 오브젝트 설명(place_note)이 마우스를 따라가게. 정보창이 떠 있는지(tip_frame)를 매 프레임 알도록 (쉬는 시간엔 다시 그리지 않는 프레임이 있다)
 	if not tip_on:
@@ -9726,6 +9725,8 @@ func _tip_detail_on() -> bool:
 func _ring_target() -> Tower:
 	if not _tip_detail_on():
 		return null
+	if card_dock.active() and card_dock.side.visible:
+		return card_dock.shown_tower
 	var h := _tower_at(_pointer_world())
 	if h == null and touch_ui and is_instance_valid(tip_tower) and Engine.get_process_frames() - tip_frame <= 2:
 		h = tip_tower

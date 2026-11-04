@@ -428,6 +428,7 @@ func tick() -> void:
 	_update_side()
 	# 상세는 필요할 때 떠 있는 패널로 읽는다. 표시 여부는 전장 크기에 영향을 주지 않는다.
 	side.visible = side.visible and not carrying() and not blocked
+	game.detail_btn.visible = side.visible and shown_tower != null and game.touch_ui
 	game.start_btn.visible = game.phase == game.Phase.READY and not blocked
 	game.cancel_btn.visible = game.phase in [game.Phase.PLACE, game.Phase.AIM, game.Phase.MOVE] and not blocked
 	game.aim_ok_btn.visible = game._ok_btn_on() and not blocked
@@ -598,7 +599,7 @@ func _update_side() -> void:
 	if pic.mode != "" and ((pic.mode == "tower" and shown_tower == null) or (pic.mode == "card" and card.is_empty())):
 		pic.clear()
 	direction_btn.visible = shown_tower != null and game.selected.size() == 1 and shown_tower == game.selected[0] and game._mine(shown_tower) and game.phase in [game.Phase.CHOOSE, game.Phase.READY]
-	heading.visible = true
+	heading.visible = not (game.touch_ui and pic.mode == "tower")
 	detail.visible = text != ""
 	var sig: String = title + "|" + text + ("|" + str(tower.get_instance_id()) if is_instance_valid(tower) and card.is_empty() else "")
 	side.visible = active() and has_content and (card.is_empty() or Meta.card_detail)
