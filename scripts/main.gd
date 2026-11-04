@@ -101,6 +101,8 @@ var targets: Array = []  # 화면 안에 들어온 구체 (공격 대상)
 var sim_id := 0  # 계산 조각 번호: 조각 안에서 변하지 않는 값(오브젝트 피해 배율)을 조각마다 한 번만 계산
 var prof_on := false  # tools/perf.gd: 부분별 계산 시간 기록
 var prof := {}
+var place_label_rect := Rect2()
+var place_note_rect := Rect2()
 var place_note := {}  # 카드 넣는 단계에서 올린 오브젝트 설명 (_draw_place_note)
 var fx_layer: Node2D  # 피해 숫자·파편 (맨 위)
 var fx_k := 1.0  # 터지는 효과 진하기 (효과 줄이기 설정이면 0.5)
@@ -1839,7 +1841,7 @@ func _help_text() -> String:
 		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 비율 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
 		"왼쪽 위 DPS 표: 웨이브 중엔 최근 5초 실시간 DPS, 쉬는 시간엔 지난 웨이브 DPS와 비율. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기 (저장됨)",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
-		"F: 카드·설명 패널 접고 전체 전장 보기   P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
+		"F / V: 카드 패널 보기·접기   P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
 		"R: 처음부터 (일시정지 중 두 번) · 게임 오버 뒤 클릭·R·Esc: 시작 화면 (멀티 판은 대기방)",
 		"E: 판 끝내기 (일시정지 중 두 번) — 지금 점수로 게임 오버, 기록·온라인 순위에 올라감",
 		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 이어하기(Enter)로 그 쉬는 시간부터 (새로 시작은 N 두 번)",
@@ -3609,7 +3611,7 @@ func _info_blockers() -> Array[Rect2]:
 		if (c is Label and str(c.text) == "") or (c == hud and hud_chips.is_empty()):
 			continue
 		var r := inv * c.get_global_rect()
-		if c == hint:
+		if c == hint and not hint.has_theme_stylebox_override("normal"):
 			# 안내 글은 칸이 넓어도 글이 있는 곳만
 			var tw := minf(r.size.x, ui_font.get_multiline_string_size(hint.text, HORIZONTAL_ALIGNMENT_LEFT, r.size.x, 15).x)
 			r.size.x = tw + 4.0
@@ -4187,6 +4189,7 @@ func _on_pick(card: Dictionary) -> void:
 	tap_sel = -1
 	_tap_hover()
 	picked = card
+	selected.clear()
 	hover_elem = -1
 	choice_box.visible = false
 	reroll_btn.visible = false
@@ -9750,7 +9753,7 @@ func _draw_tip_ctrl(at: Vector2, fs: int, lh: float, acts: bool) -> void:
 	var x := at.x
 	var y := at.y + lh * 0.5
 	var dim := Color(1, 1, 1, 0.6)
-	var items := [["click", "방향"], ["drag", "옮기기"], ["Shift", "자세히"]] if acts else [["Shift", "자세히"]]
+	var items := [["click", "선택"], ["drag", "옮기기"], ["Shift", "자세히"]] if acts else [["Shift", "자세히"]]
 	for it in items:
 		if it[0] == "Shift":
 			var kw := ui_font.get_string_size("Shift", HORIZONTAL_ALIGNMENT_LEFT, -1, f - 1).x + 8.0
@@ -10154,6 +10157,7 @@ func _shatter(p: Projectile) -> void:
 # ---------- 그리기 ----------
 
 func _draw() -> void:
+	place_label_rect = Rect2()
 	var size := Meta.FIELD
 	var vw := view_rect()
 	var mp: Dictionary = Meta.MAPS[Meta.map_id]
@@ -10388,13 +10392,20 @@ func _draw_place_label(at: Vector2, text: String, color: Color) -> void:
 	var width := ui_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
 	at.x = clampf(at.x, visible.position.x, maxf(visible.position.x, visible.end.x - width))
 	at.y = clampf(at.y, visible.position.y + 14, visible.end.y)
-	draw_string(ui_font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, color)
+	var avoid: Array[Rect2] = []
+	var to_world := get_canvas_transform().affine_inverse() * ui_root.get_global_transform()
+	for rect in _info_blockers():
+		avoid.append(to_world * rect)
+	avoid.append(Rect2(_pointer_world() - Vector2(24, 24), Vector2(48, 48)))
+	place_label_rect = _free_badge(Rect2(at - Vector2(0, 14), Vector2(width, 18)), Vector2.UP, avoid, visible)
+	draw_string(ui_font, place_label_rect.position + Vector2(0, 14), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, color)
 
 
 ## 카드를 넣을 오브젝트에 올렸을 때의 설명 글 (main._draw가 place_note에 담고, 오브젝트 위에 보이게 fx_layer가 그린다).
 ## 어두운 상자에 담아 다른 오브젝트·중앙을 가장 덜 가리는 자리(위·아래·옆, 조금씩 떨어진 곳까지)에 띄운다.
 ## 넣을 수 없으면 빨간 고리 + 큰 ✕ + "넣을 수 없음" 한 줄만.
 func _draw_place_note(ci: CanvasItem) -> void:
+	place_note_rect = Rect2()
 	if place_note.is_empty() or phase != Phase.PLACE or not is_instance_valid(place_note["t"]):
 		return
 	var target: Tower = place_note["t"]
@@ -10430,6 +10441,10 @@ func _draw_place_note(ci: CanvasItem) -> void:
 	var blocks: Array = [[center(), CORE_RADIUS + 16.0]]
 	for t in towers.get_children():
 		blocks.append([t.position, Tower.RADIUS + 4.0])
+	var ui_blocks: Array[Rect2] = []
+	var to_world := get_canvas_transform().affine_inverse() * ui_root.get_global_transform()
+	for rect in _info_blockers():
+		ui_blocks.append(to_world * rect)
 	var best := Rect2()
 	var best_s := INF
 	for p: Vector2 in cands:
@@ -10440,9 +10455,13 @@ func _draw_place_note(ci: CanvasItem) -> void:
 			var bp: Vector2 = bl[0]
 			if bp.clamp(r.position, r.end).distance_to(bp) < bl[1]:
 				sc += 10.0
+		for rect in ui_blocks:
+			if r.intersects(rect):
+				sc += 1000.0 + r.intersection(rect).get_area()
 		if sc < best_s:
 			best_s = sc
 			best = r
+	place_note_rect = best
 	var near := o.clamp(best.position, best.end)
 	if near.distance_to(o) > gap + 20.0:
 		# 떨어진 자리면 오브젝트까지 가는 가는 선

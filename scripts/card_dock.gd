@@ -428,7 +428,6 @@ func tick() -> void:
 	_update_side()
 	# 상세는 필요할 때 떠 있는 패널로 읽는다. 표시 여부는 전장 크기에 영향을 주지 않는다.
 	side.visible = side.visible and not carrying() and not blocked
-	_place_side(size, cards)
 	game.start_btn.visible = game.phase == game.Phase.READY and not blocked
 	game.cancel_btn.visible = game.phase in [game.Phase.PLACE, game.Phase.AIM, game.Phase.MOVE] and not blocked
 	game.aim_ok_btn.visible = game._ok_btn_on() and not blocked
@@ -445,20 +444,23 @@ func tick() -> void:
 		game.start_btn.position.x = left
 		layout_skip(Vector2(left + 248, action_y), 44)
 	if not blocked and not game.guide_label.visible:
-		var instruction := ""
-		match game.phase:
-			game.Phase.PLACE:
-				instruction = "빈 곳이나 오브젝트에 놓으세요." if game.picked.get("type", "") == "elem" else "넣을 오브젝트를 고르세요."
-			game.Phase.AIM: instruction = "쏠 쪽으로 끌어 보고 확정하세요." if game.touch_ui else "발사 방향을 정하세요."
-			game.Phase.MOVE: instruction = "옮길 곳을 고르세요."
-		# 대상 위에서는 적용 미리보기가 안내를 대신한다. 긴 효과 글과 하단 안내가 겹치지 않게 한다.
-		var target_preview: bool = game.phase == game.Phase.PLACE and game._tower_at(game._pointer_world()) != null
-		if instruction != "" and not target_preview:
-			game.hint.text = game._kr_keep(instruction)
+		var status := operation_text()
+		if status != "":
+			game.hint.text = game._kr_keep(status)
 			game.hint.set_anchors_preset(Control.PRESET_TOP_LEFT)
-			game.hint.position = Vector2((size.x - 260) / 2, action_y - 30)
-			game.hint.size = Vector2(260, 24)
+			game.hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			game.hint.add_theme_font_size_override("font_size", 14)
+			if not game.hint.has_theme_stylebox_override("normal"):
+				var box := surface()
+				box.content_margin_top = 6
+				box.content_margin_bottom = 6
+				game.hint.add_theme_stylebox_override("normal", box)
+			var status_width: float = minf(size.x - 24, game.ui_font.get_string_size(status, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 24)
+			game.hint.position = Vector2((size.x - status_width) / 2, (panel.position.y if cards else action_y) - 42)
+			game.hint.size = Vector2(status_width, 34)
+			game.hint.z_index = 2
 			game.hint.show()
+	_place_side(size, cards)
 	game.cancel_btn.text = game._kh("카드 돌려놓기 (Esc)") if carrying() and game.phase == game.Phase.PLACE else game._kh("취소 (Esc)")
 	for i in game.skill_btns.size():
 		var button: Button = game.skill_btns[i]
@@ -479,6 +481,26 @@ func tick() -> void:
 	game.ver_label.visible = not focus_btn.visible
 	game.skip_badge.position.y = -HEIGHT - 40 if cards else -100
 
+func operation_text() -> String:
+	game.selected = game.selected.filter(func(t): return is_instance_valid(t) and not t.is_queued_for_deletion())
+	var cancel := "아래 버튼으로 취소" if game.touch_ui else "Esc 취소"
+	if game.dragging:
+		return "%d개 이동 중 · %s" % [game.drag_group.size(), "손을 떼어 배치" if game.touch_ui else cancel]
+	if game.boxing:
+		return "영역 선택 중 · %s" % ("손을 떼어 선택" if game.touch_ui else cancel)
+	match game.phase:
+		game.Phase.PLACE:
+			return "카드 놓는 중 · %s" % cancel
+		game.Phase.AIM:
+			return ("방향 편집 중" if game.moving else "설치 방향 정하는 중") + " · " + cancel
+		game.Phase.MOVE:
+			return "위치 편집 중 · %s" % cancel
+		game.Phase.CHOOSE, game.Phase.READY, game.Phase.WAVE:
+			if not game.selected.is_empty():
+				return "오브젝트 %d개 선택 · %s" % [game.selected.size(), "빈 곳을 눌러 해제" if game.touch_ui else "Esc 해제"]
+	return ""
+
+
 func layout_skip(at: Vector2, height: float) -> void:
 	skip_group.position = at
 	skip_group.size = Vector2(SKIP_WIDTH, height)
@@ -492,6 +514,9 @@ func layout_skip(at: Vector2, height: float) -> void:
 func close_inspector() -> void:
 	dismissed_tower = game._tower_at(game._pointer_world())
 	game.selected.clear()
+	game.tap_sel = -1
+	game.hover_elem = -1
+	game._tap_hover()
 	game.tip_tower = null
 	inspected_tower = null
 	shown_tower = null
@@ -590,6 +615,8 @@ func _place_side(size: Vector2, cards: bool) -> void:
 	side.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	var top := maxf(60.0, game.hud.get_rect().end.y + 8.0)
 	var bottom: float = panel.position.y - 12.0 if cards else size.y - 64.0
+	if game.hint.visible:
+		bottom = minf(bottom, game.hint.position.y - 8)
 	var ltop := top
 	for c: Control in [game.dps_panel, game.zoom_btn]:
 		if c.is_visible_in_tree():

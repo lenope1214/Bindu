@@ -2374,8 +2374,10 @@ func _meta_misc() -> void:
 	dock._update_side()
 	var retained_tower: bool = dock.shown_tower == dt and dock.side.visible and dock.scroll.mouse_filter == Control.MOUSE_FILTER_STOP
 	var close_visible: bool = dock.close_btn.visible
+	main.tap_sel = 1
+	main.hover_elem = Elem.FIRE
 	dock.close_btn.pressed.emit()
-	var closed: bool = not dock.side.visible and dock.inspected_tower == null
+	var closed: bool = not dock.side.visible and dock.inspected_tower == null and main.tap_sel == -1 and main.hover_elem == -1
 	dock.inspected_tower = dt
 	dock._update_side()
 	var old_pointer: Vector2 = main.pointer_position
@@ -2393,11 +2395,15 @@ func _meta_misc() -> void:
 	main.pointer_position = old_pointer
 	main.phase = old_phase
 	ok("UI-32", side_ok and retained_tower and close_visible and closed and dismissed_tower and tab_hidden, "설명창 내용 높이·보는 오브젝트 반대쪽 구석, 일반 판 Tab 버튼 없음")
+	var status_guide_visible: bool = main.guide_label.visible
+	main.guide_label.hide()
 	main.phase = main.Phase.READY
 	main.press_t = dt
 	main.dragging = false
 	main._release_press()
 	dock._update_side()
+	dock.tick()
+	var selection_status: bool = main.hint.visible and main._kr_keep("오브젝트 1개 선택") in main.hint.text
 	var click_selects: bool = main.selected == [dt] and main.moving == null and main.phase == main.Phase.READY and dock.direction_btn.visible
 	main.phase = main.Phase.WAVE
 	dock._update_side()
@@ -2406,11 +2412,27 @@ func _meta_misc() -> void:
 	main.phase = main.Phase.READY
 	var original_dir: Vector2 = dt.dir
 	dock.direction_btn.pressed.emit()
+	dock.tick()
+	var edit_status: bool = main.hint.visible and main._kr_keep("방향 편집 중") in main.hint.text
 	var edits_selected: bool = main.phase == main.Phase.AIM and main.moving == dt
 	main._cancel_step()
 	var cancel_restores: bool = main.phase == main.Phase.READY and main.selected == [dt] and dt.dir == original_dir and dock.inspected_tower == dt
 	dock.close_inspector()
+	main.selected = [dt]
+	main._on_pick({"type": "mod", "id": "multi"})
+	var carry_status: bool = main.selected.is_empty() and main.hint.visible and main._kr_keep("카드 놓는 중") in main.hint.text and main._kr_keep("Esc 취소") in main.hint.text
+	var was_touch: bool = main.touch_ui
+	main.touch_ui = true
+	var touch_status: bool = "버튼으로 취소" in dock.operation_text() and not "Esc" in dock.operation_text()
+	main.touch_ui = was_touch
+	main.phase = main.Phase.CHOOSE
+	var deleted = _tower(main.center() + Vector2(200, 0))
+	main.selected = [deleted]
+	deleted.free()
+	var deleted_selection: bool = dock.operation_text() == "" and main.selected.is_empty()
 	main.phase = old_phase
+	main.guide_label.visible = status_guide_visible
+	ok("UI-35", selection_status and edit_status and carry_status and touch_status and deleted_selection, "선택·편집·카드 상태 %s/%s/%s · 터치 %s · 삭제 %s" % [selection_status, edit_status, carry_status, touch_status, deleted_selection])
 	ok("UI-05", click_selects and wave_readonly and edits_selected and cancel_restores, "클릭은 선택, 쉬는 시간의 명시적 방향 편집·취소 복원, 전투 중 읽기 전용")
 	# UI-33: 설명창 그림 (오브젝트 정보: 미리보기·숫자 타일, 자세히: 곱셈 사슬·배율 막대 / 카드: 미리보기·타일)
 	var pic: InfoPanel = dock.pic
@@ -2458,10 +2480,10 @@ func _meta_misc() -> void:
 	var guide_was_visible: bool = main.guide_label.visible
 	main.guide_label.hide()
 	main.card_dock.tick()
-	var hint_hidden: bool = not main.hint.visible
+	var preview_status: bool = main.hint.visible and main._kr_keep("카드 놓는 중") in main.hint.text
 	preview_target.free()
 	main.card_dock.tick()
-	ok("UI-25", hint_hidden and main.hint.visible, "대상 미리보기 때 하단 안내를 숨기고, 대상을 벗어나면 다시 표시")
+	ok("UI-25", preview_status and main.hint.visible, "대상 미리보기 중 상태 유지 %s/%s · 문구 %s · 입력 차단 %s" % [preview_status, main.hint.visible, main.hint.text, main.card_dock.input_blocked()])
 	main.guide_label.visible = guide_was_visible
 	main.phase = main.Phase.CHOOSE
 	ok("UI-25", mg == "혼불 3→4개 (하나 피해 73→72%) · 공격방식 보정 x1.06" and mg2 == "없음 → 탄 2개" and rings_off and rings_back and pv_ok, "넣기 설명 한 줄 합치기 '%s', 둘레 끔 %s/%s" % [mg, rings_off, rings_back])
