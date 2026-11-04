@@ -1,0 +1,11 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ok   UI-31 카드 들기: 목록 접힘 true·카메라 독립 true·글자 배율 독립 true·무효 드롭 보존 true·취소 복원 true·1회 적용 true·이어하기 true
+ok   TUT-01 첫 목표 한 문장 true, 소개 완료와 설명 열람 분리 true, 선택형 설명 true, 기기 파일만 사용
+ok   TUT-02 항목 15개, 문제 []
+ok   TUT-03 단일 안내·경고 우선 true, 자동 모달 없음 true, 직접 열람만 기록 true·닫으면 복귀 true
+ok   TUT-06 첫 행동: 터치 확정·설치·방향·취소·시작을 실제 상태에 따라 안내
+ok   TUT-04 시작 화면 true, 일시정지 true, 목록 true, 항목 열기 true, 목록으로 true, 전체 보기 true
+CARRY SPEC failures=0 features=6
+WARNING: 4 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

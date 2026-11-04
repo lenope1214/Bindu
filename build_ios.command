@@ -2,7 +2,8 @@
 # Bindu App Store용 IPA 빌드 (macOS: Finder에서 더블클릭 또는 터미널 실행)
 #
 # 결과: 프로젝트 폴더에 Bindu.ipa (App Store Connect 업로드용, Transporter 앱으로 올림)
-# TestFlight에 바로 올리기: ./build_ios.command upload (Xcode에 로그인된 Apple ID 사용)
+# TestFlight에 바로 올리기: ./build_ios.command upload ["테스트 내용"] (Xcode에 로그인된 Apple ID 사용)
+#   업로드 뒤 tools/testflight.py가 외부 그룹 배포까지 한다 (API 키는 그 파일 설명, 파이썬은 ASC_PY로 바꿀 수 있음)
 # 빌드가 끝나면 export_presets.cfg의 iOS application/version(빌드 번호)을 1 올려 둔다.
 # 사전 준비: Xcode > Settings > Accounts에 Apple ID(팀 4472Q8S8CD) 로그인. 서명은 Xcode 자동 서명.
 set -euo pipefail
@@ -38,7 +39,8 @@ xcodebuild -exportArchive -archivePath build/ios/Bindu.xcarchive \
 if [[ "${1:-}" == upload ]]; then
   rm -rf build/ios
   sed -i '' "/^name=\"iOS\"/,\$ s/^application\/version=\"$VER\"$/application\/version=\"$((VER + 1))\"/" export_presets.cfg
-  echo "업로드 완료: 빌드 번호 $VER — App Store Connect 처리 후 TestFlight에 나타남 (보통 5~30분)"
+  echo "업로드 완료: 빌드 번호 $VER — 처리를 기다렸다가 외부 그룹에 넣어요 (보통 5~30분)"
+  "${ASC_PY:-python3}" tools/testflight.py "$VER" "${2:-}"
   exit 0
 fi
 [[ -f build/ios/out/Bindu.ipa ]] || { echo "빌드 실패: 위 로그를 확인해 주세요." >&2; exit 1; }

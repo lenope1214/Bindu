@@ -51,16 +51,27 @@ def vtuple(v: str) -> tuple:
     return tuple(out[:3])
 
 
+# 게임 코드 수치 패치 키(Rules.CODE, "이름.변수[.칸]")로 바뀌면 점수·처치 상한도 넓혀야 하는 것. 기본값보다 커질 때만 반영
+CODE_KEYS = {
+    "Main.CROSS_HP": 5.6, "Main.LINE_HP": 4.8, "Main.LINE_ORBS": 1.6, "Modes.SWARM": MODE_SWARM, "Modes.ANGRY_MINIONS": 2.0,
+    "Orb.KIND.tank_hp": 2.5, "Orb.KIND.boss_hp": 12.0, "Orb.KIND.fast_hp": 0.6, "Main.COMBO_KEEP": 3.0,
+}
+
+
 def rule_values(rules: int, patch_data: dict | None) -> dict:
-    """규칙 버전 기본값에 패치 덮어쓰기까지 반영한 값."""
+    """규칙 버전 기본값에 패치 덮어쓰기까지 반영한 값 (게임 코드 수치는 기본값보다 작아지지 않게)."""
     vals = dict(RULE_DEFAULTS.get(rules, RULE_DEFAULTS[1]))
     vals["orb_hp"] = 1.0
+    vals.update(CODE_KEYS)
     if patch_data:
         r = patch_data.get("rules", {}) or {}
         for src in (r.get("all", {}), r.get(str(rules), {})):
             for k in ("orb_mul", "hp_growth", "orb_hp"):
                 if isinstance(src.get(k), (int, float)):
                     vals[k] = float(src[k])
+            for k, d in CODE_KEYS.items():
+                if isinstance(src.get(k), (int, float)) and not isinstance(src.get(k), bool):
+                    vals[k] = max(d, float(src[k]))
     return vals
 
 
@@ -106,25 +117,28 @@ def wave_size(w: int) -> int:
     return 3 + min(w, 150) * 2
 
 
-def spawn_count(w: int, map_id: str, orb_mul: float) -> int:
-    """main.gd spawn_count: 새 진입 방향이 열리는 웨이브는 80%(십자로·회랑 제외), 십자로 1.5배, 회랑 1.4배."""
+def spawn_count(w: int, map_id: str, orb_mul: float, line_orbs: float = MAP_ORBS["line"]) -> int:
+    """main.gd spawn_count: 새 진입 방향이 열리는 웨이브는 80%(십자로·회랑 제외), 십자로 1.5배, 회랑 LINE_ORBS배."""
     n = _roundi(wave_size(w) * orb_mul)
     if map_id not in MAP_ORBS and lanes_for(w) > lanes_for(w - 1):
         n = _roundi(n * 0.8)
+    if map_id == "line":
+        return _roundi(n * line_orbs)
     return _roundi(n * MAP_ORBS[map_id]) if map_id in MAP_ORBS else n
 
 
 def max_score(wave: int, map_id: str, rules: int, patch_data: dict | None = None) -> int:
     v = rule_values(rules, patch_data)
-    hp_map = MAP_HP.get(map_id, 1.0)
+    hp_map = {"cross": v["Main.CROSS_HP"], "line": v["Main.LINE_HP"]}.get(map_id, 1.0)
+    tank = max(v["Orb.KIND.tank_hp"], v["Orb.KIND.fast_hp"])
     total = 0.0
     for w in range(1, wave + 1):
         g = 1.0 if w <= 10 else v["hp_growth"] ** (w - 10)
         hp = (2.0 + math.floor(w * 0.7)) * g * v["orb_hp"] * hp_map + 1.0
-        n = spawn_count(w, map_id, v["orb_mul"])
-        kill = n * hp * 2.5  # 전부 단단한 구체라고 쳐도
+        n = spawn_count(w, map_id, v["orb_mul"], v["Main.LINE_ORBS"])
+        kill = n * hp * tank  # 전부 단단한 구체라고 쳐도
         if w % 5 == 0:
-            kill += hp * 12.0
+            kill += hp * v["Orb.KIND.boss_hp"]
         total += kill * 10 * 3.0 * SLACK + w * 20  # 처치 점수 최대 콤보 x3, 웨이브 클리어 보너스
     return int(total) + 1000
 
@@ -156,9 +170,9 @@ def check(run: dict, patch_data: dict | None = None) -> str:
     if score > cap:
         return f"score {score} > cap {cap}"
     v = rule_values(run["rules"], patch_data)
-    orb_mul = v["orb_mul"] * (MODE_SWARM if "swarm" in modes else 1.0)
-    spawned = sum(spawn_count(w, run["map"], orb_mul) for w in range(1, wave + 1))
-    minions = 400 if "angry" in modes else 200  # 성난 보스는 부하를 2배 자주 부른다
+    orb_mul = v["orb_mul"] * (v["Modes.SWARM"] if "swarm" in modes else 1.0)
+    spawned = sum(spawn_count(w, run["map"], orb_mul, v["Main.LINE_ORBS"]) for w in range(1, wave + 1))
+    minions = 200 * v["Modes.ANGRY_MINIONS"] if "angry" in modes else 200  # 성난 보스는 부하를 2배 자주 부른다
     if run.get("kills", 0) > spawned * 3 + minions * (wave // 5 + 1):
         return "too many kills"
     # 시간 검사는 TIME_CHECK_WAVE(20)웨이브까지 걸리는 시간만 요구한다 (더 간 판에 더 긴 시간을 요구하지 않음)

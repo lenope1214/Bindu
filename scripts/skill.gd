@@ -7,7 +7,7 @@ const IDS := ["focus", "hold", "brand"]
 const SETS := [["focus", "hold"], ["focus", "brand"], ["hold", "brand"]]
 const NAMES := {"focus": "집중", "hold": "붙잡기", "brand": "낙인"}
 const COLORS := {"focus": Color(1.0, 0.8, 0.35), "hold": Color(0.55, 0.85, 1.0), "brand": Color(1.0, 0.45, 0.55)}
-const PICK_R := 70.0  # 집중: 누른 곳에서 이 거리 안 가장 가까운 오브젝트
+static var PICK_R := 70.0  # 집중: 누른 곳에서 이 거리 안 가장 가까운 오브젝트
 
 
 ## 묶음 번호 → 기술 두 개 (모르는 번호는 0번).
@@ -18,6 +18,11 @@ static func set_ids(i: int) -> Array:
 static func combo_name(i: int) -> String:
 	var ids := set_ids(i)
 	return "%s + %s" % [NAMES[ids[0]], NAMES[ids[1]]]
+
+
+## 버튼·알림에 붙이는 짧은 뜻
+static func short(id: String) -> String:
+	return {"focus": "오브젝트 공격 속도↑", "hold": "둘레 구체 멈춤", "brand": "둘레 구체 받는 피해↑"}.get(id, "")
 
 
 static func desc(id: String) -> String:

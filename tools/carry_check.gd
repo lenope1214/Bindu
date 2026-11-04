@@ -51,6 +51,7 @@ func _initialize() -> void:
 	ok("UI-31", held() and main.picks_left == 2, "실제 카드 클릭: 미소비·목록/상세 접힘·작은 카드 표시")
 	await mouse_move(world(target.position))
 	await snap("held-target")
+	ok("UI-25", not main.hint.visible, "대상 미리보기 위에 하단 조작 안내를 겹쳐 쓰지 않음")
 	main.bar_open = true
 	await snap("held-controls")
 	main.bar_open = false

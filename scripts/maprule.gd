@@ -8,7 +8,7 @@ class_name MapRule
 ## 수치는 온라인 패치 rules의 map_* 키 (Rules.TUNE).
 
 const AFF := {
-	"plain": {"elem": [Elem.WOOD, Elem.EARTH], "pat": ["wall"], "mod": [], "link": ["pincer", "prism", "reso"]},
+	"plain": {"elem": [Elem.WOOD, Elem.EARTH], "pat": ["wall"], "mod": [], "link": ["pincer", "reso"]},
 	"spiral": {"elem": [Elem.WIND, Elem.TIME], "pat": ["vortex", "clock"], "mod": ["bounce"], "link": []},
 	"cross": {"elem": [Elem.METAL, Elem.FIRE], "pat": ["laser", "stream", "thorn", "iron"], "mod": ["pierce"], "link": []},
 	"storm": {"elem": [Elem.ELECTRIC, Elem.SOUND], "pat": ["sonic", "chain", "gust"], "mod": ["multi"], "link": []},
@@ -149,8 +149,8 @@ static func spiral_speed(d: float) -> float:
 
 # ---------- 십자로: 관문 ----------
 
-const LANE_W := 60.0  # 길 가운데 선에서 이만큼 안이면 길 위
-const LANE_ALIGN := 0.9  # 겨눈 방향과 길 방향 cos (약 25도 안)
+static var LANE_W := 60.0  # 길 가운데 선에서 이만큼 안이면 길 위
+static var LANE_ALIGN := 0.9  # 겨눈 방향과 길 방향 cos (약 25도 안)
 
 
 ## 오브젝트가 길 위에서 길을 따라 겨누는지

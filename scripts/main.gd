@@ -6,13 +6,13 @@ enum Phase { CHOOSE, PLACE, AIM, WAVE, GAMEOVER, MOVE, READY, DRAW }
 const CORE_RADIUS := 14.0
 const LINE_INSET := 90.0  # 회랑 맵: 문(중앙 점)이 화면 끝에서 떨어진 거리
 const LINE_HALF := 180.0  # 회랑 맵: 길 폭의 반
-const LINE_ORBS := 1.6  # 회랑 맵: 구체 수 배율 (방향이 하나고 길이 길어서). 봇 32판으로 평원에 맞춤 (2026-10-30)
-const CROSS_HP := 5.6  # 십자로 맵: 구체 체력 배율 (1.6 → 5.6, 2026-10-31 맵 난이도 맞추기: 봇 중간값 44 → 17). 서버 validate.py MAP_HP와 같이
-const LINE_HP := 4.8  # 회랑 맵: 구체 체력 배율 (2.4 → 4.8, 2026-10-31 맵 난이도 맞추기: 봇 중간값 35 → 16, 다른 맵 16~17)
-const LINE_SPD := 1.6  # 회랑 맵: 구체 속도 배율 (길이 길어 오래 맞는 만큼)
-const SPIRAL_SWIRL := 0.6  # 소용돌이 맵: 구체가 중앙 방향에서 비껴 도는 각도(라디안)
+static var LINE_ORBS := 1.6  # 회랑 맵: 구체 수 배율 (방향이 하나고 길이 길어서). 봇 32판으로 평원에 맞춤 (2026-10-30)
+static var CROSS_HP := 5.6  # 십자로 맵: 구체 체력 배율 (1.6 → 5.6, 2026-10-31 맵 난이도 맞추기: 봇 중간값 44 → 17). 서버 validate.py MAP_HP와 같이
+static var LINE_HP := 4.8  # 회랑 맵: 구체 체력 배율 (2.4 → 4.8, 2026-10-31 맵 난이도 맞추기: 봇 중간값 35 → 16, 다른 맵 16~17)
+static var LINE_SPD := 1.6  # 회랑 맵: 구체 속도 배율 (길이 길어 오래 맞는 만큼)
+static var SPIRAL_SWIRL := 0.6  # 소용돌이 맵: 구체가 중앙 방향에서 비껴 도는 각도(라디안)
 const MAP_AFF_COLOR := Color(0.55, 0.95, 0.85)  # 맵 친화 카드 표시 (MapRule)
-const CORE_MAX_HP := 10
+static var CORE_MAX_HP := 10  # 중앙 체력 (모드·멀티 배율 전)
 const MERGE_DIST := 30.0
 const SAVE_PATH := "user://best.cfg"
 const RUN_PATH := "user://run.cfg"  # 이어하기: 쉬는 시간마다 저장, 게임 오버면 지움
@@ -36,7 +36,6 @@ var spawn_timer := 0.0
 var spawn_interval := 1.0
 
 var lanes: Array[float] = []  # 다음 웨이브 구체가 들어올 방향(라디안)
-var prism_towers: Array = []  # 발사체가 지날 때 확인할 프리즘 오브젝트 (매 계산마다 갱신)
 var wells: Array = []  # 지금 떠 있는 중력 우물 (블랙홀): 안 구체가 받은 피해를 모은다
 var star_towers: Array = []  # 별이 든 오브젝트 (둘레 피해를 별빛으로 모은다, 매 계산마다 갱신)
 var picks_left := 0  # 이번 쉬는 시간에 남은 설치 횟수
@@ -108,7 +107,6 @@ var zones: Node2D
 var arcs: Array = []  # 전류 이펙트 [시작, 끝, 남은 시간]
 var bolts: Array = []  # 연쇄 번개 [점 목록, 남은 시간]
 var pulses: Array = []  # 소리 울림 음파 [중심, 반지름, 남은 시간]
-var refracts: Array = []  # 프리즘 굴절 [중심, 탄 방향, 색, 남은 시간]
 var beams: Array = []  # 빛줄기 [시작, 끝, 색, 남은 시간]
 var live_orbs: Array = []
 var targets: Array = []  # 화면 안에 들어온 구체 (공격 대상)
@@ -273,7 +271,7 @@ var coin_fx: Control
 var rest_ready := false  # 이번 쉬는 시간의 다음 웨이브(방향·저항·보스)를 이미 뽑아 둠 (넘기다 쉬는 시간에 멈춘 때)
 var combo := 0
 var combo_t := 0.0
-const COMBO_KEEP := 3.0  # 이 게임 시간(배속과 상관없이) 안에 다음 처치가 나와야 콤보가 이어진다
+static var COMBO_KEEP := 3.0  # 이 게임 시간(배속과 상관없이) 안에 다음 처치가 나와야 콤보가 이어진다
 var combo_hold := false  # 웨이브가 끝나면 남은 유지 시간을 멈춰 두고, 다음 웨이브 첫 처치에서 푼다
 var combo_bonus := 0  # 이번 콤보로 더 얻은 점수 (배율 없이 받았을 점수와의 차이)
 var combo_end := [0, 0, 0.0]  # 끊긴 콤보 [콤보, 보너스, 남은 표시 시간]
@@ -1465,18 +1463,20 @@ func _dps_row(t: Tower, rank: int, dps: float, total: float, live := false) -> C
 	row.mouse_filter = Control.MOUSE_FILTER_STOP
 	row.add_theme_constant_override("separation", 6)
 	var col := t.color()
+	var target: WeakRef = weakref(t)
 	row.draw.connect(func():
-		var hot := dps_focus == t
+		var tower: Tower = target.get_ref()
+		var hot := tower != null and dps_focus == tower
 		row.draw_rect(Rect2(Vector2.ZERO, row.size), Color(1, 1, 1, 0.14 if hot else 0.04))
 		row.draw_rect(Rect2(Vector2.ZERO, Vector2(row.size.x * share, row.size.y)), Color(col, 0.28))
 		if hot:
 			row.draw_rect(Rect2(Vector2.ZERO, row.size), Color(1, 0.9, 0.5, 0.9), false, 1.0))
 	row.mouse_entered.connect(func():
-		dps_focus = t
+		dps_focus = target.get_ref()
 		for r in dps_list.get_children():
 			r.queue_redraw())
 	row.mouse_exited.connect(func():
-		if dps_focus == t:
+		if dps_focus == target.get_ref():
 			dps_focus = null
 		row.queue_redraw())
 	var cells := [["%d" % rank, 18, HORIZONTAL_ALIGNMENT_RIGHT, Tower.RANK_COLORS[rank - 1] if rank <= 3 and rank_of.get(t.get_instance_id(), 0) == rank else Color(1, 1, 1, 0.55)],
@@ -1523,22 +1523,24 @@ func _dps_name(t: Tower, col: Color) -> Control:
 	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.clip_contents = true
+	var target: WeakRef = weakref(t)
 	c.draw.connect(func():
-		if not is_instance_valid(t):
+		var tower: Tower = target.get_ref()
+		if tower == null:
 			return  # 표가 다시 만들어지기 전에 오브젝트가 없어짐 (협동 재접속 등)
 		var y := c.size.y / 2.0
-		Glyph.pat(c, t.pattern, Vector2(10, y), 8.0, col.lightened(0.5))
+		Glyph.pat(c, tower.pattern, Vector2(10, y), 8.0, col.lightened(0.5))
 		var x := 22.0
-		if t.plv > 1:
-			c.draw_string(ui_font, Vector2(x, y + 4.0), str(t.plv), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.6))
+		if tower.plv > 1:
+			c.draw_string(ui_font, Vector2(x, y + 4.0), str(tower.plv), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.6))
 			x += 9.0
 		x += 8.0
-		for e in t.order:
+		for e in tower.order:
 			Glyph.elem(c, e, Vector2(x + 7.0, y), 7.0)
 			x += 16.0
-			if t.lv(e) > 1:
-				c.draw_string(ui_font, Vector2(x, y + 4.0), str(t.lv(e)), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.6))
-				x += 4.0 + 6.0 * str(t.lv(e)).length()
+			if tower.lv(e) > 1:
+				c.draw_string(ui_font, Vector2(x, y + 4.0), str(tower.lv(e)), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.6))
+				x += 4.0 + 6.0 * str(tower.lv(e)).length()
 			x += 3.0)
 	return c
 
@@ -1587,10 +1589,8 @@ func core_fit(card: Dictionary) -> String:
 			"elem":
 				if k == Tower.elem_key(card["e"]):
 					return src_name(k)
-				if k.begins_with("rx:"):
-					for r in Elem.REACTIONS:
-						if str(r["id"]) == k.substr(3) and card["e"] in [r["a"], r["b"]]:
-							return src_name(k)
+				if k == "share:" + Patch.ELEM_KEYS[Elem.ALL.find(card["e"])]:
+					return src_name(k)
 			"pat", "mod", "link", "trig":
 				if k == "%s:%s" % [card["type"], card.get("id", "")]:
 					return src_name(k)
@@ -1604,7 +1604,11 @@ func _src_top(d: Dictionary, n: int) -> Array:
 	return keys.slice(0, n)
 
 
-## 피해 출처 키 → 보이는 이름 (elem:fire → 불, rx:lava → 용암).
+## 피해 출처 키 → 보이는 이름 (elem:fire → 불, share:electric → 특징 튐).
+## 상성 색: 강 초록, 약 주황 (Elem.aff_of)
+const AFF_COL := {"strong": Color(0.5, 1.0, 0.55), "weak": Color(1.0, 0.68, 0.3)}
+
+
 static func src_name(key: String) -> String:
 	var p := key.split(":")
 	if p.size() != 2:
@@ -1625,9 +1629,13 @@ static func src_name(key: String) -> String:
 			for r in Elem.REACTIONS:
 				if r["id"] == p[1]:
 					return r["name"]
-		"trait":
+		"aff":
+			for r in Elem.AFF_RULES:
+				if r[2] == p[1]:
+					return "상성 " + r[3]
+		"trait", "share":
 			var j := Patch.ELEM_KEYS.find(p[1])
-			return "형태 성질 " + (Elem.NAMES[Elem.ALL[j]] if j >= 0 else p[1])
+			return ("특징 " + Elem.trait_name(Elem.ALL[j])) if j >= 0 else p[1]
 		"etc":
 			return {"crowd": "무리(오브젝트 수)", "perk": "특성", "ley": "기맥"}.get(p[1], p[1])
 	return p[1]
@@ -1757,7 +1765,7 @@ func _update_hud(force := false) -> void:
 		var ad := Vary.adapt_text()
 		if ad != "":
 			vl.append(["적응 구체: " + ad, Color(1, 0.75, 0.6)])
-		var txt := Vary.ename(Vary.event) if not Vary.event.is_empty() else ("봉인 %d" % Vary.count() if Vary.count() > 0 else "흐름")
+		var txt := Vary.ename(Vary.event) if not Vary.event.is_empty() else ("봉인 %d" % Vary.count() if Vary.count() > 0 else "판 흐름")
 		if ad != "":
 			txt += " · 적응"
 		items.append(["tag", vc, txt, vc, vl, false])
@@ -1765,25 +1773,25 @@ func _update_hud(force := false) -> void:
 		# 맵 규칙·친화 카드 (시험): 칩은 규칙 이름, 말풍선에 규칙과 친화
 		var mc := MAP_AFF_COLOR
 		var rt := MapRule.rule_text()
-		items.append(["tag", mc, rt.get_slice(":", 0), mc, [["맵 규칙 (시험)", W], [rt, W], ["친화 카드 (자주 나옴, 속성·공격방식 피해 +%d%%): %s" % [roundi(Rules.t("map_aff_dmg") * 100), MapRule.aff_text()], D]], false])
+		items.append(["tag", mc, str(Meta.MAPS[Meta.map_id]["name"]) + " 규칙", mc, [["맵 규칙 (시험)", W], [rt, W], ["친화 카드 (자주 나옴, 속성·공격방식 피해 +%d%%): %s" % [roundi(Rules.t("map_aff_dmg") * 100), MapRule.aff_text()], D]], false])
 	if not build_cache.is_empty() and build_cache[0][1] >= BUILD_MIN:
 		# 이번 판 주력: 피해 출처 1위와 몫, 말풍선에 상위 5
 		var bl: Array = [["이번 판 주력 (판 누적 피해 출처)", W]]
 		for it in build_cache:
 			bl.append(["%s %d%%" % [src_name(it[0]), roundi(it[1] * 100)], D])
 		bl.append(["주력을 키우는 카드에는 ◎ 표시", BUILD_COLOR])
-		items.append(["build", BUILD_COLOR, "%s %d%%" % [src_name(build_cache[0][0]), roundi(build_cache[0][1] * 100)], Color(0.8, 1, 1), bl, false])
+		items.append(["build", BUILD_COLOR, "주력 %s %d%%" % [src_name(build_cache[0][0]), roundi(build_cache[0][1] * 100)], Color(0.8, 1, 1), bl, false])
 	var nt := towers.get_child_count()
 	if nt > 1:
 		var cb := roundi(Rules.crowd_bonus(nt) * MapRule.crowd_k() * 100)
-		items.append(["crowd", Color(0.6, 0.9, 0.65), "%d  +%d%%" % [nt, cb], Color(0.7, 0.95, 0.75), [["오브젝트 수 보너스: %d개, 피해 +%d%%" % [nt, cb], W]], false])
+		items.append(["crowd", Color(0.6, 0.9, 0.65), "%d개 +%d%%" % [nt, cb], Color(0.7, 0.95, 0.75), [["오브젝트 수 보너스: %d개, 피해 +%d%%" % [nt, cb], W]], false])
 	if phase == Phase.WAVE:
 		items.append(["orb", Color(0.85, 0.85, 0.9), str(to_spawn + _alive_count(orbs)), W, [["남은 구체", W]], false])
 	# 다음 보스까지 남은 웨이브 (보스 웨이브 중이면 "지금")
 	var bl := (ceili(wave / 5.0) * 5 - wave) if phase == Phase.WAVE else (ceili((wave + 1) / 5.0) * 5 - wave)
 	if wave > 0 or phase != Phase.WAVE:
 		var bt := "다음 웨이브 보스" if bl == 1 and phase != Phase.WAVE else ("이번 웨이브 보스" if bl == 0 else "보스까지 %d웨이브" % bl)
-		items.append(["boss", Color(1, 0.6, 0.75), "!" if bl == 0 else str(bl), Color(1, 0.75, 0.85), [[bt, W]], false])
+		items.append(["boss", Color(1, 0.6, 0.75), "보스!" if bl == 0 else "보스까지 %d" % bl, Color(1, 0.75, 0.85), [[bt, W]], false])
 	if not selected.is_empty():
 		items.append(["sel", Color(0.6, 1, 0.7), str(selected.size()), W, [["선택한 오브젝트", W]], false])
 	var first := true
@@ -1863,16 +1871,23 @@ static func orb_base_speed(w: int) -> float:
 	return 30.0 + mini(w, int(Rules.t("orb_spd_cap_w"))) * 3.0
 
 
+## 저항·굳센 구체 비율: 나오는 웨이브의 처음 비율, 웨이브마다 +, 최대. 온라인 패치 rules "Main.SPECIAL.<이름>"
+static var SPECIAL := {
+	"resist": 0.3, "resist_step": 0.01, "resist_max": 0.6,  # 저항 구체: 처음 비율, 웨이브마다 +, 최대
+	"sturdy": 0.15, "sturdy_step": 0.01, "sturdy_max": 0.4,  # 굳센 구체: 처음 비율, 웨이브마다 +, 최대
+}
+
+
 ## 저항 구체(12웨이브~, 버전 4는 8~): 웨이브마다 저항 속성 하나를 정하고 미리 알려 준다.
 static func resist_share(w: int) -> float:
 	var s := Rules.resist_from
-	return 0.0 if w < s else minf(0.3 + 0.01 * (w - s), 0.6)
+	return 0.0 if w < s else minf(SPECIAL.resist + SPECIAL.resist_step * (w - s), SPECIAL.resist_max)
 
 
 ## 굳센 구체(15웨이브~, 버전 4는 11~): 밀기·감속·기절·냉기 절반.
 static func sturdy_share(w: int) -> float:
 	var s := Rules.sturdy_from
-	return 0.0 if w < s else minf(0.15 + 0.01 * (w - s), 0.4)
+	return 0.0 if w < s else minf(SPECIAL.sturdy + SPECIAL.sturdy_step * (w - s), SPECIAL.sturdy_max)
 
 
 ## 고른 규칙 버전을 적용한다 (시작 화면에서 바꿀 때, 새 판마다).
@@ -1916,7 +1931,7 @@ func _help_text() -> String:
 		"첫 판은 카드가 단계별로 열려요 (공격방식 3·강화 4·연계 6웨이브)",
 		"처음 생기는 일엔 위쪽에 한 줄 안내 (설정에서 끄기·처음부터 다시 보기)",
 		"튜토리얼: 시작 화면 [튜토리얼]·일시정지에서 항목별로 다시 보기",
-		"도감(시작 화면)에서 ☆로 선호 표시: 그 카드·반응이 선택지에 나오면 반짝여요",
+		"도감(시작 화면)에서 ☆로 선호 표시: 그 카드·조합이 선택지에 나오면 반짝여요",
 	]
 	# 폰·태블릿: 키보드·마우스 안내 대신 버튼·누르기로
 	var touch := [
@@ -1935,7 +1950,7 @@ func _help_text() -> String:
 		"첫 판은 카드가 단계별로 열려요 (공격방식 3·강화 4·연계 6웨이브)",
 		"처음 생기는 일엔 위쪽에 한 줄 안내 (설정에서 끄기·처음부터 다시 보기)",
 		"튜토리얼: 시작 화면 [튜토리얼]·일시정지에서 항목별로 다시 보기",
-		"도감(시작 화면)에서 ☆로 선호 표시: 그 카드·반응이 선택지에 나오면 반짝여요",
+		"도감(시작 화면)에서 ☆로 선호 표시: 그 카드·조합이 선택지에 나오면 반짝여요",
 	]
 	return "\n".join((touch if touch_ui else keys) + [
 		"",
@@ -1947,7 +1962,7 @@ func _help_text() -> String:
 		"보스 웨이브를 넘기면 특성(모든 오브젝트에 붙는 강화) 3개 중 1개 선택",
 		"공격방식은 직선탄일 때 한 번만 정할 수 있고, 같은 것을 넣으면 레벨업",
 		"속성을 많이 겹칠수록 피해는 늘고 공격 속도는 조금씩 느려집니다. 오브젝트가 많을수록 모든 오브젝트의 피해가 늘어요(오브젝트 수 보너스, 5개 +16%% · 10개 +23%%, 늘수록 덜 오름). %s" % mods,
-		"감속은 최대 70%, 밀기는 조금씩만. 기절·속박·빙결은 연달아 걸릴수록 짧아지다가 잠깐 면역",
+		"감속은 최대 70%, 밀기는 조금씩만. 기절·속박·얼림은 연달아 걸릴수록 짧아지다가 잠깐 면역",
 		"화면 밖 구체는 맞지 않습니다. 시작 화면에서 규칙(랭크·도파민 모드)%s과 맵%s을 바꿀 수 있어요" % (["", ""] if touch_ui else ["(↑/↓)", "(←/→)"]),
 		"모드(첫 판 뒤): 어렵게 하면 점수 배율이 오르고, 쉽게 하면 내려가요 (쉽게 모드 판은 기록 따로)",
 	])
@@ -2320,7 +2335,7 @@ func _tutor_card(k: String) -> Dictionary:
 	match k:
 		"pat": ids = Pat.PATTERN_IDS.slice(1)
 		"mod": ids = Pat.MOD_IDS.duplicate()
-		"link": ids = ["pincer"] if towers.get_child_count() >= 2 else ["prism", "reso"]
+		"link": ids = ["pincer"] if towers.get_child_count() >= 2 else ["reso"]
 		"trig": ids = Pat.TRIG_IDS.duplicate()
 	ids.shuffle()
 	for id in ids:
@@ -2396,7 +2411,7 @@ func _roll_card() -> Dictionary:
 	var trigs: Array = Pat.TRIG_IDS.filter(func(id):
 		var cd := {"type": "trig", "id": id}
 		return _card_enabled(cd) and ts.any(func(t): return t.can_take(cd)))
-	var links: Array = (Pat.LINK_IDS if n >= 2 else ["prism", "reso"]).filter(func(id):
+	var links: Array = (Pat.LINK_IDS if n >= 2 else ["reso"]).filter(func(id):
 		return _card_enabled({"type": "link", "id": id}) and not Vary.is_sealed("link", id))
 	if n > 0 and wave > 0 and _card_open("pat") and _path_takers() and not Garden.on and _card_enabled({"type": "pat", "id": "path"}):
 		var has := ts.any(func(t): return t.pattern == "path")
@@ -2537,12 +2552,12 @@ func _card_content(card: Dictionary, lvl: int) -> Dictionary:
 			head["e"] = e
 			if card["lv"] == 2:
 				head["lv"] = "Lv2"
-			rows = [{"i": "rider", "t": "적중 · " + Elem.rider(e), "al": 0}, {"i": "trait", "t": "형태 · " + Elem.TRAIT[e], "al": 0}]
+			rows = [{"i": "rider", "t": "효과 · " + Elem.rider(e), "al": 0}, {"i": "trait", "t": "특징 · " + Elem.TRAIT[e], "al": 0}]
 			foot = [["place_new", "새 오브젝트"], ["place_on", "겹치기" + (" %d종" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "")]]
 			var cf := _combo_parts(e)
 			if not cf["els"].is_empty():
 				rows.append({"els": cf["els"]})
-				tip = "생길 반응: " + ", ".join(cf["names"])
+				tip = "생길 조합: " + ", ".join(cf["names"])
 			if cf["ups"] > 0:
 				rows.append({"chip": "Lv↑ %d곳" % cf["ups"], "i": "place_on"})
 		"pat":
@@ -2624,8 +2639,8 @@ func _card_full(card: Dictionary) -> Array:
 	match card["type"]:
 		"elem":
 			var e: int = card["e"]
-			out.append(["적중 효과 (맞힌 구체에) · " + Elem.rider(e), Elem.COLORS[e].lightened(0.3)])
-			out.append(["형태 성질 (공격 모양에) · " + Elem.TRAIT[e], W])
+			out.append(["효과 (맞힌 구체에) · " + Elem.rider(e), Elem.COLORS[e].lightened(0.3)])
+			out.append(["특징 (이 오브젝트의 효과를 다른 구체로) · " + Elem.TRAIT[e], W])
 			var seen := {}
 			for t in towers.get_children():
 				if not t.can_take({"type": "elem", "e": e}):
@@ -2635,7 +2650,9 @@ func _card_full(card: Dictionary) -> Array:
 						continue
 					seen[r["id"]] = true
 					var o: int = r["b"] if r["a"] == e else r["a"]
-					out.append(["반응 %s (+%s) · %s" % [r["name"], Elem.NAMES[o], r["desc"]], r["color"]])
+					out.append(["조합 %s (+%s) · %s" % [r["name"], Elem.NAMES[o], r["desc"]], r["color"]])
+					if r.get("aff_txt", "") != "":
+						out.append([r["aff_txt"], AFF_COL[r["aff"]]])
 			var ups: int = _combo_parts(e)["ups"]
 			if ups > 0:
 				out.append(["%s 레벨업 가능 %d곳" % [Elem.NAMES[e], ups], D])
@@ -2892,7 +2909,7 @@ func _fav_tag(card: Dictionary) -> String:
 				continue
 			for r in Elem.new_reactions(t.elements, card["e"]):
 				if Meta.favs.has("react:" + str(r["id"])):
-					return "★ 선호 반응: " + str(r["name"])
+					return "★ 선호 조합: " + str(r["name"])
 	return ""
 
 
@@ -3041,7 +3058,7 @@ func _rest_guides() -> void:
 	if wave == 0:
 		_guide("start", "빨간 부채꼴이 구체가 들어오는 길목이에요. 그 넓이 어디로든 와요. 속성 카드를 고른 뒤 길목 쪽 빈 곳을 눌러 놓고, 한 번 더 눌러 쏠 방향을 정하세요")
 	elif towers.get_child_count() > 0:
-		_guide("stack", "속성 카드를 오브젝트 위에 놓으면 겹쳐져요. 같은 속성은 레벨업, 다른 속성은 추가 효과가 더해지고, 맞는 두 속성이 만나면 특수 반응이 생겨요")
+		_guide("stack", "속성 카드를 오브젝트 위에 놓으면 겹쳐져요. 같은 속성은 레벨업, 다른 속성은 추가 효과가 더해지고, 속성마다 특징이 다른 속성 효과까지 실어 날라요")
 	if not boss_plan.is_empty() and boss_plan["wave"] == wave + 1:
 		_guide("boss", "다음 웨이브 끝에 보스가 와요. 분홍 선이 실제로 지나갈 길이에요. 중앙에 닿으면 3 피해, 웨이브를 넘기면 특성을 하나 골라요")
 	if wave_resist >= 0:
@@ -3065,7 +3082,7 @@ func _card_guides() -> void:
 	if "link" in types:
 		_guide("link", "새 카드 · 연계: 오브젝트 위에 놓아 주변과 함께 싸워요. 협공은 여러 오브젝트가 같이 맞힌 구체를 터뜨려요")
 	if "trig" in types:
-		_guide("trig", "새 카드 · 발동: 오브젝트 위에 놓으면 조건이 맞을 때 공격이 더 나가요. 여진은 잡은 자리에서 탄이 터지고, 선봉은 체력이 많이 남은 구체를 더 세게 때려요")
+		_guide("trig", "새 카드 · 발동: 오브젝트 위에 놓으면 조건이 맞을 때 공격이 더 나가요. 처치 폭발은 잡은 자리에서 탄이 터지고, 앞줄 강타는 체력이 많이 남은 구체를 더 세게 때려요")
 
 
 ## 띄어쓰기 단위로 줄을 나눈다. Godot 자동 줄바꿈은 한글을 음절마다 끊어 "형\n태"처럼 단어가 잘린다.
@@ -3418,7 +3435,7 @@ func _apply_perk(id: String) -> void:
 ## 특성 수치 (온라인 패치 perks로 바뀔 수 있음). 설명 글도 같이 바꿔야 하면 perk_desc. coin: 동전 뒷면 새로고침 수
 const PERK_VALS := {"power": 0.15, "haste": 0.12, "reach": 0.12, "core": 3, "reroll": 1, "luck": 0.2, "regen": 1, "regen_more": 0.5, "slow": 0.08, "harmony": 0.5, "harmony_cap": 0.2, "coin": 2,
 	"shield": 1, "shield_max": 3, "shield_all": 4, "rampart": 1, "rampart_max": 4, "rampart_push": 140, "riposte": 0.6, "riposte_more": 0.5, "riposte_r": 160, "overflow": 2}
-const RAMPART_R := 56.0  # 성벽이 서는 중앙에서의 거리
+static var RAMPART_R := 56.0  # 성벽이 서는 중앙에서의 거리
 const FX_RIPOSTE := 0.35
 
 
@@ -3824,11 +3841,20 @@ func _th(t: String) -> String:
 
 ## 위쪽 가운데 글(알림·처음 안내)을 가운데에 두되, 오른쪽 설명이 떠 있으면 그 왼쪽까지만 (글자를 키우면 글 끝이 설명 밑에 깔리던 것).
 ## 글이 정한 폭보다 길면 Label이 오른쪽으로만 늘어나 가운데에서 벗어나던 것도 함께 맞춘다.
+## 전장 가운데 글(알림·큰 글)이 넘지 말아야 할 오른쪽 끝: 오른쪽 설명, 쉬는 시간 카드 정보 칸(도크 오른쪽)
+func _right_panel_x() -> float:
+	var x := ui_root.size.x
+	if legend.visible:
+		x = minf(x, legend.get_rect().position.x)
+	if card_dock != null and card_dock.side != null and card_dock.side.visible and card_dock.side.modulate.a > 0.05:
+		x = minf(x, card_dock.side.get_rect().position.x)
+	return x
+
+
 func _beside_legend(c: Control, min_w: float) -> void:
 	var w := maxf(min_w, c.get_combined_minimum_size().x)
 	var x := (ui_root.size.x - w) / 2.0
-	if legend.visible:
-		x = minf(x, legend.get_rect().position.x - 8.0 - w)
+	x = minf(x, _right_panel_x() - 8.0 - w)
 	c.position.x = maxf(x, 8.0)
 	c.size.x = w
 
@@ -4451,7 +4477,7 @@ func _on_pick(card: Dictionary) -> void:
 		card_dock.tick()
 
 
-## 통계용 카드 이름: elem:fire, pat:spray, mod:rapid, link:prism
+## 통계용 카드 이름: elem:fire, pat:spray, mod:rapid, link:reso
 func _stat_key(card: Dictionary) -> String:
 	if card.get("type", "") == "elem":
 		return "elem:" + Patch.ELEM_KEYS[Elem.ALL.find(card["e"])]
@@ -4598,7 +4624,9 @@ func _update_auto_btn() -> void:
 
 
 func _start_wave() -> void:
-	if not Garden.on and not mp_ghost:
+	# 멀티는 준비 동기화·잠수 자동 진행을 우선한다. 한 기기의 배치로 시작을 거부하면
+	# 호스트의 wave 통지와 실제 단계가 달라지거나 대결이 무기한 멈출 수 있다.
+	if not Garden.on and mp_mode == "":
 		var blocked := _wave_start_block_reason()
 		if blocked != "":
 			countdown = -1.0
@@ -4738,22 +4766,7 @@ func _wave_lane_covered(a: float, w: int, spread: float) -> bool:
 
 ## 기본 공격방식별 유효 사거리. 수치는 실제 공격·사거리 표시와 같은 기준이다.
 func _wave_attack_reach(t: Tower) -> float:
-	if t.m("reflex") > 0:
-		return t.reflex_range()
-	var l := t.plv
-	var s := t.sz()
-	match t.pattern:
-		"shot": return Tower.shot_range(t.total_level(), t.mf("size")) * (1.0 + 0.12 * t.tk(Elem.WIND))
-		"spray": return 200.0 * Tower.reach(l) * s
-		"stream": return 260.0 * Tower.reach(l) * s
-		"chain": return 280.0 * Tower.reach(l) * s
-		"gust": return 420.0 * s * Rules.t("range_gust")
-		"sonic": return t.sonic_r(l)
-		"clock": return 240.0 * Tower.reach(l) * s
-		"lob": return Tower.LOB_RANGE * Tower.reach(l)
-		"vortex": return t.well_range()
-		"wall": return 90.0 * Tower.reach(l) + 32.0 * s
-		_: return 2000.0
+	return t.well_range() if t.pattern == "vortex" else t.reflex_range()
 
 
 func _game_over() -> void:
@@ -4894,12 +4907,8 @@ func _draw_over_card() -> void:
 	if touch_ui:
 		c.draw_string(ui_font, Vector2(x0, y + 14.0), "눌러서 대기방으로" if to_lobby else "눌러서 시작 화면으로", HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
 	else:
-		Glyph.ui(c, "click", Vector2(-46.0, y + 9.0), 7.0, dim)
-		c.draw_string(ui_font, Vector2(-34.0, y + 14.0), "· R · Esc", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, dim)
-		if to_lobby:
-			c.draw_string(ui_font, Vector2(30.0, y + 14.0), "대기방", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, dim)
-		else:
-			Glyph.ui(c, "home", Vector2(38.0, y + 9.0), 7.0, dim)
+		# 그림(마우스·집)만으로는 무엇을 누르면 어디로 가는지 알기 어려웠다: 글로
+		c.draw_string(ui_font, Vector2(x0, y + 14.0), "클릭 · R · Esc: " + ("대기방으로" if to_lobby else "시작 화면으로"), HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
 	if absf(over_label.offset_top - (y + 34.0)) > 0.5:
 		over_label.offset_top = y + 34.0  # 남은 글은 카드 바로 아래 (둘 다 화면 가운데 기준)
 		over_label.offset_bottom = y + 184.0
@@ -5380,7 +5389,7 @@ func _place_on(target: Tower) -> void:
 	var msg: String = target.add(picked["e"], picked["lv"])
 	_show_toast(msg)
 	sfx.play("place")
-	if msg.begins_with("반응"):
+	if msg.begins_with("조합"):
 		sfx.play("reaction", 0.0)
 		big_banner(msg + "!", Color(1, 0.8, 0.4))
 		burst(target.position, Color(1, 0.85, 0.4), 30, 260.0)
@@ -6499,7 +6508,7 @@ func _refresh_legend() -> void:
 		"연계 · 주변 오브젝트와 함께",
 		"발동 · 조건이 맞으면 추가 공격",
 		"새 오브젝트 = 직선탄 + 속성 1",
-		"특수 반응 · 두 속성이 만나면 (%d/%d)" % [Meta.codex.size(), Elem.REACTIONS.size()],
+		"조합 · 두 속성이 만나면 (%d/%d)" % [Meta.codex.size(), Elem.REACTIONS.size()],
 	])
 	var lines := legend_heads.duplicate()
 	# 반응이 91개라 만들어 본 반응만 한 줄에 세 개씩 (나머지는 개수만, 도감과 같은 기록).
@@ -6519,9 +6528,9 @@ func _refresh_legend() -> void:
 	var k := "" if touch_ui else " K"
 	if shown < rs.size():
 		var left := Elem.REACTIONS.size() - rs.size()
-		lines.append("외 %d개%s (모두 도감%s)" % [rs.size() - shown, " · 못 만난 반응 %d개" % left if left > 0 else "", k])
+		lines.append("외 %d개%s (모두 도감%s)" % [rs.size() - shown, " · 못 만난 조합 %d개" % left if left > 0 else "", k])
 	elif rs.size() < Elem.REACTIONS.size():
-		lines.append("못 만난 반응 %d개 (도감%s)" % [Elem.REACTIONS.size() - rs.size(), k])
+		lines.append("못 만난 조합 %d개 (도감%s)" % [Elem.REACTIONS.size() - rs.size(), k])
 	legend.text = _kr_keep("\n".join(lines))
 	legend.size.y = 380.0  # Label은 글이 줄어도 저절로 작아지지 않는다 (글이 길면 다시 늘어남)
 
@@ -6579,6 +6588,7 @@ func _toggle_codex() -> void:
 		modes_panel.visible = false
 	if vote_panel.visible:
 		vote_panel.hide_panel()
+	codex_panel.fit(ui_root.size, _phone())
 	codex_panel.toggle()
 	if codex_panel.visible:
 		net.ach_rates()
@@ -6642,7 +6652,7 @@ func _toggle_records() -> void:
 	if Meta.title != "":
 		lines.append("  칭호: " + Meta.ACHIEVEMENTS[Meta.title]["name"])
 	lines.append("")
-	lines.append("[반응 도감] %d / %d   (모든 반응·조합은 도감%s 특수 반응 탭)" % [Meta.codex.size(), Elem.REACTIONS.size(), "" if touch_ui else "(K)"])
+	lines.append("[조합 도감] %d / %d   (모든 조합은 도감%s 조합 탭)" % [Meta.codex.size(), Elem.REACTIONS.size(), "" if touch_ui else "(K)"])
 	# 찾은 반응만 이어 쓴다. 모르는 칸마다 ???를 쓰면 반응이 91개라 창이 화면 높이만큼 길어져 글자가 읽을 수 없게 작아졌다
 	var found := PackedStringArray()
 	for r in Elem.REACTIONS:
@@ -6670,6 +6680,9 @@ func _on_booted(info: Dictionary) -> void:
 		_apply_rules()
 		_refresh_menu()
 	var latest: Variant = info.get("latest")
+	# 폰·태블릿은 스토어 주소만 연다 (App Store 2.5.2·3.1: 앱 밖에서 빌드를 받게 하지 않음)
+	if latest is Dictionary and OS.has_feature("mobile") and not (str(latest.get("url", "")).begins_with("https://apps.apple.com/") or str(latest.get("url", "")).begins_with("https://play.google.com/")):
+		latest = null
 	if latest is Dictionary and str(latest.get("url", "")) != "" and not updater.busy:
 		var notes := str(latest.get("notes", ""))
 		var url := str(latest["url"])
@@ -6803,7 +6816,7 @@ func _submit_run(done := true) -> void:
 		var els := {}
 		for e in t.elements:
 			els[Patch.ELEM_KEYS[Elem.ALL.find(e)]] = t.elements[e]
-		list.append({"els": els, "pat": t.pattern, "plv": t.plv, "mods": t.mods, "prism": t.prism, "reso": t.reso,
+		list.append({"els": els, "pat": t.pattern, "plv": t.plv, "mods": t.mods, "reso": t.reso,
 			"pincer": t.pincer, "trigs": t.trigs, "share": (t.run_dealt + t.dealt) / total if total > 0.0 else 0.0})
 	# 피해 출처 몫 (속성·공격방식·강화·반응·연계별, 오브젝트를 합쳐서). 직접 타격 안의 배율 몫은 추정
 	var src := {}
@@ -7836,10 +7849,10 @@ func _check_progress() -> void:
 		Ach.on_reactions(rs.map(func(r): return r["id"]))
 		for r in rs:
 			if mp_mode == "" and Meta.discover(r["id"]):
-				_show_toast("반응 도감에 추가: " + r["name"])
+				_show_toast("조합 도감에 추가: " + r["name"])
 				_save_best()
 				_refresh_legend()
-				_guide("react", "특수 반응 · %s(%s+%s): %s. 발견한 반응은 오른쪽 설명에 채워져요" % [r["name"], Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["desc"]])
+				_guide("react", "새 조합 · %s(%s+%s): %s. 발견한 조합은 오른쪽 설명에 채워져요" % [r["name"], Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["desc"]])
 	if pincers >= 3:
 		_achieve("links3")
 	_ach_check()
@@ -8472,7 +8485,7 @@ func _toggle_pause() -> void:
 	paused_label.text = _pause_text()
 	restart_armed = 0.0
 	end_armed = 0.0
-	pause_btn.text = _kh("계속 (P)" if get_tree().paused else "일시정지 (P)")
+	pause_btn.tooltip_text = "계속 (P)" if get_tree().paused else "일시정지 (P)"  # 그림 버튼이라 글은 말풍선에만
 
 
 ## 일시정지에서 처음부터: 두 번 눌러야 (R 또는 버튼).
@@ -8508,7 +8521,7 @@ func _end_run() -> void:
 	get_tree().paused = false
 	paused_label.visible = false
 	pause_box.visible = false
-	pause_btn.text = _kh("일시정지 (P)")
+	pause_btn.tooltip_text = "일시정지 (P)"
 	ended = true
 	_game_over()
 
@@ -8657,7 +8670,8 @@ func _arm_skill(i: int) -> void:
 		return
 	skill_arm = "" if skill_arm == id else id
 	if skill_arm != "":
-		_show_toast(("%s: 쓸 곳을 누르세요" if touch_ui else "%s: 쓸 곳을 클릭 (우클릭·Esc 취소)") % Skill.NAMES[id])
+		# 이름(집중·붙잡기·낙인)만으로는 무엇을 하는지 몰라 설명을 같이 (2026-11-03)
+		_show_toast(("%s (%s): 쓸 곳을 누르세요" if touch_ui else "%s (%s): 쓸 곳을 클릭 (우클릭·Esc 취소)") % [Skill.NAMES[id], Skill.short(id)])
 
 
 ## p에 기술을 쓴다. 적용할 대상이 없으면 쓰지 않는다 (누른 기술이면 이유를 알림).
@@ -8779,20 +8793,6 @@ func _tower_at(p: Vector2, except: Tower = null) -> Tower:
 	return null
 
 
-## 어둠 그림자 표식이 붙은 구체가 죽으면 남은 시간째 가장 가까운 산 구체(150 안)로 옮긴다.
-func _pass_shade(o: Orb) -> void:
-	var best: Orb = null
-	var bd := 150.0
-	for x in near(o.position, bd):
-		if x != o and x.hp > 0.0 and x.position.distance_to(o.position) < bd:
-			bd = x.position.distance_to(o.position)
-			best = x
-	if best:
-		best.shade(o.shade_t)
-		beam(o.position, best.position, Elem.COLORS[Elem.DARK])
-	o.shade_t = 0.0
-
-
 func _place_tower(p: Vector2, d: Vector2) -> void:
 	var t := Tower.new()
 	t.add(picked["e"], picked["lv"])
@@ -8812,8 +8812,6 @@ func spawn_proj(t: Tower, kind: String, l: int, d := Vector2.ZERO, off := Vector
 	var p := Projectile.new()
 	p.setup(kind, t, l, d, off)
 	projectiles.add_child(p)
-	if kind == "mushroom":
-		t.mines.append(p)
 	return p
 
 
@@ -8856,33 +8854,29 @@ func sound_pulse(o: Orb) -> void:
 	var tw: Tower = o.tune_src if is_instance_valid(o.tune_src) else null
 	var l := maxi(o.tune_lv, 1)
 	var r := 70.0 + 10.0 * (l - 1)
-	var dmg := Rules.t("sound_pulse") * Tower.pw(l) * (tw.dmg_k(true) if tw else 1.3) * (Rules.t("loud_mul") if o.loud_t > 0.0 else 1.0)
-	var tox: Tower = o.toxring_src if o.toxring_t > 0.0 and is_instance_valid(o.toxring_src) else null
+	var dmg := Rules.t("sound_pulse") * Tower.pw(l) * (tw.dmg_k(true) if tw else 1.3)
+	# 소리 퍼짐 (특징 공유): 음파에 닿은 구체에 울림을 건 오브젝트 효과
+	var ks := Share.k(tw, Elem.SOUND) if tw else 0.0
+	if ks > 0.0:
+		r *= Share.wide(tw)
+	if Share.has(tw, "reso"):
+		r *= 1.0 + Share.RESO_R  # 공진 (상성)
 	for other in near(o.position, r + 30.0):
 		if other.hp > 0.0 and other.position.distance_to(o.position) < r + other.radius():
 			var got: float = other.hurt(dmg, false, tw)
 			if tw:
 				tw.credit(got, "elem:sound")
-			if tox:
-				other.poison(1.2 * o.toxring_lv * Rules.rx_mul, 3.0, tox, true, "rx:toxecho")
+				if ks > 0.0 and other != o:
+					Share.apply(tw, other, Share.SOUND_F * ks, "share:sound")
 	if pulses.size() < 40:
 		pulses.append([o.position, r, 0.3])
 
 
-## 프리즘 굴절 표시: 탄이 프리즘을 지나면 육각형이 퍼진다.
-func refract(pos: Vector2, d: Vector2, col: Color) -> void:
-	if refracts.size() < 40:
-		refracts.append([pos, d, col, 0.35])
-
-
-## 영혼: 넋이 걸린 채 죽은 구체에서 혼불 (망자의 강 안이면 반드시). 화면의 혼불은 30개까지.
+## 영혼: 넋이 걸린 채 죽은 구체에서 혼불 (영혼 쫓아감: 혼불은 그 오브젝트 공격처럼 맞혀 효과를 모두 건다). 화면의 혼불은 30개까지.
 func _soul_wisp(o: Orb) -> void:
 	var tw: Tower = null
 	var l := 1
-	if o.styx_t > 0.0 and is_instance_valid(o.styx_src):
-		tw = o.styx_src
-		l = o.styx_lv
-	elif o.soul_t > 0.0 and is_instance_valid(o.soul_src) and randf() < minf(Rules.t("soul_base") + Rules.t("soul_lv") * o.soul_lv, Rules.t("soul_max")):
+	if o.soul_t > 0.0 and is_instance_valid(o.soul_src) and randf() < minf(Rules.t("soul_base") + Rules.t("soul_lv") * o.soul_lv, Rules.t("soul_max")):
 		tw = o.soul_src
 		l = o.soul_lv
 	if tw == null:
@@ -8897,24 +8891,10 @@ func _soul_wisp(o: Orb) -> void:
 	g.position = o.position
 	g.hit[o] = true
 	g.dmg = 2.5 * Tower.pw(l)
-	g.ghost = "styx" if o.styx_t > 0.0 else ""
-	g.src = "rx:styx" if o.styx_t > 0.0 else "elem:soul"
+	g.src = "elem:soul"
 
 
-## 영혼 형태 성질(넋불): 공격 끝 자리에서 혼불. 화면의 혼불은 30개까지 (_soul_wisp와 같이 셈).
-func form_ghost(tw: Tower, pos: Vector2, dmg: float) -> void:
-	var n := 0
-	for p in projectiles.get_children():
-		if p.kind == "ghost":
-			n += 1
-	if n >= 30:
-		return
-	var g := spawn_proj(tw, "ghost", tw.plv, Vector2.from_angle(randf() * TAU))
-	g.position = pos
-	g.dmg = dmg
-
-
-## 빛 형태 성질(빛줄기) 표시: 잠깐 빛나는 직선.
+## 빛줄기 표시 (빛 꿰뚫음): 잠깐 빛나는 직선.
 func beam(a: Vector2, b: Vector2, c: Color) -> void:
 	if beams.size() < 40:
 		beams.append([a, b, c, 0.2])
@@ -8923,7 +8903,7 @@ func beam(a: Vector2, b: Vector2, c: Color) -> void:
 ## 전기 부가효과: 가까운 다른 구체로 전류가 튄다 (src: 쏜 오브젝트, 피해 기록용).
 func arc(from: Orb, dmg: float, src: Tower = null, cap = null) -> void:  # cap: 초신성 보스 상한 (Tower.nova_hurt)
 	var best: Orb = null
-	var bd := 90.0
+	var bd := 90.0 * (Share.wide(src) if src else 1.0) * (1.0 + Share.SHOCK_R if Share.has(src, "shock") else 1.0)
 	for o in near(from.position, bd):
 		if o != from and is_instance_valid(o) and o.hp > 0.0:
 			var d: float = o.position.distance_to(from.position)
@@ -8934,6 +8914,12 @@ func arc(from: Orb, dmg: float, src: Tower = null, cap = null) -> void:  # cap: 
 		var got: float = src.nova_hurt(best, dmg, cap) if src and cap is Dictionary else best.hurt(dmg, false, src)
 		if src:
 			src.credit(got, "elem:electric")
+			if Share.has(src, "shock"):
+				best.stagger(Share.SHOCK_STAG)  # 감전 (상성)
+			# 전기 튐 (특징 공유): 전류가 튀면 오브젝트 효과도 튄다
+			var ke := Share.k(src, Elem.ELECTRIC)
+			if ke > 0.0:
+				Share.apply(src, best, Share.ELEC_F * ke, "share:electric")
 		if arcs.size() < 80:
 			arcs.append([from.position, best.position, 0.12])
 
@@ -9369,7 +9355,7 @@ func _process(delta: float) -> void:
 	# 글이 그 폭보다 길면 두 줄로 접는다 (예전엔 표 아래로 내려 카드 줄 밑에 깔렸다: 봉인·이벤트 알림)
 	if toast.visible:
 		var left := 8.0
-		var right := legend.get_rect().position.x - 8.0 if legend.visible else ui_root.size.x - 8.0
+		var right := _right_panel_x() - 8.0
 		if Garden.on and gp != null and gp.visible and not gp_portrait:
 			right = minf(right, gp.position.x - 8.0)  # 정원 가로: 목록 패널 왼쪽
 		if dps_panel.visible and dps_panel.get_rect().end.y > toast.position.y:
@@ -9386,8 +9372,13 @@ func _process(delta: float) -> void:
 	banner.position.y = maxf(ui_root.size.y / 2.0 - 140.0, hud.position.y + hud.size.y + 12.0)
 	if toast.visible and toast.text != "":
 		banner.position.y = maxf(banner.position.y, toast.get_rect().end.y + 4.0)  # 점수 줄이 세 줄일 때 알림과 겹치던 것
+	if guide_more.visible:
+		banner.position.y = maxf(banner.position.y, guide_more.get_rect().end.y + 4.0)  # [더 알아보기]가 "특성 선택" 큰 글 위에 걸치던 것
 	# 큰 글은 정원 가로 화면이면 목록 패널 왼쪽 전장 가운데 (패널 밑으로 글 끝이 들어갔다)
 	var ban_w := gp.position.x if Garden.on and gp != null and gp.visible and not gp_portrait else ui_root.size.x
+	var ban_full := ui_font.get_string_size(banner.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x
+	if ban_w / 2.0 + minf(ban_full, 800.0) / 2.0 > _right_panel_x() - 8.0:
+		ban_w = minf(ban_w, _right_panel_x() - 8.0)  # 긴 큰 글이 오른쪽 설명 위로 넘치던 것 (폰 "웨이브 3개 넘기기")
 	banner.size.x = minf(800.0, ban_w - 16.0)
 	banner.position.x = (ban_w - banner.size.x) / 2.0
 	banner.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if ui_font.get_string_size(banner.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x > banner.size.x else TextServer.AUTOWRAP_OFF
@@ -9844,7 +9835,6 @@ func _resolve(delta: float) -> void:
 	targets = live_orbs.filter(func(o): return screen.grow(o.radius()).has_point(o.position))
 
 	_build_grid()
-	prism_towers = towers.get_children().filter(func(t): return t.prism > 0)
 	star_towers = towers.get_children().filter(func(t): return t.elements.has(Elem.STAR))
 	_wind_buffs()
 	if prof_on:
@@ -9871,7 +9861,6 @@ func _resolve(delta: float) -> void:
 			p.queue_free()
 			continue
 		if p.finished():
-			_land(p)
 			p.end_form()
 			p.queue_free()
 			continue
@@ -9892,8 +9881,6 @@ func _resolve(delta: float) -> void:
 	# 구체 처치 / 중앙 도달 (협동 참가자는 호스트가 보낸 대로)
 	for o in (live_orbs if not mp_ghost else []):
 		if o.hp <= 0.0:
-			if o.shade_t > 0.0:
-				_pass_shade(o)
 			_jam_death(o)
 			sfx.play("kill", 0.15)
 			combo_hold = false
@@ -9941,22 +9928,13 @@ func _resolve(delta: float) -> void:
 				for other in targets:
 					if other != o and other.position.distance_to(o.position) < 80.0:
 						other.poison(o.poison_dps, 3.0, o.poison_src, o.poison_rx, o.poison_key)
-			if o.curse_lv > 0:
-				_curse_burst(o)
-			if o.swamp_t > 0.0:
-				_swamp_burst(o)
-			if o.lava_t > 0.0:
-				lava_burst(o)
-			if o.tick_t > 0.0:
-				tick_burst(o)
-			# 독늪: 표식이 남았거나 늪 안에서 죽으면 그 자리에 늪 (늪이 번진다)
-			var bs: Object = o.bog_src if o.bog_t > 0.0 else o.swamp_src if o.swamp_t > 0.0 else null
-			if is_instance_valid(bs):
-				bs.spawn_bog(o.position, o.bog_lv if o.bog_t > 0.0 else o.swamp_lv)
-			if o.soul_t > 0.0 or o.styx_t > 0.0:
+				Share.contagion(o)  # 독 전염: 효과도 번짐
+			if o.burn_t > 0.0:
+				Share.flare(o)  # 불 타오름: 화상 걸린 채 죽으면 불꽃
+			if o.vuln_t > 0.0:
+				Share.pull(o)  # 어둠 끌어당김
+			if o.soul_t > 0.0:
 				_soul_wisp(o)
-			if not o.dfx.is_empty():
-				RxMore.on_death(o)
 			o.queue_free()
 			continue
 		if rampart_left > 0 and not o.walled and not o.ghost and _near_core(o, RAMPART_R):
@@ -10018,82 +9996,6 @@ func _prof_add(part: String, since: int) -> int:
 	var now := Time.get_ticks_usec()
 	prof[part] = prof.get(part, 0) + now - since
 	return now
-
-
-## 저주: 표식 구체가 죽으면 주변에 그 구체 최대 체력의 10% 피해(보스는 1/4), 표식은 가까운 구체로 옮겨 간다.
-## 2026-10-30 25% → 10%: 오브젝트 힘과 상관없이 후반 구체 체력만큼 커져 몰아 쌓은 판에서 피해의 2/3가 됐다.
-const CURSE_BURST := 0.10
-
-
-func _curse_burst(o: Orb) -> void:
-	var tw: Tower = o.curse_owner if is_instance_valid(o.curse_owner) else null
-	var dmg := CURSE_BURST * o.max_hp * (1.0 + 0.2 * (o.curse_lv - 1)) * (0.25 if o.kind == Orb.Kind.BOSS else 1.0)
-	var next: Orb = null
-	var bd := 220.0
-	for other in near(o.position, bd):
-		if other == o or other.hp <= 0.0:
-			continue
-		var d: float = other.position.distance_to(o.position)
-		if d < 100.0 + other.radius():
-			var got: float = other.hurt(dmg, false, tw)
-			other.last_rx = true
-			if tw:
-				tw.credit(got, "rx:curse")
-				tw.rx_dealt += got
-		if other.curse_lv == 0 and d < bd:
-			bd = d
-			next = other
-	burst(o.position, Color(0.75, 0.3, 0.9), 18, 200.0)
-	if next and tw:
-		next.curse_lv = o.curse_lv
-		next.curse_owner = tw
-		if arcs.size() < 80:
-			arcs.append([o.position, next.position, 0.25])
-	o.curse_lv = 0
-
-
-## 용암: 묻은 구체가 그 자리에서 터져 주변에 피해·화상 (오브젝트 반응 피해).
-func lava_burst(o: Orb) -> void:
-	o.lava_t = 0.0
-	var tw = o.lava_src
-	if not is_instance_valid(tw):
-		return
-	var l: int = o.lava_lv
-	tw.in_rx = true
-	tw.tag = "rx:lava"
-	for other in near(o.position, Tower.LAVA_R):
-		if other.hp > 0.0 and other.position.distance_to(o.position) < Tower.LAVA_R + other.radius():
-			tw.hit(other, Tower.LAVA_DMG * Tower.pw(l))
-			other.burn(1.0 * l, 2.0, tw, true, "rx:lava")
-	tw.in_rx = false
-	tw.tag = ""
-	burst(o.position, Color(0.95, 0.3, 0.05), 12, 170.0)
-
-
-## 시간 형태 성질 째깍: 표식이 끝나면(또는 구체가 죽으면) 그 구체 자리에서 한 번 더 터진다.
-## 예전엔 끝 자리 바닥에 남던 장판이었다 (오브젝트에서 고정된 거리라 없앰, ELEM-10).
-func tick_burst(o: Orb) -> void:
-	o.tick_t = 0.0
-	var tw = o.tick_src
-	if not is_instance_valid(tw):
-		return
-	var old_tag: String = tw.tag
-	tw.in_form = true
-	tw.tag = o.tick_key
-	for other in near(o.position, Tower.TICK_R + 30.0):
-		if other.hp > 0.0 and other.position.distance_to(o.position) < Tower.TICK_R + other.radius():
-			tw.hit(other, o.tick_dmg, 0.5)
-	tw.in_form = false
-	tw.tag = old_tag
-	burst(o.position, Elem.COLORS[Elem.TIME], 6, 90.0)
-
-
-## 독늪 안에서 죽으면 독이 터져 주변 구체를 중독시킨다.
-func _swamp_burst(o: Orb) -> void:
-	for other in near(o.position, 90.0):
-		if other != o and other.hp > 0.0 and other.position.distance_to(o.position) < 90.0 + other.radius():
-			other.poison(1.5 * o.swamp_lv, 4.0, o.poison_src, true, "rx:swamp")
-	burst(o.position, Color(0.6, 0.85, 0.2), 12, 160.0)
 
 
 ## 구체 위치 격자: 발사체·장판이 가까운 구체만 확인하도록.
@@ -10179,9 +10081,6 @@ func _update_fx(delta: float) -> void:
 	for q in pulses:
 		q[2] -= delta
 	pulses = pulses.filter(func(q): return q[2] > 0.0)
-	for q in refracts:
-		q[3] -= delta
-	refracts = refracts.filter(func(q): return q[3] > 0.0)
 	for q in beams:
 		q[3] -= delta
 	beams = beams.filter(func(q): return q[3] > 0.0)
@@ -10235,7 +10134,7 @@ func _draw_tooltip() -> void:
 		_draw_orb_tooltip()
 		return
 	tip_frame = Engine.get_process_frames()
-	var z: float = Meta.ui_scale
+	var z: float = _tip_scale()
 	var fs := roundi(14 * z)
 	var lh := 18.0 * z
 	var maxw := minf(620.0 * z, _right_limit() - 24.0)  # 이보다 긴 줄은 접는다 (속성이 많으면 화면 밖으로 나가던 것)
@@ -10270,6 +10169,9 @@ func _draw_tooltip() -> void:
 	if not detail:
 		# 기본: 피해·공격 속도·치명타·피해 몫 숫자만 (효과 설명·계산 내역은 자세히에서)
 		lines += t.basic_lines()
+		var afs: Array = Share.aff(t)["pairs"].map(func(pr): return Elem.aff_label(pr[0], pr[1]))
+		if not afs.is_empty():
+			lines.append(["상성: " + " · ".join(afs), Color(0.85, 1.0, 0.75)])
 		if not share_line.is_empty():
 			lines.append(share_line)
 	else:
@@ -10292,7 +10194,9 @@ func _draw_tooltip() -> void:
 			for r in rxs:
 				desc.append(["%s: %s" % [r["name"], r["desc"]], r["color"], "k:rx"])
 		else:
-			desc.append(["반응 %d개: %s" % [rxs.size(), ", ".join(rxs.map(func(r): return r["name"]))], Color(1, 0.8, 0.95), "k:rx"])
+			desc.append(["조합 %d개: %s" % [rxs.size(), ", ".join(rxs.map(func(r): return r["name"]))], Color(1, 0.8, 0.95), "k:rx"])
+		for pr in Share.aff(t)["pairs"]:
+			desc.append([Elem.aff_text(pr[0], pr[1]), AFF_COL["strong" if pr[2]["strong"] else "weak"], "k:rx"])
 		_wind_buffs()  # 쉬는 시간에 새로 놓은 오브젝트도 바로 보이게
 		var tail: Array = []
 		if t.wind_buff > 0.0:
@@ -10312,7 +10216,10 @@ func _draw_tooltip() -> void:
 			var riders: Array = t.order.map(func(e): return Elem.rider_name(e))
 			keep.append(["속성 효과: " + "·".join(riders), Color(0.85, 0.85, 0.9), "k:elem"])
 			if not rxs.is_empty():
-				keep.append(["반응 %d개: %s" % [rxs.size(), ", ".join(rxs.map(func(r): return r["name"]))], Color(1, 0.8, 0.95), "k:rx"])
+				keep.append(["조합 %d개: %s" % [rxs.size(), ", ".join(rxs.map(func(r): return r["name"]))], Color(1, 0.8, 0.95), "k:rx"])
+			var afs: Array = Share.aff(t)["pairs"].map(func(pr): return Elem.aff_label(pr[0], pr[1]))
+			if not afs.is_empty():
+				keep.append(["상성: " + " · ".join(afs), Color(0.85, 1.0, 0.75), "k:rx"])
 			desc = keep
 			all = lines + nums + desc + tail
 		lines = all
@@ -10389,9 +10296,14 @@ func _tip_icon(id: String, c: Vector2, s: float, col: Color) -> void:
 		_: Glyph.ui(fx_layer, id, c, s, Color(col, 1.0))
 
 
+## 정보창 글 배율: 폰은 화면이 작아 다른 글보다 14px 정보창이 유난히 작게 읽혔다
+func _tip_scale() -> float:
+	return Meta.ui_scale * (1.2 if _phone() else 1.0)
+
+
 ## 정보창 맨 아래 조작 줄 (마우스): [왼쪽 단추] 방향 · [끌기] 옮기기 · [Shift] 자세히.
 func _draw_tip_ctrl(at: Vector2, fs: int, lh: float, path: bool, acts: bool) -> void:
-	var z: float = Meta.ui_scale
+	var z: float = _tip_scale()
 	var f := maxi(11, fs - 2)
 	var x := at.x
 	var y := at.y + lh * 0.5
@@ -10485,31 +10397,26 @@ func _draw_orb_tooltip() -> void:
 		if o.burn_t > 0.0: parts.append("화상")
 		if o.poison_t > 0.0: parts.append("중독")
 		if o.root_immune > 0.0: parts.append("기절 면역")
-		if o.vuln_t > 0.0: parts.append("약화(받는 피해 +30%)")
+		if o.vuln_t > 0.0: parts.append("받는 피해↑ +30%")
 		if o.slow_timer > 0.0: parts.append("감속")
-		if o.frozen_t > 0.0: parts.append("빙결")
-		if o.prison_t > 0.0: parts.append("감옥(받는 피해 +50%)")
-		if o.swamp_t > 0.0: parts.append("독늪(중독 2배)")
-		if o.curse_lv > 0: parts.append("저주")
-		if o.tune_t > 0.0: parts.append("울림 %d/3" % int(o.ring))
-		if o.echo_t > 0.0: parts.append("메아리 %d%%" % roundi(o.echo_frac * 100))
-		if o.soul_t > 0.0 or o.styx_t > 0.0: parts.append("넋")
+		if o.frozen_t > 0.0: parts.append("얼림")
+		if o.tune_t > 0.0: parts.append("3타 음파 %d/3" % int(o.ring))
+		if o.echo_t > 0.0: parts.append("피해 되풀이 %d%%" % roundi(o.echo_frac * 100))
+		if o.soul_t > 0.0: parts.append("혼불 소환")
 		if o.silence_t > 0.0: parts.append("침묵")
 		if o.resist_e >= 0: parts.append("%s 저항" % Elem.NAMES[o.resist_e])
 		if o.sturdy: parts.append("굳셈(밀기·감속·기절·냉기 절반)")
-		if o.lava_t > 0.0: parts.append("용암(%.1f초 뒤 폭발)" % o.lava_t)
-		if o.tick_t > 0.0: parts.append("째깍(%.1f초 뒤 터짐)" % o.tick_t)
-		if o.seed_n > 0: parts.append("씨앗 %d" % o.seed_n)
+		if is_instance_valid(o.bury_src) and o.age <= o.bury_until: parts.append("다시 맞으면 더")
 		if not o.amp.is_empty():
-			# 반응이 건 받는 피해 증가 (녹·씨앗·검은 물 등, 곱해서 하나로)
+			# 받는 피해 증가 (낙인 등, 곱해서 하나로)
 			var k := 1.0
 			for v in o.amp.values():
 				k *= 1.0 + v[0]
 			if k > 1.005:
-				parts.append("반응 약화(받는 피해 +%d%%)" % roundi((k - 1.0) * 100.0))
-		var fs := roundi(14 * Meta.ui_scale)
+				parts.append("받는 피해↑ +%d%%" % roundi((k - 1.0) * 100.0))
+		var fs := roundi(14 * _tip_scale())
 		# 상태가 많으면(보스·후반) 한 줄이 화면·오른쪽 설명 밖으로 나간다: 들어가는 만큼씩 줄을 나눈다
-		var maxw := minf(_right_limit() - 32.0, 620.0 * Meta.ui_scale)
+		var maxw := minf(_right_limit() - 32.0, 620.0 * _tip_scale())
 		var rows: Array[String] = [""]
 		for part in parts:
 			var cand: String = part if rows[-1] == "" else rows[-1] + " · " + part
@@ -10675,14 +10582,6 @@ func _draw_fx() -> void:
 		var k: float = 1.0 - q[2] / 0.3
 		fx_layer.draw_arc(q[0], q[1] * (0.4 + 0.6 * k), 0, TAU, 32, Color(sc, (1.0 - k) * fx_k), 3.0)
 		fx_layer.draw_arc(q[0], q[1] * (0.2 + 0.5 * k), 0, TAU, 24, Color(sc, 0.6 * (1.0 - k) * fx_k), 2.0)
-	for q in refracts:
-		var k: float = 1.0 - q[3] / 0.35
-		var al := (1.0 - k) * fx_k
-		var hx := PackedVector2Array()
-		for i in 7:
-			hx.append(q[0] + Vector2.from_angle(TAU * i / 6.0 + k) * (Tower.RADIUS + 6.0 + 22.0 * k))
-		fx_layer.draw_colored_polygon(hx.slice(0, 6), Color(q[2], 0.18 * al))
-		fx_layer.draw_polyline(hx, Color(q[2].lerp(Color.WHITE, 0.6), al), 3.5)
 	for q in beams:
 		var bk: float = q[3] / 0.2 * fx_k
 		fx_layer.draw_line(q[0], q[1], Color(q[2], 0.35 * bk), 9.0)
@@ -10798,21 +10697,6 @@ func _draw_combo() -> void:
 	fx_layer.draw_rect(Rect2(p + Vector2(10, 38), Vector2((w - 20) * k, 5)), Color(1, 0.35, 0.3) if k < 0.35 else col)
 	Icons.draw(fx_layer, "score", p + Vector2(17, 52), 6.0, Color(1, 0.9, 0.6))
 	fx_layer.draw_string(ui_font, p + Vector2(28, 57), "+" + num(combo_bonus), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 0.9, 0.6))
-
-
-## 투척형 발사체가 착지했을 때.
-func _land(p: Projectile) -> void:
-	var tw: Tower = p.owner_tower if is_instance_valid(p.owner_tower) else null
-	if tw:
-		tw.tag = p.src  # 장판이 발사체의 출처를 이어받는다
-	match p.kind:
-		"mushroom":
-			var z := spawn_zone("mine", p.level, p.position, tw)
-			if tw:
-				tw.mines.erase(p)
-				tw.mines.append(z)
-	if tw:
-		tw.tag = ""
 
 
 ## 얼음 탄이 깨지며 파편 3개.
@@ -10976,8 +10860,11 @@ func _draw() -> void:
 			if is_elem:
 				for r in Elem.new_reactions(target.eff_now(), picked["e"]):
 					var rd: String = r["desc"]
-					lines.append("반응: %s" % r["name"] + (" (%s)" % rd if rd.length() <= 26 else ""))
+					lines.append("조합: %s" % r["name"] + (" (%s)" % rd if rd.length() <= 26 else ""))
 					tcol = r["color"]
+					if r.get("aff", "") != "":
+						lines.append(Elem.aff_label(r["a"], r["b"]).replace("(강)", " ▲강").replace("(약)", " ∿약"))
+						tcol = AFF_COL[r["aff"]]
 			place_note = {"t": target, "lines": lines, "col": tcol, "fs": 16, "refuse": false}
 		elif is_elem:
 			var at := mpos.clamp(field_rect().position, field_rect().end)  # 실제로 놓일 자리
@@ -11117,7 +11004,7 @@ func _draw_place_note(ci: CanvasItem) -> void:
 	ci.draw_rect(best, Color(col, 0.6), false, 1.5)
 	for i in lines.size():
 		var txt := lines[i]
-		var c2: Color = col if i == 0 or txt.begins_with("반응") else Color(1, 1, 1, 0.9)
+		var c2: Color = col if i == 0 or txt.begins_with("조합") else Color(1, 1, 1, 0.9)
 		ci.draw_string(ui_font, best.position + Vector2(8.0, 2.0 + fs + i * lh), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, c2)
 
 
@@ -11590,7 +11477,7 @@ func _mp_recv_gift(from: int, msg: Dictionary) -> void:
 		t.queue_redraw()
 		_show_toast("%s가 %s 속성을 넣어 줬어요 · %s" % [_mp_name(from), Elem.NAMES[e], m])
 		sfx.play("place")
-		if m.begins_with("반응"):
+		if m.begins_with("조합"):
 			sfx.play("reaction", 0.0)
 		burst(t.position, Elem.COLORS[e], 20, 200.0)
 		_check_progress()
@@ -13129,7 +13016,7 @@ func _garden_can_new() -> bool:
 func _garden_links() -> int:
 	var n := 0
 	for t in towers.get_children():
-		n += t.prism + t.reso + t.pincer
+		n += t.reso + t.pincer
 	return n
 
 
@@ -13740,7 +13627,7 @@ func _gp_fill_slots() -> void:
 	if Garden.best >= 10:
 		return  # 처음 몇 단계만 안내 (목록을 짧게)
 	var hint_l := Label.new()
-	hint_l.text = "칸을 키우면 레벨 구간마다 공격방식·강화·속성이 저절로 붙어요. 속성이 하나 더 붙으면 반응도 생겨요"
+	hint_l.text = "칸을 키우면 레벨 구간마다 공격방식·강화·속성이 저절로 붙어요. 속성이 하나 더 붙으면 조합도 생겨요"
 	hint_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint_l.add_theme_font_size_override("font_size", _gp_fs(13))
 	hint_l.add_theme_color_override("font_color", Color(1, 1, 1, 0.5))
@@ -13895,6 +13782,10 @@ func _garden_layout(cx: float, by: float) -> void:
 			start_btn.position = Vector2(-110, -100)
 			start_btn.size = Vector2(220, 44)
 		return
+	if detail_btn.anchor_top != 1.0:  # 일반 판 도크가 줄에 옮겨 둔 [자세히]를 정원에서는 원래 자리로
+		detail_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+		detail_btn.position = Vector2(-70.0 - 130.0, -100.0)
+		detail_btn.size = Vector2(120, 40)
 	return  # 정원: 다음 웨이브·환생·분재는 목록 패널 안 (_garden_panel_tick)
 
 

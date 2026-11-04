@@ -378,7 +378,9 @@ func tick() -> void:
 			game.Phase.AIM: instruction = "발사 방향을 정하세요."
 			game.Phase.MOVE: instruction = "옮길 곳을 고르세요."
 			game.Phase.DRAW: instruction = "선을 그린 뒤 적용하세요."
-		if instruction != "":
+		# 대상 위에서는 적용 미리보기가 안내를 대신한다. 긴 효과 글과 하단 안내가 겹치지 않게 한다.
+		var target_preview: bool = game.phase == game.Phase.PLACE and game._tower_at(game.get_global_mouse_position()) != null
+		if instruction != "" and not target_preview:
 			game.hint.text = game._kr_keep(instruction)
 			game.hint.set_anchors_preset(Control.PRESET_TOP_LEFT)
 			game.hint.position = Vector2((size.x - 260) / 2, action_y - 30)

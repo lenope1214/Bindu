@@ -6,7 +6,7 @@ extends PanelContainer
 ## ★로 선호 표시(Meta.favs) → 판 중 선택지에 나오면 카드가 반짝인다 (Sparkle).
 
 const CATS := [
-	["elem", "속성"], ["pat", "공격방식"], ["mod", "강화"], ["link", "연계"], ["trig", "발동"], ["react", "특수 반응"], ["perk", "특성"], ["ach", "업적"],
+	["elem", "속성"], ["pat", "공격방식"], ["mod", "강화"], ["link", "연계"], ["trig", "발동"], ["react", "조합"], ["perk", "특성"], ["ach", "업적"],
 ]
 ## 업적 보유율 {id: 0~1} (서버 /v1/ach_rates, main이 넣는다. 비면 안 보임)
 static var rates := {}
@@ -18,6 +18,7 @@ var cat := "elem"
 var list: VBoxContainer
 var count_label: Label
 var tabs: Array[Button] = []
+var big := false  # 폰: 창을 화면 가득 넓히고 목록 글자를 키운다 (14px 설명이 폰에서 1mm 남짓이라 읽기 어려웠다)
 
 
 ## 선택지 카드의 도감 키. 속성은 번호 대신 이름으로 (속성이 늘어 번호가 밀려도 선호가 그대로).
@@ -35,7 +36,7 @@ func entries(c: String) -> Array:
 			for e in Elem.ALL:
 				var ps := Elem.partners(e)
 				out.append({"key": card_key({"type": "elem", "e": e}), "name": Elem.NAMES[e], "color": Elem.COLORS[e],
-					"desc": "같은 색 공격방식 카드: %s (속성과 따로 나오는 카드, 직선탄 오브젝트에 넣음)\n추가 효과: %s\n형태 성질(시험): %s%s" % [Elem.FORM.get(e, "-"), Elem.rider(e) if Elem.RIDER.has(e) else "-", Elem.TRAIT.get(e, "-"), "\n반응: " + ", ".join(ps) if not ps.is_empty() else ""]})
+					"desc": "같은 색 공격방식 카드: %s (속성과 따로 나오는 카드, 직선탄 오브젝트에 넣음)\n추가 효과: %s\n특징: %s%s" % [Elem.FORM.get(e, "-"), Elem.rider(e) if Elem.RIDER.has(e) else "-", Elem.TRAIT.get(e, "-"), "\n조합: " + ", ".join(ps) if not ps.is_empty() else ""]})
 		"pat":
 			for id in Pat.ALL_IDS:
 				if id != Pat.DEFAULT:  # 직선탄은 카드로 나오지 않는다
@@ -55,8 +56,8 @@ func entries(c: String) -> Array:
 			var seen: Array = Elem.REACTIONS.filter(func(r): return Meta.codex.has(r["id"]))
 			for r in seen + Elem.REACTIONS.filter(func(r): return not Meta.codex.has(r["id"])):
 				out.append({"key": "react:" + str(r["id"]), "name": r["name"], "color": r.get("color", Color.WHITE),
-					"sub": "%s + %s%s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], "" if Meta.codex.has(r["id"]) else "   · 아직 못 만남"],
-					"desc": "%s\n선호하면 이 반응을 만들 수 있는 속성 카드가 반짝여요" % r["desc"]})
+					"sub": "%s + %s%s%s" % [Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], {"strong": "   · ▲강상성", "weak": "   · ∿약상성"}.get(r.get("aff", ""), ""), "" if Meta.codex.has(r["id"]) else "   · 아직 못 만남"],
+					"desc": "%s%s\n선호하면 이 조합을 만들 수 있는 속성 카드가 반짝여요" % [r["desc"], "\n" + r["aff_txt"] if r.get("aff_txt", "") != "" else ""]})
 		"perk":
 			for pk in perks:
 				out.append({"key": "perk:" + str(pk["id"]), "name": pk["name"], "desc": pk["desc"], "color": FAV_COLOR})
@@ -179,6 +180,20 @@ func setup(perk_list: Array, sb: StyleBox, changed: Callable) -> void:
 	v.add_child(close)
 
 
+func _fs(n: int) -> int:
+	return n + (3 if big else 0)
+
+
+## 폰이면 창을 화면 가득 (가로 최대 1240, 위아래 여백 30)
+func fit(ui_size: Vector2, phone: bool) -> void:
+	big = phone
+	var hw := minf(ui_size.x / 2.0 - 20.0, 620.0) if phone else 430.0
+	offset_left = -hw
+	offset_right = hw
+	offset_top = -(ui_size.y / 2.0 - 30.0) if phone else -300.0
+	offset_bottom = (ui_size.y / 2.0 - 30.0) if phone else 270.0
+
+
 func toggle() -> void:
 	visible = not visible
 	if visible:
@@ -201,7 +216,7 @@ func _row(x: Dictionary) -> Control:
 	if x.has("head"):
 		var hl := Label.new()
 		hl.text = x["head"]
-		hl.add_theme_font_size_override("font_size", 16)
+		hl.add_theme_font_size_override("font_size", _fs(16))
 		hl.add_theme_color_override("font_color", Color(0.6, 0.85, 1.0))
 		return hl
 	if x.has("goal"):
@@ -211,7 +226,7 @@ func _row(x: Dictionary) -> Control:
 	var star := Button.new()
 	star.custom_minimum_size = Vector2(44, 44)
 	star.focus_mode = Control.FOCUS_NONE
-	star.add_theme_font_size_override("font_size", 22)
+	star.add_theme_font_size_override("font_size", _fs(22))
 	var key: String = x["key"]
 	var paint := func():
 		var on := Meta.favs.has(key)
@@ -235,14 +250,14 @@ func _row(x: Dictionary) -> Control:
 	h.add_child(v)
 	var n := Label.new()
 	n.text = x["name"] + ("   " + x["sub"] if x.has("sub") else "")
-	n.add_theme_font_size_override("font_size", 17)
+	n.add_theme_font_size_override("font_size", _fs(17))
 	n.add_theme_color_override("font_color", x["color"])
 	v.add_child(n)
 	var d := Label.new()
 	d.text = PatchNotes.kr_keep(x["desc"])
 	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	d.custom_minimum_size = Vector2(700, 0)
-	d.add_theme_font_size_override("font_size", 14)
+	d.add_theme_font_size_override("font_size", _fs(14))
 	d.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
 	v.add_child(d)
 	return h
@@ -256,7 +271,7 @@ func _ach_row(x: Dictionary) -> Control:
 	mark.text = "✓" if done else "·"
 	mark.custom_minimum_size = Vector2(44, 0)
 	mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	mark.add_theme_font_size_override("font_size", 22)
+	mark.add_theme_font_size_override("font_size", _fs(22))
 	mark.add_theme_color_override("font_color", x["tier_color"] if done else Color(1, 1, 1, 0.4))
 	h.add_child(mark)
 	var v := VBoxContainer.new()
@@ -268,12 +283,12 @@ func _ach_row(x: Dictionary) -> Control:
 	v.add_child(top)
 	var tier := Label.new()
 	tier.text = "[%s]" % x["tier"]
-	tier.add_theme_font_size_override("font_size", 14)
+	tier.add_theme_font_size_override("font_size", _fs(14))
 	tier.add_theme_color_override("font_color", x["tier_color"])
 	top.add_child(tier)
 	var n := Label.new()
 	n.text = x["name"]
-	n.add_theme_font_size_override("font_size", 17)
+	n.add_theme_font_size_override("font_size", _fs(17))
 	n.add_theme_color_override("font_color", x["color"])
 	top.add_child(n)
 	var extra := Label.new()
@@ -284,7 +299,7 @@ func _ach_row(x: Dictionary) -> Control:
 		bits.append("보유 %s%%" % ("%.1f" % (x["rate"] * 100.0) if x["rate"] < 0.1 else str(roundi(x["rate"] * 100.0))))
 	extra.text = "   ".join(bits)
 	extra.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	extra.add_theme_font_size_override("font_size", 13)
+	extra.add_theme_font_size_override("font_size", _fs(13))
 	extra.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
 	top.add_child(extra)
 	if done and Ach.can_title(x["id"]):
@@ -292,7 +307,7 @@ func _ach_row(x: Dictionary) -> Control:
 		var on: bool = Meta.title == x["id"]
 		tb.text = "칭호 해제" if on else "칭호로"
 		tb.focus_mode = Control.FOCUS_NONE
-		tb.add_theme_font_size_override("font_size", 13)
+		tb.add_theme_font_size_override("font_size", _fs(13))
 		tb.pressed.connect(func():
 			Meta.title = "" if Meta.title == x["id"] else x["id"]
 			if on_change.is_valid():
@@ -306,7 +321,7 @@ func _ach_row(x: Dictionary) -> Control:
 	d.text = x["desc"]
 	d.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	d.add_theme_font_size_override("font_size", 14)
+	d.add_theme_font_size_override("font_size", _fs(14))
 	d.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
 	row.add_child(d)
 	if x["bar"] and x["goal"] > 1:
@@ -320,7 +335,7 @@ func _ach_row(x: Dictionary) -> Control:
 	var c := Label.new()
 	c.text = ("%s / %s" % [_num(x["cur"]), _num(x["goal"])]) if x["bar"] and x["goal"] > 1 else ("달성" if done else "")
 	c.custom_minimum_size = Vector2(130, 0)
-	c.add_theme_font_size_override("font_size", 14)
+	c.add_theme_font_size_override("font_size", _fs(14))
 	c.add_theme_color_override("font_color", x["tier_color"] if done else Color(1, 1, 1, 0.7))
 	row.add_child(c)
 	return h

@@ -171,17 +171,6 @@ func _initialize():
 	ok(not t5.can_pattern("path"), "5번째 직선탄엔 못 넣음: " + t5.refuse_text({"type": "pat", "id": "path"}))
 	ok(main.towers.get_child(0).can_pattern("path"), "있는 궤적은 레벨업 가능")
 
-	# 10. 대격변: 궤적이 다른 공격방식이 되면 길은 지움, 다른 오브젝트가 궤적이 되지는 않음
-	var tc: Tower = main.towers.get_child(0)
-	tc.cataclysm_pattern()
-	ok(tc.pattern != "path" and tc.paths.is_empty(), "대격변: 궤적 → %s, 길 지움" % tc.pattern)
-	var bad := false
-	for i in 300:
-		t5.pattern = "shot"
-		t5.cataclysm_pattern()
-		bad = bad or t5.pattern == "path"
-	ok(not bad, "대격변은 궤적을 만들지 않음")
-
 	# 11. 등장 비율: 궤적 없으면 0.7%, 있으면 1.2%
 	_clear()
 	_new_tower(tp, Vector2.RIGHT)

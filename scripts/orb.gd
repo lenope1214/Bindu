@@ -5,13 +5,23 @@ extends Node2D
 enum Kind { NORMAL, FAST, TANK, BOSS }
 
 # 군중 제어 한계: 겹쳐 걸수록 효율이 떨어지고, 계속 맞아도 앞으로는 나아간다.
-const SLOW_FLOOR := 0.3  # 감속은 최대 70% (보스 50%)
-const PUSH_BUDGET := 40.0  # 중앙 반대쪽으로 한 번에 밀릴 수 있는 거리 (보스 15)
-const PUSH_REGEN := 0.15  # 밀림 여유가 초당 이동 속도의 15%씩 회복 (보스 5%): 최대로 느려져도(30%) 조금씩은 전진
-const STAGGER_MAX := 0.6  # 경직은 한 번에 이만큼(초)까지만 쌓인다
-const ROOT_DR := [1.0, 0.5, 0.25]  # 연달아 기절·속박·빙결: 지속시간 100% → 50% → 25%, 그다음 면역
-const ROOT_IMMUNE := 2.0
-const ROOT_DR_RESET := 4.0  # 이만큼 안 걸리면 처음부터
+## 구체 종류별 체력·속도 배율 (일반 구체 대비), 보스가 중앙에 주는 피해. 온라인 패치 rules "Orb.KIND.<이름>"
+static var KIND := {
+	"fast_hp": 0.6,  # 빠른 구체 체력 배율
+	"fast_spd": 1.62,  # 빠른 구체 속도 배율
+	"tank_hp": 2.5,  # 단단한 구체 체력 배율
+	"tank_spd": 0.6,  # 단단한 구체 속도 배율
+	"boss_hp": 12.0,  # 보스 체력 배율 (성난 보스 모드는 더 곱함)
+	"boss_spd": 0.45,  # 보스 속도 배율
+	"boss_core": 3,  # 보스가 중앙에 닿으면 깎는 체력
+}
+static var SLOW_FLOOR := 0.3  # 감속은 최대 70% (보스 50%)
+static var PUSH_BUDGET := 40.0  # 중앙 반대쪽으로 한 번에 밀릴 수 있는 거리 (보스 15)
+static var PUSH_REGEN := 0.15  # 밀림 여유가 초당 이동 속도의 15%씩 회복 (보스 5%): 최대로 느려져도(30%) 조금씩은 전진
+static var STAGGER_MAX := 0.6  # 경직은 한 번에 이만큼(초)까지만 쌓인다
+static var ROOT_DR := [1.0, 0.5, 0.25]  # 연달아 기절·속박·빙결: 지속시간 100% → 50% → 25%, 그다음 면역
+static var ROOT_IMMUNE := 2.0  # 세 번 연달아 걸린 뒤 기절·속박·빙결 면역 시간(초)
+static var ROOT_DR_RESET := 4.0  # 이만큼 안 걸리면 처음부터
 
 var kind := Kind.NORMAL
 var core_dmg := 1  # 중앙에 닿았을 때 깎는 체력
@@ -37,7 +47,7 @@ var digest_t := 0.0  # 포식: 소화하느라 멈춘 시간
 var prey: Object = null  # 포식: 쫓는 앞 구체
 var minion := false  # 보스가 부른 부하 (모드 '성난 보스'의 처치 점수 계산)
 var hp := 1.0
-var last_rx := false  # 마지막으로 맞은 피해가 특수 반응 몫인가 (업적 "반응으로 마무리"). hurt()가 끄고 반응 피해를 준 쪽이 켠다
+var last_rx := false  # 마지막으로 맞은 피해가 특징이 실어 나른 몫인가 (업적 "특징으로 마무리"). hurt()가 끄고 그 피해를 준 쪽이 켠다
 var born := 0.0  # 나온 때 (main.run_game, 업적 보스 순살)
 var max_hp := 1.0
 var speed := 50.0
@@ -51,37 +61,21 @@ var poison_dps := 0.0
 var poison_t := 0.0
 var burn_src: Object = null  # 화상·중독을 건 오브젝트: 지속 피해도 그 오브젝트의 피해 몫에 넣는다
 var poison_src: Object = null
-var burn_rx := false  # 특수 반응이 건 것인지 (반응 피해 측정용)
+var burn_rx := false  # 특징이 실어 나른 것인지 (그러면 타오름·전염을 다시 타지 않음, 측정용)
 var poison_rx := false
 var burn_key := "elem:fire"  # 피해 출처 (Tower.src 키)
 var poison_key := "elem:poison"
 var vuln_t := 0.0
 var vuln_k := 0.3  # 지금 걸린 약화 세기 (받는 피해 +)
-var shade_t := 0.0  # 어둠 그림자 표식: 받는 피해 +30%를 유지, 죽으면 가까운 구체로 남은 시간째 옮겨 간다
+var vuln_src: Object = null  # 약화를 건 오브젝트 (어둠 끌어당김, Share.pull)
+var vuln_sh := false  # 특징이 실어 나른 약화인지 (그러면 끌어당김을 다시 타지 않음)
+var bury_src: Object = null  # 땅 묻어둠: 이 오브젝트 효과가 묻어 있음, bury_until 전에 다시 맞으면 한 번 더 (Share.on_hit)
+var bury_until := 0.0
+var rep_cd := 0.0  # 시간 되풀이 간격
 var chill := 0.0
 var frozen_t := 0.0  # 빙결 표시
-var swamp_t := 0.0  # 독늪 안: 중독 2배, 죽으면 독 폭발
-var swamp_lv := 1
-var swamp_src: Object = null  # 독늪 늪을 만든 오브젝트 (안에서 죽으면 늪이 번진다)
-var lava_t := 0.0  # 용암: 묻은 뒤 남은 시간, 0이 되면(또는 죽으면) 그 자리에서 터짐
-var lava_lv := 1
-var lava_src: Object = null
-var tick_t := 0.0  # 시간 형태 성질 째깍: 남은 시간, 0이 되면(또는 죽으면) 이 구체 자리에서 한 번 더 터짐 (main.tick_burst)
-var tick_dmg := 0.0
-var tick_src: Object = null
-var tick_key := ""
-var bog_t := 0.0  # 독늪 표식: 이 시간 안에 죽으면 그 자리에 늪
-var bog_lv := 1
-var bog_src: Object = null
-var sand_cd := 0.0  # 모래시계 되감기 대기
-var hist := PackedVector2Array()  # 지난 위치 (0.25초마다 4개 = 1초)
-var hist_i := 0
-var hist_acc := 0.0
-var prison_t := 0.0  # 빙결 감옥: 받는 피해 +50%
 var marks := {}  # 협공: 맞힌 오브젝트 id -> 맞은 시각(age)
 var pincer_cd := 0.0
-var curse_lv := 0  # 저주 표식 (죽으면 주변 피해, 표식이 옮겨 감)
-var curse_owner: Object = null
 var tune_t := 0.0  # 소리 울림: 남은 시간 동안 어느 오브젝트에 맞든 울림이 쌓인다
 var tune_lv := 1
 var tune_src: Object = null
@@ -95,27 +89,8 @@ var echo_src: Object = null
 var soul_t := 0.0  # 영혼 넋: 남은 시간 안에 죽으면 확률로 혼불
 var soul_lv := 0
 var soul_src: Object = null
-var styx_t := 0.0  # 망자의 강 안: 죽으면 반드시 혼불
-var styx_lv := 1
-var styx_src: Object = null
-## 2026-10-30에 채운 반응들 (RxMore)
-var amp := {}  # 반응 키 → [받는 피해 증가, 남은 시간]
-var dfx := {}  # 반응 id → [오브젝트, 레벨, 이 나이까지]: 그 전에 죽으면 RxMore.on_death
-var seed_n := 0  # 씨앗 바람: 박힌 씨앗 수, seed_t가 0이 되면 싹이 터진다
-var seed_t := 0.0
-var seed_lv := 1
-var seed_src: Object = null
-var rust_n := 0  # 부식 중첩
-var lucky_t := 0.0  # 무지개: 치명타 확률 +30%
-var mud_t := 0.0  # 진흙: 땅 기절 확률 2배
-var glacier_t := 0.0  # 빙하 물결: 빙결 1.5배
-var loud_t := 0.0  # 울림 균열: 음파 피해 +20%
-var smog_t := 0.0  # 독연기: 화상도 걸려 있으면 중독 2배
-var frostpo_t := 0.0  # 냉독침: 빙결된 동안 중독 2배
-var toxring_t := 0.0  # 독 메아리: 울림 음파가 터지면 주변에 중독
-var toxring_lv := 1
-var toxring_src: Object = null
-var silence_t := 0.0  # 침묵: 저항·굳셈이 꺼지고 보스 부하 소환이 멈춘다
+var amp := {}  # 키 → [받는 피해 증가, 남은 시간] (중앙 기술 낙인 brand 등)
+var silence_t := 0.0  # 저항·굳셈을 잠깐 끔 (초신성 3종 이상 등), 보스 부하 소환이 멈춘다
 var push_budget := PUSH_BUDGET
 var stagger_t := 0.0  # 경직(금속·철구·물줄기·레일건): 제자리에 멈춤
 var root_dr := 0  # 연달아 걸린 기절 횟수
@@ -156,11 +131,11 @@ func setup(k: int, base_hp: float, base_speed: float) -> void:
 		Kind.NORMAL:
 			max_hp = base_hp; speed = base_speed
 		Kind.FAST:
-			max_hp = maxf(1.0, ceilf(base_hp * 0.6)); speed = base_speed * 1.62  # 예전 1.8 (10% 느리게)
+			max_hp = maxf(1.0, ceilf(base_hp * KIND.fast_hp)); speed = base_speed * KIND.fast_spd
 		Kind.TANK:
-			max_hp = ceilf(base_hp * 2.5); speed = base_speed * 0.6
+			max_hp = ceilf(base_hp * KIND.tank_hp); speed = base_speed * KIND.tank_spd
 		Kind.BOSS:
-			max_hp = ceilf(base_hp * 12.0 * Modes.boss_hp()); speed = base_speed * 0.45; core_dmg = 3
+			max_hp = ceilf(base_hp * KIND.boss_hp * Modes.boss_hp()); speed = base_speed * KIND.boss_spd; core_dmg = int(KIND.boss_core)
 	hp = max_hp
 	if main:
 		speed *= main.orb_speed_mul * Modes.speed()
@@ -186,52 +161,18 @@ func step(delta: float) -> void:
 	if root_timer > 0.0: root_timer = maxf(root_timer - delta, 0.0)
 	if stagger_t > 0.0: stagger_t = maxf(stagger_t - delta, 0.0)
 	if vuln_t > 0.0: vuln_t = maxf(vuln_t - delta, 0.0)
-	if shade_t > 0.0: shade_t = maxf(shade_t - delta, 0.0)
 	if flash > 0.0: flash = maxf(flash - delta, 0.0)
 	if frozen_t > 0.0: frozen_t = maxf(frozen_t - delta, 0.0)
-	if swamp_t > 0.0: swamp_t = maxf(swamp_t - delta, 0.0)
-	if bog_t > 0.0: bog_t = maxf(bog_t - delta, 0.0)
-	if sand_cd > 0.0: sand_cd = maxf(sand_cd - delta, 0.0)
-	if lava_t > 0.0:
-		lava_t -= delta
-		if lava_t <= 0.0 and main:
-			main.lava_burst(self)
-	if tick_t > 0.0:
-		tick_t -= delta
-		if tick_t <= 0.0 and main:
-			main.tick_burst(self)
-	hist_acc -= delta
-	if hist_acc <= 0.0:
-		hist_acc = 0.25
-		if hist.size() < 4:
-			hist.append(position)
-		else:
-			hist[hist_i] = position
-			hist_i = (hist_i + 1) % 4
-	if prison_t > 0.0: prison_t = maxf(prison_t - delta, 0.0)
 	if tune_t > 0.0: tune_t = maxf(tune_t - delta, 0.0)
 	if ring_cd > 0.0: ring_cd = maxf(ring_cd - delta, 0.0)
 	if soul_t > 0.0: soul_t = maxf(soul_t - delta, 0.0)
-	if styx_t > 0.0: styx_t = maxf(styx_t - delta, 0.0)
 	if silence_t > 0.0: silence_t = maxf(silence_t - delta, 0.0)
 	if not amp.is_empty():
 		for key in amp.keys():
 			amp[key][1] -= delta
 			if amp[key][1] <= 0.0:
 				amp.erase(key)
-				if key == "rust":
-					rust_n = 0
-	if lucky_t > 0.0: lucky_t = maxf(lucky_t - delta, 0.0)
-	if mud_t > 0.0: mud_t = maxf(mud_t - delta, 0.0)
-	if glacier_t > 0.0: glacier_t = maxf(glacier_t - delta, 0.0)
-	if loud_t > 0.0: loud_t = maxf(loud_t - delta, 0.0)
-	if smog_t > 0.0: smog_t = maxf(smog_t - delta, 0.0)
-	if frostpo_t > 0.0: frostpo_t = maxf(frostpo_t - delta, 0.0)
-	if toxring_t > 0.0: toxring_t = maxf(toxring_t - delta, 0.0)
-	if seed_n > 0:
-		seed_t -= delta
-		if seed_t <= 0.0:
-			RxMore.sprout(self)
+	if rep_cd > 0.0: rep_cd = maxf(rep_cd - delta, 0.0)
 	if echo_cd > 0.0: echo_cd = maxf(echo_cd - delta, 0.0)
 	if tune_t <= 0.0:
 		ring = 0.0
@@ -249,11 +190,11 @@ func step(delta: float) -> void:
 		burn_t -= delta
 		_credit(burn_src, hurt(burn_dps * delta, false, burn_src), burn_rx, burn_key)
 		last_rx = burn_rx
+		if burn_t <= 0.0 and hp > 0.0:
+			Share.flare(self)  # 불 타오름: 화상이 끝나는 순간
 	if poison_t > 0.0:
 		poison_t -= delta
-		var pd := poison_dps * delta * (2.0 if swamp_t > 0.0 else 1.0)
-		if smog_t > 0.0 and burn_t > 0.0 or frostpo_t > 0.0 and frozen_t > 0.0:
-			pd *= 2.0
+		var pd := poison_dps * delta
 		_credit(poison_src, hurt(pd, false, poison_src), poison_rx, poison_key)
 		last_rx = poison_rx
 	# 피해 숫자는 0.35초마다 묶어서 표시
@@ -297,7 +238,7 @@ func _redraw_if_changed() -> void:
 	var state := 1 if frozen_t > 0.0 else 2 if root_timer > 0.0 else 3 if stagger_t > 0.0 else 4 if root_immune > 0.0 else 0
 	# 체력 고리는 24칸으로 그려 48단계면 충분하다
 	var sg := int(flash > 0.0) | int(poison_t > 0.0) << 1 | int(burn_t > 0.0) << 2 | int(vuln_t > 0.0) << 3 \
-		| int(slow_timer > 0.0) << 4 | int(sturdy and silence_t <= 0.0) << 5 | int(prison_t > 0.0) << 6 | int(silence_t > 0.0) << 7 \
+		| int(slow_timer > 0.0) << 4 | int(sturdy and silence_t <= 0.0) << 5 | int(silence_t > 0.0) << 7 \
 		| state << 8 | (int(ring) + 1 if tune_t > 0.0 else 0) << 11 | roundi(clampf(hp / max_hp, 0.0, 1.0) * 48.0) << 14 \
 		| int(radius()) << 22
 	if kind == Kind.FAST:
@@ -308,7 +249,6 @@ func _redraw_if_changed() -> void:
 	var spin := 0
 	if shield > 0.0: spin += roundi(age * 20.0)
 	if resist_e >= 0: spin += roundi(age * 16.0) << 16
-	if curse_lv > 0: spin += roundi(age * 30.0) << 32
 	if echo_t > 0.0: spin += (roundi(echo_t * 10.0) + 1) << 48
 	if late != "":
 		spin += roundi(age * 20.0) << 8
@@ -324,7 +264,7 @@ func _redraw_if_changed() -> void:
 ## 어둠 "받는 피해 +30%"·씨앗 바람 등 증폭이 어느 피해 기록에도 안 잡혔다).
 ## hurt가 곱하는 받는 피해 배율 (가둠·약화·증폭). 보호막은 빼고.
 func hurt_mul() -> float:
-	var m := 1.5 if prison_t > 0.0 else 1.0 + vuln_k if vuln_t > 0.0 else 1.0
+	var m := 1.0 + vuln_k if vuln_t > 0.0 else 1.0
 	for v in amp.values():
 		m *= 1.0 + v[0]
 	return m
@@ -333,7 +273,7 @@ func hurt_mul() -> float:
 func hurt(amount: float, crit := false, source = null) -> float:
 	if is_instance_valid(source):
 		amount *= source.final_damage_mul()
-	var d := amount * (1.5 if prison_t > 0.0 else 1.0 + vuln_k if vuln_t > 0.0 else 1.0)
+	var d := amount * (1.0 + vuln_k if vuln_t > 0.0 else 1.0)
 	last_rx = false
 	if not amp.is_empty():
 		for v in amp.values():
@@ -371,17 +311,10 @@ func _echo_release() -> void:
 		return
 	_credit(echo_src, hurt(d, false, echo_src), false, "elem:time")
 	if main and d >= 1.0:
-		main.popup(position, d, Elem.COLORS[Elem.TIME], true, "메아리")
+		main.popup(position, d, Elem.COLORS[Elem.TIME], true, "되풀이")
 
 
 ## 시간 메아리를 건다. 이미 기록 중이면 더 큰 비율로만 바꾼다.
-## 모래시계: 약 1초 전 위치 (기록이 덜 쌓였으면 가장 오래된 것).
-func past_pos() -> Vector2:
-	if hist.is_empty():
-		return position
-	return hist[hist_i] if hist.size() == 4 else hist[0]
-
-
 func echo(frac: float, duration: float, src = null) -> void:
 	if echo_t > 0.0:
 		if frac > echo_frac:
@@ -413,7 +346,6 @@ func _late_step(delta: float, mult: float) -> void:
 					if main:
 						main.burst(position, Color(0.75, 0.6, 1.0), 6, 90.0)
 					position += dir * dist
-					hist.clear()
 		"mender":
 			if silence_t > 0.0:
 				return
@@ -525,7 +457,7 @@ func root(duration: float, dr := true) -> bool:
 	return true
 
 
-const BOSS_PUSH := 15.0
+static var BOSS_PUSH := 15.0  # 보스가 한 번에 밀릴 수 있는 거리
 
 
 func _push_max() -> float:
@@ -617,29 +549,27 @@ func _credit(src, d: float, rx: bool, key: String) -> void:
 
 
 ## 어둠 약화: 받는 피해 +amount (레벨이 높은 어둠이 걸면 큰 값으로, 2026-11-01 레벨마다 오름)
-func vuln(duration: float, amount := -1.0) -> void:
+func vuln(duration: float, amount := -1.0, src: Object = null, sh := false) -> void:
 	if amount < 0.0:
-		amount = 0.3  # 반응이 거는 약화는 예전처럼 +30%
+		amount = 0.3
 	if vuln_t <= 0.0 or amount > vuln_k:
 		vuln_k = amount
-	vuln_t = maxf(vuln_t, duration)
-
-
-## 어둠 형태 성질: 그림자 표식 (받는 피해 +30%는 vuln과 같은 효과, 겹치지 않음)
-func shade(duration: float) -> void:
-	shade_t = maxf(shade_t, duration)
+		if src != null:
+			vuln_src = src
+			vuln_sh = sh
 	vuln_t = maxf(vuln_t, duration)
 
 
 ## 냉기가 3 쌓이면 1초 빙결.
-func add_chill(amount: float) -> void:
+## freeze_t: 빙결 시간 배율 (얼음 오래감·제어 회복 2026-11-04, Share.dur)
+func add_chill(amount: float, freeze_t := 1.0) -> void:
 	if sturdy and silence_t <= 0.0:
 		amount *= 0.5
 	chill += amount
 	slow(0.7, 0.5)
 	if chill >= 3.0:
 		chill = 0.0
-		if root(1.5 if glacier_t > 0.0 else 1.0):
+		if root(freeze_t):
 			frozen_t = root_timer
 
 
@@ -725,33 +655,18 @@ func _draw() -> void:
 	elif root_immune > 0.0:
 		# 기절 면역: 옅은 흰 고리
 		draw_arc(Vector2.ZERO, r + 6.0, 0, TAU, 24, Color(1, 1, 1, 0.35), 1.5)
-	if prison_t > 0.0:
-		# 빙결 감옥: 어두운 얼음 창살
-		for i in 8:
-			var a := TAU * i / 8
-			draw_line(Vector2(cos(a), sin(a)) * (r + 2.0), Vector2(cos(a), sin(a)) * (r + 10.0), Color(0.45, 0.5, 0.95, 0.9), 3.0)
 	if tune_t > 0.0:
 		# 울림: 쌓인 만큼 분홍 호
 		var rc: Color = Elem.COLORS[Elem.SOUND]
 		for i in 3:
 			var a0 := -PI / 2 + TAU * i / 3
 			draw_arc(Vector2.ZERO, r + 4.5, a0 + 0.25, a0 + TAU / 3 - 0.25, 8, Color(rc, 0.9 if i < int(ring) else 0.3), 2.0)
-	if tick_t > 0.0:
-		# 째깍: 시간색 호가 줄어든다 (0.6초 뒤 터짐)
-		var kc: Color = Elem.COLORS[Elem.TIME]
-		draw_arc(Vector2.ZERO, r + 8.0, -PI / 2, -PI / 2 + TAU * clampf(tick_t / 0.6, 0.0, 1.0), 16, Color(kc, 0.85), 2.5)
 	if echo_t > 0.0:
 		# 메아리: 금빛 시계 바늘
 		var tc: Color = Elem.COLORS[Elem.TIME]
 		draw_line(Vector2.ZERO, Vector2.from_angle(-PI / 2 + echo_t * PI) * (r - 2.0), tc, 2.0)
 	if silence_t > 0.0:
 		draw_line(Vector2(-r, -r) * 0.7, Vector2(r, r) * 0.7, Color(0.4, 0.3, 0.5, 0.8), 2.5)
-	if curse_lv > 0:
-		# 저주 표식: 머리 위에서 도는 보라색 눈
-		var cp := Vector2(0, -r - 18.0)
-		var cc := Color(0.75, 0.3, 0.9)
-		draw_arc(cp, 7.0, age * 3.0, age * 3.0 + TAU * 0.75, 12, cc, 2.0)
-		draw_circle(cp, 2.5, cc)
 	if jam != "":
 		_draw_jam(r)
 	# 상태 표시 점: 화상·중독·약화·감속

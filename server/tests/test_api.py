@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app import signing, validate  # noqa: E402
-from app.main import app  # noqa: E402
+from app.main import PATCH_KEYS, app  # noqa: E402
 
 PUB = signing.generate_keypair(os.environ["PATCH_KEY_PATH"])
 A = {"Authorization": "Bearer adm"}
@@ -49,6 +49,10 @@ def test_flow():
         assert c.get("/admin/rule_keys").status_code == 401
         ks = {e["k"]: e for e in c.get("/admin/rule_keys", headers=A).json()}
         assert ks["laser_w"]["v"] == 21 and ks["max_elems"]["v3"] == 99 and "dmg_laser" in ks
+        assert c.get("/admin/patch_sections").status_code == 401
+        ps = c.get("/admin/patch_sections", headers=A).json()
+        assert {t["id"] for t in ps["tabs"]} >= {"obj", "card", "rx", "orb"} and set(ps["sections"]) <= PATCH_KEYS
+        assert {g for t in ps["tabs"] for g in t["groups"]} == {e["g"] for e in ks.values()}
         assert c.post("/admin/patches", json={"data": {"bogus": 1}}, headers=A).status_code == 422
         r = c.post("/admin/patches", json={"data": {"rules": {"1": {"max_mod": 4}}, "perks": {"power": 0.2}}, "notes": "t", "min_game": "0.4.25"}, headers=A).json()
         assert r == {"id": 1, "season": 1}
@@ -152,6 +156,12 @@ def test_validate_bounds():
     assert validate.check(dict(run, modes=["three", "soft"])) == ""
     assert validate.modes_mul(["rush", "steel"]) == 1.3 * 1.3
     assert validate.modes_mul(["rush"], {"modes": {"rush": 1.5}}) == 1.5
+    # 게임 코드 수치 패치: 보스 체력을 올리면 점수 상한도 오르고, 내려도 기본값보다 낮아지지 않음
+    up = {"rules": {"all": {"Orb.KIND.boss_hp": 30, "Orb.KIND.tank_hp": 5.0}}}
+    down = {"rules": {"all": {"Orb.KIND.boss_hp": 1, "Main.CROSS_HP": 1.0}}}
+    assert validate.max_score(30, "plain", 1, up) > cap * 1.5
+    assert validate.max_score(30, "plain", 1, down) == cap
+    assert validate.max_score(30, "cross", 1, down) == validate.max_score(30, "cross", 1)
 
 
 def post_logs(c, entries, device="dev-logs-aaaa"):
@@ -313,3 +323,21 @@ def test_leaks():
         assert run["wave"] == 6
         # 너무 큰 값은 거부
         assert post_run(c, map="cross", device="dev-leak-dddd", leaks=[{"w": 1, "n": -1}]).status_code == 422
+
+
+def test_card_enable_patch():
+    # 최신 관리자 탭과 함께 카드 사용 제어를 유지한다. 삭제된 연계는 허용하지 않는다.
+    elements = "fire wood water electric wind ice earth dark light poison metal sound time soul star".split()
+    with TestClient(app) as c:
+        for enabled in [[], {"link.prism": 0}, {"elem.fire": True}, {"elem.fire": "0"}, {"elem.fire": 0.5},
+                        {f"elem.{e}": 0 for e in elements}]:
+            r = c.post("/admin/patches", headers=A, json={"data": {"card_enabled": enabled}})
+            assert r.status_code == 422, (enabled, r.text)
+        enabled = {"elem.fire": 0, "pat.laser": 0, "link.reso": 1, "perk.power": 0}
+        r = c.post("/admin/patches", headers=A, json={"data": {"card_enabled": enabled}})
+        assert r.status_code == 200
+        patch = c.get("/v1/boot", params={"game": "0.9.0", "platform": "ios"}).json()["patch"]
+        assert patch["id"] == r.json()["id"] and signing.verify(patch["payload"], patch["sig"], PUB)
+        assert json.loads(patch["payload"])["data"]["card_enabled"] == enabled
+        admin = c.get("/admin", headers=A).text
+        assert 'id="ptabs"' in admin and 'id="t-card-enable"' in admin

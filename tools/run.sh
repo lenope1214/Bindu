@@ -7,7 +7,8 @@
 #   fuzz [판 수=8] [프레임=9000]          무작위 클릭·끌기·키·터치 (스크립트 오류 찾기, GARDEN=1이면 정원 판)
 #   miss                                   공격방식 x 강화 x 다중 발사 수마다 정면 구체를 거리별로 맞히는지 (사거리 안 피해 0이면 MISS, KIND=fast 작은 구체)
 #   elem                                   속성마다 직선탄 Lv2 하나가 30초간 준 피해/초
-#   rx                                     특수 반응마다 두 속성 Lv1 직선탄 하나가 구체 무리에 준 반응 피해/초 (RX=id,id로 골라 보기)
+#   stages [규칙] [판수=6]                  5~200웨이브 11단계만 싸우고 사이는 선택지만 빠르게 (STAGES=목록)
+#   rx                                     두 속성 짝마다 두 속성 Lv1 직선탄 하나가 구체 무리에 준 반응 피해/초 (RX=id,id로 골라 보기)
 #   perf                                   후반 부하(오브젝트 16개·구체 250개+) 배속별 프레임당 계산 시간·부분별 시간
 #   perfwin                                perf를 창을 띄워 실행 (그리기 비용 포함, 수직 동기 끔)
 #   compare [기준=1] [새 규칙=3] [판 수=32] [stack]   같은 시드로 두 규칙을 돌려 차이와 판정 (새 규칙을 내기 전에)
@@ -17,6 +18,7 @@
 #   modes [규칙=1] [판 수=32] [모드...]   모드마다 같은 시드로 모드 없는 판과 비교: 웨이브 차이·점수 손익분기 배율
 #   spec                                   docs/features.md의 기대 동작 자동 점검 (tools/spec_check.gd)
 #   rulekeys                               관리자 페이지 수치 표 목록(server/app/rule_keys.json)을 Rules에서 다시 만듦 (VERIFY=1이면 비교만, check에 포함)
+#   patchkeys                              관리자 페이지 [패치] 하위 탭·특성·카드·모드·정원 칸 목록(server/app/patch_sections.json)을 다시 만듦 (VERIFY=1이면 비교만, check에 포함)
 #   notes                                  CHANGELOG(게임 안 패치노트)에 패치 키·코드 이름·경로·해시·요청 인용이 없는지 (docs/changelog-rules.md)
 #   check                                  배포 전 한 번에: spec + 그린 궤적 + 무작위 입력 + 이어하기 (실패하면 끝 코드 1)
 # 환경 변수: SPEED(배속, 기본 4) SMART(기본 1: 사람처럼 중앙 가까이에서 길목을 겨눔, 0이면 예전 봇) VARY(0이면 판마다 다른 흐름 끔: 봉인·이벤트·적응 켬/끔 비교)
@@ -102,6 +104,28 @@ case "$CMD" in
 		echo "규칙 $R ${MODE:+($MODE)}:"
 		summary b_*.txt
 		leaks b_*.txt
+		rm -rf "$D"
+		;;
+	stages)
+		# 웨이브 단계별 점검 (2026-11-03): 사이 웨이브는 전투 없이 선택지만 고르고 5·10·15·20·30·40·50·75·100·150·200웨이브만 싸운다.
+		# STAGES=5,20,50처럼 목록을 바꿀 수 있다. 판마다 STAGE 줄, 끝에 웨이브별 막은 판 비율·새어 든 구체 비율·특징 피해 몫
+		R=${1:-1}; N=${2:-6}; MODE=${3:-}
+		D=$(copy_project "$$")
+		cd "$D"
+		J=${JOBS:-$( (nproc || sysctl -n hw.ncpu) 2> /dev/null || echo 4)}
+		for seed in $(seq 1 "$N"); do
+			STAGES=${STAGES:-1} MINS=${MINS:-600} MODES=${BOT_MODES:-} RULES=$R SPEED=${SPEED:-4} T 3600 "$G" --headless --fixed-fps 60 --path . -s tools/bot.gd -- "$seed" $MODE 2>&1 | grep -E "^STAGE|^RESULT|SCRIPT ERROR" > "s_$seed.txt" &
+			if (( seed % J == 0 )); then wait; fi
+		done
+		wait
+		grep -h "SCRIPT ERROR" s_*.txt | head -3 || true
+		echo "규칙 $R ${MODE:+($MODE)} 판 $N개:"
+		cat s_*.txt | awk '/^STAGE/ {
+			for (i = 2; i <= NF; i++) { split($i, kv, "="); v[kv[1]] = kv[2] }
+			w = v["w"]; c[w]++; if (v["leaked"] == 0) ok[w]++; lk[w] += v["leaked"] / (v["n"] > 0 ? v["n"] : 1); sh[w] += v["share"]; tw[w] += v["towers"]
+		} END {
+			for (w in c) printf "%6d %4d %7.0f%% %9.1f%% %7.1f%% %6.1f\n", w, c[w], 100 * ok[w] / c[w], 100 * lk[w] / c[w], 100 * sh[w] / c[w], tw[w] / c[w]
+		}' | sort -n | { echo "웨이브   판   막음   새어든몫   특징몫  오브젝트"; cat; }
 		rm -rf "$D"
 		;;
 	compare)
@@ -190,7 +214,7 @@ case "$CMD" in
 		S=tools/bot.gd
 		[ "$CMD" = cont ] && S=tools/bot_continue.gd
 		CONT=$([ "$CMD" = cont ] && echo 1 || echo "") RULES=$R MAP=$M GOD=$W SPEED=${SPEED:-8} \
-			T 3600 "$G" --headless --fixed-fps 60 --path . -s "$S" -- 1 2>&1 | grep -E "SCRIPT ERROR|STUCK|RESULT|DIFF|CONT w=" | head -80 || true
+			T 3600 "$G" --headless --fixed-fps 60 --path . -s "$S" -- 1 2>&1 | grep -E "SCRIPT ERROR|Parse Error|^ERROR:|STUCK|RESULT|DIFF|CONT w=" | head -80 || true
 		rm -rf "$D"
 		;;
 	fuzz)
@@ -198,15 +222,19 @@ case "$CMD" in
 		D=$(copy_project "$$")
 		cd "$D"
 		for seed in $(seq 1 "$N"); do
-			T 900 "$G" --headless --fixed-fps 60 --path . -s tools/fuzz.gd -- "$seed" "$F" > "f_$seed.txt" 2>&1 &
+			(T 900 "$G" --headless --fixed-fps 60 --path . -s tools/fuzz.gd -- "$seed" "$F" > "f_$seed.txt" 2>&1 && echo "FUZZ EXIT ok" >> "f_$seed.txt") &
 			if (( seed % 8 == 0 )); then wait; fi
 		done
 		wait
+		bad_fuzz=0
 		for seed in $(seq 1 "$N"); do
-			echo "시드 $seed: 오류 $(grep -c 'SCRIPT ERROR' "f_$seed.txt" || true)개 · $(grep FUZZR "f_$seed.txt" | head -1)"
+			errors=$(grep -cE 'SCRIPT ERROR|Parse Error|^ERROR:' "f_$seed.txt" || true)
+			echo "시드 $seed: 오류 ${errors}개 · $(grep FUZZR "f_$seed.txt" | head -1)"
+			if [ "$errors" -gt 0 ] || ! grep -q "^FUZZ DONE frames=$F$" "f_$seed.txt" || ! grep -q "^FUZZ EXIT ok$" "f_$seed.txt"; then bad_fuzz=1; fi
 		done
-		grep -h "SCRIPT ERROR" -A3 f_*.txt | head -20 || true
+		grep -hE 'SCRIPT ERROR|Parse Error|^ERROR:' -A3 f_*.txt | head -20 || true
 		rm -rf "$D"
+		exit "$bad_fuzz"
 		;;
 	miss)
 		D=$(copy_project "$$")
@@ -241,15 +269,20 @@ case "$CMD" in
 	spec)
 		D=$(copy_project "$$")
 		cd "$D"
-		T 600 "$G" --headless --fixed-fps 60 --path . -s tools/spec_check.gd > spec.txt 2>&1 || true
-		grep -E "^(ok|FAIL|SPEC|DOC)|SCRIPT ERROR|Parse Error" spec.txt || true
 		r=0
+		T 600 "$G" --headless --fixed-fps 60 --path . -s tools/spec_check.gd > spec.txt 2>&1 || r=1
+		grep -E "^(ok|FAIL|SPEC|DOC)|SCRIPT ERROR|Parse Error|^ERROR:" spec.txt || true
 		grep -q "^SPEC 통과" spec.txt || r=1
+		grep -qE 'SCRIPT ERROR|Parse Error|^ERROR:' spec.txt && r=1
 		cd / && rm -rf "$D"
 		exit $r
 		;;
 	notes)
 		python3 "$ROOT/tools/notes_check.py"
+		;;
+	patchkeys)
+		# Godot 없이 돈다 (게임 코드를 글로 읽음)
+		if [ "${VERIFY:-0}" = "1" ]; then python3 "$ROOT/tools/patch_keys.py" --check; else python3 "$ROOT/tools/patch_keys.py"; fi
 		;;
 	rulekeys)
 		# 관리자 페이지 수치 표(server/app/rule_keys.json)를 지금 Rules에서 다시 만든다. VERIFY=1이면 쓰지 않고 같은지만
@@ -271,18 +304,19 @@ case "$CMD" in
 		bad=""
 		if python3 "$ROOT/tools/notes_check.py" > /tmp/bindu_check_notes.txt 2>&1; then echo "notes 통과"; else grep -E "^FAIL|^NOTES" /tmp/bindu_check_notes.txt | head -10; bad="$bad notes"; fi
 		"$0" spec > /tmp/bindu_check_spec.txt 2>&1 || bad="$bad spec"
-		grep -E "^FAIL|^SPEC" /tmp/bindu_check_spec.txt || true
+		grep -E "^FAIL|^SPEC|SCRIPT ERROR|Parse Error|^ERROR:" /tmp/bindu_check_spec.txt || true
 		D=$(copy_project "$$")
-		if (cd "$D" && T 300 "$G" --headless --path . -s tools/path_test.gd > path.txt 2>&1); then echo "path 통과"; else bad="$bad path"; fi
+		if (cd "$D" && T 300 "$G" --headless --path . -s tools/path_test.gd > path.txt 2>&1) && ! grep -qE 'SCRIPT ERROR|Parse Error|^ERROR:' "$D/path.txt"; then echo "path 통과"; else bad="$bad path"; fi
 		grep -E "^FAIL|SCRIPT ERROR" "$D/path.txt" || true
 		rm -rf "$D"
-		F=$("$0" fuzz 4 3000)
+		F=$("$0" fuzz 4 3000) || bad="$bad fuzz"
 		echo "$F" | grep "^시드"
 		echo "$F" | grep "^시드" | grep -qv "오류 0개" && bad="$bad fuzz"
 		C=$("$0" cont 1 plain 13)
-		echo "$C" | grep -E "RESULT|DIFF|SCRIPT ERROR" | head -5
-		echo "$C" | grep -qE "DIFF|SCRIPT ERROR" && bad="$bad cont"
-		echo "$C" | grep -q "RESULT" || bad="$bad cont"
+		echo "$C" | grep -E "RESULT|DIFF|SCRIPT ERROR|CONT w=" | head -10
+		echo "$C" | grep -qE "DIFF|SCRIPT ERROR|Parse Error|^ERROR:|STUCK" && bad="$bad cont"
+		echo "$C" | grep -q "^RESULT wave=13 " || bad="$bad cont"
+		for w in 4 8 12; do echo "$C" | grep -q "^CONT w=$w OK$" || bad="$bad cont@$w"; done
 		D=$(copy_project "$$")
 		(cd "$D" && T 120 "$G" --headless --path . -s tools/online_check.gd > online.txt 2>&1)
 		grep -q "결과: 모두 통과" "$D/online.txt" && echo "online 통과" || { grep -E "실패|SCRIPT ERROR" "$D/online.txt" | head -5; bad="$bad online"; }
@@ -292,12 +326,13 @@ case "$CMD" in
 		grep -q "^PATCHCHECK ok" "$D/pk.txt" && echo "patch keys 통과" || { grep -E "^FAIL|SCRIPT ERROR" "$D/pk.txt" | head -5; bad="$bad patchkeys"; }
 		rm -rf "$D"
 		VERIFY=1 "$0" rulekeys || bad="$bad rulekeys"
+		VERIFY=1 "$0" patchkeys || bad="$bad patchkeys"
 		GC=$("$0" gcheck)
 		echo "$GC" | grep -E "^FAIL|SCRIPT ERROR" | head -5
-		echo "$GC" | grep -q "RESULT fails=0" && echo "gcheck 통과" || bad="$bad gcheck"
+		if echo "$GC" | grep -q "RESULT fails=0" && ! echo "$GC" | grep -qE 'SCRIPT ERROR|Parse Error|^ERROR:'; then echo "gcheck 통과"; else bad="$bad gcheck"; fi
 		if python3 -c "import fastapi, pytest, httpx" > /dev/null 2>&1; then
-			(cd "$ROOT/server" && python3 -m pytest -q 2>&1 | tail -1) | tee /tmp/bindu_check_server.txt
-			grep -qE "failed|error" /tmp/bindu_check_server.txt && bad="$bad server"
+			(cd "$ROOT/server" && python3 -m pytest -q > /tmp/bindu_check_server.txt 2>&1) || bad="$bad server"
+			tail -1 /tmp/bindu_check_server.txt
 		else
 			echo "server 건너뜀 (python3에 fastapi·pytest·httpx 없음: pip install -r server/requirements-dev.txt)"
 		fi
