@@ -81,13 +81,9 @@ var main: Node
 var owner_id := 0  # 협동 멀티플레이: 놓은 사람 id (0이면 혼자 하는 판)
 var net_id := 0  # 협동 멀티플레이: 기기끼리 같은 오브젝트를 찾는 번호
 var req_e := -1  # 협동: 주인이 요청한 속성 (-1 없음). 다른 사람이 그 속성 카드만 넣을 수 있다
-## 그린 궤적: 갈래마다 오브젝트 기준 점 목록 (첫 점은 오브젝트 자리). 오브젝트를 옮기면 같이 옮겨진다.
-var paths: Array = []
 var dice_x := 1.0  # 주사위 강화: 다음 공격까지 직접 피해에 곱하는 배율 (roll_dice)
 var dice_miss := 0  # 마지막 대박(6) 뒤로 굴린 수
 var dice_t := 0.0  # 계속 공격하는 형태: 다음에 굴릴 때까지 남은 초
-var path_i := 0  # 다음 탄이 갈 갈래
-var path_q: Array = []  # 다중 발사: 같은 길로 조금 늦게 나갈 탄까지 남은 시간
 var bounce_cd := 0.0  # 탄이 아닌 공격의 튕김 탄 간격 (공격 속도로 줄어듦)
 
 
@@ -347,7 +343,7 @@ static func lob_r(l: int) -> float:
 ## 공격방식 Lv1의 공격 간격(초). attack()과 같은 값. 분사는 계속 뿜어서 없음, 시계침은 한 번 훑는 시간.
 ## (온라인 패치 rules "Tower.BASE_IV.<공격방식>")
 static var BASE_IV := {"shot": 0.5, "thorn": 0.35, "gust": 1.5, "shard": 0.9, "iron": 1.5, "stream": 1.0, "chain": 1.3,
-	"wall": 3.5, "vortex": 5.0, "laser": 2.0, "lob": 1.6, "sonic": 1.0, "clock": 0.8, "wisp": 0.6, "path": 0.5}
+	"wall": 3.5, "vortex": 5.0, "laser": 2.0, "lob": 1.6, "sonic": 1.0, "clock": 0.8, "wisp": 0.6}
 
 ## 공격방식 한 번 맞힐 때의 기본 피해(Lv1, 배율 전). attack()·projectile.gd가 이 값을 쓴다 (온라인 패치 rules "Tower.HIT.<공격방식>").
 ## 시계침·벽·블랙홀·투척 장판은 Rules 키(clock_dmg·wall_dmg·vortex_end)와 LOB_DPS.
@@ -358,7 +354,6 @@ static var HIT := {
 	"shard": 3.0,  # 파편탄 한 발 (파편은 PROJ frag_dmg)
 	"iron": 1.7,  # 철구 한 발
 	"wisp": 1.15,  # 혼불 한 번 때릴 때
-	"path": 2.4,  # 그린 궤적 한 발
 	"chain": 2.2,  # 연쇄 번개 한 번 튈 때
 	"laser": 3.4,  # 레이저 한 번
 	"sonic": 2.6,  # 음파 가까이 (끝에서는 SHAPE sonic_far만큼 약함)
@@ -387,7 +382,7 @@ static var SHAPE := {
 }
 const HIT_DESC := {
 	"shot": "한 발", "thorn": "한 발, 모두 뚫음", "gust": "한 번, 모두 뚫음", "shard": "한 발, 파편 3개는 %s씩", "iron": "한 발, 모두 뚫음",
-	"wisp": "혼불마다 공격 간격에 한 번", "path": "한 발", "chain": "한 번 튈 때", "laser": "한 번, 모두 뚫음", "sonic": "가까이, 끝에서는 절반",
+	"wisp": "혼불마다 공격 간격에 한 번", "chain": "한 번 튈 때", "laser": "한 번, 모두 뚫음", "sonic": "가까이, 끝에서는 절반",
 	"clock": "한 번 훑을 때", "vortex": "터질 때 + 모은 피해, 안에서 초당 %s", "lob": "지나간 띠 안 초당, %s초 남음", "spray": "초당, 계속 뿜음",
 	"stream": "뿜는 동안 초당, %s초", "wall": "벽에 막힌 동안 초당, 무너질 때 둘레 %s",
 }
@@ -489,7 +484,6 @@ func range_text() -> String:
 		"vortex": return "%d 안 구체 무리에 (우물 반지름 %d)" % [roundi(well_range()), roundi((100.0 + 10.0 * (l - 1)) * s)]
 		"wall": return "앞 %d~ (벽 %d개)" % [roundi(90.0 * rr(l)), 2 + roundi(mf("multi"))]
 		"wisp": return "목줄 %d (혼불 %d개가 오브젝트 둘레를 지키며 쫓아감)" % [roundi(Projectile.wisp_leash(mf("homing"), rr(l))), wisp_cap()]
-		"path": return "그린 길 최대 %d (갈래 %d/%d)" % [roundi(Pat.path_len(plv)), paths.size(), Pat.path_branches(plv)]
 		"shard": return "화면 끝까지 (파편 130)" if m("homing") == 0 else "%d (유도, 파편 130)" % roundi(Projectile.HOMING_TRAVEL)
 	if m("homing") > 0 and pattern in Pat.PROJECTILE:
 		return "%d (유도)" % roundi(Projectile.HOMING_TRAVEL)
@@ -970,8 +964,6 @@ func refuse_text(card: Dictionary) -> String:
 			return "속성은 %d종까지예요. 빈 곳에 놓아 새 오브젝트로 만드세요" % Rules.max_elems
 		"pat":
 			var bad := pattern_blockers(card["id"])
-			if card["id"] == "path" and pattern == Pat.DEFAULT and path_full():
-				return "%s은(는) 오브젝트 %d개까지예요. 이미 있는 궤적에 넣으면 레벨업" % [Pat.pname("path"), Pat.PATH_MAX]
 			if not bad.is_empty():
 				return "%s 강화가 들어 있어서 %s(으)로 바꿀 수 없어요 (효과가 없어져요)" % ["·".join(bad), Pat.pname(card["id"])]
 			return "이 오브젝트는 %s(으)로 정해져 있어요. 같은 공격방식만 넣을 수 있어요" % Pat.pname(pattern)
@@ -990,14 +982,7 @@ func refuse_text(card: Dictionary) -> String:
 ## 이 공격방식을 넣을 수 있는지: 직선탄은 한 번 교체 가능, 정해진 뒤에는 같은 것(레벨업)만.
 ## 이미 든 강화가 그 공격방식에서 효과가 없어지면 바꿀 수 없다.
 func can_pattern(id: String) -> bool:
-	if id == "path" and pattern != "path" and path_full():
-		return false
 	return (pattern == Pat.DEFAULT or id == pattern) and pattern_blockers(id).is_empty()
-
-
-## 그린 궤적 오브젝트가 이미 Pat.PATH_MAX개인지.
-func path_full() -> bool:
-	return main != null and main.towers.get_children().filter(func(t): return t.pattern == "path").size() >= Pat.PATH_MAX
 
 
 ## 이 공격방식으로 바꾸면 효과가 없어지는 이미 든 강화 이름들.
@@ -1023,35 +1008,7 @@ func set_pattern(id: String) -> String:
 	var old := pattern
 	pattern = id
 	plv = 1
-	if id == "path":
-		paths = [straight_path(dir)]
 	return "%s → %s" % [Pat.pname(old), Pat.pname(id)]
-
-
-## 아직 그리지 않은 갈래: 그 방향으로 곧은 길 (그릴 수 있는 길이만큼).
-func straight_path(d: Vector2) -> PackedVector2Array:
-	var out := PackedVector2Array()
-	var L := Pat.path_len(plv)
-	var n := ceili(L / 20.0)
-	for i in n + 1:
-		out.append(d * L * i / n)
-	return out
-
-
-## 그린 궤적 레벨업으로 새로 그릴 갈래 (Pat.path_branches보다 적으면 곧은 길을 하나 더 붙이고 그 번호, 아니면 -1).
-func add_branch() -> int:
-	if pattern != "path" or paths.size() >= Pat.path_branches(plv):
-		return -1
-	paths.append(straight_path(dir.rotated(0.5 * (1 if paths.size() % 2 == 1 else -1))))
-	return paths.size() - 1
-
-
-## 갈래 하나의 길이.
-static func poly_len(pts: PackedVector2Array) -> float:
-	var L := 0.0
-	for i in range(1, pts.size()):
-		L += pts[i].distance_to(pts[i - 1])
-	return L
 
 
 func add_mod(id: String) -> String:
@@ -1183,14 +1140,14 @@ func extras_text() -> String:
 
 ## 미리보기·사거리 표시에 쓰는 묶음.
 func spec() -> Dictionary:
-	return {"els": elements, "pat": pattern, "plv": plv, "mods": mods, "paths": paths}
+	return {"els": elements, "pat": pattern, "plv": plv, "mods": mods}
 
 
 ## 이어하기 저장용.
 func to_save() -> Dictionary:
 	return {"elements": elements, "order": Array(order), "pattern": pattern, "plv": plv, "mods": mods,
 		"reso": reso, "pincer": pincer, "trigs": trigs, "charge": charge, "third_n": third_n, "star_sum": star_sum, "star_e": star_e, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt,
-		"src": src, "run_src": run_src, "paths": paths.map(func(p): return Array(p))}
+		"src": src, "run_src": run_src}
 
 
 ## 협동 멀티플레이: 다른 기기에 보낼 오브젝트 상태 (피해 기록은 빼서 웨이브 중에 자꾸 바뀌지 않게).
@@ -1236,6 +1193,7 @@ func load_save(d: Dictionary) -> void:
 	var p: Variant = d.get("pattern")
 	if p is String and p in Pat.ALL_IDS:
 		pattern = p
+	# 없어진 공격방식(예전 그린 궤적)은 직선탄으로 남고 레벨은 그대로 (같은 탄·피해, 길만 곧게)
 	plv = maxi(1, _int(d.get("plv")))
 	var ms: Variant = d.get("mods", {})
 	if ms is Dictionary:
@@ -1269,19 +1227,6 @@ func load_save(d: Dictionary) -> void:
 	run_dealt = maxf(0.0, _float(d.get("run_dealt")))
 	src = _src_dict(d.get("src"))
 	run_src = _src_dict(d.get("run_src"))
-	paths.clear()
-	var ps: Variant = d.get("paths", [])
-	if pattern == "path" and ps is Array:
-		for br in ps.slice(0, Pat.PATH_BRANCH_MAX):
-			var pts := PackedVector2Array()
-			if br is Array:
-				for q in br.slice(0, 64):
-					if q is Vector2 and q.is_finite():
-						pts.append(q)
-			if pts.size() >= 2:
-				paths.append(pts)
-	if pattern == "path" and paths.is_empty():
-		paths.append(straight_path(dir))
 	set_attack_direction(dir)
 
 
@@ -1621,19 +1566,6 @@ func attack(delta: float, orbs: Array) -> void:
 				pr.dmg *= mk * (1.0 + mf("multi")) * 2.0 / cap
 				pr.form_init()
 				wisps.append(pr)
-		"path":
-			# 갈래를 번갈아 쓰고, 다중 발사는 같은 길로 조금씩 늦게 나간다
-			for i in range(path_q.size() - 1, -1, -1):
-				path_q[i][0] -= dp
-				if path_q[i][0] <= 0.0:
-					_fire_path(path_q[i][1], mk)
-					path_q.remove_at(i)
-			if not paths.is_empty() and _ready_to("p", BASE_IV["path"] / spd(l), dp):
-				var br := path_i % paths.size()
-				path_i += 1
-				_fire_path(br, mk)
-				for i in mn("multi"):
-					path_q.append([PATH_GAP * (i + 1), br])
 	_set_fire([1.0, 1.0, ""])
 	_share_tick(delta)
 	nova_fx = maxf(nova_fx - delta, 0.0)
@@ -1648,22 +1580,6 @@ func attack(delta: float, orbs: Array) -> void:
 		_try_nova()
 	_nova_aim_tick(delta)
 	queue_redraw()
-
-
-static var PATH_GAP := 0.08  # 다중 발사 탄 사이 시간(초)
-
-
-func _fire_path(br: int, mk: float) -> void:
-	if br >= paths.size():
-		return
-	var pts: PackedVector2Array = paths[br]
-	var g := PackedVector2Array()
-	for q in pts:
-		g.append(position + q)
-	var pr: Projectile = main.spawn_proj(self, "path", plv, (pts[1] - pts[0]).normalized())
-	pr.set_route(g)
-	pr.dmg *= mk
-	pr.form_init()
 
 
 ## 협공: 맞힌 오브젝트를 구체에 표시해 두고, 협공이 있는 오브젝트가 맞힐 때
@@ -2488,8 +2404,6 @@ func _chain(orbs: Array, d: Vector2, l: int, used: Dictionary) -> bool:
 # ---------- 그리기 ----------
 
 func _draw() -> void:
-	if pattern == "path":
-		_draw_paths()
 	if owner_id > 0:
 		_draw_owner_glow()
 	if main and main.wave_active:
@@ -2581,19 +2495,6 @@ func _draw_rank() -> void:
 		draw_arc(Vector2.ZERO, 7.5, 0.0, TAU, 20, c.lightened(0.4), 1.2)
 		draw_string(ThemeDB.fallback_font, Vector2(-7.5, 4.8), str(r), HORIZONTAL_ALIGNMENT_CENTER, 15, 13, Color(0.12, 0.08, 0.04))
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
-
-## 그린 길: 쉬는 시간엔 또렷하게, 웨이브 중엔 옅게. 끝에 화살촉.
-func _draw_paths() -> void:
-	var c := color()
-	var a := 0.16 if main and main.wave_active else 0.45
-	for pts: PackedVector2Array in paths:
-		if pts.size() < 2:
-			continue
-		draw_polyline(pts, Color(c, a), 2.0)
-		var e := pts[pts.size() - 1]
-		var d := (e - pts[pts.size() - 2]).normalized()
-		draw_colored_polygon(PackedVector2Array([e + d * 7.0, e - d * 5.0 + d.orthogonal() * 5.0, e - d * 5.0 - d.orthogonal() * 5.0]), Color(c, a + 0.15))
 
 
 func _process(delta: float) -> void:
@@ -2994,14 +2895,6 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 				_r_cone(ci, o, dd, SHAPE.sonic_len * pr * s, SHAPE.sonic_ang, c)
 			"clock":
 				_r_cone(ci, o, dd, SHAPE.clock_len * pr * s, SHAPE.clock_arc, c)
-			"path":
-				if i == 0:
-					for pts: PackedVector2Array in sp.get("paths", []):
-						var g := PackedVector2Array()
-						for q in pts:
-							g.append(o + q)
-						if g.size() >= 2:
-							ci.draw_polyline(g, Color(c.r, c.g, c.b, 0.35 * c.a), 12.0 * s)
 			"wisp":
 				var hm: int = md.get("homing", 0)
 				var hf := 2.0 * (1.0 - pow(0.5, hm)) if Rules.mod_decay else float(hm)
@@ -3110,22 +3003,13 @@ func preview(card: Dictionary) -> Array:
 			elif id == pattern:
 				sp["plv"] = plv + 1
 				out.append("%s Lv%d → Lv%d" % [Pat.pname(id), plv, plv + 1])
-				if id == "path":
-					out.append("피해 x%.1f → x%.1f   공격 속도 x%.1f → x%.1f" % [pw(plv), pw(plv + 1), spd(plv), spd(plv + 1)])
-					if Pat.path_len(plv + 1) > Pat.path_len(plv):
-						out.append("그릴 수 있는 길이 %d → %d (넣으면 다시 그림, 취소하면 그대로)" % [roundi(Pat.path_len(plv)), roundi(Pat.path_len(plv + 1))])
-					elif Pat.path_branches(plv + 1) > paths.size():
-						out.append("갈래 %d → %d (넣으면 새 갈래를 그림)" % [paths.size(), Pat.path_branches(plv + 1)])
-				else:
-					out.append("피해 x%.1f → x%.1f   공격 속도 x%.1f → x%.1f   사거리 x%.1f → x%.1f" % [pw(plv), pw(plv + 1), spd(plv), spd(plv + 1), reach(plv), reach(plv + 1)])
+				out.append("피해 x%.1f → x%.1f   공격 속도 x%.1f → x%.1f   사거리 x%.1f → x%.1f" % [pw(plv), pw(plv + 1), spd(plv), spd(plv + 1), reach(plv), reach(plv + 1)])
 			else:
 				sp["pat"] = id
 				sp["plv"] = 1
 				out.append("공격방식: %s → %s" % [Pat.pname(pattern), Pat.pname(id)])
 				out.append(Pat.PATTERNS[id]["desc"])
 				out.append("한 번 정하면 바꿀 수 없음 (같은 것을 넣으면 레벨업)")
-				if id == "path":
-					out.append("넣으면 길을 그림: 오브젝트에서 시작해 누른 채 끌기, 꺾기 %d번까지" % Pat.PATH_BENDS)
 		"mod":
 			var id: String = card["id"]
 			sp["mods"][id] = m(id) + 1

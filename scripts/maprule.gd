@@ -12,7 +12,7 @@ const AFF := {
 	"spiral": {"elem": [Elem.WIND, Elem.TIME], "pat": ["vortex", "clock"], "mod": ["bounce"], "link": []},
 	"cross": {"elem": [Elem.METAL, Elem.FIRE], "pat": ["laser", "stream", "thorn", "iron"], "mod": ["pierce"], "link": []},
 	"storm": {"elem": [Elem.ELECTRIC, Elem.SOUND], "pat": ["sonic", "chain", "gust"], "mod": ["multi"], "link": []},
-	"line": {"elem": [Elem.ICE, Elem.WATER, Elem.POISON], "pat": ["lob", "spray", "path"], "mod": ["size"], "link": []},
+	"line": {"elem": [Elem.ICE, Elem.WATER, Elem.POISON], "pat": ["lob", "spray"], "mod": ["size"], "link": []},
 }
 
 ## 시작 화면·도움말에 보이는 규칙 한 줄 (수치는 지금 값)

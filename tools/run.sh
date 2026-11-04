@@ -20,7 +20,7 @@
 #   rulekeys                               관리자 페이지 수치 표 목록(server/app/rule_keys.json)을 Rules에서 다시 만듦 (VERIFY=1이면 비교만, check에 포함)
 #   patchkeys                              관리자 페이지 [패치] 하위 탭·특성·카드·모드·정원 칸 목록(server/app/patch_sections.json)을 다시 만듦 (VERIFY=1이면 비교만, check에 포함)
 #   notes                                  CHANGELOG(게임 안 패치노트)에 패치 키·코드 이름·경로·해시·요청 인용이 없는지 (docs/changelog-rules.md)
-#   check                                  배포 전 한 번에: spec + 그린 궤적 + 무작위 입력 + 이어하기 (실패하면 끝 코드 1)
+#   check                                  배포 전 한 번에: spec + 무작위 입력 + 이어하기 (실패하면 끝 코드 1)
 # 환경 변수: SPEED(배속, 기본 4) SMART(기본 1: 사람처럼 중앙 가까이에서 길목을 겨눔, 0이면 예전 봇) VARY(0이면 판마다 다른 흐름 끔: 봉인·이벤트·적응 켬/끔 비교)
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -305,10 +305,6 @@ case "$CMD" in
 		if python3 "$ROOT/tools/notes_check.py" > /tmp/bindu_check_notes.txt 2>&1; then echo "notes 통과"; else grep -E "^FAIL|^NOTES" /tmp/bindu_check_notes.txt | head -10; bad="$bad notes"; fi
 		"$0" spec > /tmp/bindu_check_spec.txt 2>&1 || bad="$bad spec"
 		grep -E "^FAIL|^SPEC|SCRIPT ERROR|Parse Error|^ERROR:" /tmp/bindu_check_spec.txt || true
-		D=$(copy_project "$$")
-		if (cd "$D" && T 300 "$G" --headless --path . -s tools/path_test.gd > path.txt 2>&1) && ! grep -qE 'SCRIPT ERROR|Parse Error|^ERROR:' "$D/path.txt"; then echo "path 통과"; else bad="$bad path"; fi
-		grep -E "^FAIL|SCRIPT ERROR" "$D/path.txt" || true
-		rm -rf "$D"
 		F=$("$0" fuzz 4 3000) || bad="$bad fuzz"
 		echo "$F" | grep "^시드"
 		echo "$F" | grep "^시드" | grep -qv "오류 0개" && bad="$bad fuzz"

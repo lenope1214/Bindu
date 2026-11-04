@@ -9,7 +9,7 @@ const SLOT_R := 150.0  # 중앙에서 칸까지
 const OPEN_AT := [0, 0, 0, 4, 8, 13, 19, 26]  # 칸 i가 열리는 최고 단계 (처음 3칸)
 ## 레벨 보상: [레벨, 종류]. 종류: pat(공격방식), plv(공격방식 단계), mod(강화), elem(속성 하나 더), trig(발동)
 const REWARDS := [[5, "pat"], [12, "mod"], [20, "elem"], [30, "mod"], [40, "plv"], [50, "trig"], [60, "mod"], [75, "elem"], [90, "plv"], [100, "mod"], [120, "mod"], [140, "trig"], [160, "mod"]]
-const PAT_POOL := ["spray", "thorn", "stream", "chain", "gust", "shard", "vortex", "laser", "lob", "iron", "sonic", "clock", "wisp"]  # 그린 궤적·벽(방향 고정)은 빼고
+const PAT_POOL := ["spray", "thorn", "stream", "chain", "gust", "shard", "vortex", "laser", "lob", "iron", "sonic", "clock", "wisp"]  # 벽(방향 고정)은 빼고
 const PLANT_ELEMS := [Elem.FIRE, Elem.WOOD, Elem.WATER, Elem.ELECTRIC, Elem.WIND, Elem.ICE, Elem.EARTH, Elem.DARK, Elem.LIGHT, Elem.POISON, Elem.METAL, Elem.SOUND, Elem.TIME, Elem.SOUL]  # 별은 둘레를 모으는 속성이라 칸에는 안 심음
 const REWARD_NAMES := {"pat": "공격방식", "plv": "공격방식 단계", "mod": "강화", "elem": "속성 하나 더", "trig": "발동"}
 
@@ -84,7 +84,6 @@ static func apply(t: Tower, s: Dictionary) -> void:
 	t.plv = 1
 	t.mods = {}
 	t.trigs = {}
-	t.paths = []
 	t.elements[e] = 1
 	t.order.append(e)
 	var extra := 0

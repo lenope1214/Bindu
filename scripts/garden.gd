@@ -417,7 +417,7 @@ static func save_into(cfg: ConfigFile) -> void:
 
 
 static func _valid_bonsai(b: Variant) -> Dictionary:
-	if not b is Dictionary or not b.get("e") in Elem.ALL or not b.get("pat") in Pat.ALL_IDS or b.get("pat") == "path":
+	if not b is Dictionary or not b.get("e") in Elem.ALL or not b.get("pat") in Pat.ALL_IDS:
 		return {}
 	var mods: Array = (b.get("mods", []) as Array).filter(func(m): return Pat.MODS.has(m))
 	return {"e": b["e"], "pat": b["pat"], "plv": clampi(int(b.get("plv", 1)), 1, 3), "mods": mods.slice(0, 1)}
@@ -431,7 +431,7 @@ static func bonsai_of(t: Tower) -> Dictionary:
 			e = x
 	var ms: Array = t.mods.keys()
 	ms.sort_custom(func(a, b): return t.mods[a] > t.mods[b])
-	return _valid_bonsai({"e": e, "pat": t.pattern if t.pattern != "path" else Pat.DEFAULT, "plv": t.plv, "mods": ms})
+	return _valid_bonsai({"e": e, "pat": t.pattern, "plv": t.plv, "mods": ms})
 
 
 static func bonsai_text() -> String:

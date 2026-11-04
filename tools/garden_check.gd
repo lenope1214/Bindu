@@ -79,12 +79,6 @@ func _process(_d) -> bool:
 			_ok(t1 != null and [t1.pattern, t1.order.duplicate(), t1.mods.duplicate()] == sig0 and t1.position.is_equal_approx(Grow.slot_pos(main.center(), 0)), "칸에서 다시 만들어도 같은 모양·같은 자리")
 			Garden.dew = Grow.plant_cost() + 1.0
 			_ok(Gardener.buy(main) and Grow.planted() == 2, "자동 정원사: 빈 칸이 있고 값이 맞으면 심음")
-			var pcn := 0
-			for i in 3000:
-				var cd: Dictionary = main._roll_card()
-				if cd["type"] == "pat" and cd["id"] == "path":
-					pcn += 1
-			_ok(pcn == 0, "정원엔 그린 궤적(손으로 그리기) 카드가 안 나옴")
 			var gs0: float = main.game_speed
 			main._toggle_speed()
 			_ok(main.game_speed == gs0 and main.game_speed >= 2.0 and not main.speed_btn.visible and not main.speed_pick.visible and not main.pause_btn.visible and main.gp_exit_btn.visible, "정원은 늘 x2, 배속·일시정지 버튼 없음, 패널에 [나가기]")

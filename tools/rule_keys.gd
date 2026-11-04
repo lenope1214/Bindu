@@ -146,7 +146,7 @@ const CODE_GROUP := {
 	"Tower.HIT": "공격방식 기본 피해", "Tower.BASE_IV": "공격방식 기본 간격", "Tower.SHAPE": "공격방식 모양", "Orb.KIND": "구체 종류",
 	"Main.SPECIAL": "저항·굳센 구체",
 	"Tower": "오브젝트 코드 수치", "Projectile": "탄", "Orb": "구체 상태 수치", "Main": "맵·중앙 코드 수치", "Modes": "모드 코드 수치",
-	"Share": "특징 코드 수치", "Pat": "그린 궤적 코드 수치", "MapRule": "맵 규칙 코드 수치", "Skill": "중앙 기술 코드 수치",
+	"Share": "특징 코드 수치", "Pat": "오브젝트 코드 수치", "MapRule": "맵 규칙 코드 수치", "Skill": "중앙 기술 코드 수치",
 }
 
 

@@ -9,7 +9,7 @@ const BLUE := Color(0.6, 0.9, 1.0)
 const GREEN := Color(0.55, 0.9, 0.55)
 const ORB := Color(0.95, 0.4, 0.5)
 ## 미리보기 모양 묶음
-const LINE_PATS := ["shot", "thorn", "gust", "shard", "iron", "chain", "path", "wisp"]
+const LINE_PATS := ["shot", "thorn", "gust", "shard", "iron", "chain", "wisp"]
 
 var game
 var font: Font

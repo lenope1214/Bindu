@@ -295,7 +295,7 @@ let KEYS = null, SECT = null, ROWS = [], PTAB = "obj", PATCHES = [];
 try { PTAB = localStorage.getItem("bindu_ptab") || "obj"; } catch (e) {}
 const CARD_OPTIONS = [
   ...[["불","fire"],["나무","wood"],["물","water"],["전기","electric"],["바람","wind"],["얼음","ice"],["땅","earth"],["어둠","dark"],["빛","light"],["독","poison"],["금속","metal"],["소리","sound"],["시간","time"],["영혼","soul"],["별","star"]].map(([n,k]) => ["elem",k,"속성",n]),
-  ...[["분사","spray"],["관통 연사","thorn"],["물줄기","stream"],["연쇄 번개","chain"],["돌풍","gust"],["파편탄","shard"],["벽","wall"],["블랙홀","vortex"],["레이저","laser"],["투척 장판","lob"],["철구","iron"],["음파","sonic"],["시계침","clock"],["혼불","wisp"],["그린 궤적","path"]].map(([n,k]) => ["pat",k,"공격방식",n]),
+  ...[["분사","spray"],["관통 연사","thorn"],["물줄기","stream"],["연쇄 번개","chain"],["돌풍","gust"],["파편탄","shard"],["벽","wall"],["블랙홀","vortex"],["레이저","laser"],["투척 장판","lob"],["철구","iron"],["음파","sonic"],["시계침","clock"],["혼불","wisp"]].map(([n,k]) => ["pat",k,"공격방식",n]),
   ...[["다중 발사","multi"],["분열","split"],["유도","homing"],["튕김","bounce"],["크기","size"],["속사","rapid"],["관통","pierce"],["주사위","dice"],["반응","reflex"]].map(([n,k]) => ["mod",k,"강화",n]),
   ...[["여진","echo"],["선봉","vanguard"],["축적","charge"],["삼연","third"],["마무리","finish"],["호응","answer"]].map(([n,k]) => ["trig",k,"발동",n]),
   ...[["협공","pincer"],["공명","reso"]].map(([n,k]) => ["link",k,"연계",n]),

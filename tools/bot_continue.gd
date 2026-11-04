@@ -97,7 +97,6 @@ func _process(_d):
 		main.core_max = 99999
 	main.auto_start = true
 	main.game_speed = float(OS.get_environment("SPEED")) if OS.get_environment("SPEED") != "" else 1.0
-	if main.phase == 7: main._cancel_step()  # 그린 궤적: 봇은 길을 못 그려 곧은 기본 길 그대로
 	if main.phase == 6:
 		_rearrange()
 		var blocked: String = main._wave_start_block_reason()

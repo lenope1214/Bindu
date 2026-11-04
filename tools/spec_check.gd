@@ -877,7 +877,7 @@ func _reflex() -> void:
 	var save_ok := restored.m("reflex") == 1 and not restored.can_take(card)
 	restored.free()
 	var blocked := true
-	for pat in ["path", "wisp", "vortex"]:
+	for pat in ["wisp", "vortex"]:
 		blocked = blocked and not t.can_pattern(pat) and not Pat.mod_ok(pat, "reflex")
 	ok("MOD-13", selectable and cap_ok and save_ok and blocked, "반응: 카드 후보·오브젝트당 1개(랭크/도파민)·저장 복원·무효 조합")
 	# 사거리 밖·죽은 구체 무시, 뒤·옆의 최근접 구체로 즉시 회전. 유도와 함께도 동일.
@@ -2110,39 +2110,17 @@ func _meta_misc() -> void:
 	ok("UI-14", tap1 and tap2 and tap3 and mouse1, "카드 한 번 눌러 들기: PC·터치 동일, 취소하면 같은 목록, 적용 전 횟수 보존")
 	main._back_to_choose()
 
-	# 그린 궤적: 손을 떼면 [적용]을 기다리고, 누르면 넣는다 (터치·마우스 같음). 마우스는 Enter로도, 취소하면 원래 길
+	# 그린 궤적은 없어짐: 공격방식 목록·카드에 없고, 예전 저장의 궤적 오브젝트는 직선탄으로 레벨 그대로
 	_fresh(3)
-	var pt := _tower(main.center() + Vector2(-200, 0))
-	main.touch_ui = true
-	main._start_draw(pt, [0], false)
-	main.draw_on = true
-	main.draw_pts = PackedVector2Array([pt.position, pt.position + Vector2(60, 0), pt.position + Vector2(120, 0)])
-	main.draw_len = 120.0
-	var before: int = pt.paths.size()
-	main._draw_release()
-	var waiting: bool = main.draw_wait and main.phase == main.Phase.DRAW and pt.paths.size() == before
-	main.draw_ok_btn.pressed.emit()
-	var done: bool = not main.draw_wait and pt.paths.size() > before and main.phase != main.Phase.DRAW
-	main.touch_ui = false
-	# 마우스: 이미 그린 길을 다시 그리다 떼도 바로 안 들어감 → 취소하면 원래 길, Enter면 넣음
-	var old0: PackedVector2Array = pt.paths[0].duplicate()
-	main._start_draw(pt, [0], false)
-	main.draw_on = true
-	main.draw_pts = PackedVector2Array([pt.position, pt.position + Vector2(0, 60), pt.position + Vector2(0, 120)])
-	main.draw_len = 120.0
-	main._draw_release()
-	var m_wait: bool = main.draw_wait and main.phase == main.Phase.DRAW and pt.paths[0] == old0
-	main._cancel_step()
-	var m_cancel: bool = main.phase != main.Phase.DRAW and pt.paths[0] == old0
-	main._start_draw(pt, [0], false)
-	main.draw_on = true
-	main.draw_pts = PackedVector2Array([pt.position, pt.position + Vector2(0, 60), pt.position + Vector2(0, 120)])
-	main.draw_len = 120.0
-	main._draw_release()
-	var ke := InputEventKey.new(); ke.keycode = KEY_ENTER; ke.pressed = true
-	main._unhandled_input(ke)
-	var m_enter: bool = main.phase != main.Phase.DRAW and pt.paths[0] != old0
-	ok("PATH-02", waiting and done and m_wait and m_cancel and m_enter, "그린 궤적: 손을 떼면 길을 남겨 두고 [적용]을 누르면 넣음, [취소]면 원래 길 (터치 %s/%s, 마우스 대기 %s·취소 %s·Enter %s)" % [waiting, done, m_wait, m_cancel, m_enter])
+	var old_path := Tower.new()
+	old_path.load_save({"elements": {Elem.FIRE: 2}, "order": [Elem.FIRE], "pattern": "path", "plv": 4, "mods": {"pierce": 1}, "paths": [[Vector2.ZERO, Vector2(100, 0)]]})
+	var migrated := old_path.pattern == Pat.DEFAULT and old_path.plv == 4 and old_path.m("pierce") == 1 and not old_path.to_save().has("paths")
+	old_path.free()
+	var no_card := true
+	for i in 3000:
+		var cd: Dictionary = main._roll_card()
+		no_card = no_card and not (cd["type"] == "pat" and cd["id"] == "path")
+	ok("PATH-03", migrated and no_card and not Pat.ALL_IDS.has("path") and not Pat.PATTERNS.has("path"), "그린 궤적 없음: 카드 안 나옴·예전 저장은 직선탄 Lv 유지 (저장 %s, 카드 %s)" % [migrated, no_card])
 
 	# 전장 확대: 두 손가락 벌리기로 확대, 그동안 누르기는 게임에 안 넘어감, 다 떼면 풀림. [확대 풀기]로 1배
 	_fresh(3)

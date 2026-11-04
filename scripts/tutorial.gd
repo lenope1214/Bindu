@@ -41,7 +41,7 @@ const TOPICS := [
 	]},
 	{"id": "pat", "name": "공격방식", "pages": [
 		{"pic": "pat", "pc": "공격방식 카드를 직선탄 오브젝트에 넣으면 공격 모양이 바뀌어요. 분사·연쇄 번개·돌풍 등 여러 가지가 있어요."},
-		{"pic": "pat_lv", "pc": "한 번 정하면 그 오브젝트의 공격방식은 고정이에요. 같은 공격방식을 또 넣으면 레벨이 올라요. 그린 궤적은 직접 길을 그려서 넣어요."},
+		{"pic": "pat_lv", "pc": "한 번 정하면 그 오브젝트의 공격방식은 고정이에요. 같은 공격방식을 또 넣으면 레벨이 올라요."},
 	]},
 	{"id": "mod", "name": "강화", "pages": [
 		{"pic": "mod", "pc": "강화 카드는 오브젝트 위에 놓아 공격을 바꿔요. 다중·분열·유도·튕김·크기·속사·관통·주사위가 있어요."},
@@ -771,13 +771,8 @@ func _pic_pat() -> void:
 
 
 func _pic_pat_lv() -> void:
-	_tower(P(110, 120), [_ec(Elem.ELECTRIC)], Vector2.RIGHT, Pat.pcolor("chain"))
-	_txt(P(110, 170), "%s Lv1 → Lv2" % Pat.pname("chain"), 15, Pat.pcolor("chain"))
-	var pts := PackedVector2Array([P(300, 190), P(340, 60), P(420, 150), P(500, 50)])
-	var k := _ph(3.0)
-	pic.draw_polyline(pts, Color(0.6, 1, 0.7, 0.8), 4 * _s)
-	_pointer(pts[2].lerp(pts[3], k), true)
-	_txt(P(400, 215), "그린 궤적", 15, Color(0.6, 1, 0.7))
+	_tower(P(260, 120), [_ec(Elem.ELECTRIC)], Vector2.RIGHT, Pat.pcolor("chain"))
+	_txt(P(260, 170), "%s Lv1 → Lv2" % Pat.pname("chain"), 15, Pat.pcolor("chain"))
 
 
 func _pic_mod() -> void:

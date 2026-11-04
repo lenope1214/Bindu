@@ -179,10 +179,6 @@ static func pat(ci: CanvasItem, id: String, c: Vector2, s: float, k := Color.WHI
 			ci.draw_arc(c, s * 0.75, 0, TAU, 20, Color(k, 0.35), w * 0.7)
 			ci.draw_circle(c, s * 0.2, k)
 			ci.draw_circle(c + Vector2.from_angle(-0.6) * s * 0.75, s * 0.24, k)
-		"path":
-			for i in 7:
-				var t := i / 6.0
-				ci.draw_circle(c + Vector2(-s * 0.85 + s * 1.7 * t, sin(t * TAU) * s * 0.45), s * 0.11, k)
 		_:
 			ci.draw_line(a, c + Vector2(s, 0), k, w)
 

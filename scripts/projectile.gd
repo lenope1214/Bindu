@@ -41,11 +41,6 @@ var chase_d0 := 0.0  # 확인 구간 시작 때 거리
 var gave_up := {}  # 못 따라잡아 포기한 구체 id
 var leash := 0.0  # 목줄 혼불: 오브젝트에서 이 거리 안 구체만 쫓는다 (0 = 제한 없음)
 var next_hit := 0.0  # 목줄 혼불: 다음에 때릴 수 있는 시각 (t)
-var route := PackedVector2Array()  # 그린 궤적: 따라갈 길 (전역 좌표)
-var route_on := false  # 길 위를 가는 중 (튕기면 길을 벗어나 곧게)
-var route_seg := 0  # 지금 지나는 선분
-var route_acc := 0.0  # 그 선분 시작까지의 거리
-var route_speed := 440.0
 var look := ""  # 그 모양
 var rxd := {}  # 그 반응 상태 (부메랑·커지기 등)
 
@@ -66,8 +61,6 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO, off := Vector2.ZE
 	match k:
 		"shot":
 			speed = P.shot_spd; dmg = H.shot * p; radius = P.shot_r; far_from = Tower.far_start_of(k, l, tower.total_level(), tower.mf("size"))
-		"path":
-			speed = P.path_spd; dmg = H.path * p; radius = P.path_r
 		"blob":
 			speed = P.blob_spd; lob = true; max_travel = Tower.LOB_RANGE * Tower.rr_of("lob", l)
 			homing = tower.mf("homing")  # 휜 길 그대로 장판이 깔린다
@@ -114,17 +107,6 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO, off := Vector2.ZE
 		zone.add_pt(position)
 
 
-## 그린 궤적: 이 길을 따라가고 길 끝에서 사라진다.
-func set_route(g: PackedVector2Array) -> void:
-	route = g
-	route_on = g.size() >= 2
-	route_seg = 0
-	route_acc = 0.0
-	route_speed = vel.length()
-	max_travel = Tower.poly_len(g)
-	position = g[0]
-
-
 ## 공격방식 탄으로 표시한다 (물 흐름: 지나간 길에 물길, Tower.form_path).
 func form_init() -> void:
 	form = true
@@ -145,12 +127,9 @@ func step(delta: float) -> void:
 		_seek(delta)
 	elif homing > 0 and is_instance_valid(owner_tower):
 		_steer(delta)
-	if route_on:
-		_follow_route(delta)
-	else:
-		position += vel * delta
-		travel += vel.length() * delta
-		flown += vel.length() * delta
+	position += vel * delta
+	travel += vel.length() * delta
+	flown += vel.length() * delta
 	if zone and is_instance_valid(zone):
 		seg_acc += vel.length() * delta
 		if seg_acc >= zone.radius * 0.8:
@@ -165,26 +144,10 @@ func step(delta: float) -> void:
 	queue_redraw()
 
 
-## 그린 길을 따라 route_speed만큼 간다. vel은 이번 조각에 실제로 움직인 만큼 (main의 충돌 판정이 쓴다).
-func _follow_route(delta: float) -> void:
-	travel = minf(travel + route_speed * delta, max_travel)
-	while route_seg < route.size() - 2 and route_acc + route[route_seg].distance_to(route[route_seg + 1]) < travel:
-		route_acc += route[route_seg].distance_to(route[route_seg + 1])
-		route_seg += 1
-	var a := route[route_seg]
-	var b := route[route_seg + 1]
-	var sl := a.distance_to(b)
-	var np := a.lerp(b, clampf((travel - route_acc) / sl, 0.0, 1.0) if sl > 0.0 else 1.0)
-	if delta > 0.0 and np != position:
-		vel = (np - position) / delta
-	position = np
-
-
 ## 탄 종류별 속도(초당 px)·반지름·날아가는 거리·피해(반응 탄만, 공격방식 탄 피해는 Tower.HIT).
 ## 온라인 패치 rules "Projectile.PROJ.<이름>". 공격방식 탄 반지름은 크기 강화를 곱한다.
 static var PROJ := {
 	"shot_spd": 440.0, "shot_r": 6.0,  # 직선탄
-	"path_spd": 440.0, "path_r": 6.0,  # 그린 궤적
 	"blob_spd": 260.0,  # 투척 장판 탄
 	"thorn_spd": 460.0, "thorn_r": 6.0,  # 관통 연사
 	"gust_spd": 300.0, "gust_r": 34.0, "gust_far": 420.0,  # 돌풍 (거리는 range_gust 곱)
@@ -406,11 +369,6 @@ func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 		if best:
 			bounces -= 1
 			dmg *= Rules.bounce_hit  # 튕긴 탄은 피해 40%
-			if route_on:
-				# 그린 궤적은 튕기면 길을 벗어나 곧게 날아간다
-				route_on = false
-				vel = vel.normalized() * route_speed
-				max_travel = 400.0
 			vel = (best.position - position).normalized() * vel.length()
 			if homing <= 0.0 and kind != "wisp":
 				travel = 0.0  # 곧게 나는 탄은 튕긴 자리에서 다시 사거리만큼. 쫓는 탄(혼불·유도)은 그대로 이어 세야 튕길 때마다 900씩 늘며 끝없이 쫓지 않는다
@@ -456,7 +414,7 @@ func _draw() -> void:
 		"shard", "frag":
 			var s := radius * 1.4
 			draw_colored_polygon(PackedVector2Array([d * s, n * s * 0.5, -d * s, -n * s * 0.5]), col.lightened(0.3))
-		"shot", "path":
+		"shot":
 			var fade := clampf((max_travel - travel) / 40.0, 0.0, 1.0)  # 사거리 끝에서 흐려짐
 			draw_circle(Vector2.ZERO, radius, Color(col, col.a * fade))
 			draw_circle(-d * radius * 0.3, radius * 0.45, Color(1, 1, 1, 0.7 * fade))
@@ -485,7 +443,7 @@ func _draw() -> void:
 
 func _trail_color() -> Color:
 	match kind:
-		"shot", "path", "thorn", "shard", "frag", "iron", "blob", "wisp": return col
+		"shot", "thorn", "shard", "frag", "iron", "blob", "wisp": return col
 		"ghost": return Elem.COLORS[Elem.SOUL]
 		"glob": return Elem.COLORS[Elem.POISON]
 	return Color.WHITE

@@ -1,7 +1,7 @@
 extends Node2D
 ## 게임 진행: 웨이브, 오브젝트 선택·설치, 충돌, 점수.
 
-enum Phase { CHOOSE, PLACE, AIM, WAVE, GAMEOVER, MOVE, READY, DRAW }
+enum Phase { CHOOSE, PLACE, AIM, WAVE, GAMEOVER, MOVE, READY }
 
 const CORE_RADIUS := 14.0
 const LINE_INSET := 90.0  # 회랑 맵: 문(중앙 점)이 화면 끝에서 떨어진 거리
@@ -61,23 +61,9 @@ var card_detail_btn: Button  # 선택지 카드 [자세히] 켜기·끄기 (Meta
 var move_orig_pos := Vector2.ZERO
 var move_orig_dir := Vector2.RIGHT
 var move_return := Phase.CHOOSE  # 옮기기를 끝내면 돌아갈 단계
-# 그린 궤적 그리기 (Phase.DRAW)
-var draw_t: Tower = null
-var draw_queue: Array = []  # 그릴 갈래 번호들 (앞에서부터)
-var draw_after := false  # 카드로 들어왔으면 다 그린 뒤 _after_place
-var draw_pts := PackedVector2Array()  # 지금 그리는 길 (전역, 첫 점 = 오브젝트)
-var draw_on := false  # 누른 채 그리는 중
-var draw_len := 0.0
-var draw_bends := 0
-var draw_bend_pts := PackedVector2Array()
-var draw_stop := ""  # 더 그릴 수 없는 까닭 (길이·꺾기를 다 씀)
-var draw_skip := 0  # 방금 꺾임으로 센 뒤 다시 세지 않을 조각 수
 var auto_start := false  # 끄면 설치 후 Space로 웨이브 시작
 var auto_btn: Button
 var start_btn: Button
-var draw_ok_btn: Button  # 다 그린 길 [적용] (손을 떼자마자 넣으면 삐끗한 길을 되돌릴 수 없었다, PC·터치 같음)
-var draw_wait := false  # 손을 뗀 뒤 [적용]/[취소]를 기다리는 중
-var draw_aim := Vector2.ZERO  # 터치: 손가락 떨림을 줄인 그리기 목표점
 var cancel_btn: Button  # 옮기기·설치 중 화면 취소 (우클릭·Esc가 없는 터치 화면용)
 var detail_btn: Button  # 터치: 오브젝트 정보창 [자세히] (Shift 대신)
 var tip_tower: Tower = null  # 터치: 정보창에 보이던 오브젝트
@@ -1099,19 +1085,6 @@ func _build_ui() -> void:
 	cancel_btn.pressed.connect(_cancel_step)
 	cancel_btn.visible = false
 	root.add_child(cancel_btn)
-	draw_ok_btn = Button.new()
-	draw_ok_btn.text = "적용 (Enter)" if OS.has_feature("pc") else "적용"
-	draw_ok_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	draw_ok_btn.position = Vector2(-70.0 + 150.0, -100.0)  # 취소 오른쪽
-	draw_ok_btn.size = Vector2(140, 40)
-	draw_ok_btn.add_theme_font_size_override("font_size", 18)
-	draw_ok_btn.focus_mode = Control.FOCUS_NONE
-	draw_ok_btn.pressed.connect(func():
-		if phase == Phase.DRAW and draw_wait:
-			draw_wait = false
-			_draw_commit())
-	draw_ok_btn.visible = false
-	root.add_child(draw_ok_btn)
 	detail_btn = Button.new()
 	detail_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	detail_btn.position = Vector2(-70.0 - 130.0, -100.0)  # 취소 왼쪽
@@ -2413,11 +2386,6 @@ func _roll_card() -> Dictionary:
 		return _card_enabled(cd) and ts.any(func(t): return t.can_take(cd)))
 	var links: Array = (Pat.LINK_IDS if n >= 2 else ["reso"]).filter(func(id):
 		return _card_enabled({"type": "link", "id": id}) and not Vary.is_sealed("link", id))
-	if n > 0 and wave > 0 and _card_open("pat") and _path_takers() and not Garden.on and _card_enabled({"type": "pat", "id": "path"}):
-		var has := ts.any(func(t): return t.pattern == "path")
-		var chance := Patch.num("cards", "path_again", Pat.PATH_CHANCE_AGAIN) if has else Patch.num("cards", "path", Pat.PATH_CHANCE)
-		if randf() < chance:
-			return {"type": "pat", "id": "path"}
 	# 비활성 카드와 현재 넣을 수 없는 카드는 확률 풀에서 빼고 남은 종류끼리 비율을 다시 맞춘다.
 	var we := Patch.num("cards", "elem", 0.42)
 	var wp := Patch.num("cards", "pat", 0.25) if _card_open("pat") and not patterns.is_empty() else 0.0
@@ -2442,11 +2410,6 @@ func _roll_card() -> Dictionary:
 	return {"type": "link", "id": MapRule.pick("link", links)}
 
 
-## 그린 궤적 카드를 넣을 오브젝트가 있는지 (궤적 레벨업, 또는 4개 미만일 때 직선탄).
-func _path_takers() -> bool:
-	return _my_towers().any(func(t): return t.can_pattern("path"))
-
-
 func _card_color(card: Dictionary) -> Color:
 	match card["type"]:
 		"elem": return Elem.COLORS[card["e"]]
@@ -2467,13 +2430,6 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 	sb.set_corner_radius_all(6)
 	var sbh := sb.duplicate()
 	sbh.bg_color = Color(0.16, 0.17, 0.22, 0.98)
-	if card["type"] == "pat" and card["id"] == "path":
-		sb.bg_color = Color(0.2, 0.16, 0.05, 0.97)
-		sb.set_border_width_all(4)
-		sb.border_color = col
-		sbh.bg_color = Color(0.3, 0.24, 0.08, 0.98)
-		sbh.set_border_width_all(4)
-		sbh.border_color = col.lightened(0.3)
 	b.add_theme_stylebox_override("normal", sb)
 	b.add_theme_stylebox_override("hover", sbh)
 	b.add_theme_stylebox_override("pressed", sbh)
@@ -2563,13 +2519,8 @@ func _card_content(card: Dictionary, lvl: int) -> Dictionary:
 		"pat":
 			var id: String = card["id"]
 			head["pat"] = id
-			if id == "path":
-				head["name"] = "그린 궤적"
-				head["badge"] = "시험"
-				rows = [{"t": "탄이 직접 그린 길을 따라간다"}, {"t": "길이 400→500→600, 그 뒤 갈래 +1"}, {"t": "꺾기 %d번 · 오브젝트 %d개까지" % [Pat.PATH_BENDS, Pat.PATH_MAX]}, {"t": "희귀 · 유도 못 넣음", "fs": 12, "c": dim}]
-			else:
-				head["name"] = Pat.pname(id)
-				rows = [{"t": Pat.PATTERNS[id]["desc"]}]
+			head["name"] = Pat.pname(id)
+			rows = [{"t": Pat.PATTERNS[id]["desc"]}]
 			foot = [["place_on", "직선탄에: 고정 · 같은 것에: Lv+"]]
 			var fit := ""
 			for t in towers.get_children():
@@ -2659,14 +2610,10 @@ func _card_full(card: Dictionary) -> Array:
 			out.append(["새 오브젝트로 놓거나 오브젝트 위에 겹치기" + (" (%d종까지)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else " (종류마다 공격 속도 -%d%%)" % roundi(Rules.tax_step * 100)), D])
 		"pat":
 			var id: String = card["id"]
-			if id == "path":
-				out.append(["탄이 직접 그린 길을 따라간다. 길이 400→500→600, 그 뒤 갈래 +1", W])
-				out.append(["꺾기 %d번 · 오브젝트 %d개까지 · 희귀 · 유도 못 넣음" % [Pat.PATH_BENDS, Pat.PATH_MAX], D])
-			else:
-				out.append([Pat.PATTERNS[id]["desc"], W])
-				var no := Pat.no_mods(id)
-				if not no.is_empty():
-					out.append(["못 넣는 강화(효과 없음): " + "·".join(no), D])
+			out.append([Pat.PATTERNS[id]["desc"], W])
+			var no := Pat.no_mods(id)
+			if not no.is_empty():
+				out.append(["못 넣는 강화(효과 없음): " + "·".join(no), D])
 			for t in towers.get_children():
 				if t.pattern == id:
 					out.append(["%s Lv%d → Lv%d 가능" % [Pat.pname(id), t.plv, t.plv + 1], D])
@@ -2675,7 +2622,7 @@ func _card_full(card: Dictionary) -> Array:
 			if card["id"] == "reflex":
 				out.append(["전방위 자동 조준 · 최종 피해 -10%", W])
 				out.append(["사거리 안 최근접 구체 · 오브젝트당 1회", D])
-				out.append(["그린 궤적·혼불·블랙홀에는 넣을 수 없음", D])
+				out.append(["혼불·블랙홀에는 넣을 수 없음", D])
 				return out
 			out.append([Pat.mdesc(card["id"]), W])
 			out.append(["오브젝트 위에 놓기 · " + ("종류별 %d개, 합쳐 %d개까지" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "쌓을수록 효과 절반씩"), D])
@@ -3876,7 +3823,7 @@ func _off_legend(r: Rect2) -> Rect2:
 func _info_blockers() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var inv := ui_root.get_global_transform().affine_inverse()
-	for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, guide_more,  mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, draw_ok_btn, card_dock.focus_btn, card_dock.panel, card_dock.side, card_dock.held_chip]:
+	for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, guide_more,  mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, card_dock.focus_btn, card_dock.panel, card_dock.side, card_dock.held_chip]:
 		if c == null or not c.is_visible_in_tree():
 			continue
 		if (c is Label and str(c.text) == "") or (c == hud and hud_chips.is_empty()):
@@ -4987,10 +4934,6 @@ func _over_scroll_ui(p: Vector2) -> bool:
 
 ## 두 번째 손가락이 닿으면: 첫 손가락으로 시작한 누르기·끌기·그리기·상자 선택을 없던 일로.
 func _abort_touch_action() -> void:
-	if phase == Phase.DRAW and draw_on:
-		draw_on = false
-		draw_pts = PackedVector2Array()
-		draw_len = 0.0
 	if press_t:
 		_drop_press()
 		_restore_hint()
@@ -5175,10 +5118,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_start_wave()
 		elif event.keycode == KEY_SPACE and phase == Phase.CHOOSE:
 			_show_toast(("특성을" if perk_mode else "선택지를") + " 먼저 고르세요 (1·2·3 또는 클릭)")
-		elif event.keycode in [KEY_ENTER, KEY_KP_ENTER] and phase == Phase.DRAW and draw_wait:
-			draw_wait = false
-			_draw_commit()
-		elif event.keycode == KEY_ESCAPE and (phase in [Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.DRAW] or press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
+		elif event.keycode == KEY_ESCAPE and (phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] or press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
 			_cancel_step()
 		elif event.keycode == KEY_P or event.keycode == KEY_ESCAPE:
 			_toggle_pause()
@@ -5186,9 +5126,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if Garden.on and not title_label.visible and not perk_mode:
 		return  # 키우기형 정원: 전장은 보기만 (심기·키우기는 목록에서)
-	if phase == Phase.DRAW:
-		_draw_input(event)
-		return
 	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_RIGHT and aim_right:
 		aim_right = false
 		if phase == Phase.AIM:
@@ -8094,10 +8031,6 @@ func _continue_run() -> void:
 			t = Tower.new()
 			t.main = self
 			t.load_save(d)
-			if Garden.on and t.pattern == "path":
-				# 정원(방치형)은 손으로 그리지 않게: 예전 저장의 그린 궤적은 다른 공격방식으로 (레벨은 그대로)
-				t.pattern = Pat.PATTERN_IDS.slice(1).filter(func(id): return id != "wall").pick_random()
-				t.paths = []
 			var fr := field_rect()
 			t.position = t.position.clamp(fr.position, fr.end)  # 손으로 고친 저장에서 화면 밖 위치
 			if t.order.is_empty():
@@ -8180,23 +8113,7 @@ func _apply_card(target: Tower) -> void:
 				return
 			if not _garden_pay(Garden.cost_pat(target, picked["id"])):
 				return
-			var was: String = target.pattern
 			msg = target.set_pattern(picked["id"])
-			if picked["id"] == "path":
-				# 처음 넣거나 길이가 늘면 길을 다시 그리고, 갈래가 늘면 새 갈래를 그린다
-				var q: Array = []
-				if was != "path" or Pat.path_len(target.plv) > Pat.path_len(target.plv - 1):
-					q = [0]
-				else:
-					var nb := target.add_branch()
-					if nb >= 0:
-						q = [nb]
-				if not q.is_empty():
-					_show_toast(msg)
-					sfx.play("place")
-					burst(target.position, _card_color(picked), 16, 160.0)
-					_start_draw(target, q, true)
-					return
 		"mod":
 			if not target.can_take(picked):
 				_show_toast(target.refuse_text(picked))
@@ -8223,9 +8140,6 @@ func _apply_card(target: Tower) -> void:
 
 ## 우클릭·Esc: 방향 고르기 → 위치 고르기 → 오브젝트 고르기 순으로 한 단계 되돌린다.
 func _cancel_step() -> void:
-	if phase == Phase.DRAW:
-		_draw_next()  # 이 갈래는 그대로 두고 다음으로
-		return
 	if press_t:
 		_drop_press()
 		_restore_hint()
@@ -8282,9 +8196,6 @@ func _end_move() -> void:
 ## 쉬는 시간에 설치된 오브젝트를 클릭(또는 우클릭한 채 끌기)하면 그 자리에서 방향을 다시 정한다.
 ## 옮기기는 끌기·꾹 누르기로 따로 한다 (예전엔 클릭 → 새 자리 → 방향, 방향만 바꿀 때도 제자리를 다시 눌러야 했다).
 func _start_move(t: Tower) -> void:
-	if t.pattern == "path":
-		_start_draw(t, range(t.paths.size()), false)  # 그린 궤적은 방향 대신 길을 다시 그린다
-		return
 	move_return = phase
 	start_btn.visible = false
 	moving = t
@@ -8299,183 +8210,6 @@ func _start_move(t: Tower) -> void:
 		hint.text = _th("쏠 쪽을 누르거나 끌어서 놓기: 방향 확정   취소: 그대로 두기")
 	else:
 		hint.text = _th("클릭 또는 끌어서 놓기: 방향 확정 (Shift: 15도 단위)   오브젝트 우클릭한 채 끌기로도 바로 됨\n우클릭/Esc: 그대로 두기")
-
-
-## 그린 궤적 길 그리기. q: 그릴 갈래 번호들, after: 카드로 들어왔으면 다 그린 뒤 고르기를 마친다.
-func _start_draw(t: Tower, q: Array, after: bool) -> void:
-	if not after:
-		move_return = phase
-	draw_t = t
-	draw_queue = q.duplicate()
-	draw_after = after
-	phase = Phase.DRAW
-	selected.clear()
-	choice_box.visible = false
-	reroll_btn.visible = false
-	start_btn.visible = false
-	_draw_begin_branch()
-
-
-func _draw_begin_branch() -> void:
-	draw_on = false
-	draw_wait = false
-	draw_pts = PackedVector2Array()
-	draw_len = 0.0
-	draw_bends = 0
-	draw_bend_pts = PackedVector2Array()
-	draw_stop = ""
-	draw_skip = 0
-	var n := Pat.path_branches(draw_t.plv)
-	var head := "그린 궤적%s: " % (" %d/%d" % [draw_queue[0] + 1, n] if n > 1 else "")
-	# 화면 아래 취소 버튼과 겹치지 않게 짧게 (남은 길이·꺾기 수는 그리는 끝에 따로 보인다)
-	hint.text = _th(head + "누른 채 끌어 길 그리기\n" + ("취소: 그대로 두기" if touch_ui else "우클릭/Esc: 그대로 두기"))
-
-
-func _draw_input(event: InputEvent) -> void:
-	if not event is InputEventMouseButton:
-		return
-	if event.button_index == MOUSE_BUTTON_LEFT:
-		if event.pressed:
-			_draw_begin_branch()
-			draw_on = true
-			draw_pts.append(draw_t.position)
-			draw_aim = get_global_mouse_position()
-		elif draw_on:
-			_draw_release()
-	elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
-		_cancel_step()
-
-
-## 누른 채 끄는 동안: 마우스 쪽으로 DRAW_STEP마다 점을 잇는다 (길이·꺾기 수를 넘으면 멈춤).
-const DRAW_STEP := 16.0
-const DRAW_MIN := 48.0  # 이보다 짧으면 그리지 않은 것으로
-
-
-func _update_draw() -> void:
-	if phase != Phase.DRAW or not draw_on:
-		return
-	if not is_instance_valid(draw_t):
-		_draw_done()
-		return
-	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-		_draw_release()  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
-		return
-	var m := get_global_mouse_position()
-	# 터치: 손가락 떨림이 꺾기로 세어져 꺾기를 일찍 다 쓰던 것 → 목표점을 부드럽게 따라간다
-	draw_aim = draw_aim.lerp(m, 0.45) if touch_ui else m
-	_draw_extend(draw_aim.clamp(field_rect().position, field_rect().end))
-
-
-## 손을 뗐을 때: 길을 남겨 둔 채 [적용]/[취소]를 기다린다 (다시 누른 채 끌면 새로 그림).
-## 예전엔 마우스만 떼자마자 넣어서, 이미 그린 오브젝트를 다시 그리다 손을 떼면 되돌릴 수 없었다.
-func _draw_release() -> void:
-	draw_on = false
-	if draw_len >= DRAW_MIN:
-		if touch_ui:
-			_draw_extend(get_global_mouse_position().clamp(field_rect().position, field_rect().end))  # 떨림 줄이기로 덜 따라간 끝까지
-		draw_wait = true
-		hint.text = "[적용]으로 넣기 · 다시 누른 채 끌면 새로 그리기\n" + ("취소: 그대로 두기" if touch_ui else "Enter: 적용   우클릭/Esc: 그대로 두기")
-		return
-	_draw_commit()
-
-
-func _draw_extend(p: Vector2) -> void:
-	var L := Pat.path_len(draw_t.plv)
-	while draw_stop == "" and draw_pts[draw_pts.size() - 1].distance_to(p) >= DRAW_STEP:
-		var last := draw_pts[draw_pts.size() - 1]
-		var room := L - draw_len
-		if room < 1.0:
-			draw_stop = "길이를 다 썼어요"
-			break
-		var nxt := last + (p - last).normalized() * minf(DRAW_STEP, room)
-		var n := draw_pts.size()
-		# 세 조각 전 방향과 45도 넘게 다르면 꺾임 하나 (완만한 곡선은 세지 않음)
-		if n >= 4 and draw_skip <= 0:
-			var ref := draw_pts[n - 3] - draw_pts[n - 4]
-			if absf(ref.angle_to(nxt - last)) > Pat.PATH_BEND_ANGLE:
-				if draw_bends >= Pat.PATH_BENDS:
-					draw_stop = "꺾기를 다 썼어요"
-					break
-				draw_bends += 1
-				draw_bend_pts.append(last)
-				draw_skip = 3
-		draw_skip -= 1
-		draw_len += last.distance_to(nxt)
-		draw_pts.append(nxt)
-
-
-## 다 그린 길을 오브젝트에 넣는다 (짧으면 다시 그리게 한다).
-func _draw_commit() -> void:
-	if draw_len < DRAW_MIN:
-		draw_pts = PackedVector2Array()
-		_show_toast("조금 더 길게 그려 주세요")
-		return
-	var t := draw_t
-	var br: int = draw_queue[0]
-	var loc := PackedVector2Array()
-	for q in draw_pts:
-		loc.append(q - t.position)
-	while t.paths.size() <= br:
-		t.paths.append(t.straight_path(t.dir))
-	t.paths[br] = loc
-	if br == 0:
-		t.dir = (loc[1] - loc[0]).normalized()
-		t.aim = t.dir
-	t.place_pop = 1.0
-	t.queue_redraw()
-	sfx.play("place")
-	_draw_next()
-
-
-func _draw_next() -> void:
-	draw_on = false
-	if not draw_queue.is_empty():
-		draw_queue.pop_front()
-	if draw_queue.is_empty() or not is_instance_valid(draw_t):
-		_draw_done()
-	else:
-		_draw_begin_branch()
-
-
-func _draw_done() -> void:
-	draw_t = null
-	draw_pts = PackedVector2Array()
-	if draw_after:
-		draw_after = false
-		_after_place()
-	elif move_return == Phase.READY:
-		_enter_ready()
-	else:
-		_back_to_choose()
-
-
-## 그리는 중인 길과 남은 길이·꺾기 (터치면 손가락에 가리지 않게 위쪽에 글).
-func _draw_path_edit() -> void:
-	var t := draw_t
-	var c := t.color()
-	var br: int = draw_queue[0] if not draw_queue.is_empty() else 0
-	var L := Pat.path_len(t.plv)
-	draw_arc(t.position, L, 0, TAU, 96, Color(c, 0.12), 1.0)  # 곧게 그리면 닿는 곳
-	for i in t.paths.size():
-		var g := PackedVector2Array()
-		for q in t.paths[i]:
-			g.append(t.position + q)
-		if g.size() >= 2:
-			draw_polyline(g, Color(c, 0.2 if i == br else 0.4), 2.0)
-	if draw_pts.size() >= 2:
-		draw_polyline(draw_pts, Color(c.lightened(0.3), 0.95), 3.0)
-	for q in draw_bend_pts:
-		draw_arc(q, 6.0, 0, TAU, 16, Color(1, 0.8, 0.4, 0.9), 2.0)
-	var tip := draw_pts[draw_pts.size() - 1] if not draw_pts.is_empty() else get_global_mouse_position()
-	var txt := "남은 길이 %d · 꺾기 %d/%d" % [roundi(maxf(L - draw_len, 0.0)), draw_bends, Pat.PATH_BENDS]
-	if draw_stop != "":
-		txt += " · " + draw_stop
-	var fs := roundi(15 * Meta.ui_scale)  # 폰은 글자 크기 설정만큼 (작아서 읽기 힘들었다)
-	var tw := ui_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var at := tip + (Vector2(-70, -70) * Meta.ui_scale if touch_ui else Vector2(14, -14))
-	at = at.clamp(view_rect().position + Vector2(4, 20), view_rect().end - Vector2(tw + 8, 8))
-	draw_string(ui_font, at + Vector2(1, 1), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.BLACK)
-	draw_string(ui_font, at, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(1, 0.6, 0.5) if draw_stop != "" else Color(1, 0.95, 0.75))
 
 
 func _toggle_pause() -> void:
@@ -9307,7 +9041,6 @@ func _process(delta: float) -> void:
 	if not tip_on:
 		tip_detail = false
 	detail_btn.visible = tip_on
-	draw_ok_btn.visible = phase == Phase.DRAW and draw_wait and not get_tree().paused
 	detail_btn.text = "간단히" if tip_detail else "자세히"
 	_place_apply_btn()
 	for c in [hint, skip_badge, hide_btn]:
@@ -9336,7 +9069,7 @@ func _process(delta: float) -> void:
 		hw = clampf(bar_box.get_rect().position.x - hint.position.x - 12.0, 240.0, 590.0)
 	# 아래 가운데 버튼([웨이브 시작]·[취소]·[자세히]·[적용])에도 닿지 않게 (글이 길면 버튼 밑으로 지나갔다)
 	var hb := hint.get_rect().end.y
-	for b: Control in [start_btn, cancel_btn, detail_btn, draw_ok_btn, skip_badge]:
+	for b: Control in [start_btn, cancel_btn, detail_btn, skip_badge]:
 		if b != null and b.visible:
 			var br := b.get_rect()
 			if br.end.y > hb - 70.0 and br.position.x > hint.position.x + 120.0:
@@ -9482,13 +9215,12 @@ func _process(delta: float) -> void:
 	if phase == Phase.MOVE and moving:
 		moving.position = get_global_mouse_position().clamp(field_rect().position, field_rect().end)
 	_update_press()
-	_update_draw()
 	if boxing and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_finish_box()  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
 	hide_btn.visible = phase == Phase.CHOOSE and not title_label.visible and coin_stage == 0
 	card_detail_btn.visible = hide_btn.visible and not cards_hidden and not perk_mode
 	_update_skip_ui()
-	cancel_btn.visible = phase in [Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.DRAW] and not title_label.visible and not get_tree().paused
+	cancel_btn.visible = phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] and not title_label.visible and not get_tree().paused
 	hide_btn.text = _kh("▲ 선택지 보기 (V)") if cards_hidden else ""
 	hide_btn.tooltip_text = "선택지를 다시 올린다" if cards_hidden else "필드 보기 (V): 선택지를 내리고 카드에 가려진 필드를 본다"
 	if speed_btn.visible:
@@ -10117,7 +9849,7 @@ func _draw_tooltip() -> void:
 	var touch_move := phase == Phase.MOVE and touch_ui and moving != null
 	# 터치로 방향 바꾸기: 손가락은 쏠 쪽에 있으니 그 오브젝트 정보를 함께 보여 준다 ([자세히]로 수치까지)
 	var touch_aim := phase == Phase.AIM and touch_ui and moving != null
-	if (phase in [Phase.PLACE, Phase.GAMEOVER, Phase.MOVE, Phase.AIM, Phase.DRAW] and not touch_move and not touch_aim) or title_label.visible or dragging or boxing:
+	if (phase in [Phase.PLACE, Phase.GAMEOVER, Phase.MOVE, Phase.AIM] and not touch_move and not touch_aim) or title_label.visible or dragging or boxing:
 		return
 	# 터치는 손을 뗀 자리에 마우스가 남는다: 누르고 3초가 지나면 정보창을 닫는다
 	if touch_ui and not touch_move and not touch_aim and touch_tip_t <= 0.0:
@@ -10143,7 +9875,7 @@ func _draw_tooltip() -> void:
 	var maxw := minf(620.0 * z, _right_limit() - 24.0)  # 이보다 긴 줄은 접는다 (속성이 많으면 화면 밖으로 나가던 것)
 	var lines: Array = []  # [글자, 색]
 	var head := t.title()
-	var tip := ("(클릭: 길 다시 그리기 · 끌기: 옮기기)" if t.pattern == "path" else "(클릭: 방향 · 끌기: 옮기기)") if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
+	var tip := "(클릭: 방향 · 끌기: 옮기기)" if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
 	# Shift를 누르고 있으면 공격력·공격 속도·사거리 같은 수치를 자세히
 	var detail := _tip_detail_on() and not touch_move
 	tip = _th(tip)
@@ -10271,7 +10003,7 @@ func _draw_tooltip() -> void:
 		if lines[i].size() > 2 and lines[i][2] != "":
 			_tip_icon(lines[i][2], p + Vector2(8 + gut * 0.45, 6 + i * lh + lh * 0.5), 6.0 * z, lines[i][1])
 	if ctrl and not detail:
-		_draw_tip_ctrl(p + Vector2(8, 6 + lines.size() * lh), fs, lh, t.pattern == "path", acts)
+		_draw_tip_ctrl(p + Vector2(8, 6 + lines.size() * lh), fs, lh, acts)
 
 
 ## 정보창 자세히: Shift를 누르고 있거나 터치 [자세히]. 기본 정보창은 숫자만, 올린 오브젝트는 공격 범위만 그리고
@@ -10305,13 +10037,13 @@ func _tip_scale() -> float:
 
 
 ## 정보창 맨 아래 조작 줄 (마우스): [왼쪽 단추] 방향 · [끌기] 옮기기 · [Shift] 자세히.
-func _draw_tip_ctrl(at: Vector2, fs: int, lh: float, path: bool, acts: bool) -> void:
+func _draw_tip_ctrl(at: Vector2, fs: int, lh: float, acts: bool) -> void:
 	var z: float = _tip_scale()
 	var f := maxi(11, fs - 2)
 	var x := at.x
 	var y := at.y + lh * 0.5
 	var dim := Color(1, 1, 1, 0.6)
-	var items := [["click", "다시 그리기" if path else "방향"], ["drag", "옮기기"], ["Shift", "자세히"]] if acts else [["Shift", "자세히"]]
+	var items := [["click", "방향"], ["drag", "옮기기"], ["Shift", "자세히"]] if acts else [["Shift", "자세히"]]
 	for it in items:
 		if it[0] == "Shift":
 			var kw := ui_font.get_string_size("Shift", HORIZONTAL_ALIGNMENT_LEFT, -1, f - 1).x + 8.0
@@ -10889,8 +10621,6 @@ func _draw() -> void:
 			if moving:
 				moving.set_attack_direction(d)
 			draw_line(place_pos, place_pos + d * (Tower.RADIUS + 14.0), Color.WHITE, 3.0)
-	elif phase == Phase.DRAW and is_instance_valid(draw_t):
-		_draw_path_edit()
 	# 마우스를 올린 오브젝트의 공격 범위
 	if phase == Phase.MOVE and moving:
 		Tower.draw_range(self, mpos, moving.dir, moving.spec())
@@ -11600,7 +11330,7 @@ func _mp_auto_rest() -> void:
 	mp_req_mode = false
 	mp_pop.visible = false
 	for i in 40:
-		if phase in [Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.DRAW] or press_t or moving:
+		if phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] or press_t or moving:
 			_cancel_step()
 			continue
 		if perk_mode:
@@ -11643,8 +11373,6 @@ func _mp_auto_rest() -> void:
 func _mp_auto_pick() -> bool:
 	var mine: Array = _my_towers()
 	for o in offer:
-		if o["type"] == "pat" and str(o.get("id", "")) == "path":
-			continue
 		if o["type"] == "elem":
 			for t in mine:
 				if t.can_take(o) and not Elem.new_reactions(t.eff_now(), o["e"]).is_empty():
@@ -12687,7 +12415,7 @@ func _mp_try_go(force := false) -> void:
 
 ## 참가자: 호스트가 웨이브를 시작했는데 아직 고르는 중이면 그대로 닫는다.
 func _end_ghost_rest() -> void:
-	if phase in [Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.DRAW]:
+	if phase in [Phase.PLACE, Phase.AIM, Phase.MOVE]:
 		_cancel_step()
 	perk_mode = false
 	choice_box.visible = false

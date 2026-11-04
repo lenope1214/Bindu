@@ -22,45 +22,24 @@ const PATTERNS := {
 	"sonic": {"name": "음파", "desc": "부채꼴로 퍼지는 파동 (관통, 멀수록 약함)", "from": Elem.SOUND},
 	"clock": {"name": "시계침", "desc": "앞쪽을 바늘이 왕복하며 훑는다", "from": Elem.TIME},
 	"wisp": {"name": "혼불", "desc": "오브젝트 곁을 떠돌며 가까이 온 구체를 쫓아 때리는 혼불 2개", "from": Elem.SOUL},
-	"path": {"name": "그린 궤적", "desc": "직접 그린 길을 따라 탄이 날아간다. 레벨마다 길이 400→500→600, 그 뒤 갈래 최대 3개 (희귀, 시험)", "from": -1},
 }
 
 const PATTERN_IDS := ["shot", "spray", "thorn", "stream", "chain", "gust", "shard", "wall", "vortex", "laser", "lob", "iron", "sonic", "clock", "wisp"]
 
-## 희귀 공격방식: 보통 공격방식 카드·대격변·튜토리얼에는 나오지 않고 따로 뽑힌다 (main._roll_card)
-const RARE_IDS := ["path"]
-const ALL_IDS := PATTERN_IDS + RARE_IDS
-
-## 그린 궤적 (2026-10-30 기획안): 카드당 0.7%, 이 판에 궤적이 있으면 1.2%. 오브젝트 4개까지.
-## 레벨 1~3은 그릴 수 있는 길이, 4·5는 갈래 하나씩, 그 뒤로는 피해만 오른다.
-static var PATH_CHANCE := 0.007
-static var PATH_CHANCE_AGAIN := 0.012
-static var PATH_MAX := 4
-const PATH_LEN := [400.0, 500.0, 600.0]
-static var PATH_BRANCH_MAX := 3  # 그린 궤적 갈래 최대
-static var PATH_BENDS := 3  # 갈래마다 꺾을 수 있는 수 (45도 넘게 방향이 바뀌면 한 번)
-const PATH_BEND_ANGLE := PI / 4.0
-
-
-static func path_len(l: int) -> float:
-	return PATH_LEN[clampi(l, 1, PATH_LEN.size()) - 1]
-
-
-static func path_branches(l: int) -> int:
-	return clampi(l - PATH_LEN.size() + 1, 1, PATH_BRANCH_MAX)
+const ALL_IDS := PATTERN_IDS
 
 ## 날아가는 공격방식 (바람 형태 성질 "멀리"가 붙는다)
 const FLYING := ["shot", "thorn", "gust", "shard", "iron", "wisp", "lob", "vortex"]
 
 ## 투사체를 쏘는 공격방식 (유도·튕김·관통 강화가 그대로 적용)
-const PROJECTILE := ["shot", "thorn", "gust", "shard", "iron", "wisp", "path"]
+const PROJECTILE := ["shot", "thorn", "gust", "shard", "iron", "wisp"]
 
 ## "피해 +N%"의 공백은 줄바꿈하지 않는 공백(U+00A0): 카드에서 숫자만 다음 줄로 넘어가지 않게
 const MODS := {
-	"reflex": {"name": "자동 조준", "desc": "공격 방향을 고정하지 않고 사거리 안 가장 가까운 구체를 향해 공격한다. 최종 피해 -10%. 오브젝트마다 1번만 선택 가능. 그린 궤적·혼불·블랙홀에는 못 넣음"},
+	"reflex": {"name": "자동 조준", "desc": "공격 방향을 고정하지 않고 사거리 안 가장 가까운 구체를 향해 공격한다. 최종 피해 -10%. 오브젝트마다 1번만 선택 가능. 혼불·블랙홀에는 못 넣음"},
 	"multi": {"name": "다중 발사", "desc": "공격이 1개 더 나간다 (하나하나는 피해 {multi_dmg%}%, 많이 쌓을수록 조금씩 줄어듦)"},
 	"split": {"name": "분열", "desc": "맞은 구체에서 약한 파편 2개가 튄다 (1개마다 확률 +{split_ch%}%, 최대 {split_max%}%). 벽·투척 장판에는 못 넣음"},
-	"homing": {"name": "유도", "desc": "탄이 구체 쪽으로 천천히 휜다(많이 휠수록 피해가 줄어 최저 {homing_fade_min%}%). 범위 공격은 구체 쪽으로 조금 돈다. 한 구체는 탄 2개까지만 쫓고, 못 따라잡으면 다른 구체로. 혼불은 목줄 +15%. 벽·그린 궤적·시계침·연쇄 번개에는 못 넣음"},
+	"homing": {"name": "유도", "desc": "탄이 구체 쪽으로 천천히 휜다(많이 휠수록 피해가 줄어 최저 {homing_fade_min%}%). 범위 공격은 구체 쪽으로 조금 돈다. 한 구체는 탄 2개까지만 쫓고, 못 따라잡으면 다른 구체로. 혼불은 목줄 +15%. 벽·시계침·연쇄 번개에는 못 넣음"},
 	"bounce": {"name": "튕김", "desc": "탄이 가까운 구체로 튄다(튕긴 탄 피해 {bounce_hit%}%). 번개는 1번 더 튄다. 그 밖의 공격은 맞힌 구체에서 작은 탄이 1개 더 튄다({bounce_iv}초마다)"},
 	"size": {"name": "크기", "desc": "탄 크기·범위·사거리 +{size_k%}% (탄을 쏘는 공격은 피해도 +{size_dmg%}%)"},
 	"rapid": {"name": "속사", "desc": "공격 속도 +{rapid_k%}%"},
@@ -72,12 +51,12 @@ const MOD_IDS := ["multi", "split", "homing", "bounce", "size", "rapid", "pierce
 
 ## 넣어도 효과가 없는 강화 → 공격방식. 그 오브젝트에는 넣을 수 없고, 넣을 곳이 없으면 선택지에서도 빠진다.
 ## 이 강화가 든 오브젝트는 그 공격방식으로 바꿀 수도 없다.
-## 새 공격방식을 넣을 때 여기에 같이 적는다 (그린 길을 따라가는 공격방식은 homing).
+## 새 공격방식을 넣을 때 여기에 같이 적는다.
 const NO_MOD := {
-	"reflex": ["path", "wisp", "vortex"],  # 그린 길 고정 / 이미 전방위로 구체를 찾는 공격
+	"reflex": ["wisp", "vortex"],  # 이미 전방위로 구체를 찾는 공격
 	"pierce": ["thorn", "gust", "iron", "wisp"],  # 원래 모두 뚫는다 (혼불은 맞혀도 사라지지 않는다)
 	"bounce": ["thorn", "gust", "iron", "wisp"],  # 뚫고 나가서 튕길 일이 없다
-	"homing": ["wall", "path", "wisp", "clock", "chain"],  # 벽은 정한 방향에만 세우고, 그린 궤적은 그린 길만 따라간다. 혼불은 원래 쫓아가서 유도를 못 넣는다 (2026-10-31 사용자). 시계침·연쇄 번개는 범위 공격이라 차이가 없다 (2026-11-01 측정, 사용자 승인)
+	"homing": ["wall", "wisp", "clock", "chain"],  # 벽은 정한 방향에만 세운다. 혼불은 원래 쫓아가서 유도를 못 넣는다 (2026-10-31 사용자). 시계침·연쇄 번개는 범위 공격이라 차이가 없다 (2026-11-01 측정, 사용자 승인)
 	"split": ["wall", "lob"],  # 바닥에 남아 때리는 피해는 분열을 일으키지 않는다 (블랙홀은 끝에서 터질 때 분열)
 }
 
@@ -133,8 +112,6 @@ static func no_mod_why(pat: String, mod: String) -> String:
 		"pierce", "bounce":
 			return "%s은(는) 원래 모두 뚫고 나가서 %s이(가) 효과가 없어요" % [pname(pat), MODS[mod]["name"]]
 		"homing":
-			if pat == "path":
-				return "%s은(는) 그린 길만 따라가서 유도가 효과가 없어요" % pname(pat)
 			if pat == "wisp":
 				return "%s은(는) 원래 구체를 쫓아가서 유도를 넣을 수 없어요" % pname(pat)
 			if pat in ["clock", "chain"]:
@@ -178,12 +155,11 @@ const TRIG_COLOR := Color(1.0, 0.55, 0.45)
 const BRIEF := {
 	"pat": {
 		"vortex": "구체가 모인 곳에 우물을 만들어 끌어모아요. 다른 오브젝트에게 받은 피해 일부를 모아 마지막에 터뜨려요.",
-		"path": "직접 그린 길을 따라 탄이 날아가요. 레벨이 오르면 길이와 갈래가 늘어요. 유도는 못 넣어요.",
 	},
 	"mod": {
 		"multi": "공격이 하나 더 나가요. 벽·블랙홀·투척 장판을 빼고 하나하나의 피해는 줄어요.",
 		"split": "맞은 구체에서 확률로 약한 파편 2개가 튀어요. 벽·투척 장판에는 못 넣어요.",
-		"homing": "공격이 구체 쪽으로 휘지만 많이 휠수록 약해져요. 벽·그린 궤적·혼불·시계침·연쇄 번개에는 못 넣어요.",
+		"homing": "공격이 구체 쪽으로 휘지만 많이 휠수록 약해져요. 벽·혼불·시계침·연쇄 번개에는 못 넣어요.",
 		"bounce": "탄은 주변으로 튀고 번개는 한 번 더 튀어요. 다른 공격은 옆 구체에 작은 탄을 보내요.",
 		"pierce": "탄이 하나 더 뚫지만 뚫을 때마다 약해져요. 다른 공격은 피해를 높이고 보호막·갑옷을 더 잘 뚫어요.",
 		"dice": "공격마다 주사위를 굴려 높은 눈이면 피해가 커져요. 반응 피해에는 적용되지 않아요.",
@@ -221,7 +197,5 @@ static func pname(id: String) -> String:
 
 
 static func pcolor(id: String) -> Color:
-	if id == "path":
-		return Color(1.0, 0.85, 0.4)
 	var f: int = PATTERNS[id]["from"]
 	return Color(0.85, 0.85, 0.9) if f < 0 else Elem.COLORS[f]

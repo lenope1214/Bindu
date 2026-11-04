@@ -167,13 +167,6 @@ func _initialize():
 		main.apply_btn.pressed.emit()
 		ok("UI-29", main.phase == main.Phase.PLACE, "touch apply enters placement")
 		main._cancel_step()
-		target.set_pattern("path")
-		main._start_draw(target, [0], false)
-		main.draw_wait = true
-		await snap("draw")
-		ok("UI-28", main.cancel_btn.visible and main.draw_ok_btn.visible and not main.cancel_btn.get_global_rect().intersects(main.draw_ok_btn.get_global_rect()), "draw confirm and cancel stay separate")
-		check_camera("draw")
-		main._cancel_step()
 		main.title_label.visible = true
 		await settle()
 		ok("UI-28", not main.card_dock.panel.visible and main.camera.zoom.is_equal_approx(Vector2.ONE), "return to title restores camera")

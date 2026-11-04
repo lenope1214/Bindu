@@ -20,7 +20,7 @@ TABS = [
     ["obj", "오브젝트", "Tower · Pat · Elem",
      ["오브젝트 상한", "오브젝트 피해·성장", "공격방식 수치", "공격방식 피해 배율", "공격방식 공격 속도 배율", "공격방식 사거리 배율",
       "강화", "속성 부가효과", "연계", "발동", "별·행성", "공격방식 기본 피해", "공격방식 기본 간격", "공격방식 모양", "탄",
-      "오브젝트 코드 수치", "그린 궤적 코드 수치"], ["elem_dmg", "pat_dmg"]],
+      "오브젝트 코드 수치"], ["elem_dmg", "pat_dmg"]],
     ["rx", "특징 공유", "Share · Elem.TRAIT", ["특징 공유", "특징 코드 수치"], []],
     ["card", "카드", "선택지 (main.offer · _roll_card)", ["카드 수"], ["cards"]],
     ["orb", "구체", "Orb", ["구체 기본", "진입 시간 맞추기", "후반 난이도", "후반 구체", "방해 구체", "구체 종류", "구체 상태 수치", "저항·굳센 구체"], []],
@@ -65,8 +65,6 @@ CARDS = {
     "mod": "강화 카드 비중",
     "trig": "발동 카드 비중",
     "link": "연계 카드 비중",
-    "path": "그린 궤적 카드가 나올 확률 (카드 한 장마다, 이 판에 궤적이 없을 때)",
-    "path_again": "그린 궤적 카드가 나올 확률 (이 판에 궤적이 이미 있을 때)",
     "lv2_base": "속성 카드가 Lv2로 나올 확률 기본",
     "lv2_wave": "웨이브마다 Lv2 확률 +",
     "lv2_max": "Lv2 확률 최대 (행운 특성 전)",
@@ -165,7 +163,6 @@ def build() -> dict:
     elem_names = re.findall(r'[A-Z]+: "([^"]+)"', names)
     pat_src = read("scripts/pattern.gd")
     pat_ids = re.findall(r'"([a-z]+)"', re.search(r"const PATTERN_IDS := \[(.*?)\]", pat_src).group(1))
-    pat_ids += re.findall(r'"([a-z]+)"', re.search(r"const RARE_IDS := \[(.*?)\]", pat_src).group(1))
     pat_names = dict(re.findall(r'^\t"([a-z]+)": \{"name": "([^"]+)"', pat_src[pat_src.index("const PATTERNS"):], re.M))
     # 규칙 이름
     rules_src = read("scripts/rules.gd")

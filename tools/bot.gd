@@ -113,7 +113,6 @@ func _process(_d):
 	main.game_speed = float(OS.get_environment("SPEED")) if OS.get_environment("SPEED") != "" else 1.0
 	if fast_now:
 		main.game_speed = float(OS.get_environment("FAST_SPEED")) if OS.get_environment("FAST_SPEED") != "" else 16.0
-	if main.phase == 7: main._cancel_step()  # 그린 궤적: 봇은 길을 못 그려 곧은 기본 길 그대로
 	if main.phase == 6: main._start_wave()
 	# SKIP=3: SKIP_FROM(기본 8)웨이브부터 웨이브 넘기기를 3개씩 쓰고, 멈추면 쌓인 것을 다 고른 뒤 다시 넘긴다
 	if not main.bank_picks.is_empty() or main.bank_perks > 0:

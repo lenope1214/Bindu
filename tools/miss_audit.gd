@@ -14,7 +14,7 @@ const EXTRA := ["", "homing", "size", "pierce", "bounce", "split", "rapid"]
 func reach(t, p: String) -> float:
 	var s: float = t.sz()
 	match p:
-		"shot", "shard", "path": return Tower.shot_range(t.total_level(), t.mf("size")) * 0.95
+		"shot", "shard": return Tower.shot_range(t.total_level(), t.mf("size")) * 0.95
 		"thorn", "iron": return 480.0
 		"gust": return 400.0 * Rules.t("range_gust")
 		"spray": return 200.0 * t.rr(t.plv) * s * 0.9
@@ -77,9 +77,7 @@ func _one(p: String, ex: String, nm: int, dist: float, fast: bool) -> Array:
 	main.picked = {"e": Elem.FIRE, "lv": 1}
 	main._place_tower(tp, Vector2.RIGHT)
 	var t = main.towers.get_child(0)
-	if p == "path":
-		t.set_pattern("path")
-	elif p != "shot":
+	if p != "shot":
 		t.set_pattern(p)
 	for i in nm:
 		t.add_mod("multi")
