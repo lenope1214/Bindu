@@ -167,6 +167,7 @@ func affect(orbs: Array, delta: float) -> void:
 				# 물 흐름: 지나간 길 물길을 밟은 구체에 오브젝트 효과 (같은 구체는 0.5초에 한 번)
 				if is_instance_valid(owner_tower) and (not rill_cd.has(o) or life <= rill_cd[o]):
 					rill_cd[o] = life - 0.5
+					o.slow(Share.RILL_SLOW, Share.RILL_T)  # 효과와 따로 늘 느려짐 (제어 회복 2026-11-04)
 					Share.apply(owner_tower, o, Share.WATER_F * amt, "share:water")
 			"rock":
 				var away: Vector2 = (o.position - position).normalized()

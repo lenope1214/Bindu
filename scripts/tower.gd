@@ -74,6 +74,7 @@ var ring_t0 := 0.0  # 울림 음파 초당 상한: 이번 1초 구간 시작
 var ring_n := 0  # 그 구간에 터뜨린 수
 var clock_hit := {}  # 시계침: 이번 한 번 훑는 동안 맞힌 구체 ([바늘 번호, 구체] -> true, 다중 발사 바늘은 따로 센다)
 var light_cd := 0.0  # 빛 꿰뚫음 다시 쓸 때까지 (Share.pierce)
+var aff_cd := 0.0  # 상성 둘레 효과(눈보라·비바람·증기) 다시 쓸 때까지 (Share.aff_hit)
 var chain_end := Vector2.ZERO  # 연쇄 번개가 마지막으로 친 자리
 var later: Array = []  # [남은 초, Callable]: 잠시 뒤 효과 (시간 되풀이, Share.on_hit)
 var main: Node
@@ -1644,6 +1645,7 @@ func _pincer(o: Orb) -> void:
 ## 특징 공유: 잠시 뒤 효과(시간 되풀이)·빛줄기 간격 (Share).
 func _share_tick(delta: float) -> void:
 	light_cd = maxf(light_cd - delta, 0.0)
+	aff_cd = maxf(aff_cd - delta, 0.0)
 	if later.is_empty():
 		return
 	var due: Array = []
@@ -1866,18 +1868,18 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		d *= fm
 	var crit := dx >= Rules.dice_top and k >= 1.0  # 대박은 치명타처럼 금색 숫자
 	var lit := false  # 빛 치명타
-	var cc := minf(Rules.light_ch * els.get(Elem.LIGHT, 0), Rules.light_max) if els.has(Elem.LIGHT) else 0.0
+	var cc := minf(Rules.light_ch * els.get(Elem.LIGHT, 0), Rules.light_max) * Share.am(self, Elem.LIGHT) if els.has(Elem.LIGHT) else 0.0
 	if force_crit or cc > 0.0 and randf() < cc * minf(k, 1.0):
 		d *= Rules.light_mul
 		crit = k >= 1.0
 		lit = not force_crit
 	if els.has(Elem.WOOD):
-		d *= 1.0 + Rules.wood_dmg * mini(els.get(Elem.WOOD, 0), int(Rules.wood_cap))
+		d *= 1.0 + Rules.wood_dmg * mini(els.get(Elem.WOOD, 0), int(Rules.wood_cap)) * Share.am(self, Elem.WOOD)
 	var mt := 0.0
 	if els.has(Elem.METAL):
 		mt = d * Rules.metal_dmg * els.get(Elem.METAL, 0)
 		d += mt
-		o.stagger(Rules.metal_stagger * els.get(Elem.METAL, 0) * k)
+		o.stagger(Rules.metal_stagger * els.get(Elem.METAL, 0) * k * Share.am(self, Elem.METAL))
 	# 관통 (탄이 아닌 공격): 갑옷이 빼는 피해를 줄이고 보호막을 더 깎는다
 	var ap := mf("pierce") if not in_rx and m("pierce") > 0 and not pattern in Pat.PROJECTILE else 0.0
 	if o.late != "" and not in_rx and not in_zone:
@@ -1934,19 +1936,20 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	# 효과 (Elem.RIDER). 얼음 오래감은 지속 시간, 나무 자람은 먼 구체일수록 세기를 키운다 (Share)
 	var dm := Share.dur(self)
 	var g := Share.grow(self, o)
+	var had_chill := o.chill
 	if els.has(Elem.FIRE):
-		o.burn(Rules.fire_dps * els.get(Elem.FIRE, 0) * rm * g, Rules.fire_t * dm, self)
+		o.burn(Rules.fire_dps * els.get(Elem.FIRE, 0) * rm * g * Share.am(self, Elem.FIRE), Rules.fire_t * dm, self)
 	if els.has(Elem.POISON):
-		o.poison(Rules.poison_dps * els.get(Elem.POISON, 0) * rm * g, Rules.poison_t * dm, self)
+		o.poison(Rules.poison_dps * els.get(Elem.POISON, 0) * rm * g * Share.am(self, Elem.POISON), Rules.poison_t * dm, self)
 	if els.has(Elem.ICE):
-		o.add_chill(Rules.ice_chill * k * els.get(Elem.ICE, 0) * g)
+		o.add_chill(Rules.ice_chill * k * els.get(Elem.ICE, 0) * g * Share.am(self, Elem.ICE), dm)
 	if els.has(Elem.WATER):
-		o.slow(Rules.water_slow - Rules.water_lv * els.get(Elem.WATER, 0), Rules.water_t * dm)
-	if els.has(Elem.EARTH) and randf() < minf(Rules.earth_ch * els.get(Elem.EARTH, 0), Rules.earth_max) * k * g:
+		o.slow(Share.slow_f(els.get(Elem.WATER, 0), Share.am(self, Elem.WATER)), Rules.water_t * dm)
+	if els.has(Elem.EARTH) and randf() < Share.root_ch(self, els.get(Elem.EARTH, 0)) * k * g:
 		o.root(Rules.earth_t * dm)
 	if els.has(Elem.DARK):
-		o.vuln(Rules.dark_t * dm, (Rules.dark_vuln + Rules.dark_lv * els.get(Elem.DARK, 0)) * g, self)
-	if els.has(Elem.ELECTRIC) and randf() < Rules.elec_ch * k:
+		o.vuln(Rules.dark_t * dm, (Rules.dark_vuln + Rules.dark_lv * els.get(Elem.DARK, 0)) * g * Share.am(self, Elem.DARK), self)
+	if els.has(Elem.ELECTRIC) and randf() < Rules.elec_ch * k * Share.am(self, Elem.ELECTRIC):
 		main.arc(o, d * Rules.elec_dmg * els.get(Elem.ELECTRIC, 0), self)
 	if els.has(Elem.SOUND):
 		# 울림을 걸어 둔다: 3초 동안 어느 오브젝트에 맞아도 쌓인다
@@ -1968,6 +1971,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		Share.condense(self, o, Share.carry_n(self), minf(k, 1.0))
 	if lit:
 		Share.pierce(self, o)
+	Share.aff_hit(self, o, k, lit, had_chill)
 	Share.on_hit(self, o, false)
 	if not in_rx and bounce_cd <= 0.0 and m("bounce") > 0 and not pattern in Pat.PROJECTILE and pattern != "chain" and not tag.begins_with("mod:"):
 		_area_bounce(o)

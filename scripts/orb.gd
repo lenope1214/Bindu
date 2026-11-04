@@ -561,14 +561,15 @@ func vuln(duration: float, amount := -1.0, src: Object = null, sh := false) -> v
 
 
 ## 냉기가 3 쌓이면 1초 빙결.
-func add_chill(amount: float) -> void:
+## freeze_t: 빙결 시간 배율 (얼음 오래감·제어 회복 2026-11-04, Share.dur)
+func add_chill(amount: float, freeze_t := 1.0) -> void:
 	if sturdy and silence_t <= 0.0:
 		amount *= 0.5
 	chill += amount
 	slow(0.7, 0.5)
 	if chill >= 3.0:
 		chill = 0.0
-		if root(1.0):
+		if root(freeze_t):
 			frozen_t = root_timer
 
 

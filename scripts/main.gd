@@ -1594,6 +1594,10 @@ func _src_top(d: Dictionary, n: int) -> Array:
 
 
 ## 피해 출처 키 → 보이는 이름 (elem:fire → 불, share:electric → 특징 튐).
+## 상성 색: 강 초록, 약 주황 (Elem.aff_of)
+const AFF_COL := {"strong": Color(0.5, 1.0, 0.55), "weak": Color(1.0, 0.68, 0.3)}
+
+
 static func src_name(key: String) -> String:
 	var p := key.split(":")
 	if p.size() != 2:
@@ -1614,6 +1618,10 @@ static func src_name(key: String) -> String:
 			for r in Elem.REACTIONS:
 				if r["id"] == p[1]:
 					return r["name"]
+		"aff":
+			for r in Elem.AFF_RULES:
+				if r[2] == p[1]:
+					return "상성 " + r[3]
 		"trait", "share":
 			var j := Patch.ELEM_KEYS.find(p[1])
 			return ("특징 " + Elem.trait_name(Elem.ALL[j])) if j >= 0 else p[1]
@@ -2585,6 +2593,8 @@ func _card_full(card: Dictionary) -> Array:
 					seen[r["id"]] = true
 					var o: int = r["b"] if r["a"] == e else r["a"]
 					out.append(["조합 %s (+%s) · %s" % [r["name"], Elem.NAMES[o], r["desc"]], r["color"]])
+					if r.get("aff_txt", "") != "":
+						out.append([r["aff_txt"], AFF_COL[r["aff"]]])
 			var ups: int = _combo_parts(e)["ups"]
 			if ups > 0:
 				out.append(["%s 레벨업 가능 %d곳" % [Elem.NAMES[e], ups], D])
@@ -8665,6 +8675,8 @@ func sound_pulse(o: Orb) -> void:
 	var ks := Share.k(tw, Elem.SOUND) if tw else 0.0
 	if ks > 0.0:
 		r *= Share.wide(tw)
+	if Share.has(tw, "reso"):
+		r *= 1.0 + Share.RESO_R  # 공진 (상성)
 	for other in near(o.position, r + 30.0):
 		if other.hp > 0.0 and other.position.distance_to(o.position) < r + other.radius():
 			var got: float = other.hurt(dmg, false, tw)
@@ -8707,7 +8719,7 @@ func beam(a: Vector2, b: Vector2, c: Color) -> void:
 ## 전기 부가효과: 가까운 다른 구체로 전류가 튄다 (src: 쏜 오브젝트, 피해 기록용).
 func arc(from: Orb, dmg: float, src: Tower = null, cap = null) -> void:  # cap: 초신성 보스 상한 (Tower.nova_hurt)
 	var best: Orb = null
-	var bd := 90.0 * (Share.wide(src) if src else 1.0)
+	var bd := 90.0 * (Share.wide(src) if src else 1.0) * (1.0 + Share.SHOCK_R if Share.has(src, "shock") else 1.0)
 	for o in near(from.position, bd):
 		if o != from and is_instance_valid(o) and o.hp > 0.0:
 			var d: float = o.position.distance_to(from.position)
@@ -8718,6 +8730,8 @@ func arc(from: Orb, dmg: float, src: Tower = null, cap = null) -> void:  # cap: 
 		var got: float = src.nova_hurt(best, dmg, cap) if src and cap is Dictionary else best.hurt(dmg, false, src)
 		if src:
 			src.credit(got, "elem:electric")
+			if Share.has(src, "shock"):
+				best.stagger(Share.SHOCK_STAG)  # 감전 (상성)
 			# 전기 튐 (특징 공유): 전류가 튀면 오브젝트 효과도 튄다
 			var ke := Share.k(src, Elem.ELECTRIC)
 			if ke > 0.0:
@@ -9966,6 +9980,9 @@ func _draw_tooltip() -> void:
 	if not detail:
 		# 기본: 피해·공격 속도·치명타·피해 몫 숫자만 (효과 설명·계산 내역은 자세히에서)
 		lines += t.basic_lines()
+		var afs: Array = Share.aff(t)["pairs"].map(func(pr): return Elem.aff_label(pr[0], pr[1]))
+		if not afs.is_empty():
+			lines.append(["상성: " + " · ".join(afs), Color(0.85, 1.0, 0.75)])
 		if not share_line.is_empty():
 			lines.append(share_line)
 	else:
@@ -9989,6 +10006,8 @@ func _draw_tooltip() -> void:
 				desc.append(["%s: %s" % [r["name"], r["desc"]], r["color"], "k:rx"])
 		else:
 			desc.append(["조합 %d개: %s" % [rxs.size(), ", ".join(rxs.map(func(r): return r["name"]))], Color(1, 0.8, 0.95), "k:rx"])
+		for pr in Share.aff(t)["pairs"]:
+			desc.append([Elem.aff_text(pr[0], pr[1]), AFF_COL["strong" if pr[2]["strong"] else "weak"], "k:rx"])
 		_wind_buffs()  # 쉬는 시간에 새로 놓은 오브젝트도 바로 보이게
 		var tail: Array = []
 		if t.wind_buff > 0.0:
@@ -10009,6 +10028,9 @@ func _draw_tooltip() -> void:
 			keep.append(["속성 효과: " + "·".join(riders), Color(0.85, 0.85, 0.9), "k:elem"])
 			if not rxs.is_empty():
 				keep.append(["조합 %d개: %s" % [rxs.size(), ", ".join(rxs.map(func(r): return r["name"]))], Color(1, 0.8, 0.95), "k:rx"])
+			var afs: Array = Share.aff(t)["pairs"].map(func(pr): return Elem.aff_label(pr[0], pr[1]))
+			if not afs.is_empty():
+				keep.append(["상성: " + " · ".join(afs), Color(0.85, 1.0, 0.75), "k:rx"])
 			desc = keep
 			all = lines + nums + desc + tail
 		lines = all
@@ -10651,6 +10673,9 @@ func _draw() -> void:
 					var rd: String = r["desc"]
 					lines.append("조합: %s" % r["name"] + (" (%s)" % rd if rd.length() <= 26 else ""))
 					tcol = r["color"]
+					if r.get("aff", "") != "":
+						lines.append(Elem.aff_label(r["a"], r["b"]).replace("(강)", " ▲강").replace("(약)", " ∿약"))
+						tcol = AFF_COL[r["aff"]]
 			place_note = {"t": target, "lines": lines, "col": tcol, "fs": 16, "refuse": false}
 		elif is_elem:
 			var at := mpos.clamp(field_rect().position, field_rect().end)  # 실제로 놓일 자리

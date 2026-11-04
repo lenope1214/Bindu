@@ -7,7 +7,7 @@
 #   fuzz [판 수=8] [프레임=9000]          무작위 클릭·끌기·키·터치 (스크립트 오류 찾기, GARDEN=1이면 정원 판)
 #   miss                                   공격방식 x 강화 x 다중 발사 수마다 정면 구체를 거리별로 맞히는지 (사거리 안 피해 0이면 MISS, KIND=fast 작은 구체)
 #   elem                                   속성마다 직선탄 Lv2 하나가 30초간 준 피해/초
-#   stages [규칙] [판수]                    5~200웨이브 11단계만 싸우고 사이는 선택지만 빠르게 (STAGES=목록)
+#   stages [규칙] [판수=6]                  5~200웨이브 11단계만 싸우고 사이는 선택지만 빠르게 (STAGES=목록)
 #   rx                                     두 속성 짝마다 두 속성 Lv1 직선탄 하나가 구체 무리에 준 반응 피해/초 (RX=id,id로 골라 보기)
 #   perf                                   후반 부하(오브젝트 16개·구체 250개+) 배속별 프레임당 계산 시간·부분별 시간
 #   perfwin                                perf를 창을 띄워 실행 (그리기 비용 포함, 수직 동기 끔)
@@ -109,12 +109,13 @@ case "$CMD" in
 	stages)
 		# 웨이브 단계별 점검 (2026-11-03): 사이 웨이브는 전투 없이 선택지만 고르고 5·10·15·20·30·40·50·75·100·150·200웨이브만 싸운다.
 		# STAGES=5,20,50처럼 목록을 바꿀 수 있다. 판마다 STAGE 줄, 끝에 웨이브별 막은 판 비율·새어 든 구체 비율·특징 피해 몫
-		R=${1:-1}; N=${2:-16}; MODE=${3:-}
+		R=${1:-1}; N=${2:-6}; MODE=${3:-}
 		D=$(copy_project "$$")
 		cd "$D"
+		J=${JOBS:-$( (nproc || sysctl -n hw.ncpu) 2> /dev/null || echo 4)}
 		for seed in $(seq 1 "$N"); do
 			STAGES=${STAGES:-1} MINS=${MINS:-600} MODES=${BOT_MODES:-} RULES=$R SPEED=${SPEED:-4} T 3600 "$G" --headless --fixed-fps 60 --path . -s tools/bot.gd -- "$seed" $MODE 2>&1 | grep -E "^STAGE|^RESULT|SCRIPT ERROR" > "s_$seed.txt" &
-			if (( seed % 8 == 0 )); then wait; fi
+			if (( seed % J == 0 )); then wait; fi
 		done
 		wait
 		grep -h "SCRIPT ERROR" s_*.txt | head -3 || true

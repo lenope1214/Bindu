@@ -37,6 +37,34 @@ static var ICE_T := 0.5  # 오래감: 지속 +50%
 static var WOOD_K := 0.06  # 자람: 100마다 +6%
 static var WOOD_MAX := 0.3  # 자람 최대
 static var METAL_K := 0.12  # 응축: 효과 하나당 위력의 12%
+static var METAL_STAG := 2.0  # 응축: 효과 하나당 멈칫 거리(px) (제어 회복 2026-11-04)
+static var RILL_SLOW := 0.8  # 물길: 밟은 구체는 효과와 따로 늘 이만큼 느려짐 (제어 회복)
+static var RILL_T := 0.5  # 물길 감속 시간
+static var EARTH_ROOT := 0.3  # 묻어둠이 터질 때 묶는 시간 (제어 회복)
+
+## 상성 (2026-11-04, Elem.TAGS·AFF_RULES). 같은 오브젝트 안 두 속성 짝마다.
+static var AFF_CARRY := 1.5  # 강상성 속성의 특징 세기
+static var AFF_EFF := 1.2  # 강상성 속성의 효과 세기
+static var AFF_WEAK := 0.5  # 약상성으로 줄어드는 효과
+static var SHOCK_R := 0.4  # 감전: 전기 튀는 거리 +
+static var SHOCK_STAG := 6.0  # 감전: 튄 구체 멈칫 거리(px)
+static var FUEL := 1.5  # 연료: 화상
+static var BLAZE_R := 0.5  # 불길: 타오름 범위 +
+static var FREEZE := 1.5  # 얼어붙음: 냉기
+static var NEAR_R := 60.0  # 눈보라·비바람·증기: 맞은 구체 둘레
+static var NEAR_F := 0.5  # 눈보라·비바람: 둘레 구체에 거는 비율
+static var NEAR_CD := 0.2  # 둘레에 거는 간격 (오브젝트마다)
+static var QUAKE := 1.5  # 지진: 기절 확률·경직
+static var RUST := 0.15  # 녹: 중독된 구체가 받는 피해 +
+static var RESO_R := 0.5  # 공진: 음파 범위 +
+static var NOURISH_MAX := 0.5  # 자양: 자람 최대
+static var AFTER_N := 2  # 잔상: 시간 되풀이 횟수
+static var THERMO_DMG := 0.6  # 온도 충격: 냉기를 터뜨린 피해 (위력 배율)
+static var THERMO_STAG := 10.0  # 온도 충격: 멈칫 거리(px)
+static var THERMO_MIN := 1.0  # 온도 충격: 이만큼 냉기가 쌓인 구체만
+static var ECLIPSE_T := 2.0  # 일식: 치명타 때 약화 시간 배율
+static var GROUND_CH := 0.2  # 접지: 기절 확률 +
+static var WITHER_SLOW := 0.85  # 시듦: 중독된 구체 이동 속도
 
 
 static func key_of(e: int) -> String:
@@ -50,7 +78,95 @@ static func k(tw: Object, e: int) -> float:
 	var l: int = _els(tw).get(e, 0)
 	if l <= 0:
 		return 0.0
-	return LV_K[mini(l, 3)] * Rules.share_mul * Rules.share_k.get(e, 1.0)
+	var v: float = LV_K[mini(l, 3)] * Rules.share_mul * Rules.share_k.get(e, 1.0)
+	if aff(tw)["strong_e"].has(e):
+		v *= AFF_CARRY
+	return v
+
+
+## 오브젝트의 상성: {"ids": {규칙 id: true}, "strong_e": {강상성에 든 속성: true}, "pairs": [[a, b, Elem.aff_of]]}
+static var _aff := {}
+
+
+static func aff(tw: Object) -> Dictionary:
+	var els := _els(tw)
+	var ck := 0
+	for e in els:
+		ck |= 1 << int(e)
+	if _aff.has(ck):
+		return _aff[ck]
+	var ks: Array = els.keys()
+	ks.sort()
+	var out := {"ids": {}, "strong_e": {}, "pairs": []}
+	for i in ks.size():
+		for j in range(i + 1, ks.size()):
+			var r := Elem.aff_of(ks[i], ks[j])
+			if r["ids"].is_empty():
+				continue
+			out["pairs"].append([ks[i], ks[j], r])
+			for id in r["ids"]:
+				out["ids"][id] = true
+			if r["strong"]:
+				out["strong_e"][ks[i]] = true
+				out["strong_e"][ks[j]] = true
+	_aff[ck] = out
+	return out
+
+
+static func has(tw: Object, id: String) -> bool:
+	return is_instance_valid(tw) and aff(tw)["ids"].has(id)
+
+
+## 상성이 바꾸는 효과 세기 배율 (속성 e의 효과). 접지면 전기는 0 (튀지 않음)
+static func am(tw: Object, e: int) -> float:
+	if not is_instance_valid(tw):
+		return 1.0
+	var a := aff(tw)
+	if a["pairs"].is_empty():
+		return 1.0
+	var ids: Dictionary = a["ids"]
+	var v := AFF_EFF if a["strong_e"].has(e) else 1.0
+	match e:
+		Elem.FIRE:
+			if ids.has("fuel"):
+				v *= FUEL
+			if ids.has("steam") or ids.has("thermo"):
+				v *= AFF_WEAK
+		Elem.ICE:
+			if ids.has("freeze"):
+				v *= FREEZE
+			if ids.has("thermo"):
+				v *= AFF_WEAK
+		Elem.WATER:
+			if ids.has("steam"):
+				v *= AFF_WEAK
+		Elem.EARTH, Elem.METAL:
+			if ids.has("quake"):
+				v *= QUAKE
+		Elem.DARK, Elem.LIGHT:
+			if ids.has("eclipse"):
+				v *= AFF_WEAK
+		Elem.WOOD:
+			if ids.has("wither"):
+				v *= AFF_WEAK
+		Elem.ELECTRIC:
+			if ids.has("ground"):
+				v = 0.0
+	return v
+
+
+## 물 감속 배율 (1에 가까울수록 약함): 기본 감속을 상성 세기 m만큼
+static func slow_f(l: int, m: float) -> float:
+	var sf: float = Rules.water_slow - Rules.water_lv * l
+	return clampf(1.0 - (1.0 - sf) * m, 0.3, 1.0)
+
+
+## 땅 기절 확률 (상성·접지 포함)
+static func root_ch(tw: Object, l: int) -> float:
+	var c := minf(Rules.earth_ch * l, Rules.earth_max) * am(tw, Elem.EARTH)
+	if has(tw, "ground"):
+		c += GROUND_CH
+	return minf(c, 0.95)
 
 
 static func _els(tw: Object) -> Dictionary:
@@ -80,7 +196,8 @@ static func grow(tw: Object, o: Orb) -> float:
 	var kw := k(tw, Elem.WOOD)
 	if kw <= 0.0:
 		return 1.0
-	return 1.0 + minf(WOOD_K * tw.position.distance_to(o.position) / 100.0, WOOD_MAX) * kw
+	var mx := NOURISH_MAX if has(tw, "nourish") else WOOD_MAX
+	return 1.0 + minf(WOOD_K * tw.position.distance_to(o.position) / 100.0, mx) * kw
 
 
 ## 실어 나른 효과가 주는 순간 피해의 기준 (오브젝트 위력, 공격방식 배율 제외)
@@ -101,26 +218,25 @@ static func apply(tw: Object, o: Orb, f: float, key: String) -> void:
 		var l: int = els[e]
 		match e:
 			Elem.FIRE:
-				o.burn(Rules.fire_dps * l * rm * f, Rules.fire_t * dm, tw, true, key)
+				o.burn(Rules.fire_dps * l * rm * f * am(tw, e), Rules.fire_t * dm, tw, true, key)
 			Elem.POISON:
-				o.poison(Rules.poison_dps * l * rm * f, Rules.poison_t * dm, tw, true, key)
+				o.poison(Rules.poison_dps * l * rm * f * am(tw, e), Rules.poison_t * dm, tw, true, key)
 			Elem.ICE:
-				o.add_chill(Rules.ice_chill * l * f)
+				o.add_chill(Rules.ice_chill * l * f * am(tw, e), dm)
 			Elem.WATER:
-				var sf: float = Rules.water_slow - Rules.water_lv * l
-				o.slow(1.0 - (1.0 - sf) * minf(f, 1.0), Rules.water_t * dm)
+				o.slow(slow_f(l, minf(f, 1.0) * am(tw, e)), Rules.water_t * dm)
 			Elem.EARTH:
-				if randf() < minf(Rules.earth_ch * l, Rules.earth_max) * minf(f, 1.0):
+				if randf() < root_ch(tw, l) * minf(f, 1.0):
 					o.root(Rules.earth_t * dm)
 			Elem.DARK:
-				o.vuln(Rules.dark_t * dm, (Rules.dark_vuln + Rules.dark_lv * l) * minf(f, 1.0), tw, true)
+				o.vuln(Rules.dark_t * dm, (Rules.dark_vuln + Rules.dark_lv * l) * minf(f, 1.0) * am(tw, e), tw, true)
 			Elem.ELECTRIC:
 				var d: float = o.hurt(ref_dmg(tw) * Rules.elec_dmg * l * f * rm, false, tw)
 				tw.credit(d, key)
 				tw.rx_dealt += d
 				o.last_rx = true
 			Elem.METAL:
-				o.stagger(Rules.metal_stagger * l * f)
+				o.stagger(Rules.metal_stagger * l * f * am(tw, e))
 			Elem.SOUND:
 				if o.tune_t <= 0.0 or l >= o.tune_lv:
 					o.tune_lv = l
@@ -144,6 +260,7 @@ static func condense(tw: Object, o: Orb, n: int, f: float, key := "share:metal")
 	var km := k(tw, Elem.METAL)
 	if km <= 0.0 or n <= 0 or o.hp <= 0.0:
 		return
+	o.stagger(METAL_STAG * n * km * f)
 	var d: float = o.hurt(ref_dmg(tw) * METAL_K * n * km * f * o.resist_mul(_els(tw)), false, tw)
 	tw.credit(d, "share:metal" if key == "" else key)
 	tw.rx_dealt += d
@@ -176,7 +293,7 @@ static func flare(o: Orb) -> void:
 	var kf := k(tw, Elem.FIRE)
 	if kf <= 0.0:
 		return
-	var r := FIRE_R * wide(tw)
+	var r := FIRE_R * wide(tw) * (1.0 + BLAZE_R if has(tw, "blaze") else 1.0)
 	around(tw, o.main, o.position, r, FIRE_F * kf, "share:fire", o)
 	o.main.burst(o.position, Elem.COLORS[Elem.FIRE], 6, 120.0)
 	if o.main.pulses.size() < 40:
@@ -236,6 +353,8 @@ static func on_hit(tw: Object, o: Orb, shared: bool) -> void:
 		var b: Object = o.bury_src
 		o.bury_src = null
 		apply(b, o, EARTH_F * k(b, Elem.EARTH), "share:earth")
+		if o.hp > 0.0:
+			o.root(EARTH_ROOT * dur(b))
 	if shared or o.hp <= 0.0 or not has_carry(tw):
 		return
 	if k(tw, Elem.EARTH) > 0.0:
@@ -244,6 +363,51 @@ static func on_hit(tw: Object, o: Orb, shared: bool) -> void:
 	var kt := k(tw, Elem.TIME)
 	if kt > 0.0 and o.rep_cd <= 0.0:
 		o.rep_cd = TIME_T
-		tw.later.append([TIME_T, func():
-			if is_instance_valid(o) and o.hp > 0.0:
-				apply(tw, o, TIME_F * kt, "share:time")])
+		for i in (AFTER_N if has(tw, "after") else 1):
+			tw.later.append([TIME_T * (i + 1), func():
+				if is_instance_valid(o) and o.hp > 0.0:
+					apply(tw, o, TIME_F * kt, "share:time")])
+
+
+## Tower.hit에서 효과를 건 뒤: 상성이 더하는 것 (눈보라·비바람·증기 둘레, 녹, 시듦, 온도 충격, 일식). lit: 빛 치명타, had_chill: 맞기 전 냉기
+static func aff_hit(tw: Object, o: Orb, k: float, lit: bool, had_chill: float) -> void:
+	var a := aff(tw)
+	if a["pairs"].is_empty() or not is_instance_valid(o):
+		return
+	var ids: Dictionary = a["ids"]
+	var els := _els(tw)
+	var dm := dur(tw)
+	# 온도 충격: 냉기가 쌓인 구체에 불이 닿으면 냉기를 터뜨린다
+	if ids.has("thermo") and els.has(Elem.FIRE) and had_chill >= THERMO_MIN and o.hp > 0.0:
+		o.chill = 0.0
+		o.stagger(THERMO_STAG)
+		var d: float = o.hurt(ref_dmg(tw) * THERMO_DMG * minf(had_chill, 3.0) / 3.0 * o.resist_mul(els), false, tw)
+		tw.credit(d, "aff:thermo")
+		if tw.main:
+			tw.main.burst(o.position, Color(0.8, 0.9, 1.0), 6, 100.0)
+	if o.hp <= 0.0:
+		return
+	if ids.has("rust") and els.has(Elem.POISON) and o.poison_t > 0.0:
+		o.vuln(Rules.poison_t * dm, RUST)
+	if ids.has("wither") and els.has(Elem.POISON):
+		o.slow(WITHER_SLOW, Rules.poison_t * dm)
+	if ids.has("eclipse") and lit and els.has(Elem.DARK):
+		o.vuln(Rules.dark_t * dm * ECLIPSE_T, Rules.dark_vuln + Rules.dark_lv * els[Elem.DARK], tw)
+	# 둘레: 맞은 구체 둘레 구체들 (장판 없이 그 순간 거기 있는 구체에만)
+	var blz: bool = ids.has("blizzard") and els.has(Elem.ICE)
+	var stm: bool = ids.has("steam") and els.has(Elem.WATER)
+	var rain: bool = ids.has("storm") and els.has(Elem.WATER)
+	if not (blz or stm or rain) or tw.aff_cd > 0.0 or tw.main == null:
+		return
+	tw.aff_cd = NEAR_CD
+	var r := NEAR_R * wide(tw)
+	for other in tw.main.near(o.position, r + 20.0):
+		if other == o or not is_instance_valid(other) or other.hp <= 0.0 or other.position.distance_to(o.position) > r + other.radius():
+			continue
+		if blz:
+			other.add_chill(Rules.ice_chill * els[Elem.ICE] * NEAR_F * minf(k, 1.0) * am(tw, Elem.ICE), dm)
+		if stm or rain:
+			var m := am(tw, Elem.WATER) * (1.0 if stm else NEAR_F)
+			other.slow(slow_f(els[Elem.WATER], m), Rules.water_t * dm)
+	if tw.main.pulses.size() < 40:
+		tw.main.pulses.append([o.position, r, 0.2])

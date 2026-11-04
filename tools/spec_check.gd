@@ -441,6 +441,135 @@ func _share() -> void:
 	nt.eff = nt.eff_now()
 	ok("SHR-12", none and Share.has_carry(nt), "나무·바람·빛·별 효과는 오브젝트에 걸려 실어 나르지 않음")
 	_clear()
+	_affinity(c)
+
+
+## 상성 (꼬리표, 2026-11-04)
+func _affinity(c: Vector2) -> void:
+	var _grid := func():
+		main.targets = main.orbs.get_children()
+		main._build_grid()
+	var ns := 0
+	var nw := 0
+	for i in Elem.ALL.size():
+		for j in range(i + 1, Elem.ALL.size()):
+			var r := Elem.aff_of(Elem.ALL[i], Elem.ALL[j])
+			ns += 1 if r["strong"] else 0
+			nw += 1 if r["weak"] else 0
+	var tags_ok := true
+	for e in Elem.ALL:
+		tags_ok = tags_ok and Elem.TAGS.has(e) and Elem.TAGS[e].size() in [1, 2]
+	ok("AFF-01", tags_ok and ns == 20 and nw == 11 and Elem.aff_of(Elem.WATER, Elem.ELECTRIC)["strong"] and Elem.aff_of(Elem.FIRE, Elem.WATER)["weak"]
+		and Elem.aff_of(Elem.FIRE, Elem.ELECTRIC)["ids"].is_empty(), "꼬리표 규칙으로 105짝 분류: 강 %d·약 %d (물+전기 강, 불+물 약, 불+전기 보통)" % [ns, nw])
+	# 강: 특징 세기 x AFF_CARRY, 효과 세기 x AFF_EFF
+	var st := _tower(c + Vector2(-200, 0), Elem.WATER, 3)
+	st.add(Elem.ELECTRIC, 1)
+	st.eff = st.eff_now()
+	var base: float = Share.LV_K[1] * Rules.share_mul * Rules.share_k.get(Elem.ELECTRIC, 1.0)
+	ok("AFF-02", is_equal_approx(Share.k(st, Elem.ELECTRIC), base * Share.AFF_CARRY) and is_equal_approx(Share.am(st, Elem.WATER), Share.AFF_EFF),
+		"강상성: 특징 세기 x%.1f, 효과 세기 x%.1f" % [Share.AFF_CARRY, Share.AFF_EFF])
+	# 감전: 튀는 거리 +40%, 튄 구체 멈칫
+	var e1 := _orb(c, 1e6)
+	var e2 := _orb(c + Vector2(115, 0), 1e6, Orb.Kind.NORMAL, 50.0)
+	_grid.call()
+	main.arc(e1, 10.0, st)
+	ok("AFF-03", e2.hp < 1e6 and e2.stagger_t > 0.0, "감전: 전기가 115 떨어진 구체까지 튀고 멈칫 (%.0f, 멈칫 %.2f)" % [1e6 - e2.hp, e2.stagger_t])
+	_clear()
+	# 증기: 화상 절반, 둘레 구체도 느려짐
+	var vt := _tower(c + Vector2(-200, 0), Elem.FIRE, 1)
+	vt.add(Elem.WATER, 1)
+	vt.eff = vt.eff_now()
+	var s1 := _orb(c, 1e6)
+	var s2 := _orb(c + Vector2(40, 0), 1e6)
+	_grid.call()
+	vt.hit(s1, 1.0)
+	ok("AFF-04", is_equal_approx(Share.am(vt, Elem.FIRE), Share.AFF_WEAK) and s2.slow_timer > 0.0 and s2.slow_factor < 1.0,
+		"증기: 화상 x%.1f, 대신 둘레 구체도 느려짐 (%.2f)" % [Share.am(vt, Elem.FIRE), s2.slow_factor])
+	_clear()
+	# 온도 충격: 냉기가 쌓인 구체를 불이 맞히면 냉기를 터뜨려 피해
+	var tt := _tower(c + Vector2(-200, 0), Elem.FIRE, 1)
+	tt.add(Elem.ICE, 1)
+	tt.eff = tt.eff_now()
+	var t1 := _orb(c, 1e6, Orb.Kind.NORMAL, 50.0)
+	_grid.call()
+	t1.chill = 2.0
+	tt.hit(t1, 1.0)
+	ok("AFF-05", tt.src.get("aff:thermo", 0.0) > 0.0 and t1.chill < 1.0, "온도 충격: 냉기를 터뜨려 피해 (%.1f, 남은 냉기 %.2f)" % [tt.src.get("aff:thermo", 0.0), t1.chill])
+	_clear()
+	# 일식: 치명타 확률 절반, 치명타가 나면 약화를 2배 시간
+	var lt := _tower(c + Vector2(-200, 0), Elem.LIGHT, 1)
+	lt.add(Elem.DARK, 1)
+	lt.eff = lt.eff_now()
+	var l1 := _orb(c, 1e6)
+	_grid.call()
+	Share.aff_hit(lt, l1, 1.0, true, 0.0)
+	ok("AFF-06", is_equal_approx(Share.am(lt, Elem.LIGHT), Share.AFF_WEAK) and l1.vuln_t > Rules.dark_t * 1.5, "일식: 치명타 x%.1f, 치명타 때 약화 %.1f초" % [Share.am(lt, Elem.LIGHT), l1.vuln_t])
+	_clear()
+	# 접지: 전기가 튀지 않고 기절 확률 +20%
+	var gt := _tower(c + Vector2(-200, 0), Elem.EARTH, 1)
+	gt.add(Elem.ELECTRIC, 1)
+	gt.eff = gt.eff_now()
+	ok("AFF-07", Share.am(gt, Elem.ELECTRIC) == 0.0 and is_equal_approx(Share.root_ch(gt, 1), minf(Rules.earth_ch, Rules.earth_max) + Share.GROUND_CH),
+		"접지: 전기 튐 없음, 기절 확률 %.2f" % Share.root_ch(gt, 1))
+	_clear()
+	# 시듦·녹: 중독된 구체가 느려짐 / 받는 피해 +
+	var wt := _tower(c + Vector2(-200, 0), Elem.POISON, 1)
+	wt.add(Elem.WOOD, 1)
+	wt.eff = wt.eff_now()
+	var rt := _tower(c + Vector2(-200, 150), Elem.POISON, 1)
+	rt.add(Elem.METAL, 1)
+	rt.eff = rt.eff_now()
+	var w1 := _orb(c, 1e6)
+	var w2 := _orb(c + Vector2(0, 200), 1e6)
+	_grid.call()
+	wt.hit(w1, 1.0)
+	rt.hit(w2, 1.0)
+	ok("AFF-08", w1.slow_factor <= Share.WITHER_SLOW + 0.001 and w2.vuln_t > 0.0 and w2.vuln_k >= Share.RUST - 0.001,
+		"시듦: 중독된 구체 감속 %.2f · 녹: 받는 피해 +%.2f" % [w1.slow_factor, w2.vuln_k])
+	_clear()
+	# 잔상: 시간 되풀이 2번
+	var at := _tower(c + Vector2(-200, 0), Elem.TIME, 1)
+	at.add(Elem.DARK, 1)
+	at.eff = at.eff_now()
+	var a1 := _orb(c, 1e6)
+	_grid.call()
+	at.hit(a1, 1.0)
+	ok("AFF-09", at.later.size() == Share.AFTER_N, "잔상: 시간 되풀이 %d번" % at.later.size())
+	_clear()
+	# 제어 회복: 물길은 늘 감속, 묻어둠이 터지면 묶음, 응축은 멈칫, 얼음 오래감은 빙결도 길게
+	var ft := _tower(c + Vector2(-200, 0), Elem.WATER, 1)
+	var f1 := _orb(c, 1e6)
+	var mt := _tower(c + Vector2(-200, 150), Elem.METAL, 3)
+	mt.add(Elem.FIRE, 1)
+	mt.eff = mt.eff_now()
+	var m1 := _orb(c + Vector2(0, 200), 1e6, Orb.Kind.NORMAL, 50.0)
+	var et := _tower(c + Vector2(200, 0), Elem.EARTH, 3)
+	et.add(Elem.FIRE, 1)
+	et.eff = et.eff_now()
+	var b1 := _orb(c + Vector2(0, -200), 1e6)
+	_grid.call()
+	ft.form_path(c)
+	var rill: Zone = null
+	for z in main.zones.get_children():
+		if z.kind == "rill":
+			rill = z
+	if rill:
+		rill.affect([f1], 0.1)
+	var st0 := m1.stagger_t
+	Share.condense(mt, m1, 2, 1.0)
+	b1.bury_src = et
+	b1.bury_until = b1.age + 2.0
+	b1.root_timer = 0.0
+	Share.on_hit(ft, b1, true)
+	var fz := _orb(c + Vector2(200, 200), 1e6)
+	fz.add_chill(3.0, 1.5)
+	ok("AFF-10", rill != null and f1.slow_factor <= Share.RILL_SLOW + 0.001 and m1.stagger_t > st0 and b1.root_timer > 0.0 and fz.root_timer > 1.0,
+		"특징 제어: 물길 감속 %.2f · 응축 멈칫 · 묻어둠 묶음 %.2f · 빙결 %.2f초" % [f1.slow_factor if rill else 1.0, b1.root_timer, fz.root_timer])
+	_clear()
+	# 화면 글: 짝 이름표에 상성, 오브젝트 상성 줄
+	var shock: Dictionary = Elem.reaction_of(Elem.WATER, Elem.ELECTRIC)
+	ok("AFF-11", shock.get("aff", "") == "strong" and Elem.aff_label(Elem.WATER, Elem.ELECTRIC) == "감전(강)" and Elem.aff_text(Elem.FIRE, Elem.WATER).begins_with("상성 증기(약)")
+		and main.src_name("aff:thermo") == "상성 온도 충격", "도감·정보창 상성 글 (%s)" % Elem.aff_label(Elem.WATER, Elem.ELECTRIC))
 
 
 # ---------- 공격방식 ----------

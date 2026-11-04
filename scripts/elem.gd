@@ -257,6 +257,84 @@ const PAIRS := [
 	["samsara", TIME, SOUL, Color(0.9, 0.75, 0.85)],
 ]
 
+## 상성 (2026-11-04): 속성마다 성질 꼬리표 1~2개. 꼬리표끼리 규칙(AFF_RULES)으로 105짝의 강·약이 저절로 정해진다.
+## 새 속성은 꼬리표만 정하면 된다. 같은 오브젝트 안의 두 속성에만 걸린다 (Share.aff).
+const TAGS := {
+	FIRE: ["열"], WOOD: ["생명"], WATER: ["젖음"], ELECTRIC: ["전도"], WIND: ["기류"], ICE: ["차가움"],
+	EARTH: ["흙"], DARK: ["그늘"], LIGHT: ["빛"], POISON: ["부식"], METAL: ["단단함", "전도"],
+	SOUND: ["진동"], TIME: ["흐름"], SOUL: ["그늘"], STAR: ["빛", "열"],
+}
+
+## [꼬리표, 꼬리표, id, 이름, 강(true)·약(false), 설명]. 같은 꼬리표끼리는 SAME_AFF(강, 더하는 것 없음).
+## 강: 두 속성 특징 세기 x Share.AFF_CARRY, 효과 세기 x Share.AFF_EFF + 설명의 것. 약: 줄어드는 대신 다른 효과가 생긴다.
+const AFF_RULES := [
+	["젖음", "전도", "shock", "감전", true, "전기가 튀는 거리 +40%, 튄 구체가 잠깐 멈칫"],
+	["열", "생명", "fuel", "연료", true, "화상 x1.5"],
+	["열", "기류", "blaze", "불길", true, "불 타오름 범위 +50%"],
+	["차가움", "젖음", "freeze", "얼어붙음", true, "냉기 x1.5"],
+	["차가움", "기류", "blizzard", "눈보라", true, "맞은 구체 둘레 구체에도 냉기 절반"],
+	["흙", "진동", "quake", "지진", true, "기절 확률·경직 x1.5"],
+	["단단함", "진동", "quake", "지진", true, "기절 확률·경직 x1.5"],
+	["부식", "단단함", "rust", "녹", true, "중독된 구체가 받는 피해 +15%"],
+	["기류", "진동", "reso", "공진", true, "음파 범위 +50%"],
+	["기류", "젖음", "storm", "비바람", true, "맞은 구체 둘레 구체에도 감속 절반"],
+	["젖음", "생명", "nourish", "자양", true, "나무 자람 최대 +30% → +50%"],
+	["그늘", "흐름", "after", "잔상", true, "시간 되풀이가 2번"],
+	["열", "젖음", "steam", "증기", false, "화상·감속 절반, 대신 맞은 구체 둘레 구체도 모두 느려짐"],
+	["열", "차가움", "thermo", "온도 충격", false, "화상·냉기 절반, 대신 냉기가 남은 구체를 맞히면 냉기를 터뜨려 멈칫 + 피해"],
+	["빛", "그늘", "eclipse", "일식", false, "치명타 확률·약화 절반, 대신 치명타가 나면 약화를 그대로 2배 시간 동안"],
+	["전도", "흙", "ground", "접지", false, "전기가 튀지 않음, 대신 기절 확률 +20%"],
+	["부식", "생명", "wither", "시듦", false, "가시 피해 절반, 대신 중독된 구체가 15% 느려짐"],
+]
+const SAME_AFF := ["same", "닮음", true, "같은 성질끼리 (특징·효과가 함께 세짐)"]
+
+static var _aff_cache := {}
+
+
+## 두 속성의 상성: {"strong": bool, "weak": bool, "ids": [규칙 id], "names": [이름], "descs": [설명]} (보통이면 둘 다 false)
+static func aff_of(a: int, b: int) -> Dictionary:
+	var ck := mini(a, b) * 100 + maxi(a, b)
+	if _aff_cache.has(ck):
+		return _aff_cache[ck]
+	var out := {"strong": false, "weak": false, "ids": [], "names": [], "descs": []}
+	if a != b:
+		for x in TAGS.get(a, []):
+			for y in TAGS.get(b, []):
+				var hits := []
+				if x == y:
+					hits.append(SAME_AFF)
+				for r in AFF_RULES:
+					if (r[0] == x and r[1] == y) or (r[0] == y and r[1] == x):
+						hits.append(r.slice(2))
+				for h in hits:
+					if h[0] in out["ids"]:
+						continue
+					out["ids"].append(h[0])
+					out["names"].append(h[1])
+					out["descs"].append(h[3])
+					out["strong" if h[2] else "weak"] = true
+	_aff_cache[ck] = out
+	return out
+
+
+## 상성 한 줄 ("감전(강)", 보통이면 "")
+static func aff_label(a: int, b: int) -> String:
+	var r := aff_of(a, b)
+	var parts := PackedStringArray()
+	for i in r["ids"].size():
+		parts.append("%s(%s)" % [r["names"][i], "강" if _rule_strong(r["ids"][i]) else "약"])
+	return " · ".join(parts)
+
+
+static func _rule_strong(id: String) -> bool:
+	if id == SAME_AFF[0]:
+		return true
+	for r in AFF_RULES:
+		if r[2] == id:
+			return r[4]
+	return false
+
+
 ## 짝마다 {"id","a","b","name","desc","color"}. 예전 REACTIONS와 같은 모양이라 도감·알림·업적이 그대로 쓴다.
 ## 특징 공유(2026-11-03): 고정된 반응 공격은 없고, a의 특징이 b의 효과를, b의 특징이 a의 효과를 실어 나른다 (Share).
 static var REACTIONS: Array = _build_pairs()
@@ -265,7 +343,9 @@ static var REACTIONS: Array = _build_pairs()
 static func _build_pairs() -> Array:
 	var out := []
 	for p in PAIRS:
-		out.append({"id": p[0], "a": p[1], "b": p[2], "name": pair_name(p[1], p[2]), "desc": pair_desc(p[1], p[2]), "color": p[3]})
+		var af := aff_of(p[1], p[2])
+		var aff := "strong" if af["strong"] else "weak" if af["weak"] else ""
+		out.append({"id": p[0], "a": p[1], "b": p[2], "name": pair_name(p[1], p[2]), "desc": pair_desc(p[1], p[2]), "color": p[3], "aff": aff, "aff_txt": aff_text(p[1], p[2])})
 	return out
 
 
@@ -286,6 +366,15 @@ static func pair_desc(a: int, b: int) -> String:
 			parts.append("%s의 %s → %s %s" % [NAMES[d[0]], trait_name(d[0]), NAMES[d[1]], rider_name(d[1])])
 	if parts.is_empty():
 		return "%s %s · %s %s (실어 나를 효과 없이 특징끼리)" % [NAMES[a], trait_name(a), NAMES[b], trait_name(b)]
+	return " · ".join(parts)
+
+
+## 상성 설명 한 줄 ("상성 감전(강): 전기가 …", 보통이면 "")
+static func aff_text(a: int, b: int) -> String:
+	var af := aff_of(a, b)
+	var parts := PackedStringArray()
+	for i in af["ids"].size():
+		parts.append("상성 %s(%s): %s" % [af["names"][i], "강" if _rule_strong(af["ids"][i]) else "약", af["descs"][i]])
 	return " · ".join(parts)
 
 
