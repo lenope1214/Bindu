@@ -235,6 +235,8 @@ func _elem_preview(r: Rect2, e: int) -> void:
 	var hit_t := 0.35
 	var slow := e in [Elem.WATER, Elem.ICE, Elem.EARTH, Elem.TIME]
 	var drift := t * 14.0 if t < hit_t else hit_t * 14.0 + (t - hit_t) * (3.0 if slow else 14.0)
+	if e == Elem.ILLUSION and t >= hit_t:
+		drift = hit_t * 14.0 - minf(t - hit_t, 0.8) * 8.0 + maxf(t - hit_t - 0.8, 0.0) * 14.0  # 현혹: 잠깐 되돌아 걸음
 	var orb := orb0 - Vector2(drift, 0)
 	if t < hit_t:
 		draw_circle(Vector2(lerpf(o.x, orb.x, t / hit_t), o.y), 4, col)

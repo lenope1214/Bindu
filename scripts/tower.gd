@@ -74,6 +74,10 @@ var ring_t0 := 0.0  # 울림 음파 초당 상한: 이번 1초 구간 시작
 var ring_n := 0  # 그 구간에 터뜨린 수
 var clock_hit := {}  # 시계침: 이번 한 번 훑는 동안 맞힌 구체 ([바늘 번호, 구체] -> true, 다중 발사 바늘은 따로 센다)
 var light_cd := 0.0  # 빛 꿰뚫음 다시 쓸 때까지 (Share.pierce)
+var mirror_cd := 0.0  # 환영 비춤 다시 쓸 때까지 (Share.mark)
+var mirror_src: Object = null  # 옆 환영 오브젝트가 비춘 상: 다음 공격에 그 오브젝트 효과 (Share.reflect)
+var mirror_t := 0.0
+var mirror_f := 0.0
 var aff_cd := 0.0  # 상성 둘레 효과(눈보라·비바람·증기) 다시 쓸 때까지 (Share.aff_hit)
 var chain_end := Vector2.ZERO  # 연쇄 번개가 마지막으로 친 자리
 var later: Array = []  # [남은 초, Callable]: 잠시 뒤 효과 (시간 되풀이, Share.on_hit)
@@ -1612,6 +1616,11 @@ func _pincer(o: Orb) -> void:
 ## 특징 공유: 잠시 뒤 효과(시간 되풀이)·빛줄기 간격 (Share).
 func _share_tick(delta: float) -> void:
 	light_cd = maxf(light_cd - delta, 0.0)
+	mirror_cd = maxf(mirror_cd - delta, 0.0)
+	if mirror_t > 0.0:
+		mirror_t -= delta
+		if mirror_t <= 0.0:
+			mirror_src = null
 	aff_cd = maxf(aff_cd - delta, 0.0)
 	if later.is_empty():
 		return
@@ -1940,6 +1949,10 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 			o.soul_lv = els.get(Elem.SOUL, 0)
 			o.soul_src = self
 		o.soul_t = maxf(o.soul_t, Rules.soul_t * dm)
+	if els.has(Elem.BLOOD):
+		o.bleed(Share.bleed_k(self, els.get(Elem.BLOOD, 0), rm) * g, Rules.blood_t * dm, self, "elem:blood", Share.has(self, "sepsis"))
+	if els.has(Elem.ILLUSION) and o.hp > 0.0 and randf() < Share.illu_ch(self, els.get(Elem.ILLUSION, 0)) * minf(k, 1.0) * minf(g, 1.5):
+		o.confuse(Rules.illu_t * dm, Share.has(self, "nightmare"))
 	# 특징 공유: 금속 응축 · 빛 꿰뚫음 · 땅 묻어둠 · 시간 되풀이 (나머지 특징은 전류·음파·죽을 때·물길에서)
 	if o.hp > 0.0:
 		Share.condense(self, o, Share.carry_n(self), minf(k, 1.0))
@@ -1947,6 +1960,9 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		Share.pierce(self, o)
 	Share.aff_hit(self, o, k, lit, had_chill)
 	Share.on_hit(self, o, false)
+	Share.mark(self, o)
+	if not in_rx and mirror_src != null and mirror_t > 0.0:
+		Share.reflect(self, o)
 	if not in_rx and bounce_cd <= 0.0 and m("bounce") > 0 and not pattern in Pat.PROJECTILE and pattern != "chain" and not tag.begins_with("mod:"):
 		_area_bounce(o)
 	if can_split and m("split") > 0 and randf() < split_ch() * minf(k, 1.0):

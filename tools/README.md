@@ -26,6 +26,7 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 | `tip_shot.gd` | `xvfb-run godot --path . --rendering-driver opengl3 -s tools/tip_shot.gd -- <폴더> [글자 크기] [touch] [phone]`: 별 넷·바람 곁의 행성(별+영혼 혼불)에 올린 오브젝트 정보창 기본(tip_basic)·자세히(tip_detail) | PNG |
 | `rank_shot.gd` | `xvfb-run godot --path . --rendering-driver opengl3 -s tools/rank_shot.gd -- <폴더> [글자 크기] [touch] [phone]`: 오브젝트 7개에 피해를 나눠 준 뒤 1위 왕관·2·3위 메달·DPS 표 순위 색 (rank, 가운데 확대 rank_zoom) | PNG |
 | `nova_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/nova_shot.gd -- <폴더> [글자 크기] [touch]`: 초신성 그림(별·행성 게이지, 85% 예고 조준 고리, 다 참, 터지는 순간·퍼지는 중) | PNG |
+| `newelem_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/newelem_shot.gd -- <폴더> [글자 크기] [touch] [phone]`: 새 속성 피·환영 카드 선택지·카드 자세히·출혈·현혹 표시와 핏자국 전장·정보창·도감 속성 탭 | PNG, `UI` 줄 |
 | `late_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/late_shot.gd -- <폴더> [글자 크기] [touch]`: 후반 구체 다섯 종 안내(100·500웨이브 배지)·전장 위 모양(깜빡 예고·갑옷 깨짐·치유 맥동·흐림·포식 입) | PNG |
 | `board_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path <사본> -s tools/board_shot.gd -- <폴더> [글자 크기] [touch] [phone]`: 서버 없이 순위를 채워 리더보드 기본·이번 주·지난 시즌·빈 기록·신고·차단 창 스크린샷. 사본의 online_config SERVER_URL은 http://127.0.0.1:9로 | PNG |
 | `map_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/map_shot.gd -- <폴더> [글자 크기] [touch]`: 맵 규칙 준비 화면 맵 줄(맵 5개)·친화 카드 선택지·십자로 길목 띠·폭풍 바람 스크린샷 | PNG |

@@ -231,7 +231,7 @@ func _elements() -> void:
 	Meta.rules = 1
 	main._apply_rules()
 
-	# 두 속성 짝 105개: 고정 반응이 아니라 특징 이름표 (도감·업적용)
+	# 두 속성 짝 136개: 고정 반응이 아니라 특징 이름표 (도감·업적용)
 	var missing := []
 	var ids := {}
 	for i in Elem.ALL.size():
@@ -242,14 +242,14 @@ func _elements() -> void:
 			for r in rs:
 				ids[r["id"]] = true
 	var traits_ok := Elem.ALL.all(func(e): return Elem.TRAIT.has(e) and Elem.trait_name(e) != "")
-	ok("ELEM-05", missing.is_empty() and ids.size() == 105 and Elem.REACTIONS.size() == 105 and traits_ok, "속성 15종 모두 특징이 있고, 두 속성 짝 105개 모두 도감 이름이 있음 (빠짐 %s, 짝 %d)" % [str(missing), ids.size()])
+	ok("ELEM-05", missing.is_empty() and ids.size() == 136 and Elem.REACTIONS.size() == 136 and traits_ok, "속성 17종 모두 특징이 있고, 두 속성 짝 136개 모두 도감 이름이 있음 (빠짐 %s, 짝 %d)" % [str(missing), ids.size()])
 
 	t.eff = t.eff_now()
 	var fresh := Elem.new_reactions({Elem.FIRE: 1}, Elem.WOOD)
 	ok("ELEM-06", fresh.size() == 1 and t.reactions().size() == 3, "속성을 더해 새 짝이 생기면 알림·도감, 3종이면 짝 3개")
 
 	var no_rider := Elem.ALL.filter(func(e): return Elem.rider(e).is_empty())
-	ok("ELEM-07", no_rider.is_empty() and Elem.ALL.size() == 15, "속성 15종 모두 부가효과 설명이 있음")
+	ok("ELEM-07", no_rider.is_empty() and Elem.ALL.size() == 17, "속성 17종 모두 부가효과 설명이 있음")
 	_elem_lv5()
 	_no_fixed_zone()
 	_share()
@@ -295,7 +295,7 @@ func _no_fixed_zone() -> void:
 	for pat in Pat.PATTERN_IDS:
 		_clear()
 		var pt := _tower(c + Vector2(-60, 0), Elem.WATER, 3, Vector2.LEFT)
-		for e in [Elem.FIRE, Elem.POISON, Elem.ICE]:
+		for e in [Elem.FIRE, Elem.POISON, Elem.ICE, Elem.BLOOD]:
 			pt.add(e, 3)
 		if pat != "shot":
 			pt.set_pattern(pat)
@@ -308,7 +308,7 @@ func _no_fixed_zone() -> void:
 			for z in main.zones.get_children():
 				kinds[z.kind] = true
 		for k in kinds:
-			var allowed: bool = k in ZONE_OK or (k in Tower.FORM_ZONES and pat not in CONT_PATS)
+			var allowed: bool = k in ZONE_OK or k in Zone.ORB_PATH or (k in Tower.FORM_ZONES and pat not in CONT_PATS)
 			if not allowed:
 				bad.append("%s:%s" % [pat, k])
 	main.wave_active = false
@@ -316,7 +316,7 @@ func _no_fixed_zone() -> void:
 	_clear()
 	Meta.rules = 1
 	main._apply_rules()
-	ok("ELEM-10", bad.is_empty(), "고정 거리 장판 없음: 장판 종류는 지나간 자리·블랙홀·벽·물길뿐, 물길은 날아가는 공격에만 (어긋남 %s)" % str(bad))
+	ok("ELEM-10", bad.is_empty(), "고정 거리 장판 없음: 장판 종류는 지나간 자리·블랙홀·벽·물길·핏자국뿐, 물길은 날아가는 공격에만, 핏자국은 구체가 지나간 길에만 (어긋남 %s)" % str(bad))
 
 
 ## 특징 공유 (2026-11-03): 특징이 같은 오브젝트의 다른 속성 효과를 실어 나른다. 실어 나른 효과는 특징을 다시 타지 않는다.
@@ -462,6 +462,8 @@ func _share() -> void:
 	_clear()
 	_affinity(c)
 	_real(c)
+	_clear()
+	_new_elems(c)
 
 
 ## 상성 (꼬리표, 2026-11-04)
@@ -479,8 +481,8 @@ func _affinity(c: Vector2) -> void:
 	var tags_ok := true
 	for e in Elem.ALL:
 		tags_ok = tags_ok and Elem.TAGS.has(e) and Elem.TAGS[e].size() in [1, 2]
-	ok("AFF-01", tags_ok and ns == 20 and nw == 11 and Elem.aff_of(Elem.WATER, Elem.ELECTRIC)["strong"] and Elem.aff_of(Elem.FIRE, Elem.WATER)["weak"]
-		and Elem.aff_of(Elem.FIRE, Elem.ELECTRIC)["ids"].is_empty(), "꼬리표 규칙으로 105짝 분류: 강 %d·약 %d (물+전기 강, 불+물 약, 불+전기 보통)" % [ns, nw])
+	ok("AFF-01", tags_ok and ns == 26 and nw == 15 and Elem.aff_of(Elem.WATER, Elem.ELECTRIC)["strong"] and Elem.aff_of(Elem.FIRE, Elem.WATER)["weak"]
+		and Elem.aff_of(Elem.FIRE, Elem.ELECTRIC)["ids"].is_empty(), "꼬리표 규칙으로 136짝 분류: 강 %d·약 %d (물+전기 강, 불+물 약, 불+전기 보통)" % [ns, nw])
 	# 강: 특징 세기 x AFF_CARRY, 효과 세기 x AFF_EFF
 	var st := _tower(c + Vector2(-200, 0), Elem.WATER, 3)
 	st.add(Elem.ELECTRIC, 1)
@@ -592,8 +594,8 @@ func _real(c: Vector2) -> void:
 		main.targets = main.orbs.get_children()
 		main._build_grid()
 	var all_e: Array = Share.SITE_E + Share.MOD_E
-	var split_ok: bool = Share.SITE_E.size() == 9 and Share.MOD_E.size() == 6 and Elem.ALL.all(func(e): return all_e.count(e) == 1)
-	ok("REAL-01", split_ok, "특징 15개 = 나르는 9 + 바꾸는 6 (겹침 없음)")
+	var split_ok: bool = Share.SITE_E.size() == 11 and Share.MOD_E.size() == 6 and Elem.ALL.all(func(e): return all_e.count(e) == 1)
+	ok("REAL-01", split_ok, "특징 17개 = 나르는 11 + 바꾸는 6 (겹침 없음)")
 	var at := c + Vector2(-40, 0)
 	var mk := func(e2: int) -> Tower:
 		var tw := _tower(c + Vector2(-260, 0), Elem.FIRE, 1)
@@ -1960,7 +1962,7 @@ func _maps() -> void:
 		if e in MapRule.aff("elem"):
 			aff += cnt.get(e, 0) / 3.0
 		else:
-			other += cnt.get(e, 0) / 11.0
+			other += cnt.get(e, 0) / float(Elem.ALL.size() - 4)  # 친화 3개·별 빼고 (속성 수가 늘어도 맞게)
 	var k := 1.0 + Rules.t("map_aff_dmg")
 	var mul_ok := is_equal_approx(MapRule.tower_mul({Elem.ICE: 2}, "lob"), k * k) and is_equal_approx(MapRule.tower_mul({Elem.ICE: 1, Elem.FIRE: 1}, "shot"), 1.0 + Rules.t("map_aff_dmg") / 2.0) and MapRule.tower_mul({Elem.FIRE: 1}, "wisp") == 1.0
 	ok("MAPX-01", aff > other * 1.25 and mul_ok and MapRule.card_aff({"type": "mod", "id": "size"}) and MapRule.aff_text() != "", "친화 카드: 더 자주(장당 %.0f vs %.0f), 피해 +15%%(속성 레벨 몫·공격방식)" % [aff, other])
@@ -3591,3 +3593,96 @@ func _late_curve() -> void:
 	var n_ok: bool = main.wave_size(150) == 303 and main.wave_size(400) == 303 and main.wave_size(100) == 203
 	var s_ok: bool = main.orb_base_speed(100) == 330.0 and main.orb_base_speed(450) == 1380.0 and main.orb_base_speed(600) == 1380.0
 	ok("WAVE-12", hp_ok and n_ok and s_ok, "후반 곡선: 체력 150까지 x1.05·뒤 x1.03(+수 상한 몫) %s, 구체 수 303 상한 %s, 속도 450웨이브 값 1380 상한 %s" % [hp_ok, n_ok, s_ok])
+
+
+## 새 속성 피·환영 (2026-11-04)
+func _new_elems(c: Vector2) -> void:
+	var _grid := func():
+		main.targets = main.orbs.get_children()
+		main._build_grid()
+	# 피 출혈: 움직인 만큼 피해, 멈추면 피해 없음
+	var bt := _tower(c + Vector2(-300, -200), Elem.BLOOD, 2)
+	var mv := _orb(c + Vector2(-300, 0), 1e6, Orb.Kind.NORMAL, 60.0)
+	var st := _orb(c + Vector2(0, -250), 1e6)
+	_grid.call()
+	bt.hit(mv, 0.0)
+	bt.hit(st, 0.0)
+	var hm := mv.hp
+	var hs := st.hp
+	for i in 30:
+		mv.step(1.0 / 60.0)
+		st.step(1.0 / 60.0)
+	var want := Rules.blood_dmg * 2 * 30.0 / 100.0 * bt.final_damage_mul()
+	var lost := hm - mv.hp
+	ok("ELEM-14", mv.bleed_t > 0.0 and absf(lost - want) < want * 0.15 and hs == st.hp and bt.src.has("elem:blood"),
+		"피 출혈: 30px 움직이면 %.2f (기대 %.2f), 멈춘 구체 피해 %.2f" % [lost, want, hs - st.hp])
+	_clear()
+	# 피 핏자국: 맞은 구체가 지나간 길에 핏자국, 뒤따라 밟은 구체에 효과, 남긴 구체는 안 밟음
+	var gt := _tower(c + Vector2(-300, -200), Elem.BLOOD, 3)
+	gt.add(Elem.FIRE, 1)
+	gt.eff = gt.eff_now()
+	var lead := _orb(c + Vector2(-300, 0), 1e6, Orb.Kind.NORMAL, 60.0)
+	var back := _orb(c + Vector2(-400, 0), 1e6)
+	_grid.call()
+	gt.hit(lead, 0.0)
+	for i in 60:
+		lead.step(1.0 / 60.0)
+	var gore: Zone = null
+	for z in main.zones.get_children():
+		if z.kind == "gore":
+			gore = z
+	var self_ok := true
+	if gore:
+		lead.burn_t = 0.0
+		gore.affect([lead], 0.1)
+		self_ok = lead.burn_t == 0.0
+		back.position = gore.position
+		gore.affect([back], 0.1)
+	ok("ELEM-14", lead.gore_src == gt and gore != null and back.burn_t > 0.0 and self_ok and back.bleed_t > 0.0,
+		"피 핏자국: 구체가 지나간 길에 핏자국(%s), 밟은 뒤 구체 화상 %.1f·출혈 %.1f, 남긴 구체는 안 밟음 %s" % [gore != null, back.burn_t, back.bleed_t, self_ok])
+	_clear()
+	# 환영 현혹: 왔던 길을 되돌아 걸음, 같은 구체는 쿨, 보스 절반
+	var co := _orb(c + Vector2(-300, 0), 1e6, Orb.Kind.NORMAL, 60.0)
+	var d0 := co.position.distance_to(co.target)
+	var got := co.confuse(Rules.illu_t)
+	for i in 20:
+		co.step(1.0 / 60.0)
+	var d1 := co.position.distance_to(co.target)
+	var again := co.confuse(Rules.illu_t)
+	var boss := _orb(c + Vector2(300, 0), 1e6, Orb.Kind.BOSS, 60.0)
+	boss.confuse(Rules.illu_t)
+	var it := _tower(c + Vector2(-300, -200), Elem.ILLUSION, 9)
+	ok("ELEM-15", got and d1 > d0 and not again and is_equal_approx(boss.confuse_t, Rules.illu_t * 0.5) and is_equal_approx(Share.illu_ch(it, 9), Rules.illu_max),
+		"환영 현혹: 되돌아 걸음 (거리 %.0f → %.0f), 다시 걸기 막힘, 보스 %.2f초, 확률 최대 %d%%" % [d0, d1, boss.confuse_t, roundi(Rules.illu_max * 100)])
+	_clear()
+	# 환영 비춤: 옆 오브젝트의 다음 공격에 이 오브젝트 효과, 한 번 쓰면 사라짐
+	var mt := _tower(c + Vector2(-300, -200), Elem.ILLUSION, 3)
+	mt.add(Elem.FIRE, 1)
+	mt.eff = mt.eff_now()
+	var nb := _tower(c + Vector2(-200, -200), Elem.WOOD, 1)
+	var far := _tower(c + Vector2(300, 200), Elem.WOOD, 1)
+	var m1 := _orb(c, 1e6)
+	var m2 := _orb(c + Vector2(0, 100), 1e6)
+	_grid.call()
+	mt.hit(m1, 0.0)
+	var lit := nb.mirror_src == mt and far.mirror_src == null
+	nb.hit(m2, 0.0)
+	ok("ELEM-15", lit and m2.burn_t > 0.0 and nb.mirror_src == null,
+		"환영 비춤: 둘레 220 안 가장 가까운 오브젝트에 비침(%s), 그 오브젝트 다음 공격에 화상 %.1f, 쓰면 사라짐" % [lit, m2.burn_t])
+	_clear()
+	# 상성
+	var ab := Elem.aff_of(Elem.BLOOD, Elem.POISON)
+	var ai := Elem.aff_of(Elem.BLOOD, Elem.ICE)
+	var at := _tower(c + Vector2(-300, -200), Elem.BLOOD, 1)
+	at.add(Elem.ICE, 1)
+	at.eff = at.eff_now()
+	var nm := _orb(c, 1e6, Orb.Kind.NORMAL, 60.0)
+	nm.vuln(2.0, 0.2)
+	var h0 := nm.hurt_mul()
+	nm.confuse(Rules.illu_t, true)
+	var h1 := nm.hurt_mul()
+	ok("ELEM-16", ab["strong"] and ai["weak"] and Elem.aff_of(Elem.BLOOD, Elem.DARK)["ids"].has("hunger") and Elem.aff_of(Elem.BLOOD, Elem.WOOD)["ids"].has("stanch")
+		and Elem.aff_of(Elem.ILLUSION, Elem.SOUND)["ids"].has("phantasm") and Elem.aff_of(Elem.ILLUSION, Elem.SOUL)["ids"].has("nightmare") and Elem.aff_of(Elem.ILLUSION, Elem.STAR)["ids"].has("mirage")
+		and is_equal_approx(Share.am(at, Elem.BLOOD), Share.AFF_WEAK) and is_equal_approx(h1 - 1.0, (h0 - 1.0) * Share.NIGHTMARE),
+		"피·환영 상성: 패혈·굶주림·응고·지혈·환청·악몽·신기루, 응고 출혈 x%.1f, 악몽 받는 피해↑ %.2f → %.2f" % [Share.am(at, Elem.BLOOD), h0, h1])
+	_clear()

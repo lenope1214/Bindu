@@ -8680,6 +8680,8 @@ func sound_pulse(o: Orb) -> void:
 				tw.credit(got, "elem:sound")
 				if ks > 0.0 and other != o:
 					Share.carry(tw, other, Share.SOUND_F * ks, "share:sound", o.position, other.position.distance_to(o.position) / maxf(r, 1.0))
+				if other != o and Share.has(tw, "phantasm") and tw.lv(Elem.ILLUSION) > 0 and randf() < Share.illu_ch(tw, tw.lv(Elem.ILLUSION)):
+					other.confuse(Rules.illu_t * Share.dur(tw), Share.has(tw, "nightmare"))  # 환청 (상성)
 	if pulses.size() < 40:
 		pulses.append([o.position, r, 0.3])
 

@@ -1,5 +1,5 @@
 class_name Glyph
-## 글 대신 쓰는 그림: 속성 15개·공격방식 16개·카드 종류·메뉴 버튼·결과 칩.
+## 글 대신 쓰는 그림: 속성 17개·공격방식 16개·카드 종류·메뉴 버튼·결과 칩.
 ## Icons(점수 줄·배지용)와 같은 규칙: c는 가운데, s는 반지름 정도의 크기.
 
 
@@ -101,6 +101,20 @@ static func elem(ci: CanvasItem, e: int, c: Vector2, s: float, col := Color(-1, 
 				p.append(c + Vector2.from_angle(-PI / 2.0 + PI * i / 5.0) * (s * (1.0 if i % 2 == 0 else 0.42)))
 			ci.draw_colored_polygon(p, k)
 			ci.draw_circle(c, s * 0.18, k.lightened(0.6))
+		Elem.BLOOD:
+			# 핏방울 + 아래 작은 방울
+			var p := PackedVector2Array([c + Vector2(0, -s)])
+			for i in 13:
+				var t := -PI * 0.15 + PI * 1.3 * i / 12.0
+				p.append(c + Vector2(0, s * 0.15) + Vector2(cos(t), sin(t)) * s * 0.55)
+			ci.draw_colored_polygon(p, k)
+			ci.draw_circle(c + Vector2(s * 0.62, s * 0.72), s * 0.2, k)
+			ci.draw_arc(c + Vector2(0, s * 0.15), s * 0.3, PI * 0.6, PI * 0.95, 6, k.lightened(0.55), _w(s, 0.11))
+		Elem.ILLUSION:
+			# 겹친 두 원 (흐린 쪽이 환영) + 가운데 눈
+			ci.draw_circle(c + Vector2(s * 0.3, -s * 0.05), s * 0.62, Color(k, 0.45))
+			ci.draw_circle(c + Vector2(-s * 0.25, s * 0.05), s * 0.62, k)
+			ci.draw_circle(c + Vector2(-s * 0.25, s * 0.05), s * 0.22, Color(0.06, 0.07, 0.1))
 
 
 ## 불꽃 모양 (아래 둥글고 위 뾰족)

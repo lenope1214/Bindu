@@ -54,6 +54,21 @@ static var RILL_SLOW := 0.8  # 물길: 밟은 구체는 효과와 따로 늘 이
 static var RILL_T := 0.5  # 물길 감속 시간
 static var EARTH_ROOT := 0.4  # 다짐: 묶는 시간
 
+## 피 핏자국·환영 비춤 (2026-11-04 새 속성). 핏자국은 구체 자신이 지나간 길에만 (오브젝트와 고정 거리 장판 아님, ELEM-10)
+static var BLOOD_F := 0.3  # 피 핏자국: 밟은 구체에 효과 비율
+static var GORE_T := 1.5  # 핏자국이 남는 시간
+static var GORE_STEP := 36.0  # 핏자국 간격(px, 구체가 이만큼 움직일 때마다 한 점)
+static var GORE_MARK := 3.0  # 맞은 구체가 핏자국을 남기는 시간 (얼음 오래감을 곱함)
+static var ILLU_F := 0.4  # 환영 비춤: 옆 오브젝트 다음 공격에 실리는 효과 비율
+static var MIRROR_R := 220.0  # 비춤 둘레
+static var MIRROR_T := 2.0  # 비친 상이 남는 시간 (그 안에 쏜 다음 공격에)
+static var MIRROR_CD := 0.5  # 오브젝트마다 비추는 간격
+static var SEPSIS := 0.5  # 패혈: 멈춰 있어도 이동 속도의 이만큼 움직인 셈
+static var HUNGER := 0.15  # 굶주림: 핏자국을 밟은 구체가 받는 피해 +
+static var CLOT_STAG := 6.0  # 응고: 핏자국을 밟은 구체 멈칫 거리(px)
+static var STANCH_T := 2.0  # 지혈: 핏자국 시간 배율
+static var NIGHTMARE := 1.5  # 악몽: 현혹된 구체가 받는 피해↑ 배율
+
 ## 상성 (2026-11-04, Elem.TAGS·AFF_RULES). 같은 오브젝트 안 두 속성 짝마다.
 static var AFF_CARRY := 1.5  # 강상성 속성의 특징 세기
 static var AFF_EFF := 1.2  # 강상성 속성의 효과 세기
@@ -126,10 +141,11 @@ static func aff(tw: Object) -> Dictionary:
 
 
 ## 나르는 특징(자리) · 바꾸는 특징
-const SITE_E := [Elem.FIRE, Elem.WATER, Elem.ELECTRIC, Elem.POISON, Elem.SOUND, Elem.LIGHT, Elem.DARK, Elem.SOUL, Elem.STAR]
+const SITE_E := [Elem.FIRE, Elem.WATER, Elem.ELECTRIC, Elem.POISON, Elem.SOUND, Elem.LIGHT, Elem.DARK, Elem.SOUL, Elem.STAR, Elem.BLOOD, Elem.ILLUSION]
 const MOD_E := [Elem.WOOD, Elem.WIND, Elem.ICE, Elem.EARTH, Elem.METAL, Elem.TIME]
 const SITE_NOUN := {Elem.FIRE: "불", Elem.WATER: "물길", Elem.ELECTRIC: "전기", Elem.POISON: "독", Elem.SOUND: "음파",
-	Elem.LIGHT: "빛줄기", Elem.DARK: "끌어당김", Elem.SOUL: "혼불", Elem.STAR: "초신성"}
+	Elem.LIGHT: "빛줄기", Elem.DARK: "끌어당김", Elem.SOUL: "혼불", Elem.STAR: "초신성",
+	Elem.BLOOD: "핏자국", Elem.ILLUSION: "비친 상"}
 const MOD_ADJ := {Elem.WOOD: "자라는", Elem.WIND: "바람에 실린", Elem.ICE: "얼어붙은", Elem.EARTH: "다져진", Elem.METAL: "날선", Elem.TIME: "되풀이되는"}
 ## 따로 이름을 준 칸 [자리, 바꾸는 특징] → [이름, 설명]
 const NAMED := {
@@ -262,7 +278,23 @@ static func am(tw: Object, e: int) -> float:
 		Elem.ELECTRIC:
 			if ids.has("ground"):
 				v = 0.0
+		Elem.BLOOD:
+			if ids.has("clot") or ids.has("stanch"):
+				v *= AFF_WEAK
+		Elem.ILLUSION:
+			if ids.has("mirage"):
+				v *= AFF_WEAK
 	return v
+
+
+## 피 출혈 세기 (100px마다)
+static func bleed_k(tw: Object, l: int, rm := 1.0) -> float:
+	return Rules.blood_dmg * l * rm * am(tw, Elem.BLOOD)
+
+
+## 환영 현혹 확률
+static func illu_ch(tw: Object, l: int) -> float:
+	return minf(Rules.illu_ch * l, Rules.illu_max) * am(tw, Elem.ILLUSION)
 
 
 ## 물 감속 배율 (1에 가까울수록 약함): 기본 감속을 상성 세기 m만큼
@@ -361,6 +393,11 @@ static func apply(tw: Object, o: Orb, f: float, key: String) -> void:
 					o.soul_lv = l
 					o.soul_src = tw
 				o.soul_t = maxf(o.soul_t, Rules.soul_t * dm * minf(f, 1.0))
+			Elem.BLOOD:
+				o.bleed(bleed_k(tw, l, rm) * f, Rules.blood_t * dm, tw, key, has(tw, "sepsis"))
+			Elem.ILLUSION:
+				if randf() < illu_ch(tw, l) * minf(f, 1.0):
+					o.confuse(Rules.illu_t * dm, has(tw, "nightmare"))
 			_:
 				continue
 		n += 1
@@ -519,3 +556,65 @@ static func aff_hit(tw: Object, o: Orb, k: float, lit: bool, had_chill: float) -
 			other.slow(slow_f(els[Elem.WATER], m), Rules.water_t * dm)
 	if tw.main.pulses.size() < 40:
 		tw.main.pulses.append([o.position, r, 0.2])
+
+
+## 피 핏자국: 핏자국을 남기는 구체가 GORE_STEP 움직일 때마다 (Orb._blood_step). 장판은 그 구체가 지나간 자리에만
+static func gore(o: Orb) -> void:
+	var tw: Object = o.gore_src
+	if not is_instance_valid(tw) or tw.main == null or tw.main.zones.get_child_count() >= 160:
+		return
+	var kb := k(tw, Elem.BLOOD)
+	if kb <= 0.0:
+		return
+	var old_tag: String = tw.tag
+	tw.tag = "share:blood"
+	var z: Zone = tw.main.spawn_zone("gore", tw.plv, o.position, tw)
+	tw.tag = old_tag
+	z.amt = kb
+	z.maker = o
+	z.life = GORE_T * dur(tw) * (STANCH_T if has(tw, "stanch") else 1.0)
+	z.max_life = z.life
+
+
+## 핏자국을 밟은 구체 (Zone gore, 같은 구체는 0.5초에 한 번, 핏자국을 남긴 구체는 빼고)
+static func gore_step(tw: Object, o: Orb, amt: float, at: Vector2, stage: float) -> void:
+	carry(tw, o, BLOOD_F * amt, "share:blood", at, stage)
+	if o.hp <= 0.0:
+		return
+	if has(tw, "clot"):
+		o.stagger(CLOT_STAG)
+	if has(tw, "hunger"):
+		o.vuln(Rules.dark_t, HUNGER)
+
+
+## Tower.hit에서: 피가 든 오브젝트가 맞힌 구체는 한동안 핏자국을 남긴다 · 환영이 든 오브젝트는 옆 오브젝트에 상을 비춘다
+static func mark(tw: Object, o: Orb) -> void:
+	if o.hp <= 0.0 or not has_carry(tw):
+		return
+	if k(tw, Elem.BLOOD) > 0.0:
+		o.gore_src = tw
+		o.gore_t = maxf(o.gore_t, GORE_MARK * dur(tw))
+	var ki := k(tw, Elem.ILLUSION)
+	if ki > 0.0 and tw.mirror_cd <= 0.0 and tw.main:
+		tw.mirror_cd = MIRROR_CD
+		var r := MIRROR_R * wide(tw)
+		var near: Array = []
+		for t2 in tw.main.towers.get_children():
+			if t2 != tw and is_instance_valid(t2) and not t2.is_queued_for_deletion() and t2.position.distance_to(tw.position) < r:
+				near.append(t2)
+		near.sort_custom(func(a, b): return a.position.distance_to(tw.position) < b.position.distance_to(tw.position))
+		for t2 in near.slice(0, 2 if has(tw, "mirage") else 1):
+			t2.mirror_src = tw
+			t2.mirror_t = MIRROR_T
+			t2.mirror_f = ILLU_F * ki
+
+
+## 비친 상을 받은 오브젝트가 다음에 맞힐 때 (Tower.hit): 비춘 오브젝트 효과를 이 구체에 (한 번 쓰면 사라짐)
+static func reflect(tw: Object, o: Orb) -> void:
+	var src: Object = tw.mirror_src
+	tw.mirror_src = null
+	if not is_instance_valid(src) or src == tw or o.hp <= 0.0:
+		return
+	carry(src, o, tw.mirror_f, "share:illusion", tw.position, 0.0)
+	if tw.main and tw.main.pulses.size() < 40:
+		tw.main.beam(src.position, tw.position, Elem.COLORS[Elem.ILLUSION])

@@ -89,6 +89,18 @@ var echo_src: Object = null
 var soul_t := 0.0  # 영혼 넋: 남은 시간 안에 죽으면 확률로 혼불
 var soul_lv := 0
 var soul_src: Object = null
+var bleed_t := 0.0  # 피 출혈: 남은 시간 동안 움직인 거리만큼 피해
+var bleed_k := 0.0  # 출혈: 100px마다 피해
+var bleed_src: Object = null
+var bleed_key := "elem:blood"
+var bleed_sep := false  # 상성 패혈: 중독된 동안은 멈춰 있어도 피해가 흐름
+var bleed_pos := Vector2.ZERO  # 지난 프레임 자리 (움직인 거리)
+var gore_src: Object = null  # 피 핏자국: 이 오브젝트 효과를 지나간 길에 남긴다 (Share.gore)
+var gore_t := 0.0
+var gore_acc := 0.0
+var confuse_t := 0.0  # 환영 현혹: 남은 시간 동안 왔던 길을 되돌아 걷는다
+var confuse_cd := 0.0
+var dread := false  # 상성 악몽: 현혹된 동안 받는 피해↑ x1.5
 var amp := {}  # 키 → [받는 피해 증가, 남은 시간] (중앙 기술 낙인 brand 등)
 var silence_t := 0.0  # 저항·굳셈을 잠깐 끔 (초신성 3종 이상 등), 보스 부하 소환이 멈춘다
 var push_budget := PUSH_BUDGET
@@ -166,6 +178,8 @@ func step(delta: float) -> void:
 	if tune_t > 0.0: tune_t = maxf(tune_t - delta, 0.0)
 	if ring_cd > 0.0: ring_cd = maxf(ring_cd - delta, 0.0)
 	if soul_t > 0.0: soul_t = maxf(soul_t - delta, 0.0)
+	if confuse_cd > 0.0: confuse_cd = maxf(confuse_cd - delta, 0.0)
+	if gore_t > 0.0: gore_t = maxf(gore_t - delta, 0.0)
 	if silence_t > 0.0: silence_t = maxf(silence_t - delta, 0.0)
 	if not amp.is_empty():
 		for key in amp.keys():
@@ -214,13 +228,38 @@ func step(delta: float) -> void:
 		_late_step(delta, mult)
 		if digest_t > 0.0:
 			mult = 0.0
-	if swirl != 0.0 and position.distance_to(target) > 60.0:
+	if confuse_t > 0.0:
+		# 환영 현혹: 왔던 길을 되돌아 걷는다 (중앙에서 멀어지는 쪽으로, 느리게)
+		confuse_t = maxf(confuse_t - delta, 0.0)
+		if confuse_t <= 0.0:
+			dread = false
+		position += (position - target).normalized() * speed * mult * Rules.illu_spd * delta
+	elif swirl != 0.0 and position.distance_to(target) > 60.0:
 		# 소용돌이 맵: 중앙을 향하되 옆으로 비껴 나선을 그린다. 중앙에 가까울수록 빨라진다 (MapRule 회오리)
 		mult *= MapRule.spiral_speed(position.distance_to(target))
 		position += (target - position).normalized().rotated(swirl) * speed * mult * delta
 	else:
 		position = position.move_toward(target, speed * mult * delta)
+	_blood_step(delta)
 	_redraw_if_changed()
+
+
+## 피: 이번 프레임 움직인 거리(밀림 포함, 순간이동처럼 튄 것은 이동 속도 3배까지만)만큼 출혈 피해, 핏자국 남기기
+func _blood_step(delta: float) -> void:
+	var moved := minf(position.distance_to(bleed_pos), speed * 3.0 * delta + 4.0)
+	bleed_pos = position
+	if bleed_t > 0.0:
+		bleed_t = maxf(bleed_t - delta, 0.0)
+		var m := moved
+		if bleed_sep and poison_t > 0.0:
+			m = maxf(m, speed * 0.5 * delta)
+		if m > 0.0:
+			_credit(bleed_src, hurt(bleed_k * m / 100.0, false, bleed_src), false, bleed_key)
+	if gore_t > 0.0 and is_instance_valid(gore_src):
+		gore_acc += moved
+		if gore_acc >= Share.GORE_STEP:
+			gore_acc = 0.0
+			Share.gore(self)
 
 
 ## 구체는 위치가 바뀌어도 다시 그릴 필요가 없다(노드 위치로 옮겨진다). 모양을 바꾸는 상태가 달라졌을 때만 다시 그린다.
@@ -242,7 +281,7 @@ func _redraw_if_changed() -> void:
 	# 체력 고리는 24칸으로 그려 48단계면 충분하다
 	var sg := int(flash > 0.0) | int(poison_t > 0.0) << 1 | int(burn_t > 0.0) << 2 | int(vuln_t > 0.0) << 3 \
 		| int(slow_timer > 0.0) << 4 | int(sturdy and silence_t <= 0.0) << 5 | int(silence_t > 0.0) << 7 \
-		| state << 8 | (int(ring) + 1 if tune_t > 0.0 else 0) << 11 | roundi(clampf(hp / max_hp, 0.0, 1.0) * 48.0) << 14 \
+		| int(bleed_t > 0.0) << 6 | state << 8 | (int(ring) + 1 if tune_t > 0.0 else 0) << 11 | roundi(clampf(hp / max_hp, 0.0, 1.0) * 48.0) << 14 \
 		| int(radius()) << 22
 	if kind == Kind.FAST:
 		sg |= posmod(roundi((target - position).angle() / TAU * 90.0), 90) << 30
@@ -258,6 +297,8 @@ func _redraw_if_changed() -> void:
 	sg ^= spin * 1000003
 	if amp.has("brand"):
 		sg ^= 0x5bd1e995
+	if confuse_t > 0.0:
+		sg ^= 0x2c1b3c6d
 	if sg != _sig:
 		_sig = sg
 		queue_redraw()
@@ -267,16 +308,21 @@ func _redraw_if_changed() -> void:
 ## 어둠 "받는 피해 +30%"·씨앗 바람 등 증폭이 어느 피해 기록에도 안 잡혔다).
 ## hurt가 곱하는 받는 피해 배율 (가둠·약화·증폭). 보호막은 빼고.
 func hurt_mul() -> float:
-	var m := 1.0 + vuln_k if vuln_t > 0.0 else 1.0
+	var m := 1.0 + _vk() if vuln_t > 0.0 else 1.0
 	for v in amp.values():
 		m *= 1.0 + v[0]
 	return m
 
 
+## 받는 피해↑ 세기 (상성 악몽: 현혹된 동안 x1.5)
+func _vk() -> float:
+	return vuln_k * (Share.NIGHTMARE if dread and confuse_t > 0.0 else 1.0)
+
+
 func hurt(amount: float, crit := false, source = null) -> float:
 	if is_instance_valid(source):
 		amount *= source.final_damage_mul()
-	var d := amount * (1.0 + vuln_k if vuln_t > 0.0 else 1.0)
+	var d := amount * (1.0 + _vk() if vuln_t > 0.0 else 1.0)
 	last_rx = false
 	if not amp.is_empty():
 		for v in amp.values():
@@ -563,6 +609,33 @@ func vuln(duration: float, amount := -1.0, src: Object = null, sh := false) -> v
 	vuln_t = maxf(vuln_t, duration)
 
 
+## 피 출혈: 100px 움직일 때마다 k 피해 (더 센 출혈이면 바꿔 건다)
+func bleed(k: float, duration: float, src: Object = null, key := "elem:blood", sep := false) -> void:
+	if bleed_t <= 0.0 or k >= bleed_k:
+		bleed_k = k
+		bleed_src = src
+		bleed_key = key
+		bleed_sep = sep
+		if bleed_t <= 0.0:
+			bleed_pos = position
+	bleed_t = maxf(bleed_t, duration)
+
+
+## 환영 현혹: 걸렸으면 true. 같은 구체는 illu_cd초에 한 번, 보스·굳센 구체는 절반 시간
+func confuse(duration: float, nightmare := false) -> bool:
+	if confuse_cd > 0.0 or confuse_t > 0.0:
+		return false
+	duration *= MapRule.cc_k()
+	if kind == Kind.BOSS:
+		duration *= 0.5
+	if sturdy and silence_t <= 0.0:
+		duration *= 0.5
+	confuse_t = duration
+	confuse_cd = Rules.illu_cd + duration
+	dread = nightmare
+	return true
+
+
 ## 냉기가 3 쌓이면 1초 빙결.
 ## 나무 휘감기: 덩굴이 감길수록 느려지고 3이 차면 묶임. freeze_t: 묶이는 시간 배율 (얼음 오래감)
 func entangle(amount: float, freeze_t := 1.0) -> void:
@@ -669,6 +742,16 @@ func _draw() -> void:
 	elif root_immune > 0.0:
 		# 기절 면역: 옅은 흰 고리
 		draw_arc(Vector2.ZERO, r + 6.0, 0, TAU, 24, Color(1, 1, 1, 0.35), 1.5)
+	if bleed_t > 0.0:
+		# 출혈: 아래로 맺힌 핏방울
+		var bc: Color = Elem.COLORS[Elem.BLOOD]
+		draw_circle(Vector2(0, r + 4.0), 3.0, bc)
+		draw_colored_polygon(PackedVector2Array([Vector2(-2.6, r + 3.0), Vector2(0, r - 2.0), Vector2(2.6, r + 3.0)]), bc)
+	if confuse_t > 0.0:
+		# 현혹: 머리 위 도는 물결 두 개
+		var ic: Color = Elem.COLORS[Elem.ILLUSION]
+		draw_arc(Vector2(-4.0, -r - 6.0), 4.0, PI, TAU, 8, ic, 2.0)
+		draw_arc(Vector2(4.0, -r - 6.0), 4.0, 0.0, PI, 8, ic, 2.0)
 	if tune_t > 0.0:
 		# 울림: 쌓인 만큼 분홍 호
 		var rc: Color = Elem.COLORS[Elem.SOUND]

@@ -17,7 +17,8 @@ var hp := 1.0  # 바위 벽
 var dead := false
 var src := ""  # 피해 출처 (Tower.src 키, 비면 직접 타격)
 var amt := 1.0  # 물길 세기 (Share.k 물)
-var rill_cd := {}  # 물길: 구체 → 다시 효과를 줄 수 있는 남은 수명
+var rill_cd := {}  # 물길·핏자국: 구체 → 다시 효과를 줄 수 있는 남은 수명
+var maker: Object = null  # 핏자국을 남긴 구체 (자기 핏자국은 밟지 않음)
 var boost := 1.0  # 축적·삼연이 실린 장판·바위·블랙홀 (Tower.fire_boost)
 var vel := Vector2.ZERO  # 움직이는 장판 (블랙홀, 물 흐름)
 var dir := Vector2.RIGHT
@@ -38,9 +39,11 @@ var feeding := true  # trail: 탄이 아직 날아가며 점을 더하는 중
 var dps := 0.0  # trail: 안에 있는 구체에 초당 피해 (레벨 배율 전)
 
 ## 효과 줄이기(설정)에서 옅게 그리는 장판: 물길·투척 장판. 블랙홀·바위 벽은 막거나 끌어서 그대로
-const SOFT := ["trail", "rill"]
+const SOFT := ["trail", "rill", "gore"]
 ## 모양이 바뀌지 않고 옅어지기만 하는 장판: 한 번 그리고 self_modulate로 옅게 (물길이 100개 가까이 깔려 매 프레임 다시 그리던 것). 바위 벽은 아예 그대로
-const STILL := ["rill"]
+const STILL := ["rill", "gore"]
+## 구체 자신이 지나간 길에 남는 장판 (피 핏자국, Share.gore). 오브젝트와 고정 거리가 아니다 (ELEM-10)
+const ORB_PATH := ["gore"]
 
 
 func setup(k: String, l: int, tower: Tower) -> void:
@@ -52,6 +55,8 @@ func setup(k: String, l: int, tower: Tower) -> void:
 			radius = 100.0 + 10.0 * (l - 1); max_life = 3.0
 		"rill":
 			radius = 22.0; max_life = 1.0
+		"gore":
+			radius = 16.0; max_life = Share.GORE_T
 		"rock":
 			radius = Rules.t("wall_r"); max_life = 12.0; hp = Rules.t("wall_hp") * l
 			if is_instance_valid(tower):
@@ -178,6 +183,11 @@ func affect(orbs: Array, delta: float) -> void:
 					rill_cd[o] = life - 0.5
 					o.slow(Share.RILL_SLOW, Share.RILL_T)  # 효과와 따로 늘 느려짐 (제어 회복 2026-11-04)
 					Share.carry(owner_tower, o, Share.WATER_F * amt, "share:water", position, 1.0 - life / maxf(max_life, 0.01))
+			"gore":
+				# 피 핏자국: 뒤따라 밟은 구체에 오브젝트 효과 (같은 구체는 0.5초에 한 번, 남긴 구체는 빼고)
+				if o != maker and is_instance_valid(owner_tower) and (not rill_cd.has(o) or life <= rill_cd[o]):
+					rill_cd[o] = life - 0.5
+					Share.gore_step(owner_tower, o, amt, position, 1.0 - life / maxf(max_life, 0.01))
 			"rock":
 				var away: Vector2 = (o.position - position).normalized()
 				o.position = position + away * (radius + o.radius())
@@ -272,6 +282,12 @@ func _draw() -> void:
 			draw_circle(Vector2.ZERO, 10.0, Color(0, 0, 0))
 		"rill":
 			_ground(Elem.COLORS[Elem.WATER], a, 0.25)
+		"gore":
+			# 핏자국: 작은 핏방울 셋 (테두리 없이)
+			var bc: Color = Elem.COLORS[Elem.BLOOD]
+			draw_circle(Vector2.ZERO, radius * 0.75, Color(bc, 0.45 * a))
+			draw_circle(Vector2(radius * 0.6, radius * 0.35), radius * 0.35, Color(bc, 0.4 * a))
+			draw_circle(Vector2(-radius * 0.5, -radius * 0.45), radius * 0.25, Color(bc, 0.4 * a))
 		"rock":
 			var pts := PackedVector2Array()
 			for i in 7:

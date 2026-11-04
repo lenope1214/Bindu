@@ -3,16 +3,17 @@ class_name Elem
 ## - 겹친 속성마다 고유 공격(FORM)이 모두 발사된다.
 ## - 모든 공격에 겹친 속성 전부의 부가효과(RIDER)가 붙는다.
 ## - 속성마다 효과(RIDER) 하나와 특징(TRAIT) 하나. 특징은 같은 오브젝트의 모든 효과를 실어 나른다 (Share, 2026-11-03).
-##   정해 둔 조합 공격은 없다. 두 속성 짝 105개(REACTIONS)는 도감·알림용 이름표일 뿐이다.
+##   정해 둔 조합 공격은 없다. 두 속성 짝 136개(REACTIONS)는 도감·알림용 이름표일 뿐이다.
 
-enum { FIRE, WOOD, WATER, ELECTRIC, WIND, ICE, EARTH, DARK, LIGHT, POISON, METAL, SOUND, TIME, SOUL, STAR }
+enum { FIRE, WOOD, WATER, ELECTRIC, WIND, ICE, EARTH, DARK, LIGHT, POISON, METAL, SOUND, TIME, SOUL, STAR, BLOOD, ILLUSION }
 
-const ALL := [FIRE, WOOD, WATER, ELECTRIC, WIND, ICE, EARTH, DARK, LIGHT, POISON, METAL, SOUND, TIME, SOUL, STAR]
+const ALL := [FIRE, WOOD, WATER, ELECTRIC, WIND, ICE, EARTH, DARK, LIGHT, POISON, METAL, SOUND, TIME, SOUL, STAR, BLOOD, ILLUSION]
 
 const NAMES := {
 	FIRE: "불", WOOD: "나무", WATER: "물", ELECTRIC: "전기", WIND: "바람", ICE: "얼음",
 	EARTH: "땅", DARK: "어둠", LIGHT: "빛", POISON: "독", METAL: "금속",
 	SOUND: "소리", TIME: "시간", SOUL: "영혼", STAR: "별",
+	BLOOD: "피", ILLUSION: "환영",
 }
 
 const COLORS := {
@@ -31,6 +32,8 @@ const COLORS := {
 	TIME: Color(0.95, 0.8, 0.4),
 	SOUL: Color(0.82, 0.62, 1.0),
 	STAR: Color(1.0, 0.93, 0.68),
+	BLOOD: Color(0.86, 0.12, 0.2),
+	ILLUSION: Color(0.55, 0.95, 0.95),
 }
 
 ## 속성 기호: 이름 첫 글자를 검은 테두리로 (색이 밝아도 어두워도 읽히게). c는 글자 가운데.
@@ -58,6 +61,8 @@ const FORM := {
 	TIME: "시계침 (앞쪽을 왕복하며 훑음)",
 	SOUL: "혼불 (구체를 쫓아감)",
 	STAR: "없음 (어느 공격방식이든 초신성은 같은 모양)",
+	BLOOD: "없음 (지금 공격방식 그대로)",
+	ILLUSION: "없음 (지금 공격방식 그대로)",
 }
 
 ## 특징 (2026-11-03 특징 공유): 이 속성이 든 오브젝트의 효과(적중 효과, RIDER)를 어떻게 다른 구체·때·자리로 실어 나르는지.
@@ -81,10 +86,12 @@ const TRAIT := {
 	TIME: "조금 뒤 한 번 더: 맞힌 구체와 자리에 닿은 구체에 0.8초 뒤 효과 50% 한 번 더",
 	SOUL: "혼불이 실어 감: 소환된 혼불이 이 오브젝트의 공격처럼 맞혀 모든 효과를 그대로 건다",
 	STAR: "초신성에 실음: 초신성이 맞힌 구체 모두에 효과 100%",
+	BLOOD: "핏자국에 남김: 맞은 구체가 지나간 길에 핏자국(1.5초), 뒤따라 밟은 구체에 효과 30%",
+	ILLUSION: "옆 오브젝트에 비춤: 둘레 220 안 가장 가까운 다른 오브젝트의 다음 공격에 이 오브젝트 효과 40%",
 }
 
 ## 특징이 실어 나를 수 있는 효과(구체에 걸리는 적중 효과)
-const CARRY := [FIRE, WOOD, WATER, ELECTRIC, ICE, EARTH, DARK, POISON, METAL, SOUND, TIME, SOUL]
+const CARRY := [FIRE, WOOD, WATER, ELECTRIC, ICE, EARTH, DARK, POISON, METAL, SOUND, TIME, SOUL, BLOOD, ILLUSION]
 
 ## 카드 간소화용 짧은 이름. 부가효과(적중 효과)는 맞힌 구체에, 형태 성질은 공격 모양(지나간 길·끝 자리)에 붙는다.
 ## 두 이름이 같으면 안 된다 (2026-10-31 소리 울림·울림 → 형태는 잔향)
@@ -113,6 +120,8 @@ const BRIEF := {
 	TIME: "맞은 구체가 잠시 동안 받은 피해 일부를 나중에 한 번 더 받아요.",
 	SOUL: "맞은 구체가 곧 죽으면 확률로 다른 구체를 쫓는 혼불이 나와요.",
 	STAR: "주변과 자신의 공격 피해를 복사해 모으고, 다 차면 폭발해요.",
+	BLOOD: "맞은 구체가 움직이는 만큼 피해를 줘요. 빠른 구체일수록 아파요.",
+	ILLUSION: "확률로 구체가 잠깐 왔던 길을 되돌아가요.",
 }
 
 
@@ -140,9 +149,11 @@ const RIDER := {
 	TIME: "피해 되풀이: {time_t}초간 받은 피해의 일부를 한 번 더 받음",
 	SOUL: "혼불 소환: {soul_t}초 안에 죽으면 확률로 혼불이 나와 다른 구체를 쫓음",
 	STAR: "피해 모으기: 둘레({star_r}) 다른 오브젝트 피해의 {star_take%}%(+{star_lv%}%/레벨)를 복사해 모으고, 다 차면 초신성 (별만 들면 x{star_pure}, 보스는 한 번에 체력 {star_boss_cap%}%까지)",
+	BLOOD: "출혈: {blood_t}초간 움직인 거리 100마다 피해 {blood_dmg} (x 피 레벨, 멈춰 있으면 피해 없음)",
+	ILLUSION: "현혹: 확률 {illu_ch%}%(레벨마다, 최대 {illu_max%}%)로 {illu_t}초간 왔던 길을 되돌아 걸음 (같은 구체는 {illu_cd}초에 한 번, 보스는 절반)",
 }
 
-## 두 속성 짝 105개 (id는 도감 저장과 맞추려고 예전 특수 반응 id를 그대로 쓴다). 이름·설명은 특징 공유에서 만든다 (_build_pairs)
+## 두 속성 짝 136개 (2026-11-04 피·환영 31개 더함, id는 도감 저장과 맞추려고 예전 특수 반응 id를 그대로 쓴다). 이름·설명은 특징 공유에서 만든다 (_build_pairs)
 const PAIRS := [
 	["burning", FIRE, WOOD, Color(1.0, 0.62, 0.1)],
 	["steam", FIRE, WATER, Color(0.85, 0.88, 0.94)],
@@ -249,14 +260,46 @@ const PAIRS := [
 	["reverb", SOUND, TIME, Color(0.95, 0.7, 0.6)],
 	["requiem", SOUND, SOUL, Color(0.75, 0.6, 0.85)],
 	["samsara", TIME, SOUL, Color(0.9, 0.75, 0.85)],
+	["blood_fire", BLOOD, FIRE, Color(0.93, 0.24, 0.21)],
+	["blood_wood", BLOOD, WOOD, Color(0.58, 0.39, 0.25)],
+	["blood_water", BLOOD, WATER, Color(0.58, 0.36, 0.60)],
+	["blood_electric", BLOOD, ELECTRIC, Color(0.93, 0.51, 0.23)],
+	["blood_wind", BLOOD, WIND, Color(0.73, 0.53, 0.53)],
+	["blood_ice", BLOOD, ICE, Color(0.78, 0.52, 0.60)],
+	["blood_earth", BLOOD, EARTH, Color(0.74, 0.29, 0.24)],
+	["blood_dark", BLOOD, DARK, Color(0.72, 0.22, 0.53)],
+	["blood_light", BLOOD, LIGHT, Color(0.93, 0.56, 0.51)],
+	["blood_poison", BLOOD, POISON, Color(0.79, 0.54, 0.20)],
+	["blood_metal", BLOOD, METAL, Color(0.76, 0.40, 0.47)],
+	["blood_sound", BLOOD, SOUND, Color(0.93, 0.31, 0.45)],
+	["blood_time", BLOOD, TIME, Color(0.91, 0.46, 0.30)],
+	["blood_soul", BLOOD, SOUL, Color(0.84, 0.37, 0.60)],
+	["blood_star", BLOOD, STAR, Color(0.93, 0.53, 0.44)],
+	["illu_fire", ILLUSION, FIRE, Color(0.78, 0.66, 0.58)],
+	["illu_wood", ILLUSION, WOOD, Color(0.43, 0.80, 0.62)],
+	["illu_water", ILLUSION, WATER, Color(0.43, 0.77, 0.97)],
+	["illu_electric", ILLUSION, ELECTRIC, Color(0.78, 0.93, 0.60)],
+	["illu_wind", ILLUSION, WIND, Color(0.57, 0.95, 0.90)],
+	["illu_ice", ILLUSION, ICE, Color(0.62, 0.94, 0.97)],
+	["illu_earth", ILLUSION, EARTH, Color(0.58, 0.70, 0.61)],
+	["illu_dark", ILLUSION, DARK, Color(0.56, 0.64, 0.90)],
+	["illu_light", ILLUSION, LIGHT, Color(0.78, 0.97, 0.89)],
+	["illu_poison", ILLUSION, POISON, Color(0.64, 0.95, 0.57)],
+	["illu_metal", ILLUSION, METAL, Color(0.60, 0.81, 0.85)],
+	["illu_sound", ILLUSION, SOUND, Color(0.78, 0.72, 0.82)],
+	["illu_time", ILLUSION, TIME, Color(0.75, 0.88, 0.68)],
+	["illu_soul", ILLUSION, SOUL, Color(0.69, 0.78, 0.97)],
+	["illu_star", ILLUSION, STAR, Color(0.78, 0.94, 0.81)],
+	["illu_blood", ILLUSION, BLOOD, Color(0.71, 0.53, 0.57)],
 ]
 
-## 상성 (2026-11-04): 속성마다 성질 꼬리표 1~2개. 꼬리표끼리 규칙(AFF_RULES)으로 105짝의 강·약이 저절로 정해진다.
+## 상성 (2026-11-04): 속성마다 성질 꼬리표 1~2개. 꼬리표끼리 규칙(AFF_RULES)으로 136짝의 강·약이 저절로 정해진다.
 ## 새 속성은 꼬리표만 정하면 된다. 같은 오브젝트 안의 두 속성에만 걸린다 (Share.aff).
 const TAGS := {
 	FIRE: ["열"], WOOD: ["생명"], WATER: ["젖음"], ELECTRIC: ["전도"], WIND: ["기류"], ICE: ["차가움"],
 	EARTH: ["흙"], DARK: ["그늘"], LIGHT: ["빛"], POISON: ["부식"], METAL: ["단단함", "전도"],
 	SOUND: ["진동"], TIME: ["흐름"], SOUL: ["그늘"], STAR: ["빛", "열"],
+	BLOOD: ["피"], ILLUSION: ["환상"],
 }
 
 ## [꼬리표, 꼬리표, id, 이름, 강(true)·약(false), 설명]. 같은 꼬리표끼리는 SAME_AFF(강, 더하는 것 없음).
@@ -279,6 +322,13 @@ const AFF_RULES := [
 	["빛", "그늘", "eclipse", "일식", false, "치명타 확률·받는 피해↑ 절반, 대신 치명타가 나면 받는 피해↑를 그대로 2배 시간 동안"],
 	["전도", "흙", "ground", "접지", false, "전기가 튀지 않음, 대신 기절 확률 +20%"],
 	["부식", "생명", "wither", "시듦", false, "피해 증가 절반, 대신 중독된 구체가 15% 느려짐"],
+	["피", "부식", "sepsis", "패혈", true, "중독된 구체는 멈춰 있어도 출혈 피해가 움직일 때의 절반만큼 흐름"],
+	["피", "그늘", "hunger", "굶주림", true, "핏자국을 밟은 구체가 받는 피해 +15%"],
+	["피", "차가움", "clot", "응고", false, "출혈 절반, 대신 핏자국을 밟은 구체가 잠깐 멈칫"],
+	["피", "생명", "stanch", "지혈", false, "출혈 절반, 대신 핏자국이 2배 오래 남음"],
+	["환상", "진동", "phantasm", "환청", true, "음파에 닿은 구체도 현혹 확률을 한 번 더 봄"],
+	["환상", "그늘", "nightmare", "악몽", true, "현혹된 구체가 받는 피해↑ x1.5"],
+	["환상", "빛", "mirage", "신기루", false, "현혹 확률 절반, 대신 옆 오브젝트 둘에게 비춤"],
 ]
 const SAME_AFF := ["same", "닮음", true, "같은 성질끼리 (특징·효과가 함께 세짐)"]
 
