@@ -1,0 +1,21 @@
+notes 통과
+SPEC 통과 (실패 0, 확인한 기능 231개)
+FAIL TUT-07 play ch1 pc: 23단계 끝까지 (멈춘 단계 info, 지금 16)
+FAIL TUT-07 play ch1 pc: 지지 않고 3웨이브까지 (중앙 5)
+FAIL TUT-07 play ch1 touch: 23단계 끝까지 (멈춘 단계 info, 지금 16)
+FAIL TUT-07 play ch1 touch: 지지 않고 3웨이브까지 (중앙 8)
+TUTPLAY 실패 (실패 4)
+시드 1: 오류 0개 · FUZZR rules=3 map=plain tutor=false ui=1.15 modes=swarm,seal,fort,three
+시드 2: 오류 0개 · FUZZR rules=1 map=plain tutor=true ui=1.3 modes=glass,narrow
+시드 3: 오류 0개 · FUZZR rules=3 map=plain tutor=false ui=1.0 modes=glass,angry
+시드 4: 오류 0개 · FUZZR rules=1 map=spiral tutor=true ui=1.15 modes=glass,angry
+CONT w=4 OK
+CONT w=8 OK
+CONT w=12 OK
+RESULT wave=13 score=23557
+online 통과
+patch keys 통과
+rule keys 통과
+FAIL patch sections: server/app/patch_sections.json이 오래됨 (python3 tools/patch_keys.py)
+server 건너뜀 (python3에 fastapi·pytest·httpx 없음: pip install -r server/requirements-dev.txt)
+CHECK 실패: tutplay patchkeys

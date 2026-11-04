@@ -1,0 +1,29 @@
+ok   TUT-07 play ch1 pc: 연습 판 시작 (평원·랭크·모드 없음)
+ok   TUT-09 play ch1 pc: 1장 첫 단계에서 시작 (단계 1)
+ok   TUT-07 play ch1 pc: 23단계 끝까지 (멈춘 단계 없음, 지금 23)
+ok   TUT-07 play ch1 pc: 지지 않고 7웨이브까지 (중앙 1)
+ok   TUT-10 play ch1 pc: 이어하기 저장·판 수·누적 수·업적이 그대로
+ok   TUT-10 play ch1 pc: 끝나면 맵·규칙·모드·기술 묶음 되돌림, 도중 저장도 원래 값
+ok   TUT-09 play ch1 pc: 끝내면 이 기기에서 다시 자동으로 뜨지 않음
+ok   TUT-07 play ch1 touch: 연습 판 시작 (평원·랭크·모드 없음)
+ok   TUT-09 play ch1 touch: 1장 첫 단계에서 시작 (단계 1)
+ok   TUT-07 play ch1 touch: 23단계 끝까지 (멈춘 단계 없음, 지금 23)
+ok   TUT-07 play ch1 touch: 지지 않고 7웨이브까지 (중앙 8)
+ok   TUT-10 play ch1 touch: 이어하기 저장·판 수·누적 수·업적이 그대로
+ok   TUT-10 play ch1 touch: 끝나면 맵·규칙·모드·기술 묶음 되돌림, 도중 저장도 원래 값
+ok   TUT-09 play ch1 touch: 끝내면 이 기기에서 다시 자동으로 뜨지 않음
+ok   TUT-07 skip ch1 pc: 연습 판 시작 (평원·랭크·모드 없음)
+ok   TUT-09 skip ch1 pc: 1장 첫 단계에서 시작 (단계 1)
+ok   TUT-07 skip ch1 pc: 23단계 끝까지 (멈춘 단계 없음, 지금 23)
+ok   TUT-07 skip ch1 pc: 지지 않고 5웨이브까지 (중앙 10)
+ok   TUT-10 skip ch1 pc: 이어하기 저장·판 수·누적 수·업적이 그대로
+ok   TUT-10 skip ch1 pc: 끝나면 맵·규칙·모드·기술 묶음 되돌림, 도중 저장도 원래 값
+ok   TUT-09 skip ch1 pc: 끝내면 이 기기에서 다시 자동으로 뜨지 않음
+ok   TUT-07 skip ch3 touch: 연습 판 시작 (평원·랭크·모드 없음)
+ok   TUT-09 skip ch3 touch: 3장 첫 단계에서 시작 (단계 17)
+ok   TUT-07 skip ch3 touch: 23단계 끝까지 (멈춘 단계 없음, 지금 23)
+ok   TUT-07 skip ch3 touch: 지지 않고 5웨이브까지 (중앙 10)
+ok   TUT-10 skip ch3 touch: 이어하기 저장·판 수·누적 수·업적이 그대로
+ok   TUT-10 skip ch3 touch: 끝나면 맵·규칙·모드·기술 묶음 되돌림, 도중 저장도 원래 값
+ok   TUT-09 skip ch3 touch: 끝내면 이 기기에서 다시 자동으로 뜨지 않음
+TUTPLAY 통과 (실패 0)

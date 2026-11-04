@@ -165,11 +165,9 @@ func _act() -> void:
 			await process_frame
 			main.range_all = false
 		"info":
+			main._select_tower(fire)
 			main.tip_detail = true
 			main.touch_ui = true
-			main.tip_frame = Engine.get_process_frames()
-			await process_frame
-			main.tip_frame = Engine.get_process_frames()
 			await process_frame
 			main.tip_detail = false
 			main.touch_ui = cur_touch
