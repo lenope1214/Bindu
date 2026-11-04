@@ -2436,6 +2436,34 @@ func _meta_misc() -> void:
 	stale_row.mouse_exited.emit()
 	ok("DPS-02", main.dps_focus == null, "오브젝트가 삭제된 옛 DPS 줄에 올려도 해제된 참조를 읽지 않음")
 	stale_row.queue_free()
+	# 표 옮기기: 제목 줄 짧게 누르면 접기·펴기, 끌거나 꾹 누르면 집어 들고, 놓은 자리는 비율로 저장, 점수 줄과 겹치면 비킴
+	var h0: bool = main.dps_hidden
+	var dn := InputEventMouseButton.new()
+	dn.button_index = MOUSE_BUTTON_LEFT
+	dn.pressed = true
+	var up := InputEventMouseButton.new()
+	up.button_index = MOUSE_BUTTON_LEFT
+	up.pressed = false
+	main._dps_head_input(dn)
+	main._dps_head_input(up)
+	var tap_ok: bool = main.dps_hidden != h0 and main.dps_drag == 0
+	main._toggle_dps()
+	main._dps_head_input(dn)
+	main.dps_press = main.dps_panel.get_parent().get_local_mouse_position() + Vector2(50, 0)  # 누른 뒤 50 끈 것처럼
+	var mv := InputEventMouseMotion.new()
+	main._dps_head_input(mv)
+	var picked: bool = main.dps_drag == 2
+	var hp0: Vector2 = Meta.dps_pos
+	main._dps_head_input(up)
+	var dropped: bool = main.dps_drag == 0 and main.dps_hidden == h0 and (Meta.dps_pos == Vector2(-1, -1) or (Meta.dps_pos.x >= 0.0 and Meta.dps_pos.x <= 1.0 and Meta.dps_pos.y >= 0.0 and Meta.dps_pos.y <= 1.0))
+	Meta.dps_pos = hp0
+	main._update_hud(true)
+	var dodge := true
+	if main.hud.visible and not main.hud_chips.is_empty():
+		var c0: Rect2 = main.hud_chips[0][0]
+		var p: Vector2 = main._dps_place(main.hud.position + c0.position)
+		dodge = p.y >= main.hud.position.y + c0.end.y
+	ok("DPS-03", tap_ok and picked and dropped and dodge, "DPS 표 옮기기: 짧게 누르기=접기 %s, 끌기=집기 %s, 놓기=자리 저장 %s, 점수 줄 비킴 %s" % [tap_ok, picked, dropped, dodge])
 	_clear()
 
 	# 피해 1~3위 왕관·메달: 쉬는 시간 지난 웨이브 피해 순, 2개면 1위만, 1위가 바뀌면 왕관이 날아감, 설정으로 끔

@@ -333,6 +333,14 @@ var dps_list: VBoxContainer
 var dps_sig := ""  # 표를 다시 만들지 정하는 요약 (오브젝트·피해가 바뀔 때만)
 var dps_focus: Tower = null  # 표에서 마우스를 올린 오브젝트
 var dps_hidden := OS.has_feature("mobile")  # D: 표 접기 (Meta.dps_fold로 저장)
+var dps_drag := 0  # 표 옮기기: 0 아님 · 1 제목 줄을 누르는 중 · 2 옮기는 중
+var dps_press := Vector2.ZERO  # 제목 줄을 누른 자리 (표 부모 좌표)
+var dps_press_t := 0.0  # 누른 채 지난 시간 (꾹 누르기 DPS_HOLD초면 집어 든다)
+var dps_grab := Vector2.ZERO  # 집은 곳 - 표 왼쪽 위
+const DPS_HOLD := 0.35
+const DPS_TIP := "누르면 접기·펴기 (D)\n꾹 누르거나 끌면 표 옮기기 · 왼쪽 위에 놓으면 원래 자리로"
+const DPS_DRAG_MIN := 10.0
+const DPS_HOME := 40.0  # 기본 자리(왼쪽 위) 이만큼 안에 놓으면 기본 자리로 되돌린다
 var dps_choice_open := false  # 카드 선택 중엔 요약만, D로 상세를 잠깐 펼친다
 # 웨이브 중 실시간 DPS: 게임 시간 DPS_STEP초마다 오브젝트별 누적 피해(dealt)를 적어 두고 최근 DPS_WIN초 차이로 초당 피해 (이동 평균이라 덜 흔들림)
 const DPS_STEP := 0.5
@@ -1221,6 +1229,8 @@ func _build_dps(root: Control) -> void:
 	sb.bg_color = Color(0.02, 0.03, 0.05, 0.85)
 	sb.set_corner_radius_all(5)
 	sb.set_content_margin_all(6)
+	sb.set_border_width_all(1)
+	sb.border_color = Color(1, 0.9, 0.5, 0.0)  # 옮기는 동안만 보이는 테두리
 	dps_panel.add_theme_stylebox_override("panel", sb)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 4)
@@ -1231,7 +1241,8 @@ func _build_dps(root: Control) -> void:
 	dps_head.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	dps_head.add_theme_font_size_override("font_size", 14)
 	dps_head.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
-	dps_head.pressed.connect(_toggle_dps)
+	dps_head.gui_input.connect(_dps_head_input)  # 짧게 누르면 접기·펴기, 꾹 누르거나 끌면 옮기기 (pressed는 안 씀)
+	dps_head.tooltip_text = DPS_TIP
 	box.add_child(dps_head)
 	dps_scroll = ScrollContainer.new()
 	dps_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -1242,6 +1253,95 @@ func _build_dps(root: Control) -> void:
 	dps_scroll.add_child(dps_list)
 	dps_panel.visible = false
 	root.add_child(dps_panel)
+
+
+## 제목 줄 누르기: 놓을 때 옮기지 않았으면 접기·펴기, 꾹 누르거나(DPS_HOLD) 끌면(DPS_DRAG_MIN) 표를 집어 옮긴다.
+func _dps_head_input(e: InputEvent) -> void:
+	var par := dps_panel.get_parent() as Control
+	if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT:
+		if e.pressed:
+			dps_drag = 1
+			dps_press = par.get_local_mouse_position()
+			dps_press_t = 0.0
+		elif dps_drag > 0:
+			if dps_drag == 2:
+				_dps_drop()
+			else:
+				_toggle_dps()
+			dps_drag = 0
+		dps_head.accept_event()
+	elif e is InputEventMouseMotion and dps_drag == 1:
+		if par.get_local_mouse_position().distance_to(dps_press) > DPS_DRAG_MIN:
+			_dps_pick()
+
+
+## 표를 집어 든다 (꾹 누르기·끌기).
+func _dps_pick() -> void:
+	dps_drag = 2
+	dps_grab = dps_press - dps_panel.position
+	dps_head.tooltip_text = ""  # 옮기는 동안 말풍선이 표를 가리지 않게
+	dps_sig = ""
+
+
+## 옮기는 동안 표 왼쪽 위 (손가락·마우스를 따라, 화면 안).
+func _dps_drag_pos() -> Vector2:
+	var par := dps_panel.get_parent() as Control
+	var p := par.get_local_mouse_position() - dps_grab
+	return p.clamp(Vector2.ZERO, (par.size - dps_panel.size).max(Vector2.ZERO))
+
+
+## 놓기: 기본 자리 가까이면 되돌리고, 아니면 화면 안 빈 폭 비율로 저장 (창·화면 크기가 바뀌어도 같은 쪽).
+func _dps_drop() -> void:
+	var par := dps_panel.get_parent() as Control
+	var p := _dps_drag_pos()
+	var free := (par.size - dps_panel.size).max(Vector2.ONE)
+	if p.distance_to(_dps_home()) < DPS_HOME:
+		Meta.dps_pos = Vector2(-1, -1)
+	else:
+		Meta.dps_pos = (p / free).clamp(Vector2.ZERO, Vector2.ONE)
+	dps_head.tooltip_text = DPS_TIP
+	dps_sig = ""
+	_save_best()
+
+
+## 기본 자리: 점수 줄 아래 왼쪽.
+func _dps_home() -> Vector2:
+	var top := hud.position.y + hud.size.y + 8.0 if hud.visible else 8.0
+	if mp_bar.visible:
+		top += mp_bar.size.y + 4.0
+	if mp_act and mp_act.visible:
+		top += mp_act.size.y + 4.0
+	return Vector2(10, top)
+
+
+## 옮겨 둔 자리: 점수 줄·오른쪽 아래 버튼·기술 버튼·웨이브 시작 버튼과 겹치면 위나 아래로 비켜 화면 안에.
+func _dps_place(p: Vector2) -> Vector2:
+	var par := dps_panel.get_parent() as Control
+	var sz := dps_panel.size
+	var inv := par.get_global_transform().affine_inverse()
+	var blocks: Array[Rect2] = []
+	if hud.visible and not hud_chips.is_empty():
+		var hb := Rect2()
+		for c in hud_chips:
+			hb = c[0] if hb.size == Vector2.ZERO else hb.merge(c[0])
+		blocks.append(Rect2(hud.position + hb.position, hb.size).grow(4.0))
+	for c in [bar_box, start_btn, skip_badge, mp_bar, ver_label, legend] + skill_btns:
+		if c != null and c is Control and c.is_visible_in_tree():
+			blocks.append((inv * c.get_global_rect()).grow(4.0))
+	if phase == Phase.WAVE:
+		blocks.append((inv * _combo_rect()).grow(4.0))  # 오른쪽 위 콤보 상자 자리 (웨이브 중엔 언제든 뜰 수 있어 비워 둔다)
+	for _i in 3:
+		var r := Rect2(p, sz)
+		var moved := false
+		for b in blocks:
+			if r.intersects(b):
+				# 막는 것 위쪽 반이면 그 아래로, 아니면 그 위로
+				p.y = b.end.y if b.get_center().y < par.size.y / 2.0 else b.position.y - sz.y
+				moved = true
+				break
+		if not moved:
+			break
+	return p.clamp(Vector2(8, 8), (par.size - sz - Vector2(8, 8)).max(Vector2(8, 8)))
 
 
 func _toggle_dps() -> void:
@@ -1319,6 +1419,9 @@ func _refresh_dps() -> void:
 	dps_panel.visible = on
 	if not on:
 		dps_focus = null
+		if dps_drag == 2:
+			dps_head.tooltip_text = DPS_TIP
+		dps_drag = 0
 		return
 	# 표 밑에 오브젝트가 있으면(위쪽 끝에 놓은 것) 마우스를 표에 올리지 않은 동안 옅게 해서 보이게
 	var pr := get_canvas_transform().affine_inverse() * dps_panel.get_global_rect()
@@ -1333,20 +1436,31 @@ func _refresh_dps() -> void:
 			if pr.grow(14.0).has_point(arr[0]):
 				under = true
 				break
-	dps_panel.modulate.a = 0.4 if under else 1.0
-	# 점수 줄 아래, 왼쪽 아래 안내 글 위까지
-	var top := hud.position.y + hud.size.y + 8.0 if hud.visible else 8.0
-	if mp_bar.visible:
-		top += mp_bar.size.y + 4.0  # 멀티플레이 상태 줄 아래로
-	if mp_act and mp_act.visible:
-		top += mp_act.size.y + 4.0
-	dps_panel.position.y = top
+	dps_panel.modulate.a = 0.4 if under and dps_drag != 2 else 1.0
+	# 기본: 점수 줄 아래, 왼쪽 아래 안내 글 위까지. 옮겨 뒀으면 그 자리(줄 수는 화면 아래까지)
+	var home := _dps_home()
+	var top := home.y
+	var par := dps_panel.get_parent() as Control
+	var moved := Meta.dps_pos.x >= 0.0 or dps_drag == 2
+	if dps_drag == 1:
+		dps_press_t += get_process_delta_time()
+		if dps_press_t >= DPS_HOLD:
+			_dps_pick()  # 꾹 누르기: 손을 안 움직여도 집어 든다
+	if dps_drag == 2:
+		dps_panel.position = _dps_drag_pos()
+	elif moved:
+		dps_panel.position = _dps_place(Meta.dps_pos * (par.size - dps_panel.size).max(Vector2.ONE))
+	else:
+		dps_panel.position = home
+	(dps_panel.get_theme_stylebox("panel") as StyleBoxFlat).border_color = Color(1, 0.9, 0.5, 0.9 if dps_drag == 2 else 0.0)
 	var bottom := _bottom_free()
-	if choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and choice_box.get_rect().position.x < 320.0:
+	if moved:
+		bottom = par.size.y - 8.0  # 표 높이는 점수 줄 아래~화면 아래만큼까지, 넘치면 _dps_place가 위로 올린다
+	if not moved and choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and choice_box.get_rect().position.x < 320.0:
 		bottom = minf(bottom, choice_box.get_rect().position.y - maxf(24.0, _choice_headroom() + 4.0))  # 카드·선택 안내를 덮지 않게 (넘치면 굴려 본다)
-	if apply_btn.visible and apply_btn.get_rect().position.x < dps_panel.get_rect().end.x:
+	if not moved and apply_btn.visible and apply_btn.get_rect().position.x < dps_panel.get_rect().end.x:
 		bottom = minf(bottom, apply_btn.get_rect().position.y - 28.0)  # 폰 [적용] 버튼(누른 카드 위)을 덮지 않게
-	if guide_label.visible and guide_label.get_rect().position.x < 320.0:
+	if not moved and guide_label.visible and guide_label.get_rect().position.x < 320.0:
 		bottom = minf(bottom, guide_label.position.y - 4.0)  # 처음 안내 글 위까지만
 	var room := maxf(0.0 if apply_btn.visible else 48.0, bottom - top - 44.0)
 	var live := phase == Phase.WAVE
@@ -10148,6 +10262,15 @@ func combo_mul() -> float:
 	return 1.0 + 0.1 * mini(combo, 20)
 
 
+## 콤보 상자 자리 (화면 좌표, 높이는 끊김·진행 중 큰 쪽). DPS 표를 옮겨 둘 때도 이 자리를 피한다.
+func _combo_rect() -> Rect2:
+	var w := 180.0
+	var p := Vector2(ui_root.position.x + ui_root.size.x * ui_root.scale.x - 10.0 - w, ui_root.position.y + 40.0 * ui_root.scale.y + 8.0)
+	if legend.visible:
+		p.y = legend.get_global_rect().end.y + 8.0
+	return Rect2(p, Vector2(w, 64))
+
+
 ## 오른쪽 위(설명 버튼 아래) 콤보 상자: 콤보·점수 배율·남은 유지 시간·더 얻은 점수.
 ## 콤보는 웨이브 중에만 쌓이고(쉬는 시간엔 멈춰 다음 웨이브로 이어짐), 웨이브 중엔 설명 글이 꺼져 있어 이 자리가 빈다.
 func _draw_combo() -> void:
@@ -10157,9 +10280,7 @@ func _draw_combo() -> void:
 	if not live and combo_end[2] <= 0.0:
 		return
 	var w := 180.0
-	var p := Vector2(ui_root.position.x + ui_root.size.x * ui_root.scale.x - 10.0 - w, ui_root.position.y + 40.0 * ui_root.scale.y + 8.0)
-	if legend.visible:
-		p.y = legend.get_global_rect().end.y + 8.0
+	var p := _combo_rect().position
 	if not live:
 		var a: float = clampf(combo_end[2] / 0.5, 0.0, 1.0)
 		# 끊김: 콤보 그림 + 숫자(빨강, 줄 그음) + 얻은 점수
