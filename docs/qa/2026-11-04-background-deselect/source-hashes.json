@@ -1,0 +1,7 @@
+{
+  "scripts/main.gd": "66ad62be618aacea9e52944ea83cbd6b831111049e0fd3cc30eb777c9ec90260",
+  "scripts/card_dock.gd": "1d46f268f59c8f1d13da610c5de1776d4c0d4db7266bbe24398c181c23bd9ffc",
+  "tools/spec_check.gd": "fc9d4c6398b75299e399863bee868341d2d4fbddd1e42c9f53c7a3e23b115580",
+  "tools/carry_check.gd": "3f3749efab0bd16f0651d445d62b3c01cbafcf7bad00707b4e98134b3e3d6f81",
+  "docs/features.md": "7b47c149e91a6058da62b761fd76380ae4204ac2eff01b7948283fd628ca1dcd"
+}

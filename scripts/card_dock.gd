@@ -182,10 +182,16 @@ func over_ui(p: Vector2) -> bool:
 	if not active():
 		return false
 	for c: Control in [panel, footer, side, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
-			game.bar_box, game.hud, game.dps_panel, game.range_btn, game.zoom_btn,
+			game.hud, game.dps_panel, game.range_btn, game.zoom_btn,
 			game.guide_more, game.hide_btn, game.skip_btn, game.skip_n_btn]:
 		if c != null and c.is_visible_in_tree() and c.get_global_rect().has_point(p):
 			return true
+	var bar_rect := Rect2()
+	for c: Control in game.bar_box.get_children():
+		if c.is_visible_in_tree():
+			bar_rect = bar_rect.merge(c.get_global_rect()) if bar_rect.has_area() else c.get_global_rect()
+	if bar_rect.has_area() and bar_rect.has_point(p):
+		return true
 	for c: Control in game.skill_btns:
 		if c.is_visible_in_tree() and c.get_global_rect().has_point(p):
 			return true

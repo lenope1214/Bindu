@@ -289,6 +289,8 @@ func panel_regressions() -> void:
 		await settle()
 	ok("UI-32", main.card_dock.scroll.scroll_vertical > before and main.card_dock.shown_tower == target, "유지된 오브젝트 상세를 가상 휠로 스크롤")
 	await snap("inspector-scrolled")
+	await mouse_click(main.card_dock.side.get_global_rect().get_center())
+	ok("UI-32", main.card_dock.shown_tower == target, "패널 내부 클릭은 오브젝트 정보 유지")
 	refused.position = Vector2(640, 300)
 	await mouse_move(world(refused.position))
 	ok("UI-32", main.card_dock.shown_tower == refused, "다른 오브젝트 호버로 상세 교체")
@@ -296,9 +298,35 @@ func panel_regressions() -> void:
 	release.keycode = KEY_SHIFT
 	release.pressed = false
 	VirtualInput.send(release)
+	main.selected = [refused]
+	main.tip_tower = refused
+	await mouse_click(world(main.center()))
+	ok("UI-32", main.selected.is_empty() and main.card_dock.inspected_tower == null and main.tip_tower == null and not main.card_dock.side.visible, "빈 배경 클릭으로 오브젝트 선택·상세 해제")
+	await snap("inspector-dismissed")
+	main.bar_open = false
+	await settle()
+	await mouse_move(world(refused.position))
+	main.selected = [refused]
+	var bar_rect: Rect2 = main.bar_box.get_global_rect()
+	var empty_bar := bar_rect.position + bar_rect.size * Vector2(0.4, 0.5)
+	ok("UI-32", not main.card_dock.over_ui(empty_bar), "접힌 설정 줄의 빈 영역은 배경으로 처리")
+	await mouse_click(empty_bar)
+	ok("UI-32", main.selected.is_empty() and not main.card_dock.side.visible, "투명한 설정 영역 뒤의 배경 클릭도 선택 해제")
+	main.bar_open = true
+	await settle()
+	await mouse_move(world(refused.position))
+	ok("UI-32", main.card_dock.shown_tower == refused, "해제 후 새 오브젝트 호버로 다시 탐색")
+	await mouse_click(world(refused.position))
+	ok("UI-32", main.phase == main.Phase.AIM and main.moving == refused, "설치 오브젝트 클릭의 방향 편집 유지")
+	await mouse_click(world(main.center()))
+	ok("UI-32", main.phase == main.Phase.CHOOSE and main.moving == null and not main.card_dock.side.visible and main.picks_left == 2, "배경으로 방향 확정 후 오브젝트 상세 해제")
+	main._set_cards_hidden(true)
+	await settle()
 	await key(KEY_V)
 	await mouse_move(card_center(1))
 	ok("UI-32", main.card_dock.pic.mode == "card" and main.card_dock.inspected_tower == null and main.card_dock.pic.card.get("e", -1) == Elem.FIRE, "새 카드 호버로 오브젝트 상세 교체")
+	await mouse_click(world(main.center()))
+	ok("UI-32", main.card_dock.pic.mode == "card" and main.picks_left == 2, "배경 클릭은 카드 미리보기·남은 선택 보존")
 	await mouse_click(card_center(1))
 	ok("UI-32", held() and not main.card_dock.side.visible, "카드 선택 시 상세 숨김·카드 들기 유지")
 	await key(KEY_ESCAPE)

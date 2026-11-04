@@ -2373,8 +2373,21 @@ func _meta_misc() -> void:
 	dock.inspected_tower = dt
 	dock._update_side()
 	var retained_tower: bool = dock.shown_tower == dt and dock.side.visible and dock.scroll.mouse_filter == Control.MOUSE_FILTER_STOP
+	var old_pointer: Vector2 = main.pointer_position
+	main.pointer_position = main.get_canvas_transform() * main.center()
+	main.selected = [dt]
+	main.tip_tower = dt
+	var background_click := InputEventMouseButton.new()
+	background_click.button_index = MOUSE_BUTTON_LEFT
+	background_click.pressed = true
+	background_click.position = main.pointer_position
+	main._unhandled_input(background_click)
+	main._finish_box()
+	dock._update_side()
+	var dismissed_tower: bool = main.selected.is_empty() and dock.inspected_tower == null and main.tip_tower == null and not dock.side.visible
+	main.pointer_position = old_pointer
 	main.phase = old_phase
-	ok("UI-32", side_ok and retained_tower and tab_hidden, "설명창 내용 높이·보는 오브젝트 반대쪽 구석, 일반 판 Tab 버튼 없음")
+	ok("UI-32", side_ok and retained_tower and dismissed_tower and tab_hidden, "설명창 내용 높이·보는 오브젝트 반대쪽 구석, 일반 판 Tab 버튼 없음")
 	# UI-33: 설명창 그림 (오브젝트 정보: 미리보기·숫자 타일, 자세히: 곱셈 사슬·배율 막대 / 카드: 미리보기·타일)
 	var pic: InfoPanel = dock.pic
 	pic.show_tower(dt, false, 0.3, "이번 웨이브 몫", 300.0)

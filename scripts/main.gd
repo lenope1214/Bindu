@@ -4971,6 +4971,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if card_dock != null and card_dock.over_ui(event.position):
 		return
 	var mpos := _pointer_world()
+	if event.button_index == MOUSE_BUTTON_LEFT and phase in [Phase.CHOOSE, Phase.READY, Phase.WAVE] and _tower_at(mpos) == null:
+		card_dock.inspected_tower = null
+		tip_tower = null
+		if not (Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META)):
+			selected.clear()
 	if perk_mode:
 		return
 	if phase == Phase.WAVE and skill_arm != "":
@@ -7931,6 +7936,8 @@ func _back_to_choose() -> void:
 
 ## 방향 바꾸기를 끝내고 원래 단계로.
 func _end_move() -> void:
+	card_dock.inspected_tower = null
+	tip_tower = null
 	aim_right = false
 	if move_return == Phase.READY:
 		_enter_ready()
