@@ -1604,6 +1604,24 @@ func _perks() -> void:
 	main.coin_next = ""
 	main.perk_mode = false
 
+	# 특성 새로고침: 특성 고를 때마다 1번, 다른 특성으로 3개, 카드 새로고침 수는 그대로
+	main.rerolls_left = 2
+	main._start_perk()
+	var pr0: int = main.perk_rerolls
+	var before: Array = main.perk_offer.map(func(p): return p["id"])
+	var shown: bool = main.reroll_btn.visible
+	main._on_reroll()
+	var after: Array = main.perk_offer.map(func(p): return p["id"])
+	var diff: bool = after.size() == 3 and not after.any(func(id): return id in before)
+	var gone: bool = main.perk_rerolls == 0 and not main.reroll_btn.visible
+	main._on_reroll()  # 다 쓰면 그대로
+	var same: bool = main.perk_offer.map(func(p): return p["id"]) == after
+	main._start_perk()  # 다음 특성 선택에는 다시 1번
+	var pr1: int = main.perk_rerolls
+	ok("PERK-12", pr0 == 1 and shown and diff and gone and same and pr1 == 1 and main.rerolls_left == 2 and main.perk_mode,
+		"특성 새로고침: 선택마다 1번(%d·%d), 다른 특성 3개, 다 쓰면 버튼 숨김, 카드 새로고침 %d 그대로" % [pr0, pr1, main.rerolls_left])
+	main.perk_mode = false
+
 
 	_core_guard()
 

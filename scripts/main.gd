@@ -248,6 +248,7 @@ var skip_total := 0  # 이번에 넘기기로 한 웨이브 수 (표시용)
 var skip_stop := false  # 멈추기를 눌렀거나 중앙이 위험해짐: 이번 웨이브가 끝나면 멈춤
 var bank_picks: Array = []  # 미룬 고르기. 값은 쌓은 쉬는 시간의 웨이브 (속성 Lv2 확률을 그때 기준으로)
 var bank_rerolls := 0
+var perk_rerolls := 0  # 특성 선택 새로고침: 특성 고를 때마다 1번 (카드 새로고침과 따로)
 var bank_perks := 0  # 미룬 특성 고르기
 var coin_next := ""  # 운명의 동전을 던진 뒤 다음 특성: "double"(앞면) | "reroll"(뒷면) | ""
 ## 동전 연출: 0 없음, 1 공중에서 회전(누르면 떨어짐, 1초 뒤 자동), 2 떨어지며 느려짐, 3 모서리로 서서 흔들림, 4 쓰러져 결과.
@@ -2927,6 +2928,8 @@ func _start_perk() -> void:
 		var coin: Array = pool.filter(func(pk): return pk["id"] == "coin")
 		if not coin.is_empty() and not perk_offer.is_empty():
 			perk_offer[perk_offer.size() - 1] = coin[0]  # 연습 판: 운명의 동전도 한 번 보여 준다
+	if coin_next == "":
+		perk_rerolls = 0 if Modes.has("narrow") else 1  # 동전 뒤 새 3개는 같은 선택이라 다시 주지 않음
 	_show_perks()
 	if coin_next == "":
 		big_banner("특성 선택", Color(1, 0.85, 0.45))
@@ -2998,7 +3001,7 @@ func _show_perks() -> void:
 		choice_box.add_child(b)
 	cards_hidden = false
 	choice_box.visible = true
-	reroll_btn.visible = false
+	_update_reroll_btn()
 	match coin_next:
 		"double": hint.text = _th("동전 앞면! 고르는 특성이 두 번 적용돼요")
 		"reroll": hint.text = _th("동전 뒷면! 고르는 특성에 더해 이번 쉬는 시간 새로고침 +%d" % int(_perk_val("coin")))
@@ -3051,6 +3054,7 @@ func _coin_throw() -> void:
 	for c in choice_box.get_children():
 		c.queue_free()
 	choice_box.visible = false
+	reroll_btn.visible = false
 	banner_t = 0.0  # "특성 선택" 글이 남아 결과 글이 뒤로 밀리지 않게
 	banner_queue.clear()
 	toast_timer = 0.0
@@ -3326,7 +3330,10 @@ func _perk_text() -> String:
 
 
 func _on_reroll() -> void:
-	if phase != Phase.CHOOSE:
+	if phase != Phase.CHOOSE or coin_stage > 0:
+		return
+	if perk_mode:
+		_perk_reroll()
 		return
 	if rerolls_left <= 0:
 		_show_toast("이번 쉬는 시간의 새로고침을 다 썼어요")  # Q를 눌러도 아무 일이 없던 것
@@ -3339,6 +3346,29 @@ func _on_reroll() -> void:
 	_save_run()
 
 
+## 특성 새로고침: 지금 나온 특성 말고 다른 것으로 3개를 다시 뽑는다 (모자라면 지금 것으로 채움).
+func _perk_reroll() -> void:
+	if perk_rerolls <= 0 or not _perk_can_reroll():
+		_show_toast("이번 특성 선택의 새로고침을 다 썼어요")
+		return
+	perk_rerolls -= 1
+	var now: Array = perk_offer.map(func(pk): return pk["id"])
+	var pool := _perk_pool()
+	var fresh: Array = pool.filter(func(pk): return not pk["id"] in now)
+	var old: Array = pool.filter(func(pk): return pk["id"] in now)
+	fresh.shuffle()
+	old.shuffle()
+	perk_offer = (fresh + old).slice(0, 3)
+	_show_perks()
+	_save_run()
+
+
+## 다시 뽑으면 다른 특성이 하나라도 나올 수 있는지
+func _perk_can_reroll() -> bool:
+	var now: Array = perk_offer.map(func(pk): return pk["id"])
+	return _perk_pool().any(func(pk): return not pk["id"] in now)
+
+
 ## 새로고침 버튼: 남은 횟수를 같이 보여 준다.
 ## 선택지 내리기·올리기 (V): 카드에 가려진 필드를 본다. 마우스를 올린 오브젝트 범위·정보는 그대로 보인다.
 func _set_cards_hidden(h: bool) -> void:
@@ -3348,13 +3378,15 @@ func _set_cards_hidden(h: bool) -> void:
 	choice_box.visible = not h
 	hover_elem = -1
 	_tap_hover()  # 다시 올리면 터치로 고르던 카드 미리보기도 다시
-	if perk_mode:
-		reroll_btn.visible = false
-	else:
-		_update_reroll_btn()
+	_update_reroll_btn()
 
 
 func _update_reroll_btn() -> void:
+	if perk_mode:
+		reroll_btn.visible = perk_rerolls > 0 and not cards_hidden and coin_stage == 0 and _perk_can_reroll()
+		reroll_btn.text = str(perk_rerolls)
+		reroll_btn.tooltip_text = "특성 새로고침 (Q): 이번 특성 선택에 %d번 남음" % perk_rerolls
+		return
 	reroll_btn.visible = rerolls_left > 0 and not cards_hidden  # 모드 '외길'은 늘 0
 	reroll_btn.text = str(rerolls_left)
 	reroll_btn.tooltip_text = "선택지 새로고침 (Q): 이번 쉬는 시간에 %d번 남음" % rerolls_left
@@ -4874,7 +4906,7 @@ func _unhandled_input(event: InputEvent) -> void:
 					_on_perk(perk_offer[i])
 			elif i < offer.size():
 				_on_pick(offer[i])
-		elif event.keycode == KEY_Q and phase == Phase.CHOOSE and not perk_mode:
+		elif event.keycode == KEY_Q and phase == Phase.CHOOSE:
 			_on_reroll()
 		elif event.keycode == KEY_S and not event.ctrl_pressed and not event.meta_pressed and not title_label.visible:
 			if skip_left > 0:
@@ -7617,7 +7649,7 @@ func _save_run() -> void:
 		"core_hp": core_hp, "core_max": core_max, "perks": perks.keys().map(func(k): return [k, perks[k]]), "regen_acc": regen_acc, "shield_keep": shield_keep, "orb_speed_mul": orb_speed_mul,
 		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
 		"rerolls_left": rerolls_left, "bonus_rerolls": bonus_rerolls, "picks_left": picks_left,
-		"vary": Vary.save(), "skip_left": skip_left, "skip_total": skip_total, "skip_stop": skip_stop, "bank_picks": bank_picks, "bank_rerolls": bank_rerolls, "bank_perks": bank_perks, "coin_next": coin_next, "rest_ready": rest_ready,
+		"vary": Vary.save(), "skip_left": skip_left, "skip_total": skip_total, "skip_stop": skip_stop, "bank_picks": bank_picks, "bank_rerolls": bank_rerolls, "bank_perks": bank_perks, "perk_rerolls": perk_rerolls, "coin_next": coin_next, "rest_ready": rest_ready,
 		"lanes": Array(lanes), "wave_resist": wave_resist, "boss": boss_plan, "achievements": new_achievements, "ach_run": Ach.run,
 		"state": "perk" if perk_mode else ("ready" if phase == Phase.READY else "choose"),
 		"offer": offer, "perk_offer": perk_offer.map(func(pk): return pk["id"]), "towers": list,
@@ -7744,6 +7776,7 @@ func _continue_run() -> void:
 	skip_stop = g.call("skip_stop", false) == true
 	bank_picks = (g.call("bank_picks", []) as Array).filter(func(x): return x is int).map(func(x): return clampi(x, 0, wave))
 	bank_rerolls = maxi(0, int(g.call("bank_rerolls", 0)))
+	perk_rerolls = clampi(int(g.call("perk_rerolls", 1)), 0, 1)
 	bank_perks = maxi(0, int(g.call("bank_perks", 0)))
 	coin_next = str(g.call("coin_next", ""))
 	if not coin_next in ["double", "reroll"]:
