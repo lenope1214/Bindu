@@ -114,7 +114,7 @@ func active() -> bool:
 	return available()
 
 func available() -> bool:
-	return not Garden.on and game.title_label != null and not game.title_label.visible and game.phase != game.Phase.GAMEOVER
+	return game.title_label != null and not game.title_label.visible and game.phase != game.Phase.GAMEOVER
 
 func bounds() -> Rect2:
 	return game.ui_root.get_global_transform().affine_inverse() * screen_board()
@@ -144,7 +144,7 @@ func over_ui(p: Vector2) -> bool:
 		return false
 	# 설명창 밑에 오브젝트가 있으면 설명창은 마우스를 받지 않는다 (그 오브젝트를 올리고 누를 수 있게, 올리면 설명창이 반대쪽으로 비킨다)
 	for c: Control in [panel, side if side.mouse_filter != Control.MOUSE_FILTER_IGNORE else null, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
-			game.bar_box, game.hud, game.dps_panel, game.legend_btn, game.range_btn, game.zoom_btn,
+			game.bar_box, game.hud, game.dps_panel, game.range_btn, game.zoom_btn,
 			game.guide_more, game.hide_btn, game.skip_btn, game.skip_n_btn]:
 		if c != null and c.is_visible_in_tree() and c.get_global_rect().has_point(p):
 			return true

@@ -1,7 +1,7 @@
 class_name Skill
 ## 중앙 기술 (2026-10-31 사용자 "디펜스 한계 개선 A"): 웨이브 중에 쓰는 기술 2칸.
 ## 일반 판 준비 화면에서 세 가지 중 두 개 묶음을 고른다(Meta.skill_set). 쿨다운은 게임 시간이고 웨이브를 시작하면 모두 다시 찬다.
-## 효과·수치는 Rules skill_* (온라인 패치로 조정). 멀티플레이·정원엔 없음.
+## 효과·수치는 Rules skill_* (온라인 패치로 조정). 멀티플레이엔 없음.
 
 const IDS := ["focus", "hold", "brand"]
 const SETS := [["focus", "hold"], ["focus", "brand"], ["hold", "brand"]]

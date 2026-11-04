@@ -1827,7 +1827,7 @@ func _vary() -> void:
 	Patch.data = {}
 	Rules.apply(1)
 	Vary.new_run(false)
-	ok("VARY-05", tut_off and patch_off and Vary.tower_mul({Elem.SOUL: 1}, "wisp") == 1.0, "첫 판·멀티플레이·정원은 끔, 패치 vary_on 0이면 끔")
+	ok("VARY-05", tut_off and patch_off and Vary.tower_mul({Elem.SOUL: 1}, "wisp") == 1.0, "첫 판·멀티플레이는 끔, 패치 vary_on 0이면 끔")
 
 
 # ---------- 맵 규칙 ----------
@@ -1940,12 +1940,9 @@ func _maps() -> void:
 	var slow_ok := is_equal_approx(so.slow_factor, 1.0 - 0.2 * (1.0 + Rules.t("map_line_cc")))
 	ok("MAPX-06", life_ok and slow_ok, "회랑: 지나간 자리 장판 x%s, 감속 +30%%" % Rules.t("map_line_trail"))
 
-	# 끄기: 정원·패치 map_on 0
-	Garden.on = true
-	var g_off := not MapRule.on()
-	Garden.on = false
+	# 끄기: 패치 map_on 0
 	Rules.tune["map_on"] = 0.0
-	ok("MAPX-08", g_off and not MapRule.on() and MapRule.crowd_k() == 1.0 and MapRule.tower_mul({Elem.ICE: 1}, "lob") == 1.0, "정원·패치 map_on 0이면 맵 규칙·친화 끔")
+	ok("MAPX-08", not MapRule.on() and MapRule.crowd_k() == 1.0 and MapRule.tower_mul({Elem.ICE: 1}, "lob") == 1.0, "패치 map_on 0이면 맵 규칙·친화 끔")
 	_fresh(5)
 	var map0: String = Meta.map_id
 	var mo: float = Rules.tune["map_on"]
@@ -2156,9 +2153,9 @@ func _meta_misc() -> void:
 	ec.free()
 	pc.free()
 
-	# 시작 화면: 첫 화면은 큰 타일(일반 판·정원·멀티) + 그림 버튼 줄(PC는 종료), [일반 판] → 준비 화면(맵·규칙·모드·시작), 모양은 설정 창
+	# 시작 화면: 첫 화면은 큰 타일(일반 판·멀티, 정원 없음) + 그림 버튼 줄(PC는 종료), [일반 판] → 준비 화면(맵·규칙·모드·시작), 모양은 설정 창
 	var home0: bool = main.home_box.visible and not main.prep_box.visible
-	var tiles_ok: bool = main.home_box.is_ancestor_of(main.garden_btn) and main.home_box.is_ancestor_of(main.mp_btn) and not main.home_box.is_ancestor_of(main.map_label)
+	var tiles_ok: bool = not "garden_btn" in main and main.home_box.is_ancestor_of(main.mp_btn) and not main.home_box.is_ancestor_of(main.map_label)
 	main._set_prep(true)
 	var prep1: bool = main.prep_box.visible and not main.home_box.visible and main.prep_box.is_ancestor_of(main.map_label) and main.prep_box.is_ancestor_of(main.new_btn) and main.prep_box.is_ancestor_of(main.modes_btn)
 	main._set_prep(false)
@@ -2286,7 +2283,7 @@ func _meta_misc() -> void:
 		side_ok = side_ok and not dock.side.get_rect().has_point(at) and dock.side.size.y < ui_size.y * 0.6
 	dt.position = keep_pos
 	dock.shown_tower = null
-	var tab_hidden: bool = not main.legend_btn.visible
+	var tab_hidden: bool = not "legend_btn" in main
 	ok("UI-32", side_ok and tab_hidden, "설명창 내용 높이·보는 오브젝트 반대쪽 구석, 일반 판 Tab 버튼 없음")
 	# UI-33: 설명창 그림 (오브젝트 정보: 미리보기·숫자 타일, 자세히: 곱셈 사슬·배율 막대 / 카드: 미리보기·타일)
 	var pic: InfoPanel = dock.pic
@@ -2880,11 +2877,12 @@ func _board_filters() -> void:
 	main._on_seasons_loaded([{"id": 3, "name": "시즌 3"}, {"id": 2, "name": "시즌 2"}])
 	var ch: Dictionary = main.board_chips
 	var counts: bool = ch["map"].get_child_count() == Meta.MAP_IDS.size() and ch["rules"].get_child_count() == Rules.IDS.size() \
-		and ch["kind"].get_child_count() == 3 and ch["season"].get_child_count() == 2
+		and ch["kind"].get_child_count() == 2 and ch["season"].get_child_count() == 2
 	# 소용돌이 칩 한 번 → 바로 그 맵, 쉽게 모드 칩 → 쉽게 기록
 	ch["map"].get_child(Meta.MAP_IDS.find("spiral")).pressed.emit()
-	ch["kind"].get_child(2).pressed.emit()
-	var picked: bool = main.board_map == "spiral" and main.board_easy and not main.board_grow
+	ch["kind"].get_child(1).pressed.emit()
+	var picked: bool = main.board_map == "spiral" and main.board_easy
+
 	# 이번 주 탭 → 지난 시즌 칩을 누르면 시즌 전체만 (이번 주 탭 숨김)
 	main.board_period_btns[1].pressed.emit()
 	var week: bool = main.board_period == "week"

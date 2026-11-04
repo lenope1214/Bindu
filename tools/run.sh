@@ -4,7 +4,7 @@
 #   bots [규칙=1] [판 수=32] [stack]     자동 플레이 봇: 도달 웨이브 중간값·평균과 죽은 웨이브 분포
 #   long [규칙=1] [맵=plain] [웨이브=40]   죽지 않는 봇으로 긴 판 (웨이브가 4분 넘게 안 끝나면 STUCK)
 #   cont [규칙=1] [맵=plain] [웨이브=45]   4웨이브마다 끄고 이어하기 → 저장 전후가 다르면 DIFF
-#   fuzz [판 수=8] [프레임=9000]          무작위 클릭·끌기·키·터치 (스크립트 오류 찾기, GARDEN=1이면 정원 판)
+#   fuzz [판 수=8] [프레임=9000]          무작위 클릭·끌기·키·터치 (스크립트 오류 찾기)
 #   miss                                   공격방식 x 강화 x 다중 발사 수마다 정면 구체를 거리별로 맞히는지 (사거리 안 피해 0이면 MISS, KIND=fast 작은 구체)
 #   elem                                   속성마다 직선탄 Lv2 하나가 30초간 준 피해/초
 #   stages [규칙] [판수=6]                  5~200웨이브 11단계만 싸우고 사이는 선택지만 빠르게 (STAGES=목록)
@@ -12,13 +12,10 @@
 #   perf                                   후반 부하(오브젝트 16개·구체 250개+) 배속별 프레임당 계산 시간·부분별 시간
 #   perfwin                                perf를 창을 띄워 실행 (그리기 비용 포함, 수직 동기 끔)
 #   compare [기준=1] [새 규칙=3] [판 수=32] [stack]   같은 시드로 두 규칙을 돌려 차이와 판정 (새 규칙을 내기 전에)
-#   tree [규칙=1] [판 수=32]               씨앗 나무 없음·절반·전부로 같은 시드 봇 (정원 모드 → 일반 판 강화 폭)
-#   garden [시드 수=3] [웨이브=40]          정원 봇: 물러남·도달 게임 시간·숙련 (garden_bot.gd)
-#   gcheck                                 정원 점검: 저장·이어하기·꺼 둔 동안 보상·물러남·환생·씨앗 나무 (garden_check.gd)
 #   modes [규칙=1] [판 수=32] [모드...]   모드마다 같은 시드로 모드 없는 판과 비교: 웨이브 차이·점수 손익분기 배율
 #   spec                                   docs/features.md의 기대 동작 자동 점검 (tools/spec_check.gd)
 #   rulekeys                               관리자 페이지 수치 표 목록(server/app/rule_keys.json)을 Rules에서 다시 만듦 (VERIFY=1이면 비교만, check에 포함)
-#   patchkeys                              관리자 페이지 [패치] 하위 탭·특성·카드·모드·정원 칸 목록(server/app/patch_sections.json)을 다시 만듦 (VERIFY=1이면 비교만, check에 포함)
+#   patchkeys                              관리자 페이지 [패치] 하위 탭·특성·카드·모드 칸 목록(server/app/patch_sections.json)을 다시 만듦 (VERIFY=1이면 비교만, check에 포함)
 #   notes                                  CHANGELOG(게임 안 패치노트)에 패치 키·코드 이름·경로·해시·요청 인용이 없는지 (docs/changelog-rules.md)
 #   check                                  배포 전 한 번에: spec + 무작위 입력 + 이어하기 (실패하면 끝 코드 1)
 # 환경 변수: SPEED(배속, 기본 4) SMART(기본 1: 사람처럼 중앙 가까이에서 길목을 겨눔, 0이면 예전 봇) VARY(0이면 판마다 다른 흐름 끔: 봉인·이벤트·적응 켬/끔 비교)
@@ -149,37 +146,6 @@ case "$CMD" in
 			else if (mb - ma >= 3 || r > 1.25) print "판정: 쉬움 — 기준보다 많이 길다. 의도한 것인지 확인"
 			else print "판정: 비슷함 (봇 기준). 사람 시험판은 따로"
 		}'
-		rm -rf "$D"
-		;;
-	tree)
-		# 씨앗 나무(정원)를 올린 일반 판: 없음·절반·전부를 같은 시드로 (기획 목표: 전부여도 중간값 +4 이내)
-		R=${1:-1}; N=${2:-32}
-		D=$(copy_project "$$")
-		cd "$D"
-		for lv in none half full; do
-			TREE=$lv run_bots "$R" "$N" "" "t$lv"
-			echo "씨앗 나무 $lv:"
-			summary t${lv}_*.txt
-		done
-		rm -rf "$D"
-		;;
-	garden)
-		# 정원 봇: 시드마다 정원을 [웨이브]까지 (물러남·게임 시간·숙련)
-		N=${1:-3}; W=${2:-40}
-		D=$(copy_project "$$")
-		cd "$D"
-		for seed in $(seq 1 "$N"); do
-			SPEED=${SPEED:-8} T 1800 "$G" --headless --fixed-fps 60 --path . -s tools/garden_bot.gd -- "$seed" "$W" 2>&1 | grep -E "^(W|RETREAT|RESULT|MASTERY)|SCRIPT ERROR" > "g_$seed.txt" &
-		done
-		wait
-		for seed in $(seq 1 "$N"); do echo "시드 $seed:"; grep -E "RETREAT|RESULT|SCRIPT ERROR" "g_$seed.txt" | tail -6; done
-		rm -rf "$D"
-		;;
-	gcheck)
-		# 정원 점검: 저장·이어하기·꺼 둔 동안 보상·물러남·환생·씨앗 나무·일반 판 보너스 (빈 기록으로)
-		D=$(copy_project "$$")
-		cd "$D"
-		T 600 "$G" --headless --fixed-fps 60 --path . -s tools/garden_check.gd 2>&1 | grep -E "^(ok|FAIL|RESULT|  )|SCRIPT ERROR" || true
 		rm -rf "$D"
 		;;
 	modes)
@@ -323,9 +289,6 @@ case "$CMD" in
 		rm -rf "$D"
 		VERIFY=1 "$0" rulekeys || bad="$bad rulekeys"
 		VERIFY=1 "$0" patchkeys || bad="$bad patchkeys"
-		GC=$("$0" gcheck)
-		echo "$GC" | grep -E "^FAIL|SCRIPT ERROR" | head -5
-		if echo "$GC" | grep -q "RESULT fails=0" && ! echo "$GC" | grep -qE 'SCRIPT ERROR|Parse Error|^ERROR:'; then echo "gcheck 통과"; else bad="$bad gcheck"; fi
 		if python3 -c "import fastapi, pytest, httpx" > /dev/null 2>&1; then
 			(cd "$ROOT/server" && python3 -m pytest -q > /tmp/bindu_check_server.txt 2>&1) || bad="$bad server"
 			tail -1 /tmp/bindu_check_server.txt

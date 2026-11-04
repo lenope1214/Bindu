@@ -94,7 +94,7 @@ class Run(Base):
     # 계정 (0.5.3부터). 비면 예전 기록·토큰 없는 게임: 리더보드는 기기 id로 묶는다
     account_id: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
     title: Mapped[str] = mapped_column(String(24), default="")  # 고른 칭호 (업적 id, 0.5.5부터)
-    # 씨앗 나무(정원 모드)를 쓴 판: '성장' 리더보드에만 (0.5.3부터)
+    # 씨앗 나무(예전 정원 모드)를 쓴 판: 0.5.3~0.7.x는 '성장' 리더보드, 정원을 없앤 뒤(2026-11-04)로는 리더보드에 안 올림
     grow: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     easy: Mapped[bool] = mapped_column(Boolean, default=False, index=True)  # 쉽게 모드를 쓴 판: '쉽게 모드' 리더보드에만
 

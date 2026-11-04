@@ -31,7 +31,8 @@ MODES = {
     "three": {"score": 0.50, "hard": False, "vs": ""},
     "soft": {"score": 0.70, "hard": False, "vs": "steel"},
     "ease": {"score": 0.85, "hard": False, "vs": "narrow"},
-    # 씨앗 나무(정원)를 쓴 판: 점수 배율 없음. 리더보드는 '성장'으로 따로 (Run.grow)
+    # 예전 정원 모드의 씨앗 나무를 쓴 판 (정원은 2026-11-04에 없앰, 예전 게임이 보내는 판만): 점수 배율 없음, 리더보드에는 안 올림 (Run.grow)
+
     "grow": {"score": 1.0, "hard": True, "vs": ""},
 }
 MODE_SWARM = 1.25  # 물량: 웨이브 구체 수 (Modes.SWARM)

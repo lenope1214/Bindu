@@ -38,7 +38,8 @@ app.include_router(reports.router)
 
 PLATFORMS = ["windows", "macos", "linux", "android", "ios"]
 # 패치 data에서 게임이 읽는 최상위 키 (scripts/patch.gd)
-PATCH_KEYS = {"rules", "rules_desc", "perks", "perk_desc", "cards", "card_enabled", "elem_dmg", "pat_dmg", "modes", "garden", "message"}
+PATCH_KEYS = {"rules", "rules_desc", "perks", "perk_desc", "cards", "card_enabled", "elem_dmg", "pat_dmg", "modes", "message"}
+LEGACY_PATCH_KEYS = {"garden"}  # 없앤 칸(정원 모드, 2026-11-04): 예전 패치 JSON을 다시 올려도 거절하지 않고 뺀다
 CARD_ENABLE_KEYS = {f"{kind}.{card}" for kind, cards in {
     "elem": "fire wood water electric wind ice earth dark light poison metal sound time soul star".split(),
     "pat": "spray thorn stream chain gust shard wall vortex laser lob iron sonic clock wisp path".split(),
@@ -50,7 +51,8 @@ CARD_ENABLE_KEYS = {f"{kind}.{card}" for kind, cards in {
 
 
 # 자동 배포 확인용: 서버 코드를 고쳐 배포할 때 바꾸면 /health로 새 이미지가 떴는지 밖에서 볼 수 있다
-SERVER_REV = "2026-11-04.1"
+SERVER_REV = "2026-11-04.2"
+
 
 
 @app.get("/health")
@@ -264,7 +266,7 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), au
     db.commit()
     rank = None
     if row.valid and season:
-        rank = board_rank(db, run.map, run.rules, season, None, acct.id if acct else run.device, "grow" in run.modes, row.easy)
+        rank = board_rank(db, run.map, run.rules, season, None, acct.id if acct else run.device, row.easy)
     return {"id": row.id, "accepted": row.valid, "season": season, "rank": rank}
 
 
@@ -332,13 +334,14 @@ def _who():
     return func.coalesce(Run.account_id, Run.device_id)
 
 
-def _board(db: Session, map_id: str, rules: int, season: int, since, grow: bool = False, easy: bool = False):
-    """계정(없으면 기기)마다 최고 기록 하나씩. grow: 씨앗 나무를 쓴 '성장' 기록끼리. easy: 쉽게 모드를 쓴 판끼리 (성장·순수 섞어서)."""
-    conds = [Run.map == map_id, Run.rules == rules, Run.season == season, Run.valid.is_(True), Run.hidden.is_(False)]
+def _board(db: Session, map_id: str, rules: int, season: int, since, easy: bool = False):
+    """계정(없으면 기기)마다 최고 기록 하나씩. easy: 쉽게 모드를 쓴 판끼리.
+    예전 정원 모드의 씨앗 나무를 쓴 판(Run.grow)은 어느 리더보드에도 올리지 않는다 (정원 모드는 2026-11-04에 없앰)."""
+    conds = [Run.map == map_id, Run.rules == rules, Run.season == season, Run.valid.is_(True), Run.hidden.is_(False), Run.grow.isnot(True)]
     if easy:
         conds.append(Run.easy.is_(True))
     else:
-        conds += [Run.easy.isnot(True), Run.grow.is_(True) if grow else Run.grow.isnot(True)]
+        conds.append(Run.easy.isnot(True))
     if since is not None:
         conds.append(Run.created_at >= since)
     rn = func.row_number().over(partition_by=_who(), order_by=(Run.score.desc(), Run.wave.desc(), Run.id)).label("rn")
@@ -347,8 +350,8 @@ def _board(db: Session, map_id: str, rules: int, season: int, since, grow: bool 
     return sub
 
 
-def board_rank(db: Session, map_id: str, rules: int, season: int, since, who: str, grow: bool = False, easy: bool = False):
-    sub = _board(db, map_id, rules, season, since, grow, easy)
+def board_rank(db: Session, map_id: str, rules: int, season: int, since, who: str, easy: bool = False):
+    sub = _board(db, map_id, rules, season, since, easy)
     mine = db.execute(select(sub).where(sub.c.rn == 1, sub.c.who == who)).first()
     if not mine:
         return None
@@ -360,21 +363,21 @@ def board_rank(db: Session, map_id: str, rules: int, season: int, since, who: st
 
 @app.get("/v1/leaderboard")
 def leaderboard(map: str, rules: int, season: int = 0, period: str = "all", limit: int = Query(20, le=100),
-                device: str = "", grow: bool = False, easy: bool = False, authorization: str = Header(default=""), db: Session = Depends(get_db)):
+                device: str = "", easy: bool = False, authorization: str = Header(default=""), db: Session = Depends(get_db)):
     s = db.get(Season, season) if season else current_season(db)
     me_acct = accounts.optional(db, authorization)
     who = me_acct[0].id if me_acct else device
     if not s:
         raise HTTPException(404, "no season")
     since = now() - timedelta(days=7) if period == "week" else None
-    sub = _board(db, map, rules, s.id, since, grow, easy)
+    sub = _board(db, map, rules, s.id, since, easy)
     rows = db.execute(select(sub).where(sub.c.rn == 1).order_by(sub.c.score.desc(), sub.c.wave.desc(), sub.c.id).limit(limit)).all()
     total = db.scalar(select(func.count()).select_from(sub).where(sub.c.rn == 1))
     entries = [{"rank": i + 1, "nick": r.nickname, "wave": r.wave, "score": r.score, "game": r.game_version,
                 "date": kst_date(r.created_at), "me": bool(who) and r.who == who, "ended": r.ended, "title": r.title or "",
                 "pid": reports.pid(r.who)}
                for i, r in enumerate(rows)]
-    me = board_rank(db, map, rules, s.id, since, who, grow, easy) if who else None
+    me = board_rank(db, map, rules, s.id, since, who, easy) if who else None
     return {"season": {"id": s.id, "name": s.name}, "period": period, "total": total, "entries": entries, "me": me}
 
 
@@ -421,6 +424,8 @@ class PatchIn(BaseModel):
 
 @app.post("/admin/patches", dependencies=[Depends(require_admin)])
 def create_patch(body: PatchIn, db: Session = Depends(get_db)):
+    for k in LEGACY_PATCH_KEYS:
+        body.data.pop(k, None)
     unknown = sorted(set(body.data) - PATCH_KEYS)
     if unknown:
         raise HTTPException(422, f"unknown keys: {unknown} (allowed: {sorted(PATCH_KEYS)})")
@@ -696,7 +701,7 @@ def rule_keys():
 
 @app.get("/admin/patch_sections", dependencies=[Depends(require_admin)])
 def patch_sections():
-    """관리자 페이지 [패치] 하위 탭(오브젝트·카드·반응…)과 rules 밖 칸(특성·카드·모드·정원 등) 키 목록 (tools/patch_keys.py가 만든 파일)."""
+    """관리자 페이지 [패치] 하위 탭(오브젝트·카드·반응…)과 rules 밖 칸(특성·카드·모드 등) 키 목록 (tools/patch_keys.py가 만든 파일)."""
     return json.loads((Path(__file__).parent / "patch_sections.json").read_text(encoding="utf-8"))
 
 

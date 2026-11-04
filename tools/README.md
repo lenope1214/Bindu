@@ -11,9 +11,7 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 | `bots [규칙] [판 수] [stack]` | 자동 플레이 봇(시드 1~N). `stack`은 한 오브젝트에 몰아 넣기 | 도달 웨이브 중간값·평균·최소·최대, 죽은 웨이브 분포 |
 | `long [규칙] [맵] [웨이브]` | 죽지 않는 봇으로 그 웨이브까지 | 웨이브가 4분 넘게 안 끝나면 `STUCK`과 그때 구체·오브젝트 상태 |
 | `cont [규칙] [맵] [웨이브]` | 4웨이브마다 게임을 끄고 이어하기, 비교 뒤 새 길목으로 재배치 | 저장 전후 상태가 다르면 `DIFF` |
-| `fuzz [판 수] [프레임]` | 무작위 클릭·끌기·키·터치 (`GARDEN=1`이면 정원 판, 홀수 시드는 물러남까지) | 시드별 스크립트 오류 수 |
-| `tree [규칙] [판 수]` | 같은 시드로 씨앗 나무 없음·절반·전부 봇 (봇에 직접 켜려면 `TREE=half\|full`) | 셋의 중간값·평균·죽은 웨이브 분포 (목표: 전부도 중간값 +4 이내) |
-| `garden [시드 수] [웨이브]` | 정원 봇(`garden_bot.gd`): 상점에서 싼 것부터 사서 놓고 자동 웨이브. `REBIRTHS=n` 환생 n번으로 시작, `MINS` 실제 시간 제한 | 웨이브마다 이슬·오브젝트·게임 시간, 물러남(`RETREAT`), 끝에 `RESULT`·숙련 |
+| `fuzz [판 수] [프레임]` | 무작위 클릭·끌기·키·터치 | 시드별 스크립트 오류 수 |
 | `elem` | 속성마다 직선탄 Lv2 하나가 30초간 준 피해/초 | 속성별 피해/초·통과 시간 |
 | `rx` | 특수 반응마다 두 속성 Lv1 직선탄 하나 앞을 구체 무리(초당 3개, 폭 ±50)가 30초 지나갈 때. `RX=bell,styx`로 골라 보기, `SOLO=1`이면 반응 대신 속성 하나(Lv2)씩 | 반응 피해/초(rx)·전체 피해/초(all). 구체가 죽지 않아 처치로 터지는 효과(저주·혼불 일부)는 빠짐 |
 | `compare` | 같은 시드로 기준 규칙과 새 규칙을 32판씩 (`stack`을 붙이면 몰빵 봇) | 두 규칙의 중간값·평균·상위 25% 판 평균(참고), 차이, 판정(어려움: 중간값 -2 이하 또는 평균 x0.85 미만 / 쉬움: +3 이상 또는 x1.25 초과 / 비슷함) |
@@ -21,7 +19,7 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 | `pat_dps.gd` | `godot --headless --fixed-fps 60 --path . -s tools/pat_dps.gd` (`PAT=lob,shot` `PLV=3` `ELEM=<번호>`): 공격방식마다 오브젝트 하나(속성 Lv1) 앞을 죽지 않는 무리가 30초 가로지를 때(cross)·정면으로 올 때(head) | 공격방식별 피해/초 |
 | `miss_audit.gd` | `tools/run.sh miss` (`PAT=shot,laser` `KIND=fast`): 공격방식 x 강화 하나 x 다중 발사 0~3개마다 정면(조준한 그 방향)에 멈춘 구체를 거리 90~440에 두고 4초 피해. 사거리 안인데 0이거나 가장 잘 맞힌 거리의 15% 미만이면 `MISS` | 피해가 안 들어가는 조합 전수조사 |
 | `pat_kill.gd` | 같은 방법(`HP=15` `RATE=1`): 체력 HP 구체가 정면으로 60초 올 때(lane). spiral은 비껴 도는 길이 오브젝트 앞을 지나지 않는 경우가 많아 참고만 | 공격방식별 처치율 |
-| `ui_check.gd` | 스크린샷 도구(shot·mp_shot·vote_shot·garden_shot·vary_shot·ui_audit)가 찍을 때마다 부름: 보이는 글·버튼·창·그림 배지끼리 겹침, 화면(폰은 안전 영역) 밖, 말줄임으로 잘린 글 | `UI OVERLAP/OFFSCREEN/CLIP <화면> …`, 없으면 `UI ok <화면>` |
+| `ui_check.gd` | 스크린샷 도구(shot·mp_shot·vote_shot·path_shot·vary_shot·ui_audit)가 찍을 때마다 부름: 보이는 글·버튼·창·그림 배지끼리 겹침, 화면(폰은 안전 영역) 밖, 말줄임으로 잘린 글 | `UI OVERLAP/OFFSCREEN/CLIP <화면> …`, 없으면 `UI ok <화면>` |
 | `ui_audit.gd` | `xvfb-run godot --path . --rendering-driver opengl3 --resolution 2556x1179 -s tools/ui_audit.gd -- <폴더> [글자 크기] [touch] [phone]`: 일곱 길목(점수 줄·DPS 표·버튼·웨이브 시작·안내 쪽)·큰 점수·오브젝트 14개·특성 8개·놓친 구체·긴 알림으로 꽉 채운 쉬는 시간·카드·웨이브 화면. `--resolution`으로 화면비(2400x1080 20:9, 2048x1536 4:3 등), phone이면 노치 안전 영역도 흉내 | PNG + `UI BAD <수>` |
 | `reflex_shot.gd` | `godot --path <임시 사본> -s tools/reflex_shot.gd -- <출력 폴더> [글자 크기=1.3] [touch]`: 반응 카드 앞면·상세·후방 공격. 프로젝트 이름이 BinduTools로 시작하는 사본에서만 실행 | PNG 3장 + UI 검사 + 후방 조준·명중 검증 |
 | `vary_shot.gd` | `xvfb-run godot --path . -s tools/vary_shot.gd -- <폴더> [글자 크기] [touch]`: 판마다 다른 흐름 점수 줄 칩 말풍선(이벤트·예고·봉인·적응) 스크린샷 | PNG |
@@ -42,8 +40,6 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 | `notes` | `python3 tools/notes_check.py`: CHANGELOG(게임 안 패치노트)에 패치 키·코드 이름·파일 경로·서버 API 경로·커밋 해시·백틱·요청/제보 인용이 없는지 ([docs/changelog-rules.md](../docs/changelog-rules.md)). Godot 필요 없음 | 걸린 줄마다 `FAIL CHANGELOG.md:<줄> <이유>`, 끝 줄 `NOTES ok` |
 | `check` | 배포 전 한 번에: 패치노트 검사 + spec + 무작위 입력 4판 + 이어하기 13웨이브 + 온라인 서명 + 패치 키 + 서버 pytest(패키지가 있을 때). 4~5분. 이어하기는 13웨이브 도달과 4·8·12웨이브 복원 모두 필수 | `CHECK 통과` / `CHECK 실패: <항목>`, 끝 코드 |
 | `patch_keys_check.gd` | `godot --headless --path . -s tools/patch_keys_check.gd`: 온라인 패치 rules의 오브젝트 수치 키(공격방식별 피해·속도·사거리, 강화·속성 수치, 규칙별 덮어쓰기)가 실제 값·설명 글에 먹는지 | 항목별 ok/FAIL, 끝 줄 `PATCHCHECK ok` |
-| `gcheck` | 정원 점검(`garden_check.gd`, 빈 기록으로): 상점 값 치르기·웨이브와 이슬·물러남(웨이브 0 아래로 안 감)·저장 뒤 이어하기·꺼 둔 동안 보상(50%, 8시간)·환생(두 번 누르기, 씨앗)·씨앗 나무 사기·숙련 단계·일반 판 보너스와 ~grow 기록 키 | 항목별 ok/FAIL |
-| `garden_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/garden_shot.gd -- <폴더> [글자 크기]`: 시작 화면 정원 줄·씨앗 나무 창·상점 4장·놓기·웨이브 중·물러난 뒤·특성 4장·리더보드 스크린샷 | PNG |
 | `perf` | 후반 부하(오브젝트 16개, 속성 3종·강화 10개씩, 구체 400개)를 1·4·8배속으로 600프레임씩 | 프레임 시간 평균·95%·최대, 화면 위 구체·탄·장판 수 |
 
 환경 변수: `SPEED`(배속, bots 4·long 8), `SMART`(기본 1: 사람처럼 중앙 가까이에서 길목 바깥쪽을 겨눠 배치, `SMART=0`은 예전 봇). `SKIP=n`: `SKIP_FROM`(기본 8)웨이브부터 웨이브 넘기기를 n개씩 쓰고, 멈추면 쌓인 것을 다 고른 뒤 다시 넘긴다. `MAPRULE=0`: 맵 규칙·친화 카드 끔 (맵별 켬·끔 비교, `MAP=<맵 id>`와 함께).

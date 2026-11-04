@@ -262,17 +262,26 @@ def test_stats_min_wave():
 
 
 def test_grow_board():
-    # 씨앗 나무(정원)를 쓴 판은 '성장' 리더보드에만, 쓰지 않은 판은 '순수'(기본)에만
+    # 예전 정원 모드의 씨앗 나무를 쓴 판(grow): 받아 두지만 어느 리더보드에도 오르지 않는다 (grow=true 요청도 일반 리더보드)
     with TestClient(app) as c:
         kw = dict(map="cross", game="0.5.1", patch=2)
         assert post_run(c, device="dev-grow-aaaa", modes=["grow"], score=5000, **kw).json()["accepted"]
         assert post_run(c, device="dev-pure-aaaa", score=4000, **kw).json()["accepted"]
         pure = c.get("/v1/leaderboard", params={"map": "cross", "rules": 1}).json()["entries"]
-        grow = c.get("/v1/leaderboard", params={"map": "cross", "rules": 1, "grow": True}).json()["entries"]
+        old = c.get("/v1/leaderboard", params={"map": "cross", "rules": 1, "grow": True}).json()["entries"]
         assert [e["score"] for e in pure] == [4000]
-        assert [e["score"] for e in grow] == [5000]
+        assert [e["score"] for e in old] == [4000]
         r = post_run(c, device="dev-grow-aaaa", modes=["grow", "rush"], score=6000, **kw).json()
-        assert r["accepted"] and r["rank"]["rank"] == 1
+        assert r["accepted"] and r["rank"] is None
+
+
+def test_patch_drops_garden():
+    # 없앤 정원 칸이 든 예전 패치 JSON도 올릴 수 있고, 정원 칸은 빠진다
+    with TestClient(app) as c:
+        r = c.post("/admin/patches", json={"notes": "garden-legacy", "min_game": "99.0.0", "data": {"garden": {"dew_kill": 9}, "message": "hi"}}, headers=A)
+        assert r.status_code == 200, r.text
+        p = [x for x in c.get("/admin/patches", headers=A).json() if x["id"] == r.json()["id"]][0]
+        assert "garden" not in p["data"] and p["data"]["message"] == "hi"
 
 
 def test_admin_edit_run():

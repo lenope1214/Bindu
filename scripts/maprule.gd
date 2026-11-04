@@ -1,6 +1,6 @@
 class_name MapRule
 ## 맵마다 다른 규칙과 친화 카드 (2026-10-31 사용자 "맵별 특색이 약해 한 맵만 하게 될 것", 시험).
-## 기획 docs/map-rules.md. 일반 판·멀티 판에 켠다. 정원은 끔.
+## 기획 docs/map-rules.md. 일반 판·멀티 판에 켠다.
 ## - 고유 규칙 하나: 평원 무리 보너스 x2·공명 거리 / 소용돌이 중앙 가속·보스 뒤 회전 반전 / 십자로 길목 /
 ##   폭풍 웨이브마다 바람 / 회랑 지나간 자리 장판·감속·밀치기
 ## - 친화 카드: 그 맵에서 더 자주 나오고(map_aff_w배) 피해 +map_aff_dmg (속성은 레벨 몫만큼, 공격방식은 그대로).
@@ -24,11 +24,11 @@ const RULE_TEXT := {
 	"line": "행진: 지나간 자리 장판 x{map_line_trail} · 감속·밀치기 +{map_line_cc%}%",
 }
 
-## 지금 판에 켜졌는지: 맵은 Meta.map_id 그대로 따른다 (시작 화면·이어하기·멀티 모두). 정원은 끔.
+## 지금 판에 켜졌는지: 맵은 Meta.map_id 그대로 따른다 (시작 화면·이어하기·멀티 모두).
 static func on() -> bool:
 	if _env < 0:
 		_env = 0 if OS.get_environment("MAPRULE") == "0" else 1  # 봇 비교용: MAPRULE=0이면 끔
-	return _env == 1 and Rules.t("map_on") > 0.0 and not Garden.on and AFF.has(Meta.map_id)
+	return _env == 1 and Rules.t("map_on") > 0.0 and AFF.has(Meta.map_id)
 
 
 static var _env := -1

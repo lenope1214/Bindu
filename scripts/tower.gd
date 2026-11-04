@@ -740,11 +740,6 @@ func dmg_factor(rx := false) -> float:
 		f *= 1.0 + Rules.size_dmg * mf("size")
 	if not rx:
 		f *= mod_fix_all() * Rules.t("dmg_" + pattern)
-	# 정원 속성 숙련 (씨앗 나무를 쓰는 일반 판만)
-	if Garden.boosted:
-		f *= Garden.elem_mul(elements)
-	if Garden.on:
-		f *= Garden.hero_garden_mul(elements)  # 정원 안 영웅 속성 +2%/Lv
 	# 온라인 밸런스 패치: 공격방식·넣은 속성별 피해 배율
 	if not Patch.pat_mul.is_empty():
 		f *= Patch.pat_mul.get(pattern, 1.0)
@@ -892,9 +887,9 @@ func add(e: int, n: int) -> String:
 	return "조합: " + ", ".join(names)
 
 
-## 한 오브젝트에서 같은 속성이 오를 수 있는 최대 레벨 (2026-11-01 사용자 "모든 속성 Lv5 상한"). 정원은 칸 레벨이 성장 축이라 상한 없음
+## 한 오브젝트에서 같은 속성이 오를 수 있는 최대 레벨 (2026-11-01 사용자 "모든 속성 Lv5 상한")
 static func elem_cap() -> int:
-	return 1 << 30 if Garden.on else maxi(1, int(Rules.t("elem_cap")))
+	return maxi(1, int(Rules.t("elem_cap")))
 
 
 ## 이 카드를 넣을 수 있는지 (속성 종류·강화 종류별 상한, 같은 속성 레벨 상한, 공격방식 고정).
@@ -1109,10 +1104,8 @@ static func _num(v: float) -> String:
 
 ## 지금 쓰는 속성 (예전 연결선은 여기서 이어진 오브젝트 속성을 더했다).
 func eff_now() -> Dictionary:
-	var d := elements.duplicate()
-	if Garden.on and Garden.hero_e >= 0 and d.has(Garden.hero_e):
-		d[Garden.hero_e] += Garden.hero_eff_bonus(Garden.hero_e)  # 정원 영웅 Lv10: 추가 효과 한 단계
-	return d
+	return elements.duplicate()
+
 
 
 func title() -> String:

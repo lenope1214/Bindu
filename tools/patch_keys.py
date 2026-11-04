@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""관리자 페이지 [패치] 탭의 하위 탭과 rules 밖 패치 칸(특성·카드·모드·정원·속성/공격방식 배율) 목록을 만든다.
+"""관리자 페이지 [패치] 탭의 하위 탭과 rules 밖 패치 칸(특성·카드·모드·속성/공격방식 배율) 목록을 만든다.
 
 - 결과: server/app/patch_sections.json (GET /admin/patch_sections). rules 키 목록은 따로 rule_keys.json(tools/rule_keys.gd).
 - 기본값은 게임 코드에서 읽는다. 설명은 아래 표에 적는다. 코드에 없는 키를 적거나, 코드가 읽는 키가 표에 없으면 실패.
@@ -30,7 +30,6 @@ TABS = [
     ["vary", "판 흐름", "Vary", ["판마다 다른 흐름"], []],
     ["mode", "모드", "Modes", ["모드 코드 수치"], ["modes"]],
     ["mp", "멀티", "Mp", ["협동 짧은 판", "멀티 기다리기·대결 보낸 구체", "멀티 난이도"], []],
-    ["garden", "정원", "Garden · Grow", [], ["garden"]],
     ["text", "글", "시작 화면·알림", [], ["rules_desc", "message"]],
 ]
 
@@ -68,32 +67,6 @@ CARDS = {
     "lv2_base": "속성 카드가 Lv2로 나올 확률 기본",
     "lv2_wave": "웨이브마다 Lv2 확률 +",
     "lv2_max": "Lv2 확률 최대 (행운 특성 전)",
-}
-GARDEN = {
-    "plant": "씨앗 나무: 새 칸 심는 값 (심은 칸마다 x plant_mul)",
-    "plant_mul": "씨앗 나무: 심은 칸 하나마다 심는 값 배율",
-    "grow_base": "씨앗 나무: Lv1 → Lv2 키우는 값",
-    "grow_mul": "씨앗 나무: 레벨마다 키우는 값 배율",
-    "hero_disc": "씨앗 나무: 영웅 속성 칸 키우는 값 할인 배율",
-    "stem_per": "씨앗 나무 줄기: 레벨마다 일반 판 모든 피해 +",
-    "hero_xp": "영웅: Lv1 → Lv2 경험치 (레벨마다 x1.5)",
-    "hero_garden": "영웅: 정원에서 레벨마다 영웅 속성 피해 + (속성 종류 수로 나눔)",
-    "hero_norm": "영웅: 일반 판(씨앗 나무 켬)에서 레벨마다 영웅 속성 피해 +",
-    "hero_card_lv": "영웅: 이 레벨부터 일반 판 첫 쉬는 시간에 영웅 속성 카드",
-    "mastery_per": "속성 숙련: 단계마다 일반 판 그 속성 피해 +",
-    "dew_kill": "이슬: 구체 하나 처치 (웨이브마다 x dew_growth, 보스 10배)",
-    "dew_growth": "이슬: 웨이브마다 처치 이슬 배율",
-    "offline": "이슬: 꺼 둔 동안 받는 비율 (최근 초당 이슬 대비)",
-    "hp_early": "정원 구체 체력: 첫 웨이브 배율 (12웨이브에 1이 됨)",
-    "hp_growth": "정원 구체 체력: 8웨이브 뒤 웨이브마다 배율",
-    "next_delay": "키우기형: 단계 사이 쉬는 시간(초)",
-    "cost_new": "상점: 새 오브젝트 값 (오브젝트마다 x1.25)",
-    "cost_level": "상점: 공격방식 레벨 올리기 값 (레벨마다 x1.5)",
-    "cost_elem": "상점: 속성 더하기 값 (속성마다 x2)",
-    "cost_pat": "상점: 공격방식 바꾸기 값",
-    "cost_mod": "상점: 강화 값 (같은 강화마다 x1.8)",
-    "cost_trig": "상점: 발동 값 (같은 발동마다 x1.8)",
-    "cost_link": "상점: 연계 값 (연계마다 x2)",
 }
 
 
@@ -148,10 +121,6 @@ def build() -> dict:
     # 카드: main.gd의 Patch.num("cards", 키, 기본)
     cards = defaults_from({"main": main, "pat": read("scripts/pattern.gd")}, r'Patch\.num\("cards", "([a-z0-9_]+)", ([A-Za-z0-9_.]+)\)')
     errs += check_same("cards", CARDS, cards)
-    # 정원: Garden.k(키, 기본) / garden.gd 안 k(키, 기본)
-    gsrc = {"garden": read("scripts/garden.gd"), "grow": read("scripts/grow.gd"), "main": main}
-    garden = defaults_from(gsrc, r'(?:Garden\.|[^A-Za-z_.])k\("([a-z0-9_]+)", ([A-Za-z0-9_.]+)\)')
-    errs += check_same("garden", GARDEN, garden)
     # 모드: Modes.LIST의 score
     modes_src = read("scripts/modes.gd")
     modes = re.findall(r'"([a-z]+)": \{"name": "([^"]+)", "hard": (true|false), "desc": "([^"]*)", "score": ([0-9.]+)', modes_src)
@@ -204,7 +173,6 @@ def build() -> dict:
                     "keys": [{"k": k, "g": "", "d": "%s 피해 배율 (1 = 그대로, 반응 포함)" % pat_names.get(k, k), "v": 1} for k in pat_ids]},
         "modes": {"name": "모드 점수 배율", "type": "num", "note": "서버 점수 상한(server/app/validate.py MODES)도 같은 값을 씀",
                   "keys": [{"k": k, "g": "어렵게" if h == "true" else "쉽게", "d": "%s: %s" % (n, d), "v": num(s)} for k, n, h, d, s in modes]},
-        "garden": {"name": "정원 수치", "type": "num", "keys": [{"k": k, "g": GARDEN[k].split(":")[0], "d": GARDEN[k], "v": garden[k]} for k in GARDEN]},
         "rules_desc": {"name": "시작 화면 규칙 설명", "type": "text",
                        "keys": [{"k": i, "g": "", "d": "%s 설명" % rule_names.get(i, i), "v": rule_descs.get(i, "")} for i in rule_ids]},
         "message": {"name": "시작 화면 알림", "type": "text", "single": True,

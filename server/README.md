@@ -117,7 +117,6 @@ main에 `server/` 변경이 올라오면 집 PC가 5분 안에 알아서 다시 
 | `elem_dmg` | 속성별 피해 배율. 오브젝트에 넣은 속성마다 곱함. 키: fire wood water electric wind ice earth dark light poison metal sound time soul |
 | `pat_dmg` | 공격방식별 피해 배율. 키: shot spray thorn stream chain gust shard wall vortex laser lob iron sonic clock wisp |
 | `modes` | 모드 점수 배율 (값이 배율 자체, 예 `{"rush": 1.4}`). 키: rush swarm steel glass narrow early angry seal stroll fort three soft ease. 서버 점수 상한도 같은 값을 씀 (`docs/modes.md`) |
-| `garden` | 정원 모드 경제 (값 자체). 키: `dew_kill`(처치 이슬 8) `dew_growth`(웨이브마다 이슬 x1.05) `hp_growth`(9웨이브부터 구체 체력 x1.10) `hp_early`(1웨이브 체력 0.8배 → 12웨이브 1배) `cost_new`(20) `cost_level`(10) `cost_elem`(40) `cost_pat`(100) `cost_mod`(60) `cost_trig`(70) `cost_link`(80) `offline`(꺼 둔 동안 0.5) `stem_per`(줄기 단계마다 일반 판 피해 0.005) `mastery_per`(숙련 단계마다 그 속성 피해 0.006) `hero_xp`(영웅 Lv0→1 경험치 100, 레벨마다 x1.5) `hero_garden`(정원 안 영웅 속성 피해 0.02/Lv) `hero_norm`(일반 판 0.005/Lv) `hero_card_lv`(일반 판 영웅 카드 보장 5) `plant`(키우기형 심기 20, 심은 칸마다 x`plant_mul` 2.2) `grow_base`(키우기 Lv1→2 값 8, 레벨마다 x`grow_mul` 1.12) `hero_disc`(영웅 속성 칸 키우기 0.8배) `next_delay`(단계 사이 0.8초) |
 | `message` | 시작 화면 공지 |
 
 ## 리더보드와 시즌
@@ -127,7 +126,7 @@ main에 `server/` 변경이 올라오면 집 PC가 5분 안에 알아서 다시 
 - 판도가 바뀌는 패치는 올릴 때 "새 시즌 시작"을 켭니다. 그 패치를 받기 전의 게임으로 한 판은 시즌 0(리더보드 제외, 통계에는 들어감)이 됩니다.
 - 새 빌드로 판도가 바뀌면 패치 탭 아래 "새 빌드로 새 시즌 열기"에 그 게임 버전을 적습니다.
 - 지난 시즌 기록은 지우지 않습니다 (`/v1/leaderboard?season=N`).
-- 씨앗 나무(정원 모드)를 켠 판은 모드 목록에 `grow`가 붙어 '성장' 리더보드로 따로 갑니다 (`/v1/leaderboard?grow=true`). 안 붙은 판은 '순수'(기본). 정원 판 자체는 올리지 않습니다.
+- 예전 정원 모드의 씨앗 나무를 켠 판(모드 목록에 `grow`, 0.5.3~0.7.x 게임)은 받아 두지만 리더보드에는 올리지 않습니다. 정원 모드는 2026-11-04에 없앴고, 패치 JSON의 `garden` 칸은 올릴 때 빠집니다.
 
 ## 점수 검증
 
