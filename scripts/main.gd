@@ -4882,8 +4882,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_speed()
 		elif event.keycode == KEY_SPACE and phase == Phase.CHOOSE:
 			_show_toast(("특성을" if perk_mode else "선택지를") + " 먼저 고르세요 (1·2·3 또는 클릭)")
-		elif event.keycode == KEY_ESCAPE and (phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] or press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
+		elif event.keycode == KEY_ESCAPE and not get_tree().paused and (phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] or press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
 			_cancel_step()
+		elif event.keycode == KEY_ESCAPE and not get_tree().paused and card_dock.side.visible:
+			card_dock.close_inspector()
+			_restore_hint()
 		elif event.keycode == KEY_P or event.keycode == KEY_ESCAPE:
 			_toggle_pause()
 	if get_tree().paused:
@@ -7880,7 +7883,7 @@ func _cancel_step() -> void:
 		boxing = false
 		return
 	if not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY]:
-		selected.clear()
+		card_dock.close_inspector()
 		_restore_hint()
 		return
 	if moving:

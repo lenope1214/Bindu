@@ -13,6 +13,9 @@ var footer: Panel
 var skip_group: Panel
 var controls_theme := make_controls_theme()
 var side: PanelContainer
+var inspector_header: HBoxContainer
+var close_btn: Button
+var dismissed_tower: Tower
 var heading: Label
 var detail: RichTextLabel
 var scroll: ScrollContainer  # 설명창 안이 화면보다 길면 통째로 스크롤 (폰 자세히 등)
@@ -116,17 +119,32 @@ func _init(main) -> void:
 	sb.set_content_margin_all(14)
 	side.add_theme_stylebox_override("panel", sb)
 	game.ui_root.add_child(side)
+	var content := VBoxContainer.new()
+	content.add_theme_constant_override("separation", 12)
+	side.add_child(content)
+	inspector_header = HBoxContainer.new()
+	content.add_child(inspector_header)
+	heading = Label.new()
+	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	heading.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	heading.add_theme_font_size_override("font_size", 16)
+	inspector_header.add_child(heading)
+	close_btn = Button.new()
+	close_btn.text = "×"
+	close_btn.theme = controls_theme
+	close_btn.custom_minimum_size = Vector2(36, 36)
+	close_btn.focus_mode = Control.FOCUS_NONE
+	close_btn.tooltip_text = "상세 닫기 (Esc)"
+	close_btn.pressed.connect(close_inspector)
+	inspector_header.add_child(close_btn)
 	scroll = ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	side.add_child(scroll)
+	content.add_child(scroll)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 12)
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(column)
-	heading = Label.new()
-	heading.add_theme_font_size_override("font_size", 19)
-	heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	column.add_child(heading)
 	pic = InfoPanel.new(game)
 	pic.hide()
 	column.add_child(pic)
@@ -463,9 +481,25 @@ func layout_skip(at: Vector2, height: float) -> void:
 		button.size = Vector2(76 if i == 1 else 108, height)
 
 
+func close_inspector() -> void:
+	dismissed_tower = game._tower_at(game._pointer_world())
+	game.selected.clear()
+	game.tip_tower = null
+	inspected_tower = null
+	shown_tower = null
+	hovered = null
+	pic.clear()
+	side.hide()
+	side_signature = ""
+
+
 func _update_side() -> void:
 	var mouse: Vector2 = game._pointer_screen()
 	var tower: Tower = game._tower_at(game._pointer_world()) if not over_ui(mouse) else null
+	if tower == dismissed_tower:
+		tower = null
+	else:
+		dismissed_tower = null
 	if tower != null:
 		hovered = null
 		inspected_tower = tower
@@ -530,12 +564,12 @@ func _update_side() -> void:
 					text += ("\n\n" if text != "" else "") + str(rx["name"]) + ": " + str(rx["desc"])
 	if pic.mode != "" and ((pic.mode == "tower" and shown_tower == null) or (pic.mode == "card" and card.is_empty())):
 		pic.clear()
-	heading.visible = pic.mode == ""
+	heading.visible = true
 	detail.visible = text != ""
 	var sig: String = title + "|" + text + ("|" + str(tower.get_instance_id()) if is_instance_valid(tower) and card.is_empty() else "")
 	side.visible = active() and has_content and (card.is_empty() or Meta.card_detail)
 	if sig != side_signature:
-		heading.text = title
+		heading.text = "오브젝트 정보" if pic.mode == "tower" else ("카드 정보" if pic.mode == "card" else title)
 		detail.text = game._kr_keep(text)
 		scroll.scroll_vertical = 0
 		side_signature = sig
@@ -553,8 +587,7 @@ func _place_side(size: Vector2, cards: bool) -> void:
 			ltop = maxf(ltop, c.get_rect().end.y + 8.0)
 	var sb: StyleBox = side.get_theme_stylebox("panel")
 	var parts := []
-	if heading.visible:
-		parts.append(heading.get_combined_minimum_size().y)
+	parts.append(inspector_header.get_combined_minimum_size().y)
 	if pic.visible:
 		parts.append(pic.custom_minimum_size.y)
 	if detail.visible:
