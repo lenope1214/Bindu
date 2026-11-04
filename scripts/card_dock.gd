@@ -14,6 +14,7 @@ var skip_group: Panel
 var controls_theme := make_controls_theme()
 var side: PanelContainer
 var inspector_header: HBoxContainer
+var direction_btn: Button
 var close_btn: Button
 var dismissed_tower: Tower
 var heading: Label
@@ -129,6 +130,13 @@ func _init(main) -> void:
 	heading.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	heading.add_theme_font_size_override("font_size", 16)
 	inspector_header.add_child(heading)
+	direction_btn = Button.new()
+	direction_btn.text = "방향 변경"
+	direction_btn.theme = controls_theme
+	direction_btn.focus_mode = Control.FOCUS_NONE
+	direction_btn.custom_minimum_size = Vector2(88, 36)
+	direction_btn.pressed.connect(game._edit_selected_direction)
+	inspector_header.add_child(direction_btn)
 	close_btn = Button.new()
 	close_btn.text = "×"
 	close_btn.theme = controls_theme
@@ -419,7 +427,7 @@ func tick() -> void:
 		game.choice_header.size = Vector2(maxf(240, minf(340, x - 24)), CONTROL_HEIGHT)
 	_update_side()
 	# 상세는 필요할 때 떠 있는 패널로 읽는다. 표시 여부는 전장 크기에 영향을 주지 않는다.
-	side.visible = side.visible and not carrying() and not game.cards_hidden and not blocked
+	side.visible = side.visible and not carrying() and not blocked
 	_place_side(size, cards)
 	game.start_btn.visible = game.phase == game.Phase.READY and not blocked
 	game.cancel_btn.visible = game.phase in [game.Phase.PLACE, game.Phase.AIM, game.Phase.MOVE] and not blocked
@@ -564,6 +572,7 @@ func _update_side() -> void:
 					text += ("\n\n" if text != "" else "") + str(rx["name"]) + ": " + str(rx["desc"])
 	if pic.mode != "" and ((pic.mode == "tower" and shown_tower == null) or (pic.mode == "card" and card.is_empty())):
 		pic.clear()
+	direction_btn.visible = shown_tower != null and game.selected.size() == 1 and shown_tower == game.selected[0] and game._mine(shown_tower) and game.phase in [game.Phase.CHOOSE, game.Phase.READY]
 	heading.visible = true
 	detail.visible = text != ""
 	var sig: String = title + "|" + text + ("|" + str(tower.get_instance_id()) if is_instance_valid(tower) and card.is_empty() else "")

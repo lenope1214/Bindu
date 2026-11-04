@@ -2393,6 +2393,25 @@ func _meta_misc() -> void:
 	main.pointer_position = old_pointer
 	main.phase = old_phase
 	ok("UI-32", side_ok and retained_tower and close_visible and closed and dismissed_tower and tab_hidden, "설명창 내용 높이·보는 오브젝트 반대쪽 구석, 일반 판 Tab 버튼 없음")
+	main.phase = main.Phase.READY
+	main.press_t = dt
+	main.dragging = false
+	main._release_press()
+	dock._update_side()
+	var click_selects: bool = main.selected == [dt] and main.moving == null and main.phase == main.Phase.READY and dock.direction_btn.visible
+	main.phase = main.Phase.WAVE
+	dock._update_side()
+	main._edit_selected_direction()
+	var wave_readonly: bool = not dock.direction_btn.visible and main.phase == main.Phase.WAVE and main.moving == null
+	main.phase = main.Phase.READY
+	var original_dir: Vector2 = dt.dir
+	dock.direction_btn.pressed.emit()
+	var edits_selected: bool = main.phase == main.Phase.AIM and main.moving == dt
+	main._cancel_step()
+	var cancel_restores: bool = main.phase == main.Phase.READY and main.selected == [dt] and dt.dir == original_dir and dock.inspected_tower == dt
+	dock.close_inspector()
+	main.phase = old_phase
+	ok("UI-05", click_selects and wave_readonly and edits_selected and cancel_restores, "클릭은 선택, 쉬는 시간의 명시적 방향 편집·취소 복원, 전투 중 읽기 전용")
 	# UI-33: 설명창 그림 (오브젝트 정보: 미리보기·숫자 타일, 자세히: 곱셈 사슬·배율 막대 / 카드: 미리보기·타일)
 	var pic: InfoPanel = dock.pic
 	pic.show_tower(dt, false, 0.3, "이번 웨이브 몫", 300.0)

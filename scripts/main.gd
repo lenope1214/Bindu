@@ -18,7 +18,7 @@ const SAVE_PATH := "user://best.cfg"
 const RUN_PATH := "user://run.cfg"  # 이어하기: 쉬는 시간마다 저장, 게임 오버면 지움
 const OLD_GARDEN_RUN := "user://garden.cfg"  # 예전 정원 모드 저장 판 (정원을 없애서 읽지 않고 지운다)
 const RUN_FORMAT := 1
-const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 방향 바꾸기   끌기: 옮기기"
+const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 선택 · 상세에서 방향 변경   끌기: 옮기기"
 ## 첫 판: 카드 종류가 열리는 웨이브 (그 웨이브 앞 쉬는 시간부터 나온다). 속성은 처음부터
 const TUTOR_OPEN := {"pat": 3, "mod": 4, "trig": 5, "link": 6}
 const PLACE_HINT := "클릭: 설치 (오브젝트 위면 속성 겹치기)   오브젝트 꾹 누르기·끌기: 옮기기\n우클릭/Esc: 카드 다시 선택"
@@ -1835,7 +1835,7 @@ func _help_text() -> String:
 		"공격방식·강화·연계 카드: 오브젝트 위에 놓기 (효과가 없는 강화는 못 넣음: 관통 연사·돌풍·철구에 관통·튕김, 벽에 유도, 벽·투척 장판에 분열)",
 		"오브젝트 끌기: 방향은 그대로 두고 옮기기 (카드를 고른 뒤에는 꾹 눌러서)",
 		"빈 곳 끌기 / Shift·Ctrl+클릭 / Ctrl+A(모두): 여러 개 선택 → 그중 하나를 끌면 함께 이동",
-		"쉬는 시간에 오브젝트 클릭: 그 자리에서 방향 바꾸기 (우클릭한 채 끌면 한 번에)",
+		"오브젝트 클릭: 선택 · 상세의 [방향 변경]으로 편집 (쉬는 시간에 우클릭한 채 끌면 바로 조준)",
 		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 비율 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
 		"왼쪽 위 DPS 표: 웨이브 중엔 최근 5초 실시간 DPS, 쉬는 시간엔 지난 웨이브 DPS와 비율. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기 (저장됨)",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
@@ -4967,10 +4967,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			skill_arm = ""
 		return
+	if phase == Phase.WAVE and event.button_index == MOUSE_BUTTON_LEFT:
+		var t := _tower_at(mpos)
+		if t:
+			_select_tower(t)
+		return
 	if phase in [Phase.CHOOSE, Phase.READY] and event.button_index == MOUSE_BUTTON_LEFT:
 		var t := _tower_at(mpos)
 		if t:
-			# 짧게 클릭: 그 자리에서 방향 바꾸기, Shift/Ctrl+클릭: 선택에 더하기·빼기, 끌기: 바로 이동
+			# 짧게 클릭: 선택, Shift/Ctrl+클릭: 선택에 더하기·빼기, 끌기: 바로 이동
 			_begin_press(t, mpos)
 		else:
 			# 빈 곳을 끌면 선택 상자
@@ -5123,7 +5128,10 @@ func _begin_press(t: Tower, mpos: Vector2) -> void:
 		if phase == Phase.PLACE and _req_ok(t):
 			_place_on(t)  # 요청한 속성을 넣어 주기 (옮기지는 못함)
 			return
-		_show_toast("친구가 놓은 오브젝트는 바꿀 수 없어요")
+		if phase in [Phase.CHOOSE, Phase.READY]:
+			_select_tower(t)
+		else:
+			_show_toast("친구가 놓은 오브젝트는 바꿀 수 없어요")
 		return
 	press_t = t
 	press_pos = mpos
@@ -5180,8 +5188,7 @@ func _release_press() -> void:
 				selected.append(t)
 			_restore_hint()
 		else:
-			selected.clear()
-			_start_move(t)
+			_select_tower(t)
 		return
 	dragging = false
 	# 놓을 수 없는 자리가 하나라도 있으면 모두 원래 자리로
@@ -5240,6 +5247,20 @@ func _finish_box() -> void:
 			if r.grow(Tower.RADIUS * 0.5).has_point(t.position) and not t in selected and _mine(t):
 				selected.append(t)
 	_restore_hint()
+
+
+func _select_tower(t: Tower) -> void:
+	selected = [t] if _mine(t) else []
+	card_dock.dismissed_tower = null
+	card_dock.hovered = null
+	card_dock.inspected_tower = t
+	tip_tower = t
+	_restore_hint()
+
+
+func _edit_selected_direction() -> void:
+	if phase in [Phase.CHOOSE, Phase.READY] and not card_dock.input_blocked() and selected.size() == 1 and is_instance_valid(selected[0]) and _mine(selected[0]):
+		_start_move(selected[0])
 
 
 ## 단계에 맞는 안내 문구로 되돌린다 (선택 중이면 선택 안내).
@@ -7887,11 +7908,13 @@ func _cancel_step() -> void:
 		_restore_hint()
 		return
 	if moving:
+		var t := moving
 		moving.position = move_orig_pos
 		moving.set_attack_direction(move_orig_dir)
 		moving.queue_redraw()
 		moving = null
 		_end_move()
+		_select_tower(t)
 		return
 	if phase == Phase.AIM:
 		phase = Phase.PLACE
@@ -7918,6 +7941,7 @@ func _back_to_choose() -> void:
 
 ## 방향 바꾸기를 끝내고 원래 단계로.
 func _end_move() -> void:
+	selected.clear()
 	card_dock.inspected_tower = null
 	tip_tower = null
 	aim_right = false
@@ -7927,8 +7951,7 @@ func _end_move() -> void:
 		_back_to_choose()
 
 
-## 쉬는 시간에 설치된 오브젝트를 클릭(또는 우클릭한 채 끌기)하면 그 자리에서 방향을 다시 정한다.
-## 옮기기는 끌기·꾹 누르기로 따로 한다 (예전엔 클릭 → 새 자리 → 방향, 방향만 바꿀 때도 제자리를 다시 눌러야 했다).
+## 선택한 오브젝트의 [방향 변경] 또는 우클릭 끌기로 제자리 방향을 편집한다.
 func _start_move(t: Tower) -> void:
 	move_return = phase
 	start_btn.visible = false
@@ -9558,7 +9581,7 @@ func _draw_tooltip() -> void:
 	var maxw := minf(620.0 * z, _right_limit() - 24.0)  # 이보다 긴 줄은 접는다 (속성이 많으면 화면 밖으로 나가던 것)
 	var lines: Array = []  # [글자, 색]
 	var head := t.title()
-	var tip := "(클릭: 방향 · 끌기: 옮기기)" if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
+	var tip := "(클릭: 선택 · 상세에서 방향 변경 · 끌기: 옮기기)" if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
 	# Shift를 누르고 있으면 공격력·공격 속도·사거리 같은 수치를 자세히
 	var detail := _tip_detail_on() and not touch_move
 	tip = _th(tip)
