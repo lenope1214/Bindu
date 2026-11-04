@@ -69,8 +69,8 @@ var vuln_t := 0.0
 var vuln_k := 0.3  # 지금 걸린 약화 세기 (받는 피해 +)
 var vuln_src: Object = null  # 약화를 건 오브젝트 (어둠 끌어당김, Share.pull)
 var vuln_sh := false  # 특징이 실어 나른 약화인지 (그러면 끌어당김을 다시 타지 않음)
-var bury_src: Object = null  # 땅 묻어둠: 이 오브젝트 효과가 묻어 있음, bury_until 전에 다시 맞으면 한 번 더 (Share.on_hit)
-var bury_until := 0.0
+var vine := 0.0  # 나무 휘감기: 감긴 덩굴 (3이면 묶임, 조금씩 풀림)
+var spread_cd := 0.0  # 불 번짐 간격 (Share.spread)
 var rep_cd := 0.0  # 시간 되풀이 간격
 var chill := 0.0
 var frozen_t := 0.0  # 빙결 표시
@@ -186,12 +186,15 @@ func step(delta: float) -> void:
 	if root_dr_t > ROOT_DR_RESET:
 		root_dr = 0
 	chill = maxf(chill - 0.4 * delta, 0.0)
+	vine = maxf(vine - 0.5 * delta, 0.0)
 	if burn_t > 0.0:
 		burn_t -= delta
 		_credit(burn_src, hurt(burn_dps * delta, false, burn_src), burn_rx, burn_key)
 		last_rx = burn_rx
-		if burn_t <= 0.0 and hp > 0.0:
-			Share.flare(self)  # 불 타오름: 화상이 끝나는 순간
+		spread_cd -= delta
+		if spread_cd <= 0.0 and hp > 0.0:
+			spread_cd = Share.FIRE_CD
+			Share.spread(self)  # 불 번짐: 타는 동안 닿은 구체에 옮겨 붙음
 	if poison_t > 0.0:
 		poison_t -= delta
 		var pd := poison_dps * delta
@@ -561,6 +564,17 @@ func vuln(duration: float, amount := -1.0, src: Object = null, sh := false) -> v
 
 
 ## 냉기가 3 쌓이면 1초 빙결.
+## 나무 휘감기: 덩굴이 감길수록 느려지고 3이 차면 묶임. freeze_t: 묶이는 시간 배율 (얼음 오래감)
+func entangle(amount: float, freeze_t := 1.0) -> void:
+	if sturdy and silence_t <= 0.0:
+		amount *= 0.5
+	vine += amount
+	slow(maxf(1.0 - 0.08 * vine, 0.76), 0.6)
+	if vine >= 3.0:
+		vine = 0.0
+		root(0.6 * freeze_t)
+
+
 ## freeze_t: 빙결 시간 배율 (얼음 오래감·제어 회복 2026-11-04, Share.dur)
 func add_chill(amount: float, freeze_t := 1.0) -> void:
 	if sturdy and silence_t <= 0.0:

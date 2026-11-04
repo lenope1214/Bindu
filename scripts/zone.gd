@@ -177,7 +177,7 @@ func affect(orbs: Array, delta: float) -> void:
 				if is_instance_valid(owner_tower) and (not rill_cd.has(o) or life <= rill_cd[o]):
 					rill_cd[o] = life - 0.5
 					o.slow(Share.RILL_SLOW, Share.RILL_T)  # 효과와 따로 늘 느려짐 (제어 회복 2026-11-04)
-					Share.apply(owner_tower, o, Share.WATER_F * amt, "share:water")
+					Share.carry(owner_tower, o, Share.WATER_F * amt, "share:water", position, 1.0 - life / maxf(max_life, 0.01))
 			"rock":
 				var away: Vector2 = (o.position - position).normalized()
 				o.position = position + away * (radius + o.radius())

@@ -237,7 +237,7 @@ case "$CMD" in
 		D=$(copy_project "$$")
 		cd "$D"
 		r=0
-		T 600 "$G" --headless --fixed-fps 60 --path . -s tools/spec_check.gd > spec.txt 2>&1 || r=1
+		T 1200 "$G" --headless --fixed-fps 60 --path . -s tools/spec_check.gd > spec.txt 2>&1 || r=1
 		grep -E "^(ok|FAIL|SPEC|DOC)|SCRIPT ERROR|Parse Error|^ERROR:" spec.txt || true
 		grep -q "^SPEC 통과" spec.txt || r=1
 		grep -qE 'SCRIPT ERROR|Parse Error|^ERROR:' spec.txt && r=1

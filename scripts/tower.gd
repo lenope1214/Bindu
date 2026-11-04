@@ -1840,7 +1840,8 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		d *= Rules.light_mul
 		crit = k >= 1.0
 		lit = not force_crit
-	if els.has(Elem.WOOD):
+	if els.has(Elem.WOOD) and o.vine > 0.0:
+		# 나무 휘감기: 덩굴이 감긴 구체에 가시 피해
 		d *= 1.0 + Rules.wood_dmg * mini(els.get(Elem.WOOD, 0), int(Rules.wood_cap)) * Share.am(self, Elem.WOOD)
 	var mt := 0.0
 	if els.has(Elem.METAL):
@@ -1912,6 +1913,12 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		o.add_chill(Rules.ice_chill * k * els.get(Elem.ICE, 0) * g * Share.am(self, Elem.ICE), dm)
 	if els.has(Elem.WATER):
 		o.slow(Share.slow_f(els.get(Elem.WATER, 0), Share.am(self, Elem.WATER)), Rules.water_t * dm)
+	if els.has(Elem.WOOD):
+		o.entangle(Share.WOOD_VINE * els.get(Elem.WOOD, 0) * minf(k, 1.0) * Share.am(self, Elem.WOOD), dm)
+	if els.has(Elem.WIND) and o.hp > 0.0:
+		var away := o.position - position
+		if away.length() > 0.5:
+			o.knock(away.normalized() * Share.WIND_HIT * els.get(Elem.WIND, 0) * minf(k, 1.0) * Share.am(self, Elem.WIND))
 	if els.has(Elem.EARTH) and randf() < Share.root_ch(self, els.get(Elem.EARTH, 0)) * k * g:
 		o.root(Rules.earth_t * dm)
 	if els.has(Elem.DARK):
@@ -2295,7 +2302,7 @@ func _nova_follow(at: Vector2, hits: Array, _pool: float, _cap: Dictionary) -> v
 	if ks <= 0.0 or hits.is_empty() or not Share.has_carry(self):
 		return
 	for o in hits:
-		Share.apply(self, o, Share.STAR_F * ks, "share:star")
+		Share.carry(self, o, Share.STAR_F * ks, "share:star", at, o.position.distance_to(at) / 200.0)
 	var e := planet()
 	main.burst(at, Elem.COLORS[e] if e >= 0 else NOVA_COL, 24, 240.0)
 

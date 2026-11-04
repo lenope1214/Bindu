@@ -347,10 +347,10 @@ func _share() -> void:
 	main.arc(a1, 1.0, et)
 	var arc_ok: bool = a2.burn_t > 0.0 and a2.burn_rx
 	ok("SHR-02", arc_ok, "전기 튐: 튄 전류가 같은 오브젝트의 화상도 옮김, 옮긴 효과는 1세대만 (화상 %.1f초, 표시 %s)" % [a2.burn_t, a2.burn_rx])
-	# 1세대: 옮긴 화상이 끝나도 불꽃(타오름)이 다시 터지지 않음
-	var a3 := _orb(c + Vector2(70, 0), 1e6)
+	# 1세대: 옮긴 화상은 다시 번지지 않음
+	var a3 := _orb(c + Vector2(62, 0), 1e6)
 	_grid.call()
-	Share.flare(a2)
+	Share.spread(a2)
 	ok("SHR-03", a3.burn_t <= 0.0, "실어 나른 효과는 특징을 다시 타지 않음 (끝없는 연쇄 없음)")
 	_clear()
 	# 독 전염: 독+얼음 → 중독된 구체가 죽으면 둘레에 냉기
@@ -364,18 +364,21 @@ func _share() -> void:
 	Share.contagion(p1)
 	ok("SHR-04", p2.chill > 0.0 and p2.poison_t > 0.0, "독 전염: 중독된 구체가 죽으면 둘레에 독·냉기 (냉기 %.2f)" % p2.chill)
 	_clear()
-	# 땅 묻어둠: 땅+불이 맞힌 뒤 2초 안에 다른 오브젝트가 맞혀도 묻은 화상이 터짐
+	# 땅 다짐: 자리(불 번짐)에 닿은 구체가 확률로 묶임, 자리가 없으면 맞은 구체가
 	var gt := _tower(c + Vector2(-200, 0), Elem.EARTH, 3)
 	gt.add(Elem.FIRE, 1)
 	gt.eff = gt.eff_now()
-	var other := _tower(c + Vector2(-200, 150), Elem.WATER, 1)
+	var solo := _tower(c + Vector2(-200, 150), Elem.EARTH, 3)
 	var b1 := _orb(c, 1e6)
+	var b2 := _orb(c + Vector2(0, 150), 1e6)
 	_grid.call()
-	gt.hit(b1, 1.0)
-	var buried: bool = b1.bury_src == gt
-	b1.burn_t = 0.0
-	other.hit(b1, 1.0)
-	ok("SHR-05", buried and b1.burn_t > 0.0, "땅 묻어둠: 묻어 둔 효과가 2초 안에 다시 맞으면 터짐 (묻음 %s, 화상 %.1f)" % [buried, b1.burn_t])
+	var ech := Share.EARTH_CH
+	Share.EARTH_CH = 100.0
+	Share.carry(gt, b1, 0.3, "share:fire", c + Vector2(-30, 0), 0.3)
+	b2.root_immune = 0.0
+	Share.on_hit(solo, b2, false)
+	Share.EARTH_CH = ech
+	ok("SHR-05", b1.root_timer > 0.0 and b2.root_timer > 0.0, "땅 다짐: 자리에 닿은 구체·자리가 없으면 맞은 구체가 확률로 묶임 (%.2f, %.2f)" % [b1.root_timer, b2.root_timer])
 	_clear()
 	# 시간 되풀이: 0.8초 뒤 같은 구체에 효과 한 번 더
 	var tt := _tower(c + Vector2(-200, 0), Elem.TIME, 3)
@@ -448,16 +451,17 @@ func _share() -> void:
 		rill.affect([f1], 0.1)
 	ok("SHR-11", rill != null and f1.burn_t > 0.0, "물 흐름: 지나간 길 물길을 밟은 구체에 효과 (물길 %s, 화상 %.1f)" % [rill != null, f1.burn_t])
 	_clear()
-	# 특징만 있고 실어 나를 효과가 없으면 아무 일도 없음 (나무+바람)
-	var nt := _tower(c + Vector2(-200, 0), Elem.WOOD, 3)
+	# 특징만 있고 실어 나를 효과가 없으면 아무 일도 없음 (바람+빛)
+	var nt := _tower(c + Vector2(-200, 0), Elem.LIGHT, 3)
 	nt.add(Elem.WIND, 1)
 	nt.eff = nt.eff_now()
 	var none := not Share.has_carry(nt)
 	nt.add(Elem.FIRE, 1)
 	nt.eff = nt.eff_now()
-	ok("SHR-12", none and Share.has_carry(nt), "나무·바람·빛·별 효과는 오브젝트에 걸려 실어 나르지 않음")
+	ok("SHR-12", none and Share.has_carry(nt), "바람·빛·별 효과는 오브젝트·맞힌 순간에만 걸려 실어 나르지 않음")
 	_clear()
 	_affinity(c)
+	_real(c)
 
 
 ## 상성 (꼬리표, 2026-11-04)
@@ -559,9 +563,6 @@ func _affinity(c: Vector2) -> void:
 	mt.add(Elem.FIRE, 1)
 	mt.eff = mt.eff_now()
 	var m1 := _orb(c + Vector2(0, 200), 1e6, Orb.Kind.NORMAL, 50.0)
-	var et := _tower(c + Vector2(200, 0), Elem.EARTH, 3)
-	et.add(Elem.FIRE, 1)
-	et.eff = et.eff_now()
 	var b1 := _orb(c + Vector2(0, -200), 1e6)
 	_grid.call()
 	ft.form_path(c)
@@ -573,19 +574,102 @@ func _affinity(c: Vector2) -> void:
 		rill.affect([f1], 0.1)
 	var st0 := m1.stagger_t
 	Share.condense(mt, m1, 2, 1.0)
-	b1.bury_src = et
-	b1.bury_until = b1.age + 2.0
-	b1.root_timer = 0.0
-	Share.on_hit(ft, b1, true)
+	b1.root_timer = 0.1
 	var fz := _orb(c + Vector2(200, 200), 1e6)
 	fz.add_chill(3.0, 1.5)
 	ok("AFF-10", rill != null and f1.slow_factor <= Share.RILL_SLOW + 0.001 and m1.stagger_t > st0 and b1.root_timer > 0.0 and fz.root_timer > 1.0,
-		"특징 제어: 물길 감속 %.2f · 응축 멈칫 · 묻어둠 묶음 %.2f · 빙결 %.2f초" % [f1.slow_factor if rill else 1.0, b1.root_timer, fz.root_timer])
+		"특징 제어: 물길 감속 %.2f · 응축 멈칫 · (다짐은 SHR-05) %.2f · 빙결 %.2f초" % [f1.slow_factor if rill else 1.0, b1.root_timer, fz.root_timer])
 	_clear()
 	# 화면 글: 짝 이름표에 상성, 오브젝트 상성 줄
 	var shock: Dictionary = Elem.reaction_of(Elem.WATER, Elem.ELECTRIC)
 	ok("AFF-11", shock.get("aff", "") == "strong" and Elem.aff_label(Elem.WATER, Elem.ELECTRIC) == "감전(강)" and Elem.aff_text(Elem.FIRE, Elem.WATER).begins_with("상성 증기(약)")
 		and main.src_name("aff:thermo") == "상성 온도 충격", "도감·정보창 상성 글 (%s)" % Elem.aff_label(Elem.WATER, Elem.ELECTRIC))
+
+
+## 실제 연상 개편 (2026-11-04): 나르는 특징(자리) · 바꾸는 특징 · 휘감기 · 밀쳐냄 · 불 번짐 · 이름 있는 자리
+func _real(c: Vector2) -> void:
+	var _grid := func():
+		main.targets = main.orbs.get_children()
+		main._build_grid()
+	var all_e: Array = Share.SITE_E + Share.MOD_E
+	var split_ok: bool = Share.SITE_E.size() == 9 and Share.MOD_E.size() == 6 and Elem.ALL.all(func(e): return all_e.count(e) == 1)
+	ok("REAL-01", split_ok, "특징 15개 = 나르는 9 + 바꾸는 6 (겹침 없음)")
+	var at := c + Vector2(-40, 0)
+	var mk := func(e2: int) -> Tower:
+		var tw := _tower(c + Vector2(-260, 0), Elem.FIRE, 1)
+		tw.add(e2, 3)
+		tw.eff = tw.eff_now()
+		return tw
+	# 자람: 자리 끝에 닿은 구체가 묶이고 효과가 셈
+	var wt: Tower = mk.call(Elem.WOOD)
+	var o1 := _orb(c, 1e6)
+	var o0 := _orb(c + Vector2(0, 120), 1e6)
+	_grid.call()
+	Share.carry(wt, o0, 0.3, "share:fire", at, 0.0)
+	Share.carry(wt, o1, 0.3, "share:fire", at, 1.0)
+	ok("REAL-02", o1.root_timer > 0.0 and o0.root_timer <= 0.0 and o1.burn_dps > o0.burn_dps, "자람: 자리 끝은 덩굴이 묶고 효과가 셈 (화상 %.2f > %.2f)" % [o1.burn_dps, o0.burn_dps])
+	_clear()
+	# 실림: 자리 가운데에서 바깥으로 밀림
+	var nt: Tower = mk.call(Elem.WIND)
+	var o2 := _orb(c, 1e6)
+	_grid.call()
+	var x0 := o2.position.x
+	Share.carry(nt, o2, 0.3, "share:fire", at, 0.5)
+	ok("REAL-03", o2.position.x > x0, "실림: 자리에 닿은 구체를 바깥으로 밀어냄 (%.1f)" % (o2.position.x - x0))
+	_clear()
+	# 얼림·날선·되풀이
+	var it: Tower = mk.call(Elem.ICE)
+	var mt: Tower = mk.call(Elem.METAL)
+	var tt: Tower = mk.call(Elem.TIME)
+	var o3 := _orb(c, 1e6)
+	var o4 := _orb(c + Vector2(0, 100), 1e6, Orb.Kind.NORMAL, 50.0)
+	var o5 := _orb(c + Vector2(0, -100), 1e6)
+	_grid.call()
+	Share.carry(it, o3, 0.3, "share:fire", at, 0.5)
+	Share.carry(mt, o4, 0.3, "share:fire", at, 0.5)
+	var n0 := tt.later.size()
+	Share.carry(tt, o5, 0.3, "share:fire", at, 0.5)
+	ok("REAL-04", o3.chill > 0.0 and mt.src.get("share:metal", 0.0) > 0.0 and o4.stagger_t > 0.0 and tt.later.size() > n0,
+		"얼림 냉기 %.2f · 날선 피해 %.1f·멈칫 · 되풀이 예약" % [o3.chill, mt.src.get("share:metal", 0.0)])
+	_clear()
+	# 불 번짐: 타는 구체에 닿은 구체에 옮겨 붙음 (옮은 불은 다시 안 번짐)
+	var ft := _tower(c + Vector2(-260, 0), Elem.FIRE, 3)
+	var f1 := _orb(c, 1e6)
+	var f2 := _orb(c + Vector2(f1.radius() * 2.0 + 10.0, 0), 1e6)
+	var f3 := _orb(c + Vector2(400, 0), 1e6)
+	_grid.call()
+	ft.hit(f1, 1.0)
+	Share.spread(f1)
+	ok("REAL-05", f2.burn_t > 0.0 and f2.burn_rx and f3.burn_t <= 0.0, "불 번짐: 닿은 구체에 옮겨 붙음, 먼 구체는 그대로")
+	_clear()
+	# 나무 휘감기: 3번 감기면 묶임, 감긴 구체에만 가시 피해
+	var vt := _tower(c + Vector2(-260, 0), Elem.WOOD, 1)
+	var v1 := _orb(c, 1e9)
+	_grid.call()
+	var h0 := v1.hp
+	vt.hit(v1, 10.0)
+	var first := h0 - v1.hp
+	h0 = v1.hp
+	vt.hit(v1, 10.0)
+	var second := h0 - v1.hp
+	vt.hit(v1, 10.0)
+	ok("REAL-06", second > first and v1.root_timer > 0.0, "휘감기: 감긴 구체에 더 아프고(%.1f > %.1f) 3번째에 묶임" % [second, first])
+	_clear()
+	# 바람 밀쳐냄: 맞은 구체가 오브젝트 반대쪽으로, 순풍(둘레 공격 속도)은 없음
+	var wn := _tower(c + Vector2(-260, 0), Elem.WIND, 3)
+	var buddy := _tower(c + Vector2(-260, 80), Elem.FIRE, 1)
+	var w1 := _orb(c, 1e6)
+	_grid.call()
+	var wx := w1.position.x
+	wn.hit(w1, 1.0)
+	main._wind_buffs()
+	ok("REAL-07", w1.position.x > wx and buddy.wind_buff == 0.0, "밀쳐냄: 맞은 구체가 밀림 (%.1f), 순풍 없음" % (w1.position.x - wx))
+	_clear()
+	# 이름 있는 자리
+	var ns := Share.new_sites({Elem.WATER: 1}, Elem.WOOD)
+	ok("REAL-08", Share.NAMED.size() == 10 and Share.site_name(Elem.WATER, Elem.WOOD) == "덩굴 길" and ns.has("덩굴 길")
+		and Share.site_name(Elem.FIRE, Elem.METAL) == "날선 불" and Share.sites_of({Elem.FIRE: 1, Elem.ICE: 1}).size() == 1,
+		"자리 이름: 이름 있는 칸 10개, 나머지는 꾸밈말+자리 (%s)" % ", ".join(ns))
 
 
 # ---------- 공격방식 ----------

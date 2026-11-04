@@ -7,15 +7,18 @@ class_name Share
 ##   · 물 흐름(지나간 길 물길, Zone rill) · 땅 묻어둠·시간 되풀이·빛 꿰뚫음(Tower.hit) · 영혼 쫓아감(넋 혼불이 주인 오브젝트의 hit를 그대로 씀, 세기 배율 없음) · 별 모음(초신성)
 ## - 나무 자람·바람 넓힘·얼음 오래감·금속 응축은 실어 나르는 자리가 없고 세기·범위·시간을 바꾼다.
 ## 피해 출처 키는 "share:<특징 속성>" (Tower.src, 서버 통계).
+## 실제 연상 개편 (2026-11-04): 특징은 두 종류.
+## - 나르는 특징(SITE_E, 자리를 만듦): 불 번짐·물 물길·전기 튐·독 전염·소리 음파·빛 빛줄기·어둠 끌어당김·영혼 혼불·별 초신성.
+## - 바꾸는 특징(MOD_E, 자리를 바꿈): 나무 자람·바람 실림·얼음 얼림·땅 다짐·금속 날선·시간 되풀이. 같은 오브젝트의 모든 자리에 carry()가 한 번에 붙인다.
+##   규칙이 모든 칸을 채우고, 이름 있는 칸(NAMED)만 따로 이름을 준다.
 
 ## 특징 속성 레벨별 세기 (Lv3에서 멈춤). 온라인 패치 rules.share_mul(전체) · rules.share_<속성>(특징마다)
 static var LV_K := [0.0, 0.6, 0.8, 1.0]  # 특징 속성 레벨 0~3 세기
 
 ## 특징마다 실어 나르는 비율 (Lv3 기준, 세기 Share.k를 곱한다)
-static var FIRE_F := 0.4  # 불 타오름: 불꽃에 닿은 구체에 효과 비율
+static var FIRE_F := 0.3  # 불 번짐: 타는 구체에 닿은 구체에 효과 비율 (FIRE_CD마다)
 static var WATER_F := 0.3  # 물 흐름: 물길을 밟은 구체에 효과 비율
 static var ELEC_F := 0.5  # 전기 튐: 튄 구체에 효과 비율
-static var EARTH_F := 0.7  # 땅 묻어둠: 다시 맞을 때 효과 비율
 static var DARK_F := 0.3  # 어둠 끌어당김: 끌려온 구체에 효과 비율
 static var LIGHT_F := 0.4  # 빛 꿰뚫음: 빛줄기 구체에 효과 비율
 static var POISON_F := 0.5  # 독 전염: 둘레 구체에 효과 비율
@@ -23,24 +26,33 @@ static var SOUND_F := 0.5  # 소리 퍼짐: 음파에 닿은 구체에 효과 �
 static var TIME_F := 0.5  # 시간 되풀이: 한 번 더 거는 효과 비율
 static var STAR_F := 1.0  # 별 모음: 초신성이 맞힌 구체에 효과 비율
 
-static var FIRE_R := 50.0  # 불꽃 반지름
+static var FIRE_R := 26.0  # 불 번짐: 타는 구체 몸에서 이만큼 안에 닿은 구체
+static var FIRE_CD := 0.6  # 불 번짐 간격
 static var DARK_R := 90.0  # 끌어당김 반지름
 static var DARK_PULL := 30.0  # 끌어당기는 거리(px)
 static var LIGHT_LEN := 200.0  # 꿰뚫는 빛줄기 길이
 static var LIGHT_W := 14.0  # 빛줄기 반폭
 static var LIGHT_CD := 0.3  # 오브젝트마다 빛줄기 간격
 static var POISON_R := 80.0  # 중독 전염 반지름 (예전 독 전염과 같음)
-static var EARTH_T := 2.0  # 묻어둠 기다리는 시간
 static var TIME_T := 0.8  # 되풀이까지
 static var WIND_R := 0.4  # 넓힘: 범위 +40%
 static var ICE_T := 0.5  # 오래감: 지속 +50%
-static var WOOD_K := 0.06  # 자람: 100마다 +6%
+static var WOOD_K := 0.06  # 자람: 자리가 없을 때 공격 자체가 자리 (오브젝트에서 100마다 +6%)
 static var WOOD_MAX := 0.3  # 자람 최대
 static var METAL_K := 0.12  # 응축: 효과 하나당 위력의 12%
 static var METAL_STAG := 2.0  # 응축: 효과 하나당 멈칫 거리(px) (제어 회복 2026-11-04)
+static var GROW_K := 0.5  # 자람: 자리 끝(진행 1)에서 효과 +50%
+static var GROW_END := 0.8  # 자람: 자리 진행이 이만큼 넘은 곳에 닿은 구체는 덩굴에 묶임
+static var GROW_ROOT := 0.4  # 자람: 덩굴 묶음 시간
+static var WIND_PUSH := 10.0  # 실림: 자리가 닿은 구체를 바깥으로 미는 거리(px)
+static var ICE_SITE := 0.4  # 얼림: 자리가 닿은 구체에 냉기
+static var EARTH_CH := 0.15  # 다짐: 자리가 닿은 구체가 묶일 확률
+static var METAL_SITE := 0.15  # 날선: 자리가 닿을 때 추가 피해 (위력 배율)
+static var WOOD_VINE := 1.0  # 휘감기: 맞을 때마다 감기는 덩굴 (레벨마다, 3이면 묶임)
+static var WIND_HIT := 6.0  # 밀쳐냄: 맞은 구체를 미는 거리(px, 레벨마다)
 static var RILL_SLOW := 0.8  # 물길: 밟은 구체는 효과와 따로 늘 이만큼 느려짐 (제어 회복)
 static var RILL_T := 0.5  # 물길 감속 시간
-static var EARTH_ROOT := 0.3  # 묻어둠이 터질 때 묶는 시간 (제어 회복)
+static var EARTH_ROOT := 0.4  # 다짐: 묶는 시간
 
 ## 상성 (2026-11-04, Elem.TAGS·AFF_RULES). 같은 오브젝트 안 두 속성 짝마다.
 static var AFF_CARRY := 1.5  # 강상성 속성의 특징 세기
@@ -111,6 +123,104 @@ static func aff(tw: Object) -> Dictionary:
 				out["strong_e"][ks[j]] = true
 	_aff[ck] = out
 	return out
+
+
+## 나르는 특징(자리) · 바꾸는 특징
+const SITE_E := [Elem.FIRE, Elem.WATER, Elem.ELECTRIC, Elem.POISON, Elem.SOUND, Elem.LIGHT, Elem.DARK, Elem.SOUL, Elem.STAR]
+const MOD_E := [Elem.WOOD, Elem.WIND, Elem.ICE, Elem.EARTH, Elem.METAL, Elem.TIME]
+const SITE_NOUN := {Elem.FIRE: "불", Elem.WATER: "물길", Elem.ELECTRIC: "전기", Elem.POISON: "독", Elem.SOUND: "음파",
+	Elem.LIGHT: "빛줄기", Elem.DARK: "끌어당김", Elem.SOUL: "혼불", Elem.STAR: "초신성"}
+const MOD_ADJ := {Elem.WOOD: "자라는", Elem.WIND: "바람에 실린", Elem.ICE: "얼어붙은", Elem.EARTH: "다져진", Elem.METAL: "날선", Elem.TIME: "되풀이되는"}
+## 따로 이름을 준 칸 [자리, 바꾸는 특징] → [이름, 설명]
+const NAMED := {
+	[Elem.WATER, Elem.WOOD]: ["덩굴 길", "물길을 따라 덩굴이 자라 갈수록 느리게 하다 끝에서 묶음"],
+	[Elem.WATER, Elem.ICE]: ["얼음길", "물길이 얼어 오래 남고 밟은 구체에 냉기"],
+	[Elem.WATER, Elem.EARTH]: ["진흙길", "물길이 진흙이 되어 밟은 구체가 확률로 묶임"],
+	[Elem.FIRE, Elem.WIND]: ["불바람", "바람에 실려 불이 더 멀리 번지고 닿은 구체를 밀어냄"],
+	[Elem.ELECTRIC, Elem.TIME]: ["연쇄 번개", "튄 전기가 잠시 뒤 한 번 더 튐"],
+	[Elem.POISON, Elem.WIND]: ["독안개", "바람에 실려 독이 넓게 옮음"],
+	[Elem.SOUND, Elem.ICE]: ["서리 음파", "음파에 닿은 구체에 냉기"],
+	[Elem.SOUND, Elem.EARTH]: ["땅울림", "음파에 닿은 구체가 확률로 묶임"],
+	[Elem.SOUND, Elem.TIME]: ["여운", "음파가 잠시 뒤 한 번 더 울림"],
+	[Elem.LIGHT, Elem.METAL]: ["빛의 칼", "빛줄기에 날이 서서 닿은 구체에 추가 피해"],
+}
+
+
+## 자리 이름: 이름 있는 칸이면 그 이름, 아니면 "꾸밈말 자리"
+static func site_name(site: int, mod: int) -> String:
+	if NAMED.has([site, mod]):
+		return NAMED[[site, mod]][0]
+	return "%s %s" % [MOD_ADJ[mod], SITE_NOUN[site]]
+
+
+## 오브젝트에 생긴 자리들 [[자리, 바꾸는 특징, 이름]] (속성 묶음 els)
+static func sites_of(els: Dictionary) -> Array:
+	var out := []
+	for a in els:
+		if a in SITE_E:
+			for b in els:
+				if b in MOD_E:
+					out.append([a, b, site_name(a, b)])
+	return out
+
+
+## 속성 e를 더하면 새로 생기는 자리 이름들
+static func new_sites(els: Dictionary, e: int) -> PackedStringArray:
+	var out := PackedStringArray()
+	if els.has(e):
+		return out
+	var more := els.duplicate()
+	more[e] = 1
+	for s2 in sites_of(more):
+		if s2[0] == e or s2[1] == e:
+			out.append(s2[2])
+	return out
+
+
+static func has_site(tw: Object) -> bool:
+	for e in _els(tw):
+		if e in SITE_E:
+			return true
+	return false
+
+
+## 자리가 구체 o에 효과를 건다 (나르는 특징이 부름). at: 자리 가운데, stage: 자리 진행 0~1 (멀리·오래·끝으로 갈수록 1)
+## 바꾸는 특징: 자람(진행할수록 세지고 끝에 묶음) · 실림(바깥으로 밀기) · 얼림(냉기) · 다짐(확률 묶음) · 날선(추가 피해·멈칫) · 되풀이(잠시 뒤 한 번 더)
+static func carry(tw: Object, o: Orb, f: float, key: String, at: Vector2, stage := 0.0, rep := false) -> void:
+	if f <= 0.0 or not is_instance_valid(tw) or not is_instance_valid(o) or o.hp <= 0.0:
+		return
+	var st := clampf(stage * (1.5 if has(tw, "nourish") else 1.0), 0.0, 1.0)
+	var kw := k(tw, Elem.WOOD)
+	apply(tw, o, f * (1.0 + GROW_K * st * kw), key)
+	if o.hp <= 0.0:
+		return
+	if kw > 0.0 and st >= GROW_END:
+		o.root(GROW_ROOT * minf(kw, 1.5))
+	var kn := k(tw, Elem.WIND)
+	if kn > 0.0:
+		var away := o.position - at
+		if away.length() > 0.5:
+			o.knock(away.normalized() * WIND_PUSH * kn * minf(f, 1.0))
+	var ki := k(tw, Elem.ICE)
+	if ki > 0.0:
+		o.add_chill(ICE_SITE * ki * minf(f, 1.0), dur(tw))
+	var ke := k(tw, Elem.EARTH)
+	if ke > 0.0 and randf() < EARTH_CH * ke * minf(f * 2.0, 1.0):
+		o.root(EARTH_ROOT * dur(tw))
+	var km := k(tw, Elem.METAL)
+	if km > 0.0:
+		o.stagger(METAL_STAG * km)
+		var d: float = o.hurt(ref_dmg(tw) * METAL_SITE * km * minf(f * 2.0, 1.0) * o.resist_mul(_els(tw)), false, tw)
+		tw.credit(d, "share:metal")
+		tw.rx_dealt += d
+	var kt := k(tw, Elem.TIME)
+	if kt > 0.0 and not rep:
+		var oid := o.get_instance_id()
+		for i in (AFTER_N if has(tw, "after") else 1):
+			tw.later.append([TIME_T * (i + 1), func():
+				var oo = instance_from_id(oid)
+				if oo != null and oo.hp > 0.0:
+					carry(tw, oo, f * TIME_F * kt, key, at, stage, true)])
 
 
 static func has(tw: Object, id: String) -> bool:
@@ -244,6 +354,8 @@ static func apply(tw: Object, o: Orb, f: float, key: String) -> void:
 				o.tune_t = maxf(o.tune_t, Rules.sound_t * dm * minf(f, 1.0))
 			Elem.TIME:
 				o.echo(minf(Rules.time_base + Rules.time_lv * l, Rules.time_max) * minf(f, 1.0), Rules.time_t * dm, tw)
+			Elem.WOOD:
+				o.entangle(WOOD_VINE * l * f * am(tw, e), dm)
 			Elem.SOUL:
 				if o.soul_t <= 0.0 or l >= o.soul_lv:
 					o.soul_lv = l
@@ -280,24 +392,22 @@ static func around(tw: Object, main: Node, at: Vector2, r: float, f: float, key:
 	var n := 0
 	for o in main.near(at, r + 20.0):
 		if o != skip and is_instance_valid(o) and o.hp > 0.0 and o.position.distance_to(at) < r + o.radius():
-			apply(tw, o, f, key)
+			carry(tw, o, f, key, at, o.position.distance_to(at) / maxf(r, 1.0))
 			n += 1
 	return n
 
 
-## 불 타오름: 화상이 끝나거나 화상 걸린 채 죽으면 그 자리에서 불꽃
-static func flare(o: Orb) -> void:
+## 불 번짐: 타는 구체가 몸에 닿은 구체에 불을 옮겨 붙인다 (Orb가 탈 때 FIRE_CD마다). 옮겨 붙은 불은 다시 번지지 않는다(1세대)
+static func spread(o: Orb) -> void:
 	var tw: Object = o.burn_src
 	if o.burn_rx or not is_instance_valid(tw) or o.main == null:
 		return
 	var kf := k(tw, Elem.FIRE)
 	if kf <= 0.0:
 		return
-	var r := FIRE_R * wide(tw) * (1.0 + BLAZE_R if has(tw, "blaze") else 1.0)
-	around(tw, o.main, o.position, r, FIRE_F * kf, "share:fire", o)
-	o.main.burst(o.position, Elem.COLORS[Elem.FIRE], 6, 120.0)
-	if o.main.pulses.size() < 40:
-		o.main.pulses.append([o.position, r, 0.25])
+	var r := o.radius() + FIRE_R * wide(tw) * (1.0 + BLAZE_R if has(tw, "blaze") else 1.0)
+	if around(tw, o.main, o.position, r, FIRE_F * kf, "share:fire", o) > 0:
+		o.main.burst(o.position, Elem.COLORS[Elem.FIRE], 3, 60.0)
 
 
 ## 독 전염: 중독된 채 죽으면 주변에 효과
@@ -322,7 +432,7 @@ static func pull(o: Orb) -> void:
 	for other in o.main.near(o.position, r + 20.0):
 		if other != o and is_instance_valid(other) and other.hp > 0.0 and other.position.distance_to(o.position) < r:
 			other.push((o.position - other.position).normalized() * DARK_PULL * kd)
-			apply(tw, other, DARK_F * kd, "share:dark")
+			carry(tw, other, DARK_F * kd, "share:dark", o.position, other.position.distance_to(o.position) / r)
 	o.main.burst(o.position, Elem.COLORS[Elem.DARK], 8, -90.0)
 
 
@@ -343,34 +453,28 @@ static func pierce(tw: Object, o: Orb) -> void:
 		var rel: Vector2 = other.position - o.position
 		var along := rel.dot(d)
 		if along > 0.0 and along < length and absf(rel.cross(d)) < LIGHT_W + other.radius():
-			apply(tw, other, LIGHT_F * kl, "share:light")
+			carry(tw, other, LIGHT_F * kl, "share:light", other.position - d, along / length)
 	tw.main.beam(o.position, o.position + d * length, Elem.COLORS[Elem.LIGHT])
 
 
-## Tower.hit에서: 땅 묻어둠(전에 묻어 둔 효과가 터짐 → 이번 오브젝트가 땅이면 새로 묻음) · 시간 되풀이
+## Tower.hit에서: 자리가 없는 오브젝트는 공격 자체를 자리로 본다 (땅 다짐: 맞은 구체가 확률로 묶임) · 시간 되풀이(맞힌 구체에 효과 한 번 더)
 static func on_hit(tw: Object, o: Orb, shared: bool) -> void:
-	if is_instance_valid(o.bury_src) and o.age <= o.bury_until:
-		var b: Object = o.bury_src
-		o.bury_src = null
-		apply(b, o, EARTH_F * k(b, Elem.EARTH), "share:earth")
-		if o.hp > 0.0:
-			o.root(EARTH_ROOT * dur(b))
-	if shared or o.hp <= 0.0 or not has_carry(tw):
+	if shared or o.hp <= 0.0:
 		return
-	if k(tw, Elem.EARTH) > 0.0:
-		o.bury_src = tw
-		o.bury_until = o.age + EARTH_T * dur(tw)
+	var ke := k(tw, Elem.EARTH)
+	if ke > 0.0 and not has_site(tw) and randf() < EARTH_CH * ke:
+		o.root(EARTH_ROOT * dur(tw))
+	if not has_carry(tw):
+		return
 	var kt := k(tw, Elem.TIME)
 	if kt > 0.0 and o.rep_cd <= 0.0:
 		o.rep_cd = TIME_T
-		var target: WeakRef = weakref(o)
-		var source: WeakRef = weakref(tw)
+		var oid := o.get_instance_id()
 		for i in (AFTER_N if has(tw, "after") else 1):
 			tw.later.append([TIME_T * (i + 1), func():
-				var orb: Orb = target.get_ref()
-				var tower: Object = source.get_ref()
-				if orb != null and tower != null and orb.hp > 0.0:
-					apply(tower, orb, TIME_F * kt, "share:time")])
+				var oo = instance_from_id(oid)
+				if oo != null and oo.hp > 0.0:
+					apply(tw, oo, TIME_F * kt, "share:time")])
 
 
 ## Tower.hit에서 효과를 건 뒤: 상성이 더하는 것 (눈보라·비바람·증기 둘레, 녹, 시듦, 온도 충격, 일식). lit: 빛 치명타, had_chill: 맞기 전 냉기

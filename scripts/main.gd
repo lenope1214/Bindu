@@ -3100,7 +3100,7 @@ func _wrap_parts(text: String, sep: String, width: float, fs: int) -> String:
 ## 바람 속성 오브젝트 둘레의 다른 오브젝트 공격 속도를 정한다 (가장 큰 바람 하나만).
 func _wind_buffs() -> void:
 	var ts := towers.get_children()
-	var winds := ts.filter(func(w): return w.lv(Elem.WIND) > 0 and not w.is_queued_for_deletion())
+	var winds := []  # 2026-11-04: 바람 효과가 밀쳐냄으로 바뀌어 순풍은 없다 (패치로 되살릴 때를 위해 계산은 남김)
 	for t in ts:
 		var b := 0.0
 		for w in winds:
@@ -4166,6 +4166,7 @@ func _boss_text() -> String:
 ## 바람 오브젝트에 Shift 자세히로 올렸을 때(그 둘레), 버프 받는 오브젝트에 자세히로 올렸을 때(버프를 주는 둘레),
 ## 오브젝트를 옮기는 중일 때(모든 둘레)만 그린다.
 func _draw_wind_rings() -> void:
+	return  # 2026-11-04 바람 효과가 순풍(둘레 공격 속도) → 밀쳐냄으로 바뀌어 둘레가 없다
 	if title_label.visible or phase == Phase.GAMEOVER:
 		return
 	var winds := towers.get_children().filter(func(t): return t.lv(Elem.WIND) > 0)
@@ -8678,7 +8679,7 @@ func sound_pulse(o: Orb) -> void:
 			if tw:
 				tw.credit(got, "elem:sound")
 				if ks > 0.0 and other != o:
-					Share.apply(tw, other, Share.SOUND_F * ks, "share:sound")
+					Share.carry(tw, other, Share.SOUND_F * ks, "share:sound", o.position, other.position.distance_to(o.position) / maxf(r, 1.0))
 	if pulses.size() < 40:
 		pulses.append([o.position, r, 0.3])
 
@@ -8730,7 +8731,7 @@ func arc(from: Orb, dmg: float, src: Tower = null, cap = null) -> void:  # cap: 
 			# 전기 튐 (특징 공유): 전류가 튀면 오브젝트 효과도 튄다
 			var ke := Share.k(src, Elem.ELECTRIC)
 			if ke > 0.0:
-				Share.apply(src, best, Share.ELEC_F * ke, "share:electric")
+				Share.carry(src, best, Share.ELEC_F * ke, "share:electric", from.position, 1.0)
 		if arcs.size() < 80:
 			arcs.append([from.position, best.position, 0.12])
 
@@ -9719,8 +9720,6 @@ func _resolve(delta: float) -> void:
 					if other != o and other.position.distance_to(o.position) < 80.0:
 						other.poison(o.poison_dps, 3.0, o.poison_src, o.poison_rx, o.poison_key)
 				Share.contagion(o)  # 독 전염: 효과도 번짐
-			if o.burn_t > 0.0:
-				Share.flare(o)  # 불 타오름: 화상 걸린 채 죽으면 불꽃
 			if o.vuln_t > 0.0:
 				Share.pull(o)  # 어둠 끌어당김
 			if o.soul_t > 0.0:
@@ -9954,6 +9953,9 @@ func _draw_tooltip() -> void:
 		var afs: Array = Share.aff(t)["pairs"].map(func(pr): return Elem.aff_label(pr[0], pr[1]))
 		if not afs.is_empty():
 			lines.append(["상성: " + " · ".join(afs), Color(0.85, 1.0, 0.75)])
+		var sts: Array = Share.sites_of(t.eff_now()).map(func(x): return x[2])
+		if not sts.is_empty():
+			lines.append(["자리: " + " · ".join(sts), Color(0.75, 0.9, 1.0)])
 		if not share_line.is_empty():
 			lines.append(share_line)
 	else:
@@ -9979,6 +9981,9 @@ func _draw_tooltip() -> void:
 			desc.append(["조합 %d개: %s" % [rxs.size(), ", ".join(rxs.map(func(r): return r["name"]))], Color(1, 0.8, 0.95), "k:rx"])
 		for pr in Share.aff(t)["pairs"]:
 			desc.append([Elem.aff_text(pr[0], pr[1]), AFF_COL["strong" if pr[2]["strong"] else "weak"], "k:rx"])
+		for x in Share.sites_of(t.eff_now()):
+			var nd: Array = Share.NAMED.get([x[0], x[1]], [])
+			desc.append(["자리 %s%s" % [x[2], ": " + nd[1] if not nd.is_empty() else ""], Color(0.75, 0.9, 1.0), "k:rx"])
 		_wind_buffs()  # 쉬는 시간에 새로 놓은 오브젝트도 바로 보이게
 		var tail: Array = []
 		if t.wind_buff > 0.0:
@@ -10188,7 +10193,7 @@ func _draw_orb_tooltip() -> void:
 		if o.silence_t > 0.0: parts.append("침묵")
 		if o.resist_e >= 0: parts.append("%s 저항" % Elem.NAMES[o.resist_e])
 		if o.sturdy: parts.append("굳셈(밀기·감속·기절·냉기 절반)")
-		if is_instance_valid(o.bury_src) and o.age <= o.bury_until: parts.append("다시 맞으면 더")
+		if o.vine > 0.0: parts.append("덩굴 %d/3" % int(o.vine))
 		if not o.amp.is_empty():
 			# 받는 피해 증가 (낙인 등, 곱해서 하나로)
 			var k := 1.0
@@ -10653,6 +10658,9 @@ func _draw() -> void:
 					if r.get("aff", "") != "":
 						lines.append(Elem.aff_label(r["a"], r["b"]).replace("(강)", " ▲강").replace("(약)", " ∿약"))
 						tcol = AFF_COL[r["aff"]]
+				var ns := Share.new_sites(target.eff_now(), picked["e"])
+				if not ns.is_empty():
+					lines.append("새 자리: " + " · ".join(ns))
 			place_note = {"t": target, "lines": lines, "col": tcol, "fs": 16, "refuse": false}
 		elif is_elem:
 			var at := mpos.clamp(field_rect().position, field_rect().end)  # 실제로 놓일 자리
