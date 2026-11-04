@@ -2454,9 +2454,16 @@ func _meta_misc() -> void:
 	main.selected = [deleted]
 	deleted.free()
 	var deleted_selection: bool = dock.operation_text() == "" and main.selected.is_empty()
+	main._select_tower(dt)
+	dock.tick()
+	var state_before_guide: bool = main.hint.visible
+	main.guide_label.show()
+	dock.tick()
+	var guide_priority: bool = not main.hint.visible
+	dock.close_inspector()
 	main.phase = old_phase
 	main.guide_label.visible = status_guide_visible
-	ok("UI-35", selection_status and edit_status and carry_status and touch_status and deleted_selection, "선택·편집·카드 상태 %s/%s/%s · 터치 %s · 삭제 %s" % [selection_status, edit_status, carry_status, touch_status, deleted_selection])
+	ok("UI-35", selection_status and edit_status and carry_status and touch_status and deleted_selection and state_before_guide and guide_priority, "선택·편집·카드 상태 %s/%s/%s · 터치 %s · 삭제 %s" % [selection_status, edit_status, carry_status, touch_status, deleted_selection])
 	ok("UI-05", click_selects and wave_readonly and edits_selected and cancel_restores and finished_clean, "클릭은 선택, 쉬는 시간의 명시적 방향 편집·취소 복원, 전투 중 읽기 전용")
 	# UI-33: 설명창 그림 (오브젝트 정보: 미리보기·숫자 타일, 자세히: 곱셈 사슬·배율 막대 / 카드: 미리보기·타일)
 	var pic: InfoPanel = dock.pic
