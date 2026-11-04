@@ -1,20 +1,31 @@
 class_name CardDock
 extends RefCounted
-## 일반 판의 고정 하단 도크. 전장 규칙은 그대로 두고 표시 영역과 입력만 분리한다.
+## 카드 팔레트와 전장 카메라는 독립적이다. 카드를 들면 팔레트만 접는다.
 const HEIGHT := 188.0
 const CARD_HEIGHT := 94.0
-const WAVE_FADE := 0.4  # 웨이브 중 도크·정보 영역이 빠지고 전장이 전체 화면으로 커지는 시간(초)
 var game
 var panel: Panel
 var side: PanelContainer
 var heading: Label
 var detail: RichTextLabel
 var state: Label
+var focus_btn: Button
 var hovered: Button
+var inspected_tower: Tower
 var side_signature := ""
 var board := Rect2()
 var fit := 1.0
-var wave_t := 0.0  # 0 = 도크 펼침(쉬는 시간), 1 = 웨이브 중 전체 화면
+var full_field := false
+var held_chip: PanelContainer
+var held_name: Label
+var pointer := Vector2.ZERO
+var pending_card := {}
+var press_origin := Vector2.ZERO
+var pointer_id := -2  # -2: 없음, -1: 마우스, 0 이상: 터치
+var card_dragging := false
+var suppress_tap := false
+var touch_capture := false
+var touch_position := Vector2.ZERO
 
 func _init(main) -> void:
 	game = main
@@ -59,35 +70,47 @@ func _init(main) -> void:
 	column.add_child(detail)
 	panel.visible = false
 	side.visible = false
+	focus_btn = Button.new()
+	focus_btn.focus_mode = Control.FOCUS_NONE
+	focus_btn.add_theme_font_size_override("font_size", 14)
+	focus_btn.pressed.connect(game._toggle_focus_view)
+	focus_btn.z_index = 10
+	game.ui_root.add_child(focus_btn)
+	held_chip = PanelContainer.new()
+	held_chip.name = "CarriedCard"
+	held_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	held_chip.z_index = 20
+	var chip_style := bg.duplicate()
+	chip_style.border_width_top = 1
+	chip_style.set_content_margin_all(9)
+	held_chip.add_theme_stylebox_override("panel", chip_style)
+	game.ui_root.add_child(held_chip)
+	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	held_chip.add_child(row)
+	var icon := Control.new()
+	icon.custom_minimum_size = Vector2(24, 24)
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.draw.connect(func(): _draw_held_icon(icon))
+	row.add_child(icon)
+	held_name = Label.new()
+	held_name.add_theme_font_size_override("font_size", 15)
+	held_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(held_name)
+	held_chip.hide()
 
 func active() -> bool:
+	return available()
+
+func available() -> bool:
 	return not Garden.on and game.title_label != null and not game.title_label.visible and game.phase != game.Phase.GAMEOVER
 
-## 도크를 펼쳤을 때 전장 칸 (UI 좌표).
-func dock_bounds() -> Rect2:
-	var size: Vector2 = game.ui_root.size
-	var right := clampf(size.x * 0.25, 220.0, 290.0)
-	return Rect2(8, 48, size.x - right - 24, maxf(80, size.y - HEIGHT - 60))
-
-## 웨이브 중 도크가 빠진 정도 (0~1, 부드럽게).
-func wave_e() -> float:
-	return smoothstep(0.0, 1.0, wave_t)
-
-## 지금 전장 칸: 쉬는 시간엔 도크 위, 웨이브 중엔 화면 전체로 커진다.
 func bounds() -> Rect2:
-	var d := dock_bounds()
-	var e := wave_e()
-	if e <= 0.0:
-		return d
-	var full := Rect2(Vector2.ZERO, game.ui_root.size)
-	return Rect2(d.position.lerp(full.position, e), d.size.lerp(full.size, e))
-
-## 웨이브 중이면 도크를 빼 전체 화면 (일시정지 중에도 유지).
-func wave_full() -> bool:
-	return game.phase == game.Phase.WAVE
+	return game.ui_root.get_global_transform().affine_inverse() * screen_board()
 
 func screen_board() -> Rect2:
-	return game.ui_root.get_global_transform() * bounds()
+	# UI 글자 배율·안전 영역·패널 노출과 무관한 실제 화면 기준.
+	return game.get_viewport_rect()
 
 func camera_fit() -> void:
 	board = screen_board()
@@ -106,7 +129,134 @@ func world_view() -> Rect2:
 	return Rect2(game.center() + game.view_pan - size / 2.0, size)
 
 func over_ui(p: Vector2) -> bool:
-	return active() and not screen_board().has_point(p)
+	if not active():
+		return false
+	for c: Control in [panel, side, focus_btn, game.cancel_btn, game.start_btn, game.draw_ok_btn,
+			game.bar_box, game.hud, game.dps_panel, game.legend_btn, game.range_btn, game.zoom_btn,
+			game.guide_more, game.hide_btn, game.skip_btn, game.skip_n_btn]:
+		if c.is_visible_in_tree() and c.get_global_rect().has_point(p):
+			return true
+	for c: Control in game.skill_btns:
+		if c.is_visible_in_tree() and c.get_global_rect().has_point(p):
+			return true
+	return false
+
+func carrying() -> bool:
+	return active() and not game.picked.is_empty() and game.moving == null \
+		and game.phase in [game.Phase.PLACE, game.Phase.AIM]
+
+func input_blocked() -> bool:
+	return not active() or game.get_tree().paused or game.tut.visible or game.settings_panel.visible \
+		or game.help_label.visible or game.notes_panel.visible or game.codex_panel.visible \
+		or game.vote_panel.visible or game.records_panel.visible
+
+func clear_gesture() -> void:
+	pending_card = {}
+	pointer_id = -2
+	card_dragging = false
+
+func _draw_held_icon(icon: Control) -> void:
+	if not carrying():
+		return
+	var head: Dictionary = game._card_content(game.picked, 0)["head"]
+	var col: Color = game._card_color(game.picked)
+	if head.has("e"):
+		Glyph.elem(icon, head["e"], Vector2(12, 12), 8, col)
+	elif head.has("pat"):
+		Glyph.pat(icon, head["pat"], Vector2(12, 12), 8, col)
+	else:
+		Glyph.kind(icon, head["kind"], Vector2(12, 12), 8, col)
+
+func _card_gui_input(event: InputEvent, b: Button, card: Dictionary) -> void:
+	if input_blocked() or game.phase != game.Phase.CHOOSE or game.perk_mode or card["type"] == "cata":
+		return
+	if event is InputEventScreenTouch and event.pressed:
+		suppress_tap = false
+		pending_card = card
+		pointer_id = event.index
+		press_origin = b.get_global_transform() * event.position
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and pointer_id < 0:
+		suppress_tap = false
+		pending_card = card
+		pointer_id = -1
+		press_origin = b.get_global_transform() * event.position
+
+## GUI가 시작한 카드 제스처만 받는다. 일반 전장 클릭·드래그·확대는 기존 입력으로 넘긴다.
+func handle_input(event: InputEvent) -> bool:
+	if event is InputEventMouseMotion or event is InputEventMouseButton:
+		if event.device == InputEvent.DEVICE_ID_EMULATION and touch_capture:
+			return true
+		if event.device != InputEvent.DEVICE_ID_EMULATION:
+			touch_capture = false
+		pointer = event.position
+	elif event is InputEventScreenTouch or event is InputEventScreenDrag:
+		pointer = event.position
+	if input_blocked():
+		clear_gesture()
+		touch_capture = false
+		return false
+	if event is InputEventScreenDrag and event.index == pointer_id:
+		touch_position = pointer
+	if event is InputEventScreenTouch and event.pressed:
+		# 일부 플랫폼은 같은 손가락의 흉내 낸 마우스 press를 먼저 보낸다.
+		if pointer_id == -1 and not pending_card.is_empty() and not card_dragging:
+			pointer_id = event.index
+			press_origin = pointer
+			touch_position = pointer
+			touch_capture = true
+			game.touch_ui = true
+			return true
+		if pointer_id >= 0 and event.index != pointer_id:
+			game.touches[pointer_id] = touch_position
+			clear_gesture()
+			touch_capture = false
+			return false
+		if pending_card.is_empty():
+			touch_capture = false
+			if game.phase == game.Phase.CHOOSE and not game.perk_mode and game.choice_box.is_visible_in_tree():
+				for button: Button in game.choice_box.get_children():
+					var card: Dictionary = button.get_meta("offer_card", {})
+					if button.get_global_rect().has_point(pointer) and not card.is_empty() and card["type"] != "cata":
+						pending_card = card
+						break
+			elif carrying() and game.phase == game.Phase.PLACE and not over_ui(pointer):
+				pending_card = game.picked
+				card_dragging = true
+			if not pending_card.is_empty():
+				suppress_tap = false
+				pointer_id = event.index
+				press_origin = pointer
+				touch_position = pointer
+				touch_capture = true
+				game.touch_ui = true
+				return true
+	if pending_card.is_empty():
+		if suppress_tap and event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			game.call_deferred("_release_card_tap_guard")
+			return true
+		return false
+	var motion: bool = (event is InputEventMouseMotion and pointer_id == -1) \
+		or (event is InputEventScreenDrag and event.index == pointer_id)
+	var released: bool = (event is InputEventMouseButton and pointer_id == -1 and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed) \
+		or (event is InputEventScreenTouch and event.index == pointer_id and not event.pressed)
+	if motion and not card_dragging and pointer.distance_to(press_origin) >= 12.0:
+		card_dragging = true
+		suppress_tap = true
+		game._on_pick(pending_card)
+		tick()
+	if released:
+		var dropped := card_dragging
+		var tapped := pending_card
+		var was_touch := pointer_id >= 0
+		clear_gesture()
+		if dropped:
+			game._drop_carried_card(pointer)
+		elif was_touch:
+			game._on_card_tap(tapped, game.offer.find(tapped))
+		if dropped or was_touch:
+			game.call_deferred("_release_card_tap_guard")
+		return dropped or was_touch
+	return motion and card_dragging
 
 func preview_card() -> Dictionary:
 	if not active() or game.phase != game.Phase.CHOOSE or game.perk_mode or game.cards_hidden:
@@ -125,138 +275,161 @@ func watch(b: Button, card: Dictionary) -> void:
 	b.mouse_entered.connect(func():
 		if not game.touch_ui:
 			hovered = b)
+	b.gui_input.connect(_card_gui_input.bind(b, card))
 	# 상세 영역으로 마우스를 옮겨도 읽던 카드와 강조를 유지한다. 다른 카드는 진입 시 교체한다.
 
 func card_size() -> Vector2:
 	var count := maxi(game.offer.size(), 3)
 	return Vector2(maxf(120, (game.ui_root.size.x - 24 - (count - 1) * 12) / count), CARD_HEIGHT)
 
-func tick(delta := 0.0) -> void:
-	var on := active()
-	var was := panel.visible or side.visible or wave_t > 0.0
-	if not on:
-		panel.visible = false
-		side.visible = false
-		wave_t = 0.0
-		if was:
-			for c: Control in _faded():
-				c.modulate.a = 1.0
-			game._clamp_pan()
+func tick() -> void:
+	if not available():
+		full_field = false
+		clear_gesture()
+		panel.hide()
+		side.hide()
+		held_chip.hide()
+		focus_btn.hide()
+		game.ver_label.show()
 		return
-	wave_t = move_toward(wave_t, 1.0 if wave_full() else 0.0, delta / WAVE_FADE)
-	var e := wave_e()
-	var shown := e < 0.99
-	panel.visible = shown
-	side.visible = shown
-	var size: Vector2 = game.ui_root.size
-	var field := dock_bounds()
-	var dock_y := size.y - HEIGHT
-	panel.position = Vector2(0, dock_y + 36.0 * e)  # 아래로 살짝 내려가며 사라짐
-	panel.size = Vector2(size.x, HEIGHT)
-	panel.modulate.a = 1.0 - e
-	side.position = Vector2(field.end.x + 8 + 36.0 * e, 48)  # 오른쪽으로 살짝 빠지며 사라짐
-	side.size = Vector2(size.x - field.end.x - 16, size.y - HEIGHT - 60)
-	side.modulate.a = 1.0 - e
-	game.legend.visible = false
-	game.card_dim.visible = false
-	for c: Control in [game.bar_box, game.hint, game.ver_label, game.start_btn, game.cancel_btn, game.draw_ok_btn, game.skip_badge]:
-		c.z_index = 2
 	camera_fit()
+	var size: Vector2 = game.ui_root.size
+	var blocked := input_blocked()
 	var choosing: bool = game.phase == game.Phase.CHOOSE and game.coin_stage == 0
-	var cards: bool = choosing and not game.cards_hidden and game.choice_box.visible
-	var title := "특성 선택" if game.perk_mode else "카드 선택"
-	state.text = ("특성 선택  ·  하나 선택" if game.perk_mode else "%s  ·  %d장 남음" % [title, game.picks_left]) if choosing else "전투 중" if game.phase == game.Phase.WAVE else "배치 준비"
-	state.position = Vector2(12, 9)
-	state.size = Vector2(200, 28)
+	var cards: bool = choosing and not game.cards_hidden and not full_field and not blocked
+	panel.visible = cards
+	game.choice_box.visible = cards
+	game.apply_btn.hide()  # 일반 판은 한 번 눌러 들고, 전장의 대상으로 확정한다.
+	game.legend.hide()
+	game.card_dim.hide()
+	game.hint.hide()
+	for c: Control in [game.bar_box, game.ver_label, game.start_btn, game.cancel_btn, game.draw_ok_btn, game.skip_badge]:
+		c.z_index = 2
+	panel.position = Vector2(0, size.y - HEIGHT)
+	panel.size = Vector2(size.x, HEIGHT - 42)
 	game.choice_box.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	game.choice_box.position = Vector2(12, panel.position.y + 42)
+	game.choice_box.pivot_offset = Vector2.ZERO
 	game.choice_box.scale = Vector2.ONE
 	game.choice_box.size = Vector2(size.x - 24, CARD_HEIGHT)
 	game.choice_box.add_theme_constant_override("separation", 12)
 	var cs: Array = game.choice_box.get_children()
-	for b: Control in cs:
-		if b.is_queued_for_deletion():
+	for button: Control in cs:
+		if button.is_queued_for_deletion():
 			continue
-		b.custom_minimum_size = Vector2((size.x - 24 - maxf(0, cs.size() - 1) * 12) / maxi(1, cs.size()), CARD_HEIGHT)
-		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	game.hide_btn.text = "보기" if game.cards_hidden else ""
+		button.custom_minimum_size = Vector2((size.x - 24 - maxf(0, cs.size() - 1) * 12) / maxi(1, cs.size()), CARD_HEIGHT)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	if choosing and not game.perk_mode:
+		game._update_reroll_btn()
 	var x := size.x - 12.0
-	var buttons: Array = [game.skip_n_btn, game.skip_btn, game.hide_btn, game.card_detail_btn, game.reroll_btn]
-	if game.touch_ui and game.tap_sel >= 0 and not game.perk_mode and cards:
-		buttons.push_front(game.apply_btn)
-	for b: Button in buttons:
-		if not b.visible and b != game.apply_btn:
+	for button: Button in [game.skip_n_btn, game.skip_btn, game.hide_btn, game.card_detail_btn, game.reroll_btn]:
+		if button in [game.skip_btn, game.skip_n_btn] and game.phase == game.Phase.READY:
 			continue
-		if b == game.apply_btn:
-			b.visible = cards and game.tap_sel >= 0
-		var w := maxf(132.0, b.get_combined_minimum_size().x) if b == game.apply_btn else 78.0 if b == game.card_detail_btn else 64.0
+		button.visible = button.visible and cards
+		if not button.visible:
+			continue
+		var w := 78.0 if button == game.card_detail_btn else 64.0
 		x -= w
-		b.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		b.position = Vector2(x, panel.position.y + 4)
-		b.size = Vector2(w, 34)
+		button.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		button.position = Vector2(x, panel.position.y + 4)
+		button.size = Vector2(w, 34)
 		x -= 8
-	if game.cards_hidden:
-		game.hide_btn.tooltip_text = "카드 다시 보기 (V)"
-	if game.zoom_btn.visible:
-		game.zoom_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		game.zoom_btn.position = Vector2(maxf(150.0, 12.0 + game.ver_label.get_combined_minimum_size().x + 12.0), size.y - 48)  # 왼쪽 아래 버전 글 옆 (겹치던 것)
-		game.zoom_btn.size = Vector2(132, 34)
-		game.zoom_btn.z_index = 2
-	# 도크가 빠지면 기술 버튼은 화면 오른쪽 아래, 접힌 설정 버튼 줄 왼쪽에 떠 있다
-	var skill_end := size.x - 12.0
-	if game.bar_box.visible:
-		var br: Rect2 = game.bar_box.get_rect()
-		if br.end.y > size.y - 70.0:
-			skill_end = lerpf(skill_end, minf(skill_end, br.position.x - 12.0), e)
-	for i in game.skill_btns.size():
-		var b: Button = game.skill_btns[i]
-		b.z_index = 2
-		b.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		b.position = Vector2(skill_end - game.skill_btns.size() * 176 + i * 176, lerpf(dock_y + 66, size.y - 62, e))
-		b.size = Vector2(166, 50)
-	game.hint.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	game.hint.position = Vector2(16, panel.position.y + 46)
-	game.hint.size = Vector2(maxf(200, size.x - 360), 76)
-	game.hint.visible = not cards and not game.title_label.visible
-	if game.phase == game.Phase.WAVE:
-		game.hint.text = "기술을 사용하거나 전장의 구체·오브젝트를 확인하세요."
-		game.hint.size.x = maxf(150, size.x - 410)
-	var actions: Array = [game.detail_btn, game.start_btn, game.cancel_btn, game.draw_ok_btn].filter(func(b): return b.visible)  # [자세히/간단히]도 같은 줄에 (안내 글 위에 떠 있던 것)
-	var action_width := (280.0 - maxf(0, actions.size() - 1) * 8) / maxi(1, actions.size())
-	for i in actions.size():
-		var b: Button = actions[i]
-		b.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		b.position = Vector2(size.x - 300 + i * (action_width + 8), panel.position.y + 62)
-		b.size = Vector2(action_width, 44)
-	game.ver_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	game.ver_label.position = Vector2(12, size.y - 22)
-	game.skip_badge.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	game.skip_badge.position = Vector2((size.x - game.skip_badge.size.x) / 2.0, lerpf(dock_y - game.skip_badge.size.y - 8, size.y - 62 - game.skip_badge.size.y - 10, e))
 	game._update_choice_header()
-	state.visible = not game.choice_header.visible
+	game.choice_header.visible = game.choice_header.visible and cards
+	state.visible = cards and not game.choice_header.visible
+	state.text = "특성 선택 · 하나 선택"
+	state.position = Vector2(12, 9)
 	if game.choice_header.visible:
 		game.choice_header.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		game.choice_header.position = Vector2(12, panel.position.y + 4)
 		game.choice_header.size = Vector2(maxf(240, minf(340, x - 24)), 34)
-	# 도크에 붙은 조작(카드 줄·버튼·안내)도 도크와 같이 흐려진다. 카드 줄은 main이 매 프레임 정한 값(일시정지 0.25)에 곱함
-	var fade := 1.0 - e
-	game.choice_box.modulate.a *= fade
-	for c: Control in _faded():
-		c.modulate.a = fade
-	if not shown:
-		game.hint.visible = false
-	if shown:
-		_update_side()
-
-func _faded() -> Array:
-	return [state, game.hint, game.ver_label, game.choice_header, game.skip_n_btn, game.skip_btn, game.hide_btn, game.card_detail_btn, game.reroll_btn, game.apply_btn, game.start_btn, game.cancel_btn, game.draw_ok_btn]
+	_update_side()
+	# 상세는 필요할 때 떠 있는 패널로 읽는다. 표시 여부는 전장 크기에 영향을 주지 않는다.
+	side.visible = side.visible and not carrying() and not full_field and not blocked
+	var right := clampf(size.x * 0.28, 240.0, 330.0)
+	side.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	side.position = Vector2(size.x - right - 12, maxf(60, game.hud.get_rect().end.y + 8))
+	side.size = Vector2(right, maxf(100, (panel.position.y - 12 if cards else size.y - 64) - side.position.y))
+	game.start_btn.visible = game.phase == game.Phase.READY and not blocked
+	game.cancel_btn.visible = game.phase in [game.Phase.PLACE, game.Phase.AIM, game.Phase.MOVE, game.Phase.DRAW] and not blocked
+	game.draw_ok_btn.visible = game.phase == game.Phase.DRAW and game.draw_wait and not blocked
+	var actions: Array = [game.start_btn, game.cancel_btn, game.draw_ok_btn].filter(func(button): return button.visible)
+	var width := 240.0 if game.start_btn.visible else 144.0
+	var action_y := size.y - (112.0 if game.bar_open else 52.0)
+	for i in actions.size():
+		var button: Button = actions[i]
+		button.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		button.position = Vector2((size.x - actions.size() * (width + 8)) / 2 + i * (width + 8), action_y)
+		button.size = Vector2(width, 44)
+	if game.phase == game.Phase.READY and game.skip_btn.visible:
+		var left := (size.x - 384) / 2
+		game.start_btn.position.x = left
+		for i in 2:
+			var button: Button = [game.skip_btn, game.skip_n_btn][i]
+			button.set_anchors_preset(Control.PRESET_TOP_LEFT)
+			button.position = Vector2(left + 248 + i * 72, action_y)
+			button.size = Vector2(64, 44)
+	if not blocked and not game.guide_label.visible:
+		var instruction := ""
+		match game.phase:
+			game.Phase.PLACE:
+				instruction = "빈 곳이나 오브젝트에 놓으세요." if game.picked.get("type", "") == "elem" else "넣을 오브젝트를 고르세요."
+			game.Phase.AIM: instruction = "발사 방향을 정하세요."
+			game.Phase.MOVE: instruction = "옮길 곳을 고르세요."
+			game.Phase.DRAW: instruction = "선을 그린 뒤 적용하세요."
+		# 대상 위에서는 적용 미리보기가 안내를 대신한다. 긴 효과 글과 하단 안내가 겹치지 않게 한다.
+		var target_preview: bool = game.phase == game.Phase.PLACE and game._tower_at(game.get_global_mouse_position()) != null
+		if instruction != "" and not target_preview:
+			game.hint.text = game._kr_keep(instruction)
+			game.hint.set_anchors_preset(Control.PRESET_TOP_LEFT)
+			game.hint.position = Vector2((size.x - 260) / 2, action_y - 30)
+			game.hint.size = Vector2(260, 24)
+			game.hint.show()
+	game.cancel_btn.text = game._kh("카드 돌려놓기 (Esc)") if carrying() and game.phase == game.Phase.PLACE else game._kh("취소 (Esc)")
+	for i in game.skill_btns.size():
+		var button: Button = game.skill_btns[i]
+		button.z_index = 2
+		button.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		button.position = Vector2(size.x - 12 - game.skill_btns.size() * 150 + i * 150, size.y - 110)
+		button.size = Vector2(140, 44)
+	if game.zoom_btn.visible:
+		game.zoom_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		game.zoom_btn.position = Vector2(12, 64)
+		game.zoom_btn.size = Vector2(132, 34)
+	focus_btn.visible = not blocked and choosing and (game._phone() or full_field)
+	focus_btn.text = "카드 보기" if full_field else "카드 접기"
+	focus_btn.tooltip_text = "카드 패널 보기/접기 (F)"
+	focus_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	focus_btn.position = Vector2(12, size.y - 42)
+	focus_btn.size = Vector2(110, 34)
+	game.ver_label.visible = not focus_btn.visible
+	if choosing and game.cards_hidden and not full_field and not blocked:
+		game.hide_btn.show()
+		game.hide_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		game.hide_btn.position = Vector2((size.x - 160) / 2, size.y - 48)
+		game.hide_btn.size = Vector2(160, 40)
+	if full_field:
+		game.dps_panel.hide()
+	game.skip_badge.position.y = -HEIGHT - 40 if cards else -100
+	held_chip.visible = carrying() and not blocked
+	if held_chip.visible:
+		var head: Dictionary = game._card_content(game.picked, 0)["head"]
+		held_name.text = head["name"] + (" " + head["lv"] if head.has("lv") else "")
+		held_chip.reset_size()
+		var at: Vector2 = game.ui_root.get_global_transform().affine_inverse() * pointer
+		var offset := Vector2(-held_chip.size.x / 2, -80) if game.touch_ui else Vector2(20, 24)
+		held_chip.position = (at + offset).clamp(Vector2(8, 8), (size - held_chip.size - Vector2(8, 8)).max(Vector2(8, 8)))
+		held_chip.get_child(0).get_child(0).queue_redraw()
 
 func _update_side() -> void:
 	var card := preview_card()
 	var title := "전장 안내"
-	var text: String = game.legend.text if not game.legend_hidden else "카드에 마우스를 올리면 적용 대상과 조합을 확인합니다.\n\n카드와 전장은 항상 함께 보입니다."
+	var text := ""
+	var has_content := false
 	if not card.is_empty():
+		inspected_tower = null
+		has_content = true
 		var cc: Dictionary = game._card_content(card, 0)
 		title = cc["head"]["name"]
 		var take := 0
@@ -267,7 +440,7 @@ func _update_side() -> void:
 			take += 1
 			if card["type"] == "elem" and not Elem.new_reactions(t.eff_now(), card["e"]).is_empty():
 				reaction += 1
-		text = "적용 가능 %d곳 · 새 조합 %d곳\n얇은 고리: 적용 · 빛나는 고리: 새 조합\n\n" % [take, reaction]
+		text = "적용 가능 %d곳 · 새 반응 %d곳\n얇은 고리: 적용 · 빛나는 고리: 새 반응\n\n" % [take, reaction]
 		var full: Array = game._card_full(card)
 		var fit_name: String = game.core_fit(card)
 		if fit_name != "":
@@ -278,11 +451,43 @@ func _update_side() -> void:
 		for row in (full if Meta.card_detail else full.slice(0, 2)):
 			text += str(row[0]) + "\n\n"
 		if not Meta.card_detail:
-			text += "자세히를 켜면 조합·적용 조건을 모두 볼 수 있어요." if game.touch_ui else "자세히(Z)를 켜면 조합·적용 조건을 모두 볼 수 있어요."
+			text += "자세히를 켜면 반응·적용 조건을 모두 볼 수 있어요." if game.touch_ui else "자세히(Z)를 켜면 반응·적용 조건을 모두 볼 수 있어요."
 	elif game.perk_mode and is_instance_valid(hovered) and hovered.get_parent() == game.choice_box and hovered.has_meta("perk_desc"):
+		inspected_tower = null
+		has_content = true
 		title = hovered.get_meta("card")[0]["name"]
 		text = hovered.get_meta("perk_desc")
+	else:
+		var mouse: Vector2 = game.get_viewport().get_mouse_position()
+		# 전장과 설명 패널 사이의 여백을 지날 때 호버 대상을 먼저 지우면,
+		# 패널에 도착하기 전에 설명이 사라져 긴 내용을 스크롤할 수 없다.
+		var over_inspector := side.get_global_rect().grow(24.0).has_point(mouse)
+		var tower: Tower = game._tower_at(game.get_global_mouse_position()) if not over_ui(mouse) else null
+		if tower != null:
+			inspected_tower = tower
+		elif over_inspector and is_instance_valid(inspected_tower):
+			tower = inspected_tower
+		else:
+			inspected_tower = null
+		if tower == null and game.touch_ui and is_instance_valid(game.tip_tower) \
+				and Engine.get_process_frames() - game.tip_frame <= 180:
+			tower = game.tip_tower
+		if tower != null:
+			has_content = true
+			title = tower.title()
+			text = "오브젝트 정보\n\n"
+			for row in tower.basic_lines():
+				text += str(row[0]) + "\n\n"
+			if game._tip_detail_on():
+				text += "공격방식: " + Pat.PATTERNS[tower.pattern]["desc"] + "\n\n"
+				for row in tower.detail_lines():
+					text += str(row[0]) + "\n\n"
+				for rx in tower.reactions():
+					text += str(rx["name"]) + ": " + str(rx["desc"]) + "\n\n"
+			else:
+				text += "Shift를 누르면 공격 수치와 계산 내역을 자세히 볼 수 있어요."
 	var sig: String = title + "|" + text
+	side.visible = active() and has_content and (card.is_empty() or Meta.card_detail)
 	if sig != side_signature:
 		heading.text = title
 		detail.text = game._kr_keep(text)
@@ -327,9 +532,9 @@ func draw_card(b: Button, col: Color) -> void:
 			while line.length() > 0 and font.get_string_size(line + "…", HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x > b.size.x - 28:
 				line = line.left(-1)
 			line += "…"
-		b.draw_string(font, Vector2(14, 49 + 17 * i), line, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 28, 14, Color("d2dae6"))
+		b.draw_string(font, Vector2(14, 51 + 18 * i), line, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 28, 14, Color("d2dae6"))
 	var foot := "특성 · 상세는 오른쪽에서 확인"
 	var destinations: Array = b.get_meta("card_foot", [])
 	if not destinations.is_empty():
 		foot = " · ".join(destinations.map(func(it): return it[1]))
-	b.draw_string(font, Vector2(14, 88), foot, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 28, 11, Color("8294aa"))
+	b.draw_string(font, Vector2(14, 86), foot, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 28, 11, Color("8294aa"))

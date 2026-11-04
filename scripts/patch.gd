@@ -1,5 +1,5 @@
 class_name Patch
-## 서버에서 받은 JSON 데이터 패치: 규칙·특성·카드 확률·속성/공격방식 피해 배율 덮어쓰기.
+## 서버에서 받은 JSON 데이터 패치: 규칙·특성·카드 확률/사용 여부·속성/공격방식 피해 배율 덮어쓰기.
 ## 서명(OnlineConfig.PATCH_PUBLIC_KEY)이 맞을 때만 쓰고, 없거나 틀리면 내장 값 그대로.
 ## 받은 패치는 다음 판부터 적용된다(판 도중에 수치가 바뀌지 않게): accept()로 pending에 두고 commit()으로 적용.
 ## 키 설명은 server/README.md.

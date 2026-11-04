@@ -92,10 +92,22 @@ func _process(_d):
 		var info = []
 		for t in main.towers.get_children(): info.append("%s@%d,%d dir%.0f dealt%d" % [t.title(), t.position.x, t.position.y, rad_to_deg(t.dir.angle()), t.dealt])
 		print("W", main.wave, " core=", main.core_hp, " lanes=", main.lanes.map(func(a): return int(rad_to_deg(a))), " ", info)
+	if OS.get_environment("GOD") != "":
+		main.core_hp = 99999
+		main.core_max = 99999
 	main.auto_start = true
 	main.game_speed = float(OS.get_environment("SPEED")) if OS.get_environment("SPEED") != "" else 1.0
 	if main.phase == 7: main._cancel_step()  # 그린 궤적: 봇은 길을 못 그려 곧은 기본 길 그대로
-	if main.phase == 6: main._start_wave()
+	if main.phase == 6:
+		_rearrange()
+		var blocked: String = main._wave_start_block_reason()
+		if blocked != "":
+			print("STUCK ready wave=", main.wave, " ", blocked)
+			for t in main.towers.get_children():
+				print("  TOWER ", t.title(), " p=", t.position, " dir=", t.dir, " reach=", main._wave_attack_reach(t))
+			quit(1)
+			return false
+		main._start_wave()
 	if main.perk_mode:
 		main._on_perk(main.perk_offer[randi() % 3])
 		return false
@@ -205,6 +217,35 @@ func _process(_d):
 		print("RESULT wave=", main.wave, " score=", main.score, " ", main._perk_text(), " towers=", ts)
 		return true
 	return false
+
+## 저장 비교 뒤에만 재배치한다. 옮겨 간 길목도 지키도록 남는 오브젝트를 배정한다.
+func _rearrange():
+	var c = main.core()
+	var ts = main.towers.get_children()
+	var keep = []
+	var missing = []
+	for a0 in main.lanes:
+		var a = eff_lane(a0)
+		var ld = Vector2.from_angle(a)
+		var serving = ts.filter(func(t): return not keep.has(t) and (t.position - c).normalized().dot(ld) > 0.8 and t.dir.dot(ld) > 0.999)
+		if serving.is_empty():
+			missing.append(a)
+		else:
+			keep.append(serving[0])
+	for a in missing:
+		var spare = ts.filter(func(t): return not keep.has(t))
+		if spare.is_empty():
+			break
+		var t = spare[0]
+		var ld = Vector2.from_angle(a)
+		for k in 12:
+			var p = c + ld * (90 + 30 * (k / 2)) + ld.orthogonal() * (22 if k % 2 == 0 else -22)
+			if main.field_rect().has_point(p) and main._tower_at(p, t) == null:
+				t.position = p
+				t.dir = ld
+				t.queue_redraw()
+				break
+		keep.append(t)
 
 # 소용돌이 맵: 구체가 반지름 r을 지날 때의 각도
 func eff_lane(a):

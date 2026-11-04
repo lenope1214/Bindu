@@ -363,10 +363,14 @@ static func on_hit(tw: Object, o: Orb, shared: bool) -> void:
 	var kt := k(tw, Elem.TIME)
 	if kt > 0.0 and o.rep_cd <= 0.0:
 		o.rep_cd = TIME_T
+		var target: WeakRef = weakref(o)
+		var source: WeakRef = weakref(tw)
 		for i in (AFTER_N if has(tw, "after") else 1):
 			tw.later.append([TIME_T * (i + 1), func():
-				if is_instance_valid(o) and o.hp > 0.0:
-					apply(tw, o, TIME_F * kt, "share:time")])
+				var orb: Orb = target.get_ref()
+				var tower: Object = source.get_ref()
+				if orb != null and tower != null and orb.hp > 0.0:
+					apply(tower, orb, TIME_F * kt, "share:time")])
 
 
 ## Tower.hit에서 효과를 건 뒤: 상성이 더하는 것 (눈보라·비바람·증기 둘레, 녹, 시듦, 온도 충격, 일식). lit: 빛 치명타, had_chill: 맞기 전 냉기

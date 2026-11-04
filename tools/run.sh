@@ -214,7 +214,7 @@ case "$CMD" in
 		S=tools/bot.gd
 		[ "$CMD" = cont ] && S=tools/bot_continue.gd
 		CONT=$([ "$CMD" = cont ] && echo 1 || echo "") RULES=$R MAP=$M GOD=$W SPEED=${SPEED:-8} \
-			T 3600 "$G" --headless --fixed-fps 60 --path . -s "$S" -- 1 2>&1 | grep -E "SCRIPT ERROR|STUCK|RESULT|DIFF|CONT w=" | head -80 || true
+			T 3600 "$G" --headless --fixed-fps 60 --path . -s "$S" -- 1 2>&1 | grep -E "SCRIPT ERROR|Parse Error|^ERROR:|STUCK|RESULT|DIFF|CONT w=" | head -80 || true
 		rm -rf "$D"
 		;;
 	fuzz)
@@ -222,15 +222,19 @@ case "$CMD" in
 		D=$(copy_project "$$")
 		cd "$D"
 		for seed in $(seq 1 "$N"); do
-			T 900 "$G" --headless --fixed-fps 60 --path . -s tools/fuzz.gd -- "$seed" "$F" > "f_$seed.txt" 2>&1 &
+			(T 900 "$G" --headless --fixed-fps 60 --path . -s tools/fuzz.gd -- "$seed" "$F" > "f_$seed.txt" 2>&1 && echo "FUZZ EXIT ok" >> "f_$seed.txt") &
 			if (( seed % 8 == 0 )); then wait; fi
 		done
 		wait
+		bad_fuzz=0
 		for seed in $(seq 1 "$N"); do
-			echo "시드 $seed: 오류 $(grep -c 'SCRIPT ERROR' "f_$seed.txt" || true)개 · $(grep FUZZR "f_$seed.txt" | head -1)"
+			errors=$(grep -cE 'SCRIPT ERROR|Parse Error|^ERROR:' "f_$seed.txt" || true)
+			echo "시드 $seed: 오류 ${errors}개 · $(grep FUZZR "f_$seed.txt" | head -1)"
+			if [ "$errors" -gt 0 ] || ! grep -q "^FUZZ DONE frames=$F$" "f_$seed.txt" || ! grep -q "^FUZZ EXIT ok$" "f_$seed.txt"; then bad_fuzz=1; fi
 		done
-		grep -h "SCRIPT ERROR" -A3 f_*.txt | head -20 || true
+		grep -hE 'SCRIPT ERROR|Parse Error|^ERROR:' -A3 f_*.txt | head -20 || true
 		rm -rf "$D"
+		exit "$bad_fuzz"
 		;;
 	miss)
 		D=$(copy_project "$$")
@@ -265,10 +269,11 @@ case "$CMD" in
 	spec)
 		D=$(copy_project "$$")
 		cd "$D"
-		T 600 "$G" --headless --fixed-fps 60 --path . -s tools/spec_check.gd > spec.txt 2>&1 || true
-		grep -E "^(ok|FAIL|SPEC|DOC)|SCRIPT ERROR|Parse Error" spec.txt || true
 		r=0
+		T 600 "$G" --headless --fixed-fps 60 --path . -s tools/spec_check.gd > spec.txt 2>&1 || r=1
+		grep -E "^(ok|FAIL|SPEC|DOC)|SCRIPT ERROR|Parse Error|^ERROR:" spec.txt || true
 		grep -q "^SPEC 통과" spec.txt || r=1
+		grep -qE 'SCRIPT ERROR|Parse Error|^ERROR:' spec.txt && r=1
 		cd / && rm -rf "$D"
 		exit $r
 		;;
@@ -299,18 +304,19 @@ case "$CMD" in
 		bad=""
 		if python3 "$ROOT/tools/notes_check.py" > /tmp/bindu_check_notes.txt 2>&1; then echo "notes 통과"; else grep -E "^FAIL|^NOTES" /tmp/bindu_check_notes.txt | head -10; bad="$bad notes"; fi
 		"$0" spec > /tmp/bindu_check_spec.txt 2>&1 || bad="$bad spec"
-		grep -E "^FAIL|^SPEC" /tmp/bindu_check_spec.txt || true
+		grep -E "^FAIL|^SPEC|SCRIPT ERROR|Parse Error|^ERROR:" /tmp/bindu_check_spec.txt || true
 		D=$(copy_project "$$")
-		if (cd "$D" && T 300 "$G" --headless --path . -s tools/path_test.gd > path.txt 2>&1); then echo "path 통과"; else bad="$bad path"; fi
+		if (cd "$D" && T 300 "$G" --headless --path . -s tools/path_test.gd > path.txt 2>&1) && ! grep -qE 'SCRIPT ERROR|Parse Error|^ERROR:' "$D/path.txt"; then echo "path 통과"; else bad="$bad path"; fi
 		grep -E "^FAIL|SCRIPT ERROR" "$D/path.txt" || true
 		rm -rf "$D"
-		F=$("$0" fuzz 4 3000)
+		F=$("$0" fuzz 4 3000) || bad="$bad fuzz"
 		echo "$F" | grep "^시드"
 		echo "$F" | grep "^시드" | grep -qv "오류 0개" && bad="$bad fuzz"
 		C=$("$0" cont 1 plain 13)
-		echo "$C" | grep -E "RESULT|DIFF|SCRIPT ERROR" | head -5
-		echo "$C" | grep -qE "DIFF|SCRIPT ERROR" && bad="$bad cont"
-		echo "$C" | grep -q "RESULT" || bad="$bad cont"
+		echo "$C" | grep -E "RESULT|DIFF|SCRIPT ERROR|CONT w=" | head -10
+		echo "$C" | grep -qE "DIFF|SCRIPT ERROR|Parse Error|^ERROR:|STUCK" && bad="$bad cont"
+		echo "$C" | grep -q "^RESULT wave=13 " || bad="$bad cont"
+		for w in 4 8 12; do echo "$C" | grep -q "^CONT w=$w OK$" || bad="$bad cont@$w"; done
 		D=$(copy_project "$$")
 		(cd "$D" && T 120 "$G" --headless --path . -s tools/online_check.gd > online.txt 2>&1)
 		grep -q "결과: 모두 통과" "$D/online.txt" && echo "online 통과" || { grep -E "실패|SCRIPT ERROR" "$D/online.txt" | head -5; bad="$bad online"; }
@@ -323,10 +329,10 @@ case "$CMD" in
 		VERIFY=1 "$0" patchkeys || bad="$bad patchkeys"
 		GC=$("$0" gcheck)
 		echo "$GC" | grep -E "^FAIL|SCRIPT ERROR" | head -5
-		echo "$GC" | grep -q "RESULT fails=0" && echo "gcheck 통과" || bad="$bad gcheck"
+		if echo "$GC" | grep -q "RESULT fails=0" && ! echo "$GC" | grep -qE 'SCRIPT ERROR|Parse Error|^ERROR:'; then echo "gcheck 통과"; else bad="$bad gcheck"; fi
 		if python3 -c "import fastapi, pytest, httpx" > /dev/null 2>&1; then
-			(cd "$ROOT/server" && python3 -m pytest -q 2>&1 | tail -1) | tee /tmp/bindu_check_server.txt
-			grep -qE "failed|error" /tmp/bindu_check_server.txt && bad="$bad server"
+			(cd "$ROOT/server" && python3 -m pytest -q > /tmp/bindu_check_server.txt 2>&1) || bad="$bad server"
+			tail -1 /tmp/bindu_check_server.txt
 		else
 			echo "server 건너뜀 (python3에 fastapi·pytest·httpx 없음: pip install -r server/requirements-dev.txt)"
 		fi

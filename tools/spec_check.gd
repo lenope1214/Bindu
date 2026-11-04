@@ -95,6 +95,7 @@ func _initialize():
 	_mods_links()
 	await _mods_area()
 	_waves()
+	_wave_start_guard()
 	_orbs_cc()
 	_score_core()
 	_perks()
@@ -103,6 +104,7 @@ func _initialize():
 	_maps()
 	_save_load()
 	_meta_misc()
+	_carry_cards()
 	_multiplayer()
 	_tutorial()
 	_vote()
@@ -155,6 +157,15 @@ func _cards() -> void:
 		main._make_choices()
 		only_elem = only_elem and main.offer.all(func(cd): return cd["type"] == "elem")
 	ok("CARD-04", only_elem, "오브젝트가 없으면 속성 카드만")
+	_fresh(30)
+	_tower(main.center() + Vector2(120, 0))
+	var valid_links := true
+	for i in 1000:
+		var rolled: Dictionary = main._roll_card()
+		if rolled.get("type") == "link":
+			valid_links = valid_links and Pat.LINKS.has(rolled.get("id"))
+	ok("LINK-02", valid_links, "오브젝트 하나에서도 삭제된 연계 카드를 뽑지 않음")
+
 
 	# 첫 판: 종류가 웨이브마다 열림
 	main.tutor = true
@@ -378,6 +389,11 @@ func _share() -> void:
 	var early: bool = r1.burn_t > 0.0
 	tt._share_tick(0.4)
 	ok("SHR-06", not early and r1.burn_t > 0.0, "시간 되풀이: 0.8초 뒤 효과 한 번 더 (먼저 %s, 뒤 %.1f)" % [early, r1.burn_t])
+	var gone := _orb(c + Vector2(100, 0), 1e6)
+	tt.hit(gone, 1.0)
+	gone.free()
+	tt._share_tick(1.0)
+	ok("SHR-06", tt.later.is_empty(), "되풀이 전 대상이 사라지면 오류 없이 예약을 비움")
 	_clear()
 	# 금속 응축: 효과 수만큼 추가 피해 (피해 출처 share:metal)
 	var mt := _tower(c + Vector2(-200, 0), Elem.METAL, 3)
@@ -1288,6 +1304,38 @@ func _waves() -> void:
 	main.phase = main.Phase.CHOOSE
 
 
+## 시작 차단은 혼자 판에서만. 멀티 준비/잠수 진행은 배치에 막히지 않는다.
+func _wave_start_guard() -> void:
+	_fresh(0)
+	main.mp_mode = ""
+	main.lanes.assign([0.0])
+	main.phase = main.Phase.READY
+	main.mp_next_extra = 3
+	main._start_wave()
+	var empty_blocked: bool = main.phase == main.Phase.READY and main.wave == 0 and main.mp_next_extra == 3
+	var t := _tower(main.center() + Vector2(120, 0), Elem.FIRE, 1, Vector2.UP)
+	main._start_wave()
+	var away_blocked: bool = main.phase == main.Phase.READY and main.wave == 0
+	t.dir = Vector2.RIGHT
+	main._start_wave()
+	var covered_go: bool = main.phase == main.Phase.WAVE and main.wave == 1
+	main.mp_next_extra = 0
+	main.mp_extra_left = 0
+	main.wave_active = false
+	_clear()
+	main.mp_mode = "coop"
+	main.mp_wave_go = true
+	main.phase = main.Phase.READY
+	main._start_wave()
+	var coop_go: bool = main.phase == main.Phase.WAVE and main.wave == 2
+	main.mp_wave_go = false
+	main.mp_mode = ""
+	main.wave_active = false
+	main.phase = main.Phase.CHOOSE
+	ok("WAVE-14", empty_blocked and away_blocked and covered_go and coop_go,
+		"혼자 판: 오브젝트 없음/반대 방향이면 미시작·자원 보존, 닿으면 시작; 협동 통지 후 시작 보장")
+
+
 # ---------- 구체·군중 제어 ----------
 
 func _orbs_cc() -> void:
@@ -1678,7 +1726,7 @@ func _vary() -> void:
 	Vary.load_from(JSON.parse_string(JSON.stringify(sv)))
 	var keep: bool = Vary.seal_on and Vary.sealed["elem"] == sealed_e
 	Modes.set_on([])
-	ok("VARY-01", off_after_rules and counts_ok and keep and leak == 0 and Vary.count() == n0 - 1, "봉인: 속성 3·공격방식 4·연계 1, 선택지·대격변에 안 나옴(새어 나옴 %d), 25웨이브에 하나 풀림" % leak)
+	ok("VARY-01", off_after_rules and counts_ok and keep and leak == 0 and Vary.count() == n0 - 1, "봉인: 속성 3·공격방식 4·연계 1, 선택지에 안 나옴(새어 나옴 %d), 25웨이브에 하나 풀림" % leak)
 
 	Vary.new_run(true)
 	Vary.rest(8)
@@ -1924,6 +1972,64 @@ func _save_load() -> void:
 	_clear()
 
 
+# ---------- 카드 들기와 독립 카메라 ----------
+func _carry_cards() -> void:
+	_fresh(12)
+	main.auto_start = false
+	main.shake = 0.0
+	Meta.card_detail = false
+	main.card_dock.full_field = false
+	var target := _tower(Vector2(420, 520), Elem.WATER)
+	var bad := _tower(Vector2(860, 520), Elem.WATER)
+	bad.set_pattern("thorn")
+	var card := {"type": "mod", "id": "pierce"}
+	main.offer = [card, {"type":"elem", "e":Elem.FIRE, "lv":1}, {"type":"elem", "e":Elem.WOOD, "lv":1}]
+	main.picks_left = 2
+	main._show_offer()
+	main._open_choose()
+	main._process(0.0)
+	var offers: Array = main.offer.duplicate(true)
+	var xform: Transform2D = main.get_canvas_transform()
+	var scale0 := Meta.ui_scale
+	Meta.ui_scale = 1.3
+	main._apply_ui_scale()
+	main._process(0.0)
+	var scale_independent: bool = xform.is_equal_approx(main.get_canvas_transform())
+	main._zoom_to(1.4, main.get_viewport_rect().size / 2)
+	var zoomed: Transform2D = main.get_canvas_transform()
+	main.touch_ui = true
+	main._on_card_tap(card, 0)
+	main._process(0.0)
+	var held: bool = main.phase == main.Phase.PLACE and main.card_dock.held_chip.visible and not main.card_dock.panel.visible and not main.card_dock.side.visible and not main.choice_box.visible
+	var independent: bool = zoomed.is_equal_approx(main.get_canvas_transform()) and is_equal_approx(main.view_zoom, 1.4)
+	var before: int = main.picks_left
+	main._drop_carried_card(Vector2(-100, -100))
+	main._drop_carried_card(main.get_canvas_transform() * bad.position)
+	var refused: bool = main.picks_left == before and bad.m("pierce") == 0 and main.phase == main.Phase.PLACE
+	main._drop_carried_card(main.cancel_btn.get_global_rect().get_center())
+	refused = refused and main.picks_left == before
+	main._cancel_step()
+	main._process(0.0)
+	var cancel: bool = main.offer == offers and main.picks_left == before and main.phase == main.Phase.CHOOSE and main.choice_box.visible and main.tap_sel == 0 and zoomed.is_equal_approx(main.get_canvas_transform())
+	main._on_card_tap(card, 0)
+	main._drop_carried_card(main.get_canvas_transform() * target.position)
+	var applied: bool = target.m("pierce") == 1 and main.picks_left == before - 1
+	# 들고 있는 동안 앱을 닫아도 마지막 선택 목록과 남은 장수로 복원한다.
+	main.offer = offers.duplicate(true)
+	main._show_offer()
+	main._open_choose()
+	main._on_card_tap(card, 0)
+	_clear()
+	main._continue_run()
+	var resume: bool = main.phase == main.Phase.CHOOSE and main.offer == offers and main.picks_left == before - 1
+	main._reset_zoom()
+	Meta.ui_scale = scale0
+	main._apply_ui_scale()
+	main.touch_ui = false
+	ok("UI-31", held and independent and scale_independent and refused and cancel and applied and resume,
+		"카드 들기: 목록 접힘 %s·카메라 독립 %s·글자 배율 독립 %s·무효 드롭 보존 %s·취소 복원 %s·1회 적용 %s·이어하기 %s" % [held, independent, scale_independent, refused, cancel, applied, resume])
+
+
 # ---------- 기록·도감·화면 글 ----------
 
 func _meta_misc() -> void:
@@ -1943,25 +2049,25 @@ func _meta_misc() -> void:
 	main.touch_ui = false
 	ok("UI-02", not t.contains("(Q)") and h.contains("[조작 · 터치]"), "터치 화면은 키 안내를 빼고 터치용 도움말")
 
-	# 폰 카드: 한 번 누르면 미리보기, 같은 카드를 한 번 더 누르면 고름 (마우스는 바로)
+	# 일반 판은 마우스·터치 모두 한 번 눌러 든다. 대상 확정 전에는 선택 횟수를 쓰지 않는다.
 	_fresh(3)
 	main.phase = main.Phase.CHOOSE
 	main.offer = [{"type": "elem", "e": Elem.WATER, "lv": 1}, {"type": "elem", "e": Elem.FIRE, "lv": 1}]
+	main.picks_left = 2
 	main._show_offer()
 	main.touch_ui = true
 	main._on_card_tap(main.offer[0], 0)
-	var tap1: bool = main.phase == main.Phase.CHOOSE and main.tap_sel == 0 and main.hover_elem == Elem.WATER
-	main._on_card_tap(main.offer[1], 1)
-	var tap2: bool = main.phase == main.Phase.CHOOSE and main.tap_sel == 1
+	var tap1: bool = main.phase == main.Phase.PLACE and main.picked == main.offer[0] and main.picks_left == 2
+	main._cancel_step()
+	var tap2: bool = main.phase == main.Phase.CHOOSE and main.offer.size() == 2
 	main._on_card_tap(main.offer[1], 1)
 	var tap3: bool = main.phase == main.Phase.PLACE and main.picked.get("e", -1) == Elem.FIRE
+	main._cancel_step()
 	main.touch_ui = false
-	main.phase = main.Phase.CHOOSE
-	main._show_offer()
 	main._on_card_tap(main.offer[0], 0)
-	var mouse1: bool = main.phase == main.Phase.PLACE
-	ok("UI-14", tap1 and tap2 and tap3 and mouse1, "터치 카드: 한 번 누르면 미리보기·다른 카드 누르면 바꿈·한 번 더 누르면 고름, 마우스는 바로 고름")
-	main.phase = main.Phase.CHOOSE
+	var mouse1: bool = main.phase == main.Phase.PLACE and main.picks_left == 2
+	ok("UI-14", tap1 and tap2 and tap3 and mouse1, "카드 한 번 눌러 들기: PC·터치 동일, 취소하면 같은 목록, 적용 전 횟수 보존")
+	main._back_to_choose()
 
 	# 그린 궤적: 손을 떼면 [적용]을 기다리고, 누르면 넣는다 (터치·마우스 같음). 마우스는 Enter로도, 취소하면 원래 길
 	_fresh(3)
@@ -2081,7 +2187,7 @@ func _meta_misc() -> void:
 	var dt := _tower(main.center() + Vector2(-200, 0))
 	main._start_choose()
 	main._process(0.016)
-	var dim_on: bool = not main.card_dim.visible and main.card_dock.panel.visible and main.card_dock.side.visible
+	var dim_on: bool = not main.card_dim.visible and main.card_dock.panel.visible
 	main.picks_left = 2
 	main._process(0.016)
 	var head_two: bool = main.choice_header.visible and main.choice_remaining.text == "2장 더 선택 가능" and main.choice_header.z_index > main.card_dim.z_index
@@ -2094,7 +2200,7 @@ func _meta_misc() -> void:
 	main.touch_ui = true
 	main.tap_sel = 1
 	main._process(0.016)
-	var apply_row: bool = main.apply_btn.get_meta("choice_icon", {}) == main.choice_box.get_child(1).get_meta("card")[0] and main.apply_btn.visible and main.apply_btn.text.replace("\u2060", "").ends_with(" 적용") and is_equal_approx(main.apply_btn.offset_top, main.reroll_btn.offset_top)
+	var no_apply: bool = not main.apply_btn.visible
 	main.tap_sel = -1
 	main.touch_ui = false
 	main.perk_mode = true
@@ -2110,8 +2216,8 @@ func _meta_misc() -> void:
 	main._process(0.016)
 	var dim_off: bool = not main.card_dim.visible and main.phase == main.Phase.PLACE
 	ok("UI-23", dim_on and dim_hide and dim_off, "일반 판 카드 선택 시 전장 어둠 없음 %s, 필드 보기 %s·카드 고른 뒤 %s 유지" % [dim_on, dim_hide, dim_off])
-	ok("UI-30", head_two and head_one and apply_row and head_perk and head_hide and not main.choice_header.visible,
-		"카드 줄 선택 안내: 갱신 %s·%s, 적용 줄 %s, 숨김 %s·%s·%s" % [head_two, head_one, apply_row, head_perk, head_hide, not main.choice_header.visible])
+	ok("UI-30", head_two and head_one and no_apply and head_perk and head_hide and not main.choice_header.visible,
+		"카드 줄 선택 안내: 갱신 %s·%s, 중간 적용 버튼 없음 %s, 숨김 %s·%s·%s" % [head_two, head_one, no_apply, head_perk, head_hide, not main.choice_header.visible])
 
 
 
@@ -2125,21 +2231,8 @@ func _meta_misc() -> void:
 		main._process(0.0)
 		stable = stable and main.get_canvas_transform().is_equal_approx(transform)
 	var board: Rect2 = main.card_dock.screen_board()
-	var docked: bool = main.card_dock.panel.visible and main.card_dock.side.visible and not board.intersects(main.card_dock.panel.get_global_rect())
-	var enclosed: bool = board.grow(1).encloses(main.get_canvas_transform() * main.arena())
-	# 웨이브 중: 도크·정보 영역이 흐려지며 빠지고 전장 칸이 화면 전체로, 끝나면 다시 도크
-	main.phase = main.Phase.WAVE
-	main._process(main.card_dock.WAVE_FADE * 0.5)
-	var mid: float = main.card_dock.panel.modulate.a
-	main._process(main.card_dock.WAVE_FADE)
-	var full_rect: Rect2 = main.ui_root.get_global_transform() * Rect2(Vector2.ZERO, main.ui_root.size)
-	var wave_full: bool = not main.card_dock.panel.visible and not main.card_dock.side.visible and main.card_dock.screen_board().is_equal_approx(full_rect) and mid > 0.0 and mid < 1.0
-	var wave_fit: bool = main.card_dock.screen_board().grow(1).encloses(main.get_canvas_transform() * main.arena())
-	main.phase = main.Phase.CHOOSE
-	main._process(main.card_dock.WAVE_FADE)
-	var dock_back: bool = main.card_dock.panel.visible and main.card_dock.panel.modulate.a == 1.0 and main.get_canvas_transform().is_equal_approx(transform)
-	ok("UI-28", stable and main.arena().size == Meta.FIELD and enclosed and docked and wave_full and wave_fit and dock_back,
-		"쉬는 시간 전장 전체가 도크 위·카메라 고정 %s, 웨이브 중 도크 빠짐·전체 화면 %s(중간 %.2f), 끝나면 복귀 %s" % [stable and enclosed and docked, wave_full and wave_fit, mid, dock_back])
+	ok("UI-28", stable and main.arena().size == Meta.FIELD and board.grow(1).encloses(main.get_canvas_transform() * main.arena())
+		and board.size.is_equal_approx(main.get_viewport_rect().size), "패널과 독립된 전체 화면 전장: 단계 전환에서 카메라 고정·논리 전장 유지")
 	var preview := {"type": "elem", "e": Elem.WATER, "lv": 1}
 	var target_good: bool = main.card_dock.target_ok(dt, preview)
 	dt.add(Elem.ICE, 1)
@@ -2182,6 +2275,19 @@ func _meta_misc() -> void:
 	main.phase = main.Phase.CHOOSE
 	var rings_back: bool = not main._place_rings_off()
 	var pv_ok: bool = not (dt.preview({"type": "mod", "id": "multi"})[0] as PackedStringArray)[0].contains("겹쳐서")
+	main.card_dock.camera_fit()
+	var preview_target := _tower(main.get_global_mouse_position())
+	main.picked = {"type": "mod", "id": "multi"}
+	main.phase = main.Phase.PLACE
+	var guide_was_visible: bool = main.guide_label.visible
+	main.guide_label.hide()
+	main.card_dock.tick()
+	var hint_hidden: bool = not main.hint.visible
+	preview_target.free()
+	main.card_dock.tick()
+	ok("UI-25", hint_hidden and main.hint.visible, "대상 미리보기 때 하단 안내를 숨기고, 대상을 벗어나면 다시 표시")
+	main.guide_label.visible = guide_was_visible
+	main.phase = main.Phase.CHOOSE
 	ok("UI-25", mg == "혼불 3→4개 (하나 피해 73→72%) · 공격방식 보정 x1.06" and mg2 == "없음 → 탄 2개" and rings_off and rings_back and pv_ok, "넣기 설명 한 줄 합치기 '%s', 둘레 끔 %s/%s" % [mg, rings_off, rings_back])
 
 	# 오브젝트 정보창: 기본은 피해·공격 속도·치명타 숫자만, 자세히에만 주변 둘레
@@ -2256,6 +2362,13 @@ func _meta_misc() -> void:
 	var saved: bool = Meta.dps_fold == main.dps_hidden and main.dps_hidden != f0
 	main._toggle_dps()
 	ok("DPS-02", absf(live - 10.0) < 0.01 and after > 50.0 and saved, "실시간 DPS: 웨이브 중 최근 5초 이동 평균 (%.1f, 쉬는 시간엔 웨이브 평균 %.1f), 표 접기 저장" % [live, after])
+	var stale_row: Control = main._dps_row(lt, 1, 10.0, 10.0)
+	main.dps_list.add_child(stale_row)
+	lt.free()
+	stale_row.mouse_entered.emit()
+	stale_row.mouse_exited.emit()
+	ok("DPS-02", main.dps_focus == null, "오브젝트가 삭제된 옛 DPS 줄에 올려도 해제된 참조를 읽지 않음")
+	stale_row.queue_free()
 	_clear()
 
 	# 피해 1~3위 왕관·메달: 쉬는 시간 지난 웨이브 피해 순, 2개면 1위만, 1위가 바뀌면 왕관이 날아감, 설정으로 끔
@@ -2586,8 +2699,9 @@ func _tutorial() -> void:
 	main.cards_hidden = false
 	main.touch_ui = true
 	main.tap_sel = 0
-	var preview: bool = main._first_action_text() == "선택한 카드를 적용하세요."
+	var preview: bool = main._first_action_text().contains("고르세요")
 	main.tap_sel = -1
+	main.picked = {"type":"elem", "e":Elem.WATER, "lv":1}
 	main.phase = main.Phase.PLACE
 	var place: bool = main._first_action_text().contains("빈 곳")
 	main.phase = main.Phase.AIM

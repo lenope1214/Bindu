@@ -323,3 +323,21 @@ def test_leaks():
         assert run["wave"] == 6
         # 너무 큰 값은 거부
         assert post_run(c, map="cross", device="dev-leak-dddd", leaks=[{"w": 1, "n": -1}]).status_code == 422
+
+
+def test_card_enable_patch():
+    # 최신 관리자 탭과 함께 카드 사용 제어를 유지한다. 삭제된 연계는 허용하지 않는다.
+    elements = "fire wood water electric wind ice earth dark light poison metal sound time soul star".split()
+    with TestClient(app) as c:
+        for enabled in [[], {"link.prism": 0}, {"elem.fire": True}, {"elem.fire": "0"}, {"elem.fire": 0.5},
+                        {f"elem.{e}": 0 for e in elements}]:
+            r = c.post("/admin/patches", headers=A, json={"data": {"card_enabled": enabled}})
+            assert r.status_code == 422, (enabled, r.text)
+        enabled = {"elem.fire": 0, "pat.laser": 0, "link.reso": 1, "perk.power": 0}
+        r = c.post("/admin/patches", headers=A, json={"data": {"card_enabled": enabled}})
+        assert r.status_code == 200
+        patch = c.get("/v1/boot", params={"game": "0.9.0", "platform": "ios"}).json()["patch"]
+        assert patch["id"] == r.json()["id"] and signing.verify(patch["payload"], patch["sig"], PUB)
+        assert json.loads(patch["payload"])["data"]["card_enabled"] == enabled
+        admin = c.get("/admin", headers=A).text
+        assert 'id="ptabs"' in admin and 'id="t-card-enable"' in admin

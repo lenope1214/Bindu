@@ -339,6 +339,7 @@ var dps_list: VBoxContainer
 var dps_sig := ""  # 표를 다시 만들지 정하는 요약 (오브젝트·피해가 바뀔 때만)
 var dps_focus: Tower = null  # 표에서 마우스를 올린 오브젝트
 var dps_hidden := OS.has_feature("mobile")  # D: 표 접기 (Meta.dps_fold로 저장)
+var dps_choice_open := false  # 카드 선택 중엔 요약만, D로 상세를 잠깐 펼친다
 # 웨이브 중 실시간 DPS: 게임 시간 DPS_STEP초마다 오브젝트별 누적 피해(dealt)를 적어 두고 최근 DPS_WIN초 차이로 초당 피해 (이동 평균이라 덜 흔들림)
 const DPS_STEP := 0.5
 const DPS_WIN := 5.0
@@ -615,6 +616,8 @@ func _ready() -> void:
 
 ## 창이 포커스를 잃어도 판은 계속 진행된다 (직접 조작이 없으니 멈추지 않음).
 func _notification(what: int) -> void:
+	if what in [NOTIFICATION_WM_WINDOW_FOCUS_OUT, NOTIFICATION_APPLICATION_PAUSED] and card_dock != null:
+		card_dock.clear_gesture()
 	# Android 뒤로가기 = Esc (한 단계 되돌리기 / 일시정지)
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		var esc := InputEventKey.new()
@@ -1312,8 +1315,11 @@ func _build_dps(root: Control) -> void:
 
 
 func _toggle_dps() -> void:
-	dps_hidden = not dps_hidden
-	Meta.dps_fold = dps_hidden
+	if card_dock != null and card_dock.active() and phase == Phase.CHOOSE:
+		dps_choice_open = not dps_choice_open
+	else:
+		dps_hidden = not dps_hidden
+		Meta.dps_fold = dps_hidden
 	dps_sig = ""
 	_save_best()
 
@@ -1420,7 +1426,8 @@ func _refresh_dps() -> void:
 		dv[t] = _dps_of(t)
 	list.sort_custom(func(a, b): return dv[a] > dv[b])
 	# 웨이브 중엔 1초(표본 2개)마다만 고친다: 숫자가 매 프레임 바뀌면 읽을 수 없고 줄 순서도 덜 뒤바뀐다
-	var sig := "%s|%s|%d|%d" % [dps_hidden, live, roundi(room), dps_n / 2 if live else roundi(wave_time)]
+	var folded := dps_hidden or (card_dock != null and card_dock.active() and phase == Phase.CHOOSE and not dps_choice_open)
+	var sig := "%s|%s|%d|%d" % [folded, live, roundi(room), dps_n / 2 if live else roundi(wave_time)]
 	for t in list:
 		sig += "|%d:%s" % [t.get_instance_id(), t.title()]
 		if not live:
@@ -1428,11 +1435,11 @@ func _refresh_dps() -> void:
 	if sig == dps_sig:
 		return
 	dps_sig = sig
-	dps_head.text = _kh(("▶" if dps_hidden else "▼") + (" 실시간 DPS (D)" if live else " 지난 웨이브 DPS (D)"))
+	dps_head.text = _kh(("▶" if folded else "▼") + (" 실시간 DPS (D)" if live else " 지난 웨이브 DPS (D)"))
 	for c in dps_list.get_children():
 		c.queue_free()
-	dps_scroll.visible = not dps_hidden
-	if dps_hidden:
+	dps_scroll.visible = not folded
+	if folded:
 		dps_focus = null
 		dps_panel.size = Vector2.ZERO
 		return
@@ -1456,18 +1463,20 @@ func _dps_row(t: Tower, rank: int, dps: float, total: float, live := false) -> C
 	row.mouse_filter = Control.MOUSE_FILTER_STOP
 	row.add_theme_constant_override("separation", 6)
 	var col := t.color()
+	var target: WeakRef = weakref(t)
 	row.draw.connect(func():
-		var hot := dps_focus == t
+		var tower: Tower = target.get_ref()
+		var hot := tower != null and dps_focus == tower
 		row.draw_rect(Rect2(Vector2.ZERO, row.size), Color(1, 1, 1, 0.14 if hot else 0.04))
 		row.draw_rect(Rect2(Vector2.ZERO, Vector2(row.size.x * share, row.size.y)), Color(col, 0.28))
 		if hot:
 			row.draw_rect(Rect2(Vector2.ZERO, row.size), Color(1, 0.9, 0.5, 0.9), false, 1.0))
 	row.mouse_entered.connect(func():
-		dps_focus = t
+		dps_focus = target.get_ref()
 		for r in dps_list.get_children():
 			r.queue_redraw())
 	row.mouse_exited.connect(func():
-		if dps_focus == t:
+		if dps_focus == target.get_ref():
 			dps_focus = null
 		row.queue_redraw())
 	var cells := [["%d" % rank, 18, HORIZONTAL_ALIGNMENT_RIGHT, Tower.RANK_COLORS[rank - 1] if rank <= 3 and rank_of.get(t.get_instance_id(), 0) == rank else Color(1, 1, 1, 0.55)],
@@ -1514,22 +1523,24 @@ func _dps_name(t: Tower, col: Color) -> Control:
 	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.clip_contents = true
+	var target: WeakRef = weakref(t)
 	c.draw.connect(func():
-		if not is_instance_valid(t):
+		var tower: Tower = target.get_ref()
+		if tower == null:
 			return  # 표가 다시 만들어지기 전에 오브젝트가 없어짐 (협동 재접속 등)
 		var y := c.size.y / 2.0
-		Glyph.pat(c, t.pattern, Vector2(10, y), 8.0, col.lightened(0.5))
+		Glyph.pat(c, tower.pattern, Vector2(10, y), 8.0, col.lightened(0.5))
 		var x := 22.0
-		if t.plv > 1:
-			c.draw_string(ui_font, Vector2(x, y + 4.0), str(t.plv), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.6))
+		if tower.plv > 1:
+			c.draw_string(ui_font, Vector2(x, y + 4.0), str(tower.plv), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.6))
 			x += 9.0
 		x += 8.0
-		for e in t.order:
+		for e in tower.order:
 			Glyph.elem(c, e, Vector2(x + 7.0, y), 7.0)
 			x += 16.0
-			if t.lv(e) > 1:
-				c.draw_string(ui_font, Vector2(x, y + 4.0), str(t.lv(e)), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.6))
-				x += 4.0 + 6.0 * str(t.lv(e)).length()
+			if tower.lv(e) > 1:
+				c.draw_string(ui_font, Vector2(x, y + 4.0), str(tower.lv(e)), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.6))
+				x += 4.0 + 6.0 * str(tower.lv(e)).length()
 			x += 3.0)
 	return c
 
@@ -1806,9 +1817,14 @@ func _update_hud(force := false) -> void:
 	var y := 0.0
 	var right := 0.0
 	hud_chips.clear()
-	for it in items:
+	# 핵심 상태는 항상 먼저, 나머지는 별도 줄로 시각적으로 묶는다.
+	var primary := items.slice(0, mini(3, items.size()))
+	var secondary := items.slice(mini(3, items.size()))
+	for it in primary + secondary:
 		var w := Icons.chip_w(ui_font, it[2], fs)
-		if x > 0.0 and (it[5] or x + w > (hud_w if y == 0.0 else hud_w2)):
+		var core_count := mini(3, items.size())
+		var core_done := hud_chips.size() >= core_count
+		if x > 0.0 and (it[5] or (core_done and y == 0.0) or x + w > (hud_w if y == 0.0 else hud_w2)):
 			x = 0.0
 			y += 34.0
 		hud_chips.append([Rect2(x, y, w, 30.0), it[0], it[1], it[2], it[3], it[4]])
@@ -1908,7 +1924,7 @@ func _help_text() -> String:
 		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 비율 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
 		"왼쪽 위 DPS 표: 웨이브 중엔 최근 5초 실시간 DPS, 쉬는 시간엔 지난 웨이브 DPS와 비율. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기 (저장됨)",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
-		"P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
+		"F: 카드·설명 패널 접고 전체 전장 보기   P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   Tab: 설명 보기·숨기기   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
 		"R: 처음부터 (일시정지 중 두 번) · 게임 오버 뒤 클릭·R·Esc: 시작 화면 (멀티 판은 대기방)",
 		"E: 판 끝내기 (일시정지 중 두 번) — 지금 점수로 게임 오버, 기록·온라인 순위에 올라감",
 		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 이어하기(Enter)로 그 쉬는 시간부터 (새로 시작은 N 두 번)",
@@ -1921,6 +1937,7 @@ func _help_text() -> String:
 	var touch := [
 		"[조작 · 터치]",
 		"카드 누르기: 카드 선택   [새로고침]: 선택지 바꾸기   [필드 보기]: 카드를 내리고 필드 보기",
+		"화면 아래 [전장 넓게] / [패널 보기]: 카드·설명 패널 접기·복구",
 		"[웨이브 n개 넘기기]: 카드 선택을 미루고 웨이브 n개(1·3·5·10)를 연달아 진행, 멈추면 쌓인 특성·카드·새로고침을 한꺼번에 (넘기는 중 아래 표시를 누르면 멈춤)",
 		"속성 카드: 빈 곳을 눌러 설치(직선탄) → 쏠 쪽을 누르거나 끌어서 놓아 방향",
 		"속성 카드를 오브젝트 위에: 속성 겹치기 (%s)" % elems,
@@ -2212,6 +2229,10 @@ func _make_choices() -> void:
 	while offer.size() < want and guard < 50:
 		guard += 1
 		var card := _roll_card()
+		if card.is_empty():
+			break
+		if not _card_enabled(card):
+			continue
 		# 넣을 곳이 없는 공격방식·강화 카드는 내지 않는다
 		if card["type"] in ["pat", "mod", "trig"] and not _my_towers().any(func(t): return t.can_take(card)):
 			continue
@@ -2224,12 +2245,20 @@ func _make_choices() -> void:
 		elif card.get("lv", 1) > same[0].get("lv", 1):
 			offer[offer.find(same[0])] = card
 	# 영웅 Lv5: 일반 판 첫 쉬는 시간에 영웅 속성 카드 보장
-	if wave == 0 and Garden.hero_card() and not offer.any(func(cd): return cd["type"] == "elem" and cd["e"] == Garden.hero_e):
-		offer[0] = {"type": "elem", "e": Garden.hero_e, "lv": 1}
+	if wave == 0 and Garden.hero_card() and _card_enabled({"type": "elem", "e": Garden.hero_e}) and not offer.any(func(cd): return cd["type"] == "elem" and cd["e"] == Garden.hero_e):
+		if offer.is_empty():
+			offer.append({"type": "elem", "e": Garden.hero_e, "lv": 1})
+		else:
+			offer[0] = {"type": "elem", "e": Garden.hero_e, "lv": 1}
 	# 속성 카드(새 오브젝트를 놓을 수 있는 카드)는 최소 1장
 	if not offer.any(func(cd): return cd["type"] == "elem"):
-		var pool: Array = Vary.open("elem", Elem.ALL).filter(func(e): return not _star_blocked({"type": "elem", "e": e}))
-		offer[randi() % offer.size()] = {"type": "elem", "e": MapRule.pick("elem", pool) if not pool.is_empty() else Elem.FIRE, "lv": 1}
+		var pool: Array = Vary.open("elem", Elem.ALL).filter(func(e): return _card_enabled({"type": "elem", "e": e}) and not _star_blocked({"type": "elem", "e": e}))
+		if not pool.is_empty():
+			var fallback := {"type": "elem", "e": MapRule.pick("elem", pool), "lv": 1}
+			if offer.is_empty():
+				offer.append(fallback)
+			else:
+				offer[randi() % offer.size()] = fallback
 	if tutor:
 		_tutor_offer()
 	_show_offer()
@@ -2311,7 +2340,7 @@ func _tutor_card(k: String) -> Dictionary:
 	ids.shuffle()
 	for id in ids:
 		var cd := {"type": k, "id": id}
-		if k == "link" or towers.get_children().any(func(t): return t.can_take(cd)):
+		if _card_enabled(cd) and (k == "link" or towers.get_children().any(func(t): return t.can_take(cd))):
 			return cd
 	return {}
 
@@ -2354,34 +2383,63 @@ func _card_key(card: Dictionary) -> String:
 	return "%s:%s" % [card["type"], card.get("e", card.get("id", ""))]
 
 
+## 온라인 패치의 카드 사용 여부. 미지정 카드는 기존처럼 사용한다.
+func _card_enabled(card: Dictionary) -> bool:
+	var kind := str(card.get("type", ""))
+	var id := str(card.get("id", ""))
+	if kind == "elem":
+		var e := int(card.get("e", -1))
+		if e < 0 or e >= Patch.ELEM_KEYS.size():
+			return false
+		id = Patch.ELEM_KEYS[e]
+	return Patch.num("card_enabled", "%s.%s" % [kind, id], 1.0) >= 0.5
+
+
 ## 선택지 한 장: 속성 / 공격방식 / 강화 / 연계 중 하나.
 func _roll_card() -> Dictionary:
-	var n := _my_towers().size()
-	if n > 0 and wave > 0 and _card_open("pat") and _path_takers() and not Garden.on:  # 정원(방치형)은 손으로 그려야 해서 안 나옴
-		# 그린 궤적: 카드당 0.7%, 이 판에 궤적이 있으면 1.2% (여러 번 나와야 쓸모 있는 공격)
-		var has := _my_towers().any(func(t): return t.pattern == "path")
-		if randf() < (Patch.num("cards", "path_again", Pat.PATH_CHANCE_AGAIN) if has else Patch.num("cards", "path", Pat.PATH_CHANCE)):
+	var ts := _my_towers()
+	var n := ts.size()
+	var elems: Array = Vary.open("elem", Elem.ALL).filter(func(e): return _card_enabled({"type": "elem", "e": e}))
+	if elems.is_empty():
+		return {}
+	var patterns: Array = Vary.open("pat", Pat.PATTERN_IDS.slice(1)).filter(func(id):
+		var cd := {"type": "pat", "id": id}
+		return _card_enabled(cd) and ts.any(func(t): return t.can_take(cd)))
+	var mods: Array = Pat.MOD_IDS.filter(func(id):
+		var cd := {"type": "mod", "id": id}
+		return _card_enabled(cd) and ts.any(func(t): return t.can_take(cd)))
+	var trigs: Array = Pat.TRIG_IDS.filter(func(id):
+		var cd := {"type": "trig", "id": id}
+		return _card_enabled(cd) and ts.any(func(t): return t.can_take(cd)))
+	var links: Array = (Pat.LINK_IDS if n >= 2 else ["reso"]).filter(func(id):
+		return _card_enabled({"type": "link", "id": id}) and not Vary.is_sealed("link", id))
+	if n > 0 and wave > 0 and _card_open("pat") and _path_takers() and not Garden.on and _card_enabled({"type": "pat", "id": "path"}):
+		var has := ts.any(func(t): return t.pattern == "path")
+		var chance := Patch.num("cards", "path_again", Pat.PATH_CHANCE_AGAIN) if has else Patch.num("cards", "path", Pat.PATH_CHANCE)
+		if randf() < chance:
 			return {"type": "pat", "id": "path"}
-	# 종류 비율 (온라인 패치 cards로 바뀔 수 있음): 속성 42%, 공격방식 25%, 강화 23%, 연계 10%, 발동 12% (합으로 나눔)
+	# 비활성 카드와 현재 넣을 수 없는 카드는 확률 풀에서 빼고 남은 종류끼리 비율을 다시 맞춘다.
 	var we := Patch.num("cards", "elem", 0.42)
-	var wp := Patch.num("cards", "pat", 0.25) if _card_open("pat") else 0.0
-	var wm := Patch.num("cards", "mod", 0.23) if _card_open("mod") else 0.0
-	var wt := Patch.num("cards", "trig", 0.12) if _card_open("trig") else 0.0
-	var r := randf() * (we + wp + wm + wt + (Patch.num("cards", "link", 0.10) if _card_open("link") else 0.0))
-	if n == 0 or (wave == 0 and not Garden.on) or r < we:  # 정원은 웨이브 0으로 물러나도 다른 카드가 나오게
-		var lv := 2 if randf() < _lv2_chance() else 1
-		return {"type": "elem", "e": MapRule.pick("elem", Vary.open("elem", Elem.ALL)), "lv": lv}
-	if r < we + wp:
-		return {"type": "pat", "id": MapRule.pick("pat", Vary.open("pat", Pat.PATTERN_IDS.slice(1)))}
-	if r < we + wp + wm:
-		return {"type": "mod", "id": MapRule.pick("mod", Pat.MOD_IDS)}
-	if r < we + wp + wm + wt:
-		return {"type": "trig", "id": Pat.TRIG_IDS.pick_random()}
-	var ids: Array = Pat.LINK_IDS.duplicate() if n >= 2 else ["reso"]
-	ids = ids.filter(func(id): return not Vary.is_sealed("link", id))
-	if ids.is_empty():
-		return {"type": "elem", "e": MapRule.pick("elem", Vary.open("elem", Elem.ALL)), "lv": 1}
-	return {"type": "link", "id": MapRule.pick("link", ids)}
+	var wp := Patch.num("cards", "pat", 0.25) if _card_open("pat") and not patterns.is_empty() else 0.0
+	var wm := Patch.num("cards", "mod", 0.23) if _card_open("mod") and not mods.is_empty() else 0.0
+	var wt := Patch.num("cards", "trig", 0.12) if _card_open("trig") and not trigs.is_empty() else 0.0
+	var wl := Patch.num("cards", "link", 0.10) if _card_open("link") and not links.is_empty() else 0.0
+	var total := we + wp + wm + wt + wl
+	if n == 0 or (wave == 0 and not Garden.on) or total <= 0.0:
+		return {"type": "elem", "e": MapRule.pick("elem", elems), "lv": 2 if randf() < _lv2_chance() else 1}
+	var r := randf() * total
+	if r < we:
+		return {"type": "elem", "e": MapRule.pick("elem", elems), "lv": 2 if randf() < _lv2_chance() else 1}
+	r -= we
+	if r < wp:
+		return {"type": "pat", "id": MapRule.pick("pat", patterns)}
+	r -= wp
+	if r < wm:
+		return {"type": "mod", "id": MapRule.pick("mod", mods)}
+	r -= wm
+	if r < wt:
+		return {"type": "trig", "id": trigs.pick_random()}
+	return {"type": "link", "id": MapRule.pick("link", links)}
 
 
 ## 그린 궤적 카드를 넣을 오브젝트가 있는지 (궤적 레벨업, 또는 4개 미만일 때 직선탄).
@@ -2871,10 +2929,7 @@ func _choose_hint() -> String:
 		return "상점: 카드를 사서 놓아요 (빈 곳: 새 오브젝트 · 오브젝트 위: 겹치기·넣기). 끌기: 옮기기"
 	if Meta.games >= 3:
 		return ""
-	# 선택지 내리기(V)는 카드 아래 버튼에 적혀 있다
-	if touch_ui:
-		return "카드를 한 번 누르면 미리보기, 한 번 더 누르거나 [적용]으로 선택. 설치된 오브젝트 누르기: 방향 바꾸기 · 끌기: 옮기기"
-	return "선택지를 고르세요. 설치된 오브젝트 클릭: 방향 바꾸기 · 끌기: 옮기기"
+	return "카드를 눌러 든 뒤 대상에 놓으세요. 카드에서 바로 끌어 놓을 수도 있어요."
 
 
 # ---------- 튜토리얼 ----------
@@ -2908,11 +2963,9 @@ func _first_action_text() -> String:
 				return ""
 			if cards_hidden:
 				return "선택지를 다시 열어 카드를 고르세요."
-			if touch_ui and tap_sel >= 0:
-				return "선택한 카드를 적용하세요."
 			return "카드를 한 장 더 고르세요." if towers.get_child_count() > 0 else "카드를 하나 고르세요."
 		Phase.PLACE:
-			return "빨간 길목 쪽 빈 곳에 놓으세요."
+			return "넣을 오브젝트를 고르세요." if picked.get("type", "elem") != "elem" else "빨간 길목 쪽 빈 곳에 놓으세요."
 		Phase.AIM:
 			return "구체가 오는 쪽으로 방향을 정하세요."
 		Phase.READY:
@@ -3086,6 +3139,11 @@ func _lv2_chance() -> float:
 
 func _start_perk() -> void:
 	var pool := _perk_pool()
+	if pool.is_empty():
+		bank_perks = 0
+		_show_toast("사용 가능한 특성 카드가 없어 이번 선택을 건너뜁니다")
+		_start_choose(not rest_ready)
+		return
 	pool.shuffle()
 	perk_offer = pool.slice(0, 4 if Garden.boosted and Garden.lv("fruit") >= 1 else 3)  # 씨앗 나무 열매 1: 특성 선택지 4개
 	_show_perks()
@@ -3096,7 +3154,7 @@ func _start_perk() -> void:
 
 ## 지금 선택지에 나올 수 있는 특성들
 func _perk_pool() -> Array:
-	var pool: Array = PERKS.duplicate()
+	var pool: Array = PERKS.filter(func(pk): return _card_enabled({"type": "perk", "id": pk["id"]}))
 	if Modes.has("narrow"):
 		pool = pool.filter(func(pk): return not pk["id"] in ["reroll", "coin"])  # 외길: 새로고침이 없으니 쓸모없는 특성은 빼고 (동전 뒷면도 새로고침)
 	if coin_next != "":
@@ -3818,7 +3876,7 @@ func _off_legend(r: Rect2) -> Rect2:
 func _info_blockers() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var inv := ui_root.get_global_transform().affine_inverse()
-	for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, guide_more,  mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, draw_ok_btn]:
+	for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, guide_more,  mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, draw_ok_btn, card_dock.focus_btn, card_dock.panel, card_dock.side, card_dock.held_chip]:
 		if c == null or not c.is_visible_in_tree():
 			continue
 		if (c is Label and str(c.text) == "") or (c == hud and hud_chips.is_empty()):
@@ -3912,7 +3970,7 @@ func _draw_info() -> void:
 			boss_li = 0 if Meta.map_id == "line" or boss_plan.is_empty() else _lane_of(boss_plan["a"])
 		var fs := 18
 		# 폰: 배지가 7개까지 겹쳐 전장을 덮었다 → 수와 보스 왕관만, 섞여 나오는 종류는 점 하나(누르면 말풍선)
-		var compact := _phone()
+		var compact := _phone() or (card_dock.active() and phase == Phase.CHOOSE)
 		var blockers := _info_blockers()
 		# 오브젝트도 되도록 가리지 않는다 (배지를 비킬 때 오브젝트 위에 얹히던 것)
 		for t in towers.get_children():
@@ -4377,14 +4435,23 @@ func _draw_apply_icon() -> void:
 
 
 
-## 카드 누르기. 마우스는 바로 고르고(올리면 미리보기), 터치는 한 번 누르면 미리보기(다른 카드는 옅게, 아래에 [적용]),
-## 같은 카드를 한 번 더 누르거나 [적용]을 누르면 고른다.
+## 일반 판은 PC·터치 한 번 눌러 든다. 정원 상점은 기존 터치 두 단계 선택을 유지한다.
 func _on_card_tap(card: Dictionary, i: int) -> void:
+	if not Garden.on:
+		if phase != Phase.CHOOSE or card_dock.suppress_tap or card_dock.input_blocked():
+			return
+		_on_pick(card)
+		return
 	if not touch_ui or tap_sel == i:
 		_on_pick(card)
 		return
 	tap_sel = i
 	_tap_hover()
+
+
+func _release_card_tap_guard() -> void:
+	card_dock.suppress_tap = false
+	card_dock.touch_capture = false
 
 
 ## 터치로 고른(미리보기 중인) 카드의 속성 미리보기와 카드 진하기.
@@ -4397,6 +4464,7 @@ func _tap_hover() -> void:
 
 
 func _on_pick(card: Dictionary) -> void:
+	_save_run()  # 카드를 들고 앱을 닫아도 적용 전 목록과 남은 선택을 복원한다.
 	tap_sel = -1
 	_tap_hover()
 	picked = card
@@ -4405,6 +4473,8 @@ func _on_pick(card: Dictionary) -> void:
 	reroll_btn.visible = false
 	phase = Phase.PLACE
 	hint.text = _th(_place_hint())
+	if card_dock.active():
+		card_dock.tick()
 
 
 ## 통계용 카드 이름: elem:fire, pat:spray, mod:rapid, link:reso
@@ -4528,6 +4598,17 @@ func _toggle_legend() -> void:
 	_save_best()
 
 
+## 카드 도크·설명 칸을 접어 전장을 넓게 보거나 다시 연다 (F·모바일 버튼).
+func _toggle_focus_view() -> void:
+	if card_dock == null or not card_dock.available() or card_dock.carrying():
+		return
+	card_dock.full_field = not card_dock.full_field
+	if card_dock.full_field:
+		_clamp_pan()
+	else:
+		card_dock.tick()
+
+
 func _toggle_bar() -> void:
 	bar_open = not bar_open
 	_save_best()
@@ -4543,6 +4624,14 @@ func _update_auto_btn() -> void:
 
 
 func _start_wave() -> void:
+	# 멀티는 준비 동기화·잠수 자동 진행을 우선한다. 한 기기의 배치로 시작을 거부하면
+	# 호스트의 wave 통지와 실제 단계가 달라지거나 대결이 무기한 멈출 수 있다.
+	if not Garden.on and mp_mode == "":
+		var blocked := _wave_start_block_reason()
+		if blocked != "":
+			countdown = -1.0
+			_show_toast(blocked)
+			return
 	if mp_mode == "coop" and not mp_wave_go:
 		countdown = -1.0
 		_mp_coop_ready()
@@ -4615,6 +4704,69 @@ func _start_wave() -> void:
 	hint.text = ""
 	big_banner("웨이브 %d" % wave, Color.WHITE)
 	sfx.play("wave", 0.0)
+
+
+## 모든 다음 웨이브 진입 방향에 적어도 하나의 오브젝트 공격이 닿는지 확인한다.
+## 시작 버튼·Space·자동 시작·넘기기·멀티 호스트가 모두 _start_wave를 지나므로 여기서 막는다.
+func _wave_start_block_reason() -> String:
+	if lanes.is_empty():
+		return ""
+	var w := wave + 1
+	var spread := lane_spread(w)
+	var missed: Array[String] = []
+	for i in lanes.size():
+		if not _wave_lane_covered(lanes[i], w, spread):
+			missed.append(compass(lanes[i]))
+	if missed.is_empty():
+		return ""
+	return "웨이브를 시작할 수 없어요: %s쪽 공격이 닿지 않아요. 오브젝트의 위치나 방향을 맞춰 주세요" % "·".join(missed)
+
+
+## 진입 길을 따라 여러 지점을 살펴 공격 사거리·방향 안에 들어오는 오브젝트를 찾는다.
+func _wave_lane_covered(a: float, w: int, spread: float) -> bool:
+	var path := _orb_path(a)
+	if path.size() < 2:
+		return true
+	var samples: Array[Vector2] = []
+	if Meta.map_id == "line":
+		for y in [-LINE_HALF + 20.0, 0.0, LINE_HALF - 20.0]:
+			var line_path := _orb_path(a, y)
+			for k in range(1, 9):
+				samples.append(line_path[0].lerp(line_path[1], float(k) / 9.0))
+	else:
+		for seg in range(path.size() - 1):
+			var length := path[seg].distance_to(path[seg + 1])
+			var n := maxi(1, ceili(length / 45.0))
+			for k in n:
+				samples.append(path[seg].lerp(path[seg + 1], float(k) / n))
+	for t: Tower in towers.get_children():
+		var reach := _wave_attack_reach(t)
+		if reach <= 0.0:
+			continue
+		for p in samples:
+			var v := p - t.position
+			var dist := v.length()
+			if dist < 8.0 or dist > reach:
+				continue
+			# 자동 조준·중력 우물은 공격 방향을 고정하지 않는다. 나머지는 공격 폭과
+			# 구체의 진입 부채꼴을 함께 고려해 중앙선을 겨눈 공격도 유효하게 판정한다.
+			if t.m("reflex") > 0 or t.pattern == "vortex":
+				return true
+			var half := 0.12
+			match t.pattern:
+				"spray": half = 0.35
+				"chain": half = 0.5
+				"sonic": half = 0.5
+				"clock": half = 0.7
+			var width := atan(18.0 / dist)
+			if absf(t.dir.angle_to(v)) <= maxf(half, width) + spread:
+				return true
+	return false
+
+
+## 기본 공격방식별 유효 사거리. 수치는 실제 공격·사거리 표시와 같은 기준이다.
+func _wave_attack_reach(t: Tower) -> float:
+	return t.well_range() if t.pattern == "vortex" else t.reflex_range()
 
 
 func _game_over() -> void:
@@ -4849,6 +5001,9 @@ func _abort_touch_action() -> void:
 func _input(event: InputEvent) -> void:
 	if mp_mode != "" and ((event is InputEventMouseButton or event is InputEventScreenTouch or event is InputEventKey) and event.pressed):
 		_mp_presence()
+	if card_dock != null and card_dock.handle_input(event):
+		get_viewport().set_input_as_handled()
+		return
 	if _zoom_input(event) or (Garden.on and _gp_scroll_input(event)):
 		get_viewport().set_input_as_handled()
 		return
@@ -4962,6 +5117,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if event.keycode == KEY_F11:
 			_toggle_fullscreen()
+		elif event.keycode == KEY_F:
+			_toggle_focus_view()
 		elif event.keycode == KEY_R and get_tree().paused:
 			_pause_restart()
 		elif event.keycode == KEY_E and get_tree().paused:
@@ -4978,7 +5135,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			help_label.visible = not help_label.visible
 		elif event.keycode == KEY_TAB:
 			_toggle_legend()
-		elif event.keycode in [KEY_1, KEY_2, KEY_3, KEY_4, KEY_KP_1, KEY_KP_2, KEY_KP_3, KEY_KP_4] and phase == Phase.CHOOSE and help_label.visible == false:
+		elif event.keycode in [KEY_1, KEY_2, KEY_3, KEY_4, KEY_KP_1, KEY_KP_2, KEY_KP_3, KEY_KP_4] and phase == Phase.CHOOSE and help_label.visible == false and not get_tree().paused:
 			var i: int = event.keycode - (KEY_KP_1 if event.keycode >= KEY_KP_1 else KEY_1)
 			if perk_mode:
 				if i < perk_offer.size():
@@ -5127,32 +5284,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_cancel_step()
 		return
 	if phase == Phase.PLACE and event.button_index == MOUSE_BUTTON_LEFT:
-		var target := _tower_at(mpos)
-		if target and not _place_ok(target):
-			# 넣을 수 없는 오브젝트는 흐리게 그리고 누르거나 끌 수 없다 (이유만 알림)
-			_show_toast(_place_refuse(target))
-			return
-		if target:
-			# 클릭은 손을 뗄 때 처리한다. 꾹 누르거나 끌면 카드를 유지한 채 옮긴다.
-			_begin_press(target, mpos)
-			return
-		mpos = mpos.clamp(field_rect().position, field_rect().end)
-		if mpos.distance_to(core()) < 50.0:
-			_show_toast("중앙 점에 너무 가까워요")
-			return
-		if picked["type"] != "elem":
-			_apply_card(target)
-			return
-		elif Garden.on and not _garden_can_new():
-			return
-		elif picked["e"] == Elem.STAR and star_full():
-			_show_toast(Tower.star_full_text())
-			return
-		else:
-			place_pos = mpos
-			phase = Phase.AIM
-			aim_start_ms = Time.get_ticks_msec()
-			hint.text = _th("클릭 또는 끌어서 놓기: 발사 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 위치 다시 정하기")
+		_place_card_at(mpos)
 	elif phase == Phase.AIM:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			# 오브젝트 바로 위를 누르면 손을 뗄 때 정한다 (그 자리에서 바깥으로 끌어 조준)
@@ -5163,6 +5295,47 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif phase == Phase.PLACE and event.button_index == MOUSE_BUTTON_RIGHT:
 		_cancel_step()
 
+
+## 드롭은 손을 뗀 화면 좌표로 판정한다. 패널·창 밖·무효 대상에서는 카드를 소비하지 않는다.
+func _drop_carried_card(screen: Vector2) -> void:
+	if phase != Phase.PLACE or picked.is_empty() or not get_viewport_rect().has_point(screen) or card_dock.input_blocked() or card_dock.over_ui(screen):
+		return
+	var world := get_canvas_transform().affine_inverse() * screen
+	_place_card_at(world, true)
+
+
+func _place_card_at(mpos: Vector2, direct := false) -> void:
+	var target := _tower_at(mpos)
+	if target and not _place_ok(target):
+		# 넣을 수 없는 오브젝트는 흐리게 그리고 누르거나 끌 수 없다 (이유만 알림)
+		_show_toast(_place_refuse(target))
+		return
+	if target:
+		# 클릭은 손을 뗄 때 처리한다. 꾹 누르거나 끌면 카드를 유지한 채 옮긴다.
+		if direct:
+			_place_on(target)
+		else:
+			_begin_press(target, mpos)
+		return
+	if not field_rect().has_point(mpos):
+		_show_toast("전장 안에 놓으세요")
+		return
+	if mpos.distance_to(core()) < 50.0:
+		_show_toast("중앙 점에 너무 가까워요")
+		return
+	if picked["type"] != "elem":
+		_apply_card(target)
+		return
+	elif Garden.on and not _garden_can_new():
+		return
+	elif picked["e"] == Elem.STAR and star_full():
+		_show_toast(Tower.star_full_text())
+		return
+	else:
+		place_pos = mpos
+		phase = Phase.AIM
+		aim_start_ms = Time.get_ticks_msec()
+		hint.text = _th("클릭 또는 끌어서 놓기: 발사 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 위치 다시 정하기")
 
 ## 카드 선택 막을 깔지: 선택지 카드가 펼쳐져 있을 때만 (일시정지 어둠이 있으면 그것만).
 func _card_dim_on() -> bool:
@@ -7942,7 +8115,7 @@ func _continue_run() -> void:
 			perk_offer = []
 			for id in g.call("perk_offer", []):
 				for pk in PERKS:
-					if pk["id"] == id:
+					if pk["id"] == id and _card_enabled({"type": "perk", "id": id}):
 						perk_offer.append(pk)
 			if perk_offer.is_empty():
 				_start_perk()
@@ -8078,7 +8251,17 @@ func _cancel_step() -> void:
 
 ## 선택지를 그대로 둔 채 오브젝트 고르기로 돌아간다.
 func _back_to_choose() -> void:
+	if not Garden.on:
+		card_dock.clear_gesture()
+		card_dock.full_field = false
+		cards_hidden = false
+		tap_sel = offer.find(picked)
+		for button: Button in choice_box.get_children():
+			if button.get_meta("offer_card", {}) == picked:
+				card_dock.hovered = button
 	phase = Phase.CHOOSE
+	if not Garden.on:
+		_tap_hover()
 	choice_box.visible = not cards_hidden
 	_update_reroll_btn()
 	hint.text = _th(_choose_hint())
@@ -9083,6 +9266,7 @@ func _spawn_child(parent: Orb) -> void:
 	o.position = parent.position + Vector2(randf_range(-14, 14), randf_range(-14, 14))
 	o.from_a = parent.from_a
 	o.target = parent.target
+	o.swirl = parent.swirl
 	o.lane_k = parent.lane_k
 	o.setup(Orb.Kind.NORMAL, maxf(1.0, ceilf(parent.max_hp * 0.4)), parent.speed * 1.1 / (orb_speed_mul * Modes.speed()))
 	o.resist_e = parent.resist_e
@@ -9383,7 +9567,7 @@ func _process(delta: float) -> void:
 		hide_btn.offset_bottom = hy + 32.0
 	_garden_layout(cx, by)
 	_skill_ui()
-	card_dock.tick(delta)
+	card_dock.tick()
 	restart_armed = maxf(restart_armed - delta, 0.0)
 	end_armed = maxf(end_armed - delta, 0.0)
 	if not get_tree().paused and not title_label.visible and phase != Phase.GAMEOVER:
@@ -9924,6 +10108,8 @@ func _update_fx(delta: float) -> void:
 ## 마우스를 올린 오브젝트의 정보.
 func _draw_tooltip() -> void:
 	tip_orb = null
+	if card_dock != null and card_dock.full_field:
+		return  # 전장 넓게 보기에서는 마우스 정보창도 접는다
 	# 터치는 마우스를 올려 둘 수 없으니, 눌러서 옮기기 시작한 오브젝트의 정보를 보여 준다
 	var touch_move := phase == Phase.MOVE and touch_ui and moving != null
 	# 터치로 방향 바꾸기: 손가락은 쏠 쪽에 있으니 그 오브젝트 정보를 함께 보여 준다 ([자세히]로 수치까지)
@@ -9942,6 +10128,8 @@ func _draw_tooltip() -> void:
 		t = tip_tower
 	if t != null:
 		tip_tower = t
+		if card_dock.active():
+			return  # 카드 도크 사용 중엔 전장 위를 덮지 않고 오른쪽 설명 칸에 표시한다
 	if t == null:
 		_draw_orb_tooltip()
 		return
@@ -12731,18 +12919,29 @@ func _garden_fill() -> void:
 		for e in t.order:
 			if not e in used:
 				used.append(e)
-	var es: Array = Elem.ALL.duplicate()
+	var es: Array = Elem.ALL.filter(func(e): return _card_enabled({"type": "elem", "e": e}))
+	var used_enabled: Array = used.filter(func(e): return _card_enabled({"type": "elem", "e": e}))
+	if not used_enabled.is_empty():
+		var preferred: int = used_enabled.pick_random()
+		es.erase(preferred)
+		used_enabled.erase(preferred)
+		offer.append({"type": "elem", "e": preferred, "lv": 1})
+		used_enabled.shuffle()
+		for e in used_enabled:
+			if offer.size() >= Garden.SHOP_ELEMS:
+				break
+			offer.append({"type": "elem", "e": e, "lv": 1})
 	es.shuffle()
-	if not used.is_empty():
-		var u: int = used.pick_random()
-		es.erase(u)
-		es.push_front(u)
-	for i in Garden.SHOP_ELEMS:
-		offer.append({"type": "elem", "e": es[i], "lv": 1})
+	for e in es:
+		if offer.size() >= Garden.SHOP_ELEMS:
+			break
+		offer.append({"type": "elem", "e": e, "lv": 1})
 	var guard := 0
 	while offer.size() < Garden.SHOP_ELEMS + Garden.SHOP_OTHERS and guard < 60 and towers.get_child_count() > 0:
 		guard += 1
 		var cd := _roll_card()
+		if not _card_enabled(cd):
+			continue
 		if cd["type"] == "elem":
 			continue
 		if cd["type"] in ["pat", "mod", "trig"] and not towers.get_children().any(func(t): return t.can_take(cd)):
@@ -13604,10 +13803,11 @@ func _apply_tree() -> void:
 	if Garden.lv("leaf") >= 1:
 		bonus_rerolls += 1
 	if Garden.lv("fruit") >= 2:
-		var pool: Array = PERKS.filter(func(pk): return not (pk["id"] == "reroll" and Modes.has("narrow")))
-		var pk: Dictionary = pool.pick_random()
-		_grant_perk(pk["id"])
-		_show_toast("씨앗 나무 열매: 특성 '%s'로 시작" % pk["name"])
+		var pool: Array = PERKS.filter(func(pk): return _card_enabled({"type": "perk", "id": pk["id"]}) and not (pk["id"] == "reroll" and Modes.has("narrow")))
+		if not pool.is_empty():
+			var pk: Dictionary = pool.pick_random()
+			_grant_perk(pk["id"])
+			_show_toast("씨앗 나무 열매: 특성 '%s'로 시작" % pk["name"])
 	call_deferred("_place_bonsai")
 
 

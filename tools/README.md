@@ -10,7 +10,7 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 |---|---|---|
 | `bots [규칙] [판 수] [stack]` | 자동 플레이 봇(시드 1~N). `stack`은 한 오브젝트에 몰아 넣기 | 도달 웨이브 중간값·평균·최소·최대, 죽은 웨이브 분포 |
 | `long [규칙] [맵] [웨이브]` | 죽지 않는 봇으로 그 웨이브까지 | 웨이브가 4분 넘게 안 끝나면 `STUCK`과 그때 구체·오브젝트 상태 |
-| `cont [규칙] [맵] [웨이브]` | 4웨이브마다 게임을 끄고 이어하기 | 저장 전후 상태가 다르면 `DIFF` |
+| `cont [규칙] [맵] [웨이브]` | 4웨이브마다 게임을 끄고 이어하기, 비교 뒤 새 길목으로 재배치 | 저장 전후 상태가 다르면 `DIFF` |
 | `fuzz [판 수] [프레임]` | 무작위 클릭·끌기·키·터치 (`GARDEN=1`이면 정원 판, 홀수 시드는 물러남까지) | 시드별 스크립트 오류 수 |
 | `tree [규칙] [판 수]` | 같은 시드로 씨앗 나무 없음·절반·전부 봇 (봇에 직접 켜려면 `TREE=half\|full`) | 셋의 중간값·평균·죽은 웨이브 분포 (목표: 전부도 중간값 +4 이내) |
 | `garden [시드 수] [웨이브]` | 정원 봇(`garden_bot.gd`): 상점에서 싼 것부터 사서 놓고 자동 웨이브. `REBIRTHS=n` 환생 n번으로 시작, `MINS` 실제 시간 제한 | 웨이브마다 이슬·오브젝트·게임 시간, 물러남(`RETREAT`), 끝에 `RESULT`·숙련 |
@@ -38,10 +38,11 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 | `mp_play.gd` | 두(이상) 프로세스로 봇 판: `MP_ROLE=host\|join MP_MODE=vs\|coop MP_FILE=<코드 파일> MP_WAVES=8 MP_N=<참가 인원>` + BINDU_MP_URL (`MP_IDLE=<역할>`이면 그 역할은 아무것도 안 함: 잠수 처리 시험). 대결은 웨이브마다 진입 방향이 같은지, 협동은 웨이브·점수·오브젝트가 같은지 | 웨이브마다 `MPW`·`MPDEALT`(주인별 피해), 끝에 `MPPLAY` |
 | `mp_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/mp_shot.gd -- <폴더> [글자 크기] [touch] [vs\|coop]`: 연결 없이 상태만 채워 시작 버튼·방 화면·상태 줄·웨이브·끝 화면 스크린샷 | PNG |
 | `vote_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path <사본> -s tools/vote_shot.gd -- <폴더> [글자 크기] [touch] [phone]`: 서버 없이 응답을 채워 시작 화면 [투표]·투표 창(표·개선 의견·표 다 씀·지난 회차 결과)·판 끝 화면 버튼·이번 판 탭 스크린샷. 사본의 online_config SERVER_URL은 http://127.0.0.1:9로 | PNG |
+| `carry_check.gd` | `godot --path <BinduTools 사본> -s tools/carry_check.gd -- <출력 폴더> <글자 배율> [phone]`: 서버 주소를 비운 native 사본에서 실제 카드 클릭·드래그·터치, 무효 대상·취소·앱 전환·확대·중복 소비 방지·카메라 독립·UI 검사 | PNG·ok/FAIL·CARRY failures |
 | `first_play_check.gd` | 저장 분리 사본(`config/name`은 BinduTools로 시작)에서 `godot --path <사본> -s tools/first_play_check.gd -- <캡처 폴더> <글자 배율> [touch]`: 첫 기기 진입·선택형 설명·첫 2회 배치·취소·이어하기·웨이브 시작 확인. 창 필요, 실제 게임 저장에서는 실행 거부 | 항목별 ok/FAIL, 캡처 PNG, `NATIVE FIRST failures=0` |
 | `spec` | [docs/features.md](../docs/features.md)에서 검사가 spec인 기능마다 기대 동작을 확인(tools/spec_check.gd), 끝에 문서와 대조 | 기능별 ok/FAIL, 실패가 있으면 끝 코드 1 |
 | `notes` | `python3 tools/notes_check.py`: CHANGELOG(게임 안 패치노트)에 패치 키·코드 이름·파일 경로·서버 API 경로·커밋 해시·백틱·요청/제보 인용이 없는지 ([docs/changelog-rules.md](../docs/changelog-rules.md)). Godot 필요 없음 | 걸린 줄마다 `FAIL CHANGELOG.md:<줄> <이유>`, 끝 줄 `NOTES ok` |
-| `check` | 배포 전 한 번에: 패치노트 검사 + spec + 그린 궤적 + 무작위 입력 4판 + 이어하기 13웨이브 + 온라인 서명 + 패치 키 + 서버 pytest(패키지가 있을 때). 4~5분 | `CHECK 통과` / `CHECK 실패: <항목>`, 끝 코드 |
+| `check` | 배포 전 한 번에: 패치노트 검사 + spec + 그린 궤적 + 무작위 입력 4판 + 이어하기 13웨이브 + 온라인 서명 + 패치 키 + 서버 pytest(패키지가 있을 때). 4~5분. 이어하기는 13웨이브 도달과 4·8·12웨이브 복원 모두 필수 | `CHECK 통과` / `CHECK 실패: <항목>`, 끝 코드 |
 | `patch_keys_check.gd` | `godot --headless --path . -s tools/patch_keys_check.gd`: 온라인 패치 rules의 오브젝트 수치 키(공격방식별 피해·속도·사거리, 강화·속성 수치, 규칙별 덮어쓰기)가 실제 값·설명 글에 먹는지 | 항목별 ok/FAIL, 끝 줄 `PATCHCHECK ok` |
 | `gcheck` | 정원 점검(`garden_check.gd`, 빈 기록으로): 상점 값 치르기·웨이브와 이슬·물러남(웨이브 0 아래로 안 감)·저장 뒤 이어하기·꺼 둔 동안 보상(50%, 8시간)·환생(두 번 누르기, 씨앗)·씨앗 나무 사기·숙련 단계·일반 판 보너스와 ~grow 기록 키 | 항목별 ok/FAIL |
 | `garden_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/garden_shot.gd -- <폴더> [글자 크기]`: 시작 화면 정원 줄·씨앗 나무 창·상점 4장·놓기·웨이브 중·물러난 뒤·특성 4장·리더보드 스크린샷 | PNG |

@@ -112,7 +112,8 @@ main에 `server/` 변경이 올라오면 집 PC가 5분 안에 알아서 다시 
 | `rules_desc."N"` | 시작 화면 규칙 설명 |
 | `perks` | 특성 수치: `power` 0.15, `haste` 0.12, `reach` 0.12, `core` 3, `reroll` 1, `luck` 0.2, `regen` 1(처음 고른 회복의 웨이브당 체력), `regen_more` 0.5(겹친 회복 하나당, 소수 가능), `slow` 0.08, `harmony` 0.5·`harmony_cap` 0.2(조화가 올려 주는 공격 속도 상한), `shield` 1·`shield_max` 3·`shield_all` 4(실드), `rampart` 1·`rampart_max` 4·`rampart_push` 140(성벽), `riposte` 0.6(보통 구체 체력 배)·`riposte_more` 0.5·`riposte_r` 160(반격 파동), `overflow` 2(넘친 회복 실드 최대) |
 | `perk_desc` | 특성 카드 설명 (수치를 바꾸면 같이 바꾸기) |
-| `cards` | 카드 종류 비율(`elem`·`pat`·`mod`·`link`, 합이 1이 아니어도 됨), Lv2 확률 `lv2_base + lv2_wave × 웨이브`(최대 `lv2_max`) |
+| `cards` | 카드 종류 비율(`elem`·`pat`·`mod`·`link`, 합이 1이 아니어도 됨), Lv2 확률 `lv2_base + lv2_wave × 웨이브`(최대 `lv2_max`), 희귀 그린 궤적 확률 `path`(처음)·`path_again`(이미 보유) |
+| `card_enabled` | 카드별 사용 여부. `elem.fire`·`pat.path`·`mod.multi`·`trig.echo`·`link.prism`·`perk.power`처럼 종류와 ID를 붙여 `0`(미사용) 또는 `1`(사용)을 넣는다. 미지정 카드는 사용 상태. 어드민 패치 탭에서 전체 목록을 검색·편집할 수 있다. 새 오브젝트를 만들 수 있도록 속성 카드는 하나 이상 사용 상태로 둔다. 새 패치부터 적용된다. |
 | `elem_dmg` | 속성별 피해 배율. 오브젝트에 넣은 속성마다 곱함. 키: fire wood water electric wind ice earth dark light poison metal sound time soul |
 | `pat_dmg` | 공격방식별 피해 배율. 키: shot spray thorn stream chain gust shard wall vortex laser lob iron sonic clock wisp |
 | `modes` | 모드 점수 배율 (값이 배율 자체, 예 `{"rush": 1.4}`). 키: rush swarm steel glass narrow early angry seal stroll fort three soft ease. 서버 점수 상한도 같은 값을 씀 (`docs/modes.md`) |

@@ -84,4 +84,7 @@ func _process(_d):
 	if main.get_tree().paused and randf() < 0.05: _key(KEY_P)
 	if f % 1000 == 0:
 		print("FUZZ f=%d phase=%d wave=%d towers=%d sel=%d garden=%s" % [f, main.phase, main.wave, main.towers.get_child_count(), main.selected.size(), Garden.on])
-	return f >= n
+	if f >= n:
+		print("FUZZ DONE frames=%d" % f)
+		return true
+	return false

@@ -38,11 +38,19 @@ app.include_router(reports.router)
 
 PLATFORMS = ["windows", "macos", "linux", "android", "ios"]
 # 패치 data에서 게임이 읽는 최상위 키 (scripts/patch.gd)
-PATCH_KEYS = {"rules", "rules_desc", "perks", "perk_desc", "cards", "elem_dmg", "pat_dmg", "modes", "garden", "message"}
+PATCH_KEYS = {"rules", "rules_desc", "perks", "perk_desc", "cards", "card_enabled", "elem_dmg", "pat_dmg", "modes", "garden", "message"}
+CARD_ENABLE_KEYS = {f"{kind}.{card}" for kind, cards in {
+    "elem": "fire wood water electric wind ice earth dark light poison metal sound time soul star".split(),
+    "pat": "spray thorn stream chain gust shard wall vortex laser lob iron sonic clock wisp path".split(),
+    "mod": "multi split homing bounce size rapid pierce dice reflex".split(),
+    "trig": "echo vanguard charge third finish answer".split(),
+    "link": "pincer reso".split(),
+    "perk": "power haste reach core reroll luck regen slow harmony coin shield rampart riposte quick overflow".split(),
+}.items() for card in cards}
 
 
 # 자동 배포 확인용: 서버 코드를 고쳐 배포할 때 바꾸면 /health로 새 이미지가 떴는지 밖에서 볼 수 있다
-SERVER_REV = "2026-11-03.5"
+SERVER_REV = "2026-11-04.1"
 
 
 @app.get("/health")
@@ -416,6 +424,11 @@ def create_patch(body: PatchIn, db: Session = Depends(get_db)):
     unknown = sorted(set(body.data) - PATCH_KEYS)
     if unknown:
         raise HTTPException(422, f"unknown keys: {unknown} (allowed: {sorted(PATCH_KEYS)})")
+    enabled = body.data.get("card_enabled", {})
+    if not isinstance(enabled, dict) or any(k not in CARD_ENABLE_KEYS or type(v) not in (int, float) or v not in (0, 1) for k, v in enabled.items()):
+        raise HTTPException(422, "card_enabled must map known card ids to 0 or 1")
+    if enabled and not any(enabled.get(f"elem.{e}", 1) == 1 for e in "fire wood water electric wind ice earth dark light poison metal sound time soul star".split()):
+        raise HTTPException(422, "at least one element card must remain enabled")
     p = Patch(notes=body.notes, min_game=body.min_game, max_game=body.max_game, data=body.data, payload="", sig="")
     db.add(p)
     db.flush()

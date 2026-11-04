@@ -123,6 +123,8 @@ func flush_logs() -> void:
 
 
 func _request(method: int, path: String, body := "", headers := PackedStringArray(), timeout := TIMEOUT) -> Dictionary:
+	if OnlineConfig.SERVER_URL == "":
+		return {"code": 0, "data": null}
 	var http := HTTPRequest.new()
 	http.timeout = timeout
 	add_child(http)
