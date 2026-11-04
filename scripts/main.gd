@@ -8302,7 +8302,7 @@ func _toggle_pause() -> void:
 	paused_label.text = _pause_text()
 	restart_armed = 0.0
 	end_armed = 0.0
-	pause_btn.text = _kh("계속 (P)" if get_tree().paused else "일시정지 (P)")
+	pause_btn.tooltip_text = "계속 (P)" if get_tree().paused else "일시정지 (P)"  # 그림 버튼이라 글은 말풍선에만
 
 
 ## 일시정지에서 처음부터: 두 번 눌러야 (R 또는 버튼).
@@ -8338,7 +8338,7 @@ func _end_run() -> void:
 	get_tree().paused = false
 	paused_label.visible = false
 	pause_box.visible = false
-	pause_btn.text = _kh("일시정지 (P)")
+	pause_btn.tooltip_text = "일시정지 (P)"
 	ended = true
 	_game_over()
 
