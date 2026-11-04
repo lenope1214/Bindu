@@ -1,11 +1,5 @@
 extends "res://tools/spec_check.gd"
 ## 전체 카드 문체 변경의 native 줄바꿈·상세 스크롤 검사. BinduTools 사본·온라인 주소 비움 필수.
-# 렌더 fixture에서는 OS 포인터가 움직여도 카드 설명이 오브젝트 검사로 바뀌지 않게 한다.
-class CardCopyFixture:
-	extends "res://scripts/main.gd"
-	func _tower_at(_p: Vector2, _except: Tower = null) -> Tower:
-		return null
-
 var output := ""
 var captures: Array = []
 var touch := false
@@ -29,14 +23,11 @@ func _initialize():
 	Tutorial.loaded = true
 	Tutorial.done = true
 	Meta.games = 5
-	main = CardCopyFixture.new()
-	root.add_child(main)
+	main = load("res://main.tscn").instantiate()
+	VirtualInput.mount(main, root)
 	await process_frame
 	main._hide_title()
 	main.set_process(false)
-	main.set_process_input(false)
-	main.set_process_unhandled_input(false)
-	root.gui_disable_input = true
 	main.auto_start = false
 	touch = args.size() > 2
 	main.touch_ui = touch
@@ -69,6 +60,7 @@ func _initialize():
 			var button: Button = main.choice_box.get_child(i)
 			main.card_dock.inspected_tower = null
 			main.card_dock.hovered = button
+			VirtualInput.move(button.get_global_rect().get_center())
 			expected_name = main._card_content(card, 0)["head"]["name"]
 			expected_rows = main._card_full(card).map(func(row): return row[0])
 			Meta.card_detail = false
@@ -84,6 +76,7 @@ func _initialize():
 			var button: Button = main.choice_box.get_child(i)
 			main.card_dock.inspected_tower = null
 			main.card_dock.hovered = button
+			VirtualInput.move(button.get_global_rect().get_center())
 			var tag: String = "perk_" + main.perk_offer[i]["id"]
 			expected_name = main.perk_offer[i]["name"]
 			expected_rows = [main._perk_desc(main.perk_offer[i])]
@@ -115,7 +108,7 @@ func snap(tag: String):
 		for line in lines:
 			ok("UI-20", main.ui_font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x <= button.size.x - 27, tag + " wrapped summary width")
 	fails += preload("res://tools/ui_check.gd").check(main, tag)
-	var image := root.get_texture().get_image()
+	var image: Image = main.get_viewport().get_texture().get_image()
 	image.save_png(output.path_join(tag + ".png"))
 	captures.append({"file": tag + ".png", "viewport": [image.get_width(), image.get_height()], "scale": Meta.ui_scale, "touch": main.touch_ui, "phone": Meta.sim_phone, "text": dock.detail.text, "scroll_max": dock.scroll.get_v_scroll_bar().max_value, "scroll_page": dock.scroll.get_v_scroll_bar().page})
 

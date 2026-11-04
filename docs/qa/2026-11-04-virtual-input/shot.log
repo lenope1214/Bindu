@@ -1,0 +1,122 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+SHOT title
+UI ok title
+SHOT title_prep
+UI ok title_prep
+SHOT notes
+UI ok notes
+SHOT records
+UI ok records
+SHOT board
+UI ok board
+SHOT settings
+UI ok settings
+SHOT codex
+UI ok codex
+SHOT codex_pat
+UI ok codex_pat
+SHOT codex_rx
+UI ok codex_rx
+SHOT codex_perk
+UI ok codex_perk
+SHOT codex_ach
+UI ok codex_ach
+SHOT codex_ach_end
+UI ok codex_ach_end
+SHOT codex_elem
+UI ok codex_elem
+SHOT modes
+UI ok modes
+SHOT modes_easy
+UI ok modes_easy
+SHOT tut_goal
+UI ok tut_goal
+SHOT tut_place
+UI ok tut_place
+SHOT tut_react
+UI ok tut_react
+SHOT tut_coin
+UI ok tut_coin
+SHOT tut_coop
+UI ok tut_coop
+SHOT tut_link
+UI ok tut_link
+SHOT tut_list
+UI ok tut_list
+SHOT help
+UI ok help
+SHOT title_remote
+UI ok title_remote
+SHOT cards
+UI ok cards
+SHOT cards_tap
+UI ok cards_tap
+SHOT cards_detail_full
+UI ok cards_detail_full
+SHOT cards_detail
+UI ok cards_detail
+SHOT zoom
+UI ok zoom
+SHOT cards2
+UI ok cards2
+SHOT cards_guide
+UI ok cards_guide
+SHOT place_mod
+UI ok place_mod
+SHOT place_mod_ok
+UI ok place_mod_ok
+SHOT cards_hidden
+UI OVERLAP cards_hidden PanelContainer(CardInspector) [906,145 358x410] × 배지 ×94 [1205,340 63x39]
+SHOT tip
+UI OVERLAP tip PanelContainer(CardInspector) [906,145 358x410] × 배지 ×94 [1205,340 63x39]
+SHOT aim_touch_detail
+UI OVERLAP aim_touch_detail PanelContainer(CardInspector) [906,145 358x410] × 배지 ×94 [1026,340 243x39]
+SHOT aim_touch_hold
+UI OVERLAP aim_touch_hold PanelContainer(CardInspector) [906,145 358x410] × 배지 ×94 [1026,340 243x39]
+SHOT aim_touch_wait
+UI OVERLAP aim_touch_wait PanelContainer(CardInspector) [906,145 358x410] × 배지 ×94 [1026,340 243x39]
+SHOT ready_skip
+UI OVERLAP ready_skip PanelContainer(CardInspector) [906,145 358x410] × 배지 ×94 [1026,340 243x39]
+SHOT skip_ready
+UI OVERLAP skip_ready PanelContainer(CardInspector) [906,145 358x410] × 배지 ×94 [1026,340 243x39]
+UI OFFSCREEN skip_ready Button「넘기는 중 1/3 · 쌓인 카드 0 (S: …」 [367,-130 546x46]
+SHOT skip_wave
+UI OVERLAP skip_wave PanelContainer(CardInspector) [906,384 358x252] × Button「집중」 [874,577 182x57]
+UI OVERLAP skip_wave PanelContainer(CardInspector) [906,384 358x252] × Button「낙인」 [1069,577 182x57]
+UI OFFSCREEN skip_wave Button「넘기는 중 1/3 · 쌓인 카드 0 (S: …」 [367,-130 546x46]
+SHOT wave_dps
+UI OVERLAP wave_dps PanelContainer(CardInspector) [906,384 358x252] × Button「집중」 [874,577 182x57]
+UI OVERLAP wave_dps PanelContainer(CardInspector) [906,384 358x252] × Button「낙인」 [1069,577 182x57]
+UI OVERLAP wave_dps Label「낙⁠인 (둘⁠레 구⁠체 받⁠는 피⁠해↑): …」 [425,137 458x61] × Label「웨⁠이⁠브 중 기⁠술 버⁠튼⁠으⁠로 전⁠투⁠…」 [433,189 412x52]
+UI OFFSCREEN wave_dps Button「넘기는 중 1/3 · 쌓인 카드 0 (S: …」 [367,-130 546x46]
+SHOT orb_tip
+UI OVERLAP orb_tip PanelContainer(CardInspector) [906,384 358x252] × Button「집중」 [874,577 182x57]
+UI OVERLAP orb_tip PanelContainer(CardInspector) [906,384 358x252] × Button「낙인」 [1069,577 182x57]
+UI OVERLAP orb_tip Label「낙⁠인 (둘⁠레 구⁠체 받⁠는 피⁠해↑): …」 [425,137 458x61] × Label「웨⁠이⁠브 중 기⁠술 버⁠튼⁠으⁠로 전⁠투⁠…」 [433,189 412x52]
+UI OFFSCREEN orb_tip Button「넘기는 중 1/3 · 쌓인 카드 0 (S: …」 [367,-130 546x46]
+SHOT perks
+UI OVERLAP perks PanelContainer(CardInspector) [906,428 358x130] × HBoxContainer(@HBoxContainer@43) [15,509 1251x122]
+UI OVERLAP perks PanelContainer(CardInspector) [906,428 358x130] × Button「넘기기」 [1025,452 140x46]
+UI OVERLAP perks PanelContainer(CardInspector) [906,428 358x130] × Button「3개 ▸」 [1165,452 98x46]
+UI OVERLAP perks PanelContainer(CardInspector) [906,428 358x130] × Button(@Button@56) [931,452 83x46]
+UI OVERLAP perks Label「낙⁠인 (둘⁠레 구⁠체 받⁠는 피⁠해↑): …」 [425,182 458x61] × Label「웨⁠이⁠브 중 기⁠술 버⁠튼⁠으⁠로 전⁠투⁠…」 [433,233 412x52]
+SHOT coin_air
+UI OVERLAP coin_air PanelContainer(CardInspector) [906,189 358x439] × 배지 ×98 [1205,184 63x39]
+SHOT coin_fall
+UI OVERLAP coin_fall PanelContainer(CardInspector) [906,189 358x439] × 배지 ×98 [1205,184 63x39]
+SHOT coin_edge
+UI OVERLAP coin_edge PanelContainer(CardInspector) [906,189 358x439] × 배지 ×98 [1205,184 63x39]
+SHOT coin_land
+UI ok coin_land
+SHOT coin_perks
+UI ok coin_perks
+SHOT pause
+UI ok pause
+SHOT pause_settings
+UI ok pause_settings
+SHOT gameover
+UI ok gameover
+WARNING: 4 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

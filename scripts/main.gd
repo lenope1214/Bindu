@@ -1331,7 +1331,7 @@ func _refresh_dps() -> void:
 	# 표 밑에 오브젝트가 있으면(위쪽 끝에 놓은 것) 마우스를 표에 올리지 않은 동안 옅게 해서 보이게
 	var pr := get_canvas_transform().affine_inverse() * dps_panel.get_global_rect()
 	var under := false
-	if not pr.has_point(get_global_mouse_position()):
+	if not pr.has_point(_pointer_world()):
 		for t in towers.get_children():
 			if pr.grow(14.0).has_point(t.position):
 				under = true
@@ -3919,7 +3919,7 @@ func _draw_wind_rings() -> void:
 ## 카드를 넣는 단계에서 모든 바람·별 둘레를 끌지: 새로 놓을 수 없는 카드(강화·연계 등)이거나 오브젝트 위에 올려 둔 동안.
 ## 둘레는 새 자리를 고를 때만 쓸모 있고, 여러 개가 겹치면 올린 오브젝트 설명·범위가 묻힌다. 올린 오브젝트 자기 둘레는 draw_range가 그린다.
 func _place_rings_off() -> bool:
-	return phase == Phase.PLACE and moving == null and not dragging and (picked.get("type", "") != "elem" or _tower_at(get_global_mouse_position()) != null)
+	return phase == Phase.PLACE and moving == null and not dragging and (picked.get("type", "") != "elem" or _tower_at(_pointer_world()) != null)
 
 
 ## 별 흡수 둘레: 오브젝트를 놓거나 옮기는 중엔 모든 별의 둘레(어디 두면 별빛을 주는지),
@@ -4727,8 +4727,22 @@ func _abort_touch_action() -> void:
 		_cancel_step()
 
 
-## 터치인지 마우스인지 기억한다 (터치에서 흉내 낸 마우스 움직임은 장치 번호가 EMULATION).
+## OS 포인터를 조회하지 않고 입력 이벤트의 화면 좌표를 현재 카메라로 변환한다.
+var pointer_position := Vector2.ZERO
+
+
+func _pointer_screen() -> Vector2:
+	return pointer_position
+
+
+func _pointer_world() -> Vector2:
+	return get_canvas_transform().affine_inverse() * pointer_position
+
+
+## 터치에서 흉내 낸 마우스는 장치 번호 EMULATION으로 구분한다.
 func _input(event: InputEvent) -> void:
+	if event is InputEventMouse:
+		pointer_position = event.position
 	if mp_mode != "" and ((event is InputEventMouseButton or event is InputEventScreenTouch or event is InputEventKey) and event.pressed):
 		_mp_presence()
 	if card_dock != null and card_dock.handle_input(event):
@@ -4897,7 +4911,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_RIGHT and aim_right:
 		aim_right = false
 		if phase == Phase.AIM:
-			if get_global_mouse_position().distance_to(place_pos) > 30.0:
+			if _pointer_world().distance_to(place_pos) > 30.0:
 				_confirm_aim()
 			else:
 				_cancel_step()  # 거의 안 끌고 뗀 우클릭: 그대로 둔다
@@ -4913,7 +4927,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_aim_release()
 			return
 		# 누른 채 끌어서 놓으면 그 방향으로 바로 확정
-		if phase == Phase.AIM and get_global_mouse_position().distance_to(place_pos) > 40.0 and Time.get_ticks_msec() - aim_start_ms > 150:
+		if phase == Phase.AIM and _pointer_world().distance_to(place_pos) > 40.0 and Time.get_ticks_msec() - aim_start_ms > 150:
 			_confirm_aim()
 		return
 	if not (event is InputEventMouseButton and event.pressed):
@@ -4927,7 +4941,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	# 오브젝트를 우클릭한 채 끌기: 그 자리에서 방향만 바꾸고, 떼면 확정
 	if event.button_index == MOUSE_BUTTON_RIGHT and phase in [Phase.CHOOSE, Phase.READY] and not perk_mode and not title_label.visible \
 			and not (settings_panel.visible or notes_panel.visible or codex_panel.visible or vote_panel.visible or records_panel.visible or help_label.visible):
-		var rt := _tower_at(get_global_mouse_position())
+		var rt := _tower_at(_pointer_world())
 		if rt and _mine(rt):
 			_start_move(rt)
 			aim_right = phase == Phase.AIM
@@ -4956,7 +4970,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if card_dock != null and card_dock.over_ui(event.position):
 		return
-	var mpos := get_global_mouse_position()
+	var mpos := _pointer_world()
 	if perk_mode:
 		return
 	if phase == Phase.WAVE and skill_arm != "":
@@ -5136,7 +5150,7 @@ func _update_press() -> void:
 	if not phase in [Phase.PLACE, Phase.CHOOSE, Phase.READY] or not is_instance_valid(press_t):
 		_drop_press()
 		return
-	var mpos := get_global_mouse_position()
+	var mpos := _pointer_world()
 	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_release_press()
 		return
@@ -5229,7 +5243,7 @@ func _drop_press() -> void:
 ## 선택 상자를 놓았을 때: 상자 안 오브젝트 선택 (Shift/Ctrl: 기존 선택에 더함). 짧은 클릭이면 선택 해제.
 func _finish_box() -> void:
 	boxing = false
-	var r := Rect2(box_start, get_global_mouse_position() - box_start).abs()
+	var r := Rect2(box_start, _pointer_world() - box_start).abs()
 	var add := Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META)
 	if not add:
 		selected.clear()
@@ -5270,7 +5284,7 @@ func _ok_btn_on() -> bool:
 ## 오브젝트를 짧게 다시 누르면(끌지 않고 떼면) 붙잡아 둔 방향으로 확정.
 func _aim_release() -> void:
 	aim_hold = false
-	var d := get_global_mouse_position() - place_pos
+	var d := _pointer_world() - place_pos
 	if d.length() >= AIM_TOUCH_MIN:
 		aim_d = d.normalized()
 		aim_wait = true
@@ -8205,7 +8219,7 @@ func _draw_skill_fx() -> void:
 		var k: float = 1.0 - q[2] / 0.5
 		fx_layer.draw_arc(q[0], q[1] * (0.6 + 0.4 * k), 0, TAU, 48, Color(q[3], 0.9 * (1.0 - k)), 4.0)
 	if skill_arm != "" and phase == Phase.WAVE:
-		var mp := get_global_mouse_position()
+		var mp := _pointer_world()
 		var col: Color = Skill.COLORS[skill_arm]
 		if skill_arm == "focus":
 			var t := Skill.focus_tower(self, mp)
@@ -8929,7 +8943,7 @@ func _process(delta: float) -> void:
 	queue_redraw()
 	info.queue_redraw()
 	if phase == Phase.MOVE and moving:
-		moving.position = get_global_mouse_position().clamp(field_rect().position, field_rect().end)
+		moving.position = _pointer_world().clamp(field_rect().position, field_rect().end)
 	_update_press()
 	if boxing and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_finish_box()  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
@@ -9545,12 +9559,12 @@ func _draw_tooltip() -> void:
 	# 터치는 손을 뗀 자리에 마우스가 남는다: 누르고 3초가 지나면 정보창을 닫는다
 	if touch_ui and not touch_move and not touch_aim and touch_tip_t <= 0.0:
 		return
-	if dps_panel.visible and dps_panel.get_global_rect().has_point(dps_panel.get_global_mouse_position()):
+	if dps_panel.visible and dps_panel.get_global_rect().has_point(_pointer_screen()):
 		return  # DPS 표 위: 표 뒤에 가린 오브젝트 정보창이 뜨지 않게
-	var t := moving if touch_move or touch_aim else _tower_at(get_global_mouse_position())
+	var t := moving if touch_move or touch_aim else _tower_at(_pointer_world())
 	# 터치로 [자세히]를 누르면 손가락이 버튼으로 가서 정보창이 사라졌다: 방금 보던 오브젝트를 이어서
 	if t == null and touch_ui and is_instance_valid(tip_tower) and detail_btn.visible \
-			and detail_btn.get_global_rect().has_point(get_viewport().get_mouse_position()):
+			and detail_btn.get_global_rect().has_point(_pointer_screen()):
 		t = tip_tower
 	if t != null:
 		tip_tower = t
@@ -9673,7 +9687,7 @@ func _draw_tooltip() -> void:
 	var size := vw.end  # 화면 오른쪽 아래 끝 (월드 좌표. 폰은 전장 밖 양옆까지)
 	size.y = _tip_bottom()
 	var p := t.position + Vector2(28, -h / 2)
-	if touch_aim and get_global_mouse_position().x > t.position.x:
+	if touch_aim and _pointer_world().x > t.position.x:
 		p.x = t.position.x - 28.0 - (w + 16.0)  # 손가락(쏠 쪽) 반대편에
 	p.x = clampf(p.x, vw.position.x + 8, _right_limit() - w - 16)
 	var top := _tip_top()
@@ -9707,7 +9721,7 @@ func _tip_detail_on() -> bool:
 func _ring_target() -> Tower:
 	if not _tip_detail_on():
 		return null
-	var h := _tower_at(get_global_mouse_position())
+	var h := _tower_at(_pointer_world())
 	if h == null and touch_ui and is_instance_valid(tip_tower) and Engine.get_process_frames() - tip_frame <= 2:
 		h = tip_tower
 	return h
@@ -9801,7 +9815,7 @@ func _avoid_cards(r: Rect2, size: Vector2) -> Vector2:
 
 ## 마우스를 올린 구체의 체력·상태.
 func _draw_orb_tooltip() -> void:
-	var m := get_global_mouse_position()
+	var m := _pointer_world()
 	# 작은 구체도 잡기 쉽게 최소 14 안, 여럿이면 가장 가까운 것
 	var o: Orb = null
 	var bd := INF
@@ -10218,7 +10232,7 @@ func _draw() -> void:
 		for k in 4:
 			draw_circle(lf[0], 40.0 + k * 34.0, Color(1, 0.15, 0.2, 0.16 * f * (1.0 - k * 0.22)))
 
-	var mpos := get_global_mouse_position()
+	var mpos := _pointer_world()
 	if card_dock.active():
 		var preview := card_dock.preview_card()
 		if not preview.is_empty():
@@ -10497,7 +10511,7 @@ func _draw_line_map(size: Vector2, mp: Dictionary, now: float) -> void:
 ## 방향 고르기. Shift를 누르면 15도 단위로 맞춘다.
 ## 터치: 손가락을 오브젝트에서 조금 떼어 대고 있는 동안만 손가락 쪽, 아니면 붙잡아 둔 방향(aim_d).
 func _aim_dir(from: Vector2) -> Vector2:
-	var d := get_global_mouse_position() - from
+	var d := _pointer_world() - from
 	if touch_ui and phase == Phase.AIM and (not aim_hold or d.length() < AIM_TOUCH_MIN):
 		return aim_d
 	if d.length() < 5.0:
@@ -11865,7 +11879,7 @@ func _mp_cursor_tick(delta: float) -> void:
 	mp_cur_t += delta
 	if mp_cur_t >= 1.0 / MP_CUR_HZ:
 		mp_cur_t = 0.0
-		var m := get_global_mouse_position()
+		var m := _pointer_world()
 		if m.distance_to(mp_cur_last) > 1.0 and not title_label.visible:
 			mp_cur_last = m
 			mp.send({"t": "cur", "x": roundf(m.x), "y": roundf(m.y)}, 0, false)

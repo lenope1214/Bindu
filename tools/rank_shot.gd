@@ -15,7 +15,7 @@ func _initialize():
 	touch = a.size() > 2 and a[2] == "touch"
 	Meta.sim_phone = a.size() > 3 and a[3] == "phone"
 	main = load("res://main.tscn").instantiate()
-	root.add_child(main)
+	VirtualInput.mount(main, root)
 	steps = [
 		func():
 			Meta.ui_scale = z
@@ -47,7 +47,7 @@ func _initialize():
 			main.wave_time = 30.0
 			main._rank_update()
 			main._set_cards_hidden(true),
-		func(): Input.warp_mouse(Vector2(5, 5)),
+		func(): VirtualInput.move(Vector2(5, 5)),
 		func(): _snap("rank"),
 	]
 
@@ -58,10 +58,11 @@ func get_paused_fix():
 
 
 func _snap(n: String):
-	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
-	var img := root.get_viewport().get_texture().get_image()
+	RenderingServer.force_draw()
+	main.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
+	var img: Image = main.get_viewport().get_texture().get_image()
 	var c: Vector2 = main.core()
-	var sc: Transform2D = root.get_viewport().get_screen_transform() * main.get_canvas_transform()
+	var sc: Transform2D = main.get_viewport().get_final_transform() * main.get_canvas_transform()
 	var cc := sc * c
 	var hw := 260.0 * sc.get_scale().x
 	var crop := img.get_region(Rect2i(int(cc.x - hw), int(cc.y - hw * 0.8), int(hw * 2), int(hw * 1.6)))

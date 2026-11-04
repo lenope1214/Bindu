@@ -1,0 +1,54 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+SHOT vote_title
+UI ok vote_title
+SHOT vote_panel
+UI ok vote_panel
+SHOT vote_mod
+UI CLIP vote_mod Label「탄⁠이 구⁠체 쪽⁠으⁠로 천⁠천⁠히 휘⁠어⁠…」 글 1151 > 칸 652
+UI CLIP vote_mod Label「탄⁠이 가⁠까⁠운 구⁠체⁠로 튀⁠어⁠요. (…」 글 695 > 칸 652
+UI CLIP vote_mod Label「공⁠격⁠할 때⁠마⁠다 주⁠사⁠위⁠를 굴⁠려⁠…」 글 1085 > 칸 652
+UI CLIP vote_mod Label「공⁠격 방⁠향⁠을 고⁠정⁠하⁠지 않⁠고 사⁠…」 글 785 > 칸 648
+SHOT vote_full_rx
+UI CLIP vote_full_rx Label「번⁠개 튐(전⁠기) → 물⁠길⁠에 남⁠김(물…」 글 323 > 칸 308
+UI CLIP vote_full_rx Label「번⁠개 튐(전⁠기) → 효⁠과 수⁠만⁠큼 피…」 글 398 > 칸 259
+UI CLIP vote_full_rx Label「기⁠절(땅) → 효⁠과 수⁠만⁠큼 피⁠해(금…」 글 375 > 칸 298
+UI CLIP vote_full_rx Label「받⁠는 피⁠해↑(어⁠둠) → 오⁠래 지⁠속(…」 글 375 > 칸 366
+UI CLIP vote_full_rx Label「3⁠타 음⁠파(소⁠리) → 효⁠과 수⁠만⁠큼…」 글 405 > 칸 250
+UI CLIP vote_full_rx Label「3⁠타 음⁠파(소⁠리) → 죽⁠으⁠면 끌⁠어…」 글 408 > 칸 336
+UI CLIP vote_full_rx Label「피⁠해 되⁠풀⁠이(시⁠간) → 번⁠개⁠로 옮…」 글 404 > 칸 346
+UI CLIP vote_full_rx Label「피⁠해 되⁠풀⁠이(시⁠간) → 다⁠시 맞⁠으…」 글 382 > 칸 341
+UI CLIP vote_full_rx Label「일⁠격·멈⁠칫(금⁠속) → 오⁠래 지⁠속(얼…」 글 372 > 칸 374
+UI CLIP vote_full_rx Label「피⁠해 되⁠풀⁠이(시⁠간) → 오⁠래 지⁠속…」 글 378 > 칸 360
+UI CLIP vote_full_rx Label「번⁠개 튐(전⁠기) → 다⁠시 맞⁠으⁠면 더…」 글 337 > 칸 293
+UI CLIP vote_full_rx Label「받⁠는 피⁠해↑(어⁠둠) → 다⁠시 맞⁠으⁠…」 글 378 > 칸 346
+UI CLIP vote_full_rx Label「3⁠타 음⁠파(소⁠리) → 다⁠시 맞⁠으⁠면…」 글 344 > 칸 280
+UI CLIP vote_full_rx Label「혼⁠불 소⁠환(영⁠혼) → 다⁠시 맞⁠으⁠면…」 글 363 > 칸 356
+UI CLIP vote_full_rx Label「일⁠격·멈⁠칫(금⁠속) → 죽⁠으⁠면 전⁠염…」 글 361 > 칸 292
+UI CLIP vote_full_rx Label「피⁠해 되⁠풀⁠이(시⁠간) → 죽⁠으⁠면 전…」 글 367 > 칸 360
+UI CLIP vote_full_rx Label「받⁠는 피⁠해↑(어⁠둠) → 죽⁠으⁠면 불⁠…」 글 364 > 칸 366
+UI CLIP vote_full_rx Label「피⁠해 되⁠풀⁠이(시⁠간) → 죽⁠으⁠면 불…」 글 367 > 칸 360
+UI CLIP vote_full_rx Label「받⁠는 피⁠해↑(어⁠둠) → 물⁠길⁠에 남⁠…」 글 364 > 칸 366
+UI CLIP vote_full_rx Label「일⁠격·멈⁠칫(금⁠속) → 물⁠길⁠에 남⁠김…」 글 361 > 칸 292
+UI CLIP vote_full_rx Label「피⁠해 되⁠풀⁠이(시⁠간) → 물⁠길⁠에 남…」 글 367 > 칸 360
+UI CLIP vote_full_rx Label「받⁠는 피⁠해↑(어⁠둠) → 번⁠개⁠로 옮⁠…」 글 401 > 칸 351
+UI CLIP vote_full_rx Label「3⁠타 음⁠파(소⁠리) → 번⁠개⁠로 옮⁠김…」 글 367 > 칸 366
+UI CLIP vote_full_rx Label「혼⁠불 소⁠환(영⁠혼) → 번⁠개⁠로 옮⁠김…」 글 386 > 칸 360
+UI CLIP vote_full_rx Label「일⁠격·멈⁠칫(금⁠속) → 죽⁠으⁠면 끌⁠어…」 글 439 > 칸 330
+UI CLIP vote_full_rx Label「피⁠해 되⁠풀⁠이(시⁠간) → 죽⁠으⁠면 끌…」 글 445 > 칸 234
+UI CLIP vote_full_rx Label「혼⁠불 소⁠환(영⁠혼) → 죽⁠으⁠면 끌⁠어…」 글 427 > 칸 249
+UI CLIP vote_full_rx Label「피⁠해 되⁠풀⁠이(시⁠간) → 효⁠과 수⁠만…」 글 442 > 칸 312
+UI CLIP vote_full_rx Label「혼⁠불 소⁠환(영⁠혼) → 효⁠과 수⁠만⁠큼…」 글 424 > 칸 326
+UI CLIP vote_full_rx Label「피⁠해 되⁠풀⁠이(시⁠간) → 음⁠파⁠로 퍼…」 글 411 > 칸 346
+UI CLIP vote_full_rx Label「혼⁠불 소⁠환(영⁠혼) → 음⁠파⁠로 퍼⁠짐…」 글 393 > 칸 360
+UI CLIP vote_full_rx Label「혼⁠불 소⁠환(영⁠혼) → 조⁠금 뒤 한 번…」 글 430 > 칸 250
+SHOT vote_over
+UI ok vote_over
+SHOT vote_over_run
+UI OVERLAP vote_over_run 점수 칩「34,567 · 12」 [13,51 152x39] × PanelContainer(@PanelContainer@332) [155,45 969x590]
+UI OVERLAP vote_over_run 점수 칩「평원 규칙」 [172,51 133x39] × PanelContainer(@PanelContainer@332) [155,45 969x590]
+UI OVERLAP vote_over_run 점수 칩「보스까지 3」 [314,51 145x39] × PanelContainer(@PanelContainer@332) [155,45 969x590]
+UI OVERLAP vote_over_run Label「피해 출처: 불 42%, 분사 30%, 속사…」 [437,438 405x61] × PanelContainer(@PanelContainer@332) [155,45 969x590]
+WARNING: 4 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

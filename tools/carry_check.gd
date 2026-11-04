@@ -1,5 +1,5 @@
 extends "res://tools/spec_check.gd"
-## 실제 GUI 입력으로 카드 클릭·드래그·터치와 카메라 독립성을 검증한다.
+## OS 커서·포커스를 건드리지 않는 가상 GUI 입력으로 카드 클릭·드래그·터치와 카메라 독립성을 검증한다.
 ## 저장 분리 BinduTools 사본·온라인 주소 비움·native 창에서만 실행.
 var output := ""
 var start_camera := Transform2D()
@@ -29,7 +29,7 @@ func _initialize() -> void:
 	for id in Meta.ACHIEVEMENTS:
 		Meta.achieved[id] = true
 	main = load("res://main.tscn").instantiate()
-	root.add_child(main)
+	VirtualInput.mount(main, root)
 	await process_frame
 	main._hide_title()
 	Meta.ui_scale = float(args[1])
@@ -38,11 +38,17 @@ func _initialize() -> void:
 	main.set_process(false)
 	main.auto_start = false
 	main._apply_ui_scale()
-	DisplayServer.window_move_to_foreground()
+
 	await create_timer(0.2).timeout
 	await fixture()
 	await mouse_click(world(main.center()))
 	await fixture()
+	ok("UI-34", main.get_viewport_rect().size.is_equal_approx(root.get_visible_rect().size) and VirtualInput.viewport.size == root.size, "가상 화면의 논리 크기·렌더 해상도 원본 창과 일치")
+	var os_pointer := DisplayServer.mouse_get_position()
+	for at in [Vector2(10, 10), Vector2(1200, 680), Vector2(400, 240)]:
+		VirtualInput.move(at)
+		ok("UI-34", main._pointer_screen().is_equal_approx(at) and main._pointer_world().is_equal_approx(main.get_canvas_transform().affine_inverse() * at), "가상 포인터 화면·전장 좌표 일치")
+	ok("UI-34", DisplayServer.mouse_get_position() == os_pointer and root.unfocusable and root.mode == Window.MODE_MINIMIZED and not root.has_focus() and bool(ProjectSettings.get_setting("display/window/size/no_focus", false)), "OS 커서 불변 %s·unfocusable %s·minimized %s·focus %s·startup no_focus %s" % [DisplayServer.mouse_get_position() == os_pointer, root.unfocusable, root.mode == Window.MODE_MINIMIZED, root.has_focus(), ProjectSettings.get_setting("display/window/size/no_focus", false)])
 	await panel_regressions()
 	await fixture()
 	print("GEOMETRY size=", root.size, " field=", main.get_viewport_rect(), " final=", root.get_final_transform(), " canvas=", root.canvas_transform, " screen=", root.get_screen_transform())
@@ -77,7 +83,7 @@ func _initialize() -> void:
 	camera_ready = true
 	ok("UI-31", main.camera.zoom.x >= 0.99, "1280×720 전장 원래 크기 이상·UI 배율로 축소하지 않음")
 	await mouse_click(card_center())
-	ok("UI-31", held() and main.picks_left == 2, "실제 카드 클릭: 미소비·목록/상세 접힘·이름 말풍선 없음")
+	ok("UI-31", held() and main.picks_left == 2, "가상 카드 클릭: 미소비·목록/상세 접힘·이름 말풍선 없음")
 	await mouse_move(world(target.position))
 	await snap("held-target")
 	ok("UI-25", not main.hint.visible, "대상 미리보기 위에 하단 조작 안내를 겹쳐 쓰지 않음")
@@ -87,7 +93,7 @@ func _initialize() -> void:
 	await settle()
 	ok("UI-31", not main.card_dock.over_ui(world(target.position)), "기존 카드 줄 뒤의 대상도 가림 없이 선택 가능")
 	await mouse_click(world(target.position))
-	ok("UI-31", target.m("pierce") == 1 and main.picks_left == 1, "실제 대상 클릭: 정확히 한 번 적용")
+	ok("UI-31", target.m("pierce") == 1 and main.picks_left == 1, "가상 대상 클릭: 정확히 한 번 적용")
 	await snap("applied")
 	await fixture()
 	var offers: Array = main.offer.duplicate(true)
@@ -96,14 +102,14 @@ func _initialize() -> void:
 	ok("UI-31", main.phase == main.Phase.CHOOSE and main.offer == offers and main.picks_left == 2, "Esc: 동일 목록과 남은 선택 복원")
 	await snap("cancelled")
 	await drag_to(world(refused.position))
-	ok("UI-31", held() and main.picks_left == 2 and refused.m("pierce") == 0, "실제 드래그 무효 대상: 미소비·계속 들기")
+	ok("UI-31", held() and main.picks_left == 2 and refused.m("pierce") == 0, "가상 드래그 무효 대상: 미소비·계속 들기")
 	await snap("refused")
 	# 화면 밖의 드롭은 소비하지 않는다.
 	main._drop_carried_card(Vector2(-1, main.get_viewport_rect().size.y / 2))
 	ok("UI-31", main.picks_left == 2, "화면 밖 드롭은 미소비")
 	await mouse_click(main.cancel_btn.get_global_rect().get_center())
 	await drag_to(world(target.position))
-	ok("UI-31", target.m("pierce") == 1 and main.picks_left == 1, "실제 카드 드래그: 손을 뗀 대상에 정확히 1회 적용")
+	ok("UI-31", target.m("pierce") == 1 and main.picks_left == 1, "가상 카드 드래그: 손을 뗀 대상에 정확히 1회 적용")
 	await snap("drag-applied")
 	await fixture()
 	await mouse_button(card_center(), true)
@@ -125,7 +131,7 @@ func _initialize() -> void:
 	Input.emulate_mouse_from_touch = true
 	await touch(card_center(), true)
 	await touch(card_center(), false)
-	ok("UI-31", held() and main.picks_left == 2, "실제 터치 이벤트: 한 번 눌러 들기")
+	ok("UI-31", held() and main.picks_left == 2, "가상 터치 이벤트: 한 번 눌러 들기")
 	await snap("touch-held")
 	var cancel_at: Vector2 = main.cancel_btn.get_global_rect().get_center()
 	await touch(cancel_at, true)
@@ -135,14 +141,14 @@ func _initialize() -> void:
 	await touch_drag(world(target.position) + Vector2(0, -90))
 	await touch_drag(world(target.position))
 	await touch(world(target.position), false)
-	ok("UI-31", target.m("pierce") == 1 and main.picks_left == 1, "실제 터치 드래그: 중복 없이 한 번 적용")
+	ok("UI-31", target.m("pierce") == 1 and main.picks_left == 1, "가상 터치 드래그: 중복 없이 한 번 적용")
 	await fixture()
 	await touch(card_center(), true)
 	await touch_drag(world(target.position) + Vector2(0, -90))
 	await touch_drag(world(target.position))
 	await touch(world(target.position) + Vector2(160, 0), true, 1)
 	await touch_drag(world(target.position) + Vector2(240, 0), 1)
-	ok("UI-31", main.pinch_lock and main.view_zoom > 1.0, "카드를 든 채 두 손가락으로 실제 확대 가능")
+	ok("UI-31", main.pinch_lock and main.view_zoom > 1.0, "카드를 든 채 두 손가락으로 가상 확대 가능")
 	await touch(world(target.position), false)
 	await touch(world(target.position) + Vector2(160, 0), false, 1)
 	ok("UI-31", main.picks_left == 2 and target.m("pierce") == 0, "두 번째 손가락 확대 중 손 떼기: 카드 적용 없음")
@@ -161,6 +167,7 @@ func _initialize() -> void:
 	await mouse_button(world(target.position), false)
 	ok("UI-31", paused and main.picks_left == 2 and target.m("pierce") == 0, "드래그 중 일시정지·손 떼기: 오적용 없음")
 	await key(KEY_P)
+	ok("UI-34", not paused, "가상 P 입력으로 일시정지 복귀")
 	await fixture()
 	var empty_at := Vector2(450, 400)
 	await mouse_click(card_center(1))
@@ -186,7 +193,7 @@ func _initialize() -> void:
 	await mouse_click(card_center(1))
 	await mouse_click(world(empty_at))
 	await mouse_click(world(empty_at + Vector2(-120, -60)))
-	ok("UI-31", main.towers.get_child_count() == 3 and main.picks_left == 1, "속성 카드 클릭·방향 확정: 실제 새 오브젝트 설치와 1회 차감")
+	ok("UI-31", main.towers.get_child_count() == 3 and main.picks_left == 1, "속성 카드 클릭·방향 확정: 가상 새 오브젝트 설치와 1회 차감")
 	await fixture()
 	await touch(card_center(1), true)
 	await touch_drag(world(empty_at))
@@ -195,8 +202,9 @@ func _initialize() -> void:
 	await touch(direction, true)
 	await touch(direction, false)
 	ok("UI-31", main.phase == main.Phase.AIM and main.aim_ok_btn.visible, "터치 방향 선택 뒤 확정 버튼 표시")
-	await mouse_click(main.aim_ok_btn.get_global_rect().get_center())
-	ok("UI-31", main.towers.get_child_count() == 3 and main.picks_left == 1, "터치 속성 드래그 후 방향 터치로 실제 설치")
+	await touch(main.aim_ok_btn.get_global_rect().get_center(), true)
+	await touch(main.aim_ok_btn.get_global_rect().get_center(), false)
+	ok("UI-31", main.towers.get_child_count() == 3 and main.picks_left == 1, "터치 속성 드래그 후 방향 터치로 가상 설치")
 	await fixture()
 	main._zoom_to(1.5, main.get_viewport_rect().size / 2)
 	var zoomed: Transform2D = main.get_canvas_transform()
@@ -271,15 +279,15 @@ func panel_regressions() -> void:
 	var before: int = main.card_dock.scroll.scroll_vertical
 	for i in 8:
 		var wheel := InputEventMouseButton.new()
-		wheel.position = root.get_final_transform() * main.card_dock.side.get_global_rect().get_center()
+		wheel.position = main.card_dock.side.get_global_rect().get_center()
 		wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
 		wheel.pressed = true
-		Input.parse_input_event(wheel)
+		VirtualInput.send(wheel)
 		wheel = wheel.duplicate()
 		wheel.pressed = false
-		Input.parse_input_event(wheel)
+		VirtualInput.send(wheel)
 		await settle()
-	ok("UI-32", main.card_dock.scroll.scroll_vertical > before and main.card_dock.shown_tower == target, "유지된 오브젝트 상세를 실제 휠로 스크롤")
+	ok("UI-32", main.card_dock.scroll.scroll_vertical > before and main.card_dock.shown_tower == target, "유지된 오브젝트 상세를 가상 휠로 스크롤")
 	await snap("inspector-scrolled")
 	refused.position = Vector2(640, 300)
 	await mouse_move(world(refused.position))
@@ -287,7 +295,7 @@ func panel_regressions() -> void:
 	var release := InputEventKey.new()
 	release.keycode = KEY_SHIFT
 	release.pressed = false
-	Input.parse_input_event(release)
+	VirtualInput.send(release)
 	await key(KEY_V)
 	await mouse_move(card_center(1))
 	ok("UI-32", main.card_dock.pic.mode == "card" and main.card_dock.inspected_tower == null and main.card_dock.pic.card.get("e", -1) == Elem.FIRE, "새 카드 호버로 오브젝트 상세 교체")
@@ -310,7 +318,7 @@ func speed_regressions() -> void:
 	await settle()
 	ok("UI-30", is_equal_approx(main.speed_btn.get_global_rect().end.x, main.speed_pick.get_global_rect().position.x), "배속 실행·선택을 간격 없는 연결 그룹으로 배치")
 	await mouse_click(main.speed_pick.get_global_rect().get_center())
-	ok("UI-30", main.speed_pick.get_popup().visible, "배속 그룹의 셀렉트를 실제 클릭으로 열기")
+	ok("UI-30", main.speed_pick.get_popup().visible, "배속 그룹의 셀렉트를 가상 클릭으로 열기")
 	main.speed_pick.get_popup().index_pressed.emit(main.SPEEDS.size() - 1)
 	main.speed_pick.get_popup().hide()
 	await settle()
@@ -362,30 +370,29 @@ func settle() -> void:
 
 func snap(label: String) -> void:
 	await settle()
-	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png(output.path_join(label + ".png"))
+	RenderingServer.force_draw()
+	main.get_viewport().get_texture().get_image().save_png(output.path_join(label + ".png"))
 	var bad: int = preload("res://tools/ui_check.gd").check(main, label)
 	ui_errors += bad
 	if camera_ready:
 		ok("UI-31", main.get_canvas_transform().is_equal_approx(start_camera), label + ": 카메라 고정")
 
 func mouse_move(p: Vector2, down := false) -> void:
-	root.warp_mouse(p)
 	var e := InputEventMouseMotion.new()
-	e.position = root.get_final_transform() * p
-	e.global_position = root.get_final_transform() * p
+	e.position = p
+	e.global_position = p
 	e.button_mask = MOUSE_BUTTON_MASK_LEFT if down else 0
-	Input.parse_input_event(e)
+	VirtualInput.send(e)
 	await settle()
 
 func mouse_button(p: Vector2, down: bool) -> void:
-	root.warp_mouse(p)
+	VirtualInput.move(p)
 	var e := InputEventMouseButton.new()
-	e.position = root.get_final_transform() * p
-	e.global_position = root.get_final_transform() * p
+	e.position = p
+	e.global_position = p
 	e.button_index = MOUSE_BUTTON_LEFT
 	e.pressed = down
-	Input.parse_input_event(e)
+	VirtualInput.send(e)
 	await settle()
 
 func mouse_click(p: Vector2) -> void:
@@ -403,20 +410,20 @@ func key(k: int) -> void:
 	var e := InputEventKey.new()
 	e.keycode = k
 	e.pressed = true
-	Input.parse_input_event(e)
+	VirtualInput.send(e)
 	await settle()
 
 func touch(p: Vector2, down: bool, id := 0) -> void:
 	var e := InputEventScreenTouch.new()
-	e.position = root.get_final_transform() * p
+	e.position = p
 	e.pressed = down
 	e.index = id
-	Input.parse_input_event(e)
+	VirtualInput.send(e)
 	await settle()
 
 func touch_drag(p: Vector2, id := 0) -> void:
 	var e := InputEventScreenDrag.new()
-	e.position = root.get_final_transform() * p
+	e.position = p
 	e.index = id
-	Input.parse_input_event(e)
+	VirtualInput.send(e)
 	await settle()

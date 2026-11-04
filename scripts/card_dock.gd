@@ -422,7 +422,7 @@ func tick() -> void:
 			game.Phase.AIM: instruction = "쏠 쪽으로 끌어 보고 확정하세요." if game.touch_ui else "발사 방향을 정하세요."
 			game.Phase.MOVE: instruction = "옮길 곳을 고르세요."
 		# 대상 위에서는 적용 미리보기가 안내를 대신한다. 긴 효과 글과 하단 안내가 겹치지 않게 한다.
-		var target_preview: bool = game.phase == game.Phase.PLACE and game._tower_at(game.get_global_mouse_position()) != null
+		var target_preview: bool = game.phase == game.Phase.PLACE and game._tower_at(game._pointer_world()) != null
 		if instruction != "" and not target_preview:
 			game.hint.text = game._kr_keep(instruction)
 			game.hint.set_anchors_preset(Control.PRESET_TOP_LEFT)
@@ -468,8 +468,8 @@ func layout_skip(at: Vector2, height: float) -> void:
 
 
 func _update_side() -> void:
-	var mouse: Vector2 = game.get_viewport().get_mouse_position()
-	var tower: Tower = game._tower_at(game.get_global_mouse_position()) if not over_ui(mouse) else null
+	var mouse: Vector2 = game._pointer_screen()
+	var tower: Tower = game._tower_at(game._pointer_world()) if not over_ui(mouse) else null
 	if tower != null:
 		hovered = null
 		inspected_tower = tower

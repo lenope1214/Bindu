@@ -2075,6 +2075,22 @@ func _carry_cards() -> void:
 # ---------- 기록·도감·화면 글 ----------
 
 func _meta_misc() -> void:
+	var pointer_before: Vector2 = main._pointer_screen()
+	var motion := InputEventMouseMotion.new()
+	motion.position = Vector2(123, 234)
+	main._input(motion)
+	var cached: bool = main._pointer_screen() == motion.position
+	var transformed: bool = (main.get_canvas_transform() * main._pointer_world()).is_equal_approx(motion.position)
+	main.pointer_position = pointer_before
+	ok("UI-34", cached and transformed, "입력 이벤트의 포인터 좌표 보존·현재 카메라 변환으로 전장 좌표 계산")
+	var tools_safe := true
+	for file in DirAccess.get_files_at("res://tools"):
+		if not file.ends_with(".gd"): continue
+		var source := FileAccess.get_file_as_string("res://tools/" + file)
+		tools_safe = tools_safe and not source.contains("warp_" + "mouse(") and not source.contains("window_move_to_" + "foreground(")
+		if file != "virtual_input.gd":
+			tools_safe = tools_safe and not source.contains("Input." + "parse_input_event(")
+	ok("UI-34", tools_safe, "자동화 도구의 OS 커서·포커스 제어 금지, 입력 주입은 공용 Viewport 경로만 사용")
 	Meta.codex.erase("spec_x")
 	ok("META-01", Meta.discover("spec_x") and not Meta.discover("spec_x"), "반응 도감: 처음 발견할 때만 새로 추가")
 	Meta.codex.erase("spec_x")
@@ -2399,7 +2415,7 @@ func _meta_misc() -> void:
 	var rings_back: bool = not main._place_rings_off()
 	var pv_ok: bool = not (dt.preview({"type": "mod", "id": "multi"})[0] as PackedStringArray)[0].contains("겹쳐서")
 	main.card_dock.camera_fit()
-	var preview_target := _tower(main.get_global_mouse_position())
+	var preview_target := _tower(main._pointer_world())
 	main.picked = {"type": "mod", "id": "multi"}
 	main.phase = main.Phase.PLACE
 	var guide_was_visible: bool = main.guide_label.visible
@@ -2859,7 +2875,7 @@ func _tutorial() -> void:
 	main.aim_wait = true
 	var held_dir: bool = main._aim_dir(main.place_pos) == Vector2.UP and main._ok_btn_on() and main.aim_ok_btn.text == "확정"
 	main.aim_hold = true
-	var held_near: bool = main.get_global_mouse_position().distance_to(main.place_pos) >= main.AIM_TOUCH_MIN or main._aim_dir(main.place_pos) == Vector2.UP
+	var held_near: bool = main._pointer_world().distance_to(main.place_pos) >= main.AIM_TOUCH_MIN or main._aim_dir(main.place_pos) == Vector2.UP
 	main.aim_hold = false
 	main.phase = main.Phase.PLACE
 	main.touch_ui = false
