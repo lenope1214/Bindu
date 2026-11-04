@@ -2310,6 +2310,20 @@ func _meta_misc() -> void:
 	dock.shown_tower = null
 	var tab_hidden: bool = not main.legend_btn.visible
 	ok("UI-32", side_ok and tab_hidden, "설명창 내용 높이·보는 오브젝트 반대쪽 구석, 일반 판 Tab 버튼 없음")
+	# UI-33: 설명창 그림 (오브젝트 정보: 미리보기·숫자 타일, 자세히: 곱셈 사슬·배율 막대 / 카드: 미리보기·타일)
+	var pic: InfoPanel = dock.pic
+	pic.show_tower(dt, false, 0.3, "이번 웨이브 몫", 300.0)
+	var h_basic: float = pic.custom_minimum_size.y
+	pic.show_tower(dt, true, 0.3, "이번 웨이브 몫", 300.0)
+	var h_more: float = pic.custom_minimum_size.y
+	var df: Dictionary = dt.dmg_factors()
+	var hc2: Dictionary = dt.hit_calc()
+	var chain_end: String = df["chain"][-1][0]
+	var chain_ok: bool = chain_end == "= " + Tower.tip_num(hc2["one"] + hc2["metal"])
+	pic.show_card({"type": "elem", "e": Elem.FIRE, "lv": 2}, {"kind": "elem", "name": "불", "e": Elem.FIRE, "lv": "Lv2"}, 3, 1, [Elem.WOOD], 300.0)
+	var card_ok: bool = pic.mode == "card" and pic.custom_minimum_size.y > 150.0
+	pic.clear()
+	ok("UI-33", h_basic > 200.0 and h_more > h_basic and chain_ok and card_ok, "설명창 그림: 기본 %d · 자세히 %d · 사슬 끝 %s" % [h_basic, h_more, chain_end])
 	main.phase = main.Phase.PLACE
 
 

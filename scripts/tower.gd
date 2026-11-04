@@ -615,6 +615,35 @@ func detail_lines() -> Array:
 	return out
 
 
+## 설명창 그림용 피해 내역. chain: 곱셈 사슬 [값 글, 이름] (마지막은 결과), mul: 피해 배율 내역 [이름, 배율, 그림 id], f: 피해 배율 전체.
+func dmg_factors() -> Dictionary:
+	var els: Dictionary = eff if not eff.is_empty() else elements
+	var hc := hit_calc()
+	var bh: Array = hc["bh"]
+	var chain := [[tip_num(bh[0]), "기본"]]
+	if plv > 1:
+		chain.append(["×%.2f" % pw(plv), "Lv%d" % plv])
+	chain.append(["×%.2f" % hc["f"], "배율"])
+	if hc["mk_on"]:
+		chain.append(["×%.2f" % multi_k(), "한 발"])
+	if hc["wood"] > 1.0:
+		chain.append(["×%.2f" % hc["wood"], Elem.NAMES[Elem.WOOD]])
+	if hc["metal"] > 0.0:
+		chain.append(["×%.2f" % (1.0 + Rules.metal_dmg * els.get(Elem.METAL, 0)), Elem.NAMES[Elem.METAL]])
+	chain.append(["= " + tip_num(hc["one"] + hc["metal"]), ""])
+	var mul := [["기본", Rules.t("dmg_base"), "dmg"]]
+	var tl := total_level()
+	if tl > 1:
+		mul.append(["레벨 합 %d" % tl, 1.0 + Rules.t("dmg_sum") * (tl - 1), "k:elem"])
+	if main and main.towers.get_child_count() > 1:
+		mul.append(["오브젝트 %d개" % main.towers.get_child_count(), 1.0 + Rules.crowd_bonus(main.towers.get_child_count()), "i:crowd"])
+	if dmg_mul != 1.0:
+		mul.append(["특성", dmg_mul, "k:perk"])
+	if main and main.on_ley(self):
+		mul.append(["기맥 위", 1.0 + Rules.t("ley_dmg"), "k:link"])
+	return {"chain": chain, "mul": mul, "f": hc["f"]}
+
+
 func wind_range() -> float:
 	return Rules.t("wind_range") * reach_mul
 

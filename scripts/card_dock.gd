@@ -8,6 +8,8 @@ var panel: Panel
 var side: PanelContainer
 var heading: Label
 var detail: RichTextLabel
+var scroll: ScrollContainer  # 설명창 안이 화면보다 길면 통째로 스크롤 (폰 자세히 등)
+var pic: InfoPanel  # 설명창 그림 부분 (오브젝트 정보·카드 미리보기)
 var state: Label
 var focus_btn: Button
 var hovered: Button
@@ -55,19 +57,26 @@ func _init(main) -> void:
 	sb.set_content_margin_all(14)
 	side.add_theme_stylebox_override("panel", sb)
 	game.ui_root.add_child(side)
+	scroll = ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	side.add_child(scroll)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 12)
-	side.add_child(column)
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(column)
 	heading = Label.new()
 	heading.add_theme_font_size_override("font_size", 19)
 	heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(heading)
+	pic = InfoPanel.new(game)
+	pic.hide()
+	column.add_child(pic)
 	detail = RichTextLabel.new()
-	detail.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	detail.add_theme_font_size_override("normal_font_size", 14)
 	detail.add_theme_color_override("default_color", Color("c5cfdc"))
 	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detail.scroll_active = true
+	detail.scroll_active = false
+	detail.fit_content = true
 	detail.bbcode_enabled = false
 	column.add_child(detail)
 	panel.visible = false
@@ -441,7 +450,7 @@ func _update_side() -> void:
 			take += 1
 			if card["type"] == "elem" and not Elem.new_reactions(t.eff_now(), card["e"]).is_empty():
 				reaction += 1
-		text = "적용 가능 %d곳 · 새 반응 %d곳\n얇은 고리: 적용 · 빛나는 고리: 새 반응\n\n" % [take, reaction]
+		pic.show_card(card, cc["head"], take, reaction, game._combo_parts(card["e"])["els"] if card["type"] == "elem" else [], _pic_w())
 		var full: Array = game._card_full(card)
 		var fit_name: String = game.core_fit(card)
 		if fit_name != "":
@@ -451,7 +460,9 @@ func _update_side() -> void:
 			full.append([str(Meta.MAPS[Meta.map_id]["name"]) + " 친화" + bonus, Color.WHITE])
 		for row in (full if Meta.card_detail else full.slice(0, 2)):
 			text += str(row[0]) + "\n\n"
+		text = text.strip_edges()
 		if not Meta.card_detail:
+			text += "\n\n"
 			text += "자세히를 켜면 반응·적용 조건을 모두 볼 수 있어요." if game.touch_ui else "자세히(Z)를 켜면 반응·적용 조건을 모두 볼 수 있어요."
 	elif game.perk_mode and is_instance_valid(hovered) and hovered.get_parent() == game.choice_box and hovered.has_meta("perk_desc"):
 		inspected_tower = null
@@ -477,23 +488,26 @@ func _update_side() -> void:
 		if tower != null:
 			has_content = true
 			title = tower.title()
-			text = "오브젝트 정보\n\n"
-			for row in tower.basic_lines():
-				text += str(row[0]) + "\n\n"
-			if game._tip_detail_on():
-				text += "공격방식: " + Pat.PATTERNS[tower.pattern]["desc"] + "\n\n"
-				for row in tower.detail_lines():
-					text += str(row[0]) + "\n\n"
+			var total := 0.0
+			for o: Tower in game.towers.get_children():
+				total += o.dealt
+			var part: float = tower.dealt / total if total > 0.0 and game.towers.get_child_count() > 1 else -1.0
+			var more: bool = game._tip_detail_on()
+			pic.show_tower(tower, more, part, "이번 웨이브 몫" if game.phase == game.Phase.WAVE else "지난 웨이브 몫", _pic_w())
+			# 그림으로 못 보이는 것만 글로: 자세히일 때 반응 설명 (공격 모양은 미리보기가 보여 준다)
+			if more:
 				for rx in tower.reactions():
-					text += str(rx["name"]) + ": " + str(rx["desc"]) + "\n\n"
-			else:
-				text += "Shift를 누르면 공격 수치와 계산 내역을 자세히 볼 수 있어요."
+					text += ("\n\n" if text != "" else "") + str(rx["name"]) + ": " + str(rx["desc"])
+	if pic.mode != "" and ((pic.mode == "tower" and shown_tower == null) or (pic.mode == "card" and card.is_empty())):
+		pic.clear()
+	heading.visible = pic.mode == ""
+	detail.visible = text != ""
 	var sig: String = title + "|" + text
 	side.visible = active() and has_content and (card.is_empty() or Meta.card_detail)
 	if sig != side_signature:
 		heading.text = title
 		detail.text = game._kr_keep(text)
-		detail.scroll_to_line(0)
+		scroll.scroll_vertical = 0
 		side_signature = sig
 
 ## 설명창 자리: 오른쪽 기둥 대신 내용 높이만큼만, 오른쪽 위·왼쪽 위 중 오브젝트를 덜 가리는 쪽에 뜬다.
@@ -508,7 +522,16 @@ func _place_side(size: Vector2, cards: bool) -> void:
 		if c.is_visible_in_tree():
 			ltop = maxf(ltop, c.get_rect().end.y + 8.0)
 	var sb: StyleBox = side.get_theme_stylebox("panel")
-	var want: float = heading.get_combined_minimum_size().y + 12.0 + detail.get_content_height() + sb.get_minimum_size().y + 4.0
+	var parts := []
+	if heading.visible:
+		parts.append(heading.get_combined_minimum_size().y)
+	if pic.visible:
+		parts.append(pic.custom_minimum_size.y)
+	if detail.visible:
+		parts.append(detail.get_content_height())
+	var want: float = sb.get_minimum_size().y + 4.0 + 12.0 * maxf(0, parts.size() - 1)
+	for v in parts:
+		want += v
 	var cands := [Rect2(size.x - w - 12.0, top, w, 0.0), Rect2(12.0, ltop, w, 0.0)]
 	var scores := []
 	var inv: Transform2D = game.ui_root.get_global_transform().affine_inverse()
@@ -536,7 +559,13 @@ func _place_side(size: Vector2, cards: bool) -> void:
 	# 고른 자리에도 오브젝트가 깔려 있으면 마우스를 통과시켜 그 오브젝트를 올리고 누를 수 있게
 	var under: bool = scores[cur] >= 1.0
 	side.mouse_filter = Control.MOUSE_FILTER_IGNORE if under else Control.MOUSE_FILTER_STOP
-	detail.mouse_filter = Control.MOUSE_FILTER_IGNORE if under else Control.MOUSE_FILTER_STOP
+	detail.mouse_filter = Control.MOUSE_FILTER_IGNORE if under else Control.MOUSE_FILTER_PASS
+	scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE if under else Control.MOUSE_FILTER_STOP
+
+
+## 설명창 그림 폭: 설명창 폭에서 안쪽 여백을 뺀 값.
+func _pic_w() -> float:
+	return side.size.x - 28.0
 
 
 func summary_text(b: Button) -> String:
