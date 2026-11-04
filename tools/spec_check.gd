@@ -2695,6 +2695,13 @@ func _multiplayer() -> void:
 	main.phase = main.Phase.CHOOSE
 	main._begin_press(other, other.position)
 	var blocked: bool = main.press_t == null
+	var select_all := InputEventKey.new()
+	select_all.keycode = KEY_A
+	select_all.ctrl_pressed = true
+	select_all.pressed = true
+	main._unhandled_input(select_all)
+	var owned_selection: bool = main.selected == [mine]
+	main.selected.clear()
 	main.coop_n = 2
 	var hk1: float = main.coop_hp_k(1)
 	var hk3: float = main.coop_hp_k(3)
@@ -2709,7 +2716,7 @@ func _multiplayer() -> void:
 	copy.main = main
 	copy.mp_apply(st)
 	mine.mp_apply(mine.mp_state())
-	ok("MP-07", mine.owner_id == 1 and mine.net_id == 100001 and blocked and main._my_towers() == [mine] and copy.elements == other.elements and copy.pattern == other.pattern and is_equal_approx(mine.dealt, 55.0) and mine.lv(Elem.FIRE) == 2,
+	ok("MP-07", mine.owner_id == 1 and mine.net_id == 100001 and blocked and owned_selection and main._my_towers() == [mine] and copy.elements == other.elements and copy.pattern == other.pattern and is_equal_approx(mine.dealt, 55.0) and mine.lv(Elem.FIRE) == 2,
 		"협동: 내 오브젝트만 바꿈, 상태를 주고받아도 속성·공격방식 같고 피해 기록은 이 기기 것 (%s)" % str([mine.owner_id, mine.net_id, blocked, main._my_towers().size(), copy.elements, other.elements, mine.dealt, mine.lv(Elem.FIRE)]))
 	copy.free()
 	main.press_t = null

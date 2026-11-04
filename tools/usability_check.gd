@@ -28,6 +28,8 @@ func _initialize() -> void:
 	await create_timer(0.2).timeout
 	if which in ["all", "detail"]:
 		await detail_case()
+	if which in ["all", "ownership"]:
+		await ownership_case()
 	print("USABILITY case=%s failures=%d ui=%d" % [which, fails, ui_errors])
 	quit(1 if fails > 0 or ui_errors > 0 else 0)
 
@@ -49,3 +51,30 @@ func detail_case() -> void:
 	await touch(main.detail_btn.get_global_rect().get_center(), true)
 	await touch(main.detail_btn.get_global_rect().get_center(), false)
 	ok("UI-16", not main._tip_detail_on() and main.card_dock.shown_tower == target, "간단히로 복귀해도 대상 유지")
+
+func ownership_case() -> void:
+	await fixture()
+	target.position = Vector2(220, 300)
+	refused.position = Vector2(1060, 300)
+	main._set_cards_hidden(true)
+	main.mp_mode = "coop"
+	main.mp.my_id = 1
+	target.owner_id = 1
+	refused.owner_id = 2
+	var other_origin := refused.position
+	var all := InputEventKey.new()
+	all.keycode = KEY_A
+	all.ctrl_pressed = true
+	all.pressed = true
+	VirtualInput.send(all)
+	await settle()
+	ok("MP-07", main.selected == [target], "협동 Ctrl+A는 내 오브젝트만 선택")
+	main.selected = [target, refused]
+	var mine_origin := target.position
+	await mouse_button(world(target.position), true)
+	await mouse_move(world(target.position) + Vector2(80, -60), true)
+	ok("MP-07", main.dragging and main.drag_group == [target] and refused.position == other_origin, "섞인 선택에서도 드래그 시작 시 소유권 재확인")
+	await mouse_button(world(target.position), false)
+	ok("MP-07", target.position != mine_origin and refused.position == other_origin, "내 것만 이동 확정, 친구 좌표 보존")
+	main.selected.clear()
+	main.mp_mode = ""

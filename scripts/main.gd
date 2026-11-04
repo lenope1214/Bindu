@@ -4871,7 +4871,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_dps()
 		elif event.keycode == KEY_A and (event.ctrl_pressed or event.meta_pressed) and phase in [Phase.CHOOSE, Phase.READY] and not perk_mode:
 			# 모두 선택: 한꺼번에 옮길 때
-			selected = towers.get_children()
+			selected = _my_towers()
 			_restore_hint()
 		elif event.keycode == KEY_R and phase == Phase.GAMEOVER:
 			if Time.get_ticks_msec() - over_ms > 800:
@@ -5146,7 +5146,7 @@ func _begin_press(t: Tower, mpos: Vector2) -> void:
 func _update_press() -> void:
 	if not press_t:
 		return
-	if not phase in [Phase.PLACE, Phase.CHOOSE, Phase.READY] or not is_instance_valid(press_t):
+	if not phase in [Phase.PLACE, Phase.CHOOSE, Phase.READY] or not is_instance_valid(press_t) or not _mine(press_t):
 		_drop_press()
 		return
 	var mpos := _pointer_world()
@@ -5155,7 +5155,7 @@ func _update_press() -> void:
 		return
 	if not dragging and (mpos.distance_to(press_pos) > 12.0 or Time.get_ticks_msec() - press_ms >= 350):
 		dragging = true
-		drag_group = selected.duplicate() if press_t in selected else [press_t]
+		drag_group = selected.filter(func(t): return is_instance_valid(t) and _mine(t)) if press_t in selected else [press_t]
 		drag_origs = drag_group.map(func(t): return t.position)
 		for t in drag_group:
 			t.place_pop = 1.0
