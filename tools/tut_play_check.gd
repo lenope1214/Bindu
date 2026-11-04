@@ -52,6 +52,9 @@ func _run(how: String, ch: int, touch: bool) -> void:
 	TutPlay.pending = ch
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
+	# main._ready가 randomize()를 부른다: 판마다 같은 구체·카드가 나오게 다시 고정 (TP_SEED로 바꿔 볼 수 있음)
+	var sd := int(OS.get_environment("TP_SEED")) if OS.get_environment("TP_SEED") != "" else 3
+	seed(sd * 101 + ch * 7 + (1 if touch else 0) + (50 if how == "skip" else 0))
 	await _frames(2)
 	main.touch_ui = touch
 	cur_touch = touch
@@ -220,14 +223,8 @@ func _gate() -> void:
 		main._on_perk(main.perk_offer[0])
 	elif main.coin_stage > 0:
 		main._coin_tap()
-	elif main.phase == main.Phase.CHOOSE and main.picks_left > 0 and not main.offer.is_empty():
-		var cd: Dictionary = main.offer[0]
-		main._on_pick(cd)
-		if cd["type"] == "elem":
-			main._place_card_at(tp._free_spot(), true)
-			_aim(Vector2.LEFT)
-		else:
-			main._place_card_at(main.towers.get_child(0).position, true)
+	elif main.phase in [main.Phase.CHOOSE, main.Phase.PLACE] and main.picks_left > 0 and not main.offer.is_empty():
+		tp._skip_gate()  # 넣을 수 있는 카드를 골라 넣는다 (사람이 받아 주는 오브젝트를 고르듯)
 	elif main.phase == main.Phase.READY:
 		tp._cover_lanes()
 		if main._wave_start_block_reason() != "":

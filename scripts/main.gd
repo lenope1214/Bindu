@@ -5483,6 +5483,8 @@ func _confirm_aim() -> void:
 	if d == Vector2.ZERO:
 		return
 	if moving:
+		if tplay != null:
+			tplay.flags["aimed"] = true  # 튜토리얼 '보스 길 쪽으로 돌리기': 이미 그쪽이라 거의 안 돌아도 한 번 정하면 된다
 		moving.position = place_pos
 		moving.set_attack_direction(d)
 		moving.place_pop = 1.0

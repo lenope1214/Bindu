@@ -440,7 +440,7 @@ func is_done() -> bool:
 		"turn":
 			return m.phase != m.Phase.AIM and m.moving == null and _turned() > 0.35
 		"preview":
-			return m.phase != m.Phase.AIM and m.moving == null and (_turned() > 0.35 or _turned() > 0.02 and _aims_boss())
+			return m.phase != m.Phase.AIM and m.moving == null and (_turned() > 0.35 or (_turned() > 0.02 or flags.has("aimed")) and _aims_boss())
 		"zoom":
 			return absf(m.view_zoom - base["zoom"]) > 0.2 or (m.view_pan - base["pan"]).length() > 40.0
 		"stack":
@@ -833,17 +833,19 @@ func _skip_gate() -> void:
 		if s["when"] != "wave":
 			_clear_wave()
 		return
-	if m.phase == m.Phase.CHOOSE and m.picks_left > 0 and not m.perk_mode:
-		# 남은 고르기는 보통 선택지에서 첫 카드로 대신 (빈 곳이면 중앙 둘레에)
-		while m.phase == m.Phase.CHOOSE and m.picks_left > 0 and not m.offer.is_empty() and not m.perk_mode:
-			var cd: Dictionary = m.offer[0]
-			if cd["type"] == "elem":
-				_put(cd, _free_spot(), m.lanes[0] if not m.lanes.is_empty() else 0.0)
-			elif m.towers.get_child_count() > 0:
-				_pick(cd)
-				m._apply_card(m.towers.get_child(0))
-			else:
+	# 남은 고르기는 넣을 수 있는 카드를 골라 대신 (속성은 빈 곳에, 나머지는 받아 주는 오브젝트에)
+	if m.phase == m.Phase.PLACE:
+		m._back_to_choose()  # 들고 있던 카드는 내려놓고 넣을 수 있는 카드부터
+	var guard := 0
+	while m.phase == m.Phase.CHOOSE and m.picks_left > 0 and not m.perk_mode and guard < 8:
+		guard += 1
+		var put := false
+		for cd in m.offer.duplicate():
+			if _auto_card(cd):
+				put = true
 				break
+		if not put:
+			break
 	if m.perk_mode and not m.perk_offer.is_empty():
 		m._on_perk(m.perk_offer[0])
 		return
@@ -851,6 +853,23 @@ func _skip_gate() -> void:
 		_cover_lanes()
 		force_start = true
 		m._start_wave()
+
+
+## 카드 하나를 사람 대신 넣는다. 받아 줄 곳이 없으면 false (그 카드는 두고 다음 카드).
+func _auto_card(cd: Dictionary) -> bool:
+	if cd["type"] == "elem":
+		_put(cd, _free_spot(), m.lanes[0] if not m.lanes.is_empty() else 0.0)
+		return true
+	var keep: Dictionary = m.picked
+	m.picked = cd
+	for tw in m.towers.get_children():
+		if m._place_ok(tw):
+			m.picked = keep
+			_pick(cd)
+			m._apply_card(tw)
+			return true
+	m.picked = keep
+	return false
 
 
 func _free_spot() -> Vector2:

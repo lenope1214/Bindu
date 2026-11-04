@@ -250,7 +250,7 @@ case "$CMD" in
 		cd "$D"
 		r=0
 		T 600 "$G" --headless --fixed-fps 60 --path . -s tools/tut_play_check.gd > tp.txt 2>&1 || r=1
-		grep -E "^(ok|FAIL|TUTPLAY)|SCRIPT ERROR|Parse Error|^ERROR:" tp.txt || true
+		grep -E "^(ok|FAIL|TUTPLAY|STUCK)|SCRIPT ERROR|Parse Error|^ERROR:" tp.txt || true
 		grep -q "^TUTPLAY 통과" tp.txt || r=1
 		grep -qE 'SCRIPT ERROR|Parse Error|^ERROR:' tp.txt && r=1
 		cd / && rm -rf "$D"
