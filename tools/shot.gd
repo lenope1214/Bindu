@@ -160,6 +160,14 @@ func _initialize():
 		func():
 			_snap("aim_touch_detail")
 			main.tip_detail = false
+			# 터치 조준: 누른 채 끄는 동안 손가락 쪽 범위, 떼면 그 방향 유지 + [확정]
+			var t: Node2D = main.towers.get_child(1)
+			main.aim_hold = true
+			Input.warp_mouse(t.get_global_transform_with_canvas().origin + Vector2(-120, -140)),
+		func(): main.touch_ui = true,
+		func(): _snap("aim_touch_hold"); main._aim_release(),
+		func():
+			_snap("aim_touch_wait")
 			main._cancel_step()
 			main.touch_ui = touch; main._set_cards_hidden(false); main.picks_left = 0; main._enter_ready(),  # 마우스를 옮기면 touch_ui가 꺼진다
 		# 카드를 다 고른 뒤: [웨이브 시작] 옆 [넘기기]·[×N]

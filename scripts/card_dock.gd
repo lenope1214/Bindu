@@ -143,7 +143,7 @@ func over_ui(p: Vector2) -> bool:
 	if not active():
 		return false
 	# 설명창 밑에 오브젝트가 있으면 설명창은 마우스를 받지 않는다 (그 오브젝트를 올리고 누를 수 있게, 올리면 설명창이 반대쪽으로 비킨다)
-	for c: Control in [panel, side if side.mouse_filter != Control.MOUSE_FILTER_IGNORE else null, focus_btn, game.cancel_btn, game.start_btn,
+	for c: Control in [panel, side if side.mouse_filter != Control.MOUSE_FILTER_IGNORE else null, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
 			game.bar_box, game.hud, game.dps_panel, game.legend_btn, game.range_btn, game.zoom_btn,
 			game.guide_more, game.hide_btn, game.skip_btn, game.skip_n_btn]:
 		if c != null and c.is_visible_in_tree() and c.get_global_rect().has_point(p):
@@ -315,7 +315,7 @@ func tick() -> void:
 	game.legend.hide()
 	game.card_dim.hide()
 	game.hint.hide()
-	for c: Control in [game.bar_box, game.ver_label, game.start_btn, game.cancel_btn, game.skip_badge]:
+	for c: Control in [game.bar_box, game.ver_label, game.start_btn, game.cancel_btn, game.aim_ok_btn, game.skip_badge]:
 		c.z_index = 2
 	panel.position = Vector2(0, size.y - HEIGHT)
 	panel.size = Vector2(size.x, HEIGHT - 42)
@@ -362,7 +362,8 @@ func tick() -> void:
 	_place_side(size, cards)
 	game.start_btn.visible = game.phase == game.Phase.READY and not blocked
 	game.cancel_btn.visible = game.phase in [game.Phase.PLACE, game.Phase.AIM, game.Phase.MOVE] and not blocked
-	var actions: Array = [game.start_btn, game.cancel_btn].filter(func(button): return button.visible)
+	game.aim_ok_btn.visible = game._ok_btn_on() and not blocked
+	var actions: Array = [game.start_btn, game.cancel_btn, game.aim_ok_btn].filter(func(button): return button.visible)
 	var width := 240.0 if game.start_btn.visible else 144.0
 	var action_y := size.y - (112.0 if game.bar_open else 52.0)
 	for i in actions.size():
@@ -383,7 +384,7 @@ func tick() -> void:
 		match game.phase:
 			game.Phase.PLACE:
 				instruction = "빈 곳이나 오브젝트에 놓으세요." if game.picked.get("type", "") == "elem" else "넣을 오브젝트를 고르세요."
-			game.Phase.AIM: instruction = "발사 방향을 정하세요."
+			game.Phase.AIM: instruction = "쏠 쪽으로 끌어 보고 확정하세요." if game.touch_ui else "발사 방향을 정하세요."
 			game.Phase.MOVE: instruction = "옮길 곳을 고르세요."
 		# 대상 위에서는 적용 미리보기가 안내를 대신한다. 긴 효과 글과 하단 안내가 겹치지 않게 한다.
 		var target_preview: bool = game.phase == game.Phase.PLACE and game._tower_at(game.get_global_mouse_position()) != null

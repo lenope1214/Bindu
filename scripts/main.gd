@@ -64,6 +64,7 @@ var move_return := Phase.CHOOSE  # 옮기기를 끝내면 돌아갈 단계
 var auto_start := false  # 끄면 설치 후 Space로 웨이브 시작
 var auto_btn: Button
 var start_btn: Button
+var aim_ok_btn: Button  # 터치 조준 [확정] (취소 오른쪽)
 var cancel_btn: Button  # 옮기기·설치 중 화면 취소 (우클릭·Esc가 없는 터치 화면용)
 var detail_btn: Button  # 터치: 오브젝트 정보창 [자세히] (Shift 대신)
 var tip_tower: Tower = null  # 터치: 정보창에 보이던 오브젝트
@@ -191,6 +192,13 @@ var guide_t := 0.0  # 남은 시간. 음수면 웨이브가 시작될 때까지
 var wave_resist := -1  # 다음 웨이브 저항 속성 (-1: 없음)
 var legend_btn: Button
 var aim_start_ms := 0
+const AIM_TOUCH_MIN := 30.0  # 터치 조준: 오브젝트에서 이만큼 떨어진 손가락만 방향으로 친다 (손가락이 오브젝트를 가려도 바깥으로 끌면 된다)
+const AIM_TOUCH_HINT := "쏠 쪽으로 누른 채 끌어 범위 보기, 떼면 그 방향 유지\n[확정] 또는 오브젝트 다시 누르기: 방향 확정"
+# 터치 조준: 누른 채 끌면 손가락을 따라 범위가 보이고, 떼면 그 방향을 붙잡아 둔 채 [확정]을 기다린다
+# (예전엔 누르는 순간 확정돼 어느 쪽으로 정해질지 미리 볼 수 없었다)
+var aim_d := Vector2.ZERO  # 붙잡아 둔 방향 (터치)
+var aim_hold := false  # 손가락을 대고 있는 중 (터치)
+var aim_wait := false  # 방향을 붙잡아 두고 [확정]을 기다리는 중 (터치)
 var restart_armed := 0.0  # 일시정지 중 R 두 번이면 처음부터
 var end_armed := 0.0  # 일시정지 중 판 끝내기 두 번이면 지금 점수로 게임 오버
 var ended := false  # 스스로 끝낸 판 (게임 오버 글 제목만 다름)
@@ -1085,6 +1093,18 @@ func _build_ui() -> void:
 	cancel_btn.pressed.connect(_cancel_step)
 	cancel_btn.visible = false
 	root.add_child(cancel_btn)
+	aim_ok_btn = Button.new()
+	aim_ok_btn.text = "확정"
+	aim_ok_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	aim_ok_btn.position = Vector2(-70.0 + 150.0, -100.0)  # 취소 오른쪽
+	aim_ok_btn.size = Vector2(140, 40)
+	aim_ok_btn.add_theme_font_size_override("font_size", 18)
+	aim_ok_btn.focus_mode = Control.FOCUS_NONE
+	aim_ok_btn.pressed.connect(func():
+		if phase == Phase.AIM and aim_wait:
+			_confirm_aim())
+	aim_ok_btn.visible = false
+	root.add_child(aim_ok_btn)
 	detail_btn = Button.new()
 	detail_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	detail_btn.position = Vector2(-70.0 - 130.0, -100.0)  # 취소 왼쪽
@@ -3823,7 +3843,7 @@ func _off_legend(r: Rect2) -> Rect2:
 func _info_blockers() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var inv := ui_root.get_global_transform().affine_inverse()
-	for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, guide_more,  mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, card_dock.focus_btn, card_dock.panel, card_dock.side, card_dock.held_chip]:
+	for c: Control in [hud, dps_panel, legend, legend_btn, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, guide_more,  mp_bar, ver_label, hint, rebirth_btn, bonsai_btn, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, aim_ok_btn, card_dock.focus_btn, card_dock.panel, card_dock.side, card_dock.held_chip]:
 		if c == null or not c.is_visible_in_tree():
 			continue
 		if (c is Label and str(c.text) == "") or (c == hud and hud_chips.is_empty()):
@@ -4938,6 +4958,7 @@ func _abort_touch_action() -> void:
 		_drop_press()
 		_restore_hint()
 	boxing = false
+	aim_hold = false
 	if dragging and moving:
 		_cancel_step()
 
@@ -5141,6 +5162,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		if boxing:
 			_finish_box()
 			return
+		if phase == Phase.AIM and touch_ui and aim_hold:
+			_aim_release()
+			return
 		# 누른 채 끌어서 놓으면 그 방향으로 바로 확정
 		if phase == Phase.AIM and get_global_mouse_position().distance_to(place_pos) > 40.0 and Time.get_ticks_msec() - aim_start_ms > 150:
 			_confirm_aim()
@@ -5218,6 +5242,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			moving.position = mpos
 			phase = Phase.AIM
 			aim_start_ms = Time.get_ticks_msec()
+			_aim_begin()
 			hint.text = _th("클릭 또는 끌어서 놓기: 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 옮기기 취소")
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			_cancel_step()
@@ -5225,7 +5250,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if phase == Phase.PLACE and event.button_index == MOUSE_BUTTON_LEFT:
 		_place_card_at(mpos)
 	elif phase == Phase.AIM:
-		if event.button_index == MOUSE_BUTTON_LEFT:
+		if event.button_index == MOUSE_BUTTON_LEFT and touch_ui:
+			aim_hold = true  # 터치: 누르는 동안 손가락을 따라 범위를 보여 주고, 떼면 [확정]을 기다린다
+		elif event.button_index == MOUSE_BUTTON_LEFT:
 			# 오브젝트 바로 위를 누르면 손을 뗄 때 정한다 (그 자리에서 바깥으로 끌어 조준)
 			if mpos.distance_to(place_pos) >= MERGE_DIST:
 				_confirm_aim()
@@ -5274,7 +5301,12 @@ func _place_card_at(mpos: Vector2, direct := false) -> void:
 		place_pos = mpos
 		phase = Phase.AIM
 		aim_start_ms = Time.get_ticks_msec()
-		hint.text = _th("클릭 또는 끌어서 놓기: 발사 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 위치 다시 정하기")
+		_aim_begin()
+		aim_hold = touch_ui and not direct  # 놓은 손가락 그대로 끌어 방향을 볼 수 있다
+		if touch_ui:
+			hint.text = _th(AIM_TOUCH_HINT + "   취소: 위치 다시 정하기")
+		else:
+			hint.text = _th("클릭 또는 끌어서 놓기: 발사 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 위치 다시 정하기")
 
 ## 카드 선택 막을 깔지: 선택지 카드가 펼쳐져 있을 때만 (일시정지 어둠이 있으면 그것만).
 func _card_dim_on() -> bool:
@@ -5479,7 +5511,31 @@ func _restore_hint() -> void:
 		hint.text = ("선택 %d개: 선택한 오브젝트 하나를 끌면 함께 이동\n빈 곳 누르기: 선택 해제" if touch_ui else "선택 %d개: 선택한 오브젝트 하나를 끌면 함께 이동\nShift/Ctrl+클릭: 더하기·빼기   Ctrl+A: 모두   Esc/우클릭: 선택 해제") % selected.size()
 
 
-## 방향 확정 (클릭, 또는 끌었다 놓기).
+## 조준 단계에 들어갈 때: 터치는 지금 방향(옮기는 오브젝트)을 붙잡아 두고 시작한다.
+func _aim_begin() -> void:
+	aim_hold = false
+	aim_d = moving.dir.normalized() if moving else Vector2.ZERO
+	aim_wait = aim_d != Vector2.ZERO
+
+
+## 아래 [확정] 버튼: 터치 조준에서 방향을 붙잡아 뒀을 때.
+func _ok_btn_on() -> bool:
+	return phase == Phase.AIM and touch_ui and aim_wait
+
+
+## 터치 조준에서 손가락을 뗄 때: 끌었던 방향을 붙잡아 두고 [확정]을 기다린다.
+## 오브젝트를 짧게 다시 누르면(끌지 않고 떼면) 붙잡아 둔 방향으로 확정.
+func _aim_release() -> void:
+	aim_hold = false
+	var d := get_global_mouse_position() - place_pos
+	if d.length() >= AIM_TOUCH_MIN:
+		aim_d = d.normalized()
+		aim_wait = true
+	elif aim_wait and d.length() < MERGE_DIST:
+		_confirm_aim()
+
+
+## 방향 확정 (클릭, 또는 끌었다 놓기, 터치 [확정]).
 func _confirm_aim() -> void:
 	var d := _aim_dir(place_pos)
 	if d == Vector2.ZERO:
@@ -8204,10 +8260,11 @@ func _start_move(t: Tower) -> void:
 	place_pos = t.position
 	phase = Phase.AIM
 	aim_start_ms = Time.get_ticks_msec()
+	_aim_begin()
 	choice_box.visible = false
 	reroll_btn.visible = false
 	if touch_ui:
-		hint.text = _th("쏠 쪽을 누르거나 끌어서 놓기: 방향 확정   취소: 그대로 두기")
+		hint.text = _th(AIM_TOUCH_HINT + "   취소: 그대로 두기")
 	else:
 		hint.text = _th("클릭 또는 끌어서 놓기: 방향 확정 (Shift: 15도 단위)   오브젝트 우클릭한 채 끌기로도 바로 됨\n우클릭/Esc: 그대로 두기")
 
@@ -9041,6 +9098,7 @@ func _process(delta: float) -> void:
 	if not tip_on:
 		tip_detail = false
 	detail_btn.visible = tip_on
+	aim_ok_btn.visible = _ok_btn_on() and not get_tree().paused
 	detail_btn.text = "간단히" if tip_detail else "자세히"
 	_place_apply_btn()
 	for c in [hint, skip_badge, hide_btn]:
@@ -9069,7 +9127,7 @@ func _process(delta: float) -> void:
 		hw = clampf(bar_box.get_rect().position.x - hint.position.x - 12.0, 240.0, 590.0)
 	# 아래 가운데 버튼([웨이브 시작]·[취소]·[자세히]·[적용])에도 닿지 않게 (글이 길면 버튼 밑으로 지나갔다)
 	var hb := hint.get_rect().end.y
-	for b: Control in [start_btn, cancel_btn, detail_btn, skip_badge]:
+	for b: Control in [start_btn, cancel_btn, detail_btn, aim_ok_btn, skip_badge]:
 		if b != null and b.visible:
 			var br := b.get_rect()
 			if br.end.y > hb - 70.0 and br.position.x > hint.position.x + 120.0:
@@ -10797,8 +10855,11 @@ func _draw_line_map(size: Vector2, mp: Dictionary, now: float) -> void:
 
 
 ## 방향 고르기. Shift를 누르면 15도 단위로 맞춘다.
+## 터치: 손가락을 오브젝트에서 조금 떼어 대고 있는 동안만 손가락 쪽, 아니면 붙잡아 둔 방향(aim_d).
 func _aim_dir(from: Vector2) -> Vector2:
 	var d := get_global_mouse_position() - from
+	if touch_ui and phase == Phase.AIM and (not aim_hold or d.length() < AIM_TOUCH_MIN):
+		return aim_d
 	if d.length() < 5.0:
 		return Vector2.ZERO
 	if Input.is_key_pressed(KEY_SHIFT):

@@ -2776,6 +2776,22 @@ func _tutorial() -> void:
 	Meta.games = games0
 	main.tutor = false
 	main.touch_ui = false
+	# AIM-01: 터치 조준은 누르는 순간 확정하지 않고, 뗀 뒤 붙잡아 둔 방향으로 [확정]
+	main.touch_ui = true
+	main.moving = null
+	main.phase = main.Phase.AIM
+	main.place_pos = main.core() + Vector2(200, 0)
+	main._aim_begin()
+	var no_btn: bool = not main._ok_btn_on()
+	main.aim_d = Vector2.UP
+	main.aim_wait = true
+	var held_dir: bool = main._aim_dir(main.place_pos) == Vector2.UP and main._ok_btn_on() and main.aim_ok_btn.text == "확정"
+	main.aim_hold = true
+	var held_near: bool = main.get_global_mouse_position().distance_to(main.place_pos) >= main.AIM_TOUCH_MIN or main._aim_dir(main.place_pos) == Vector2.UP
+	main.aim_hold = false
+	main.phase = main.Phase.PLACE
+	main.touch_ui = false
+	ok("AIM-01", no_btn and held_dir and held_near, "터치 조준: 새로 놓기는 방향 전 [확정] 없음, 뗀 뒤 붙잡은 방향·[확정], 오브젝트 가까이 누르면 방향 유지")
 	ok("TUT-06", preview and place and aim and cancel and ready and finished and veteran and reset and off, "첫 행동: 터치 확정·설치·방향·취소·시작을 실제 상태에 따라 안내")
 	# TUT-04: 시작 화면·일시정지의 [튜토리얼] 버튼, 목록 15개 + 전체 보기, ✓, 항목 → 카드 → 목록으로, 전체 보기 → 도움말
 	var title_btn := false
