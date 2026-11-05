@@ -922,7 +922,7 @@ func _mods_area() -> void:
 		and not Pat.mod_ok("clock", "homing") and not Pat.mod_ok("chain", "homing")
 		and is_equal_approx(Pat.mod_fix("thorn", "homing", 2.0), 1.0) and is_equal_approx(Pat.mod_fix("thorn", "homing", 5.0), Pat.MOD_FIX["thorn"]["homing"]),
 		"벽 속사 2개 피해 속도 x%.2f, 크기 1개 벽 %.1f초, 시계침·연쇄 유도 막힘, 관통 연사 유도 2개 보정 x%.2f" % [rk, life, Pat.mod_fix("thorn", "homing", 2.0)])
-	# MOD-14 크기 피해는 공격방식 자기 공격에만: 곁공격·실어 나른 특징 피해(dmg_k_bare)엔 안 붙고, 숨은 보정 칸도 정보 줄에 보인다
+	# MOD-14 크기 피해는 공격방식 자기 공격에만: 보조 공격·실어 나른 특징 피해(dmg_k_bare)엔 안 붙고, 숨은 보정 칸도 정보 줄에 보인다
 	_clear()
 	var sz_t := _tower(c + Vector2(-200, 0))
 	sz_t.set_pattern("shot")
@@ -934,7 +934,7 @@ func _mods_area() -> void:
 	var bare: float = sz_t.dmg_k_bare()
 	var line: String = sz_t.mod_effect("size")
 	ok("MOD-14", line.contains("이 공격방식 피해") and own > bare0 * 1.01 and is_equal_approx(bare, bare0) and is_equal_approx(own / bare, sz_t.size_part()) and not line.contains("보정"),
-		"크기 2개 직선탄: 자기 공격 x%.3f, 곁공격·특징 x%.3f · %s" % [own / bare0, bare / bare0, line])
+		"크기 2개 직선탄: 자기 공격 x%.3f, 보조 공격·특징 x%.3f · %s" % [own / bare0, bare / bare0, line])
 	# MOD-10 돌풍 다중 발사: 부채꼴이 아니라 같은 방향으로 나란히
 	_clear()
 	var g := _tower(c + Vector2(-300, 0))
@@ -2191,7 +2191,7 @@ func _carry_cards() -> void:
 		"카드 들기: 카드 이름 말풍선 없음 %s·목록 접힘 %s·카메라 독립 %s·글자 배율 독립 %s·무효 드롭 보존 %s·취소 복원 %s·1회 적용 %s·이어하기 %s" % [chip, held, independent, scale_independent, refused, cancel, applied, resume])
 
 
-# ---------- 곁공격 ----------
+# ---------- 보조 공격 ----------
 
 func _side() -> void:
 	_fresh()
@@ -2206,7 +2206,7 @@ func _side() -> void:
 	t.eff = t.eff_now()
 	var two := Side.iv(t)
 	ok("SIDE-01", base > 0.0 and is_equal_approx(one, base) and is_equal_approx(two, base / 2.0),
-		"곁공격 간격 = %s초 ÷ 속성 종류 수 (1종 %.2f초, 2종 %.2f초)" % [base, one, two])
+		"보조 공격 간격 = %s초 ÷ 속성 종류 수 (1종 %.2f초, 2종 %.2f초)" % [base, one, two])
 	_clear()
 	# 조준(오른쪽) 밖, 위쪽 150에 있는 구체를 친다. 효과(화상)가 실린다.
 	var ft := _tower(c + Vector2(-300, 0), Elem.FIRE, 3, Vector2.RIGHT)
@@ -2220,10 +2220,10 @@ func _side() -> void:
 	var hit_near: bool = near.hp < 1e6 and far.hp >= 1e6 and near.burn_t > 0.0
 	var credited: bool = float(ft.src.get("share:side", 0.0)) > 0.0
 	var reset: bool = is_equal_approx(ft.side_cd, Side.iv(ft))
-	ok("SIDE-02", hit_near and credited and reset,
-		"곁공격: 조준과 상관없이 둘레 가장 가까운 구체 하나, 효과 실림·피해 출처 곁공격 (맞힘 %s·출처 %s·간격 %s)" % [hit_near, credited, reset])
+	ok("SIDE-02", hit_near and credited and reset and main.src_name("share:side") == "보조 공격" and main.src_name("share:side_big") == "큰 보조 공격",
+		"보조 공격: 조준과 상관없이 둘레 가장 가까운 구체 하나, 효과 실림·피해 출처 보조 공격 (맞힘 %s·출처 %s·간격 %s)" % [hit_near, credited, reset])
 	_clear()
-	# 큰 곁공격: side_big_n번째는 여러 구체를 맞힌다
+	# 큰 보조 공격: side_big_n번째는 여러 구체를 맞힌다
 	var bt := _tower(c + Vector2(-300, 0), Elem.FIRE, 3, Vector2.RIGHT)
 	var group: Array = []
 	for i in 4:
@@ -2239,8 +2239,8 @@ func _side() -> void:
 	var big_src: bool = float(bt.src.get("share:side_big", 0.0)) > 0.0
 	var locked: bool = main.side_big_t > 0.0 and bt.side_n == 0
 	ok("SIDE-03", all_hit and big_src and locked,
-		"큰 곁공격: %d번째 곁공격은 여러 구체를 함께 맞힘 (전부 맞음 %s·출처 %s·차례 초기화 %s)" % [int(Rules.t("side_big_n")), all_hit, big_src, locked])
-	# 화면에 큰 곁공격이 이미 있으면 다른 오브젝트는 보통 곁공격, 차례는 남김
+		"큰 보조 공격: %d번째 보조 공격은 여러 구체를 함께 맞힘 (전부 맞음 %s·출처 %s·차례 초기화 %s)" % [int(Rules.t("side_big_n")), all_hit, big_src, locked])
+	# 화면에 큰 보조 공격이 이미 있으면 다른 오브젝트는 보통 보조 공격, 차례는 남김
 	var ot := _tower(c + Vector2(-300, 60), Elem.WATER, 3, Vector2.RIGHT)
 	var hp0: Array = group.map(func(o): return o.hp)
 	ot.side_cd = 0.0
@@ -2251,7 +2251,7 @@ func _side() -> void:
 		if group[i].hp < hp0[i]:
 			n_hit += 1
 	var waits: bool = n_hit == 1 and ot.side_n == int(Rules.t("side_big_n")) - 1 and float(ot.src.get("share:side_big", 0.0)) == 0.0
-	ok("SIDE-04", waits, "큰 곁공격은 화면에 하나씩: 다른 오브젝트는 보통 곁공격, 차례는 다음으로 미룸 (맞은 수 %d)" % n_hit)
+	ok("SIDE-04", waits, "큰 보조 공격은 화면에 하나씩: 다른 오브젝트는 보통 보조 공격, 차례는 다음으로 미룸 (맞은 수 %d)" % n_hit)
 	main.side_big_t = 0.0
 	_clear()
 

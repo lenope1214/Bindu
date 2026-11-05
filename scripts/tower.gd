@@ -79,9 +79,9 @@ var mirror_src: Object = null  # 옆 환영 오브젝트가 비춘 상: 다음 �
 var mirror_t := 0.0
 var mirror_f := 0.0
 var aff_cd := 0.0  # 상성 둘레 효과(눈보라·비바람·증기) 다시 쓸 때까지 (Share.aff_hit)
-var side_cd := 1.0  # 곁공격까지 남은 시간 (Side)
-var side_n := 0  # 지난 큰 곁공격 뒤 곁공격 수 (Side)
-var side_big_fx := 0.0  # 큰 곁공격 번쩍임
+var side_cd := 1.0  # 보조 공격까지 남은 시간 (Side)
+var side_n := 0  # 지난 큰 보조 공격 뒤 보조 공격 수 (Side)
+var side_big_fx := 0.0  # 큰 보조 공격 번쩍임
 var chain_end := Vector2.ZERO  # 연쇄 번개가 마지막으로 친 자리
 var later: Array = []  # [남은 초, Callable]: 잠시 뒤 효과 (시간 되풀이, Share.on_hit)
 var main: Node
@@ -1829,12 +1829,12 @@ func size_part() -> float:
 	return f
 
 
-## 곁공격·실어 나른 특징 피해용 배율: 크기 몫을 뺀다 (크기는 공격방식 자기 판정에만, 2026-11-05 사용자 결정)
+## 보조 공격·실어 나른 특징 피해용 배율: 크기 몫을 뺀다 (크기는 공격방식 자기 판정에만, 2026-11-05 사용자 결정)
 func dmg_k_bare() -> float:
 	return dmg_k(false) / size_part()
 
 
-var no_size := false  # 지금 hit이 곁공격처럼 공격방식 밖 공격인지 (크기 피해 빼기)
+var no_size := false  # 지금 hit이 보조 공격처럼 공격방식 밖 공격인지 (크기 피해 빼기)
 
 
 ## 이 오브젝트의 공격이 구체에 닿았을 때. 겹친(나눠 받은) 모든 속성의 부가효과가 붙는다.

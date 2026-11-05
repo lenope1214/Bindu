@@ -76,7 +76,7 @@ func show_card(c: Dictionary, hd: Dictionary, n_take: int, n_react: int, els: Ar
 func tower_h() -> float:
 	var h := 30.0 + 8.0 + 96.0 + 8.0 + 52.0 * 2 + 8.0 + 8.0  # 제목·미리보기·타일
 	if Rules.t("side_iv") > 0.0:
-		h += 20.0  # 곁공격 줄
+		h += 20.0  # 보조 공격 줄
 	if share >= 0.0:
 		h += 22.0
 	h += 22.0  # 자세히 안내 / 구분선
@@ -359,7 +359,7 @@ func _draw_tower() -> void:
 		_tile(Rect2(tw2 + 8, y + 60, tw2, 52), "range", GREEN, "끝까지" if far else rnum, ("%s부터 약해짐" % rnum) if far else "사거리")
 	y += 120.0
 	if Rules.t("side_iv") > 0.0:
-		var sl := "곁공격 %s초마다 · %d번째는 %s" % [Tower.tip_num(Side.iv(tw)), int(Rules.t("side_big_n")), Side.big_name(Side.shape_e(tw))]
+		var sl := "보조 공격 %s초마다 · %d번째는 %s" % [Tower.tip_num(Side.iv(tw)), int(Rules.t("side_big_n")), Side.big_name(Side.shape_e(tw))]
 		_txt(Vector2(0, y + 12), sl, 12, Color(1, 0.85, 0.55, 0.85), w)
 		y += 20.0
 	if share >= 0.0:

@@ -126,7 +126,7 @@ var core_flash := 0.0
 var danger_lv := 0  # 중앙 위험 단계: 0 보통, 1 체력 50% 이하, 2 25% 이하
 var wave_dmg := 0  # 이번 웨이브에 중앙이 잃은 체력
 var eclipse_flash := 0.0  # 일식 순간 화면 어둡게
-var side_big_t := 0.0  # 큰 곁공격이 화면을 차지하는 남은 시간 (Side.BIG_LOCK, 하나씩만)
+var side_big_t := 0.0  # 큰 보조 공격이 화면을 차지하는 남은 시간 (Side.BIG_LOCK, 하나씩만)
 var eclipse_cd := 0.0  # 화면 전체 일식 연출 쉬는 시간(실제 시간). 오브젝트 여럿의 일식이 번갈아 화면을 깜빡이지 않게
 var core_disp := float(CORE_MAX_HP)  # 중앙 체력 표시(부드럽게 변함)
 var kills := 0
@@ -1615,9 +1615,9 @@ static func src_name(key: String) -> String:
 					return "상성 " + r[3]
 		"trait", "share":
 			if p[1] == "side":
-				return "곁공격"
+				return "보조 공격"
 			if p[1] == "side_big":
-				return "큰 곁공격"
+				return "큰 보조 공격"
 			var j := Patch.ELEM_KEYS.find(p[1])
 			return ("특징 " + Elem.trait_name(Elem.ALL[j])) if j >= 0 else p[1]
 		"etc":

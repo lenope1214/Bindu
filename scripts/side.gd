@@ -1,30 +1,30 @@
 class_name Side
-## 속성 곁공격 (2026-11-05, 초반 난이도). 오브젝트는 정해 둔 방향으로만 쏴서 조준선 밖으로 지나가는 구체가 샌다.
-## 곁공격: 몇 초마다 조준과 상관없이 둘레(side_r)에서 가장 가까운 구체를 한 번 친다. Tower.hit 그대로라 효과·특징·상성이 모두 실린다.
+## 속성 보조 공격 (2026-11-05, 초반 난이도). 오브젝트는 정해 둔 방향으로만 쏴서 조준선 밖으로 지나가는 구체가 샌다.
+## 보조 공격: 몇 초마다 조준과 상관없이 둘레(side_r)에서 가장 가까운 구체를 한 번 친다. Tower.hit 그대로라 효과·특징·상성이 모두 실린다.
 ## 간격 = side_iv / 속성 종류 수 (섞을수록 자주). 속성 하나짜리도 가진다 (분산 플레이).
-## 큰 곁공격: 곁공격 side_big_n번마다 한 번은 크게. 모양은 대표 나르는 특징(레벨이 가장 높은 것)이 정하고,
+## 큰 보조 공격: 보조 공격 side_big_n번마다 한 번은 크게. 모양은 대표 나르는 특징(레벨이 가장 높은 것)이 정하고,
 ## 맞은 구체마다 Share.carry로 그 오브젝트 효과 + 바꾸는 특징(바람 실림·얼음 얼림·땅 다짐·금속 날 세움·나무 자람·시간 되풀이)이 붙는다.
-## 화면에는 큰 곁공격이 하나씩만 (main.side_big_t 동안 다음 것은 기다림).
+## 화면에는 큰 보조 공격이 하나씩만 (main.side_big_t 동안 다음 것은 기다림).
 ## 온라인 패치: rules.side_iv · side_dmg · side_r · side_big_n · side_big_k
-const BIG_R := 200.0  # 큰 곁공격 둥근 터짐 반지름 (바람 넓힘 곱)
+const BIG_R := 200.0  # 큰 보조 공격 둥근 터짐 반지름 (바람 넓힘 곱)
 const BIG_CHAIN := 10  # 전기: 이어지는 구체 수
 const BIG_JUMP := 160.0  # 전기: 다음 구체까지 거리 (바람 넓힘 곱)
 const BIG_LINE_W := 26.0  # 빛: 빛줄기 반폭 (바람 넓힘 곱)
-const BIG_CAP := 60  # 큰 곁공격 하나가 맞히는 구체 최대 수
-const BIG_F := 0.6  # 큰 곁공격이 싣는 효과 비율
-const BIG_LOCK := 1.2  # 큰 곁공격 하나가 화면을 차지하는 시간(초)
+const BIG_CAP := 60  # 큰 보조 공격 하나가 맞히는 구체 최대 수
+const BIG_F := 0.6  # 큰 보조 공격이 싣는 효과 비율
+const BIG_LOCK := 1.2  # 큰 보조 공격 하나가 화면을 차지하는 시간(초)
 
 
 static func kinds(tw: Object) -> int:
 	return maxi(1, (tw.eff if not tw.eff.is_empty() else tw.elements).size())
 
 
-## 곁공격 간격(초)
+## 보조 공격 간격(초)
 static func iv(tw: Object) -> float:
 	return Rules.t("side_iv") / kinds(tw)
 
 
-## 큰 곁공격 모양을 정하는 속성 (나르는 특징 중 레벨이 가장 높은 것, 없으면 -1 = 둥근 터짐)
+## 큰 보조 공격 모양을 정하는 속성 (나르는 특징 중 레벨이 가장 높은 것, 없으면 -1 = 둥근 터짐)
 static func shape_e(tw: Object) -> int:
 	var els: Dictionary = tw.eff if not tw.eff.is_empty() else tw.elements
 	var best := -1
@@ -55,7 +55,7 @@ static func tick(tw: Object, delta: float) -> void:
 	var main: Node = tw.main
 	var big: bool = tw.side_n + 1 >= int(Rules.t("side_big_n")) and Rules.t("side_big_n") > 0.0
 	if big and main.side_big_t > 0.0:
-		big = false  # 화면에 큰 곁공격이 이미 있으면 이번엔 보통 곁공격 (차례는 남겨 둠)
+		big = false  # 화면에 큰 보조 공격이 이미 있으면 이번엔 보통 보조 공격 (차례는 남겨 둠)
 		tw.side_n = int(Rules.t("side_big_n")) - 2
 	var o: Orb = nearest(tw, Rules.t("side_r"))
 	if o == null:
@@ -82,7 +82,7 @@ static func nearest(tw: Object, r: float) -> Orb:
 	return best
 
 
-## 보통 곁공격: 구체 하나를 오브젝트 공격처럼 친다
+## 보통 보조 공격: 구체 하나를 오브젝트 공격처럼 친다
 static func hit_one(tw: Object, o: Orb) -> void:
 	var col: Color = tw.color()
 	col.a = 0.7
@@ -95,7 +95,7 @@ static func hit_one(tw: Object, o: Orb) -> void:
 	tw.tag = old
 
 
-## 큰 곁공격
+## 큰 보조 공격
 static func big_hit(tw: Object, o: Orb) -> void:
 	var main: Node = tw.main
 	main.side_big_t = BIG_LOCK
