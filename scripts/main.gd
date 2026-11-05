@@ -339,21 +339,13 @@ var range_all := false  # 터치 화면 [범위 보기]: Alt를 누른 것처럼
 var range_btn: Button
 var wave_time := 0.0  # 이번 웨이브 경과 시간
 # 쉬는 시간 오브젝트별 DPS 표: 줄에 마우스를 올리면 그 오브젝트를 필드에서 짚어 준다
-var dps_panel: PanelContainer
-var dps_head: Button
+var dps_panel: FloatPanel  # 공용 떠 있는 창 틀 (옮기기·압정·접기는 FloatPanel)
+var dps_head: Label  # 표 제목 (dps_panel.title)
 var dps_scroll: ScrollContainer
 var dps_list: VBoxContainer
 var dps_sig := ""  # 표를 다시 만들지 정하는 요약 (오브젝트·피해가 바뀔 때만)
 var dps_focus: Tower = null  # 표에서 마우스를 올린 오브젝트
 var dps_hidden := OS.has_feature("mobile")  # D: 표 접기 (Meta.dps_fold로 저장)
-var dps_drag := 0  # 표 옮기기: 0 아님 · 1 제목 줄을 누르는 중 · 2 옮기는 중
-var dps_press := Vector2.ZERO  # 제목 줄을 누른 자리 (표 부모 좌표)
-var dps_press_t := 0.0  # 누른 채 지난 시간 (꾹 누르기 DPS_HOLD초면 집어 든다)
-var dps_grab := Vector2.ZERO  # 집은 곳 - 표 왼쪽 위
-const DPS_HOLD := 0.35
-const DPS_TIP := "누르면 접기·펴기 (D)\n꾹 누르거나 끌면 표 옮기기 · 왼쪽 위에 놓으면 원래 자리로"
-const DPS_DRAG_MIN := 10.0
-const DPS_HOME := 40.0  # 기본 자리(왼쪽 위) 이만큼 안에 놓으면 기본 자리로 되돌린다
 var dps_choice_open := false  # 카드 선택 중엔 요약만, D로 상세를 잠깐 펼친다
 # 웨이브 중 실시간 DPS: 게임 시간 DPS_STEP초마다 오브젝트별 누적 피해(dealt)를 적어 두고 최근 DPS_WIN초 차이로 초당 피해 (이동 평균이라 덜 흔들림)
 const DPS_STEP := 0.5
@@ -1260,100 +1252,23 @@ func _build_ui() -> void:
 	root.add_child(help_scroll)
 
 
-## 쉬는 시간 왼쪽 위: 지난 웨이브 오브젝트별 DPS 표 (줄은 _refresh_dps가 채운다).
+## 쉬는 시간 왼쪽 위: 지난 웨이브 오브젝트별 DPS 표 (줄은 _refresh_dps가 채운다). 틀은 공용 FloatPanel.
 func _build_dps(root: Control) -> void:
-	dps_panel = PanelContainer.new()
+	dps_panel = FloatPanel.new("dps", self)
 	dps_panel.position = Vector2(10, 60)
 	dps_panel.custom_minimum_size.x = 300
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.02, 0.03, 0.05, 0.85)
-	sb.set_corner_radius_all(5)
-	sb.set_content_margin_all(6)
-	sb.set_border_width_all(1)
-	sb.border_color = Color(1, 0.9, 0.5, 0.0)  # 옮기는 동안만 보이는 테두리
-	dps_panel.add_theme_stylebox_override("panel", sb)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 4)
-	dps_panel.add_child(box)
-	dps_head = Button.new()
-	dps_head.flat = true
-	dps_head.focus_mode = Control.FOCUS_NONE
-	dps_head.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	dps_head.add_theme_font_size_override("font_size", 14)
-	dps_head.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
-	dps_head.gui_input.connect(_dps_head_input)  # 짧게 누르면 접기·펴기, 꾹 누르거나 끌면 옮기기 (pressed는 안 씀)
-	dps_head.tooltip_text = DPS_TIP
-	box.add_child(dps_head)
+	dps_panel.fold_pressed.connect(_toggle_dps)
+	dps_panel.moved.connect(func(): dps_sig = "")
+	dps_head = dps_panel.title
 	dps_scroll = ScrollContainer.new()
 	dps_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	box.add_child(dps_scroll)
+	dps_panel.body.add_child(dps_scroll)
 	dps_list = VBoxContainer.new()
 	dps_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	dps_list.add_theme_constant_override("separation", 2)
 	dps_scroll.add_child(dps_list)
 	dps_panel.visible = false
 	root.add_child(dps_panel)
-
-
-## 표 전체(판·제목·줄)가 마우스를 받을지. 끄면 밑의 오브젝트가 받는다.
-func _dps_mouse(on: bool) -> void:
-	var f := Control.MOUSE_FILTER_STOP if on else Control.MOUSE_FILTER_IGNORE
-	if dps_head.mouse_filter == f:
-		return
-	dps_panel.mouse_filter = f
-	dps_head.mouse_filter = f
-	dps_scroll.mouse_filter = f if on else Control.MOUSE_FILTER_IGNORE
-	for r in dps_list.get_children():
-		(r as Control).mouse_filter = f
-
-
-## 제목 줄 누르기: 놓을 때 옮기지 않았으면 접기·펴기, 꾹 누르거나(DPS_HOLD) 끌면(DPS_DRAG_MIN) 표를 집어 옮긴다.
-func _dps_head_input(e: InputEvent) -> void:
-	var par := dps_panel.get_parent() as Control
-	if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT:
-		if e.pressed:
-			dps_drag = 1
-			dps_press = (par.get_global_transform().affine_inverse() * _pointer_screen())
-			dps_press_t = 0.0
-		elif dps_drag > 0:
-			if dps_drag == 2:
-				_dps_drop()
-			else:
-				_toggle_dps()
-			dps_drag = 0
-		dps_head.accept_event()
-	elif e is InputEventMouseMotion and dps_drag == 1:
-		if (par.get_global_transform().affine_inverse() * _pointer_screen()).distance_to(dps_press) > DPS_DRAG_MIN:
-			_dps_pick()
-
-
-## 표를 집어 든다 (꾹 누르기·끌기).
-func _dps_pick() -> void:
-	dps_drag = 2
-	dps_grab = dps_press - dps_panel.position
-	dps_head.tooltip_text = ""  # 옮기는 동안 말풍선이 표를 가리지 않게
-	dps_sig = ""
-
-
-## 옮기는 동안 표 왼쪽 위 (손가락·마우스를 따라, 화면 안).
-func _dps_drag_pos() -> Vector2:
-	var par := dps_panel.get_parent() as Control
-	var p := (par.get_global_transform().affine_inverse() * _pointer_screen()) - dps_grab
-	return p.clamp(Vector2.ZERO, (par.size - dps_panel.size).max(Vector2.ZERO))
-
-
-## 놓기: 기본 자리 가까이면 되돌리고, 아니면 화면 안 빈 폭 비율로 저장 (창·화면 크기가 바뀌어도 같은 쪽).
-func _dps_drop() -> void:
-	var par := dps_panel.get_parent() as Control
-	var p := _dps_drag_pos()
-	var free := (par.size - dps_panel.size).max(Vector2.ONE)
-	if p.distance_to(_dps_home()) < DPS_HOME:
-		Meta.dps_pos = Vector2(-1, -1)
-	else:
-		Meta.dps_pos = (p / free).clamp(Vector2.ZERO, Vector2.ONE)
-	dps_head.tooltip_text = DPS_TIP
-	dps_sig = ""
-	_save_best()
 
 
 ## 기본 자리: 점수 줄 아래 왼쪽.
@@ -1366,10 +1281,9 @@ func _dps_home() -> Vector2:
 	return Vector2(10, top)
 
 
-## 옮겨 둔 자리: 점수 줄·오른쪽 아래 버튼·기술 버튼·웨이브 시작 버튼과 겹치면 위나 아래로 비켜 화면 안에.
-func _dps_place(p: Vector2) -> Vector2:
-	var par := dps_panel.get_parent() as Control
-	var sz := dps_panel.size
+## 옮겨 둔 떠 있는 창(FloatPanel)이 비켜야 할 것 (창 부모 좌표): 점수 줄 칩·오른쪽 아래 버튼·기술 버튼·웨이브 시작 버튼·웨이브 중 콤보 자리.
+func _panel_blocks(panel: Control) -> Array[Rect2]:
+	var par := panel.get_parent() as Control
 	var inv := par.get_global_transform().affine_inverse()
 	var blocks: Array[Rect2] = []
 	if hud.visible and not hud_chips.is_empty():
@@ -1382,18 +1296,7 @@ func _dps_place(p: Vector2) -> Vector2:
 			blocks.append((inv * c.get_global_rect()).grow(4.0))
 	if phase == Phase.WAVE:
 		blocks.append((inv * _combo_rect()).grow(4.0))  # 오른쪽 위 콤보 상자 자리 (웨이브 중엔 언제든 뜰 수 있어 비워 둔다)
-	for _i in 3:
-		var r := Rect2(p, sz)
-		var moved := false
-		for b in blocks:
-			if r.intersects(b):
-				# 막는 것 위쪽 반이면 그 아래로, 아니면 그 위로
-				p.y = b.end.y if b.get_center().y < par.size.y / 2.0 else b.position.y - sz.y
-				moved = true
-				break
-		if not moved:
-			break
-	return p.clamp(Vector2(8, 8), (par.size - sz - Vector2(8, 8)).max(Vector2(8, 8)))
+	return blocks
 
 
 func _toggle_dps() -> void:
@@ -1471,53 +1374,27 @@ func _refresh_dps() -> void:
 	dps_panel.visible = on
 	if not on:
 		dps_focus = null
-		if dps_drag == 2:
-			dps_head.tooltip_text = DPS_TIP
-		dps_drag = 0
+		dps_panel.stop_drag()
 		return
-	# 표 밑에 오브젝트가 있으면(위쪽 끝에 놓은 것) 마우스를 표에 올리지 않은 동안 옅게 해서 보이게
-	var pr := get_canvas_transform().affine_inverse() * dps_panel.get_global_rect()
-	var under := false
-	if not pr.has_point(_pointer_world()):
-		for t in towers.get_children():
-			if pr.grow(14.0).has_point(t.position):
-				under = true
-				break
-		# 진입 화살표가 표 밑에 깔려도 (왼쪽 위·왼쪽 길목) 보이게
-		for arr in _lane_arrows():
-			if pr.grow(14.0).has_point(arr[0]):
-				under = true
-				break
-	dps_panel.modulate.a = 0.4 if under and dps_drag != 2 else 1.0
-	# 누르는 자리 밑에 오브젝트가 있으면 표가 마우스를 받지 않아 오브젝트를 먼저 누르고 옮긴다 (점수 줄과 같은 규칙, UI-36)
-	var pass_thru := dps_drag == 0 and _tower_at(_pointer_world()) != null and pr.has_point(_pointer_world())
-	_dps_mouse(not pass_thru)
+	dps_panel.set_touch(touch_ui)
+	# 표 밑에 오브젝트가 있으면 마우스를 올리지 않은 동안 옅게, 누르는 자리 밑 오브젝트는 먼저 (점수 줄과 같은 규칙, UI-36)
+	dps_panel.cover(true)
 	# 기본: 점수 줄 아래, 왼쪽 아래 안내 글 위까지. 옮겨 뒀으면 그 자리(줄 수는 화면 아래까지)
 	var home := _dps_home()
 	var top := home.y
 	var par := dps_panel.get_parent() as Control
-	var moved := Meta.dps_pos.x >= 0.0 or dps_drag == 2
-	if dps_drag == 1:
-		dps_press_t += get_process_delta_time()
-		if dps_press_t >= DPS_HOLD:
-			_dps_pick()  # 꾹 누르기: 손을 안 움직여도 집어 든다
-	if dps_drag == 2:
-		dps_panel.position = _dps_drag_pos()
-	elif moved:
-		dps_panel.position = _dps_place(Meta.dps_pos * (par.size - dps_panel.size).max(Vector2.ONE))
-	else:
-		dps_panel.position = home
-	(dps_panel.get_theme_stylebox("panel") as StyleBoxFlat).border_color = Color(1, 0.9, 0.5, 0.9 if dps_drag == 2 else 0.0)
+	var moved := dps_panel.pinned() or dps_panel.drag == 2
+	dps_panel.follow(home, get_process_delta_time())
 	var bottom := _bottom_free()
 	if moved:
-		bottom = par.size.y - 8.0  # 표 높이는 점수 줄 아래~화면 아래만큼까지, 넘치면 _dps_place가 위로 올린다
+		bottom = par.size.y - 8.0  # 표 높이는 점수 줄 아래~화면 아래만큼까지, 넘치면 dps_panel.place가 위로 올린다
 	if not moved and choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 and choice_box.get_rect().position.x < 320.0:
 		bottom = minf(bottom, choice_box.get_rect().position.y - maxf(24.0, _choice_headroom() + 4.0))  # 카드·선택 안내를 덮지 않게 (넘치면 굴려 본다)
 	if not moved and apply_btn.visible and apply_btn.get_rect().position.x < dps_panel.get_rect().end.x:
 		bottom = minf(bottom, apply_btn.get_rect().position.y - 28.0)  # 폰 [적용] 버튼(누른 카드 위)을 덮지 않게
 	if not moved and guide_label.visible and guide_label.get_rect().position.x < 320.0:
 		bottom = minf(bottom, guide_label.position.y - 4.0)  # 처음 안내 글 위까지만
-	var room := maxf(0.0 if apply_btn.visible else 48.0, bottom - top - 44.0)
+	var room := maxf(0.0 if apply_btn.visible else 48.0, bottom - top - dps_panel.head.size.y - 18.0)
 	var live := phase == Phase.WAVE
 	var list := towers.get_children()
 	var dv := {}
@@ -1534,10 +1411,10 @@ func _refresh_dps() -> void:
 	if sig == dps_sig:
 		return
 	dps_sig = sig
-	dps_head.text = _kh(("▶" if folded else "▼") + (" 실시간 DPS (D)" if live else " 지난 웨이브 DPS (D)"))
+	dps_head.text = _kh("실시간 DPS (D)" if live else "지난 웨이브 DPS (D)")
 	for c in dps_list.get_children():
 		c.queue_free()
-	dps_scroll.visible = not folded
+	dps_panel.set_folded(folded)
 	if folded:
 		dps_focus = null
 		dps_panel.size = Vector2.ZERO
@@ -1547,10 +1424,10 @@ func _refresh_dps() -> void:
 		total += dv[t]
 	for i in list.size():
 		var row := _dps_row(list[i], i + 1, dv[list[i]], total, live)
-		row.mouse_filter = dps_head.mouse_filter
 		dps_list.add_child(row)
 	var rows := list.size() * 24.0
 	dps_scroll.custom_minimum_size.y = minf(rows, room)
+	dps_panel.set_pass(dps_panel.passing, true)  # 새 줄도 통과 상태를 따르게
 	dps_panel.size = Vector2.ZERO  # 줄이 줄면 판도 줄인다
 	if dps_focus != null and not is_instance_valid(dps_focus):
 		dps_focus = null
@@ -5098,10 +4975,10 @@ func _input(event: InputEvent) -> void:
 		get_tree().call_group("keycap", "queue_redraw")
 		if legend:
 			_refresh_legend()
-	if dps_panel != null and dps_panel.visible and dps_drag == 0 and ((event is InputEventMouseButton or event is InputEventScreenTouch) and event.pressed):
-		var wp: Vector2 = get_canvas_transform().affine_inverse() * event.position
-		var pr := get_canvas_transform().affine_inverse() * dps_panel.get_global_rect()
-		_dps_mouse(not (pr.has_point(wp) and _tower_at(wp) != null))
+	if dps_panel != null and ((event is InputEventMouseButton or event is InputEventScreenTouch) and event.pressed):
+		dps_panel.press_check(event.position)
+		if card_dock != null:
+			card_dock.side.press_check(event.position)
 	if mp_mode != "" and ((event is InputEventMouseButton or event is InputEventScreenTouch or event is InputEventKey) and event.pressed):
 		_mp_presence()
 	if _info_input(event) or (card_dock != null and card_dock.handle_input(event)) or _zoom_input(event):

@@ -2581,6 +2581,43 @@ func _meta_misc() -> void:
 	main.pointer_position = old_pointer
 	main.phase = old_phase
 	ok("UI-32", side_ok and retained_tower and close_visible and closed and dismissed_tower and tab_hidden, "설명창 내용 높이·보는 오브젝트 반대쪽 구석, 일반 판 Tab 버튼 없음")
+	# UI-38: 떠 있는 창 공용 틀 — 정보창도 DPS 표와 같은 FloatPanel(머리 줄 압정·접기, 정보창만 닫기). 옮겨 둔 자리에 고정, 압정 끄면 자동 자리, 터치는 여섯 자리에 붙음, 접으면 머리 줄만
+	var fpp0: Dictionary = Meta.panel_pos.duplicate()
+	var fold0: Dictionary = Meta.panel_fold.duplicate()
+	var fs: FloatPanel = dock.side
+	var same_frame: bool = fs is FloatPanel and main.dps_panel is FloatPanel and fs.close_btn != null and main.dps_panel.close_btn == null \
+		and fs.pin_btn.get_parent() == fs.head and main.dps_panel.pin_btn.get_parent() == main.dps_panel.head
+	var ph_37 = main.phase
+	main.phase = main.Phase.READY
+	Meta.panel_pos.erase("info")
+	dock.inspected_tower = dt
+	dock._update_side()
+	dock._place_side(ui_size, false)
+	var auto_at: Vector2 = fs.position
+	Meta.panel_pos["info"] = Vector2(0.5, 0.5)
+	dock._place_side(ui_size, false)
+	var mid_x: float = (ui_size.x - fs.size.x) / 2.0
+	var pin_ok: bool = fs.pinned() and absf(fs.position.x - mid_x) < 2.0
+	fs.toggle_pin()
+	dock._place_side(ui_size, false)
+	var unpin_ok: bool = not fs.pinned() and fs.position.is_equal_approx(auto_at)
+	var was_touch_37: bool = main.touch_ui
+	main.touch_ui = true
+	var sl37: Array[Vector2] = fs.slots()
+	var snap_ok: bool = sl37.size() == 6 and fs.snap(Vector2(20.0, ui_size.y)) == sl37[3] and fs.snap(Vector2(ui_size.x, 0.0)) == sl37[2]
+	main.touch_ui = was_touch_37
+	var h_open: float = fs.size.y
+	fs.fold_pressed.emit()
+	dock._place_side(ui_size, false)
+	var h_fold: float = fs.size.y
+	var fold37: bool = fs.folded and not fs.body.visible and h_fold < h_open and Meta.panel_fold.get("info", false)
+	fs.fold_pressed.emit()
+	var unfold_ok: bool = not fs.folded and fs.body.visible
+	Meta.panel_pos = fpp0
+	Meta.panel_fold = fold0
+	dock.close_inspector()
+	main.phase = ph_37
+	ok("UI-38", same_frame and pin_ok and unpin_ok and snap_ok and fold37 and unfold_ok, "떠 있는 창 공용 틀 %s · 옮긴 자리 고정 %s · 압정 끄면 자동 %s · 터치 여섯 자리 %s · 접기 %s(%d→%d)/%s" % [same_frame, pin_ok, unpin_ok, snap_ok, fold37, h_open, h_fold, unfold_ok])
 	var status_guide_visible: bool = main.guide_label.visible
 	main.guide_label.hide()
 	main.phase = main.Phase.READY
@@ -2855,24 +2892,28 @@ func _meta_misc() -> void:
 	var up := InputEventMouseButton.new()
 	up.button_index = MOUSE_BUTTON_LEFT
 	up.pressed = false
-	main._dps_head_input(dn)
-	main._dps_head_input(up)
-	var tap_ok: bool = main.dps_hidden != h0 and main.dps_drag == 0
+	var fp: FloatPanel = main.dps_panel
+	fp.head_input(dn)
+	fp.head_input(up)
+	var tap_ok: bool = main.dps_hidden != h0 and fp.drag == 0
 	main._toggle_dps()
-	main._dps_head_input(dn)
-	main.dps_press = main.dps_panel.get_parent().get_local_mouse_position() + Vector2(50, 0)  # 누른 뒤 50 끈 것처럼
+	var pp0: Dictionary = Meta.panel_pos.duplicate()
+	fp.head_input(dn)
+	fp.press = fp._local_pointer() + Vector2(50, 0)  # 누른 뒤 50 끈 것처럼
 	var mv := InputEventMouseMotion.new()
-	main._dps_head_input(mv)
-	var picked: bool = main.dps_drag == 2
-	var hp0: Vector2 = Meta.dps_pos
-	main._dps_head_input(up)
-	var dropped: bool = main.dps_drag == 0 and main.dps_hidden == h0 and (Meta.dps_pos == Vector2(-1, -1) or (Meta.dps_pos.x >= 0.0 and Meta.dps_pos.x <= 1.0 and Meta.dps_pos.y >= 0.0 and Meta.dps_pos.y <= 1.0))
-	Meta.dps_pos = hp0
+	fp.head_input(mv)
+	var picked: bool = fp.drag == 2
+	fp.head_input(up)
+	var dpr: Vector2 = Meta.panel_pos.get("dps", Vector2(-1, -1))
+	var dropped: bool = fp.drag == 0 and main.dps_hidden == h0 and fp.pinned() and dpr.x >= 0.0 and dpr.x <= 1.0 and dpr.y >= 0.0 and dpr.y <= 1.0
+	fp.toggle_pin()
+	var unpinned: bool = not fp.pinned()
+	Meta.panel_pos = pp0
 	main._update_hud(true)
 	var dodge := true
 	if main.hud.visible and not main.hud_chips.is_empty():
 		var c0: Rect2 = main.hud_chips[0][0]
-		var p: Vector2 = main._dps_place(main.hud.position + c0.position)
+		var p: Vector2 = fp.place(main.hud.position + c0.position)
 		dodge = p.y >= main.hud.position.y + c0.end.y
 	# 표 밑에 오브젝트가 깔린 자리를 누르면 오브젝트가 먼저 (점수 줄과 같은 규칙), 빈 자리는 표가 받음
 	var pv0: bool = main.dps_panel.visible
@@ -2894,15 +2935,15 @@ func _meta_misc() -> void:
 		ev.pressed = true
 		ev.position = sp
 		main._input(ev)
-		var passes: bool = main.dps_head.mouse_filter == Control.MOUSE_FILTER_IGNORE and not main.card_dock.over_ui(sp)
+		var passes: bool = main.dps_panel.passing and main.dps_panel.head.mouse_filter == Control.MOUSE_FILTER_IGNORE and not main.card_dock.over_ui(sp)
 		ut.position = Vector2(-9999, -9999)
 		main._input(ev)
-		var blocks: bool = main.dps_head.mouse_filter == Control.MOUSE_FILTER_STOP and main.card_dock.over_ui(sp)
+		var blocks: bool = not main.dps_panel.passing and main.dps_panel.head.mouse_filter == Control.MOUSE_FILTER_STOP and main.card_dock.over_ui(sp)
 		under_ok = passes and blocks
 		ut.free()
 	main.dps_panel.visible = pv0
 	ok("DPS-03", under_ok, "DPS 표 밑 오브젝트는 누를 수 있고, 빈 표 자리는 표가 받음")
-	ok("DPS-03", tap_ok and picked and dropped and dodge, "DPS 표 옮기기: 짧게 누르기=접기 %s, 끌기=집기 %s, 놓기=자리 저장 %s, 점수 줄 비킴 %s" % [tap_ok, picked, dropped, dodge])
+	ok("DPS-03", tap_ok and picked and dropped and unpinned and dodge, "DPS 표 옮기기: 짧게 누르기=접기 %s, 끌기=집기 %s, 놓기=자리 저장·압정 %s, 압정 끄기 %s, 점수 줄 비킴 %s" % [tap_ok, picked, dropped, unpinned, dodge])
 	_clear()
 
 	# 피해 1~3위 왕관·메달: 쉬는 시간 지난 웨이브 피해 순, 2개면 1위만, 1위가 바뀌면 왕관이 날아감, 설정으로 끔

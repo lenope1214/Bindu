@@ -12,8 +12,8 @@ var panel: Panel
 var footer: Panel
 var skip_group: Panel
 var controls_theme := make_controls_theme()
-var side: PanelContainer
-var inspector_header: HBoxContainer
+var side: FloatPanel  # 오브젝트·카드 정보창 (공용 떠 있는 창 틀: 옮기기·압정·접기·닫기)
+var inspector_header: HBoxContainer  # 머리 줄의 창별 버튼 칸 (방향 변경·터치 자세히)
 var direction_btn: Button
 var close_btn: Button
 var dismissed_tower: Tower
@@ -111,25 +111,21 @@ func _init(main) -> void:
 	state.add_theme_color_override("font_color", Color("d9e5f5"))
 	state.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(state)
-	side = PanelContainer.new()
+	side = FloatPanel.new("info", game, true)
 	side.name = "CardInspector"
 	side.z_index = 1
-	var sb := bg.duplicate()
-	sb.border_width_top = 0
-	sb.border_width_left = 1
-	sb.set_content_margin_all(14)
-	side.add_theme_stylebox_override("panel", sb)
+	side.style.set_content_margin_all(10)
+	side.style.bg_color = Color("0b101a")  # 읽는 창은 뒤 전장이 비치지 않게 (DPS 표는 옅게 비침)
+	side.fold_pressed.connect(func():
+		Meta.panel_fold["info"] = not side.folded
+		side.set_folded(not side.folded)
+		game._save_best())
+	side.set_folded(Meta.panel_fold.get("info", false))
 	game.ui_root.add_child(side)
-	var content := VBoxContainer.new()
-	content.add_theme_constant_override("separation", 12)
-	side.add_child(content)
-	inspector_header = HBoxContainer.new()
-	content.add_child(inspector_header)
-	heading = Label.new()
-	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	heading.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	heading.add_theme_font_size_override("font_size", 16)
-	inspector_header.add_child(heading)
+	var content := side.body
+	inspector_header = side.tools
+	heading = side.title
+	heading.add_theme_font_size_override("font_size", 15)
 	direction_btn = Button.new()
 	direction_btn.text = "방향 변경"
 	direction_btn.theme = controls_theme
@@ -137,17 +133,13 @@ func _init(main) -> void:
 	direction_btn.custom_minimum_size = Vector2(88, 36)
 	direction_btn.pressed.connect(game._edit_selected_direction)
 	inspector_header.add_child(direction_btn)
-	close_btn = Button.new()
-	close_btn.text = "×"
-	close_btn.theme = controls_theme
-	close_btn.custom_minimum_size = Vector2(36, 36)
-	close_btn.focus_mode = Control.FOCUS_NONE
+	close_btn = side.close_btn
 	close_btn.tooltip_text = "상세 닫기 (Esc)"
-	close_btn.pressed.connect(close_inspector)
-	inspector_header.add_child(close_btn)
+	side.close_pressed.connect(close_inspector)
 	scroll = ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.mouse_filter = Control.MOUSE_FILTER_STOP  # 읽는 창의 스크롤은 뒤 전장으로 넘기지 않는다
 	content.add_child(scroll)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 12)
@@ -162,6 +154,7 @@ func _init(main) -> void:
 	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detail.scroll_active = false
 	detail.fit_content = true
+	detail.mouse_filter = Control.MOUSE_FILTER_PASS
 	detail.bbcode_enabled = false
 	column.add_child(detail)
 	panel.visible = false
@@ -206,8 +199,9 @@ func world_view() -> Rect2:
 func over_ui(p: Vector2, include_info := true) -> bool:
 	if not active():
 		return false
-	for c: Control in [panel, footer, side, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
-			game.dps_panel if not (_tower_under(p) and game.dps_drag == 0) else null, game.range_btn, game.zoom_btn,
+	var under := _tower_under(p)
+	for c: Control in [panel, footer, side if not (under and side.drag == 0) else null, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
+			game.dps_panel if not (under and game.dps_panel.drag == 0) else null, game.range_btn, game.zoom_btn,
 			game.guide_more, game.skip_btn, game.skip_n_btn, game.pause_box, game.paused_label, game.mp_bar, game.coin_fx]:
 		if c != null and c.is_visible_in_tree() and c.get_global_rect().has_point(p):
 			return true
@@ -229,7 +223,7 @@ func over_ui(p: Vector2, include_info := true) -> bool:
 			return true
 	return false
 
-## 점수 줄 칩·DPS 표 밑에 오브젝트가 있으면 오브젝트가 먼저 (누르기·옮기기·방향 바꾸기). DPS 표는 main._refresh_dps가 마우스도 통과시킨다
+## 점수 줄 칩·떠 있는 창(DPS 표·정보창) 밑에 오브젝트가 있으면 오브젝트가 먼저 (누르기·옮기기·방향 바꾸기). 창은 FloatPanel.cover가 마우스도 통과시킨다
 func _tower_under(p: Vector2) -> bool:
 	return game._tower_at(game.get_canvas_transform().affine_inverse() * p) != null
 
@@ -635,6 +629,10 @@ func _update_side() -> void:
 ## 보고 있는 오브젝트(shown_tower)는 가리지 않는다. 비슷하면 지금 쪽에 머문다(왔다 갔다 하지 않게).
 func _place_side(size: Vector2, cards: bool) -> void:
 	var w := clampf(size.x * 0.28, 240.0, 330.0)
+	# 머리 줄 버튼(방향 변경·자세히·압정·접기·닫기)이 다 들어가게: 터치는 짧은 이름, 그래도 모자라면 창을 넓힌다
+	direction_btn.text = "방향" if game.touch_ui else "방향 변경"
+	side.set_touch(game.touch_ui)
+	w = maxf(w, side.get_combined_minimum_size().x)
 	side.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	var top := maxf(60.0, game.hud.get_rect().end.y + 8.0)
 	var bottom: float = panel.position.y - 12.0 if cards else size.y - 64.0
@@ -655,12 +653,13 @@ func _place_side(size: Vector2, cards: bool) -> void:
 				rtop = maxf(rtop, dr.end.y + 8.0)
 	var sb: StyleBox = side.get_theme_stylebox("panel")
 	var parts := []
-	parts.append(inspector_header.get_combined_minimum_size().y)
-	if pic.visible:
-		parts.append(pic.custom_minimum_size.y)
-	if detail.visible:
-		parts.append(detail.get_content_height())
-	var want: float = sb.get_minimum_size().y + 4.0 + 12.0 * maxf(0, parts.size() - 1)
+	parts.append(side.head.get_combined_minimum_size().y)
+	if not side.folded:
+		if pic.visible:
+			parts.append(pic.custom_minimum_size.y)
+		if detail.visible:
+			parts.append(detail.get_content_height())
+	var want: float = sb.get_minimum_size().y + 4.0 + 12.0 * maxf(0, parts.size() - 2)
 	for v in parts:
 		want += v
 	var cands := [Rect2(size.x - w - 12.0, rtop, w, 0.0), Rect2(12.0, ltop, w, 0.0)]
@@ -679,7 +678,7 @@ func _place_side(size: Vector2, cards: bool) -> void:
 	var pad: float = 26.0 * fit * game.view_zoom
 	for i in cands.size():
 		var r: Rect2 = cands[i]
-		r.size.y = clampf(want, 100.0, maxf(100.0, bottom - r.position.y))
+		r.size.y = clampf(want, minf(100.0, want), maxf(100.0, bottom - r.position.y))  # 접으면 머리 줄만
 		cands[i] = r
 		var sc := 0.0
 		for t: Tower in game.towers.get_children():
@@ -696,12 +695,18 @@ func _place_side(size: Vector2, cards: bool) -> void:
 		cur = 1 - cur
 	side_left = cur == 1
 	var pick: Rect2 = cands[cur]
-	side.position = pick.position
+	if side.pinned() or side.drag == 2:
+		# 사용자가 옮겨 둔 자리: 폭은 같고, 높이는 그 자리에서 아래 끝까지 들어가는 만큼 (모자라면 위로 올린다)
+		var at: Vector2 = side.saved_pos() if side.drag != 2 else side.drag_pos()
+		var h := clampf(want, minf(100.0, want), maxf(100.0, bottom - top))
+		pick = Rect2(Vector2(at.x, clampf(at.y, top, maxf(top, bottom - h))), Vector2(w, h))
 	side.size = pick.size
-	# 읽는 패널의 클릭·스크롤은 뒤 전장으로 넘기지 않는다.
-	side.mouse_filter = Control.MOUSE_FILTER_STOP
-	detail.mouse_filter = Control.MOUSE_FILTER_PASS
-	scroll.mouse_filter = Control.MOUSE_FILTER_STOP
+	side.follow(pick.position, game.get_process_delta_time())
+	if side.pinned() and side.drag != 2:
+		side.position.y = clampf(side.position.y, top, maxf(top, bottom - side.size.y))
+	side.set_touch(game.touch_ui)
+	# 밑에 깔린 오브젝트는 먼저 누르게 통과, 옮겨 둔 창은 밑에 오브젝트가 있으면 옅게 (자동 자리는 보는 오브젝트를 피해 뜬다)
+	side.cover(side.pinned())
 
 
 ## 설명창 그림 폭: 설명창 폭에서 안쪽 여백을 뺀 값.
