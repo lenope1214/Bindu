@@ -30,9 +30,10 @@
   {
    "id": "rx",
    "name": "특징 공유",
-   "cls": "Share · Elem.TRAIT",
+   "cls": "Share · Elem.TRAIT · Side",
    "groups": [
     "특징 공유",
+    "곁공격",
     "특징 코드 수치"
    ],
    "sections": []

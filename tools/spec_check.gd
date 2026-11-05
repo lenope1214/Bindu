@@ -105,6 +105,7 @@ func _initialize():
 	_save_load()
 	_meta_misc()
 	_carry_cards()
+	_side()
 	_multiplayer()
 	_tutorial()
 	_vote()
@@ -2170,6 +2171,71 @@ func _carry_cards() -> void:
 	main.touch_ui = false
 	ok("UI-31", held and independent and scale_independent and refused and cancel and applied and resume,
 		"카드 들기: 목록 접힘 %s·카메라 독립 %s·글자 배율 독립 %s·무효 드롭 보존 %s·취소 복원 %s·1회 적용 %s·이어하기 %s" % [held, independent, scale_independent, refused, cancel, applied, resume])
+
+
+# ---------- 곁공격 ----------
+
+func _side() -> void:
+	_fresh()
+	var c: Vector2 = main.center()
+	var _grid := func():
+		main.targets = main.orbs.get_children()
+		main._build_grid()
+	var base: float = Rules.t("side_iv")
+	var t := _tower(c + Vector2(-300, 0), Elem.FIRE, 1)
+	var one := Side.iv(t)
+	t.add(Elem.WATER, 1)
+	t.eff = t.eff_now()
+	var two := Side.iv(t)
+	ok("SIDE-01", base > 0.0 and is_equal_approx(one, base) and is_equal_approx(two, base / 2.0),
+		"곁공격 간격 = %s초 ÷ 속성 종류 수 (1종 %.2f초, 2종 %.2f초)" % [base, one, two])
+	_clear()
+	# 조준(오른쪽) 밖, 위쪽 150에 있는 구체를 친다. 효과(화상)가 실린다.
+	var ft := _tower(c + Vector2(-300, 0), Elem.FIRE, 3, Vector2.RIGHT)
+	var far := _orb(ft.position + Vector2(0, -250), 1e6)
+	var near := _orb(ft.position + Vector2(0, -150), 1e6)
+	_grid.call()
+	ft.side_cd = 0.0
+	ft.side_n = 0
+	main.side_big_t = 0.0
+	Side.tick(ft, 0.01)
+	var hit_near: bool = near.hp < 1e6 and far.hp >= 1e6 and near.burn_t > 0.0
+	var credited: bool = float(ft.src.get("share:side", 0.0)) > 0.0
+	var reset: bool = is_equal_approx(ft.side_cd, Side.iv(ft))
+	ok("SIDE-02", hit_near and credited and reset,
+		"곁공격: 조준과 상관없이 둘레 가장 가까운 구체 하나, 효과 실림·피해 출처 곁공격 (맞힘 %s·출처 %s·간격 %s)" % [hit_near, credited, reset])
+	_clear()
+	# 큰 곁공격: side_big_n번째는 여러 구체를 맞힌다
+	var bt := _tower(c + Vector2(-300, 0), Elem.FIRE, 3, Vector2.RIGHT)
+	var group: Array = []
+	for i in 4:
+		group.append(_orb(bt.position + Vector2(-40 + i * 30, -150), 1e6))
+	_grid.call()
+	bt.side_cd = 0.0
+	bt.side_n = int(Rules.t("side_big_n")) - 1
+	main.side_big_t = 0.0
+	Side.tick(bt, 0.01)
+	var all_hit := true
+	for o in group:
+		all_hit = all_hit and o.hp < 1e6
+	var big_src: bool = float(bt.src.get("share:side_big", 0.0)) > 0.0
+	var locked: bool = main.side_big_t > 0.0 and bt.side_n == 0
+	ok("SIDE-03", all_hit and big_src and locked,
+		"큰 곁공격: %d번째 곁공격은 여러 구체를 함께 맞힘 (전부 맞음 %s·출처 %s·차례 초기화 %s)" % [int(Rules.t("side_big_n")), all_hit, big_src, locked])
+	# 화면에 큰 곁공격이 이미 있으면 다른 오브젝트는 보통 곁공격, 차례는 남김
+	var ot := _tower(c + Vector2(-300, 60), Elem.WATER, 3, Vector2.RIGHT)
+	var hp0: Array = group.map(func(o): return o.hp)
+	ot.side_cd = 0.0
+	ot.side_n = int(Rules.t("side_big_n")) - 1
+	Side.tick(ot, 0.01)
+	var n_hit := 0
+	for i in group.size():
+		if group[i].hp < hp0[i]:
+			n_hit += 1
+	var waits: bool = n_hit == 1 and ot.side_n == int(Rules.t("side_big_n")) - 1 and float(ot.src.get("share:side_big", 0.0)) == 0.0
+	ok("SIDE-04", waits, "큰 곁공격은 화면에 하나씩: 다른 오브젝트는 보통 곁공격, 차례는 다음으로 미룸 (맞은 수 %d)" % n_hit)
+	main.side_big_t = 0.0
+	_clear()
 
 
 # ---------- 기록·도감·화면 글 ----------

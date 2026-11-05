@@ -79,6 +79,9 @@ var mirror_src: Object = null  # 옆 환영 오브젝트가 비춘 상: 다음 �
 var mirror_t := 0.0
 var mirror_f := 0.0
 var aff_cd := 0.0  # 상성 둘레 효과(눈보라·비바람·증기) 다시 쓸 때까지 (Share.aff_hit)
+var side_cd := 1.0  # 곁공격까지 남은 시간 (Side)
+var side_n := 0  # 지난 큰 곁공격 뒤 곁공격 수 (Side)
+var side_big_fx := 0.0  # 큰 곁공격 번쩍임
 var chain_end := Vector2.ZERO  # 연쇄 번개가 마지막으로 친 자리
 var later: Array = []  # [남은 초, Callable]: 잠시 뒤 효과 (시간 되풀이, Share.on_hit)
 var main: Node
@@ -1615,6 +1618,8 @@ func _pincer(o: Orb) -> void:
 
 ## 특징 공유: 잠시 뒤 효과(시간 되풀이)·빛줄기 간격 (Share).
 func _share_tick(delta: float) -> void:
+	Side.tick(self, delta)
+	side_big_fx = maxf(side_big_fx - delta, 0.0)
 	light_cd = maxf(light_cd - delta, 0.0)
 	mirror_cd = maxf(mirror_cd - delta, 0.0)
 	if mirror_t > 0.0:
