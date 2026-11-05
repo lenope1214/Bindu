@@ -84,6 +84,6 @@ func _initialize() -> void:
 func settle() -> void:
 	for i in 6:
 		main.touch_ui = touch
-		main._process(0.0)
+		main.frame_system._process(0.0)
 		await process_frame
 	RenderingServer.force_draw()

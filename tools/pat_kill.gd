@@ -30,7 +30,7 @@ func _initialize():
 				main.wave_time = 10.0
 				main.to_spawn = 0
 				main.core_hp = 99999
-				var c0: Vector2 = main.center()
+				var c0: Vector2 = main.viewport_system.center()
 				main.picked = {"e": e, "lv": 1}
 				main.interaction_system._place_tower(c0 + Vector2(-150, 0), Vector2.LEFT)
 				var t = main.towers.get_child(0)

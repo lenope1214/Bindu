@@ -68,8 +68,8 @@ func _orb(p: Vector2, hp: float, kind := Orb.Kind.NORMAL, spd := 0.0) -> Orb:
 	var o := Orb.new()
 	o.main = main
 	o.position = p
-	o.target = main.center()
-	o.from_a = (p - main.center()).angle()
+	o.target = main.viewport_system.center()
+	o.from_a = (p - main.viewport_system.center()).angle()
 	o.setup(kind, hp, spd)
 	main.orbs.add_child(o)
 	return o
@@ -121,7 +121,7 @@ func _initialize():
 
 func _cards() -> void:
 	_fresh()
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	_tower(c + Vector2(-200, 0))
 	var bad3 := 0
 	var no_elem := 0
@@ -160,7 +160,7 @@ func _cards() -> void:
 		only_elem = only_elem and main.offer.all(func(cd): return cd["type"] == "elem")
 	ok("CARD-04", only_elem, "오브젝트가 없으면 속성 카드만")
 	_fresh(30)
-	_tower(main.center() + Vector2(120, 0))
+	_tower(main.viewport_system.center() + Vector2(120, 0))
 	var valid_links := true
 	for i in 1000:
 		var rolled: Dictionary = main.cards_system._roll_card()
@@ -212,7 +212,7 @@ func _cards() -> void:
 
 func _elements() -> void:
 	_fresh()
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var t := _tower(c + Vector2(-200, 0), Elem.WATER, 2)
 	ok("ELEM-01", t.pattern == "shot" and t.elements == {Elem.WATER: 2} and t.plv == 1, "빈 곳에 속성 카드 → 직선탄 + 그 속성 (%s)" % t.title())
 
@@ -260,7 +260,7 @@ func _elements() -> void:
 ## 속성 Lv5 값 (2026-11-01): 금속은 맞힌 피해 +8%/레벨, 어둠 약화는 +20% + 4%/레벨, 물 감속은 0.85 - 0.03/레벨
 func _elem_lv5() -> void:
 	_clear()
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var mt := _tower(c + Vector2(-200, 0), Elem.METAL, 5)
 	var hc := mt.hit_calc()
 	var metal_ok := is_equal_approx(hc["metal"], hc["one"] * 0.4)
@@ -289,7 +289,7 @@ func _no_fixed_zone() -> void:
 	_fresh()
 	Meta.rules = 3  # 속성 종류 제한 없음
 	main.run_flow_system._apply_rules()
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	main.wave_active = true
 	main.phase = main.Phase.WAVE
 	main.to_spawn = 0
@@ -306,7 +306,7 @@ func _no_fixed_zone() -> void:
 		_orb(c + Vector2(-330, 30), 99999.0, Orb.Kind.NORMAL, 30.0)
 		var kinds := {}
 		for i in 180:
-			main._sim_step(1.0 / 60.0)
+			main.combat_system._sim_step(1.0 / 60.0)
 			for z in main.zones.get_children():
 				kinds[z.kind] = true
 		for k in kinds:
@@ -324,10 +324,10 @@ func _no_fixed_zone() -> void:
 ## 특징 공유 (2026-11-03): 특징이 같은 오브젝트의 다른 속성 효과를 실어 나른다. 실어 나른 효과는 특징을 다시 타지 않는다.
 func _share() -> void:
 	_fresh()
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var _grid := func():
-		main.targets = main.orbs.get_children()
-		main._build_grid()
+		main.combat_system.targets = main.orbs.get_children()
+		main.combat_system._build_grid()
 	# 세기: Lv1 60% · Lv2 80% · Lv3 이상 100% x 속성별 차등(피해 특징은 낮게)
 	var lt := _tower(c + Vector2(-300, -200), Elem.FIRE, 1)
 	var k1 := Share.k(lt, Elem.FIRE)
@@ -346,7 +346,7 @@ func _share() -> void:
 	var a1 := _orb(c + Vector2(0, 0), 1e6)
 	var a2 := _orb(c + Vector2(40, 0), 1e6)
 	_grid.call()
-	main.arc(a1, 1.0, et)
+	main.spawning_system.arc(a1, 1.0, et)
 	var arc_ok: bool = a2.burn_t > 0.0 and a2.burn_rx
 	ok("SHR-02", arc_ok, "전기 튐: 튄 전류가 같은 오브젝트의 화상도 옮김, 옮긴 효과는 1세대만 (화상 %.1f초, 표시 %s)" % [a2.burn_t, a2.burn_rx])
 	# 1세대: 옮긴 화상은 다시 번지지 않음
@@ -471,8 +471,8 @@ func _share() -> void:
 ## 상성 (꼬리표, 2026-11-04)
 func _affinity(c: Vector2) -> void:
 	var _grid := func():
-		main.targets = main.orbs.get_children()
-		main._build_grid()
+		main.combat_system.targets = main.orbs.get_children()
+		main.combat_system._build_grid()
 	var ns := 0
 	var nw := 0
 	for i in Elem.ALL.size():
@@ -496,7 +496,7 @@ func _affinity(c: Vector2) -> void:
 	var e1 := _orb(c, 1e6)
 	var e2 := _orb(c + Vector2(115, 0), 1e6, Orb.Kind.NORMAL, 50.0)
 	_grid.call()
-	main.arc(e1, 10.0, st)
+	main.spawning_system.arc(e1, 10.0, st)
 	ok("AFF-03", e2.hp < 1e6 and e2.stagger_t > 0.0, "감전: 전기가 115 떨어진 구체까지 튀고 멈칫 (%.0f, 멈칫 %.2f)" % [1e6 - e2.hp, e2.stagger_t])
 	_clear()
 	# 증기: 화상 절반, 둘레 구체도 느려짐
@@ -594,8 +594,8 @@ func _affinity(c: Vector2) -> void:
 ## 실제 연상 개편 (2026-11-04): 나르는 특징(자리) · 바꾸는 특징 · 휘감기 · 밀쳐냄 · 불 번짐 · 이름 있는 자리
 func _real(c: Vector2) -> void:
 	var _grid := func():
-		main.targets = main.orbs.get_children()
-		main._build_grid()
+		main.combat_system.targets = main.orbs.get_children()
+		main.combat_system._build_grid()
 	var all_e: Array = Share.SITE_E + Share.MOD_E
 	var split_ok: bool = Share.SITE_E.size() == 11 and Share.MOD_E.size() == 6 and Elem.ALL.all(func(e): return all_e.count(e) == 1)
 	ok("REAL-01", split_ok, "특징 17개 = 나르는 11 + 바꾸는 6 (겹침 없음)")
@@ -682,7 +682,7 @@ func _real(c: Vector2) -> void:
 
 func _patterns() -> void:
 	_fresh()
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var t := _tower(c + Vector2(-200, 0))
 	var m1 := t.set_pattern("spray")
 	var other := t.can_pattern("laser")
@@ -711,7 +711,7 @@ func _patterns() -> void:
 ## 공격방식마다: 다가오는 구체에 실제로 피해를 준다.
 func _attacks() -> void:
 	_fresh(5)
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var silent := []
 	for p in Pat.PATTERN_IDS:
 		_clear()
@@ -723,7 +723,7 @@ func _attacks() -> void:
 		main.phase = main.Phase.WAVE
 		main.to_spawn = 0
 		for i in 360:  # 6초
-			main._sim_step(1.0 / 60.0)
+			main.combat_system._sim_step(1.0 / 60.0)
 			if not is_instance_valid(o) or o.hp < o.max_hp:
 				break
 		if not is_instance_valid(o) or o.hp >= o.max_hp:
@@ -740,7 +740,7 @@ func _attacks() -> void:
 
 ## 방향성 공격 화면 끝까지 (2026-11-04): 직선탄·돌풍·물줄기·연쇄 번개가 예전 사거리 밖(700) 구체도 맞히고, 그 거리에선 피해가 줄어든다
 func _far() -> void:
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var reach := []
 	var weak := []
 	for p in Tower.FAR_PATS:
@@ -756,11 +756,11 @@ func _far() -> void:
 			main.phase = main.Phase.WAVE
 			main.to_spawn = 0
 			for i in 480:
-				main._sim_step(1.0 / 60.0)
+				main.combat_system._sim_step(1.0 / 60.0)
 				if not is_instance_valid(o) or o.hp < o.max_hp:
 					break
 			for i in 30:  # 첫 피해 뒤 조금 더 (물줄기·연속 피해 몫)
-				main._sim_step(1.0 / 60.0)
+				main.combat_system._sim_step(1.0 / 60.0)
 			dealt.append(o.max_hp - o.hp if is_instance_valid(o) else 0.0)
 			await process_frame
 		if dealt[1] <= 0.0:
@@ -780,7 +780,7 @@ func _far() -> void:
 ## 블랙홀 중력 우물 (2026-11-01): 사거리 안 구체가 가장 빽빽한 곳에 떨어지고, 안 구체가 남에게 받은 피해 20%를 모았다가 끝에 나눠 넣음
 func _well() -> void:
 	_fresh()
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var vt := _tower(c + Vector2(-100, 0), Elem.DARK, 1, Vector2.LEFT)
 	vt.set_pattern("vortex")
 	var other := _tower(c + Vector2(-100, 200), Elem.FIRE)
@@ -788,11 +788,11 @@ func _well() -> void:
 	var pack := []
 	for i in 5:
 		pack.append(_orb(c + Vector2(-350, 150) + Vector2(i * 8, i * 6), 1e6))
-	main.targets = [lone] + pack
-	main._build_grid()
+	main.combat_system.targets = [lone] + pack
+	main.combat_system._build_grid()
 	var spots := vt.well_spots(1)
 	var at_pack: bool = not spots.is_empty() and spots[0].distance_to(pack[0].position) < 60.0
-	var z: Zone = main.spawn_zone("vortex", 1, spots[0] if not spots.is_empty() else c, vt)
+	var z: Zone = main.spawning_system.spawn_zone("vortex", 1, spots[0] if not spots.is_empty() else c, vt)
 	z.well()
 	var o: Orb = pack[2]
 	var before := z.store
@@ -840,7 +840,7 @@ func _fade() -> void:
 ## 다중 발사가 짝수 개(다중 1·3개)여도 조준한 정면의 먼 작은 구체를 맞힌다 (2026-11-01: 가운데가 비어 빗나가던 것)
 func _multi_center() -> void:
 	_fresh(5)
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var far := {"shot": 330.0, "thorn": 400.0, "shard": 320.0, "iron": 400.0, "laser": 450.0, "stream": 190.0, "lob": 260.0}
 	var miss := []
 	for p in far:
@@ -858,7 +858,7 @@ func _multi_center() -> void:
 			main.phase = main.Phase.WAVE
 			main.to_spawn = 0
 			for i in 300:  # 5초
-				main._sim_step(1.0 / 60.0)
+				main.combat_system._sim_step(1.0 / 60.0)
 				if not is_instance_valid(o) or o.hp < o.max_hp:
 					break
 			if is_instance_valid(o) and o.hp >= o.max_hp:
@@ -875,7 +875,7 @@ func _multi_center() -> void:
 
 func _mods_area() -> void:
 	_fresh()
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	# MOD-07 관통 (탄 아닌 공격): 보호막을 더 깎고 갑옷이 빼는 피해가 준다
 	var a := _tower(c + Vector2(-200, 0))
 	a.set_pattern("spray")
@@ -910,7 +910,7 @@ func _mods_area() -> void:
 	main.phase = main.Phase.WAVE
 	main.to_spawn = 0
 	for i in 90:
-		main._sim_step(1.0 / 60.0)
+		main.combat_system._sim_step(1.0 / 60.0)
 	await process_frame
 	ok("MOD-08", t.src.get("mod:bounce", 0.0) > 0.0 and is_equal_approx(t.bounce_iv(), Rules.t("bounce_iv")),
 		"튕김 분사: 튕김 탄 피해 %.2f (%.1f초마다)" % [t.src.get("mod:bounce", 0.0), t.bounce_iv()])
@@ -921,7 +921,7 @@ func _mods_area() -> void:
 	w.add_mod("rapid")
 	w.add_mod("rapid")
 	w.add_mod("size")
-	var z: Zone = main.spawn_zone("rock", 1, c, w)
+	var z: Zone = main.spawning_system.spawn_zone("rock", 1, c, w)
 	var rk: float = z._rapid()
 	var life: float = z.max_life
 	ok("MOD-09", is_equal_approx(rk, 1.0 + 2.0 * Rules.rapid_k) and is_equal_approx(life, 12.0 * w.sz())
@@ -951,7 +951,7 @@ func _mods_area() -> void:
 	g.aim = Vector2.RIGHT
 	var dirs := []
 	for i in 60:
-		main._sim_step(1.0 / 60.0)
+		main.combat_system._sim_step(1.0 / 60.0)
 		for p in main.projectiles.get_children():
 			if p.kind == "gust" and not p in dirs:
 				dirs.append(p)
@@ -967,7 +967,7 @@ func _mods_area() -> void:
 # 반응: 기존 방향 고정과 다른 전방위 조준·최종 감산·모드/저장 경계.
 func _reflex() -> void:
 	_fresh()
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var card := {"type": "mod", "id": "reflex"}
 	var t := _tower(c + Vector2(-100, 0), Elem.WIND)
 	var other := _tower(c + Vector2(100, 0), Elem.WATER)
@@ -1073,17 +1073,17 @@ func _reflex() -> void:
 	t = _tower(c + Vector2(-100, 0), Elem.WATER)
 	t.set_pattern("spray")
 	victim = _orb(t.position + Vector2.LEFT * 100.0, 1000.0)
-	main._resolve(0.1)
+	main.combat_system._resolve(0.1)
 	var fixed_hp := victim.hp
 	t.add_mod("reflex")
-	main._resolve(0.1)
+	main.combat_system._resolve(0.1)
 	ok("MOD-13", is_equal_approx(fixed_hp, 1000.0) and victim.hp < fixed_hp, "반응: 실제 전투 분사 후방 구체 명중 (기존 방향 고정은 0)")
 
 
 # PR #11 리뷰: 기존 검사가 놓친 쿨다운·실제 사거리·처형 경계를 재현한다.
 func _reflex_review_regressions() -> void:
 	_fresh()
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var t := _tower(c, Elem.FIRE)
 	t.add(Elem.WOOD, 1)
 	t.eff = t.eff_now()
@@ -1145,7 +1145,7 @@ func _reflex_review_regressions() -> void:
 
 func _mods_links() -> void:
 	_fresh()
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var t := _tower(c + Vector2(-200, 0))
 	for i in Rules.max_mod:
 		t.add_mod("rapid")
@@ -1216,11 +1216,11 @@ func _mods_links() -> void:
 	ch.add_charge(_orb(c + Vector2(-150, 0), 10.0, Orb.Kind.TANK))
 	var c7 := ch.charge
 	ch.add_charge(_orb(c + Vector2(-150, 20), 10.0, Orb.Kind.BOSS))
-	main.targets = main.orbs.get_children()
-	main._build_grid()
+	main.combat_system.targets = main.orbs.get_children()
+	main.combat_system._build_grid()
 	var f: Array = ch._fire_mul(true)
-	main.targets = []
-	main._build_grid()
+	main.combat_system.targets = []
+	main.combat_system._build_grid()
 	ok("TRIG-06", is_equal_approx(c7, 8.0) and is_equal_approx(f[0], 5.0) and f[2] == "trig:charge" and ch.charge == 0.0 and ch.charge_need() == 15,
 		"축적: 처치 1·특수 2·보스 8, 15 차면 다음 공격 x%.1f, 쏘면 비움 (8 → %.0f)" % [f[0], c7])
 
@@ -1260,11 +1260,11 @@ func _mods_links() -> void:
 
 func _stars() -> void:
 	_clear()
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var st := _tower(c + Vector2(-200, 0), Elem.STAR)
 	var fi := _tower(c + Vector2(-100, 0), Elem.FIRE)
 	var wa := _tower(c + Vector2(-200, 100), Elem.WATER)
-	main.star_towers = [st]
+	main.combat_system.star_towers = [st]
 	var o := _orb(c + Vector2(-60, 0), 1e6)
 	var d0 := fi.dealt
 	fi.hit(o, 1.0)
@@ -1281,7 +1281,7 @@ func _stars() -> void:
 	sx.free()
 	var rs := st.star_rate(true)
 	var st2 := _tower(c + Vector2(-150, -80), Elem.STAR)
-	main.star_towers = [st, st2]
+	main.combat_system.star_towers = [st, st2]
 	st.star_sum = 0.0
 	d0 = fi.dealt
 	fi.hit(o, 1.0)
@@ -1290,7 +1290,7 @@ func _stars() -> void:
 		and is_equal_approx(st.star_sum, got * 0.5 * 0.15) and is_equal_approx(st2.star_sum, got * 0.5 * 0.15),
 		"별빛 상한: Lv5 %.3f = Lv11 %.3f, 자기 %.2f, 별 둘이면 반씩 (%.3f / %.3f)" % [r5b, r11, rs, st.star_sum, st2.star_sum])
 	st2.free()
-	main.star_towers = [st]
+	main.combat_system.star_towers = [st]
 
 	# 행성: 별 + 불 = 불의 행성, 불 몫만 30%
 	st.add(Elem.FIRE, 1)
@@ -1321,14 +1321,14 @@ func _stars() -> void:
 	var ph0 = main.phase
 	main.phase = main.Phase.CHOOSE
 	for i in 50:
-		main._process(0.016)
+		main.frame_system._process(0.016)
 	main.phase = ph0
 	ok("STAR-06", fx_on and st.nova_fx == 0.0 and st.fx["laser"] == 0.0,
 		"웨이브 밖에서도 초신성·공격 그림 사라짐 (%.2f)" % st.nova_fx)
 	# 초신성 예고: 별빛 85%부터 터질 자리(지금 터지면 맞을 구체)를 골라 두고, 그 아래면 없음
 	var aim_o := _orb(st.position + Vector2(-200, 0), 1e6)
-	main.targets = [aim_o]
-	main._build_grid()
+	main.combat_system.targets = [aim_o]
+	main.combat_system._build_grid()
 	st.star_sum = st.star_need() * 0.5
 	st._nova_aim_tick(0.3)
 	var aim_lo = st.nova_aim
@@ -1340,7 +1340,7 @@ func _stars() -> void:
 		"별빛 게이지 고리가 속성 점(RADIUS+7)과 안 겹치고 굵음 (+%s, 두께 %s)" % [Tower.GAUGE_GAP, Tower.GAUGE_W])
 	st.nova_aim = null
 	aim_o.free()
-	main.targets = []
+	main.combat_system.targets = []
 	# 보스 상한: 초신성 한 번(행성 효과·화상 포함)이 보스에게는 최대 체력의 star_boss_cap(15%)까지. 옆 일반 구체는 그대로
 	st.star_sum = st.star_need()
 	st.star_e = {Elem.FIRE: st.star_sum}
@@ -1349,8 +1349,8 @@ func _stars() -> void:
 	var mate := _orb(c + Vector2(-260, 200), 1e6)
 	var bh0 := boss.hp
 	var mh0 := mate.hp
-	main.targets = main.orbs.get_children().filter(func(o): return is_instance_valid(o) and not o.is_queued_for_deletion())
-	main._build_grid()
+	main.combat_system.targets = main.orbs.get_children().filter(func(o): return is_instance_valid(o) and not o.is_queued_for_deletion())
+	main.combat_system._build_grid()
 	st._supernova(boss)
 	var bcap := boss.max_hp * Rules.t("star_boss_cap")
 	var blost := bh0 - boss.hp  # 바로 깎인 몫 (행성 화상은 상한에서 미리 빼 두므로 이보다 적게 남는다)
@@ -1359,8 +1359,8 @@ func _stars() -> void:
 		"보스 상한: 체력 %.0f 중 %.0f(상한 %.0f), 옆 구체 %.0f" % [boss.max_hp, blost, bcap, mh0 - mate.hp])
 	boss.free()
 	mate.free()
-	main.targets = []
-	main._build_grid()
+	main.combat_system.targets = []
+	main.combat_system._build_grid()
 
 	# 행성 제한: 같은 행성은 하나, 행성은 3개까지
 	var s2 := _tower(c + Vector2(100, -150), Elem.STAR)
@@ -1388,7 +1388,7 @@ func _stars() -> void:
 	ok("STAR-05", free_before and Tower.star_count(main) == 3 and main.cards_system.star_full() and not w2.can_take(star_card) and why5.contains("합쳐")
 		and w1.can_take(star_card) and not main.cards_system._star_blocked(star_card),
 		"별·행성 합쳐 3개 (%d개, %s)" % [Tower.star_count(main), why5])
-	main.star_towers = []
+	main.combat_system.star_towers = []
 
 
 # ---------- 웨이브 ----------
@@ -1411,7 +1411,7 @@ func _waves() -> void:
 	var inside := true
 	var widest := 0.0
 	for i in 400:
-		var a: float = main._roll_orb(11)["a"]
+		var a: float = main.spawning_system._roll_orb(11)["a"]
 		var off: float = minf(absf(angle_difference(a, 1.0)), absf(angle_difference(a, 3.0)))
 		widest = maxf(widest, off)
 		inside = inside and off <= sp + 0.0001
@@ -1428,21 +1428,21 @@ func _waves() -> void:
 		main.wave = w
 		var s := {}
 		for i in 400:
-			s[main._roll_kind()] = true
+			s[main.spawning_system._roll_kind()] = true
 		kinds[w] = s
 	ok("WAVE-07", kinds[3].keys() == [Orb.Kind.NORMAL] and kinds[4].has(Orb.Kind.FAST) and not kinds[4].has(Orb.Kind.TANK) and kinds[7].has(Orb.Kind.TANK),
 		"구체 종류: 빠른 4웨이브·단단한 7웨이브부터")
 
 	# 보스: 5웨이브마다 마지막 구체, 쉬는 시간에 미리 정함
 	main.wave = 4
-	main._plan_boss()
+	main.spawning_system._plan_boss()
 	var planned: bool = main.boss_plan.get("wave", -1) == 5
 	main.wave = 5
 	main.to_spawn = 1
 	main.spawn_timer = 0.0
 	main.wave_active = true
 	main.phase = main.Phase.WAVE
-	main._sim_step(1.0 / 60.0)
+	main.combat_system._sim_step(1.0 / 60.0)
 	var boss: Orb = null
 	for o in main.orbs.get_children():
 		if o.kind == Orb.Kind.BOSS:
@@ -1462,7 +1462,7 @@ func _wave_start_guard() -> void:
 	main.mp_next_extra = 3
 	main.run_flow_system._start_wave()
 	var empty_blocked: bool = main.phase == main.Phase.READY and main.wave == 0 and main.mp_next_extra == 3
-	var t := _tower(main.center() + Vector2(120, 0), Elem.FIRE, 1, Vector2.UP)
+	var t := _tower(main.viewport_system.center() + Vector2(120, 0), Elem.FIRE, 1, Vector2.UP)
 	main.run_flow_system._start_wave()
 	var away_blocked: bool = main.phase == main.Phase.READY and main.wave == 0
 	t.dir = Vector2.RIGHT
@@ -1489,10 +1489,10 @@ func _wave_start_guard() -> void:
 
 func _orbs_cc() -> void:
 	_fresh()
-	var o := _orb(main.center() + Vector2(300, 0), 10.0, Orb.Kind.NORMAL, 50.0)
+	var o := _orb(main.viewport_system.center() + Vector2(300, 0), 10.0, Orb.Kind.NORMAL, 50.0)
 	o.slow(0.05, 2.0)
 	var floor_n := o.slow_factor
-	var b := _orb(main.center() + Vector2(300, 50), 10.0, Orb.Kind.BOSS, 50.0)
+	var b := _orb(main.viewport_system.center() + Vector2(300, 50), 10.0, Orb.Kind.BOSS, 50.0)
 	b.slow(0.05, 2.0)
 	ok("CC-01", is_equal_approx(floor_n, Orb.SLOW_FLOOR) and is_equal_approx(b.slow_factor, 0.5), "감속은 최대 70%%, 보스 50%% (%.2f·%.2f)" % [floor_n, b.slow_factor])
 
@@ -1503,12 +1503,12 @@ func _orbs_cc() -> void:
 		durs.append(o.root_timer if hit else -1.0)
 	ok("CC-02", durs == [1.0, 0.5, 0.25, -1.0], "기절·속박·빙결: 100%%→50%%→25%% 뒤 면역 %s" % str(durs))
 
-	var s := _orb(main.center() + Vector2(300, -50), 10.0, Orb.Kind.NORMAL, 50.0)
+	var s := _orb(main.viewport_system.center() + Vector2(300, -50), 10.0, Orb.Kind.NORMAL, 50.0)
 	s.sturdy = true
 	s.root(1.0)
 	ok("CC-03", is_equal_approx(s.root_timer, 0.5), "굳센 구체는 기절 시간 절반")
 
-	var kb := _orb(main.center() + Vector2(-300, 0), 10.0, Orb.Kind.BOSS, 50.0)
+	var kb := _orb(main.viewport_system.center() + Vector2(-300, 0), 10.0, Orb.Kind.BOSS, 50.0)
 	var k0 := kb.position
 	kb.knock((kb.target - kb.position).normalized() * 100.0)  # 중앙 쪽
 	var k_in := kb.position.distance_to(k0)
@@ -1519,7 +1519,7 @@ func _orbs_cc() -> void:
 	o.resist_e = Elem.FIRE
 	ok("ORB-01", is_equal_approx(o.resist_mul({Elem.FIRE: 1}), 0.4) and is_equal_approx(o.resist_mul({Elem.FIRE: 1, Elem.WATER: 1}), 0.7) and o.resist_mul({Elem.WATER: 1}) == 1.0,
 		"저항 구체: 그 속성 비중만큼 피해 최대 60% 감소")
-	var sh := _orb(main.center() + Vector2(300, 80), 10.0)
+	var sh := _orb(main.viewport_system.center() + Vector2(300, 80), 10.0)
 	sh.shield = 3.0
 	sh.hurt(5.0)
 	ok("ORB-02", is_equal_approx(sh.hp, 8.0) and sh.shield == 0.0, "보호막이 피해를 먼저 흡수")
@@ -1537,53 +1537,53 @@ func _score_core() -> void:
 	_fresh()
 	main.wave_active = true
 	main.phase = main.Phase.WAVE
-	var o := _orb(main.center() + Vector2(300, 0), 3.0)
+	var o := _orb(main.viewport_system.center() + Vector2(300, 0), 3.0)
 	o.hp = 0.0
-	main._resolve(1.0 / 60.0)
+	main.combat_system._resolve(1.0 / 60.0)
 	var first: int = main.score
 	ok("SCORE-01", first == int(3.0 * 10 * 1.1) and main.combo == 1, "처치 점수 = 최대 체력x10 x 콤보 배율 (%d)" % first)
-	var o2 := _orb(main.center() + Vector2(300, 40), 3.0)
+	var o2 := _orb(main.viewport_system.center() + Vector2(300, 40), 3.0)
 	o2.hp = 0.0
-	main._resolve(1.0 / 60.0)
+	main.combat_system._resolve(1.0 / 60.0)
 	ok("SCORE-02", main.combo == 2 and main.score - first == int(30 * 1.2), "3초 안 다음 처치는 콤보 +1, 처치마다 점수 +10%")
 	main.combo = 25
-	ok("SCORE-03", is_equal_approx(main.combo_mul(), 3.0), "콤보 20부터 x3")
+	ok("SCORE-03", is_equal_approx(main.field_view_system.combo_mul(), 3.0), "콤보 20부터 x3")
 	main.combo = 2
 	main.combo_t = 0.01
 	main.to_spawn = 5  # 웨이브가 끝나지 않게
 	main.spawn_timer = 99.0
-	main._sim_step(0.1)
-	var o3 := _orb(main.center() + Vector2(300, 80), 3.0)
+	main.combat_system._sim_step(0.1)
+	var o3 := _orb(main.viewport_system.center() + Vector2(300, 80), 3.0)
 	o3.hp = 0.0
-	main._resolve(1.0 / 60.0)
+	main.combat_system._resolve(1.0 / 60.0)
 	ok("SCORE-04", main.combo == 1, "3초 넘게 처치가 없으면 콤보가 끊김")
 
 	# 보스 처치: 중앙 +2, 새로고침 +1
 	main.core_hp = 5
 	main.bonus_rerolls = 0
-	var bo := _orb(main.center() + Vector2(300, 0), 3.0, Orb.Kind.BOSS)
+	var bo := _orb(main.viewport_system.center() + Vector2(300, 0), 3.0, Orb.Kind.BOSS)
 	bo.hp = 0.0
-	main._resolve(1.0 / 60.0)
+	main.combat_system._resolve(1.0 / 60.0)
 	ok("BOSS-01", main.core_hp == 7 and main.bonus_rerolls == 1, "보스 처치: 중앙 체력 +2, 새로고침 +1")
 
 	# 중앙에 닿으면 체력 -1(보스 -3), 누수 기록
 	_clear()
 	main.core_hp = 10
 	main.wave_leaks.clear()
-	_orb(main.center(), 5.0)
-	main._resolve(1.0 / 60.0)
+	_orb(main.viewport_system.center(), 5.0)
+	main.combat_system._resolve(1.0 / 60.0)
 	var after_n: int = main.core_hp
-	_orb(main.center(), 5.0, Orb.Kind.BOSS)
-	main._resolve(1.0 / 60.0)
+	_orb(main.viewport_system.center(), 5.0, Orb.Kind.BOSS)
+	main.combat_system._resolve(1.0 / 60.0)
 	ok("CORE-01", after_n == 9 and main.core_hp == 6 and main.wave_leaks.size() == 2, "구체가 중앙에 닿으면 -1, 보스 -3, 누수 기록")
 
 	# 웨이브별 중앙 피해: 실드에 막힌 것도 닿은 수·피해엔 들어가고 깎인 체력엔 안 들어감, 판 기록(leaks)·이어하기 저장
 	main.leak_log.clear()
 	main.shield = 1
-	_orb(main.center(), 5.0, Orb.Kind.FAST)
-	main._resolve(1.0 / 60.0)
-	main._log_wave()
-	var recs: Array = main._leak_records()
+	_orb(main.viewport_system.center(), 5.0, Orb.Kind.FAST)
+	main.combat_system._resolve(1.0 / 60.0)
+	main.combat_system._log_wave()
+	var recs: Array = main.combat_system._leak_records()
 	var lr: Dictionary = recs[-1] if recs.size() == 1 else {}
 	var lk_ok: bool = lr.get("w") == main.wave and lr.get("n") == 3 and lr.get("dmg") == 5 and lr.get("lost") == 4 and lr.get("hp") == 6 \
 		and lr.get("kinds") == {"normal": 1, "boss": 1, "fast": 1} and lr.get("kdmg", {}).get("boss") == 3
@@ -1592,7 +1592,7 @@ func _score_core() -> void:
 	main.persistence_system._save_run()
 	main.leak_log.clear()
 	main.persistence_system._continue_run()
-	ok("ONLINE-05", lk_ok and JSON.stringify(main._leak_records(), "", true) == JSON.stringify(recs, "", true), "웨이브별 중앙 피해 기록(닿은 수·피해·깎인 체력·종류별) → 판 기록 leaks, 이어하기 뒤에도 그대로")
+	ok("ONLINE-05", lk_ok and JSON.stringify(main.combat_system._leak_records(), "", true) == JSON.stringify(recs, "", true), "웨이브별 중앙 피해 기록(닿은 수·피해·깎인 체력·종류별) → 판 기록 leaks, 이어하기 뒤에도 그대로")
 	main.persistence_system._clear_run()
 	main.shield = 0
 
@@ -1602,12 +1602,12 @@ func _score_core() -> void:
 	main.to_spawn = 0
 	main.score = 0
 	main.perk_mode = false
-	main._sim_step(1.0 / 60.0)
+	main.combat_system._sim_step(1.0 / 60.0)
 	ok("WAVE-09", main.score == 4 * 20 and main.phase == main.Phase.CHOOSE and not main.perk_mode, "웨이브 클리어 +웨이브x20점, 다음 쉬는 시간은 카드 고르기")
 	main.wave = 5
 	main.wave_active = true
 	main.phase = main.Phase.WAVE
-	main._sim_step(1.0 / 60.0)
+	main.combat_system._sim_step(1.0 / 60.0)
 	ok("PERK-01", main.perk_mode and main.perk_offer.size() == 3, "보스 웨이브(5의 배수)를 넘기면 특성 3개 중 고르기")
 	main.perk_mode = false
 
@@ -1618,8 +1618,8 @@ func _score_core() -> void:
 	main.core_hp = 1
 	main.to_spawn = 5
 	main.spawn_timer = 99.0
-	_orb(main.center(), 5.0)
-	main._sim_step(1.0 / 60.0)
+	_orb(main.viewport_system.center(), 5.0)
+	main.combat_system._sim_step(1.0 / 60.0)
 	ok("CORE-02", main.phase == main.Phase.GAMEOVER and main.over_label.visible and not FileAccess.file_exists(main.RUN_PATH), "중앙 체력 0이면 게임 오버, 이어하기 저장 지움")
 	main.over_label.visible = false
 	main.wave_active = false
@@ -1743,12 +1743,12 @@ func _core_guard() -> void:
 	var cap: int = main.perks_system._shield_wave()
 	main.perks = {"shield": 1}
 	main.shield = main.perks_system._shield_wave()
-	_orb(main.center(), 5.0)
-	main._resolve(1.0 / 60.0)
+	_orb(main.viewport_system.center(), 5.0)
+	main.combat_system._resolve(1.0 / 60.0)
 	var hp1: int = main.core_hp
 	var sh1: int = main.shield
-	_orb(main.center(), 5.0)
-	main._resolve(1.0 / 60.0)
+	_orb(main.viewport_system.center(), 5.0)
+	main.combat_system._resolve(1.0 / 60.0)
 	ok("PERK-08", cap == 3 and hp1 == main.CORE_MAX_HP and sh1 == 0 and main.core_hp == main.CORE_MAX_HP - 1,
 		"실드: 웨이브마다 1칸(겹치면 +1, 최대 3), 맞으면 체력 대신 실드가 깎임 (최대 %d, 막은 뒤 체력 %d, 다음 %d)" % [cap, hp1, main.core_hp])
 
@@ -1756,16 +1756,16 @@ func _core_guard() -> void:
 	main.wave_active = true
 	main.phase = main.Phase.WAVE
 	var no_wall: bool = not main.perks_system._has_wall()
-	var t := _tower(main.center() + Vector2(0, 200))
+	var t := _tower(main.viewport_system.center() + Vector2(0, 200))
 	t.set_pattern("wall")
 	main.perks = {"rampart": 1}
 	main.rampart_left = main.perks_system._rampart_n()
 	var n0: int = main.rampart_left
-	var o := _orb(main.center() + Vector2(main.RAMPART_R, 0), 5.0)
-	main._resolve(1.0 / 60.0)
-	var pushed: bool = o.position.distance_to(main.center()) > main.RAMPART_R + 100.0 and o.walled
-	o.position = main.center() + Vector2(main.RAMPART_R, 0)
-	main._resolve(1.0 / 60.0)  # 한 번 밀린 구체는 다시 막지 않음
+	var o := _orb(main.viewport_system.center() + Vector2(main.RAMPART_R, 0), 5.0)
+	main.combat_system._resolve(1.0 / 60.0)
+	var pushed: bool = o.position.distance_to(main.viewport_system.center()) > main.RAMPART_R + 100.0 and o.walled
+	o.position = main.viewport_system.center() + Vector2(main.RAMPART_R, 0)
+	main.combat_system._resolve(1.0 / 60.0)  # 한 번 밀린 구체는 다시 막지 않음
 	ok("PERK-09", no_wall and n0 == 2 and pushed and main.rampart_left == 1 and main.core_hp == main.CORE_MAX_HP,
 		"성벽: 벽 오브젝트가 있어야 나옴, 조각 = 벽 레벨 합 + 1, 다가온 구체를 한 번 밀어내고 한 조각 부서짐 (조각 %d → %d)" % [n0, main.rampart_left])
 
@@ -1773,10 +1773,10 @@ func _core_guard() -> void:
 	main.wave_active = true
 	main.phase = main.Phase.WAVE
 	main.perks = {"riposte": 1}
-	_orb(main.center(), 5.0)
-	var far := _orb(main.center() + Vector2(100, 0), 1000000.0)
-	main._resolve(1.0 / 60.0)
-	ok("PERK-10", far.hp < 1000000.0 and far.position.distance_to(main.center()) > 100.0 and main.core_hp == main.CORE_MAX_HP - 1,
+	_orb(main.viewport_system.center(), 5.0)
+	var far := _orb(main.viewport_system.center() + Vector2(100, 0), 1000000.0)
+	main.combat_system._resolve(1.0 / 60.0)
+	ok("PERK-10", far.hp < 1000000.0 and far.position.distance_to(main.viewport_system.center()) > 100.0 and main.core_hp == main.CORE_MAX_HP - 1,
 		"반격 파동: 중앙이 맞으면 가까운 구체에 피해·밀어내기")
 
 	_fresh()
@@ -1876,7 +1876,7 @@ func _vary() -> void:
 	var mode_ok: bool = Vary.seal_on and Modes.mul() > 1.0 and not Modes.easy()
 	ok("VARY-06", no_mode_no_seal and mode_ok, "봉인은 모드: 안 켜면 봉인 없음(흐름은 켜짐), 켜면 봉인·어렵게 점수 배율")
 	var counts_ok: bool = Vary.sealed["elem"].size() == 3 and Vary.sealed["pat"].size() == 4 and Vary.sealed["link"].size() == 1
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	_tower(c + Vector2(-200, 0))
 	_tower(c + Vector2(200, 0))
 	_tower(c + Vector2(0, -200))
@@ -1908,7 +1908,7 @@ func _vary() -> void:
 	Vary.event = {"id": "gold", "el": {}, "pt": {}}
 	var gold: bool = Vary.score_k() == 2.0 and Vary.spd_k() > 1.0
 	Vary.event = {"id": "shell", "el": {}, "pt": {}}
-	var shell: bool = main._roll_orb(15)["sturdy"]
+	var shell: bool = main.spawning_system._roll_orb(15)["sturdy"]
 	Vary.event = {}
 	ok("VARY-02", none_yet and planned and active and ecl and gold and shell, "이벤트: 9웨이브 뒤 예고, 10웨이브 뒤 시작해 10웨이브, 일식 빛 x0.6, 황금 점수 x2, 굳은 껍질 모두 굳셈")
 
@@ -1967,11 +1967,13 @@ func _map_on(id: String) -> void:
 
 
 func _maps() -> void:
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	# 친화 카드: 회랑 얼음·물·독이 더 자주, 피해 +15%(속성 레벨 몫·공격방식)
 	_map_on("line")
 	_tower(c + Vector2(-200, 0))
 	_tower(c + Vector2(200, 0))
+	# Sampling must not depend on RNG consumed by earlier UI/sound timing.
+	seed(7)
 	var cnt := {}
 	for i in 1500:
 		main.cards_system._make_choices()
@@ -2000,7 +2002,7 @@ func _maps() -> void:
 	# 소용돌이: 1~5웨이브 한 방향, 6~10 반대. 중앙 1.4배·바깥 0.8배
 	_map_on("spiral")
 	main.wave = 6
-	main._spawn_orb(Orb.Kind.NORMAL)
+	main.spawning_system._spawn_orb(Orb.Kind.NORMAL)
 	var o: Orb = main.orbs.get_child(main.orbs.get_child_count() - 1)
 	var flip_ok: bool = MapRule.swirl_sign(5) == 1.0 and MapRule.swirl_sign(6) == -1.0 and MapRule.swirl_sign(11) == 1.0 and o.swirl < 0.0
 	var spd_ok := is_equal_approx(MapRule.spiral_speed(60.0), Rules.t("map_spiral_in")) and is_equal_approx(MapRule.spiral_speed(900.0), Rules.t("map_spiral_out"))
@@ -2014,18 +2016,18 @@ func _maps() -> void:
 		main.wave = 1
 		var ins: Array = []
 		var arr: Array = []
-		var base: Dictionary = main._roll_orb(1)
+		var base: Dictionary = main.spawning_system._roll_orb(1)
 		for a in [0.0, PI / 2.0, atan2(360.0, 640.0), PI, PI * 1.5]:
 			var plan: Dictionary = base.duplicate()
 			plan["a"] = a
-			main._spawn_orb(Orb.Kind.NORMAL, plan)
+			main.spawning_system._spawn_orb(Orb.Kind.NORMAL, plan)
 			var lo: Orb = main.orbs.get_child(main.orbs.get_child_count() - 1)
 			var t_in := -1.0
 			var t := 0.0
-			while lo.position.distance_to(main.center()) > 20.0 and t < 120.0:
+			while lo.position.distance_to(main.viewport_system.center()) > 20.0 and t < 120.0:
 				lo.step(0.02)
 				t += 0.02
-				if t_in < 0.0 and main.arena().grow(lo.radius()).has_point(lo.position):
+				if t_in < 0.0 and main.viewport_system.arena().grow(lo.radius()).has_point(lo.position):
 					t_in = t
 			ins.append(t_in)
 			arr.append(t)
@@ -2058,7 +2060,7 @@ func _maps() -> void:
 	# 회랑: 지나간 자리 장판 x2, 감속·밀치기 +30%
 	_map_on("line")
 	var lt := _tower(c + Vector2(-150, 0), Elem.POISON)
-	var z: Zone = main.spawn_zone("trail", 1, lt.position, lt)
+	var z: Zone = main.spawning_system.spawn_zone("trail", 1, lt.position, lt)
 	z.trail("puddle")
 	var life_ok := is_equal_approx(z.max_life, Tower.LOB_LIFE * Rules.t("map_line_trail"))
 	var so := _orb(c + Vector2(300, 0), 50.0)
@@ -2088,7 +2090,7 @@ func _maps() -> void:
 
 func _save_load() -> void:
 	_fresh(7)
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var a := _tower(c + Vector2(-200, 30), Elem.FIRE, 2, Vector2.UP)
 	a.add(Elem.WOOD, 1)
 	a.set_pattern("spray")
@@ -2151,19 +2153,19 @@ func _carry_cards() -> void:
 	main.picks_left = 2
 	main.cards_system._show_offer()
 	main.cards_system._open_choose()
-	main._process(0.0)
+	main.frame_system._process(0.0)
 	var offers: Array = main.offer.duplicate(true)
 	var xform: Transform2D = main.get_canvas_transform()
 	var scale0 := Meta.ui_scale
 	Meta.ui_scale = 1.3
 	main.hud_system._apply_ui_scale()
-	main._process(0.0)
+	main.frame_system._process(0.0)
 	var scale_independent: bool = xform.is_equal_approx(main.get_canvas_transform())
-	main._zoom_to(1.4, main.get_viewport_rect().size / 2)
+	main.viewport_system._zoom_to(1.4, main.get_viewport_rect().size / 2)
 	var zoomed: Transform2D = main.get_canvas_transform()
 	main.touch_ui = true
 	main.cards_system._on_card_tap(card, 0)
-	main._process(0.0)
+	main.frame_system._process(0.0)
 	var held: bool = main.phase == main.Phase.PLACE and main.card_dock.carrying() and not main.card_dock.panel.visible and not main.card_dock.side.visible and not main.choice_box.visible
 	var independent: bool = zoomed.is_equal_approx(main.get_canvas_transform()) and is_equal_approx(main.view_zoom, 1.4)
 	var before: int = main.picks_left
@@ -2173,10 +2175,10 @@ func _carry_cards() -> void:
 	main.interaction_system._drop_carried_card(main.cancel_btn.get_global_rect().get_center())
 	refused = refused and main.picks_left == before
 	main.interaction_system._cancel_step()
-	main._process(0.0)
+	main.frame_system._process(0.0)
 	var cancel: bool = main.offer == offers and main.picks_left == before and main.phase == main.Phase.CHOOSE and main.choice_box.visible and main.tap_sel == 0 and zoomed.is_equal_approx(main.get_canvas_transform())
 	main.cards_system._on_card_tap(offers[1], 1)
-	main._process(0.0)
+	main.frame_system._process(0.0)
 	var chip: bool = main.card_dock.carrying() and not main.ui_root.has_node("CarriedCard")
 	main.interaction_system._cancel_step()
 	main.cards_system._on_card_tap(card, 0)
@@ -2190,7 +2192,7 @@ func _carry_cards() -> void:
 	_clear()
 	main.persistence_system._continue_run()
 	var resume: bool = main.phase == main.Phase.CHOOSE and main.offer == offers and main.picks_left == before - 1
-	main._reset_zoom()
+	main.viewport_system._reset_zoom()
 	Meta.ui_scale = scale0
 	main.hud_system._apply_ui_scale()
 	main.touch_ui = false
@@ -2202,10 +2204,10 @@ func _carry_cards() -> void:
 
 func _side() -> void:
 	_fresh()
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var _grid := func():
-		main.targets = main.orbs.get_children()
-		main._build_grid()
+		main.combat_system.targets = main.orbs.get_children()
+		main.combat_system._build_grid()
 	var base: float = Rules.t("side_iv")
 	var t := _tower(c + Vector2(-300, 0), Elem.FIRE, 1)
 	var one := Side.iv(t)
@@ -2339,26 +2341,26 @@ func _meta_misc() -> void:
 	var lock1: bool = main.interaction_system._zoom_input(t1)
 	var dr := InputEventScreenDrag.new(); dr.index = 1; dr.position = Vector2(800, 360)
 	main.interaction_system._zoom_input(dr)
-	var zin: bool = main.view_zoom > 1.5 and main.view_rect().size.x < main.get_viewport_rect().size.x
+	var zin: bool = main.view_zoom > 1.5 and main.viewport_system.view_rect().size.x < main.get_viewport_rect().size.x
 	t1.pressed = false; t0.pressed = false
 	main.interaction_system._zoom_input(t1)
 	var last: bool = main.interaction_system._zoom_input(t0)
 	var unlocked: bool = not main.interaction_system.pinch_lock and last
-	main._reset_zoom()
-	ok("UI-18", lock1 and zin and unlocked and is_equal_approx(main.view_zoom, 1.0) and main.arena().size == Meta.FIELD, "두 손가락 벌리기 = 전장 확대(x%.1f), 확대 중 누르기는 게임에 안 넘어감, [확대 풀기] = 1배, 전장 크기 그대로" % main.view_zoom)
+	main.viewport_system._reset_zoom()
+	ok("UI-18", lock1 and zin and unlocked and is_equal_approx(main.view_zoom, 1.0) and main.viewport_system.arena().size == Meta.FIELD, "두 손가락 벌리기 = 전장 확대(x%.1f), 확대 중 누르기는 게임에 안 넘어감, [확대 풀기] = 1배, 전장 크기 그대로" % main.view_zoom)
 
-	main._zoom_to(0.1, Vector2(100, 100))
-	main._process(0.0)
+	main.viewport_system._zoom_to(0.1, Vector2(100, 100))
+	main.frame_system._process(0.0)
 	var zoom_min: bool = is_equal_approx(main.view_zoom, 0.5) and main.view_pan.is_zero_approx() and main.zoom_btn.visible
-	main._zoom_to(9.0, Vector2(100, 100))
+	main.viewport_system._zoom_to(9.0, Vector2(100, 100))
 	var zoom_max: bool = is_equal_approx(main.view_zoom, 2.5)
-	main._reset_zoom()
+	main.viewport_system._reset_zoom()
 	ok("UI-18", zoom_min and zoom_max and is_equal_approx(main.view_zoom, 1.0), "0.5~2.5배 제한·축소 중앙 정렬·복귀 버튼")
 
 	# 글 대신 그림: 카드는 버튼 글 없이 그림 머리(속성 카드는 속성 그림·Lv 배지), 짝 속성 줄·숫자 특성은 그림 + 숫자,
 	# 시작 화면·일시정지는 그림 버튼(이름은 말풍선), 오른쪽 설명 앞줄마다 그림
 	_fresh(3)
-	_tower(main.center() + Vector2(-200, 0))
+	_tower(main.viewport_system.center() + Vector2(-200, 0))
 	var ec: Button = main.cards_system._card_button({"type": "elem", "e": Elem.WATER, "lv": 2}, 1)
 	var em: Array = ec.get_meta("card")
 	var has_els: bool = em[1].any(func(l): return l[0].has("els"))
@@ -2449,68 +2451,68 @@ func _meta_misc() -> void:
 
 	# 카드 선택 막: 선택지가 펼쳐져 있으면 검은 막(카드·카드 줄 버튼은 그 위), 필드 보기·카드를 고르면 곧바로 걷힘
 	_fresh(3)
-	var dt := _tower(main.center() + Vector2(-200, 0))
+	var dt := _tower(main.viewport_system.center() + Vector2(-200, 0))
 	main.run_flow_system._start_choose()
-	main._process(0.016)
+	main.frame_system._process(0.016)
 	var dim_on: bool = not main.card_dim.visible and main.card_dock.panel.visible
 	main.picks_left = 2
-	main._process(0.016)
+	main.frame_system._process(0.016)
 	var head_two: bool = main.choice_header.visible and main.choice_remaining.text == "2장 더 선택 가능" and main.choice_header.z_index > main.card_dim.z_index
 	var bottom_controls: bool = is_equal_approx(main.bar_box.position.y - main.card_dock.footer.position.y, 12) and is_equal_approx(main.ui_root.size.y - main.bar_box.get_rect().end.y, 12)
 	var detail_icon: Vector2 = main.cards_system._button_icon_center(main.card_detail_btn)
 	var icon_fits: bool = Rect2(Vector2.ZERO, main.card_detail_btn.size).grow(-8).encloses(Rect2(detail_icon - Vector2(9, 9), Vector2(18, 18)))
 
 	main.picks_left = 1
-	main._process(0.016)
+	main.frame_system._process(0.016)
 	var head_one: bool = main.choice_remaining.text == "1장 더 선택 가능"
 	for card_node in main.choice_box.get_children():
 		if card_node.is_queued_for_deletion():
 			main.choice_box.remove_child(card_node)
 	main.touch_ui = true
 	main.tap_sel = 1
-	main._process(0.016)
+	main.frame_system._process(0.016)
 	var no_apply: bool = not main.apply_btn.visible
 	main.tap_sel = -1
 	main.touch_ui = false
 	main.perk_mode = true
-	main._process(0.016)
+	main.frame_system._process(0.016)
 	var head_perk: bool = not main.choice_header.visible
 	main.perk_mode = false
 	main.cards_system._set_cards_hidden(true)
-	main._process(0.016)
+	main.frame_system._process(0.016)
 	var dim_hide: bool = not main.card_dim.visible
 	var head_hide: bool = not main.choice_header.visible
 	var fold_offer: Array = main.offer.duplicate(true)
 	var fold_left: int = main.picks_left
 	var fold_ok := true
 	main.cards_system._set_cards_hidden(false)
-	main._process(0.0)
+	main.frame_system._process(0.0)
 	fold_ok = main.hide_btn == main.card_dock.focus_btn and main.card_dock.focus_btn.visible and main.card_dock.focus_btn.text == "카드 접기"
 	for i in 3:
 		main.card_dock.focus_btn.pressed.emit()
-		main._process(0.0)
+		main.frame_system._process(0.0)
 		fold_ok = fold_ok and main.cards_hidden and not main.card_dock.panel.visible and not main.card_dock.side.visible and main.card_dock.focus_btn.text == "카드 보기"
 		main.card_dock.focus_btn.pressed.emit()
-		main._process(0.0)
+		main.frame_system._process(0.0)
 		fold_ok = fold_ok and main.card_dock.panel.visible and main.offer == fold_offer and main.picks_left == fold_left
 	main.cards_system._set_cards_hidden(true)
-	main._process(0.0)
+	main.frame_system._process(0.0)
 	fold_ok = fold_ok and main.card_dock.focus_btn.text == "카드 보기"
 	main.card_dock.focus_btn.pressed.emit()
-	main._process(0.0)
+	main.frame_system._process(0.0)
 	fold_ok = fold_ok and not main.cards_hidden and main.card_dock.panel.visible
 	var toggles := true
 	var same_offer: Array = main.offer.duplicate(true)
 	for i in 4:
 		main.cards_system._set_cards_hidden(false)
-		main._process(0.0)
+		main.frame_system._process(0.0)
 		toggles = toggles and main.card_dock.panel.visible and not main.cards_hidden
 		main.cards_system._set_cards_hidden(true)
-		main._process(0.0)
+		main.frame_system._process(0.0)
 		toggles = toggles and not main.card_dock.panel.visible and main.hide_btn.visible and main.offer == same_offer
 	main.cards_system._set_cards_hidden(false)
 	main.cards_system._on_pick({"type": "mod", "id": "pierce"})
-	main._process(0.016)
+	main.frame_system._process(0.016)
 	var dim_off: bool = not main.card_dim.visible and main.phase == main.Phase.PLACE
 	ok("UI-23", fold_ok and toggles and dim_on and dim_hide and dim_off, "일반 판 카드 선택 시 전장 어둠 없음 %s, 필드 보기 %s·카드 고른 뒤 %s 유지" % [dim_on, dim_hide, dim_off])
 	var controls: bool = main.speed_btn.get_parent() == main.speed_group and main.speed_pick.get_parent() == main.speed_group and main.speed_group.get_theme_constant("separation") == 0 and main.card_detail_btn.theme == main.bar_box.theme and main.speed_pick.get_theme_stylebox("normal").bg_color == main.reroll_btn.get_theme_stylebox("normal").bg_color and main.fx_pick.get_popup().get_theme_stylebox("panel") is StyleBoxFlat
@@ -2520,20 +2522,20 @@ func _meta_misc() -> void:
 
 
 	main.shake = 0.0
-	main._process(0.0)
-	main._process(0.0)
+	main.frame_system._process(0.0)
+	main.frame_system._process(0.0)
 	var transform: Transform2D = main.get_canvas_transform()
 	var stable := true
 	for stage in [main.Phase.AIM, main.Phase.READY, main.Phase.CHOOSE]:
 		main.phase = stage
-		main._process(0.0)
+		main.frame_system._process(0.0)
 		stable = stable and main.get_canvas_transform().is_equal_approx(transform)
 	var board: Rect2 = main.card_dock.screen_board()
-	ok("UI-28", stable and main.arena().size == Meta.FIELD and board.grow(1).encloses(main.get_canvas_transform() * main.arena())
+	ok("UI-28", stable and main.viewport_system.arena().size == Meta.FIELD and board.grow(1).encloses(main.get_canvas_transform() * main.viewport_system.arena())
 		and board.size.is_equal_approx(main.get_viewport_rect().size), "패널과 독립된 전체 화면 전장: 단계 전환에서 카메라 고정·논리 전장 유지")
 	var saved_tips: Array = main.tip_rects.duplicate()
 	var saved_pin: int = main.tip_pin
-	var info_point: Vector2 = main.get_canvas_transform() * main.center()
+	var info_point: Vector2 = main.get_canvas_transform() * main.viewport_system.center()
 	var info_at: Vector2 = main.ui_root.get_global_transform().affine_inverse() * info_point
 	main.tip_rects.clear()
 	main.tip_rects.append([Rect2(info_at - Vector2(10, 10), Vector2(20, 20)), [["정보", Color.WHITE]]])
@@ -2595,7 +2597,7 @@ func _meta_misc() -> void:
 	dock.inspected_tower = dt
 	dock._update_side()
 	var old_pointer: Vector2 = main.interaction_system.pointer_position
-	main.interaction_system.pointer_position = main.get_canvas_transform() * main.center()
+	main.interaction_system.pointer_position = main.get_canvas_transform() * main.viewport_system.center()
 	main.interaction_system.selected = [dt]
 	main.tip_tower = dt
 	var background_click := InputEventMouseButton.new()
@@ -2610,7 +2612,7 @@ func _meta_misc() -> void:
 	main.phase = old_phase
 	ok("UI-32", side_ok and retained_tower and close_visible and closed and dismissed_tower and tab_hidden, "설명창 내용 높이·보는 오브젝트 반대쪽 구석, 일반 판 Tab 버튼 없음")
 	# 선택 대상은 카드 호버에 밀리지 않고, 다른 오브젝트 호버가 끝나면 돌아온다.
-	var hover_other := _tower(main.center() + Vector2(-200, 0))
+	var hover_other := _tower(main.viewport_system.center() + Vector2(-200, 0))
 	var select_at: Vector2 = dt.position
 	dt.position = Vector2(220, 300)
 	hover_other.position = Vector2(420, 300)
@@ -2730,7 +2732,7 @@ func _meta_misc() -> void:
 		main.interaction_system.aim_right = false
 		main.interaction_system._cancel_step()
 	main.interaction_system._select_tower(dt)
-	main.interaction_system.pointer_position = main.get_canvas_transform() * main.center()
+	main.interaction_system.pointer_position = main.get_canvas_transform() * main.viewport_system.center()
 	right.position = main.interaction_system.pointer_position
 	main.interaction_system._unhandled_input(right)
 	right_ok = right_ok and main.interaction_system.selected.is_empty() and main.phase == main.Phase.READY
@@ -2787,7 +2789,7 @@ func _meta_misc() -> void:
 	var touch_status: bool = "버튼으로 취소" in dock.operation_text() and not "Esc" in dock.operation_text()
 	main.touch_ui = was_touch
 	main.phase = main.Phase.CHOOSE
-	var deleted = _tower(main.center() + Vector2(200, 0))
+	var deleted = _tower(main.viewport_system.center() + Vector2(200, 0))
 	main.interaction_system.selected = [deleted]
 	deleted.free()
 	var deleted_selection: bool = dock.operation_text() == "" and main.interaction_system.selected.is_empty()
@@ -2833,11 +2835,11 @@ func _meta_misc() -> void:
 	main.countdown = -1.0
 	main.card_dock.inspected_tower = dt
 	main.tip_frame = -10
-	main._process(4.0)
+	main.frame_system._process(4.0)
 	var touch_detail_btn: bool = main.detail_btn.is_visible_in_tree() and main.detail_btn.get_parent() == dock.inspector_header
 	main.detail_btn.pressed.emit()
-	main._process(0.0)
-	var touch_detail_kept: bool = main._tip_detail_on() and dock.shown_tower == dt and main._ring_target() == dt and dock.pic.detail
+	main.frame_system._process(0.0)
+	var touch_detail_kept: bool = main.field_view_system._tip_detail_on() and dock.shown_tower == dt and main.field_view_system._ring_target() == dt and dock.pic.detail
 	main.touch_ui = false
 	main.tip_detail = false
 	dock.close_inspector()
@@ -2846,8 +2848,8 @@ func _meta_misc() -> void:
 	main.card_dock.inspected_tower = dt
 	main.interaction_system.selected = [dt]
 	main.run_flow_system._toggle_pause()
-	main._process(0.0)
-	var paused_reading: bool = dock.side.visible and dock.side.z_index > main.pause_dim.z_index and not dock.direction_btn.visible and main._ring_target() == null
+	main.frame_system._process(0.0)
+	var paused_reading: bool = dock.side.visible and dock.side.z_index > main.pause_dim.z_index and not dock.direction_btn.visible and main.field_view_system._ring_target() == null
 	main.interaction_system._edit_selected_direction()
 	var paused_no_edit: bool = main.phase == main.Phase.READY and main.interaction_system.moving == null
 	main.run_flow_system._toggle_pause()
@@ -2856,7 +2858,7 @@ func _meta_misc() -> void:
 
 
 	# 카드 넣을 대상: 넣을 수 있는 오브젝트만 밝게, 못 넣는 오브젝트(NO_MOD 등)는 흐리게·선택 불가
-	var bad_t := _tower(main.center() + Vector2(200, 0))
+	var bad_t := _tower(main.viewport_system.center() + Vector2(200, 0))
 	bad_t.set_pattern("thorn")
 	main.picked = {"type": "mod", "id": "pierce"}
 	main.phase = main.Phase.PLACE
@@ -2873,9 +2875,9 @@ func _meta_misc() -> void:
 	var mg2: String = Tower.arrow_merge("없음", "탄 2개")
 	main.picked = {"type": "mod", "id": "multi"}
 	main.phase = main.Phase.PLACE
-	var rings_off: bool = main._place_rings_off()
+	var rings_off: bool = main.field_overlay_system._place_rings_off()
 	main.phase = main.Phase.CHOOSE
-	var rings_back: bool = not main._place_rings_off()
+	var rings_back: bool = not main.field_overlay_system._place_rings_off()
 	var pv_ok: bool = not (dt.preview({"type": "mod", "id": "multi"})[0] as PackedStringArray)[0].contains("겹쳐서")
 	main.card_dock.camera_fit()
 	var preview_target := _tower(main.interaction_system._pointer_world())
@@ -2894,23 +2896,23 @@ func _meta_misc() -> void:
 
 	# 오브젝트 정보창: 기본은 피해·공격 속도·치명타 숫자만, 자세히에만 주변 둘레
 	_fresh(3)
-	var tp := _tower(main.center() + Vector2(0, -150), Elem.SOUL, 3)
+	var tp := _tower(main.viewport_system.center() + Vector2(0, -150), Elem.SOUL, 3)
 	tp.add(Elem.STAR, 1)
 	tp.add(Elem.LIGHT, 2)
 	tp.eff = tp.eff_now()
 	var bl: Array = tp.basic_lines()
 	var bl_ok: bool = bl.size() == 3 and (bl[0][0] as String).begins_with("피해 ") and (bl[1][0] as String).begins_with("초당 ") and (bl[2][0] as String).begins_with("치명타 ")
-	var plain := _tower(main.center() + Vector2(0, 150))
+	var plain := _tower(main.viewport_system.center() + Vector2(0, 150))
 	plain.eff = plain.eff_now()
 	var no_crit: bool = plain.basic_lines().size() == 2
 	var dl_more: bool = tp.detail_lines().size() > bl.size()
-	var basic_ring: bool = main._ring_target() == null and not main._tip_detail_on()
+	var basic_ring: bool = main.field_view_system._ring_target() == null and not main.field_view_system._tip_detail_on()
 	ok("UI-26", bl_ok and no_crit and dl_more and basic_ring, "정보창 기본 %d줄 %s, 빛 없으면 치명타 줄 없음 %s, 자세히가 더 많음 %s, 기본엔 둘레 없음 %s" % [bl.size(), bl_ok, no_crit, dl_more, basic_ring])
 
 	# 웨이브 넘기기: 오브젝트가 있어야, 첫 판은 카드가 다 열린 뒤
 	_fresh(3)
 	var none: bool = main.run_flow_system._can_skip()
-	_tower(main.center() + Vector2(-200, 0))
+	_tower(main.viewport_system.center() + Vector2(-200, 0))
 	var some: bool = main.run_flow_system._can_skip()
 	main.tutor = true
 	var tut: bool = main.run_flow_system._can_skip()
@@ -2939,7 +2941,7 @@ func _meta_misc() -> void:
 	main.skip_left = 0
 	main.bank_picks = []
 	# 카드를 다 고른 뒤(웨이브 시작 대기)에도 넘기기: 버튼이 보이고, 누르면 넘기기 시작
-	_tower(main.center() + Vector2(-200, 0))
+	_tower(main.viewport_system.center() + Vector2(-200, 0))
 	main.cards_system._enter_ready()
 	main.countdown = -1.0
 	main.run_flow_system._update_skip_ui()
@@ -2959,7 +2961,7 @@ func _meta_misc() -> void:
 	tw.free()
 
 	# 웨이브 중 실시간 DPS: 최근 5초 이동 평균 (앞쪽 큰 피해는 창 밖으로 빠짐), 접기 상태 저장
-	_tower(main.center() + Vector2(-200, 0))
+	_tower(main.viewport_system.center() + Vector2(-200, 0))
 	var lt: Tower = main.towers.get_child(main.towers.get_child_count() - 1)
 	var ph0 = main.phase
 	main.phase = main.Phase.WAVE
@@ -3052,7 +3054,7 @@ func _meta_misc() -> void:
 	# 피해 1~3위 왕관·메달: 쉬는 시간 지난 웨이브 피해 순, 2개면 1위만, 1위가 바뀌면 왕관이 날아감, 설정으로 끔
 	var rk: Array = []
 	for i in 4:
-		_tower(main.center() + Vector2(-240 + 160 * i, 120))
+		_tower(main.viewport_system.center() + Vector2(-240 + 160 * i, 120))
 		rk.append(main.towers.get_child(main.towers.get_child_count() - 1))
 	var ph1 = main.phase
 	main.phase = main.Phase.CHOOSE
@@ -3103,15 +3105,15 @@ func _multiplayer() -> void:
 		for i in main.waves_system.lane_counts(main.wave).size():
 			for j in main.waves_system.lane_counts(main.wave)[i]:
 				main.lane_bag.append(i)
-		main._wshuffle(main.lane_bag)
+		main.multiplayer_system._wshuffle(main.lane_bag)
 		for i in 5:
-			plan.append(main._roll_orb(main.wave))
+			plan.append(main.spawning_system._roll_orb(main.wave))
 		rolls.append(var_to_str(plan))
 	main.mp_seed = 0
 	seed(7)
 	var a := randf()
 	seed(7)
-	var b: float = main.wf()
+	var b: float = main.multiplayer_system.wf()
 	ok("MP-03", rolls[0] == rolls[1] and is_equal_approx(a, b), "대결: 같은 씨앗이면 같은 방향·저항·구체, 씨앗 0이면 전역 난수")
 
 	# 멀티 난이도: 대결·협동만 구체 체력 x0.7(대결)·중앙 체력 13, 혼자 판은 그대로
@@ -3139,7 +3141,7 @@ func _multiplayer() -> void:
 	var extra: int = main.mp_extra_left
 	main.to_spawn = 0
 	for i in 600:
-		main._sim_step(1.0 / 30.0)
+		main.combat_system._sim_step(1.0 / 30.0)
 	ok("MP-04", extra == 3 and main.mp_next_extra == 0 and main.mp_extra_left == 0, "보낸 구체 %d개가 이번 웨이브에 나옴 (남은 %d)" % [extra, main.mp_extra_left])
 	main.mp_mode = ""
 	main.mp_extra_left = 0
@@ -3152,8 +3154,8 @@ func _multiplayer() -> void:
 	main.coop_orbs = 1.0
 	main.mp_mode = "coop"
 	main.mp.my_id = 1
-	var mine := _tower(main.center() + Vector2(-200, 0), Elem.FIRE, 2)
-	var other := _tower(main.center() + Vector2(200, 0), Elem.WATER)
+	var mine := _tower(main.viewport_system.center() + Vector2(-200, 0), Elem.FIRE, 2)
+	var other := _tower(main.viewport_system.center() + Vector2(200, 0), Elem.WATER)
 	other.owner_id = 2
 	main.phase = main.Phase.CHOOSE
 	main.interaction_system._begin_press(other, other.position)
@@ -3179,8 +3181,8 @@ func _multiplayer() -> void:
 	copy.main = main
 	copy.mp_apply(st)
 	mine.mp_apply(mine.mp_state())
-	ok("MP-07", mine.owner_id == 1 and mine.net_id == 100001 and blocked and owned_selection and main._my_towers() == [mine] and copy.elements == other.elements and copy.pattern == other.pattern and is_equal_approx(mine.dealt, 55.0) and mine.lv(Elem.FIRE) == 2,
-		"협동: 내 오브젝트만 바꿈, 상태를 주고받아도 속성·공격방식 같고 피해 기록은 이 기기 것 (%s)" % str([mine.owner_id, mine.net_id, blocked, main._my_towers().size(), copy.elements, other.elements, mine.dealt, mine.lv(Elem.FIRE)]))
+	ok("MP-07", mine.owner_id == 1 and mine.net_id == 100001 and blocked and owned_selection and main.multiplayer_system._my_towers() == [mine] and copy.elements == other.elements and copy.pattern == other.pattern and is_equal_approx(mine.dealt, 55.0) and mine.lv(Elem.FIRE) == 2,
+		"협동: 내 오브젝트만 바꿈, 상태를 주고받아도 속성·공격방식 같고 피해 기록은 이 기기 것 (%s)" % str([mine.owner_id, mine.net_id, blocked, main.multiplayer_system._my_towers().size(), copy.elements, other.elements, mine.dealt, mine.lv(Elem.FIRE)]))
 	copy.free()
 	main.interaction_system.press_t = null
 
@@ -3212,7 +3214,7 @@ func _mp_more() -> void:
 	Ach.add("boss_kills")
 	Ach.raise("max:wave", 100)
 	main.progression_system._achieve("wave100")
-	main._mp_ach_coop(5, {1: 0.5, 2: 0.5})
+	main.multiplayer_system._mp_ach_coop(5, {1: 0.5, 2: 0.5})
 	var blocked: bool = int(Meta.tally.get("boss_kills", 0)) == kb and int(Meta.tally.get("max:wave", 0)) == mw and Meta.achieved.has("wave100") == w100
 	var got: bool = Meta.achieved.has("mp_coop5") and int(Meta.tally.get("max:mp_coop", 0)) >= 5
 	Ach.mp = ""
@@ -3224,24 +3226,24 @@ func _mp_more() -> void:
 	_fresh(3)
 	main.mp_mode = "coop"
 	main.mp.my_id = 2
-	main._mp_packet(1, {"t": "wait", "s": 45.0, "ids": [2]})
+	main.multiplayer_system._mp_packet(1, {"t": "wait", "s": 45.0, "ids": [2]})
 	var waited: bool = is_equal_approx(main.mp_wait_left, 45.0)
 	main.mp_afk_n = 0
 	main.run_flow_system._start_choose()
-	main._mp_auto_rest()
+	main.lobby_system._mp_auto_rest()
 	var first := [main.phase == main.Phase.READY, main.mp_i_ready, main.towers.get_child_count() >= 1, main.mp_afk_n == 1, main.mp_afk]
 	main.mp_i_ready = false
 	main.run_flow_system._start_choose()
-	main._mp_auto_rest()
+	main.lobby_system._mp_auto_rest()
 	var afk: bool = main.mp_afk
-	main._mp_presence()
+	main.lobby_system._mp_presence()
 	var back: bool = not main.mp_afk and main.mp_afk_n == 0
 	_fresh(3)
 	main.mp_mode = "vs"
 	main.mp.my_id = 1
 	main.mp_afk_n = 0
 	main.run_flow_system._start_choose()
-	main._mp_auto_rest()
+	main.lobby_system._mp_auto_rest()
 	var vs_go: bool = main.phase == main.Phase.WAVE and main.mp_afk_n == 1
 	ok("MP-15", waited and first == [true, true, true, true, false] and afk and back and vs_go and Rules.tune["mp_wait"] == 45.0 and Rules.tune["vs_idle"] == 90.0,
 		"잠수: 기다림 %s, 첫 대신 고르기 %s, 2번째 자리 비움 %s, 돌아옴 %s, 대결 웨이브 시작 %s" % [waited, str(first), afk, back, vs_go])
@@ -3252,8 +3254,8 @@ func _mp_more() -> void:
 	_fresh(3)
 	main.mp_mode = "coop"
 	main.mp.my_id = 1
-	var mine := _tower(main.center() + Vector2(-200, 0), Elem.FIRE)
-	var other := _tower(main.center() + Vector2(200, 0), Elem.WOOD)
+	var mine := _tower(main.viewport_system.center() + Vector2(-200, 0), Elem.FIRE)
+	var other := _tower(main.viewport_system.center() + Vector2(200, 0), Elem.WOOD)
 	other.owner_id = 2
 	other.req_e = Elem.WATER
 	main.picked = {"type": "elem", "e": Elem.WATER, "lv": 1}
@@ -3267,9 +3269,9 @@ func _mp_more() -> void:
 	var synced: bool = copy.req_e == Elem.WATER
 	copy.free()
 	mine.req_e = Elem.WATER
-	main._mp_recv_gift(2, {"nid": mine.net_id, "e": Elem.WATER, "lv": 1})
-	var given: bool = mine.lv(Elem.WATER) == 1 and mine.req_e == -1 and main.mp_req_got_w == main.wave
-	main._mp_recv_gift(2, {"nid": mine.net_id, "e": Elem.ICE, "lv": 1})
+	main.lobby_system._mp_recv_gift(2, {"nid": mine.net_id, "e": Elem.WATER, "lv": 1})
+	var given: bool = mine.lv(Elem.WATER) == 1 and mine.req_e == -1 and main.lobby_system.mp_req_got_w == main.wave
+	main.lobby_system._mp_recv_gift(2, {"nid": mine.net_id, "e": Elem.ICE, "lv": 1})
 	var no_req: bool = mine.lv(Elem.ICE) == 0
 	ok("MP-16", can_req and cant_other and synced and given and no_req,
 		"속성 요청: 요청 속성 넣기 %s, 다른 속성 막힘 %s, 상태 주고받기 %s, 받음 %s, 요청 없으면 안 들어감 %s" % [can_req, cant_other, synced, given, no_req])
@@ -3282,14 +3284,14 @@ func _mp_more() -> void:
 	main.mp_others = {}
 	for id in [2, 3, 4]:
 		main.mp_others[id] = {"name": "", "w": 3, "hp": 10, "mx": 10, "sc": id * 10, "alive": true, "gone": false}
-	var k4: float = main._mp_send_k()
+	var k4: float = main.multiplayer_system._mp_send_k()
 	main.mp_others[4]["alive"] = false
-	var k3: float = main._mp_send_k()
-	var tgt: int = main._mp_vs_target([3])
+	var k3: float = main.multiplayer_system._mp_send_k()
+	var tgt: int = main.multiplayer_system._mp_vs_target([3])
 	main.phase = main.Phase.CHOOSE
 	main.mp_recv_n = 0
 	main.mp_next_extra = 0
-	main._mp_packet(2, {"t": "atk", "n": 5})
+	main.multiplayer_system._mp_packet(2, {"t": "atk", "n": 5})
 	var capped: bool = main.mp_recv_n == 3 and main.mp_next_extra == 3
 	ok("MP-17", is_equal_approx(k4, 0.5) and is_equal_approx(k3, 0.7) and tgt == 2 and capped,
 		"대결: 4명 x%.1f, 3명 x%.1f, 받는 사람 %d, 5개 중 받은 %d (상한 3)" % [k4, k3, tgt, main.mp_next_extra])
@@ -3364,7 +3366,7 @@ func _tutorial() -> void:
 	var single: bool = main.guide_lines.size() == 1 and main.guide_lines[0].contains("보스") and not Meta.guide_seen.has("mod")
 	var quiet: bool = main.onboarding_system.tut_queue.is_empty() and Tutorial.seen.is_empty() and not paused
 	Meta.guide_on = false
-	main._process(0.0)
+	main.frame_system._process(0.0)
 	var hidden_off: bool = not main.guide_label.visible and not main.guide_more.visible and not main.guide_lines.is_empty()
 	Meta.guide_on = true
 	main.tut_paused = true
@@ -3413,14 +3415,14 @@ func _tutorial() -> void:
 	main.touch_ui = true
 	main.interaction_system.moving = null
 	main.phase = main.Phase.AIM
-	main.place_pos = main.core() + Vector2(200, 0)
+	main.place_pos = main.viewport_system.core() + Vector2(200, 0)
 	main.interaction_system._aim_begin()
 	var no_btn: bool = not main.interaction_system._ok_btn_on()
 	main.aim_d = Vector2.UP
 	main.aim_wait = true
-	var held_dir: bool = main._aim_dir(main.place_pos) == Vector2.UP and main.interaction_system._ok_btn_on() and main.aim_ok_btn.text == "확정"
+	var held_dir: bool = main.field_view_system._aim_dir(main.place_pos) == Vector2.UP and main.interaction_system._ok_btn_on() and main.aim_ok_btn.text == "확정"
 	main.interaction_system.aim_hold = true
-	var held_near: bool = main.interaction_system._pointer_world().distance_to(main.place_pos) >= main.AIM_TOUCH_MIN or main._aim_dir(main.place_pos) == Vector2.UP
+	var held_near: bool = main.interaction_system._pointer_world().distance_to(main.place_pos) >= main.AIM_TOUCH_MIN or main.field_view_system._aim_dir(main.place_pos) == Vector2.UP
 	main.interaction_system.aim_hold = false
 	main.phase = main.Phase.PLACE
 	main.touch_ui = false
@@ -3473,7 +3475,7 @@ func _tut_play() -> void:
 	var picks: bool = tp.rest_picks(0) == 1 and tp.rest_picks(1) == 2 and tp.rest_picks(2) == 2 and tp.rest_picks(3) == 2 and tp.rest_picks(4) == -1
 	var lanes: bool = TutPlay.lanes_for(1) == [0.0] and TutPlay.lanes_for(3).size() == 2 and TutPlay.lanes_for(6).size() == 3
 	_fresh(1)
-	_tower(main.core() + Vector2(170, 0))
+	_tower(main.viewport_system.core() + Vector2(170, 0))
 	tp.idx = 7  # 속성 겹치기
 	var water := {"type": "elem", "e": Elem.WATER, "lv": 1}
 	var offer: Array = tp.offer([{"type": "elem", "e": Elem.ICE, "lv": 1}, {"type": "elem", "e": Elem.EARTH, "lv": 1}, water])
@@ -3673,7 +3675,7 @@ func _ugc() -> void:
 ## UI-37: 속성을 합쳐 새 조합이 생기면 긴 배너·토스트 대신 오브젝트 옆 그림 카드
 func _rx_card() -> void:
 	_fresh()
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var t := _tower(c + Vector2(-200, -120), Elem.FIRE)
 	main.phase = main.Phase.PLACE
 	main.picked = {"type": "elem", "e": Elem.ELECTRIC, "lv": 1}
@@ -3684,7 +3686,7 @@ func _rx_card() -> void:
 	var shown: bool = rc.active() and rc.tower == t and rc.rxs.size() == 1 and rc.size.y > 120.0
 	var quiet: bool = not str(main.toast.text).begins_with("조합") and main.banner_t <= 0.0
 	main.phase = main.Phase.READY
-	main._place_rx_card()
+	main.field_view_system._place_rx_card()
 	var to_ui: Transform2D = main.ui_root.get_global_transform().affine_inverse() * main.get_canvas_transform()
 	var tp: Vector2 = to_ui * t.position
 	var cr: Rect2 = Rect2(rc.position, rc.size)
@@ -3714,7 +3716,7 @@ func _rx_card() -> void:
 	rc.show_for(t, Elem.REACTIONS.slice(0, 3))
 	var capped: bool = rc.rxs.size() == 2 and rc.extra == 1
 	main.phase = main.Phase.GAMEOVER
-	main._place_rx_card()
+	main.field_view_system._place_rx_card()
 	var closed: bool = not rc.visible
 	main.phase = main.Phase.READY
 	ok("UI-37", shown and quiet and clear_of_tower and rows_ok and say_ok and capped and closed,
@@ -3757,7 +3759,7 @@ func _late_orbs() -> void:
 	var froms: Array = [main.late_from("blink"), main.late_from("armor"), main.late_from("mender"), main.late_from("phase"), main.late_from("devour")]
 	var share_ok: bool = main.late_share("blink", 99) == 0.0 and is_equal_approx(main.late_share("blink", 100), 0.08) and is_equal_approx(main.late_share("blink", 400), 0.2)
 	# 깜빡: 3.5초 뒤 90px 앞으로, 기절 중엔 안 뜀
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var b := _orb(c + Vector2(500, 0), 10.0, Orb.Kind.NORMAL, 0.0)
 	b.late = "blink"
 	b.late_t = 3.5
@@ -3785,7 +3787,7 @@ func _late_orbs() -> void:
 	n1.hp = 50.0
 	n2.hp = 50.0
 	n2.burn(0.0001, 10.0)
-	main._resolve(0.0)  # 격자
+	main.combat_system._resolve(0.0)  # 격자
 	m.step(0.02)
 	var heal_ok := is_equal_approx(n1.hp, 56.0) and absf(n2.hp - 53.0) < 0.01
 	# 흐림: 흐린 동안 직접 피해 30%
@@ -3800,7 +3802,7 @@ func _late_orbs() -> void:
 	var dv := _orb(c + Vector2(0, -250), 30.0)
 	dv.late = "devour"
 	var prey := _orb(c + Vector2(5, -250), 20.0)
-	main._resolve(0.0)
+	main.combat_system._resolve(0.0)
 	dv.step(0.01)
 	var dev_ok := prey.is_queued_for_deletion() and is_equal_approx(dv.max_hp, 40.0) and dv.core_dmg == 2 and dv.eaten == 1
 	# 안내: 처음 나오는 웨이브에 NEW
@@ -3815,39 +3817,39 @@ func _late_orbs() -> void:
 ## 방해 구체 (JAM-01~04)
 func _jam_orbs() -> void:
 	_fresh(25)
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var froms := [main.jam_from("shade"), main.jam_from("leech"), main.jam_from("seeker")]
 	var share_ok: bool = main.jam_share("shade", 19) == 0.0 and is_equal_approx(main.jam_share("shade", 20), 0.05) and is_equal_approx(main.jam_share("shade", 40), 0.07) and is_equal_approx(main.jam_share("shade", 300), 0.12)
 	main.mp_mode = "vs"
-	var mp_off: bool = not main.jams_on()
+	var mp_off: bool = not main.spawning_system.jams_on()
 	main.mp_mode = ""
 	var fresh := false
 	main.wave = 19
 	main.waves_system._update_preview()
 	fresh = main.wave_kinds.any(func(k): return k[0] == "shade" and k[2])
 	main.wave = 25
-	ok("JAM-01", froms == [20, 30, 40] and share_ok and mp_off and main.jams_on() and fresh, "등장 %s 비율 %s 멀티 끔 %s 안내 NEW %s" % [str(froms), share_ok, mp_off, fresh])
+	ok("JAM-01", froms == [20, 30, 40] and share_ok and mp_off and main.spawning_system.jams_on() and fresh, "등장 %s 비율 %s 멀티 끔 %s 안내 NEW %s" % [str(froms), share_ok, mp_off, fresh])
 	# 그림자: 80 안 오브젝트 1.5초 멈춤, 풀린 뒤 4초 면역, 침묵이면 못 함
 	var t := _tower(c + Vector2(-200, 0), Elem.FIRE)
 	var far := _tower(c + Vector2(200, 0), Elem.FIRE)
 	var sh := _orb(c + Vector2(-200, 60), 50.0)
 	sh.jam = "shade"
 	main.jam_any = true
-	main._resolve(0.0)
-	main._jam_tick()
+	main.combat_system._resolve(0.0)
+	main.spawning_system._jam_tick()
 	var stopped := is_equal_approx(t.jam_t, 1.5) and far.jam_t == 0.0
 	t.jam_t = 0.0
-	main._jam_tick()
+	main.spawning_system._jam_tick()
 	var imm := t.jam_t == 0.0 and t.jam_imm > 0.0
 	t.jam_imm = 0.0
 	sh.silence_t = 2.0
-	main._jam_tick()
+	main.spawning_system._jam_tick()
 	var quiet := t.jam_t == 0.0
 	# 멈춘 동안 공격하지 않는다 (직선탄이 안 나감)
 	t.jam_t = 1.0
 	t.dir = Vector2.DOWN
 	var np: int = main.projectiles.get_child_count()
-	t.attack(0.5, main.targets)
+	t.attack(0.5, main.combat_system.targets)
 	var no_shot: bool = main.projectiles.get_child_count() == np and is_equal_approx(t.jam_t, 0.5)
 	ok("JAM-02", stopped and imm and quiet and no_shot, "그림자: 멈춤 %s 면역 %s 침묵 %s 멈춘 동안 공격 없음 %s" % [stopped, imm, quiet, no_shot])
 	# 흡수: 맞힐 때마다 공격 속도 -5%(0.5초에 한 겹, 최대 5), 잡으면 300 안 오브젝트 풀림
@@ -3863,7 +3865,7 @@ func _jam_orbs() -> void:
 		t.leech_t = 0.0
 		t.hit(lc, 1.0)
 	var cap := t.leech_n == 5
-	main._jam_death(lc)
+	main.spawning_system._jam_death(lc)
 	var freed := t.leech_n == 0
 	ok("JAM-03", one and cap and freed, "흡수: 한 겹 %s 최대 5 %s 잡으면 풀림 %s" % [one, cap, freed])
 	# 표적: 가장 가까운 오브젝트를 쫓고, 닿으면 그 오브젝트 3초 멈춤·사라짐
@@ -3878,7 +3880,7 @@ func _jam_orbs() -> void:
 		o.position = c + Vector2(-500, 0)
 		o.target = c
 		o.setup(Orb.Kind.NORMAL, 5000.0, 40.0)  # 오브젝트 공격에 바로 죽지 않게
-		main._jam_trait(o)
+		main.spawning_system._jam_trait(o)
 		if o.jam == "seeker":
 			sk = o
 			break
@@ -3888,8 +3890,8 @@ func _jam_orbs() -> void:
 	if sk:
 		main.orbs.add_child(sk)
 		sk.position = t.position + Vector2(10, 0)
-		main._resolve(0.0)
-		main._jam_tick()
+		main.combat_system._resolve(0.0)
+		main.spawning_system._jam_tick()
 		hit_ok = is_equal_approx(t.jam_t, 3.0) and sk.is_queued_for_deletion()
 	main.wave = 25
 	ok("JAM-04", aimed and hit_ok, "표적: 가까운 오브젝트 쫓음 %s 닿으면 멈춤·사라짐 %s" % [aimed, hit_ok])
@@ -3900,7 +3902,7 @@ func _jam_orbs() -> void:
 ## 중앙 기술 (SKILL-01~05)
 func _skills() -> void:
 	_fresh(12)
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	main.abilities_system._skills_new_run(1)
 	var set_ok: bool = main.skill_ids == ["focus", "brand"] and Skill.SETS.size() == 3
 	main.mp_mode = "coop"
@@ -3923,7 +3925,7 @@ func _skills() -> void:
 	var b := _orb(c + Vector2(260, 40), 50.0)
 	var boss := _orb(c + Vector2(180, -60), 50.0, Orb.Kind.BOSS)
 	var out := _orb(c + Vector2(200, 200), 50.0)
-	main._resolve(0.0)
+	main.combat_system._resolve(0.0)
 	var held: bool = main.abilities_system._use_skill("hold", c + Vector2(210, 0))
 	var hold_ok: bool = held and is_equal_approx(a.root_timer, 2.0) and is_equal_approx(b.root_timer, 2.0) and is_equal_approx(boss.root_timer, 1.0) and out.root_timer == 0.0 and is_equal_approx(main.abilities_system.skill_left("hold"), 30.0)
 	ok("SKILL-03", hold_ok, "붙잡기: 120 안 2초(보스 1초), 밖은 그대로, 다시 쓰기 30초")
@@ -3944,7 +3946,7 @@ func _skills() -> void:
 		o.root_timer = 0.0
 		o.root_immune = 0.0
 		o.root_dr = 0
-	main._resolve(0.0)
+	main.combat_system._resolve(0.0)
 	main.abilities_system._skill_tick(0.01)
 	var auto_ok: bool = main.abilities_system.skill_left("hold") > 0.0 and main.abilities_system.skill_left("brand") > 0.0 and a.amp.has("brand") and is_equal_approx(main.abilities_system.skill_left("brand"), 12.8)
 	main.abilities_system.auto_skills = false
@@ -3963,7 +3965,7 @@ func _hold_immunity() -> void:
 			_fresh(12)
 			main.abilities_system._skills_new_run(0)
 			main.phase = main.Phase.WAVE
-			var o := _orb(main.center() + Vector2(210, 0), 100.0, kind, 60.0)
+			var o := _orb(main.viewport_system.center() + Vector2(210, 0), 100.0, kind, 60.0)
 			if natural:
 				for i in 3:
 					o.root(2.0)
@@ -3971,7 +3973,7 @@ func _hold_immunity() -> void:
 					o.step(1.0 / 60.0)
 			else:
 				o.root_immune = 2.0
-			main._resolve(0.0)
+			main.combat_system._resolve(0.0)
 			main.abilities_system._arm_skill(1)
 			var fx_n: int = main.skill_fx.size()
 			var immune := o.root_immune > 0.0 and o.root_timer == 0.0
@@ -3985,12 +3987,12 @@ func _hold_immunity() -> void:
 	_fresh(12)
 	main.abilities_system._skills_new_run(0)
 	main.phase = main.Phase.WAVE
-	var p: Vector2 = main.center() + Vector2(210, 0)
+	var p: Vector2 = main.viewport_system.center() + Vector2(210, 0)
 	var dead := _orb(p, 50.0)
 	dead.root_immune = 2.0
 	var outside := _orb(p + Vector2(150, 0), 50.0)
 	outside.root_immune = 2.0
-	main._resolve(0.0)
+	main.combat_system._resolve(0.0)
 	dead.hp = 0.0
 	main.abilities_system._arm_skill(1)
 	var missed: bool = not main.abilities_system._use_skill("hold", p)
@@ -4002,13 +4004,13 @@ func _hold_immunity() -> void:
 		_fresh(12)
 		main.abilities_system._skills_new_run(0)
 		main.phase = main.Phase.WAVE
-		var c: Vector2 = main.center() + Vector2(210, 0)
+		var c: Vector2 = main.viewport_system.center() + Vector2(210, 0)
 		var group: Array = []
 		for i in 3:
 			group.append(_orb(c + Vector2(0, i * 20), 50.0))
 		var immune: Orb = group[0 if immune_first else 2]
 		immune.root_immune = 2.0
-		main._resolve(0.0)
+		main.combat_system._resolve(0.0)
 		main.abilities_system._arm_skill(1)
 		var used: bool = main.abilities_system._use_skill("hold", c)
 		var stopped: bool = group.all(func(o): return o == immune or is_equal_approx(o.root_timer, 2.0))
@@ -4019,15 +4021,15 @@ func _hold_immunity() -> void:
 	_fresh(12)
 	main.abilities_system._skills_new_run(0)
 	main.phase = main.Phase.WAVE
-	var boss := _orb(main.center() + Vector2(210, 0), 100.0, Orb.Kind.BOSS)
+	var boss := _orb(main.viewport_system.center() + Vector2(210, 0), 100.0, Orb.Kind.BOSS)
 	boss.root_immune = 2.0
-	main._resolve(0.0)
+	main.combat_system._resolve(0.0)
 	main.toast.text = "자동 사용 전"
 	main.abilities_system.auto_skills = true
 	main.abilities_system._skill_tick(0.01)
 	var quiet: bool = main.abilities_system.skill_left("hold") == 0.0 and main.skill_used == 0 and main.toast.text == "자동 사용 전"
 	boss.step(2.1)
-	main._resolve(0.0)
+	main.combat_system._resolve(0.0)
 	main.abilities_system._skill_tick(0.01)
 	ok("SKILL-03", quiet and is_equal_approx(boss.root_timer, 1.0) and is_equal_approx(main.abilities_system.skill_left("hold"), 30.0) and main.skill_used == 1,
 		"붙잡기 자동 사용: 면역 중 비용·안내 없음, 면역이 풀리면 다시 사용")
@@ -4040,16 +4042,16 @@ func _hold_immunity() -> void:
 ## 기맥·빌드 읽기 (LEY-01..03, BUILD-01..02)
 func _ley_build() -> void:
 	_fresh(12)
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	main.run_id = "spec-ley"
 	main.abilities_system._ley_new_run()
 	var a: Array = main.ley.duplicate()
 	main.abilities_system._ley_new_run()
 	var same: bool = a == main.ley
-	var fr: Rect2 = main.field_rect().grow(-90.0)
+	var fr: Rect2 = main.combat_system.field_rect().grow(-90.0)
 	var cons := a.size() == 3
 	for i in a.size():
-		var d: float = a[i].distance_to(main.core())
+		var d: float = a[i].distance_to(main.viewport_system.core())
 		cons = cons and fr.has_point(a[i]) and d >= 150.0 and d <= 360.0
 		for j in i:
 			cons = cons and a[i].distance_to(a[j]) >= 220.0
@@ -4114,8 +4116,8 @@ func _late_curve() -> void:
 ## 새 속성 피·환영 (2026-11-04)
 func _new_elems(c: Vector2) -> void:
 	var _grid := func():
-		main.targets = main.orbs.get_children()
-		main._build_grid()
+		main.combat_system.targets = main.orbs.get_children()
+		main.combat_system._build_grid()
 	# 피 출혈: 움직인 만큼 피해, 멈추면 피해 없음
 	var bt := _tower(c + Vector2(-300, -200), Elem.BLOOD, 2)
 	var mv := _orb(c + Vector2(-300, 0), 1e6, Orb.Kind.NORMAL, 60.0)

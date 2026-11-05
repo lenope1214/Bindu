@@ -436,7 +436,7 @@ static func carry_n(tw: Object) -> int:
 ## 둘레 구체 모두에 (자기 빼고)
 static func around(tw: Object, main: Node, at: Vector2, r: float, f: float, key: String, skip: Object = null) -> int:
 	var n := 0
-	for o in main.near(at, r + 20.0):
+	for o in main.combat_system.near(at, r + 20.0):
 		if o != skip and is_instance_valid(o) and o.hp > 0.0 and o.position.distance_to(at) < r + o.radius():
 			carry(tw, o, f, key, at, o.position.distance_to(at) / maxf(r, 1.0))
 			n += 1
@@ -453,7 +453,7 @@ static func spread(o: Orb) -> void:
 		return
 	var r := o.radius() + FIRE_R * wide(tw) * (1.0 + BLAZE_R if has(tw, "blaze") else 1.0)
 	if around(tw, o.main, o.position, r, FIRE_F * kf, "share:fire", o) > 0:
-		o.main.burst(o.position, Elem.COLORS[Elem.FIRE], 3, 60.0)
+		o._spawning_port.burst(o.position, Elem.COLORS[Elem.FIRE], 3, 60.0)
 
 
 ## 독 전염: 중독된 채 죽으면 주변에 효과
@@ -475,11 +475,11 @@ static func pull(o: Orb) -> void:
 	if kd <= 0.0:
 		return
 	var r := DARK_R * wide(tw)
-	for other in o.main.near(o.position, r + 20.0):
+	for other in o._combat_port.near(o.position, r + 20.0):
 		if other != o and is_instance_valid(other) and other.hp > 0.0 and other.position.distance_to(o.position) < r:
 			other.push((o.position - other.position).normalized() * DARK_PULL * kd)
 			carry(tw, other, DARK_F * kd, "share:dark", o.position, other.position.distance_to(o.position) / r)
-	o.main.burst(o.position, Elem.COLORS[Elem.DARK], 8, -90.0)
+	o._spawning_port.burst(o.position, Elem.COLORS[Elem.DARK], 8, -90.0)
 
 
 ## 빛 꿰뚫음: 치명타가 난 구체 뒤쪽 일직선
@@ -493,14 +493,14 @@ static func pierce(tw: Object, o: Orb) -> void:
 		d = tw.aim
 	var length := LIGHT_LEN * wide(tw)
 	var mid := o.position + d * length * 0.5
-	for other in tw.main.near(mid, length * 0.5 + 20.0):
+	for other in tw._combat_port.near(mid, length * 0.5 + 20.0):
 		if other == o or not is_instance_valid(other) or other.hp <= 0.0:
 			continue
 		var rel: Vector2 = other.position - o.position
 		var along := rel.dot(d)
 		if along > 0.0 and along < length and absf(rel.cross(d)) < LIGHT_W + other.radius():
 			carry(tw, other, LIGHT_F * kl, "share:light", other.position - d, along / length)
-	tw.main.beam(o.position, o.position + d * length, Elem.COLORS[Elem.LIGHT])
+	tw._spawning_port.beam(o.position, o.position + d * length, Elem.COLORS[Elem.LIGHT])
 
 
 ## Tower.hit에서: 자리가 없는 오브젝트는 공격 자체를 자리로 본다 (땅 다짐: 맞은 구체가 확률로 묶임) · 시간 되풀이(맞힌 구체에 효과 한 번 더)
@@ -538,7 +538,7 @@ static func aff_hit(tw: Object, o: Orb, k: float, lit: bool, had_chill: float) -
 		var d: float = o.hurt(ref_dmg(tw) * THERMO_DMG * minf(had_chill, 3.0) / 3.0 * o.resist_mul(els), false, tw)
 		tw.credit(d, "aff:thermo")
 		if tw.main:
-			tw.main.burst(o.position, Color(0.8, 0.9, 1.0), 6, 100.0)
+			tw._spawning_port.burst(o.position, Color(0.8, 0.9, 1.0), 6, 100.0)
 	if o.hp <= 0.0:
 		return
 	if ids.has("rust") and els.has(Elem.POISON) and o.poison_t > 0.0:
@@ -555,7 +555,7 @@ static func aff_hit(tw: Object, o: Orb, k: float, lit: bool, had_chill: float) -
 		return
 	tw.aff_cd = NEAR_CD
 	var r := NEAR_R * wide(tw)
-	for other in tw.main.near(o.position, r + 20.0):
+	for other in tw._combat_port.near(o.position, r + 20.0):
 		if other == o or not is_instance_valid(other) or other.hp <= 0.0 or other.position.distance_to(o.position) > r + other.radius():
 			continue
 		if blz:
@@ -577,7 +577,7 @@ static func gore(o: Orb) -> void:
 		return
 	var old_tag: String = tw.tag
 	tw.tag = "share:blood"
-	var z: Zone = tw.main.spawn_zone("gore", tw.plv, o.position, tw)
+	var z: Zone = tw._spawning_port.spawn_zone("gore", tw.plv, o.position, tw)
 	tw.tag = old_tag
 	z.amt = kb
 	z.maker = o
@@ -626,4 +626,4 @@ static func reflect(tw: Object, o: Orb) -> void:
 		return
 	carry(src, o, tw.mirror_f, "share:illusion", tw.position, 0.0)
 	if tw.main and tw.main.pulses.size() < 40:
-		tw.main.beam(src.position, tw.position, Elem.COLORS[Elem.ILLUSION])
+		tw._spawning_port.beam(src.position, tw.position, Elem.COLORS[Elem.ILLUSION])

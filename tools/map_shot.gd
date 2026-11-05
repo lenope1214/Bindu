@@ -45,7 +45,7 @@ func _initialize():
 			main.help_label.visible = false
 			for i in 3:
 				main.picked = {"type": "elem", "e": Elem.ALL[i * 3], "lv": 1}
-				main.interaction_system._place_tower(main.core() + Vector2.from_angle(i * 2.0 + 0.4) * 170.0, Vector2.RIGHT)
+				main.interaction_system._place_tower(main.viewport_system.core() + Vector2.from_angle(i * 2.0 + 0.4) * 170.0, Vector2.RIGHT)
 			main.wave = 6
 			main.offer = [{"type": "elem", "e": Elem.ICE, "lv": 1}, {"type": "pat", "id": "lob"}, {"type": "mod", "id": "size"}]
 			main.phase = main.Phase.CHOOSE

@@ -13,7 +13,7 @@ func _orb(p: Vector2, id: String) -> Orb:
 	var o := Orb.new()
 	o.main = main
 	o.position = p
-	o.target = main.center()
+	o.target = main.viewport_system.center()
 	o.setup(Orb.Kind.NORMAL, 40.0, 0.0)
 	o.late = id
 	o.age = 1.0
@@ -58,7 +58,7 @@ func _initialize():
 			for o in main.orbs.get_children():
 				o.free()
 			main.to_spawn = 0
-			var c: Vector2 = main.center()
+			var c: Vector2 = main.viewport_system.center()
 			var b := _orb(c + Vector2(-330, -150), "blink")
 			b.late_t = 0.4
 			var ar := _orb(c + Vector2(-150, -190), "armor")

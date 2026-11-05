@@ -64,7 +64,7 @@ func _process(_d):
 		dumped = true
 		print("STUCK real=", Time.get_ticks_msec() - wave_ms, " wave=", main.wave, " t=", main.wave_time, " to_spawn=", main.to_spawn, " alive=", main.orbs.get_child_count(), " proj=", main.projectiles.get_child_count(), " zones=", main.zones.get_child_count())
 		for o in main.orbs.get_children():
-			print("  ORB kind=", o.kind, " pos=", o.position, " d=", o.position.distance_to(main.center()), " hp=", o.hp, "/", o.max_hp, " sh=", o.shield, " spd=", o.speed, " slow=", o.slow_factor, " root=", o.root_timer, " frozen=", o.frozen_t, " prison=", o.prison_t, " push=", o.push_budget, " q=", o.is_queued_for_deletion(), " target=", o.target, " age=", o.age, " resist=", o.resist_e, " sturdy=", o.sturdy)
+			print("  ORB kind=", o.kind, " pos=", o.position, " d=", o.position.distance_to(main.viewport_system.center()), " hp=", o.hp, "/", o.max_hp, " sh=", o.shield, " spd=", o.speed, " slow=", o.slow_factor, " root=", o.root_timer, " frozen=", o.frozen_t, " prison=", o.prison_t, " push=", o.push_budget, " q=", o.is_queued_for_deletion(), " target=", o.target, " age=", o.age, " resist=", o.resist_e, " sturdy=", o.sturdy)
 		for t in main.towers.get_children():
 			print("  TW ", t.title(), " @", t.position, " ", t.extras_text(), " rx=", t.reactions().map(func(r): return r["name"]))
 		quit()
@@ -122,7 +122,7 @@ func _process(_d):
 		var uncovered = false
 		for cand0 in main.lanes:
 			var cand = eff_lane(cand0)
-			var lp = main.center() + Vector2(cos(cand), sin(cand)) * 170
+			var lp = main.viewport_system.center() + Vector2(cos(cand), sin(cand)) * 170
 			if not ts.any(func(t): return t.position.distance_to(lp) < 160): uncovered = true
 		if uncovered or ts.size() < main.lanes.size() + 1:
 			for o in offer:
@@ -186,7 +186,7 @@ func _process(_d):
 			main.hud_system._show_toast(target.add(pick["e"], pick["lv"]))
 			main.cards_system._after_place()
 		else:
-			var c = main.center()
+			var c = main.viewport_system.center()
 			# 오브젝트가 가장 적은 진입 방향에 설치
 			var la = eff_lane(main.lanes[0])
 			var fewest = 999
@@ -219,7 +219,7 @@ func _process(_d):
 
 ## 저장 비교 뒤에만 재배치한다. 옮겨 간 길목도 지키도록 남는 오브젝트를 배정한다.
 func _rearrange():
-	var c = main.core()
+	var c = main.viewport_system.core()
 	var ts = main.towers.get_children()
 	var keep = []
 	var missing = []
@@ -239,7 +239,7 @@ func _rearrange():
 		var ld = Vector2.from_angle(a)
 		for k in 12:
 			var p = c + ld * (90 + 30 * (k / 2)) + ld.orthogonal() * (22 if k % 2 == 0 else -22)
-			if main.field_rect().has_point(p) and main.interaction_system._tower_at(p, t) == null:
+			if main.combat_system.field_rect().has_point(p) and main.interaction_system._tower_at(p, t) == null:
 				t.position = p
 				t.dir = ld
 				t.queue_redraw()
@@ -249,7 +249,7 @@ func _rearrange():
 # 소용돌이 맵: 구체가 반지름 r을 지날 때의 각도
 func eff_lane(a):
 	if Meta.map_id != "spiral": return a
-	var c = main.center()
+	var c = main.viewport_system.center()
 	var p = c + Vector2(cos(a), sin(a)) * 650
 	while p.distance_to(c) > 170:
 		p += (c - p).normalized().rotated(0.6) * 4.0

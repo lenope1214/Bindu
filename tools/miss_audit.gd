@@ -72,7 +72,7 @@ func _one(p: String, ex: String, nm: int, dist: float, fast: bool) -> Array:
 	main.wave_time = 10.0
 	main.to_spawn = 0
 	main.core_hp = 999
-	var tp: Vector2 = main.center() + Vector2(-560, 0)  # 구체가 가운데(핵)에 닿지 않게
+	var tp: Vector2 = main.viewport_system.center() + Vector2(-560, 0)  # 구체가 가운데(핵)에 닿지 않게
 	main.picked = {"e": Elem.FIRE, "lv": 1}
 	main.interaction_system._place_tower(tp, Vector2.RIGHT)
 	var t = main.towers.get_child(0)

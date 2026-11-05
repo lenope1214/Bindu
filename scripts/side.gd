@@ -73,7 +73,7 @@ static func tick(tw: Object, delta: float) -> void:
 static func nearest(tw: Object, r: float) -> Orb:
 	var best: Orb = null
 	var bd := r * r
-	for o in tw.main.near(tw.position, r):
+	for o in tw._combat_port.near(tw.position, r):
 		if is_instance_valid(o) and o.hp > 0.0:
 			var d: float = tw.position.distance_squared_to(o.position)
 			if d < bd:
@@ -86,7 +86,7 @@ static func nearest(tw: Object, r: float) -> Orb:
 static func hit_one(tw: Object, o: Orb) -> void:
 	var col: Color = tw.color()
 	col.a = 0.7
-	tw.main.beam(tw.position, o.position, col)
+	tw._spawning_port.beam(tw.position, o.position, col)
 	var old: String = tw.tag
 	tw.tag = "share:side"
 	tw.no_size = true
@@ -111,7 +111,7 @@ static func big_hit(tw: Object, o: Orb) -> void:
 			while got.size() < BIG_CHAIN:
 				var nx: Orb = null
 				var nd := BIG_JUMP * w * BIG_JUMP * w
-				for c in main.near(cur.position, BIG_JUMP * w):
+				for c in main.combat_system.near(cur.position, BIG_JUMP * w):
 					if is_instance_valid(c) and c.hp > 0.0 and not got.has(c):
 						var d: float = c.position.distance_squared_to(cur.position)
 						if d < nd:
@@ -122,7 +122,7 @@ static func big_hit(tw: Object, o: Orb) -> void:
 				got.append(nx)
 				pts.append(nx.position)
 				cur = nx
-			main.bolt(pts)
+			main.spawning_system.bolt(pts)
 		Elem.LIGHT:
 			var dir: Vector2 = (o.position - tw.position).normalized()
 			if dir == Vector2.ZERO:
@@ -134,15 +134,15 @@ static func big_hit(tw: Object, o: Orb) -> void:
 					var along := rel.dot(dir)
 					if along > 0.0 and absf(rel.cross(dir)) < hw + c.radius():
 						got.append(c)
-			main.beam(tw.position, tw.position + dir * 1600.0, Elem.COLORS[Elem.LIGHT])
+			main.spawning_system.beam(tw.position, tw.position + dir * 1600.0, Elem.COLORS[Elem.LIGHT])
 		Elem.DARK:
 			for c in main.live_orbs:
 				if is_instance_valid(c) and c.hp > 0.0:
 					got.append(c)
-			main.eclipse_screen()
+			main.field_view_system.eclipse_screen()
 		_:
 			var r := BIG_R * w
-			for c in main.near(at, r):
+			for c in main.combat_system.near(at, r):
 				if is_instance_valid(c) and c.hp > 0.0 and c.position.distance_to(at) < r + c.radius():
 					got.append(c)
 			if main.pulses.size() < 40:
@@ -161,5 +161,5 @@ static func big_hit(tw: Object, o: Orb) -> void:
 		tw.credit(dd, "share:side_big")
 		if c.hp > 0.0:
 			Share.carry(tw, c, BIG_F, "share:side_big", at, minf(c.position.distance_to(at) / r0, 1.0))
-	main.burst(at, tw.color(), 10, 160.0)
+	main.spawning_system.burst(at, tw.color(), 10, 160.0)
 	tw.side_big_fx = 0.5

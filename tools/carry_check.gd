@@ -41,7 +41,7 @@ func _initialize() -> void:
 
 	await create_timer(0.2).timeout
 	await fixture()
-	await mouse_click(world(main.center()))
+	await mouse_click(world(main.viewport_system.center()))
 	await fixture()
 	ok("UI-34", main.get_viewport_rect().size.is_equal_approx(root.get_visible_rect().size) and VirtualInput.viewport.size == root.size, "가상 화면의 논리 크기·렌더 해상도 원본 창과 일치")
 	var os_pointer := DisplayServer.mouse_get_position()
@@ -86,7 +86,7 @@ func _initialize() -> void:
 	ok("UI-31", held() and main.picks_left == 2, "가상 카드 클릭: 미소비·목록/상세 접힘·이름 말풍선 없음")
 	await mouse_move(world(target.position))
 	await snap("held-target")
-	var note_rect: Rect2 = main.get_canvas_transform() * main.place_note_rect
+	var note_rect: Rect2 = main.get_canvas_transform() * main.field_view_system.place_note_rect
 	ok("UI-25", main.hint.visible and note_rect.has_area() and not note_rect.intersects(main.hint.get_global_rect()) and not note_rect.intersects(main.cancel_btn.get_global_rect()), "대상 미리보기는 하단 상태·취소 버튼과 겹치지 않음")
 	ok("UI-35", main.patchlog_system._kr_keep("카드 놓는 중") in main.hint.text, "카드를 든 동안 같은 하단 상태 칸으로 안내")
 	main.bar_open = true
@@ -135,7 +135,7 @@ func _initialize() -> void:
 	await touch(card_center(1), false)
 	ok("UI-31", held() and main.picks_left == 2, "가상 터치 이벤트: 한 번 눌러 들기")
 	await snap("touch-held")
-	var place_label: Rect2 = main.get_canvas_transform() * main.place_label_rect
+	var place_label: Rect2 = main.get_canvas_transform() * main.field_view_system.place_label_rect
 	ok("UI-35", place_label.has_area() and not place_label.intersects(main.hint.get_global_rect()) and not place_label.intersects(main.cancel_btn.get_global_rect()), "터치 새로 설치 안내도 상태·취소 버튼을 피함")
 	var cancel_at: Vector2 = main.cancel_btn.get_global_rect().get_center()
 	await touch(cancel_at, true)
@@ -165,8 +165,8 @@ func _initialize() -> void:
 	await touch(cancel_at, true)
 	await touch(cancel_at, false)
 	ok("UI-05", main.phase == main.Phase.CHOOSE and main.interaction_system.selected == [target], "터치 방향 취소도 선택 복원")
-	await touch(world(main.center()), true)
-	await touch(world(main.center()), false)
+	await touch(world(main.viewport_system.center()), true)
+	await touch(world(main.viewport_system.center()), false)
 	ok("UI-32", main.interaction_system.selected.is_empty() and not main.card_dock.side.visible, "터치 빈 곳 누르기로 선택·상세 해제")
 	await fixture()
 	await touch(card_center(), true)
@@ -206,14 +206,14 @@ func _initialize() -> void:
 	await mouse_move(world(empty_at))
 	ok("UI-31", main.card_dock.carrying() and not main.ui_root.has_node("CarriedCard"), "속성 카드 이름 말풍선 없이 설치 안내만 표시")
 	await snap("element-place")
-	await mouse_move(world(main.center()))
+	await mouse_move(world(main.viewport_system.center()))
 	await snap("element-near-core")
-	main._zoom_to(1.5, main.get_viewport_rect().size / 2)
+	main.viewport_system._zoom_to(1.5, main.get_viewport_rect().size / 2)
 	await mouse_move(Vector2(main.get_viewport_rect().size.x - 4, 90))
 	camera_ready = false
 	await snap("element-edge-zoom")
 	camera_ready = true
-	main._reset_zoom()
+	main.viewport_system._reset_zoom()
 	await key(KEY_ESCAPE)
 	await drag_to(world(empty_at), 1)
 	ok("UI-31", main.phase == main.Phase.AIM and main.towers.get_child_count() == 2 and main.picks_left == 2, "속성 카드 드롭: 방향 확정 전에는 새 오브젝트·횟수 소비 없음")
@@ -238,7 +238,7 @@ func _initialize() -> void:
 	await touch(main.aim_ok_btn.get_global_rect().get_center(), false)
 	ok("UI-31", main.towers.get_child_count() == 3 and main.picks_left == 1, "터치 속성 드래그 후 방향 터치로 가상 설치")
 	await fixture()
-	main._zoom_to(1.5, main.get_viewport_rect().size / 2)
+	main.viewport_system._zoom_to(1.5, main.get_viewport_rect().size / 2)
 	var zoomed: Transform2D = main.get_canvas_transform()
 	await mouse_click(card_center())
 	ok("UI-31", main.get_canvas_transform().is_equal_approx(zoomed), "카드 들어도 사용자 확대 유지")
@@ -247,7 +247,7 @@ func _initialize() -> void:
 	main.cards_system._set_card_detail(true)
 	await settle()
 	ok("UI-31", main.get_canvas_transform().is_equal_approx(zoomed), "상세를 열어도 사용자 확대 유지")
-	main._reset_zoom()
+	main.viewport_system._reset_zoom()
 	await settle()
 	await snap("detail")
 	main.cards_system._set_card_detail(false)
@@ -294,7 +294,7 @@ func panel_regressions() -> void:
 	await snap("toggle-restored")
 	main.cards_system._set_card_detail(true)
 	await mouse_move(card_center())
-	await mouse_move(world(main.center()))
+	await mouse_move(world(main.viewport_system.center()))
 	ok("UI-32", main.card_dock.pic.mode == "card", "카드 호버 종료 뒤 미리보기 유지")
 	await key(KEY_V)
 	for e in Elem.ALL:
@@ -303,7 +303,7 @@ func panel_regressions() -> void:
 	await key(KEY_SHIFT)
 	await mouse_move(world(target.position))
 	ok("UI-32", main.card_dock.shown_tower == target, "유지된 카드 미리보기를 새 오브젝트 정보로 교체")
-	await mouse_move(world(main.center()))
+	await mouse_move(world(main.viewport_system.center()))
 	ok("UI-32", main.card_dock.side.visible and main.card_dock.shown_tower == target, "오브젝트와 패널 사이 빈 공간에서도 상세 유지")
 	await mouse_move(main.card_dock.side.get_global_rect().get_center())
 	await snap("inspector-retained")
@@ -332,7 +332,7 @@ func panel_regressions() -> void:
 	VirtualInput.send(release)
 	main.interaction_system.selected = [refused]
 	main.tip_tower = refused
-	await mouse_click(world(main.center()))
+	await mouse_click(world(main.viewport_system.center()))
 	ok("UI-32", main.interaction_system.selected.is_empty() and main.card_dock.inspected_tower == null and main.tip_tower == null and not main.card_dock.side.visible, "빈 배경 클릭으로 오브젝트 선택·상세 해제")
 	await snap("inspector-dismissed")
 	main.bar_open = false
@@ -365,27 +365,27 @@ func panel_regressions() -> void:
 	ok("UI-32", paused, "세 번째 Esc는 일시정지")
 	await key(KEY_ESCAPE)
 	ok("UI-32", not paused, "Esc로 일시정지 해제")
-	await mouse_move(world(main.center()))
+	await mouse_move(world(main.viewport_system.center()))
 	await mouse_click(world(refused.position))
 	await mouse_click(main.card_dock.close_btn.get_global_rect().get_center())
 	ok("UI-32", main.interaction_system.selected.is_empty() and not main.card_dock.side.visible, "고정 헤더 ×로 선택·상세 닫기")
 	await mouse_click(world(refused.position))
 	await mouse_click(main.card_dock.direction_btn.get_global_rect().get_center())
-	await mouse_click(world(main.center()))
+	await mouse_click(world(main.viewport_system.center()))
 	ok("UI-32", main.phase == main.Phase.CHOOSE and main.interaction_system.moving == null and not main.card_dock.side.visible and main.picks_left == 2, "배경으로 방향 확정 후 오브젝트 상세 해제")
 	main.cards_system._set_cards_hidden(true)
 	await settle()
 	await key(KEY_V)
 	await mouse_move(card_center(1))
 	ok("UI-32", main.card_dock.pic.mode == "card" and main.card_dock.inspected_tower == null and main.card_dock.pic.card.get("e", -1) == Elem.FIRE, "새 카드 호버로 오브젝트 상세 교체")
-	await mouse_click(world(main.center()))
+	await mouse_click(world(main.viewport_system.center()))
 	ok("UI-32", main.card_dock.pic.mode == "card" and main.picks_left == 2, "배경 클릭은 카드 미리보기·남은 선택 보존")
 	await mouse_click(card_center(1))
 	ok("UI-32", held() and not main.card_dock.side.visible, "카드 선택 시 상세 숨김·카드 들기 유지")
 	await key(KEY_ESCAPE)
 	await key(KEY_V)
 	await mouse_move(world(target.position))
-	await mouse_move(world(main.center()))
+	await mouse_move(world(main.viewport_system.center()))
 	target.queue_free()
 	await settle()
 	ok("UI-32", not main.card_dock.side.visible and main.card_dock.inspected_tower == null, "삭제된 오브젝트 상세 참조 해제")
@@ -419,7 +419,7 @@ func fixture() -> void:
 	main.cards_hidden = false
 	if main.card_dock.has_method("clear_gesture"):
 		main.card_dock.clear_gesture()
-	main._reset_zoom()
+	main.viewport_system._reset_zoom()
 	_fresh(12)
 	target = _tower(Vector2(220, 620), Elem.WATER)
 	refused = _tower(Vector2(1060, 620), Elem.WATER)
@@ -446,7 +446,7 @@ func world(p: Vector2) -> Vector2:
 
 func settle() -> void:
 	for i in 4:
-		main._process(0.0)
+		main.frame_system._process(0.0)
 		await process_frame
 
 func snap(label: String) -> void:

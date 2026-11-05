@@ -59,7 +59,7 @@ func _initialize():
 	ok("TUT-06", main.onboarding_system._first_action_text().contains("다시 열어"), "field view retains next action")
 	main.cards_system._set_cards_hidden(false)
 	main.cards_system._on_pick(card)
-	main.interaction_system._place_tower(main.center() + Vector2(-180, 120), Vector2.RIGHT)
+	main.interaction_system._place_tower(main.viewport_system.center() + Vector2(-180, 120), Vector2.RIGHT)
 	main.cards_system._after_place(card)
 	await snap("one_left")
 	ok("TUT-06", main.picks_left == 1 and main.phase == main.Phase.CHOOSE and main.onboarding_system._first_action_text().contains("한 장 더"), "first completed placement still needs one card")
@@ -68,7 +68,7 @@ func _initialize():
 	ok("TUT-06", main.picks_left == 1 and main.phase == main.Phase.CHOOSE and main.onboarding_system._first_action_text().contains("한 장 더"), "saved initial rest resumes correct action")
 	card = main.offer[0]
 	main.cards_system._on_pick(card)
-	main.interaction_system._place_tower(main.center() + Vector2(180, 120), Vector2.LEFT)
+	main.interaction_system._place_tower(main.viewport_system.center() + Vector2(180, 120), Vector2.LEFT)
 	main.cards_system._after_place(card)
 	await snap("ready")
 	ok("TUT-06", main.picks_left == 0 and main.phase == main.Phase.READY and main.onboarding_system._first_action_text().contains("웨이브"), "two real placements enable start action")
@@ -79,7 +79,7 @@ func _initialize():
 	main.onboarding_system._tut_tick()
 	ok("TUT-03", not main.tut.visible and not paused and main.onboarding_system.tut_queue.is_empty(), "event does not pause or open another modal")
 	Meta.guide_on = false
-	main._process(0.0)
+	main.frame_system._process(0.0)
 	ok("TUT-03", not main.guide_label.visible and not main.guide_more.visible, "turning guidance off hides current hint immediately")
 	Meta.guide_on = true
 	Tutorial.load_file()
@@ -89,7 +89,7 @@ func _initialize():
 	quit(1 if fails else 0)
 func snap(tag: String):
 	for i in 6:
-		main._process(0.0)
+		main.frame_system._process(0.0)
 		await process_frame
 	RenderingServer.force_draw()
 	main.get_viewport().get_texture().get_image().save_png(output.path_join(tag + ".png"))

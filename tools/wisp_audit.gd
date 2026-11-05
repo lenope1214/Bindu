@@ -100,7 +100,7 @@ func _run(j: Dictionary) -> Dictionary:
 	_clear()
 	main.wave = wave if mode == "kill" else 20
 	main.phase = main.Phase.WAVE; main.wave_active = true; main.wave_time = 10.0; main.to_spawn = 0
-	var c = main.center()
+	var c = main.viewport_system.center()
 	var ld := Vector2.UP
 	main.picked = {"e": Elem.SOUL, "lv": 3}
 	main.interaction_system._place_tower(c + ld * 100.0, ld)
@@ -140,11 +140,11 @@ func _run(j: Dictionary) -> Dictionary:
 		if spawn_t <= 0 and f < frames - 60 * 6:
 			spawn_t = 0.5 if mode == "immortal" else 0.35
 			if mode == "kill":
-				main._spawn_orb()
+				main.spawning_system._spawn_orb()
 			else:
 				var o = Orb.new(); o.main = main
 				var a := rng.randf_range(0, TAU)
-				o.position = c + Vector2.from_angle(a) * main._spawn_radius()
+				o.position = c + Vector2.from_angle(a) * main.spawning_system._spawn_radius()
 				o.from_a = a; o.target = c; o.swirl = main.SPIRAL_SWIRL
 				o.setup(Orb.Kind.NORMAL, 1000000, ospd)
 				main.orbs.add_child(o)

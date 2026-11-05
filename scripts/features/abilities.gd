@@ -1,26 +1,29 @@
 class_name BinduAbilities
 extends BinduFeature
+## 기맥·중앙 기술과 쿨다운. 예약 콜백은 main의 순서를 따른다.
 
 func leys_on() -> bool:
+	var session: BinduSession = self.session
 	return Rules.t("ley_on") > 0.0 and session.mp_mode == "" and OS.get_environment("LEY") != "0"  # 봇 비교용: LEY=0이면 끔
 
 
 ## 새 판: 중앙에서 150~360, 가장자리에서 90 넘게, 서로 220 넘게 떨어진 자리. 회랑은 문에서 150 넘게.
 func _ley_new_run() -> void:
+	var session: BinduSession = self.session
 	session.ley = []
 	if not leys_on():
 		return
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(session.run_id + "ley")
-	var fr := session.field_rect().grow(-90.0)
-	var c := session.core()
+	var fr := session.combat_system.field_rect().grow(-90.0)
+	var c := session.viewport_system.core()
 	var n := int(Rules.t("ley_n"))
 	for tries in 400:
 		if session.ley.size() >= n:
 			break
 		var p := Vector2(rng.randf_range(fr.position.x, fr.end.x), rng.randf_range(fr.position.y, fr.end.y))
 		if Meta.map_id == "line":
-			p.y = c.y + rng.randf_range(-session.LINE_HALF + 50.0, session.LINE_HALF - 50.0)  # 회랑: 길 안에만
+			p.y = c.y + rng.randf_range(-BinduSession.LINE_HALF + 50.0, BinduSession.LINE_HALF - 50.0)  # 회랑: 길 안에만
 		var d := absf(p.x - c.x) if Meta.map_id == "line" else p.distance_to(c)
 		if d < 150.0 or (Meta.map_id != "line" and d > 360.0):
 			continue
@@ -36,9 +39,10 @@ var ley_memo_id := -1
 
 
 func on_ley(t: Node) -> bool:
+	var session: BinduSession = self.session
 	if session.ley.is_empty():
 		return false
-	if session.phase == session.Phase.WAVE:
+	if session.phase == BinduSession.Phase.WAVE:
 		if ley_memo_id != session.sim_id:
 			ley_memo_id = session.sim_id
 			ley_memo = {}
@@ -50,6 +54,7 @@ func on_ley(t: Node) -> bool:
 
 
 func _on_ley(t: Node) -> bool:
+	var session: BinduSession = self.session
 	var r := Rules.t("ley_r")
 	for p in session.ley:
 		if t.position.distance_to(p) >= r:
@@ -65,6 +70,7 @@ func _on_ley(t: Node) -> bool:
 
 
 func _draw_ley() -> void:
+	var session: BinduSession = self.session
 	var now := Time.get_ticks_msec() / 1000.0
 	var r := Rules.t("ley_r")
 	for p in session.ley:
@@ -74,11 +80,11 @@ func _draw_ley() -> void:
 				used = true
 				break
 		var a := 0.5 + 0.2 * sin(now * 2.0 + p.x * 0.01)
-		session.draw_circle(p, r, Color(session.BUILD_COLOR, 0.08 if not used else 0.16))
+		session.draw_circle(p, r, Color(BinduSession.BUILD_COLOR, 0.08 if not used else 0.16))
 		for k in 6:
 			var a0 := TAU * k / 6.0 + now * 0.4
-			session.draw_arc(p, r, a0, a0 + 0.6, 6, Color(session.BUILD_COLOR, a if not used else 0.9), 2.0)
-		session.draw_circle(p, 3.0, Color(session.BUILD_COLOR, a))
+			session.draw_arc(p, r, a0, a0 + 0.6, 6, Color(BinduSession.BUILD_COLOR, a if not used else 0.9), 2.0)
+		session.draw_circle(p, 3.0, Color(BinduSession.BUILD_COLOR, a))
 
 
 # ---------- 중앙 기술 (Skill) ----------
@@ -88,10 +94,12 @@ var auto_skills := false  # 봇·점검: 설정과 상관없이 자동 사용
 
 ## 이번 판에 중앙 기술을 쓰는가 (멀티플레이·온라인 패치 skill_on 0이면 없음).
 func skills_on() -> bool:
+	var session: BinduSession = self.session
 	return Rules.t("skill_on") > 0.0 and session.mp_mode == "" and OS.get_environment("SKILL") != "0"  # 봇 비교용: SKILL=0이면 끔
 
 
 func _skills_new_run(set_i: int) -> void:
+	var session: BinduSession = self.session
 	session.skill_set = clampi(set_i, 0, Skill.SETS.size() - 1)
 	session.skill_ids = Skill.set_ids(session.skill_set).duplicate() if skills_on() else []
 	session.skill_cd = {}
@@ -100,10 +108,12 @@ func _skills_new_run(set_i: int) -> void:
 
 
 func skill_left(id: String) -> float:
+	var session: BinduSession = self.session
 	return session.skill_cd.get(id, 0.0)
 
 
 func _skill_tick(delta: float) -> void:
+	var session: BinduSession = self.session
 	if session.skill_ids.is_empty() or session.mp_ghost:
 		return
 	for id in session.skill_cd.keys():
@@ -118,7 +128,8 @@ func _skill_tick(delta: float) -> void:
 
 ## 기술 버튼(1·2 키): 쓸 곳을 누르기를 기다린다. 다시 누르면 취소.
 func _arm_skill(i: int) -> void:
-	if session.phase != session.Phase.WAVE or i < 0 or i >= session.skill_ids.size():
+	var session: BinduSession = self.session
+	if session.phase != BinduSession.Phase.WAVE or i < 0 or i >= session.skill_ids.size():
 		return
 	var id: String = session.skill_ids[i]
 	if skill_left(id) > 0.0:
@@ -132,7 +143,8 @@ func _arm_skill(i: int) -> void:
 
 ## p에 기술을 쓴다. 적용할 대상이 없으면 쓰지 않는다 (누른 기술이면 이유를 알림).
 func _use_skill(id: String, p: Vector2) -> bool:
-	if session.phase != session.Phase.WAVE or skill_left(id) > 0.0 or not id in session.skill_ids:
+	var session: BinduSession = self.session
+	if session.phase != BinduSession.Phase.WAVE or skill_left(id) > 0.0 or not id in session.skill_ids:
 		return false
 	if not Skill.use(session, id, p):
 		if session.skill_arm == id:
@@ -151,7 +163,8 @@ func _use_skill(id: String, p: Vector2) -> bool:
 
 ## 기술 버튼: 웨이브 중에만, 다시 쓰기까지 남은 초를 글로.
 func _skill_ui() -> void:
-	var show := session.phase == session.Phase.WAVE and not session.skill_ids.is_empty() and not session.title_label.visible
+	var session: BinduSession = self.session
+	var show := session.phase == BinduSession.Phase.WAVE and not session.skill_ids.is_empty() and not session.title_label.visible
 	for i in session.skill_btns.size():
 		var b: Button = session.skill_btns[i]
 		b.visible = show and i < session.skill_ids.size()
@@ -179,6 +192,7 @@ func _skill_ui() -> void:
 
 
 func _make_skill_btns(root: Control) -> void:
+	var session: BinduSession = self.session
 	for i in 2:
 		var b := Button.new()
 		b.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
@@ -195,10 +209,11 @@ func _make_skill_btns(root: Control) -> void:
 
 ## 기술 효과·고른 기술의 범위 (fx_layer, 전장 좌표).
 func _draw_skill_fx() -> void:
+	var session: BinduSession = self.session
 	for q in session.skill_fx:
 		var k: float = 1.0 - q[2] / 0.5
 		session.fx_layer.draw_arc(q[0], q[1] * (0.6 + 0.4 * k), 0, TAU, 48, Color(q[3], 0.9 * (1.0 - k)), 4.0)
-	if session.skill_arm != "" and session.phase == session.Phase.WAVE:
+	if session.skill_arm != "" and session.phase == BinduSession.Phase.WAVE:
 		var mp := session.interaction_system._pointer_world()
 		var col: Color = Skill.COLORS[session.skill_arm]
 		if session.skill_arm == "focus":
@@ -210,5 +225,3 @@ func _draw_skill_fx() -> void:
 			var r := Skill.radius(session.skill_arm)
 			session.fx_layer.draw_circle(mp, r, Color(col, 0.12))
 			session.fx_layer.draw_arc(mp, r, 0, TAU, 48, Color(col, 0.8), 2.0)
-
-

@@ -16,7 +16,7 @@ func _orb(p: Vector2) -> Orb:
 	var o := Orb.new()
 	o.main = main
 	o.position = p
-	o.target = main.center()
+	o.target = main.viewport_system.center()
 	o.setup(Orb.Kind.NORMAL, 40.0, 0.0)
 	o.age = 1.0
 	main.orbs.add_child(o)
@@ -71,7 +71,7 @@ func _initialize():
 		func():
 			main.tut.close()
 			main.wave = 12
-			var c: Vector2 = main.center()
+			var c: Vector2 = main.viewport_system.center()
 			st = _tower(c + Vector2(-150, 40), [Elem.STAR])
 			pl = _tower(c + Vector2(110, 60), [Elem.STAR, Elem.FIRE])
 			_tower(c + Vector2(-40, 110), [Elem.FIRE])

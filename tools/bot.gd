@@ -56,7 +56,7 @@ func _process(_d):
 		dumped = true
 		print("STUCK real=", Time.get_ticks_msec() - wave_ms, " wave=", main.wave, " t=", main.wave_time, " to_spawn=", main.to_spawn, " alive=", main.orbs.get_child_count(), " proj=", main.projectiles.get_child_count(), " zones=", main.zones.get_child_count())
 		for o in main.orbs.get_children():
-			print("  ORB kind=", o.kind, " pos=", o.position, " d=", o.position.distance_to(main.core()), " hp=", o.hp, "/", o.max_hp, " sh=", o.shield, " spd=", o.speed, " slow=", o.slow_factor, " root=", o.root_timer, " frozen=", o.frozen_t, " prison=", o.prison_t, " push=", o.push_budget, " q=", o.is_queued_for_deletion(), " target=", o.target, " age=", o.age, " resist=", o.resist_e, " sturdy=", o.sturdy)
+			print("  ORB kind=", o.kind, " pos=", o.position, " d=", o.position.distance_to(main.viewport_system.core()), " hp=", o.hp, "/", o.max_hp, " sh=", o.shield, " spd=", o.speed, " slow=", o.slow_factor, " root=", o.root_timer, " frozen=", o.frozen_t, " prison=", o.prison_t, " push=", o.push_budget, " q=", o.is_queued_for_deletion(), " target=", o.target, " age=", o.age, " resist=", o.resist_e, " sturdy=", o.sturdy)
 		for t in main.towers.get_children():
 			print("  TW ", t.title(), " @", t.position, " ", t.extras_text(), " rx=", t.reactions().map(func(r): return r["name"]))
 		quit()
@@ -208,7 +208,7 @@ func _process(_d):
 			main.hud_system._show_toast(target.add(pick["e"], pick["lv"]))
 			main.cards_system._after_place()
 		else:
-			var c = main.core()
+			var c = main.viewport_system.core()
 			# 오브젝트가 가장 적은 진입 방향에 설치
 			var la = eff_lane(main.lanes[0])
 			var fewest = 999
@@ -255,14 +255,14 @@ var adapt_w := -1
 func serves(t, a) -> bool:
 	if Meta.map_id == "line":
 		return true
-	var c = main.core()
+	var c = main.viewport_system.core()
 	var ld = Vector2(cos(a), sin(a))
 	var far = c + ld * (1200 if Meta.map_id == "line" else 600)
 	var q = Geometry2D.get_closest_point_to_segment(t.position, c, far)
 	return t.position.distance_to(q) < 120 and absf(angle_difference(t.dir.angle(), (far - t.position).angle())) < 0.35
 
 func _rearrange():
-	var c = main.core()
+	var c = main.viewport_system.core()
 	var ls = main.lanes.map(func(a): return eff_lane(a))
 	for t in main.towers.get_children():
 		if ls.any(func(a): return serves(t, a)):
@@ -283,7 +283,7 @@ func _rearrange():
 			else:
 				p = c + ld * (150 + 30 * ((lane_i + k) % 3) + 30 * k) + ld.orthogonal() * 70 * side
 			if main.interaction_system._tower_at(p, t) == null and p.distance_to(c) > 60:
-				t.position = p.clamp(main.field_rect().position, main.field_rect().end)
+				t.position = p.clamp(main.combat_system.field_rect().position, main.combat_system.field_rect().end)
 				t.dir = ld if _smart() else (c + ld * 600 - p).normalized()
 				t.queue_redraw()
 				break
@@ -291,7 +291,7 @@ func _rearrange():
 # 소용돌이 맵: 구체가 반지름 r을 지날 때의 각도
 func eff_lane(a):
 	if Meta.map_id != "spiral": return a
-	var c = main.core()
+	var c = main.viewport_system.core()
 	var p = c + Vector2(cos(a), sin(a)) * 650
 	while p.distance_to(c) > 170:
 		p += (c - p).normalized().rotated(0.6) * 4.0

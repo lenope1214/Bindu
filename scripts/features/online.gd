@@ -1,9 +1,11 @@
 class_name BinduOnline
 extends BinduFeature
+## 온라인 부팅·업데이트와 원격 판 연결. 예약 콜백은 main의 순서를 따른다.
 
 var remote_run := ""  # remote_btn이 가져올 판
 var updater: Updater  # Windows 게임 안 업데이트
 func _on_booted(info: Dictionary) -> void:
+	var session: BinduSession = self.session
 	if info.is_empty() or session.update_btn == null:
 		return
 	if session.title_label.visible:
@@ -34,6 +36,7 @@ func _on_booted(info: Dictionary) -> void:
 
 ## 다른 기기 진행과 합쳐졌다: 저장하고 시작 화면 글(최고 기록·해금)을 다시 쓴다.
 func _on_progress_synced() -> void:
+	var session: BinduSession = self.session
 	var b := Meta.best_of(Meta.run_key())
 	session.best_wave = maxi(session.best_wave, b[0])
 	session.best_score = maxi(session.best_score, b[1])
@@ -47,6 +50,7 @@ func _on_progress_synced() -> void:
 
 ## 계정의 진행 중 판 목록: 이 기기 판을 다른 기기가 가져갔으면 지우고, 이 기기에 판이 없으면 다른 기기 판을 이어 하게.
 func _on_runs_listed(list: Array) -> void:
+	var session: BinduSession = self.session
 	var local := _local_run_key()
 	remote_run = ""
 	for e in list:
@@ -55,7 +59,7 @@ func _on_runs_listed(list: Array) -> void:
 		if str(e.get("run", "")) == local and local != "" and not e.get("mine", true):
 			_on_run_moved(local)
 			local = ""
-	if local == "" and not FileAccess.file_exists(session.RUN_PATH):
+	if local == "" and not FileAccess.file_exists(BinduSession.RUN_PATH):
 		for e in list:
 			if e is Dictionary and not e.get("mine", true) and Net.same_minor(str(e.get("game", "")), Net.game_version()) and str(e.get("map", "")) in Meta.MAP_IDS:
 				remote_run = str(e["run"])
@@ -66,6 +70,7 @@ func _on_runs_listed(list: Array) -> void:
 
 
 func _claim_remote_run() -> void:
+	var session: BinduSession = self.session
 	if remote_run == "":
 		return
 	session.remote_btn.disabled = true
@@ -74,12 +79,13 @@ func _claim_remote_run() -> void:
 
 
 func _on_run_claimed(d: Dictionary) -> void:
+	var session: BinduSession = self.session
 	session.remote_btn.visible = false
 	var cfg := ConfigFile.new()
-	if d.is_empty() or cfg.parse(str(d.get("data", ""))) != OK or Meta.val(cfg, "run", "format", 0) != session.RUN_FORMAT:
+	if d.is_empty() or cfg.parse(str(d.get("data", ""))) != OK or Meta.val(cfg, "run", "format", 0) != BinduSession.RUN_FORMAT:
 		session.hud_system._show_toast("다른 기기의 판을 가져오지 못했어요")
 		return
-	cfg.save(session.RUN_PATH)
+	cfg.save(BinduSession.RUN_PATH)
 	session.moved_run = ""
 	session.persistence_system._refresh_continue()
 	if session.title_label.visible and session.continue_btn.visible:
@@ -88,6 +94,7 @@ func _on_run_claimed(d: Dictionary) -> void:
 
 ## 다른 기기가 이 판을 가져갔다: 시작 화면이면 이어하기를 지우고, 하는 중이면 계속 하되 서버에는 더 올리지 않는다.
 func _on_run_moved(key: String) -> void:
+	var session: BinduSession = self.session
 	if session.title_label.visible and _local_run_key() == key:
 		session.persistence_system._clear_run(false)
 		session.persistence_system._refresh_continue()
@@ -99,10 +106,11 @@ func _on_run_moved(key: String) -> void:
 
 func _local_run_key() -> String:
 	var cfg := ConfigFile.new()
-	return str(Meta.val(cfg, "run", "run_id", "")) if cfg.load(session.RUN_PATH) == OK else ""
+	return str(Meta.val(cfg, "run", "run_id", "")) if cfg.load(BinduSession.RUN_PATH) == OK else ""
 
 
 func _set_update_action(f: Callable) -> void:
+	var session: BinduSession = self.session
 	for c in session.update_btn.pressed.get_connections():
 		session.update_btn.pressed.disconnect(c["callable"])
 	session.update_btn.pressed.connect(f)
@@ -110,17 +118,20 @@ func _set_update_action(f: Callable) -> void:
 
 ## [업데이트]: 받는 동안 버튼이 진행률을 보여 주고, 다 되면 새 버전으로 다시 켜진다.
 func _start_update(latest: Dictionary) -> void:
+	var session: BinduSession = self.session
 	session.update_btn.disabled = true
 	session.update_btn.text = "업데이트 받는 중..."
 	updater.start(latest)
 
 
 func _on_update_progress(ratio: float) -> void:
+	var session: BinduSession = self.session
 	session.update_btn.text = "업데이트 받는 중 %d%%" % int(ratio * 100) if ratio >= 0.0 else "업데이트 받는 중..."
 
 
 ## 실패하면 원래 버전 그대로: 버튼을 눌러 지금처럼 zip을 직접 받는다.
 func _on_update_failed(reason: String) -> void:
+	var session: BinduSession = self.session
 	var latest: Variant = Net.info.get("latest")
 	var url := str(latest.get("url", "")) if latest is Dictionary else ""
 	session.update_btn.disabled = false
@@ -129,6 +140,7 @@ func _on_update_failed(reason: String) -> void:
 
 
 func _submit_run(done := true) -> void:
+	var session: BinduSession = self.session
 	if not Net.enabled() or session.mp_mode != "" or TutPlay.on:
 		return
 	var ts := session.towers.get_children()
@@ -152,13 +164,14 @@ func _submit_run(done := true) -> void:
 		"device": Meta.device_id, "nick": Meta.nickname, "title": Meta.title, "platform": Net.platform(), "game": session.old_run_ver if session.old_run_ver != "" else Net.game_version(),
 		"patch": Patch.id, "map": Meta.map_id, "rules": Meta.rules, "modes": Array(Modes.on) + (["grow"] if session.legacy_grow else []), "wave": session.wave, "score": session.score, "kills": session.kills,
 		"best_combo": session.best_combo, "game_secs": session.run_game, "real_secs": session.run_real, "perks": session.perks.duplicate(),
-		"towers": list, "src": src, "log": session.run_log, "leaks": session._leak_records(), "vary": Vary.record(), "run": session.run_id, "ended": done,
+		"towers": list, "src": src, "log": session.run_log, "leaks": session.combat_system._leak_records(), "vary": Vary.record(), "run": session.run_id, "ended": done,
 	})
 
 
 ## 서버가 기록을 받으면 게임 오버 글 아래에 온라인 순위.
 func _on_run_sent(res: Dictionary) -> void:
-	if session.phase != session.Phase.GAMEOVER or not res.get("accepted", false):
+	var session: BinduSession = self.session
+	if session.phase != BinduSession.Phase.GAMEOVER or not res.get("accepted", false):
 		return
 	var rk: Variant = res.get("rank")
 	if int(res.get("season", 0)) == 0:
@@ -169,7 +182,3 @@ func _on_run_sent(res: Dictionary) -> void:
 		var sname := str(season.get("name", "")) if season is Dictionary else ""
 		session.over_label.text += "\n온라인 순위%s: %s%d위 (최고 점수 %s)" % [" (쉽게 모드)" if Modes.easy() else "", sname + " " if sname != "" else "", int(rk["rank"]), session.num(int(rk["score"]))]
 		session.over_card.queue_redraw()
-
-
-## 시작 화면 리더보드 (2026-11-01 개편): 왼쪽 필터(맵·규칙·기록·시즌 칩을 모두 펼쳐 한 번에 고름), 오른쪽 순위 표(전체/이번 주 탭).
-## 처음엔 지금 고른 맵·규칙·기록 종류의 이번 시즌 전체. 지난 시즌은 전체만.

@@ -55,16 +55,16 @@ func detail_case() -> void:
 	Input.emulate_mouse_from_touch = true
 	await touch(world(target.position), true)
 	await touch(world(target.position), false)
-	main._process(4.0)
+	main.frame_system._process(4.0)
 	await settle()
 	ok("UI-16", main.card_dock.side.visible and main.detail_btn.is_visible_in_tree(), "터치 후 4초가 지나도 인스펙터·자세히 버튼 유지")
 	await touch(main.detail_btn.get_global_rect().get_center(), true)
 	await touch(main.detail_btn.get_global_rect().get_center(), false)
-	ok("UI-16", main._tip_detail_on() and main.card_dock.shown_tower == target and main.card_dock.side.visible and main._ring_target() == target and main.card_dock.pic.detail, "헤더 자세히 터치는 대상 유지·상세 전환")
+	ok("UI-16", main.field_view_system._tip_detail_on() and main.card_dock.shown_tower == target and main.card_dock.side.visible and main.field_view_system._ring_target() == target and main.card_dock.pic.detail, "헤더 자세히 터치는 대상 유지·상세 전환")
 	await snap("object-detail")
 	await touch(main.detail_btn.get_global_rect().get_center(), true)
 	await touch(main.detail_btn.get_global_rect().get_center(), false)
-	ok("UI-16", not main._tip_detail_on() and main.card_dock.shown_tower == target, "간단히로 복귀해도 대상 유지")
+	ok("UI-16", not main.field_view_system._tip_detail_on() and main.card_dock.shown_tower == target, "간단히로 복귀해도 대상 유지")
 
 func ownership_case() -> void:
 	await fixture()
@@ -193,7 +193,7 @@ func pause_inspector_case() -> void:
 	main.detail_btn.pressed.connect(counted)
 	await touch(at, true)
 	await touch(at, false)
-	ok("UI-07", paused and clicks[0] == 1 and main._tip_detail_on() and main.card_dock.shown_tower == target, "정지 중 터치 자세히도 대상을 유지")
+	ok("UI-07", paused and clicks[0] == 1 and main.field_view_system._tip_detail_on() and main.card_dock.shown_tower == target, "정지 중 터치 자세히도 대상을 유지")
 	main.detail_btn.pressed.disconnect(counted)
 	var before: int = main.card_dock.scroll.scroll_vertical
 	for i in 10:

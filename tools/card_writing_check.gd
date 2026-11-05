@@ -36,7 +36,7 @@ func _initialize():
 	ok("UI-20", is_equal_approx(Meta.ui_scale, float(args[1])) and main.ui_root.scale.is_equal_approx(Vector2.ONE * Meta.ui_scale), "requested text scale applied after saved settings")
 	_fresh(12)
 	for e in Elem.ALL:
-		_tower(main.center() + Vector2.from_angle(e * 0.7) * 180.0, e)
+		_tower(main.viewport_system.center() + Vector2.from_angle(e * 0.7) * 180.0, e)
 	main.run_flow_system._start_choose()
 	main.guide_lines.clear()
 	main.banner_queue.clear()
@@ -90,7 +90,7 @@ func _initialize():
 func settle():
 	for i in 8:
 		main.touch_ui = touch
-		main._process(0.0)
+		main.frame_system._process(0.0)
 		await process_frame
 	RenderingServer.force_draw()
 

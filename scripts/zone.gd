@@ -100,7 +100,7 @@ func trail_orbs(main) -> Array:
 			for y in range(floori((p.y - pad) / g), floori((p.y + pad) / g) + 1):
 				cells[Vector2i(x, y)] = true
 	for key in cells:
-		var cell = main.grid.get(key)
+		var cell = main.combat_system.grid.get(key)
 		if not cell:
 			continue
 		for o in cell:
@@ -246,7 +246,7 @@ func _end() -> void:
 				return
 			tw.main.wells.erase(self)
 			var inside: Array = []
-			for o in tw.main.near(position, radius + 30.0):
+			for o in tw._combat_port.near(position, radius + 30.0):
 				if o.hp > 0.0 and o.position.distance_to(position) < radius + o.radius():
 					inside.append(o)
 			# 모은 피해는 안에 있는 구체에 나눠 넣는다 (이미 배율이 다 곱해진 피해라 그대로)
@@ -255,14 +255,14 @@ func _end() -> void:
 				tw.hit(o, Rules.t("vortex_end") * _p() * (1.0 + minf(0.1 * eaten, 0.5)) * boost)
 				if share > 0.0 and o.hp > 0.0:
 					_hurt(o, share)
-			tw.main.burst(position, Elem.COLORS[Elem.DARK], 10, 120.0)
+			tw._spawning_port.burst(position, Elem.COLORS[Elem.DARK], 10, 120.0)
 		"rock":
 			# 무너지거나 사라질 때 둘레 구체에 돌 파편 피해 (2026-11-01 사용자 "벽 대폭 상향")
 			if Rules.t("wall_break") > 0.0:
-				for o in tw.main.near(position, radius + 60.0):
+				for o in tw._combat_port.near(position, radius + 60.0):
 					if o.hp > 0.0 and o.position.distance_to(position) < radius + 40.0 + o.radius():
 						_hit(o, Rules.t("wall_break") * _p(), 1.0)
-				tw.main.burst(position, Elem.COLORS[Elem.EARTH], 8, 100.0)
+				tw._spawning_port.burst(position, Elem.COLORS[Elem.EARTH], 8, 100.0)
 
 
 func _draw() -> void:

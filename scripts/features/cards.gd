@@ -1,8 +1,10 @@
 class_name BinduCards
 extends BinduFeature
+## 카드 선택·표현·적용. 예약 콜백은 main의 순서를 따른다.
 
 func _open_choose() -> void:
-	session.phase = session.Phase.CHOOSE
+	var session: BinduSession = self.session
+	session.phase = BinduSession.Phase.CHOOSE
 	session.wave_active = false
 	_clear_shots()
 	for t in session.towers.get_children():
@@ -16,6 +18,7 @@ func _open_choose() -> void:
 
 ## 쉬는 시간이 되면 남은 탄·장판을 지운다.
 func _clear_shots() -> void:
+	var session: BinduSession = self.session
 	for p in session.projectiles.get_children():
 		p.queue_free()
 	for z in session.zones.get_children():
@@ -23,6 +26,7 @@ func _clear_shots() -> void:
 
 
 func _make_choices() -> void:
+	var session: BinduSession = self.session
 	session.offer.clear()
 	var guard := 0
 	while session.offer.size() < 3 and guard < 50:
@@ -33,7 +37,7 @@ func _make_choices() -> void:
 		if not _card_enabled(card):
 			continue
 		# 넣을 곳이 없는 공격방식·강화 카드는 내지 않는다
-		if card["type"] in ["pat", "mod", "trig"] and not session._my_towers().any(func(t): return t.can_take(card)):
+		if card["type"] in ["pat", "mod", "trig"] and not session.multiplayer_system._my_towers().any(func(t): return t.can_take(card)):
 			continue
 		if _star_blocked(card):  # 별·행성이 다 찼고 레벨업할 별도 없으면 별 카드는 내지 않는다
 			continue
@@ -62,6 +66,7 @@ func _make_choices() -> void:
 
 ## 카드 줄 위 봉인 칩 (봉인 모드): 봉인된 속성(그림 + 이름)·공격방식(그림 + 이름)·연계 이름. cx 가운데, bottom 칩 아래 끝.
 func _draw_seal_chip(ci: CanvasItem, cx: float, bottom: float) -> Rect2:
+	var session: BinduSession = self.session
 	var fs := 14
 	var items: Array = []  # [그리기 종류, id, 글, 색]
 	for e in Vary.sealed["elem"]:
@@ -109,8 +114,9 @@ func _draw_seal_chip(ci: CanvasItem, cx: float, bottom: float) -> Rect2:
 
 ## 첫 판: 이번 웨이브에 새로 열린 카드 종류를 처음 한 번은 선택지에 꼭 넣는다 (속성 카드 하나는 남김).
 func _tutor_offer() -> void:
+	var session: BinduSession = self.session
 	for k in ["pat", "mod", "trig", "link"]:
-		if session.wave + 1 < session.TUTOR_OPEN[k] or session.tutor_given.has(k):
+		if session.wave + 1 < BinduSession.TUTOR_OPEN[k] or session.tutor_given.has(k):
 			continue
 		if not session.offer.any(func(cd): return cd["type"] == k):
 			var cd := _tutor_card(k)
@@ -126,6 +132,7 @@ func _tutor_offer() -> void:
 
 ## 넣을 곳이 있는 그 종류 카드 한 장 (없으면 빈 사전).
 func _tutor_card(k: String) -> Dictionary:
+	var session: BinduSession = self.session
 	var ids: Array = []
 	match k:
 		"pat": ids = Pat.PATTERN_IDS.slice(1)
@@ -142,15 +149,17 @@ func _tutor_card(k: String) -> Dictionary:
 
 ## 첫 판에는 아직 안 열린 카드 종류.
 func _card_open(k: String) -> bool:
-	return not session.tutor or session.wave + 1 >= session.TUTOR_OPEN[k]
+	var session: BinduSession = self.session
+	return not session.tutor or session.wave + 1 >= BinduSession.TUTOR_OPEN[k]
 
 
 ## 카드 [자세히] 켜기·끄기: 지금 선택지를 같은 카드로 다시 그린다 (새로 뽑지 않음).
 func _set_card_detail(on: bool) -> void:
+	var session: BinduSession = self.session
 	Meta.card_detail = on
 	session.card_detail_btn.set_pressed_no_signal(on)
 	session.progression_system._save_best()
-	if session.phase == session.Phase.CHOOSE and not session.perk_mode and not session.offer.is_empty():
+	if session.phase == BinduSession.Phase.CHOOSE and not session.perk_mode and not session.offer.is_empty():
 		var sel := session.tap_sel
 		_show_offer()
 		session.tap_sel = sel
@@ -159,6 +168,7 @@ func _set_card_detail(on: bool) -> void:
 
 ## 선택지 카드 버튼을 offer대로 다시 만든다.
 func _show_offer() -> void:
+	var session: BinduSession = self.session
 	var last_preview := session.card_dock.preview_card() if session.card_dock != null else {}
 	var retained: Button = null
 	session.tap_sel = -1
@@ -192,7 +202,8 @@ func _card_enabled(card: Dictionary) -> bool:
 
 ## 선택지 한 장: 속성 / 공격방식 / 강화 / 연계 중 하나.
 func _roll_card() -> Dictionary:
-	var ts := session._my_towers()
+	var session: BinduSession = self.session
+	var ts := session.multiplayer_system._my_towers()
 	var n := ts.size()
 	var elems: Array = Vary.open("elem", Elem.ALL).filter(func(e): return _card_enabled({"type": "elem", "e": e}))
 	if elems.is_empty():
@@ -242,6 +253,7 @@ func _card_color(card: Dictionary) -> Color:
 
 
 func _card_button(card: Dictionary, idx: int) -> Button:
+	var session: BinduSession = self.session
 	var col := _card_color(card)
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(230 if session.offer.size() <= 3 else 166, 170)
@@ -264,10 +276,10 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 	session.card_dock.watch(b, card)
 	var fit := session.hud_system.core_fit(card)
 	if fit != "":
-		rows.append({"t": "◎ 주력 %s 강화" % fit, "fs": 12, "c": session.BUILD_COLOR})
+		rows.append({"t": "◎ 주력 %s 강화" % fit, "fs": 12, "c": BinduSession.BUILD_COLOR})
 	if MapRule.card_aff(card):
 		var dmg_up: bool = card["type"] in ["elem", "pat"]
-		rows.append({"t": "◆ %s 친화%s" % [Meta.MAPS[Meta.map_id]["name"], " · 피해 +%d%%" % roundi(Rules.t("map_aff_dmg") * 100) if dmg_up else ""], "fs": 12, "c": session.MAP_AFF_COLOR})
+		rows.append({"t": "◆ %s 친화%s" % [Meta.MAPS[Meta.map_id]["name"], " · 피해 +%d%%" % roundi(Rules.t("map_aff_dmg") * 100) if dmg_up else ""], "fs": 12, "c": BinduSession.MAP_AFF_COLOR})
 
 	_card_paint(b, head, rows, foot, col, 14, session.offer.size())
 	b.focus_mode = Control.FOCUS_NONE  # 다른 버튼처럼: Space·Enter가 카드를 고르지 않게
@@ -286,6 +298,7 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 
 ## 카드 앞면 내용 {head, rows, foot, tip}. lvl 0 = 기본 주효과, 1 = 자세히(전체 설명).
 func _card_content(card: Dictionary, lvl: int) -> Dictionary:
+	var session: BinduSession = self.session
 	var head := {"kind": card["type"], "name": ""}
 	var rows: Array = []
 	var foot: Array = []
@@ -374,6 +387,7 @@ func _short(t: String) -> String:
 
 ## 자세히 + 올리기 창의 줄 [[글, 색]]: 앞면에 줄인 것까지 전부.
 func _card_full(card: Dictionary) -> Array:
+	var session: BinduSession = self.session
 	var W := Color(1, 1, 1, 0.9)
 	var D := Color(1, 1, 1, 0.6)
 	var out: Array = []
@@ -393,7 +407,7 @@ func _card_full(card: Dictionary) -> Array:
 					var o: int = r["b"] if r["a"] == e else r["a"]
 					out.append(["조합 %s (+%s) · %s" % [r["name"], Elem.NAMES[o], r["desc"]], r["color"]])
 					if r.get("aff_txt", "") != "":
-						out.append([r["aff_txt"], session.AFF_COL[r["aff"]]])
+						out.append([r["aff_txt"], BinduSession.AFF_COL[r["aff"]]])
 			var ups: int = session.waves_system._combo_parts(e)["ups"]
 			if ups > 0:
 				out.append(["%s 레벨업 가능 %d곳" % [Elem.NAMES[e], ups], D])
@@ -427,9 +441,10 @@ func _card_full(card: Dictionary) -> Array:
 
 ## [자세히]를 켠 채 카드에 올리면(터치는 한 번 눌러 미리보기) 카드 위에 모든 내용 창.
 func _draw_card_full() -> void:
+	var session: BinduSession = self.session
 	if session.card_dock != null and session.card_dock.active():
 		return
-	if not Meta.card_detail or session.phase != session.Phase.CHOOSE or session.perk_mode or session.cards_hidden or not session.choice_box.visible or session.get_tree().paused:
+	if not Meta.card_detail or session.phase != BinduSession.Phase.CHOOSE or session.perk_mode or session.cards_hidden or not session.choice_box.visible or session.get_tree().paused:
 		return
 	var cs := session.choice_box.get_children()
 	var hit: Button = null
@@ -490,6 +505,7 @@ func _draw_card_full() -> void:
 ##   {t: 글, i: 앞 그림(Glyph.ui id), fs, c, al(0 왼쪽 · 기본 가운데)} · {els: [짝 속성]} · {chip: 글, i} · {big: 글, i} · {pips: 보유 수}
 ## 높이는 내용에 맞춰 170~CARD_MAX_H, 넘치면 글자를 줄인다(최소 12).
 func _card_paint(b: Button, head: Dictionary, rows: Array, foot: Array, col: Color, base_fs := 14, count := 3) -> void:
+	var session: BinduSession = self.session
 	b.text = ""
 	var cw := 230.0 if count <= 3 else 166.0  # 4장일 때는 좁게
 	var fs := base_fs
@@ -519,7 +535,7 @@ func _card_paint(b: Button, head: Dictionary, rows: Array, foot: Array, col: Col
 				lh = session.ui_font.get_multiline_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, w, f).y + 4.0
 			lay.append([r, t, f, lh])
 			h += lh
-		if h + pad <= session.CARD_MAX_H or fs <= 12:
+		if h + pad <= BinduSession.CARD_MAX_H or fs <= 12:
 			break
 		fs -= 1
 	b.custom_minimum_size = session.card_dock.card_size()
@@ -531,10 +547,12 @@ func _card_paint(b: Button, head: Dictionary, rows: Array, foot: Array, col: Col
 
 
 func _draw_card(b: Button, col: Color) -> void:
+	var session: BinduSession = self.session
 	session.card_dock.draw_card(b, col)
 
 
 func _fav_tag(card: Dictionary) -> String:
+	var session: BinduSession = self.session
 	if Meta.favs.has(Codex.card_key(card)):
 		return "★ 선호"
 	if card["type"] == "elem":
@@ -568,7 +586,8 @@ func _choose_hint() -> String:
 
 ## 자동 튜토리얼 모달은 예약하지 않는다. 기존 이벤트 호출부는 짧은 안내와 함께 유지한다.
 func _on_reroll() -> void:
-	if session.phase != session.Phase.CHOOSE or session.get_tree().paused or session.coin_stage > 0:
+	var session: BinduSession = self.session
+	if session.phase != BinduSession.Phase.CHOOSE or session.get_tree().paused or session.coin_stage > 0:
 		return
 	if session.perk_mode:
 		_perk_reroll()
@@ -586,6 +605,7 @@ func _on_reroll() -> void:
 
 ## 특성 새로고침: 지금 나온 특성 말고 다른 것으로 3개를 다시 뽑는다 (모자라면 지금 것으로 채움).
 func _perk_reroll() -> void:
+	var session: BinduSession = self.session
 	if session.perk_rerolls <= 0 or not _perk_can_reroll():
 		session.hud_system._show_toast("이번 특성 선택의 새로고침을 다 썼어요")
 		return
@@ -603,6 +623,7 @@ func _perk_reroll() -> void:
 
 ## 다시 뽑으면 다른 특성이 하나라도 나올 수 있는지
 func _perk_can_reroll() -> bool:
+	var session: BinduSession = self.session
 	var now: Array = session.perk_offer.map(func(pk): return pk["id"])
 	return session.perks_system._perk_pool().any(func(pk): return not pk["id"] in now)
 
@@ -610,13 +631,15 @@ func _perk_can_reroll() -> bool:
 ## 새로고침 버튼: 남은 횟수를 같이 보여 준다.
 ## 선택지 내리기·올리기 (V): 카드에 가려진 필드를 본다. 마우스를 올린 오브젝트 범위·정보는 그대로 보인다.
 func _toggle_cards_hidden() -> void:
+	var session: BinduSession = self.session
 	if session.card_dock.input_blocked():
 		return
 	_set_cards_hidden(not session.cards_hidden)
 
 
 func _set_cards_hidden(h: bool) -> void:
-	if session.phase != session.Phase.CHOOSE:
+	var session: BinduSession = self.session
+	if session.phase != BinduSession.Phase.CHOOSE:
 		return
 	session.cards_hidden = h
 	session.choice_box.visible = not h
@@ -626,6 +649,7 @@ func _set_cards_hidden(h: bool) -> void:
 
 
 func _update_reroll_btn() -> void:
+	var session: BinduSession = self.session
 	if session.perk_mode:
 		session.reroll_btn.visible = session.perk_rerolls > 0 and not session.cards_hidden and session.coin_stage == 0 and _perk_can_reroll()
 		session.reroll_btn.text = str(session.perk_rerolls)
@@ -638,18 +662,21 @@ func _update_reroll_btn() -> void:
 
 ## 진입 방향은 웨이브마다 조금씩 늘고, 가끔 하나가 옮겨 간다.
 func _on_card_tap(card: Dictionary, _i: int) -> void:
-	if session.phase != session.Phase.CHOOSE or session.card_dock.suppress_tap or session.card_dock.input_blocked():
+	var session: BinduSession = self.session
+	if session.phase != BinduSession.Phase.CHOOSE or session.card_dock.suppress_tap or session.card_dock.input_blocked():
 		return
 	_on_pick(card)
 
 
 func _release_card_tap_guard() -> void:
+	var session: BinduSession = self.session
 	session.card_dock.suppress_tap = false
 	session.card_dock.touch_capture = false
 
 
 ## 터치로 고른(미리보기 중인) 카드의 속성 미리보기와 카드 진하기.
 func _tap_hover() -> void:
+	var session: BinduSession = self.session
 	if session.tap_sel >= 0 and session.tap_sel < session.offer.size() and not session.cards_hidden:
 		session.hover_elem = session.offer[session.tap_sel]["e"] if session.offer[session.tap_sel]["type"] == "elem" else -1
 	var cs := session.choice_box.get_children()
@@ -658,6 +685,7 @@ func _tap_hover() -> void:
 
 
 func _on_pick(card: Dictionary) -> void:
+	var session: BinduSession = self.session
 	if TutPlay.on and session.tplay != null and not session.tplay.allow_pick(card):
 		return
 	session.persistence_system._save_run()  # 카드를 들고 앱을 닫아도 적용 전 목록과 남은 선택을 복원한다.
@@ -668,7 +696,7 @@ func _on_pick(card: Dictionary) -> void:
 	session.hover_elem = -1
 	session.choice_box.visible = false
 	session.reroll_btn.visible = false
-	session.phase = session.Phase.PLACE
+	session.phase = BinduSession.Phase.PLACE
 	session.card_dock.inspected_tower = null
 	session.hint.text = session.ui_layout_system._th(_place_hint())
 	if session.card_dock.active():
@@ -684,6 +712,7 @@ func _stat_key(card: Dictionary) -> String:
 
 ## 이번 선택지와 고른 카드(빈 사전: 새로고침으로 넘김)를 판 기록에 남긴다.
 func _log_offer(card: Dictionary) -> void:
+	var session: BinduSession = self.session
 	var e := {"w": session.wave, "k": "card", "o": session.offer.map(_stat_key), "p": _stat_key(card) if not card.is_empty() else ""}
 	if not session.bank_picks.is_empty():
 		e["bw"] = session.bank_picks[0]  # 넘기기로 미뤘던 고르기: 쌓은 쉬는 시간의 웨이브
@@ -691,14 +720,16 @@ func _log_offer(card: Dictionary) -> void:
 
 
 func _place_hint() -> String:
+	var session: BinduSession = self.session
 	match session.picked.get("type", "elem"):
 		"elem":
-			return session.PLACE_HINT
+			return BinduSession.PLACE_HINT
 	return "넣을 오브젝트를 클릭   꾹 누르기·끌기: 옮기기\n우클릭/Esc: 카드 다시 선택"
 
 
 ## card: 이번에 넣은 카드.
 func _after_place(card: Dictionary = {}) -> void:
+	var session: BinduSession = self.session
 	_log_offer(session.picked if card.is_empty() else card)
 	Ach.on_pick(_stat_key(session.picked if card.is_empty() else card))
 	session.progression_system._check_progress()
@@ -715,17 +746,19 @@ func _after_place(card: Dictionary = {}) -> void:
 
 ## 자동 시작이 꺼져 있을 때: 설치를 마치고 Space를 기다린다. 이때도 오브젝트를 옮길 수 있다.
 func _enter_ready() -> void:
-	session.phase = session.Phase.READY
+	var session: BinduSession = self.session
+	session.phase = BinduSession.Phase.READY
 	session.choice_box.visible = false
 	session.reroll_btn.visible = false
 	session.start_btn.visible = true
 	session.start_btn.text = "웨이브 시작 (Space)"
-	session.hint.text = session.ui_layout_system._th(session.READY_HINT if Meta.games < 3 else "")
+	session.hint.text = session.ui_layout_system._th(BinduSession.READY_HINT if Meta.games < 3 else "")
 	session.persistence_system._save_run()
 
 
 func _start_wave_from_ready() -> void:
-	if session.phase == session.Phase.READY:
+	var session: BinduSession = self.session
+	if session.phase == BinduSession.Phase.READY:
 		session.run_flow_system._start_wave()
 
 
@@ -752,6 +785,7 @@ func _button_icon_center(b: Button) -> Vector2:
 
 ## 버튼 오른쪽 위 모서리에 작은 단축키 상자 (터치 화면에선 안 그림). key는 글 또는 글을 돌려주는 Callable.
 func _keycap(b: Button, key: Variant) -> void:
+	var session: BinduSession = self.session
 	b.theme_type_variation = "ShortcutButton"
 	b.add_to_group("keycap")
 	b.draw.connect(func():
@@ -762,6 +796,7 @@ func _keycap(b: Button, key: Variant) -> void:
 
 ## 메뉴 그림 버튼: 위에 그림, 아래 짧은 이름 (버튼 글은 비움).
 func _menu_glyph(b: Button, icon: String, label: String) -> void:
+	var session: BinduSession = self.session
 	b.text = ""
 	b.draw.connect(func():
 		var hov := b.is_hovered()
@@ -773,11 +808,13 @@ func _menu_glyph(b: Button, icon: String, label: String) -> void:
 
 ## 터치는 말풍선(tooltip)을 볼 수 없어 글 없는 아이콘 버튼이 무엇을 바꿨는지 몰랐다: 누르면 이름·상태를 잠깐 띄운다.
 func _icon_toast(b: Button) -> void:
+	var session: BinduSession = self.session
 	if session.touch_ui and b.tooltip_text != "":
 		session.hud_system._show_toast(session.ui_layout_system._kh(b.tooltip_text.get_slice("\n", 0)))
 
 
 func _toggle_mute() -> void:
+	var session: BinduSession = self.session
 	session.sfx.set_muted(not session.sfx.muted)
 	session.mute_btn.tooltip_text = "소리: " + ("끔" if session.sfx.muted else "켬") + " (M)"
 	session.mute_btn.queue_redraw()
@@ -785,18 +822,20 @@ func _toggle_mute() -> void:
 
 
 func _toggle_auto() -> void:
+	var session: BinduSession = self.session
 	session.auto_start = not session.auto_start
 	_update_auto_btn()
 	session.progression_system._save_best()
-	if session.auto_start and session.phase == session.Phase.READY:
+	if session.auto_start and session.phase == BinduSession.Phase.READY:
 		session.countdown = 2.0
 	elif not session.auto_start:
 		session.countdown = -1.0
-		if session.phase == session.Phase.READY:
+		if session.phase == BinduSession.Phase.READY:
 			session.start_btn.text = "웨이브 시작 (Space)"
 
 
 func _toggle_legend() -> void:
+	var session: BinduSession = self.session
 	session.legend_hidden = not session.legend_hidden
 	session.progression_system._save_best()
 
@@ -807,11 +846,13 @@ func _toggle_focus_view() -> void:
 
 
 func _toggle_bar() -> void:
+	var session: BinduSession = self.session
 	session.bar_open = not session.bar_open
 	session.progression_system._save_best()
 
 
 func _update_auto_btn() -> void:
+	var session: BinduSession = self.session
 	session.auto_btn.tooltip_text = "자동 시작: " + ("켬" if session.auto_start else "끔") + " (웨이브가 끝나고 카드 선택을 마치면 바로 다음 웨이브)"
 	session.auto_btn.queue_redraw()
 
@@ -821,10 +862,11 @@ var short_re := RegEx.create_from_string("\\s*\\([^)]*\\)")  # 카드 간소화:
 
 ## 오른쪽 설명 줄 앞 그림. 글자를 키우면 줄이 접히므로 앞줄들이 몇 줄로 접히는지 세어 자리를 맞춘다.
 func _apply_card(target: Tower) -> void:
+	var session: BinduSession = self.session
 	if target == null:
 		session.hud_system._show_toast("오브젝트 위에 놓으세요")
 		return
-	if not session._mine(target):
+	if not session.multiplayer_system._mine(target):
 		session.hud_system._show_toast("친구가 놓은 오브젝트에는 넣을 수 없어요")
 		return
 	var msg := ""
@@ -848,7 +890,7 @@ func _apply_card(target: Tower) -> void:
 			msg = target.add_trig(session.picked["id"])
 	session.hud_system._show_toast(msg)
 	session.sfx.play("place")
-	session.burst(target.position, _card_color(session.picked), 16, 160.0)
+	session.spawning_system.burst(target.position, _card_color(session.picked), 16, 160.0)
 	_after_place()
 
 
@@ -859,17 +901,20 @@ func star_full() -> bool:
 
 ## 이 카드가 별 카드인데 새로 놓을 수도, 넣을(레벨업할) 오브젝트도 없다.
 func _star_blocked(card: Dictionary) -> bool:
-	return card.get("type") == "elem" and card.get("e") == Elem.STAR and star_full() and not session._my_towers().any(func(t): return t.can_take(card))
+	var session: BinduSession = self.session
+	return card.get("type") == "elem" and card.get("e") == Elem.STAR and star_full() and not session.multiplayer_system._my_towers().any(func(t): return t.can_take(card))
 
 
 ## 특성 하나를 얻는다.
 func _grant_perk(id: String) -> void:
+	var session: BinduSession = self.session
 	session.perks[id] = session.perks.get(id, 0) + 1
 	session.perks_system._apply_perk(id)
 
 
 ## 쉬는 시간 [시작] 버튼 자리 (일반 판 도크가 옮겨 두면 원래 자리로).
 func _start_btn_layout() -> void:
+	var session: BinduSession = self.session
 	if session.start_btn.anchor_top != 1.0:
 		session.start_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 		session.start_btn.position = Vector2(-110, -100)

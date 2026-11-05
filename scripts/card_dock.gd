@@ -185,16 +185,16 @@ func camera_fit() -> void:
 	fit = minf(board.size.x / Meta.FIELD.x, board.size.y / Meta.FIELD.y)
 	var half: Vector2 = board.size / (fit * game.view_zoom) / 2.0
 	var limits: Vector2 = (half - Meta.FIELD / 2.0).max(Vector2.ZERO)
-	var p: Vector2 = game.center() + game.view_pan
+	var p: Vector2 = game.viewport_system.center() + game.view_pan
 	p = p.clamp(-limits + half, Meta.FIELD + limits - half)
-	game.view_pan = p - game.center()
+	game.view_pan = p - game.viewport_system.center()
 	game.camera.zoom = Vector2.ONE * fit * game.view_zoom
 	game.camera.position = p - (board.get_center() - game.get_viewport_rect().size / 2.0) / (fit * game.view_zoom)
 	game.camera.force_update_scroll()
 
 func world_view() -> Rect2:
 	var size: Vector2 = screen_board().size / maxf(0.01, fit * game.view_zoom)
-	return Rect2(game.center() + game.view_pan - size / 2.0, size)
+	return Rect2(game.viewport_system.center() + game.view_pan - size / 2.0, size)
 
 func over_ui(p: Vector2, include_info := true) -> bool:
 	if not active():
@@ -306,7 +306,7 @@ func handle_input(event: InputEvent) -> bool:
 				return true
 	if pending_card.is_empty():
 		if suppress_tap and event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			game.call_deferred("_release_card_tap_guard")
+			game.cards_system.call_deferred("_release_card_tap_guard")
 			return true
 		return false
 	var motion: bool = (event is InputEventMouseMotion and pointer_id == -1) \
@@ -328,7 +328,7 @@ func handle_input(event: InputEvent) -> bool:
 		elif was_touch:
 			game.cards_system._on_card_tap(tapped, game.offer.find(tapped))
 		if dropped or was_touch:
-			game.call_deferred("_release_card_tap_guard")
+			game.cards_system.call_deferred("_release_card_tap_guard")
 		return dropped or was_touch
 	return motion and card_dragging
 
@@ -342,7 +342,7 @@ func preview_card() -> Dictionary:
 	return {}
 
 func target_ok(t: Tower, card: Dictionary) -> bool:
-	return (game._mine(t) or (game.mp_mode == "coop" and card.get("type") == "elem" and t.req_e >= 0 and t.req_e == card.get("e", -1))) and t.can_take(card)
+	return (game.multiplayer_system._mine(t) or (game.mp_mode == "coop" and card.get("type") == "elem" and t.req_e >= 0 and t.req_e == card.get("e", -1))) and t.can_take(card)
 
 func watch(b: Button, card: Dictionary) -> void:
 	b.set_meta("offer_card", card)
@@ -422,7 +422,7 @@ func tick() -> void:
 		button.position = Vector2(x, panel.position.y + 8)
 		button.size = Vector2(w, CONTROL_HEIGHT)
 		x -= 8
-	game._update_choice_header()
+	game.field_overlay_system._update_choice_header()
 	game.choice_header.visible = game.choice_header.visible and cards
 	state.visible = cards and not game.choice_header.visible
 	state.text = "특성 선택 · 하나 선택"
@@ -622,7 +622,7 @@ func _update_side() -> void:
 			for o: Tower in game.towers.get_children():
 				total += o.dealt
 			var part: float = tower.dealt / total if total > 0.0 and game.towers.get_child_count() > 1 else -1.0
-			var more: bool = game._tip_detail_on()
+			var more: bool = game.field_view_system._tip_detail_on()
 			pic.show_tower(tower, more, part, "이번 웨이브 몫" if game.phase == game.Phase.WAVE else "지난 웨이브 몫", _pic_w())
 			# 그림으로 못 보이는 것만 글로: 자세히일 때 반응 설명 (공격 모양은 미리보기가 보여 준다)
 			if more:
@@ -630,7 +630,7 @@ func _update_side() -> void:
 					text += ("\n\n" if text != "" else "") + str(rx["name"]) + ": " + str(rx["desc"])
 	if pic.mode != "" and ((pic.mode == "tower" and shown_tower == null) or (pic.mode == "card" and card.is_empty())):
 		pic.clear()
-	direction_btn.visible = shown_tower != null and game.interaction_system.selected.size() == 1 and shown_tower == game.interaction_system.selected[0] and game._mine(shown_tower) and game.phase in [game.Phase.CHOOSE, game.Phase.READY] and not game.get_tree().paused
+	direction_btn.visible = shown_tower != null and game.interaction_system.selected.size() == 1 and shown_tower == game.interaction_system.selected[0] and game.multiplayer_system._mine(shown_tower) and game.phase in [game.Phase.CHOOSE, game.Phase.READY] and not game.get_tree().paused
 	heading.visible = not (game.touch_ui and pic.mode == "tower")
 	detail.visible = text != ""
 	var sig: String = title + "|" + text + ("|" + str(tower.get_instance_id()) if is_instance_valid(tower) and card.is_empty() else "")

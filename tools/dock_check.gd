@@ -70,9 +70,9 @@ func _initialize():
 	if revised:
 		# 카메라 독립 팔레트는 전장을 덮을 수 있다. 대상 클릭은 팔레트를 접은 뒤 아래에서 검사한다.
 		var board: Rect2 = main.card_dock.screen_board()
-		var world: Rect2 = main.get_canvas_transform() * main.arena()
+		var world: Rect2 = main.get_canvas_transform() * main.viewport_system.arena()
 		ok("UI-28", board.grow(1).encloses(world), "whole logical arena fits board including edge objects")
-		ok("UI-28", main.arena().size == Meta.FIELD, "logical arena unchanged")
+		ok("UI-28", main.viewport_system.arena().size == Meta.FIELD, "logical arena unchanged")
 		camera_start = main.get_canvas_transform()
 		var pt: Vector2 = main.towers.get_child(5).position
 		var screen: Vector2 = main.get_canvas_transform() * pt
@@ -112,7 +112,7 @@ func _initialize():
 	check_camera("wave")
 	if revised:
 		var p: Vector2 = main.card_dock.screen_board().get_center()
-		main._zoom_to(1.6, p)
+		main.viewport_system._zoom_to(1.6, p)
 		await snap("zoom")
 		ok("UI-28", main.view_zoom > 1.5, "zoom remains available inside board")
 		main.phase = main.Phase.CHOOSE
@@ -128,7 +128,7 @@ func _initialize():
 		VirtualInput.send(wheel)
 		await settle()
 		ok("UI-28", main.view_zoom == z, "visible dock wheel cannot zoom world")
-		main._reset_zoom()
+		main.viewport_system._reset_zoom()
 	main.wave = 5
 	main.perks_system._start_perk()
 	main.banner_t = 0
@@ -186,7 +186,7 @@ func check_camera(label: String):
 
 func settle():
 	for i in 8:
-		main._process(0.0)
+		main.frame_system._process(0.0)
 		await process_frame
 	RenderingServer.force_draw()
 
@@ -207,5 +207,5 @@ func click_at(p: Vector2):
 		event.pressed = pressed
 		VirtualInput.send(event)
 		await process_frame
-		main._process(0.0)
+		main.frame_system._process(0.0)
 	await settle()

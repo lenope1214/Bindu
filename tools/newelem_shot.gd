@@ -35,7 +35,7 @@ func _initialize():
 			if main.tut and main.tut.visible:
 				main.tut.visible = false,
 		func():
-			var c: Vector2 = main.core()
+			var c: Vector2 = main.viewport_system.core()
 			main.picked = {"type": "elem", "e": Elem.BLOOD, "lv": 2}
 			main.interaction_system._place_tower(c + Vector2(-170, -60), Vector2.LEFT)
 			main.picked = {"type": "elem", "e": Elem.ILLUSION, "lv": 2}
@@ -59,7 +59,7 @@ func _initialize():
 			main.cards_system._set_card_detail(false)
 			# 전장: 출혈·현혹 걸린 구체와 핏자국
 			main.cards_system._set_cards_hidden(true)
-			var c: Vector2 = main.core()
+			var c: Vector2 = main.viewport_system.core()
 			var bt: Tower = main.towers.get_child(0)
 			var it: Tower = main.towers.get_child(1)
 			for i in 6:

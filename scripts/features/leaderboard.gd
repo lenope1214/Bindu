@@ -1,5 +1,6 @@
 class_name BinduLeaderboard
 extends BinduFeature
+## 순위 목록·필터와 신고/차단 UI. 예약 콜백은 main의 순서를 따른다.
 
 var board_chips := {}  # 필터 줄: map·rules·kind·season → HFlowContainer
 var board_period := "all"  # 순위 표 탭: all(시즌 전체)·week(이번 주)
@@ -18,6 +19,7 @@ var board_raw := {}  # 리더보드 창: period → 받은 응답 (차단을 바
 var board_people := {}  # 리더보드 창에 보이는 다른 사람 {pid: 닉네임} (신고·차단 창 목록)
 var board_ugc_btn: Button  # 리더보드 창 오른쪽 아래 [신고·차단] (App Store 1.2, 지우지 말 것)
 func _toggle_board() -> void:
+	var session: BinduSession = self.session
 	session.records_panel.visible = not session.records_panel.visible
 	session.board_ugc_panel.visible = false
 	if not session.records_panel.visible:
@@ -40,6 +42,7 @@ func _board_tag() -> String:
 
 
 func _load_board() -> void:
+	var session: BinduSession = self.session
 	board_raw = {}
 	board_people = {}
 	session.board_ugc_panel.visible = false
@@ -71,6 +74,7 @@ func _board_value(what: String) -> Variant:
 
 
 func _on_seasons_loaded(list: Array) -> void:
+	var session: BinduSession = self.session
 	board_seasons = list.filter(func(x): return x is Dictionary)
 	if session.records_panel.visible and session.board_box.visible:
 		_draw_board()
@@ -84,6 +88,7 @@ func _season_name(id: int) -> String:
 
 
 func _on_board_loaded(d: Dictionary) -> void:
+	var session: BinduSession = self.session
 	if not session.records_panel.visible or not session.board_box.visible or d.get("tag", "") != _board_tag():
 		return
 	board_raw[d.get("period", "all")] = d
@@ -97,7 +102,8 @@ func _on_board_loaded(d: Dictionary) -> void:
 
 ## 리더보드 창 만들기 (records_panel 안). 칩·표는 _draw_board가 채운다.
 func _build_board() -> void:
-	var ph := session._phone()
+	var session: BinduSession = self.session
+	var ph := session.viewport_system._phone()
 	session.board_box = VBoxContainer.new()
 	session.board_box.set_anchors_preset(Control.PRESET_FULL_RECT)
 	session.board_box.offset_left = 18.0
@@ -202,19 +208,21 @@ func _build_board() -> void:
 
 ## 필터 칩 하나 (고른 칩은 금색 테두리·밝은 바탕)
 func _board_chip(text: String, on_press: Callable) -> Button:
+	var session: BinduSession = self.session
 	var b := Button.new()
 	b.text = text
 	b.focus_mode = Control.FOCUS_NONE
-	b.custom_minimum_size = Vector2(64, 44 if session._phone() else 32)
+	b.custom_minimum_size = Vector2(64, 44 if session.viewport_system._phone() else 32)
 	b.add_theme_font_size_override("font_size", 15)
 	b.pressed.connect(on_press)
 	return b
 
 
 func _board_chip_on(b: Button, on: bool) -> void:
+	var session: BinduSession = self.session
 	for st in ["normal", "hover", "pressed", "disabled"]:
 		var sb := StyleBoxFlat.new()
-		sb.set_corner_radius_all(14 if not session._phone() else 18)
+		sb.set_corner_radius_all(14 if not session.viewport_system._phone() else 18)
 		sb.content_margin_left = 12
 		sb.content_margin_right = 12
 		sb.set_border_width_all(1)
@@ -261,7 +269,8 @@ func _board_fill_chips() -> void:
 
 ## 표 한 줄. e가 null이면 열 이름 줄, Dictionary면 순위 한 줄.
 func _board_row(e: Variant) -> PanelContainer:
-	var ph := session._phone()
+	var session: BinduSession = self.session
+	var ph := session.viewport_system._phone()
 	var row := PanelContainer.new()
 	var sb := StyleBoxFlat.new()
 	sb.set_corner_radius_all(4)
@@ -375,7 +384,8 @@ func _draw_board() -> void:
 
 ## 리더보드 창 크기: 화면 폭에 맞춰 넓게(최대 1140, 폰 1400), 높이는 순위 10줄이 들어가게. 화면보다 크면 _fit_panels가 줄인다.
 func _board_fit() -> void:
-	var ph := session._phone()
+	var session: BinduSession = self.session
+	var ph := session.viewport_system._phone()
 	var w := minf(session.ui_root.size.x - 40.0, 1400.0 if ph else 1140.0)  # 폰은 가로로 넓게 써서 닉네임 칸을 넓힌다
 	var h := 560.0 if not ph else minf(590.0, session.ui_root.size.y - 24.0)  # 폰: 화면 높이에 맞추고 안은 굴려 본다
 	board_narrow = w < 1100.0  # 글자를 키운 PC·폰: 필터 칸과 표 열을 좁힌다
@@ -388,6 +398,7 @@ func _board_fit() -> void:
 
 ## 맵별 최고 기록 창은 원래 크기로
 func _records_fit() -> void:
+	var session: BinduSession = self.session
 	session.records_panel.offset_left = -430.0
 	session.records_panel.offset_right = 430.0
 	session.records_panel.offset_top = -325.0
@@ -406,6 +417,7 @@ func _board_text() -> String:
 
 ## 리더보드 [신고·차단]: 지금 창에 보이는 다른 사람 목록. 다시 누르면 닫는다.
 func _board_ugc_open() -> void:
+	var session: BinduSession = self.session
 	if session.board_ugc_panel.visible:
 		session.board_ugc_panel.visible = false
 		return
@@ -472,7 +484,7 @@ func _ugc_buttons(pid: String, nick: String, where: String, after: Callable) -> 
 	var rb := Button.new()
 	rb.text = "신고"
 	rb.focus_mode = Control.FOCUS_NONE
-	rb.custom_minimum_size = Vector2(72, 40 if session._phone() else 32)
+	rb.custom_minimum_size = Vector2(72, 40 if session.viewport_system._phone() else 32)
 	rb.add_theme_font_size_override("font_size", 15)
 	rb.disabled = pid == "" or not Net.report_ok()
 	rb.tooltip_text = "부적절한 닉네임 신고" if not rb.disabled else "지금은 신고할 수 없어요 (온라인 연결 필요)"
@@ -480,7 +492,7 @@ func _ugc_buttons(pid: String, nick: String, where: String, after: Callable) -> 
 		rb.disabled = true
 		rb.text = "보내는 중"
 		var code := await session.net.report(pid, nick, where)
-		if not is_instance_valid(rb):
+		if not is_instance_valid(session) or not is_instance_valid(rb):
 			return
 		if code == 200:
 			rb.text = "신고함"
@@ -494,7 +506,7 @@ func _ugc_buttons(pid: String, nick: String, where: String, after: Callable) -> 
 	var on := Meta.blocked.has(pid)
 	bb.text = "차단 풀기" if on else "차단"
 	bb.focus_mode = Control.FOCUS_NONE
-	bb.custom_minimum_size = Vector2(90, 40 if session._phone() else 32)
+	bb.custom_minimum_size = Vector2(90, 40 if session.viewport_system._phone() else 32)
 	bb.add_theme_font_size_override("font_size", 15)
 	bb.disabled = pid == ""
 	bb.tooltip_text = "이 기기에서 이 사람 이름을 가리고 멀티 방에서 막아요"
@@ -509,8 +521,3 @@ func _ugc_buttons(pid: String, nick: String, where: String, after: Callable) -> 
 		after.call())
 	box.add_child(bb)
 	return box
-
-
-# ---------- 패치노트 ----------
-
-## 버전별 패치노트 창: 길어서 굴려 보는 창. 바깥을 누르거나 Esc·N으로 닫는다.

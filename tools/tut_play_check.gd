@@ -138,11 +138,11 @@ func _act() -> void:
 			_aim(fire.dir.rotated(-0.6))
 		"preview":
 			main.interaction_system._start_move(fire)
-			_aim((main.core() + Vector2.from_angle(main.boss_plan.get("a", 0.0)) * 240.0 - fire.position).normalized().rotated(0.1))
+			_aim((main.viewport_system.core() + Vector2.from_angle(main.boss_plan.get("a", 0.0)) * 240.0 - fire.position).normalized().rotated(0.1))
 		"zoom":
-			main._zoom_to(1.6, main.get_viewport_rect().size / 2.0)
+			main.viewport_system._zoom_to(1.6, main.get_viewport_rect().size / 2.0)
 			await process_frame
-			main._reset_zoom()
+			main.viewport_system._reset_zoom()
 		"stack", "trig", "link":
 			_pick(s["card"])
 			main.interaction_system._place_card_at(fire.position, true)

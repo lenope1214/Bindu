@@ -1,5 +1,6 @@
 class_name BinduHud
 extends BinduFeature
+## 점수·DPS·안전 영역과 UI 배율. 예약 콜백은 main의 순서를 따른다.
 
 var panel_scroll := {}  # 폰: 창 → 안 굴림 칸 (_phone_scroll)
 var hud_sig := ""
@@ -11,6 +12,7 @@ var dps_choice_open := false  # 카드 선택 중엔 요약만, D로 상세를 �
 # 웨이브 중 실시간 DPS: 게임 시간 DPS_STEP초마다 오브젝트별 누적 피해(dealt)를 적어 두고 최근 DPS_WIN초 차이로 초당 피해 (이동 평균이라 덜 흔들림)
 var rank_of := {}  # 오브젝트 instance id → 피해 순위 1~3 (왕관·메달)
 func _build_dps(root: Control) -> void:
+	var session: BinduSession = self.session
 	session.dps_panel = FloatPanel.new("dps", session)
 	session.dps_panel.position = Vector2(10, 60)
 	session.dps_panel.custom_minimum_size.x = 300
@@ -30,6 +32,7 @@ func _build_dps(root: Control) -> void:
 
 ## 기본 자리: 점수 줄 아래 왼쪽.
 func _dps_home() -> Vector2:
+	var session: BinduSession = self.session
 	var top := session.hud.position.y + session.hud.size.y + 8.0 if session.hud.visible else 8.0
 	if session.mp_bar.visible:
 		top += session.mp_bar.size.y + 4.0
@@ -40,6 +43,7 @@ func _dps_home() -> Vector2:
 
 ## 옮겨 둔 떠 있는 창(FloatPanel)이 비켜야 할 것 (창 부모 좌표): 점수 줄 칩·오른쪽 아래 버튼·기술 버튼·웨이브 시작 버튼·웨이브 중 콤보 자리.
 func _panel_blocks(panel: Control) -> Array[Rect2]:
+	var session: BinduSession = self.session
 	var par := panel.get_parent() as Control
 	var inv := par.get_global_transform().affine_inverse()
 	var blocks: Array[Rect2] = []
@@ -52,13 +56,14 @@ func _panel_blocks(panel: Control) -> Array[Rect2]:
 	for c in [session.bar_box, session.start_btn, session.cancel_btn, session.aim_ok_btn, session.skip_badge, session.mp_bar, session.ver_label, session.legend] + session.skill_btns + dock_btns:
 		if c != null and c is Control and c.is_visible_in_tree():
 			blocks.append((inv * c.get_global_rect()).grow(4.0))
-	if session.phase == session.Phase.WAVE:
-		blocks.append((inv * session._combo_rect()).grow(4.0))  # 오른쪽 위 콤보 상자 자리 (웨이브 중엔 언제든 뜰 수 있어 비워 둔다)
+	if session.phase == BinduSession.Phase.WAVE:
+		blocks.append((inv * session.field_view_system._combo_rect()).grow(4.0))  # 오른쪽 위 콤보 상자 자리 (웨이브 중엔 언제든 뜰 수 있어 비워 둔다)
 	return blocks
 
 
 func _toggle_dps() -> void:
-	if session.card_dock != null and session.card_dock.active() and session.phase == session.Phase.CHOOSE:
+	var session: BinduSession = self.session
+	if session.card_dock != null and session.card_dock.active() and session.phase == BinduSession.Phase.CHOOSE:
 		dps_choice_open = not dps_choice_open
 	else:
 		session.dps_hidden = not session.dps_hidden
@@ -69,12 +74,13 @@ func _toggle_dps() -> void:
 
 ## 웨이브 중 표본 적기 (게임 시간 기준이라 배속과 상관없이 같은 값).
 func _dps_sample(delta: float) -> void:
+	var session: BinduSession = self.session
 	session.dps_t -= delta
 	if session.dps_t > 0.0:
 		return
-	session.dps_t += session.DPS_STEP
+	session.dps_t += BinduSession.DPS_STEP
 	session.dps_n += 1
-	var keep := int(session.DPS_WIN / session.DPS_STEP) + 1
+	var keep := int(BinduSession.DPS_WIN / BinduSession.DPS_STEP) + 1
 	for t in session.towers.get_children():
 		var h: Array = session.dps_hist.get(t.get_instance_id(), [])
 		h.append(t.dealt)
@@ -86,13 +92,14 @@ func _dps_sample(delta: float) -> void:
 ## 피해 1~3위 (왕관·메달, Tower._draw_rank). 이번 웨이브 누적 피해, 쉬는 시간엔 지난 웨이브 피해(t.dealt가 그 값).
 ## 웨이브 첫 RANK_HOLD초는 피해가 0부터 다시 쌓이므로 지난 순위를 그대로 둔다. 오브젝트 2개면 1위만, 1개면 없음.
 func _rank_update() -> void:
+	var session: BinduSession = self.session
 	if not Meta.rank_on:
 		if not rank_of.is_empty():
 			rank_of.clear()
 			for t in session.towers.get_children():
 				t.queue_redraw()
 		return
-	if session.phase == session.Phase.WAVE and session.wave_time < session.RANK_HOLD:
+	if session.phase == BinduSession.Phase.WAVE and session.wave_time < BinduSession.RANK_HOLD:
 		return
 	var list := session.towers.get_children().filter(func(t): return t.dealt > 0.0)
 	list.sort_custom(func(a, b): return a.dealt > b.dealt)
@@ -114,18 +121,20 @@ func _rank_update() -> void:
 
 ## 표의 초당 피해: 웨이브 중이면 최근 DPS_WIN초 이동 평균, 쉬는 시간이면 지난 웨이브 평균.
 func _dps_of(t: Tower) -> float:
-	if session.phase != session.Phase.WAVE:
+	var session: BinduSession = self.session
+	if session.phase != BinduSession.Phase.WAVE:
 		return t.dealt / maxf(session.wave_time, 0.001)
 	var h: Array = session.dps_hist.get(t.get_instance_id(), [])
 	if h.size() < 2:
 		return t.dealt / maxf(session.wave_time, 0.001)
 	# 마지막 표본 뒤 흐른 시간까지 넣으면 0.5초마다 톱니처럼 튀므로 표본끼리만 잰다
-	return (h[-1] - h[0]) / ((h.size() - 1) * session.DPS_STEP)
+	return (h[-1] - h[0]) / ((h.size() - 1) * BinduSession.DPS_STEP)
 
 
 ## 표를 보일지, 보이면 오브젝트·피해가 바뀌었을 때만 줄을 다시 만든다 (매 프레임 만들면 마우스 올림이 끊긴다).
 func _refresh_dps() -> void:
-	var on := session.phase in [session.Phase.CHOOSE, session.Phase.READY, session.Phase.WAVE] and not session.title_label.visible and session.wave_time > 1.0 and session.towers.get_child_count() > 0 \
+	var session: BinduSession = self.session
+	var on := session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY, BinduSession.Phase.WAVE] and not session.title_label.visible and session.wave_time > 1.0 and session.towers.get_child_count() > 0 \
 		and not session.get_tree().paused and not session.help_label.visible and not session.settings_panel.visible and not session.records_panel.visible and not session.notes_panel.visible and not session.modes_panel.visible
 	session.dps_panel.visible = on
 	if not on:
@@ -145,20 +154,20 @@ func _refresh_dps() -> void:
 	if moved:
 		bottom = par.size.y - 8.0  # 표 높이는 점수 줄 아래~화면 아래만큼까지, 넘치면 dps_panel.place가 위로 올린다
 	if not moved and session.choice_box.visible and not session.cards_hidden and session.choice_box.get_child_count() > 0 and session.choice_box.get_rect().position.x < 320.0:
-		bottom = minf(bottom, session.choice_box.get_rect().position.y - maxf(24.0, session._choice_headroom() + 4.0))  # 카드·선택 안내를 덮지 않게 (넘치면 굴려 본다)
+		bottom = minf(bottom, session.choice_box.get_rect().position.y - maxf(24.0, session.field_overlay_system._choice_headroom() + 4.0))  # 카드·선택 안내를 덮지 않게 (넘치면 굴려 본다)
 	if not moved and session.apply_btn.visible and session.apply_btn.get_rect().position.x < session.dps_panel.get_rect().end.x:
 		bottom = minf(bottom, session.apply_btn.get_rect().position.y - 28.0)  # 폰 [적용] 버튼(누른 카드 위)을 덮지 않게
 	if not moved and session.guide_label.visible and session.guide_label.get_rect().position.x < 320.0:
 		bottom = minf(bottom, session.guide_label.position.y - 4.0)  # 처음 안내 글 위까지만
 	var room := maxf(0.0 if session.apply_btn.visible else 48.0, bottom - top - session.dps_panel.head.size.y - 18.0)
-	var live := session.phase == session.Phase.WAVE
+	var live := session.phase == BinduSession.Phase.WAVE
 	var list := session.towers.get_children()
 	var dv := {}
 	for t in list:
 		dv[t] = _dps_of(t)
 	list.sort_custom(func(a, b): return dv[a] > dv[b])
 	# 웨이브 중엔 1초(표본 2개)마다만 고친다: 숫자가 매 프레임 바뀌면 읽을 수 없고 줄 순서도 덜 뒤바뀐다
-	var folded := session.dps_hidden or (session.card_dock != null and session.card_dock.active() and session.phase == session.Phase.CHOOSE and not dps_choice_open)
+	var folded := session.dps_hidden or (session.card_dock != null and session.card_dock.active() and session.phase == BinduSession.Phase.CHOOSE and not dps_choice_open)
 	var sig := "%s|%s|%d|%d" % [folded, live, roundi(room), session.dps_n / 2 if live else roundi(session.wave_time)]
 	for t in list:
 		sig += "|%d:%s" % [t.get_instance_id(), t.title()]
@@ -191,6 +200,7 @@ func _refresh_dps() -> void:
 
 ## 표 한 줄: 순위 · 색 · 이름 · 초당 피해 · 몫. 뒤에 몫만큼 막대.
 func _dps_row(t: Tower, rank: int, dps: float, total: float, live := false) -> Control:
+	var session: BinduSession = self.session
 	var share := dps / total if total > 0.0 else 0.0
 	var row := HBoxContainer.new()
 	row.custom_minimum_size = Vector2(0, 22)
@@ -237,7 +247,7 @@ func _dps_row(t: Tower, rank: int, dps: float, total: float, live := false) -> C
 			l.custom_minimum_size.x = 150
 		row.add_child(l)
 	if live:
-		row.tooltip_text = "%s\n최근 %d초 초당 %.1f · 전체의 %d%%\n이번 웨이브 피해 %d (평균 초당 %.1f)" % [t.title(), roundi(session.DPS_WIN), dps, roundi(share * 100.0), roundi(t.dealt), t.dealt / session.wave_time]
+		row.tooltip_text = "%s\n최근 %d초 초당 %.1f · 전체의 %d%%\n이번 웨이브 피해 %d (평균 초당 %.1f)" % [t.title(), roundi(BinduSession.DPS_WIN), dps, roundi(share * 100.0), roundi(t.dealt), t.dealt / session.wave_time]
 	else:
 		row.tooltip_text = "%s\n지난 웨이브 피해 %d · 초당 %.1f · 전체의 %d%%" % [t.title(), roundi(t.dealt), dps, roundi(share * 100.0)]
 	var b := t.breakdown()
@@ -252,6 +262,7 @@ func _dps_row(t: Tower, rank: int, dps: float, total: float, live := false) -> C
 
 ## 표 이름 칸: 글 대신 공격방식 그림 + 속성 그림(레벨 2 이상은 작은 숫자). 이름은 줄 말풍선에.
 func _dps_name(t: Tower, col: Color) -> Control:
+	var session: BinduSession = self.session
 	var c := Control.new()
 	c.custom_minimum_size = Vector2(150, 22)
 	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -281,6 +292,7 @@ func _dps_name(t: Tower, col: Color) -> Control:
 
 ## 판 전체 피해 출처 (모든 오브젝트 합).
 func _run_src() -> Dictionary:
+	var session: BinduSession = self.session
 	var out := {}
 	for t in session.towers.get_children():
 		var a: Dictionary = t.all_src()
@@ -308,13 +320,15 @@ func build_top(n: int) -> Array:
 
 
 func _refresh_build() -> void:
+	var session: BinduSession = self.session
 	build_cache = build_top(5) if session.wave >= 3 else []
 
 
 ## 카드가 주력(상위 2, 몫 8% 이상) 출처를 키우면 그 이름, 아니면 "". 반응 출처는 그 반응의 두 속성 카드.
 func core_fit(card: Dictionary) -> String:
+	var session: BinduSession = self.session
 	for it in build_cache.slice(0, 2):
-		if it[1] < session.BUILD_MIN:
+		if it[1] < BinduSession.BUILD_MIN:
 			continue
 		var k: String = it[0]
 		match card["type"]:
@@ -339,6 +353,7 @@ func _src_top(d: Dictionary, n: int) -> Array:
 ## 피해 출처 키 → 보이는 이름 (elem:fire → 불, share:electric → 특징 튐).
 ## 상성 색: 강 초록, 약 주황 (Elem.aff_of)
 func _apply_ui_scale() -> void:
+	var session: BinduSession = self.session
 	var s: float = Meta.ui_scale
 	session.legend_rx_rows = 999  # 글자 크기가 바뀌면 설명 반응 줄 수를 다시 맞춘다
 	session.ui_root.set_anchors_preset(Control.PRESET_TOP_LEFT)
@@ -358,6 +373,7 @@ func _apply_ui_scale() -> void:
 
 ## 안전 영역 밖 여백 (화면 좌표, position = 왼쪽·위, size = 오른쪽·아래). 폰·태블릿만.
 func _safe_pad() -> Rect2:
+	var session: BinduSession = self.session
 	if Meta.sim_safe.has_area() or Meta.sim_safe.position != Vector2.ZERO:
 		return Meta.sim_safe
 	if not OS.has_feature("mobile") or DisplayServer.get_name() == "headless":
@@ -388,7 +404,8 @@ func _vscroll(inner: Control) -> ScrollContainer:
 
 ## 폰: 창 안 내용을 굴림 칸으로 옮긴다. _fit_panels가 창을 줄이는 대신 굴림 칸 높이를 화면에 맞춘다
 func _phone_scroll(p: PanelContainer) -> void:
-	if not session._phone():
+	var session: BinduSession = self.session
+	if not session.viewport_system._phone():
 		return
 	var inner: Control = p.get_child(0)
 	p.remove_child(inner)
@@ -398,12 +415,13 @@ func _phone_scroll(p: PanelContainer) -> void:
 
 
 func _fit_panels() -> void:
+	var session: BinduSession = self.session
 	if session.title_box.visible:
 		session.menu_system._prep_layout()
 		if session.modes_btn.get_child_count() > 0:
 			# 모드 줄 작은 설명이 두 줄로 접히면 버튼도 키운다 (버튼은 안 글 높이를 따라 크지 않는다)
 			var mh := (session.modes_btn.get_child(0) as Control).get_combined_minimum_size().y + 8.0
-			session.modes_btn.custom_minimum_size.y = maxf(64.0 if session._phone() else 56.0, mh)
+			session.modes_btn.custom_minimum_size.y = maxf(64.0 if session.viewport_system._phone() else 56.0, mh)
 	for c: Control in [session.title_box, session.help_scroll, session.records_panel, session.settings_panel, session.notes_panel, session.modes_panel, session.codex_panel, session.vote_panel]:
 		if not c.is_visible_in_tree():
 			continue
@@ -418,7 +436,7 @@ func _fit_panels() -> void:
 				c.offset_bottom = ph / 2.0
 			c.scale = Vector2.ONE
 			continue
-		if c == session.records_panel and session.board_box.visible and session._phone():
+		if c == session.records_panel and session.board_box.visible and session.viewport_system._phone():
 			c.scale = Vector2.ONE  # 리더보드는 _board_fit이 화면에 맞추고 안을 굴린다
 			continue
 		if c == session.records_panel and not session.board_box.visible:
@@ -438,7 +456,8 @@ func _fit_panels() -> void:
 
 ## 새 판을 시작할 때 모드가 바꾸는 시작 값 (중앙 체력). 봇이 모드를 바꾼 뒤에도 부른다.
 func start_modes() -> void:
-	session.core_max = maxi(1, roundi(Modes.core_max(session.CORE_MAX_HP) * (float(Rules.tune["mp_core"]) if session.vs_on or session.coop_n > 1 else 1.0)))
+	var session: BinduSession = self.session
+	session.core_max = maxi(1, roundi(Modes.core_max(BinduSession.CORE_MAX_HP) * (float(Rules.tune["mp_core"]) if BinduSession.vs_on or BinduSession.coop_n > 1 else 1.0)))
 	session.core_hp = session.core_max
 	session.core_disp = float(session.core_hp)
 	session.danger_lv = 0
@@ -446,6 +465,7 @@ func start_modes() -> void:
 
 
 func big_banner(t: String, col: Color) -> void:
+	var session: BinduSession = self.session
 	if session.banner_t > 0.5:
 		if session.banner_queue.size() < 3:
 			session.banner_queue.append([t, col])
@@ -456,6 +476,7 @@ func big_banner(t: String, col: Color) -> void:
 
 
 func _show_toast(t: String) -> void:
+	var session: BinduSession = self.session
 	session.toast.text = session.patchlog_system._kr_keep(t)  # 좁은 자리에서 두 줄로 접힐 때 한글 낱말 중간에서 끊기지 않게
 	session.toast_timer = 2.0
 
@@ -463,6 +484,7 @@ func _show_toast(t: String) -> void:
 ## 점수·남은 구체만 바뀐 때는 0.1초에 한 번만 다시 쓴다. 글자 모양 계산이 비싸 고배속에서 프레임마다 쓰면
 ## 그것만으로 프레임당 몇 ms (8배속 부하 측정). 웨이브·중앙 체력 등이 바뀌면 바로.
 func _update_hud(force := false) -> void:
+	var session: BinduSession = self.session
 	var urgent := "%d|%d|%d|%d|%d|%d|%d|%d|%d" % [session.wave, session.wave_dmg, session.core_hp, session.core_max, session.phase, session.towers.get_child_count(), session.interaction_system.selected.size(), session.perks.size(), 0]
 	if not force and urgent == hud_urgent and session.hud_cool > 0.0:
 		return
@@ -503,31 +525,31 @@ func _update_hud(force := false) -> void:
 		items.append(["tag", vc, txt, vc, vl, false])
 	if MapRule.on():
 		# 맵 규칙·친화 카드 (시험): 칩은 규칙 이름, 말풍선에 규칙과 친화
-		var mc := session.MAP_AFF_COLOR
+		var mc := BinduSession.MAP_AFF_COLOR
 		var rt := MapRule.rule_text()
 		items.append(["tag", mc, str(Meta.MAPS[Meta.map_id]["name"]) + " 규칙", mc, [["맵 규칙 (시험)", W], [rt, W], ["친화 카드 (자주 나옴, 속성·공격방식 피해 +%d%%): %s" % [roundi(Rules.t("map_aff_dmg") * 100), MapRule.aff_text()], D]], false])
-	if not build_cache.is_empty() and build_cache[0][1] >= session.BUILD_MIN:
+	if not build_cache.is_empty() and build_cache[0][1] >= BinduSession.BUILD_MIN:
 		# 이번 판 주력: 피해 출처 1위와 몫, 말풍선에 상위 5
 		var bl: Array = [["이번 판 주력 (판 누적 피해 출처)", W]]
 		for it in build_cache:
 			bl.append(["%s %d%%" % [session.src_name(it[0]), roundi(it[1] * 100)], D])
-		bl.append(["주력을 키우는 카드에는 ◎ 표시", session.BUILD_COLOR])
-		items.append(["build", session.BUILD_COLOR, "주력 %s %d%%" % [session.src_name(build_cache[0][0]), roundi(build_cache[0][1] * 100)], Color(0.8, 1, 1), bl, false])
+		bl.append(["주력을 키우는 카드에는 ◎ 표시", BinduSession.BUILD_COLOR])
+		items.append(["build", BinduSession.BUILD_COLOR, "주력 %s %d%%" % [session.src_name(build_cache[0][0]), roundi(build_cache[0][1] * 100)], Color(0.8, 1, 1), bl, false])
 	var nt := session.towers.get_child_count()
 	if nt > 1:
 		var cb := roundi(Rules.crowd_bonus(nt) * MapRule.crowd_k() * 100)
 		items.append(["crowd", Color(0.6, 0.9, 0.65), "%d개 +%d%%" % [nt, cb], Color(0.7, 0.95, 0.75), [["오브젝트 수 보너스: %d개, 피해 +%d%%" % [nt, cb], W]], false])
-	if session.phase == session.Phase.WAVE:
-		items.append(["orb", Color(0.85, 0.85, 0.9), str(session.to_spawn + session._alive_count(session.orbs)), W, [["남은 구체", W]], false])
+	if session.phase == BinduSession.Phase.WAVE:
+		items.append(["orb", Color(0.85, 0.85, 0.9), str(session.to_spawn + session.combat_system._alive_count(session.orbs)), W, [["남은 구체", W]], false])
 	# 다음 보스까지 남은 웨이브 (보스 웨이브 중이면 "지금")
-	var bl := (ceili(session.wave / 5.0) * 5 - session.wave) if session.phase == session.Phase.WAVE else (ceili((session.wave + 1) / 5.0) * 5 - session.wave)
-	if session.wave > 0 or session.phase != session.Phase.WAVE:
-		var bt := "다음 웨이브 보스" if bl == 1 and session.phase != session.Phase.WAVE else ("이번 웨이브 보스" if bl == 0 else "보스까지 %d웨이브" % bl)
+	var bl := (ceili(session.wave / 5.0) * 5 - session.wave) if session.phase == BinduSession.Phase.WAVE else (ceili((session.wave + 1) / 5.0) * 5 - session.wave)
+	if session.wave > 0 or session.phase != BinduSession.Phase.WAVE:
+		var bt := "다음 웨이브 보스" if bl == 1 and session.phase != BinduSession.Phase.WAVE else ("이번 웨이브 보스" if bl == 0 else "보스까지 %d웨이브" % bl)
 		items.append(["boss", Color(1, 0.6, 0.75), "보스!" if bl == 0 else "보스까지 %d" % bl, Color(1, 0.75, 0.85), [[bt, W]], false])
 	if not session.interaction_system.selected.is_empty():
 		items.append(["sel", Color(0.6, 1, 0.7), str(session.interaction_system.selected.size()), W, [["선택한 오브젝트", W]], false])
 	var first := true
-	for pk in session.PERKS:
+	for pk in BinduSession.PERKS:
 		var n: int = session.perks.get(pk["id"], 0)
 		if n > 0:
 			items.append(["perk", Color(0.75, 0.7, 1.0), pk["name"] + (" x%d" % n if n > 1 else ""), D, [["특성 " + pk["name"] + (" x%d" % n if n > 1 else ""), W], [pk["desc"], D]], first])
@@ -565,10 +587,6 @@ func _update_hud(force := false) -> void:
 
 
 func _draw_hud() -> void:
+	var session: BinduSession = self.session
 	for c in session.hud_chips:
 		Icons.chip(session.hud, session.ui_font, c[0], c[1], c[2], c[3], c[4], 17)
-
-
-# ---------- 단계 ----------
-
-## 큰 숫자를 천 단위 쉼표로 (3864489 → 3,864,489).

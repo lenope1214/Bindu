@@ -1,5 +1,6 @@
 class_name BinduOnboarding
 extends BinduFeature
+## 튜토리얼·처음 안내와 연습 판. 예약 콜백은 main의 순서를 따른다.
 
 var guide_topic := ""
 var guide_priority := 0
@@ -11,6 +12,7 @@ func _tut_event(_id: String) -> void:
 
 
 func _tut_tick() -> void:
+	var session: BinduSession = self.session
 	if session.tut.visible or DisplayServer.get_name() == "headless":
 		return
 	var panels := session.settings_panel.visible or session.records_panel.visible or session.help_label.visible or session.notes_panel.visible or session.modes_panel.visible or session.codex_panel.visible or session.vote_panel.visible or session.mp_panel.visible
@@ -19,33 +21,35 @@ func _tut_tick() -> void:
 	if tut_first and session.title_label.visible:
 		tut_first = false
 		session.tut.touch = session.touch_ui
-		session.tut.phone = session._phone()
+		session.tut.phone = session.viewport_system._phone()
 		session.tut.open_welcome()
 	tut_queue.clear()
 
 
 func _first_action_text() -> String:
+	var session: BinduSession = self.session
 	if TutPlay.on or Tutorial.play_done or (Meta.games > 0 and not session.tutor) or session.wave != 0 or session.mp_mode != "" or not Meta.guide_on:
 		return ""
 	match session.phase:
-		session.Phase.CHOOSE:
+		BinduSession.Phase.CHOOSE:
 			if session.perk_mode:
 				return ""
 			if session.cards_hidden:
 				return "선택지를 다시 열어 카드를 고르세요."
 			return "카드를 한 장 더 고르세요." if session.towers.get_child_count() > 0 else "카드를 하나 고르세요."
-		session.Phase.PLACE:
+		BinduSession.Phase.PLACE:
 			return "넣을 오브젝트를 고르세요." if session.picked.get("type", "elem") != "elem" else "빨간 길목 쪽 빈 곳에 놓으세요."
-		session.Phase.AIM:
+		BinduSession.Phase.AIM:
 			return "구체가 오는 쪽으로 방향을 정하세요."
-		session.Phase.READY:
+		BinduSession.Phase.READY:
 			return "웨이브를 시작하세요."
-		session.Phase.MOVE:
+		BinduSession.Phase.MOVE:
 			return "옮길 곳에 놓으세요. 취소하면 돌아가요."
 	return ""
 
 
 func _open_guide_details() -> void:
+	var session: BinduSession = self.session
 	if guide_topic == "":
 		return
 	if not session.get_tree().paused and not session.title_label.visible:
@@ -55,11 +59,12 @@ func _open_guide_details() -> void:
 
 
 func _update_action_guide() -> void:
+	var session: BinduSession = self.session
 	var action := _first_action_text()
 	if action != "" and not session.title_label.visible and not (session.settings_panel.visible or session.records_panel.visible or session.help_label.visible or session.notes_panel.visible or session.modes_panel.visible or session.codex_panel.visible or session.vote_panel.visible or session.mp_panel.visible or session.tut.visible):
 		session.guide_label.text = session.patchlog_system._kr_keep(action)
 		session.guide_label.reset_size()
-		guide_topic = "cards" if session.phase == session.Phase.CHOOSE else "goal" if session.phase == session.Phase.READY else "place"
+		guide_topic = "cards" if session.phase == BinduSession.Phase.CHOOSE else "goal" if session.phase == BinduSession.Phase.READY else "place"
 		session.guide_label.visible = not session.get_tree().paused and not session.tut.visible
 		# 같은 조작을 화면 위 안내와 아래 긴 조작문으로 중복 설명하지 않는다.
 		session.hint.text = ""
@@ -68,20 +73,23 @@ func _update_action_guide() -> void:
 
 
 func _open_tut(ids: Array, first := false) -> void:
+	var session: BinduSession = self.session
 	session.tut.touch = session.touch_ui
-	session.tut.phone = session._phone()
+	session.tut.phone = session.viewport_system._phone()
 	session.tut.open_topics(ids, first)
 
 
 ## 다시 보기 목록 (시작 화면 [튜토리얼]·H, 일시정지 [튜토리얼]).
 func _open_tut_list() -> void:
+	var session: BinduSession = self.session
 	session.help_label.visible = false
 	session.tut.touch = session.touch_ui
-	session.tut.phone = session._phone()
+	session.tut.phone = session.viewport_system._phone()
 	session.tut.open_list()
 
 
 func _on_tut_closed() -> void:
+	var session: BinduSession = self.session
 	if session.tut_paused:
 		session.tut_paused = false
 		session.get_tree().paused = false
@@ -90,6 +98,7 @@ func _on_tut_closed() -> void:
 ## [플레이하며 배우기]·목록의 [플레이 튜토리얼]: 화면을 다시 불러 연습 판으로 (ch: 장 0~3).
 ## 진행 중인 판은 쉬는 시간 저장이 그대로 남아 시작 화면 [이어하기]로 돌아갈 수 있다.
 func _play_tutorial(ch := 0) -> void:
+	var session: BinduSession = self.session
 	if session.mp_mode != "":
 		return
 	session.persistence_system._save_run()
@@ -102,9 +111,10 @@ func _play_tutorial(ch := 0) -> void:
 
 ## 다시 불러온 뒤 (_ready): 시작 화면을 닫고 연습 판의 첫 쉬는 시간을 연다.
 func _start_tut_play(ch: int) -> void:
+	var session: BinduSession = self.session
 	TutPlay.pending = -1
 	session.progression_system._hide_title()
-	session.title_seen = false  # 연습 판을 마치면 시작 화면으로
+	BinduSession.title_seen = false  # 연습 판을 마치면 시작 화면으로
 	session.tplay = TutPlay.new()
 	session.tplay.z_index = 19  # 카드·전장 위, 일시정지 어둠(20)·창 아래 (끝내기 확인은 그 위)
 	session.ui_root.add_child(session.tplay)
@@ -120,6 +130,7 @@ func _start_tut_play(ch: int) -> void:
 ## 처음 생기는 일에 한 줄 안내. 안내마다 한 번만(Meta.guide_seen), 설정에서 끌 수 있다.
 ## 쉬는 시간은 웨이브 시작까지, 웨이브 중은 8초. 한 번에 하나만, 위험 경고를 일반 안내보다 우선한다.
 func _guide(id: String, text: String) -> void:
+	var session: BinduSession = self.session
 	if TutPlay.on:
 		return  # 연습 판은 위 안내 칸이 대신한다
 	if not Meta.guide_on or Meta.guide_seen.has(id) or session.title_label.visible or _first_action_text() != "":
@@ -149,13 +160,14 @@ func _guide(id: String, text: String) -> void:
 	session.guide_lines.assign([line])
 	guide_priority = priority
 	guide_topic = Tutorial.ON_EVENT.get(id, "goal" if id == "lanes" else "")
-	session.guide_t = 8.0 if session.phase == session.Phase.WAVE else -1.0
+	session.guide_t = 8.0 if session.phase == BinduSession.Phase.WAVE else -1.0
 	session.guide_label.text = session.patchlog_system._kr_keep(_wrap_words(line, minf(570.0, session.ui_root.size.x - 40.0), 16))
 	session.guide_label.reset_size()
 
 
 ## 쉬는 시간이 열릴 때: 길목·겹치기·보스·저항·굳센 구체 안내.
 func _rest_guides() -> void:
+	var session: BinduSession = self.session
 	if session.wave == 0:
 		_guide("start", "빨간 부채꼴이 구체가 들어오는 길목이에요. 그 넓이 어디로든 와요. 속성 카드를 고른 뒤 길목 쪽 빈 곳을 눌러 놓고, 한 번 더 눌러 쏠 방향을 정하세요")
 	elif session.towers.get_child_count() > 0:
@@ -166,7 +178,7 @@ func _rest_guides() -> void:
 		_guide("resist", "저항 구체(점선 고리)가 섞여 와요. 다음 웨이브는 %s 속성 피해를 덜 받으니 다른 속성 오브젝트도 길목에 두세요" % Elem.NAMES[session.wave_resist])
 	if not session.ley.is_empty():
 		_guide("ley", "청록 고리는 기맥이에요. 그 위에 놓은 오브젝트는 피해 +%d%% (자리마다 가장 가까운 하나)" % roundi(Rules.t("ley_dmg") * 100))
-	if session.jams_on() and session.wave + 1 >= session.jam_from("shade"):
+	if session.spawning_system.jams_on() and session.wave + 1 >= session.jam_from("shade"):
 		_guide("jam", "방해 구체가 섞여 와요. 그림자·표적은 오브젝트를 잠깐 멈추고, 흡수는 공격 속도를 빼앗아요. 오브젝트를 여러 곳에 나눠 두면 덜 막혀요")
 	if session.wave + 1 >= Rules.sturdy_from:
 		_guide("sturdy", "굳센 구체(회색 쐐기)가 섞여 와요. 밀기·감속·기절·냉기가 절반만 들으니 피해로 잡아야 해요")
@@ -174,6 +186,7 @@ func _rest_guides() -> void:
 
 ## 선택지에 처음 나온 카드 종류 안내.
 func _card_guides() -> void:
+	var session: BinduSession = self.session
 	var types := session.offer.map(func(cd): return cd["type"])
 	if "pat" in types:
 		_guide("pat", "새 카드 · 공격방식: 직선탄 오브젝트에 넣으면 공격 모양이 바뀌고 그 뒤로 고정돼요. 같은 공격방식을 넣으면 레벨업")
@@ -188,6 +201,7 @@ func _card_guides() -> void:
 
 ## 띄어쓰기 단위로 줄을 나눈다. Godot 자동 줄바꿈은 한글을 음절마다 끊어 "형\n태"처럼 단어가 잘린다.
 func _wrap_words(text: String, width: float, fs: int) -> String:
+	var session: BinduSession = self.session
 	var out := PackedStringArray()
 	for para in text.split("\n"):
 		var line := ""
@@ -204,6 +218,7 @@ func _wrap_words(text: String, width: float, fs: int) -> String:
 
 ## "a · b · c"처럼 구분자로 나뉜 글을 항목 단위로 줄바꿈 (항목 중간에서 끊지 않음).
 func _wrap_parts(text: String, sep: String, width: float, fs: int) -> String:
+	var session: BinduSession = self.session
 	var out := PackedStringArray()
 	var line := ""
 	for part in text.split(sep):
@@ -220,6 +235,7 @@ func _wrap_parts(text: String, sep: String, width: float, fs: int) -> String:
 ## 5웨이브마다: 특성 3개 중 1개.
 ## 바람 속성 오브젝트 둘레의 다른 오브젝트 공격 속도를 정한다 (가장 큰 바람 하나만).
 func _wind_buffs() -> void:
+	var session: BinduSession = self.session
 	var ts := session.towers.get_children()
 	var winds := []  # 2026-11-04: 바람 효과가 밀쳐냄으로 바뀌어 순풍은 없다 (패치로 되살릴 때를 위해 계산은 남김)
 	for t in ts:
@@ -228,6 +244,3 @@ func _wind_buffs() -> void:
 			if w != t and w.position.distance_to(t.position) < w.wind_range():
 				b = maxf(b, Rules.t("wind_buff") * w.lv(Elem.WIND))
 		t.wind_buff = b
-
-
-## 속성 카드가 Lv2로 나올 확률 (행운 특성 포함).

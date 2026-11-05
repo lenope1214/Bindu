@@ -39,7 +39,7 @@ func _initialize():
 			# 오브젝트 많이 + 지난 웨이브 피해 (DPS 표가 뜨게)
 			for i in 14:
 				main.picked = {"e": Elem.ALL[i % Elem.ALL.size()], "lv": 3}
-				main.interaction_system._place_tower(main.core() + Vector2.from_angle(i * 0.45) * (120.0 + (i % 3) * 70.0), Vector2.RIGHT)
+				main.interaction_system._place_tower(main.viewport_system.core() + Vector2.from_angle(i * 0.45) * (120.0 + (i % 3) * 70.0), Vector2.RIGHT)
 			for t in main.towers.get_children():
 				t.dealt = 100000.0 + randf() * 900000.0
 			main.wave = 39  # 다음이 보스 웨이브(40), 섞여 나오는 종류 전부

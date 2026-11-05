@@ -9,3 +9,9 @@ func _input(event: InputEvent) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	interaction_system._unhandled_input(event)
+
+func _process(delta: float) -> void:
+	frame_system._process(delta)
+
+func _draw() -> void:
+	field_view_system._draw()

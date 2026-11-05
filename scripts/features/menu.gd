@@ -1,5 +1,6 @@
 class_name BinduMenu
 extends BinduFeature
+## 시작·준비·설정·모드 UI. 예약 콜백은 main의 순서를 따른다.
 
 var account_label: Label  # 설정: 계정 상태 한 줄
 var map_label: Label  # 준비 화면 맵 카드 아래 설명 (고른 맵 이름·규칙, 작은 설명은 meta "sub")
@@ -20,6 +21,7 @@ var prep_title: Label
 var modes_label: Label  # 준비 화면 모드 줄 가운데 글
 var normal_info: Label  # 일반 판 타일의 맵·최고 기록 줄
 func _build_menu(root: Control) -> void:
+	var session: BinduSession = self.session
 	session.title_label = Control.new()
 	session.title_label.set_anchors_preset(Control.PRESET_FULL_RECT)
 	session.title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -46,7 +48,7 @@ func _build_menu(root: Control) -> void:
 	desc.add_theme_font_size_override("font_size", 19)
 	desc.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
 	desc.text = "밖에서 몰려오는 구체를 막아 중앙 점을 지키세요\n공격방식·속성·강화·연계를 조합해 오브젝트를 키우세요"
-	desc.visible = not session._phone()  # 폰: 줄을 줄여야 시작 화면을 덜 줄여서 버튼이 손가락 크기로 남는다
+	desc.visible = not session.viewport_system._phone()  # 폰: 줄을 줄여야 시작 화면을 덜 줄여서 버튼이 손가락 크기로 남는다
 	box.add_child(desc)
 	# [일반 판]을 누르면 나오는 준비 화면 (맵·오는 쪽·규칙·모드 + 시작)
 	prep_title = Label.new()
@@ -68,7 +70,7 @@ func _build_menu(root: Control) -> void:
 	skill_label = _prep_row(prep_box, "중앙 기술", func(): _cycle_skill(-1), func(): _cycle_skill(1))
 	# 모드: 여러 개를 켜고 끄는 창이라 화살표 대신 줄 전체가 [모드] 창을 연다
 	session.modes_btn = Button.new()
-	session.modes_btn.custom_minimum_size = Vector2(session.PREP_W, 64 if session._phone() else 56)
+	session.modes_btn.custom_minimum_size = Vector2(BinduSession.PREP_W, 64 if session.viewport_system._phone() else 56)
 	session.modes_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	session.modes_btn.focus_mode = Control.FOCUS_NONE
 	session.modes_btn.pressed.connect(_toggle_modes)
@@ -101,7 +103,7 @@ func _build_menu(root: Control) -> void:
 	mh.add_child(marrow)
 	prep_box.add_child(session.modes_btn)
 	session.new_btn = Button.new()
-	session.new_btn.custom_minimum_size = Vector2(session.PREP_W, 72 if session._phone() else 64)
+	session.new_btn.custom_minimum_size = Vector2(BinduSession.PREP_W, 72 if session.viewport_system._phone() else 64)
 	session.new_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	session.new_btn.focus_mode = Control.FOCUS_NONE
 	session.new_btn.add_theme_font_size_override("font_size", 24)
@@ -136,7 +138,7 @@ func _build_menu(root: Control) -> void:
 	session.prep_back = Button.new()
 	session.prep_back.text = "◀ 뒤로 (Esc)"
 	session.prep_back.add_to_group("key_hint")
-	session.prep_back.custom_minimum_size = Vector2(150, 56 if session._phone() else 42)
+	session.prep_back.custom_minimum_size = Vector2(150, 56 if session.viewport_system._phone() else 42)
 	session.prep_back.position = Vector2(20, 20)
 	session.prep_back.focus_mode = Control.FOCUS_NONE
 	session.prep_back.add_theme_font_size_override("font_size", 18)
@@ -169,7 +171,7 @@ func _build_menu(root: Control) -> void:
 		b.focus_mode = Control.FOCUS_NONE
 		b.pressed.connect(spec[1])
 		row.add_child(b)
-		b.custom_minimum_size = Vector2(78, 64 if session._phone() else 54)
+		b.custom_minimum_size = Vector2(78, 64 if session.viewport_system._phone() else 54)
 		b.tooltip_text = spec[4]
 		if spec[2] == "vote":
 			session.vote_btn = b
@@ -179,13 +181,13 @@ func _build_menu(root: Control) -> void:
 	# 이어하기: 저장된 판이 있을 때만 (쉬는 시간마다 자동 저장)
 	# 아래 타일과 같은 카드 모양(호박색 테두리·이름·설명 줄), 폭은 타일 줄과 같게 (_refresh_continue)
 	session.continue_btn = Button.new()
-	session.continue_info = _tile(session.continue_btn, "이어하기", session.CONT_COL, "Enter")
-	session.continue_btn.custom_minimum_size.y = 104 if session._phone() else 92
+	session.continue_info = _tile(session.continue_btn, "이어하기", BinduSession.CONT_COL, "Enter")
+	session.continue_btn.custom_minimum_size.y = 104 if session.viewport_system._phone() else 92
 	session.continue_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	for st in ["normal", "hover", "pressed"]:
 		var csb: StyleBoxFlat = session.continue_btn.get_theme_stylebox(st).duplicate()
 		csb.bg_color = Color(0.13, 0.11, 0.07) if st == "normal" else Color(0.18, 0.15, 0.09)
-		csb.border_color = Color(session.CONT_COL, 0.8 if st == "normal" else 1.0)
+		csb.border_color = Color(BinduSession.CONT_COL, 0.8 if st == "normal" else 1.0)
 		session.continue_btn.add_theme_stylebox_override(st, csb)
 	session.continue_info.add_theme_font_size_override("font_size", 17)
 	session.continue_info.add_theme_color_override("font_color", Color(1, 0.95, 0.85, 0.85))
@@ -194,7 +196,7 @@ func _build_menu(root: Control) -> void:
 	home_box.add_child(session.continue_btn)
 	home_box.move_child(session.continue_btn, 0)
 	session.remote_btn = Button.new()
-	session.remote_btn.custom_minimum_size = Vector2(630, 56 if session._phone() else 44)
+	session.remote_btn.custom_minimum_size = Vector2(630, 56 if session.viewport_system._phone() else 44)
 	session.remote_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	session.remote_btn.focus_mode = Control.FOCUS_NONE
 	session.remote_btn.add_theme_font_size_override("font_size", 17)
@@ -205,21 +207,21 @@ func _build_menu(root: Control) -> void:
 	# 멀티플레이: 중개 서버 주소가 있고 WebRTC 확장이 읽힌 기기에서만
 	session.mp_btn = Button.new()
 	_tile(session.mp_btn, "멀티플레이", Color(0.8, 0.62, 1.0), "").text = "친구와 대결 · 협동\n방 만들기 · 코드로 참가"
-	session.mp_btn.pressed.connect(session._toggle_mp_lobby)
+	session.mp_btn.pressed.connect(session.lobby_system._toggle_mp_lobby)
 	# Windows는 exe 안 dll을 풀어 읽어서 실패할 수 있다: 버튼은 두고 방을 만들 때 까닭을 보여 준다
-	session.mp_btn.visible = session._mp_btn_shown()
+	session.mp_btn.visible = session.lobby_system._mp_btn_shown()
 	tiles.add_child(session.mp_btn)
-	session._build_mp_lobby(root)
+	session.lobby_system._build_mp_lobby(root)
 	# 온라인: 새 버전 알림, 패치 공지 (서버에서 받았을 때만 보임)
 	session.update_btn = Button.new()
-	session.update_btn.custom_minimum_size = Vector2(630, 56 if session._phone() else 40)
+	session.update_btn.custom_minimum_size = Vector2(630, 56 if session.viewport_system._phone() else 40)
 	session.update_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	session.update_btn.focus_mode = Control.FOCUS_NONE
 	session.update_btn.add_theme_color_override("font_color", Color(1, 0.85, 0.45))
 	session.update_btn.visible = false
 	home_box.add_child(session.update_btn)
 	session.notes_btn = Button.new()
-	session.notes_btn.custom_minimum_size = Vector2(320, 52 if session._phone() else 36)
+	session.notes_btn.custom_minimum_size = Vector2(320, 52 if session.viewport_system._phone() else 36)
 	session.cards_system._icon_btn(session.notes_btn, func(): return ["notes", Color(1, 1, 1, 0.8)])
 	session.notes_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	session.notes_btn.focus_mode = Control.FOCUS_NONE
@@ -270,11 +272,11 @@ func _build_menu(root: Control) -> void:
 	_build_modes(root, rsb)
 	session.codex_panel = Codex.new()
 	session.codex_panel.z_index = 22  # 일시정지 어둠(z 20) 위에
-	session.codex_panel.setup(session.PERKS, rsb.duplicate(), session.progression_system._save_best)
+	session.codex_panel.setup(BinduSession.PERKS, rsb.duplicate(), session.progression_system._save_best)
 	root.add_child(session.codex_panel)
 	session.vote_panel = Vote.new()
 	session.vote_panel.z_index = 22
-	session.vote_panel.setup(session.PERKS, rsb.duplicate(), session.net)
+	session.vote_panel.setup(BinduSession.PERKS, rsb.duplicate(), session.net)
 	root.add_child(session.vote_panel)
 	session.tut = Tutorial.new()
 	session.tut.z_index = 23  # 일시정지 어둠(20)·다른 창(22) 위에
@@ -287,7 +289,7 @@ func _build_menu(root: Control) -> void:
 	session.settings_panel.z_index = 22  # 일시정지 어둠(z 20) 위에
 	session.settings_panel.set_anchors_preset(Control.PRESET_CENTER)
 	# 폰: 켜기·끄기 줄을 두 칸으로 나누고 줄을 손가락 크기로 (한 칸이면 창이 화면보다 길어져 줄어들고 줄이 3mm 남짓이었다)
-	var sw := 920.0 if session._phone() else 480.0
+	var sw := 920.0 if session.viewport_system._phone() else 480.0
 	session.settings_panel.position = Vector2(-sw / 2.0, 0)
 	session.settings_panel.size = Vector2(sw, 0)
 	session.settings_panel.grow_vertical = Control.GROW_DIRECTION_BOTH  # 내용 높이에 맞춰 위아래로 자라 가운데에 (온라인 줄이 생기면 아래가 잘리던 것)
@@ -346,7 +348,7 @@ func _build_menu(root: Control) -> void:
 	skin_label = _menu_row(sv, func(): _cycle_skin("tower", -1), func(): _cycle_skin("tower", 1), sw - 160.0)
 	core_label = _menu_row(sv, func(): _cycle_skin("core", -1), func(): _cycle_skin("core", 1), sw - 160.0)
 	var cbox: Container = sv
-	if session._phone():
+	if session.viewport_system._phone():
 		var grid := GridContainer.new()
 		grid.columns = 2
 		grid.add_theme_constant_override("h_separation", 18)
@@ -481,7 +483,7 @@ func _build_menu(root: Control) -> void:
 	close.pressed.connect(_toggle_settings)
 	brow.add_child(close)
 	sv.add_child(brow)
-	if session._phone():
+	if session.viewport_system._phone():
 		for c: Control in session.settings_panel.find_children("*", "", true, false):
 			if c is BaseButton or c is LineEdit or c is HSlider:
 				c.custom_minimum_size.y = maxf(c.custom_minimum_size.y, 52.0)
@@ -507,7 +509,7 @@ func _on_delete_data(b: Button, nick_edit: LineEdit) -> void:
 	b.disabled = true
 	b.text = "지우는 중…"
 	var code := await session.net.delete_account()
-	if not is_instance_valid(b):
+	if not is_instance_valid(session) or not is_instance_valid(b) or not is_instance_valid(nick_edit):
 		return
 	b.disabled = false
 	b.text = "내 온라인 데이터 지우기"
@@ -530,8 +532,9 @@ func _on_delete_data(b: Button, nick_edit: LineEdit) -> void:
 ## ◀ 글자 ▶ 한 줄.
 ## 시작 화면 큰 타일: 버튼 위에 이름(색)과 설명 줄. 설명 Label을 돌려준다.
 func _tile(b: Button, title: String, col: Color, key: Variant) -> Label:
+	var session: BinduSession = self.session
 	b.text = ""
-	b.custom_minimum_size = Vector2(_tile_w(), 170 if session._phone() else 150)
+	b.custom_minimum_size = Vector2(_tile_w(), 170 if session.viewport_system._phone() else 150)
 	b.focus_mode = Control.FOCUS_NONE
 	b.clip_contents = true
 	for st in ["normal", "hover", "pressed"]:
@@ -564,18 +567,20 @@ func _tile(b: Button, title: String, col: Color, key: Variant) -> Label:
 
 
 func _tile_w() -> float:
-	return 230.0 if session._phone() else 210.0
+	var session: BinduSession = self.session
+	return 230.0 if session.viewport_system._phone() else 210.0
 
 
 ## 시작 화면: 첫 화면(큰 타일) ↔ 일반 판 준비 화면.
 func _set_prep(on: bool) -> void:
+	var session: BinduSession = self.session
 	session.prep = on
 	prep_title.visible = on
 	prep_box.visible = on
 	session.prep_back.visible = on
 	home_box.visible = not on
 	session.title_box.get_child(0).visible = not on  # 로고·소개 줄은 첫 화면에만
-	session.title_box.get_child(1).visible = not on and not session._phone()
+	session.title_box.get_child(1).visible = not on and not session.viewport_system._phone()
 	session.new_armed = 0.0
 	session.new_btn.text = "새로 시작" if session.continue_btn.visible else "시작"
 	session.sfx.play("place")
@@ -583,13 +588,14 @@ func _set_prep(on: bool) -> void:
 
 
 func _prep_layout() -> void:
+	var session: BinduSession = self.session
 	if prep_cols == null:
 		return
 	# 오른쪽 칸 폭: 남는 폭에 맞춰 420~520 (폰 가로 글자 130%는 UI 폭 약 1120)
 	# 조금 모자라면 _fit_panels가 폭에 맞춰 살짝 줄인다 (한 칸으로 두면 높이 탓에 0.57배까지 줄었다)
-	var rw := clampf(session.ui_root.size.x - session.PREP_W - 12.0 - 24.0, 420.0, 520.0)
+	var rw := clampf(session.ui_root.size.x - BinduSession.PREP_W - 12.0 - 24.0, 420.0, 520.0)
 	var two := session.ui_root.size.x >= 960.0
-	var w := floorf(rw) if two else session.PREP_W
+	var w := floorf(rw) if two else BinduSession.PREP_W
 	if prep_cols.columns == (2 if two else 1) and prep_cols.get_meta("laid", -1.0) == w:
 		return
 	prep_cols.set_meta("laid", w)
@@ -636,7 +642,7 @@ func _prep_sub() -> Label:
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	l.custom_minimum_size = Vector2(session.PREP_W - 220.0, 0)
+	l.custom_minimum_size = Vector2(BinduSession.PREP_W - 220.0, 0)
 	l.set_meta("sub_w", true)
 	l.add_theme_font_size_override("font_size", 14)
 	l.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
@@ -646,8 +652,9 @@ func _prep_sub() -> Label:
 ## 준비 화면 한 줄: [이름표 | ◀ | 가운데 글(+작은 설명) | ▶]. 가운데 글을 눌러도 다음으로.
 ## 가운데 Label을 돌려주고, 작은 설명 Label은 meta "sub", 줄 전체는 meta "row".
 func _prep_row(box: BoxContainer, title: String, prev: Callable, next: Callable) -> Label:
+	var session: BinduSession = self.session
 	var row := PanelContainer.new()
-	row.custom_minimum_size = Vector2(session.PREP_W, 64 if session._phone() else 56)
+	row.custom_minimum_size = Vector2(BinduSession.PREP_W, 64 if session.viewport_system._phone() else 56)
 	row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	row.add_theme_stylebox_override("panel", _prep_sb())
 	box.add_child(row)
@@ -695,8 +702,9 @@ func _prep_row(box: BoxContainer, title: String, prev: Callable, next: Callable)
 ## 준비 화면 맵 고르기: 맵 카드 다섯 장(이름·길 모양·규칙·친화 속성 그림·최고 웨이브) + 아래 고른 맵 설명.
 ## 2026-11-01 사용자 요청 "맵 친화 속성도 게임 시작 전에 알 수 있게, 텍스트 대신 카드 형식으로". ←/→도 그대로.
 func _build_map_cards(box: BoxContainer) -> Label:
+	var session: BinduSession = self.session
 	var row := PanelContainer.new()
-	row.custom_minimum_size = Vector2(session.PREP_W, 0)
+	row.custom_minimum_size = Vector2(BinduSession.PREP_W, 0)
 	row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	var psb := _prep_sb()
 	psb.content_margin_left = 8
@@ -712,10 +720,10 @@ func _build_map_cards(box: BoxContainer) -> Label:
 	h.add_theme_constant_override("separation", 8)
 	v.add_child(h)
 	map_cards.clear()
-	var cw := floorf((session.PREP_W - 16.0 - 8.0 * (Meta.MAP_IDS.size() - 1)) / Meta.MAP_IDS.size())
+	var cw := floorf((BinduSession.PREP_W - 16.0 - 8.0 * (Meta.MAP_IDS.size() - 1)) / Meta.MAP_IDS.size())
 	for id in Meta.MAP_IDS:
 		var b := Button.new()
-		b.custom_minimum_size = Vector2(cw, 150 if session._phone() else 138)
+		b.custom_minimum_size = Vector2(cw, 150 if session.viewport_system._phone() else 138)
 		b.focus_mode = Control.FOCUS_NONE
 		b.set_meta("map", id)
 		for st in ["normal", "hover", "pressed"]:
@@ -735,7 +743,7 @@ func _build_map_cards(box: BoxContainer) -> Label:
 	var l := _prep_main()
 	v.add_child(l)
 	var sub := _prep_sub()
-	sub.custom_minimum_size = Vector2(session.PREP_W - 40.0, 0)
+	sub.custom_minimum_size = Vector2(BinduSession.PREP_W - 40.0, 0)
 	v.add_child(sub)
 	l.set_meta("sub", sub)
 	l.set_meta("row", row)
@@ -744,6 +752,7 @@ func _build_map_cards(box: BoxContainer) -> Label:
 
 ## 맵 카드 한 장: 고른 맵은 밝은 테두리. 위 이름, 가운데 길 모양, 규칙 이름, 친화 속성 그림, 최고 웨이브.
 func _draw_map_card(b: Button) -> void:
+	var session: BinduSession = self.session
 	var id: String = b.get_meta("map")
 	var m: Dictionary = Meta.MAPS[id]
 	var sel := Meta.map_id == id
@@ -763,7 +772,7 @@ func _draw_map_card(b: Button) -> void:
 		b.draw_string(session.ui_font, Vector2(0, 35), "시험", HORIZONTAL_ALIGNMENT_CENTER, b.size.x, 10, Color(1, 1, 1, 0.45))
 	_draw_map_path(b, id, Vector2(cx, 62.0), 20.0, Color(acc, 0.75 if sel else 0.5))
 	var rt := MapRule.rule_text(id).get_slice(":", 0)
-	b.draw_string(session.ui_font, Vector2(0, 100), rt, HORIZONTAL_ALIGNMENT_CENTER, b.size.x, 13, Color(session.MAP_AFF_COLOR, 0.95 if sel else 0.7))
+	b.draw_string(session.ui_font, Vector2(0, 100), rt, HORIZONTAL_ALIGNMENT_CENTER, b.size.x, 13, Color(BinduSession.MAP_AFF_COLOR, 0.95 if sel else 0.7))
 	# 친화 속성 그림 (자주 나오고 피해 +)
 	var es: Array = MapRule.aff("elem", id)
 	var gap := 26.0
@@ -807,6 +816,7 @@ func _draw_map_path(ci: CanvasItem, id: String, c: Vector2, s: float, col: Color
 
 ## 준비 화면 줄 글: 가운데 글과 작은 설명 (설명이 비면 숨김).
 func _prep_set(l: Label, main_t: String, sub_t: String) -> void:
+	var session: BinduSession = self.session
 	l.text = main_t
 	var sub: Label = l.get_meta("sub")
 	sub.text = session.patchlog_system._kr_keep(sub_t)
@@ -848,21 +858,22 @@ func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0) ->
 
 ## 맵 규칙 그림: 십자로 길목 띠(쉬는 시간), 폭풍 바람 줄기와 화살표.
 func _draw_map_rule(c: Vector2, now: float) -> void:
+	var session: BinduSession = self.session
 	if session.title_label.visible:
 		return
-	if MapRule.is_map("cross") and session.phase != session.Phase.WAVE:
+	if MapRule.is_map("cross") and session.phase != BinduSession.Phase.WAVE:
 		for a in session.lanes:
 			var u := Vector2.from_angle(a)
-			var e := session._edge_point(c, u)
+			var e := session.field_view_system._edge_point(c, u)
 			var n := u.orthogonal() * MapRule.LANE_W
-			session.draw_colored_polygon(PackedVector2Array([c + u * 60.0 + n, e + n, e - n, c + u * 60.0 - n]), Color(session.MAP_AFF_COLOR, 0.05))
-			session.draw_line(c + u * 60.0 + n, e + n, Color(session.MAP_AFF_COLOR, 0.18), 1.0)
-			session.draw_line(c + u * 60.0 - n, e - n, Color(session.MAP_AFF_COLOR, 0.18), 1.0)
+			session.draw_colored_polygon(PackedVector2Array([c + u * 60.0 + n, e + n, e - n, c + u * 60.0 - n]), Color(BinduSession.MAP_AFF_COLOR, 0.05))
+			session.draw_line(c + u * 60.0 + n, e + n, Color(BinduSession.MAP_AFF_COLOR, 0.18), 1.0)
+			session.draw_line(c + u * 60.0 - n, e - n, Color(BinduSession.MAP_AFF_COLOR, 0.18), 1.0)
 	var w := MapRule.wind_dir(session.lanes)
 	if w != Vector2.ZERO:
 		# 바람 줄기: 화면을 가로질러 흐르는 짧은 선 (웨이브 중에는 옅게)
-		var vr := session.arena()
-		var al := 0.16 if session.phase != session.Phase.WAVE else 0.07
+		var vr := session.viewport_system.arena()
+		var al := 0.16 if session.phase != BinduSession.Phase.WAVE else 0.07
 		for i in 24:
 			var h := Vector2(fmod(i * 0.6180339, 1.0), fmod(i * 0.4142135 + 0.13, 1.0))
 			var p := vr.position + Vector2(h.x * vr.size.x, h.y * vr.size.y)
@@ -872,31 +883,32 @@ func _draw_map_rule(c: Vector2, now: float) -> void:
 			session.draw_line(p, p + w * 34.0, Color(1, 1, 1, al * (1.0 - off / 260.0)), 2.0)
 		# 화살표: 중앙 위
 		var at := c + Vector2(0, -150.0)
-		var col := Color(1, 1, 1, 0.55 if session.phase != session.Phase.WAVE else 0.25)
+		var col := Color(1, 1, 1, 0.55 if session.phase != BinduSession.Phase.WAVE else 0.25)
 		session.draw_line(at - w * 40.0, at + w * 30.0, col, 4.0)
 		session.draw_colored_polygon(PackedVector2Array([at + w * 46.0, at + w * 22.0 + w.orthogonal() * 12.0, at + w * 22.0 - w.orthogonal() * 12.0]), col)
 
 
 ## 시작 화면 맵 줄: 맵 규칙·친화 카드 (시험)
 func _refresh_menu() -> void:
+	var session: BinduSession = self.session
 	var m: Dictionary = Meta.MAPS[Meta.map_id]
 	var best := Meta.best_of(Meta.run_key())
 	# 폰: 맵 설명 줄은 뺀다 (도움말·도감에 있고, 줄이 많으면 시작 화면 전체가 줄어 버튼이 작아진다)
 	# 맵 카드 아래: 고른 맵 이름·규칙, 작은 설명에 맵 설명·친화 카드·최고 기록 (폰은 맵 설명 줄만 뺌)
 	var mr := MapRule.rule_text() + " (시험)" if MapRule.on() else ""
-	_prep_set(map_label, session.ui_layout_system._kh("%s%s" % [Meta.map_name(), "" if session.touch_ui else "  (←/→)"]), "%s%s최고 기록%s · 웨이브 %d · 점수 %s" % ["" if session._phone() else m["desc"].replace("\n", " ") + "\n", "%s\n친화 카드 (자주 나옴·피해 +%d%%): %s\n" % [mr, roundi(Rules.t("map_aff_dmg") * 100), MapRule.aff_text()] if MapRule.on() else "", " (쉽게 모드)" if Modes.easy() else "", best[0], session.num(best[1])])
+	_prep_set(map_label, session.ui_layout_system._kh("%s%s" % [Meta.map_name(), "" if session.touch_ui else "  (←/→)"]), "%s%s최고 기록%s · 웨이브 %d · 점수 %s" % ["" if session.viewport_system._phone() else m["desc"].replace("\n", " ") + "\n", "%s\n친화 카드 (자주 나옴·피해 +%d%%): %s\n" % [mr, roundi(Rules.t("map_aff_dmg") * 100), MapRule.aff_text()] if MapRule.on() else "", " (쉽게 모드)" if Modes.easy() else "", best[0], session.num(best[1])])
 	for mc in map_cards:
 		mc.queue_redraw()
 	session.flip_label.get_meta("row").visible = Meta.map_id == "line"
 	_prep_set(session.flip_label, session.ui_layout_system._kh("%s  (F)" % ("왼쪽 → 문은 오른쪽 끝" if Meta.line_flip else "오른쪽 → 문은 왼쪽 끝")), "")
 	var ra := [Rules.NAMES[Meta.rules], " (시험)" if Meta.rules in Rules.TRIAL_IDS else "", "(눌러서 바꾸기)" if session.touch_ui else "(↑/↓)", session.onboarding_system._wrap_parts(Patch.text("rules_desc", str(Meta.rules), Rules.DESCS[Meta.rules]), " · ", 550.0, 18)]
 	# 폰: 규칙 설명 줄도 뺀다 (이름만, 자세한 건 도움말·모드 창)
-	_prep_set(rules_label, session.ui_layout_system._kh("%s%s  %s" % ra.slice(0, 3)), "" if session._phone() else ra[3].replace("\n", " · "))
+	_prep_set(rules_label, session.ui_layout_system._kh("%s%s  %s" % ra.slice(0, 3)), "" if session.viewport_system._phone() else ra[3].replace("\n", " · "))
 	rules_label.get_meta("row").visible = Meta.games > 0  # 규칙 버전 고르기는 첫 판을 끝낸 뒤에 (그 전엔 버전 1)
 	session.modes_btn.visible = Meta.games > 0  # 모드도
 	var sk := Skill.set_ids(Meta.skill_set)
 	_prep_set(skill_label, Skill.combo_name(Meta.skill_set) + ("  (눌러서 바꾸기)" if session.touch_ui else ""),
-		"" if session._phone() else "웨이브 중 %s · %s" % ["%s: %s" % [Skill.NAMES[sk[0]], Skill.desc(sk[0])], "%s: %s" % [Skill.NAMES[sk[1]], Skill.desc(sk[1])]])
+		"" if session.viewport_system._phone() else "웨이브 중 %s · %s" % ["%s: %s" % [Skill.NAMES[sk[0]], Skill.desc(sk[0])], "%s: %s" % [Skill.NAMES[sk[1]], Skill.desc(sk[1])]])
 	skill_label.get_meta("row").visible = Rules.t("skill_on") > 0.0
 	_prep_set(modes_label, "없음" if Modes.on.is_empty() else Modes.names(), "판을 어렵게·쉽게 바꾸는 규칙 · 점수 배율이 붙어요" if Modes.on.is_empty() else "점수 x%.2f" % Modes.mul())
 	if session.modes_panel.visible:
@@ -912,6 +924,7 @@ func _refresh_menu() -> void:
 
 ## 회랑 맵: 구체가 오는 쪽(좌우)을 바꾼다. 기록은 나누지 않는다 (좌우만 바뀐 같은 판).
 func _toggle_flip() -> void:
+	var session: BinduSession = self.session
 	if Meta.map_id != "line":
 		return
 	Meta.line_flip = not Meta.line_flip
@@ -922,6 +935,7 @@ func _toggle_flip() -> void:
 
 
 func _cycle_map(d: int) -> void:
+	var session: BinduSession = self.session
 	var i := Meta.MAP_IDS.find(Meta.map_id)
 	Meta.map_id = Meta.MAP_IDS[(i + d + Meta.MAP_IDS.size()) % Meta.MAP_IDS.size()]
 	session.sfx.play("place")
@@ -933,14 +947,15 @@ func _cycle_map(d: int) -> void:
 ## 오른쪽 설명: 상한은 규칙 버전에 따라 다르다.
 var legend_heads := PackedStringArray()
 func _draw_legend_icons() -> void:
+	var session: BinduSession = self.session
 	var lh := session.legend.get_line_height() + session.legend.get_theme_constant("line_spacing")
 	var fs := session.legend.get_theme_font_size("font_size")
 	var w := session.legend.size.x - 32.0 - 8.0
 	var row := 0
-	for i in mini(session.LEGEND_ICONS.size(), legend_heads.size()):
+	for i in mini(BinduSession.LEGEND_ICONS.size(), legend_heads.size()):
 		var c := Vector2(16.0, 8.0 + lh * row + session.legend.get_line_height() / 2.0)
 		row += session.onboarding_system._wrap_words(session.patchlog_system._kr_keep(legend_heads[i]), w, fs).count("\n") + 1
-		var id: String = session.LEGEND_ICONS[i]
+		var id: String = BinduSession.LEGEND_ICONS[i]
 		if id == "tower":
 			Glyph.ui(session.legend, id, c, 6.5, Color(1, 1, 1, 0.7))
 		else:
@@ -948,6 +963,7 @@ func _draw_legend_icons() -> void:
 
 
 func _refresh_legend() -> void:
+	var session: BinduSession = self.session
 	# 줄 앞 그림(카드 종류)은 legend.draw에서 (LEGEND_ICONS 순서). 그림이 있어 머리 글·긴 설명을 뺐다
 	var cap_e := "%d종까지" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "종류마다 공속 -%d%%" % roundi(Rules.tax_step * 100)
 	var cap_m := "종류별 %d · 합 %d" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "쌓을수록 절반"
@@ -987,6 +1003,7 @@ func _refresh_legend() -> void:
 
 ## 규칙 버전 바꾸기: 기록은 버전마다 따로.
 func _cycle_skill(d: int) -> void:
+	var session: BinduSession = self.session
 	Meta.skill_set = posmod(Meta.skill_set + d, Skill.SETS.size())
 	session.sfx.play("place")
 	_refresh_menu()
@@ -994,6 +1011,7 @@ func _cycle_skill(d: int) -> void:
 
 
 func _cycle_rules(d: int) -> void:
+	var session: BinduSession = self.session
 	var i := Rules.IDS.find(Meta.rules)
 	Meta.rules = Rules.IDS[(i + d + Rules.IDS.size()) % Rules.IDS.size()]
 	session.run_flow_system._apply_rules()
@@ -1005,6 +1023,7 @@ func _cycle_rules(d: int) -> void:
 
 ## 잠긴 스킨은 건너뛰고, 잠긴 것이 있으면 해금 조건을 알려 준다.
 func _cycle_skin(kind: String, d: int) -> void:
+	var session: BinduSession = self.session
 	var ids: Array = Meta.TOWER_SKIN_IDS if kind == "tower" else Meta.CORE_SKIN_IDS
 	var defs: Dictionary = Meta.TOWER_SKINS if kind == "tower" else Meta.CORE_SKINS
 	var cur: String = Meta.tower_skin if kind == "tower" else Meta.core_skin
@@ -1030,6 +1049,7 @@ func _cycle_skin(kind: String, d: int) -> void:
 
 
 func _toggle_codex() -> void:
+	var session: BinduSession = self.session
 	if not session.codex_panel.visible:
 		session.settings_panel.visible = false
 		session.records_panel.visible = false
@@ -1038,7 +1058,7 @@ func _toggle_codex() -> void:
 		session.modes_panel.visible = false
 	if session.vote_panel.visible:
 		session.vote_panel.hide_panel()
-	session.codex_panel.fit(session.ui_root.size, session._phone())
+	session.codex_panel.fit(session.ui_root.size, session.viewport_system._phone())
 	session.codex_panel.toggle()
 	if session.codex_panel.visible:
 		session.net.ach_rates()
@@ -1046,6 +1066,7 @@ func _toggle_codex() -> void:
 
 ## 다음 패치 투표 창. 판 끝난 화면에서 열면 이번 판에 고른 카드·특성이 맨 앞 탭.
 func _toggle_vote(from_run := false) -> void:
+	var session: BinduSession = self.session
 	if not session.vote_panel.visible:
 		session.settings_panel.visible = false
 		session.records_panel.visible = false
@@ -1058,6 +1079,7 @@ func _toggle_vote(from_run := false) -> void:
 
 ## 이번 판에 고른 것 (통계 키, 고른 차례대로, 겹치지 않게).
 func _vote_run_keys() -> Array:
+	var session: BinduSession = self.session
 	var out := []
 	for e in session.run_log:
 		var p := str(e.get("p", ""))
@@ -1067,6 +1089,7 @@ func _vote_run_keys() -> Array:
 
 
 func _toggle_records() -> void:
+	var session: BinduSession = self.session
 	session.records_panel.visible = not session.records_panel.visible
 	session.board_box.visible = false
 	session.board_ugc_panel.visible = false
@@ -1124,6 +1147,7 @@ func _toggle_records() -> void:
 
 ## 서버 응답(켤 때, 시작 화면으로 돌아올 때): 시작 화면이면 받은 패치를 바로 적용하고, 새 버전·공지를 띄운다.
 func _toggle_settings() -> void:
+	var session: BinduSession = self.session
 	session.settings_panel.visible = not session.settings_panel.visible
 	if account_label:
 		account_label.text = Account.label()
@@ -1133,6 +1157,7 @@ func _toggle_settings() -> void:
 
 ## 모드 창: 어렵게·쉽게 두 묶음. 누르면 켜고 끄며, 반대 모드는 저절로 꺼진다. 효과는 버튼에 바로 적는다 (터치는 마우스 올리기가 없음).
 func _build_modes(root: Control, sb: StyleBox) -> void:
+	var session: BinduSession = self.session
 	session.modes_panel = PanelContainer.new()
 	session.modes_panel.set_anchors_preset(Control.PRESET_CENTER)
 	session.modes_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
@@ -1194,6 +1219,7 @@ func _build_modes(root: Control, sb: StyleBox) -> void:
 
 
 func _toggle_modes() -> void:
+	var session: BinduSession = self.session
 	session.modes_panel.visible = not session.modes_panel.visible
 	if session.modes_panel.visible:
 		_refresh_modes()
@@ -1214,6 +1240,7 @@ func _toggle_mode(id: String) -> void:
 
 
 func _build_easy_notice(v: VBoxContainer) -> void:
+	var session: BinduSession = self.session
 	easy_notice = PanelContainer.new()
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.08, 0.16, 0.26, 0.97)
@@ -1252,18 +1279,19 @@ func _close_easy_notice() -> void:
 	if easy_notice_skip.button_pressed:
 		var cfg := ConfigFile.new()
 		cfg.load(Tutorial.PATH)
-		cfg.set_value("notice", session.EASY_NOTICE_KEY, true)
+		cfg.set_value("notice", BinduSession.EASY_NOTICE_KEY, true)
 		cfg.save(Tutorial.PATH)
 	easy_notice.visible = false
 
 
 func _easy_notice_off() -> bool:
 	var cfg := ConfigFile.new()
-	return cfg.load(Tutorial.PATH) == OK and cfg.get_value("notice", session.EASY_NOTICE_KEY, false) == true
+	return cfg.load(Tutorial.PATH) == OK and cfg.get_value("notice", BinduSession.EASY_NOTICE_KEY, false) == true
 
 
 ## 고른 모드를 저장하고 규칙·기록 표시를 다시 맞춘다 (시작 화면에서만 바뀐다).
 func _modes_changed() -> void:
+	var session: BinduSession = self.session
 	Meta.modes = Array(Modes.on)
 	if not Modes.easy():
 		easy_notice.visible = false
@@ -1275,6 +1303,7 @@ func _modes_changed() -> void:
 
 
 func _refresh_modes() -> void:
+	var session: BinduSession = self.session
 	for id in modes_btns:
 		var b: Button = modes_btns[id]
 		var d: Dictionary = Modes.LIST[id]
@@ -1297,6 +1326,3 @@ func _toggle_fullscreen() -> void:
 
 func _apply_volume() -> void:
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(Meta.volume, 0.001)))
-
-
-## 업적 달성 처리: 배너와 소리, 해금 안내.

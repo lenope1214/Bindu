@@ -33,7 +33,7 @@ func _run(pat: String, md: Dictionary, secs: float, ospd: float) -> Array:
 	for c in main.zones.get_children(): c.free()
 	for c in main.projectiles.get_children(): c.free()
 	main.wave = 20; main.phase = main.Phase.WAVE; main.wave_active = true; main.wave_time = 10.0; main.to_spawn = 0
-	var c = main.center()
+	var c = main.viewport_system.center()
 	var ld := Vector2.UP
 	main.picked = {"e": Elem.SOUL, "lv": 3}
 	main.interaction_system._place_tower(c + ld * 100.0, ld)
@@ -55,7 +55,7 @@ func _run(pat: String, md: Dictionary, secs: float, ospd: float) -> Array:
 			spawn_t = 0.5
 			var o = Orb.new(); o.main = main
 			var a := rng.randf_range(0, TAU)
-			o.position = c + Vector2.from_angle(a) * main._spawn_radius()
+			o.position = c + Vector2.from_angle(a) * main.spawning_system._spawn_radius()
 			o.from_a = a; o.target = c; o.swirl = main.SPIRAL_SWIRL
 			o.setup(Orb.Kind.NORMAL, 1000000, ospd)
 			main.orbs.add_child(o)

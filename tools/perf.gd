@@ -37,7 +37,7 @@ func _setup() -> void:
 	if main.title_label.visible:  # 창 모드는 타이틀에서 시작한다: 헤드리스처럼 바로 판으로
 		main.title_label.visible = false
 		main.run_flow_system._start_choose()
-	var c: Vector2 = main.center()
+	var c: Vector2 = main.viewport_system.center()
 	var n := 16
 	for i in n:
 		var a := TAU * i / n
@@ -75,11 +75,11 @@ func _process(_d):
 	# 구체가 goal개 넘게 쌓일 때까지(최대 4000프레임) 기다린 뒤 잰다
 	if samples.is_empty() and main.live_orbs.size() < goal and warm < 4000:
 		warm += 1
-		main.prof.clear()
+		main.combat_system.prof.clear()
 		last_us = now
 		return false
 	if f <= 120:
-		main.prof.clear()  # 잴 프레임만 더한다 (배속을 바꾼 직후 120프레임은 빼고)
+		main.combat_system.prof.clear()  # 잴 프레임만 더한다 (배속을 바꾼 직후 120프레임은 빼고)
 	if f > 120:
 		samples.append((now - last_us) / 1000.0)
 		counts += Vector3(main.live_orbs.size(), main.projectiles.get_child_count(), main.zones.get_child_count())
@@ -103,8 +103,8 @@ func _process(_d):
 			return false
 		print("PERF x%d: 평균 %.2fms · 95%% %.2fms · 최대 %.2fms (구체 %d · 탄 %d · 장판 %d)%s" % [roundi(speeds[stage]), avg, samples[int(samples.size() * 0.95)], samples[-1], roundi(counts.x), roundi(counts.y), roundi(counts.z), rt])
 		var parts := PackedStringArray()
-		for k in main.prof:
-			parts.append("%s %.2f" % [k, main.prof[k] / 1000.0 / samples.size()])
+		for k in main.combat_system.prof:
+			parts.append("%s %.2f" % [k, main.combat_system.prof[k] / 1000.0 / samples.size()])
 		print("PERF x%d 부분(ms/프레임): %s" % [roundi(speeds[stage]), " · ".join(parts)])
 		samples.clear()
 		counts = Vector3.ZERO

@@ -1,5 +1,6 @@
 class_name BinduPerks
 extends BinduFeature
+## 특성·동전·중앙 방어 효과. 예약 콜백은 main의 순서를 따른다.
 
 var perk_press: Button = null  # 누르고 있는 특성 카드 (길게 누르기)
 var perk_peek: Button = null  # 길게 눌러 자세히를 띄운 특성 카드 (손을 떼도 고르지 않음)
@@ -10,12 +11,14 @@ var coin_ang0 := 0.0
 var coin_spin := 0.0  # 떨어지는 동안 더 돌 각도 (끝에서 모서리가 서게 맞춤)
 var coin_tap_t := 0  # 마지막으로 누른 때(ms), 터치가 마우스로도 와서 두 번 눌리지 않게
 func _lv2_chance() -> float:
+	var session: BinduSession = self.session
 	var w: int = session.bank_picks[0] if not session.bank_picks.is_empty() else session.wave  # 미룬 고르기는 쌓은 때의 웨이브로 (미뤄서 Lv2가 더 잘 나오지 않게)
 	var lv2 := minf(Patch.num("cards", "lv2_base", 0.2) + Patch.num("cards", "lv2_wave", 0.02) * w, Patch.num("cards", "lv2_max", 0.5))
 	return lv2 + _perk_val("luck") * session.perks.get("luck", 0)
 
 
 func _start_perk() -> void:
+	var session: BinduSession = self.session
 	var pool := _perk_pool()
 	if pool.is_empty():
 		session.bank_perks = 0
@@ -38,7 +41,8 @@ func _start_perk() -> void:
 
 ## 지금 선택지에 나올 수 있는 특성들
 func _perk_pool() -> Array:
-	var pool: Array = session.PERKS.filter(func(pk): return session.cards_system._card_enabled({"type": "perk", "id": pk["id"]}))
+	var session: BinduSession = self.session
+	var pool: Array = BinduSession.PERKS.filter(func(pk): return session.cards_system._card_enabled({"type": "perk", "id": pk["id"]}))
 	if Modes.has("narrow"):
 		pool = pool.filter(func(pk): return not pk["id"] in ["reroll", "coin"])  # 외길: 새로고침이 없으니 쓸모없는 특성은 빼고 (동전 뒷면도 새로고침)
 	if session.coin_next != "":
@@ -56,7 +60,8 @@ func _perk_pool() -> Array:
 
 ## 특성 고르기 화면 (perk_offer는 이미 정해져 있음).
 func _show_perks() -> void:
-	session.phase = session.Phase.CHOOSE
+	var session: BinduSession = self.session
+	session.phase = BinduSession.Phase.CHOOSE
 	session.wave_active = false
 	session.perk_mode = true
 	session.cards_system._clear_shots()
@@ -104,7 +109,7 @@ func _show_perks() -> void:
 				if ev.pressed:
 					perk_press = b
 					session.get_tree().create_timer(0.45).timeout.connect(func():
-						if perk_press == b and is_instance_valid(b) and session.perk_mode:
+						if is_instance_valid(session) and perk_press == b and is_instance_valid(b) and session.perk_mode:
 							perk_peek = b
 							session.card_dock.inspected_tower = null
 							session.card_dock.hovered = b)
@@ -127,6 +132,7 @@ func _show_perks() -> void:
 
 
 func _on_perk(pk: Dictionary) -> void:
+	var session: BinduSession = self.session
 	if not session.perk_mode or session.coin_stage > 0:
 		return
 	session.perk_mode = false
@@ -144,13 +150,13 @@ func _on_perk(pk: Dictionary) -> void:
 			_coin_done()
 		return
 	_apply_perk(id)
-	session._mp_send_perk(id)
+	session.multiplayer_system._mp_send_perk(id)
 	var note := ""
 	match session.coin_next:
 		"double":
 			session.perks[id] += 1
 			_apply_perk(id)
-			session._mp_send_perk(id)
+			session.multiplayer_system._mp_send_perk(id)
 			note = " · 동전 앞면: 두 번"
 		"reroll":
 			session.rerolls_left += int(_perk_val("coin"))
@@ -169,6 +175,7 @@ func _on_perk(pk: Dictionary) -> void:
 
 ## 동전을 던진다: 카드를 치우고 공중에서 돌리기 시작.
 func _coin_throw() -> void:
+	var session: BinduSession = self.session
 	for c in session.choice_box.get_children():
 		c.queue_free()
 	session.choice_box.visible = false
@@ -187,6 +194,7 @@ func _coin_throw() -> void:
 
 ## 누르기·Space: 공중이면 떨어뜨리고, 떨어지는 중이면 결과로, 결과가 떠 있으면 바로 카드로.
 func _coin_tap() -> void:
+	var session: BinduSession = self.session
 	if session.coin_stage == 0 or Time.get_ticks_msec() - coin_tap_t < 150:
 		return
 	coin_tap_t = Time.get_ticks_msec()
@@ -197,6 +205,7 @@ func _coin_tap() -> void:
 
 
 func _coin_drop() -> void:
+	var session: BinduSession = self.session
 	session.coin_stage = 2
 	coin_t = 0.0
 	coin_ang0 = coin_ang
@@ -205,6 +214,7 @@ func _coin_drop() -> void:
 
 
 func _coin_land() -> void:
+	var session: BinduSession = self.session
 	session.coin_stage = 4
 	coin_t = 0.0
 	session.sfx.play("crit")
@@ -214,6 +224,7 @@ func _coin_land() -> void:
 
 ## 연출이 끝나 결과대로 특성 3개를 새로 받는다.
 func _coin_done() -> void:
+	var session: BinduSession = self.session
 	session.coin_stage = 0
 	Ach.on_coin(session.coin_next == "double")
 	session.progression_system._ach_check()
@@ -227,6 +238,7 @@ func _coin_done() -> void:
 
 
 func _coin_step(delta: float) -> void:
+	var session: BinduSession = self.session
 	coin_t += delta
 	var was := cos(coin_ang) > 0.0
 	match session.coin_stage:
@@ -254,6 +266,7 @@ func _coin_step(delta: float) -> void:
 
 
 func _draw_coin() -> void:
+	var session: BinduSession = self.session
 	var sz := session.coin_fx.size
 	var c := sz / 2.0 + Vector2(0, 40)  # 결과 글(banner, 가운데 -140)이 동전 위에 오게
 	var air := c.y - 120.0
@@ -303,6 +316,7 @@ func _draw_coin() -> void:
 
 ## 동전 한 개. sx: 가로 폭(-1~1, 0이면 모서리). 앞면은 금색에 가운데 점(빈두), 뒷면은 은색에 새로고침 화살표.
 func _coin_disc(p: Vector2, r: float, sx: float, rot: float, front: bool, a: float) -> void:
+	var session: BinduSession = self.session
 	var w := maxf(absf(sx), 0.07)
 	var face := Color(1, 0.8, 0.35, a) if front else Color(0.68, 0.8, 0.95, a)
 	var dark := Color(0.62, 0.42, 0.12, a) if front else Color(0.3, 0.4, 0.58, a)
@@ -323,6 +337,7 @@ func _coin_disc(p: Vector2, r: float, sx: float, rot: float, front: bool, a: flo
 
 
 func _apply_perk(id: String) -> void:
+	var session: BinduSession = self.session
 	match id:
 		"power": Tower.dmg_mul += _perk_val("power")
 		"haste": Tower.spd_mul += _perk_val("haste")
@@ -336,11 +351,13 @@ func _apply_perk(id: String) -> void:
 
 ## 특성 수치 (온라인 패치 perks로 바뀔 수 있음). 설명 글도 같이 바꿔야 하면 perk_desc. coin: 동전 뒷면 새로고침 수
 func _shield_wave() -> int:
+	var session: BinduSession = self.session
 	return mini(session.perks.get("shield", 0) * int(_perk_val("shield")), int(_perk_val("shield_max")))
 
 
 ## 넘친 회복으로 남길 수 있는 실드 (모든 실드 합이 shield_all을 넘지 않게).
 func _keep_cap() -> int:
+	var session: BinduSession = self.session
 	if not session.perks.has("overflow"):
 		return 0
 	return maxi(0, mini(int(_perk_val("overflow")), int(_perk_val("shield_all")) - _shield_wave()))
@@ -348,31 +365,35 @@ func _keep_cap() -> int:
 
 ## 중앙 체력 회복. 넘친 회복 특성이 있으면 가득 차서 넘친 만큼 실드로.
 func _heal_core(n: int) -> void:
+	var session: BinduSession = self.session
 	var room := maxi(session.core_max - session.core_hp, 0)
 	session.core_hp += mini(n, room)
 	var over := mini(n - room, _keep_cap() - session.shield_keep)
 	if over > 0:
 		session.shield_keep += over
-		session.popup(session.core() + Vector2(0, -session.CORE_RADIUS - 24.0), over, Color(0.55, 0.85, 1.0), true, "실드 +%d" % over, 1.0)
+		session.spawning_system.popup(session.viewport_system.core() + Vector2(0, -BinduSession.CORE_RADIUS - 24.0), over, Color(0.55, 0.85, 1.0), true, "실드 +%d" % over, 1.0)
 
 
 ## 성벽 조각 수: 벽 공격방식 오브젝트의 레벨 합 + 고른 횟수.
 func _rampart_n() -> int:
+	var session: BinduSession = self.session
 	var n: int = session.perks.get("rampart", 0)
 	if n == 0:
 		return 0
-	for t in session._my_towers():
+	for t in session.multiplayer_system._my_towers():
 		if t.pattern == "wall":
 			n += t.plv
 	return mini(n * int(_perk_val("rampart")), int(_perk_val("rampart_max")))
 
 
 func _has_wall() -> bool:
-	return session._my_towers().any(func(t): return t.pattern == "wall")
+	var session: BinduSession = self.session
+	return session.multiplayer_system._my_towers().any(func(t): return t.pattern == "wall")
 
 
 ## 실드가 먼저 막는다 (이번 웨이브 실드 → 남는 실드). 막은 양을 돌려준다.
 func _shield_absorb(dmg: int) -> int:
+	var session: BinduSession = self.session
 	var a := mini(session.shield, dmg)
 	session.shield -= a
 	var b := mini(session.shield_keep, dmg - a)
@@ -382,13 +403,14 @@ func _shield_absorb(dmg: int) -> int:
 
 ## 반격 파동: 중앙 근처 구체를 밀어내고 피해 (보통 구체 체력의 riposte배, 겹치면 하나당 +riposte_more).
 func _riposte(p: Vector2) -> void:
+	var session: BinduSession = self.session
 	if session.riposte_cd > 0.0:
 		return
 	session.riposte_cd = 0.25
 	var r := _perk_val("riposte_r")
 	var base: float = (1.0 + floorf(session.wave * 0.7)) * session.hp_growth(session.wave) * Rules.orb_hp * Vary.hp_k()
 	var dmg: float = base * _perk_val("riposte") * (1.0 + _perk_val("riposte_more") * (session.perks.get("riposte", 1) - 1))
-	for o in session.near(p, r):
+	for o in session.combat_system.near(p, r):
 		if o.hp <= 0.0 or o.ghost:
 			continue
 		var d: float = o.position.distance_to(p)
@@ -396,11 +418,12 @@ func _riposte(p: Vector2) -> void:
 			o.hurt(dmg)
 			o.knock((o.position - p).normalized() * 60.0 if d > 0.1 else Vector2.ZERO)
 	if session.core_fx.size() < 20:
-		session.core_fx.append([p, r, session.FX_RIPOSTE])
+		session.core_fx.append([p, r, BinduSession.FX_RIPOSTE])
 
 
 ## 회복 특성이 이번 웨이브에 채우는 체력. 처음 고른 것은 regen(1), 겹친 것은 하나당 regen_more(0.5)이고, 1이 안 되는 나머지는 다음 웨이브로 넘긴다.
 func _regen_take() -> int:
+	var session: BinduSession = self.session
 	session.regen_acc += _perk_val("regen") + _perk_val("regen_more") * (session.perks.get("regen", 0) - 1)
 	var h := int(session.regen_acc)
 	session.regen_acc -= h
@@ -408,20 +431,21 @@ func _regen_take() -> int:
 
 
 func _perk_val(id: String) -> float:
-	return Patch.num("perks", id, session.PERK_VALS[id])
+	return Patch.num("perks", id, BinduSession.PERK_VALS[id])
 
 
 ## 숫자 하나로 끝나는 특성은 그림 + 숫자로 (설명 글은 말풍선). 패치로 설명이 바뀌어 숫자를 못 찾으면 글 그대로.
 func _perk_big(id: String, desc: String) -> Dictionary:
-	if not session.PERK_GLYPH.has(id):
+	var session: BinduSession = self.session
+	if not BinduSession.PERK_GLYPH.has(id):
 		return {}
 	if id == "regen" and session.perks.get("regen", 0) > 0:  # 이미 있으면 겹친 회복 값
-		return {"big": "+%s/웨이브" % String.num(_perk_val("regen_more")), "i": session.PERK_GLYPH[id]}
+		return {"big": "+%s/웨이브" % String.num(_perk_val("regen_more")), "i": BinduSession.PERK_GLYPH[id]}
 	var re := RegEx.create_from_string("[+-]\\d+(\\.\\d+)?%?")
 	var mm := re.search(desc)
 	if mm == null:
 		return {}
-	return {"big": mm.get_string() + ("/웨이브" if id == "regen" else ""), "i": session.PERK_GLYPH[id]}
+	return {"big": mm.get_string() + ("/웨이브" if id == "regen" else ""), "i": BinduSession.PERK_GLYPH[id]}
 
 
 func _perk_desc(pk: Dictionary) -> String:
@@ -429,11 +453,10 @@ func _perk_desc(pk: Dictionary) -> String:
 
 
 func _perk_text() -> String:
+	var session: BinduSession = self.session
 	var parts := PackedStringArray()
-	for pk in session.PERKS:
+	for pk in BinduSession.PERKS:
 		var n: int = session.perks.get(pk["id"], 0)
 		if n > 0:
 			parts.append(pk["name"] + (" x%d" % n if n > 1 else ""))
 	return "특성: " + ", ".join(parts) if not parts.is_empty() else ""
-
-

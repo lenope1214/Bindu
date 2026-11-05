@@ -1,8 +1,10 @@
 class_name BinduRunFlow
 extends BinduFeature
+## 판 진행·일시정지·넘기기 전환. 예약 콜백은 main의 순서를 따른다.
 
 var over_data := {}
 func _apply_rules() -> void:
+	var session: BinduSession = self.session
 	Patch.commit()  # 받아 둔 온라인 패치는 새 판을 시작할 때 적용
 	Rules.apply(Meta.rules)
 	Modes.apply_rules()
@@ -20,6 +22,7 @@ func _apply_rules() -> void:
 
 ## 도움말: 상한·장수는 고른 규칙 버전에 따라 다르다.
 func _help_text() -> String:
+	var session: BinduSession = self.session
 	var elems := "속성 %d종까지, 레벨은 제한 없음" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "종류 제한 없음"
 	var mods := "강화는 종류마다 %d개, 한 오브젝트에 합쳐 %d개까지" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "강화는 제한 없이 쌓이지만 쌓을수록 효과가 절반씩"
 	var keys := [
@@ -86,6 +89,7 @@ func _ver_text() -> String:
 
 ## 웨이브 구체 수: 기존 공식 3 + 2w. 150웨이브 이후에는 기존처럼 수를 고정하고 초과 몫은 체력으로 반영한다.
 func _start_choose(new_round := true) -> void:
+	var session: BinduSession = self.session
 	if new_round and session.wave == 0:
 		# 새 판. 헤드리스(봇·점검)는 늘 모두 열린 채로
 		session.tutor = Meta.tutor_next and DisplayServer.get_name() != "headless" and not TutPlay.on
@@ -100,13 +104,13 @@ func _start_choose(new_round := true) -> void:
 		session.legacy_grow = false
 		session.abilities_system._skills_new_run(Meta.skill_set)
 		session.abilities_system._ley_new_run()
-	if new_round and session.tutor and session.wave + 1 >= session.TUTOR_OPEN.values().max() and Meta.tutor_next:
+	if new_round and session.tutor and session.wave + 1 >= BinduSession.TUTOR_OPEN.values().max() and Meta.tutor_next:
 		Meta.tutor_next = false  # 모두 열렸다: 다음 판부터는 처음부터 모두
 		session.progression_system._save_best()
 	if new_round:
 		_new_rest()
 		_take_bank()
-	session.phase = session.Phase.CHOOSE  # 웨이브를 막 끝낸 때도 카드 안내가 쉬는 시간 안내로 뜨게 (_open_choose가 다시 정함)
+	session.phase = BinduSession.Phase.CHOOSE  # 웨이브를 막 끝낸 때도 카드 안내가 쉬는 시간 안내로 뜨게 (_open_choose가 다시 정함)
 	session.cards_system._make_choices()
 	session.cards_system._open_choose()
 	session.persistence_system._save_run()
@@ -116,11 +120,12 @@ func _start_choose(new_round := true) -> void:
 
 ## 새 쉬는 시간: 다음 웨이브(방향·저항·보스)를 뽑고 고르기·새로고침 수를 정한다.
 func _new_rest() -> void:
+	var session: BinduSession = self.session
 	session.hud_system._refresh_build()
 	if session.mp_seed != 0:
 		session.wrng.seed = hash([session.mp_seed, session.wave])  # 대결: 모두 같은 웨이브 (방향·저항·보스·구체)
 	if session.mp_ghost:
-		session._mp_ghost_rest()  # 협동 참가자: 다음 웨이브는 호스트가 정한 것
+		session.multiplayer_system._mp_ghost_rest()  # 협동 참가자: 다음 웨이브는 호스트가 정한 것
 	else:
 		if session.wave > 0:
 			for msg in Vary.rest(session.wave):
@@ -129,9 +134,9 @@ func _new_rest() -> void:
 				session.hud_system._show_toast("회오리: 다음 웨이브부터 회전 방향이 반대로 바뀌어요")
 		session.waves_system._roll_lanes()
 		# 다음 웨이브 저항 속성: 12웨이브(버전 4는 8)부터 60% 확률
-		session.wave_resist = session._wpick(Elem.ALL) if session.wave + 1 >= Rules.resist_from and session.wf() < 0.6 else -1
-		session._plan_boss()
-	session._mp_rest_begin()
+		session.wave_resist = session.multiplayer_system._wpick(Elem.ALL) if session.wave + 1 >= Rules.resist_from and session.multiplayer_system.wf() < 0.6 else -1
+		session.spawning_system._plan_boss()
+	session.multiplayer_system._mp_rest_begin()
 	session.picks_left = maxi(Rules.open_picks, Rules.picks) if session.wave <= 1 else Rules.picks  # 처음 두 번의 쉬는 시간은 2개씩, 그 뒤 1개 (모드 '두 장'이면 계속 2개)
 	if TutPlay.on and session.tplay != null and session.tplay.rest_picks(session.wave) >= 0:
 		session.picks_left = session.tplay.rest_picks(session.wave)  # 플레이 튜토리얼: 그 쉬는 시간의 카드 단계 수
@@ -143,14 +148,16 @@ func _new_rest() -> void:
 
 ## 넘기기를 쓸 수 있나: 오브젝트가 있고, 첫 판이면 카드 종류가 다 열린 뒤.
 func _can_skip() -> bool:
+	var session: BinduSession = self.session
 	if session.mp_mode != "":
 		return false  # 멀티플레이는 웨이브 넘기기 없음 (협동은 함께, 대결은 같은 웨이브 순서)
-	return session.towers.get_child_count() > 0 and not (session.tutor and session.wave + 1 < session.TUTOR_OPEN.values().max()) and session.skip_left == 0
+	return session.towers.get_child_count() > 0 and not (session.tutor and session.wave + 1 < BinduSession.TUTOR_OPEN.values().max()) and session.skip_left == 0
 
 
 ## 선택지(또는 특성) 화면에서 넘기기: 이번 쉬는 시간의 고르기를 쌓아 두고 웨이브를 시작한다.
 func _on_skip() -> void:
-	if session.phase not in [session.Phase.CHOOSE, session.Phase.READY] or not _can_skip() or session.title_label.visible or session.get_tree().paused:
+	var session: BinduSession = self.session
+	if session.phase not in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY] or not _can_skip() or session.title_label.visible or session.get_tree().paused:
 		return
 	if TutPlay.on and session.tplay != null and not session.tplay.allow_skip():
 		session.hud_system._show_toast("웨이브 넘기기는 튜토리얼 마지막 장에서 해 봐요")
@@ -171,6 +178,7 @@ func _on_skip() -> void:
 ## 이번 쉬는 시간의 남은 고르기·새로고침을 쌓고 바로 다음 웨이브로 (1초 뒤 시작).
 ## picks_left에는 이미 쌓인 고르기(bank_picks)도 들어 있다.
 func _bank_rest() -> void:
+	var session: BinduSession = self.session
 	for i in session.picks_left - session.bank_picks.size():
 		session.bank_picks.append(session.wave)
 	session.picks_left = 0
@@ -187,6 +195,7 @@ func _bank_rest() -> void:
 
 ## 넘기는 중에 웨이브가 끝났다: 고르지 않고 다음 쉬는 시간을 쌓는다.
 func _skip_rest() -> void:
+	var session: BinduSession = self.session
 	if session.wave % 5 == 0:
 		session.bank_perks += 1
 	session.wave_active = false
@@ -199,6 +208,7 @@ func _skip_rest() -> void:
 
 ## 쌓아 둔 고르기·새로고침을 이번 쉬는 시간에 더한다.
 func _take_bank() -> void:
+	var session: BinduSession = self.session
 	session.picks_left += session.bank_picks.size()
 	session.rerolls_left += session.bank_rerolls
 	session.bank_rerolls = 0
@@ -207,6 +217,7 @@ func _take_bank() -> void:
 ## 넘기기를 끝내고 쌓인 것을 연다: 특성부터 하나씩, 그다음 카드.
 ## now_rest: 이번 쉬는 시간의 다음 웨이브를 이미 뽑아 둔 채(넘기기 대기 중) 멈췄나.
 func _end_skip(now_rest: bool) -> void:
+	var session: BinduSession = self.session
 	if not now_rest and not session.skip_stop:
 		Ach.on_skip_done(session.skip_total)  # 멈추지 않고 끝까지 넘김
 	session.skip_left = 0
@@ -228,9 +239,10 @@ func _end_skip(now_rest: bool) -> void:
 
 ## 넘기는 중 멈추기: 웨이브 중이면 그 웨이브 뒤에, 다음 웨이브를 기다리는 중이면 바로.
 func _toggle_skip_stop() -> void:
+	var session: BinduSession = self.session
 	if session.skip_left <= 0:
 		return
-	if session.phase == session.Phase.READY:
+	if session.phase == BinduSession.Phase.READY:
 		_end_skip(true)
 		return
 	session.skip_stop = not session.skip_stop
@@ -238,16 +250,18 @@ func _toggle_skip_stop() -> void:
 
 
 func _cycle_skip_n() -> void:
-	var i := session.SKIP_NS.find(int(Meta.skip_n))
-	Meta.skip_n = session.SKIP_NS[(i + 1) % session.SKIP_NS.size()]
+	var session: BinduSession = self.session
+	var i := BinduSession.SKIP_NS.find(int(Meta.skip_n))
+	Meta.skip_n = BinduSession.SKIP_NS[(i + 1) % BinduSession.SKIP_NS.size()]
 	session.progression_system._save_best()
 
 
 ## 넘기기 버튼·넘기는 중 표시 (매 프레임).
 func _update_skip_ui() -> void:
+	var session: BinduSession = self.session
 	# 카드를 다 고른 뒤(웨이브 시작 대기)에도 [웨이브 시작] 옆에서 넘기기를 쓸 수 있다
-	var ready_skip := session.phase == session.Phase.READY and session.skip_left == 0
-	var show_btn := (session.phase == session.Phase.CHOOSE and not session.cards_hidden or ready_skip) and not session.title_label.visible and _can_skip() and not session.get_tree().paused and session.coin_stage == 0
+	var ready_skip := session.phase == BinduSession.Phase.READY and session.skip_left == 0
+	var show_btn := (session.phase == BinduSession.Phase.CHOOSE and not session.cards_hidden or ready_skip) and not session.title_label.visible and _can_skip() and not session.get_tree().paused and session.coin_stage == 0
 	session.skip_btn.visible = show_btn
 	session.skip_n_btn.visible = show_btn
 	# 글자를 키우면(폰 기본) 카드 아래 버튼 줄이 왼쪽 아래 안내 글까지 내려와 겹친다. 카드를 고르라는 글이라 겹칠 때만 숨긴다
@@ -258,14 +272,14 @@ func _update_skip_ui() -> void:
 		session.skip_btn.tooltip_text = "%d웨이브 넘기기 (S)\n%s\n미룬 카드·새로고침·특성은 멈춘 뒤 한꺼번에 고릅니다. 중앙이 위험해지면(설정) 그 웨이브가 끝나고 멈춥니다" % [n, deferred]
 		session.skip_btn.text = "넘기기"
 		session.skip_n_btn.text = "%d웨이브 ▸" % n
-	session.skip_badge.visible = session.skip_left > 0 and session.phase in [session.Phase.WAVE, session.Phase.READY] and not session.title_label.visible
+	session.skip_badge.visible = session.skip_left > 0 and session.phase in [BinduSession.Phase.WAVE, BinduSession.Phase.READY] and not session.title_label.visible
 	if session.skip_badge.visible:
 		var done := session.skip_total - session.skip_left + 1
 		var cards := session.bank_picks.size()
 		var extra := " · 특성 %d" % session.bank_perks if session.bank_perks > 0 else ""
 		if session.skip_stop:
 			session.skip_badge.text = session.ui_layout_system._kh("이번 웨이브 뒤 멈춤 · 쌓인 카드 %d%s (S: 계속)" % [cards, extra], true)
-		elif session.phase == session.Phase.READY:
+		elif session.phase == BinduSession.Phase.READY:
 			session.skip_badge.text = session.ui_layout_system._kh("넘기는 중 %d/%d · 쌓인 카드 %d%s (S: 지금 멈추고 선택)" % [done, session.skip_total, cards, extra], true)
 		else:
 			session.skip_badge.text = session.ui_layout_system._kh("넘기는 중 %d/%d · 쌓인 카드 %d%s (S: 멈추기)" % [done, session.skip_total, cards, extra], true)
@@ -273,6 +287,7 @@ func _update_skip_ui() -> void:
 
 ## 선택지 화면을 연다 (offer는 이미 정해져 있음).
 func _reload() -> void:
+	var session: BinduSession = self.session
 	_mp_keep_room()
 	if session.is_inside_tree() and session.get_tree().current_scene != null:
 		session.get_tree().reload_current_scene()
@@ -280,19 +295,21 @@ func _reload() -> void:
 
 ## 멀티 판 끝 → 다시 불러오기 전에: 방 연결(Mp)을 루트에 옮겨 두고, 새 화면이 대기방을 열게 표시한다.
 func _mp_keep_room() -> void:
-	if session.mp != null and session.mp_mode != "" and session.phase == session.Phase.GAMEOVER and session.is_inside_tree():
+	var session: BinduSession = self.session
+	if session.mp != null and session.mp_mode != "" and session.phase == BinduSession.Phase.GAMEOVER and session.is_inside_tree():
 		# 멀티 판 끝 → 대기방으로 (방은 나가기 전까지 남는다)
-		session.mp_back = true
-		session.mp_back_msg = ""
+		BinduSession.mp_back = true
+		BinduSession.mp_back_msg = ""
 		if session.mp.active():
-			session.mp_keep = session.mp
+			BinduSession.mp_keep = session.mp
 			session.mp.reparent(session.get_tree().root)
 		else:
-			session.mp_back_msg = session.mp_fail_msg if session.mp_fail_msg != "" else "방이 없어져 대기방으로 돌아가지 못했어요"
+			BinduSession.mp_back_msg = session.mp_fail_msg if session.mp_fail_msg != "" else "방이 없어져 대기방으로 돌아가지 못했어요"
 
 
 ## 왼쪽 아래 안내 글 위쪽 끝 (안내 글이 없으면 아래 버튼 줄 위).
 func _start_wave() -> void:
+	var session: BinduSession = self.session
 	# 멀티는 준비 동기화·잠수 자동 진행을 우선한다. 한 기기의 배치로 시작을 거부하면
 	# 호스트의 wave 통지와 실제 단계가 달라지거나 대결이 무기한 멈출 수 있다.
 	var forced := TutPlay.on and session.tplay != null and session.tplay.force_start
@@ -307,7 +324,7 @@ func _start_wave() -> void:
 			return
 	if session.mp_mode == "coop" and not session.mp_wave_go:
 		session.countdown = -1.0
-		session._mp_coop_ready()
+		session.multiplayer_system._mp_coop_ready()
 		return
 	session.countdown = -1.0
 	session.interaction_system._drop_press()
@@ -316,7 +333,7 @@ func _start_wave() -> void:
 	session.start_btn.visible = false
 	session.wave += 1
 	session.rest_ready = false
-	session.phase = session.Phase.WAVE
+	session.phase = BinduSession.Phase.WAVE
 	session.wave_active = true
 	session.choice_box.visible = false
 	session.reroll_btn.visible = false
@@ -332,7 +349,7 @@ func _start_wave() -> void:
 	for i in lc.size():
 		for k in lc[i]:
 			session.lane_bag.append(i)
-	session._wshuffle(session.lane_bag)
+	session.multiplayer_system._wshuffle(session.lane_bag)
 	if session.mp_ghost:
 		session.to_spawn = 0  # 협동 참가자: 구체는 호스트가 보낸 대로
 		session.lane_bag.clear()
@@ -361,7 +378,7 @@ func _start_wave() -> void:
 	session.dps_hist.clear()
 	session.dps_t = 0.0
 	session.dps_n = 0
-	session.rank_t = session.RANK_HOLD + 0.05  # 피해가 다시 쌓인 뒤에 매긴다
+	session.rank_t = BinduSession.RANK_HOLD + 0.05  # 피해가 다시 쌓인 뒤에 매긴다
 	for t in session.towers.get_children():
 		t.cd.clear()
 		t.fx.clear()
@@ -379,6 +396,7 @@ func _start_wave() -> void:
 ## 모든 다음 웨이브 진입 방향에 적어도 하나의 오브젝트 공격이 닿는지 확인한다.
 ## 시작 버튼·Space·자동 시작·넘기기·멀티 호스트가 모두 _start_wave를 지나므로 여기서 막는다.
 func _wave_start_block_reason() -> String:
+	var session: BinduSession = self.session
 	if session.lanes.is_empty():
 		return ""
 	var w := session.wave + 1
@@ -394,13 +412,14 @@ func _wave_start_block_reason() -> String:
 
 ## 진입 길을 따라 여러 지점을 살펴 공격 사거리·방향 안에 들어오는 오브젝트를 찾는다.
 func _wave_lane_covered(a: float, w: int, spread: float) -> bool:
-	var path := session._orb_path(a)
+	var session: BinduSession = self.session
+	var path := session.spawning_system._orb_path(a)
 	if path.size() < 2:
 		return true
 	var samples: Array[Vector2] = []
 	if Meta.map_id == "line":
-		for y in [-session.LINE_HALF + 20.0, 0.0, session.LINE_HALF - 20.0]:
-			var line_path := session._orb_path(a, y)
+		for y in [-BinduSession.LINE_HALF + 20.0, 0.0, BinduSession.LINE_HALF - 20.0]:
+			var line_path := session.spawning_system._orb_path(a, y)
 			for k in range(1, 9):
 				samples.append(line_path[0].lerp(line_path[1], float(k) / 9.0))
 	else:
@@ -442,10 +461,11 @@ func _wave_attack_reach(t: Tower) -> float:
 
 
 func _game_over() -> void:
-	session._mp_over()
+	var session: BinduSession = self.session
+	session.multiplayer_system._mp_over()
 	session.onboarding_system._tut_event("over")
-	session._log_wave()
-	session.phase = session.Phase.GAMEOVER
+	session.combat_system._log_wave()
+	session.phase = BinduSession.Phase.GAMEOVER
 	session.over_ms = Time.get_ticks_msec()
 	session.toast_timer = 0.0  # 넘기기 알림 등이 게임 오버 글 위에 남지 않게
 	session.wave_active = false
@@ -507,6 +527,7 @@ func _game_over() -> void:
 
 ## 게임 오버 그림 카드 (over_card 가운데가 화면 가운데 위쪽).
 func _draw_over_card() -> void:
+	var session: BinduSession = self.session
 	if not session.over_label.visible or over_data.is_empty():
 		return
 	var d := over_data
@@ -602,7 +623,8 @@ func _draw_over_card() -> void:
 ## 두 손가락 벌리기·모으기 = 확대, 두 손가락 끌기 = 이동. PC는 휠 = 확대(커서 쪽), 휠 누른 채 끌기 = 이동.
 ## 처리했으면 true (그 입력은 게임·UI로 넘기지 않는다).
 func _toggle_pause() -> void:
-	if session.phase == session.Phase.GAMEOVER or session.title_label.visible:
+	var session: BinduSession = self.session
+	if session.phase == BinduSession.Phase.GAMEOVER or session.title_label.visible:
 		return
 	session.get_tree().paused = not session.get_tree().paused
 	if session.get_tree().paused:
@@ -617,6 +639,7 @@ func _toggle_pause() -> void:
 
 ## 일시정지에서 처음부터: 두 번 눌러야 (R 또는 버튼).
 func _pause_restart() -> void:
+	var session: BinduSession = self.session
 	if session.restart_armed > 0.0:
 		session.get_tree().paused = false
 		if TutPlay.on and session.tplay != null:
@@ -631,10 +654,11 @@ func _pause_restart() -> void:
 
 ## 일시정지 글: 지금 나가면 어디서부터 이어지는지도 알려 준다. 키는 아래 그림 버튼 모서리에.
 func _pause_text() -> String:
+	var session: BinduSession = self.session
 	var keys := "일시정지"
 	if TutPlay.on:
 		return keys + "\n연습 판이에요. 기록·업적은 남지 않아요"
-	if session.phase == session.Phase.WAVE:
+	if session.phase == BinduSession.Phase.WAVE:
 		return keys + "\n지금 나가면 웨이브 %d 앞 쉬는 시간부터 이어집니다" % session.wave
 	return keys + "\n지금 나가도 이 쉬는 시간부터 이어서 할 수 있어요"
 
@@ -642,6 +666,7 @@ func _pause_text() -> String:
 ## 일시정지에서 판 끝내기: 두 번 누르면 지금 점수로 게임 오버 (기록 저장·온라인 전송은 보통 게임 오버와 같다).
 ## 실수로 누르지 않게 처음 누르면 안내만 한다.
 func _end_run() -> void:
+	var session: BinduSession = self.session
 	if TutPlay.on and session.tplay != null:
 		_toggle_pause()
 		session.tplay.ask_quit()  # 연습 판: 튜토리얼 끝내기 확인
@@ -662,6 +687,7 @@ func _end_run() -> void:
 ## 일시정지에서 시작 화면으로 가거나 게임을 끈다. 쉬는 시간이면 지금 상태를 저장하고,
 ## 웨이브 중이면 그 웨이브 앞 쉬는 시간의 저장이 남는다 (시작 화면의 이어하기).
 func _leave(quit_game: bool) -> void:
+	var session: BinduSession = self.session
 	if TutPlay.on and session.tplay != null and not quit_game:
 		session.tplay.finish(false)  # 연습 판에서 시작 화면으로 = 튜토리얼 끝내기
 		return
@@ -672,13 +698,14 @@ func _leave(quit_game: bool) -> void:
 	if quit_game:
 		session.get_tree().quit()
 		return
-	session.title_seen = false
+	BinduSession.title_seen = false
 	_reload()
 
 
 # ---------- 기맥 (2026-10-31 "디펜스 한계 개선 F") ----------
 ## 판마다 전장에 기맥 자리 ley_n개가 생긴다(판 번호로 정해 이어하기도 같음). 자리마다 ley_r 안 가장 가까운 오브젝트 하나가 피해 +ley_dmg.
 func _toggle_speed() -> void:
+	var session: BinduSession = self.session
 	# Space·버튼: 1배속 ↔ 고른 배속
 	session.game_speed = _fast_now() if session.game_speed == 1.0 else 1.0
 	_update_speed_btn()
@@ -686,23 +713,24 @@ func _toggle_speed() -> void:
 
 ## 빠르게 켤 때 배속
 func _fast_now() -> float:
+	var session: BinduSession = self.session
 	return session.fast_speed
 
 
 func _update_speed_btn() -> void:
+	var session: BinduSession = self.session
 	session.speed_btn.text = "x%d" % roundi(session.game_speed)
 	session.speed_btn.tooltip_text = "배속 x%d (Space)" % roundi(session.game_speed)
 	session.speed_btn.queue_redraw()
-	for i in session.SPEEDS.size():
-		if session.SPEEDS[i] == session.fast_speed:
+	for i in BinduSession.SPEEDS.size():
+		if BinduSession.SPEEDS[i] == session.fast_speed:
 			session.speed_pick.select(i)
 
 
 func _on_speed_pick(i: int) -> void:
-	session.fast_speed = session.SPEEDS[i]
+	var session: BinduSession = self.session
+	session.fast_speed = BinduSession.SPEEDS[i]
 	if session.game_speed > 1.0:
 		session.game_speed = _fast_now()
 	_update_speed_btn()
 	session.progression_system._save_best()
-
-

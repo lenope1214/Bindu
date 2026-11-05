@@ -466,7 +466,7 @@ func is_done() -> bool:
 		"link":
 			return _reso_pair()
 		"info":
-			if m._ring_target() != null:
+			if m.field_view_system._ring_target() != null:
 				flags["info"] = true
 			return flags.has("info")
 		"ley":
@@ -514,7 +514,7 @@ func _turned() -> float:
 func _aims_boss() -> bool:
 	if m.boss_plan.is_empty():
 		return true
-	var q: Vector2 = m.core() + Vector2.from_angle(m.boss_plan["a"]) * 240.0
+	var q: Vector2 = m.viewport_system.core() + Vector2.from_angle(m.boss_plan["a"]) * 240.0
 	return m.towers.get_children().any(func(tw): return absf(tw.dir.angle_to(q - tw.position)) < 0.4)
 
 
@@ -776,12 +776,12 @@ func _first(e: int) -> Node:
 
 
 func _spot(off: Vector2) -> Vector2:
-	return m.core() + off
+	return m.viewport_system.core() + off
 
 
 ## p에서 그 길목 구체가 지나가는 곳(중앙에서 260)을 겨누는 방향.
 func _lane_dir(p: Vector2, a: float) -> Vector2:
-	var q: Vector2 = m.core() + Vector2.from_angle(a) * 260.0
+	var q: Vector2 = m.viewport_system.core() + Vector2.from_angle(a) * 260.0
 	var d := q - p
 	return d.normalized() if d.length() > 1.0 else Vector2.from_angle(a)
 
@@ -795,7 +795,7 @@ func _pair_up() -> void:
 	if f == null or w == null:
 		return
 	var p: Vector2 = w.position + Vector2(100, -50)
-	if p.distance_to(m.core()) < 60.0 or m.interaction_system._tower_at(p, f) != null:
+	if p.distance_to(m.viewport_system.core()) < 60.0 or m.interaction_system._tower_at(p, f) != null:
 		p = w.position + Vector2(-100, -50)
 	f.position = p
 	f.set_attack_direction(_lane_dir(p, 0.0))
@@ -874,10 +874,10 @@ func _auto_card(cd: Dictionary) -> bool:
 
 func _free_spot() -> Vector2:
 	for k in 12:
-		var p: Vector2 = m.core() + Vector2.from_angle(k * TAU / 12.0 + 0.3) * 200.0
+		var p: Vector2 = m.viewport_system.core() + Vector2.from_angle(k * TAU / 12.0 + 0.3) * 200.0
 		if m.interaction_system._tower_at(p) == null:
 			return p
-	return m.core() + Vector2(-200, -120)
+	return m.viewport_system.core() + Vector2(-200, -120)
 
 
 ## 웨이브를 시작할 수 없는 길목이 있으면 가장 가까운 오브젝트를 그쪽으로 돌린다.
@@ -892,7 +892,7 @@ func _cover_lanes() -> void:
 		var bestd := INF
 		var best: Node = null
 		for tw in m.towers.get_children():
-			var d: float = tw.position.distance_to(m.core() + Vector2.from_angle(a) * 200.0)
+			var d: float = tw.position.distance_to(m.viewport_system.core() + Vector2.from_angle(a) * 200.0)
 			if d < bestd:
 				bestd = d
 				best = tw
@@ -1018,9 +1018,9 @@ func _refresh() -> void:
 	ask.visible = quit_ask
 	btn_skip.text = "건너뛰기" if tc else "건너뛰기 ▸ (Tab)"
 	btn_all.text = "전체 ✕" if tc else "전체 건너뛰기 ✕"
-	var hgt := 52.0 if m._phone() else 32.0
+	var hgt := 52.0 if m.viewport_system._phone() else 32.0
 	for b in [btn_skip, btn_all, btn_ok]:
-		b.custom_minimum_size = Vector2(64.0 if m._phone() else 0.0, hgt)
+		b.custom_minimum_size = Vector2(64.0 if m.viewport_system._phone() else 0.0, hgt)
 	btn_ok.visible = s.get("id", "") == "goal"
 	if s.is_empty() or s["id"] == "end":
 		return
@@ -1124,7 +1124,7 @@ func _draw_marks() -> void:
 	var z: float = m.view_zoom
 	match s["id"]:
 		"goal":
-			_ring(_world_to_ui(m.core()), 30.0 * z, Color(1, 0.88, 0.5))
+			_ring(_world_to_ui(m.viewport_system.core()), 30.0 * z, Color(1, 0.88, 0.5))
 		"place":
 			var sp := _world_to_ui(_spot(SPOT_FIRE))
 			_ring(sp, 26.0 * z)
@@ -1159,12 +1159,12 @@ func _draw_marks() -> void:
 				_ring(a, 24.0 * z)
 				var tgt: Vector2 = f.position + f.dir.rotated(0.8) * 110.0
 				if s["id"] == "preview" and not m.boss_plan.is_empty():
-					tgt = m.core() + Vector2.from_angle(m.boss_plan["a"]) * 240.0
+					tgt = m.viewport_system.core() + Vector2.from_angle(m.boss_plan["a"]) * 240.0
 				_hand(a, _world_to_ui(tgt))
 				if m.interaction_system._ok_btn_on():
 					_box(m.aim_ok_btn)
 		"zoom":
-			var c := _world_to_ui(m.core())
+			var c := _world_to_ui(m.viewport_system.core())
 			if _touch():
 				var d := 30.0 + 30.0 * fmod(t, 1.4) / 1.4
 				_hand(c + Vector2(-d, d * 0.4))

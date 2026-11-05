@@ -33,7 +33,7 @@ func _initialize():
 		func():
 			if not main.legend_hidden:
 				main.cards_system._toggle_legend()
-			var c: Vector2 = main.core()
+			var c: Vector2 = main.viewport_system.core()
 			var es := [Elem.FIRE, Elem.ICE, Elem.LIGHT, Elem.WIND, Elem.SOUL, Elem.EARTH, Elem.WATER]
 			var dl := [2400.0, 1500.0, 3100.0, 400.0, 900.0, 1250.0, 600.0]
 			for i in es.size():
@@ -61,7 +61,7 @@ func _snap(n: String):
 	RenderingServer.force_draw()
 	main.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
 	var img: Image = main.get_viewport().get_texture().get_image()
-	var c: Vector2 = main.core()
+	var c: Vector2 = main.viewport_system.core()
 	var sc: Transform2D = main.get_viewport().get_final_transform() * main.get_canvas_transform()
 	var cc := sc * c
 	var hw := 260.0 * sc.get_scale().x

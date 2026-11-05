@@ -55,7 +55,7 @@ func _process(d):
 					OS.delay_msec(200)
 				main.mp.join(code, "봇" + role)
 		if role == "host" and main.mp.connected_ids().size() >= int(OS.get_environment("MP_N") if OS.get_environment("MP_N") != "" else "1") and main.mp_mode == "":
-			main._mp_start()
+			main.lobby_system._mp_start()
 		if Engine.get_process_frames() % 300 == 0:
 			print("MPPLAY wait ", role, " code=", main.mp.code, " id=", main.mp.my_id, " peers=", main.mp.names())
 		if main.mp_mode != "":
@@ -75,7 +75,7 @@ func _process(d):
 			return true
 	if main.phase == 3 and main.wave != seen_w:
 		seen_w = main.wave
-		print("MPW %s w=%d lanes=%s n=%d res=%d extra=%d ghosts=%d towers=%d" % [role, main.wave, main.lanes.map(func(a): return snappedf(a, 0.001)), main.to_spawn + main.mp_extra_left, main.wave_resist, main.mp_extra_left, main.mp_ghosts.size(), main.towers.get_child_count()])
+		print("MPW %s w=%d lanes=%s n=%d res=%d extra=%d ghosts=%d towers=%d" % [role, main.wave, main.lanes.map(func(a): return snappedf(a, 0.001)), main.to_spawn + main.mp_extra_left, main.wave_resist, main.mp_extra_left, main.multiplayer_system.mp_ghosts.size(), main.towers.get_child_count()])
 		var by := {}
 		for t in main.towers.get_children():
 			by[t.owner_id] = by.get(t.owner_id, 0) + int(t.run_dealt)
@@ -89,7 +89,7 @@ func _process(d):
 				main.run_flow_system._game_over()
 			lobby_st = 1
 			return false
-		var mine: int = main._my_towers().size()
+		var mine: int = main.multiplayer_system._my_towers().size()
 		print("MPAFK %s afk=%s afk_n=%d" % [role, main.mp_afk, main.mp_afk_n])
 		print("MPPLAY %s mode=%s wave=%d score=%d core=%d towers=%d mine=%d ghosts=%d others=%s" % [role, main.mp_mode, main.wave, main.score, main.core_hp, main.towers.get_child_count(), mine, main.orbs.get_child_count(), JSON.stringify(main.mp_others)])
 		return true
@@ -114,7 +114,7 @@ func _coop_bot() -> bool:
 		return false
 	if main.phase != 0 or main.offer.is_empty() or main.lanes.is_empty():
 		return false
-	var mine: Array = main._my_towers()
+	var mine: Array = main.multiplayer_system._my_towers()
 	var pick = null
 	var target = null
 	for o in main.offer:
@@ -147,7 +147,7 @@ func _coop_bot() -> bool:
 	var la: float = main.lanes[placed % main.lanes.size()]
 	var ld := Vector2.from_angle(la)
 	var side := 1.0 if main.mp.my_id % 2 == 0 else -1.0
-	var p: Vector2 = main.core() + ld * (90.0 + 30.0 * (placed % 4)) + ld.orthogonal() * 26.0 * side
+	var p: Vector2 = main.viewport_system.core() + ld * (90.0 + 30.0 * (placed % 4)) + ld.orthogonal() * 26.0 * side
 	main.interaction_system._place_tower(p, ld)
 	main.cards_system._after_place()
 	return false
@@ -179,12 +179,12 @@ func _lobby_step(d: float) -> bool:
 		return false
 	lobby_t += d
 	if main.mp_mode != "":
-		print("MPLOBBY ok ", role, " mode=", main.mp_mode, " ids=", main.mp_start.get("ids", []))
+		print("MPLOBBY ok ", role, " mode=", main.mp_mode, " ids=", main.multiplayer_system.mp_start.get("ids", []))
 		quit(0)
 		return true
 	if role == "host" and lobby_t > 0.5 and main.mp.playing_ids().is_empty() and not main.mp.connected_ids().is_empty():
 		print("MPLOBBY restart host peers=", main.mp.names())
-		main._mp_start()
+		main.lobby_system._mp_start()
 	elif Engine.get_process_frames() % 120 == 0:
-		print("MPLOBBY wait ", role, " playing=", main.mp.playing_ids(), " start_disabled=", main.mp_start_btn.disabled, " status=", main.mp_status.text)
+		print("MPLOBBY wait ", role, " playing=", main.mp.playing_ids(), " start_disabled=", main.lobby_system.mp_start_btn.disabled, " status=", main.mp_status.text)
 	return false

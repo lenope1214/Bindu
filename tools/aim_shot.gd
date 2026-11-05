@@ -32,7 +32,7 @@ func _initialize():
 			main.progression_system._close_title(),
 		func():
 			main.tut.visible = false
-			var c: Vector2 = main.core()
+			var c: Vector2 = main.viewport_system.core()
 			main.picked = {"e": Elem.FIRE, "lv": 2}
 			main.interaction_system._place_tower(c + Vector2(140, -60), Vector2.RIGHT)
 			main.picked = {"e": Elem.WATER, "lv": 2}

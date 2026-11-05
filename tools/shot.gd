@@ -90,7 +90,7 @@ func _initialize():
 		func():
 			for i in 6:
 				main.picked = {"e": Elem.ALL[i], "lv": 2}
-				main.interaction_system._place_tower(main.core() + Vector2.from_angle(i * 1.0) * 160.0, Vector2.RIGHT)
+				main.interaction_system._place_tower(main.viewport_system.core() + Vector2.from_angle(i * 1.0) * 160.0, Vector2.RIGHT)
 			main.wave = 27
 			main.wave_time = 30.0
 			main.abilities_system._skills_new_run(1)
@@ -119,10 +119,10 @@ func _initialize():
 			main.touch_ui = touch
 			# 전장 확대 2배 (오른쪽 위 [확대 풀기], 배지·카드·정보는 그대로 화면에)
 			main.cards_system._set_cards_hidden(true)
-			main._zoom_to(2.0, main.get_viewport_rect().size * Vector2(0.3, 0.5)),
+			main.viewport_system._zoom_to(2.0, main.get_viewport_rect().size * Vector2(0.3, 0.5)),
 		func():
 			_snap("zoom")
-			main._reset_zoom()
+			main.viewport_system._reset_zoom()
 			main.cards_system._set_cards_hidden(false)
 			main.offer = [{"type": "pat", "id": Pat.PATTERN_IDS[2]}, {"type": "mod", "id": Pat.MOD_IDS[0]}, {"type": "cata", "id": "elem"}]
 			main.cards_system._show_offer(),
@@ -195,7 +195,7 @@ func _initialize():
 				k *= 1.7
 			main.hud_system.dps_sig = ""
 			main.abilities_system._arm_skill(1)
-			VirtualInput.move(main.get_global_transform_with_canvas() * (main.core() + Vector2(200, 60))),
+			VirtualInput.move(main.get_global_transform_with_canvas() * (main.viewport_system.core() + Vector2(200, 60))),
 		func(): _snap("wave_dps"); main.skill_arm = ""; main.dps_hidden = Meta.dps_fold; _orb_tip(),
 		func(): _snap("orb_tip"); main.touch_ui = touch; main.skip_left = 0; VirtualInput.move(Vector2(5, 360)); main.perks_system._start_perk(),
 		func():
@@ -204,7 +204,7 @@ func _initialize():
 			main.perks_system.coin_anim = true
 			main.perks_system._on_perk(main.PERKS[9])
 			main.coin_next = "double"
-			main._process(0.0)  # 숨길 버튼·글을 한 번 정리하고
+			main.frame_system._process(0.0)  # 숨길 버튼·글을 한 번 정리하고
 			main.set_process(false)  # 장면을 멈춰 둔다 (일시정지는 일시정지 창이 떠서 안 씀)
 			main.perks_system.coin_t = 0.5; main.perks_system.coin_ang = 0.6; main.coin_fx.queue_redraw(),
 		func():
@@ -243,7 +243,7 @@ func _rx_show(want: int) -> void:
 	best_t.add(best_e, 1)
 	main.rx_card.show_for(best_t, best)
 	main.rx_card.t = 1.05
-	main._place_rx_card()
+	main.field_view_system._place_rx_card()
 
 
 func _snap(n: String):
@@ -267,7 +267,7 @@ func _process(_d) -> bool:
 ## 상태가 많은 구체에 마우스를 올린다 (구체 정보창이 한 줄로 화면 밖까지 나가지 않는지)
 func _orb_tip() -> void:
 	if main.orbs.get_child_count() == 0:
-		main._spawn_orb(2)  # 단단한 구체
+		main.spawning_system._spawn_orb(2)  # 단단한 구체
 	var o = main.orbs.get_child(0)
 	o.position = main.get_canvas_transform().affine_inverse() * Vector2(760, 440)  # 막 나온 구체는 화면 끝이라 가운데로
 	o.shield = 30.0; o.splits = true; o.burn_t = 2.0; o.poison_t = 2.0; o.vuln_t = 2.0; o.slow_timer = 2.0

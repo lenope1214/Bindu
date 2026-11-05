@@ -86,7 +86,7 @@ func _clear():
 
 ## 봇 eff_lane과 같은 식: 각도 a에서 나온 구체가 중앙 170 거리를 지날 때의 각도
 func _eff_lane(a: float) -> float:
-	var c = main.center()
+	var c = main.viewport_system.center()
 	var p = c + Vector2(cos(a), sin(a)) * 650
 	while p.distance_to(c) > 170:
 		p += (c - p).normalized().rotated(main.SPIRAL_SWIRL) * 4.0
@@ -105,7 +105,7 @@ func _run(j: Dictionary) -> Dictionary:
 	main.to_spawn = 0
 	main.core_hp = 99999
 	var a0 := -PI / 2.0
-	var c = main.center()
+	var c = main.viewport_system.center()
 	var ld := Vector2.from_angle(_eff_lane(a0))
 	var t = null
 	if not j["els"].is_empty():
@@ -149,7 +149,7 @@ func _run(j: Dictionary) -> Dictionary:
 			spawn_t = 1.0 / 3.0
 			var o = Orb.new(); o.main = main
 			var a := a0 + spawn_rng.randf_range(-0.12, 0.12)
-			o.position = c + Vector2.from_angle(a) * main._spawn_radius()
+			o.position = c + Vector2.from_angle(a) * main.spawning_system._spawn_radius()
 			o.from_a = a
 			o.target = c
 			o.swirl = main.SPIRAL_SWIRL

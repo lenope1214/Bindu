@@ -308,14 +308,15 @@ PYCONFIG
 		;;
 	check)
 		# 배포 전 점검 (docs/features.md). 화면 배치는 tools/shot.gd 스크린샷을 눈으로 따로 본다.
+		CHECK_DIR=$(mktemp -d "${TMPDIR:-/tmp}/bindu-check.XXXXXX")
 		bad=""
-		"$0" architecture > /tmp/bindu_check_architecture.txt 2>&1 || bad="$bad architecture"
-		grep -E "^ARCHITECTURE|^FAIL|SCRIPT ERROR|Parse Error" /tmp/bindu_check_architecture.txt || true
-		if python3 "$ROOT/tools/notes_check.py" > /tmp/bindu_check_notes.txt 2>&1; then echo "notes 통과"; else grep -E "^FAIL|^NOTES" /tmp/bindu_check_notes.txt | head -10; bad="$bad notes"; fi
-		"$0" spec > /tmp/bindu_check_spec.txt 2>&1 || bad="$bad spec"
-		grep -E "^FAIL|^SPEC|SCRIPT ERROR|Parse Error|^ERROR:" /tmp/bindu_check_spec.txt || true
-		"$0" tutplay > /tmp/bindu_check_tutplay.txt 2>&1 || bad="$bad tutplay"
-		grep -E "^FAIL|^TUTPLAY|SCRIPT ERROR|Parse Error|^ERROR:" /tmp/bindu_check_tutplay.txt || true
+		"$0" architecture > "$CHECK_DIR/architecture.txt" 2>&1 || bad="$bad architecture"
+		grep -E "^ARCHITECTURE|^FAIL|SCRIPT ERROR|Parse Error" "$CHECK_DIR/architecture.txt" || true
+		if python3 "$ROOT/tools/notes_check.py" > "$CHECK_DIR/notes.txt" 2>&1; then echo "notes 통과"; else grep -E "^FAIL|^NOTES" "$CHECK_DIR/notes.txt" | head -10; bad="$bad notes"; fi
+		"$0" spec > "$CHECK_DIR/spec.txt" 2>&1 || bad="$bad spec"
+		grep -E "^FAIL|^SPEC|SCRIPT ERROR|Parse Error|^ERROR:" "$CHECK_DIR/spec.txt" || true
+		"$0" tutplay > "$CHECK_DIR/tutplay.txt" 2>&1 || bad="$bad tutplay"
+		grep -E "^FAIL|^TUTPLAY|SCRIPT ERROR|Parse Error|^ERROR:" "$CHECK_DIR/tutplay.txt" || true
 		F=$("$0" fuzz 4 3000) || bad="$bad fuzz"
 		echo "$F" | grep "^시드"
 		echo "$F" | grep "^시드" | grep -qv "오류 0개" && bad="$bad fuzz"
@@ -335,13 +336,14 @@ PYCONFIG
 		VERIFY=1 "$0" rulekeys || bad="$bad rulekeys"
 		VERIFY=1 "$0" patchkeys || bad="$bad patchkeys"
 		if python3 -c "import fastapi, pytest, httpx" > /dev/null 2>&1; then
-			(cd "$ROOT/server" && python3 -m pytest -q > /tmp/bindu_check_server.txt 2>&1) || bad="$bad server"
-			tail -1 /tmp/bindu_check_server.txt
+			(cd "$ROOT/server" && python3 -m pytest -q > "$CHECK_DIR/server.txt" 2>&1) || bad="$bad server"
+			tail -1 "$CHECK_DIR/server.txt"
 		else
 			echo "server 건너뜀 (python3에 fastapi·pytest·httpx 없음: pip install -r server/requirements-dev.txt)"
 		fi
-		if [ -n "$bad" ]; then echo "CHECK 실패:$bad"; exit 1; fi
+		if [ -n "$bad" ]; then echo "CHECK 실패:$bad · 로그: $CHECK_DIR"; exit 1; fi
 		echo "CHECK 통과. 화면 배치는 tools/shot.gd 스크린샷으로 따로 확인 (docs/features.md)"
+		rm -rf "$CHECK_DIR"
 		;;
 	*)
 		sed -n '2,13p' "$0"

@@ -31,7 +31,7 @@ func _initialize():
 		func():
 			if not main.legend_hidden:
 				main.cards_system._toggle_legend()
-			var c: Vector2 = main.core()
+			var c: Vector2 = main.viewport_system.core()
 			# 별 넷이 중앙 둘레에, 바람 하나, 행성(별2·영혼8 혼불) 하나
 			for i in 4:
 				main.picked = {"e": Elem.STAR, "lv": 2}
