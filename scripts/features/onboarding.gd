@@ -70,6 +70,7 @@ func _update_action_guide() -> void:
 		session.hint.text = ""
 	session.guide_more.visible = session.guide_label.visible and guide_topic != ""
 	session.guide_more.position = Vector2(session.guide_label.position.x, session.guide_label.get_rect().end.y + 6.0)
+	suppress_guide_for_object(session.interaction_system._pointer_screen())
 
 
 func _open_tut(ids: Array, first := false) -> void:
@@ -244,3 +245,14 @@ func _wind_buffs() -> void:
 			if w != t and w.position.distance_to(t.position) < w.wind_range():
 				b = maxf(b, Rules.t("wind_buff") * w.lv(Elem.WIND))
 		t.wind_buff = b
+
+## 안내는 실제 오브젝트 입력보다 우선하지 않는다. GUI 처리 전 첫 터치에도 적용한다.
+func suppress_guide_for_object(screen: Vector2) -> void:
+	var session: BinduSession = self.session
+	if session.towers == null:
+		return
+	if not session.interaction_system.selected.is_empty() or session.interaction_system.press_t != null \
+			or session.interaction_system.boxing or session.interaction_system.moving != null \
+			or session.interaction_system._tower_at(session.get_canvas_transform().affine_inverse() * screen) != null:
+		session.guide_label.hide()
+		session.guide_more.hide()

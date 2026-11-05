@@ -1,4 +1,5 @@
 extends "res://tools/carry_check.gd"
+var guidance_completed := 0
 ## 사용성 회귀: 격리 사본·가상 입력으로 실제 버튼과 전장 입력 경로를 함께 확인한다.
 func _initialize() -> void:
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools") or DisplayServer.get_name() == "headless" or OnlineConfig.SERVER_URL != "" or OnlineConfig.MP_URL != "":
@@ -26,6 +27,9 @@ func _initialize() -> void:
 	Meta.ui_scale = float(args[1])
 	main.hud_system._apply_ui_scale()
 	await create_timer(0.2).timeout
+	if which in ["all", "guidance"]:
+		await guidance_case()
+		ok("TUT-03", guidance_completed == 2, "마우스·첫 터치 안내 우선순위 검사 완료")
 	if which in ["all", "inspector"]:
 		await inspector_case()
 	if which in ["all", "detail"]:
@@ -362,3 +366,30 @@ func inspector_case() -> void:
 		main.get_viewport().get_texture().get_image().save_png(output.path_join("inspector-selected-%s.png" % stage))
 		await key(KEY_ESCAPE)
 		ok("UI-32", main.interaction_system.selected.is_empty() and main.card_dock.inspected_tower == null, "Esc로 선택·인스펙터 해제")
+
+func guidance_case() -> void:
+	for touch_mode in [false, true]:
+		await fixture()
+		main.cards_system._enter_ready()
+		await mouse_move(world(Vector2(650, 440)))
+		Meta.guide_on = true
+		main.guide_lines.assign(["방해 구체가 와요. 오브젝트를 나눠 배치하세요."])
+		main.guide_t = -1
+		main.onboarding_system.guide_topic = "jam"
+		await settle()
+		ok("TUT-03", main.guide_more.visible and main.guide_label.position.y < 140.0, "처음 안내는 HUD 바로 아래에 표시")
+		var at: Vector2 = main.guide_more.get_global_rect().get_center()
+		target.position = main.get_canvas_transform().affine_inverse() * at
+		await settle()
+		if touch_mode:
+			Input.emulate_mouse_from_touch = true
+			await touch(at, true)
+			await touch(at, false)
+		else:
+			await mouse_click(at)
+		ok("TUT-03", main.interaction_system.selected == [target] and not paused and not main.tut.visible and not main.guide_more.visible, "더 알아보기 아래 오브젝트는 첫 입력으로 선택: 터치=%s" % touch_mode)
+		RenderingServer.force_draw()
+		main.get_viewport().get_texture().get_image().save_png(output.path_join("guide-object-priority-%s.png" % touch_mode))
+		guidance_completed += 1
+	Meta.guide_on = false
+	main.guide_lines.clear()

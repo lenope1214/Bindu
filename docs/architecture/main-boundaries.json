@@ -1292,6 +1292,9 @@
     "_on_delete_data": "Weak session liveness after await",
     "_ugc_buttons": "Weak session liveness after await",
     "_show_perks": "Weak session liveness in delayed long press",
-    "_mp_kick": "Weak session liveness in delayed kick"
+    "_mp_kick": "Weak session liveness in delayed kick",
+    "_input": "Hide guidance before object GUI hit testing; pointer/touch regression",
+    "_process": "Place guidance below HUD and toast below guidance; UI regression",
+    "_update_action_guide": "Suppress guidance while hovering or manipulating objects; TUT-03 regression"
   }
 }

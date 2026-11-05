@@ -158,6 +158,8 @@ func _input(event: InputEvent) -> void:
 		session.touch_tip_t = BinduSession.TOUCH_TIP_SEC
 	elif event is InputEventMouseMotion and event.device != InputEvent.DEVICE_ID_EMULATION:
 		session.touch_ui = false
+	if event is InputEventMouse or event is InputEventScreenTouch or event is InputEventScreenDrag:
+		session.onboarding_system.suppress_guide_for_object(event.position)
 	if session.touch_ui != was_touch:
 		session.get_tree().call_group("keycap", "queue_redraw")
 		if session.legend:

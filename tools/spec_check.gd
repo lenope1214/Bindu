@@ -3363,6 +3363,14 @@ func _tutorial() -> void:
 	main.onboarding_system._tut_event("pat")
 	main.onboarding_system._guide("boss", "보스 안내")
 	main.onboarding_system._guide("mod", "일반 안내")
+	var keep_pointer: Vector2 = main.interaction_system.pointer_position
+	main.guide_label.show()
+	main.guide_more.show()
+	var probe := _tower(main.viewport_system.center() + Vector2(140, -100))
+	main.onboarding_system.suppress_guide_for_object(main.get_canvas_transform() * probe.position)
+	ok("TUT-03", not main.guide_label.visible and not main.guide_more.visible and not paused, "오브젝트 위 안내·더 알아보기는 숨겨 선택 입력 우선")
+	probe.free()
+	main.interaction_system.pointer_position = keep_pointer
 	var single: bool = main.guide_lines.size() == 1 and main.guide_lines[0].contains("보스") and not Meta.guide_seen.has("mod")
 	var quiet: bool = main.onboarding_system.tut_queue.is_empty() and Tutorial.seen.is_empty() and not paused
 	Meta.guide_on = false

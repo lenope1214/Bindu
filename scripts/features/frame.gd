@@ -69,9 +69,13 @@ func _process(delta: float) -> void:
 	if session.tplay != null:
 		session.toast.position.y = maxf(session.toast.position.y, session.tplay.panel_bottom() + 8.0)  # 연습 판 안내 칸 아래
 	# 안내·큰 글자도 점수 줄이 길어지거나 글자를 키우면(설정) 그 아래로 밀어 겹치지 않게
-	session.guide_label.position.y = maxf(140.0, session.toast.position.y + 40.0)
+	session.guide_label.position.y = maxf(8.0, session.hud.get_rect().end.y + 8.0)
+	if session.tplay != null:
+		session.guide_label.position.y = maxf(session.guide_label.position.y, session.tplay.panel_bottom() + 8.0)
 	session.ui_layout_system._beside_legend(session.guide_label, 0.0)
 	session.onboarding_system._update_action_guide()
+	if session.guide_label.visible:
+		session.toast.position.y = maxf(session.toast.position.y, session.guide_more.get_rect().end.y + 8.0)
 	# 왼쪽 위 DPS 표를 펼쳐 두면 알림이 표 위에 겹치던 것 (글자 115% 이상·표가 길 때): 표와 오른쪽 설명 사이에 두고,
 	# 글이 그 폭보다 길면 두 줄로 접는다 (예전엔 표 아래로 내려 카드 줄 밑에 깔렸다: 봉인·이벤트 알림)
 	if session.toast.visible:
