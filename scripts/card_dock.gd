@@ -388,12 +388,13 @@ func tick() -> void:
 		c.z_index = 2
 	panel.position = Vector2(0, size.y - HEIGHT)
 	panel.size = Vector2(size.x, HEIGHT - FOOTER_HEIGHT)
-	game.choice_box.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_top_left(game.choice_box)
 	game.choice_box.position = Vector2(12, panel.position.y + HEADER_HEIGHT)
 	game.choice_box.pivot_offset = Vector2.ZERO
 	game.choice_box.scale = Vector2.ONE
 	game.choice_box.size = Vector2(size.x - 24, CARD_HEIGHT)
-	game.choice_box.add_theme_constant_override("separation", 12)
+	if game.choice_box.get_theme_constant("separation") != 12:
+		game.choice_box.add_theme_constant_override("separation", 12)
 	var cs: Array = game.choice_box.get_children()
 	for button: Control in cs:
 		if button.is_queued_for_deletion():
@@ -418,7 +419,7 @@ func tick() -> void:
 			continue
 		var w := 96.0 if button == game.card_detail_btn else 80.0
 		x -= w
-		button.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		_top_left(button)
 		button.position = Vector2(x, panel.position.y + 8)
 		button.size = Vector2(w, CONTROL_HEIGHT)
 		x -= 8
@@ -428,7 +429,7 @@ func tick() -> void:
 	state.text = "특성 선택 · 하나 선택"
 	state.position = Vector2(12, 9)
 	if game.choice_header.visible:
-		game.choice_header.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		_top_left(game.choice_header)
 		game.choice_header.position = Vector2(12, panel.position.y + 8)
 		game.choice_header.size = Vector2(maxf(240, minf(340, x - 24)), CONTROL_HEIGHT)
 	_update_side()
@@ -444,22 +445,23 @@ func tick() -> void:
 	var actions: Array = [game.start_btn, game.cancel_btn, game.aim_ok_btn].filter(func(button): return button.visible)
 	var width := 240.0 if game.start_btn.visible else 144.0
 	var action_y := size.y - (112.0 if game.bar_open else 52.0)
+	var ready_skip: bool = game.phase == game.Phase.READY and skip_visible
+	var left := (size.x - 240 - 8 - SKIP_WIDTH) / 2
 	for i in actions.size():
 		var button: Button = actions[i]
-		button.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		button.position = Vector2((size.x - actions.size() * (width + 8)) / 2 + i * (width + 8), action_y)
+		_top_left(button)
+		var bx: float = left if ready_skip and button == game.start_btn else (size.x - actions.size() * (width + 8)) / 2 + i * (width + 8)
+		button.position = Vector2(bx, action_y)  # 자리를 한 번에 (두 번 나눠 정하면 매 프레임 움직인 것으로 쳐 다시 그렸다)
 		button.size = Vector2(width, 44)
-	if game.phase == game.Phase.READY and skip_visible:
-		var left := (size.x - 240 - 8 - SKIP_WIDTH) / 2
-		game.start_btn.position.x = left
+	if ready_skip:
 		layout_skip(Vector2(left + 248, action_y), 44)
 	if not blocked and not game.guide_label.visible:
 		var status := operation_text()
 		if status != "":
 			game.hint.text = game._kr_keep(status)
-			game.hint.set_anchors_preset(Control.PRESET_TOP_LEFT)
+			_top_left(game.hint)
 			game.hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			game.hint.add_theme_font_size_override("font_size", 14)
+			game._font_size(game.hint, 14)
 			if not game.hint.has_theme_stylebox_override("normal"):
 				var box := surface()
 				box.content_margin_top = 6
@@ -478,11 +480,11 @@ func tick() -> void:
 	for i in game.skill_btns.size():
 		var button: Button = game.skill_btns[i]
 		button.z_index = 2
-		button.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		_top_left(button)
 		button.position = Vector2(size.x - 12 - game.skill_btns.size() * 150 + i * 150, size.y - 110)
 		button.size = Vector2(140, 44)
 	if game.zoom_btn.visible:
-		game.zoom_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		_top_left(game.zoom_btn)
 		# 점수 줄 첫 줄(웨이브·점수·중앙 체력) 오른쪽 빈자리: 예전 (12, 64)는 둘째 줄 칩(모드·맵 규칙)을 덮었다
 		var row1 := 0.0
 		for ch in game.hud_chips:
@@ -493,11 +495,18 @@ func tick() -> void:
 	focus_btn.visible = not blocked and choosing
 	focus_btn.text = "카드 보기" if game.cards_hidden else "카드 접기"
 	focus_btn.tooltip_text = "카드 패널 보기/접기 (F / V)"
-	focus_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_top_left(focus_btn)
 	focus_btn.position = Vector2(12, size.y - 48)
 	focus_btn.size = Vector2(110, CONTROL_HEIGHT)
 	game.ver_label.visible = not focus_btn.visible
 	game.skip_badge.position = Vector2((size.x - game.skip_badge.size.x) / 2.0, size.y - HEIGHT - 40 if cards else size.y - 100)
+
+## 왼쪽 위 기준으로 바꾸기: 이미 그렇다면 건드리지 않는다 (set_anchors_preset은 같은 값이어도 다시 그리기를 부른다:
+## 매 프레임 부르면 카드 줄·버튼이 매 프레임 다시 그려졌다).
+static func _top_left(c: Control) -> void:
+	if c.anchor_left != 0.0 or c.anchor_top != 0.0 or c.anchor_right != 0.0 or c.anchor_bottom != 0.0:
+		c.set_anchors_preset(Control.PRESET_TOP_LEFT)
+
 
 func operation_text() -> String:
 	game.selected = game.selected.filter(func(t): return is_instance_valid(t) and not t.is_queued_for_deletion())
@@ -527,7 +536,7 @@ func layout_skip(at: Vector2, height: float) -> void:
 	skip_group.size = Vector2(SKIP_WIDTH, height)
 	for i in 2:
 		var button: Button = [game.skip_btn, game.skip_n_btn][i]
-		button.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		_top_left(button)
 		button.position = at + Vector2(108 if i == 1 else 0, 0)
 		button.size = Vector2(96 if i == 1 else 108, height)
 
@@ -649,7 +658,7 @@ func _place_side(size: Vector2, cards: bool) -> void:
 	direction_btn.text = "방향" if game.touch_ui else "방향 변경"
 	side.set_touch(game.touch_ui)
 	w = maxf(w, side.get_combined_minimum_size().x)
-	side.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_top_left(side)
 	var top := maxf(60.0, game.hud.get_rect().end.y + 8.0)
 	var bottom: float = panel.position.y - 12.0 if cards else size.y - 64.0
 	if game.hint.visible:

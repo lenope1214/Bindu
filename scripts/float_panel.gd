@@ -295,7 +295,9 @@ func follow(auto_pos: Vector2, delta: float) -> void:
 		position = place(saved_pos())
 	else:
 		position = auto_pos
-	style.border_color = Color(1, 0.9, 0.5, 0.95) if drag == 2 else Color("303c50")
+	var bc := Color(1, 0.9, 0.5, 0.95) if drag == 2 else Color("303c50")
+	if style.border_color != bc:  # 같은 색을 다시 넣어도 상자가 바뀐 것으로 쳐 창 전체를 매 프레임 다시 그렸다
+		style.border_color = bc
 	if guide != null:
 		guide.visible = drag == 2 and game.touch_ui
 		if guide.visible:

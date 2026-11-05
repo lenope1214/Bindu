@@ -138,6 +138,7 @@ var stars := PackedVector3Array()  # 배경 점 (x, y, 밝기)
 var hud: Control  # 왼쪽 위 점수 줄: 아이콘 칩 (_update_hud가 hud_chips를 채우고 _draw_hud가 그린다)
 var hud_chips: Array = []  # [자리 Rect2, 아이콘, 아이콘 색, 글, 글 색, 말풍선 줄]
 var info: Control  # 화면 위 아이콘 층: 진입 화살표 배지·고르기 배지·말풍선 (_draw_info)
+var info_sig: Array = []  # _draw_info가 읽는 값 묶음: 바뀔 때만 다시 그림 (_info_sig)
 var tip_rects: Array = []  # 이번 프레임 말풍선 자리 [Rect2(UI 좌표), 줄들 [[글, 색]]]
 var _hint_kept := ""  # 낱말 붙임(_kr_keep)을 넣은 아래 안내 글
 var _badge_memo := {}  # _free_badge 답 (입력 hash → Rect2)
@@ -3866,6 +3867,23 @@ func _free_badge_search(r: Rect2, inward: Vector2, lo_r: Rect2, cover: Callable)
 
 
 ## 화면 위 아이콘 층: 진입 화살표 옆 구체 수 배지, 놓친 구체, 남은 고르기, 칩·배지에 올리면 뜨는 말풍선.
+## _draw_info가 읽는 값 묶음. 이것이 그대로면 아이콘 층을 다시 그리지 않는다.
+## _draw_info에 새 값을 읽게 하면 여기에도 넣을 것 (빠지면 화면이 늦게 바뀐다).
+func _info_sig() -> Array:
+	if card_dim.visible and hover_elem >= 0:
+		return [Engine.get_process_frames()]  # 새 반응 고리가 숨쉬듯 움직인다: 매 프레임
+	var tw: Array = []
+	for t in towers.get_children():
+		tw.append(t.position)
+	# 전장 좌표(카메라·흔들림)는 쉬는 시간 배지만 따라간다: 웨이브 중엔 빼서 맞을 때 흔들려도 다시 그리지 않게
+	var resting := phase in [Phase.CHOOSE, Phase.PLACE, Phase.AIM, Phase.MOVE, Phase.READY]
+	return [info.size, get_canvas_transform() if resting or card_dim.visible else Transform2D(), ui_root.get_global_transform(), info.get_local_mouse_position(), tip_pin, touch_ui,
+		phase, wave, title_label.visible, get_tree().paused, lanes, Meta.map_id, Meta.line_flip, perk_mode, cards_hidden, picks_left,
+		Vary.count(), hud_sig, hud.visible, hud.position, _info_blockers(), choice_box.visible, choice_box.get_global_rect(),
+		card_dim.visible, choice_header.visible, choice_header.get_rect(), tw, leak_marks, wave_kinds, wave_info, boss_plan,
+		tap_sel, Meta.card_detail, card_dock.panel.visible, card_dock.panel.position, choice_box.get_child_count(), guide_label.visible]
+
+
 func _draw_info() -> void:
 	tip_rects.clear()
 	info_rects.clear()
@@ -4324,6 +4342,8 @@ func _update_choice_header() -> void:
 	var first := inv * (choice_box.get_child(0) as Control).get_global_rect()
 	var last := inv * (choice_box.get_child(choice_box.get_child_count() - 1) as Control).get_global_rect()
 	choice_remaining.text = "%d장 더 선택 가능" % picks_left
+	if card_dock.active():
+		return  # 자리는 카드 도크가 정한다 (여기서도 정하면 둘이 매 프레임 번갈아 바꿨다)
 	choice_header.size = Vector2(last.end.x - first.position.x, CHOICE_HEADER_H)
 	choice_header.position = Vector2(first.position.x, first.position.y - CHOICE_HEADER_H - CHOICE_HEADER_GAP)
 
@@ -8582,7 +8602,9 @@ func _skill_ui() -> void:
 			b.text = txt
 		var col: Color = Skill.COLORS[id]
 		b.modulate = Color(1, 1, 1, 1) if left <= 0.0 else Color(1, 1, 1, 0.55)
-		b.add_theme_color_override("font_color", col if left <= 0.0 else Color(1, 1, 1, 0.8))
+		var fc: Color = col if left <= 0.0 else Color(1, 1, 1, 0.8)
+		if b.get_theme_color("font_color") != fc:  # 같은 값으로 덮어써도 테마가 바뀐 것으로 쳐 매 프레임 다시 그렸다
+			b.add_theme_color_override("font_color", fc)
 		b.tooltip_text = "%s (%d): %s · 다시 쓰기 %d초" % [Skill.NAMES[id], i + 1, Skill.desc(id), roundi(Skill.cd_full(id, perks.get("quick", 0)))]
 		var armed := skill_arm == id
 		if b.get_meta("armed", false) != armed:
@@ -9237,7 +9259,7 @@ func _process(delta: float) -> void:
 		var tw := ui_font.get_string_size(toast.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x + 12.0
 		var wrap := tw > avail
 		toast.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if wrap else TextServer.AUTOWRAP_OFF
-		toast.add_theme_font_size_override("font_size", 18 if wrap else 22)  # 접을 때는 조금 작게 (세 줄로 전장 가운데를 덮지 않게)
+		_font_size(toast, 18 if wrap else 22)  # 접을 때는 조금 작게 (세 줄로 전장 가운데를 덮지 않게)
 		var w := minf(maxf(tw, 600.0), avail)
 		if not is_equal_approx(toast.size.x, w):
 			toast.size = Vector2(w, 0.0)
@@ -9346,7 +9368,11 @@ func _process(delta: float) -> void:
 	_refresh_dps()
 	_soften_fx()
 	queue_redraw()
-	info.queue_redraw()
+	# 화면 위 아이콘 층(진입 배지·말풍선)은 그리는 데 쓰는 값이 바뀔 때만 다시 그린다 (예전엔 매 프레임)
+	var isig := _info_sig()
+	if isig != info_sig:
+		info_sig = isig
+		info.queue_redraw()
 	if phase == Phase.MOVE and moving and not get_tree().paused:
 		moving.position = _pointer_world().clamp(field_rect().position, field_rect().end)
 	_update_press()
@@ -9355,72 +9381,12 @@ func _process(delta: float) -> void:
 	card_detail_btn.visible = phase == Phase.CHOOSE and not title_label.visible and coin_stage == 0 and not cards_hidden and not perk_mode
 	_update_skip_ui()
 	cancel_btn.visible = phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] and not title_label.visible and not get_tree().paused
-	if speed_btn.visible:
+	if speed_btn.visible and speed_btn.get_meta("fast", false) != (game_speed > 1.0):
+		speed_btn.set_meta("fast", game_speed > 1.0)  # 아이콘 색은 배속이 1배를 넘는지만 따른다: 바뀔 때만 다시 그림
 		speed_btn.queue_redraw()
-	# 카드 줄은 오른쪽 설명을 피해 왼쪽으로 비켜 있다. 설명을 숨기면 가운데로, 버튼도 카드 가운데에 맞춘다
-	var cx := 0.0 if legend_hidden else -75.0
-	# 카드 4장이 오른쪽 설명 밑으로 들어가면(글자 크게) 쉬는 시간 동안 설명을 접고 가운데로
-	if legend.visible and phase == Phase.CHOOSE and choice_box.get_child_count() > 3 and ui_root.size.x / 2.0 + cx + 365.0 > legend.position.x - 8.0:
-		legend.visible = false
-		cx = 0.0
-	# 글자를 키우면(설정) 카드 줄 오른쪽이 설명 밑으로 들어가던 것: 설명 왼쪽까지 들어가게 왼쪽으로 옮기고, 모자라면 줄인다
-	var room := (legend.get_rect().position.x - 8.0) if legend.visible else ui_root.size.x - 8.0
-	var half := maxf(365.0, choice_box.get_combined_minimum_size().x / 2.0)  # 카드 4장은 730보다 넓다
-	var kw := minf((room - 8.0) / (half * 2.0), 1.0)
-	# 새로고침·내리기 버튼은 카드 바로 아래 한 줄에 (카드가 길어지면 버튼이 카드 글을 덮던 것).
-	# 카드+버튼 줄이 왼쪽 아래 안내 글에 닿으면 카드 줄을 위로 올리고, 그래도 모자라면(글자 크게) 0.7배까지 줄인다
-	var mid := ui_root.size.y / 2.0
-	var ch := choice_box.get_combined_minimum_size().y
-	var lim := _bottom_free() - 6.0
-	var floor_y := (hud.position.y + hud.size.y + 8.0) if hud.visible else 8.0
-	if dps_panel.visible and ui_root.size.x / 2.0 + cx - 365.0 < 320.0:
-		floor_y += 44.0 + 48.0 + 6.0  # 왼쪽 위 DPS 표(머리 + 2줄, 나머지는 굴려 봄)를 덮지 않게
-	if guide_label.visible:
-		floor_y = maxf(floor_y, (guide_more.get_rect().end.y if guide_more.visible else guide_label.get_rect().end.y) + 26.0)  # 처음 안내 글이 카드 글 뒤로 겹치던 것 (고르기 꼬리표 자리 포함)
-	var need := ch + 8.0 + 40.0
-	var k := clampf(minf((lim - floor_y) / need, kw), minf(0.7, kw), 1.0)
-	cx = minf(cx, room - half * k - ui_root.size.x / 2.0)
-	cx = maxf(cx, 8.0 + half * k - ui_root.size.x / 2.0)
-	choice_box.offset_left = cx - half
-	choice_box.offset_right = cx + half
-	var ctop := maxf(minf(mid - 90.0, lim - need * k), floor_y)
-	choice_box.pivot_offset = Vector2(choice_box.size.x / 2.0, 0.0)
-	choice_box.scale = Vector2(k, k)
-	choice_box.offset_top = ctop - mid
-	choice_box.offset_bottom = choice_box.offset_top + ch
-	_update_choice_header()
-	var by := choice_box.offset_top + ch * k + 8.0
-	# 카드 밑 한 줄 그림 버튼: [새로고침 N] [필드 보기] [넘기기] [×N]. 없는 버튼 자리는 당겨 가운데 맞춘다
-	var row: Array = []
-	for bt in [reroll_btn, card_detail_btn, skip_btn, skip_n_btn, apply_btn]:
-		if bt.visible:
-			row.append(bt)
-	var bw := {reroll_btn: 96.0, card_detail_btn: 104.0, hide_btn: 76.0, skip_btn: 76.0, skip_n_btn: 76.0}
-	if apply_btn.visible:
-		bw = {reroll_btn: 76.0, card_detail_btn: 88.0, hide_btn: 60.0, skip_btn: 60.0, skip_n_btn: 60.0}
-		bw[apply_btn] = maxf(120.0, ui_font.get_string_size(apply_btn.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x + 50.0)
-	var rw := -10.0
-	for bt in row:
-		rw += bw[bt] + 10.0
-	var bx := cx - rw / 2.0
-	for bt in row:
-		bt.offset_left = bx
-		bt.offset_right = bx + bw[bt]
-		bt.offset_top = by
-		bt.offset_bottom = by + 40.0
-		bx += bw[bt] + 10.0
-	if phase == Phase.READY and skip_btn.visible:
-		# 웨이브 시작 대기: [웨이브 시작] 바로 오른쪽에 [넘기기] [×N]
-		var pw: Vector2 = skip_btn.get_parent().size
-		var sx := start_btn.position.x + start_btn.size.x + 10.0 - pw.x / 2.0
-		var sy := start_btn.position.y + (start_btn.size.y - 40.0) / 2.0 - pw.y / 2.0
-		for bt in [skip_btn, skip_n_btn]:
-			bt.offset_left = sx
-			bt.offset_right = sx + 76.0
-			bt.offset_top = sy
-			bt.offset_bottom = sy + 40.0
-			sx += 86.0
-	_start_btn_layout()
+	# 카드 도크(판 안)가 카드 줄·버튼 자리를 정한다. 옛 배치는 도크가 없을 때(시작 화면·판 끝)만: 둘이 매 프레임 자리를 번갈아 바꿔 버튼·카드 줄이 매 프레임 다시 그려졌다
+	if not card_dock.active():
+		_legacy_card_layout()
 	_skill_ui()
 	card_dock.tick()
 	restart_armed = maxf(restart_armed - delta, 0.0)
@@ -12774,8 +12740,83 @@ func _grant_perk(id: String) -> void:
 
 
 ## 쉬는 시간 [시작] 버튼 자리 (일반 판 도크가 옮겨 두면 원래 자리로).
+## 글 크기 덮어쓰기는 값이 다를 때만 (같은 값이어도 테마 바뀜 → 크기 다시 계산·다시 그리기가 매 프레임 일어났다).
+static func _font_size(c: Control, n: int) -> void:
+	if not c.has_theme_font_size_override("font_size") or c.get_theme_font_size("font_size") != n:
+		c.add_theme_font_size_override("font_size", n)
+
+
 func _start_btn_layout() -> void:
 	if start_btn.anchor_top != 1.0:
 		start_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 		start_btn.position = Vector2(-110, -100)
 		start_btn.size = Vector2(220, 44)
+
+
+
+## 카드 도크가 없을 때의 카드 줄·버튼 줄 배치 (예전 화면 배치).
+func _legacy_card_layout() -> void:
+	# 카드 줄은 오른쪽 설명을 피해 왼쪽으로 비켜 있다. 설명을 숨기면 가운데로, 버튼도 카드 가운데에 맞춘다
+	var cx := 0.0 if legend_hidden else -75.0
+	# 카드 4장이 오른쪽 설명 밑으로 들어가면(글자 크게) 쉬는 시간 동안 설명을 접고 가운데로
+	if legend.visible and phase == Phase.CHOOSE and choice_box.get_child_count() > 3 and ui_root.size.x / 2.0 + cx + 365.0 > legend.position.x - 8.0:
+		legend.visible = false
+		cx = 0.0
+	# 글자를 키우면(설정) 카드 줄 오른쪽이 설명 밑으로 들어가던 것: 설명 왼쪽까지 들어가게 왼쪽으로 옮기고, 모자라면 줄인다
+	var room := (legend.get_rect().position.x - 8.0) if legend.visible else ui_root.size.x - 8.0
+	var half := maxf(365.0, choice_box.get_combined_minimum_size().x / 2.0)  # 카드 4장은 730보다 넓다
+	var kw := minf((room - 8.0) / (half * 2.0), 1.0)
+	# 새로고침·내리기 버튼은 카드 바로 아래 한 줄에 (카드가 길어지면 버튼이 카드 글을 덮던 것).
+	# 카드+버튼 줄이 왼쪽 아래 안내 글에 닿으면 카드 줄을 위로 올리고, 그래도 모자라면(글자 크게) 0.7배까지 줄인다
+	var mid := ui_root.size.y / 2.0
+	var ch := choice_box.get_combined_minimum_size().y
+	var lim := _bottom_free() - 6.0
+	var floor_y := (hud.position.y + hud.size.y + 8.0) if hud.visible else 8.0
+	if dps_panel.visible and ui_root.size.x / 2.0 + cx - 365.0 < 320.0:
+		floor_y += 44.0 + 48.0 + 6.0  # 왼쪽 위 DPS 표(머리 + 2줄, 나머지는 굴려 봄)를 덮지 않게
+	if guide_label.visible:
+		floor_y = maxf(floor_y, (guide_more.get_rect().end.y if guide_more.visible else guide_label.get_rect().end.y) + 26.0)  # 처음 안내 글이 카드 글 뒤로 겹치던 것 (고르기 꼬리표 자리 포함)
+	var need := ch + 8.0 + 40.0
+	var k := clampf(minf((lim - floor_y) / need, kw), minf(0.7, kw), 1.0)
+	cx = minf(cx, room - half * k - ui_root.size.x / 2.0)
+	cx = maxf(cx, 8.0 + half * k - ui_root.size.x / 2.0)
+	choice_box.offset_left = cx - half
+	choice_box.offset_right = cx + half
+	var ctop := maxf(minf(mid - 90.0, lim - need * k), floor_y)
+	choice_box.pivot_offset = Vector2(choice_box.size.x / 2.0, 0.0)
+	choice_box.scale = Vector2(k, k)
+	choice_box.offset_top = ctop - mid
+	choice_box.offset_bottom = choice_box.offset_top + ch
+	_update_choice_header()
+	var by := choice_box.offset_top + ch * k + 8.0
+	# 카드 밑 한 줄 그림 버튼: [새로고침 N] [필드 보기] [넘기기] [×N]. 없는 버튼 자리는 당겨 가운데 맞춘다
+	var row: Array = []
+	for bt in [reroll_btn, card_detail_btn, skip_btn, skip_n_btn, apply_btn]:
+		if bt.visible:
+			row.append(bt)
+	var bw := {reroll_btn: 96.0, card_detail_btn: 104.0, hide_btn: 76.0, skip_btn: 76.0, skip_n_btn: 76.0}
+	if apply_btn.visible:
+		bw = {reroll_btn: 76.0, card_detail_btn: 88.0, hide_btn: 60.0, skip_btn: 60.0, skip_n_btn: 60.0}
+		bw[apply_btn] = maxf(120.0, ui_font.get_string_size(apply_btn.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x + 50.0)
+	var rw := -10.0
+	for bt in row:
+		rw += bw[bt] + 10.0
+	var bx := cx - rw / 2.0
+	for bt in row:
+		bt.offset_left = bx
+		bt.offset_right = bx + bw[bt]
+		bt.offset_top = by
+		bt.offset_bottom = by + 40.0
+		bx += bw[bt] + 10.0
+	if phase == Phase.READY and skip_btn.visible:
+		# 웨이브 시작 대기: [웨이브 시작] 바로 오른쪽에 [넘기기] [×N]
+		var pw: Vector2 = skip_btn.get_parent().size
+		var sx := start_btn.position.x + start_btn.size.x + 10.0 - pw.x / 2.0
+		var sy := start_btn.position.y + (start_btn.size.y - 40.0) / 2.0 - pw.y / 2.0
+		for bt in [skip_btn, skip_n_btn]:
+			bt.offset_left = sx
+			bt.offset_right = sx + 76.0
+			bt.offset_top = sy
+			bt.offset_bottom = sy + 40.0
+			sx += 86.0
+	_start_btn_layout()

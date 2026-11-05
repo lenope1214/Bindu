@@ -11,6 +11,7 @@
 #   stages [규칙] [판수=6]                  5~200웨이브 11단계만 싸우고 사이는 선택지만 빠르게 (STAGES=목록)
 #   rx                                     두 속성 짝마다 두 속성 Lv1 직선탄 하나가 구체 무리에 준 반응 피해/초 (RX=id,id로 골라 보기)
 #   perf                                   후반 부하(오브젝트 16개·구체 250개+) 배속별 프레임당 계산 시간·부분별 시간
+#   uifreq                                 UI 요소별 다시 그리기·글 바뀜 횟수와 프레임 시간 (쉬는 시간·카드 선택·구체 250개 웨이브)
 #   perfwin                                perf를 창을 띄워 실행 (그리기 비용 포함, 수직 동기 끔)
 #   compare [기준=1] [새 규칙=3] [판 수=32] [stack]   같은 시드로 두 규칙을 돌려 차이와 판정 (새 규칙을 내기 전에)
 #   modes [규칙=1] [판 수=32] [모드...]   모드마다 같은 시드로 모드 없는 판과 비교: 웨이브 차이·점수 손익분기 배율
@@ -248,6 +249,12 @@ PYCONFIG
 		D=$(copy_project "$$")
 		cd "$D"
 		T 900 "$G" --headless --fixed-fps 60 --path . -s tools/perf.gd 2>&1 | grep -E "PERF|SCRIPT ERROR" || true
+		rm -rf "$D"
+		;;
+	uifreq)
+		D=$(copy_project "$$")
+		cd "$D"
+		T 900 "$G" --headless --fixed-fps 60 --path . -s tools/ui_freq.gd 2>&1 | grep -E "UIFREQ|SCRIPT ERROR" || true
 		rm -rf "$D"
 		;;
 	perfwin)
