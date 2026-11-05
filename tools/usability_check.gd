@@ -1,6 +1,7 @@
 extends "res://tools/carry_check.gd"
 var guidance_completed := 0
 var combo_close_completed := 0
+var dismiss_inspector_completed := false
 ## 사용성 회귀: 격리 사본·가상 입력으로 실제 버튼과 전장 입력 경로를 함께 확인한다.
 func _initialize() -> void:
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools") or DisplayServer.get_name() == "headless" or OnlineConfig.SERVER_URL != "" or OnlineConfig.MP_URL != "":
@@ -28,6 +29,9 @@ func _initialize() -> void:
 	Meta.ui_scale = float(args[1])
 	main.hud_system._apply_ui_scale()
 	await create_timer(0.2).timeout
+	if which == "dismiss-inspector":
+		await dismiss_inspector_case()
+		ok("UI-32", dismiss_inspector_completed, "인스펙터 닫기·재활성화 입력 검사 완료")
 	if which in ["all", "combo-close"]:
 		await combo_close_case()
 		ok("UI-37", combo_close_completed == 2, "마우스·터치 조합 설명 닫기 검사 완료")
@@ -426,3 +430,31 @@ func combo_close_case() -> void:
 		ok("UI-37", not main.rx_card.visible and not Meta.rx_cards_on, "앞으로 숨기기는 다음 조합도 표시하지 않음: 터치=%s" % touch_mode)
 		main.rx_card.set_enabled(true)
 		combo_close_completed += 1
+
+func dismiss_inspector_case() -> void:
+	await fixture()
+	main.cards_system._set_card_detail(true)
+	main.interaction_system._select_tower(target)
+	await settle()
+	if phone:
+		var at: Vector2 = main.card_dock.close_btn.get_global_rect().get_center()
+		await touch(at, true)
+		await touch(at, false)
+	else:
+		await mouse_click(main.card_dock.close_btn.get_global_rect().get_center())
+	VirtualInput.move(world(refused.position))
+	await settle()
+	ok("UI-32", main.card_dock.inspector_dismissed and not main.card_dock.side.visible, "X 후 다른 오브젝트 호버에도 닫힘 유지")
+	await mouse_click(main.card_detail_btn.get_global_rect().get_center())
+	await settle()
+	ok("UI-32", not main.card_dock.inspector_dismissed and Meta.card_detail, "자세히 버튼 한 번으로 다시 활성화")
+	main.interaction_system._select_tower(target)
+	await settle()
+	await mouse_click(main.card_dock.close_btn.get_global_rect().get_center())
+	var event := InputEventKey.new()
+	event.keycode = KEY_Z
+	event.pressed = true
+	VirtualInput.send(event)
+	await settle()
+	ok("UI-32", not main.card_dock.inspector_dismissed and Meta.card_detail, "Z 한 번으로 다시 활성화")
+	dismiss_inspector_completed = true

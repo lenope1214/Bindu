@@ -2594,6 +2594,13 @@ func _meta_misc() -> void:
 	main.hover_elem = Elem.FIRE
 	dock.close_btn.pressed.emit()
 	var closed: bool = not dock.side.visible and dock.inspected_tower == null and main.tap_sel == -1 and main.hover_elem == -1
+	main.interaction_system.selected = [dt]
+	dock._update_side()
+	var stays_closed: bool = dock.inspector_dismissed and not dock.side.visible
+	main.cards_system._set_card_detail(not Meta.card_detail)
+	dock._update_side()
+	ok("UI-32", stays_closed and not dock.inspector_dismissed and Meta.card_detail and dock.side.visible, "X 닫힘은 선택에도 유지하고 자세히 한 번으로 재활성화")
+	main.interaction_system.selected.clear()
 	dock.inspected_tower = dt
 	dock._update_side()
 	var old_pointer: Vector2 = main.interaction_system.pointer_position

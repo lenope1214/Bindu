@@ -156,6 +156,9 @@ func _card_open(k: String) -> bool:
 ## 카드 [자세히] 켜기·끄기: 지금 선택지를 같은 카드로 다시 그린다 (새로 뽑지 않음).
 func _set_card_detail(on: bool) -> void:
 	var session: BinduSession = self.session
+	if session.card_dock.inspector_dismissed:
+		on = true
+		session.card_dock.inspector_dismissed = false
 	Meta.card_detail = on
 	session.card_detail_btn.set_pressed_no_signal(on)
 	session.progression_system._save_best()

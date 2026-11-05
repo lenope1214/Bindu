@@ -16,6 +16,7 @@ var side: FloatPanel  # 오브젝트·카드 정보창 (공용 떠 있는 창 �
 var inspector_header: HBoxContainer  # 머리 줄의 창별 버튼 칸 (방향 변경·터치 자세히)
 var direction_btn: Button
 var close_btn: Button
+var inspector_dismissed := false  # X로 닫으면 명시적으로 자세히를 다시 켤 때까지 유지
 var dismissed_tower: Tower
 var heading: Label
 var detail: RichTextLabel
@@ -135,7 +136,7 @@ func _init(main) -> void:
 	inspector_header.add_child(direction_btn)
 	close_btn = side.close_btn
 	close_btn.tooltip_text = "상세 닫기 (Esc)"
-	side.close_pressed.connect(close_inspector)
+	side.close_pressed.connect(func(): close_inspector(true))
 	scroll = ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -532,7 +533,9 @@ func layout_skip(at: Vector2, height: float) -> void:
 		button.size = Vector2(96 if i == 1 else 108, height)
 
 
-func close_inspector() -> void:
+func close_inspector(explicit := false) -> void:
+	if explicit:
+		inspector_dismissed = true
 	dismissed_tower = game.interaction_system._tower_at(game.interaction_system._pointer_world())
 	game.interaction_system.selected.clear()
 	game.tap_sel = -1
@@ -548,6 +551,9 @@ func close_inspector() -> void:
 
 
 func _update_side() -> void:
+	if inspector_dismissed:
+		side.hide()
+		return
 	var mouse: Vector2 = game.interaction_system._pointer_screen()
 	var tower: Tower = game.interaction_system._tower_at(game.interaction_system._pointer_world()) if not over_ui(mouse) else null
 	if tower == dismissed_tower:
