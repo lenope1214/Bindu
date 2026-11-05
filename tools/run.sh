@@ -19,6 +19,7 @@
 #   patchkeys                              관리자 페이지 [패치] 하위 탭·특성·카드·모드 칸 목록(server/app/patch_sections.json)을 다시 만듦 (VERIFY=1이면 비교만, check에 포함)
 #   tutplay                                플레이 튜토리얼 23단계를 직접·건너뛰기·장 고르기로 끝까지 (tools/tut_play_check.gd)
 #   notes                                  CHANGELOG(게임 안 패치노트)에 패치 키·코드 이름·경로·해시·요청 인용이 없는지 (docs/changelog-rules.md)
+#   preview [basic|pairs|deaths|context|long] 실제 전투·인스펙터 일치 검사
 #   check                                  배포 전 한 번에: spec + 무작위 입력 + 이어하기 (실패하면 끝 코드 1)
 # 환경 변수: SPEED(배속, 기본 4) SMART(기본 1: 사람처럼 중앙 가까이에서 길목을 겨눔, 0이면 예전 봇) VARY(0이면 판마다 다른 흐름 끔: 봉인·이벤트·적응 켬/끔 비교)
 set -e
@@ -306,6 +307,17 @@ PYCONFIG
 		trap 'rm -rf "$D"' EXIT
 		"$G" --headless --path "$D" -s tools/architecture_check.gd
 		;;
+	preview)
+		SUITE=${1:-basic}
+		case "$SUITE" in basic|pairs|deaths|context|long) ;; *) echo "알 수 없는 preview 검사: $SUITE"; exit 1 ;; esac
+		D=$(copy_project "$$")
+		trap 'rm -rf "$D"' EXIT
+		preview_status=0
+		T 300 "$G" --headless --path "$D" -s tools/preview_parity_check.gd -- "$D" 1.0 pc "$SUITE" > "$D/preview.txt" 2>&1 || preview_status=$?
+		grep -E "^PARITY|^FAIL|SCRIPT ERROR|Parse Error|^ERROR:" "$D/preview.txt" || true
+		if [ "$preview_status" -ne 0 ] || grep -qE "^FAIL|SCRIPT ERROR|Parse Error|^ERROR:" "$D/preview.txt"; then exit 1; fi
+		grep -q "^PARITY suite=$SUITE .* failures=0$" "$D/preview.txt"
+		;;
 	check)
 		# 배포 전 점검 (docs/features.md). 화면 배치는 tools/shot.gd 스크린샷을 눈으로 따로 본다.
 		CHECK_DIR=$(mktemp -d "${TMPDIR:-/tmp}/bindu-check.XXXXXX")
@@ -315,9 +327,14 @@ PYCONFIG
 		if python3 "$ROOT/tools/notes_check.py" > "$CHECK_DIR/notes.txt" 2>&1; then echo "notes 통과"; else grep -E "^FAIL|^NOTES" "$CHECK_DIR/notes.txt" | head -10; bad="$bad notes"; fi
 		"$0" spec > "$CHECK_DIR/spec.txt" 2>&1 || bad="$bad spec"
 		grep -E "^FAIL|^SPEC|SCRIPT ERROR|Parse Error|^ERROR:" "$CHECK_DIR/spec.txt" || true
+		for suite in basic deaths; do
+			"$0" preview "$suite" > "$CHECK_DIR/preview-$suite.txt" 2>&1 || bad="$bad preview-$suite"
+			grep -E "^PARITY suite=|^FAIL|SCRIPT ERROR|Parse Error|^ERROR:" "$CHECK_DIR/preview-$suite.txt" || true
+		done
 		"$0" tutplay > "$CHECK_DIR/tutplay.txt" 2>&1 || bad="$bad tutplay"
 		grep -E "^FAIL|^TUTPLAY|SCRIPT ERROR|Parse Error|^ERROR:" "$CHECK_DIR/tutplay.txt" || true
 		F=$("$0" fuzz 4 3000) || bad="$bad fuzz"
+		printf '%s\n' "$F" > "$CHECK_DIR/fuzz.txt"
 		echo "$F" | grep "^시드"
 		echo "$F" | grep "^시드" | grep -qv "오류 0개" && bad="$bad fuzz"
 		C=$("$0" cont 1 plain 13)

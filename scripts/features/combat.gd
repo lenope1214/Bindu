@@ -8,12 +8,8 @@ var prof := {}
 var ach_dirty := false  # 이번 프레임에 처치가 있었다: 업적 조건을 한 번 본다
 func _sim_step(delta: float) -> void:
 	var session: BinduSession = self.session
-	session.sim_id += 1
 	var us := Time.get_ticks_usec() if session.prof_on else 0
-	for layer in [session.orbs, session.projectiles, session.zones]:
-		for n in layer.get_children():
-			if not n.is_queued_for_deletion():
-				n.step(delta)
+	step_entities(delta)
 	if session.prof_on:
 		_prof_add("이동", us)
 
@@ -275,6 +271,9 @@ func _resolve(delta: float, preview := false) -> void:
 	# 구체 처치 / 중앙 도달 (협동 참가자는 호스트가 보낸 대로)
 	for o in (session.live_orbs if not session.mp_ghost else []):
 		if o.hp <= 0.0 and preview:
+			session.spawning_system._jam_death(o)
+			session.spawning_system.burst(o.position, o.death_color(), 10 if o.kind != Orb.Kind.BOSS else 40, 180.0)
+			_charge_on_kill(o)
 			_death_effects(o)
 			o.queue_free()
 			continue
@@ -314,9 +313,7 @@ func _resolve(delta: float, preview := false) -> void:
 				session.hud_system._show_toast("보스 처치! 중앙 체력 +2" + ("" if Modes.has("narrow") else ", 새로고침 +1"))
 			session.spawning_system.burst(o.position, o.death_color(), 10 if o.kind != Orb.Kind.BOSS else 40, 180.0)
 			session.kills += 1
-			for t in session.towers.get_children():
-				if t.tg("charge") > 0 and t.position.distance_to(o.position) < Rules.t("charge_r"):
-					t.add_charge(o)
+			_charge_on_kill(o)
 			if o.kind == Orb.Kind.BOSS:
 				session.shake = 0.4
 			_death_effects(o)
@@ -439,6 +436,43 @@ func near_t(p: Vector2, r: float) -> Array:
 
 func _update_fx(delta: float) -> void:
 	var session: BinduSession = self.session
+	tick_effects(delta)
+	if not is_equal_approx(session.view_zoom, 1.0) and (session.title_label.visible or session.phase == BinduSession.Phase.GAMEOVER):
+		session.viewport_system._reset_zoom()  # 시작 화면·게임 오버는 1배로
+	if not session.card_dock.active():  # 도크 전용 화면 영역의 카메라는 도크 레이아웃에서 정한다
+
+		session.camera.position = session.viewport_system.center() + session.view_pan
+	session.camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 14.0 * session.shake * (1.0 if Meta.shake_on else 0.0)
+	session.fx_layer.queue_redraw()
+
+
+## 처치 시 전투 효과만. 보상·업적과 분리해 미리보기에서도 같은 효과를 쓴다.
+func _death_effects(o: Orb) -> void:
+	var session: BinduSession = self.session
+	if o.poison_t > 0.0:
+		for other in targets:
+			if other != o and other.position.distance_to(o.position) < 80.0:
+				other.poison(o.poison_dps, 3.0, o.poison_src, o.poison_rx, o.poison_key)
+		Share.contagion(o)  # 독 전염: 효과도 번짐
+	if o.vuln_t > 0.0:
+		Share.pull(o)  # 어둠 끌어당김
+	if o.soul_t > 0.0:
+		session.spawning_system._soul_wisp(o)
+
+
+## 실제 전투와 미리보기의 이동·타이머 순서를 공용으로 유지한다.
+func step_entities(delta: float) -> void:
+	var session: BinduSession = self.session
+	session.sim_id += 1
+	for layer in [session.orbs, session.projectiles, session.zones]:
+		for n in layer.get_children():
+			if not n.is_queued_for_deletion():
+				n.step(delta)
+
+
+## 전투 이펙트와 전역 효과 타이머. 카메라·UI 갱신은 호출자가 담당한다.
+func tick_effects(delta: float) -> void:
+	var session: BinduSession = self.session
 	session.danger_lv = mini(session.danger_lv, _danger_of(session.core_hp))
 	for lf in session.leak_flash:
 		lf[1] -= delta
@@ -474,24 +508,9 @@ func _update_fx(delta: float) -> void:
 	session.skill_fx = session.skill_fx.filter(func(q): return q[2] > 0.0)
 	session.eclipse_flash = maxf(session.eclipse_flash - delta, 0.0)
 	session.eclipse_cd = maxf(session.eclipse_cd - delta, 0.0)
-	if not is_equal_approx(session.view_zoom, 1.0) and (session.title_label.visible or session.phase == BinduSession.Phase.GAMEOVER):
-		session.viewport_system._reset_zoom()  # 시작 화면·게임 오버는 1배로
-	if not session.card_dock.active():  # 도크 전용 화면 영역의 카메라는 도크 레이아웃에서 정한다
-
-		session.camera.position = session.viewport_system.center() + session.view_pan
-	session.camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 14.0 * session.shake * (1.0 if Meta.shake_on else 0.0)
-	session.fx_layer.queue_redraw()
 
 
-## 처치 시 전투 효과만. 보상·업적과 분리해 미리보기에서도 같은 효과를 쓴다.
-func _death_effects(o: Orb) -> void:
-	var session: BinduSession = self.session
-	if o.poison_t > 0.0:
-		for other in targets:
-			if other != o and other.position.distance_to(o.position) < 80.0:
-				other.poison(o.poison_dps, 3.0, o.poison_src, o.poison_rx, o.poison_key)
-		Share.contagion(o)  # 독 전염: 효과도 번짐
-	if o.vuln_t > 0.0:
-		Share.pull(o)  # 어둠 끌어당김
-	if o.soul_t > 0.0:
-		session.spawning_system._soul_wisp(o)
+func _charge_on_kill(o: Orb) -> void:
+	for t in session.towers.get_children():
+		if t.tg("charge") > 0 and t.position.distance_to(o.position) < Rules.t("charge_r"):
+			t.add_charge(o)

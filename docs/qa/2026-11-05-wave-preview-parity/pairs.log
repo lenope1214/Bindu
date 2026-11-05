@@ -1,0 +1,21 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+PARITY pattern=shot cases=136 failures=0
+PARITY pattern=spray cases=272 failures=0
+PARITY pattern=thorn cases=408 failures=0
+PARITY pattern=stream cases=544 failures=0
+PARITY pattern=chain cases=680 failures=0
+PARITY pattern=gust cases=816 failures=0
+PARITY pattern=shard cases=952 failures=0
+PARITY pattern=wall cases=1088 failures=0
+PARITY pattern=vortex cases=1224 failures=0
+PARITY pattern=laser cases=1360 failures=0
+PARITY pattern=lob cases=1496 failures=0
+PARITY pattern=iron cases=1632 failures=0
+PARITY pattern=sonic cases=1768 failures=0
+PARITY pattern=clock cases=1904 failures=0
+PARITY pattern=wisp cases=2040 failures=0
+PARITY suite=pairs cases=2040 samples=24480 failures=0
+WARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

@@ -104,3 +104,5 @@ Tower/Orb는 연결 시 사용할 전투/생성 등의 서비스 참조를 받�
 5. 기존 폰 carry 실패와 넘기기/인스펙터 겹침은 기능 수정 작업으로 별도 처리한다.
 
 오브젝트 인스펙터의 `attack_preview.gd`는 독립 World2D의 BinduSession에서 실제 전투 로직을 재사용한다. 미리보기 처치는 전투 효과만 실행하며 보상·업적·저장을 실행하지 않는다. 별도 조합 창은 인스펙터로 통합했다.
+
+미리보기는 주변 오브젝트와 누적 발동 상태까지 복제하고 실제 월드 좌표를 유지한다. `BinduCombat.step_entities`와 `tick_effects`를 실제 전투와 공유한다. `tools/run.sh preview basic|pairs|deaths|context|long`으로 같은 시드·표적에서 실제 `_sim_step`과 프레임별 결과를 대조하며, `check`에는 기본·처치 검사가 포함된다. 전투 그림은 `preview_gallery.gd`로 별도 확인한다.

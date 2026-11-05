@@ -487,11 +487,7 @@ func _draw_fx(preview := false) -> void:
 			session.fx_layer.draw_rect(Rect2(o.x + vs.x - w, o.y, w, vs.y), col)
 		if session.phase == BinduSession.Phase.GAMEOVER or session.title_label.visible:
 			session.fx_layer.draw_rect(vw, Color(0, 0, 0, 0.6))
-		if session.eclipse_flash > 0.0:
-			# 단번에 어두워지지 않게 0.1초 동안 천천히 어두워졌다가 풀린다
-			var ef := session.eclipse_flash / 0.6
-			var env := minf((1.0 - ef) / 0.15, 1.0) * ef
-			session.fx_layer.draw_rect(vw, Color(0.1, 0.0, 0.15, 0.22 * env))
+		_draw_eclipse(vw)
 		# 중앙 위험: 화면 테두리가 붉게 맥박친다 (25% 이하는 더 진하고 빠르게). 배속과 상관없이 계속 보인다
 		if session.danger_lv > 0 and session.phase != BinduSession.Phase.GAMEOVER and not session.title_label.visible:
 			var t := Time.get_ticks_msec() / 1000.0
@@ -505,6 +501,8 @@ func _draw_fx(preview := false) -> void:
 				session.fx_layer.draw_rect(Rect2(o.x, o.y + vs.y - w, vs.x, w), col)
 				session.fx_layer.draw_rect(Rect2(o.x, o.y, w, vs.y), col)
 				session.fx_layer.draw_rect(Rect2(o.x + vs.x - w, o.y, w, vs.y), col)
+	if preview:
+		_draw_eclipse(session.get_canvas_transform().affine_inverse() * Rect2(Vector2.ZERO, session.get_viewport_rect().size))
 	for a in session.arcs:
 		session.fx_layer.draw_line(a[0], a[1], Color(Elem.COLORS[Elem.ELECTRIC], fx_k), 2.0)
 	var sc: Color = Elem.COLORS[Elem.SOUND]
@@ -553,6 +551,16 @@ func _draw_fx(preview := false) -> void:
 	session.fx_layer.draw_set_transform_matrix(Transform2D.IDENTITY)
 	_draw_tooltip()
 
+
+
+## 일식 화면 연출도 미리보기 전장 안에서 같은 진하기·시간으로 표시한다.
+func _draw_eclipse(vw: Rect2) -> void:
+	var session: BinduSession = self.session
+	if session.eclipse_flash > 0.0:
+		# 단번에 어두워지지 않게 0.1초 동안 천천히 어두워졌다가 풀린다
+		var ef := session.eclipse_flash / 0.6
+		var env := minf((1.0 - ef) / 0.15, 1.0) * ef
+		session.fx_layer.draw_rect(vw, Color(0.1, 0.0, 0.15, 0.22 * env))
 
 ## 보스가 있으면 화면 위 가운데에 체력 막대 (여럿이면 합계). 화면 흔들림을 따라가지 않게 카메라 흔들림만큼 되돌린다.
 func _draw_boss_bar() -> void:

@@ -10,3 +10,5 @@
 - native 검사 종료 시 기존 ObjectDB 2개 잔존 경고. 실행 중 SCRIPT ERROR 없음.
 
 로그: [전체 검사](check.log), [전체 공격·조합](preview.log), [X 닫기와 재활성화](dismiss.log).
+
+후속 검증에서 실행 스모크 검사가 놓친 공격 그림·주변 배치·누적 상태 누락을 수정했다. 현재 검증 범위와 결과는 [실제 전투 대조 기록](../2026-11-05-wave-preview-parity/README.md)을 따른다.

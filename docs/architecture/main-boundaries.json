@@ -1294,7 +1294,7 @@
     "_update_action_guide": "Suppress guidance while hovering or manipulating objects; TUT-03 regression",
     "_build_menu": "Remove obsolete combination popup setting; inspector is the single presentation",
     "_set_card_detail": "Explicit detail button or Z reopens dismissed inspector; UI-32 regression",
-    "_resolve": "Preview skips rewards/core damage and shares death effects; isolated preview tests",
+    "_resolve": "Share charge on kill with preview without rewards; parity tests",
     "_draw_fx": "Preview draws combat effects without HUD or tooltips",
     "_build_ui": "Remove separate combination popup; inspector NEW and discovery regression",
     "_place_on": "Remove separate combination popup; inspector NEW and discovery regression",
@@ -1304,6 +1304,8 @@
     "_draw_info": "Nonblocking lane warning and new direction highlight before card placement; WAVE-14 regression",
     "_save_run": "Nonblocking lane warning and new direction highlight before card placement; WAVE-14 regression",
     "_continue_run": "Nonblocking lane warning and new direction highlight before card placement; WAVE-14 regression",
-    "_mp_ghost_rest": "Nonblocking lane warning and new direction highlight before card placement; WAVE-14 regression"
+    "_mp_ghost_rest": "Nonblocking lane warning and new direction highlight before card placement; WAVE-14 regression",
+    "_sim_step": "Share entity tick order with inspector; real versus preview parity matrix",
+    "_update_fx": "Share effect/cooldown lifetime with inspector; parity matrix"
   }
 }

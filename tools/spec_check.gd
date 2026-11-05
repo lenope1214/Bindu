@@ -3685,7 +3685,7 @@ func _ugc() -> void:
 		"닉네임 거르기, 리더보드 차단한 사람 이름 가림·[신고·차단] 창(신고는 서버 report 있을 때만)·차단 풀기, 설정 데이터 지우기 버튼")
 
 
-## UI-37: 속성을 합쳐 새 조합이 생기면 긴 배너·토스트 대신 오브젝트 옆 그림 카드
+## UI-37: 실제 공격·렌더링·누적 상태를 통합 인스펙터에서 격리해 표시한다.
 func _attack_preview() -> void:
 	_fresh()
 	var t := _tower(Vector2(250, 300), Elem.WATER, 2)
@@ -3701,8 +3701,27 @@ func _attack_preview() -> void:
 	var effects := false
 	for orb in preview.world.orbs.get_children():
 		effects = effects or orb.poison_t > 0.0 or orb.slow_timer > 0.0
-	ok("UI-37", hit and effects, "실제 공격·명중 경로로 미리보기 표적에 감속·중독 적용")
+	ok("UI-37", hit and effects and preview.world.wave_active, "실제 공격·명중 경로로 미리보기 표적에 감속·중독 적용")
 	ok("UI-37", hp == main.core_hp and score == main.score and dealt == t.dealt and count == main.orbs.get_child_count(), "미리보기 피해·구체·점수는 실제 판과 격리")
+	t.trigs = {"charge": 2, "third": 2}
+	t.charge = 3.0
+	t.third_n = 2
+	t.dir = Vector2.UP
+	var ally := _tower(t.position + Vector2(30, 0), Elem.FIRE)
+	preview.configure(t)
+	ok("UI-37", preview.clone.charge == 3.0 and preview.clone.third_n == 2 and preview.clone.dir == t.dir and preview.copies.has(ally.get_instance_id()), "현재 축적·삼연·방향·주변 배치를 미리보기에 복사")
+	preview.clone.charge = 0.0
+	var slot := 0
+	for orb in preview.world.orbs.get_children():
+		orb.position = preview.clone.position + preview.clone.dir * (60.0 + 8.0 * slot)
+		orb.hp = 0.0
+		slot += 1
+	preview.advance(1.0 / 60.0)
+	var charged: bool = preview.clone.charge == 5.0
+	var same: int = preview.clone.get_instance_id()
+	preview.elapsed = 8.1
+	preview.advance(0.5)
+	ok("UI-37", charged and preview.clone.get_instance_id() == same and preview.clone.charge == 5.0 and preview.cycle == 2, "처치로 축적 증가, 8초 뒤에도 상태 유지하며 표적만 보충")
 	preview.source = null
 	_clear()
 
