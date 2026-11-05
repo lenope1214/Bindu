@@ -517,7 +517,10 @@ func operation_text() -> String:
 			return "위치 편집 중 · %s" % cancel
 		game.Phase.CHOOSE, game.Phase.READY, game.Phase.WAVE:
 			if not game.selected.is_empty():
-				return "오브젝트 %d개 선택 · %s" % [game.selected.size(), "빈 곳을 눌러 해제" if game.touch_ui else "Esc 해제"]
+				var again := ""
+				if game.selected.size() == 1 and game.phase != game.Phase.WAVE:
+					again = "한 번 더 누르면 방향 · " if game.touch_ui else "한 번 더 클릭·휠: 방향 · "
+				return "오브젝트 %d개 선택 · %s%s" % [game.selected.size(), again, "빈 곳을 눌러 해제" if game.touch_ui else "Esc 해제"]
 	return ""
 
 

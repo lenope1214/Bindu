@@ -2598,6 +2598,32 @@ func _meta_misc() -> void:
 	var wave_readonly: bool = not dock.direction_btn.visible and main.phase == main.Phase.WAVE and main.moving == null
 	main.phase = main.Phase.READY
 	var original_dir: Vector2 = dt.dir
+	# 이미 선택해 상세가 열린 오브젝트를 한 번 더 누르면 바로 방향 바꾸기, 취소하면 그대로
+	main.press_t = dt
+	main.dragging = false
+	main._release_press()
+	var tap_again: bool = main.phase == main.Phase.AIM and main.moving == dt
+	main._cancel_step()
+	tap_again = tap_again and main.phase == main.Phase.READY and dt.dir == original_dir and main.selected == [dt]
+	# 선택한 오브젝트 위에서 휠: 15도씩 돌리기, 선택 안 한 오브젝트 위·전투 중이면 확대
+	var was_touch_w: bool = main.touch_ui
+	main.touch_ui = false
+	var wheel := InputEventMouseButton.new()
+	wheel.button_index = MOUSE_BUTTON_WHEEL_DOWN
+	wheel.pressed = true
+	wheel.factor = 1.0
+	wheel.position = main.get_canvas_transform() * dt.position
+	var a0: float = dt.dir.angle()
+	var wheel_turns: bool = main._wheel_turn(wheel) and absf(angle_difference(a0, dt.dir.angle()) + deg_to_rad(-15.0)) < 0.01
+	main.phase = main.Phase.WAVE
+	var wheel_wave_zooms: bool = not main._wheel_turn(wheel)
+	main.phase = main.Phase.READY
+	main.selected = []
+	var wheel_unselected_zooms: bool = not main._wheel_turn(wheel)
+	main.selected = [dt]
+	main.touch_ui = was_touch_w
+	dt.set_attack_direction(original_dir)
+	tap_again = tap_again and wheel_turns and wheel_wave_zooms and wheel_unselected_zooms
 	dock.direction_btn.pressed.emit()
 	dock.tick()
 	var edit_status: bool = main.hint.visible and main._kr_keep("방향 편집 중") in main.hint.text
@@ -2635,7 +2661,7 @@ func _meta_misc() -> void:
 	main.phase = old_phase
 	main.guide_label.visible = status_guide_visible
 	ok("UI-35", selection_status and edit_status and carry_status and touch_status and deleted_selection and state_before_guide and guide_priority, "선택·편집·카드 상태 %s/%s/%s · 터치 %s · 삭제 %s" % [selection_status, edit_status, carry_status, touch_status, deleted_selection])
-	ok("UI-05", click_selects and wave_readonly and edits_selected and cancel_restores and finished_clean, "클릭은 선택, 쉬는 시간의 명시적 방향 편집·취소 복원, 전투 중 읽기 전용")
+	ok("UI-05", click_selects and wave_readonly and edits_selected and cancel_restores and finished_clean and tap_again, "클릭은 선택, 한 번 더 누르기·[방향 변경]으로 방향 편집·취소 복원, 휠 15도 %s, 전투 중 읽기 전용" % tap_again)
 	# UI-36: 점수 줄 칩 밑에 깔린 오브젝트는 점수 줄이 막지 않는다
 	var hud_ok := true
 	if main.hud.is_visible_in_tree() and main.hud.size.x > 40.0:
