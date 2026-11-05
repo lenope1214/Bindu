@@ -58,7 +58,7 @@ func _initialize():
 	if a.size() > 1: z = float(a[1])
 	touch = a.size() > 2 and a[2] == "touch"
 	main = load("res://main.tscn").instantiate()
-	root.add_child(main)
+	VirtualInput.mount(main, root)
 	main.tut_first = false
 	steps = [
 		func():
@@ -96,7 +96,8 @@ func _initialize():
 
 
 func _snap(n: String):
-	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s.png" % [n, z, "_touch" if touch else ""]))
+	RenderingServer.force_draw()
+	main.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s.png" % [n, z, "_touch" if touch else ""]))
 	print("SHOT ", n)
 	preload("res://tools/ui_check.gd").check(main, n)
 

@@ -1,6 +1,6 @@
 extends SceneTree
 ## 플레이 튜토리얼 화면 스크린샷 (features TUT-08 shot). 단계마다 안내 칸·강조·카드가 겹치거나 잘리지 않는지 눈으로 본다.
-## xvfb-run godot --path . --rendering-driver opengl3 -s tools/tut_play_shot.gd -- <폴더> [글자 크기] [touch] [phone]
+## tools/run.sh ui tut_play_shot.gd <폴더> [글자 크기] [touch] [phone]
 var main
 var tp: TutPlay
 var f := 0
@@ -11,6 +11,9 @@ var steps: Array = []
 
 
 func _initialize():
+	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools"):
+		quit(2)
+		return
 	var a := OS.get_cmdline_user_args()
 	if a.size() > 0: out = a[0]
 	if a.size() > 1: z = float(a[1])
@@ -21,7 +24,7 @@ func _initialize():
 	DirAccess.make_dir_recursive_absolute(out)
 	TutPlay.pending = 0
 	main = load("res://main.tscn").instantiate()
-	root.add_child(main)
+	VirtualInput.mount(main, root)
 	steps = [
 		func():
 			Meta.ui_scale = z
@@ -68,7 +71,8 @@ func _to(id: String) -> void:
 
 
 func _snap(n: String):
-	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
+	RenderingServer.force_draw()
+	main.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
 	print("SHOT ", n, " step=", tp.step().get("id", "") if tp else "")
 	preload("res://tools/ui_check.gd").check(main, n)
 

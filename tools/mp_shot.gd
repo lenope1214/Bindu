@@ -17,7 +17,7 @@ func _initialize():
 	touch = a.size() > 2 and a[2] == "touch"
 	if a.size() > 3: mode = a[3]
 	main = load("res://main.tscn").instantiate()
-	root.add_child(main)
+	VirtualInput.mount(main, root)
 	steps = [
 		func():
 			Meta.guide_on = false  # 튜토리얼(처음 켤 때·멀티플레이 처음)이 화면을 가리지 않게
@@ -97,10 +97,10 @@ func _initialize():
 			# 끝 화면을 지나 대기방으로 (방 유지): 화면을 새로 만들고 민수는 아직 판 진행 중
 			main._mp_keep_room()
 			var old = main
-			root.remove_child(old)
+			old.get_parent().remove_child(old)
 			old.free()
 			main = load("res://main.tscn").instantiate()
-			root.add_child(main)
+			VirtualInput.mount(main, root)
 			main.tut_first = false
 			if main.tut and main.tut.panel.visible:
 				main.tut.close()
@@ -124,7 +124,8 @@ func _initialize():
 
 
 func _snap(n: String):
-	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s.png" % [n, z, "_touch" if touch else ""]))
+	RenderingServer.force_draw()
+	main.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s.png" % [n, z, "_touch" if touch else ""]))
 	print("SHOT ", n)
 	preload("res://tools/ui_check.gd").check(main, n)  # 겹침·화면 밖 (UI OVERLAP 줄)
 

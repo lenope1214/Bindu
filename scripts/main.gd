@@ -18,7 +18,7 @@ const SAVE_PATH := "user://best.cfg"
 const RUN_PATH := "user://run.cfg"  # 이어하기: 쉬는 시간마다 저장, 게임 오버면 지움
 const OLD_GARDEN_RUN := "user://garden.cfg"  # 예전 정원 모드 저장 판 (정원을 없애서 읽지 않고 지운다)
 const RUN_FORMAT := 1
-const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 방향 바꾸기   끌기: 옮기기"
+const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 선택 · 상세에서 방향 변경   끌기: 옮기기"
 ## 첫 판: 카드 종류가 열리는 웨이브 (그 웨이브 앞 쉬는 시간부터 나온다). 속성은 처음부터
 const TUTOR_OPEN := {"pat": 3, "mod": 4, "trig": 5, "link": 6}
 const PLACE_HINT := "클릭: 설치 (오브젝트 위면 속성 겹치기)   오브젝트 꾹 누르기·끌기: 옮기기\n우클릭/Esc: 카드 다시 선택"
@@ -61,6 +61,7 @@ var hide_btn: Button
 var card_detail_btn: Button  # 선택지 카드 [자세히] 켜기·끄기 (Meta.card_detail)
 var move_orig_pos := Vector2.ZERO
 var move_orig_dir := Vector2.RIGHT
+var move_cards_hidden := false
 var move_return := Phase.CHOOSE  # 옮기기를 끝내면 돌아갈 단계
 var auto_start := false  # 끄면 설치 후 Space로 웨이브 시작
 var auto_btn: Button
@@ -101,6 +102,8 @@ var targets: Array = []  # 화면 안에 들어온 구체 (공격 대상)
 var sim_id := 0  # 계산 조각 번호: 조각 안에서 변하지 않는 값(오브젝트 피해 배율)을 조각마다 한 번만 계산
 var prof_on := false  # tools/perf.gd: 부분별 계산 시간 기록
 var prof := {}
+var place_label_rect := Rect2()
+var place_note_rect := Rect2()
 var place_note := {}  # 카드 넣는 단계에서 올린 오브젝트 설명 (_draw_place_note)
 var fx_layer: Node2D  # 피해 숫자·파편 (맨 위)
 var fx_k := 1.0  # 터지는 효과 진하기 (효과 줄이기 설정이면 0.5)
@@ -139,6 +142,8 @@ var _hint_kept := ""  # 낱말 붙임(_kr_keep)을 넣은 아래 안내 글
 var _badge_memo := {}  # _free_badge 답 (입력 hash → Rect2)
 var _badge_cands: Array[Vector2] = []  # _free_badge가 볼 자리 (안쪽 칸, 옆 칸), 가까운 순
 var info_rects: Array = []  # 이번 프레임 info에 그린 배지 [이름, Rect2(UI 좌표)] (화면 배치 점검 tools/ui_check.gd)
+var info_mouse_capture := false
+var info_touch_capture := -1
 var tip_pin := -1  # 터치로 누른 말풍선 (tip_rects 번호)
 var wave_info: Array = []  # 다음 웨이브 자세한 안내 [[글, 색]] (배지에 올리면 보임)
 var wave_kinds: Array = []  # 다음 웨이브에 섞여 나오는 구체 [아이콘, 색, 처음 등장?]
@@ -171,6 +176,7 @@ var skip_n_btn: Button  # 넘길 웨이브 수 바꾸기
 var skip_badge: Button  # 넘기는 중 표시, 누르면 멈추기
 var pause_btn: Button
 var speed_btn: Button
+var speed_group: HBoxContainer
 var speed_pick: OptionButton
 const SPEEDS := [2.0, 3.0, 4.0, 6.0, 8.0]
 var game_speed := 1.0  # 지금 배속
@@ -212,18 +218,18 @@ const PERKS := [
 	{"id": "power", "name": "화력", "desc": "모든 피해 +15%"},
 	{"id": "haste", "name": "속사", "desc": "모든 공격 속도 +12%"},
 	{"id": "reach", "name": "원거리", "desc": "모든 사거리 +12%"},
-	{"id": "core", "name": "단단한 중앙", "desc": "중앙 최대 체력 +3, 모두 회복"},
+	{"id": "core", "name": "단단한 중앙", "desc": "중앙 최대 체력 +3, 체력을 모두 회복해요."},
 	{"id": "reroll", "name": "넉넉한 선택", "desc": "쉬는 시간마다 새로고침 +1"},
 	{"id": "luck", "name": "행운", "desc": "속성 카드가 Lv2로 나올 확률 +20%"},
 	{"id": "regen", "name": "회복", "desc": "웨이브를 마칠 때마다 중앙 체력 +1 (겹쳐 고르면 하나당 +0.5)"},
 	{"id": "slow", "name": "끈적한 공간", "desc": "모든 구체 이동 속도 -8%"},
-	{"id": "harmony", "name": "조화", "desc": "속성을 여러 종류 겹쳐 생기는 공격 속도 감소가 절반으로 (한 번만, 공격 속도 최대 +20%)"},
-	{"id": "coin", "name": "운명의 동전", "desc": "동전을 던지고 특성 3개를 새로 받아요. 앞면: 고른 특성이 두 번 적용. 뒷면: 한 번 적용 + 이번 쉬는 시간 새로고침 +2"},
-	{"id": "shield", "name": "실드", "desc": "웨이브를 시작할 때마다 중앙 실드 1칸 (겹치면 +1, 최대 3). 맞으면 체력 대신 실드가 깎이고, 다음 웨이브로 넘어가지 않아요"},
+	{"id": "harmony", "name": "조화", "desc": "속성을 여러 종류 겹쳐 생기는 공격 속도 감소가 절반이 돼요. (한 번만, 공격 속도 최대 +20%)"},
+	{"id": "coin", "name": "운명의 동전", "desc": "동전을 던지고 특성 3개를 새로 받아요. 앞면: 고른 특성이 두 번 적용돼요. 뒷면: 한 번 적용돼요. 이번 쉬는 시간 새로고침 +2"},
+	{"id": "shield", "name": "실드", "desc": "웨이브를 시작할 때마다 중앙 실드 1칸 (겹치면 +1, 최대 3). 맞으면 체력 대신 실드가 깎이고, 다음 웨이브로 넘어가지 않아요."},
 	{"id": "rampart", "name": "성벽", "desc": "웨이브마다 중앙 앞에 바위 벽: 다가온 구체를 한 번 밀어내고 한 조각씩 부서져요. 조각 수 = 벽 오브젝트 레벨 합 + 1 (겹치면 +1, 최대 4)"},
-	{"id": "riposte", "name": "반격 파동", "desc": "중앙이 맞을 때마다(실드 포함) 파동이 퍼져 가까운 구체를 밀어내고 피해 (겹치면 피해 +50%)"},
+	{"id": "riposte", "name": "반격 파동", "desc": "중앙이 맞을 때마다(실드 포함) 파동이 퍼져 가까운 구체를 밀어내고 피해를 줘요. (겹치면 피해 +50%)"},
 	{"id": "quick", "name": "빠른 손", "desc": "중앙 기술을 다시 쓰기까지 -20% (겹치면 곱)"},
-	{"id": "overflow", "name": "넘친 회복", "desc": "체력이 가득할 때 받은 회복은 실드로 쌓여요 (회복 특성·보스 처치, 최대 2, 웨이브가 지나도 남음)"},
+	{"id": "overflow", "name": "넘친 회복", "desc": "체력이 가득할 때 받은 회복은 실드로 쌓여요. (회복 특성·보스 처치, 최대 2, 웨이브가 지나도 남아요.)"},
 ]
 var perks := {}  # id → 고른 횟수
 # 중앙 기술 (Skill): 이번 판 기술 두 개, 다시 쓰기까지 남은 게임 시간, 누를 자리를 기다리는 기술, 효과 그림 [자리, 반지름, 남은 시간, 색]
@@ -604,6 +610,8 @@ func _notification(what: int) -> void:
 		touches.clear()
 		pinch_lock = false
 		mid_drag = false
+		info_mouse_capture = false
+		info_touch_capture = -1
 	# 창을 닫거나 (모바일) 앱이 뒤로 가면 지금 쉬는 시간 상태를 한 번 더 저장 (옮긴 위치까지)
 	if (what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED) and towers and title_label:
 		_save_run()
@@ -827,11 +835,7 @@ func _build_ui() -> void:
 	choice_header.z_index = 2
 	choice_header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	choice_header.visible = false
-	var chs := StyleBoxFlat.new()
-	chs.bg_color = Color(0.06, 0.07, 0.1, 0.98)
-	chs.border_color = Color(1, 1, 1, 0.18)
-	chs.set_border_width_all(1)
-	chs.set_corner_radius_all(6)
+	var chs := CardDock.surface()
 	chs.content_margin_left = 14
 	chs.content_margin_right = 14
 	chs.content_margin_top = 6
@@ -952,16 +956,7 @@ func _build_ui() -> void:
 	skip_badge.visible = false
 	root.add_child(skip_badge)
 
-	hide_btn = Button.new()
-	hide_btn.focus_mode = Control.FOCUS_NONE
-	hide_btn.add_theme_font_size_override("font_size", 14)
-	hide_btn.pressed.connect(func(): _set_cards_hidden(not cards_hidden))
-	# 펼쳐 있을 때는 눈 그림만 (내려 두면 화면 위 "선택지 보기" 글)
-	_icon_btn(hide_btn, func(): return ["none" if cards_hidden else "eye", Color(1, 1, 1, 0.85)])
-	_keycap(hide_btn, func(): return "" if cards_hidden else "V")
-	hide_btn.visible = false
-	hide_btn.z_index = 2  # 카드 선택 막(card_dim) 위
-	root.add_child(hide_btn)
+	hide_btn = card_dock.focus_btn  # V·F·화면 버튼이 같은 컨트롤을 사용한다.
 	card_detail_btn = Button.new()
 	card_detail_btn.set_anchors_preset(Control.PRESET_CENTER)
 	card_detail_btn.focus_mode = Control.FOCUS_NONE
@@ -978,17 +973,19 @@ func _build_ui() -> void:
 	root.add_child(card_detail_btn)
 
 	var bar := HBoxContainer.new()
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bar.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	# 버튼이 늘어나도 오른쪽 여백(16)을 지키고 왼쪽으로 자란다
 	bar.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	bar.alignment = BoxContainer.ALIGNMENT_END
 	bar.offset_left = -616.0
-	bar.offset_right = -16.0
-	bar.offset_top = -50.0
-	bar.offset_bottom = -14.0
+	bar.offset_right = -12.0
+	bar.offset_top = -48.0
+	bar.offset_bottom = -12.0
 	bar.add_theme_constant_override("separation", 8)
 	root.add_child(bar)
 	bar_box = bar
+	bar.theme = card_dock.controls_theme
 	# 글 대신 아이콘 (이름·단축키는 올리면 말풍선)
 	fx_pick = OptionButton.new()
 	for i in FX_DPS.size():
@@ -1019,11 +1016,15 @@ func _build_ui() -> void:
 	pause_btn.pressed.connect(_toggle_pause)
 	_icon_btn(pause_btn, func(): return ["pause", Color(1, 1, 1, 0.9)])
 	bar.add_child(pause_btn)
+	speed_group = HBoxContainer.new()
+	speed_group.name = "SpeedControls"
+	speed_group.add_theme_constant_override("separation", 0)
+	bar.add_child(speed_group)
 	speed_btn = Button.new()
 	speed_btn.custom_minimum_size = Vector2(72, 36)
 	speed_btn.pressed.connect(_toggle_speed)
 	_icon_btn(speed_btn, func(): return ["speed", Color(1, 0.85, 0.45) if game_speed > 1.0 else Color(1, 1, 1, 0.9)])
-	bar.add_child(speed_btn)
+	speed_group.add_child(speed_btn)
 	speed_pick = OptionButton.new()
 	for sp in SPEEDS:
 		speed_pick.add_item("x%d" % roundi(sp))
@@ -1031,7 +1032,7 @@ func _build_ui() -> void:
 	speed_pick.focus_mode = Control.FOCUS_NONE
 	speed_pick.tooltip_text = "빠르게 할 때 배속 (Space로 1배속과 오감)"
 	speed_pick.item_selected.connect(_on_speed_pick)
-	bar.add_child(speed_pick)
+	speed_group.add_child(speed_pick)
 	# 맨 오른쪽: 접으면 이것만 남고, 펼치면 왼쪽으로 버튼이 늘어선다
 	bar_btn = Button.new()
 	bar_btn.custom_minimum_size = Vector2(96, 36)
@@ -1068,17 +1069,30 @@ func _build_ui() -> void:
 			_confirm_aim())
 	aim_ok_btn.visible = false
 	root.add_child(aim_ok_btn)
+	for button: Button in [reroll_btn, skip_btn, skip_n_btn, hide_btn, card_detail_btn, start_btn, cancel_btn, aim_ok_btn]:
+		button.theme = card_dock.controls_theme
+	for pair in [[skip_btn, skip_n_btn], [speed_btn, speed_pick]]:
+		for button: Button in pair:
+			for state_name in ["normal", "hover", "pressed", "hover_pressed", "disabled", "focus"]:
+				var segment: StyleBoxFlat = button.get_theme_stylebox(state_name).duplicate()
+				if button == pair[0]:
+					segment.corner_radius_top_right = 0
+					segment.corner_radius_bottom_right = 0
+					segment.border_width_right = 0
+				else:
+					segment.corner_radius_top_left = 0
+					segment.corner_radius_bottom_left = 0
+				button.add_theme_stylebox_override(state_name, segment)
 	detail_btn = Button.new()
-	detail_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	detail_btn.position = Vector2(-70.0 - 130.0, -100.0)  # 취소 왼쪽
-	detail_btn.size = Vector2(120, 40)
-	detail_btn.add_theme_font_size_override("font_size", 18)
+	detail_btn.theme = card_dock.controls_theme
+	detail_btn.custom_minimum_size = Vector2(64, 36)
 	detail_btn.focus_mode = Control.FOCUS_NONE
 	detail_btn.pressed.connect(func():
 		tip_detail = not tip_detail
 		touch_tip_t = TOUCH_TIP_SEC * 3.0)  # 자세히는 읽을 게 많아 더 오래
 	detail_btn.visible = false
-	root.add_child(detail_btn)
+	card_dock.inspector_header.add_child(detail_btn)
+	card_dock.inspector_header.move_child(detail_btn, 1)
 	for b in [pause_btn, speed_btn, reroll_btn, skip_btn, skip_n_btn, skip_badge, auto_btn, start_btn, mute_btn, cancel_btn, bar_btn]:
 		b.focus_mode = Control.FOCUS_NONE
 	_update_auto_btn()
@@ -1294,7 +1308,7 @@ func _dps_head_input(e: InputEvent) -> void:
 	if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT:
 		if e.pressed:
 			dps_drag = 1
-			dps_press = par.get_local_mouse_position()
+			dps_press = (par.get_global_transform().affine_inverse() * _pointer_screen())
 			dps_press_t = 0.0
 		elif dps_drag > 0:
 			if dps_drag == 2:
@@ -1304,7 +1318,7 @@ func _dps_head_input(e: InputEvent) -> void:
 			dps_drag = 0
 		dps_head.accept_event()
 	elif e is InputEventMouseMotion and dps_drag == 1:
-		if par.get_local_mouse_position().distance_to(dps_press) > DPS_DRAG_MIN:
+		if (par.get_global_transform().affine_inverse() * _pointer_screen()).distance_to(dps_press) > DPS_DRAG_MIN:
 			_dps_pick()
 
 
@@ -1319,7 +1333,7 @@ func _dps_pick() -> void:
 ## 옮기는 동안 표 왼쪽 위 (손가락·마우스를 따라, 화면 안).
 func _dps_drag_pos() -> Vector2:
 	var par := dps_panel.get_parent() as Control
-	var p := par.get_local_mouse_position() - dps_grab
+	var p := (par.get_global_transform().affine_inverse() * _pointer_screen()) - dps_grab
 	return p.clamp(Vector2.ZERO, (par.size - dps_panel.size).max(Vector2.ZERO))
 
 
@@ -1459,7 +1473,7 @@ func _refresh_dps() -> void:
 	# 표 밑에 오브젝트가 있으면(위쪽 끝에 놓은 것) 마우스를 표에 올리지 않은 동안 옅게 해서 보이게
 	var pr := get_canvas_transform().affine_inverse() * dps_panel.get_global_rect()
 	var under := false
-	if not pr.has_point(get_global_mouse_position()):
+	if not pr.has_point(_pointer_world()):
 		for t in towers.get_children():
 			if pr.grow(14.0).has_point(t.position):
 				under = true
@@ -1470,8 +1484,8 @@ func _refresh_dps() -> void:
 				under = true
 				break
 	dps_panel.modulate.a = 0.4 if under and dps_drag != 2 else 1.0
-	# 누르는 자리 밑에 오브젝트가 있으면 표가 마우스를 받지 않아 오브젝트를 먼저 누르고 옮긴다 (점수 줄과 같은 규칙, UI-34)
-	var pass_thru := dps_drag == 0 and _tower_at(get_global_mouse_position()) != null and pr.has_point(get_global_mouse_position())
+	# 누르는 자리 밑에 오브젝트가 있으면 표가 마우스를 받지 않아 오브젝트를 먼저 누르고 옮긴다 (점수 줄과 같은 규칙, UI-36)
+	var pass_thru := dps_drag == 0 and _tower_at(_pointer_world()) != null and pr.has_point(_pointer_world())
 	_dps_mouse(not pass_thru)
 	# 기본: 점수 줄 아래, 왼쪽 아래 안내 글 위까지. 옮겨 뒀으면 그 자리(줄 수는 화면 아래까지)
 	var home := _dps_home()
@@ -2042,11 +2056,11 @@ func _help_text() -> String:
 		"공격방식·강화·연계 카드: 오브젝트 위에 놓기 (효과가 없는 강화는 못 넣음: 관통 연사·돌풍·철구에 관통·튕김, 벽에 유도, 벽·투척 장판에 분열)",
 		"오브젝트 끌기: 방향은 그대로 두고 옮기기 (카드를 고른 뒤에는 꾹 눌러서)",
 		"빈 곳 끌기 / Shift·Ctrl+클릭 / Ctrl+A(모두): 여러 개 선택 → 그중 하나를 끌면 함께 이동",
-		"쉬는 시간에 오브젝트 클릭: 그 자리에서 방향 바꾸기 (우클릭한 채 끌면 한 번에)",
+		"오브젝트 클릭: 선택 · 상세의 [방향 변경]으로 편집 (쉬는 시간에 우클릭한 채 끌면 바로 조준)",
 		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 비율 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
 		"왼쪽 위 DPS 표: 웨이브 중엔 최근 5초 실시간 DPS, 쉬는 시간엔 지난 웨이브 DPS와 비율. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기 (저장됨)",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
-		"F: 카드·설명 패널 접고 전체 전장 보기   P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
+		"F / V: 카드 패널 보기·접기   P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
 		"R: 처음부터 (일시정지 중 두 번) · 게임 오버 뒤 클릭·R·Esc: 시작 화면 (멀티 판은 대기방)",
 		"E: 판 끝내기 (일시정지 중 두 번) — 지금 점수로 게임 오버, 기록·온라인 순위에 올라감",
 		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 이어하기(Enter)로 그 쉬는 시간부터 (새로 시작은 N 두 번)",
@@ -2201,7 +2215,7 @@ func _can_skip() -> bool:
 
 ## 선택지(또는 특성) 화면에서 넘기기: 이번 쉬는 시간의 고르기를 쌓아 두고 웨이브를 시작한다.
 func _on_skip() -> void:
-	if phase not in [Phase.CHOOSE, Phase.READY] or not _can_skip() or title_label.visible:
+	if phase not in [Phase.CHOOSE, Phase.READY] or not _can_skip() or title_label.visible or get_tree().paused:
 		return
 	if TutPlay.on and tplay != null and not tplay.allow_skip():
 		_show_toast("웨이브 넘기기는 튜토리얼 마지막 장에서 해 봐요")
@@ -2305,8 +2319,10 @@ func _update_skip_ui() -> void:
 	hint.visible = not (show_btn and hint.get_global_rect().intersects(skip_btn.get_global_rect()))
 	if show_btn:
 		var n := int(Meta.skip_n)
-		skip_btn.tooltip_text = "웨이브 %d개 넘기기 (S)\n카드 선택을 미루고 웨이브를 연달아 진행합니다. 미룬 카드·새로고침·특성은 멈춘 뒤 한꺼번에 고릅니다\n중앙이 위험해지면(설정) 그 웨이브가 끝나고 멈춥니다" % n
-		skip_n_btn.text = "×%d ▸" % n
+		var deferred := "특성 선택 1회 보류" if perk_mode else "카드 선택 %d회 보류 · 새로고침 %d회 보류" % [picks_left, rerolls_left]
+		skip_btn.tooltip_text = "%d웨이브 넘기기 (S)\n%s\n미룬 카드·새로고침·특성은 멈춘 뒤 한꺼번에 고릅니다. 중앙이 위험해지면(설정) 그 웨이브가 끝나고 멈춥니다" % [n, deferred]
+		skip_btn.text = "넘기기"
+		skip_n_btn.text = "%d웨이브 ▸" % n
 	skip_badge.visible = skip_left > 0 and phase in [Phase.WAVE, Phase.READY] and not title_label.visible
 	if skip_badge.visible:
 		var done := skip_total - skip_left + 1
@@ -2565,13 +2581,10 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 	var col := _card_color(card)
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(230 if offer.size() <= 3 else 166, 170)
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.1, 0.11, 0.15, 0.96)
+	var sb := CardDock.surface()
 	sb.border_color = Color(col, 0.6)
-	sb.set_border_width_all(2)
-	sb.set_corner_radius_all(6)
 	var sbh := sb.duplicate()
-	sbh.bg_color = Color(0.16, 0.17, 0.22, 0.98)
+	sbh.bg_color = Color("223149")
 	b.add_theme_stylebox_override("normal", sb)
 	b.add_theme_stylebox_override("hover", sbh)
 	b.add_theme_stylebox_override("pressed", sbh)
@@ -2647,7 +2660,7 @@ func _card_content(card: Dictionary, lvl: int) -> Dictionary:
 		"mod":
 			var id: String = card["id"]
 			head["name"] = Pat.MODS[id]["name"]
-			rows = [{"t": "사거리 안 가까운 구체를 전방위 조준 · 최종 피해 -10% · 오브젝트당 1회" if id == "reflex" else Pat.mdesc(id)}]
+			rows = [{"t": "사거리 안 가까운 구체를 전방위로 조준해요. 최종 피해 -10% · 오브젝트당 1회" if id == "reflex" else Pat.mdesc(id)}]
 			foot = [["place_on", "오브젝트당 1회" if id == "reflex" else "위에 놓기 · " + ("종류별 %d · 합 %d" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "쌓을수록 절반")]]
 		"link":
 			var id: String = card["id"]
@@ -2730,12 +2743,12 @@ func _card_full(card: Dictionary) -> Array:
 			for t in towers.get_children():
 				if t.pattern == id:
 					out.append(["%s Lv%d → Lv%d 가능" % [Pat.pname(id), t.plv, t.plv + 1], D])
-			out.append(["직선탄 오브젝트에 넣으면 그 공격방식으로 고정, 같은 공격방식에 넣으면 레벨업", D])
+			out.append(["직선탄 오브젝트에 넣으면 그 공격방식으로 고정돼요. 같은 공격방식에 넣으면 레벨업해요.", D])
 		"mod":
 			if card["id"] == "reflex":
-				out.append(["전방위 자동 조준 · 최종 피해 -10%", W])
+				out.append(["전방위로 자동 조준해요. 최종 피해 -10%", W])
 				out.append(["사거리 안 최근접 구체 · 오브젝트당 1회", D])
-				out.append(["혼불·블랙홀에는 넣을 수 없음", D])
+				out.append(["혼불·블랙홀에는 넣을 수 없어요.", D])
 				return out
 			out.append([Pat.mdesc(card["id"]), W])
 			out.append(["오브젝트 위에 놓기 · " + ("종류별 %d개, 합쳐 %d개까지" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "쌓을수록 효과 절반씩"), D])
@@ -3201,7 +3214,9 @@ func _show_perks() -> void:
 		b.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
 		b.focus_mode = Control.FOCUS_NONE
 		b.set_meta("perk_desc", desc + ("\n\n" + coin if coin != "" else ""))
-		b.mouse_entered.connect(func(): card_dock.hovered = b)
+		b.mouse_entered.connect(func():
+			card_dock.inspected_tower = null
+			card_dock.hovered = b)
 		# 터치는 올리기가 없어 누르면 바로 골라졌다: 길게 누르면(0.45초) 고르지 않고 오른쪽에 자세히
 		b.gui_input.connect(func(ev: InputEvent):
 			if touch_ui and (ev is InputEventScreenTouch or (ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT)):
@@ -3210,6 +3225,7 @@ func _show_perks() -> void:
 					get_tree().create_timer(0.45).timeout.connect(func():
 						if perk_press == b and is_instance_valid(b) and perk_mode:
 							perk_peek = b
+							card_dock.inspected_tower = null
 							card_dock.hovered = b)
 				else:
 					perk_press = null)
@@ -3551,7 +3567,7 @@ func _perk_text() -> String:
 
 
 func _on_reroll() -> void:
-	if phase != Phase.CHOOSE or coin_stage > 0:
+	if phase != Phase.CHOOSE or get_tree().paused or coin_stage > 0:
 		return
 	if perk_mode:
 		_perk_reroll()
@@ -3592,6 +3608,12 @@ func _perk_can_reroll() -> bool:
 
 ## 새로고침 버튼: 남은 횟수를 같이 보여 준다.
 ## 선택지 내리기·올리기 (V): 카드에 가려진 필드를 본다. 마우스를 올린 오브젝트 범위·정보는 그대로 보인다.
+func _toggle_cards_hidden() -> void:
+	if card_dock.input_blocked():
+		return
+	_set_cards_hidden(not cards_hidden)
+
+
 func _set_cards_hidden(h: bool) -> void:
 	if phase != Phase.CHOOSE:
 		return
@@ -3893,13 +3915,13 @@ func _off_legend(r: Rect2) -> Rect2:
 func _info_blockers() -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	var inv := ui_root.get_global_transform().affine_inverse()
-	for c: Control in [hud, dps_panel, legend, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, guide_more,  mp_bar, ver_label, hint, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, aim_ok_btn, card_dock.focus_btn, card_dock.panel, card_dock.side, card_dock.held_chip]:
+	for c: Control in [hud, dps_panel, legend, range_btn, zoom_btn, start_btn, skip_badge, bar_box, toast, banner, guide_label, guide_more,  mp_bar, ver_label, hint, apply_btn, reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, cancel_btn, detail_btn, aim_ok_btn, card_dock.focus_btn, card_dock.panel, card_dock.side, card_dock.footer]:
 		if c == null or not c.is_visible_in_tree():
 			continue
 		if (c is Label and str(c.text) == "") or (c == hud and hud_chips.is_empty()):
 			continue
 		var r := inv * c.get_global_rect()
-		if c == hint:
+		if c == hint and not hint.has_theme_stylebox_override("normal"):
 			# 안내 글은 칸이 넓어도 글이 있는 곳만
 			var tw := minf(r.size.x, ui_font.get_multiline_string_size(hint.text, HORIZONTAL_ALIGNMENT_LEFT, r.size.x, 15).x)
 			r.size.x = tw + 4.0
@@ -3967,8 +3989,7 @@ func _draw_info() -> void:
 	var lo := size.y - 64.0
 	if card_dock.active():
 		top = maxf(top, card_dock.bounds().position.y)
-		lo = card_dock.bounds().end.y
-		size.x = card_dock.bounds().end.x
+		lo = size.y - 8.0
 	if hud.visible:
 		for ch in hud_chips:
 			tip_rects.append([Rect2(hud.position + ch[0].position, ch[0].size), ch[5]])
@@ -4031,6 +4052,11 @@ func _draw_info() -> void:
 			if far > 70.0 and far < 240.0:  # 너무 멀면 선이 화면을 가로질러 더 어지럽다 (글자 130%·길목 7곳)
 				# UI를 피해 화살표에서 멀리 비켜났으면 화살표 쪽으로 옅은 선 (어느 길목 배지인지 보이게)
 				var tip: Vector2 = xf * arr[0]
+				# 카드 뒤의 화살표까지 잇는 선은 패널 윗변에서 멈춘다.
+				if card_dock.panel.visible and tip.y > card_dock.panel.position.y:
+					var from := r.get_center()
+					var fraction := (card_dock.panel.position.y - 8 - from.y) / maxf(1, tip.y - from.y)
+					tip = from.lerp(tip, clampf(fraction, 0, 1))
 				var c0 := r.get_center()
 				var e0 := c0 + (tip - c0).normalized() * minf(r.size.x, r.size.y) * 0.5
 				info.draw_dashed_line(e0, tip - (tip - c0).normalized() * 14.0, Color(1, 0.4, 0.45, 0.35), 2.0, 6.0)
@@ -4197,7 +4223,7 @@ func _draw_wind_rings() -> void:
 ## 카드를 넣는 단계에서 모든 바람·별 둘레를 끌지: 새로 놓을 수 없는 카드(강화·연계 등)이거나 오브젝트 위에 올려 둔 동안.
 ## 둘레는 새 자리를 고를 때만 쓸모 있고, 여러 개가 겹치면 올린 오브젝트 설명·범위가 묻힌다. 올린 오브젝트 자기 둘레는 draw_range가 그린다.
 func _place_rings_off() -> bool:
-	return phase == Phase.PLACE and moving == null and not dragging and (picked.get("type", "") != "elem" or _tower_at(get_global_mouse_position()) != null)
+	return phase == Phase.PLACE and moving == null and not dragging and (picked.get("type", "") != "elem" or _tower_at(_pointer_world()) != null)
 
 
 ## 별 흡수 둘레: 오브젝트를 놓거나 옮기는 중엔 모든 별의 둘레(어디 두면 별빛을 주는지),
@@ -4476,10 +4502,12 @@ func _on_pick(card: Dictionary) -> void:
 	tap_sel = -1
 	_tap_hover()
 	picked = card
+	selected.clear()
 	hover_elem = -1
 	choice_box.visible = false
 	reroll_btn.visible = false
 	phase = Phase.PLACE
+	card_dock.inspected_tower = null
 	hint.text = _th(_place_hint())
 	if card_dock.active():
 		card_dock.tick()
@@ -4541,18 +4569,28 @@ func _start_wave_from_ready() -> void:
 
 ## 버튼 위에 아이콘을 그린다. 글이 있으면 왼쪽, 없으면 가운데. icon은 [아이콘, 색]을 돌려준다.
 func _icon_btn(b: Button, icon: Callable) -> void:
+	# 벡터 아이콘을 덧그려도 native 버튼이 글 옆의 아이콘 공간을 확보하게 한다.
+	var image := Image.create(18, 18, false, Image.FORMAT_RGBA8)
+	image.fill(Color.TRANSPARENT)
+	b.icon = ImageTexture.create_from_image(image)
+	b.add_theme_constant_override("h_separation", 8)
 	b.draw.connect(func():
 		var ic: Array = icon.call()
-		var x := b.size.x / 2.0
-		if b.text != "":
-			# 가운데 맞춘 글 바로 왼쪽
-			var tw := b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x
-			x = (b.size.x - tw) / 2.0 - 13.0
-		Glyph.ui(b, ic[0], Vector2(x, b.size.y / 2.0), 8.5, ic[1]))
+		Glyph.ui(b, ic[0], _button_icon_center(b), 8.5, ic[1]))
+
+
+func _button_icon_center(b: Button) -> Vector2:
+	var style := b.get_theme_stylebox("normal")
+	var left := style.get_content_margin(SIDE_LEFT)
+	var width := b.size.x - left - style.get_content_margin(SIDE_RIGHT)
+	var text_width := b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x
+	var content_width := 18.0 + (text_width + b.get_theme_constant("h_separation") if b.text != "" else 0.0)
+	return Vector2(left + (width - content_width) / 2.0 + 9, b.size.y / 2.0)
 
 
 ## 버튼 오른쪽 위 모서리에 작은 단축키 상자 (터치 화면에선 안 그림). key는 글 또는 글을 돌려주는 Callable.
 func _keycap(b: Button, key: Variant) -> void:
+	b.theme_type_variation = "ShortcutButton"
 	b.add_to_group("keycap")
 	b.draw.connect(func():
 		var k: String = key.call() if key is Callable else key
@@ -4603,13 +4641,7 @@ func _toggle_legend() -> void:
 
 ## 카드 도크·설명 칸을 접어 전장을 넓게 보거나 다시 연다 (F·모바일 버튼).
 func _toggle_focus_view() -> void:
-	if card_dock == null or not card_dock.available() or card_dock.carrying():
-		return
-	card_dock.full_field = not card_dock.full_field
-	if card_dock.full_field:
-		_clamp_pan()
-	else:
-		card_dock.tick()
+	_toggle_cards_hidden()
 
 
 func _toggle_bar() -> void:
@@ -5007,42 +5039,89 @@ func _abort_touch_action() -> void:
 		_cancel_step()
 
 
-## 터치인지 마우스인지 기억한다 (터치에서 흉내 낸 마우스 움직임은 장치 번호가 EMULATION).
+## OS 포인터를 조회하지 않고 입력 이벤트의 화면 좌표를 현재 카메라로 변환한다.
+var pointer_position := Vector2.ZERO
+
+
+func _pointer_screen() -> Vector2:
+	return pointer_position
+
+
+func _pointer_world() -> Vector2:
+	return get_canvas_transform().affine_inverse() * pointer_position
+
+
+## 터치에서 흉내 낸 마우스는 장치 번호 EMULATION으로 구분한다.
 func _input(event: InputEvent) -> void:
-	# 누르는 순간 DPS 표 밑 오브젝트를 다시 본다 (터치는 누르기 전 마우스 자리가 옛 자리라 지난 프레임 판정이 틀릴 수 있다)
+	var was_touch := touch_ui
+	if event is InputEventMouse:
+		pointer_position = event.position
+	if event is InputEventScreenTouch or event is InputEventScreenDrag:
+		pointer_position = event.position
+		touch_ui = true
+		touch_tip_t = TOUCH_TIP_SEC
+	elif event is InputEventMouseMotion and event.device != InputEvent.DEVICE_ID_EMULATION:
+		touch_ui = false
+	if touch_ui != was_touch:
+		get_tree().call_group("keycap", "queue_redraw")
+		if legend:
+			_refresh_legend()
 	if dps_panel != null and dps_panel.visible and dps_drag == 0 and ((event is InputEventMouseButton or event is InputEventScreenTouch) and event.pressed):
 		var wp: Vector2 = get_canvas_transform().affine_inverse() * event.position
 		var pr := get_canvas_transform().affine_inverse() * dps_panel.get_global_rect()
 		_dps_mouse(not (pr.has_point(wp) and _tower_at(wp) != null))
 	if mp_mode != "" and ((event is InputEventMouseButton or event is InputEventScreenTouch or event is InputEventKey) and event.pressed):
 		_mp_presence()
-	if card_dock != null and card_dock.handle_input(event):
+	if _info_input(event) or (card_dock != null and card_dock.handle_input(event)) or _zoom_input(event):
 		get_viewport().set_input_as_handled()
-		return
-	if _zoom_input(event):
-		get_viewport().set_input_as_handled()
-		return
-	var was_touch := touch_ui
-	if event is InputEventScreenTouch or event is InputEventScreenDrag:
-		touch_tip_t = TOUCH_TIP_SEC
-	if event is InputEventScreenTouch:
-		touch_ui = true
-		if event.pressed:
-			# 칩·배지를 누르면 말풍선 (다시 누르거나 다른 곳을 누르면 닫힘)
-			var p: Vector2 = ui_root.get_global_transform().affine_inverse() * event.position
-			var was := tip_pin
-			tip_pin = -1
-			for i in tip_rects.size():
-				if tip_rects[i][0].has_point(p):
-					tip_pin = -1 if was == i else i
-					get_viewport().set_input_as_handled()
-					break
-	elif event is InputEventMouseMotion and event.device != InputEvent.DEVICE_ID_EMULATION:
-		touch_ui = false
-	if touch_ui != was_touch:
-		get_tree().call_group("keycap", "queue_redraw")  # 모서리 단축키 상자는 터치에서 숨긴다
-	if touch_ui != was_touch and legend:
-		_refresh_legend()  # 설명의 키 안내(도감 K)를 터치·마우스에 맞게
+
+
+func _info_tip_at(screen: Vector2) -> int:
+	if hud.is_visible_in_tree() and hud.get_global_rect().has_point(screen) and card_dock._tower_under(screen):
+		return -1
+	var at := ui_root.get_global_transform().affine_inverse() * screen
+	for i in range(tip_rects.size() - 1, -1, -1):
+		if tip_rects[i][0].has_point(at):
+			return i
+	return -1
+
+
+## 원래 터치와 흉내 낸 마우스의 누름/뗌을 각각 소비해 뒤 전장으로 넘기지 않는다.
+func _info_input(event: InputEvent) -> bool:
+	if card_dock == null or card_dock.input_blocked():
+		info_mouse_capture = false
+		info_touch_capture = -1
+		return false
+	if event is InputEventMouseMotion and info_mouse_capture:
+		return true
+	if event is InputEventScreenDrag and event.index == info_touch_capture:
+		return true
+	var mouse: bool = event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT
+	var touch: bool = event is InputEventScreenTouch
+	if mouse and not event.pressed and info_mouse_capture:
+		info_mouse_capture = false
+		return true
+	if touch and not event.pressed and event.index == info_touch_capture:
+		info_touch_capture = -1
+		return true
+	if not (mouse or touch) or not event.pressed:
+		return false
+	var at: Vector2 = (event as InputEventScreenTouch).position if touch else (event as InputEventMouseButton).position
+	var was := tip_pin
+	if touch:
+		tip_pin = -1
+	if card_dock.over_ui(at, false):
+		return false
+	var hit := _info_tip_at(at)
+	if hit < 0:
+		return false
+	_abort_touch_action()
+	if touch:
+		info_touch_capture = event.index
+		tip_pin = -1 if was == hit else hit
+	else:
+		info_mouse_capture = true
+	return true
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -5114,6 +5193,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				KEY_M:
 					_toggle_mute()  # 시작 화면에도 소리 버튼이 보인다
 			return
+		if get_tree().paused and event.keycode not in [KEY_ESCAPE, KEY_P, KEY_R, KEY_E, KEY_T, KEY_X, KEY_H, KEY_M, KEY_D, KEY_F11]:
+			return
 		if event.keycode == KEY_ESCAPE and phase == Phase.GAMEOVER:
 			if Time.get_ticks_msec() - over_ms > 800:
 				title_seen = false
@@ -5152,14 +5233,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			elif phase in [Phase.CHOOSE, Phase.READY]:
 				_on_skip()
 		elif event.keycode == KEY_V and phase == Phase.CHOOSE:
-			_set_cards_hidden(not cards_hidden)
+			_toggle_cards_hidden()
 		elif event.keycode == KEY_Z and phase == Phase.CHOOSE and not perk_mode:
 			_set_card_detail(not Meta.card_detail)
 		elif event.keycode == KEY_D and phase in [Phase.CHOOSE, Phase.READY, Phase.WAVE]:
 			_toggle_dps()
 		elif event.keycode == KEY_A and (event.ctrl_pressed or event.meta_pressed) and phase in [Phase.CHOOSE, Phase.READY] and not perk_mode:
 			# 모두 선택: 한꺼번에 옮길 때
-			selected = towers.get_children()
+			selected = _my_towers()
 			_restore_hint()
 		elif event.keycode == KEY_R and phase == Phase.GAMEOVER:
 			if Time.get_ticks_msec() - over_ms > 800:
@@ -5173,16 +5254,25 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_speed()
 		elif event.keycode == KEY_SPACE and phase == Phase.CHOOSE:
 			_show_toast(("특성을" if perk_mode else "선택지를") + " 먼저 고르세요 (1·2·3 또는 클릭)")
-		elif event.keycode == KEY_ESCAPE and (phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] or press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
+		elif event.keycode == KEY_ESCAPE and not get_tree().paused and (phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] or press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
 			_cancel_step()
+		elif event.keycode == KEY_ESCAPE and not get_tree().paused and card_dock.side.visible:
+			card_dock.close_inspector()
+			_restore_hint()
 		elif event.keycode == KEY_P or event.keycode == KEY_ESCAPE:
 			_toggle_pause()
 	if get_tree().paused:
 		return
+	if event is InputEventMouseButton and not card_dock.input_blocked() and card_dock.over_ui(event.position):
+		if not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			_drop_press()
+			boxing = false
+			aim_hold = false
+		return
 	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_RIGHT and aim_right:
 		aim_right = false
 		if phase == Phase.AIM:
-			if get_global_mouse_position().distance_to(place_pos) > 30.0:
+			if _pointer_world().distance_to(place_pos) > 30.0:
 				_confirm_aim()
 			else:
 				_cancel_step()  # 거의 안 끌고 뗀 우클릭: 그대로 둔다
@@ -5198,7 +5288,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_aim_release()
 			return
 		# 누른 채 끌어서 놓으면 그 방향으로 바로 확정
-		if phase == Phase.AIM and get_global_mouse_position().distance_to(place_pos) > 40.0 and Time.get_ticks_msec() - aim_start_ms > 150:
+		if phase == Phase.AIM and _pointer_world().distance_to(place_pos) > 40.0 and Time.get_ticks_msec() - aim_start_ms > 150:
 			_confirm_aim()
 		return
 	if not (event is InputEventMouseButton and event.pressed):
@@ -5212,7 +5302,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	# 오브젝트를 우클릭한 채 끌기: 그 자리에서 방향만 바꾸고, 떼면 확정
 	if event.button_index == MOUSE_BUTTON_RIGHT and phase in [Phase.CHOOSE, Phase.READY] and not perk_mode and not title_label.visible \
 			and not (settings_panel.visible or notes_panel.visible or codex_panel.visible or vote_panel.visible or records_panel.visible or help_label.visible):
-		var rt := _tower_at(get_global_mouse_position())
+		var rt := _tower_at(_pointer_world())
 		if rt and _mine(rt):
 			_start_move(rt)
 			aim_right = phase == Phase.AIM
@@ -5241,7 +5331,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if card_dock != null and card_dock.over_ui(event.position):
 		return
-	var mpos := get_global_mouse_position()
+	var mpos := _pointer_world()
+	if event.button_index == MOUSE_BUTTON_LEFT and phase in [Phase.CHOOSE, Phase.READY, Phase.WAVE] and _tower_at(mpos) == null:
+		card_dock.inspected_tower = null
+		tip_tower = null
+		if not (Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META)):
+			selected.clear()
 	if perk_mode:
 		return
 	if phase == Phase.WAVE and skill_arm != "":
@@ -5250,10 +5345,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			skill_arm = ""
 		return
+	if phase == Phase.WAVE and event.button_index == MOUSE_BUTTON_LEFT:
+		var t := _tower_at(mpos)
+		if t:
+			_select_tower(t)
+		return
 	if phase in [Phase.CHOOSE, Phase.READY] and event.button_index == MOUSE_BUTTON_LEFT:
 		var t := _tower_at(mpos)
 		if t:
-			# 짧게 클릭: 그 자리에서 방향 바꾸기, Shift/Ctrl+클릭: 선택에 더하기·빼기, 끌기: 바로 이동
+			# 짧게 클릭: 선택, Shift/Ctrl+클릭: 선택에 더하기·빼기, 끌기: 바로 이동
 			_begin_press(t, mpos)
 		else:
 			# 빈 곳을 끌면 선택 상자
@@ -5408,7 +5508,10 @@ func _begin_press(t: Tower, mpos: Vector2) -> void:
 		if phase == Phase.PLACE and _req_ok(t):
 			_place_on(t)  # 요청한 속성을 넣어 주기 (옮기지는 못함)
 			return
-		_show_toast("친구가 놓은 오브젝트는 바꿀 수 없어요")
+		if phase in [Phase.CHOOSE, Phase.READY]:
+			_select_tower(t)
+		else:
+			_show_toast("친구가 놓은 오브젝트는 바꿀 수 없어요")
 		return
 	press_t = t
 	press_pos = mpos
@@ -5420,16 +5523,16 @@ func _begin_press(t: Tower, mpos: Vector2) -> void:
 func _update_press() -> void:
 	if not press_t:
 		return
-	if not phase in [Phase.PLACE, Phase.CHOOSE, Phase.READY] or not is_instance_valid(press_t):
+	if card_dock.input_blocked() or not phase in [Phase.PLACE, Phase.CHOOSE, Phase.READY] or not is_instance_valid(press_t) or not _mine(press_t):
 		_drop_press()
 		return
-	var mpos := get_global_mouse_position()
+	var mpos := _pointer_world()
 	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_release_press()
 		return
 	if not dragging and (mpos.distance_to(press_pos) > 12.0 or Time.get_ticks_msec() - press_ms >= 350):
 		dragging = true
-		drag_group = selected.duplicate() if press_t in selected else [press_t]
+		drag_group = selected.filter(func(t): return is_instance_valid(t) and _mine(t)) if press_t in selected else [press_t]
 		drag_origs = drag_group.map(func(t): return t.position)
 		for t in drag_group:
 			t.place_pop = 1.0
@@ -5450,6 +5553,10 @@ func _update_press() -> void:
 
 ## 누른 오브젝트에서 손을 뗐을 때: 끌었으면 그 자리에 두고, 짧은 클릭이면 원래 클릭 동작.
 func _release_press() -> void:
+	if card_dock.input_blocked() or card_dock.over_ui(_pointer_screen()):
+		_drop_press()
+		_restore_hint()
+		return
 	var t := press_t
 	press_t = null
 	if not is_instance_valid(t) or not phase in [Phase.PLACE, Phase.CHOOSE, Phase.READY]:
@@ -5465,8 +5572,7 @@ func _release_press() -> void:
 				selected.append(t)
 			_restore_hint()
 		else:
-			selected.clear()
-			_start_move(t)
+			_select_tower(t)
 		return
 	dragging = false
 	# 놓을 수 없는 자리가 하나라도 있으면 모두 원래 자리로
@@ -5516,7 +5622,10 @@ func _drop_press() -> void:
 ## 선택 상자를 놓았을 때: 상자 안 오브젝트 선택 (Shift/Ctrl: 기존 선택에 더함). 짧은 클릭이면 선택 해제.
 func _finish_box() -> void:
 	boxing = false
-	var r := Rect2(box_start, get_global_mouse_position() - box_start).abs()
+	if card_dock.input_blocked() or card_dock.over_ui(_pointer_screen()):
+		_restore_hint()
+		return
+	var r := Rect2(box_start, _pointer_world() - box_start).abs()
 	var add := Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META)
 	if not add:
 		selected.clear()
@@ -5525,6 +5634,20 @@ func _finish_box() -> void:
 			if r.grow(Tower.RADIUS * 0.5).has_point(t.position) and not t in selected and _mine(t):
 				selected.append(t)
 	_restore_hint()
+
+
+func _select_tower(t: Tower) -> void:
+	selected = [t] if _mine(t) else []
+	card_dock.dismissed_tower = null
+	card_dock.hovered = null
+	card_dock.inspected_tower = t
+	tip_tower = t
+	_restore_hint()
+
+
+func _edit_selected_direction() -> void:
+	if phase in [Phase.CHOOSE, Phase.READY] and not card_dock.input_blocked() and selected.size() == 1 and is_instance_valid(selected[0]) and _mine(selected[0]):
+		_start_move(selected[0])
 
 
 ## 단계에 맞는 안내 문구로 되돌린다 (선택 중이면 선택 안내).
@@ -5557,7 +5680,7 @@ func _ok_btn_on() -> bool:
 ## 오브젝트를 짧게 다시 누르면(끌지 않고 떼면) 붙잡아 둔 방향으로 확정.
 func _aim_release() -> void:
 	aim_hold = false
-	var d := get_global_mouse_position() - place_pos
+	var d := _pointer_world() - place_pos
 	if d.length() >= AIM_TOUCH_MIN:
 		aim_d = d.normalized()
 		aim_wait = true
@@ -8223,15 +8346,17 @@ func _cancel_step() -> void:
 		boxing = false
 		return
 	if not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY]:
-		selected.clear()
+		card_dock.close_inspector()
 		_restore_hint()
 		return
 	if moving:
+		var t := moving
 		moving.position = move_orig_pos
 		moving.set_attack_direction(move_orig_dir)
 		moving.queue_redraw()
 		moving = null
 		_end_move()
+		_select_tower(t)
 		return
 	if phase == Phase.AIM:
 		phase = Phase.PLACE
@@ -8243,7 +8368,6 @@ func _cancel_step() -> void:
 ## 선택지를 그대로 둔 채 오브젝트 고르기로 돌아간다.
 func _back_to_choose() -> void:
 	card_dock.clear_gesture()
-	card_dock.full_field = false
 	cards_hidden = false
 	tap_sel = offer.find(picked)
 	for button: Button in choice_box.get_children():
@@ -8259,16 +8383,21 @@ func _back_to_choose() -> void:
 
 ## 방향 바꾸기를 끝내고 원래 단계로.
 func _end_move() -> void:
+	card_dock.clear_gesture()
+	card_dock.close_inspector()
 	aim_right = false
 	if move_return == Phase.READY:
 		_enter_ready()
 	else:
-		_back_to_choose()
+		phase = Phase.CHOOSE
+		_set_cards_hidden(move_cards_hidden)
+		_restore_hint()
+		_save_run()
 
 
-## 쉬는 시간에 설치된 오브젝트를 클릭(또는 우클릭한 채 끌기)하면 그 자리에서 방향을 다시 정한다.
-## 옮기기는 끌기·꾹 누르기로 따로 한다 (예전엔 클릭 → 새 자리 → 방향, 방향만 바꿀 때도 제자리를 다시 눌러야 했다).
+## 선택한 오브젝트의 [방향 변경] 또는 우클릭 끌기로 제자리 방향을 편집한다.
 func _start_move(t: Tower) -> void:
+	move_cards_hidden = cards_hidden
 	move_return = phase
 	start_btn.visible = false
 	moving = t
@@ -8290,6 +8419,8 @@ func _toggle_pause() -> void:
 	if phase == Phase.GAMEOVER or title_label.visible:
 		return
 	get_tree().paused = not get_tree().paused
+	if get_tree().paused:
+		_abort_touch_action()
 	paused_label.visible = get_tree().paused
 	pause_box.visible = get_tree().paused
 	paused_label.text = _pause_text()
@@ -8562,7 +8693,7 @@ func _draw_skill_fx() -> void:
 		var k: float = 1.0 - q[2] / 0.5
 		fx_layer.draw_arc(q[0], q[1] * (0.6 + 0.4 * k), 0, TAU, 48, Color(q[3], 0.9 * (1.0 - k)), 4.0)
 	if skill_arm != "" and phase == Phase.WAVE:
-		var mp := get_global_mouse_position()
+		var mp := _pointer_world()
 		var col: Color = Skill.COLORS[skill_arm]
 		if skill_arm == "focus":
 			var t := Skill.focus_tower(self, mp)
@@ -9115,8 +9246,8 @@ func _process(delta: float) -> void:
 	if coin_stage > 0 and not get_tree().paused:
 		_coin_step(delta)
 	touch_tip_t -= delta
-	# 터치 [자세히]: 오브젝트 정보창이 떠 있는 동안만 (취소 버튼 왼쪽)
-	var tip_on := touch_ui and Engine.get_process_frames() - tip_frame <= 2 and not title_label.visible
+	# 터치 자세히는 유지 중인 인스펙터를 기준으로 표시한다.
+	var tip_on := touch_ui and not title_label.visible and (is_instance_valid(card_dock.inspected_tower) if card_dock.active() else Engine.get_process_frames() - tip_frame <= 2)
 	if touch_ui or phase == Phase.PLACE:
 		fx_layer.queue_redraw()  # PLACE: 올린 오브젝트 설명(place_note)이 마우스를 따라가게. 정보창이 떠 있는지(tip_frame)를 매 프레임 알도록 (쉬는 시간엔 다시 그리지 않는 프레임이 있다)
 	if not tip_on:
@@ -9257,6 +9388,7 @@ func _process(delta: float) -> void:
 	mute_btn.visible = not in_game or bar_open
 	auto_btn.visible = not in_game or bar_open
 	pause_btn.visible = in_game and bar_open
+	speed_group.visible = in_game and bar_open
 	speed_btn.visible = in_game and bar_open
 	speed_pick.visible = in_game and bar_open
 	fx_pick.visible = in_game and bar_open
@@ -9290,21 +9422,16 @@ func _process(delta: float) -> void:
 	_soften_fx()
 	queue_redraw()
 	info.queue_redraw()
-	if phase == Phase.MOVE and moving:
-		moving.position = get_global_mouse_position().clamp(field_rect().position, field_rect().end)
+	if phase == Phase.MOVE and moving and not get_tree().paused:
+		moving.position = _pointer_world().clamp(field_rect().position, field_rect().end)
 	_update_press()
 	if boxing and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_finish_box()  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
-	hide_btn.visible = phase == Phase.CHOOSE and not title_label.visible and coin_stage == 0
-	card_detail_btn.visible = hide_btn.visible and not cards_hidden and not perk_mode
+	card_detail_btn.visible = phase == Phase.CHOOSE and not title_label.visible and coin_stage == 0 and not cards_hidden and not perk_mode
 	_update_skip_ui()
 	cancel_btn.visible = phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] and not title_label.visible and not get_tree().paused
-	hide_btn.text = _kh("▲ 선택지 보기 (V)") if cards_hidden else ""
-	hide_btn.tooltip_text = "선택지를 다시 올린다" if cards_hidden else "필드 보기 (V): 선택지를 내리고 카드에 가려진 필드를 본다"
 	if speed_btn.visible:
 		speed_btn.queue_redraw()
-	# 펼쳐 있으면 카드 바로 아래 새로고침 버튼 옆, 내려 두면 화면 위쪽 가운데
-	hide_btn.set_anchors_preset(Control.PRESET_CENTER_TOP if cards_hidden else Control.PRESET_CENTER)
 	# 카드 줄은 오른쪽 설명을 피해 왼쪽으로 비켜 있다. 설명을 숨기면 가운데로, 버튼도 카드 가운데에 맞춘다
 	var cx := 0.0 if legend_hidden else -75.0
 	# 카드 4장이 오른쪽 설명 밑으로 들어가면(글자 크게) 쉬는 시간 동안 설명을 접고 가운데로
@@ -9340,8 +9467,8 @@ func _process(delta: float) -> void:
 	var by := choice_box.offset_top + ch * k + 8.0
 	# 카드 밑 한 줄 그림 버튼: [새로고침 N] [필드 보기] [넘기기] [×N]. 없는 버튼 자리는 당겨 가운데 맞춘다
 	var row: Array = []
-	for bt in [reroll_btn, card_detail_btn, hide_btn, skip_btn, skip_n_btn, apply_btn]:
-		if bt.visible and not (bt == hide_btn and cards_hidden):
+	for bt in [reroll_btn, card_detail_btn, skip_btn, skip_n_btn, apply_btn]:
+		if bt.visible:
 			row.append(bt)
 	var bw := {reroll_btn: 96.0, card_detail_btn: 104.0, hide_btn: 76.0, skip_btn: 76.0, skip_n_btn: 76.0}
 	if apply_btn.visible:
@@ -9368,12 +9495,6 @@ func _process(delta: float) -> void:
 			bt.offset_top = sy
 			bt.offset_bottom = sy + 40.0
 			sx += 86.0
-	if cards_hidden:
-		var hy := maxf(96.0, hud.position.y + hud.size.y + 8.0)  # 내려 둘 때는 점수 줄 아래
-		hide_btn.offset_left = -130.0
-		hide_btn.offset_right = 130.0
-		hide_btn.offset_top = hy
-		hide_btn.offset_bottom = hy + 32.0
 	_start_btn_layout()
 	_skill_ui()
 	card_dock.tick()
@@ -9897,7 +10018,7 @@ func _update_fx(delta: float) -> void:
 ## 마우스를 올린 오브젝트의 정보.
 func _draw_tooltip() -> void:
 	tip_orb = null
-	if card_dock != null and card_dock.full_field:
+	if card_dock != null and cards_hidden:
 		return  # 전장 넓게 보기에서는 마우스 정보창도 접는다
 	# 터치는 마우스를 올려 둘 수 없으니, 눌러서 옮기기 시작한 오브젝트의 정보를 보여 준다
 	var touch_move := phase == Phase.MOVE and touch_ui and moving != null
@@ -9908,12 +10029,12 @@ func _draw_tooltip() -> void:
 	# 터치는 손을 뗀 자리에 마우스가 남는다: 누르고 3초가 지나면 정보창을 닫는다
 	if touch_ui and not touch_move and not touch_aim and touch_tip_t <= 0.0:
 		return
-	if dps_panel.visible and dps_panel.get_global_rect().has_point(dps_panel.get_global_mouse_position()):
+	if dps_panel.visible and dps_panel.get_global_rect().has_point(_pointer_screen()):
 		return  # DPS 표 위: 표 뒤에 가린 오브젝트 정보창이 뜨지 않게
-	var t := moving if touch_move or touch_aim else _tower_at(get_global_mouse_position())
+	var t := moving if touch_move or touch_aim else _tower_at(_pointer_world())
 	# 터치로 [자세히]를 누르면 손가락이 버튼으로 가서 정보창이 사라졌다: 방금 보던 오브젝트를 이어서
 	if t == null and touch_ui and is_instance_valid(tip_tower) and detail_btn.visible \
-			and detail_btn.get_global_rect().has_point(get_viewport().get_mouse_position()):
+			and detail_btn.get_global_rect().has_point(_pointer_screen()):
 		t = tip_tower
 	if t != null:
 		tip_tower = t
@@ -9929,7 +10050,7 @@ func _draw_tooltip() -> void:
 	var maxw := minf(620.0 * z, _right_limit() - 24.0)  # 이보다 긴 줄은 접는다 (속성이 많으면 화면 밖으로 나가던 것)
 	var lines: Array = []  # [글자, 색]
 	var head := t.title()
-	var tip := "(클릭: 방향 · 끌기: 옮기기)" if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
+	var tip := "(클릭: 선택 · 상세에서 방향 변경 · 끌기: 옮기기)" if phase in [Phase.CHOOSE, Phase.READY] and not perk_mode else ""
 	# Shift를 누르고 있으면 공격력·공격 속도·사거리 같은 수치를 자세히
 	var detail := _tip_detail_on() and not touch_move
 	tip = _th(tip)
@@ -10042,7 +10163,7 @@ func _draw_tooltip() -> void:
 	var size := vw.end  # 화면 오른쪽 아래 끝 (월드 좌표. 폰은 전장 밖 양옆까지)
 	size.y = _tip_bottom()
 	var p := t.position + Vector2(28, -h / 2)
-	if touch_aim and get_global_mouse_position().x > t.position.x:
+	if touch_aim and _pointer_world().x > t.position.x:
 		p.x = t.position.x - 28.0 - (w + 16.0)  # 손가락(쏠 쪽) 반대편에
 	p.x = clampf(p.x, vw.position.x + 8, _right_limit() - w - 16)
 	var top := _tip_top()
@@ -10076,7 +10197,9 @@ func _tip_detail_on() -> bool:
 func _ring_target() -> Tower:
 	if not _tip_detail_on():
 		return null
-	var h := _tower_at(get_global_mouse_position())
+	if card_dock.active() and card_dock.side.visible:
+		return card_dock.shown_tower
+	var h := _tower_at(_pointer_world())
 	if h == null and touch_ui and is_instance_valid(tip_tower) and Engine.get_process_frames() - tip_frame <= 2:
 		h = tip_tower
 	return h
@@ -10103,7 +10226,7 @@ func _draw_tip_ctrl(at: Vector2, fs: int, lh: float, acts: bool) -> void:
 	var x := at.x
 	var y := at.y + lh * 0.5
 	var dim := Color(1, 1, 1, 0.6)
-	var items := [["click", "방향"], ["drag", "옮기기"], ["Shift", "자세히"]] if acts else [["Shift", "자세히"]]
+	var items := [["click", "선택"], ["drag", "옮기기"], ["Shift", "자세히"]] if acts else [["Shift", "자세히"]]
 	for it in items:
 		if it[0] == "Shift":
 			var kw := ui_font.get_string_size("Shift", HORIZONTAL_ALIGNMENT_LEFT, -1, f - 1).x + 8.0
@@ -10170,7 +10293,7 @@ func _avoid_cards(r: Rect2, size: Vector2) -> Vector2:
 
 ## 마우스를 올린 구체의 체력·상태.
 func _draw_orb_tooltip() -> void:
-	var m := get_global_mouse_position()
+	var m := _pointer_world()
 	# 작은 구체도 잡기 쉽게 최소 14 안, 여럿이면 가장 가까운 것
 	var o: Orb = null
 	var bd := INF
@@ -10514,6 +10637,7 @@ func _shatter(p: Projectile) -> void:
 # ---------- 그리기 ----------
 
 func _draw() -> void:
+	place_label_rect = Rect2()
 	var size := Meta.FIELD
 	var vw := view_rect()
 	var mp: Dictionary = Meta.MAPS[Meta.map_id]
@@ -10594,7 +10718,7 @@ func _draw() -> void:
 		for k in 4:
 			draw_circle(lf[0], 40.0 + k * 34.0, Color(1, 0.15, 0.2, 0.16 * f * (1.0 - k * 0.22)))
 
-	var mpos := get_global_mouse_position()
+	var mpos := _pointer_world()
 	if card_dock.active():
 		var preview := card_dock.preview_card()
 		if not preview.is_empty():
@@ -10675,10 +10799,10 @@ func _draw() -> void:
 			draw_circle(at, Tower.RADIUS, Color(col, 0.4))
 			var near := at.distance_to(c) < 50.0
 			var lbl := "중앙과 너무 가까움" if near else "새로 설치 (직선탄)"
-			draw_string(ui_font, at + Vector2(-40, Tower.RADIUS + 20), lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 0.5, 0.5) if near else Color(1, 1, 1, 0.7))
+			_draw_place_label(at + Vector2(-40, Tower.RADIUS + 20), lbl, Color(1, 0.5, 0.5) if near else Color(1, 1, 1, 0.7))
 		else:
 			draw_arc(mpos, 10.0, 0, TAU, 20, Color(col, 0.8), 2.0)
-			draw_string(ui_font, mpos + Vector2(-50, 28), "오브젝트 위에 놓기", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 1, 1, 0.7))
+			_draw_place_label(mpos + Vector2(-50, 28), "오브젝트 위에 놓기", Color(1, 1, 1, 0.7))
 	elif phase == Phase.AIM:
 		var sp: Dictionary = moving.spec() if moving else {"els": {picked["e"]: picked["lv"]}, "pat": Pat.DEFAULT, "plv": 1, "mods": {}}
 		var col: Color = Elem.COLORS[sp["els"].keys()[0]]
@@ -10687,7 +10811,7 @@ func _draw() -> void:
 		var d := _aim_dir(place_pos)
 		if d != Vector2.ZERO:
 			Tower.draw_range(self, place_pos, d, sp)
-			if moving:
+			if moving and not get_tree().paused:
 				moving.set_attack_direction(d)
 			draw_line(place_pos, place_pos + d * (Tower.RADIUS + 14.0), Color.WHITE, 3.0)
 	# 마우스를 올린 오브젝트의 공격 범위
@@ -10721,7 +10845,7 @@ func _draw() -> void:
 			if is_instance_valid(t):
 				Tower.draw_range(self, t.position, t.dir, t.spec())
 	elif phase in [Phase.CHOOSE, Phase.WAVE, Phase.READY]:
-		var hov := _tower_at(mpos)
+		var hov := _tower_at(mpos) if not card_dock.over_ui(_pointer_screen()) else null
 		if hov == null:
 			hov = _ring_target()
 		if hov:
@@ -10746,10 +10870,25 @@ func _draw() -> void:
 		draw_rect(r, Color(0.5, 0.9, 1.0, 0.8), false, 1.5)
 
 
+func _draw_place_label(at: Vector2, text: String, color: Color) -> void:
+	var visible := view_rect().grow(-8)
+	var width := ui_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+	at.x = clampf(at.x, visible.position.x, maxf(visible.position.x, visible.end.x - width))
+	at.y = clampf(at.y, visible.position.y + 14, visible.end.y)
+	var avoid: Array[Rect2] = []
+	var to_world := get_canvas_transform().affine_inverse() * ui_root.get_global_transform()
+	for rect in _info_blockers():
+		avoid.append(to_world * rect)
+	avoid.append(Rect2(_pointer_world() - Vector2(24, 24), Vector2(48, 48)))
+	place_label_rect = _free_badge(Rect2(at - Vector2(0, 14), Vector2(width, 18)), Vector2.UP, avoid, visible)
+	draw_string(ui_font, place_label_rect.position + Vector2(0, 14), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, color)
+
+
 ## 카드를 넣을 오브젝트에 올렸을 때의 설명 글 (main._draw가 place_note에 담고, 오브젝트 위에 보이게 fx_layer가 그린다).
 ## 어두운 상자에 담아 다른 오브젝트·중앙을 가장 덜 가리는 자리(위·아래·옆, 조금씩 떨어진 곳까지)에 띄운다.
 ## 넣을 수 없으면 빨간 고리 + 큰 ✕ + "넣을 수 없음" 한 줄만.
 func _draw_place_note(ci: CanvasItem) -> void:
+	place_note_rect = Rect2()
 	if place_note.is_empty() or phase != Phase.PLACE or not is_instance_valid(place_note["t"]):
 		return
 	var target: Tower = place_note["t"]
@@ -10785,6 +10924,10 @@ func _draw_place_note(ci: CanvasItem) -> void:
 	var blocks: Array = [[center(), CORE_RADIUS + 16.0]]
 	for t in towers.get_children():
 		blocks.append([t.position, Tower.RADIUS + 4.0])
+	var ui_blocks: Array[Rect2] = []
+	var to_world := get_canvas_transform().affine_inverse() * ui_root.get_global_transform()
+	for rect in _info_blockers():
+		ui_blocks.append(to_world * rect)
 	var best := Rect2()
 	var best_s := INF
 	for p: Vector2 in cands:
@@ -10795,9 +10938,13 @@ func _draw_place_note(ci: CanvasItem) -> void:
 			var bp: Vector2 = bl[0]
 			if bp.clamp(r.position, r.end).distance_to(bp) < bl[1]:
 				sc += 10.0
+		for rect in ui_blocks:
+			if r.intersects(rect):
+				sc += 1000.0 + r.intersection(rect).get_area()
 		if sc < best_s:
 			best_s = sc
 			best = r
+	place_note_rect = best
 	var near := o.clamp(best.position, best.end)
 	if near.distance_to(o) > gap + 20.0:
 		# 떨어진 자리면 오브젝트까지 가는 가는 선
@@ -10868,7 +11015,7 @@ func _draw_line_map(size: Vector2, mp: Dictionary, now: float) -> void:
 ## 방향 고르기. Shift를 누르면 15도 단위로 맞춘다.
 ## 터치: 손가락을 오브젝트에서 조금 떼어 대고 있는 동안만 손가락 쪽, 아니면 붙잡아 둔 방향(aim_d).
 func _aim_dir(from: Vector2) -> Vector2:
-	var d := get_global_mouse_position() - from
+	var d := _pointer_world() - from
 	if touch_ui and phase == Phase.AIM and (not aim_hold or d.length() < AIM_TOUCH_MIN):
 		return aim_d
 	if d.length() < 5.0:
@@ -12238,7 +12385,7 @@ func _mp_cursor_tick(delta: float) -> void:
 	mp_cur_t += delta
 	if mp_cur_t >= 1.0 / MP_CUR_HZ:
 		mp_cur_t = 0.0
-		var m := get_global_mouse_position()
+		var m := _pointer_world()
 		if m.distance_to(mp_cur_last) > 1.0 and not title_label.visible:
 			mp_cur_last = m
 			mp.send({"t": "cur", "x": roundf(m.x), "y": roundf(m.y)}, 0, false)

@@ -1,11 +1,22 @@
 class_name CardDock
 extends RefCounted
 ## 카드 팔레트와 전장 카메라는 독립적이다. 카드를 들면 팔레트만 접는다.
-const HEIGHT := 188.0
 const CARD_HEIGHT := 94.0
+const CONTROL_HEIGHT := 36.0
+const HEADER_HEIGHT := CONTROL_HEIGHT + 16.0
+const FOOTER_HEIGHT := CONTROL_HEIGHT + 24.0
+const HEIGHT := HEADER_HEIGHT + CARD_HEIGHT + 8.0 + FOOTER_HEIGHT
+const SKIP_WIDTH := 204.0
 var game
 var panel: Panel
+var footer: Panel
+var skip_group: Panel
+var controls_theme := make_controls_theme()
 var side: PanelContainer
+var inspector_header: HBoxContainer
+var direction_btn: Button
+var close_btn: Button
+var dismissed_tower: Tower
 var heading: Label
 var detail: RichTextLabel
 var scroll: ScrollContainer  # 설명창 안이 화면보다 길면 통째로 스크롤 (폰 자세히 등)
@@ -19,9 +30,6 @@ var side_left := false  # 설명창이 왼쪽 위에 떠 있는지 (오브젝트
 var side_signature := ""
 var board := Rect2()
 var fit := 1.0
-var full_field := false
-var held_chip: PanelContainer
-var held_name: Label
 var pointer := Vector2.ZERO
 var pending_card := {}
 var press_origin := Vector2.ZERO
@@ -30,6 +38,47 @@ var card_dragging := false
 var suppress_tap := false
 var touch_capture := false
 var touch_position := Vector2.ZERO
+
+static func surface() -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color("151e2c")
+	box.border_color = Color("344358")
+	box.set_border_width_all(1)
+	box.set_corner_radius_all(6)
+	box.set_content_margin_all(8)
+	return box
+
+static func make_controls_theme() -> Theme:
+	var theme := Theme.new()
+	theme.set_type_variation("ShortcutButton", "Button")
+	for type in ["Button", "OptionButton"]:
+		for state_name in ["normal", "hover", "pressed", "hover_pressed", "disabled", "focus"]:
+			var box := surface()
+			if state_name == "focus":
+				box.bg_color = Color.TRANSPARENT
+				box.border_color = Color("7798be")
+			elif state_name == "hover":
+				box.bg_color = Color("223149")
+				box.border_color = Color("7798be")
+			elif state_name in ["pressed", "hover_pressed"]:
+				box.bg_color = Color("2a3945")
+				box.border_color = Color("e6c476")
+			elif state_name == "disabled":
+				box.bg_color = Color("101722")
+			theme.set_stylebox(state_name, type, box)
+			if type == "Button":
+				var shortcut := box.duplicate()
+				shortcut.content_margin_right = 24
+				theme.set_stylebox(state_name, "ShortcutButton", shortcut)
+		for color_name in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color", "font_hover_pressed_color"]:
+			theme.set_color(color_name, type, Color("e1e9f4"))
+		theme.set_color("font_disabled_color", type, Color("78889d"))
+		theme.set_font_size("font_size", type, 15)
+	theme.set_stylebox("panel", "PopupMenu", surface())
+	var hover := surface()
+	hover.bg_color = Color("223149")
+	theme.set_stylebox("hover", "PopupMenu", hover)
+	return theme
 
 func _init(main) -> void:
 	game = main
@@ -43,6 +92,20 @@ func _init(main) -> void:
 	bg.border_width_top = 1
 	panel.add_theme_stylebox_override("panel", bg)
 	game.ui_root.add_child(panel)
+	footer = Panel.new()
+	footer.name = "ControlBarSurface"
+	footer.set_meta("layout_background", true)
+	footer.z_index = 1
+	footer.add_theme_stylebox_override("panel", bg)
+	game.ui_root.add_child(footer)
+	skip_group = Panel.new()
+	skip_group.name = "SkipControls"
+	skip_group.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	skip_group.set_meta("layout_background", true)
+	skip_group.z_index = 2
+	skip_group.add_theme_stylebox_override("panel", surface())
+	skip_group.hide()
+	game.ui_root.add_child(skip_group)
 	state = Label.new()
 	state.add_theme_font_size_override("font_size", 16)
 	state.add_theme_color_override("font_color", Color("d9e5f5"))
@@ -57,17 +120,39 @@ func _init(main) -> void:
 	sb.set_content_margin_all(14)
 	side.add_theme_stylebox_override("panel", sb)
 	game.ui_root.add_child(side)
+	var content := VBoxContainer.new()
+	content.add_theme_constant_override("separation", 12)
+	side.add_child(content)
+	inspector_header = HBoxContainer.new()
+	content.add_child(inspector_header)
+	heading = Label.new()
+	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	heading.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	heading.add_theme_font_size_override("font_size", 16)
+	inspector_header.add_child(heading)
+	direction_btn = Button.new()
+	direction_btn.text = "방향 변경"
+	direction_btn.theme = controls_theme
+	direction_btn.focus_mode = Control.FOCUS_NONE
+	direction_btn.custom_minimum_size = Vector2(88, 36)
+	direction_btn.pressed.connect(game._edit_selected_direction)
+	inspector_header.add_child(direction_btn)
+	close_btn = Button.new()
+	close_btn.text = "×"
+	close_btn.theme = controls_theme
+	close_btn.custom_minimum_size = Vector2(36, 36)
+	close_btn.focus_mode = Control.FOCUS_NONE
+	close_btn.tooltip_text = "상세 닫기 (Esc)"
+	close_btn.pressed.connect(close_inspector)
+	inspector_header.add_child(close_btn)
 	scroll = ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	side.add_child(scroll)
+	content.add_child(scroll)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 12)
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(column)
-	heading = Label.new()
-	heading.add_theme_font_size_override("font_size", 19)
-	heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	column.add_child(heading)
 	pic = InfoPanel.new(game)
 	pic.hide()
 	column.add_child(pic)
@@ -82,33 +167,12 @@ func _init(main) -> void:
 	panel.visible = false
 	side.visible = false
 	focus_btn = Button.new()
+	focus_btn.theme = controls_theme
 	focus_btn.focus_mode = Control.FOCUS_NONE
 	focus_btn.add_theme_font_size_override("font_size", 14)
 	focus_btn.pressed.connect(game._toggle_focus_view)
 	focus_btn.z_index = 10
 	game.ui_root.add_child(focus_btn)
-	held_chip = PanelContainer.new()
-	held_chip.name = "CarriedCard"
-	held_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	held_chip.z_index = 20
-	var chip_style := bg.duplicate()
-	chip_style.border_width_top = 1
-	chip_style.set_content_margin_all(9)
-	held_chip.add_theme_stylebox_override("panel", chip_style)
-	game.ui_root.add_child(held_chip)
-	var row := HBoxContainer.new()
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	held_chip.add_child(row)
-	var icon := Control.new()
-	icon.custom_minimum_size = Vector2(24, 24)
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon.draw.connect(func(): _draw_held_icon(icon))
-	row.add_child(icon)
-	held_name = Label.new()
-	held_name.add_theme_font_size_override("font_size", 15)
-	held_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(held_name)
-	held_chip.hide()
 
 func active() -> bool:
 	return available()
@@ -139,15 +203,27 @@ func world_view() -> Rect2:
 	var size: Vector2 = screen_board().size / maxf(0.01, fit * game.view_zoom)
 	return Rect2(game.center() + game.view_pan - size / 2.0, size)
 
-func over_ui(p: Vector2) -> bool:
+func over_ui(p: Vector2, include_info := true) -> bool:
 	if not active():
 		return false
-	# 설명창 밑에 오브젝트가 있으면 설명창은 마우스를 받지 않는다 (그 오브젝트를 올리고 누를 수 있게, 올리면 설명창이 반대쪽으로 비킨다)
-	for c: Control in [panel, side if side.mouse_filter != Control.MOUSE_FILTER_IGNORE else null, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
-			game.bar_box, game.hud if not _tower_under(p) else null, game.dps_panel if not (_tower_under(p) and game.dps_drag == 0) else null, game.range_btn, game.zoom_btn,
-			game.guide_more, game.hide_btn, game.skip_btn, game.skip_n_btn]:
+	for c: Control in [panel, footer, side, focus_btn, game.cancel_btn, game.start_btn, game.aim_ok_btn,
+			game.dps_panel if not (_tower_under(p) and game.dps_drag == 0) else null, game.range_btn, game.zoom_btn,
+			game.guide_more, game.skip_btn, game.skip_n_btn, game.pause_box, game.paused_label, game.mp_bar, game.coin_fx]:
 		if c != null and c.is_visible_in_tree() and c.get_global_rect().has_point(p):
 			return true
+	var hovered_control: Control = game.get_viewport().gui_get_hovered_control()
+	while hovered_control != null and hovered_control != game.ui_root:
+		if hovered_control is BaseButton and hovered_control.mouse_filter != Control.MOUSE_FILTER_IGNORE and hovered_control.is_visible_in_tree() and hovered_control.get_global_rect().has_point(p):
+			return true
+		hovered_control = hovered_control.get_parent() as Control
+	if include_info and ((game.hud.is_visible_in_tree() and game.hud.get_global_rect().has_point(p) and not _tower_under(p)) or game._info_tip_at(p) >= 0):
+		return true
+	var bar_rect := Rect2()
+	for c: Control in game.bar_box.get_children():
+		if c.is_visible_in_tree():
+			bar_rect = bar_rect.merge(c.get_global_rect()) if bar_rect.has_area() else c.get_global_rect()
+	if bar_rect.has_area() and bar_rect.has_point(p):
+		return true
 	for c: Control in game.skill_btns:
 		if c.is_visible_in_tree() and c.get_global_rect().has_point(p):
 			return true
@@ -161,8 +237,8 @@ func carrying() -> bool:
 	return active() and not game.picked.is_empty() and game.moving == null \
 		and game.phase in [game.Phase.PLACE, game.Phase.AIM]
 
-func input_blocked() -> bool:
-	return not active() or game.get_tree().paused or game.tut.visible or game.settings_panel.visible \
+func input_blocked(include_pause := true) -> bool:
+	return not active() or (include_pause and game.get_tree().paused) or game.tut.visible or game.settings_panel.visible \
 		or game.help_label.visible or game.notes_panel.visible or game.codex_panel.visible \
 		or game.vote_panel.visible or game.records_panel.visible
 
@@ -170,18 +246,6 @@ func clear_gesture() -> void:
 	pending_card = {}
 	pointer_id = -2
 	card_dragging = false
-
-func _draw_held_icon(icon: Control) -> void:
-	if not carrying():
-		return
-	var head: Dictionary = game._card_content(game.picked, 0)["head"]
-	var col: Color = game._card_color(game.picked)
-	if head.has("e"):
-		Glyph.elem(icon, head["e"], Vector2(12, 12), 8, col)
-	elif head.has("pat"):
-		Glyph.pat(icon, head["pat"], Vector2(12, 12), 8, col)
-	else:
-		Glyph.kind(icon, head["kind"], Vector2(12, 12), 8, col)
 
 func _card_gui_input(event: InputEvent, b: Button, card: Dictionary) -> void:
 	if input_blocked() or game.phase != game.Phase.CHOOSE or game.perk_mode or card["type"] == "cata":
@@ -275,7 +339,7 @@ func handle_input(event: InputEvent) -> bool:
 	return motion and card_dragging
 
 func preview_card() -> Dictionary:
-	if not active() or game.phase != game.Phase.CHOOSE or game.perk_mode or game.cards_hidden:
+	if not active() or game.phase != game.Phase.CHOOSE or game.perk_mode or game.cards_hidden or is_instance_valid(inspected_tower):
 		return {}
 	if game.touch_ui and game.tap_sel >= 0 and game.tap_sel < game.offer.size():
 		return game.offer[game.tap_sel]
@@ -290,6 +354,7 @@ func watch(b: Button, card: Dictionary) -> void:
 	b.set_meta("offer_card", card)
 	b.mouse_entered.connect(func():
 		if not game.touch_ui:
+			inspected_tower = null
 			hovered = b)
 	b.gui_input.connect(_card_gui_input.bind(b, card))
 	# 상세 영역으로 마우스를 옮겨도 읽던 카드와 강조를 유지한다. 다른 카드는 진입 시 교체한다.
@@ -300,11 +365,13 @@ func card_size() -> Vector2:
 
 func tick() -> void:
 	if not available():
-		full_field = false
 		clear_gesture()
+		inspected_tower = null
+		hovered = null
 		panel.hide()
+		footer.hide()
+		skip_group.hide()
 		side.hide()
-		held_chip.hide()
 		focus_btn.hide()
 		game.ver_label.show()
 		return
@@ -312,7 +379,10 @@ func tick() -> void:
 	var size: Vector2 = game.ui_root.size
 	var blocked := input_blocked()
 	var choosing: bool = game.phase == game.Phase.CHOOSE and game.coin_stage == 0
-	var cards: bool = choosing and not game.cards_hidden and not full_field and not blocked
+	var cards: bool = choosing and not game.cards_hidden and not blocked
+	footer.visible = cards
+	footer.position = Vector2(0, size.y - FOOTER_HEIGHT)
+	footer.size = Vector2(size.x, FOOTER_HEIGHT)
 	panel.visible = cards
 	game.choice_box.visible = cards
 	game.apply_btn.hide()  # 일반 판은 한 번 눌러 들고, 전장의 대상으로 확정한다.
@@ -322,9 +392,9 @@ func tick() -> void:
 	for c: Control in [game.bar_box, game.ver_label, game.start_btn, game.cancel_btn, game.aim_ok_btn, game.skip_badge]:
 		c.z_index = 2
 	panel.position = Vector2(0, size.y - HEIGHT)
-	panel.size = Vector2(size.x, HEIGHT - 42)
+	panel.size = Vector2(size.x, HEIGHT - FOOTER_HEIGHT)
 	game.choice_box.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	game.choice_box.position = Vector2(12, panel.position.y + 42)
+	game.choice_box.position = Vector2(12, panel.position.y + HEADER_HEIGHT)
 	game.choice_box.pivot_offset = Vector2.ZERO
 	game.choice_box.scale = Vector2.ONE
 	game.choice_box.size = Vector2(size.x - 24, CARD_HEIGHT)
@@ -339,17 +409,23 @@ func tick() -> void:
 	if choosing and not game.perk_mode:
 		game._update_reroll_btn()
 	var x := size.x - 12.0
-	for button: Button in [game.skip_n_btn, game.skip_btn, game.hide_btn, game.card_detail_btn, game.reroll_btn]:
-		if button in [game.skip_btn, game.skip_n_btn] and game.phase == game.Phase.READY:
-			continue
+	var skip_visible: bool = game.skip_btn.visible and not blocked and (cards or game.phase == game.Phase.READY)
+	game.skip_btn.visible = skip_visible
+	game.skip_n_btn.visible = skip_visible
+	skip_group.visible = skip_visible
+	if cards and skip_visible:
+		x -= SKIP_WIDTH
+		layout_skip(Vector2(x, panel.position.y + 8), CONTROL_HEIGHT)
+		x -= 8
+	for button: Button in [game.card_detail_btn, game.reroll_btn]:
 		button.visible = button.visible and cards
 		if not button.visible:
 			continue
-		var w := 78.0 if button == game.card_detail_btn else 64.0
+		var w := 96.0 if button == game.card_detail_btn else 80.0
 		x -= w
 		button.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		button.position = Vector2(x, panel.position.y + 4)
-		button.size = Vector2(w, 34)
+		button.position = Vector2(x, panel.position.y + 8)
+		button.size = Vector2(w, CONTROL_HEIGHT)
 		x -= 8
 	game._update_choice_header()
 	game.choice_header.visible = game.choice_header.visible and cards
@@ -358,12 +434,15 @@ func tick() -> void:
 	state.position = Vector2(12, 9)
 	if game.choice_header.visible:
 		game.choice_header.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		game.choice_header.position = Vector2(12, panel.position.y + 4)
-		game.choice_header.size = Vector2(maxf(240, minf(340, x - 24)), 34)
+		game.choice_header.position = Vector2(12, panel.position.y + 8)
+		game.choice_header.size = Vector2(maxf(240, minf(340, x - 24)), CONTROL_HEIGHT)
 	_update_side()
 	# 상세는 필요할 때 떠 있는 패널로 읽는다. 표시 여부는 전장 크기에 영향을 주지 않는다.
-	side.visible = side.visible and not carrying() and not full_field and not blocked
-	_place_side(size, cards)
+	side.visible = side.visible and not carrying() and not input_blocked(false)
+	side.z_index = 21 if game.get_tree().paused else 1
+	if side.visible and game.get_tree().paused:
+		game.ui_root.move_child(side, game.ui_root.get_child_count() - 1)  # GUI 입력 순서도 일시정지 막 위로 올린다.
+	game.detail_btn.visible = side.visible and shown_tower != null and game.touch_ui
 	game.start_btn.visible = game.phase == game.Phase.READY and not blocked
 	game.cancel_btn.visible = game.phase in [game.Phase.PLACE, game.Phase.AIM, game.Phase.MOVE] and not blocked
 	game.aim_ok_btn.visible = game._ok_btn_on() and not blocked
@@ -375,29 +454,28 @@ func tick() -> void:
 		button.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		button.position = Vector2((size.x - actions.size() * (width + 8)) / 2 + i * (width + 8), action_y)
 		button.size = Vector2(width, 44)
-	if game.phase == game.Phase.READY and game.skip_btn.visible:
-		var left := (size.x - 384) / 2
+	if game.phase == game.Phase.READY and skip_visible:
+		var left := (size.x - 240 - 8 - SKIP_WIDTH) / 2
 		game.start_btn.position.x = left
-		for i in 2:
-			var button: Button = [game.skip_btn, game.skip_n_btn][i]
-			button.set_anchors_preset(Control.PRESET_TOP_LEFT)
-			button.position = Vector2(left + 248 + i * 72, action_y)
-			button.size = Vector2(64, 44)
+		layout_skip(Vector2(left + 248, action_y), 44)
 	if not blocked and not game.guide_label.visible:
-		var instruction := ""
-		match game.phase:
-			game.Phase.PLACE:
-				instruction = "빈 곳이나 오브젝트에 놓으세요." if game.picked.get("type", "") == "elem" else "넣을 오브젝트를 고르세요."
-			game.Phase.AIM: instruction = "쏠 쪽으로 끌어 보고 확정하세요." if game.touch_ui else "발사 방향을 정하세요."
-			game.Phase.MOVE: instruction = "옮길 곳을 고르세요."
-		# 대상 위에서는 적용 미리보기가 안내를 대신한다. 긴 효과 글과 하단 안내가 겹치지 않게 한다.
-		var target_preview: bool = game.phase == game.Phase.PLACE and game._tower_at(game.get_global_mouse_position()) != null
-		if instruction != "" and not target_preview:
-			game.hint.text = game._kr_keep(instruction)
+		var status := operation_text()
+		if status != "":
+			game.hint.text = game._kr_keep(status)
 			game.hint.set_anchors_preset(Control.PRESET_TOP_LEFT)
-			game.hint.position = Vector2((size.x - 260) / 2, action_y - 30)
-			game.hint.size = Vector2(260, 24)
+			game.hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			game.hint.add_theme_font_size_override("font_size", 14)
+			if not game.hint.has_theme_stylebox_override("normal"):
+				var box := surface()
+				box.content_margin_top = 6
+				box.content_margin_bottom = 6
+				game.hint.add_theme_stylebox_override("normal", box)
+			var status_width: float = minf(size.x - 24, game.ui_font.get_string_size(status, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 24)
+			game.hint.position = Vector2((size.x - status_width) / 2, (panel.position.y if cards else action_y) - 42)
+			game.hint.size = Vector2(status_width, 34)
+			game.hint.z_index = 2
 			game.hint.show()
+	_place_side(size, cards)
 	game.cancel_btn.text = game._kh("카드 돌려놓기 (Esc)") if carrying() and game.phase == game.Phase.PLACE else game._kh("취소 (Esc)")
 	for i in game.skill_btns.size():
 		var button: Button = game.skill_btns[i]
@@ -414,35 +492,70 @@ func tick() -> void:
 				row1 = maxf(row1, (ch[0] as Rect2).end.x)
 		game.zoom_btn.position = Vector2(game.hud.position.x + row1 + 10.0, maxf(game.hud.position.y - 2.0, 4.0)) if game.hud.visible else Vector2(12, 8)
 		game.zoom_btn.size = Vector2(132, 34)
-	# 선택지를 내려 둔 동안(V)은 [선택지 보기] 하나만: [카드 접기]가 함께 떠 이미 접힌 카드를 접으라고 했다
-	focus_btn.visible = not blocked and choosing and (game._phone() or full_field) and not (game.cards_hidden and not full_field)
-	focus_btn.text = "카드 보기" if full_field else "카드 접기"
-	focus_btn.tooltip_text = "카드 패널 보기/접기 (F)"
+	focus_btn.visible = not blocked and choosing
+	focus_btn.text = "카드 보기" if game.cards_hidden else "카드 접기"
+	focus_btn.tooltip_text = "카드 패널 보기/접기 (F / V)"
 	focus_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	focus_btn.position = Vector2(12, size.y - 42)
-	focus_btn.size = Vector2(110, 34)
+	focus_btn.position = Vector2(12, size.y - 48)
+	focus_btn.size = Vector2(110, CONTROL_HEIGHT)
 	game.ver_label.visible = not focus_btn.visible
-	if choosing and game.cards_hidden and not full_field and not blocked:
-		game.hide_btn.show()
-		game.hide_btn.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		game.hide_btn.position = Vector2((size.x - 160) / 2, size.y - 48)
-		game.hide_btn.size = Vector2(160, 40)
-	if full_field:
-		game.dps_panel.hide()
-	# 넘기는 중 표시: 카드 패널 위 / 없으면 웨이브 시작 버튼 줄 위 (예전 -100은 화면 위 밖이라 넘기는 동안 보이지 않았다)
 	game.skip_badge.position = Vector2((size.x - game.skip_badge.size.x) / 2.0, size.y - HEIGHT - 40 if cards else size.y - 100)
-	# 오브젝트에 올려 설명 상자(place_note)가 뜬 동안엔 숨긴다: 커서 옆 칩이 상자 아래 줄을 가렸다 (상자 첫 줄이 카드 이름)
-	held_chip.visible = carrying() and not blocked and game.place_note.is_empty()
-	if held_chip.visible:
-		var head: Dictionary = game._card_content(game.picked, 0)["head"]
-		held_name.text = head["name"] + (" " + head["lv"] if head.has("lv") else "")
-		held_chip.reset_size()
-		var at: Vector2 = game.ui_root.get_global_transform().affine_inverse() * pointer
-		var offset := Vector2(-held_chip.size.x / 2, -80) if game.touch_ui else Vector2(20, 24)
-		held_chip.position = (at + offset).clamp(Vector2(8, 8), (size - held_chip.size - Vector2(8, 8)).max(Vector2(8, 8)))
-		held_chip.get_child(0).get_child(0).queue_redraw()
+
+func operation_text() -> String:
+	game.selected = game.selected.filter(func(t): return is_instance_valid(t) and not t.is_queued_for_deletion())
+	var cancel := "아래 버튼으로 취소" if game.touch_ui else "Esc 취소"
+	if game.dragging:
+		return "%d개 이동 중 · %s" % [game.drag_group.size(), "손을 떼어 배치" if game.touch_ui else cancel]
+	if game.boxing:
+		return "영역 선택 중 · %s" % ("손을 떼어 선택" if game.touch_ui else cancel)
+	match game.phase:
+		game.Phase.PLACE:
+			return "카드 놓는 중 · %s" % cancel
+		game.Phase.AIM:
+			return ("방향 편집 중" if game.moving else "설치 방향 정하는 중") + " · " + cancel
+		game.Phase.MOVE:
+			return "위치 편집 중 · %s" % cancel
+		game.Phase.CHOOSE, game.Phase.READY, game.Phase.WAVE:
+			if not game.selected.is_empty():
+				return "오브젝트 %d개 선택 · %s" % [game.selected.size(), "빈 곳을 눌러 해제" if game.touch_ui else "Esc 해제"]
+	return ""
+
+
+func layout_skip(at: Vector2, height: float) -> void:
+	skip_group.position = at
+	skip_group.size = Vector2(SKIP_WIDTH, height)
+	for i in 2:
+		var button: Button = [game.skip_btn, game.skip_n_btn][i]
+		button.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		button.position = at + Vector2(108 if i == 1 else 0, 0)
+		button.size = Vector2(96 if i == 1 else 108, height)
+
+
+func close_inspector() -> void:
+	dismissed_tower = game._tower_at(game._pointer_world())
+	game.selected.clear()
+	game.tap_sel = -1
+	game.hover_elem = -1
+	game._tap_hover()
+	game.tip_tower = null
+	inspected_tower = null
+	shown_tower = null
+	hovered = null
+	pic.clear()
+	side.hide()
+	side_signature = ""
+
 
 func _update_side() -> void:
+	var mouse: Vector2 = game._pointer_screen()
+	var tower: Tower = game._tower_at(game._pointer_world()) if not over_ui(mouse) else null
+	if tower == dismissed_tower:
+		tower = null
+	else:
+		dismissed_tower = null
+	if tower != null:
+		hovered = null
+		inspected_tower = tower
 	var card := preview_card()
 	var title := "전장 안내"
 	var text := ""
@@ -481,14 +594,7 @@ func _update_side() -> void:
 		title = hovered.get_meta("card")[0]["name"]
 		text = hovered.get_meta("perk_desc")
 	else:
-		var mouse: Vector2 = game.get_viewport().get_mouse_position()
-		# 전장과 설명 패널 사이의 여백을 지날 때 호버 대상을 먼저 지우면,
-		# 패널에 도착하기 전에 설명이 사라져 긴 내용을 스크롤할 수 없다.
-		var over_inspector := side.get_global_rect().grow(24.0).has_point(mouse)
-		var tower: Tower = game._tower_at(game.get_global_mouse_position()) if not over_ui(mouse) else null
-		if tower != null:
-			inspected_tower = tower
-		elif over_inspector and is_instance_valid(inspected_tower):
+		if is_instance_valid(inspected_tower) and not inspected_tower.is_queued_for_deletion() and inspected_tower.get_parent() == game.towers:
 			tower = inspected_tower
 		else:
 			inspected_tower = null
@@ -511,12 +617,13 @@ func _update_side() -> void:
 					text += ("\n\n" if text != "" else "") + str(rx["name"]) + ": " + str(rx["desc"])
 	if pic.mode != "" and ((pic.mode == "tower" and shown_tower == null) or (pic.mode == "card" and card.is_empty())):
 		pic.clear()
-	heading.visible = pic.mode == ""
+	direction_btn.visible = shown_tower != null and game.selected.size() == 1 and shown_tower == game.selected[0] and game._mine(shown_tower) and game.phase in [game.Phase.CHOOSE, game.Phase.READY] and not game.get_tree().paused
+	heading.visible = not (game.touch_ui and pic.mode == "tower")
 	detail.visible = text != ""
-	var sig: String = title + "|" + text
+	var sig: String = title + "|" + text + ("|" + str(tower.get_instance_id()) if is_instance_valid(tower) and card.is_empty() else "")
 	side.visible = active() and has_content and (card.is_empty() or Meta.card_detail)
 	if sig != side_signature:
-		heading.text = title
+		heading.text = "오브젝트 정보" if pic.mode == "tower" else ("카드 정보" if pic.mode == "card" else title)
 		detail.text = game._kr_keep(text)
 		scroll.scroll_vertical = 0
 		side_signature = sig
@@ -528,6 +635,8 @@ func _place_side(size: Vector2, cards: bool) -> void:
 	side.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	var top := maxf(60.0, game.hud.get_rect().end.y + 8.0)
 	var bottom: float = panel.position.y - 12.0 if cards else size.y - 64.0
+	if game.hint.visible:
+		bottom = minf(bottom, game.hint.position.y - 8)
 	var ltop := top
 	var rtop := top
 	if game.zoom_btn.is_visible_in_tree():
@@ -543,8 +652,7 @@ func _place_side(size: Vector2, cards: bool) -> void:
 				rtop = maxf(rtop, dr.end.y + 8.0)
 	var sb: StyleBox = side.get_theme_stylebox("panel")
 	var parts := []
-	if heading.visible:
-		parts.append(heading.get_combined_minimum_size().y)
+	parts.append(inspector_header.get_combined_minimum_size().y)
 	if pic.visible:
 		parts.append(pic.custom_minimum_size.y)
 	if detail.visible:
@@ -553,6 +661,15 @@ func _place_side(size: Vector2, cards: bool) -> void:
 	for v in parts:
 		want += v
 	var cands := [Rect2(size.x - w - 12.0, rtop, w, 0.0), Rect2(12.0, ltop, w, 0.0)]
+	for control: Control in [game.toast, game.banner, game.paused_label, game.pause_box]:
+		if not control.is_visible_in_tree():
+			continue
+		var overlay := control.get_rect()
+		for i in cands.size():
+			var candidate: Rect2 = cands[i]
+			if overlay.position.x < candidate.end.x and overlay.end.x > candidate.position.x:
+				candidate.position.y = maxf(candidate.position.y, overlay.end.y + 8)
+				cands[i] = candidate
 	var scores := []
 	var inv: Transform2D = game.ui_root.get_global_transform().affine_inverse()
 	var canvas: Transform2D = game.get_viewport().get_canvas_transform()
@@ -578,11 +695,10 @@ func _place_side(size: Vector2, cards: bool) -> void:
 	var pick: Rect2 = cands[cur]
 	side.position = pick.position
 	side.size = pick.size
-	# 고른 자리에도 오브젝트가 깔려 있으면 마우스를 통과시켜 그 오브젝트를 올리고 누를 수 있게
-	var under: bool = scores[cur] >= 1.0
-	side.mouse_filter = Control.MOUSE_FILTER_IGNORE if under else Control.MOUSE_FILTER_STOP
-	detail.mouse_filter = Control.MOUSE_FILTER_IGNORE if under else Control.MOUSE_FILTER_PASS
-	scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE if under else Control.MOUSE_FILTER_STOP
+	# 읽는 패널의 클릭·스크롤은 뒤 전장으로 넘기지 않는다.
+	side.mouse_filter = Control.MOUSE_FILTER_STOP
+	detail.mouse_filter = Control.MOUSE_FILTER_PASS
+	scroll.mouse_filter = Control.MOUSE_FILTER_STOP
 
 
 ## 설명창 그림 폭: 설명창 폭에서 안쪽 여백을 뺀 값.

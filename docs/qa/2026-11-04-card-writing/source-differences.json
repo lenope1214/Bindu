@@ -1,0 +1,14 @@
+[
+  {
+    "file": "scripts/card_dock.gd",
+    "captured_sha256": "b6c734896cafce4a0007860cf1b19b46c761ae7902eacf88363e3c3950fa03eb",
+    "current_sha256": "a9ac70463bb7a98a3267f37bbf7de9bb99cd529bc50806bb296a608d8848836b",
+    "difference": "hidden-card reopen button y changed by concurrent control work; all captured card states have cards_hidden=false"
+  },
+  {
+    "file": "scripts/main.gd",
+    "captured_sha256": "6ebf09cc2e495f1ddd090804f2a0a59f88157f4223c8e087c4ab9a7c0e015eda",
+    "current_sha256": "9d15ca6a086ebacd6dc0e014fac20bb4e28b6f3af60f4d827caa659d027e9ad1",
+    "difference": "bar.mouse_filter = Control.MOUSE_FILTER_IGNORE added by concurrent control work; fixture disables input"
+  }
+]

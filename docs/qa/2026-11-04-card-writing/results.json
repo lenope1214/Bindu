@@ -1,0 +1,46 @@
+[
+  {
+    "profile": "desktop",
+    "captures": 126,
+    "viewport": [
+      1280,
+      720
+    ],
+    "scale": 1.0,
+    "touch": false,
+    "failures": 0
+  },
+  {
+    "profile": "large",
+    "captures": 156,
+    "viewport": [
+      1280,
+      720
+    ],
+    "scale": 1.3,
+    "touch": false,
+    "failures": 0
+  },
+  {
+    "profile": "phone",
+    "captures": 156,
+    "viewport": [
+      2556,
+      1180
+    ],
+    "scale": 1.3,
+    "touch": true,
+    "failures": 0
+  },
+  {
+    "profile": "tablet",
+    "captures": 126,
+    "viewport": [
+      2048,
+      1536
+    ],
+    "scale": 1.3,
+    "touch": true,
+    "failures": 0
+  }
+]

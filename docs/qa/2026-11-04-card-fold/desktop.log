@@ -1,0 +1,19 @@
+sandbox_extension_issue_file_to_process failed for /tmp/bindu-hold-qa/Godot.app: 1 (Operation not permitted)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+ok   UI-23 PC·폰에서 접기 버튼 노출
+UI ok expanded
+ok   UI-23 버튼으로 카드·상세 접기 0
+UI ok collapsed
+ok   UI-23 같은 선택지·장수·카메라로 펼치기 0
+ok   UI-23 버튼으로 카드·상세 접기 1
+ok   UI-23 같은 선택지·장수·카메라로 펼치기 1
+ok   UI-23 버튼으로 카드·상세 접기 2
+ok   UI-23 같은 선택지·장수·카메라로 펼치기 2
+ok   UI-23 V 숨김 상태에서 보기 표시
+ok   UI-23 V로 숨긴 뒤 접기/보기 버튼으로 복원
+UI ok restored
+FOLD failures=0 ui=0
+WARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

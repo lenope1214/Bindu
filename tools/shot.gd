@@ -18,7 +18,7 @@ func _initialize():
 	if Meta.sim_phone and DisplayServer.window_get_size().x > DisplayServer.window_get_size().y * 2:
 		Meta.sim_safe = Rect2(86, 0, 86, 38)  # 노치 있는 폰 가로: 양옆 노치·둥근 모서리, 아래 홈 막대
 	main = load("res://main.tscn").instantiate()
-	root.add_child(main)
+	VirtualInput.mount(main, root)
 	steps = [
 		func():
 			Meta.ui_scale = z
@@ -139,22 +139,22 @@ func _initialize():
 			main.towers.get_child(0).set_pattern("thorn")
 			main.towers.get_child(3).set_pattern("thorn")
 			main._on_pick({"type": "mod", "id": "pierce"})
-			Input.warp_mouse(main.towers.get_child(0).get_global_transform_with_canvas().origin),
+			VirtualInput.move(main.towers.get_child(0).get_global_transform_with_canvas().origin),
 		# 넣을 수 있는 오브젝트에 올린 설명 상자 (다른 오브젝트를 가리지 않는 자리)
-		func(): _snap("place_mod"); Input.warp_mouse(main.towers.get_child(1).get_global_transform_with_canvas().origin),
+		func(): _snap("place_mod"); VirtualInput.move(main.towers.get_child(1).get_global_transform_with_canvas().origin),
 		func(): _snap("place_mod_ok"); main._cancel_step(); main._set_cards_hidden(true),
 		func():
 			_snap("cards_hidden")
 			# 오브젝트 정보창 (마우스를 올렸을 때, 화면 오른쪽 아래 쪽 오브젝트라 창이 화면 끝에 닿는지)
 			var t: Node2D = main.towers.get_child(1)
-			Input.warp_mouse(t.get_global_transform_with_canvas().origin),
+			VirtualInput.move(t.get_global_transform_with_canvas().origin),
 		func():
 			_snap("tip")
 			# 터치로 방향 바꾸기: 오브젝트 정보창이 손가락 반대편에, 아래에 [자세히]
 			main.touch_ui = true
 			var t: Node2D = main.towers.get_child(1)
 			main._start_move(t)
-			Input.warp_mouse(t.get_global_transform_with_canvas().origin + Vector2(160, 0)),
+			VirtualInput.move(t.get_global_transform_with_canvas().origin + Vector2(160, 0)),
 		func(): main.touch_ui = true,  # 마우스를 옮기면(warp) touch_ui가 꺼진다
 		func(): main.tip_detail = true,
 		func():
@@ -163,7 +163,7 @@ func _initialize():
 			# 터치 조준: 누른 채 끄는 동안 손가락 쪽 범위, 떼면 그 방향 유지 + [확정]
 			var t: Node2D = main.towers.get_child(1)
 			main.aim_hold = true
-			Input.warp_mouse(t.get_global_transform_with_canvas().origin + Vector2(-120, -140)),
+			VirtualInput.move(t.get_global_transform_with_canvas().origin + Vector2(-120, -140)),
 		func(): main.touch_ui = true,
 		func(): _snap("aim_touch_hold"); main._aim_release(),
 		func():
@@ -186,9 +186,9 @@ func _initialize():
 				k *= 1.7
 			main.dps_sig = ""
 			main._arm_skill(1)
-			Input.warp_mouse(main.get_global_transform_with_canvas() * (main.core() + Vector2(200, 60))),
+			VirtualInput.move(main.get_global_transform_with_canvas() * (main.core() + Vector2(200, 60))),
 		func(): _snap("wave_dps"); main.skill_arm = ""; main.dps_hidden = Meta.dps_fold; _orb_tip(),
-		func(): _snap("orb_tip"); main.touch_ui = touch; main.skip_left = 0; Input.warp_mouse(Vector2(5, 360)); main._start_perk(),
+		func(): _snap("orb_tip"); main.touch_ui = touch; main.skip_left = 0; VirtualInput.move(Vector2(5, 360)); main._start_perk(),
 		func():
 			_snap("perks")
 			# 운명의 동전 연출: 장면마다 멈춰 두고 찍는다 (공중 → 떨어지는 중 → 모서리 → 결과 → 새 특성)
@@ -213,7 +213,8 @@ func _initialize():
 
 
 func _snap(n: String):
-	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
+	RenderingServer.force_draw()
+	main.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
 	print("SHOT ", n)
 	preload("res://tools/ui_check.gd").check(main, n)  # 겹침·화면 밖 (UI OVERLAP 줄)
 
@@ -238,4 +239,4 @@ func _orb_tip() -> void:
 	o.shield = 30.0; o.splits = true; o.burn_t = 2.0; o.poison_t = 2.0; o.vuln_t = 2.0; o.slow_timer = 2.0
 	o.silence_t = 2.0; o.resist_e = 0; o.sturdy = true; o.echo_t = 2.0; o.vine = 2.0
 	o.root_timer = 30.0  # 제자리에
-	Input.warp_mouse(o.get_global_transform_with_canvas().origin)
+	VirtualInput.move(o.get_global_transform_with_canvas().origin)

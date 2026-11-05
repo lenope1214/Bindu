@@ -1,0 +1,21 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+SHOT ready
+UI ok ready
+SHOT ready_nolegend
+UI OVERLAP ready_nolegend 배지 ×12 [446,589 323x55] × 놓친 -140 [646,562 91x33]
+UI OVERLAP ready_nolegend 배지 ×12 [974,193 295x55] × 놓친 -3 [1125,163 70x33]
+SHOT ready_leak
+UI OFFSCREEN ready_leak HBoxContainer(@HBoxContainer@43) [15,509 2519x122]
+SHOT choose
+UI ok choose
+SHOT choose_nolegend
+UI ok choose_nolegend
+SHOT wave
+UI ok wave
+SHOT wave_toast
+UI ok wave_toast
+UI BAD 3
+WARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

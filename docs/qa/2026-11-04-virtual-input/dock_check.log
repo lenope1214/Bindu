@@ -1,0 +1,48 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+UI ok hover
+DOCK SHOT hover
+CARD COVERED 1
+ok   UI-28 whole logical arena fits board including edge objects
+ok   UI-28 logical arena unchanged
+ok   UI-28 screen placement maps back to same world point
+ok   UI-29 preview resolves applicable target
+ok   UI-29 card does not open floating tooltip over world
+UI ok detail
+DOCK SHOT detail
+ok   UI-29 detail toggle retains card preview
+UI ok hidden
+DOCK SHOT hidden
+ok   UI-28 camera stays fixed: hide cards
+UI ok place
+DOCK SHOT place
+ok   UI-28 camera stays fixed: place
+ok   UI-28 cancel returns to choice
+ok   UI-28 camera stays fixed: continue
+UI ok ready
+DOCK SHOT ready
+ok   UI-28 camera stays fixed: ready
+UI ok wave
+DOCK SHOT wave
+ok   UI-28 camera stays fixed: wave
+UI ok zoom
+DOCK SHOT zoom
+ok   UI-28 zoom remains available inside board
+ok   UI-28 visible dock wheel cannot zoom world
+UI ok perk
+DOCK SHOT perk
+ok   UI-28 camera stays fixed: perk
+UI ok settings_expanded
+DOCK SHOT settings_expanded
+UI ok pause
+DOCK SHOT pause
+ok   UI-28 camera stays fixed: pause
+ok   UI-28 virtual pointer resolves transformed target
+ok   UI-28 virtual input applies card to transformed target
+ok   UI-28 inspector input does not place or start selection
+ok   UI-29 touch selection carries card without obsolete apply step
+ok   UI-28 return to title restores camera
+DOCK failures=0 revised=true
+WARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

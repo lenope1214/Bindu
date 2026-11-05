@@ -15,7 +15,7 @@ func _initialize():
 	if a.size() > 1: z = float(a[1])
 	touch = a.size() > 2 and a[2] == "touch"
 	main = load("res://main.tscn").instantiate()
-	root.add_child(main)
+	VirtualInput.mount(main, root)
 	steps = [
 		func():
 			Meta.ui_scale = z
@@ -43,7 +43,7 @@ func _initialize():
 		func():
 			var ch: Array = main.hud_chips.filter(func(c): return c[1] == "tag")
 			var r: Rect2 = ch[-1][0]
-			root.get_viewport().warp_mouse(main.hud.get_global_transform_with_canvas() * r.get_center()),
+			VirtualInput.move(main.hud.get_global_transform_with_canvas() * r.get_center()),
 		func(): pass,
 		func(): _snap("vary_chip"),
 		func():
@@ -56,7 +56,7 @@ func _initialize():
 			main._make_choices()
 			main._open_choose()
 			main.card_dim.visible = true
-			root.get_viewport().warp_mouse(Vector2(5, 700)),
+			VirtualInput.move(Vector2(5, 700)),
 		func():
 			if main.tut:
 				main.tut.close(),
@@ -65,7 +65,8 @@ func _initialize():
 
 
 func _snap(n: String):
-	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s.png" % [n, z, "_touch" if touch else ""]))
+	RenderingServer.force_draw()
+	main.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s.png" % [n, z, "_touch" if touch else ""]))
 	print("SHOT ", n)
 	preload("res://tools/ui_check.gd").check(main, n)  # 겹침·화면 밖 (UI OVERLAP 줄)
 

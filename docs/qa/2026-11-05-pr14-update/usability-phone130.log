@@ -1,0 +1,48 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+ok   UI-16 터치 후 4초가 지나도 인스펙터·자세히 버튼 유지
+ok   UI-16 헤더 자세히 터치는 대상 유지·상세 전환
+UI ok object-detail
+ok   UI-16 간단히로 복귀해도 대상 유지
+ok   MP-07 협동 Ctrl+A는 내 오브젝트만 선택
+ok   MP-07 섞인 선택에서도 드래그 시작 시 소유권 재확인
+ok   MP-07 내 것만 이동 확정, 친구 좌표 보존
+ok   UI-10 정지 중 게임 단축키·직접 넘기기/새로고침 호출 차단
+ok   UI-10 정지 중 소리 조작은 정지를 풀지 않음
+ok   UI-10 재개 후 같은 S 키로 정상 넘기기
+ok   UI-05 방향 취소는 카드 접힘·오브젝트 선택 복원: false
+ok   UI-05 방향 확정은 이전 카드 미리보기 없이 종료: false
+UI ok direction-finished-false
+ok   UI-05 방향 취소는 카드 접힘·오브젝트 선택 복원: true
+ok   UI-05 방향 확정은 이전 카드 미리보기 없이 종료: true
+UI ok direction-finished-true
+ok   UI-07 일시정지 중에도 인스펙터를 메뉴 위에서 읽기 전용 표시
+ok   UI-07 정지 중 터치 자세히도 대상을 유지
+ok   UI-07 정지 중 상세 스크롤 가능
+UI ok paused-inspector
+ok   UI-07 진행 중 드래그도 정지하면 원위치로 취소
+ok   UI-28 버튼·배지·오브젝트 겹침은 버튼 한 번만: touch=false 회차=0
+ok   UI-28 버튼·배지·오브젝트 겹침은 버튼 한 번만: touch=false 회차=1
+ok   UI-28 버튼·배지·오브젝트 겹침은 버튼 한 번만: touch=false 회차=2
+ok   UI-28 버튼·배지·오브젝트 겹침은 버튼 한 번만: touch=true 회차=0
+ok   UI-28 버튼·배지·오브젝트 겹침은 버튼 한 번만: touch=true 회차=1
+ok   UI-28 버튼·배지·오브젝트 겹침은 버튼 한 번만: touch=true 회차=2
+ok   UI-28 배지·오브젝트 겹침은 배지만: emulate=true 회차=0
+ok   UI-28 배지·오브젝트 겹침은 배지만: emulate=true 회차=1
+ok   UI-28 배지·오브젝트 겹침은 배지만: emulate=true 회차=2
+ok   UI-28 배지·오브젝트 겹침은 배지만: emulate=false 회차=0
+ok   UI-28 배지·오브젝트 겹침은 배지만: emulate=false 회차=1
+ok   UI-28 배지·오브젝트 겹침은 배지만: emulate=false 회차=2
+ok   UI-28 전장 드래그를 버튼 위에서 놓으면 이동 취소
+ok   UI-28 카드 취소 버튼과 뒤 대상이 겹쳐도 취소만 실행
+ok   UI-28 모달 밖 클릭은 창만 닫고 뒤 정보·전장을 누르지 않음
+ok   UI-36 점수 줄 밑 오브젝트는 단독 선택하고 칩은 함께 누르지 않음: false
+ok   UI-36 점수 줄 밑 오브젝트는 단독 선택하고 칩은 함께 누르지 않음: true
+ok   UI-16 특성 길게 누르기는 적용 없이 상세 열람
+UI ok perk-long-press
+ok   UI-16 길게 누른 손을 떼어도 특성을 적용하지 않음
+ok   UI-16 이후 짧은 터치는 특성 한 번 적용
+USABILITY case=all failures=0 ui=0
+WARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

@@ -1,6 +1,7 @@
 #!/bin/bash
 # 빈두 점검 도구. 프로젝트를 임시 폴더에 복사해(저장 파일이 섞이지 않게) 헤드리스 Godot으로 돌린다.
 # 사용: GODOT=<godot 실행 파일> tools/run.sh <명령> [인자...]
+#   ui <검사.gd> <출력 폴더> [배율] [phone|touch]  커서·포커스 비점유 native 검사
 #   bots [규칙=1] [판 수=32] [stack]     자동 플레이 봇: 도달 웨이브 중간값·평균과 죽은 웨이브 분포
 #   long [규칙=1] [맵=plain] [웨이브=40]   죽지 않는 봇으로 긴 판 (웨이브가 4분 넘게 안 끝나면 STUCK)
 #   cont [규칙=1] [맵=plain] [웨이브=45]   4웨이브마다 끄고 이어하기 → 저장 전후가 다르면 DIFF
@@ -38,6 +39,11 @@ copy_project() {
 	cp -r "$ROOT/scripts" "$ROOT/tools" "$ROOT/docs" "$ROOT/main.tscn" "$ROOT/project.godot" "$ROOT/icon.svg" "$d/"
 	# config/name이 다르면 user:// 폴더가 달라 실제 게임의 기록·이어하기를 건드리지 않는다
 	sed -i.bak "s/^config\/name=.*/config\/name=\"BinduTools$1\"/" "$d/project.godot"
+	cat > "$d/override.cfg" <<'CFG'
+[display]
+window/size/no_focus=true
+window/size/mode=1
+CFG
 	(cd "$d" && T 300 "$G" --headless --import > /dev/null 2>&1 || true)
 	echo "$d"
 }
@@ -94,6 +100,23 @@ med_mean() {
 }
 
 case "$CMD" in
+	ui)
+		SCRIPT=${1:?tools 아래 검사 파일 이름 필요}; shift
+		if [[ "$SCRIPT" == */* || ! -f "$ROOT/tools/$SCRIPT" ]]; then echo "검사 파일을 찾을 수 없음: $SCRIPT"; exit 1; fi
+		D=$(copy_project "$$")
+		python3 - "$D/scripts/online_config.gd" <<'PYCONFIG'
+import re, sys
+from pathlib import Path
+p = Path(sys.argv[1])
+p.write_text(re.sub(r'const (SERVER_URL|MP_URL) := "[^\"]*"', r'const \1 := ""', p.read_text()))
+PYCONFIG
+		if [[ "$SCRIPT" != "fuzz.gd" && $# -gt 0 ]]; then
+			if [[ "$1" != /* ]]; then echo "출력 폴더는 절대 경로를 사용하세요"; rm -rf "$D"; exit 1; fi
+			mkdir -p -- "$1"
+		fi
+		trap 'rm -rf "$D"' EXIT
+		T 300 "$G" --audio-driver Dummy --path "$D" --resolution "${RESOLUTION:-1280x720}" -s "tools/$SCRIPT" -- "$@"
+		;;
 	bots)
 		R=${1:-1}; N=${2:-32}; MODE=${3:-}
 		D=$(copy_project "$$")

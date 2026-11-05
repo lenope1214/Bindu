@@ -1,0 +1,58 @@
+{
+	"card_detail_vs_object_detail": {
+		"inspector_mode": "tower",
+		"meta_card_detail": true,
+		"object_detail": false,
+		"object_detail_button": false
+	},
+	"coop_multi_drag": {
+		"foreign_delta_after": "(80.0, -60.0)",
+		"foreign_delta_during": "(80.0, -60.0)",
+		"other_is_mine": false,
+		"own_is_mine": true,
+		"selected": 2
+	},
+	"direction_confirm": {
+		"inspector": true,
+		"inspector_mode": "card",
+		"phase": 0,
+		"picked_in_offer": true,
+		"selected": 0,
+		"tap_sel": 1
+	},
+	"fold_after_cancel": {
+		"cards_hidden": false,
+		"phase": 0,
+		"selected": 1
+	},
+	"guide_status": {
+		"guide": true,
+		"guide_t": -1.0,
+		"selected": 1,
+		"status": false
+	},
+	"mobile_detail": {
+		"detail_button": false,
+		"frame": 21,
+		"inspector": true,
+		"last_tip_frame": -10,
+		"selected": 1,
+		"tip_detail": false
+	},
+	"paused_inspector": {
+		"inspector": false,
+		"paused": true
+	},
+	"paused_skip": {
+		"banked": 2,
+		"paused": true,
+		"phase": 6,
+		"picks_after": 0,
+		"picks_before": 2,
+		"skip_left": 3
+	},
+	"touch_timeout": {
+		"inspector_after_4s": true,
+		"touch_tip_t": -1.0
+	}
+}

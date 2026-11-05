@@ -28,7 +28,7 @@ func _initialize():
 	if Meta.sim_phone and DisplayServer.window_get_size().x > DisplayServer.window_get_size().y * 2:
 		Meta.sim_safe = Rect2(86, 0, 86, 38)
 	main = load("res://main.tscn").instantiate()
-	root.add_child(main)
+	VirtualInput.mount(main, root)
 	steps = [
 		func():
 			Meta.ui_scale = z
@@ -57,7 +57,8 @@ func _press_period(i: int) -> void:
 
 
 func _snap(n: String):
-	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
+	RenderingServer.force_draw()
+	main.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
 	print("SHOT ", n)
 	preload("res://tools/ui_check.gd").check(main, n)
 

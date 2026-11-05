@@ -17,7 +17,7 @@ func _initialize():
 	touch = a.size() > 2 and a[2] == "touch"
 	Meta.sim_phone = a.size() > 3 and a[3] == "phone"
 	main = load("res://main.tscn").instantiate()
-	root.add_child(main)
+	VirtualInput.mount(main, root)
 	steps = [
 		func():
 			Meta.ui_scale = z
@@ -64,14 +64,11 @@ func _initialize():
 
 
 func _hover() -> void:
-	Input.warp_mouse(root.get_viewport().get_screen_transform() * planet.get_global_transform_with_canvas().origin)
+	VirtualInput.move(planet.get_global_transform_with_canvas().origin)
 
 
 func _touch() -> void:
-	# 폰 화면비(expand)에선 창·화면 좌표가 어긋난다: 남은 차이만큼 한 번 더 옮긴다
-	var diff: Vector2 = planet.position - main.get_global_mouse_position()
-	if diff.length() > 4.0:
-		Input.warp_mouse(DisplayServer.mouse_get_position() - DisplayServer.window_get_position() + Vector2i(diff * root.get_viewport().get_screen_transform().get_scale()))
+	VirtualInput.move(planet.get_global_transform_with_canvas().origin)
 	main.touch_ui = touch
 	if touch:
 		main.touch_tip_t = 3.0
@@ -85,11 +82,12 @@ func _detail(on: bool) -> void:
 	ev.keycode = KEY_SHIFT
 	ev.physical_keycode = KEY_SHIFT
 	ev.pressed = on
-	Input.parse_input_event(ev)
+	VirtualInput.send(ev)
 
 
 func _snap(n: String):
-	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
+	RenderingServer.force_draw()
+	main.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
 	print("SHOT ", n)
 
 

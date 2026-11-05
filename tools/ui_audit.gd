@@ -21,7 +21,7 @@ func _initialize():
 	if Meta.sim_phone and DisplayServer.window_get_size().x > DisplayServer.window_get_size().y * 2:
 		Meta.sim_safe = Rect2(86, 0, 86, 38)  # 노치 있는 폰 가로: 양옆 노치·둥근 모서리, 아래 홈 막대
 	main = load("res://main.tscn").instantiate()
-	root.add_child(main)
+	VirtualInput.mount(main, root)
 	steps = [
 		func():
 			Meta.guide_on = false
@@ -78,7 +78,8 @@ func _snap(n: String):
 	main.info.queue_redraw()
 	await process_frame
 	await process_frame
-	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
+	RenderingServer.force_draw()
+	main.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
 	print("SHOT ", n)
 	bad += UiCheck.check(main, n)
 

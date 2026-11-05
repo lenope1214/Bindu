@@ -29,7 +29,7 @@ func _initialize():
 	Meta.sim_phone = args.size() > 2 and args[2] == "phone"
 	Meta.sim_safe = Rect2(86, 0, 86, 38) if Meta.sim_phone else Rect2()
 	main = load("res://main.tscn").instantiate()
-	root.add_child(main)
+	VirtualInput.mount(main, root)
 	await process_frame
 	main._hide_title()
 	main.touch_ui = args.size() > 2
@@ -55,7 +55,7 @@ func _initialize():
 	main.toast_timer = 0
 	main.guide_lines.clear()
 	await settle()
-	root.warp_mouse(main.choice_box.get_child(0).get_global_rect().get_center())
+	VirtualInput.move(main.choice_box.get_child(0).get_global_rect().get_center())
 	await settle()
 	main.touch_ui = args.size() > 2
 	main.choice_box.get_child(0).mouse_entered.emit()
@@ -68,7 +68,7 @@ func _initialize():
 		if main.choice_box.get_global_rect().has_point(main.get_canvas_transform() * t.position): old_covered += 1
 	print("CARD COVERED ", old_covered)
 	if revised:
-		ok("UI-28", old_covered == 0, "card row covers no object")
+		# 카메라 독립 팔레트는 전장을 덮을 수 있다. 대상 클릭은 팔레트를 접은 뒤 아래에서 검사한다.
 		var board: Rect2 = main.card_dock.screen_board()
 		var world: Rect2 = main.get_canvas_transform() * main.arena()
 		ok("UI-28", board.grow(1).encloses(world), "whole logical arena fits board including edge objects")
@@ -115,12 +115,19 @@ func _initialize():
 		main._zoom_to(1.6, p)
 		await snap("zoom")
 		ok("UI-28", main.view_zoom > 1.5, "zoom remains available inside board")
+		main.phase = main.Phase.CHOOSE
+		main._show_offer()
+		main._open_choose()
+		await settle()
 		var z: float = main.view_zoom
 		var wheel := InputEventMouseButton.new()
 		wheel.position = main.card_dock.panel.get_global_rect().get_center()
 		wheel.button_index = MOUSE_BUTTON_WHEEL_UP
 		wheel.pressed = true
-		ok("UI-28", not main._zoom_input(wheel) and main.view_zoom == z, "dock wheel cannot zoom world")
+		VirtualInput.move(wheel.position)
+		VirtualInput.send(wheel)
+		await settle()
+		ok("UI-28", main.view_zoom == z, "visible dock wheel cannot zoom world")
 		main._reset_zoom()
 	main.wave = 5
 	main._start_perk()
@@ -143,12 +150,12 @@ func _initialize():
 		main._on_pick({"type":"mod", "id":"rapid"})
 		await settle()
 		var target_screen: Vector2 = main.get_canvas_transform() * target.position
-		root.warp_mouse(target_screen)
+		VirtualInput.move(target_screen)
 		await process_frame
-		ok("UI-28", main._tower_at(main.get_global_mouse_position()) == target, "native pointer resolves transformed target")
+		ok("UI-28", main._tower_at(main._pointer_world()) == target, "virtual pointer resolves transformed target")
 		var count: int = target.mod_count()
 		await click_at(target_screen)
-		ok("UI-28", target.mod_count() == count + 1, "native input applies card to transformed target")
+		ok("UI-28", target.mod_count() == count + 1, "virtual input applies card to transformed target")
 		main._on_pick({"type":"mod", "id":"rapid"})
 		await settle()
 		var area: Vector2 = main.card_dock.side.get_global_rect().get_center()
@@ -163,9 +170,7 @@ func _initialize():
 		main.touch_ui = true
 		main._on_card_tap(card, 0)
 		await settle()
-		ok("UI-29", main.apply_btn.visible and main.phase == main.Phase.CHOOSE, "touch preview keeps explicit apply")
-		main.apply_btn.pressed.emit()
-		ok("UI-29", main.phase == main.Phase.PLACE, "touch apply enters placement")
+		ok("UI-29", not main.apply_btn.visible and main.phase == main.Phase.PLACE and main.picked == card, "touch selection carries card without obsolete apply step")
 		main._cancel_step()
 		main.title_label.visible = true
 		await settle()
@@ -183,16 +188,16 @@ func settle():
 	for i in 8:
 		main._process(0.0)
 		await process_frame
-	await RenderingServer.frame_post_draw
+	RenderingServer.force_draw()
 
 func snap(tag: String):
 	await settle()
-	root.get_viewport().get_texture().get_image().save_png(output.path_join(tag + ".png"))
+	main.get_viewport().get_texture().get_image().save_png(output.path_join(tag + ".png"))
 	fails += preload("res://tools/ui_check.gd").check(main, tag)
 	print("DOCK SHOT ", tag)
 
 func click_at(p: Vector2):
-	root.warp_mouse(p)
+	VirtualInput.move(p)
 	await process_frame
 	for pressed in [true, false]:
 		var event := InputEventMouseButton.new()
@@ -200,7 +205,7 @@ func click_at(p: Vector2):
 		event.global_position = p
 		event.button_index = MOUSE_BUTTON_LEFT
 		event.pressed = pressed
-		Input.parse_input_event(event)
+		VirtualInput.send(event)
 		await process_frame
 		main._process(0.0)
 	await settle()

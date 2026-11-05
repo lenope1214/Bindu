@@ -2121,7 +2121,7 @@ func _carry_cards() -> void:
 	main.auto_start = false
 	main.shake = 0.0
 	Meta.card_detail = false
-	main.card_dock.full_field = false
+	main.cards_hidden = false
 	var target := _tower(Vector2(420, 520), Elem.WATER)
 	var bad := _tower(Vector2(860, 520), Elem.WATER)
 	bad.set_pattern("thorn")
@@ -2143,7 +2143,7 @@ func _carry_cards() -> void:
 	main.touch_ui = true
 	main._on_card_tap(card, 0)
 	main._process(0.0)
-	var held: bool = main.phase == main.Phase.PLACE and main.card_dock.held_chip.visible and not main.card_dock.panel.visible and not main.card_dock.side.visible and not main.choice_box.visible
+	var held: bool = main.phase == main.Phase.PLACE and main.card_dock.carrying() and not main.card_dock.panel.visible and not main.card_dock.side.visible and not main.choice_box.visible
 	var independent: bool = zoomed.is_equal_approx(main.get_canvas_transform()) and is_equal_approx(main.view_zoom, 1.4)
 	var before: int = main.picks_left
 	main._drop_carried_card(Vector2(-100, -100))
@@ -2154,6 +2154,10 @@ func _carry_cards() -> void:
 	main._cancel_step()
 	main._process(0.0)
 	var cancel: bool = main.offer == offers and main.picks_left == before and main.phase == main.Phase.CHOOSE and main.choice_box.visible and main.tap_sel == 0 and zoomed.is_equal_approx(main.get_canvas_transform())
+	main._on_card_tap(offers[1], 1)
+	main._process(0.0)
+	var chip: bool = main.card_dock.carrying() and not main.ui_root.has_node("CarriedCard")
+	main._cancel_step()
 	main._on_card_tap(card, 0)
 	main._drop_carried_card(main.get_canvas_transform() * target.position)
 	var applied: bool = target.m("pierce") == 1 and main.picks_left == before - 1
@@ -2169,8 +2173,8 @@ func _carry_cards() -> void:
 	Meta.ui_scale = scale0
 	main._apply_ui_scale()
 	main.touch_ui = false
-	ok("UI-31", held and independent and scale_independent and refused and cancel and applied and resume,
-		"카드 들기: 목록 접힘 %s·카메라 독립 %s·글자 배율 독립 %s·무효 드롭 보존 %s·취소 복원 %s·1회 적용 %s·이어하기 %s" % [held, independent, scale_independent, refused, cancel, applied, resume])
+	ok("UI-31", held and chip and independent and scale_independent and refused and cancel and applied and resume,
+		"카드 들기: 카드 이름 말풍선 없음 %s·목록 접힘 %s·카메라 독립 %s·글자 배율 독립 %s·무효 드롭 보존 %s·취소 복원 %s·1회 적용 %s·이어하기 %s" % [chip, held, independent, scale_independent, refused, cancel, applied, resume])
 
 
 # ---------- 곁공격 ----------
@@ -2241,6 +2245,22 @@ func _side() -> void:
 # ---------- 기록·도감·화면 글 ----------
 
 func _meta_misc() -> void:
+	var pointer_before: Vector2 = main._pointer_screen()
+	var motion := InputEventMouseMotion.new()
+	motion.position = Vector2(123, 234)
+	main._input(motion)
+	var cached: bool = main._pointer_screen() == motion.position
+	var transformed: bool = (main.get_canvas_transform() * main._pointer_world()).is_equal_approx(motion.position)
+	main.pointer_position = pointer_before
+	ok("UI-34", cached and transformed, "입력 이벤트의 포인터 좌표 보존·현재 카메라 변환으로 전장 좌표 계산")
+	var tools_safe := true
+	for file in DirAccess.get_files_at("res://tools"):
+		if not file.ends_with(".gd"): continue
+		var source := FileAccess.get_file_as_string("res://tools/" + file)
+		tools_safe = tools_safe and not source.contains("warp_" + "mouse(") and not source.contains("window_move_to_" + "foreground(")
+		if file != "virtual_input.gd":
+			tools_safe = tools_safe and not source.contains("Input." + "parse_input_event(")
+	ok("UI-34", tools_safe, "자동화 도구의 OS 커서·포커스 제어 금지, 입력 주입은 공용 Viewport 경로만 사용")
 	Meta.codex.erase("spec_x")
 	ok("META-01", Meta.discover("spec_x") and not Meta.discover("spec_x"), "반응 도감: 처음 발견할 때만 새로 추가")
 	Meta.codex.erase("spec_x")
@@ -2366,6 +2386,36 @@ func _meta_misc() -> void:
 	var dock_brief: bool = main.card_dock.summary_text(plain_card).contains(Elem.BRIEF[Elem.WATER])
 	plain_card.free()
 	main._set_card_detail(was_d)
+	# 공유 원문뿐 아니라 카드별 별도 설명·도감으로 가는 전체 문장도 검사한다. 수치 라벨은 허용한다.
+	var copy_texts: Array[String] = []
+	for e in Elem.ALL:
+		copy_texts.append_array([Elem.BRIEF[e], Elem.rider(e), Elem.TRAIT[e]])
+	for defs in [Pat.PATTERNS, Pat.MODS, Pat.LINKS, Pat.TRIGS]:
+		for id in defs:
+			copy_texts.append(Rules.fmt(defs[id]["desc"]))
+	for kind in Pat.BRIEF:
+		for id in Pat.BRIEF[kind]:
+			copy_texts.append(Pat.brief(kind, id, ""))
+	for pk in main.PERKS:
+		copy_texts.append(pk["desc"])
+	for rule in Elem.AFF_RULES:
+		copy_texts.append(rule[5])
+	copy_texts.append(Elem.SAME_AFF[3])
+	for kind in ["pat", "mod", "link", "trig"]:
+		var defs: Dictionary = {"pat": Pat.PATTERNS, "mod": Pat.MODS, "link": Pat.LINKS, "trig": Pat.TRIGS}[kind]
+		for id in defs:
+			var card := {"type": kind, "id": id}
+			for lvl in [0, 1]:
+				for row in main._card_content(card, lvl)["rows"]:
+					copy_texts.append(row.get("t", ""))
+			for row in main._card_full(card):
+				copy_texts.append(row[0])
+	var old_ending := RegEx.create_from_string("(한다|된다|쏜다|뿜는다|세운다|튄다|민다|갈라진다|막는다|남는다|훑는다|건다|줄어듦|세짐|느려짐|쫓음|받음|못 넣음|넣을 수 없음)([. ,)\\n]|$)")
+	var copy_ok := copy_texts.all(func(text): return old_ending.search(text) == null)
+	ok("UI-20", copy_ok, "카드·특성·도감 공유 원문과 요약·상세: 해요체, 수치 라벨 허용 (%d줄)" % copy_texts.size())
+	var unit_text := "12개까지 1.5초 40%를"
+	var kept_units := PatchNotes.kr_keep(unit_text)
+	ok("UI-20", kept_units.contains("2\u2060개") and kept_units.contains("5\u2060초") and kept_units.contains("0\u2060%\u2060를") and kept_units.replace("\u2060", "") == unit_text and PatchNotes.kr_keep(kept_units) == kept_units, "숫자·단위 줄바꿈 방지: 원문 보존·중복 적용 안전")
 	ok("UI-20", basic_ok and conditions and combo_ok and full_ok and on_ok and no_floating_tip and dock_brief, "카드 기본 효과: 15속성·0/12/50웨이브 %s, 조건 %s, 반응 그림 %s, 자세히 보존 %s" % [basic_ok, conditions, combo_ok, full_ok])
 
 	# 카드 선택 막: 선택지가 펼쳐져 있으면 검은 막(카드·카드 줄 버튼은 그 위), 필드 보기·카드를 고르면 곧바로 걷힘
@@ -2377,6 +2427,10 @@ func _meta_misc() -> void:
 	main.picks_left = 2
 	main._process(0.016)
 	var head_two: bool = main.choice_header.visible and main.choice_remaining.text == "2장 더 선택 가능" and main.choice_header.z_index > main.card_dim.z_index
+	var bottom_controls: bool = is_equal_approx(main.bar_box.position.y - main.card_dock.footer.position.y, 12) and is_equal_approx(main.ui_root.size.y - main.bar_box.get_rect().end.y, 12)
+	var detail_icon: Vector2 = main._button_icon_center(main.card_detail_btn)
+	var icon_fits: bool = Rect2(Vector2.ZERO, main.card_detail_btn.size).grow(-8).encloses(Rect2(detail_icon - Vector2(9, 9), Vector2(18, 18)))
+
 	main.picks_left = 1
 	main._process(0.016)
 	var head_one: bool = main.choice_remaining.text == "1장 더 선택 가능"
@@ -2397,12 +2451,41 @@ func _meta_misc() -> void:
 	main._process(0.016)
 	var dim_hide: bool = not main.card_dim.visible
 	var head_hide: bool = not main.choice_header.visible
+	var fold_offer: Array = main.offer.duplicate(true)
+	var fold_left: int = main.picks_left
+	var fold_ok := true
+	main._set_cards_hidden(false)
+	main._process(0.0)
+	fold_ok = main.hide_btn == main.card_dock.focus_btn and main.card_dock.focus_btn.visible and main.card_dock.focus_btn.text == "카드 접기"
+	for i in 3:
+		main.card_dock.focus_btn.pressed.emit()
+		main._process(0.0)
+		fold_ok = fold_ok and main.cards_hidden and not main.card_dock.panel.visible and not main.card_dock.side.visible and main.card_dock.focus_btn.text == "카드 보기"
+		main.card_dock.focus_btn.pressed.emit()
+		main._process(0.0)
+		fold_ok = fold_ok and main.card_dock.panel.visible and main.offer == fold_offer and main.picks_left == fold_left
+	main._set_cards_hidden(true)
+	main._process(0.0)
+	fold_ok = fold_ok and main.card_dock.focus_btn.text == "카드 보기"
+	main.card_dock.focus_btn.pressed.emit()
+	main._process(0.0)
+	fold_ok = fold_ok and not main.cards_hidden and main.card_dock.panel.visible
+	var toggles := true
+	var same_offer: Array = main.offer.duplicate(true)
+	for i in 4:
+		main._set_cards_hidden(false)
+		main._process(0.0)
+		toggles = toggles and main.card_dock.panel.visible and not main.cards_hidden
+		main._set_cards_hidden(true)
+		main._process(0.0)
+		toggles = toggles and not main.card_dock.panel.visible and main.hide_btn.visible and main.offer == same_offer
 	main._set_cards_hidden(false)
 	main._on_pick({"type": "mod", "id": "pierce"})
 	main._process(0.016)
 	var dim_off: bool = not main.card_dim.visible and main.phase == main.Phase.PLACE
-	ok("UI-23", dim_on and dim_hide and dim_off, "일반 판 카드 선택 시 전장 어둠 없음 %s, 필드 보기 %s·카드 고른 뒤 %s 유지" % [dim_on, dim_hide, dim_off])
-	ok("UI-30", head_two and head_one and no_apply and head_perk and head_hide and not main.choice_header.visible,
+	ok("UI-23", fold_ok and toggles and dim_on and dim_hide and dim_off, "일반 판 카드 선택 시 전장 어둠 없음 %s, 필드 보기 %s·카드 고른 뒤 %s 유지" % [dim_on, dim_hide, dim_off])
+	var controls: bool = main.speed_btn.get_parent() == main.speed_group and main.speed_pick.get_parent() == main.speed_group and main.speed_group.get_theme_constant("separation") == 0 and main.card_detail_btn.theme == main.bar_box.theme and main.speed_pick.get_theme_stylebox("normal").bg_color == main.reroll_btn.get_theme_stylebox("normal").bg_color and main.fx_pick.get_popup().get_theme_stylebox("panel") is StyleBoxFlat
+	ok("UI-30", controls and bottom_controls and icon_fits and head_two and head_one and no_apply and head_perk and head_hide and not main.choice_header.visible,
 		"카드 줄 선택 안내: 갱신 %s·%s, 중간 적용 버튼 없음 %s, 숨김 %s·%s·%s" % [head_two, head_one, no_apply, head_perk, head_hide, not main.choice_header.visible])
 
 
@@ -2419,6 +2502,21 @@ func _meta_misc() -> void:
 	var board: Rect2 = main.card_dock.screen_board()
 	ok("UI-28", stable and main.arena().size == Meta.FIELD and board.grow(1).encloses(main.get_canvas_transform() * main.arena())
 		and board.size.is_equal_approx(main.get_viewport_rect().size), "패널과 독립된 전체 화면 전장: 단계 전환에서 카메라 고정·논리 전장 유지")
+	var saved_tips: Array = main.tip_rects.duplicate()
+	var saved_pin: int = main.tip_pin
+	var info_point: Vector2 = main.get_canvas_transform() * main.center()
+	var info_at: Vector2 = main.ui_root.get_global_transform().affine_inverse() * info_point
+	main.tip_rects.clear()
+	main.tip_rects.append([Rect2(info_at - Vector2(10, 10), Vector2(20, 20)), [["정보", Color.WHITE]]])
+	var info_touch := InputEventScreenTouch.new()
+	info_touch.position = info_point
+	info_touch.pressed = true
+	var captured_info: bool = main._info_input(info_touch) and main.info_touch_capture == 0 and main.card_dock.over_ui(info_point)
+	info_touch.pressed = false
+	var released_info: bool = main._info_input(info_touch) and main.info_touch_capture == -1
+	main.tip_rects = saved_tips
+	main.tip_pin = saved_pin
+	ok("UI-28", captured_info and released_info, "그려진 정보 요소도 터치 누름·뗌을 소비해 전장으로 통과하지 않음")
 	var preview := {"type": "elem", "e": Elem.WATER, "lv": 1}
 	var target_good: bool = main.card_dock.target_ok(dt, preview)
 	dt.add(Elem.ICE, 1)
@@ -2454,8 +2552,90 @@ func _meta_misc() -> void:
 	dt.position = keep_pos
 	dock.shown_tower = null
 	var tab_hidden: bool = not "legend_btn" in main
-	ok("UI-32", side_ok and tab_hidden, "설명창 내용 높이·보는 오브젝트 반대쪽 구석, 일반 판 Tab 버튼 없음")
-	# UI-34: 점수 줄 칩 밑에 깔린 오브젝트는 점수 줄이 막지 않는다
+	var old_phase = main.phase
+	main.phase = main.Phase.READY
+	dock.hovered = null
+	dock.inspected_tower = dt
+	dock._update_side()
+	var retained_tower: bool = dock.shown_tower == dt and dock.side.visible and dock.scroll.mouse_filter == Control.MOUSE_FILTER_STOP
+	var close_visible: bool = dock.close_btn.visible
+	main.tap_sel = 1
+	main.hover_elem = Elem.FIRE
+	dock.close_btn.pressed.emit()
+	var closed: bool = not dock.side.visible and dock.inspected_tower == null and main.tap_sel == -1 and main.hover_elem == -1
+	dock.inspected_tower = dt
+	dock._update_side()
+	var old_pointer: Vector2 = main.pointer_position
+	main.pointer_position = main.get_canvas_transform() * main.center()
+	main.selected = [dt]
+	main.tip_tower = dt
+	var background_click := InputEventMouseButton.new()
+	background_click.button_index = MOUSE_BUTTON_LEFT
+	background_click.pressed = true
+	background_click.position = main.pointer_position
+	main._unhandled_input(background_click)
+	main._finish_box()
+	dock._update_side()
+	var dismissed_tower: bool = main.selected.is_empty() and dock.inspected_tower == null and main.tip_tower == null and not dock.side.visible
+	main.pointer_position = old_pointer
+	main.phase = old_phase
+	ok("UI-32", side_ok and retained_tower and close_visible and closed and dismissed_tower and tab_hidden, "설명창 내용 높이·보는 오브젝트 반대쪽 구석, 일반 판 Tab 버튼 없음")
+	var status_guide_visible: bool = main.guide_label.visible
+	main.guide_label.hide()
+	main.phase = main.Phase.READY
+	main.press_t = dt
+	main.dragging = false
+	main.pointer_position = main.get_canvas_transform() * dt.position
+	main._release_press()
+	dock._update_side()
+	dock.tick()
+	var selection_status: bool = main.hint.visible and main._kr_keep("오브젝트 1개 선택") in main.hint.text
+	var click_selects: bool = main.selected == [dt] and main.moving == null and main.phase == main.Phase.READY and dock.direction_btn.visible
+	main.phase = main.Phase.WAVE
+	dock._update_side()
+	main._edit_selected_direction()
+	var wave_readonly: bool = not dock.direction_btn.visible and main.phase == main.Phase.WAVE and main.moving == null
+	main.phase = main.Phase.READY
+	var original_dir: Vector2 = dt.dir
+	dock.direction_btn.pressed.emit()
+	dock.tick()
+	var edit_status: bool = main.hint.visible and main._kr_keep("방향 편집 중") in main.hint.text
+	var edits_selected: bool = main.phase == main.Phase.AIM and main.moving == dt
+	main._cancel_step()
+	var cancel_restores: bool = main.phase == main.Phase.READY and main.selected == [dt] and dt.dir == original_dir and dock.inspected_tower == dt
+	main.phase = main.Phase.CHOOSE
+	main.cards_hidden = true
+	main.picked = main.offer[0]
+	main._start_move(dt)
+	main.moving = null
+	main._end_move()
+	var finished_clean: bool = main.cards_hidden and main.selected.is_empty() and dock.inspected_tower == null and dock.hovered == null and main.tap_sel == -1
+	main.cards_hidden = false
+	dock.close_inspector()
+	main.selected = [dt]
+	main._on_pick({"type": "mod", "id": "multi"})
+	var carry_status: bool = main.selected.is_empty() and main.hint.visible and main._kr_keep("카드 놓는 중") in main.hint.text and main._kr_keep("Esc 취소") in main.hint.text
+	var was_touch: bool = main.touch_ui
+	main.touch_ui = true
+	var touch_status: bool = "버튼으로 취소" in dock.operation_text() and not "Esc" in dock.operation_text()
+	main.touch_ui = was_touch
+	main.phase = main.Phase.CHOOSE
+	var deleted = _tower(main.center() + Vector2(200, 0))
+	main.selected = [deleted]
+	deleted.free()
+	var deleted_selection: bool = dock.operation_text() == "" and main.selected.is_empty()
+	main._select_tower(dt)
+	dock.tick()
+	var state_before_guide: bool = main.hint.visible
+	main.guide_label.show()
+	dock.tick()
+	var guide_priority: bool = not main.hint.visible
+	dock.close_inspector()
+	main.phase = old_phase
+	main.guide_label.visible = status_guide_visible
+	ok("UI-35", selection_status and edit_status and carry_status and touch_status and deleted_selection and state_before_guide and guide_priority, "선택·편집·카드 상태 %s/%s/%s · 터치 %s · 삭제 %s" % [selection_status, edit_status, carry_status, touch_status, deleted_selection])
+	ok("UI-05", click_selects and wave_readonly and edits_selected and cancel_restores and finished_clean, "클릭은 선택, 쉬는 시간의 명시적 방향 편집·취소 복원, 전투 중 읽기 전용")
+	# UI-36: 점수 줄 칩 밑에 깔린 오브젝트는 점수 줄이 막지 않는다
 	var hud_ok := true
 	if main.hud.is_visible_in_tree() and main.hud.size.x > 40.0:
 		var hp: Vector2 = main.hud.get_global_rect().position + Vector2(20.0, main.hud.size.y / 2.0)
@@ -2466,7 +2646,7 @@ func _meta_misc() -> void:
 		var free_tower: bool = not dock.over_ui(hp)
 		dt.position = keep_hp
 		hud_ok = blocked_empty and free_tower
-	ok("UI-34", hud_ok, "점수 줄 밑 오브젝트는 누를 수 있고, 빈 칩 자리는 막힘")
+	ok("UI-36", hud_ok, "점수 줄 밑 오브젝트는 누를 수 있고, 빈 칩 자리는 막힘")
 	# UI-33: 설명창 그림 (오브젝트 정보: 미리보기·숫자 타일, 자세히: 곱셈 사슬·배율 막대 / 카드: 미리보기·타일)
 	var pic: InfoPanel = dock.pic
 	pic.show_tower(dt, false, 0.3, "이번 웨이브 몫", 300.0)
@@ -2481,6 +2661,30 @@ func _meta_misc() -> void:
 	var card_ok: bool = pic.mode == "card" and pic.custom_minimum_size.y > 150.0
 	pic.clear()
 	ok("UI-33", h_basic > 200.0 and h_more > h_basic and chain_ok and card_ok, "설명창 그림: 기본 %d · 자세히 %d · 사슬 끝 %s" % [h_basic, h_more, chain_end])
+	main.phase = main.Phase.READY
+	main.touch_ui = true
+	main.countdown = -1.0
+	main.card_dock.inspected_tower = dt
+	main.tip_frame = -10
+	main._process(4.0)
+	var touch_detail_btn: bool = main.detail_btn.is_visible_in_tree() and main.detail_btn.get_parent() == dock.inspector_header
+	main.detail_btn.pressed.emit()
+	main._process(0.0)
+	var touch_detail_kept: bool = main._tip_detail_on() and dock.shown_tower == dt and main._ring_target() == dt and dock.pic.detail
+	main.touch_ui = false
+	main.tip_detail = false
+	dock.close_inspector()
+	ok("UI-16", touch_detail_btn and touch_detail_kept, "터치 인스펙터는 시간 경과 후에도 유지, 헤더 자세히로 상세 수치 전환")
+	main.phase = main.Phase.READY
+	main.card_dock.inspected_tower = dt
+	main.selected = [dt]
+	main._toggle_pause()
+	main._process(0.0)
+	var paused_reading: bool = dock.side.visible and dock.side.z_index > main.pause_dim.z_index and not dock.direction_btn.visible and main._ring_target() == null
+	main._edit_selected_direction()
+	var paused_no_edit: bool = main.phase == main.Phase.READY and main.moving == null
+	main._toggle_pause()
+	ok("UI-07", paused_reading and paused_no_edit, "정지 중 인스펙터는 막 위에서 열람 가능, 방향 편집은 금지")
 	main.phase = main.Phase.PLACE
 
 
@@ -2507,16 +2711,16 @@ func _meta_misc() -> void:
 	var rings_back: bool = not main._place_rings_off()
 	var pv_ok: bool = not (dt.preview({"type": "mod", "id": "multi"})[0] as PackedStringArray)[0].contains("겹쳐서")
 	main.card_dock.camera_fit()
-	var preview_target := _tower(main.get_global_mouse_position())
+	var preview_target := _tower(main._pointer_world())
 	main.picked = {"type": "mod", "id": "multi"}
 	main.phase = main.Phase.PLACE
 	var guide_was_visible: bool = main.guide_label.visible
 	main.guide_label.hide()
 	main.card_dock.tick()
-	var hint_hidden: bool = not main.hint.visible
+	var preview_status: bool = main.hint.visible and main._kr_keep("카드 놓는 중") in main.hint.text
 	preview_target.free()
 	main.card_dock.tick()
-	ok("UI-25", hint_hidden and main.hint.visible, "대상 미리보기 때 하단 안내를 숨기고, 대상을 벗어나면 다시 표시")
+	ok("UI-25", preview_status and main.hint.visible, "대상 미리보기 중 상태 유지 %s/%s · 문구 %s · 입력 차단 %s" % [preview_status, main.hint.visible, main.hint.text, main.card_dock.input_blocked()])
 	main.guide_label.visible = guide_was_visible
 	main.phase = main.Phase.CHOOSE
 	ok("UI-25", mg == "혼불 3→4개 (하나 피해 73→72%) · 공격방식 보정 x1.06" and mg2 == "없음 → 탄 2개" and rings_off and rings_back and pv_ok, "넣기 설명 한 줄 합치기 '%s', 둘레 끔 %s/%s" % [mg, rings_off, rings_back])
@@ -2548,8 +2752,23 @@ func _meta_misc() -> void:
 	main.phase = main.Phase.CHOOSE
 	main.picks_left = 2
 	Meta.skip_n = 3
+	main._update_skip_ui()
+	var skip_forecast: bool = "카드 선택 2회 보류" in main.skip_btn.tooltip_text
+	main.get_tree().paused = true
+	var paused_offer: Array = main.offer.duplicate(true)
+	var paused_rerolls: int = main.rerolls_left
+	for code in [KEY_S, KEY_Q, KEY_SPACE, KEY_1]:
+		var paused_key := InputEventKey.new()
+		paused_key.keycode = code
+		paused_key.pressed = true
+		main._unhandled_input(paused_key)
 	main._on_skip()
-	ok("SKIP-02", main.skip_left == 3 and main.bank_picks.size() == 2, "넘기기: 이번 고르기를 쌓아 두고 n웨이브 진행 (남은 %d, 쌓인 고르기 %d)" % [main.skip_left, main.bank_picks.size()])
+	main._on_reroll()
+	var paused_unchanged: bool = main.phase == main.Phase.CHOOSE and main.picks_left == 2 and main.rerolls_left == paused_rerolls and main.offer == paused_offer and main.skip_left == 0
+	main.get_tree().paused = false
+	ok("UI-10", paused_unchanged, "일시정지 중 선택·새로고침·넘기기·시작 입력은 상태를 바꾸지 않음")
+	main._on_skip()
+	ok("SKIP-02", skip_forecast and main.skip_left == 3 and main.bank_picks.size() == 2, "넘기기: 이번 고르기를 쌓아 두고 n웨이브 진행 (남은 %d, 쌓인 고르기 %d)" % [main.skip_left, main.bank_picks.size()])
 	main.skip_left = 0
 	main.bank_picks = []
 	# 카드를 다 고른 뒤(웨이브 시작 대기)에도 넘기기: 버튼이 보이고, 누르면 넘기기 시작
@@ -2557,7 +2776,8 @@ func _meta_misc() -> void:
 	main._enter_ready()
 	main.countdown = -1.0
 	main._update_skip_ui()
-	var ready_btn: bool = main.skip_btn.visible
+	main.card_dock.tick()
+	var ready_btn: bool = main.skip_btn.visible and main.card_dock.skip_group.visible and is_equal_approx(main.skip_btn.get_rect().end.x, main.skip_n_btn.position.x) and main.skip_btn.text == "넘기기" and main.skip_n_btn.text == "3웨이브 ▸"
 	main._on_skip()
 	ok("SKIP-03", ready_btn and main.skip_left == 3 and main.bank_picks.is_empty() and main.phase == main.Phase.READY, "웨이브 시작 대기에서도 넘기기 (버튼 %s, 남은 %d)" % [ready_btn, main.skip_left])
 	main.skip_left = 0
@@ -2767,6 +2987,13 @@ func _multiplayer() -> void:
 	main.phase = main.Phase.CHOOSE
 	main._begin_press(other, other.position)
 	var blocked: bool = main.press_t == null
+	var select_all := InputEventKey.new()
+	select_all.keycode = KEY_A
+	select_all.ctrl_pressed = true
+	select_all.pressed = true
+	main._unhandled_input(select_all)
+	var owned_selection: bool = main.selected == [mine]
+	main.selected.clear()
 	main.coop_n = 2
 	var hk1: float = main.coop_hp_k(1)
 	var hk3: float = main.coop_hp_k(3)
@@ -2781,7 +3008,7 @@ func _multiplayer() -> void:
 	copy.main = main
 	copy.mp_apply(st)
 	mine.mp_apply(mine.mp_state())
-	ok("MP-07", mine.owner_id == 1 and mine.net_id == 100001 and blocked and main._my_towers() == [mine] and copy.elements == other.elements and copy.pattern == other.pattern and is_equal_approx(mine.dealt, 55.0) and mine.lv(Elem.FIRE) == 2,
+	ok("MP-07", mine.owner_id == 1 and mine.net_id == 100001 and blocked and owned_selection and main._my_towers() == [mine] and copy.elements == other.elements and copy.pattern == other.pattern and is_equal_approx(mine.dealt, 55.0) and mine.lv(Elem.FIRE) == 2,
 		"협동: 내 오브젝트만 바꿈, 상태를 주고받아도 속성·공격방식 같고 피해 기록은 이 기기 것 (%s)" % str([mine.owner_id, mine.net_id, blocked, main._my_towers().size(), copy.elements, other.elements, mine.dealt, mine.lv(Elem.FIRE)]))
 	copy.free()
 	main.press_t = null
@@ -3022,7 +3249,7 @@ func _tutorial() -> void:
 	main.aim_wait = true
 	var held_dir: bool = main._aim_dir(main.place_pos) == Vector2.UP and main._ok_btn_on() and main.aim_ok_btn.text == "확정"
 	main.aim_hold = true
-	var held_near: bool = main.get_global_mouse_position().distance_to(main.place_pos) >= main.AIM_TOUCH_MIN or main._aim_dir(main.place_pos) == Vector2.UP
+	var held_near: bool = main._pointer_world().distance_to(main.place_pos) >= main.AIM_TOUCH_MIN or main._aim_dir(main.place_pos) == Vector2.UP
 	main.aim_hold = false
 	main.phase = main.Phase.PLACE
 	main.touch_ui = false

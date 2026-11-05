@@ -19,7 +19,7 @@ func _initialize():
 	Tutorial.loaded = false
 	Meta.games = 0
 	main = load("res://main.tscn").instantiate()
-	root.add_child(main)
+	VirtualInput.mount(main, root)
 	await process_frame
 	Meta.ui_scale = float(args[1])
 	main.touch_ui = args.size() > 2
@@ -72,6 +72,7 @@ func _initialize():
 	main._after_place(card)
 	await snap("ready")
 	ok("TUT-06", main.picks_left == 0 and main.phase == main.Phase.READY and main._first_action_text().contains("웨이브"), "two real placements enable start action")
+	main.lanes.clear()  # 방어 배치 정책은 spec에서 검사하고, 여기서는 첫 행동 안내 종료를 확인한다.
 	main._start_wave_from_ready()
 	ok("TUT-06", main.wave == 1 and main._first_action_text() == "", "action guide ends only after wave starts")
 	main._guide("skill", "긴 설명")
@@ -90,8 +91,8 @@ func snap(tag: String):
 	for i in 6:
 		main._process(0.0)
 		await process_frame
-	await RenderingServer.frame_post_draw
-	root.get_viewport().get_texture().get_image().save_png(output.path_join(tag + ".png"))
+	RenderingServer.force_draw()
+	main.get_viewport().get_texture().get_image().save_png(output.path_join(tag + ".png"))
 	var bad: int = preload("res://tools/ui_check.gd").check(main, tag)
 	fails += bad
 	print("NATIVE SHOT ", tag, " action=", main._first_action_text(), " ui=", bad)

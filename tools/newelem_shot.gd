@@ -1,6 +1,6 @@
 extends SceneTree
 ## 새 속성 피·환영(2026-11-04) 화면 점검: 카드 선택지·카드 자세히·출혈·현혹 표시와 핏자국이 깔린 전장·정보창·도감 속성 탭.
-## 인자: 저장 폴더 [글자 크기] [touch] [phone]. 예) xvfb-run godot --path . --rendering-driver opengl3 -s tools/newelem_shot.gd -- /tmp/shots 1.0
+## 인자: 저장 폴더 [글자 크기] [touch] [phone]. tools/run.sh ui로 격리된 가상 입력에서 실행한다.
 var main
 var f := 0
 var out := "/tmp"
@@ -10,13 +10,16 @@ var steps: Array = []
 
 
 func _initialize():
+	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools"):
+		quit(2)
+		return
 	var a := OS.get_cmdline_user_args()
 	if a.size() > 0: out = a[0]
 	if a.size() > 1: z = float(a[1])
 	touch = a.size() > 2 and a[2] == "touch"
 	Meta.sim_phone = a.size() > 3 and a[3] == "phone"
 	main = load("res://main.tscn").instantiate()
-	root.add_child(main)
+	VirtualInput.mount(main, root)
 	steps = [
 		func():
 			Meta.ui_scale = z
@@ -86,7 +89,7 @@ func _initialize():
 			it.hit(main.orbs.get_child(6), 0.0),
 		func():
 			_snap("ne_field")
-			Input.warp_mouse(main.towers.get_child(0).get_global_transform_with_canvas().origin),
+			VirtualInput.move(main.towers.get_child(0).get_global_transform_with_canvas().origin),
 		func(): pass,
 		func():
 			_snap("ne_tip")
@@ -101,7 +104,8 @@ func _initialize():
 
 
 func _snap(n: String):
-	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
+	RenderingServer.force_draw()
+	main.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
 	print("SHOT ", n)
 	preload("res://tools/ui_check.gd").check(main, n)
 

@@ -27,7 +27,7 @@ func _initialize():
 	if a.size() > 1: z = float(a[1])
 	touch = a.size() > 2 and a[2] == "touch"
 	main = load("res://main.tscn").instantiate()
-	root.add_child(main)
+	VirtualInput.mount(main, root)
 	main.tut_first = false
 	steps = [
 		func():
@@ -47,13 +47,13 @@ func _initialize():
 		func():
 			# 안내 배지에 마우스를 올린 것처럼: 첫 진입 화살표 말풍선
 			if not main.tip_rects.is_empty():
-				Input.warp_mouse(main.tip_rects[0][0].get_center()),
+				VirtualInput.move(main.tip_rects[0][0].get_center()),
 		func(): _snap("late_preview_100"); main.wave = 499; main._update_preview(),
 		func(): pass,
 		func():
 			if not main.tip_rects.is_empty():
-				Input.warp_mouse(main.tip_rects[0][0].get_center()),
-		func(): _snap("late_preview_500"); Input.warp_mouse(Vector2(5, 360)); main._start_wave(),
+				VirtualInput.move(main.tip_rects[0][0].get_center()),
+		func(): _snap("late_preview_500"); VirtualInput.move(Vector2(5, 360)); main._start_wave(),
 		func():
 			for o in main.orbs.get_children():
 				o.free()
@@ -85,7 +85,8 @@ func _initialize():
 
 
 func _snap(n: String):
-	root.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s.png" % [n, z, "_touch" if touch else ""]))
+	RenderingServer.force_draw()
+	main.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s.png" % [n, z, "_touch" if touch else ""]))
 	print("SHOT ", n)
 	preload("res://tools/ui_check.gd").check(main, n)
 

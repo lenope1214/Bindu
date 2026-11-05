@@ -1,10 +1,20 @@
 # 점검 도구
 
-게임을 바꾼 뒤 결과가 어떻게 달라졌는지 같은 방법으로 다시 재기 위한 스크립트. 모두 헤드리스 Godot으로 돌고, 프로젝트를 임시 폴더에 복사해서 실제 게임의 기록·이어하기 파일은 건드리지 않는다.
+게임을 바꾼 뒤 결과가 어떻게 달라졌는지 같은 방법으로 다시 재기 위한 스크립트. 기능·플레이 검사는 헤드리스, 화면·입력 검사는 native 렌더러로 돌린다. 프로젝트를 임시 폴더에 복사해서 실제 게임의 기록·이어하기 파일은 건드리지 않는다.
 
 ```
 GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 ```
+
+UI 자동화는 아래 실행기를 사용한다. 사본에 시작 전 `no_focus`·최소화를 설정하고, 온라인 주소를 비운다. OS 창은 최소화한 채 별도 Viewport에 입력을 주입해 클릭·드래그·터치·휠·수정키를 실제 게임 GUI 경로로 보낸다. 사용자의 커서나 전면 앱을 바꾸지 않는다. 창의 물리 해상도와 논리 좌표를 분리해 큰 글자·폰 화면에서도 좌표를 맞춘다.
+
+```sh
+GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh ui carry_check.gd /tmp/carry 1.0
+RESOLUTION=2556x1179 GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh ui carry_check.gd /tmp/carry-phone 1.3 phone
+GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh ui shot.gd /tmp/screens 1.3
+```
+
+출력 폴더는 절대 경로를 사용한다. `godot -s`로 원본 프로젝트에서 UI 검사를 직접 실행하지 않는다. `virtual_input.gd`가 입력·좌표 변환을 공용으로 처리하며 OS 커서 이동·전면 활성화 호출은 spec에서 금지한다. OS 자체의 포커스 전환·드라이버·실기기 입력은 이 검사의 범위가 아니다.
 
 | 명령 | 하는 일 | 출력 |
 |---|---|---|
@@ -20,26 +30,27 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh bots 1 32
 | `miss_audit.gd` | `tools/run.sh miss` (`PAT=shot,laser` `KIND=fast`): 공격방식 x 강화 하나 x 다중 발사 0~3개마다 정면(조준한 그 방향)에 멈춘 구체를 거리 90~440에 두고 4초 피해. 사거리 안인데 0이거나 가장 잘 맞힌 거리의 15% 미만이면 `MISS` | 피해가 안 들어가는 조합 전수조사 |
 | `pat_kill.gd` | 같은 방법(`HP=15` `RATE=1`): 체력 HP 구체가 정면으로 60초 올 때(lane). spiral은 비껴 도는 길이 오브젝트 앞을 지나지 않는 경우가 많아 참고만 | 공격방식별 처치율 |
 | `ui_check.gd` | 스크린샷 도구(shot·mp_shot·vote_shot·path_shot·vary_shot·ui_audit)가 찍을 때마다 부름: 보이는 글·버튼·창·그림 배지끼리 겹침, 화면(폰은 안전 영역) 밖, 말줄임으로 잘린 글 | `UI OVERLAP/OFFSCREEN/CLIP <화면> …`, 없으면 `UI ok <화면>` |
-| `ui_audit.gd` | `xvfb-run godot --path . --rendering-driver opengl3 --resolution 2556x1179 -s tools/ui_audit.gd -- <폴더> [글자 크기] [touch] [phone]`: 일곱 길목(점수 줄·DPS 표·버튼·웨이브 시작·안내 쪽)·큰 점수·오브젝트 14개·특성 8개·놓친 구체·긴 알림으로 꽉 채운 쉬는 시간·카드·웨이브 화면. `--resolution`으로 화면비(2400x1080 20:9, 2048x1536 4:3 등), phone이면 노치 안전 영역도 흉내 | PNG + `UI BAD <수>` |
-| `reflex_shot.gd` | `godot --path <임시 사본> -s tools/reflex_shot.gd -- <출력 폴더> [글자 크기=1.3] [touch]`: 반응 카드 앞면·상세·후방 공격. 프로젝트 이름이 BinduTools로 시작하는 사본에서만 실행 | PNG 3장 + UI 검사 + 후방 조준·명중 검증 |
-| `vary_shot.gd` | `xvfb-run godot --path . -s tools/vary_shot.gd -- <폴더> [글자 크기] [touch]`: 판마다 다른 흐름 점수 줄 칩 말풍선(이벤트·예고·봉인·적응) 스크린샷 | PNG |
-| `tip_shot.gd` | `xvfb-run godot --path . --rendering-driver opengl3 -s tools/tip_shot.gd -- <폴더> [글자 크기] [touch] [phone]`: 별 넷·바람 곁의 행성(별+영혼 혼불)에 올린 오브젝트 정보창 기본(tip_basic)·자세히(tip_detail) | PNG |
-| `rank_shot.gd` | `xvfb-run godot --path . --rendering-driver opengl3 -s tools/rank_shot.gd -- <폴더> [글자 크기] [touch] [phone]`: 오브젝트 7개에 피해를 나눠 준 뒤 1위 왕관·2·3위 메달·DPS 표 순위 색 (rank, 가운데 확대 rank_zoom) | PNG |
-| `nova_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/nova_shot.gd -- <폴더> [글자 크기] [touch]`: 초신성 그림(별·행성 게이지, 85% 예고 조준 고리, 다 참, 터지는 순간·퍼지는 중) | PNG |
-| `newelem_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/newelem_shot.gd -- <폴더> [글자 크기] [touch] [phone]`: 새 속성 피·환영 카드 선택지·카드 자세히·출혈·현혹 표시와 핏자국 전장·정보창·도감 속성 탭 | PNG, `UI` 줄 |
-| `late_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/late_shot.gd -- <폴더> [글자 크기] [touch]`: 후반 구체 다섯 종 안내(100·500웨이브 배지)·전장 위 모양(깜빡 예고·갑옷 깨짐·치유 맥동·흐림·포식 입) | PNG |
-| `board_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path <사본> -s tools/board_shot.gd -- <폴더> [글자 크기] [touch] [phone]`: 서버 없이 순위를 채워 리더보드 기본·이번 주·지난 시즌·빈 기록·신고·차단 창 스크린샷. 사본의 online_config SERVER_URL은 http://127.0.0.1:9로 | PNG |
-| `map_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/map_shot.gd -- <폴더> [글자 크기] [touch]`: 맵 규칙 준비 화면 맵 줄(맵 5개)·친화 카드 선택지·십자로 길목 띠·폭풍 바람 스크린샷 | PNG |
+| `ui_audit.gd` | `tools/run.sh ui ui_audit.gd <폴더> [글자 크기] [touch] [phone]`: 일곱 길목(점수 줄·DPS 표·버튼·웨이브 시작·안내 쪽)·큰 점수·오브젝트 14개·특성 8개·놓친 구체·긴 알림으로 꽉 채운 쉬는 시간·카드·웨이브 화면. `RESOLUTION`으로 화면비(2400x1080 20:9, 2048x1536 4:3 등), phone이면 노치 안전 영역도 흉내 | PNG + `UI BAD <수>` |
+| `reflex_shot.gd` | `tools/run.sh ui reflex_shot.gd <출력 폴더> [글자 크기=1.3] [touch]`: 반응 카드 앞면·상세·후방 공격. 프로젝트 이름이 BinduTools로 시작하는 사본에서만 실행 | PNG 3장 + UI 검사 + 후방 조준·명중 검증 |
+| `vary_shot.gd` | `tools/run.sh ui vary_shot.gd <폴더> [글자 크기] [touch]`: 판마다 다른 흐름 점수 줄 칩 말풍선(이벤트·예고·봉인·적응) 스크린샷 | PNG |
+| `tip_shot.gd` | `tools/run.sh ui tip_shot.gd <폴더> [글자 크기] [touch] [phone]`: 별 넷·바람 곁의 행성(별+영혼 혼불)에 올린 오브젝트 정보창 기본(tip_basic)·자세히(tip_detail) | PNG |
+| `rank_shot.gd` | `tools/run.sh ui rank_shot.gd <폴더> [글자 크기] [touch] [phone]`: 오브젝트 7개에 피해를 나눠 준 뒤 1위 왕관·2·3위 메달·DPS 표 순위 색 (rank, 가운데 확대 rank_zoom) | PNG |
+| `nova_shot.gd` | `tools/run.sh ui nova_shot.gd <폴더> [글자 크기] [touch]`: 초신성 그림(별·행성 게이지, 85% 예고 조준 고리, 다 참, 터지는 순간·퍼지는 중) | PNG |
+| `late_shot.gd` | `tools/run.sh ui late_shot.gd <폴더> [글자 크기] [touch]`: 후반 구체 다섯 종 안내(100·500웨이브 배지)·전장 위 모양(깜빡 예고·갑옷 깨짐·치유 맥동·흐림·포식 입) | PNG |
+| `board_shot.gd` | `tools/run.sh ui board_shot.gd <폴더> [글자 크기] [touch] [phone]`: 서버 없이 순위를 채워 리더보드 기본·이번 주·지난 시즌·빈 기록·신고·차단 창 스크린샷. 사본의 online_config SERVER_URL은 http://127.0.0.1:9로 | PNG |
+| `map_shot.gd` | `tools/run.sh ui map_shot.gd <폴더> [글자 크기] [touch]`: 맵 규칙 준비 화면 맵 줄(맵 5개)·친화 카드 선택지·십자로 길목 띠·폭풍 바람 스크린샷 | PNG |
+| `newelem_shot.gd` | `tools/run.sh ui newelem_shot.gd <폴더> [글자 크기] [touch] [phone]`: 새 속성 피·환영 카드 선택지·카드 자세히·출혈·현혹 표시와 핏자국 전장·정보창·도감 속성 탭 | PNG, `UI` 줄 |
 | `mp_signal.gd` | `godot --headless -s tools/mp_signal.gd -- [포트=8790]`: 멀티플레이 중개 Worker(server/mp-worker)와 같은 약속의 로컬 서버. 게임·도구는 `BINDU_MP_URL=http://127.0.0.1:8790` | 로그 |
 | `mp_conn_test.gd` | 두 프로세스로 `-- host <코드 파일>` / `-- join <코드 파일>` (BINDU_MP_URL 필요): WebRTC로 이어져 메시지를 주고받고 핑을 재는지 | `MPCONN ok ... ping=Nms` / `MPCONN FAIL` |
 | `mp_play.gd` | 두(이상) 프로세스로 봇 판: `MP_ROLE=host\|join MP_MODE=vs\|coop MP_FILE=<코드 파일> MP_WAVES=8 MP_N=<참가 인원>` + BINDU_MP_URL (`MP_IDLE=<역할>`이면 그 역할은 아무것도 안 함: 잠수 처리 시험). 대결은 웨이브마다 진입 방향이 같은지, 협동은 웨이브·점수·오브젝트가 같은지 | 웨이브마다 `MPW`·`MPDEALT`(주인별 피해), 끝에 `MPPLAY` |
-| `mp_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path . -s tools/mp_shot.gd -- <폴더> [글자 크기] [touch] [vs\|coop]`: 연결 없이 상태만 채워 시작 버튼·방 화면·상태 줄·웨이브·끝 화면 스크린샷 | PNG |
-| `vote_shot.gd` | `xvfb-run godot --rendering-driver opengl3 --path <사본> -s tools/vote_shot.gd -- <폴더> [글자 크기] [touch] [phone]`: 서버 없이 응답을 채워 시작 화면 [투표]·투표 창(표·개선 의견·표 다 씀·지난 회차 결과)·판 끝 화면 버튼·이번 판 탭 스크린샷. 사본의 online_config SERVER_URL은 http://127.0.0.1:9로 | PNG |
-| `carry_check.gd` | `godot --path <BinduTools 사본> -s tools/carry_check.gd -- <출력 폴더> <글자 배율> [phone]`: 서버 주소를 비운 native 사본에서 실제 카드 클릭·드래그·터치, 무효 대상·취소·앱 전환·확대·중복 소비 방지·카메라 독립·UI 검사 | PNG·ok/FAIL·CARRY failures |
-| `first_play_check.gd` | 저장 분리 사본(`config/name`은 BinduTools로 시작)에서 `godot --path <사본> -s tools/first_play_check.gd -- <캡처 폴더> <글자 배율> [touch]`: 첫 기기 진입·선택형 설명·첫 2회 배치·취소·이어하기·웨이브 시작 확인. 창 필요, 실제 게임 저장에서는 실행 거부 | 항목별 ok/FAIL, 캡처 PNG, `NATIVE FIRST failures=0` |
+| `mp_shot.gd` | `tools/run.sh ui mp_shot.gd <폴더> [글자 크기] [touch] [vs\|coop]`: 연결 없이 상태만 채워 시작 버튼·방 화면·상태 줄·웨이브·끝 화면 스크린샷 | PNG |
+| `vote_shot.gd` | `tools/run.sh ui vote_shot.gd <폴더> [글자 크기] [touch] [phone]`: 서버 없이 응답을 채워 시작 화면 [투표]·투표 창(표·개선 의견·표 다 씀·지난 회차 결과)·판 끝 화면 버튼·이번 판 탭 스크린샷. 사본의 online_config SERVER_URL은 http://127.0.0.1:9로 | PNG |
+| `card_writing_check.gd` | 온라인·멀티 주소를 비운 `BinduTools` native 사본에서 `tools/run.sh ui card_writing_check.gd <폴더> 1.0`. 130%는 `1.3`, 폰은 `2556x1179`·`1.3 phone`, 태블릿은 `2048x1536`·`1.3 touch`. 전체 62종(직선탄 정의·특성 포함) 요약·상세, 4장 선택지, 가로 넘침·본문 높이·스크롤 마지막 줄 검사 | PNG·본문/해상도 manifest·`CARD WRITING failures=0` |
+| `carry_check.gd` | `tools/run.sh ui carry_check.gd <출력 폴더> <글자 배율> [phone]`: 서버 주소를 비운 native 사본에서 가상 카드 클릭·드래그·터치, 무효 대상·취소·앱 전환·확대·중복 소비 방지·카메라 독립·UI 검사 | PNG·ok/FAIL·CARRY failures |
+| `first_play_check.gd` | 저장 분리 사본(`config/name`은 BinduTools로 시작)에서 `tools/run.sh ui first_play_check.gd <캡처 폴더> <글자 배율> [touch]`: 첫 기기 진입·선택형 설명·첫 2회 배치·취소·이어하기·웨이브 시작 확인. 창 필요, 실제 게임 저장에서는 실행 거부 | 항목별 ok/FAIL, 캡처 PNG, `NATIVE FIRST failures=0` |
 | `spec` | [docs/features.md](../docs/features.md)에서 검사가 spec인 기능마다 기대 동작을 확인(tools/spec_check.gd), 끝에 문서와 대조 | 기능별 ok/FAIL, 실패가 있으면 끝 코드 1 |
 | `tutplay` | 플레이 튜토리얼(tools/tut_play_check.gd)을 직접 해내기(PC·터치)·[건너뛰기]만·3장부터 장 고르기로 끝까지 돌리고, 끝난 뒤 이어하기·판 수·누적 수·업적·맵·규칙·모드가 그대로인지 | 항목별 ok/FAIL, `TUTPLAY 통과`, 끝 코드 |
-| `tut_play_shot.gd` | `xvfb-run godot --path . --rendering-driver opengl3 -s tools/tut_play_shot.gd -- <폴더> [글자 크기] [touch] [phone]`: 플레이 튜토리얼 단계별 화면 PNG (안내 칸·강조·카드 겹침) | PNG, `UI OVERLAP` 줄 |
+| `tut_play_shot.gd` | `tools/run.sh ui tut_play_shot.gd <폴더> [글자 크기] [touch] [phone]`: 플레이 튜토리얼 단계별 화면 PNG (안내 칸·강조·카드 겹침) | PNG, `UI OVERLAP` 줄 |
 | `notes` | `python3 tools/notes_check.py`: CHANGELOG(게임 안 패치노트)에 패치 키·코드 이름·파일 경로·서버 API 경로·커밋 해시·백틱·요청/제보 인용이 없는지 ([docs/changelog-rules.md](../docs/changelog-rules.md)). Godot 필요 없음 | 걸린 줄마다 `FAIL CHANGELOG.md:<줄> <이유>`, 끝 줄 `NOTES ok` |
 | `check` | 배포 전 한 번에: 패치노트 검사 + spec + 플레이 튜토리얼 + 무작위 입력 4판 + 이어하기 13웨이브 + 온라인 서명 + 패치 키 + 서버 pytest(패키지가 있을 때). 4~5분. 이어하기는 13웨이브 도달과 4·8·12웨이브 복원 모두 필수 | `CHECK 통과` / `CHECK 실패: <항목>`, 끝 코드 |
 | `patch_keys_check.gd` | `godot --headless --path . -s tools/patch_keys_check.gd`: 온라인 패치 rules의 오브젝트 수치 키(공격방식별 피해·속도·사거리, 강화·속성 수치, 규칙별 덮어쓰기)가 실제 값·설명 글에 먹는지 | 항목별 ok/FAIL, 끝 줄 `PATCHCHECK ok` |
@@ -82,11 +93,11 @@ godot --headless --path . -s tools/update_check.gd -- 공개키.pem 서명 Bindu
 ## 하단 카드 도크 전후 비교
 
 `tools/dock_check.gd`는 같은 시드·오브젝트 좌표·선택지를 사용해 PC/폰/태블릿 화면과 실제 Godot 입력 경로를 확인한다.
-실제 저장과 분리된 `BinduTools…` 사본, 온라인·멀티 주소가 빈 설정, native 창에서만 실행한다.
+실제 저장과 분리된 `BinduTools…` 사본, 온라인·멀티 주소가 빈 설정, native 렌더러로 OS 창 포커스 없이 실행한다.
 
 ```sh
-godot --path /path/to/isolated-copy --resolution 1280x720 -s tools/dock_check.gd -- /tmp/dock-desktop 1.0
-godot --path /path/to/isolated-copy --resolution 2556x1179 -s tools/dock_check.gd -- /tmp/dock-phone 1.3 phone
+GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh ui dock_check.gd /tmp/dock-desktop 1.0
+RESOLUTION=2556x1179 GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh ui dock_check.gd /tmp/dock-phone 1.3 phone
 ```
 
 기준 main 사본에 같은 검사 파일을 복사하면 before 캡처도 얻을 수 있다. 전장 상태는 같고 레이아웃만 다르다.

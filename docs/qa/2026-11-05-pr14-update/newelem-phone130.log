@@ -1,0 +1,25 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+SHOT ne_cards
+UI ok ne_cards
+SHOT ne_cards_detail
+UI ok ne_cards_detail
+SHOT ne_field
+UI ok ne_field
+SHOT ne_tip
+UI ok ne_tip
+SHOT ne_codex
+UI OVERLAP ne_codex 점수 칩「0 · 0」 [13,51 97x39] × PanelContainer(@PanelContainer@321) [87,65 1385x590]
+UI OVERLAP ne_codex 점수 칩「평원 규칙」 [118,51 133x39] × PanelContainer(@PanelContainer@321) [87,65 1385x590]
+UI OVERLAP ne_codex 점수 칩「3개 +22%」 [260,51 141x39] × PanelContainer(@PanelContainer@321) [87,65 1385x590]
+UI OVERLAP ne_codex 점수 칩「보스까지 3」 [409,51 145x39] × PanelContainer(@PanelContainer@321) [87,65 1385x590]
+UI OVERLAP ne_codex PanelContainer(@PanelContainer@321) [87,65 1385x590] × 배지 ×29 [603,630 62x39]
+SHOT ne_codex_end
+UI OVERLAP ne_codex_end 점수 칩「0 · 0」 [13,51 97x39] × PanelContainer(@PanelContainer@321) [87,65 1385x590]
+UI OVERLAP ne_codex_end 점수 칩「평원 규칙」 [118,51 133x39] × PanelContainer(@PanelContainer@321) [87,65 1385x590]
+UI OVERLAP ne_codex_end 점수 칩「3개 +22%」 [260,51 141x39] × PanelContainer(@PanelContainer@321) [87,65 1385x590]
+UI OVERLAP ne_codex_end 점수 칩「보스까지 3」 [409,51 145x39] × PanelContainer(@PanelContainer@321) [87,65 1385x590]
+UI OVERLAP ne_codex_end PanelContainer(@PanelContainer@321) [87,65 1385x590] × 배지 ×29 [603,630 62x39]
+WARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

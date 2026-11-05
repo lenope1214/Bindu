@@ -1,0 +1,12 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+ok   UI-05 방향 취소는 카드 접힘·오브젝트 선택 복원: false
+ok   UI-05 방향 확정은 이전 카드 미리보기 없이 종료: false
+UI ok direction-finished-false
+ok   UI-05 방향 취소는 카드 접힘·오브젝트 선택 복원: true
+ok   UI-05 방향 확정은 이전 카드 미리보기 없이 종료: true
+UI ok direction-finished-true
+USABILITY case=direction failures=0 ui=0
+WARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

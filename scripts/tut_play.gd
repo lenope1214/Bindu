@@ -466,7 +466,7 @@ func is_done() -> bool:
 		"link":
 			return _reso_pair()
 		"info":
-			if Engine.get_process_frames() - m.tip_frame <= 2 and m._tip_detail_on():
+			if m._ring_target() != null:
 				flags["info"] = true
 			return flags.has("info")
 		"ley":
