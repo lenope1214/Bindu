@@ -109,6 +109,30 @@ func pause_input_case() -> void:
 	ok("UI-10", not paused and main.phase == main.Phase.READY and main.skip_left > 0 and main.bank_picks.size() == 2, "재개 후 같은 S 키로 정상 넘기기")
 
 func direction_case() -> void:
+	await fixture()
+	target.position = Vector2(220, 300)
+	main._set_cards_hidden(true)
+	await settle()
+	await mouse_button(world(target.position), true)
+	await mouse_move(world(target.position) + Vector2(80, -60), true)
+	await mouse_button(world(target.position), false)
+	ok("UI-05", main.selected == [target] and main.card_dock.inspected_tower == target, "마우스 드래그 후 선택·상세 유지")
+	await mouse_click(world(target.position))
+	ok("UI-05", main.phase == main.Phase.AIM and main.moving == target, "드래그 다음 클릭 한 번으로 방향 편집")
+	await key(KEY_ESCAPE)
+	main._enter_ready()
+	var args := OS.get_cmdline_user_args()
+	main.touch_ui = phone or (args.size() > 2 and args[2] == "touch")
+	await settle()
+	for expanded in [false, true]:
+		main.bar_open = expanded
+		await settle()
+		var hint_rect: Rect2 = main.hint.get_global_rect()
+		for button: Button in [main.start_btn, main.skip_btn, main.skip_n_btn]:
+			ok("UI-35", not hint_rect.intersects(button.get_global_rect()) and hint_rect.end.y < button.get_global_rect().position.y, "선택 안내와 웨이브 버튼 분리: %s %s" % [expanded, button.text])
+		# 상태 칸·버튼은 위에서 직접 검사. 전체 UI 감사는 기존 배지/제목 진단과 분리한다.
+		RenderingServer.force_draw()
+		main.get_viewport().get_texture().get_image().save_png(output.path_join("selected-ready-%s.png" % expanded))
 	for folded in [false, true]:
 		await fixture()
 		target.position = Vector2(220, 300)

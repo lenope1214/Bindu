@@ -2650,6 +2650,23 @@ func _meta_misc() -> void:
 	dock.tick()
 	var selection_status: bool = main.hint.visible and main._kr_keep("오브젝트 1개 선택") in main.hint.text
 	var click_selects: bool = main.selected == [dt] and main.moving == null and main.phase == main.Phase.READY and dock.direction_btn.visible
+	# 선택 없이 끌어 놓아도 상세를 열어 다음 클릭 한 번으로 방향을 바꾼다.
+	main.selected.clear()
+	dock.inspected_tower = null
+	var drag_origin: Vector2 = dt.position
+	main.press_t = dt
+	main.dragging = true
+	main.drag_group = [dt]
+	main.drag_origs = [drag_origin]
+	main._release_press()
+	var drop_selects: bool = main.selected == [dt] and dock.inspected_tower == dt
+	main.press_t = dt
+	main._release_press()
+	drop_selects = drop_selects and main.phase == main.Phase.AIM and main.moving == dt
+	main._cancel_step()
+	ok("UI-05", drop_selects, "끌어 놓기 후 선택·상세 유지, 다음 클릭은 방향 편집")
+	var status_gap: bool = main.hint.get_rect().end.y <= main.start_btn.position.y - 7.9
+	ok("UI-35", status_gap, "상태 안내는 실제 높이로 웨이브 버튼 위 8px 간격")
 	main.phase = main.Phase.WAVE
 	dock._update_side()
 	main._edit_selected_direction()

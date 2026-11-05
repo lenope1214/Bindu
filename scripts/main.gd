@@ -5505,6 +5505,11 @@ func _release_press() -> void:
 		if is_instance_valid(o):
 			o.place_pop = 1.0
 			o.queue_redraw()
+	if bad == "" and phase in [Phase.CHOOSE, Phase.READY]:
+		if drag_group.size() == 1:
+			_select_tower(t)
+		else:
+			selected = drag_group.duplicate()
 	drag_group.clear()
 	_restore_hint()
 	_save_run()
