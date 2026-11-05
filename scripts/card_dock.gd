@@ -348,7 +348,8 @@ func watch(b: Button, card: Dictionary) -> void:
 	b.set_meta("offer_card", card)
 	b.mouse_entered.connect(func():
 		if not game.touch_ui:
-			inspected_tower = null
+			if game.selected.is_empty():
+				inspected_tower = null
 			hovered = b)
 	b.gui_input.connect(_card_gui_input.bind(b, card))
 	# 상세 영역으로 마우스를 옮겨도 읽던 카드와 강조를 유지한다. 다른 카드는 진입 시 교체한다.
@@ -553,9 +554,20 @@ func _update_side() -> void:
 		tower = null
 	else:
 		dismissed_tower = null
+	# 선택은 고정 대상, 전장 호버는 이번 프레임의 임시 대상이다.
+	var selected_tower: Tower = null
+	for candidate in game.selected:
+		if is_instance_valid(candidate) and not candidate.is_queued_for_deletion() and candidate.get_parent() == game.towers:
+			if selected_tower == null or candidate == inspected_tower:
+				selected_tower = candidate
+			if candidate == inspected_tower:
+				break
+	if selected_tower != null:
+		inspected_tower = selected_tower
 	if tower != null:
 		hovered = null
-		inspected_tower = tower
+		if selected_tower == null:
+			inspected_tower = tower
 	var card := preview_card()
 	var title := "전장 안내"
 	var text := ""
@@ -588,14 +600,15 @@ func _update_side() -> void:
 		if not Meta.card_detail:
 			text += "\n\n"
 			text += "자세히를 켜면 반응·적용 조건을 모두 볼 수 있어요." if game.touch_ui else "자세히(Z)를 켜면 반응·적용 조건을 모두 볼 수 있어요."
-	elif game.perk_mode and is_instance_valid(hovered) and hovered.get_parent() == game.choice_box and hovered.has_meta("perk_desc"):
+	elif selected_tower == null and game.perk_mode and is_instance_valid(hovered) and hovered.get_parent() == game.choice_box and hovered.has_meta("perk_desc"):
 		inspected_tower = null
 		has_content = true
 		title = hovered.get_meta("card")[0]["name"]
 		text = hovered.get_meta("perk_desc")
 	else:
 		if is_instance_valid(inspected_tower) and not inspected_tower.is_queued_for_deletion() and inspected_tower.get_parent() == game.towers:
-			tower = inspected_tower
+			if tower == null:
+				tower = inspected_tower
 		else:
 			inspected_tower = null
 		if tower == null and game.touch_ui and is_instance_valid(game.tip_tower) \

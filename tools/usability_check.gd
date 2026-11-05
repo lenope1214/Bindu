@@ -26,6 +26,8 @@ func _initialize() -> void:
 	Meta.ui_scale = float(args[1])
 	main._apply_ui_scale()
 	await create_timer(0.2).timeout
+	if which in ["all", "inspector"]:
+		await inspector_case()
 	if which in ["all", "detail"]:
 		await detail_case()
 	if which in ["all", "ownership"]:
@@ -309,3 +311,33 @@ func perk_case() -> void:
 	await touch(at, true)
 	await touch(at, false)
 	ok("UI-16", main.perks != before, "이후 짧은 터치는 특성 한 번 적용")
+
+func inspector_case() -> void:
+	for stage in [main.Phase.CHOOSE, main.Phase.READY, main.Phase.WAVE]:
+		await fixture()
+		target.position = Vector2(220, 300)
+		refused.position = Vector2(420, 300)
+		main.phase = stage
+		if stage == main.Phase.WAVE:
+			_orb(Vector2(650, 500), 1e6)  # 빈 전투가 즉시 끝나 단계 검증이 무의미해지지 않게
+		await mouse_click(world(target.position))
+		ok("UI-32", main.phase == stage and main.selected == [target] and main.card_dock.shown_tower == target, "선택한 상세 유지: %s" % stage)
+		if stage == main.Phase.CHOOSE:
+			main._set_card_detail(true)
+			await mouse_move(card_center(1))
+			ok("UI-32", main.card_dock.shown_tower == target and main.card_dock.preview_card().is_empty(), "선택한 오브젝트는 카드 호버보다 우선")
+		for run in 3:
+			await mouse_move(world(refused.position))
+			ok("UI-32", main.card_dock.shown_tower == refused and main.card_dock.inspected_tower == target and main.selected == [target], "다른 오브젝트 호버는 임시 표시: %s/%s" % [stage, run])
+			await mouse_move(world(Vector2(650, 240)))
+			ok("UI-32", main.card_dock.shown_tower == target, "호버 이탈 후 선택 상세 복귀: %s/%s" % [stage, run])
+		await key(KEY_P)
+		await mouse_move(world(refused.position))
+		ok("UI-32", paused and main.card_dock.shown_tower == refused, "정지 중에도 임시 호버 표시")
+		await mouse_move(world(Vector2(650, 240)))
+		ok("UI-32", main.card_dock.shown_tower == target, "정지 중 호버 이탈도 선택 상세 복귀")
+		await key(KEY_P)
+		RenderingServer.force_draw()
+		main.get_viewport().get_texture().get_image().save_png(output.path_join("inspector-selected-%s.png" % stage))
+		await key(KEY_ESCAPE)
+		ok("UI-32", main.selected.is_empty() and main.card_dock.inspected_tower == null, "Esc로 선택·인스펙터 해제")

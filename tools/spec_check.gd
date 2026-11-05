@@ -2602,6 +2602,44 @@ func _meta_misc() -> void:
 	main.pointer_position = old_pointer
 	main.phase = old_phase
 	ok("UI-32", side_ok and retained_tower and close_visible and closed and dismissed_tower and tab_hidden, "설명창 내용 높이·보는 오브젝트 반대쪽 구석, 일반 판 Tab 버튼 없음")
+	# 선택 대상은 카드 호버에 밀리지 않고, 다른 오브젝트 호버가 끝나면 돌아온다.
+	var hover_other := _tower(main.center() + Vector2(-200, 0))
+	var select_at: Vector2 = dt.position
+	dt.position = Vector2(220, 300)
+	hover_other.position = Vector2(420, 300)
+	var saved_hidden: bool = main.cards_hidden
+	main.phase = main.Phase.CHOOSE
+	main.cards_hidden = false
+	main._select_tower(dt)
+	main.pointer_position = main.get_canvas_transform() * Vector2(650, 240)
+	main.choice_box.get_child(0).mouse_entered.emit()
+	dock._update_side()
+	var selected_priority: bool = dock.shown_tower == dt and dock.preview_card().is_empty()
+	main.pointer_position = main.get_canvas_transform() * hover_other.position
+	dock._update_side()
+	var temporary_hover: bool = dock.shown_tower == hover_other and dock.inspected_tower == dt and main.selected == [dt]
+	main.pointer_position = main.get_canvas_transform() * Vector2(650, 240)
+	dock._update_side()
+	var restored_selection: bool = dock.shown_tower == dt and dock.inspected_tower == dt
+	main.selected.append(hover_other)
+	main.pointer_position = main.get_canvas_transform() * hover_other.position
+	dock._update_side()
+	main.pointer_position = main.get_canvas_transform() * Vector2(650, 240)
+	dock._update_side()
+	var group_anchor: bool = dock.shown_tower == dt and main.selected.size() == 2
+	dock.close_inspector()
+	main.choice_box.get_child(0).mouse_entered.emit()
+	dock._update_side()
+	var card_after_clear: bool = not dock.preview_card().is_empty() and dock.shown_tower == null
+	dock.hovered = null
+	dock.dismissed_tower = null
+	hover_other.free()
+	dt.position = select_at
+	main.pointer_position = old_pointer
+	main.phase = old_phase
+	main.cards_hidden = saved_hidden
+	ok("UI-32", selected_priority and temporary_hover and restored_selection and group_anchor and card_after_clear,
+		"선택 상세 우선 %s · 호버 임시 %s · 복귀 %s · 그룹 기준 유지 %s · 선택 해제 후 카드 %s" % [selected_priority, temporary_hover, restored_selection, group_anchor, card_after_clear])
 	# UI-38: 떠 있는 창 공용 틀 — 정보창도 DPS 표와 같은 FloatPanel(머리 줄 압정·접기, 정보창만 닫기). 옮겨 둔 자리에 고정, 압정 끄면 자동 자리, 터치는 여섯 자리에 붙음, 접으면 머리 줄만
 	var fpp0: Dictionary = Meta.panel_pos.duplicate()
 	var fold0: Dictionary = Meta.panel_fold.duplicate()
