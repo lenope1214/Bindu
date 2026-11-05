@@ -204,8 +204,6 @@ var bar_btn: Button
 var tutor := false  # 이번 판이 첫 판 안내 판인지: 카드 종류를 웨이브마다 하나씩 연다 (TUTOR_OPEN)
 var tutor_given := {}  # 첫 판에 새로 연 카드 종류를 선택지에 한 번 넣었는지 (종류 -> true)
 var guide_label: Label  # 처음 생기는 일 한 줄 안내 (위쪽 가운데)
-const RX_CARD := preload("res://scripts/rx_card.gd")
-var rx_card: RxCard  # RxCard: 속성을 합쳐 새 조합이 생기면 오브젝트 옆에 뜨는 그림 카드
 var guide_lines: Array[String] = []
 var guide_more: Button
 var guide_t := 0.0  # 남은 시간. 음수면 웨이브가 시작될 때까지

@@ -24,6 +24,8 @@ var head := {}
 var take := 0
 var react := 0
 var partners: Array = []
+var new_read_time := 0.0
+var new_read_keys := ""
 var t := 0.0
 var _w := 300.0
 
@@ -40,6 +42,15 @@ func _init(main) -> void:
 func _process(delta: float) -> void:
 	if not is_visible_in_tree() or mode == "":
 		return
+	if mode == "tower" and is_instance_valid(tower) and not tower.new_reactions.is_empty():
+		var keys := str(tower.new_reactions.keys())
+		if keys != new_read_keys:
+			new_read_keys = keys
+			new_read_time = 0.0
+		new_read_time += delta
+		if new_read_time >= 6.0:
+			tower.new_reactions.clear()
+			new_read_keys = ""
 	t = fmod(t + delta, 2.0)
 	queue_redraw()
 
@@ -54,6 +65,7 @@ func clear() -> void:
 
 
 func show_tower(tw: Tower, more: bool, part: float, label: String, w: float) -> void:
+	if tower != tw: new_read_time = 0.0
 	mode = "tower"
 	tower = tw
 	attack_preview.configure(tw)
@@ -347,6 +359,7 @@ func _draw_tower() -> void:
 	var rnum := rt
 	var match_num := RegEx.create_from_string("\\d+").search(rt)
 	if match_num: rnum = match_num.get_string()
+	_box(Rect2(0, y, w, AttackPreview.HEIGHT), Color(0, 0, 0, 0.3))
 	y += AttackPreview.HEIGHT + 8.0
 	# 숫자 타일 2x2
 	var tw2 := (w - 8.0) / 2.0

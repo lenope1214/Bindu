@@ -398,13 +398,6 @@ func _build_menu(root: Control) -> void:
 			session.guide_lines.clear()
 		session.progression_system._save_best())
 	cbox.add_child(gc)
-	var rc := CheckButton.new()
-	rc.text = "새 조합 설명 보기"
-	rc.button_pressed = Meta.rx_cards_on
-	rc.focus_mode = Control.FOCUS_NONE
-	rc.toggled.connect(session.rx_card.set_enabled)
-	session.rx_card.visibility_preference_changed.connect(rc.set_pressed_no_signal)
-	cbox.add_child(rc)
 	var gr := Button.new()
 	gr.text = "안내 처음부터 다시 보기"
 	gr.tooltip_text = "본 안내를 지우고, 다음 새 판은 첫 판처럼 카드 종류를 웨이브마다 하나씩 엽니다"

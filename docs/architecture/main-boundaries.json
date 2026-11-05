@@ -425,7 +425,6 @@
     "_tip_detail_on": "field_view",
     "_ring_target": "field_view",
     "_tip_icon": "field_view",
-    "_place_rx_card": "field_view",
     "_tip_scale": "field_view",
     "_draw_tip_ctrl": "field_view",
     "_tip_rows": "field_view",
@@ -704,7 +703,7 @@
   "migrated_consumers": [
     "scripts/share.gd",
     "scripts/zone.gd",
-    "scripts/rx_card.gd",
+    "scripts/attack_preview.gd",
     "scripts/projectile.gd",
     "scripts/side.gd",
     "scripts/tower.gd",
@@ -1177,7 +1176,6 @@
     "_tip_detail_on": "606d1c5bbce1c07456a4f0d387d2bd9816299f0ffbd21b0c73f9c429bb4d09c8",
     "_ring_target": "4da4f7faf23154b5131a7089244317db9c79df81a73b5a2c5f9712621a1e6fa7",
     "_tip_icon": "c61c09aaed3f8a8147dda66267ffa066aef355b689de29ffd106bccc34c85036",
-    "_place_rx_card": "82c669e551109ee80a131ed231739430dd82ea682fe450cc3453a9de997a1f40",
     "_tip_scale": "e7350c2d54d68deb39cd8d4add28a761e7ff129732a88b83e30ff79c6806d5f1",
     "_draw_tip_ctrl": "0c103ad28592d3f12ec8f0c280a7c70c13eebc415f1235d0cef71688b80706ee",
     "_tip_rows": "577dfa5700a61c6e241990bbc9a6a3a29caa3c4c5d8f575ad938d6ae0bf85246",
@@ -1294,12 +1292,14 @@
     "_show_perks": "Weak session liveness in delayed long press",
     "_mp_kick": "Weak session liveness in delayed kick",
     "_input": "Hide guidance before object GUI hit testing; pointer/touch regression",
-    "_process": "Place guidance below HUD and toast below guidance; UI regression",
+    "_process": "Guide layout preserved; remove separate popup placement",
     "_update_action_guide": "Suppress guidance while hovering or manipulating objects; TUT-03 regression",
-    "_build_menu": "Add persisted combination popup visibility setting and preference sync; UI-37 regression",
-    "_place_rx_card": "Hide popup buttons together with transparent popup while placing/aiming; UI-37 input regression",
+    "_build_menu": "Remove obsolete combination popup setting; inspector is the single presentation",
     "_set_card_detail": "Explicit detail button or Z reopens dismissed inspector; UI-32 regression",
     "_resolve": "Preview skips rewards/core damage and shares death effects; isolated preview tests",
-    "_draw_fx": "Preview draws combat effects without HUD or tooltips"
+    "_draw_fx": "Preview draws combat effects without HUD or tooltips",
+    "_build_ui": "Remove separate combination popup; inspector NEW and discovery regression",
+    "_place_on": "Remove separate combination popup; inspector NEW and discovery regression",
+    "_check_progress": "Remove separate combination popup; inspector NEW and discovery regression"
   }
 }

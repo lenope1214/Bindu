@@ -211,60 +211,6 @@ func _tip_icon(id: String, c: Vector2, s: float, col: Color) -> void:
 		_: Glyph.ui(session.fx_layer, id, c, s, Color(col, 1.0))
 
 
-## 조합 카드 자리: 그 오브젝트 오른쪽·왼쪽·위·아래 중 UI(카드 줄·설명·점수 줄)·다른 오브젝트·중앙을 가장 덜 가리는 곳 (ui_root 좌표).
-## 카드를 넣는 단계(PLACE)에는 놓을 곳을 가리지 않게 감추고, 시작 화면·게임 오버면 닫는다.
-func _place_rx_card() -> void:
-	var session: BinduSession = self.session
-	if session.rx_card == null or not session.rx_card.visible:
-		return
-	if session.title_label.visible or session.phase == BinduSession.Phase.GAMEOVER:
-		session.rx_card.hide_card()
-		return
-	session.rx_card.set_interactive(not session.phase in [BinduSession.Phase.PLACE, BinduSession.Phase.AIM])
-	if not is_instance_valid(session.rx_card.tower):
-		return
-	var to_ui := session.ui_root.get_global_transform().affine_inverse() * session.get_canvas_transform()
-	var o := to_ui * session.rx_card.tower.position
-	var sz := session.rx_card.size
-	var zs := to_ui.get_scale().x
-	var gap := Tower.RADIUS * zs + 16.0
-	var lo := Vector2(8.0, 44.0)
-	var hi := (session.ui_root.size - sz - Vector2(8.0, 60.0)).max(lo)
-	var cands: Array = []
-	for kk in 4:
-		var d := gap + kk * 36.0
-		for ay in [0.35, 0.85, 0.0]:  # 옆자리는 오브젝트 높이에 맞춘 세 가지 (위 점수 줄·아래 카드 줄 중 빈 쪽으로)
-			cands.append(Vector2(o.x + d, o.y - sz.y * ay))
-			cands.append(Vector2(o.x - d - sz.x, o.y - sz.y * ay))
-		cands.append(Vector2(o.x - sz.x * 0.5, o.y - d - sz.y))
-		cands.append(Vector2(o.x - sz.x * 0.5, o.y + d))
-	var blocks: Array = [[to_ui * session.viewport_system.center(), BinduSession.CORE_RADIUS * zs + 12.0]]
-	for t in session.towers.get_children():
-		blocks.append([to_ui * t.position, Tower.RADIUS * zs + 4.0])
-	var ui_blocks := session.ui_layout_system._info_blockers()
-	if session.choice_box and session.choice_box.is_visible_in_tree():
-		ui_blocks.append(session.ui_root.get_global_transform().affine_inverse() * session.choice_box.get_global_rect())
-	var best := Rect2(cands[0] as Vector2, sz)
-	var best_s := INF
-	for p: Vector2 in cands:
-		var q := p.clamp(lo, hi)
-		var r := Rect2(q, sz)
-		var sc := q.distance_to(p) / 20.0 + p.distance_to(o) / 80.0
-		for bl in blocks:
-			var bp: Vector2 = bl[0]
-			if bp.clamp(r.position, r.end).distance_to(bp) < bl[1]:
-				sc += 12.0
-		for rect in ui_blocks:
-			if r.intersects(rect):
-				sc += 1000.0 + r.intersection(rect).get_area()
-		if sc < best_s:
-			best_s = sc
-			best = r
-	if best_s >= 1000.0 and session.rx_card.shrink_to_one():
-		_place_rx_card()  # 두 장이 UI에 걸리면 한 장 + "+N"으로 다시 자리를 잡는다
-		return
-	session.rx_card.position = best.position
-
 
 ## 정보창 글 배율: 폰은 화면이 작아 다른 글보다 14px 정보창이 유난히 작게 읽혔다
 func _tip_scale() -> float:

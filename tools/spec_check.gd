@@ -112,7 +112,7 @@ func _initialize():
 	_ugc()
 	_board_filters()
 	_attack_preview()
-	_rx_card()
+	_combination_inspector()
 	_lint()
 	print("SPEC %s (실패 %d, 확인한 기능 %d개)" % ["통과" if fails == 0 else "실패", fails, seen.size()])
 	quit(1 if fails > 0 else 0)
@@ -3710,77 +3710,22 @@ func _attack_preview() -> void:
 	_clear()
 
 
-func _rx_card() -> void:
+func _combination_inspector() -> void:
 	_fresh()
-	var c: Vector2 = main.viewport_system.center()
-	var t := _tower(c + Vector2(-200, -120), Elem.FIRE)
+	var t := _tower(main.viewport_system.center() + Vector2(-200, -120), Elem.FIRE)
 	main.phase = main.Phase.PLACE
 	main.picked = {"type": "elem", "e": Elem.ELECTRIC, "lv": 1}
-	main.banner_t = 0.0
-	main.toast.text = ""
+	main.card_dock.close_inspector(true)
 	main.interaction_system._place_on(t)
-	var rc = main.rx_card
-	var shown: bool = rc.active() and rc.tower == t and rc.rxs.size() == 1 and rc.size.y > 120.0
-	var quiet: bool = not str(main.toast.text).begins_with("조합") and main.banner_t <= 0.0
-	main.phase = main.Phase.READY
-	main.field_view_system._place_rx_card()
-	var to_ui: Transform2D = main.ui_root.get_global_transform().affine_inverse() * main.get_canvas_transform()
-	var tp: Vector2 = to_ui * t.position
-	var cr: Rect2 = Rect2(rc.position, rc.size)
-	var clear_of_tower: bool = tp.clamp(cr.position, cr.end).distance_to(tp) >= Tower.RADIUS
-	var rows_ok := true
-	for r in Elem.REACTIONS:
-		var rows: Array = Elem.pair_rows(r["a"], r["b"])
-		rows_ok = rows_ok and rows.size() in [1, 2]
-		for row in rows:
-			rows_ok = rows_ok and str(row["say"]).length() <= 14 and str(row["say"]) != ""
-	var say_ok: bool = Elem.ALL.all(func(e): return Elem.TRAIT_SAY.has(e))
-	var illusion_ok := true
-	for other in Elem.ALL:
-		if other == Elem.ILLUSION:
-			continue
-		var rx: Dictionary = Elem.reaction_of(Elem.ILLUSION, other)
-		var wanted: String = "환영 · " + Elem.NAMES[other]
-		illusion_ok = illusion_ok and rx["name"] == wanted and RxCard.title(rx["a"], rx["b"]) == wanted \
-			and Elem.pair_name(other, Elem.ILLUSION) == wanted and rx["desc"] == Elem.pair_desc(other, Elem.ILLUSION) \
-			and "220" in rx["desc"] and "40%" in rx["desc"] and "다음 공격" in rx["desc"]
-	illusion_ok = illusion_ok and "확률로 묶여요." in Elem.pair_desc(Elem.ILLUSION, Elem.EARTH) \
-		and "추가 피해를 주고 잠깐 멈칫하게 해요." in Elem.pair_desc(Elem.ILLUSION, Elem.METAL) \
-		and Elem.trait_name(Elem.ILLUSION) == "효과 전달"
-	ok("UI-37", illusion_ok, "환영 16짝: 속성 제목·전달 동작 원문을 조합 카드·도감·상세에 공용, 땅 묶임·금속 피해와 멈칫")
-
-	# 짝 셋이 한 번에 생기면 2장 + "+1"
-	rc.show_for(t, Elem.REACTIONS.slice(0, 3))
-	var capped: bool = rc.rxs.size() == 2 and rc.extra == 1
-	rc.close_btn.pressed.emit()
-	var dismissed: bool = not rc.active() and Meta.rx_cards_on
-	rc.show_for(t, Elem.REACTIONS.slice(0, 1))
-	var reappears: bool = rc.active()
-	main.phase = main.Phase.PLACE
-	main.field_view_system._place_rx_card()
-	var transparent_pass: bool = not rc.close_btn.visible and not rc.disable_btn.visible and rc.self_modulate.a == 0.0
-	main.phase = main.Phase.READY
-	main.field_view_system._place_rx_card()
-	ok("UI-37", transparent_pass and rc.close_btn.visible and rc.disable_btn.visible, "설치·조준 중 투명한 조합 창의 버튼도 입력을 막지 않고 이후 복원")
-	var discovered: Dictionary = Meta.codex.duplicate()
-	rc.disable_btn.pressed.emit()
-	rc.show_for(t, Elem.REACTIONS.slice(0, 1))
-	var persisted := ConfigFile.new()
-	persisted.load(Meta.SAVE_PATH)
-	var disabled: bool = not Meta.rx_cards_on and not rc.active() and persisted.get_value("settings", "rx_cards_on", true) == false and Meta.codex == discovered
-	var toggle: CheckButton = null
-	for button in main.settings_panel.find_children("*", "CheckButton", true, false):
-		if button.text == "새 조합 설명 보기": toggle = button
-	var synced: bool = toggle != null and not toggle.button_pressed
-	if toggle != null: toggle.toggled.emit(true)
-	rc.show_for(t, Elem.REACTIONS.slice(0, 1))
-	ok("UI-37", dismissed and reappears and disabled and synced and rc.active(), "조합 설명 닫기·다음 표시 유지·지속 끄기 저장·도감 보존·설정으로 재활성화")
-	main.phase = main.Phase.GAMEOVER
-	main.field_view_system._place_rx_card()
-	var closed: bool = not rc.visible
-	main.phase = main.Phase.READY
-	ok("UI-37", shown and quiet and clear_of_tower and rows_ok and say_ok and capped and closed,
-		"조합 카드: 뜸 %s · 배너/토스트 없음 %s · 오브젝트 안 가림 %s · 줄 %s/%s · 2장+N %s · 게임 오버에 닫힘 %s" % [shown, quiet, clear_of_tower, rows_ok, say_ok, capped, closed])
+	main.card_dock._update_side()
+	ok("UI-37", not main.card_dock.side.visible and not t.new_reactions.is_empty() and not "rx_card" in main, "새 조합은 NEW로 남기고 X 닫힘은 유지")
+	main.cards_system._set_card_detail(true)
+	main.interaction_system._select_tower(t)
+	main.card_dock._update_side()
+	ok("UI-37", main.card_dock.side.visible and "NEW" in main.card_dock.detail.text and main.card_dock.pic.attack_preview.source == t, "인스펙터에서 현재 공격과 NEW 조합 설명 통합")
+	main.card_dock.pic._process(6.1)
+	main.card_dock._update_side()
+	ok("UI-37", t.new_reactions.is_empty() and not "NEW" in main.card_dock.detail.text, "인스펙터 열람 후 NEW 해제")
 	_clear()
 
 

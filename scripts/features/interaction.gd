@@ -599,13 +599,10 @@ func _place_on(target: Tower) -> void:
 	if not target.can_take(session.picked):
 		session.hud_system._show_toast(target.refuse_text(session.picked))
 		return
-	var fresh := Elem.new_reactions(target.eff_now(), session.picked["e"])
 	var msg: String = target.add(session.picked["e"], session.picked["lv"])
 	session.sfx.play("place")
 	if msg.begins_with("조합"):
-		# 긴 배너·토스트 글 대신 오브젝트 옆 그림 카드 (2026-11-05)
 		session.sfx.play("reaction", 0.0)
-		session.rx_card.show_for(target, fresh)
 		session.spawning_system.burst(target.position, Color(1, 0.85, 0.4), 30, 260.0)
 	else:
 		session.hud_system._show_toast(msg)

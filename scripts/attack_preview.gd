@@ -2,6 +2,7 @@ class_name AttackPreview
 extends TextureRect
 ## 실제 Tower·Projectile·Orb·Share를 사용하는 독립 전장. boot/입력/온라인/저장은 실행하지 않는다.
 const HEIGHT := 140.0
+var caption: Label
 var world: BinduSession
 var viewport: SubViewport
 var clone: Tower
@@ -15,7 +16,7 @@ func _init() -> void:
 	expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	stretch_mode = TextureRect.STRETCH_SCALE
 	viewport = SubViewport.new()
-	viewport.size = Vector2i(640, 240)
+	viewport.size = Vector2i(400, 200)
 	viewport.world_2d = World2D.new()
 	viewport.disable_3d = true
 	viewport.gui_disable_input = true
@@ -23,6 +24,11 @@ func _init() -> void:
 	viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	add_child(viewport)
 	texture = viewport.get_texture()
+	caption = Label.new()
+	caption.position = Vector2(6, 4)
+	caption.add_theme_font_size_override("font_size", 11)
+	caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(caption)
 	world = BinduSession.new()
 	world.phase = BinduSession.Phase.WAVE
 	world.ui_font = ThemeDB.fallback_font
@@ -37,7 +43,7 @@ func _init() -> void:
 	world.fx_layer.draw.connect(func(): world.field_view_system._draw_fx(true))
 
 func _ready() -> void:
-	viewport.canvas_transform = Transform2D(0.0, Vector2(0.6, 0.6), 0.0, Vector2(-60, -100))
+	viewport.canvas_transform = Transform2D(0.0, Vector2(0.75, 0.75), 0.0, Vector2(-100, -170))
 
 func _exit_tree() -> void:
 	# tree 밖에서 소유한 무음 서비스는 직접 정리한다.
@@ -46,6 +52,10 @@ func _exit_tree() -> void:
 func configure(tower: Tower) -> void:
 	source = tower
 	world.ui_font = tower.main.ui_font if tower.main != null else ThemeDB.fallback_font
+	caption.add_theme_font_override("font", world.ui_font)
+	if tower.main != null:
+		world.perks = tower.main.perks.duplicate(true)
+		world.wave = tower.main.wave
 	var values := {}
 	for key in ["elements", "order", "pattern", "plv", "mods", "trigs", "pincer", "reso", "wind_buff"]:
 		values[key] = tower.get(key)
@@ -72,7 +82,7 @@ func _reset(values: Dictionary) -> void:
 		var orb := Orb.new()
 		orb.main = world
 		orb.setup(Orb.Kind.NORMAL, hp * (1.0 if i == 0 else 3.0), 8.0)
-		orb.position = Vector2(400 + i * 65, 360 + (0 if i < 3 else (i * 2 - 7) * 50))
+		orb.position = Vector2(380 + i * 48, 360 + (0 if i < 3 else (i * 2 - 7) * 50))
 		orb.target = Vector2(120, 360)
 		world.orbs.add_child(orb)
 	elapsed = 0.0
@@ -81,6 +91,7 @@ func advance(delta: float) -> void:
 	if clone == null: return
 	elapsed += delta
 	world.run_game += delta
+	world.sim_id += 1
 	for layer in [world.orbs, world.projectiles, world.zones]:
 		for child in layer.get_children():
 			if not child.is_queued_for_deletion(): child.step(delta)
@@ -104,6 +115,7 @@ func _process(delta: float) -> void:
 	var on := is_visible_in_tree()
 	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if on else SubViewport.UPDATE_DISABLED
 	if not on: return
+	caption.text = ("NEW · " if is_instance_valid(source) and not source.new_reactions.is_empty() else "") + "최종 공격 · 조건에 따라 발동"
 	accumulator += minf(delta, 0.1)
 	while accumulator >= 1.0 / 30.0:
 		advance(1.0 / 30.0)

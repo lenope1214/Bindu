@@ -74,7 +74,6 @@ static var online_on := true  # 판 기록 보내기 (리더보드·사용 통�
 static var nickname := ""
 static var blocked := {}  # 차단한 플레이어 {pid: 그때 닉네임}. 이 기기에서만 (리더보드·멀티 방에서 이름을 가림)
 static var device_id := ""  # 이 기기의 무작위 id (개인정보 아님). 처음 켤 때 만든다
-static var rx_cards_on := true  # 새 조합 설명 표시 (기기 설정)
 static var guide_on := true  # 처음 생기는 일에 한 줄 안내 (설정에서 끔)
 static var guide_seen := {}  # 이미 본 안내 id -> true
 static var tutor_next := true  # 다음 새 판은 카드 종류를 웨이브마다 하나씩 연다 (첫 판, 설정에서 다시 켬)
@@ -187,7 +186,6 @@ static func load_into(cfg: ConfigFile) -> void:
 	nickname = val(cfg, "online", "nickname", "")
 	blocked = val(cfg, "online", "blocked", {})
 	device_id = val(cfg, "online", "device", "")
-	rx_cards_on = val(cfg, "settings", "rx_cards_on", true)
 	guide_on = val(cfg, "guide", "on", true)
 	guide_seen = val(cfg, "guide", "seen", {})
 	tutor_next = val(cfg, "guide", "tutor", games == 0)  # 이미 해 본 저장은 단계별로 열지 않는다
@@ -260,7 +258,6 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("online", "nickname", nickname)
 	cfg.set_value("online", "blocked", blocked)
 	cfg.set_value("online", "device", device_id)
-	cfg.set_value("settings", "rx_cards_on", rx_cards_on)
 	cfg.set_value("guide", "on", guide_on)
 	cfg.set_value("guide", "seen", guide_seen)
 	cfg.set_value("guide", "tutor", tutor_next)

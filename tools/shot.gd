@@ -136,14 +136,14 @@ func _initialize():
 			_snap("cards_guide")
 			main.guide_lines.clear()
 			main.guide_label.visible = false
-			# 조합 카드: 속성을 합쳐 새 조합이 생긴 오브젝트 옆 그림 카드 (카드 줄·설명을 피한 자리)
+			# 조합을 적용한 오브젝트의 통합 공격 인스펙터
 			_rx_show(1),
 		func():
-			_snap("rx_card")
+			_snap("combination_inspector")
 			_rx_show(2),
 		func():
-			_snap("rx_card_multi")
-			main.rx_card.hide_card()
+			_snap("combination_inspector_multi")
+			main.card_dock.close_inspector()
 			# 강화 카드를 넣는 단계: 넣을 수 있는 오브젝트는 빛나는 고리, 못 넣는 것(관통 연사 ✕ 관통)은 흐리게·이유 글
 			main.towers.get_child(0).set_pattern("thorn")
 			main.towers.get_child(3).set_pattern("thorn")
@@ -236,14 +236,14 @@ func _rx_show(want: int) -> void:
 				best_e = e
 				best = fr
 	if best_t == null:
-		print("SHOT rx_card 건너뜀: 새 조합이 생기는 오브젝트 없음")
+		print("SHOT combination_inspector 건너뜀: 새 조합이 생기는 오브젝트 없음")
 		return
 	if main.phase in [main.Phase.PLACE, main.Phase.AIM]:
 		main.interaction_system._back_to_choose()  # 넣는 단계에는 카드가 숨으니 고르기로 돌아가 찍는다
 	best_t.add(best_e, 1)
-	main.rx_card.show_for(best_t, best)
-	main.rx_card.t = 1.05
-	main.field_view_system._place_rx_card()
+	main.card_dock.inspector_dismissed = false
+	main.interaction_system._select_tower(best_t)
+	main.card_dock._update_side()
 
 
 func _snap(n: String):

@@ -630,10 +630,9 @@ func _update_side() -> void:
 			var part: float = tower.dealt / total if total > 0.0 and game.towers.get_child_count() > 1 else -1.0
 			var more: bool = game.field_view_system._tip_detail_on()
 			pic.show_tower(tower, more, part, "이번 웨이브 몫" if game.phase == game.Phase.WAVE else "지난 웨이브 몫", _pic_w())
-			# 그림으로 못 보이는 것만 글로: 자세히일 때 반응 설명 (공격 모양은 미리보기가 보여 준다)
-			if more:
-				for rx in tower.reactions():
-					text += ("\n\n" if text != "" else "") + str(rx["name"]) + ": " + str(rx["desc"])
+			# 조합의 발동 조건은 기본 정보에도 표시한다. 공격 모습은 위의 공용 미리보기에서 보여 준다.
+			for rx in tower.reactions():
+				text += ("\n\n" if text != "" else "") + ("NEW · " if tower.new_reactions.has(rx["id"]) else "") + str(rx["name"]) + ": " + str(rx["desc"])
 	if pic.mode != "" and ((pic.mode == "tower" and shown_tower == null) or (pic.mode == "card" and card.is_empty())):
 		pic.clear()
 	direction_btn.visible = shown_tower != null and game.interaction_system.selected.size() == 1 and shown_tower == game.interaction_system.selected[0] and game.multiplayer_system._mine(shown_tower) and game.phase in [game.Phase.CHOOSE, game.Phase.READY] and not game.get_tree().paused

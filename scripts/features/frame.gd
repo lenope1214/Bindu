@@ -6,7 +6,6 @@ var key_t := 0.0
 var _hint_kept := ""  # 낱말 붙임(_kr_keep)을 넣은 아래 안내 글
 func _process(delta: float) -> void:
 	var session: BinduSession = self.session
-	session.field_view_system._place_rx_card()
 	session.rank_t -= delta
 	if session.rank_t <= 0.0:
 		session.rank_t = BinduSession.RANK_STEP

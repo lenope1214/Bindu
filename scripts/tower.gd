@@ -9,6 +9,7 @@ extends Node2D
 
 const RADIUS := 18.0
 
+var new_reactions := {}  # 이번 실행에서 새로 생긴 조합. 인스펙터에서 읽을 때까지 유지
 var elements := {}  # 속성 -> 겹친 수(=그 속성 레벨)
 var order: Array[int] = []  # 넣은 순서
 var pattern := Pat.DEFAULT
@@ -897,7 +898,9 @@ func color() -> Color:
 ## 속성을 겹친다. 결과 메시지를 돌려준다.
 func add(e: int, n: int) -> String:
 	var fresh := Elem.new_reactions(eff_now(), e)
+	for reaction in fresh: new_reactions[reaction["id"]] = true
 	elements[e] = mini(lv(e) + n, elem_cap())
+	eff = eff_now()
 	if not order.has(e):
 		order.append(e)
 	place_pop = 1.0

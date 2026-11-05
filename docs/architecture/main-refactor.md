@@ -54,7 +54,7 @@
 | `features/abilities.gd` | 기맥·중앙 기술·쿨다운·조준 효과 |
 | `features/frame.gd` | 기존 프레임 갱신 순서와 배속 조각 스케줄링 |
 | `features/viewport.gd` | 화면/전장 좌표·확대·패닝·맵 기하 |
-| `features/field_view.gd` | 전장·효과·툴팁·조합 카드·설치 미리보기 그리기 |
+| `features/field_view.gd` | 전장·효과·툴팁·설치 미리보기 그리기 |
 | `features/field_overlay.gd` | 진입 배지·보스 예고·전장 안내·선택 헤더 |
 | `features/ui_shell.gd` | UI 노드 생성·기능 이벤트 연결 |
 | `features/ui_layout.gd` | UI 회피·키 안내·안전한 배지 자리 계산 |
@@ -102,3 +102,5 @@ Tower/Orb는 연결 시 사용할 전투/생성 등의 서비스 참조를 받�
 3. 메뉴·전장 그리기는 여전히 1,000줄 이상이다. 다음 분리는 실제 UI 책임/생명주기 기준으로 하고 위젯마다 파일을 만드는 방식은 피한다.
 4. CPU 경계 비용, 실제 시계에 따른 RNG 소비, 기존 ObjectDB 경고의 소유 경로를 독립 프로파일로 더 좁힌다. 실기기/GPU 검증도 필요하다.
 5. 기존 폰 carry 실패와 넘기기/인스펙터 겹침은 기능 수정 작업으로 별도 처리한다.
+
+오브젝트 인스펙터의 `attack_preview.gd`는 독립 World2D의 BinduSession에서 실제 전투 로직을 재사용한다. 미리보기 처치는 전투 효과만 실행하며 보상·업적·저장을 실행하지 않는다. 별도 조합 창은 인스펙터로 통합했다.

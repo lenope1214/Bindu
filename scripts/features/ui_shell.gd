@@ -74,8 +74,6 @@ func _build_ui() -> void:
 	session.guide_label.add_theme_stylebox_override("normal", gsb)
 	session.guide_label.visible = false
 	root.add_child(session.guide_label)
-	session.rx_card = BinduSession.RX_CARD.new(session)
-	root.add_child(session.rx_card)
 	session.guide_more = Button.new()
 	session.guide_more.text = "더 알아보기"
 	session.guide_more.focus_mode = Control.FOCUS_NONE

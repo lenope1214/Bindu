@@ -54,10 +54,6 @@ func _check_progress() -> void:
 		Ach.on_reactions(rs.map(func(r): return r["id"]))
 		for r in rs:
 			if session.mp_mode == "" and not TutPlay.on and Meta.discover(r["id"]):
-				if session.rx_card.active():
-					session.rx_card.found[r["id"]] = true  # 카드 머리에 "도감 +" 표시
-				else:
-					session.hud_system._show_toast("조합 도감에 추가: " + r["name"])
 				_save_best()
 				session.menu_system._refresh_legend()
 				session.onboarding_system._guide("react", "")
