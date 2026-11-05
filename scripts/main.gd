@@ -5207,7 +5207,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	# 휠은 클릭이 아니다: 도감·패치노트는 끝까지 굴린 뒤의 휠이 여기로 넘어와 창이 닫혔다
 	if event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_LEFT, MOUSE_BUTTON_WHEEL_RIGHT]:
 		return
-	if event.button_index == MOUSE_BUTTON_RIGHT and (press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
+	if event.button_index == MOUSE_BUTTON_RIGHT and (press_t or boxing):
 		_cancel_step()
 		return
 	# 오브젝트를 우클릭한 채 끌기: 그 자리에서 방향만 바꾸고, 떼면 확정
@@ -5218,6 +5218,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_start_move(rt)
 			aim_right = phase == Phase.AIM
 			return
+	# 선택 해제보다 오브젝트 우클릭 조준을 먼저 처리한다. 빈 곳 우클릭은 선택 해제.
+	if event.button_index == MOUSE_BUTTON_RIGHT and not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY]:
+		_cancel_step()
+		return
 	if notes_panel.visible:
 		_close_notes()
 		return

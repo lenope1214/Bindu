@@ -2717,6 +2717,26 @@ func _meta_misc() -> void:
 	main._edit_selected_direction()
 	var wave_readonly: bool = not dock.direction_btn.visible and main.phase == main.Phase.WAVE and main.moving == null
 	main.phase = main.Phase.READY
+	var right := InputEventMouseButton.new()
+	right.button_index = MOUSE_BUTTON_RIGHT
+	right.pressed = true
+	right.position = main.get_canvas_transform() * dt.position
+	var right_ok := true
+	for picked_group in [[], [dt]]:
+		main.selected.assign(picked_group)
+		main.pointer_position = right.position
+		main._unhandled_input(right)
+		right_ok = right_ok and main.phase == main.Phase.AIM and main.moving == dt and main.aim_right
+		main.aim_right = false
+		main._cancel_step()
+	main._select_tower(dt)
+	main.pointer_position = main.get_canvas_transform() * main.center()
+	right.position = main.pointer_position
+	main._unhandled_input(right)
+	right_ok = right_ok and main.selected.is_empty() and main.phase == main.Phase.READY
+	main._select_tower(dt)
+	main.pointer_position = main.get_canvas_transform() * dt.position
+	ok("UI-05", right_ok, "선택 유무와 무관하게 오브젝트 우클릭은 조준 우선, 빈 곳은 선택 해제")
 	var original_dir: Vector2 = dt.dir
 	# 이미 선택해 상세가 열린 오브젝트를 한 번 더 누르면 바로 방향 바꾸기, 취소하면 그대로
 	main.press_t = dt

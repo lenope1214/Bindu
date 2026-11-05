@@ -111,6 +111,27 @@ func pause_input_case() -> void:
 	ok("UI-10", not paused and main.phase == main.Phase.READY and main.skip_left > 0 and main.bank_picks.size() == 2, "재개 후 같은 S 키로 정상 넘기기")
 
 func direction_case() -> void:
+	for select_first in [false, true]:
+		await fixture()
+		target.position = Vector2(220, 300)
+		main._set_cards_hidden(true)
+		if select_first:
+			await mouse_click(world(target.position))
+		var original_dir: Vector2 = target.dir
+		await mouse_move(world(target.position))
+		var right := InputEventMouseButton.new()
+		right.button_index = MOUSE_BUTTON_RIGHT
+		right.pressed = true
+		right.position = world(target.position)
+		VirtualInput.send(right)
+		await settle()
+		ok("UI-05", main.phase == main.Phase.AIM and main.moving == target and main.aim_right, "우클릭 즉시 방향 편집: 선택=%s" % select_first)
+		await mouse_move(world(target.position + Vector2(0, -120)))
+		right.pressed = false
+		right.position = world(target.position + Vector2(0, -120))
+		VirtualInput.send(right)
+		await settle()
+		ok("UI-05", main.phase == main.Phase.CHOOSE and main.moving == null and not target.dir.is_equal_approx(original_dir) and target.dir.dot(Vector2.UP) > 0.99, "우클릭 끌기 확정: 선택=%s" % select_first)
 	await fixture()
 	target.position = Vector2(220, 300)
 	main._set_cards_hidden(true)
