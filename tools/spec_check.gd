@@ -3710,6 +3710,13 @@ func _attack_preview() -> void:
 	var ally := _tower(t.position + Vector2(30, 0), Elem.FIRE)
 	preview.configure(t)
 	ok("UI-37", preview.clone.charge == 3.0 and preview.clone.third_n == 2 and preview.clone.dir == t.dir and preview.copies.has(ally.get_instance_id()), "현재 축적·삼연·방향·주변 배치를 미리보기에 복사")
+	for frame in 60: preview.advance(1.0 / 60.0)
+	var quiet: bool = true
+	for peer in preview.world.towers.get_children():
+		if peer != preview.clone: quiet = quiet and not peer.visible and peer.dealt == 0.0
+	ok("UI-37", quiet and preview.clone.side_n == 0 and preview.clone.dealt > 0.0, "활성 오브젝트만 공격·표시하고 보조 공격은 제외")
+	preview.signature = ""
+	preview.configure(t)
 	preview.clone.charge = 0.0
 	var slot := 0
 	for orb in preview.world.orbs.get_children():

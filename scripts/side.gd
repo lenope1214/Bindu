@@ -49,6 +49,8 @@ static func big_name(e: int) -> String:
 static func tick(tw: Object, delta: float) -> void:
 	if Rules.t("side_iv") <= 0.0 or not tw.main:
 		return
+	if not tw.main.combat_system.side_attacks_enabled:
+		return
 	tw.side_cd -= delta
 	if tw.side_cd > 0.0:
 		return

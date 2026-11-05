@@ -30,6 +30,9 @@ func _initialize() -> void:
 	Meta.ui_scale = float(args[1])
 	main.hud_system._apply_ui_scale()
 	await create_timer(0.2).timeout
+	if which == "focused-preview":
+		await focused_preview_case()
+		ok("UI-37", preview_completed, "단일 오브젝트 미리보기 검사 완료")
 	if which == "lane-warning":
 		await lane_warning_case()
 		ok("WAVE-14", lanes_completed, "길목 경고·카드 단계 새 방향 검사 완료")
@@ -504,3 +507,41 @@ func lane_warning_case() -> void:
 		await mouse_click(start_at)
 	ok("WAVE-14", main.phase == main.Phase.WAVE, "범위 밖 길목이 있어도 시작 버튼으로 진행")
 	lanes_completed = true
+
+func focused_preview_case() -> void:
+	await fixture()
+	main.cards_system._enter_ready()
+	refused.position = target.position + Vector2(35, 10)
+	for e in [Elem.POISON, Elem.FIRE, Elem.ELECTRIC, Elem.TIME]: target.add(e, 2)
+	target.pattern = "spray"
+	main.interaction_system._select_tower(target)
+	await settle()
+	var pic: InfoPanel = main.card_dock.pic
+	var preview: AttackPreview = pic.attack_preview
+	preview.set_process(false)
+	for frame in 240: preview.advance(1.0 / 60.0)
+	var hidden := true
+	for peer in preview.world.towers.get_children():
+		if peer != preview.clone: hidden = hidden and not peer.visible and peer.dealt == 0.0
+	ok("UI-37", hidden and preview.clone.side_n == 0, "주변 오브젝트·공격·보조 공격은 숨김")
+	ok("UI-37", pic.tower_header_h() >= 90.0 and preview.position.y >= pic.tower_header_h(), "다섯 속성을 생략하지 않고 미리보기 위에서 줄바꿈")
+	var lowest := 5
+	for frame in 720:
+		preview.advance(1.0 / 60.0)
+		if frame % 60 == 0:
+			var live: int = preview.world.orbs.get_children().filter(func(o): return not o.is_queued_for_deletion()).size()
+			lowest = mini(lowest, live)
+	ok("UI-37", lowest > 0 and preview.clone.dealt > 0.0 and preview.cycle > 1, "적 명중과 표적 보충이 계속 이어짐")
+	var pos := target.position
+	target.position = Vector2(Meta.FIELD.x - 25, 300)
+	target.dir = Vector2.RIGHT
+	preview.configure(target)
+	for frame in 120: preview.advance(1.0 / 60.0)
+	ok("UI-37", preview.clone.dealt > 0.0, "전장 바깥을 향한 오브젝트도 예시 표적 명중을 보여 줌")
+	target.position = pos
+	preview.configure(target)
+	for frame in 60: preview.advance(1.0 / 60.0)
+	await process_frame
+	RenderingServer.force_draw()
+	main.get_viewport().get_texture().get_image().save_png(output.path_join("focused-preview.png"))
+	preview_completed = true

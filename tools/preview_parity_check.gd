@@ -25,6 +25,7 @@ func _initialize() -> void:
 	preview = main.card_dock.pic.attack_preview
 	preview.set_process(false)
 	preview.auto_refill = false
+	preview.include_support_attacks = true
 	Meta.guide_on = false
 	Vary.new_run(false)
 	for pat in Pat.ALL_IDS:

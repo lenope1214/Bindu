@@ -1,7 +1,7 @@
 class_name AttackPreview
 extends TextureRect
 ## 실제 Tower·Projectile·Orb·Share를 사용하는 독립 전장. boot/입력/온라인/저장은 실행하지 않는다.
-const HEIGHT := 140.0
+const HEIGHT := 180.0
 var caption: Label
 var world: BinduSession
 var viewport: SubViewport
@@ -16,7 +16,7 @@ func _init() -> void:
 	expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	stretch_mode = TextureRect.STRETCH_SCALE
 	viewport = SubViewport.new()
-	viewport.size = Vector2i(400, 200)
+	viewport.size = Vector2i(320, 180)
 	viewport.world_2d = World2D.new()
 	viewport.disable_3d = true
 	viewport.gui_disable_input = true
@@ -54,6 +54,7 @@ func _exit_tree() -> void:
 const BUILD_KEYS := ["elements", "order", "pattern", "plv", "mods", "trigs", "pincer", "reso", "position", "dir"]
 const STATE_KEYS := ["charge", "third_n", "star_sum", "star_e", "focus_t", "leech_n", "leech_t"]
 var copies := {}  # 실제 instance id -> 격리된 사본
+var include_support_attacks := false  # 수치 대조 도구만 전체 전투를 실행한다. 화면은 활성 오브젝트에 집중한다.
 var auto_refill := true
 var refill_left := 0.0
 var cycle := 0
@@ -109,10 +110,12 @@ func _reset(peers: Array, context: Dictionary) -> void:
 		copies[peer.get_instance_id()] = copy
 	clone = copies[source.get_instance_id()]
 	for copy: Tower in world.towers.get_children():
-		copy.self_modulate.a = 1.0 if copy == clone else 0.3
+		copy.visible = copy == clone
+	world.combat_system.preview_focus = null if include_support_attacks else clone
+	world.combat_system.side_attacks_enabled = include_support_attacks
 	# 오브젝트의 실제 월드 위치·방향은 유지하고 카메라만 돌린다. 맵·기맥·공명 판정도 그대로다.
-	var xf := Transform2D(-clone.dir.angle(), Vector2(0.75, 0.75), 0.0, Vector2.ZERO)
-	xf.origin = Vector2(65, 100) - xf * clone.position
+	var xf := Transform2D(-clone.dir.angle(), Vector2.ONE, 0.0, Vector2.ZERO)
+	xf.origin = Vector2(40, 95) - xf * clone.position
 	viewport.canvas_transform = xf
 	elapsed = 0.0
 	accumulator = 0.0
@@ -120,16 +123,16 @@ func _reset(peers: Array, context: Dictionary) -> void:
 	cycle = 0
 	_spawn_targets()
 
-func _spawn_targets() -> void:
+func _spawn_targets(count := 5) -> void:
 	var damage: Dictionary = clone.hit_calc()
 	var hp := maxf(3.0, (damage.one + damage.metal) * 2.5)
 	var arena := world.viewport_system.arena().grow(-24.0)
-	for i in 5:
+	for i in count:
 		var orb := Orb.new()
 		orb.main = world
 		orb.setup(Orb.Kind.NORMAL, hp * (1.0 if i == 0 else 3.0), 16.0)
-		var offset := clone.dir * (100.0 + i * 42.0) + clone.dir.orthogonal() * (0 if i < 3 else (i * 2 - 7) * 40)
-		orb.position = (clone.position + offset).clamp(arena.position, arena.end)
+		var offset := clone.dir * (70.0 + i * 44.0) + clone.dir.orthogonal() * (0 if i < 3 else (i * 2 - 7) * 32)
+		orb.position = (clone.position + offset).clamp(arena.position, arena.end) if include_support_attacks else clone.position + offset
 		orb.target = clone.position - clone.dir * 80.0
 		world.orbs.add_child(orb)
 	cycle += 1
@@ -144,18 +147,25 @@ func advance(delta: float) -> void:
 	world.wave_time += delta
 	world.combat_system._resolve(delta, true)
 	world.fx_layer.queue_redraw()
-	# 고정 8초 초기화는 긴 발동·초신성·누적 강화를 잘랐다. 전투 상태를 유지하며 표적만 보충한다.
-	if auto_refill and world.orbs.get_children().all(func(o): return o.is_queued_for_deletion()):
+	# 맞는 적이 끊기지 않게 죽거나 화면을 벗어난 표적을 보충한다. 오브젝트 누적 상태는 유지한다.
+	if auto_refill:
+		var shown := 0
+		for orb: Orb in world.orbs.get_children():
+			if orb.is_queued_for_deletion(): continue
+			var screen := viewport.canvas_transform * orb.position
+			if screen.x < 78.0 or not Rect2(Vector2.ZERO, Vector2(viewport.size)).grow(24).has_point(screen):
+				orb.queue_free()
+			else: shown += 1
 		refill_left += delta
-		if refill_left >= 0.5:
-			_spawn_targets()
+		if shown < 5 and refill_left >= 0.35:
+			_spawn_targets(5 - shown)
 			refill_left = 0.0
 
 func _process(delta: float) -> void:
 	var on := is_visible_in_tree() and is_instance_valid(source)
 	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if on else SubViewport.UPDATE_DISABLED
 	if not on: return
-	caption.text = ("NEW · " if not source.new_reactions.is_empty() else "") + "예시 표적 · 발동 조건 적용"
+	caption.text = ("NEW · " if not source.new_reactions.is_empty() else "") + "기본·특수 공격 · 예시 표적"
 	accumulator += minf(delta, 0.1)
 	while accumulator >= 1.0 / 60.0:
 		advance(1.0 / 60.0)

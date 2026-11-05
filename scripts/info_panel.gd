@@ -69,7 +69,8 @@ func show_tower(tw: Tower, more: bool, part: float, label: String, w: float) -> 
 	mode = "tower"
 	tower = tw
 	attack_preview.configure(tw)
-	attack_preview.position = Vector2(0, 38)
+	_w = w
+	attack_preview.position = Vector2(0, tower_header_h() + 8.0)
 	attack_preview.size = Vector2(w, AttackPreview.HEIGHT)
 	attack_preview.show()
 	detail = more
@@ -95,10 +96,22 @@ func show_card(c: Dictionary, hd: Dictionary, n_take: int, n_react: int, els: Ar
 
 # ---------------- 높이 ----------------
 
+## 모든 속성 이름·레벨을 줄바꿈해 보여 주고 그 아래에 미리보기를 둔다.
+func tower_header_h() -> float:
+	var x := 0.0
+	var rows := 1
+	if not is_instance_valid(tower): return 62.0
+	for e in tower.order:
+		var width := 34.0 + _tw("%s %d" % [Elem.NAMES[e], tower.lv(e)], 13)
+		if x > 0 and x + width > _w:
+			rows += 1
+			x = 0.0
+		x += width + 4.0
+	return 34.0 + rows * 28.0
+
+
 func tower_h() -> float:
-	var h := 30.0 + 8.0 + AttackPreview.HEIGHT + 8.0 + 52.0 * 2 + 8.0 + 8.0  # 제목·미리보기·타일
-	if Rules.t("side_iv") > 0.0:
-		h += 20.0  # 보조 공격 줄
+	var h := tower_header_h() + 8.0 + AttackPreview.HEIGHT + 8.0 + 52.0 * 2 + 8.0 + 8.0  # 제목·미리보기·타일
 	if share >= 0.0:
 		h += 22.0
 	h += 22.0  # 자세히 안내 / 구분선
@@ -342,15 +355,16 @@ func _draw_tower() -> void:
 	var pname := Pat.pname(tw.pattern) + ("" if tw.plv == 1 else " Lv%d" % tw.plv)
 	Glyph.pat(self, tw.pattern, Vector2(10, 14), 9, Color.WHITE)
 	_txt(Vector2(26, 21), pname, 18, Color.WHITE)
-	var cx := 32.0 + _tw(pname, 18) + 6.0
-	var cy := 2.0
+	var cx := 0.0
+	var cy := 34.0
 	for e in tw.order:
 		var label := "%s %d" % [Elem.NAMES[e], tw.lv(e)]
 		var cw := 34.0 + _tw(label, 13)
-		if cx + cw > w:
-			break  # 넘치는 속성은 미리보기 색으로만
+		if cx > 0 and cx + cw > w:
+			cx = 0.0
+			cy += 28.0
 		cx += _chip(Vector2(cx, cy), "e:%d" % e, label, Elem.COLORS[e]) + 4.0
-	y = 38.0
+	y = tower_header_h() + 8.0
 	var hc := tw.hit_calc()
 	var one: float = hc["one"] + hc["metal"]
 	var iv := tw.attack_iv()
@@ -378,10 +392,6 @@ func _draw_tower() -> void:
 	else:
 		_tile(Rect2(tw2 + 8, y + 60, tw2, 52), "range", GREEN, "끝까지" if far else rnum, ("%s부터 약해짐" % rnum) if far else "사거리")
 	y += 120.0
-	if Rules.t("side_iv") > 0.0:
-		var sl := "보조 공격 %s초마다 · %d번째는 %s" % [Tower.tip_num(Side.iv(tw)), int(Rules.t("side_big_n")), Side.big_name(Side.shape_e(tw))]
-		_txt(Vector2(0, y + 12), sl, 12, Color(1, 0.85, 0.55, 0.85), w)
-		y += 20.0
 	if share >= 0.0:
 		_txt(Vector2(0, y + 12), share_label, 12, DIM)
 		var bx := _tw(share_label, 12) + 8.0

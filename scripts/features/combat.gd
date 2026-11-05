@@ -4,6 +4,8 @@ extends BinduFeature
 
 var star_towers: Array = []  # 별이 든 오브젝트 (둘레 피해를 별빛으로 모은다, 매 계산마다 갱신)
 var targets: Array = []  # 화면 안에 들어온 구체 (공격 대상)
+var preview_focus: Tower
+var side_attacks_enabled := true
 var prof := {}
 var ach_dirty := false  # 이번 프레임에 처치가 있었다: 업적 조건을 한 번 본다
 func _sim_step(delta: float) -> void:
@@ -219,9 +221,13 @@ func _resolve(delta: float, preview := false) -> void:
 	var session: BinduSession = self.session
 	var us := Time.get_ticks_usec() if session.prof_on else 0
 	var rect := session.viewport_system.arena().grow(40.0)
+	if preview and preview_focus != null:
+		rect = session.viewport_system.arena().grow(500.0)
 	session.live_orbs = session.orbs.get_children().filter(func(o): return not o.is_queued_for_deletion())
 	# 공격은 전장에 들어오기 시작한 구체에만 닿는다 (가장자리가 전장 안으로 들어온 구체. 폰처럼 화면이 넓어도 전장 밖 구체는 안 맞는다)
 	var screen := session.viewport_system.arena()
+	if preview and preview_focus != null:
+		screen = rect
 	targets = session.live_orbs.filter(func(o): return screen.grow(o.radius()).has_point(o.position))
 
 	_build_grid()
@@ -231,7 +237,7 @@ func _resolve(delta: float, preview := false) -> void:
 		us = _prof_add("목록·격자", us)
 	# 오브젝트 공격
 	for t in session.towers.get_children():
-		if not t.is_queued_for_deletion():
+		if not t.is_queued_for_deletion() and (not preview or preview_focus == null or t == preview_focus):
 			t.attack(delta, targets)
 	if session.prof_on:
 		us = _prof_add("오브젝트 공격", us)

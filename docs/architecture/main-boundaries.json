@@ -1294,7 +1294,7 @@
     "_update_action_guide": "Suppress guidance while hovering or manipulating objects; TUT-03 regression",
     "_build_menu": "Remove obsolete combination popup setting; inspector is the single presentation",
     "_set_card_detail": "Explicit detail button or Z reopens dismissed inspector; UI-32 regression",
-    "_resolve": "Share charge on kill with preview without rewards; parity tests",
+    "_resolve": "Preview focus limits attacks to selected tower; production and parity mode retain full simulation",
     "_draw_fx": "Preview draws combat effects without HUD or tooltips",
     "_build_ui": "Remove separate combination popup; inspector NEW and discovery regression",
     "_place_on": "Remove separate combination popup; inspector NEW and discovery regression",
