@@ -523,41 +523,42 @@ func _draw_margins(vw: Rect2) -> void:
 	session.fx_layer.draw_rect(ar, Color(1, 1, 1, 0.08), false, 1.0)
 
 
-func _draw_fx() -> void:
+func _draw_fx(preview := false) -> void:
 	var session: BinduSession = self.session
-	var vw := session.viewport_system.view_rect()
-	var o := vw.position
-	var vs := vw.size
-	_draw_margins(vw)
-	_draw_place_note(session.fx_layer)
-	session.abilities_system._draw_skill_fx()
-	for i in 6:
-		var w := 14.0 * (6 - i)
-		var col := Color(0, 0, 0, 0.05)
-		session.fx_layer.draw_rect(Rect2(o.x, o.y, vs.x, w), col)
-		session.fx_layer.draw_rect(Rect2(o.x, o.y + vs.y - w, vs.x, w), col)
-		session.fx_layer.draw_rect(Rect2(o.x, o.y, w, vs.y), col)
-		session.fx_layer.draw_rect(Rect2(o.x + vs.x - w, o.y, w, vs.y), col)
-	if session.phase == BinduSession.Phase.GAMEOVER or session.title_label.visible:
-		session.fx_layer.draw_rect(vw, Color(0, 0, 0, 0.6))
-	if session.eclipse_flash > 0.0:
-		# 단번에 어두워지지 않게 0.1초 동안 천천히 어두워졌다가 풀린다
-		var ef := session.eclipse_flash / 0.6
-		var env := minf((1.0 - ef) / 0.15, 1.0) * ef
-		session.fx_layer.draw_rect(vw, Color(0.1, 0.0, 0.15, 0.22 * env))
-	# 중앙 위험: 화면 테두리가 붉게 맥박친다 (25% 이하는 더 진하고 빠르게). 배속과 상관없이 계속 보인다
-	if session.danger_lv > 0 and session.phase != BinduSession.Phase.GAMEOVER and not session.title_label.visible:
-		var t := Time.get_ticks_msec() / 1000.0
-		var beat := 0.5 + 0.5 * sin(t * (3.0 if session.danger_lv == 1 else 7.0))
-		var a := (0.05 + 0.05 * beat) if session.danger_lv == 1 else (0.09 + 0.09 * beat)
-		var dc := Color(1, 0.6, 0.25) if session.danger_lv == 1 else Color(1, 0.15, 0.2)
+	if not preview:
+		var vw := session.viewport_system.view_rect()
+		var o := vw.position
+		var vs := vw.size
+		_draw_margins(vw)
+		_draw_place_note(session.fx_layer)
+		session.abilities_system._draw_skill_fx()
 		for i in 6:
-			var w := 10.0 * (6 - i)
-			var col := Color(dc, a)
+			var w := 14.0 * (6 - i)
+			var col := Color(0, 0, 0, 0.05)
 			session.fx_layer.draw_rect(Rect2(o.x, o.y, vs.x, w), col)
 			session.fx_layer.draw_rect(Rect2(o.x, o.y + vs.y - w, vs.x, w), col)
 			session.fx_layer.draw_rect(Rect2(o.x, o.y, w, vs.y), col)
 			session.fx_layer.draw_rect(Rect2(o.x + vs.x - w, o.y, w, vs.y), col)
+		if session.phase == BinduSession.Phase.GAMEOVER or session.title_label.visible:
+			session.fx_layer.draw_rect(vw, Color(0, 0, 0, 0.6))
+		if session.eclipse_flash > 0.0:
+			# 단번에 어두워지지 않게 0.1초 동안 천천히 어두워졌다가 풀린다
+			var ef := session.eclipse_flash / 0.6
+			var env := minf((1.0 - ef) / 0.15, 1.0) * ef
+			session.fx_layer.draw_rect(vw, Color(0.1, 0.0, 0.15, 0.22 * env))
+		# 중앙 위험: 화면 테두리가 붉게 맥박친다 (25% 이하는 더 진하고 빠르게). 배속과 상관없이 계속 보인다
+		if session.danger_lv > 0 and session.phase != BinduSession.Phase.GAMEOVER and not session.title_label.visible:
+			var t := Time.get_ticks_msec() / 1000.0
+			var beat := 0.5 + 0.5 * sin(t * (3.0 if session.danger_lv == 1 else 7.0))
+			var a := (0.05 + 0.05 * beat) if session.danger_lv == 1 else (0.09 + 0.09 * beat)
+			var dc := Color(1, 0.6, 0.25) if session.danger_lv == 1 else Color(1, 0.15, 0.2)
+			for i in 6:
+				var w := 10.0 * (6 - i)
+				var col := Color(dc, a)
+				session.fx_layer.draw_rect(Rect2(o.x, o.y, vs.x, w), col)
+				session.fx_layer.draw_rect(Rect2(o.x, o.y + vs.y - w, vs.x, w), col)
+				session.fx_layer.draw_rect(Rect2(o.x, o.y, w, vs.y), col)
+				session.fx_layer.draw_rect(Rect2(o.x + vs.x - w, o.y, w, vs.y), col)
 	for a in session.arcs:
 		session.fx_layer.draw_line(a[0], a[1], Color(Elem.COLORS[Elem.ELECTRIC], fx_k), 2.0)
 	var sc: Color = Elem.COLORS[Elem.SOUND]
@@ -597,6 +598,8 @@ func _draw_fx() -> void:
 		var f: Font = ThemeDB.fallback_font if p[1].is_valid_int() else session.ui_font
 		session.fx_layer.draw_string(f, p[0] + Vector2(1, 1), p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(0, 0, 0, 0.7 * a))
 		session.fx_layer.draw_string(f, p[0], p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(p[3], a))
+	if preview:
+		return
 	# 보스 체력 줄·콤보 상자는 화면에 붙은 글이라 화면 좌표로 그린다 (확대해도 크기·자리 그대로)
 	session.fx_layer.draw_set_transform_matrix(session.get_canvas_transform().affine_inverse())
 	_draw_boss_bar()

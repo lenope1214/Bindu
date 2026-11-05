@@ -219,7 +219,7 @@ func _alive_count(n: Node) -> int:
 	return c
 
 
-func _resolve(delta: float) -> void:
+func _resolve(delta: float, preview := false) -> void:
 	var session: BinduSession = self.session
 	var us := Time.get_ticks_usec() if session.prof_on else 0
 	var rect := session.viewport_system.arena().grow(40.0)
@@ -274,6 +274,12 @@ func _resolve(delta: float) -> void:
 
 	# 구체 처치 / 중앙 도달 (협동 참가자는 호스트가 보낸 대로)
 	for o in (session.live_orbs if not session.mp_ghost else []):
+		if o.hp <= 0.0 and preview:
+			_death_effects(o)
+			o.queue_free()
+			continue
+		if preview:
+			continue
 		if o.hp <= 0.0:
 			session.spawning_system._jam_death(o)
 			session.sfx.play("kill", 0.15)
@@ -313,15 +319,7 @@ func _resolve(delta: float) -> void:
 					t.add_charge(o)
 			if o.kind == Orb.Kind.BOSS:
 				session.shake = 0.4
-			if o.poison_t > 0.0:
-				for other in targets:
-					if other != o and other.position.distance_to(o.position) < 80.0:
-						other.poison(o.poison_dps, 3.0, o.poison_src, o.poison_rx, o.poison_key)
-				Share.contagion(o)  # 독 전염: 효과도 번짐
-			if o.vuln_t > 0.0:
-				Share.pull(o)  # 어둠 끌어당김
-			if o.soul_t > 0.0:
-				session.spawning_system._soul_wisp(o)
+			_death_effects(o)
 			o.queue_free()
 			continue
 		if session.rampart_left > 0 and not o.walled and not o.ghost and _near_core(o, BinduSession.RAMPART_R):
@@ -483,3 +481,17 @@ func _update_fx(delta: float) -> void:
 		session.camera.position = session.viewport_system.center() + session.view_pan
 	session.camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 14.0 * session.shake * (1.0 if Meta.shake_on else 0.0)
 	session.fx_layer.queue_redraw()
+
+
+## 처치 시 전투 효과만. 보상·업적과 분리해 미리보기에서도 같은 효과를 쓴다.
+func _death_effects(o: Orb) -> void:
+	var session: BinduSession = self.session
+	if o.poison_t > 0.0:
+		for other in targets:
+			if other != o and other.position.distance_to(o.position) < 80.0:
+				other.poison(o.poison_dps, 3.0, o.poison_src, o.poison_rx, o.poison_key)
+		Share.contagion(o)  # 독 전염: 효과도 번짐
+	if o.vuln_t > 0.0:
+		Share.pull(o)  # 어둠 끌어당김
+	if o.soul_t > 0.0:
+		session.spawning_system._soul_wisp(o)

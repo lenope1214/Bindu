@@ -2,6 +2,7 @@ extends "res://tools/carry_check.gd"
 var guidance_completed := 0
 var combo_close_completed := 0
 var dismiss_inspector_completed := false
+var preview_completed := false
 ## 사용성 회귀: 격리 사본·가상 입력으로 실제 버튼과 전장 입력 경로를 함께 확인한다.
 func _initialize() -> void:
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools") or DisplayServer.get_name() == "headless" or OnlineConfig.SERVER_URL != "" or OnlineConfig.MP_URL != "":
@@ -29,6 +30,9 @@ func _initialize() -> void:
 	Meta.ui_scale = float(args[1])
 	main.hud_system._apply_ui_scale()
 	await create_timer(0.2).timeout
+	if which == "unified-preview":
+		await unified_preview_case()
+		ok("UI-37", preview_completed, "최종 공격 미리보기 검사 완료")
 	if which == "dismiss-inspector":
 		await dismiss_inspector_case()
 		ok("UI-32", dismiss_inspector_completed, "인스펙터 닫기·재활성화 입력 검사 완료")
@@ -458,3 +462,26 @@ func dismiss_inspector_case() -> void:
 	await settle()
 	ok("UI-32", not main.card_dock.inspector_dismissed and Meta.card_detail, "Z 한 번으로 다시 활성화")
 	dismiss_inspector_completed = true
+
+func unified_preview_case() -> void:
+	await fixture()
+	main.interaction_system._select_tower(target)
+	target.add(Elem.POISON, 2)
+	target.add(Elem.WATER, 2)
+	await settle()
+	var preview: AttackPreview = main.card_dock.pic.attack_preview
+	var tested := 0
+	for pat in Pat.ALL_IDS:
+		target.pattern = pat
+		preview.configure(target)
+		for frame in 90: preview.advance(1.0 / 30.0)
+		tested += 1
+		ok("UI-37", is_instance_valid(preview.clone), "실제 공격 미리보기: " + pat)
+	target.pattern = "shot"
+	preview.configure(target)
+	for frame in 24: preview.advance(1.0 / 30.0)
+	await process_frame
+	await process_frame
+	RenderingServer.force_draw()
+	main.get_viewport().get_texture().get_image().save_png(output.path_join("unified-preview.png"))
+	preview_completed = tested == Pat.ALL_IDS.size()

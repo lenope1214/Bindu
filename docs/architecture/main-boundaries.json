@@ -1298,6 +1298,8 @@
     "_update_action_guide": "Suppress guidance while hovering or manipulating objects; TUT-03 regression",
     "_build_menu": "Add persisted combination popup visibility setting and preference sync; UI-37 regression",
     "_place_rx_card": "Hide popup buttons together with transparent popup while placing/aiming; UI-37 input regression",
-    "_set_card_detail": "Explicit detail button or Z reopens dismissed inspector; UI-32 regression"
+    "_set_card_detail": "Explicit detail button or Z reopens dismissed inspector; UI-32 regression",
+    "_resolve": "Preview skips rewards/core damage and shares death effects; isolated preview tests",
+    "_draw_fx": "Preview draws combat effects without HUD or tooltips"
   }
 }

@@ -12,6 +12,7 @@ const ORB := Color(0.95, 0.4, 0.5)
 const LINE_PATS := ["shot", "thorn", "gust", "shard", "iron", "chain", "wisp"]
 
 var game
+var attack_preview: AttackPreview
 var font: Font
 var mode := ""  # "" · "tower" · "card"
 var tower: Tower
@@ -29,6 +30,9 @@ var _w := 300.0
 
 func _init(main) -> void:
 	game = main
+	attack_preview = AttackPreview.new()
+	add_child(attack_preview)
+	attack_preview.hide()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
@@ -42,6 +46,7 @@ func _process(delta: float) -> void:
 
 func clear() -> void:
 	mode = ""
+	attack_preview.hide()
 	tower = null
 	card = {}
 	custom_minimum_size = Vector2.ZERO
@@ -51,6 +56,10 @@ func clear() -> void:
 func show_tower(tw: Tower, more: bool, part: float, label: String, w: float) -> void:
 	mode = "tower"
 	tower = tw
+	attack_preview.configure(tw)
+	attack_preview.position = Vector2(0, 38)
+	attack_preview.size = Vector2(w, AttackPreview.HEIGHT)
+	attack_preview.show()
 	detail = more
 	share = part
 	share_label = label
@@ -61,6 +70,7 @@ func show_tower(tw: Tower, more: bool, part: float, label: String, w: float) -> 
 
 func show_card(c: Dictionary, hd: Dictionary, n_take: int, n_react: int, els: Array, w: float) -> void:
 	mode = "card"
+	attack_preview.hide()
 	card = c
 	head = hd
 	take = n_take
@@ -74,7 +84,7 @@ func show_card(c: Dictionary, hd: Dictionary, n_take: int, n_react: int, els: Ar
 # ---------------- 높이 ----------------
 
 func tower_h() -> float:
-	var h := 30.0 + 8.0 + 96.0 + 8.0 + 52.0 * 2 + 8.0 + 8.0  # 제목·미리보기·타일
+	var h := 30.0 + 8.0 + AttackPreview.HEIGHT + 8.0 + 52.0 * 2 + 8.0 + 8.0  # 제목·미리보기·타일
 	if Rules.t("side_iv") > 0.0:
 		h += 20.0  # 보조 공격 줄
 	if share >= 0.0:
@@ -332,15 +342,12 @@ func _draw_tower() -> void:
 	var hc := tw.hit_calc()
 	var one: float = hc["one"] + hc["metal"]
 	var iv := tw.attack_iv()
-	var main_e: int = tw.order[0] if not tw.order.is_empty() else -1
 	var rt := tw.range_text()
 	var far := rt.begins_with("화면 끝까지")
 	var rnum := rt
-	var m := RegEx.create_from_string("\\d+").search(rt)
-	if m:
-		rnum = m.get_string()
-	_pat_preview(Rect2(0, y, w, 96), tw.pattern, main_e, iv, far, Tower.tip_num(one), rnum)
-	y += 104.0
+	var match_num := RegEx.create_from_string("\\d+").search(rt)
+	if match_num: rnum = match_num.get_string()
+	y += AttackPreview.HEIGHT + 8.0
 	# 숫자 타일 2x2
 	var tw2 := (w - 8.0) / 2.0
 	var shots: float = hc["shots"] if tw.pattern != "wall" else 1.0

@@ -111,6 +111,7 @@ func _initialize():
 	_vote()
 	_ugc()
 	_board_filters()
+	_attack_preview()
 	_rx_card()
 	_lint()
 	print("SPEC %s (실패 %d, 확인한 기능 %d개)" % ["통과" if fails == 0 else "실패", fails, seen.size()])
@@ -3688,6 +3689,27 @@ func _ugc() -> void:
 
 
 ## UI-37: 속성을 합쳐 새 조합이 생기면 긴 배너·토스트 대신 오브젝트 옆 그림 카드
+func _attack_preview() -> void:
+	_fresh()
+	var t := _tower(Vector2(250, 300), Elem.WATER, 2)
+	t.add(Elem.POISON, 2)
+	var preview: AttackPreview = main.card_dock.pic.attack_preview
+	preview.configure(t)
+	var hp: int = main.core_hp
+	var score: int = main.score
+	var dealt := t.dealt
+	var count: int = main.orbs.get_child_count()
+	for frame in 120: preview.advance(1.0 / 30.0)
+	var hit: bool = preview.clone.dealt > 0.0
+	var effects := false
+	for orb in preview.world.orbs.get_children():
+		effects = effects or orb.poison_t > 0.0 or orb.slow_timer > 0.0
+	ok("UI-37", hit and effects, "실제 공격·명중 경로로 미리보기 표적에 감속·중독 적용")
+	ok("UI-37", hp == main.core_hp and score == main.score and dealt == t.dealt and count == main.orbs.get_child_count(), "미리보기 피해·구체·점수는 실제 판과 격리")
+	preview.source = null
+	_clear()
+
+
 func _rx_card() -> void:
 	_fresh()
 	var c: Vector2 = main.viewport_system.center()
