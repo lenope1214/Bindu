@@ -20,8 +20,8 @@ func _initialize():
 		func():
 			Meta.ui_scale = z
 			main.touch_ui = touch
-			main._apply_ui_scale()
-			main.tut_first = false
+			main.hud_system._apply_ui_scale()
+			main.onboarding_system.tut_first = false
 			Tutorial.loaded = true
 			Tutorial.done = true
 			for tp in Tutorial.TOPICS:
@@ -29,7 +29,7 @@ func _initialize():
 			if main.tut.visible:
 				main.tut.close()
 			get_paused_fix()
-			main._close_title(),
+			main.progression_system._close_title(),
 		func():
 			if not main.legend_hidden:
 				main._toggle_legend()
@@ -45,7 +45,7 @@ func _initialize():
 				main.towers.get_child(i).dealt = dl[i]
 			main.wave = 24
 			main.wave_time = 30.0
-			main._rank_update()
+			main.hud_system._rank_update()
 			main._set_cards_hidden(true),
 		func(): VirtualInput.move(Vector2(5, 5)),
 		func(): _snap("rank"),

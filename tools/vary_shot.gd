@@ -19,10 +19,10 @@ func _initialize():
 	steps = [
 		func():
 			Meta.ui_scale = z
-			main._apply_ui_scale()
-			main._close_title(),
+			main.hud_system._apply_ui_scale()
+			main.progression_system._close_title(),
 		func():
-			main._close_title()
+			main.progression_system._close_title()
 			main.touch_ui = touch
 			if main.tut:
 				main.tut.close()
@@ -39,7 +39,7 @@ func _initialize():
 			main._roll_lanes()
 			main.phase = main.Phase.READY
 			main._update_preview()
-			main.hud_sig = "",
+			main.hud_system.hud_sig = "",
 		func():
 			var ch: Array = main.hud_chips.filter(func(c): return c[1] == "tag")
 			var r: Rect2 = ch[-1][0]

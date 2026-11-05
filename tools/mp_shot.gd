@@ -21,14 +21,14 @@ func _initialize():
 	steps = [
 		func():
 			Meta.guide_on = false  # 튜토리얼(처음 켤 때·멀티플레이 처음)이 화면을 가리지 않게
-			main.tut_first = false
+			main.onboarding_system.tut_first = false
 			if main.tut and main.tut.panel.visible:
 				main.tut.close()
 			Meta.ui_scale = z
 			main.touch_ui = touch
-			main._apply_ui_scale()
+			main.hud_system._apply_ui_scale()
 			Meta.games = 5
-			main._refresh_menu()
+			main.menu_system._refresh_menu()
 			main.mp_btn.visible = true,
 		func(): _snap("mp_title"); main._toggle_mp_lobby(),
 		func():
@@ -101,11 +101,11 @@ func _initialize():
 			old.free()
 			main = load("res://main.tscn").instantiate()
 			VirtualInput.mount(main, root)
-			main.tut_first = false
+			main.onboarding_system.tut_first = false
 			if main.tut and main.tut.panel.visible:
 				main.tut.close()
 			main.touch_ui = touch
-			main._apply_ui_scale()
+			main.hud_system._apply_ui_scale()
 			main.mp.in_game = {2: true}
 			main._mp_refresh_lobby(),
 		func(): _snap("mp_lobby_back_" + mode),

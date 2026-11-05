@@ -20,7 +20,7 @@ func _initialize():
 		func():
 			Meta.ui_scale = z
 			main.touch_ui = touch
-			main._apply_ui_scale()
+			main.hud_system._apply_ui_scale()
 			Meta.games = 5
 			if main.tut:
 				main.tut.close(),
@@ -30,16 +30,16 @@ func _initialize():
 			if main.tut:
 				main.tut.close()
 			Meta.map_id = m
-			main._set_prep(true)
-			main._refresh_menu())
+			main.menu_system._set_prep(true)
+			main.menu_system._refresh_menu())
 		steps.append(func(): _snap("prep_" + m))
 	steps.append_array([
 		func():
-			main._set_prep(false)
+			main.menu_system._set_prep(false)
 			Meta.map_id = "line"
-			main._close_title(),
+			main.progression_system._close_title(),
 		func():
-			main._close_title()
+			main.progression_system._close_title()
 			if main.tut:
 				main.tut.close()
 			main.help_label.visible = false
@@ -60,7 +60,7 @@ func _initialize():
 			main._roll_lanes()
 			main.phase = main.Phase.READY
 			main._update_preview()
-			main.hud_sig = "",
+			main.hud_system.hud_sig = "",
 		func():
 			var ch: Array = main.hud_chips.filter(func(c): return c[1] == "tag")
 			var r: Rect2 = ch[-1][0]
@@ -72,7 +72,7 @@ func _initialize():
 			main.lanes.clear()
 			main._roll_lanes()
 			main._update_preview()
-			main.hud_sig = "",
+			main.hud_system.hud_sig = "",
 		func(): pass,
 		func(): _snap("map_storm"),
 	])

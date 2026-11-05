@@ -87,7 +87,7 @@ static func _collect(c: Node, out: Array) -> void:
 
 static func check(main, tag: String, extra: Array = []) -> int:
 	var vp: Rect2 = main.get_viewport().get_visible_rect()
-	var pad: Rect2 = main._safe_pad() if main.has_method("_safe_pad") else Rect2()
+	var pad: Rect2 = main.hud_system._safe_pad() if main.has_method("_safe_pad") else Rect2()
 	vp = Rect2(vp.position + pad.position, vp.size - pad.position - pad.size)  # 노치·홈 막대 밖은 화면 밖
 	var units := _units(main)
 	var items: Array = []  # [이름, 화면 rect, node or null]

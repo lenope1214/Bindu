@@ -29,7 +29,7 @@ func _initialize():
 		func():
 			Meta.ui_scale = z
 			main.touch_ui = touch
-			main._apply_ui_scale()
+			main.hud_system._apply_ui_scale()
 			tp = main.tplay,
 		func(): _snap("tp01_goal"); tp.skip_step(),
 		func(): _snap("tp02_place"); _to("aim"),

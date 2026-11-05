@@ -26,13 +26,13 @@ func _initialize():
 	main = load("res://main.tscn").instantiate()
 	VirtualInput.mount(main, root)
 	await process_frame
-	main._hide_title()
+	main.progression_system._hide_title()
 	main.set_process(false)
 	main.auto_start = false
 	touch = args.size() > 2
 	main.touch_ui = touch
 	Meta.ui_scale = float(args[1])
-	main._apply_ui_scale()
+	main.hud_system._apply_ui_scale()
 	ok("UI-20", is_equal_approx(Meta.ui_scale, float(args[1])) and main.ui_root.scale.is_equal_approx(Vector2.ONE * Meta.ui_scale), "requested text scale applied after saved settings")
 	_fresh(12)
 	for e in Elem.ALL:
@@ -99,13 +99,13 @@ func snap(tag: String):
 	var dock = main.card_dock
 	var has_detail: bool = Meta.card_detail or main.perk_mode
 	var title_ok: bool = dock.heading.text == expected_name if main.perk_mode else dock.heading.text == "카드 정보" and dock.pic.head.get("name", "") == expected_name
-	ok("UI-20", not has_detail or (dock.side.visible and title_ok and expected_rows.all(func(row): return dock.detail.text.contains(main._kr_keep(row)))), tag + " full text visible")
+	ok("UI-20", not has_detail or (dock.side.visible and title_ok and expected_rows.all(func(row): return dock.detail.text.contains(main.patchlog_system._kr_keep(row)))), tag + " full text visible")
 	var hbar: HScrollBar = dock.scroll.get_h_scroll_bar()
 	ok("UI-20", not has_detail or hbar.max_value <= hbar.page + 1.0, tag + " no horizontal overflow")
 	ok("UI-20", not has_detail or dock.detail.size.y + 1.0 >= dock.detail.get_content_height(), tag + " text height fits")
 	for button in main.choice_box.get_children():
 		if button.is_queued_for_deletion(): continue
-		var lines: PackedStringArray = main._wrap_words(main._kr_keep(dock.summary_text(button)), button.size.x - 28, 14).split("\n")
+		var lines: PackedStringArray = main.onboarding_system._wrap_words(main.patchlog_system._kr_keep(dock.summary_text(button)), button.size.x - 28, 14).split("\n")
 		for line in lines:
 			ok("UI-20", main.ui_font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x <= button.size.x - 27, tag + " wrapped summary width")
 	fails += preload("res://tools/ui_check.gd").check(main, tag)

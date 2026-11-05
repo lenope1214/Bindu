@@ -110,7 +110,7 @@ static func title(a: int, b: int) -> String:
 
 
 func paragraph(text: String, font_size: int) -> String:
-	return game._wrap_words(game._kr_keep(text), W * fs / 15.0 - 24.0, font_size)
+	return game.onboarding_system._wrap_words(game.patchlog_system._kr_keep(text), W * fs / 15.0 - 24.0, font_size)
 
 
 func paragraph_height(text: String, font_size: int) -> float:

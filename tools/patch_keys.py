@@ -111,7 +111,7 @@ def check_same(name: str, table: dict, found: dict) -> list:
 
 
 def build() -> dict:
-    main = read("scripts/main.gd")
+    main = read("scripts/app/session.gd") + "\n" + "\n".join(p.read_text(encoding="utf-8") for p in sorted((ROOT / "scripts/features").glob("*.gd")))
     errs = []
     # 특성: main.PERK_VALS + 이름은 PERKS
     pv = re.search(r"const PERK_VALS := \{(.*?)\}", main, re.S).group(1)

@@ -22,14 +22,14 @@ func _initialize():
 		func():
 			Meta.ui_scale = z
 			main.touch_ui = touch
-			main._apply_ui_scale()
-			main.tut_first = false
+			main.hud_system._apply_ui_scale()
+			main.onboarding_system.tut_first = false
 			Meta.games = 5
 			Meta.guide_on = false
 			Tutorial.loaded = true
 			for tp in Tutorial.TOPICS:
 				Tutorial.seen[tp["id"]] = true
-			main._close_title(),
+			main.progression_system._close_title(),
 		func():
 			main.tut.visible = false
 			var c: Vector2 = main.core()

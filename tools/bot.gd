@@ -44,7 +44,7 @@ func _set_modes():
 	if OS.get_environment("COOP") != "":
 		main.coop_n = int(OS.get_environment("COOP"))
 		main.coop_orbs = 1.0 + float(Rules.tune["coop_orb_per"]) * (main.coop_n - 1)
-	main.start_modes()
+	main.hud_system.start_modes()
 	main.picks_left = maxi(Rules.open_picks, Rules.picks)
 	main.rerolls_left = Modes.rerolls(1)
 var wave_ms := 0
@@ -205,7 +205,7 @@ func _process(_d):
 				return false
 			main._apply_card(target)
 		elif target:
-			main._show_toast(target.add(pick["e"], pick["lv"]))
+			main.hud_system._show_toast(target.add(pick["e"], pick["lv"]))
 			main._after_place()
 		else:
 			var c = main.core()

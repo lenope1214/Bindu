@@ -24,7 +24,7 @@ func _set_modes():
 	modes_set = true
 	Modes.set_on(Array(OS.get_environment("MODES").split(",", false)))
 	main._apply_rules()
-	main.start_modes()
+	main.hud_system.start_modes()
 	main.picks_left = maxi(Rules.open_picks, Rules.picks)
 	main.rerolls_left = Modes.rerolls(1)
 var cont_w := -1
@@ -183,7 +183,7 @@ func _process(_d):
 				return false
 			main._apply_card(target)
 		elif target:
-			main._show_toast(target.add(pick["e"], pick["lv"]))
+			main.hud_system._show_toast(target.add(pick["e"], pick["lv"]))
 			main._after_place()
 		else:
 			var c = main.center()

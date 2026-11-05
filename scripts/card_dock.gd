@@ -119,7 +119,7 @@ func _init(main) -> void:
 	side.fold_pressed.connect(func():
 		Meta.panel_fold["info"] = not side.folded
 		side.set_folded(not side.folded)
-		game._save_best())
+		game.progression_system._save_best())
 	side.set_folded(Meta.panel_fold.get("info", false))
 	game.ui_root.add_child(side)
 	var content := side.body
@@ -456,7 +456,7 @@ func tick() -> void:
 	if not blocked and not game.guide_label.visible:
 		var status := operation_text()
 		if status != "":
-			game.hint.text = game._kr_keep(status)
+			game.hint.text = game.patchlog_system._kr_keep(status)
 			game.hint.set_anchors_preset(Control.PRESET_TOP_LEFT)
 			game.hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			game.hint.add_theme_font_size_override("font_size", 14)
@@ -474,7 +474,7 @@ func tick() -> void:
 			game.hint.z_index = 2
 			game.hint.show()
 	_place_side(size, cards)
-	game.cancel_btn.text = game._kh("카드 돌려놓기 (Esc)") if carrying() and game.phase == game.Phase.PLACE else game._kh("취소 (Esc)")
+	game.cancel_btn.text = game.ui_layout_system._kh("카드 돌려놓기 (Esc)") if carrying() and game.phase == game.Phase.PLACE else game.ui_layout_system._kh("취소 (Esc)")
 	for i in game.skill_btns.size():
 		var button: Button = game.skill_btns[i]
 		button.z_index = 2
@@ -588,7 +588,7 @@ func _update_side() -> void:
 				reaction += 1
 		pic.show_card(card, cc["head"], take, reaction, game._combo_parts(card["e"])["els"] if card["type"] == "elem" else [], _pic_w())
 		var full: Array = game._card_full(card)
-		var fit_name: String = game.core_fit(card)
+		var fit_name: String = game.hud_system.core_fit(card)
 		if fit_name != "":
 			full.append(["주력 %s 강화" % fit_name, Color.WHITE])
 		if MapRule.card_aff(card):
@@ -637,7 +637,7 @@ func _update_side() -> void:
 	side.visible = active() and has_content and (card.is_empty() or Meta.card_detail)
 	if sig != side_signature:
 		heading.text = "오브젝트 정보" if pic.mode == "tower" else ("카드 정보" if pic.mode == "card" else title)
-		detail.text = game._kr_keep(text)
+		detail.text = game.patchlog_system._kr_keep(text)
 		scroll.scroll_vertical = 0
 		side_signature = sig
 
@@ -763,7 +763,7 @@ func draw_card(b: Button, col: Color) -> void:
 	if not game.touch_ui:
 		Glyph.keycap(b, font, Vector2(b.size.x - 8, 8), str(h["idx"]))
 	var summary := summary_text(b)
-	var lines: PackedStringArray = game._wrap_words(game._kr_keep(summary), b.size.x - 28, 14).split("\n")
+	var lines: PackedStringArray = game.onboarding_system._wrap_words(game.patchlog_system._kr_keep(summary), b.size.x - 28, 14).split("\n")
 	var visible_lines := mini(2, lines.size())
 	for i in visible_lines:
 		var line := lines[i]

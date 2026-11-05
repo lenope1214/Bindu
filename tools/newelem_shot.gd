@@ -24,13 +24,13 @@ func _initialize():
 		func():
 			Meta.ui_scale = z
 			main.touch_ui = touch
-			main._apply_ui_scale()
+			main.hud_system._apply_ui_scale()
 			Meta.games = 5
 			if main.tut and main.tut.visible:
 				main.tut.close(),
 		func():
 			main.continue_btn.visible = false
-			main._close_title(),
+			main.progression_system._close_title(),
 		func():
 			if main.tut and main.tut.visible:
 				main.tut.visible = false,
@@ -94,7 +94,7 @@ func _initialize():
 		func():
 			_snap("ne_tip")
 			main._set_cards_hidden(false)
-			main._toggle_codex()
+			main.menu_system._toggle_codex()
 			main.codex_panel.tabs[0].pressed.emit(),
 		func():
 			_snap("ne_codex")

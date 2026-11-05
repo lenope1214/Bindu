@@ -23,34 +23,34 @@ func _initialize():
 		func():
 			Meta.ui_scale = z
 			main.touch_ui = touch
-			main._apply_ui_scale()
+			main.hud_system._apply_ui_scale()
 			# 가장 긴 시작 화면: 이어하기·새 버전 알림·공지까지, 준비 화면(title_prep)은 회랑(좌우 줄)·규칙 3·모드 줄
 			Meta.games = 5
 			Meta.rules = 3
 			Meta.map_id = "line"
-			main._refresh_menu()
+			main.menu_system._refresh_menu()
 			main.continue_info.text = "웨이브 29부터 · 소용돌이 · 랭크"
-			main.continue_btn.custom_minimum_size.x = 3 * main._tile_w() + 32
+			main.continue_btn.custom_minimum_size.x = 3 * main.menu_system._tile_w() + 32
 			main.continue_btn.visible = true
 			main.get_tree().call_group("keycap", "queue_redraw")
 			main.update_btn.text = "새 버전 0.9.9 받기"
 			main.update_btn.visible = true
 			main.notice_label.text = "공지: 시즌 2가 시작됐어요"
 			main.notice_label.visible = true,
-		func(): _snap("title"); main._set_prep(true),
-		func(): _snap("title_prep"); main._set_prep(false); main._toggle_notes(),
-		func(): _snap("notes"); main._toggle_notes(); main._toggle_records(),
+		func(): _snap("title"); main.menu_system._set_prep(true),
+		func(): _snap("title_prep"); main.menu_system._set_prep(false); main.patchlog_system._toggle_notes(),
+		func(): _snap("notes"); main.patchlog_system._toggle_notes(); main.menu_system._toggle_records(),
 		func():
-			_snap("records"); main._toggle_records(); main._toggle_board(),
+			_snap("records"); main.menu_system._toggle_records(); main.leaderboard_system._toggle_board(),
 		func():
 			# 서버 없이 순위 10줄을 채워 본다 (연결 실패가 먼저 온 뒤에 덮어쓴다)
 			var es := []
 			for i in 10:
 				es.append({"rank": i + 1, "nick": "닉네임%d" % i, "wave": 40 - i, "score": 9000000 - i * 1000, "me": i == 3, "ended": i != 1})
-			main._on_board_loaded({"tag": main._board_tag(), "period": "all", "entries": es})
-			main._on_board_loaded({"tag": main._board_tag(), "period": "week", "entries": es.slice(0, 5)}),
-		func(): _snap("board"); main._toggle_board(); main._toggle_settings(),
-		func(): _snap("settings"); main._toggle_settings(); main._toggle_codex(),
+			main.leaderboard_system._on_board_loaded({"tag": main.leaderboard_system._board_tag(), "period": "all", "entries": es})
+			main.leaderboard_system._on_board_loaded({"tag": main.leaderboard_system._board_tag(), "period": "week", "entries": es.slice(0, 5)}),
+		func(): _snap("board"); main.leaderboard_system._toggle_board(); main.menu_system._toggle_settings(),
+		func(): _snap("settings"); main.menu_system._toggle_settings(); main.menu_system._toggle_codex(),
 		func(): _snap("codex"); main.codex_panel.tabs[1].pressed.emit(),
 		func(): _snap("codex_pat"); main.codex_panel.tabs[5].pressed.emit(),
 		func(): _snap("codex_rx"); main.codex_panel.tabs[6].pressed.emit(),
@@ -71,22 +71,22 @@ func _initialize():
 			main.codex_panel.tabs[7].pressed.emit(),
 		func(): _snap("codex_ach"); (main.codex_panel.list.get_parent() as ScrollContainer).scroll_vertical = 100000,
 		func(): _snap("codex_ach_end"); main.codex_panel.tabs[0].pressed.emit(),
-		func(): _snap("codex_elem"); main._toggle_codex(); main._toggle_modes(),
-		func(): _snap("modes"); main.easy_notice.visible = true,
-		func(): _snap("modes_easy"); main.easy_notice.visible = false; main._toggle_modes(); main._open_tut(Tutorial.FIRST, true),
+		func(): _snap("codex_elem"); main.menu_system._toggle_codex(); main.menu_system._toggle_modes(),
+		func(): _snap("modes"); main.menu_system.easy_notice.visible = true,
+		func(): _snap("modes_easy"); main.menu_system.easy_notice.visible = false; main.menu_system._toggle_modes(); main.onboarding_system._open_tut(Tutorial.FIRST, true),
 		# 튜토리얼: 기기 첫 진입(건너뛰기) → 놓기(터치 글이 다름) → 항목 줄의 마지막 장 → 다른 그림 몇 개 → 다시 보기 목록
 		func(): _snap("tut_goal"); main.tut._next(); main.tut._next(); main.tut._next(),
 		func(): _snap("tut_place"); main.tut.qi = 3; main.tut.page = 1; main.tut._refresh(),
-		func(): _snap("tut_react"); main.tut.close(); main._open_tut(["boss", "mp"]); main.tut.page = 2; main.tut._refresh(),
+		func(): _snap("tut_react"); main.tut.close(); main.onboarding_system._open_tut(["boss", "mp"]); main.tut.page = 2; main.tut._refresh(),
 		func(): _snap("tut_coin"); main.tut._next(); main.tut._next(),
-		func(): _snap("tut_coop"); main.tut.close(); main._open_tut(["link"]),
-		func(): _snap("tut_link"); main.tut.close(); main._open_tut_list(),
+		func(): _snap("tut_coop"); main.tut.close(); main.onboarding_system._open_tut(["link"]),
+		func(): _snap("tut_link"); main.tut.close(); main.onboarding_system._open_tut_list(),
 		func(): _snap("tut_list"); main.tut.close(); main.help_label.visible = true,
 		func():
 			_snap("help"); main.help_label.visible = false; main.continue_btn.visible = false
 			main.remote_btn.text = "다른 기기에서 하던 판 이어하기   웨이브 29부터 · 소용돌이"
 			main.remote_btn.visible = true,
-		func(): _snap("title_remote"); main.remote_btn.visible = false; main._close_title(),
+		func(): _snap("title_remote"); main.remote_btn.visible = false; main.progression_system._close_title(),
 		func():
 			for i in 6:
 				main.picked = {"e": Elem.ALL[i], "lv": 2}
@@ -96,7 +96,7 @@ func _initialize():
 			main._skills_new_run(1)
 			main.run_id = "shot"
 			main._ley_new_run()
-			main.build_cache = [["elem:wood", 0.34], ["share:electric", 0.18], ["pat:spray", 0.12]]
+			main.hud_system.build_cache = [["elem:wood", 0.34], ["share:electric", 0.18], ["pat:spray", 0.12]]
 			main.offer = [{"type": "elem", "e": Elem.WOOD, "lv": 2}, {"type": "trig", "id": "echo"}, {"type": "link", "id": "pincer"}]
 			main._show_offer()
 			main._open_choose(),
@@ -131,7 +131,7 @@ func _initialize():
 			# 첫 판처럼 처음 안내가 떠 있을 때 (안내 글과 카드 줄이 겹치지 않는지)
 			main.guide_lines.clear()
 			Meta.guide_seen.erase("start")
-			main._guide("start", "빨간 화살표가 구체가 들어오는 길목이에요. 속성 카드를 고른 뒤 길목 쪽 빈 곳을 눌러 놓고, 한 번 더 눌러 쏠 방향을 정하세요"),
+			main.onboarding_system._guide("start", "빨간 화살표가 구체가 들어오는 길목이에요. 속성 카드를 고른 뒤 길목 쪽 빈 곳을 눌러 놓고, 한 번 더 눌러 쏠 방향을 정하세요"),
 		func():
 			_snap("cards_guide")
 			main.guide_lines.clear()
@@ -193,7 +193,7 @@ func _initialize():
 				main.dps_hist[t.get_instance_id()] = [0.0, 40.0 * k]
 				t.dealt = 60.0 * k
 				k *= 1.7
-			main.dps_sig = ""
+			main.hud_system.dps_sig = ""
 			main._arm_skill(1)
 			VirtualInput.move(main.get_global_transform_with_canvas() * (main.core() + Vector2(200, 60))),
 		func(): _snap("wave_dps"); main.skill_arm = ""; main.dps_hidden = Meta.dps_fold; _orb_tip(),
@@ -215,8 +215,8 @@ func _initialize():
 		func(): _snap("coin_land"),
 		func(): pass,
 		func(): _snap("coin_perks"); main._toggle_pause(),
-		func(): _snap("pause"); main._toggle_settings(),
-		func(): _snap("pause_settings"); main._toggle_settings(); main._toggle_pause(); main._game_over(),
+		func(): _snap("pause"); main.menu_system._toggle_settings(),
+		func(): _snap("pause_settings"); main.menu_system._toggle_settings(); main._toggle_pause(); main._game_over(),
 		func(): _snap("gameover"),
 	]
 

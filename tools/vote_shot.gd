@@ -27,23 +27,23 @@ func _initialize():
 		func():
 			Meta.ui_scale = z
 			main.touch_ui = touch
-			main._apply_ui_scale()
+			main.hud_system._apply_ui_scale()
 			Net.info["vote"] = true
-			main.tut_first = false
+			main.onboarding_system.tut_first = false
 			if main.tut.visible:
 				main.tut.close(),
-		func(): _snap("vote_title"); main.vote_panel.net = null; main._toggle_vote(),
+		func(): _snap("vote_title"); main.vote_panel.net = null; main.menu_system._toggle_vote(),
 		func(): main.vote_panel.take(FAKE); main.vote_panel._draw_list(),
 		func(): _snap("vote_panel"); main.vote_panel.tabs[3].pressed.emit(),
 		func(): _snap("vote_mod"); main.vote_panel.choose("trig:echo", "up"); main.vote_panel.choose("perk:power", "fix"); main.vote_panel.choose("elem:ice", "up"); main.vote_panel._say("표 5장을 다 썼어요. 다른 표를 취소하고 넣어 주세요"); main.vote_panel.tabs[6].pressed.emit(),
-		func(): _snap("vote_full_rx"); main.vote_panel.hide_panel(); main.continue_btn.visible = false; main._close_title(),
+		func(): _snap("vote_full_rx"); main.vote_panel.hide_panel(); main.continue_btn.visible = false; main.progression_system._close_title(),
 		func():
 			main.run_log = [{"w": 0, "k": "card", "p": "elem:fire"}, {"w": 2, "k": "card", "p": "pat:spray"}, {"w": 4, "k": "card", "p": "mod:rapid"}, {"w": 5, "k": "perk", "p": "perk:power"}]
 			main.wave = 12
 			main.score = 34567
 			main._game_over(),
 		func(): main.over_label.text = "피해 출처: 불 42%, 분사 30%, 속사 12%\n온라인 순위: 시즌 1 12위 (최고 점수 34,567)",
-		func(): _snap("vote_over"); main._toggle_vote(true),
+		func(): _snap("vote_over"); main.menu_system._toggle_vote(true),
 		func(): main.vote_panel.take(FAKE); main.vote_panel._draw_list(),
 		func(): _snap("vote_over_run"),
 	]

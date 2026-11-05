@@ -301,9 +301,16 @@ PYCONFIG
 		rm -rf "$D"
 		exit $r
 		;;
+	architecture)
+		D=$(copy_project "$$")
+		trap 'rm -rf "$D"' EXIT
+		"$G" --headless --path "$D" -s tools/architecture_check.gd
+		;;
 	check)
 		# 배포 전 점검 (docs/features.md). 화면 배치는 tools/shot.gd 스크린샷을 눈으로 따로 본다.
 		bad=""
+		"$0" architecture > /tmp/bindu_check_architecture.txt 2>&1 || bad="$bad architecture"
+		grep -E "^ARCHITECTURE|^FAIL|SCRIPT ERROR|Parse Error" /tmp/bindu_check_architecture.txt || true
 		if python3 "$ROOT/tools/notes_check.py" > /tmp/bindu_check_notes.txt 2>&1; then echo "notes 통과"; else grep -E "^FAIL|^NOTES" /tmp/bindu_check_notes.txt | head -10; bad="$bad notes"; fi
 		"$0" spec > /tmp/bindu_check_spec.txt 2>&1 || bad="$bad spec"
 		grep -E "^FAIL|^SPEC|SCRIPT ERROR|Parse Error|^ERROR:" /tmp/bindu_check_spec.txt || true

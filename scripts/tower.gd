@@ -2502,7 +2502,7 @@ const RANK_COLORS := [Color(1.0, 0.82, 0.25), Color(0.85, 0.88, 0.95), Color(0.8
 func _draw_rank() -> void:
 	if not main:
 		return
-	var r: int = main.rank_of.get(get_instance_id(), 0)
+	var r: int = main.hud_system.rank_of.get(get_instance_id(), 0)
 	if r == 0:
 		return
 	var c: Color = RANK_COLORS[r - 1]
@@ -2542,7 +2542,7 @@ func _draw_rank() -> void:
 func _process(delta: float) -> void:
 	if crown_t > 0.0:
 		crown_t = maxf(crown_t - delta, 0.0)
-	if main and main.rank_of.has(get_instance_id()):
+	if main and main.hud_system.rank_of.has(get_instance_id()):
 		queue_redraw()  # 왕관 흔들림·반짝임 (오브젝트 최대 3개)
 	if place_pop > 0.0:
 		place_pop = maxf(place_pop - delta * 3.0, 0.0)

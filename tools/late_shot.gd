@@ -28,13 +28,13 @@ func _initialize():
 	touch = a.size() > 2 and a[2] == "touch"
 	main = load("res://main.tscn").instantiate()
 	VirtualInput.mount(main, root)
-	main.tut_first = false
+	main.onboarding_system.tut_first = false
 	steps = [
 		func():
 			Meta.ui_scale = z
 			main.touch_ui = touch
-			main._apply_ui_scale()
-			main._hide_title()
+			main.hud_system._apply_ui_scale()
+			main.progression_system._hide_title()
 			main.tut.close()
 			main.tutor = false,
 		func():

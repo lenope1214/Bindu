@@ -25,16 +25,16 @@ func _initialize():
 	steps = [
 		func():
 			Meta.guide_on = false
-			main.tut_first = false
+			main.onboarding_system.tut_first = false
 			if main.tut and main.tut.panel.visible:
 				main.tut.close()
 			Meta.ui_scale = z
 			main.touch_ui = touch
-			main._apply_ui_scale()
+			main.hud_system._apply_ui_scale()
 			Meta.games = 1  # 아래 안내(READY_HINT)가 보이는 첫 판들
 			Meta.map_id = "plain"
 			Meta.rules = 1
-			main._clear_run(); main._hide_title(); main.lanes.clear(); main._start_choose(),
+			main._clear_run(); main.progression_system._hide_title(); main.lanes.clear(); main._start_choose(),
 		func():
 			# 오브젝트 많이 + 지난 웨이브 피해 (DPS 표가 뜨게)
 			for i in 14:
@@ -55,21 +55,21 @@ func _initialize():
 			main.picks_left = 0
 			main._enter_ready()
 			main.legend_hidden = false
-			main._refresh_legend(),
+			main.menu_system._refresh_legend(),
 		func(): _snap("ready"),
 		func():
 			main.legend_hidden = true
-			main._refresh_legend(),
+			main.menu_system._refresh_legend(),
 		func(): _snap("ready_nolegend"); main.leak_marks = [[-2.5, 12], [-0.45, 3], [1.57, 140]],
 		func(): _snap("ready_leak"); main.start_btn.visible = false; main._start_choose(true),  # 실제로는 웨이브가 끝나야 고르기라 [웨이브 시작]은 없다
 		func():
 			main.legend_hidden = false
-			main._refresh_legend(),
+			main.menu_system._refresh_legend(),
 		func(): _snap("choose"),
-		func(): main.legend_hidden = true; main._refresh_legend(),
+		func(): main.legend_hidden = true; main.menu_system._refresh_legend(),
 		func(): _snap("choose_nolegend"); main.leak_marks = []; main._start_wave(),
-		func(): main.score = 98765432109; main._update_hud(true),
-		func(): _snap("wave"); main._show_toast("업적: 아주 긴 업적 이름이 여기에 들어갑니다 · 칭호 해금"); main.big_banner("웨이브 40 · 보스", Color.WHITE),
+		func(): main.score = 98765432109; main.hud_system._update_hud(true),
+		func(): _snap("wave"); main.hud_system._show_toast("업적: 아주 긴 업적 이름이 여기에 들어갑니다 · 칭호 해금"); main.hud_system.big_banner("웨이브 40 · 보스", Color.WHITE),
 		func(): _snap("wave_toast"),
 	]
 

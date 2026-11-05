@@ -98,7 +98,7 @@ func _run(how: String, ch: int, touch: bool) -> void:
 	ok("TUT-07", main.core_hp >= 1 and main.phase != main.Phase.GAMEOVER and main.wave >= 5, "%s: 지지 않고 %d웨이브까지 (중앙 %d)" % [tag, main.wave, main.core_hp])
 	ok("TUT-10", not FileAccess.file_exists("user://run.cfg") and Meta.games == games0 and JSON.stringify(Meta.tally) == tally0 and Meta.achieved.size() == ach0,
 		"%s: 이어하기 저장·판 수·누적 수·업적이 그대로" % tag)
-	main._save_best()
+	main.progression_system._save_best()
 	var cfg := ConfigFile.new()
 	cfg.load(Meta.SAVE_PATH)
 	var saved_ok := Meta.map_id == "plain" and str(cfg.get_value("meta", "map", "plain")) == "cross"

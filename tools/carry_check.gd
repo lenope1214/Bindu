@@ -31,13 +31,13 @@ func _initialize() -> void:
 	main = load("res://main.tscn").instantiate()
 	VirtualInput.mount(main, root)
 	await process_frame
-	main._hide_title()
+	main.progression_system._hide_title()
 	Meta.ui_scale = float(args[1])
 	Meta.skip_n = 1
 	seed(17)
 	main.set_process(false)
 	main.auto_start = false
-	main._apply_ui_scale()
+	main.hud_system._apply_ui_scale()
 
 	await create_timer(0.2).timeout
 	await fixture()
@@ -88,7 +88,7 @@ func _initialize() -> void:
 	await snap("held-target")
 	var note_rect: Rect2 = main.get_canvas_transform() * main.place_note_rect
 	ok("UI-25", main.hint.visible and note_rect.has_area() and not note_rect.intersects(main.hint.get_global_rect()) and not note_rect.intersects(main.cancel_btn.get_global_rect()), "대상 미리보기는 하단 상태·취소 버튼과 겹치지 않음")
-	ok("UI-35", main._kr_keep("카드 놓는 중") in main.hint.text, "카드를 든 동안 같은 하단 상태 칸으로 안내")
+	ok("UI-35", main.patchlog_system._kr_keep("카드 놓는 중") in main.hint.text, "카드를 든 동안 같은 하단 상태 칸으로 안내")
 	main.bar_open = true
 	await snap("held-controls")
 	main.bar_open = false
@@ -154,7 +154,7 @@ func _initialize() -> void:
 	await touch(world(target.position), true)
 	await touch(world(target.position), false)
 	ok("UI-05", main.selected == [target] and main.card_dock.direction_btn.visible and main.phase == main.Phase.CHOOSE, "터치로 오브젝트 선택·상세 열기, 방향 유지")
-	ok("UI-35", main._kr_keep("빈 곳을 눌러 해제") in main.hint.text and not "Esc" in main.hint.text, "터치 선택은 빈 곳 누르기로 해제 안내")
+	ok("UI-35", main.patchlog_system._kr_keep("빈 곳을 눌러 해제") in main.hint.text and not "Esc" in main.hint.text, "터치 선택은 빈 곳 누르기로 해제 안내")
 	await snap("touch-selected")
 	var direction_at: Vector2 = main.card_dock.direction_btn.get_global_rect().get_center()
 	await touch(direction_at, true)
@@ -351,11 +351,11 @@ func panel_regressions() -> void:
 	var original_dir := refused.dir
 	await mouse_click(world(refused.position))
 	ok("UI-05", main.phase == main.Phase.CHOOSE and main.moving == null and main.selected == [refused] and refused.dir == original_dir and main.card_dock.direction_btn.visible, "설치 오브젝트 클릭은 선택·상세, 방향은 유지")
-	ok("UI-35", main.hint.visible and main._kr_keep("오브젝트 1개 선택") in main.hint.text and main._kr_keep("Esc 해제") in main.hint.text, "선택 개수와 해제 방법 표시")
+	ok("UI-35", main.hint.visible and main.patchlog_system._kr_keep("오브젝트 1개 선택") in main.hint.text and main.patchlog_system._kr_keep("Esc 해제") in main.hint.text, "선택 개수와 해제 방법 표시")
 	await snap("object-selected")
 	await mouse_click(main.card_dock.direction_btn.get_global_rect().get_center())
 	ok("UI-05", main.phase == main.Phase.AIM and main.moving == refused, "상세 헤더의 방향 변경으로 편집 시작")
-	ok("UI-35", main.hint.visible and main._kr_keep("방향 편집 중") in main.hint.text, "방향 편집 상태·취소 안내 표시")
+	ok("UI-35", main.hint.visible and main.patchlog_system._kr_keep("방향 편집 중") in main.hint.text, "방향 편집 상태·취소 안내 표시")
 	await snap("direction-edit")
 	await key(KEY_ESCAPE)
 	ok("UI-05", main.phase == main.Phase.CHOOSE and main.selected == [refused] and refused.dir == original_dir and not paused, "첫 Esc는 편집 취소·선택 복원")

@@ -59,7 +59,7 @@ func _initialize():
 			continue
 		_ok("기본값 숫자 " + k, false)
 	# 게임 코드 수치 (Rules.CODE): "<이름>.<변수>[.<칸>]"
-	var mg: GDScript = load("res://scripts/main.gd")
+	var mg: GDScript = load(Rules.CODE["Main"])
 	Patch.data = {"rules": {"all": {"Tower.HIT.laser": 5.0, "Orb.KIND.boss_hp": 20, "Orb.KIND.boss_core": 2.0, "Tower.CHARGE_MUL.0": 9.0,
 		"Main.CORE_MAX_HP": 15.0, "Projectile.PROJ.shot_spd": 600, "Tower.SHAPE.spray_len": 250, "share_fire": 2.0,
 		"Tower.NOPE": 1, "Tower.HIT.nope": 1, "Tower.HIT": 3, "Rules.max_mod": 1}}}

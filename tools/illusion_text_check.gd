@@ -20,11 +20,11 @@ func _initialize() -> void:
 	main = load("res://main.tscn").instantiate()
 	VirtualInput.mount(main, root)
 	await process_frame
-	main._hide_title()
+	main.progression_system._hide_title()
 	main.set_process(false)
 	main.auto_start = false
 	Meta.ui_scale = float(args[1])
-	main._apply_ui_scale()
+	main.hud_system._apply_ui_scale()
 	main.guide_lines.clear()
 	main.banner_queue.clear()
 	main.banner_t = 0
@@ -64,7 +64,7 @@ func _initialize() -> void:
 		main._select_tower(tw)
 		main.tip_detail = true
 		await settle()
-		ok("UI-32", main.card_dock.detail.text.contains(main._kr_keep(rx["desc"])), "선택 상세의 공용 설명 " + rx["id"])
+		ok("UI-32", main.card_dock.detail.text.contains(main.patchlog_system._kr_keep(rx["desc"])), "선택 상세의 공용 설명 " + rx["id"])
 		ok("UI-37", entries.any(func(entry): return entry.get("key") == "react:" + rx["id"] and entry["name"] == rx["name"] and entry["desc"].contains(rx["desc"])), "도감의 공용 제목·설명 " + rx["id"])
 	# 긴 설명 두 장도 화면에 맞춰 한 장 + 더 보기로 접을 수 있다.
 	main.card_dock.close_inspector()

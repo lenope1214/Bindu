@@ -34,9 +34,9 @@ func _run() -> void:
 	Meta.map_id = map_id
 	Modes.set_on([])
 	main._apply_rules()
-	main._hide_title()
+	main.progression_system._hide_title()
 	main.guide_label.hide()
-	main._apply_ui_scale()
+	main.hud_system._apply_ui_scale()
 	main.touch_ui = touch
 	main.wave = 12
 	main.picks_left = 1

@@ -84,7 +84,7 @@ func _initialize():
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	await process_frame
-	main._hide_title()
+	main.progression_system._hide_title()
 	_cards()
 	_elements()
 	_patterns()
@@ -667,7 +667,7 @@ func _real(c: Vector2) -> void:
 	_grid.call()
 	var wx := w1.position.x
 	wn.hit(w1, 1.0)
-	main._wind_buffs()
+	main.onboarding_system._wind_buffs()
 	ok("REAL-07", w1.position.x > wx and buddy.wind_buff == 0.0, "밀쳐냄: 맞은 구체가 밀림 (%.1f), 순풍 없음" % (w1.position.x - wx))
 	_clear()
 	# 이름 있는 자리
@@ -1807,18 +1807,18 @@ func _rules_modes() -> void:
 	Meta.games = 1
 	Meta.rules = 1
 	main.touch_ui = true
-	main._refresh_menu()
-	var tap_txt: bool = main.rules_label.text.contains("눌러서 바꾸기") and not main.rules_label.text.contains("↑/↓")
+	main.menu_system._refresh_menu()
+	var tap_txt: bool = main.menu_system.rules_label.text.contains("눌러서 바꾸기") and not main.menu_system.rules_label.text.contains("↑/↓")
 	var up := InputEventMouseButton.new()
 	up.button_index = MOUSE_BUTTON_LEFT
 	up.pressed = false
-	main.rules_label.gui_input.emit(up)
+	main.menu_system.rules_label.gui_input.emit(up)
 	var r1: int = Meta.rules
-	main.rules_label.gui_input.emit(up)
-	ok("RULE-04", main.rules_label.get_meta("row").visible and tap_txt and r1 == 3 and Meta.rules == 1 and main.rules_label.mouse_filter == Control.MOUSE_FILTER_STOP, "규칙 줄 글을 누르면 랭크 ↔ 도파민 모드, 터치 화면 안내 '눌러서 바꾸기'")
+	main.menu_system.rules_label.gui_input.emit(up)
+	ok("RULE-04", main.menu_system.rules_label.get_meta("row").visible and tap_txt and r1 == 3 and Meta.rules == 1 and main.menu_system.rules_label.mouse_filter == Control.MOUSE_FILTER_STOP, "규칙 줄 글을 누르면 랭크 ↔ 도파민 모드, 터치 화면 안내 '눌러서 바꾸기'")
 	main.touch_ui = false
 	Meta.games = g0
-	main._refresh_menu()
+	main.menu_system._refresh_menu()
 	Rules.apply(5)
 	var v5 := Rules.version
 	Rules.apply(1)
@@ -1852,13 +1852,13 @@ func _rules_modes() -> void:
 	ok("MODE-04", Rules.picks == 2 and Modes.rerolls(1) == 3, "두 장: 고르기 2장, 여유: 새로고침 +2")
 	Modes.set_on([])
 	main._apply_rules()
-	main._toggle_mode("stroll")
-	var shown: bool = main.easy_notice.visible
-	main.easy_notice_skip.button_pressed = true
-	main._close_easy_notice()
-	main._toggle_mode("stroll")
-	main._toggle_mode("stroll")
-	ok("MODE-05", shown and not main.easy_notice.visible and main._easy_notice_off(), "쉽게 모드를 켜면 안내, 다시 보지 않기면 안 뜸")
+	main.menu_system._toggle_mode("stroll")
+	var shown: bool = main.menu_system.easy_notice.visible
+	main.menu_system.easy_notice_skip.button_pressed = true
+	main.menu_system._close_easy_notice()
+	main.menu_system._toggle_mode("stroll")
+	main.menu_system._toggle_mode("stroll")
+	ok("MODE-05", shown and not main.menu_system.easy_notice.visible and main.menu_system._easy_notice_off(), "쉽게 모드를 켜면 안내, 다시 보지 않기면 안 뜸")
 	Modes.set_on([])
 	main._apply_rules()
 
@@ -2073,14 +2073,14 @@ func _maps() -> void:
 	var map0: String = Meta.map_id
 	var mo: float = Rules.tune["map_on"]
 	Rules.tune["map_on"] = 1.0
-	var n_ok: bool = main.map_cards.size() == Meta.MAP_IDS.size()
-	main.map_cards[2].pressed.emit()
+	var n_ok: bool = main.menu_system.map_cards.size() == Meta.MAP_IDS.size()
+	main.menu_system.map_cards[2].pressed.emit()
 	var picked: bool = Meta.map_id == Meta.MAP_IDS[2]
-	var sub_t: String = (main.map_label.get_meta("sub") as Label).text.replace("\u2060", "")  # _kr_keep 줄바꿈 방지 문자
+	var sub_t: String = (main.menu_system.map_label.get_meta("sub") as Label).text.replace("\u2060", "")  # _kr_keep 줄바꿈 방지 문자
 	var aff_shown: bool = sub_t.contains("친화") and sub_t.contains(Elem.NAMES[MapRule.aff("elem")[0]])
 	Meta.map_id = map0
 	Rules.tune["map_on"] = mo
-	main._refresh_menu()
+	main.menu_system._refresh_menu()
 	ok("MAPX-09", n_ok and picked and aff_shown, "준비 화면 맵 카드: 맵마다 한 장, 누르면 그 맵, 아래 설명에 친화 카드")
 
 
@@ -2156,7 +2156,7 @@ func _carry_cards() -> void:
 	var xform: Transform2D = main.get_canvas_transform()
 	var scale0 := Meta.ui_scale
 	Meta.ui_scale = 1.3
-	main._apply_ui_scale()
+	main.hud_system._apply_ui_scale()
 	main._process(0.0)
 	var scale_independent: bool = xform.is_equal_approx(main.get_canvas_transform())
 	main._zoom_to(1.4, main.get_viewport_rect().size / 2)
@@ -2192,7 +2192,7 @@ func _carry_cards() -> void:
 	var resume: bool = main.phase == main.Phase.CHOOSE and main.offer == offers and main.picks_left == before - 1
 	main._reset_zoom()
 	Meta.ui_scale = scale0
-	main._apply_ui_scale()
+	main.hud_system._apply_ui_scale()
 	main.touch_ui = false
 	ok("UI-31", held and chip and independent and scale_independent and refused and cancel and applied and resume,
 		"카드 들기: 카드 이름 말풍선 없음 %s·목록 접힘 %s·카메라 독립 %s·글자 배율 독립 %s·무효 드롭 보존 %s·취소 복원 %s·1회 적용 %s·이어하기 %s" % [chip, held, independent, scale_independent, refused, cancel, applied, resume])
@@ -2293,7 +2293,7 @@ func _meta_misc() -> void:
 
 	ok("UI-01", main._ver_text().contains(str(ProjectSettings.get_setting("application/config/version"))), "구석 버전 표시 = project.godot 버전 (%s)" % main._ver_text())
 	main.touch_ui = true
-	var t: String = main._kh("새로고침 (Q)")
+	var t: String = main.ui_layout_system._kh("새로고침 (Q)")
 	var h: String = main._help_text()
 	main.touch_ui = false
 	ok("UI-02", not t.contains("(Q)") and h.contains("[조작 · 터치]"), "터치 화면은 키 안내를 빼고 터치용 도움말")
@@ -2367,20 +2367,20 @@ func _meta_misc() -> void:
 	var glyph_btns: bool = main.title_box.find_children("*", "Button", true, false).filter(func(b): return b.text == "" and b.tooltip_text in ["도감 (K)", "설정 (O)"]).size() == 2
 	var pause_ok: bool = main.pause_box.get_child_count() >= 6 and main.pause_box.get_children().all(func(b): return b.text == "")
 	ok("UI-19", ec.text == "" and em[0].get("e", -1) == Elem.WATER and em[0].get("lv", "") == "Lv2" and has_els and pc.text == "" and big.get("big", "") == "+12%" and big.get("i", "") == "rate" \
-		and glyph_btns and pause_ok and main.legend_heads.size() == main.LEGEND_ICONS.size() and not main._pause_text().contains("Esc:"),
+		and glyph_btns and pause_ok and main.menu_system.legend_heads.size() == main.LEGEND_ICONS.size() and not main._pause_text().contains("Esc:"),
 		"글 대신 그림: 카드 그림 머리·짝 속성 그림, 특성 그림+숫자, 시작 화면·일시정지 그림 버튼, 설명 앞줄 그림")
 	ec.free()
 	pc.free()
 
 	# 시작 화면: 첫 화면은 큰 타일(일반 판·멀티, 정원 없음) + 그림 버튼 줄(PC는 종료), [일반 판] → 준비 화면(맵·규칙·모드·시작), 모양은 설정 창
-	var home0: bool = main.home_box.visible and not main.prep_box.visible
-	var tiles_ok: bool = not "garden_btn" in main and main.home_box.is_ancestor_of(main.mp_btn) and not main.home_box.is_ancestor_of(main.map_label)
-	main._set_prep(true)
-	var prep1: bool = main.prep_box.visible and not main.home_box.visible and main.prep_box.is_ancestor_of(main.map_label) and main.prep_box.is_ancestor_of(main.new_btn) and main.prep_box.is_ancestor_of(main.modes_btn)
-	main._set_prep(false)
-	var skins_set: bool = main.settings_panel.is_ancestor_of(main.skin_label) and main.settings_panel.is_ancestor_of(main.core_label)
-	var quit_btn: bool = main.home_box.find_children("*", "Button", true, false).any(func(b): return b.tooltip_text == "게임 종료") == OS.has_feature("pc")
-	ok("UI-21", home0 and tiles_ok and prep1 and main.home_box.visible and skins_set and quit_btn, "첫 화면 %s·타일 %s, 준비 화면 %s, 모양은 설정 %s, 종료(PC만) %s" % [home0, tiles_ok, prep1, skins_set, quit_btn])
+	var home0: bool = main.menu_system.home_box.visible and not main.menu_system.prep_box.visible
+	var tiles_ok: bool = not "garden_btn" in main and main.menu_system.home_box.is_ancestor_of(main.mp_btn) and not main.menu_system.home_box.is_ancestor_of(main.menu_system.map_label)
+	main.menu_system._set_prep(true)
+	var prep1: bool = main.menu_system.prep_box.visible and not main.menu_system.home_box.visible and main.menu_system.prep_box.is_ancestor_of(main.menu_system.map_label) and main.menu_system.prep_box.is_ancestor_of(main.new_btn) and main.menu_system.prep_box.is_ancestor_of(main.modes_btn)
+	main.menu_system._set_prep(false)
+	var skins_set: bool = main.settings_panel.is_ancestor_of(main.menu_system.skin_label) and main.settings_panel.is_ancestor_of(main.menu_system.core_label)
+	var quit_btn: bool = main.menu_system.home_box.find_children("*", "Button", true, false).any(func(b): return b.tooltip_text == "게임 종료") == OS.has_feature("pc")
+	ok("UI-21", home0 and tiles_ok and prep1 and main.menu_system.home_box.visible and skins_set and quit_btn, "첫 화면 %s·타일 %s, 준비 화면 %s, 모양은 설정 %s, 종료(PC만) %s" % [home0, tiles_ok, prep1, skins_set, quit_btn])
 
 	# 기본 설명은 효과 문장이고, 자세히와 반응·레벨업 정보는 남는다. 첫 판에 한정하지 않는다.
 	var was_d := Meta.card_detail
@@ -2693,7 +2693,7 @@ func _meta_misc() -> void:
 	main._release_press()
 	dock._update_side()
 	dock.tick()
-	var selection_status: bool = main.hint.visible and main._kr_keep("오브젝트 1개 선택") in main.hint.text
+	var selection_status: bool = main.hint.visible and main.patchlog_system._kr_keep("오브젝트 1개 선택") in main.hint.text
 	var click_selects: bool = main.selected == [dt] and main.moving == null and main.phase == main.Phase.READY and dock.direction_btn.visible
 	# 선택 없이 끌어 놓아도 상세를 열어 다음 클릭 한 번으로 방향을 바꾼다.
 	main.selected.clear()
@@ -2766,7 +2766,7 @@ func _meta_misc() -> void:
 	tap_again = tap_again and wheel_turns and wheel_wave_zooms and wheel_unselected_zooms
 	dock.direction_btn.pressed.emit()
 	dock.tick()
-	var edit_status: bool = main.hint.visible and main._kr_keep("방향 편집 중") in main.hint.text
+	var edit_status: bool = main.hint.visible and main.patchlog_system._kr_keep("방향 편집 중") in main.hint.text
 	var edits_selected: bool = main.phase == main.Phase.AIM and main.moving == dt
 	main._cancel_step()
 	var cancel_restores: bool = main.phase == main.Phase.READY and main.selected == [dt] and dt.dir == original_dir and dock.inspected_tower == dt
@@ -2781,7 +2781,7 @@ func _meta_misc() -> void:
 	dock.close_inspector()
 	main.selected = [dt]
 	main._on_pick({"type": "mod", "id": "multi"})
-	var carry_status: bool = main.selected.is_empty() and main.hint.visible and main._kr_keep("카드 놓는 중") in main.hint.text and main._kr_keep("Esc 취소") in main.hint.text
+	var carry_status: bool = main.selected.is_empty() and main.hint.visible and main.patchlog_system._kr_keep("카드 놓는 중") in main.hint.text and main.patchlog_system._kr_keep("Esc 취소") in main.hint.text
 	var was_touch: bool = main.touch_ui
 	main.touch_ui = true
 	var touch_status: bool = "버튼으로 취소" in dock.operation_text() and not "Esc" in dock.operation_text()
@@ -2884,7 +2884,7 @@ func _meta_misc() -> void:
 	var guide_was_visible: bool = main.guide_label.visible
 	main.guide_label.hide()
 	main.card_dock.tick()
-	var preview_status: bool = main.hint.visible and main._kr_keep("카드 놓는 중") in main.hint.text
+	var preview_status: bool = main.hint.visible and main.patchlog_system._kr_keep("카드 놓는 중") in main.hint.text
 	preview_target.free()
 	main.card_dock.tick()
 	ok("UI-25", preview_status and main.hint.visible, "대상 미리보기 중 상태 유지 %s/%s · 문구 %s · 입력 차단 %s" % [preview_status, main.hint.visible, main.hint.text, main.card_dock.input_blocked()])
@@ -2968,20 +2968,20 @@ func _meta_misc() -> void:
 	lt.dealt = 1000.0  # 웨이브 초반 큰 피해
 	main.wave_time = 0.0
 	for i in 40:  # 20초 동안 초당 10
-		main._dps_sample(main.DPS_STEP)
+		main.hud_system._dps_sample(main.DPS_STEP)
 		lt.dealt += 10.0 * main.DPS_STEP
 		main.wave_time += main.DPS_STEP
-	var live: float = main._dps_of(lt)
+	var live: float = main.hud_system._dps_of(lt)
 	main.phase = main.Phase.CHOOSE
-	var after: float = main._dps_of(lt)
+	var after: float = main.hud_system._dps_of(lt)
 	main.phase = ph0
 	var f0: bool = main.dps_hidden
-	main._toggle_dps()
+	main.hud_system._toggle_dps()
 	var saved: bool = Meta.dps_fold == main.dps_hidden and main.dps_hidden != f0
-	main._toggle_dps()
+	main.hud_system._toggle_dps()
 	ok("DPS-02", absf(live - 10.0) < 0.01 and after > 50.0 and saved, "실시간 DPS: 웨이브 중 최근 5초 이동 평균 (%.1f, 쉬는 시간엔 웨이브 평균 %.1f), 표 접기 저장" % [live, after])
-	var stale_row: Control = main._dps_row(lt, 1, 10.0, 10.0)
-	main.dps_list.add_child(stale_row)
+	var stale_row: Control = main.hud_system._dps_row(lt, 1, 10.0, 10.0)
+	main.hud_system.dps_list.add_child(stale_row)
 	lt.free()
 	stale_row.mouse_entered.emit()
 	stale_row.mouse_exited.emit()
@@ -2999,7 +2999,7 @@ func _meta_misc() -> void:
 	fp.head_input(dn)
 	fp.head_input(up)
 	var tap_ok: bool = main.dps_hidden != h0 and fp.drag == 0
-	main._toggle_dps()
+	main.hud_system._toggle_dps()
 	var pp0: Dictionary = Meta.panel_pos.duplicate()
 	fp.head_input(dn)
 	fp.press = fp._local_pointer() + Vector2(50, 0)  # 누른 뒤 50 끈 것처럼
@@ -3012,7 +3012,7 @@ func _meta_misc() -> void:
 	fp.toggle_pin()
 	var unpinned: bool = not fp.pinned()
 	Meta.panel_pos = pp0
-	main._update_hud(true)
+	main.hud_system._update_hud(true)
 	var dodge := true
 	if main.hud.visible and not main.hud_chips.is_empty():
 		var c0: Rect2 = main.hud_chips[0][0]
@@ -3058,27 +3058,27 @@ func _meta_misc() -> void:
 	main.phase = main.Phase.CHOOSE
 	for i in 4:
 		rk[i].dealt = [300.0, 900.0, 100.0, 500.0][i]
-	main.rank_of.clear()
-	main._rank_update()
-	var r_ok: bool = main.rank_of.get(rk[1].get_instance_id(), 0) == 1 and main.rank_of.get(rk[3].get_instance_id(), 0) == 2 \
-		and main.rank_of.get(rk[0].get_instance_id(), 0) == 3 and not main.rank_of.has(rk[2].get_instance_id())
+	main.hud_system.rank_of.clear()
+	main.hud_system._rank_update()
+	var r_ok: bool = main.hud_system.rank_of.get(rk[1].get_instance_id(), 0) == 1 and main.hud_system.rank_of.get(rk[3].get_instance_id(), 0) == 2 \
+		and main.hud_system.rank_of.get(rk[0].get_instance_id(), 0) == 3 and not main.hud_system.rank_of.has(rk[2].get_instance_id())
 	rk[2].dealt = 2000.0
-	main._rank_update()
-	var fly: bool = main.rank_of.get(rk[2].get_instance_id(), 0) == 1 and rk[2].crown_t > 0.0
+	main.hud_system._rank_update()
+	var fly: bool = main.hud_system.rank_of.get(rk[2].get_instance_id(), 0) == 1 and rk[2].crown_t > 0.0
 	main.phase = main.Phase.WAVE
 	main.wave_time = 1.0
 	rk[1].dealt = 5000.0
-	main._rank_update()
-	var hold: bool = main.rank_of.get(rk[2].get_instance_id(), 0) == 1  # 웨이브 첫 3초는 그대로
+	main.hud_system._rank_update()
+	var hold: bool = main.hud_system.rank_of.get(rk[2].get_instance_id(), 0) == 1  # 웨이브 첫 3초는 그대로
 	main.phase = main.Phase.CHOOSE
 	for i in 2:
 		rk[i].dealt = 0.0
-	main._rank_update()
-	var two: bool = main.rank_of.size() == 1  # 피해 있는 오브젝트 2개 → 1위만
+	main.hud_system._rank_update()
+	var two: bool = main.hud_system.rank_of.size() == 1  # 피해 있는 오브젝트 2개 → 1위만
 	var on0: bool = Meta.rank_on
 	Meta.rank_on = false
-	main._rank_update()
-	var off: bool = main.rank_of.is_empty()
+	main.hud_system._rank_update()
+	var off: bool = main.hud_system.rank_of.is_empty()
 	Meta.rank_on = on0
 	main.phase = ph1
 	ok("RANK-01", r_ok and fly and hold and two and off, "피해 1~3위 왕관·메달 (순위 %s, 날아감 %s, 웨이브 초반 유지 %s, 2개면 1위만 %s, 끄기 %s)" % [r_ok, fly, hold, two, off])
@@ -3120,13 +3120,13 @@ func _multiplayer() -> void:
 	for st in [[false, 1], [true, 1], [false, 2]]:
 		main.vs_on = st[0]
 		main.coop_n = st[1]
-		main.start_modes()
+		main.hud_system.start_modes()
 		cores.append(main.core_max)
 	main.vs_on = true
 	var vk: float = main.vs_k("vs_hp")
 	main.vs_on = false
 	main.coop_n = 1
-	main.start_modes()
+	main.hud_system.start_modes()
 	ok("MP-20", cores == [10, 13, 13] and is_equal_approx(vk, 0.7) and main.vs_k("vs_hp") == 1.0 and main.core_max == 10,
 		"멀티 난이도: 중앙 체력 혼자/대결/협동 %s, 대결 구체 체력 x%.2f" % [str(cores), vk])
 
@@ -3211,7 +3211,7 @@ func _mp_more() -> void:
 	var w100 := Meta.achieved.has("wave100")
 	Ach.add("boss_kills")
 	Ach.raise("max:wave", 100)
-	main._achieve("wave100")
+	main.progression_system._achieve("wave100")
 	main._mp_ach_coop(5, {1: 0.5, 2: 0.5})
 	var blocked: bool = int(Meta.tally.get("boss_kills", 0)) == kb and int(Meta.tally.get("max:wave", 0)) == mw and Meta.achieved.has("wave100") == w100
 	var got: bool = Meta.achieved.has("mp_coop5") and int(Meta.tally.get("max:mp_coop", 0)) >= 5
@@ -3323,7 +3323,7 @@ func _tutorial() -> void:
 	main.tut._close_or_details()
 	var optional: bool = main.tut.mode == "pages" and Tutorial.seen.has("goal") and not Tutorial.seen.has("place")
 	main.tut.close()
-	main._save_best()
+	main.progression_system._save_best()
 	var best := ConfigFile.new()
 	best.load(Meta.SAVE_PATH)
 	var prog := JSON.stringify(Progress.build())
@@ -3351,25 +3351,25 @@ func _tutorial() -> void:
 	ok("TUT-02", Tutorial.TOPICS.size() == 15 and ids.size() == 15 and bad.is_empty(), "항목 %d개, 문제 %s" % [ids.size(), str(bad)])
 	# 자동 이벤트는 더 이상 모달을 예약하거나 읽음으로 기록하지 않는다.
 	Tutorial.seen = {}
-	main.tut_queue.clear()
+	main.onboarding_system.tut_queue.clear()
 	Meta.guide_on = true
 	main.mp_mode = ""
 	main.wave = 4
 	Meta.guide_seen.erase("boss")
 	Meta.guide_seen.erase("mod")
 	main.guide_lines.clear()
-	main._tut_event("pat")
-	main._guide("boss", "보스 안내")
-	main._guide("mod", "일반 안내")
+	main.onboarding_system._tut_event("pat")
+	main.onboarding_system._guide("boss", "보스 안내")
+	main.onboarding_system._guide("mod", "일반 안내")
 	var single: bool = main.guide_lines.size() == 1 and main.guide_lines[0].contains("보스") and not Meta.guide_seen.has("mod")
-	var quiet: bool = main.tut_queue.is_empty() and Tutorial.seen.is_empty() and not paused
+	var quiet: bool = main.onboarding_system.tut_queue.is_empty() and Tutorial.seen.is_empty() and not paused
 	Meta.guide_on = false
 	main._process(0.0)
 	var hidden_off: bool = not main.guide_label.visible and not main.guide_more.visible and not main.guide_lines.is_empty()
 	Meta.guide_on = true
 	main.tut_paused = true
 	paused = true
-	main._open_tut(["pat"])
+	main.onboarding_system._open_tut(["pat"])
 	var marked := Tutorial.seen.has("pat")
 	main.tut._next()
 	main.tut._next()
@@ -3384,27 +3384,27 @@ func _tutorial() -> void:
 	main.cards_hidden = false
 	main.touch_ui = true
 	main.tap_sel = 0
-	var preview: bool = main._first_action_text().contains("고르세요")
+	var preview: bool = main.onboarding_system._first_action_text().contains("고르세요")
 	main.tap_sel = -1
 	main.picked = {"type":"elem", "e":Elem.WATER, "lv":1}
 	main.phase = main.Phase.PLACE
-	var place: bool = main._first_action_text().contains("빈 곳")
+	var place: bool = main.onboarding_system._first_action_text().contains("빈 곳")
 	main.phase = main.Phase.AIM
-	var aim: bool = main._first_action_text().contains("방향")
+	var aim: bool = main.onboarding_system._first_action_text().contains("방향")
 	main._cancel_step()
-	var cancel: bool = main.phase == main.Phase.PLACE and main._first_action_text().contains("빈 곳")
+	var cancel: bool = main.phase == main.Phase.PLACE and main.onboarding_system._first_action_text().contains("빈 곳")
 	main.phase = main.Phase.READY
-	var ready: bool = main._first_action_text() == "웨이브를 시작하세요."
+	var ready: bool = main.onboarding_system._first_action_text() == "웨이브를 시작하세요."
 	main.wave = 1
-	var finished: bool = main._first_action_text() == ""
+	var finished: bool = main.onboarding_system._first_action_text() == ""
 	main.wave = 0
 	Meta.games = 1
 	main.tutor = false
-	var veteran: bool = main._first_action_text() == ""
+	var veteran: bool = main.onboarding_system._first_action_text() == ""
 	main.tutor = true
-	var reset: bool = main._first_action_text().contains("웨이브")
+	var reset: bool = main.onboarding_system._first_action_text().contains("웨이브")
 	Meta.guide_on = false
-	var off: bool = main._first_action_text() == ""
+	var off: bool = main.onboarding_system._first_action_text() == ""
 	Meta.guide_on = true
 	Meta.games = games0
 	main.tutor = false
@@ -3429,14 +3429,14 @@ func _tutorial() -> void:
 	# TUT-04: 시작 화면·일시정지의 [튜토리얼] 버튼, 목록 15개 + 전체 보기, ✓, 항목 → 카드 → 목록으로, 전체 보기 → 도움말
 	var title_btn := false
 	for b in main.title_box.find_children("*", "Button", true, false):
-		if (b as Button).pressed.is_connected(main._open_tut_list):
+		if (b as Button).pressed.is_connected(main.onboarding_system._open_tut_list):
 			title_btn = true
 	var pause_btn := false
 	for b in main.pause_box.get_children():
-		if (b as Button).pressed.is_connected(main._open_tut_list):
+		if (b as Button).pressed.is_connected(main.onboarding_system._open_tut_list):
 			pause_btn = true
 	Tutorial.seen = {"goal": true}
-	main._open_tut_list()
+	main.onboarding_system._open_tut_list()
 	var g: GridContainer = main.tut.grid
 	var listed: bool = main.tut.mode == "list" and g.get_child_count() == 16 and (g.get_child(0) as Button).text.ends_with("✓") and not (g.get_child(1) as Button).text.ends_with("✓")
 	(g.get_child(4) as Button).pressed.emit()
@@ -3504,11 +3504,11 @@ func _tut_play() -> void:
 	tp2.free()
 	ok("TUT-08", words.is_empty() and btns, "터치 글 문제 %s, 건너뛰기·전체 건너뛰기 버튼 %s" % [str(words), btns])
 	# TUT-09: 목록 맨 위 처음부터 + 장 4개, 첫 소개 [건너뛰기]
-	main._open_tut_list()
+	main.onboarding_system._open_tut_list()
 	var row: int = main.tut.play_row.get_child_count()
 	var asked := [-1]
 	var cb := func(ch): asked[0] = ch
-	main.tut.play_requested.disconnect(main._play_tutorial)
+	main.tut.play_requested.disconnect(main.onboarding_system._play_tutorial)
 	main.tut.play_requested.connect(cb)
 	(main.tut.play_row.get_child(3) as Button).pressed.emit()
 	var chosen: bool = asked[0] == 2 and not main.tut.visible
@@ -3517,7 +3517,7 @@ func _tut_play() -> void:
 	main.tut._list_or_skip()
 	var closed: bool = not main.tut.visible
 	main.tut.play_requested.disconnect(cb)
-	main.tut.play_requested.connect(main._play_tutorial)
+	main.tut.play_requested.connect(main.onboarding_system._play_tutorial)
 	var starts: bool = TutPlay.CH_START == [0, 7, 16, 21]
 	ok("TUT-09", row == 5 and chosen and skip_btn and closed and starts, "목록 맨 위 %d개, 3장 버튼 → 장 %d, 첫 소개 [건너뛰기] %s·닫힘 %s" % [row, asked[0], skip_btn, closed])
 	# TUT-10: 연습 판 설정 바꾸기·되돌리기, 저장은 원래 값, 이어하기·업적 없음
@@ -3536,7 +3536,7 @@ func _tut_play() -> void:
 	main._save_run()
 	var no_run: bool = not FileAccess.file_exists(main.RUN_PATH)
 	var ach0 := Meta.achieved.size()
-	main._achieve("first")
+	main.progression_system._achieve("first")
 	var no_ach: bool = Meta.achieved.size() == ach0
 	TutPlay.leave_meta()
 	var out: bool = not TutPlay.on and Meta.map_id == "cross" and Meta.rules == 3 and Meta.skill_set == 2 and Ach.mp == ""
@@ -3583,12 +3583,12 @@ func _vote() -> void:
 	v.take({"round": {"id": 3, "name": "시험"}, "max": 5, "eligible": false, "reason": "play", "mine": [], "min_wave": 5})
 	var no_vote: bool = not v.can_vote and v.status.text.contains("5웨이브")
 	main.run_log = [{"w": 0, "k": "card", "p": "elem:fire"}, {"w": 2, "k": "card", "p": ""}, {"w": 4, "k": "card", "p": "elem:fire"}, {"w": 5, "k": "perk", "p": "perk:power"}]
-	var rk: Array = main._vote_run_keys()
+	var rk: Array = main.menu_system._vote_run_keys()
 	v.open(rk)
 	var run_tab: bool = v.cat == "run" and v._entries("run").size() == 2
 	# 이름이 같은 카드(강화 속사·특성 속사)는 이번 판 탭에서 갈래로 구분
 	main.run_log = [{"w": 0, "k": "card", "p": "mod:rapid"}, {"w": 1, "k": "perk", "p": "perk:haste"}]
-	v.open(main._vote_run_keys())
+	v.open(main.menu_system._vote_run_keys())
 	var rx: Array = v._entries("run")
 	var same_name: bool = rx.size() == 2 and rx[0]["name"] == rx[1]["name"] and rx[0]["sub"] != rx[1]["sub"] and rx[0]["sub"] != ""
 	# 서버에 못 닿으면 '불러오는 중'에 멈추지 않고 안내 + [다시 시도] (기록 보내기를 끈 경우는 설정 안내)
@@ -3607,26 +3607,26 @@ func _vote() -> void:
 ## 리더보드 필터: 맵·규칙·기록·시즌 칩을 모두 펼쳐 한 번 눌러 고르고, 순위 표는 시즌 전체/이번 주 탭
 func _board_filters() -> void:
 	var keep_map: String = Meta.map_id
-	main._toggle_board()
-	main._on_seasons_loaded([{"id": 3, "name": "시즌 3"}, {"id": 2, "name": "시즌 2"}])
-	var ch: Dictionary = main.board_chips
+	main.leaderboard_system._toggle_board()
+	main.leaderboard_system._on_seasons_loaded([{"id": 3, "name": "시즌 3"}, {"id": 2, "name": "시즌 2"}])
+	var ch: Dictionary = main.leaderboard_system.board_chips
 	var counts: bool = ch["map"].get_child_count() == Meta.MAP_IDS.size() and ch["rules"].get_child_count() == Rules.IDS.size() \
 		and ch["kind"].get_child_count() == 2 and ch["season"].get_child_count() == 2
 	# 소용돌이 칩 한 번 → 바로 그 맵, 쉽게 모드 칩 → 쉽게 기록
 	ch["map"].get_child(Meta.MAP_IDS.find("spiral")).pressed.emit()
 	ch["kind"].get_child(1).pressed.emit()
-	var picked: bool = main.board_map == "spiral" and main.board_easy
+	var picked: bool = main.leaderboard_system.board_map == "spiral" and main.leaderboard_system.board_easy
 
 	# 이번 주 탭 → 지난 시즌 칩을 누르면 시즌 전체만 (이번 주 탭 숨김)
-	main.board_period_btns[1].pressed.emit()
-	var week: bool = main.board_period == "week"
+	main.leaderboard_system.board_period_btns[1].pressed.emit()
+	var week: bool = main.leaderboard_system.board_period == "week"
 	ch["season"].get_child(1).pressed.emit()
-	var old: bool = main.board_season == 2 and main.board_period == "all" and not main.board_period_btns[1].visible
+	var old: bool = main.leaderboard_system.board_season == 2 and main.leaderboard_system.board_period == "all" and not main.leaderboard_system.board_period_btns[1].visible
 	# 표: 받은 순위가 줄마다, 내 줄은 '나'
-	main._on_board_loaded({"tag": main._board_tag(), "period": "all", "entries": [{"rank": 1, "nick": "가나", "wave": 9, "score": 100}, {"rank": 2, "nick": "다라", "wave": 8, "score": 90, "me": true}]})
-	var rows: bool = main.board_rows.get_child_count() == 2 and main._board_text().contains("가나") and main._board_text().contains("나")
-	var ugc: bool = main.board_ugc_btn.visible and main.board_ugc_btn.is_visible_in_tree()
-	main._toggle_board()
+	main.leaderboard_system._on_board_loaded({"tag": main.leaderboard_system._board_tag(), "period": "all", "entries": [{"rank": 1, "nick": "가나", "wave": 9, "score": 100}, {"rank": 2, "nick": "다라", "wave": 8, "score": 90, "me": true}]})
+	var rows: bool = main.leaderboard_system.board_rows.get_child_count() == 2 and main.leaderboard_system._board_text().contains("가나") and main.leaderboard_system._board_text().contains("나")
+	var ugc: bool = main.leaderboard_system.board_ugc_btn.visible and main.leaderboard_system.board_ugc_btn.is_visible_in_tree()
+	main.leaderboard_system._toggle_board()
 	var closed: bool = not main.records_panel.visible
 	Meta.map_id = keep_map
 	ok("ONLINE-07", counts and picked and week and old and rows and ugc and closed,
@@ -3641,29 +3641,29 @@ func _ugc() -> void:
 	Meta.blocked = {"aaaaaaaaaaaaaaaa": "나쁜이름"}
 	main.records_panel.visible = true
 	main.board_box.visible = true
-	main.board_raw = {}
-	main.board_people = {}
-	var tag: String = main._board_tag()
-	main._on_board_loaded({"tag": tag, "period": "all", "season": {"name": "s"}, "entries": [
+	main.leaderboard_system.board_raw = {}
+	main.leaderboard_system.board_people = {}
+	var tag: String = main.leaderboard_system._board_tag()
+	main.leaderboard_system._on_board_loaded({"tag": tag, "period": "all", "season": {"name": "s"}, "entries": [
 		{"rank": 1, "nick": "나쁜이름", "wave": 9, "score": 100, "pid": "aaaaaaaaaaaaaaaa"},
 		{"rank": 2, "nick": "착한이름", "wave": 8, "score": 90, "pid": "bbbbbbbbbbbbbbbb"},
 		{"rank": 3, "nick": "나", "wave": 7, "score": 80, "pid": "cccccccccccccccc", "me": true}]})
-	var txt: String = main._board_text()
+	var txt: String = main.leaderboard_system._board_text()
 	var hide_ok: bool = txt.contains("(차단한 플레이어)") and not txt.contains("나쁜이름") and txt.contains("착한이름")
-	var people_ok: bool = main.board_people.size() == 2 and main.board_ugc_btn.visible
-	main._board_ugc_open()
+	var people_ok: bool = main.leaderboard_system.board_people.size() == 2 and main.leaderboard_system.board_ugc_btn.visible
+	main.leaderboard_system._board_ugc_open()
 	var btns: Array = main.board_ugc_panel.find_children("*", "Button", true, false)
 	var reps: Array = btns.filter(func(b): return b.text == "신고")
 	var unblock: Array = btns.filter(func(b): return b.text == "차단 풀기")
 	var panel_ok: bool = main.board_ugc_panel.visible and reps.size() == 2 and unblock.size() == 1 and reps.all(func(b): return b.disabled == not Net.report_ok())
 	# 차단 풀기 → 이름이 다시 보임
 	unblock[0].pressed.emit()
-	var unblock_ok: bool = not Meta.blocked.has("aaaaaaaaaaaaaaaa") and main._board_text().contains("나쁜이름")
+	var unblock_ok: bool = not Meta.blocked.has("aaaaaaaaaaaaaaaa") and main.leaderboard_system._board_text().contains("나쁜이름")
 	main.board_ugc_panel.visible = false
 	main.records_panel.visible = false
 	main.board_box.visible = false
 	Meta.blocked = keep
-	main._save_best()
+	main.progression_system._save_best()
 	# 설정의 [내 온라인 데이터 지우기] (서버 주소가 있는 빌드)
 	var del_ok: bool = OnlineConfig.SERVER_URL == "" or main.settings_panel.find_children("*", "Button", true, false).any(func(b): return b.text == "내 온라인 데이터 지우기")
 	ok("ONLINE-06", filt and hide_ok and people_ok and panel_ok and unblock_ok and del_ok,
@@ -3977,7 +3977,7 @@ func _hold_immunity() -> void:
 			var immune := o.root_immune > 0.0 and o.root_timer == 0.0
 			var used: bool = main._use_skill("hold", o.position)
 			var no_cost: bool = not used and main.skill_left("hold") == 0.0 and main.skill_used == 0
-			var feedback: bool = main.skill_arm == "hold" and main.toast.text.contains(main._kr_keep("면역"))
+			var feedback: bool = main.skill_arm == "hold" and main.toast.text.contains(main.patchlog_system._kr_keep("면역"))
 			ok("SKILL-03", immune and no_cost and feedback and o.root_timer == 0.0 and main.skill_fx.size() == fx_n,
 				"붙잡기 전부 면역: 자연 %s·종류 %d, 사용 %s·쿨다운 %.1f·안내 %s" % [natural, kind, used, main.skill_left("hold"), feedback])
 
@@ -3994,7 +3994,7 @@ func _hold_immunity() -> void:
 	dead.hp = 0.0
 	main._arm_skill(1)
 	var missed: bool = not main._use_skill("hold", p)
-	ok("SKILL-03", missed and main.skill_left("hold") == 0.0 and main.toast.text.contains(main._kr_keep("없어요")) and not main.toast.text.contains(main._kr_keep("면역")),
+	ok("SKILL-03", missed and main.skill_left("hold") == 0.0 and main.toast.text.contains(main.patchlog_system._kr_keep("없어요")) and not main.toast.text.contains(main.patchlog_system._kr_keep("면역")),
 		"붙잡기 빈 범위: 죽은 구체·범위 밖 면역 구체는 제외하고 구체 없음 안내")
 
 	# 성공한 첫 구체 때문에 뒤 구체의 root 호출을 건너뛰면 안 된다. 순서를 바꿔 둘 다 확인한다.
@@ -4087,16 +4087,16 @@ func _ley_build() -> void:
 	for t in [t1, t2, t3]:
 		t.src = {}
 	main.wave = 12
-	main._refresh_build()
-	var top: Array = main.build_cache
+	main.hud_system._refresh_build()
+	var top: Array = main.hud_system.build_cache
 	var top_ok: bool = top.size() >= 3 and top[0][0] == "elem:fire" and top[1][0] == "share:wood" and not top.any(func(it): return it[0] == "hit" or str(it[0]).begins_with("etc:"))
 	ok("BUILD-01", top_ok, "주력 순서(직접 타격·공통 몫 뺌) %s" % [top.map(func(it): return it[0])])
-	var f_fire: String = main.core_fit({"type": "elem", "e": Elem.FIRE, "lv": 1})
-	var rx_ok: bool = main.core_fit({"type": "elem", "e": Elem.WOOD, "lv": 1}) != ""  # 특징 자람(share:wood)이 주력
-	var no_pat: bool = main.core_fit({"type": "pat", "id": "spray"}) == ""
+	var f_fire: String = main.hud_system.core_fit({"type": "elem", "e": Elem.FIRE, "lv": 1})
+	var rx_ok: bool = main.hud_system.core_fit({"type": "elem", "e": Elem.WOOD, "lv": 1}) != ""  # 특징 자람(share:wood)이 주력
+	var no_pat: bool = main.hud_system.core_fit({"type": "pat", "id": "spray"}) == ""
 	main.wave = 2
-	main._refresh_build()
-	var early: bool = main.build_cache.is_empty()
+	main.hud_system._refresh_build()
+	var early: bool = main.hud_system.build_cache.is_empty()
 	ok("BUILD-02", f_fire != "" and rx_ok and no_pat and early, "주력 카드 ◎: 속성 %s, 특징의 속성 %s, 3위 아래는 없음 %s, 3웨이브 전엔 안 셈 %s" % [f_fire != "", rx_ok, no_pat, early])
 	_clear()
 

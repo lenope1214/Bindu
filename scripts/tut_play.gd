@@ -584,10 +584,10 @@ func allow_pick(card: Dictionary) -> bool:
 		return true
 	var s := step()
 	if not s.has("card") and s["id"] not in ["goal", "wave1"] and _active():
-		m._show_toast("먼저 위 안내를 해 보세요 (건너뛰기도 돼요)")
+		m.hud_system._show_toast("먼저 위 안내를 해 보세요 (건너뛰기도 돼요)")
 		return false
 	if card != want:
-		m._show_toast("이번엔 %s 카드를 고르세요" % _card_name(want))
+		m.hud_system._show_toast("이번엔 %s 카드를 고르세요" % _card_name(want))
 		return false
 	return true
 
@@ -611,14 +611,14 @@ func allow_place(target: Node) -> bool:
 		need = "wood"
 	if want["type"] == "elem" and want["e"] != Elem.WATER:
 		if target != null:
-			m._show_toast("이번엔 빈 곳에 놓으세요")
+			m.hud_system._show_toast("이번엔 빈 곳에 놓으세요")
 			return false
 		return true
 	if need == "fire" and (target == null or not target.elements.has(Elem.FIRE)):
-		m._show_toast("불 오브젝트 위에 놓으세요")
+		m.hud_system._show_toast("불 오브젝트 위에 놓으세요")
 		return false
 	if need == "wood" and (target == null or not target.elements.has(Elem.WOOD)):
-		m._show_toast("나무 오브젝트에 넣으세요")
+		m.hud_system._show_toast("나무 오브젝트에 넣으세요")
 		return false
 	return true
 
@@ -640,7 +640,7 @@ func can_start() -> bool:
 	var s := step()
 	if s.is_empty() or s["when"] != "rest" or s["id"] == "wave1" or m.wave != s["rest"]:
 		return true
-	m._show_toast("먼저 위 안내를 해 보세요 (건너뛰기도 돼요)")
+	m.hud_system._show_toast("먼저 위 안내를 해 보세요 (건너뛰기도 돼요)")
 	return false
 
 
@@ -968,7 +968,7 @@ func _layout() -> void:
 	# 왼쪽 위 점수 줄 오른쪽, 오른쪽 위 버튼·설명 왼쪽 틈에. 모자라면 점수 줄 아래 가운데
 	var hud: Control = m.hud
 	var left: float = hud.position.x + hud.size.x + 10.0
-	var right: float = minf(m._right_panel_x(), size.x - (300.0 if m.range_btn.visible or m.zoom_btn.visible else 0.0)) - 10.0
+	var right: float = minf(m.ui_layout_system._right_panel_x(), size.x - (300.0 if m.range_btn.visible or m.zoom_btn.visible else 0.0)) - 10.0
 	var w := minf(620.0, right - left)
 	var top := 8.0
 	if w < 420.0:

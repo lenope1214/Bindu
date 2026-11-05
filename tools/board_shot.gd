@@ -14,9 +14,9 @@ func _fill(n: int, week: int) -> void:
 	var es := []
 	for i in n:
 		es.append({"rank": i + 1, "nick": "닉네임%d" % i if i != 2 else "아주긴닉네임열두글자까지", "wave": 40 - i, "score": 9000000 - i * 1000, "me": i == 3, "ended": i != 1, "pid": "p%015d" % i, "title": "wave10" if i == 0 else ""})
-	main._on_board_loaded({"tag": main._board_tag(), "period": "all", "season": {"name": "시즌 2"}, "entries": es, "total": 57})
-	if main.board_season == 0:
-		main._on_board_loaded({"tag": main._board_tag(), "period": "week", "entries": es.slice(0, week), "total": 12, "me": {"rank": 15, "score": 120000}})
+	main.leaderboard_system._on_board_loaded({"tag": main.leaderboard_system._board_tag(), "period": "all", "season": {"name": "시즌 2"}, "entries": es, "total": 57})
+	if main.leaderboard_system.board_season == 0:
+		main.leaderboard_system._on_board_loaded({"tag": main.leaderboard_system._board_tag(), "period": "week", "entries": es.slice(0, week), "total": 12, "me": {"rank": 15, "score": 120000}})
 
 
 func _initialize():
@@ -33,27 +33,27 @@ func _initialize():
 		func():
 			Meta.ui_scale = z
 			main.touch_ui = touch
-			main._apply_ui_scale()
+			main.hud_system._apply_ui_scale()
 			Meta.games = 5
 			if main.tut.visible: main.tut.close(),
 		func():
-			main._toggle_board(),
+			main.leaderboard_system._toggle_board(),
 		func():
 			# 서버 없이: 연결 실패(빈 시즌 목록·오류)가 먼저 온 뒤에 덮어쓴다
-			main._on_seasons_loaded([{"id": 3, "name": "시즌 3"}, {"id": 2, "name": "시즌 2"}, {"id": 1, "name": "시즌 1"}])
+			main.leaderboard_system._on_seasons_loaded([{"id": 3, "name": "시즌 3"}, {"id": 2, "name": "시즌 2"}, {"id": 1, "name": "시즌 1"}])
 			_fill(10, 5),
 		func(): _snap("board"); _press_period(1),
-		func(): _snap("board_week"); _press_period(0); main._board_set("season", 2); _fill(10, 0),
-		func(): _snap("board_old"); main._board_set("map", "line"); _fill(0, 0),
-		func(): _snap("board_empty"); main._board_set("season", 0); _fill(10, 5),
-		func(): main._board_ugc_open(),
+		func(): _snap("board_week"); _press_period(0); main.leaderboard_system._board_set("season", 2); _fill(10, 0),
+		func(): _snap("board_old"); main.leaderboard_system._board_set("map", "line"); _fill(0, 0),
+		func(): _snap("board_empty"); main.leaderboard_system._board_set("season", 0); _fill(10, 5),
+		func(): main.leaderboard_system._board_ugc_open(),
 		func(): _snap("board_ugc"),
 	]
 
 
 func _press_period(i: int) -> void:
-	if "board_period_btns" in main and main.board_period_btns.size() > i:
-		main.board_period_btns[i].pressed.emit()
+	if "board_period_btns" in main and main.leaderboard_system.board_period_btns.size() > i:
+		main.leaderboard_system.board_period_btns[i].pressed.emit()
 
 
 func _snap(n: String):

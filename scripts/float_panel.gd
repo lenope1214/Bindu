@@ -216,7 +216,7 @@ func _after_move() -> void:
 	grip.queue_redraw()
 	_update_pin_tip()
 	moved.emit()
-	game._save_best()
+	game.progression_system._save_best()
 
 
 func _update_pin_tip() -> void:
@@ -235,7 +235,7 @@ func saved_pos() -> Vector2:
 ## 붙을 자리 여섯 곳 (위·아래 x 왼쪽·가운데·오른쪽, 왼쪽 위 좌표). 위는 점수 줄 아래, 아래는 아래 버튼 줄 위.
 func slots() -> Array[Vector2]:
 	var ps := _par().size
-	var top: float = game._dps_home().y
+	var top: float = game.hud_system._dps_home().y
 	var bottom := maxf(top, ps.y - size.y - 64.0)
 	var out: Array[Vector2] = []
 	for y in [top, bottom]:
@@ -266,7 +266,7 @@ func snap(p: Vector2) -> Vector2:
 ## 옮겨 둔 자리: 점수 줄·아래 버튼·기술 버튼 등(game._panel_blocks)과 겹치면 위나 아래로 비켜 화면 안에.
 func place(p: Vector2) -> Vector2:
 	var ps := _par().size
-	var blocks: Array[Rect2] = game._panel_blocks(self)
+	var blocks: Array[Rect2] = game.hud_system._panel_blocks(self)
 	for _i in 3:
 		var r := Rect2(p, size)
 		var hit := false
@@ -354,7 +354,7 @@ func cover(fade: bool) -> void:
 				under = true
 				break
 		if not under:
-			for arr in game._lane_arrows():
+			for arr in game.ui_layout_system._lane_arrows():
 				if pr.grow(14.0).has_point(arr[0]):
 					under = true
 					break

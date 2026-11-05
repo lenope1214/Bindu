@@ -31,12 +31,12 @@ func _initialize():
 	main = load("res://main.tscn").instantiate()
 	VirtualInput.mount(main, root)
 	await process_frame
-	main._hide_title()
+	main.progression_system._hide_title()
 	main.touch_ui = args.size() > 2
 	main.auto_start = false
 	main.set_process(false)
 	Meta.ui_scale = float(args[1])
-	main._apply_ui_scale()
+	main.hud_system._apply_ui_scale()
 	main.legend_hidden = false
 	revised = main.get("card_dock") != null
 	for id in Meta.ACHIEVEMENTS:
