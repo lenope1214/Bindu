@@ -2,7 +2,20 @@ class_name BinduWaves
 extends BinduFeature
 ## 진입 방향과 웨이브 미리보기. 예약 콜백은 main의 순서를 따른다.
 
+var new_angles: Array = []  # 다음 웨이브에서 처음 열리는 방향. 선택 단계부터 표시한다.
+
 func _roll_lanes() -> void:
+	var previous: Array = session.lanes.duplicate()
+	_choose_lanes()
+	mark_new_angles(previous)
+
+func mark_new_angles(previous: Array) -> void:
+	new_angles = [] if previous.is_empty() else session.lanes.filter(func(a): return not previous.any(func(b): return absf(angle_difference(a, b)) < 0.001))
+
+func lane_is_new(index: int) -> bool:
+	return index >= 0 and index < session.lanes.size() and new_angles.any(func(a): return absf(angle_difference(a, session.lanes[index])) < 0.001)
+
+func _choose_lanes() -> void:
 	var session: BinduSession = self.session
 	if TutPlay.on:
 		session.lanes.assign(TutPlay.lanes_for(session.wave + 1))  # 연습 판: 정해진 길목

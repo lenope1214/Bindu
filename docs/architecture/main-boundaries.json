@@ -197,7 +197,6 @@
     "_toggle_bar": "cards",
     "_update_auto_btn": "cards",
     "_start_wave": "run_flow",
-    "_wave_start_block_reason": "run_flow",
     "_wave_lane_covered": "run_flow",
     "_wave_attack_reach": "run_flow",
     "_game_over": "run_flow",
@@ -948,7 +947,6 @@
     "_toggle_bar": "9ac1290b23c7094879ef6c0534d78fcbe9b09bea247cf98b53414413ed15e8f1",
     "_update_auto_btn": "a9ef1d385d6d3d08a2865a12bb67fc52e2a73f2f197cafc054260db7400646d0",
     "_start_wave": "bdbca188212baf188062541f9d5ff74b3e9fc051241f338141a42e96844222d6",
-    "_wave_start_block_reason": "995f896ac60ec96d230abf63f665751acbb421a6e99230d28b64f27931aac13f",
     "_wave_lane_covered": "70b421d90d0f519424af7dfc208891bd54f02c7a332ebf03e650cb7011a732ca",
     "_wave_attack_reach": "7fc366bddbb5cd0c452243d348f7691a4bc0233c136d765a254e108d6b70c229",
     "_game_over": "da20184ba5fda3d29d2849f4c4f698ec51baa6839359b5abb69ac63f52e72fb0",
@@ -1300,6 +1298,12 @@
     "_draw_fx": "Preview draws combat effects without HUD or tooltips",
     "_build_ui": "Remove separate combination popup; inspector NEW and discovery regression",
     "_place_on": "Remove separate combination popup; inspector NEW and discovery regression",
-    "_check_progress": "Remove separate combination popup; inspector NEW and discovery regression"
+    "_check_progress": "Remove separate combination popup; inspector NEW and discovery regression",
+    "_start_wave": "Nonblocking lane warning and new direction highlight before card placement; WAVE-14 regression",
+    "_roll_lanes": "Nonblocking lane warning and new direction highlight before card placement; WAVE-14 regression",
+    "_draw_info": "Nonblocking lane warning and new direction highlight before card placement; WAVE-14 regression",
+    "_save_run": "Nonblocking lane warning and new direction highlight before card placement; WAVE-14 regression",
+    "_continue_run": "Nonblocking lane warning and new direction highlight before card placement; WAVE-14 regression",
+    "_mp_ghost_rest": "Nonblocking lane warning and new direction highlight before card placement; WAVE-14 regression"
   }
 }

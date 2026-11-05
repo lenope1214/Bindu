@@ -1454,21 +1454,19 @@ func _waves() -> void:
 	main.phase = main.Phase.CHOOSE
 
 
-## 시작 차단은 혼자 판에서만. 멀티 준비/잠수 진행은 배치에 막히지 않는다.
+## 미방어 길목은 참고 경고만. 단일 오브젝트 집중 투자도 진행할 수 있다.
 func _wave_start_guard() -> void:
-	_fresh(0)
+	_fresh(2)
 	main.mp_mode = ""
-	main.lanes.assign([0.0])
+	main.lanes.assign([0.0, PI])
+	main.waves_system.mark_new_angles([0.0])
+	var t := _tower(main.viewport_system.center() + Vector2(120, 0), Elem.FIRE, 1, Vector2.RIGHT)
+	var warns: bool = main.run_flow_system.lane_warning(0) == "" and main.run_flow_system.lane_warning(1) != ""
+	var marked: bool = not main.waves_system.lane_is_new(0) and main.waves_system.lane_is_new(1)
 	main.phase = main.Phase.READY
 	main.mp_next_extra = 3
 	main.run_flow_system._start_wave()
-	var empty_blocked: bool = main.phase == main.Phase.READY and main.wave == 0 and main.mp_next_extra == 3
-	var t := _tower(main.viewport_system.center() + Vector2(120, 0), Elem.FIRE, 1, Vector2.UP)
-	main.run_flow_system._start_wave()
-	var away_blocked: bool = main.phase == main.Phase.READY and main.wave == 0
-	t.dir = Vector2.RIGHT
-	main.run_flow_system._start_wave()
-	var covered_go: bool = main.phase == main.Phase.WAVE and main.wave == 1
+	var goes: bool = main.phase == main.Phase.WAVE and main.wave == 3 and main.mp_extra_left == 3
 	main.mp_next_extra = 0
 	main.mp_extra_left = 0
 	main.wave_active = false
@@ -1477,13 +1475,12 @@ func _wave_start_guard() -> void:
 	main.mp_wave_go = true
 	main.phase = main.Phase.READY
 	main.run_flow_system._start_wave()
-	var coop_go: bool = main.phase == main.Phase.WAVE and main.wave == 2
+	var coop_go: bool = main.phase == main.Phase.WAVE and main.wave == 4
 	main.mp_wave_go = false
 	main.mp_mode = ""
 	main.wave_active = false
 	main.phase = main.Phase.CHOOSE
-	ok("WAVE-14", empty_blocked and away_blocked and covered_go and coop_go,
-		"혼자 판: 오브젝트 없음/반대 방향이면 미시작·자원 보존, 닿으면 시작; 협동 통지 후 시작 보장")
+	ok("WAVE-14", warns and marked and goes and coop_go, "범위 밖 경고·새 방향 표시, 단일 오브젝트와 협동 모두 시작 허용")
 
 
 # ---------- 구체·군중 제어 ----------

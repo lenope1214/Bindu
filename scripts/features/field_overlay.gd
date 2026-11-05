@@ -44,7 +44,9 @@ func _draw_info() -> void:
 			var n: int = counts[li] if li < counts.size() else 0
 			if Meta.map_id == "line":
 				n = session.spawn_count(nw) - (1 if nw % 5 == 0 else 0)
-			var txt := "×%d" % n
+			var fresh_lane := session.waves_system.lane_is_new(li)
+			var warning := session.run_flow_system.lane_warning(li)
+			var txt := ("새 진입 · " if fresh_lane else "") + "×%d" % n + (" · 범위 밖" if warning != "" else "")
 			var tw := session.ui_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			var nk := (0 if compact else session.wave_kinds.size()) + (1 if li == boss_li else 0)
 			var w := 10.0 + tw + (6.0 + nk * 22.0 if nk > 0 else 0.0) + 8.0
@@ -64,10 +66,10 @@ func _draw_info() -> void:
 			if cards_r.has_area() and r.intersects(cards_r):
 				continue
 			info_rects.append(["배지 %s" % txt, r.grow_side(SIDE_TOP, 13.0 if not compact and session.wave_kinds.any(func(k): return k[2]) else 0.0)])
-			var al := 0.35 if session.card_dim.visible else 1.0  # 카드 선택 막 아래 전장 것이라 같이 옅게
+			var al := 0.85 if fresh_lane or warning != "" else (0.35 if session.card_dim.visible else 1.0)  # 카드 선택 막 아래 전장 것이라 같이 옅게
 			var sb := StyleBoxFlat.new()
 			sb.bg_color = Color(0.16, 0.04, 0.06, 0.88 * al)
-			sb.border_color = Color(1, 0.35, 0.4, 0.9 * al)
+			sb.border_color = Color(1, 0.8, 0.3, 0.95) if fresh_lane or warning != "" else Color(1, 0.35, 0.4, 0.9 * al)
 			sb.set_border_width_all(2)
 			sb.set_corner_radius_all(7)
 			var home := Rect2(p - Vector2(w, 30.0) / 2.0, Vector2(w, 30.0))
@@ -103,6 +105,8 @@ func _draw_info() -> void:
 			if li == boss_li:
 				Icons.draw(session.info, "boss", Vector2(x + 11.0, cy), 7.5, Color(1, 0.6, 0.75, al))
 			var lines: Array = [["이쪽에서 구체 %d개%s" % [n, " + 보스" if li == boss_li else ""], Color(1, 0.85, 0.85)]]
+			if fresh_lane: lines.append(["다음 웨이브부터 새로 들어오는 방향이에요", Color(1, 0.85, 0.3)])
+			if warning != "": lines.append([warning + ". 구체가 중앙에 도달할 수 있어요", Color(1, 0.85, 0.3)])
 			session.tip_rects.append([r.grow(4.0), lines + session.wave_info])
 		# 지난 웨이브에 놓친 구체: 그 방향 가장자리에 빨간 -N (다음 웨이브에 방향이 바뀌어도 어디서 샜는지 보이게)
 		for lm in session.leak_marks:

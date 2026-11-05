@@ -880,10 +880,8 @@ func _free_spot() -> Vector2:
 	return m.viewport_system.core() + Vector2(-200, -120)
 
 
-## 웨이브를 시작할 수 없는 길목이 있으면 가장 가까운 오브젝트를 그쪽으로 돌린다.
+## 기본 공격 범위 밖인 길목이 있으면 가장 가까운 오브젝트를 그쪽으로 돌린다.
 func _cover_lanes() -> void:
-	if m.run_flow_system._wave_start_block_reason() == "":
-		return
 	var w: int = m.wave + 1
 	var spread: float = m.lane_spread(w)
 	for a in m.lanes:
@@ -1042,9 +1040,7 @@ func _refresh() -> void:
 		txt = "카드를 골라 놓거나 넣으세요"
 	else:
 		txt = "[웨이브 시작]을 눌러 다음 웨이브를 막으세요" if tc else "[웨이브 시작](Space)을 눌러 다음 웨이브를 막으세요"
-		var why: String = m.run_flow_system._wave_start_block_reason() if m.phase == m.Phase.READY else ""
-		if why != "":
-			txt += "\n" + why.replace("웨이브를 시작할 수 없어요: ", "")
+
 	body.text = PatchNotes.kr_keep(txt)
 	btn_skip.disabled = m.phase == m.Phase.WAVE and not _active() and s["when"] == "wave" or done_t >= 0.0
 

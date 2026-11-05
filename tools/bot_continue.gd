@@ -99,13 +99,6 @@ func _process(_d):
 	main.game_speed = float(OS.get_environment("SPEED")) if OS.get_environment("SPEED") != "" else 1.0
 	if main.phase == 6:
 		_rearrange()
-		var blocked: String = main.run_flow_system._wave_start_block_reason()
-		if blocked != "":
-			print("STUCK ready wave=", main.wave, " ", blocked)
-			for t in main.towers.get_children():
-				print("  TOWER ", t.title(), " p=", t.position, " dir=", t.dir, " reach=", main.run_flow_system._wave_attack_reach(t))
-			quit(1)
-			return false
 		main.run_flow_system._start_wave()
 	if main.perk_mode:
 		main.perks_system._on_perk(main.perk_offer[randi() % 3])

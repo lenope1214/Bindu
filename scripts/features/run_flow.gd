@@ -310,18 +310,9 @@ func _mp_keep_room() -> void:
 ## 왼쪽 아래 안내 글 위쪽 끝 (안내 글이 없으면 아래 버튼 줄 위).
 func _start_wave() -> void:
 	var session: BinduSession = self.session
-	# 멀티는 준비 동기화·잠수 자동 진행을 우선한다. 한 기기의 배치로 시작을 거부하면
-	# 호스트의 wave 통지와 실제 단계가 달라지거나 대결이 무기한 멈출 수 있다.
-	var forced := TutPlay.on and session.tplay != null and session.tplay.force_start
 	if TutPlay.on and session.tplay != null and not session.tplay.can_start():
 		session.countdown = -1.0
 		return
-	if session.mp_mode == "" and not forced:
-		var blocked := _wave_start_block_reason()
-		if blocked != "":
-			session.countdown = -1.0
-			session.hud_system._show_toast(blocked)
-			return
 	if session.mp_mode == "coop" and not session.mp_wave_go:
 		session.countdown = -1.0
 		session.multiplayer_system._mp_coop_ready()
@@ -393,21 +384,11 @@ func _start_wave() -> void:
 	session.sfx.play("wave", 0.0)
 
 
-## 모든 다음 웨이브 진입 방향에 적어도 하나의 오브젝트 공격이 닿는지 확인한다.
-## 시작 버튼·Space·자동 시작·넘기기·멀티 호스트가 모두 _start_wave를 지나므로 여기서 막는다.
-func _wave_start_block_reason() -> String:
+## 길목별 참고 경고. 기본 공격의 근사 범위이며 시작을 차단하지 않는다.
+func lane_warning(index: int) -> String:
 	var session: BinduSession = self.session
-	if session.lanes.is_empty():
-		return ""
-	var w := session.wave + 1
-	var spread := session.lane_spread(w)
-	var missed: Array[String] = []
-	for i in session.lanes.size():
-		if not _wave_lane_covered(session.lanes[i], w, spread):
-			missed.append(session.compass(session.lanes[i]))
-	if missed.is_empty():
-		return ""
-	return "웨이브를 시작할 수 없어요: %s쪽 공격이 닿지 않아요. 오브젝트의 위치나 방향을 맞춰 주세요" % "·".join(missed)
+	if index < 0 or index >= session.lanes.size(): return ""
+	return "" if _wave_lane_covered(session.lanes[index], session.wave + 1, session.lane_spread(session.wave + 1)) else "기본 공격 범위 밖"
 
 
 ## 진입 길을 따라 여러 지점을 살펴 공격 사거리·방향 안에 들어오는 오브젝트를 찾는다.

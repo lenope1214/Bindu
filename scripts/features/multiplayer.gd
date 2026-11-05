@@ -729,7 +729,9 @@ func _mp_ghost_rest() -> void:
 	var session: BinduSession = self.session
 	if int(mp_next.get("w", -1)) != session.wave:
 		return
+	var previous: Array = session.lanes.duplicate()
 	session.lanes.assign((mp_next.get("lanes", []) as Array).filter(func(a): return a is float))
+	session.waves_system.mark_new_angles(previous)
 	session.wave_resist = int(mp_next.get("res", -1))
 	var bp: Variant = mp_next.get("boss", {})
 	session.boss_plan = bp if bp is Dictionary else {}

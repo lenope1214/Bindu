@@ -80,7 +80,7 @@ func _run(how: String, ch: int, touch: bool) -> void:
 		same += 1
 		if same > 6000:
 			stuck = TutPlay.STEPS[tp.idx]["id"]
-			print("STUCK %s wave=%d phase=%d picks=%d offer=%s block=%s active=%s perk=%s skip=%d hp=%d" % [stuck, main.wave, main.phase, main.picks_left, str(main.offer), main.run_flow_system._wave_start_block_reason(), tp._active(), main.perk_mode, main.skip_left, main.core_hp])
+			print("STUCK %s wave=%d phase=%d picks=%d offer=%s block=%s active=%s perk=%s skip=%d hp=%d" % [stuck, main.wave, main.phase, main.picks_left, str(main.offer), str(main.lanes), tp._active(), main.perk_mode, main.skip_left, main.core_hp])
 			break
 		if main.phase == main.Phase.WAVE:
 			main.game_speed = 8.0
@@ -225,7 +225,4 @@ func _gate() -> void:
 		tp._skip_gate()  # 넣을 수 있는 카드를 골라 넣는다 (사람이 받아 주는 오브젝트를 고르듯)
 	elif main.phase == main.Phase.READY:
 		tp._cover_lanes()
-		if main.run_flow_system._wave_start_block_reason() != "":
-			print("BLOCK %s (단계 %s)" % [main.run_flow_system._wave_start_block_reason(), tp.step()["id"]])
-			tp.force_start = true
 		main.cards_system._start_wave_from_ready()

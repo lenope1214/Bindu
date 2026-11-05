@@ -2,6 +2,7 @@ extends "res://tools/carry_check.gd"
 var guidance_completed := 0
 var dismiss_inspector_completed := false
 var preview_completed := false
+var lanes_completed := false
 ## 사용성 회귀: 격리 사본·가상 입력으로 실제 버튼과 전장 입력 경로를 함께 확인한다.
 func _initialize() -> void:
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools") or DisplayServer.get_name() == "headless" or OnlineConfig.SERVER_URL != "" or OnlineConfig.MP_URL != "":
@@ -29,6 +30,9 @@ func _initialize() -> void:
 	Meta.ui_scale = float(args[1])
 	main.hud_system._apply_ui_scale()
 	await create_timer(0.2).timeout
+	if which == "lane-warning":
+		await lane_warning_case()
+		ok("WAVE-14", lanes_completed, "길목 경고·카드 단계 새 방향 검사 완료")
 	if which == "unified-preview":
 		await unified_preview_case()
 		ok("UI-37", preview_completed, "최종 공격 미리보기 검사 완료")
@@ -462,3 +466,41 @@ func unified_preview_case() -> void:
 	RenderingServer.force_draw()
 	main.get_viewport().get_texture().get_image().save_png(output.path_join("unified-preview.png"))
 	preview_completed = tested == Pat.ALL_IDS.size()
+
+func lane_warning_case() -> void:
+	await fixture()
+	target.position = main.viewport_system.center() + Vector2(120, 0)
+	target.dir = Vector2.RIGHT
+	refused.position = target.position
+	refused.dir = Vector2.RIGHT
+	main.lanes.assign([0.0, PI])
+	main.waves_system.mark_new_angles([0.0])
+	await settle()
+	await process_frame
+	RenderingServer.force_draw()
+	var badges: Array = main.field_overlay_system.info_rects
+	ok("WAVE-14", main.phase == main.Phase.CHOOSE and badges.any(func(b): return "새 진입" in b[0] and "범위 밖" in b[0]), "카드 선택 중 새 진입·범위 밖을 해당 길목 배지로 표시")
+	main.get_viewport().get_texture().get_image().save_png(output.path_join("lane-warning.png"))
+	main.lanes.assign([0.0, TAU / 6, TAU / 3, PI, TAU * 2 / 3, TAU * 5 / 6])
+	main.waves_system.mark_new_angles([0.0])
+	await settle()
+	RenderingServer.force_draw()
+	var rects: Array = main.field_overlay_system.info_rects.filter(func(b): return str(b[0]).begins_with("배지"))
+	var clear := rects.size() == 6
+	var safe := Rect2(Vector2.ZERO, main.ui_root.size)
+	var cards: Rect2 = main.ui_root.get_global_transform().affine_inverse() * main.choice_box.get_global_rect()
+	for i in rects.size():
+		clear = clear and safe.encloses(rects[i][1]) and not cards.intersects(rects[i][1])
+		for j in range(i + 1, rects.size()): clear = clear and not rects[i][1].intersects(rects[j][1])
+	ok("WAVE-14", clear, "여섯 길목 경고도 카드·다른 배지·화면 밖을 피함")
+	main.get_viewport().get_texture().get_image().save_png(output.path_join("lane-warning-six.png"))
+	main.cards_system._enter_ready()
+	await settle()
+	var start_at: Vector2 = main.start_btn.get_global_rect().get_center()
+	if phone:
+		await touch(start_at, true)
+		await touch(start_at, false)
+	else:
+		await mouse_click(start_at)
+	ok("WAVE-14", main.phase == main.Phase.WAVE, "범위 밖 길목이 있어도 시작 버튼으로 진행")
+	lanes_completed = true
