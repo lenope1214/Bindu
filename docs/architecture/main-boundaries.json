@@ -1295,6 +1295,8 @@
     "_mp_kick": "Weak session liveness in delayed kick",
     "_input": "Hide guidance before object GUI hit testing; pointer/touch regression",
     "_process": "Place guidance below HUD and toast below guidance; UI regression",
-    "_update_action_guide": "Suppress guidance while hovering or manipulating objects; TUT-03 regression"
+    "_update_action_guide": "Suppress guidance while hovering or manipulating objects; TUT-03 regression",
+    "_build_menu": "Add persisted combination popup visibility setting and preference sync; UI-37 regression",
+    "_place_rx_card": "Hide popup buttons together with transparent popup while placing/aiming; UI-37 input regression"
   }
 }

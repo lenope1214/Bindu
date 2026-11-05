@@ -1,5 +1,6 @@
 extends "res://tools/carry_check.gd"
 var guidance_completed := 0
+var combo_close_completed := 0
 ## 사용성 회귀: 격리 사본·가상 입력으로 실제 버튼과 전장 입력 경로를 함께 확인한다.
 func _initialize() -> void:
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools") or DisplayServer.get_name() == "headless" or OnlineConfig.SERVER_URL != "" or OnlineConfig.MP_URL != "":
@@ -27,6 +28,9 @@ func _initialize() -> void:
 	Meta.ui_scale = float(args[1])
 	main.hud_system._apply_ui_scale()
 	await create_timer(0.2).timeout
+	if which in ["all", "combo-close"]:
+		await combo_close_case()
+		ok("UI-37", combo_close_completed == 2, "마우스·터치 조합 설명 닫기 검사 완료")
 	if which in ["all", "guidance"]:
 		await guidance_case()
 		ok("TUT-03", guidance_completed == 2, "마우스·첫 터치 안내 우선순위 검사 완료")
@@ -393,3 +397,32 @@ func guidance_case() -> void:
 		guidance_completed += 1
 	Meta.guide_on = false
 	main.guide_lines.clear()
+
+func combo_close_case() -> void:
+	for touch_mode in [false, true]:
+		await fixture()
+		main.cards_system._enter_ready()
+		main.rx_card.set_enabled(true)
+		main.rx_card.show_for(target, [Elem.reaction_of(Elem.WATER, Elem.EARTH)])
+		await settle()
+		RenderingServer.force_draw()
+		main.get_viewport().get_texture().get_image().save_png(output.path_join("combo-close-%s.png" % touch_mode))
+		var at: Vector2 = main.rx_card.close_btn.get_global_rect().get_center()
+		if touch_mode:
+			await touch(at, true)
+			await touch(at, false)
+		else:
+			await mouse_click(at)
+		ok("UI-37", not main.rx_card.visible and Meta.rx_cards_on and main.interaction_system.selected.is_empty(), "현재 조합 설명만 닫고 전장 클릭으로 새지 않음: 터치=%s" % touch_mode)
+		main.rx_card.show_for(target, [Elem.reaction_of(Elem.WATER, Elem.EARTH)])
+		await settle()
+		at = main.rx_card.disable_btn.get_global_rect().get_center()
+		if touch_mode:
+			await touch(at, true)
+			await touch(at, false)
+		else:
+			await mouse_click(at)
+		main.rx_card.show_for(target, [Elem.reaction_of(Elem.WATER, Elem.EARTH)])
+		ok("UI-37", not main.rx_card.visible and not Meta.rx_cards_on, "앞으로 숨기기는 다음 조합도 표시하지 않음: 터치=%s" % touch_mode)
+		main.rx_card.set_enabled(true)
+		combo_close_completed += 1

@@ -3723,6 +3723,29 @@ func _rx_card() -> void:
 	# 짝 셋이 한 번에 생기면 2장 + "+1"
 	rc.show_for(t, Elem.REACTIONS.slice(0, 3))
 	var capped: bool = rc.rxs.size() == 2 and rc.extra == 1
+	rc.close_btn.pressed.emit()
+	var dismissed: bool = not rc.active() and Meta.rx_cards_on
+	rc.show_for(t, Elem.REACTIONS.slice(0, 1))
+	var reappears: bool = rc.active()
+	main.phase = main.Phase.PLACE
+	main.field_view_system._place_rx_card()
+	var transparent_pass: bool = not rc.close_btn.visible and not rc.disable_btn.visible and rc.self_modulate.a == 0.0
+	main.phase = main.Phase.READY
+	main.field_view_system._place_rx_card()
+	ok("UI-37", transparent_pass and rc.close_btn.visible and rc.disable_btn.visible, "설치·조준 중 투명한 조합 창의 버튼도 입력을 막지 않고 이후 복원")
+	var discovered: Dictionary = Meta.codex.duplicate()
+	rc.disable_btn.pressed.emit()
+	rc.show_for(t, Elem.REACTIONS.slice(0, 1))
+	var persisted := ConfigFile.new()
+	persisted.load(Meta.SAVE_PATH)
+	var disabled: bool = not Meta.rx_cards_on and not rc.active() and persisted.get_value("settings", "rx_cards_on", true) == false and Meta.codex == discovered
+	var toggle: CheckButton = null
+	for button in main.settings_panel.find_children("*", "CheckButton", true, false):
+		if button.text == "새 조합 설명 보기": toggle = button
+	var synced: bool = toggle != null and not toggle.button_pressed
+	if toggle != null: toggle.toggled.emit(true)
+	rc.show_for(t, Elem.REACTIONS.slice(0, 1))
+	ok("UI-37", dismissed and reappears and disabled and synced and rc.active(), "조합 설명 닫기·다음 표시 유지·지속 끄기 저장·도감 보존·설정으로 재활성화")
 	main.phase = main.Phase.GAMEOVER
 	main.field_view_system._place_rx_card()
 	var closed: bool = not rc.visible

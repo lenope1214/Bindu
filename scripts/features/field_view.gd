@@ -220,7 +220,7 @@ func _place_rx_card() -> void:
 	if session.title_label.visible or session.phase == BinduSession.Phase.GAMEOVER:
 		session.rx_card.hide_card()
 		return
-	session.rx_card.self_modulate.a = 0.0 if session.phase in [BinduSession.Phase.PLACE, BinduSession.Phase.AIM] else 1.0
+	session.rx_card.set_interactive(not session.phase in [BinduSession.Phase.PLACE, BinduSession.Phase.AIM])
 	if not is_instance_valid(session.rx_card.tower):
 		return
 	var to_ui := session.ui_root.get_global_transform().affine_inverse() * session.get_canvas_transform()

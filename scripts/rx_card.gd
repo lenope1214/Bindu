@@ -4,6 +4,9 @@ extends Control
 ## 머리(두 속성 그림 + 이름 + 상성 배지) · 움직이는 미리보기(효과가 특징을 따라 옮겨 가는 2초 반복) · 방향마다 한 줄
 ## "[효과 칩] → (특징 그림) 짧은 말". 한 번에 2장까지, 더 있으면 "+N". main이 show_for로 띄우고 _process가 자리를 잡는다.
 
+signal visibility_preference_changed(enabled: bool)
+
+const FOOTER_H := 44.0
 const LIFE := 6.0  # 뜨는 시간(초). 마우스를 올린 동안은 줄지 않는다
 const W := 390.0
 const PREV_H := 74.0
@@ -13,6 +16,8 @@ const BG := Color(0.07, 0.085, 0.125, 0.96)
 const ORB := Color(0.93, 0.89, 0.92)
 const ORB_EDGE := Color(0.88, 0.35, 0.45)
 
+var close_btn: Button
+var disable_btn: Button
 var game
 var font: Font
 var tower: Tower
@@ -30,11 +35,32 @@ func _init(main) -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
 	z_index = 3  # 카드 선택 막(z 1)·카드 줄(z 2) 위
+	close_btn = Button.new()
+	close_btn.text = "닫기"
+	close_btn.focus_mode = Control.FOCUS_NONE
+	close_btn.pressed.connect(hide_card)
+	close_btn.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(close_btn)
+	disable_btn = Button.new()
+	disable_btn.text = "앞으로 숨기기"
+	disable_btn.focus_mode = Control.FOCUS_NONE
+	disable_btn.pressed.connect(func(): set_enabled(false))
+	disable_btn.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(disable_btn)
+	for button: Button in [close_btn, disable_btn]:
+		button.add_theme_font_size_override("font_size", 15)
+		for state in ["normal", "hover", "pressed", "focus"]:
+			var style := StyleBoxFlat.new()
+			style.bg_color = BG.lightened(0.10 if state != "normal" else 0.03)
+			style.border_color = GOLD if state != "normal" else Color(0.3, 0.37, 0.48)
+			style.set_border_width_all(1)
+			style.set_corner_radius_all(6)
+			button.add_theme_stylebox_override(state, style)
 
 
 ## 새로 생긴 짝들(Elem.new_reactions 결과)을 tower 옆에 띄운다.
 func show_for(tw: Tower, fresh: Array) -> void:
-	if fresh.is_empty() or not is_instance_valid(tw):
+	if not Meta.rx_cards_on or fresh.is_empty() or not is_instance_valid(tw):
 		return
 	tower = tw
 	rxs = fresh.slice(0, 2)
@@ -45,6 +71,7 @@ func show_for(tw: Tower, fresh: Array) -> void:
 	font = game.ui_font
 	fs = 15  # ui_root가 글자 크기 설정만큼 커진다
 	_resize()
+	set_interactive(not game.phase in [game.Phase.PLACE, game.Phase.AIM])
 	visible = true
 	queue_redraw()
 
@@ -65,13 +92,33 @@ func _resize() -> void:
 	for i in rxs.size():
 		_h += block_h(rxs[i], i == 0)
 	_h += 8.0 * (rxs.size() - 1) + (22.0 if extra > 0 else 0.0)
+	_h += FOOTER_H
 	size = Vector2(W * fs / 15.0, _h)
+	disable_btn.position = Vector2(10, size.y - FOOTER_H + 4)
+	disable_btn.size = Vector2(144, 34)
+	close_btn.position = Vector2(size.x - 74, size.y - FOOTER_H + 4)
+	close_btn.size = Vector2(64, 34)
 
 
 func hide_card() -> void:
 	visible = false
 	life = 0.0
 	tower = null
+
+
+## 투명하게 숨긴 동안 버튼도 숨겨 카드 설치·방향 확정 입력을 가로채지 않는다.
+func set_interactive(on: bool) -> void:
+	self_modulate.a = 1.0 if on else 0.0
+	close_btn.visible = on
+	disable_btn.visible = on
+
+
+func set_enabled(on: bool) -> void:
+	Meta.rx_cards_on = on
+	if not on:
+		hide_card()
+	visibility_preference_changed.emit(on)
+	game.progression_system._save_best()
 
 
 func active() -> bool:
@@ -142,6 +189,8 @@ static func aff_note(r: Dictionary) -> String:
 
 
 func _process(delta: float) -> void:
+	if not Meta.rx_cards_on:
+		hide_card()
 	if not visible:
 		return
 	if not is_instance_valid(tower) or tower.is_queued_for_deletion():
