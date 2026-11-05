@@ -32,13 +32,13 @@ func _initialize():
 			main.progression_system._close_title(),
 		func():
 			if not main.legend_hidden:
-				main._toggle_legend()
+				main.cards_system._toggle_legend()
 			var c: Vector2 = main.core()
 			var es := [Elem.FIRE, Elem.ICE, Elem.LIGHT, Elem.WIND, Elem.SOUL, Elem.EARTH, Elem.WATER]
 			var dl := [2400.0, 1500.0, 3100.0, 400.0, 900.0, 1250.0, 600.0]
 			for i in es.size():
 				main.picked = {"e": es[i], "lv": 3}
-				main._place_tower(c + Vector2.from_angle(i * TAU / es.size() + 0.3) * 170.0, Vector2.RIGHT)
+				main.interaction_system._place_tower(c + Vector2.from_angle(i * TAU / es.size() + 0.3) * 170.0, Vector2.RIGHT)
 				var t = main.towers.get_child(i)
 				t.add(es[(i + 2) % es.size()], 2)
 			for i in es.size():
@@ -46,7 +46,7 @@ func _initialize():
 			main.wave = 24
 			main.wave_time = 30.0
 			main.hud_system._rank_update()
-			main._set_cards_hidden(true),
+			main.cards_system._set_cards_hidden(true),
 		func(): VirtualInput.move(Vector2(5, 5)),
 		func(): _snap("rank"),
 	]

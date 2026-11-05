@@ -36,13 +36,13 @@ func _initialize():
 func _setup() -> void:
 	if main.title_label.visible:  # 창 모드는 타이틀에서 시작한다: 헤드리스처럼 바로 판으로
 		main.title_label.visible = false
-		main._start_choose()
+		main.run_flow_system._start_choose()
 	var c: Vector2 = main.center()
 	var n := 16
 	for i in n:
 		var a := TAU * i / n
 		main.picked = {"e": Elem.ALL[i % Elem.ALL.size()], "lv": 3}
-		main._place_tower(c + Vector2(cos(a), sin(a)) * (150 + 70 * (i % 3)), Vector2(cos(a + 1.6), sin(a + 1.6)))
+		main.interaction_system._place_tower(c + Vector2(cos(a), sin(a)) * (150 + 70 * (i % 3)), Vector2(cos(a + 1.6), sin(a + 1.6)))
 		var t = main.towers.get_child(i)
 		t.set_pattern(Pat.PATTERN_IDS[i % Pat.PATTERN_IDS.size()])
 		for k in 2:
@@ -56,7 +56,7 @@ func _setup() -> void:
 	main.prof_on = true
 	Rules.orb_hp = 40.0  # 잘 죽지 않게: 구체 수를 후반처럼 쌓는다
 	main.wave = 29
-	main._start_wave()
+	main.run_flow_system._start_wave()
 	main.to_spawn = 400
 	main.spawn_interval = 0.02
 

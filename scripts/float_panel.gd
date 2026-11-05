@@ -161,7 +161,7 @@ func _par() -> Control:
 
 
 func _local_pointer() -> Vector2:
-	return _par().get_global_transform().affine_inverse() * game._pointer_screen()
+	return _par().get_global_transform().affine_inverse() * game.interaction_system._pointer_screen()
 
 
 ## 머리 줄 누르기: 놓을 때 옮기지 않았으면 접기·펴기, 꾹 누르거나(HOLD) 끌면(DRAG_MIN) 집어 옮긴다.
@@ -346,7 +346,7 @@ func cover(fade: bool) -> void:
 		return
 	var inv: Transform2D = game.get_canvas_transform().affine_inverse()
 	var pr: Rect2 = inv * get_global_rect()
-	var wp: Vector2 = game._pointer_world()
+	var wp: Vector2 = game.interaction_system._pointer_world()
 	var under := false
 	if fade and not pr.has_point(wp):
 		for t in game.towers.get_children():
@@ -359,7 +359,7 @@ func cover(fade: bool) -> void:
 					under = true
 					break
 	modulate.a = 0.4 if under and drag != 2 else 1.0
-	set_pass(drag == 0 and pr.has_point(wp) and game._tower_at(wp) != null)
+	set_pass(drag == 0 and pr.has_point(wp) and game.interaction_system._tower_at(wp) != null)
 
 
 ## 누르는 순간 다시 판정 (마우스가 움직이지 않고 눌러도 맞게).
@@ -368,4 +368,4 @@ func press_check(screen: Vector2) -> void:
 		return
 	var inv: Transform2D = game.get_canvas_transform().affine_inverse()
 	var wp: Vector2 = inv * screen
-	set_pass((inv * get_global_rect()).has_point(wp) and game._tower_at(wp) != null)
+	set_pass((inv * get_global_rect()).has_point(wp) and game.interaction_system._tower_at(wp) != null)

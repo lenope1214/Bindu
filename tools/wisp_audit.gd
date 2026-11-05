@@ -18,7 +18,7 @@ func _initialize():
 	await process_frame
 	Meta.rules = int(OS.get_environment("RULES")) if OS.get_environment("RULES") != "" else 1
 	Meta.map_id = "spiral"
-	main._apply_rules()
+	main.run_flow_system._apply_rules()
 	secs = float(_env("SECS", "20"))
 	mode = _env("MODE", "immortal")
 	ospd = float(_env("OSPD", "90"))
@@ -103,7 +103,7 @@ func _run(j: Dictionary) -> Dictionary:
 	var c = main.center()
 	var ld := Vector2.UP
 	main.picked = {"e": Elem.SOUL, "lv": 3}
-	main._place_tower(c + ld * 100.0, ld)
+	main.interaction_system._place_tower(c + ld * 100.0, ld)
 	var t = main.towers.get_child(0)
 	if j.has("e2"):
 		t.add(j["e2"], 3)
@@ -121,7 +121,7 @@ func _run(j: Dictionary) -> Dictionary:
 		# 연계 짝: 옆(50)에 금속 직선탄 하나. 공명·협공은 혼불 쪽에
 		main.picked = {"e": Elem.METAL, "lv": 3}
 		var pp: Vector2 = c + ld * 100.0 + ld.orthogonal() * 45.0
-		main._place_tower(pp, ld)
+		main.interaction_system._place_tower(pp, ld)
 		var pt = main.towers.get_child(main.towers.get_child_count() - 1)
 		for i in j["ln"]:
 			t.add_link(j["link"])

@@ -11,7 +11,7 @@ func _initialize():
 	await process_frame
 	Meta.rules = int(OS.get_environment("RULES")) if OS.get_environment("RULES") != "" else 1
 	Meta.map_id = "spiral"
-	main._apply_rules()
+	main.run_flow_system._apply_rules()
 	var secs := float(OS.get_environment("SECS")) if OS.get_environment("SECS") != "" else 20.0
 	var ospd := float(OS.get_environment("OSPD")) if OS.get_environment("OSPD") != "" else 90.0
 	var combos := [{}, {"homing": 3}, {"bounce": 3}, {"pierce": 3}, {"split": 3}, {"multi": 3},
@@ -36,7 +36,7 @@ func _run(pat: String, md: Dictionary, secs: float, ospd: float) -> Array:
 	var c = main.center()
 	var ld := Vector2.UP
 	main.picked = {"e": Elem.SOUL, "lv": 3}
-	main._place_tower(c + ld * 100.0, ld)
+	main.interaction_system._place_tower(c + ld * 100.0, ld)
 	var t = main.towers.get_child(0)
 	if pat != "shot":
 		t.set_pattern(pat)

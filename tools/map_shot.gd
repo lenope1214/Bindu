@@ -45,11 +45,11 @@ func _initialize():
 			main.help_label.visible = false
 			for i in 3:
 				main.picked = {"type": "elem", "e": Elem.ALL[i * 3], "lv": 1}
-				main._place_tower(main.core() + Vector2.from_angle(i * 2.0 + 0.4) * 170.0, Vector2.RIGHT)
+				main.interaction_system._place_tower(main.core() + Vector2.from_angle(i * 2.0 + 0.4) * 170.0, Vector2.RIGHT)
 			main.wave = 6
 			main.offer = [{"type": "elem", "e": Elem.ICE, "lv": 1}, {"type": "pat", "id": "lob"}, {"type": "mod", "id": "size"}]
 			main.phase = main.Phase.CHOOSE
-			main._show_offer()
+			main.cards_system._show_offer()
 			main.choice_box.get_parent().visible = true,
 		func(): pass,
 		func(): _snap("map_cards"),
@@ -57,9 +57,9 @@ func _initialize():
 			main.choice_box.get_parent().visible = false
 			Meta.map_id = "cross"
 			main.lanes.clear()
-			main._roll_lanes()
+			main.waves_system._roll_lanes()
 			main.phase = main.Phase.READY
-			main._update_preview()
+			main.waves_system._update_preview()
 			main.hud_system.hud_sig = "",
 		func():
 			var ch: Array = main.hud_chips.filter(func(c): return c[1] == "tag")
@@ -70,8 +70,8 @@ func _initialize():
 		func():
 			Meta.map_id = "storm"
 			main.lanes.clear()
-			main._roll_lanes()
-			main._update_preview()
+			main.waves_system._roll_lanes()
+			main.waves_system._update_preview()
 			main.hud_system.hud_sig = "",
 		func(): pass,
 		func(): _snap("map_storm"),

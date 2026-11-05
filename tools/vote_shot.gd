@@ -41,7 +41,7 @@ func _initialize():
 			main.run_log = [{"w": 0, "k": "card", "p": "elem:fire"}, {"w": 2, "k": "card", "p": "pat:spray"}, {"w": 4, "k": "card", "p": "mod:rapid"}, {"w": 5, "k": "perk", "p": "perk:power"}]
 			main.wave = 12
 			main.score = 34567
-			main._game_over(),
+			main.run_flow_system._game_over(),
 		func(): main.over_label.text = "피해 출처: 불 42%, 분사 30%, 속사 12%\n온라인 순위: 시즌 1 12위 (최고 점수 34,567)",
 		func(): _snap("vote_over"); main.menu_system._toggle_vote(true),
 		func(): main.vote_panel.take(FAKE); main.vote_panel._draw_list(),

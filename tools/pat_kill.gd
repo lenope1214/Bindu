@@ -32,7 +32,7 @@ func _initialize():
 				main.core_hp = 99999
 				var c0: Vector2 = main.center()
 				main.picked = {"e": e, "lv": 1}
-				main._place_tower(c0 + Vector2(-150, 0), Vector2.LEFT)
+				main.interaction_system._place_tower(c0 + Vector2(-150, 0), Vector2.LEFT)
 				var t = main.towers.get_child(0)
 				for i in plv:
 					t.set_pattern(p)

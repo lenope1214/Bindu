@@ -4,24 +4,38 @@ extends Node2D
 
 enum Phase { CHOOSE, PLACE, AIM, WAVE, GAMEOVER, MOVE, READY }
 
+var abilities_system: BinduAbilities
+var cards_system: BinduCards
 var hud_system: BinduHud
+var interaction_system: BinduInteraction
 var leaderboard_system: BinduLeaderboard
 var menu_system: BinduMenu
 var onboarding_system: BinduOnboarding
 var online_system: BinduOnline
 var patchlog_system: BinduPatchlog
+var perks_system: BinduPerks
+var persistence_system: BinduPersistence
 var progression_system: BinduProgression
+var run_flow_system: BinduRunFlow
 var ui_layout_system: BinduUiLayout
+var waves_system: BinduWaves
 
 func _init() -> void:
+	abilities_system = BinduAbilities.new(self)
+	cards_system = BinduCards.new(self)
 	hud_system = BinduHud.new(self)
+	interaction_system = BinduInteraction.new(self)
 	leaderboard_system = BinduLeaderboard.new(self)
 	menu_system = BinduMenu.new(self)
 	onboarding_system = BinduOnboarding.new(self)
 	online_system = BinduOnline.new(self)
 	patchlog_system = BinduPatchlog.new(self)
+	perks_system = BinduPerks.new(self)
+	persistence_system = BinduPersistence.new(self)
 	progression_system = BinduProgression.new(self)
+	run_flow_system = BinduRunFlow.new(self)
 	ui_layout_system = BinduUiLayout.new(self)
+	waves_system = BinduWaves.new(self)
 
 
 const CORE_RADIUS := 14.0
@@ -65,26 +79,9 @@ const CARD_DIM_A := 0.65  # 카드 선택 중 전장 위 검은 막 (카드·카
 const PLACE_OFF := Color(0.45, 0.45, 0.5, 0.4)  # 카드를 놓는 중 넣을 수 없는 오브젝트
 var card_dim: ColorRect
 var card_dock: CardDock
-var moving: Tower = null  # 위치를 옮기는 중인 오브젝트
-# 오브젝트를 꾹 누르거나 끌면 바로 옮긴다(카드를 고른 뒤에도). 선택된 오브젝트를 끌면 함께 움직인다.
-var press_t: Tower = null
-var press_pos := Vector2.ZERO
-var press_ms := 0
-var dragging := false
-var drag_group: Array = []  # 함께 끄는 오브젝트들
-var drag_origs: Array = []  # 끌기 전 위치
-var selected: Array = []  # 여러 개 선택 (빈 곳을 끌어 상자로, Shift/Ctrl+클릭으로 더하고 빼기)
-var boxing := false  # 선택 상자를 끄는 중
-var wheel_acc := 0.0  # 오브젝트 휠 돌리기: 트랙패드의 잘게 오는 휠을 한 칸이 될 때까지 모은다
-var aim_right := false  # 오브젝트를 우클릭한 채 끌어 방향을 정하는 중 (떼면 확정)
-var box_start := Vector2.ZERO
 var cards_hidden := false  # 선택지를 내려 필드를 보는 중
 var hide_btn: Button
 var card_detail_btn: Button  # 선택지 카드 [자세히] 켜기·끄기 (Meta.card_detail)
-var move_orig_pos := Vector2.ZERO
-var move_orig_dir := Vector2.RIGHT
-var move_cards_hidden := false
-var move_return := Phase.CHOOSE  # 옮기기를 끝내면 돌아갈 단계
 var auto_start := false  # 끄면 설치 후 Space로 웨이브 시작
 var auto_btn: Button
 var start_btn: Button
@@ -135,11 +132,6 @@ var particles: Array = []  # [위치, 속도, 남은 시간, 색, 크기]
 var camera: Camera2D
 var view_zoom := 1.0  # 전장 확대 배율 (두 손가락 벌리기·마우스 휠)
 var view_pan := Vector2.ZERO  # 확대한 화면 가운데가 전장 가운데에서 벗어난 만큼
-var touches := {}  # 터치 번호 → 화면 자리 (두 손가락 확대·이동)
-var pinch_d := 0.0  # 두 손가락 사이 거리 (확대 시작할 때)
-var pinch_z := 1.0
-var pinch_lock := false  # 두 손가락을 댄 뒤 모든 손가락을 뗄 때까지 누르기·끌기를 막는다 (확대하다 설치되지 않게)
-var mid_drag := false  # PC: 휠 누른 채 끌어 화면 이동
 var zoom_btn: Button
 var shake := 0.0
 var core_flash := 0.0
@@ -161,8 +153,6 @@ var info: Control  # 화면 위 아이콘 층: 진입 화살표 배지·고르�
 var tip_rects: Array = []  # 이번 프레임 말풍선 자리 [Rect2(UI 좌표), 줄들 [[글, 색]]]
 var _hint_kept := ""  # 낱말 붙임(_kr_keep)을 넣은 아래 안내 글
 var info_rects: Array = []  # 이번 프레임 info에 그린 배지 [이름, Rect2(UI 좌표)] (화면 배치 점검 tools/ui_check.gd)
-var info_mouse_capture := false
-var info_touch_capture := -1
 var tip_pin := -1  # 터치로 누른 말풍선 (tip_rects 번호)
 var wave_info: Array = []  # 다음 웨이브 자세한 안내 [[글, 색]] (배지에 올리면 보임)
 var wave_kinds: Array = []  # 다음 웨이브에 섞여 나오는 구체 [아이콘, 색, 처음 등장?]
@@ -184,7 +174,6 @@ const CHOICE_HEADER_GAP := 18.0
 const CARD_MAX_H := 250.0  # 선택지 카드 최대 높이 (넘으면 글자를 줄인다)
 var over_label: Label
 var over_card: Control  # 게임 오버 그림 카드 (over_data를 그림)
-var over_data := {}
 var legend: Label
 var bar_box: HBoxContainer  # 오른쪽 아래 버튼 줄
 var reroll_btn: Button
@@ -203,8 +192,6 @@ var fast_speed := 2.0  # Space로 켜는 배속
 var paused_label: Label
 var pause_box: HBoxContainer  # 일시정지 창 아래 버튼 (계속·시작 화면·끄기)
 var pause_dim: ColorRect
-var perk_press: Button = null  # 누르고 있는 특성 카드 (길게 누르기)
-var perk_peek: Button = null  # 길게 눌러 자세히를 띄운 특성 카드 (손을 떼도 고르지 않음)
 var legend_hidden := OS.has_feature("mobile")  # 폰·태블릿은 필드가 좁아 접어 두고 시작 (버튼으로 열면 저장)
 var bar_open := false  # 오른쪽 아래 설정 버튼(소리·자동 시작·일시정지·배속)을 펼쳤는지. 접으면 펼치기 버튼만 남는다
 var bar_btn: Button
@@ -217,13 +204,11 @@ var guide_lines: Array[String] = []
 var guide_more: Button
 var guide_t := 0.0  # 남은 시간. 음수면 웨이브가 시작될 때까지
 var wave_resist := -1  # 다음 웨이브 저항 속성 (-1: 없음)
-var aim_start_ms := 0
 const AIM_TOUCH_MIN := 30.0  # 터치 조준: 오브젝트에서 이만큼 떨어진 손가락만 방향으로 친다 (손가락이 오브젝트를 가려도 바깥으로 끌면 된다)
 const AIM_TOUCH_HINT := "쏠 쪽으로 누른 채 끌어 범위 보기, 떼면 그 방향 유지\n[확정] 또는 오브젝트 다시 누르기: 방향 확정"
 # 터치 조준: 누른 채 끌면 손가락을 따라 범위가 보이고, 떼면 그 방향을 붙잡아 둔 채 [확정]을 기다린다
 # (예전엔 누르는 순간 확정돼 어느 쪽으로 정해질지 미리 볼 수 없었다)
 var aim_d := Vector2.ZERO  # 붙잡아 둔 방향 (터치)
-var aim_hold := false  # 손가락을 대고 있는 중 (터치)
 var aim_wait := false  # 방향을 붙잡아 두고 [확정]을 기다리는 중 (터치)
 var restart_armed := 0.0  # 일시정지 중 R 두 번이면 처음부터
 var end_armed := 0.0  # 일시정지 중 판 끝내기 두 번이면 지금 점수로 게임 오버
@@ -281,13 +266,7 @@ var bank_perks := 0  # 미룬 특성 고르기
 var coin_next := ""  # 운명의 동전을 던진 뒤 다음 특성: "double"(앞면) | "reroll"(뒷면) | ""
 ## 동전 연출: 0 없음, 1 공중에서 회전(누르면 떨어짐, 1초 뒤 자동), 2 떨어지며 느려짐, 3 모서리로 서서 흔들림, 4 쓰러져 결과.
 ## 결과(coin_next)는 던질 때 정해지고 연출은 보여 주기만 한다. 실제 시간으로 흐름(배속 무관). 자동 점검(headless)은 건너뜀
-var coin_anim := DisplayServer.get_name() != "headless"
 var coin_stage := 0
-var coin_t := 0.0
-var coin_ang := 0.0  # 회전각. 가로 폭 = cos(각), 양수면 앞면이 보임
-var coin_ang0 := 0.0
-var coin_spin := 0.0  # 떨어지는 동안 더 돌 각도 (끝에서 모서리가 서게 맞춤)
-var coin_tap_t := 0  # 마지막으로 누른 때(ms), 터치가 마우스로도 와서 두 번 눌리지 않게
 var coin_fx: Control
 var rest_ready := false  # 이번 쉬는 시간의 다음 웨이브(방향·저항·보스)를 이미 뽑아 둠 (넘기다 쉬는 시간에 멈춘 때)
 var combo := 0
@@ -468,7 +447,7 @@ func boot() -> void:
 	Modes.set_on(Meta.modes if Meta.games > 0 else [])  # 모드도 첫 판 뒤에 열린다
 	if TutPlay.pending >= 0:
 		TutPlay.enter_meta()  # 플레이 튜토리얼: 평원·랭크·모드 없음 (저장할 때는 원래 값으로)
-	_apply_rules()
+	run_flow_system._apply_rules()
 	zones = _layer("Zones")
 	towers = _layer("Towers")
 	orbs = _layer("Orbs")
@@ -493,7 +472,7 @@ func boot() -> void:
 	hud_system._apply_ui_scale()
 	progression_system._ach_catch_up()
 	menu_system._apply_volume()
-	_update_speed_btn()
+	run_flow_system._update_speed_btn()
 	net = Net.new()
 	add_child(net)
 	vote_panel.net = net  # 투표 창은 _build_ui에서 net보다 먼저 만들어져 null을 받았다 ("서버에 연결하지 못했어요")
@@ -546,12 +525,12 @@ func boot() -> void:
 	elif mp_back:
 		_mp_back_lobby()
 	elif title_seen or DisplayServer.get_name() == "headless":
-		_start_choose()
-	elif _old_run_version() != "":
-		_end_old_run(_old_run_version())
+		run_flow_system._start_choose()
+	elif persistence_system._old_run_version() != "":
+		persistence_system._end_old_run(persistence_system._old_run_version())
 	else:
 		title_label.visible = true
-		_refresh_continue()
+		persistence_system._refresh_continue()
 		hint.text = ""
 		net.check()  # 시작 화면이 뜰 때마다 새 버전 확인 (처음 켤 때는 Net이 이미 묻는 중)
 		if TutPlay.then_play:
@@ -571,14 +550,14 @@ func _notification(what: int) -> void:
 		Input.parse_input_event(esc)
 	# 앱이 뒤로 가면 뗀 손가락 이벤트를 못 받을 수 있다: 두 손가락 확대 상태를 비운다
 	if what in [NOTIFICATION_APPLICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_WM_WINDOW_FOCUS_OUT]:
-		touches.clear()
-		pinch_lock = false
-		mid_drag = false
-		info_mouse_capture = false
-		info_touch_capture = -1
+		interaction_system.touches.clear()
+		interaction_system.pinch_lock = false
+		interaction_system.mid_drag = false
+		interaction_system.info_mouse_capture = false
+		interaction_system.info_touch_capture = -1
 	# 창을 닫거나 (모바일) 앱이 뒤로 가면 지금 쉬는 시간 상태를 한 번 더 저장 (옮긴 위치까지)
 	if (what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED) and towers and title_label:
-		_save_run()
+		persistence_system._save_run()
 
 
 func _layer(n: String) -> Node2D:
@@ -726,7 +705,7 @@ func _build_ui() -> void:
 	ver_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ver_label.add_theme_font_size_override("font_size", 12)
 	ver_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.45))
-	ver_label.text = _ver_text()
+	ver_label.text = run_flow_system._ver_text()
 	root.add_child(ver_label)
 
 	toast = Label.new()
@@ -865,12 +844,12 @@ func _build_ui() -> void:
 
 	reroll_btn = Button.new()
 	reroll_btn.text = "1"
-	_icon_btn(reroll_btn, func(): return ["reroll", Color(0.6, 0.85, 1.0)])
-	_keycap(reroll_btn, "Q")
+	cards_system._icon_btn(reroll_btn, func(): return ["reroll", Color(0.6, 0.85, 1.0)])
+	cards_system._keycap(reroll_btn, "Q")
 	reroll_btn.set_anchors_preset(Control.PRESET_CENTER)
 	reroll_btn.position = Vector2(-170, 105)
 	reroll_btn.size = Vector2(340, 36)
-	reroll_btn.pressed.connect(_on_reroll)
+	reroll_btn.pressed.connect(cards_system._on_reroll)
 	reroll_btn.visible = false
 	reroll_btn.z_index = 2  # 카드 선택 막(card_dim) 위
 	root.add_child(reroll_btn)
@@ -893,7 +872,7 @@ func _build_ui() -> void:
 		apply_btn.add_theme_color_override(fc, Color(0.12, 0.09, 0.02))
 	apply_btn.pressed.connect(func():
 		if tap_sel >= 0 and tap_sel < offer.size():
-			_on_pick(offer[tap_sel]))
+			cards_system._on_pick(offer[tap_sel]))
 	apply_btn.visible = false
 	apply_btn.z_index = 2  # 카드 선택 막(card_dim) 위
 	root.add_child(apply_btn)
@@ -901,16 +880,16 @@ func _build_ui() -> void:
 	skip_btn = Button.new()
 	skip_btn.set_anchors_preset(Control.PRESET_CENTER)
 	skip_btn.tooltip_text = "카드 선택을 미루고 웨이브를 연달아 진행합니다. 미룬 카드·새로고침·특성은 멈춘 뒤 한꺼번에 고릅니다\n중앙이 위험해지면(설정) 그 웨이브가 끝나고 멈춥니다"
-	skip_btn.pressed.connect(_on_skip)
-	_icon_btn(skip_btn, func(): return ["skip", Color(0.75, 0.9, 1.0)])
-	_keycap(skip_btn, "S")
+	skip_btn.pressed.connect(run_flow_system._on_skip)
+	cards_system._icon_btn(skip_btn, func(): return ["skip", Color(0.75, 0.9, 1.0)])
+	cards_system._keycap(skip_btn, "S")
 	skip_btn.visible = false
 	skip_btn.z_index = 2  # 카드 선택 막(card_dim) 위
 	root.add_child(skip_btn)
 	skip_n_btn = Button.new()
 	skip_n_btn.set_anchors_preset(Control.PRESET_CENTER)
 	skip_n_btn.tooltip_text = "넘길 웨이브 수 바꾸기 (1·3·5·10)"
-	skip_n_btn.pressed.connect(_cycle_skip_n)
+	skip_n_btn.pressed.connect(run_flow_system._cycle_skip_n)
 	skip_n_btn.visible = false
 	skip_n_btn.z_index = 2  # 카드 선택 막(card_dim) 위
 	root.add_child(skip_n_btn)
@@ -919,7 +898,7 @@ func _build_ui() -> void:
 	skip_badge.position = Vector2(-210, -146)  # 웨이브 시작 버튼 위
 	skip_badge.size = Vector2(420, 36)
 	skip_badge.add_theme_color_override("font_color", Color(0.75, 0.9, 1))
-	skip_badge.pressed.connect(_toggle_skip_stop)
+	skip_badge.pressed.connect(run_flow_system._toggle_skip_stop)
 	skip_badge.visible = false
 	root.add_child(skip_badge)
 
@@ -932,9 +911,9 @@ func _build_ui() -> void:
 	card_detail_btn.toggle_mode = true
 	card_detail_btn.button_pressed = Meta.card_detail
 	card_detail_btn.tooltip_text = "카드 설명 자세히 (Z): 켜면 설명 전체, 카드에 올리면(터치는 한 번 누르면) 위에 모든 내용"
-	card_detail_btn.toggled.connect(_set_card_detail)
-	_icon_btn(card_detail_btn, func(): return ["help", Color(1, 0.88, 0.5) if Meta.card_detail else Color(1, 1, 1, 0.7)])
-	_keycap(card_detail_btn, "Z")
+	card_detail_btn.toggled.connect(cards_system._set_card_detail)
+	cards_system._icon_btn(card_detail_btn, func(): return ["help", Color(1, 0.88, 0.5) if Meta.card_detail else Color(1, 1, 1, 0.7)])
+	cards_system._keycap(card_detail_btn, "Z")
 	card_detail_btn.visible = false
 	card_detail_btn.z_index = 2  # 카드 선택 막(card_dim) 위
 	root.add_child(card_detail_btn)
@@ -967,21 +946,21 @@ func _build_ui() -> void:
 	bar.add_child(fx_pick)
 	mute_btn = Button.new()
 	mute_btn.custom_minimum_size = Vector2(44, 36)
-	mute_btn.pressed.connect(_toggle_mute)
-	mute_btn.pressed.connect(_icon_toast.bind(mute_btn))
-	_icon_btn(mute_btn, func(): return ["mute" if sfx.muted else "sound", Color(1, 1, 1, 0.9)])
+	mute_btn.pressed.connect(cards_system._toggle_mute)
+	mute_btn.pressed.connect(cards_system._icon_toast.bind(mute_btn))
+	cards_system._icon_btn(mute_btn, func(): return ["mute" if sfx.muted else "sound", Color(1, 1, 1, 0.9)])
 	bar.add_child(mute_btn)
 	auto_btn = Button.new()
 	auto_btn.custom_minimum_size = Vector2(44, 36)
-	auto_btn.pressed.connect(_toggle_auto)
-	auto_btn.pressed.connect(_icon_toast.bind(auto_btn))
-	_icon_btn(auto_btn, func(): return ["auto", Color(0.5, 0.9, 0.6) if auto_start else Color(1, 1, 1, 0.35)])
+	auto_btn.pressed.connect(cards_system._toggle_auto)
+	auto_btn.pressed.connect(cards_system._icon_toast.bind(auto_btn))
+	cards_system._icon_btn(auto_btn, func(): return ["auto", Color(0.5, 0.9, 0.6) if auto_start else Color(1, 1, 1, 0.35)])
 	bar.add_child(auto_btn)
 	pause_btn = Button.new()
 	pause_btn.tooltip_text = "일시정지 (P)"
 	pause_btn.custom_minimum_size = Vector2(44, 36)
-	pause_btn.pressed.connect(_toggle_pause)
-	_icon_btn(pause_btn, func(): return ["pause", Color(1, 1, 1, 0.9)])
+	pause_btn.pressed.connect(run_flow_system._toggle_pause)
+	cards_system._icon_btn(pause_btn, func(): return ["pause", Color(1, 1, 1, 0.9)])
 	bar.add_child(pause_btn)
 	speed_group = HBoxContainer.new()
 	speed_group.name = "SpeedControls"
@@ -989,8 +968,8 @@ func _build_ui() -> void:
 	bar.add_child(speed_group)
 	speed_btn = Button.new()
 	speed_btn.custom_minimum_size = Vector2(72, 36)
-	speed_btn.pressed.connect(_toggle_speed)
-	_icon_btn(speed_btn, func(): return ["speed", Color(1, 0.85, 0.45) if game_speed > 1.0 else Color(1, 1, 1, 0.9)])
+	speed_btn.pressed.connect(run_flow_system._toggle_speed)
+	cards_system._icon_btn(speed_btn, func(): return ["speed", Color(1, 0.85, 0.45) if game_speed > 1.0 else Color(1, 1, 1, 0.9)])
 	speed_group.add_child(speed_btn)
 	speed_pick = OptionButton.new()
 	for sp in SPEEDS:
@@ -998,12 +977,12 @@ func _build_ui() -> void:
 	speed_pick.custom_minimum_size = Vector2(64, 36)
 	speed_pick.focus_mode = Control.FOCUS_NONE
 	speed_pick.tooltip_text = "빠르게 할 때 배속 (Space로 1배속과 오감)"
-	speed_pick.item_selected.connect(_on_speed_pick)
+	speed_pick.item_selected.connect(run_flow_system._on_speed_pick)
 	speed_group.add_child(speed_pick)
 	# 맨 오른쪽: 접으면 이것만 남고, 펼치면 왼쪽으로 버튼이 늘어선다
 	bar_btn = Button.new()
 	bar_btn.custom_minimum_size = Vector2(96, 36)
-	bar_btn.pressed.connect(_toggle_bar)
+	bar_btn.pressed.connect(cards_system._toggle_bar)
 	bar.add_child(bar_btn)
 	start_btn = Button.new()
 	start_btn.text = "웨이브 시작 (Space)"
@@ -1011,17 +990,17 @@ func _build_ui() -> void:
 	start_btn.position = Vector2(-110, -100)
 	start_btn.size = Vector2(220, 44)
 	start_btn.add_theme_font_size_override("font_size", 20)
-	start_btn.pressed.connect(_start_wave_from_ready)
+	start_btn.pressed.connect(cards_system._start_wave_from_ready)
 	start_btn.visible = false
 	root.add_child(start_btn)
-	_make_skill_btns(root)
+	abilities_system._make_skill_btns(root)
 	cancel_btn = Button.new()
 	cancel_btn.text = "취소 (Esc)" if OS.has_feature("pc") else "취소"
 	cancel_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	cancel_btn.position = Vector2(-70, -100)  # 웨이브 시작 버튼 자리 (옮기기·설치 중엔 비어 있다)
 	cancel_btn.size = Vector2(140, 40)
 	cancel_btn.add_theme_font_size_override("font_size", 18)
-	cancel_btn.pressed.connect(_cancel_step)
+	cancel_btn.pressed.connect(interaction_system._cancel_step)
 	cancel_btn.visible = false
 	root.add_child(cancel_btn)
 	aim_ok_btn = Button.new()
@@ -1033,7 +1012,7 @@ func _build_ui() -> void:
 	aim_ok_btn.focus_mode = Control.FOCUS_NONE
 	aim_ok_btn.pressed.connect(func():
 		if phase == Phase.AIM and aim_wait:
-			_confirm_aim())
+			interaction_system._confirm_aim())
 	aim_ok_btn.visible = false
 	root.add_child(aim_ok_btn)
 	for button: Button in [reroll_btn, skip_btn, skip_n_btn, hide_btn, card_detail_btn, start_btn, cancel_btn, aim_ok_btn]:
@@ -1062,7 +1041,7 @@ func _build_ui() -> void:
 	card_dock.inspector_header.move_child(detail_btn, 1)
 	for b in [pause_btn, speed_btn, reroll_btn, skip_btn, skip_n_btn, skip_badge, auto_btn, start_btn, mute_btn, cancel_btn, bar_btn]:
 		b.focus_mode = Control.FOCUS_NONE
-	_update_auto_btn()
+	cards_system._update_auto_btn()
 	mute_btn.tooltip_text = "소리: " + ("끔" if sfx.muted else "켬") + " (M)"
 
 	# 일시정지 중엔 뒤 화면(카드·설명·큰 글)을 어둡게 덮고 그 위에 글·버튼 (카드가 일시정지 버튼 위에 그려져 겹치던 것)
@@ -1084,7 +1063,7 @@ func _build_ui() -> void:
 	paused_label.add_theme_font_size_override("font_size", 20)
 	paused_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	paused_label.add_theme_constant_override("outline_size", 5)
-	paused_label.text = _pause_text()
+	paused_label.text = run_flow_system._pause_text()
 	var psb := StyleBoxFlat.new()
 	psb.bg_color = Color(0.03, 0.04, 0.06, 0.85)
 	psb.set_corner_radius_all(8)
@@ -1099,10 +1078,10 @@ func _build_ui() -> void:
 	pause_box.alignment = BoxContainer.ALIGNMENT_CENTER
 	pause_box.add_theme_constant_override("separation", 12)
 	# 글 대신 그림 버튼 (키 안내 글 두 줄을 없애고 키는 모서리에). 작은 버튼 셋은 그림만 (이름은 말풍선)
-	var pspecs := [["계속", _toggle_pause, "play", "P"], ["튜토리얼", onboarding_system._open_tut_list, "help", ""], ["처음부터", _pause_restart, "restart", "R"], ["판 끝내기", _end_run, "flag", "E"], ["시작 화면", _leave.bind(false), "home", "T"]]
+	var pspecs := [["계속", run_flow_system._toggle_pause, "play", "P"], ["튜토리얼", onboarding_system._open_tut_list, "help", ""], ["처음부터", run_flow_system._pause_restart, "restart", "R"], ["판 끝내기", run_flow_system._end_run, "flag", "E"], ["시작 화면", run_flow_system._leave.bind(false), "home", "T"]]
 	if OS.has_feature("pc"):
-		pspecs.append(["끄기", _leave.bind(true), "power", "X"])  # 모바일은 운영체제가 앱을 닫는다
-	pspecs += [["소리 (M)", _toggle_mute, "sound", "M", true], ["설정 (O)", menu_system._toggle_settings, "gear", "O", true]]
+		pspecs.append(["끄기", run_flow_system._leave.bind(true), "power", "X"])  # 모바일은 운영체제가 앱을 닫는다
+	pspecs += [["소리 (M)", cards_system._toggle_mute, "sound", "M", true], ["설정 (O)", menu_system._toggle_settings, "gear", "O", true]]
 	if OS.has_feature("pc"):
 		pspecs.append(["전체 화면 (F11)", menu_system._toggle_fullscreen, "full", "F11", true])
 	for spec in pspecs:
@@ -1113,11 +1092,11 @@ func _build_ui() -> void:
 		b.pressed.connect(spec[1])
 		if small:
 			b.tooltip_text = spec[0]
-			_icon_btn(b, func(): return [("mute" if sfx.muted else "sound") if spec[2] == "sound" else spec[2], Color(1, 1, 1, 0.85)])
-			b.pressed.connect(_icon_toast.bind(b))
+			cards_system._icon_btn(b, func(): return [("mute" if sfx.muted else "sound") if spec[2] == "sound" else spec[2], Color(1, 1, 1, 0.85)])
+			b.pressed.connect(cards_system._icon_toast.bind(b))
 		else:
-			_menu_glyph(b, spec[2], spec[0])
-		_keycap(b, spec[3])
+			cards_system._menu_glyph(b, spec[2], spec[0])
+		cards_system._keycap(b, spec[3])
 		pause_box.add_child(b)
 	pause_box.visible = false
 	root.add_child(pause_box)
@@ -1134,10 +1113,10 @@ func _build_ui() -> void:
 	coin_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	coin_fx.z_index = 15  # 카드 줄 버튼(넘기기·필드 보기) 위, 일시정지(20) 아래
 	coin_fx.visible = false
-	coin_fx.draw.connect(_draw_coin)
+	coin_fx.draw.connect(perks_system._draw_coin)
 	coin_fx.gui_input.connect(func(e: InputEvent):
 		if e is InputEventMouseButton and e.pressed or e is InputEventScreenTouch and e.pressed:
-			_coin_tap()
+			perks_system._coin_tap()
 			coin_fx.accept_event())
 	root.add_child(coin_fx)
 
@@ -1181,13 +1160,13 @@ func _build_ui() -> void:
 	vote_over_btn.tooltip_text = "이번 판에 쓴 카드 중 다음 패치에서 강해졌으면·약해졌으면·바뀌었으면 하는 것에 투표"
 	vote_over_btn.pressed.connect(func(): menu_system._toggle_vote(true))
 	vote_over_btn.visible = false
-	_icon_btn(vote_over_btn, func(): return ["vote", Color(1, 0.86, 0.35)])
+	cards_system._icon_btn(vote_over_btn, func(): return ["vote", Color(1, 0.86, 0.35)])
 	root.add_child(vote_over_btn)
 	# 게임 오버 그림 카드: 웨이브·점수 큰 칩, 처치·콤보·오브젝트 작은 칩, 새 업적 배지 (나머지 글은 아래 over_label)
 	over_card = Control.new()
 	over_card.set_anchors_preset(Control.PRESET_CENTER)
 	over_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	over_card.draw.connect(_draw_over_card)
+	over_card.draw.connect(run_flow_system._draw_over_card)
 	over_card.add_to_group("keycap")  # 터치·마우스가 바뀌면 나가는 법 줄을 다시
 	over_card.visible = false
 	root.add_child(over_card)
@@ -1216,7 +1195,7 @@ func _build_ui() -> void:
 	hsb.set_content_margin_all(18)
 	hsb.set_corner_radius_all(6)
 	help_scroll.add_theme_stylebox_override("panel", hsb)
-	help_label.text = patchlog_system._kr_keep(_help_text())
+	help_label.text = patchlog_system._kr_keep(run_flow_system._help_text())
 	help_label.visible = false
 	help_scroll.add_child(help_label)
 	root.add_child(help_scroll)
@@ -1318,89 +1297,6 @@ static func sturdy_share(w: int) -> float:
 
 
 ## 고른 규칙 버전을 적용한다 (시작 화면에서 바꿀 때, 새 판마다).
-func _apply_rules() -> void:
-	Patch.commit()  # 받아 둔 온라인 패치는 새 판을 시작할 때 적용
-	Rules.apply(Meta.rules)
-	Modes.apply_rules()
-	Vary.new_run(false)  # 판마다 다른 흐름: 일반 새 판에서만 켠다 (_on_rest_start), 이어하기는 저장에서
-	Tower.tax_step = Rules.tax_step
-	Tower.harmony_cap = _perk_val("harmony_cap")
-	if legend:
-		menu_system._refresh_legend()
-	if ver_label:
-		ver_label.text = _ver_text()
-	if help_label:
-		help_label.text = patchlog_system._kr_keep(_help_text())
-		help_touch = touch_ui
-
-
-## 도움말: 상한·장수는 고른 규칙 버전에 따라 다르다.
-func _help_text() -> String:
-	var elems := "속성 %d종까지, 레벨은 제한 없음" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "종류 제한 없음"
-	var mods := "강화는 종류마다 %d개, 한 오브젝트에 합쳐 %d개까지" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "강화는 제한 없이 쌓이지만 쌓을수록 효과가 절반씩"
-	var keys := [
-		"[조작]",
-		"1 / 2 / 3 또는 클릭: 카드 선택     Q: 선택지 새로고침     V: 선택지 내리고 필드 보기",
-		"S: 웨이브 넘기기 — 카드 선택을 미루고 웨이브 n개(1·3·5·10)를 연달아 진행, 멈추면 쌓인 특성·카드·새로고침을 한꺼번에 (넘기는 중 S: 멈추기)",
-		"속성 카드: 빈 곳에 설치(직선탄) → 클릭(또는 끌어서 놓기)으로 방향, Shift: 15도",
-		"속성 카드를 오브젝트 위에: 속성 겹치기 (%s)" % elems,
-		"공격방식·강화·연계 카드: 오브젝트 위에 놓기 (효과가 없는 강화는 못 넣음: 관통 연사·돌풍·철구에 관통·튕김, 벽에 유도, 벽·투척 장판에 분열)",
-		"오브젝트 끌기: 방향은 그대로 두고 옮기기 (카드를 고른 뒤에는 꾹 눌러서)",
-		"빈 곳 끌기 / Shift·Ctrl+클릭 / Ctrl+A(모두): 여러 개 선택 → 그중 하나를 끌면 함께 이동",
-		"오브젝트 클릭: 선택 · 쉬는 시간에 선택한 오브젝트를 한 번 더 클릭하거나 상세의 [방향 변경]: 방향 바꾸기 · 선택한 오브젝트 위에서 휠: 15도씩 돌리기(Shift: 5도) · 우클릭한 채 끌기: 바로 조준",
-		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 비율 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
-		"왼쪽 위 DPS 표: 웨이브 중엔 최근 5초 실시간 DPS, 쉬는 시간엔 지난 웨이브 DPS와 비율. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기 (저장됨)",
-		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
-		"F / V: 카드 패널 보기·접기   P / Esc: 일시정지(시작 화면으로·끄기)   M: 소리   O: 설정   H: 도움말   K: 도감(시작 화면)   F11: 전체 화면",
-		"R: 처음부터 (일시정지 중 두 번) · 게임 오버 뒤 클릭·R·Esc: 시작 화면 (멀티 판은 대기방)",
-		"E: 판 끝내기 (일시정지 중 두 번) — 지금 점수로 게임 오버, 기록·온라인 순위에 올라감",
-		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 이어하기(Enter)로 그 쉬는 시간부터 (새로 시작은 N 두 번)",
-		"첫 판은 카드가 단계별로 열려요 (공격방식 3·강화 4·연계 6웨이브)",
-		"처음 생기는 일엔 위쪽에 한 줄 안내 (설정에서 끄기·처음부터 다시 보기)",
-		"튜토리얼: 시작 화면 [튜토리얼]·일시정지에서 항목별로 다시 보기",
-		"도감(시작 화면)에서 ☆로 선호 표시: 그 카드·조합이 선택지에 나오면 반짝여요",
-	]
-	# 폰·태블릿: 키보드·마우스 안내 대신 버튼·누르기로
-	var touch := [
-		"[조작 · 터치]",
-		"카드 누르기: 카드 선택   [새로고침]: 선택지 바꾸기   [필드 보기]: 카드를 내리고 필드 보기",
-		"화면 아래 [전장 넓게] / [패널 보기]: 카드·설명 패널 접기·복구",
-		"[웨이브 n개 넘기기]: 카드 선택을 미루고 웨이브 n개(1·3·5·10)를 연달아 진행, 멈추면 쌓인 특성·카드·새로고침을 한꺼번에 (넘기는 중 아래 표시를 누르면 멈춤)",
-		"속성 카드: 빈 곳을 눌러 설치(직선탄) → 쏠 쪽을 누르거나 끌어서 놓아 방향",
-		"속성 카드를 오브젝트 위에: 속성 겹치기 (%s)" % elems,
-		"공격방식·강화·연계 카드: 오브젝트를 눌러 넣기 (효과가 없는 강화는 못 넣음: 관통 연사·돌풍·철구에 관통·튕김, 벽에 유도, 벽·투척 장판에 분열)",
-		"오브젝트 누르기: 선택 · 쉬는 시간에 선택한 오브젝트를 한 번 더 누르기: 쏠 방향 바꾸기   누른 채 끌기: 옮기기 (방향은 그대로)",
-		"[취소]: 한 단계 되돌리기   [범위 보기]: 모든 오브젝트의 공격 범위·피해 비율",
-		"왼쪽 위 DPS 표: 웨이브 중엔 최근 5초 실시간 DPS, 쉬는 시간엔 지난 웨이브 DPS와 비율. 제목을 누르면 접기·펴기 (저장됨)",
-		"오른쪽 아래 [◀ 설정]: 소리·자동 시작·일시정지(시작 화면으로·판 끝내기·처음부터)·배속(x2~x8)",
-		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 [이어하기]로 그 쉬는 시간부터",
-		"첫 판은 카드가 단계별로 열려요 (공격방식 3·강화 4·연계 6웨이브)",
-		"처음 생기는 일엔 위쪽에 한 줄 안내 (설정에서 끄기·처음부터 다시 보기)",
-		"튜토리얼: 시작 화면 [튜토리얼]·일시정지에서 항목별로 다시 보기",
-		"도감(시작 화면)에서 ☆로 선호 표시: 그 카드·조합이 선택지에 나오면 반짝여요",
-	]
-	return "\n".join((touch if touch_ui else keys) + [
-		"",
-		"[규칙 · %s]" % Rules.NAMES[Rules.version],
-		"중앙 체력 10. 구체가 닿으면 줄어듭니다",
-		"쉬는 시간마다 3개 중 1개를 고릅니다 (처음 두 번은 %d번)" % Rules.open_picks if Rules.picks == 1 else "쉬는 시간마다 3개 중 1개씩 %d번 고릅니다" % Rules.picks,
-		"5웨이브마다 보스. 처치하면 체력 +2, 새로고침 +1",
-		"콤보: 게임 시간 3초 안에 다음 구체를 잡으면 이어져요 (어느 오브젝트가 잡든, 배속과 상관없이). 쉬는 시간엔 멈춰서 다음 웨이브로 이어져요. 콤보마다 처치 점수 +10%, 콤보 20부터 x3. 오른쪽 위 상자에 배율과 남은 시간",
-		"보스 웨이브를 넘기면 특성(모든 오브젝트에 붙는 강화) 3개 중 1개 선택",
-		"공격방식은 직선탄일 때 한 번만 정할 수 있고, 같은 것을 넣으면 레벨업",
-		"속성을 많이 겹칠수록 피해는 늘고 공격 속도는 조금씩 느려집니다. 오브젝트가 많을수록 모든 오브젝트의 피해가 늘어요(오브젝트 수 보너스, 5개 +16%% · 10개 +23%%, 늘수록 덜 오름). %s" % mods,
-		"감속은 최대 70%, 밀기는 조금씩만. 기절·속박·얼림은 연달아 걸릴수록 짧아지다가 잠깐 면역",
-		"화면 밖 구체는 맞지 않습니다. 시작 화면에서 규칙(랭크·도파민 모드)%s과 맵%s을 바꿀 수 있어요" % (["", ""] if touch_ui else ["(↑/↓)", "(←/→)"]),
-		"모드(첫 판 뒤): 어렵게 하면 점수 배율이 오르고, 쉽게 하면 내려가요 (쉽게 모드 판은 기록 따로)",
-	])
-
-
-## 실행 중인 빌드가 최신인지 알아보도록 구석에 표시 (버전은 project.godot의 config/version).
-func _ver_text() -> String:
-	return "빈두 v%s · 규칙 %s" % [ProjectSettings.get_setting("application/config/version", "?"), Rules.NAMES[Meta.rules]]
-
-
-## 웨이브 구체 수: 기존 공식 3 + 2w. 150웨이브 이후에는 기존처럼 수를 고정하고 초과 몫은 체력으로 반영한다.
 static func wave_size(w: int) -> int:
 	return 3 + mini(w, int(Rules.t("orb_n_cap_w"))) * 2
 
@@ -1441,1085 +1337,6 @@ static func lanes_for(w: int) -> int:
 	return mini(mini(1 + w / 3, 4 + maxi(0, (w - 12) / 6)), 6)
 
 
-func _start_choose(new_round := true) -> void:
-	if new_round and wave == 0:
-		# 새 판. 헤드리스(봇·점검)는 늘 모두 열린 채로
-		tutor = Meta.tutor_next and DisplayServer.get_name() != "headless" and not TutPlay.on
-		tutor_given = {}
-		hud_system.start_modes()
-		Vary.new_run(mp_mode == "" and not tutor and not TutPlay.on)
-		if Vary.count() > 0:
-			hud_system._show_toast("봉인: " + Vary.sealed_text())
-			toast_timer = 5.0  # 카드 줄 위 봉인 칩에도 계속 보임 (_draw_seal_chip)
-		run_id = _new_run_id()
-		Ach.new_run()
-		legacy_grow = false
-		_skills_new_run(Meta.skill_set)
-		_ley_new_run()
-	if new_round and tutor and wave + 1 >= TUTOR_OPEN.values().max() and Meta.tutor_next:
-		Meta.tutor_next = false  # 모두 열렸다: 다음 판부터는 처음부터 모두
-		progression_system._save_best()
-	if new_round:
-		_new_rest()
-		_take_bank()
-	phase = Phase.CHOOSE  # 웨이브를 막 끝낸 때도 카드 안내가 쉬는 시간 안내로 뜨게 (_open_choose가 다시 정함)
-	_make_choices()
-	_open_choose()
-	_save_run()
-	if new_round:
-		onboarding_system._rest_guides()
-
-
-## 새 쉬는 시간: 다음 웨이브(방향·저항·보스)를 뽑고 고르기·새로고침 수를 정한다.
-func _new_rest() -> void:
-	hud_system._refresh_build()
-	if mp_seed != 0:
-		wrng.seed = hash([mp_seed, wave])  # 대결: 모두 같은 웨이브 (방향·저항·보스·구체)
-	if mp_ghost:
-		_mp_ghost_rest()  # 협동 참가자: 다음 웨이브는 호스트가 정한 것
-	else:
-		if wave > 0:
-			for msg in Vary.rest(wave):
-				hud_system._show_toast(msg)
-			if MapRule.is_map("spiral") and wave % 5 == 0:
-				hud_system._show_toast("회오리: 다음 웨이브부터 회전 방향이 반대로 바뀌어요")
-		_roll_lanes()
-		# 다음 웨이브 저항 속성: 12웨이브(버전 4는 8)부터 60% 확률
-		wave_resist = _wpick(Elem.ALL) if wave + 1 >= Rules.resist_from and wf() < 0.6 else -1
-		_plan_boss()
-	_mp_rest_begin()
-	picks_left = maxi(Rules.open_picks, Rules.picks) if wave <= 1 else Rules.picks  # 처음 두 번의 쉬는 시간은 2개씩, 그 뒤 1개 (모드 '두 장'이면 계속 2개)
-	if TutPlay.on and tplay != null and tplay.rest_picks(wave) >= 0:
-		picks_left = tplay.rest_picks(wave)  # 플레이 튜토리얼: 그 쉬는 시간의 카드 단계 수
-	rerolls_left = Modes.rerolls(1 + bonus_rerolls + perks.get("reroll", 0) * int(_perk_val("reroll")))
-	bonus_rerolls = 0
-
-
-# ---------- 웨이브 넘기기 ----------
-
-## 넘기기를 쓸 수 있나: 오브젝트가 있고, 첫 판이면 카드 종류가 다 열린 뒤.
-func _can_skip() -> bool:
-	if mp_mode != "":
-		return false  # 멀티플레이는 웨이브 넘기기 없음 (협동은 함께, 대결은 같은 웨이브 순서)
-	return towers.get_child_count() > 0 and not (tutor and wave + 1 < TUTOR_OPEN.values().max()) and skip_left == 0
-
-
-## 선택지(또는 특성) 화면에서 넘기기: 이번 쉬는 시간의 고르기를 쌓아 두고 웨이브를 시작한다.
-func _on_skip() -> void:
-	if phase not in [Phase.CHOOSE, Phase.READY] or not _can_skip() or title_label.visible or get_tree().paused:
-		return
-	if TutPlay.on and tplay != null and not tplay.allow_skip():
-		hud_system._show_toast("웨이브 넘기기는 튜토리얼 마지막 장에서 해 봐요")
-		return
-	if perk_mode:
-		perk_mode = false
-		bank_perks += 1
-		if not rest_ready:
-			_new_rest()  # 특성 뒤에 올 카드 고르기도 같이 쌓는다
-			_take_bank()
-	skip_total = int(Meta.skip_n)
-	skip_left = skip_total
-	skip_stop = false
-	_bank_rest()
-	hud_system._show_toast("웨이브 %d개 넘기기: 카드 선택은 멈춘 뒤 한꺼번에 (%s)" % [skip_total, "아래 표시를 누르면 멈춤" if touch_ui else "S: 멈추기"])
-
-
-## 이번 쉬는 시간의 남은 고르기·새로고침을 쌓고 바로 다음 웨이브로 (1초 뒤 시작).
-## picks_left에는 이미 쌓인 고르기(bank_picks)도 들어 있다.
-func _bank_rest() -> void:
-	for i in picks_left - bank_picks.size():
-		bank_picks.append(wave)
-	picks_left = 0
-	bank_rerolls += rerolls_left
-	rerolls_left = 0
-	offer.clear()
-	for c in choice_box.get_children():
-		c.queue_free()
-	rest_ready = false
-	cards_hidden = false
-	_enter_ready()
-	countdown = 1.0
-
-
-## 넘기는 중에 웨이브가 끝났다: 고르지 않고 다음 쉬는 시간을 쌓는다.
-func _skip_rest() -> void:
-	if wave % 5 == 0:
-		bank_perks += 1
-	wave_active = false
-	_clear_shots()  # 쉬는 시간처럼 남은 탄·장판을 지운다
-	_new_rest()
-	_take_bank()
-	_update_preview()
-	_bank_rest()
-
-
-## 쌓아 둔 고르기·새로고침을 이번 쉬는 시간에 더한다.
-func _take_bank() -> void:
-	picks_left += bank_picks.size()
-	rerolls_left += bank_rerolls
-	bank_rerolls = 0
-
-
-## 넘기기를 끝내고 쌓인 것을 연다: 특성부터 하나씩, 그다음 카드.
-## now_rest: 이번 쉬는 시간의 다음 웨이브를 이미 뽑아 둔 채(넘기기 대기 중) 멈췄나.
-func _end_skip(now_rest: bool) -> void:
-	if not now_rest and not skip_stop:
-		Ach.on_skip_done(skip_total)  # 멈추지 않고 끝까지 넘김
-	skip_left = 0
-	skip_stop = false
-	countdown = -1.0
-	start_btn.visible = false
-	if now_rest:
-		rest_ready = true
-		picks_left = 0
-		_take_bank()
-	if not now_rest and wave % 5 == 0:
-		_start_perk()  # 이번 쉬는 시간의 특성 (미룬 특성은 그 뒤에 이어서)
-	elif bank_perks > 0:
-		bank_perks -= 1
-		_start_perk()
-	else:
-		_start_choose(not now_rest)
-
-
-## 넘기는 중 멈추기: 웨이브 중이면 그 웨이브 뒤에, 다음 웨이브를 기다리는 중이면 바로.
-func _toggle_skip_stop() -> void:
-	if skip_left <= 0:
-		return
-	if phase == Phase.READY:
-		_end_skip(true)
-		return
-	skip_stop = not skip_stop
-	hud_system._show_toast("이번 웨이브가 끝나면 넘기기를 멈춰요" if skip_stop else "넘기기를 계속해요")
-
-
-func _cycle_skip_n() -> void:
-	var i := SKIP_NS.find(int(Meta.skip_n))
-	Meta.skip_n = SKIP_NS[(i + 1) % SKIP_NS.size()]
-	progression_system._save_best()
-
-
-## 넘기기 버튼·넘기는 중 표시 (매 프레임).
-func _update_skip_ui() -> void:
-	# 카드를 다 고른 뒤(웨이브 시작 대기)에도 [웨이브 시작] 옆에서 넘기기를 쓸 수 있다
-	var ready_skip := phase == Phase.READY and skip_left == 0
-	var show_btn := (phase == Phase.CHOOSE and not cards_hidden or ready_skip) and not title_label.visible and _can_skip() and not get_tree().paused and coin_stage == 0
-	skip_btn.visible = show_btn
-	skip_n_btn.visible = show_btn
-	# 글자를 키우면(폰 기본) 카드 아래 버튼 줄이 왼쪽 아래 안내 글까지 내려와 겹친다. 카드를 고르라는 글이라 겹칠 때만 숨긴다
-	hint.visible = not (show_btn and hint.get_global_rect().intersects(skip_btn.get_global_rect()))
-	if show_btn:
-		var n := int(Meta.skip_n)
-		var deferred := "특성 선택 1회 보류" if perk_mode else "카드 선택 %d회 보류 · 새로고침 %d회 보류" % [picks_left, rerolls_left]
-		skip_btn.tooltip_text = "%d웨이브 넘기기 (S)\n%s\n미룬 카드·새로고침·특성은 멈춘 뒤 한꺼번에 고릅니다. 중앙이 위험해지면(설정) 그 웨이브가 끝나고 멈춥니다" % [n, deferred]
-		skip_btn.text = "넘기기"
-		skip_n_btn.text = "%d웨이브 ▸" % n
-	skip_badge.visible = skip_left > 0 and phase in [Phase.WAVE, Phase.READY] and not title_label.visible
-	if skip_badge.visible:
-		var done := skip_total - skip_left + 1
-		var cards := bank_picks.size()
-		var extra := " · 특성 %d" % bank_perks if bank_perks > 0 else ""
-		if skip_stop:
-			skip_badge.text = ui_layout_system._kh("이번 웨이브 뒤 멈춤 · 쌓인 카드 %d%s (S: 계속)" % [cards, extra], true)
-		elif phase == Phase.READY:
-			skip_badge.text = ui_layout_system._kh("넘기는 중 %d/%d · 쌓인 카드 %d%s (S: 지금 멈추고 선택)" % [done, skip_total, cards, extra], true)
-		else:
-			skip_badge.text = ui_layout_system._kh("넘기는 중 %d/%d · 쌓인 카드 %d%s (S: 멈추기)" % [done, skip_total, cards, extra], true)
-
-
-## 선택지 화면을 연다 (offer는 이미 정해져 있음).
-func _open_choose() -> void:
-	phase = Phase.CHOOSE
-	wave_active = false
-	_clear_shots()
-	for t in towers.get_children():
-		t.queue_redraw()
-	_update_preview()
-	cards_hidden = false
-	choice_box.visible = true
-	_update_reroll_btn()
-	hint.text = ui_layout_system._th(_choose_hint())
-
-
-## 쉬는 시간이 되면 남은 탄·장판을 지운다.
-func _clear_shots() -> void:
-	for p in projectiles.get_children():
-		p.queue_free()
-	for z in zones.get_children():
-		z.queue_free()
-
-
-func _make_choices() -> void:
-	offer.clear()
-	var guard := 0
-	while offer.size() < 3 and guard < 50:
-		guard += 1
-		var card := _roll_card()
-		if card.is_empty():
-			break
-		if not _card_enabled(card):
-			continue
-		# 넣을 곳이 없는 공격방식·강화 카드는 내지 않는다
-		if card["type"] in ["pat", "mod", "trig"] and not _my_towers().any(func(t): return t.can_take(card)):
-			continue
-		if _star_blocked(card):  # 별·행성이 다 찼고 레벨업할 별도 없으면 별 카드는 내지 않는다
-			continue
-		# 같은 속성은 레벨만 다르게 두 장 나오지 않게: 높은 레벨 한 장만 남긴다
-		var same := offer.filter(func(cd): return _card_key(cd) == _card_key(card))
-		if same.is_empty():
-			offer.append(card)
-		elif card.get("lv", 1) > same[0].get("lv", 1):
-			offer[offer.find(same[0])] = card
-	# 속성 카드(새 오브젝트를 놓을 수 있는 카드)는 최소 1장
-	if not offer.any(func(cd): return cd["type"] == "elem"):
-		var pool: Array = Vary.open("elem", Elem.ALL).filter(func(e): return _card_enabled({"type": "elem", "e": e}) and not _star_blocked({"type": "elem", "e": e}))
-		if not pool.is_empty():
-			var fallback := {"type": "elem", "e": MapRule.pick("elem", pool), "lv": 1}
-			if offer.is_empty():
-				offer.append(fallback)
-			else:
-				offer[randi() % offer.size()] = fallback
-	if tutor:
-		_tutor_offer()
-	if TutPlay.on and tplay != null:
-		offer = tplay.offer(offer)  # 연습 판: 이번 단계 카드 + 흐린 카드 두 장
-	_show_offer()
-	onboarding_system._card_guides()
-
-
-## 카드 줄 위 봉인 칩 (봉인 모드): 봉인된 속성(그림 + 이름)·공격방식(그림 + 이름)·연계 이름. cx 가운데, bottom 칩 아래 끝.
-func _draw_seal_chip(ci: CanvasItem, cx: float, bottom: float) -> Rect2:
-	var fs := 14
-	var items: Array = []  # [그리기 종류, id, 글, 색]
-	for e in Vary.sealed["elem"]:
-		items.append(["e", e, Elem.NAMES[e], Elem.COLORS[e]])
-	for p in Vary.sealed["pat"]:
-		items.append(["p", p, Pat.pname(p), Pat.pcolor(p).lightened(0.15)])
-	for l in Vary.sealed["link"]:
-		items.append(["l", l, Pat.LINKS[l]["name"], Color(0.55, 0.9, 1.0)])
-	var head := "봉인"
-	var hw := ui_font.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var widths: Array = []
-	var w := 12.0 + hw + 10.0
-	for it in items:
-		var iw: float = (0.0 if it[0] == "l" else 18.0) + ui_font.get_string_size(it[2], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		widths.append(iw)
-		w += iw + 10.0
-	w += 2.0
-	var r := Rect2(cx - w / 2.0, bottom - 26.0, w, 26.0)
-	r.position.x = clampf(r.position.x, 8.0, maxf(8.0, info.size.x - w - 8.0))
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.06, 0.06, 0.12, 0.97)
-	sb.border_color = Color(0.7, 0.7, 1.0, 0.7)
-	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(6)
-	ci.draw_style_box(sb, r)
-	var cy := r.position.y + 13.0
-	var x := r.position.x + 12.0
-	ci.draw_string(ui_font, Vector2(x, cy + fs * 0.36), head, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(0.8, 0.8, 1.0))
-	x += hw + 10.0
-	for i in items.size():
-		var it: Array = items[i]
-		var col: Color = it[3]
-		if it[0] == "e":
-			Glyph.elem(ci, it[1], Vector2(x + 7.0, cy), 7.0)
-		elif it[0] == "p":
-			Glyph.pat(ci, it[1], Vector2(x + 7.0, cy), 7.0, col)
-		var tx := x + (0.0 if it[0] == "l" else 18.0)
-		ci.draw_string(ui_font, Vector2(tx, cy + fs * 0.36), it[2], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
-		# 봉인: 이름 위에 가로줄
-		var tw: float = ui_font.get_string_size(it[2], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		ci.draw_line(Vector2(tx - 1.0, cy), Vector2(tx + tw + 1.0, cy), Color(col, 0.7), 1.5)
-		x += widths[i] + 10.0
-	return r
-
-
-## 첫 판: 이번 웨이브에 새로 열린 카드 종류를 처음 한 번은 선택지에 꼭 넣는다 (속성 카드 하나는 남김).
-func _tutor_offer() -> void:
-	for k in ["pat", "mod", "trig", "link"]:
-		if wave + 1 < TUTOR_OPEN[k] or tutor_given.has(k):
-			continue
-		if not offer.any(func(cd): return cd["type"] == k):
-			var cd := _tutor_card(k)
-			if cd.is_empty():
-				continue
-			var elems := offer.filter(func(c): return c["type"] == "elem").size()
-			for i in range(offer.size() - 1, -1, -1):
-				if offer[i]["type"] != "elem" or elems > 1:
-					offer[i] = cd
-					break
-		tutor_given[k] = true
-
-
-## 넣을 곳이 있는 그 종류 카드 한 장 (없으면 빈 사전).
-func _tutor_card(k: String) -> Dictionary:
-	var ids: Array = []
-	match k:
-		"pat": ids = Pat.PATTERN_IDS.slice(1)
-		"mod": ids = Pat.MOD_IDS.duplicate()
-		"link": ids = ["pincer"] if towers.get_child_count() >= 2 else ["reso"]
-		"trig": ids = Pat.TRIG_IDS.duplicate()
-	ids.shuffle()
-	for id in ids:
-		var cd := {"type": k, "id": id}
-		if _card_enabled(cd) and (k == "link" or towers.get_children().any(func(t): return t.can_take(cd))):
-			return cd
-	return {}
-
-
-## 첫 판에는 아직 안 열린 카드 종류.
-func _card_open(k: String) -> bool:
-	return not tutor or wave + 1 >= TUTOR_OPEN[k]
-
-
-## 카드 [자세히] 켜기·끄기: 지금 선택지를 같은 카드로 다시 그린다 (새로 뽑지 않음).
-func _set_card_detail(on: bool) -> void:
-	Meta.card_detail = on
-	card_detail_btn.set_pressed_no_signal(on)
-	progression_system._save_best()
-	if phase == Phase.CHOOSE and not perk_mode and not offer.is_empty():
-		var sel := tap_sel
-		_show_offer()
-		tap_sel = sel
-		_tap_hover.call_deferred()
-
-
-## 선택지 카드 버튼을 offer대로 다시 만든다.
-func _show_offer() -> void:
-	var last_preview := card_dock.preview_card() if card_dock != null else {}
-	var retained: Button = null
-	tap_sel = -1
-	for c in choice_box.get_children():
-		c.queue_free()
-	for i in offer.size():
-		var button := _card_button(offer[i], i + 1)
-		choice_box.add_child(button)
-		if offer[i] == last_preview:
-			retained = button
-	if card_dock != null:
-		card_dock.hovered = retained
-
-
-## 같은 선택지인지 비교하는 키 (레벨은 무시).
-func _card_key(card: Dictionary) -> String:
-	return "%s:%s" % [card["type"], card.get("e", card.get("id", ""))]
-
-
-## 온라인 패치의 카드 사용 여부. 미지정 카드는 기존처럼 사용한다.
-func _card_enabled(card: Dictionary) -> bool:
-	var kind := str(card.get("type", ""))
-	var id := str(card.get("id", ""))
-	if kind == "elem":
-		var e := int(card.get("e", -1))
-		if e < 0 or e >= Patch.ELEM_KEYS.size():
-			return false
-		id = Patch.ELEM_KEYS[e]
-	return Patch.num("card_enabled", "%s.%s" % [kind, id], 1.0) >= 0.5
-
-
-## 선택지 한 장: 속성 / 공격방식 / 강화 / 연계 중 하나.
-func _roll_card() -> Dictionary:
-	var ts := _my_towers()
-	var n := ts.size()
-	var elems: Array = Vary.open("elem", Elem.ALL).filter(func(e): return _card_enabled({"type": "elem", "e": e}))
-	if elems.is_empty():
-		return {}
-	var patterns: Array = Vary.open("pat", Pat.PATTERN_IDS.slice(1)).filter(func(id):
-		var cd := {"type": "pat", "id": id}
-		return _card_enabled(cd) and ts.any(func(t): return t.can_take(cd)))
-	var mods: Array = Pat.MOD_IDS.filter(func(id):
-		var cd := {"type": "mod", "id": id}
-		return _card_enabled(cd) and ts.any(func(t): return t.can_take(cd)))
-	var trigs: Array = Pat.TRIG_IDS.filter(func(id):
-		var cd := {"type": "trig", "id": id}
-		return _card_enabled(cd) and ts.any(func(t): return t.can_take(cd)))
-	var links: Array = (Pat.LINK_IDS if n >= 2 else ["reso"]).filter(func(id):
-		return _card_enabled({"type": "link", "id": id}) and not Vary.is_sealed("link", id))
-	# 비활성 카드와 현재 넣을 수 없는 카드는 확률 풀에서 빼고 남은 종류끼리 비율을 다시 맞춘다.
-	var we := Patch.num("cards", "elem", 0.42)
-	var wp := Patch.num("cards", "pat", 0.25) if _card_open("pat") and not patterns.is_empty() else 0.0
-	var wm := Patch.num("cards", "mod", 0.23) if _card_open("mod") and not mods.is_empty() else 0.0
-	var wt := Patch.num("cards", "trig", 0.12) if _card_open("trig") and not trigs.is_empty() else 0.0
-	var wl := Patch.num("cards", "link", 0.10) if _card_open("link") and not links.is_empty() else 0.0
-	var total := we + wp + wm + wt + wl
-	if n == 0 or wave == 0 or total <= 0.0:
-		return {"type": "elem", "e": MapRule.pick("elem", elems), "lv": 2 if randf() < _lv2_chance() else 1}
-	var r := randf() * total
-	if r < we:
-		return {"type": "elem", "e": MapRule.pick("elem", elems), "lv": 2 if randf() < _lv2_chance() else 1}
-	r -= we
-	if r < wp:
-		return {"type": "pat", "id": MapRule.pick("pat", patterns)}
-	r -= wp
-	if r < wm:
-		return {"type": "mod", "id": MapRule.pick("mod", mods)}
-	r -= wm
-	if r < wt:
-		return {"type": "trig", "id": trigs.pick_random()}
-	return {"type": "link", "id": MapRule.pick("link", links)}
-
-
-func _card_color(card: Dictionary) -> Color:
-	match card["type"]:
-		"elem": return Elem.COLORS[card["e"]]
-		"pat": return Pat.pcolor(card["id"]).lightened(0.15)
-		"mod": return Color(1, 0.82, 0.4)
-		"trig": return Pat.TRIG_COLOR
-	return Color(0.55, 0.9, 1.0)
-
-
-func _card_button(card: Dictionary, idx: int) -> Button:
-	var col := _card_color(card)
-	var b := Button.new()
-	b.custom_minimum_size = Vector2(230 if offer.size() <= 3 else 166, 170)
-	var sb := CardDock.surface()
-	sb.border_color = Color(col, 0.6)
-	var sbh := sb.duplicate()
-	sbh.bg_color = Color("223149")
-	b.add_theme_stylebox_override("normal", sb)
-	b.add_theme_stylebox_override("hover", sbh)
-	b.add_theme_stylebox_override("pressed", sbh)
-	# 카드는 글 대신 그림 머리(종류 그림·이름·Lv 배지·번호 키)와 줄(앞에 그림)로 그린다 (_card_paint).
-	# 설명은 세 단계: 기본은 간소화, [자세히]를 켜면 조금 더, 자세히 + 올리기(터치는 한 번 누르기)면 카드 위 창에 전부 (_draw_card_full)
-	var cc := _card_content(card, 1 if Meta.card_detail else 0)
-	var head: Dictionary = cc["head"]
-	head["idx"] = idx
-	var rows: Array = cc["rows"]
-	var foot: Array = cc["foot"]
-	b.set_meta("full", _card_full(card))
-	b.set_meta("summary", _card_content(card, 0)["rows"])
-	card_dock.watch(b, card)
-	var fit := hud_system.core_fit(card)
-	if fit != "":
-		rows.append({"t": "◎ 주력 %s 강화" % fit, "fs": 12, "c": BUILD_COLOR})
-	if MapRule.card_aff(card):
-		var dmg_up: bool = card["type"] in ["elem", "pat"]
-		rows.append({"t": "◆ %s 친화%s" % [Meta.MAPS[Meta.map_id]["name"], " · 피해 +%d%%" % roundi(Rules.t("map_aff_dmg") * 100) if dmg_up else ""], "fs": 12, "c": MAP_AFF_COLOR})
-
-	_card_paint(b, head, rows, foot, col, 14, offer.size())
-	b.focus_mode = Control.FOCUS_NONE  # 다른 버튼처럼: Space·Enter가 카드를 고르지 않게
-	b.add_theme_color_override("font_color", col)
-	b.add_theme_color_override("font_hover_color", col.lightened(0.3))
-	b.pressed.connect(_on_card_tap.bind(card, idx - 1))
-	_mark_fav(b, sb, sbh, _fav_tag(card))
-	if card["type"] == "elem":
-		# 터치는 누르는 순간 마우스가 들어와 미리보기가 보이기도 전에 골라졌다: 터치는 한 번 누르기(_on_card_tap)로 미리보기
-		b.mouse_entered.connect(func():
-			if not touch_ui: hover_elem = card["e"])
-		b.mouse_exited.connect(func():
-			if not touch_ui: hover_elem = -1)
-	return b
-
-
-## 카드 앞면 내용 {head, rows, foot, tip}. lvl 0 = 기본 주효과, 1 = 자세히(전체 설명).
-func _card_content(card: Dictionary, lvl: int) -> Dictionary:
-	var head := {"kind": card["type"], "name": ""}
-	var rows: Array = []
-	var foot: Array = []
-	var tip := ""
-	var dim := Color(1, 1, 1, 0.55)
-	match card["type"]:
-		"elem":
-			var e: int = card["e"]
-			head["name"] = Elem.NAMES[e]
-			head["e"] = e
-			if card["lv"] == 2:
-				head["lv"] = "Lv2"
-			rows = [{"i": "rider", "t": "효과 · " + Elem.rider(e), "al": 0}, {"i": "trait", "t": "특징 · " + Elem.TRAIT[e], "al": 0}]
-			foot = [["place_new", "새 오브젝트"], ["place_on", "겹치기" + (" %d종" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "")]]
-			var cf := _combo_parts(e)
-			if not cf["els"].is_empty():
-				rows.append({"els": cf["els"]})
-				tip = "생길 조합: " + ", ".join(cf["names"])
-			if cf["ups"] > 0:
-				rows.append({"chip": "Lv↑ %d곳" % cf["ups"], "i": "place_on"})
-		"pat":
-			var id: String = card["id"]
-			head["pat"] = id
-			head["name"] = Pat.pname(id)
-			rows = [{"t": Pat.PATTERNS[id]["desc"]}]
-			foot = [["place_on", "직선탄에: 고정 · 같은 것에: Lv+"]]
-			var fit := ""
-			for t in towers.get_children():
-				if t.pattern == id:
-					fit = "Lv%d → Lv%d" % [t.plv, t.plv + 1]
-					break
-			if fit != "":
-				rows.append({"chip": fit, "i": "place_on"})
-			elif not towers.get_children().any(func(t): return t.pattern == Pat.DEFAULT):
-				rows.append({"t": "넣을 수 있는 오브젝트 없음", "fs": 12, "c": Color(1, 0.6, 0.55)})
-		"mod":
-			var id: String = card["id"]
-			head["name"] = Pat.MODS[id]["name"]
-			rows = [{"t": "사거리 안 가까운 구체를 전방위로 조준해요. 최종 피해 -10% · 오브젝트당 1회" if id == "reflex" else Pat.mdesc(id)}]
-			foot = [["place_on", "오브젝트당 1회" if id == "reflex" else "위에 놓기 · " + ("종류별 %d · 합 %d" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "쌓을수록 절반")]]
-		"link":
-			var id: String = card["id"]
-			head["name"] = Pat.LINKS[id]["name"]
-			rows = [{"t": Pat.ldesc(id)}]
-			foot = [["place_on", "오브젝트 위에 놓기"]]
-		"trig":
-			var id: String = card["id"]
-			head["name"] = Pat.TRIGS[id]["name"]
-			rows = [{"t": Pat.tdesc(id)}]
-			foot = [["place_on", "위에 놓기 · 종류별 5개"]]
-	if lvl == 0:
-		rows = _card_simple(card, rows)
-		for f in foot:
-			f[1] = _short(f[1]).get_slice(" · ", 0)
-	return {"head": head, "rows": rows, "foot": foot, "tip": tip}
-
-
-## 기본 카드에는 효과를 설명하는 문장을 남긴다. 모든 웨이브에서 같은 내용이며 자세히는 보존한다.
-func _card_simple(card: Dictionary, rows: Array) -> Array:
-	var out: Array = []
-	if card["type"] == "elem":
-		out.append({"t": Elem.BRIEF[card["e"]]})
-		for r in rows:
-			if r.has("els") or r.has("chip"):
-				out.append(r)
-		return out
-	if card["type"] == "cata":
-		return rows  # 다시 뽑는 대상·레벨 유지·즉시 발동 조건을 생략하지 않는다.
-	var first := true
-	for r in rows:
-		if not r.has("t"):
-			out.append(r)
-		elif r.has("fs"):
-			if r.get("c", Color.WHITE) != Color(1, 1, 1, 0.55):
-				out.append(r)  # 넣을 수 없는 대상 경고는 남긴다.
-		elif first:
-			out.append({"t": Pat.brief(card["type"], card["id"], r["t"])})
-			first = false
-	return out
-
-
-## 괄호 속 덧붙임을 뺀 짧은 글.
-func _short(t: String) -> String:
-	return short_re.sub(t, "", true).strip_edges()
-
-
-## 자세히 + 올리기 창의 줄 [[글, 색]]: 앞면에 줄인 것까지 전부.
-func _card_full(card: Dictionary) -> Array:
-	var W := Color(1, 1, 1, 0.9)
-	var D := Color(1, 1, 1, 0.6)
-	var out: Array = []
-	match card["type"]:
-		"elem":
-			var e: int = card["e"]
-			out.append(["효과 (맞힌 구체에) · " + Elem.rider(e), Elem.COLORS[e].lightened(0.3)])
-			out.append(["특징 (이 오브젝트의 효과를 다른 구체로) · " + Elem.TRAIT[e], W])
-			var seen := {}
-			for t in towers.get_children():
-				if not t.can_take({"type": "elem", "e": e}):
-					continue
-				for r in Elem.new_reactions(t.elements, e):
-					if seen.has(r["id"]):
-						continue
-					seen[r["id"]] = true
-					var o: int = r["b"] if r["a"] == e else r["a"]
-					out.append(["조합 %s (+%s) · %s" % [r["name"], Elem.NAMES[o], r["desc"]], r["color"]])
-					if r.get("aff_txt", "") != "":
-						out.append([r["aff_txt"], AFF_COL[r["aff"]]])
-			var ups: int = _combo_parts(e)["ups"]
-			if ups > 0:
-				out.append(["%s 레벨업 가능 %d곳" % [Elem.NAMES[e], ups], D])
-			out.append(["새 오브젝트로 놓거나 오브젝트 위에 겹치기" + (" (%d종까지)" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else " (종류마다 공격 속도 -%d%%)" % roundi(Rules.tax_step * 100)), D])
-		"pat":
-			var id: String = card["id"]
-			out.append([Pat.PATTERNS[id]["desc"], W])
-			var no := Pat.no_mods(id)
-			if not no.is_empty():
-				out.append(["못 넣는 강화(효과 없음): " + "·".join(no), D])
-			for t in towers.get_children():
-				if t.pattern == id:
-					out.append(["%s Lv%d → Lv%d 가능" % [Pat.pname(id), t.plv, t.plv + 1], D])
-			out.append(["직선탄 오브젝트에 넣으면 그 공격방식으로 고정돼요. 같은 공격방식에 넣으면 레벨업해요.", D])
-		"mod":
-			if card["id"] == "reflex":
-				out.append(["전방위로 자동 조준해요. 최종 피해 -10%", W])
-				out.append(["사거리 안 최근접 구체 · 오브젝트당 1회", D])
-				out.append(["혼불·블랙홀에는 넣을 수 없어요.", D])
-				return out
-			out.append([Pat.mdesc(card["id"]), W])
-			out.append(["오브젝트 위에 놓기 · " + ("종류별 %d개, 합쳐 %d개까지" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "쌓을수록 효과 절반씩"), D])
-		"link":
-			out.append([Pat.ldesc(card["id"]), W])
-			out.append(["오브젝트 위에 놓기", D])
-		"trig":
-			out.append([Pat.tdesc(card["id"]), W])
-			out.append(["오브젝트 위에 놓기 · 종류별 5개까지", D])
-	return out
-
-
-## [자세히]를 켠 채 카드에 올리면(터치는 한 번 눌러 미리보기) 카드 위에 모든 내용 창.
-func _draw_card_full() -> void:
-	if card_dock != null and card_dock.active():
-		return
-	if not Meta.card_detail or phase != Phase.CHOOSE or perk_mode or cards_hidden or not choice_box.visible or get_tree().paused:
-		return
-	var cs := choice_box.get_children()
-	var hit: Button = null
-	for i in cs.size():
-		var b := cs[i] as Button
-		if b == null or b.is_queued_for_deletion() or not b.has_meta("full"):
-			continue
-		if (touch_ui and i == tap_sel) or (not touch_ui and b.is_hovered()):
-			hit = b
-	if hit == null or (hit.get_meta("full") as Array).is_empty():
-		return
-	var inv := ui_root.get_global_transform().affine_inverse()
-	var cr: Rect2 = inv * hit.get_global_rect()
-	var row: Rect2 = inv * choice_box.get_global_rect()
-	var top_lim := (hud.position.y + hud.size.y + 6.0) if hud.visible else 8.0
-	var bot_lim := info.size.y - 8.0
-	var side_room := info.size.x - row.end.x - 20.0
-	var beside_guide := guide_label.visible and side_room >= 260.0
-	var w := minf(420.0, side_room) if beside_guide else 420.0
-	var fs := 14
-	var rows: Array = []
-	var lh := 0.0
-	var h := 0.0
-	# 화면 높이에 안 들어가면 글자를 한 단계씩 줄인다 (최소 12)
-	while true:
-		rows.clear()
-		for l in hit.get_meta("full"):
-			for t in onboarding_system._wrap_words(patchlog_system._kr_keep(l[0]), w - 20.0, fs).split("\n"):
-				rows.append([t, l[1]])
-		lh = fs + 6.0
-		h = rows.size() * lh + 14.0
-		if h <= bot_lim - top_lim or fs <= 12:
-			break
-		fs -= 1
-	var x := clampf(cr.get_center().x - w / 2.0, 8.0, info.size.x - w - 8.0)
-	var y := row.position.y - h - (44.0 if touch_ui else 30.0)  # 카드 줄 위 (고르기 꼬리표·[적용] 위)
-	if beside_guide:
-		x = row.end.x + 12.0
-		y = clampf(row.position.y, top_lim, bot_lim - h)
-	elif y < top_lim:
-		y = clampf(row.end.y + 50.0, top_lim, bot_lim - h)  # 위에 자리가 없으면 아래 버튼 줄 밑, 화면 안으로
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.04, 0.05, 0.08, 0.96)
-	sb.border_color = Color(1, 0.85, 0.5, 0.5)
-	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(6)
-	info.draw_style_box(sb, Rect2(x, y, w, h))
-	# 어느 카드의 내용인지: 카드 쪽으로 작은 꼭지
-	var tipx := clampf(cr.get_center().x, x + 12.0, x + w - 12.0)
-	if y < row.position.y:
-		info.draw_colored_polygon(PackedVector2Array([Vector2(tipx - 7, y + h), Vector2(tipx + 7, y + h), Vector2(tipx, y + h + 7)]), sb.bg_color)
-	for i in rows.size():
-		info.draw_string(ui_font, Vector2(x + 10.0, y + 7.0 + fs + i * lh), rows[i][0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, rows[i][1])
-
-
-## 그림 카드: 머리(종류 그림·이름·Lv 배지, 번호는 오른쪽 위 작은 키)와 줄들을 직접 그린다 (버튼 글은 비움).
-## head: kind·name·idx, 있으면 e(속성 그림)·pat(공격방식 그림)·lv·badge. rows: 줄마다 하나
-##   {t: 글, i: 앞 그림(Glyph.ui id), fs, c, al(0 왼쪽 · 기본 가운데)} · {els: [짝 속성]} · {chip: 글, i} · {big: 글, i} · {pips: 보유 수}
-## 높이는 내용에 맞춰 170~CARD_MAX_H, 넘치면 글자를 줄인다(최소 12).
-func _card_paint(b: Button, head: Dictionary, rows: Array, foot: Array, col: Color, base_fs := 14, count := 3) -> void:
-	b.text = ""
-	var cw := 230.0 if count <= 3 else 166.0  # 4장일 때는 좁게
-	var fs := base_fs
-	var lay: Array = []
-	var h := 0.0
-	var pad := 54.0 + (24.0 if not foot.is_empty() else 8.0)
-	while true:
-		lay.clear()
-		h = 0.0
-		for r: Dictionary in rows:
-			var f: int = mini(r.get("fs", fs), fs)
-			var lh := 0.0
-			var t := ""
-			if r.has("els"):
-				lh = 24.0
-			elif r.has("chip"):
-				lh = 28.0
-			elif r.has("big"):
-				lh = 44.0
-			elif r.has("pips"):
-				lh = 20.0
-			elif r.has("pair"):
-				lh = 28.0
-			else:
-				var w := cw - 24.0 - (20.0 if r.has("i") else 0.0)
-				t = onboarding_system._wrap_words(patchlog_system._kr_keep(r["t"]), w, f)
-				lh = ui_font.get_multiline_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, w, f).y + 4.0
-			lay.append([r, t, f, lh])
-			h += lh
-		if h + pad <= CARD_MAX_H or fs <= 12:
-			break
-		fs -= 1
-	b.custom_minimum_size = card_dock.card_size()
-	b.clip_contents = true
-	b.set_meta("card", [head, lay, h, not foot.is_empty()])
-	b.set_meta("card_foot", foot)
-	b.add_to_group("keycap")
-	b.draw.connect(_draw_card.bind(b, col))
-
-
-func _draw_card(b: Button, col: Color) -> void:
-	card_dock.draw_card(b, col)
-
-
-func _fav_tag(card: Dictionary) -> String:
-	if Meta.favs.has(Codex.card_key(card)):
-		return "★ 선호"
-	if card["type"] == "elem":
-		for t in towers.get_children():
-			if not t.can_take(card):
-				continue
-			for r in Elem.new_reactions(t.elements, card["e"]):
-				if Meta.favs.has("react:" + str(r["id"])):
-					return "★ 선호 조합: " + str(r["name"])
-	return ""
-
-
-## 선호 카드 강조: 금색 테두리와 반짝임(Codex.Sparkle)을 얹는다.
-func _mark_fav(b: Button, sb: StyleBoxFlat, sbh: StyleBoxFlat, tag: String) -> void:
-	if tag == "":
-		return
-	for s: StyleBoxFlat in [sb, sbh]:
-		s.border_color = Codex.FAV_COLOR
-		s.set_border_width_all(maxi(s.border_width_left, 3))
-	b.add_child(Codex.Sparkle.new(tag))
-
-
-## 남은 고르기 수는 카드 위 배지(_draw_info)에 있어서, 조작 안내만 처음 세 판에 띄운다.
-func _choose_hint() -> String:
-	if Meta.games >= 3:
-		return ""
-	return "카드를 눌러 든 뒤 대상에 놓으세요. 카드에서 바로 끌어 놓을 수도 있어요."
-
-
-# ---------- 튜토리얼 ----------
-
-## 자동 튜토리얼 모달은 예약하지 않는다. 기존 이벤트 호출부는 짧은 안내와 함께 유지한다.
-func _lv2_chance() -> float:
-	var w: int = bank_picks[0] if not bank_picks.is_empty() else wave  # 미룬 고르기는 쌓은 때의 웨이브로 (미뤄서 Lv2가 더 잘 나오지 않게)
-	var lv2 := minf(Patch.num("cards", "lv2_base", 0.2) + Patch.num("cards", "lv2_wave", 0.02) * w, Patch.num("cards", "lv2_max", 0.5))
-	return lv2 + _perk_val("luck") * perks.get("luck", 0)
-
-
-func _start_perk() -> void:
-	var pool := _perk_pool()
-	if pool.is_empty():
-		bank_perks = 0
-		hud_system._show_toast("사용 가능한 특성 카드가 없어 이번 선택을 건너뜁니다")
-		_start_choose(not rest_ready)
-		return
-	pool.shuffle()
-	perk_offer = pool.slice(0, 3)
-	if TutPlay.on and not perk_offer.any(func(pk): return pk["id"] == "coin"):
-		var coin: Array = pool.filter(func(pk): return pk["id"] == "coin")
-		if not coin.is_empty() and not perk_offer.is_empty():
-			perk_offer[perk_offer.size() - 1] = coin[0]  # 연습 판: 운명의 동전도 한 번 보여 준다
-	if coin_next == "":
-		perk_rerolls = 0 if Modes.has("narrow") else 1  # 동전 뒤 새 3개는 같은 선택이라 다시 주지 않음
-	_show_perks()
-	if coin_next == "":
-		hud_system.big_banner("특성 선택", Color(1, 0.85, 0.45))
-	_save_run()
-
-
-## 지금 선택지에 나올 수 있는 특성들
-func _perk_pool() -> Array:
-	var pool: Array = PERKS.filter(func(pk): return _card_enabled({"type": "perk", "id": pk["id"]}))
-	if Modes.has("narrow"):
-		pool = pool.filter(func(pk): return not pk["id"] in ["reroll", "coin"])  # 외길: 새로고침이 없으니 쓸모없는 특성은 빼고 (동전 뒷면도 새로고침)
-	if coin_next != "":
-		pool = pool.filter(func(pk): return pk["id"] != "coin")  # 던진 동전의 결과를 받을 차례
-	# 더 골라도 거의 효과가 없는 특성은 빼고: 이미 거의 Lv2로 나오는 행운, 조화(한 번만, 2026-11-01: 도파민에서 겹치고 속성을 많이 쌓으면 속사보다 훨씬 셌음).
-	# 동전 앞면(두 번 적용)일 때도 조화는 한 번만 효과가 있어 뺀다
-	pool = pool.filter(func(pk): return not (pk["id"] == "luck" and _lv2_chance() >= 0.9 or pk["id"] == "harmony" and (perks.has("harmony") or coin_next == "double")))
-	# 넣어도 효과가 없는 중앙 특성은 빼고: 벽 오브젝트가 없을 때 성벽, 이미 최대인 실드·성벽
-	pool = pool.filter(func(pk): return not (pk["id"] == "rampart" and (not _has_wall() or _rampart_n() >= int(_perk_val("rampart_max")))
-		or pk["id"] == "shield" and _shield_wave() >= int(_perk_val("shield_max"))
-		or pk["id"] == "overflow" and perks.has("overflow")
-		or pk["id"] == "quick" and (skill_ids.is_empty() or perks.get("quick", 0) >= 3)))
-	return pool
-
-
-## 특성 고르기 화면 (perk_offer는 이미 정해져 있음).
-func _show_perks() -> void:
-	phase = Phase.CHOOSE
-	wave_active = false
-	perk_mode = true
-	_clear_shots()
-	for c in choice_box.get_children():
-		c.queue_free()
-	for i in perk_offer.size():
-		var pk: Dictionary = perk_offer[i]
-		var b := Button.new()
-		b.custom_minimum_size = Vector2(230, 170)
-		var sb := StyleBoxFlat.new()
-		sb.bg_color = Color(0.13, 0.11, 0.06, 0.96)
-		sb.border_color = Color(1, 0.8, 0.35, 0.8)
-		sb.set_border_width_all(2)
-		sb.set_corner_radius_all(6)
-		var sbh := sb.duplicate()
-		sbh.bg_color = Color(0.2, 0.17, 0.09, 0.98)
-		b.add_theme_stylebox_override("normal", sb)
-		b.add_theme_stylebox_override("hover", sbh)
-		b.add_theme_stylebox_override("pressed", sbh)
-		var have: int = perks.get(pk["id"], 0)
-		var coin: String = {"double": "동전 앞면: 두 번 적용", "reroll": "동전 뒷면: + 새로고침 %d" % int(_perk_val("coin"))}.get(coin_next, "")
-		var rows: Array = []
-		var desc := _perk_desc(pk)
-		var big := _perk_big(pk["id"], desc)
-		if big.is_empty():
-			rows.append({"t": desc, "fs": 16})
-		else:
-			rows.append(big)
-			b.tooltip_text = ""
-		if have > 0:
-			rows.append({"pips": mini(have, 8)})
-		if coin != "":
-			rows.append({"t": coin, "fs": 13, "c": Color(1, 0.85, 0.45)})
-		_card_paint(b, {"kind": "perk", "name": pk["name"], "idx": i + 1}, rows, [], Color(1, 0.85, 0.45), 16, perk_offer.size())
-		b.add_theme_color_override("font_color", Color(1, 0.85, 0.45))
-		b.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
-		b.focus_mode = Control.FOCUS_NONE
-		b.set_meta("perk_desc", desc + ("\n\n" + coin if coin != "" else ""))
-		b.mouse_entered.connect(func():
-			card_dock.inspected_tower = null
-			card_dock.hovered = b)
-		# 터치는 올리기가 없어 누르면 바로 골라졌다: 길게 누르면(0.45초) 고르지 않고 오른쪽에 자세히
-		b.gui_input.connect(func(ev: InputEvent):
-			if touch_ui and (ev is InputEventScreenTouch or (ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT)):
-				if ev.pressed:
-					perk_press = b
-					get_tree().create_timer(0.45).timeout.connect(func():
-						if perk_press == b and is_instance_valid(b) and perk_mode:
-							perk_peek = b
-							card_dock.inspected_tower = null
-							card_dock.hovered = b)
-				else:
-					perk_press = null)
-		b.pressed.connect(func():
-			if perk_peek == b:
-				perk_peek = null  # 길게 눌러 본 것: 고르지 않음
-				return
-			_on_perk(pk))
-		_mark_fav(b, sb, sbh, "★ 선호" if Meta.favs.has("perk:" + str(pk["id"])) else "")
-		choice_box.add_child(b)
-	cards_hidden = false
-	choice_box.visible = true
-	_update_reroll_btn()
-	match coin_next:
-		"double": hint.text = ui_layout_system._th("동전 앞면! 고르는 특성이 두 번 적용돼요")
-		"reroll": hint.text = ui_layout_system._th("동전 뒷면! 고르는 특성에 더해 이번 쉬는 시간 새로고침 +%d" % int(_perk_val("coin")))
-		_: hint.text = ui_layout_system._th("특성을 하나 고르세요. 이번 판 끝까지 유지됩니다")
-
-
-func _on_perk(pk: Dictionary) -> void:
-	if not perk_mode or coin_stage > 0:
-		return
-	perk_mode = false
-	var id: String = pk["id"]
-	perks[id] = perks.get(id, 0) + 1
-	run_log.append({"w": wave, "k": "perk", "o": perk_offer.map(func(x): return "perk:" + x["id"]), "p": "perk:" + id})
-
-	Ach.on_pick("perk:" + id)
-	if id == "coin":
-		# 운명의 동전: 지금 던지고 특성 3개를 새로 받는다 (뒷면도 보통 특성 하나보다 조금 낫게)
-		coin_next = "double" if randf() < 0.5 else "reroll"
-		if coin_anim:
-			_coin_throw()
-		else:
-			_coin_done()
-		return
-	_apply_perk(id)
-	_mp_send_perk(id)
-	var note := ""
-	match coin_next:
-		"double":
-			perks[id] += 1
-			_apply_perk(id)
-			_mp_send_perk(id)
-			note = " · 동전 앞면: 두 번"
-		"reroll":
-			rerolls_left += int(_perk_val("coin"))
-			note = " · 동전 뒷면: 새로고침 +%d" % int(_perk_val("coin"))
-	coin_next = ""
-	sfx.play("reaction", 0.0)
-	hud_system._show_toast("특성: %s (%s)%s" % [pk["name"], _perk_desc(pk), note])
-	for t in towers.get_children():
-		t.queue_redraw()
-	if bank_perks > 0:
-		bank_perks -= 1  # 미룬 특성을 이어서
-		_start_perk()
-	else:
-		_start_choose(not rest_ready)
-
-
-## 동전을 던진다: 카드를 치우고 공중에서 돌리기 시작.
-func _coin_throw() -> void:
-	for c in choice_box.get_children():
-		c.queue_free()
-	choice_box.visible = false
-	reroll_btn.visible = false
-	banner_t = 0.0  # "특성 선택" 글이 남아 결과 글이 뒤로 밀리지 않게
-	banner_queue.clear()
-	toast_timer = 0.0
-	coin_stage = 1
-	coin_t = 0.0
-	coin_ang = 0.0
-	coin_fx.visible = true
-	coin_fx.mouse_filter = Control.MOUSE_FILTER_STOP
-	hint.text = ui_layout_system._th("동전을 던졌어요! 눌러서 잡기 · 한 번 더 누르면 바로 결과")
-	sfx.play("place")
-
-
-## 누르기·Space: 공중이면 떨어뜨리고, 떨어지는 중이면 결과로, 결과가 떠 있으면 바로 카드로.
-func _coin_tap() -> void:
-	if coin_stage == 0 or Time.get_ticks_msec() - coin_tap_t < 150:
-		return
-	coin_tap_t = Time.get_ticks_msec()
-	match coin_stage:
-		1: _coin_drop()
-		2, 3: _coin_land()
-		4: _coin_done()
-
-
-func _coin_drop() -> void:
-	coin_stage = 2
-	coin_t = 0.0
-	coin_ang0 = coin_ang
-	# 처음 속도(초당 22)에서 고르게 느려져 0.85초 뒤 가로 폭 0(모서리)이 되게: 끝 각도 = (n + 0.5)π
-	coin_spin = ceilf((coin_ang0 + 9.35 - PI / 2.0) / PI) * PI + PI / 2.0 - coin_ang0
-
-
-func _coin_land() -> void:
-	coin_stage = 4
-	coin_t = 0.0
-	sfx.play("crit")
-	sfx.play("reaction", 0.0)
-	hud_system.big_banner("동전 앞면! 두 번 적용" if coin_next == "double" else "동전 뒷면! 새로고침 +%d" % int(_perk_val("coin")), Color(1, 0.85, 0.3) if coin_next == "double" else Color(0.7, 0.82, 1.0))
-
-
-## 연출이 끝나 결과대로 특성 3개를 새로 받는다.
-func _coin_done() -> void:
-	coin_stage = 0
-	Ach.on_coin(coin_next == "double")
-	progression_system._ach_check()
-	if coin_fx:
-		coin_fx.visible = false
-		coin_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if not coin_anim:
-		sfx.play("crit")
-		hud_system.big_banner("동전 앞면!" if coin_next == "double" else "동전 뒷면!", Color(1, 0.85, 0.3))
-	_start_perk()
-
-
-func _coin_step(delta: float) -> void:
-	coin_t += delta
-	var was := cos(coin_ang) > 0.0
-	match coin_stage:
-		1:
-			coin_ang += 22.0 * delta
-			if coin_t >= 1.0:
-				_coin_drop()
-		2:
-			var k := minf(coin_t / 0.85, 1.0)
-			coin_ang = coin_ang0 + coin_spin * (1.0 - (1.0 - k) * (1.0 - k))
-			if k >= 1.0:
-				coin_stage = 3
-				coin_t = 0.0
-				sfx.play("place", 0.0)
-		3:
-			if coin_t >= 0.5:
-				_coin_land()
-		4:
-			if coin_t >= 0.75:
-				_coin_done()
-				return
-	if coin_stage in [1, 2] and (cos(coin_ang) > 0.0) != was:
-		sfx.play("hit", 0.02)  # 면이 바뀔 때마다 띵 (느려질수록 뜸해진다)
-	coin_fx.queue_redraw()
-
-
-func _draw_coin() -> void:
-	var sz := coin_fx.size
-	var c := sz / 2.0 + Vector2(0, 40)  # 결과 글(banner, 가운데 -140)이 동전 위에 오게
-	var air := c.y - 120.0
-	var fade := minf(coin_t / 0.2, 1.0) if coin_stage == 1 else 1.0
-	coin_fx.draw_rect(Rect2(Vector2.ZERO, sz), Color(0, 0, 0, 0.62 * fade))
-	var y := air + sin(coin_t * 5.0) * 6.0
-	var sx := cos(coin_ang)
-	var rot := 0.0
-	var r := 52.0
-	var front := sx > 0.0
-	match coin_stage:
-		2:
-			var k := minf(coin_t / 0.85, 1.0)
-			y = lerpf(air, c.y, k * k)
-			r = lerpf(52.0, 58.0, k)
-		3:
-			# 모서리로 서서 흔들림: 어느 쪽으로 쓰러질지 모르게 양쪽으로 기울었다 돌아온다
-			var k := coin_t / 0.5
-			y = c.y
-			r = 58.0
-			rot = sin(coin_t * 19.0) * 0.28 * (1.0 - k * 0.6)
-			sx = 0.1 * sin(coin_t * 27.0)
-			front = sx > 0.0
-			coin_fx.draw_string(ui_font, Vector2(c.x - 40, c.y + 110), "…?", HORIZONTAL_ALIGNMENT_CENTER, 80, 34, Color(1, 1, 1, 0.9))
-		4:
-			var k := minf(coin_t / 0.12, 1.0)
-			y = c.y
-			front = coin_next == "double"
-			sx = k if front else -k
-			r = 58.0 * (1.0 + 0.25 * maxf(0.0, 1.0 - coin_t / 0.25))
-			var col := Color(1, 0.82, 0.35) if front else Color(0.68, 0.8, 0.95)
-			var ray_a := Time.get_ticks_msec() / 1000.0 * 0.6
-			var rl := 190.0 * minf(coin_t / 0.15, 1.0)
-			for i in 16:
-				var a := ray_a + i * TAU / 16.0
-				coin_fx.draw_colored_polygon(PackedVector2Array([Vector2(c.x, y), Vector2(c.x, y) + Vector2.from_angle(a) * rl, Vector2(c.x, y) + Vector2.from_angle(a + 0.09) * rl]), Color(col, 0.22))
-			for i in 8:
-				coin_fx.draw_circle(Vector2(c.x, y), r * (2.6 - i * 0.2), Color(col, 0.05))
-	if coin_stage == 1:
-		coin_fx.draw_string(ui_font, Vector2(c.x - 200, c.y + 60), ui_layout_system._th("눌러서 잡기"), HORIZONTAL_ALIGNMENT_CENTER, 400, 28, Color(1, 1, 1, 0.95 * fade))
-		coin_fx.draw_string(ui_font, Vector2(c.x - 200, c.y + 92), "운명의 동전", HORIZONTAL_ALIGNMENT_CENTER, 400, 18, Color(1, 0.85, 0.45, 0.8 * fade))
-	if coin_stage in [1, 2]:
-		# 잔상: 조금 전 위치의 흐린 동전
-		_coin_disc(Vector2(c.x, y - 14.0), r, cos(coin_ang - 0.35), 0.0, cos(coin_ang - 0.35) > 0.0, 0.25)
-	_coin_disc(Vector2(c.x, y), r, sx, rot, front, 1.0)
-
-
-## 동전 한 개. sx: 가로 폭(-1~1, 0이면 모서리). 앞면은 금색에 가운데 점(빈두), 뒷면은 은색에 새로고침 화살표.
-func _coin_disc(p: Vector2, r: float, sx: float, rot: float, front: bool, a: float) -> void:
-	var w := maxf(absf(sx), 0.07)
-	var face := Color(1, 0.8, 0.35, a) if front else Color(0.68, 0.8, 0.95, a)
-	var dark := Color(0.62, 0.42, 0.12, a) if front else Color(0.3, 0.4, 0.58, a)
-	var th := 3.0 + 6.0 * (1.0 - absf(sx))  # 옆으로 누울수록 두께가 보인다
-	coin_fx.draw_set_transform(p, rot, Vector2(w, 1.0))
-	coin_fx.draw_circle(Vector2(th / w, 0), r, dark)
-	coin_fx.draw_circle(Vector2.ZERO, r, face)
-	coin_fx.draw_arc(Vector2.ZERO, r - 2.0, 0, TAU, 40, dark, 4.0 / w)
-	if absf(sx) > 0.3:
-		coin_fx.draw_arc(Vector2.ZERO, r * 0.62, 0, TAU, 40, dark, 3.0 / w)
-		if front:
-			coin_fx.draw_circle(Vector2.ZERO, r * 0.16, dark)
-		else:
-			coin_fx.draw_arc(Vector2.ZERO, r * 0.32, 0.7, TAU - 0.5, 24, dark, 4.0 / w)
-			var tip := Vector2.from_angle(0.7) * r * 0.32
-			coin_fx.draw_colored_polygon(PackedVector2Array([tip + Vector2(-9, -2), tip + Vector2(7, -6), tip + Vector2(2, 9)]), dark)
-	coin_fx.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
-
-func _apply_perk(id: String) -> void:
-	match id:
-		"power": Tower.dmg_mul += _perk_val("power")
-		"haste": Tower.spd_mul += _perk_val("haste")
-		"reach": Tower.reach_mul += _perk_val("reach")
-		"core":
-			core_max += int(_perk_val("core"))
-			core_hp = core_max
-		"slow": orb_speed_mul *= 1.0 - _perk_val("slow")
-		"harmony": Tower.tax_step = minf(Tower.tax_step, Rules.tax_step * _perk_val("harmony"))  # 한 번만 (동전 앞면·옛 저장에서 두 번 와도 같게)
-
-
-## 특성 수치 (온라인 패치 perks로 바뀔 수 있음). 설명 글도 같이 바꿔야 하면 perk_desc. coin: 동전 뒷면 새로고침 수
 const PERK_VALS := {"power": 0.15, "haste": 0.12, "reach": 0.12, "core": 3, "reroll": 1, "luck": 0.2, "regen": 1, "regen_more": 0.5, "slow": 0.08, "harmony": 0.5, "harmony_cap": 0.2, "coin": 2,
 	"shield": 1, "shield_max": 3, "shield_all": 4, "rampart": 1, "rampart_max": 4, "rampart_push": 140, "riposte": 0.6, "riposte_more": 0.5, "riposte_r": 160, "overflow": 2}
 static var RAMPART_R := 56.0  # 성벽이 서는 중앙에서의 거리
@@ -2527,365 +1344,9 @@ const FX_RIPOSTE := 0.35
 
 
 ## 실드 특성이 웨이브 시작마다 채우는 실드.
-func _shield_wave() -> int:
-	return mini(perks.get("shield", 0) * int(_perk_val("shield")), int(_perk_val("shield_max")))
-
-
-## 넘친 회복으로 남길 수 있는 실드 (모든 실드 합이 shield_all을 넘지 않게).
-func _keep_cap() -> int:
-	if not perks.has("overflow"):
-		return 0
-	return maxi(0, mini(int(_perk_val("overflow")), int(_perk_val("shield_all")) - _shield_wave()))
-
-
-## 중앙 체력 회복. 넘친 회복 특성이 있으면 가득 차서 넘친 만큼 실드로.
-func _heal_core(n: int) -> void:
-	var room := maxi(core_max - core_hp, 0)
-	core_hp += mini(n, room)
-	var over := mini(n - room, _keep_cap() - shield_keep)
-	if over > 0:
-		shield_keep += over
-		popup(core() + Vector2(0, -CORE_RADIUS - 24.0), over, Color(0.55, 0.85, 1.0), true, "실드 +%d" % over, 1.0)
-
-
-## 성벽 조각 수: 벽 공격방식 오브젝트의 레벨 합 + 고른 횟수.
-func _rampart_n() -> int:
-	var n: int = perks.get("rampart", 0)
-	if n == 0:
-		return 0
-	for t in _my_towers():
-		if t.pattern == "wall":
-			n += t.plv
-	return mini(n * int(_perk_val("rampart")), int(_perk_val("rampart_max")))
-
-
-func _has_wall() -> bool:
-	return _my_towers().any(func(t): return t.pattern == "wall")
-
-
-## 실드가 먼저 막는다 (이번 웨이브 실드 → 남는 실드). 막은 양을 돌려준다.
-func _shield_absorb(dmg: int) -> int:
-	var a := mini(shield, dmg)
-	shield -= a
-	var b := mini(shield_keep, dmg - a)
-	shield_keep -= b
-	return a + b
-
-
-## 반격 파동: 중앙 근처 구체를 밀어내고 피해 (보통 구체 체력의 riposte배, 겹치면 하나당 +riposte_more).
-func _riposte(p: Vector2) -> void:
-	if riposte_cd > 0.0:
-		return
-	riposte_cd = 0.25
-	var r := _perk_val("riposte_r")
-	var base: float = (1.0 + floorf(wave * 0.7)) * hp_growth(wave) * Rules.orb_hp * Vary.hp_k()
-	var dmg: float = base * _perk_val("riposte") * (1.0 + _perk_val("riposte_more") * (perks.get("riposte", 1) - 1))
-	for o in near(p, r):
-		if o.hp <= 0.0 or o.ghost:
-			continue
-		var d: float = o.position.distance_to(p)
-		if d < r + o.radius():
-			o.hurt(dmg)
-			o.knock((o.position - p).normalized() * 60.0 if d > 0.1 else Vector2.ZERO)
-	if core_fx.size() < 20:
-		core_fx.append([p, r, FX_RIPOSTE])
-
-
-## 회복 특성이 이번 웨이브에 채우는 체력. 처음 고른 것은 regen(1), 겹친 것은 하나당 regen_more(0.5)이고, 1이 안 되는 나머지는 다음 웨이브로 넘긴다.
-func _regen_take() -> int:
-	regen_acc += _perk_val("regen") + _perk_val("regen_more") * (perks.get("regen", 0) - 1)
-	var h := int(regen_acc)
-	regen_acc -= h
-	return h
-
-
-func _perk_val(id: String) -> float:
-	return Patch.num("perks", id, PERK_VALS[id])
-
-
-## 숫자 하나로 끝나는 특성은 그림 + 숫자로 (설명 글은 말풍선). 패치로 설명이 바뀌어 숫자를 못 찾으면 글 그대로.
 const PERK_GLYPH := {"power": "dmg", "haste": "rate", "reach": "range", "slow": "fast", "regen": "core", "reroll": "reroll"}
 
 
-func _perk_big(id: String, desc: String) -> Dictionary:
-	if not PERK_GLYPH.has(id):
-		return {}
-	if id == "regen" and perks.get("regen", 0) > 0:  # 이미 있으면 겹친 회복 값
-		return {"big": "+%s/웨이브" % String.num(_perk_val("regen_more")), "i": PERK_GLYPH[id]}
-	var re := RegEx.create_from_string("[+-]\\d+(\\.\\d+)?%?")
-	var mm := re.search(desc)
-	if mm == null:
-		return {}
-	return {"big": mm.get_string() + ("/웨이브" if id == "regen" else ""), "i": PERK_GLYPH[id]}
-
-
-func _perk_desc(pk: Dictionary) -> String:
-	return Patch.text("perk_desc", pk["id"], pk["desc"])
-
-
-func _perk_text() -> String:
-	var parts := PackedStringArray()
-	for pk in PERKS:
-		var n: int = perks.get(pk["id"], 0)
-		if n > 0:
-			parts.append(pk["name"] + (" x%d" % n if n > 1 else ""))
-	return "특성: " + ", ".join(parts) if not parts.is_empty() else ""
-
-
-func _on_reroll() -> void:
-	if phase != Phase.CHOOSE or get_tree().paused or coin_stage > 0:
-		return
-	if perk_mode:
-		_perk_reroll()
-		return
-	if rerolls_left <= 0:
-		hud_system._show_toast("이번 쉬는 시간의 새로고침을 다 썼어요")  # Q를 눌러도 아무 일이 없던 것
-		return
-	rerolls_left -= 1
-	Ach.on_reroll()
-	_log_offer({})
-	_make_choices()
-	_update_reroll_btn()
-	_save_run()
-
-
-## 특성 새로고침: 지금 나온 특성 말고 다른 것으로 3개를 다시 뽑는다 (모자라면 지금 것으로 채움).
-func _perk_reroll() -> void:
-	if perk_rerolls <= 0 or not _perk_can_reroll():
-		hud_system._show_toast("이번 특성 선택의 새로고침을 다 썼어요")
-		return
-	perk_rerolls -= 1
-	var now: Array = perk_offer.map(func(pk): return pk["id"])
-	var pool := _perk_pool()
-	var fresh: Array = pool.filter(func(pk): return not pk["id"] in now)
-	var old: Array = pool.filter(func(pk): return pk["id"] in now)
-	fresh.shuffle()
-	old.shuffle()
-	perk_offer = (fresh + old).slice(0, 3)
-	_show_perks()
-	_save_run()
-
-
-## 다시 뽑으면 다른 특성이 하나라도 나올 수 있는지
-func _perk_can_reroll() -> bool:
-	var now: Array = perk_offer.map(func(pk): return pk["id"])
-	return _perk_pool().any(func(pk): return not pk["id"] in now)
-
-
-## 새로고침 버튼: 남은 횟수를 같이 보여 준다.
-## 선택지 내리기·올리기 (V): 카드에 가려진 필드를 본다. 마우스를 올린 오브젝트 범위·정보는 그대로 보인다.
-func _toggle_cards_hidden() -> void:
-	if card_dock.input_blocked():
-		return
-	_set_cards_hidden(not cards_hidden)
-
-
-func _set_cards_hidden(h: bool) -> void:
-	if phase != Phase.CHOOSE:
-		return
-	cards_hidden = h
-	choice_box.visible = not h
-	hover_elem = -1
-	_tap_hover()  # 다시 올리면 터치로 고르던 카드 미리보기도 다시
-	_update_reroll_btn()
-
-
-func _update_reroll_btn() -> void:
-	if perk_mode:
-		reroll_btn.visible = perk_rerolls > 0 and not cards_hidden and coin_stage == 0 and _perk_can_reroll()
-		reroll_btn.text = str(perk_rerolls)
-		reroll_btn.tooltip_text = "특성 새로고침 (Q): 이번 특성 선택에 %d번 남음" % perk_rerolls
-		return
-	reroll_btn.visible = rerolls_left > 0 and not cards_hidden  # 모드 '외길'은 늘 0
-	reroll_btn.text = str(rerolls_left)
-	reroll_btn.tooltip_text = "선택지 새로고침 (Q): 이번 쉬는 시간에 %d번 남음" % rerolls_left
-
-
-## 진입 방향은 웨이브마다 조금씩 늘고, 가끔 하나가 옮겨 간다.
-func _roll_lanes() -> void:
-	if TutPlay.on:
-		lanes.assign(TutPlay.lanes_for(wave + 1))  # 연습 판: 정해진 길목
-		return
-	var n := lanes_for(wave + 1)
-	if Meta.map_id == "line":
-		# 회랑: 한쪽 끝 하나 (각도는 중앙 점에서 구체가 오는 쪽)
-		lanes = [PI if Meta.line_flip else 0.0]
-		return
-	if Meta.map_id == "cross":
-		# 십자로: 처음부터 네 방향 고정
-		if lanes.size() != 4:
-			var r0 := wf() * TAU
-			lanes = [r0, r0 + PI / 2, r0 + PI, r0 + PI * 1.5]
-		return
-	if Meta.map_id == "storm":
-		# 폭풍: 매번 전부 새로
-		lanes.clear()
-	if not lanes.is_empty() and wf() < 0.25:
-		lanes.remove_at(wi() % lanes.size())
-	while lanes.size() < n:
-		lanes.append(_free_lane())
-
-
-## 다른 방향과 0.8 이상 떨어진 새 방향. 자리가 모자라면 가장 넓은 틈의 가운데에 둔다
-## (6곳이 될 때 기존 방향이 고르게 퍼져 있으면 빈자리가 없어 게임이 멈추던 것).
-func _free_lane() -> float:
-	for i in 40:
-		var a := wf() * TAU
-		if lanes.all(func(b): return absf(angle_difference(a, b)) >= 0.8):
-			return a
-	var ls: Array = lanes.map(func(b): return fposmod(b, TAU))
-	ls.sort()
-	var best := 0
-	var gap := 0.0
-	for i in ls.size():
-		var g := fposmod(ls[(i + 1) % ls.size()] - ls[i], TAU)
-		if g <= 0.0:
-			g = TAU  # 방향이 하나뿐일 때
-		if g > gap:
-			gap = g
-			best = i
-	return fposmod(ls[best] + gap / 2.0, TAU)
-
-
-## 설치된 오브젝트에 겹쳤을 때 생기는 특수 반응 안내 문구들.
-## 속성 카드: 넣으면 생길 반응의 짝 속성·반응 이름, 레벨업 가능한 곳 수.
-func _combo_parts(e: int) -> Dictionary:
-	var els: Array = []
-	var names := PackedStringArray()
-	var ups := 0
-	var card := {"type": "elem", "e": e}
-	for t in towers.get_children():
-		if not t.can_take(card):  # 속성 종류 상한으로 못 넣는 오브젝트는 셈에서 뺀다
-			continue
-		for r in Elem.new_reactions(t.elements, e):
-			var o: int = r["b"] if r["a"] == e else r["a"]
-			if not els.has(o):
-				els.append(o)
-			if not names.has(r["name"]):
-				names.append(r["name"])
-		if t.elements.has(e):
-			ups += 1
-	return {"els": els, "names": names, "ups": ups}
-
-
-func _els_name(t: Tower) -> String:
-	var parts := PackedStringArray()
-	for e in t.order:
-		parts.append(Elem.NAMES[e])
-	return "·".join(parts)
-
-
-## 다음 웨이브 안내: 진입 화살표 배지(구체 수·섞여 나오는 종류)와, 배지에 올리면 뜨는 자세한 글.
-func _update_preview() -> void:
-	var nw := wave + 1
-	var info_l: Array = []
-	var kinds: Array = []
-	var W := Color(1, 1, 1, 0.9)
-	var lk := _leak_text()
-	if lk != "":
-		info_l.append([lk, Color(1, 0.6, 0.6)])
-	info_l.append(["다음 웨이브 %d: 구체 %d개, 진입 방향 %d곳" % [nw, spawn_count(nw), lanes.size()], W])
-	if mp_next_extra > 0:
-		info_l.append(["상대가 보낸 구체 +%d개 (이번 웨이브 구체와 같은 세기, 아무 방향)" % mp_next_extra, Color(1, 0.55, 0.45)])
-	var firsts := {4: "빠른 구체", 7: "단단한 구체", 8: "보호막 두른 구체(먼저 보호막을 깎아야 함)", 12: "분열 구체(터지면 둘로 나뉨)", 11: "이제부터 구체 체력이 웨이브마다 %d%%씩 곱으로 늘어남" % roundi((Rules.hp_growth - 1.0) * 100)}
-	for f in [[Rules.resist_from, "저항 구체(같은 색 점선 고리: 그 속성 피해를 덜 받음. 오브젝트에서 그 속성이 차지하는 만큼, 최대 60%)"], [Rules.sturdy_from, "굳센 구체(회색 쐐기: 밀기·감속·기절·냉기 절반)"]]:
-		firsts[f[0]] = (firsts[f[0]] + ", " if firsts.has(f[0]) else "") + f[1]
-	var body := Color(0.85, 0.85, 0.9)
-	var mix := PackedStringArray()
-	for m in [[4, "fast", "빠른 구체(뾰족)"], [7, "tank", "단단한 구체(네모)"], [8, "shield", "보호막"], [12, "split", "분열"]]:
-		if nw >= m[0]:
-			mix.append(m[2])
-			kinds.append([m[1], body, nw == m[0]])
-	for id in LATE_IDS:
-		var lf := late_from(id)
-		if nw >= lf:
-			mix.append(LATE_NAMES[id] + (" %d%%" % roundi(late_share(id, nw) * 100) if id != "devour" else " %d" % int(Rules.t("late_devour_n"))))
-			kinds.append([id, body, nw == lf])
-			if nw == lf:
-				firsts[lf] = (firsts[lf] + ", " if firsts.has(lf) else "") + LATE_DESC[id]
-	for id in JAM_IDS:
-		var jf := jam_from(id)
-		if nw >= jf and jams_on():
-			mix.append(JAM_NAMES[id] + " %d%%" % roundi(jam_share(id, nw) * 100))
-			kinds.append([id, body, nw == jf])
-			if nw == jf:
-				firsts[jf] = (firsts[jf] + ", " if firsts.has(jf) else "") + JAM_DESC[id]
-	if not mix.is_empty():
-		info_l.append(["섞여 나옴: " + ", ".join(mix), W])
-	var sp := PackedStringArray()
-	if wave_resist >= 0:
-		sp.append("%s 저항 구체 %d%%" % [Elem.NAMES[wave_resist], roundi(resist_share(nw) * 100)])
-		kinds.append(["resist", Elem.COLORS[wave_resist], nw == Rules.resist_from])
-	if sturdy_share(nw) > 0.0:
-		sp.append("굳센 구체 %d%%" % roundi(sturdy_share(nw) * 100))
-		kinds.append(["sturdy", Color(0.75, 0.75, 0.8), nw == Rules.sturdy_from])
-	if nw > 10:
-		sp.append("구체 체력 x%.1f" % hp_growth(nw))
-	if not sp.is_empty():
-		info_l.append(["특수 구체: " + " · ".join(sp), W])
-	if firsts.has(nw):
-		info_l.append(["처음 등장: " + firsts[nw], Color(1, 0.75, 0.75)])
-	if nw % 5 == 0:
-		info_l.insert(0, ["⚠ 보스 웨이브 · 놓치면 중앙 체력 -3", Color(1, 0.35, 0.4)])
-		for l in _boss_text().split("\n"):
-			info_l.append([l, Color(1, 0.75, 0.85)])
-	else:
-		var bw := ceili(nw / 5.0) * 5
-		info_l.append(["다음 보스: 웨이브 %d (%d웨이브 뒤)" % [bw, bw - wave], Color(1, 0.75, 0.85)])
-	if MapRule.is_map("spiral") and wave > 0 and wave % 5 == 0:
-		info_l.append(["회오리: 이번 웨이브부터 회전 방향이 바뀜", MAP_AFF_COLOR])
-	if MapRule.is_map("storm"):
-		info_l.append(["뇌우: 바람 방향은 화면의 흰 화살표 (순풍 탄 +%d%%, 역풍 -%d%%)" % [roundi(Rules.t("map_wind_with") * 100), roundi(Rules.t("map_wind_against") * 100)], MAP_AFF_COLOR])
-	if Vary.on or Vary.count() > 0:
-		var vc := Color(0.75, 0.85, 1.0)
-		if not Vary.event.is_empty():
-			info_l.append(["이벤트 %s: %s" % [Vary.ename(Vary.event), Vary.edesc(Vary.event)], vc])
-		if not Vary.next_event.is_empty():
-			info_l.append(["웨이브 %d 뒤 이벤트 %s: %s" % [nw, Vary.ename(Vary.next_event), Vary.edesc(Vary.next_event)], vc])
-		if Vary.count() > 0:
-			info_l.append(["봉인: " + Vary.sealed_text(), vc])
-		var ad := Vary.adapt_text()
-		if ad != "":
-			info_l.append(["적응 구체 (많이 쓴 것에 저항): " + ad, vc])
-	wave_info = info_l
-	wave_kinds = kinds
-	if wave == 0:
-		onboarding_system._guide("lanes", "구체는 빨간 부채꼴 넓이 어디로든 와요. 옆 숫자는 그쪽에서 오는 구체 수(%s 자세히). 부채꼴을 가로지르게, 좁은 중앙 쪽에 설치하면 다 막혀요" % ("누르면" if touch_ui else "올리면"))
-
-
-## 다음 웨이브 구체를 진입 방향별로 고르게 나눈 수 (보스 제외). 화살표 배지와 실제 웨이브(lane_bag)가 같은 값을 쓴다.
-func lane_counts(w: int) -> Array[int]:
-	var out: Array[int] = []
-	var nl := lanes.size()
-	if nl == 0:
-		return out
-	var n := spawn_count(w) - (1 if w % 5 == 0 else 0)
-	for i in nl:
-		out.append(n / nl + (1 if i < n % nl else 0))
-	return out
-
-
-## 장면 다시 읽기. 한 프레임에 입력이 여럿 오면 두 번째는 current_scene이 이미 비어 오류가 난다.
-func _reload() -> void:
-	_mp_keep_room()
-	if is_inside_tree() and get_tree().current_scene != null:
-		get_tree().reload_current_scene()
-
-
-## 멀티 판 끝 → 다시 불러오기 전에: 방 연결(Mp)을 루트에 옮겨 두고, 새 화면이 대기방을 열게 표시한다.
-func _mp_keep_room() -> void:
-	if mp != null and mp_mode != "" and phase == Phase.GAMEOVER and is_inside_tree():
-		# 멀티 판 끝 → 대기방으로 (방은 나가기 전까지 남는다)
-		mp_back = true
-		mp_back_msg = ""
-		if mp.active():
-			mp_keep = mp
-			mp.reparent(get_tree().root)
-		else:
-			mp_back_msg = mp_fail_msg if mp_fail_msg != "" else "방이 없어져 대기방으로 돌아가지 못했어요"
-
-
-## 왼쪽 아래 안내 글 위쪽 끝 (안내 글이 없으면 아래 버튼 줄 위).
 func _draw_info() -> void:
 	tip_rects.clear()
 	info_rects.clear()
@@ -2902,7 +1363,7 @@ func _draw_info() -> void:
 	if resting and not lanes.is_empty():
 		var xf := ui_root.get_global_transform().affine_inverse() * get_canvas_transform()
 		var nw := wave + 1
-		var counts := lane_counts(nw)
+		var counts := waves_system.lane_counts(nw)
 		var badges: Array[Rect2] = []
 		# 카드 위에 겹친 배지는 옅게 (글자를 키우면 카드가 화면 끝까지 차서 덮던 것). 카드를 내리면 다시 진하게
 		var cards_r := Rect2()
@@ -3032,9 +1493,9 @@ func _draw_info() -> void:
 		var r := choice_header.get_rect()
 		tip_rects.append([r, [["이번 쉬는 시간에 카드를 %d장 더 선택할 수 있어요" % picks_left, Color(1, 0.9, 0.6)]]])
 		if Vary.count() > 0:
-			var sr := _draw_seal_chip(info, r.get_center().x, r.position.y - 6.0)
+			var sr := cards_system._draw_seal_chip(info, r.get_center().x, r.position.y - 6.0)
 			tip_rects.append([sr, [["봉인 모드: 이번 판 선택지에 안 나오는 카드", Color(0.8, 0.8, 1.0)], [Vary.sealed_text(), Color(1, 1, 1, 0.9)], ["25·50웨이브에 하나씩 풀려요", Color(1, 1, 1, 0.6)]]])
-	_draw_card_full()
+	cards_system._draw_card_full()
 	# 말풍선: 마우스를 올린 칩·배지 (터치는 누른 것)
 	var m := info.get_local_mouse_position()
 	var hit := -1
@@ -3111,7 +1572,7 @@ func _draw_wind_rings() -> void:
 	var show: Array = []
 	if _place_rings_off():
 		pass
-	elif moving != null or dragging or phase in [Phase.PLACE, Phase.MOVE]:
+	elif interaction_system.moving != null or interaction_system.dragging or phase in [Phase.PLACE, Phase.MOVE]:
 		show = winds
 	else:
 		var h := _ring_target()  # 올린 오브젝트 둘레는 자세히일 때만
@@ -3128,7 +1589,7 @@ func _draw_wind_rings() -> void:
 ## 카드를 넣는 단계에서 모든 바람·별 둘레를 끌지: 새로 놓을 수 없는 카드(강화·연계 등)이거나 오브젝트 위에 올려 둔 동안.
 ## 둘레는 새 자리를 고를 때만 쓸모 있고, 여러 개가 겹치면 올린 오브젝트 설명·범위가 묻힌다. 올린 오브젝트 자기 둘레는 draw_range가 그린다.
 func _place_rings_off() -> bool:
-	return phase == Phase.PLACE and moving == null and not dragging and (picked.get("type", "") != "elem" or _tower_at(_pointer_world()) != null)
+	return phase == Phase.PLACE and interaction_system.moving == null and not interaction_system.dragging and (picked.get("type", "") != "elem" or interaction_system._tower_at(interaction_system._pointer_world()) != null)
 
 
 ## 별 흡수 둘레: 오브젝트를 놓거나 옮기는 중엔 모든 별의 둘레(어디 두면 별빛을 주는지),
@@ -3143,8 +1604,8 @@ func _draw_star_rings() -> void:
 	var show: Array = []
 	if _place_rings_off():
 		pass
-	elif moving != null or dragging or phase in [Phase.PLACE, Phase.MOVE, Phase.AIM]:
-		show = stars.filter(func(s): return s != moving)
+	elif interaction_system.moving != null or interaction_system.dragging or phase in [Phase.PLACE, Phase.MOVE, Phase.AIM]:
+		show = stars.filter(func(s): return s != interaction_system.moving)
 	else:
 		var h := _ring_target()
 		if h != null:
@@ -3380,1291 +1841,11 @@ func _draw_apply_icon() -> void:
 
 
 ## PC·터치 모두 한 번 눌러 든다.
-func _on_card_tap(card: Dictionary, _i: int) -> void:
-	if phase != Phase.CHOOSE or card_dock.suppress_tap or card_dock.input_blocked():
-		return
-	_on_pick(card)
-
-
-func _release_card_tap_guard() -> void:
-	card_dock.suppress_tap = false
-	card_dock.touch_capture = false
-
-
-## 터치로 고른(미리보기 중인) 카드의 속성 미리보기와 카드 진하기.
-func _tap_hover() -> void:
-	if tap_sel >= 0 and tap_sel < offer.size() and not cards_hidden:
-		hover_elem = offer[tap_sel]["e"] if offer[tap_sel]["type"] == "elem" else -1
-	var cs := choice_box.get_children()
-	for k in cs.size():
-		cs[k].modulate.a = 0.55 if tap_sel >= 0 and k != tap_sel else 1.0
-
-
-func _on_pick(card: Dictionary) -> void:
-	if TutPlay.on and tplay != null and not tplay.allow_pick(card):
-		return
-	_save_run()  # 카드를 들고 앱을 닫아도 적용 전 목록과 남은 선택을 복원한다.
-	tap_sel = -1
-	_tap_hover()
-	picked = card
-	selected.clear()
-	hover_elem = -1
-	choice_box.visible = false
-	reroll_btn.visible = false
-	phase = Phase.PLACE
-	card_dock.inspected_tower = null
-	hint.text = ui_layout_system._th(_place_hint())
-	if card_dock.active():
-		card_dock.tick()
-
-
-## 통계용 카드 이름: elem:fire, pat:spray, mod:rapid, link:reso
-func _stat_key(card: Dictionary) -> String:
-	if card.get("type", "") == "elem":
-		return "elem:" + Patch.ELEM_KEYS[Elem.ALL.find(card["e"])]
-	return "%s:%s" % [card.get("type", ""), card.get("id", "")]
-
-
-## 이번 선택지와 고른 카드(빈 사전: 새로고침으로 넘김)를 판 기록에 남긴다.
-func _log_offer(card: Dictionary) -> void:
-	var e := {"w": wave, "k": "card", "o": offer.map(_stat_key), "p": _stat_key(card) if not card.is_empty() else ""}
-	if not bank_picks.is_empty():
-		e["bw"] = bank_picks[0]  # 넘기기로 미뤘던 고르기: 쌓은 쉬는 시간의 웨이브
-	run_log.append(e)
-
-
-func _place_hint() -> String:
-	match picked.get("type", "elem"):
-		"elem":
-			return PLACE_HINT
-	return "넣을 오브젝트를 클릭   꾹 누르기·끌기: 옮기기\n우클릭/Esc: 카드 다시 선택"
-
-
-## card: 이번에 넣은 카드.
-func _after_place(card: Dictionary = {}) -> void:
-	_log_offer(picked if card.is_empty() else card)
-	Ach.on_pick(_stat_key(picked if card.is_empty() else card))
-	progression_system._check_progress()
-	picks_left -= 1
-	if not bank_picks.is_empty():
-		bank_picks.pop_front()  # 미룬 고르기부터 쓴다
-	if picks_left > 0:
-		_start_choose(false)
-	else:
-		_enter_ready()
-		if auto_start:
-			countdown = 2.0
-
-
-## 자동 시작이 꺼져 있을 때: 설치를 마치고 Space를 기다린다. 이때도 오브젝트를 옮길 수 있다.
-func _enter_ready() -> void:
-	phase = Phase.READY
-	choice_box.visible = false
-	reroll_btn.visible = false
-	start_btn.visible = true
-	start_btn.text = "웨이브 시작 (Space)"
-	hint.text = ui_layout_system._th(READY_HINT if Meta.games < 3 else "")
-	_save_run()
-
-
-func _start_wave_from_ready() -> void:
-	if phase == Phase.READY:
-		_start_wave()
-
-
-## 버튼 위에 아이콘을 그린다. 글이 있으면 왼쪽, 없으면 가운데. icon은 [아이콘, 색]을 돌려준다.
-func _icon_btn(b: Button, icon: Callable) -> void:
-	# 벡터 아이콘을 덧그려도 native 버튼이 글 옆의 아이콘 공간을 확보하게 한다.
-	var image := Image.create(18, 18, false, Image.FORMAT_RGBA8)
-	image.fill(Color.TRANSPARENT)
-	b.icon = ImageTexture.create_from_image(image)
-	b.add_theme_constant_override("h_separation", 8)
-	b.draw.connect(func():
-		var ic: Array = icon.call()
-		Glyph.ui(b, ic[0], _button_icon_center(b), 8.5, ic[1]))
-
-
-func _button_icon_center(b: Button) -> Vector2:
-	var style := b.get_theme_stylebox("normal")
-	var left := style.get_content_margin(SIDE_LEFT)
-	var width := b.size.x - left - style.get_content_margin(SIDE_RIGHT)
-	var text_width := b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x
-	var content_width := 18.0 + (text_width + b.get_theme_constant("h_separation") if b.text != "" else 0.0)
-	return Vector2(left + (width - content_width) / 2.0 + 9, b.size.y / 2.0)
-
-
-## 버튼 오른쪽 위 모서리에 작은 단축키 상자 (터치 화면에선 안 그림). key는 글 또는 글을 돌려주는 Callable.
-func _keycap(b: Button, key: Variant) -> void:
-	b.theme_type_variation = "ShortcutButton"
-	b.add_to_group("keycap")
-	b.draw.connect(func():
-		var k: String = key.call() if key is Callable else key
-		if not touch_ui and k != "":
-			Glyph.keycap(b, ui_font, Vector2(b.size.x - 3.0, 3.0), k, 9))
-
-
-## 메뉴 그림 버튼: 위에 그림, 아래 짧은 이름 (버튼 글은 비움).
-func _menu_glyph(b: Button, icon: String, label: String) -> void:
-	b.text = ""
-	b.draw.connect(func():
-		var hov := b.is_hovered()
-		var c := Color(1, 1, 1, 1.0 if hov else 0.9)
-		var fs := 13
-		Glyph.ui(b, icon, Vector2(b.size.x / 2.0, b.size.y * 0.4), 10.0, c)
-		b.draw_string(ui_font, Vector2(0, b.size.y - 7.0), label, HORIZONTAL_ALIGNMENT_CENTER, b.size.x, fs, Color(c, 0.75)))
-
-
-## 터치는 말풍선(tooltip)을 볼 수 없어 글 없는 아이콘 버튼이 무엇을 바꿨는지 몰랐다: 누르면 이름·상태를 잠깐 띄운다.
-func _icon_toast(b: Button) -> void:
-	if touch_ui and b.tooltip_text != "":
-		hud_system._show_toast(ui_layout_system._kh(b.tooltip_text.get_slice("\n", 0)))
-
-
-func _toggle_mute() -> void:
-	sfx.set_muted(not sfx.muted)
-	mute_btn.tooltip_text = "소리: " + ("끔" if sfx.muted else "켬") + " (M)"
-	mute_btn.queue_redraw()
-	progression_system._save_best()
-
-
-func _toggle_auto() -> void:
-	auto_start = not auto_start
-	_update_auto_btn()
-	progression_system._save_best()
-	if auto_start and phase == Phase.READY:
-		countdown = 2.0
-	elif not auto_start:
-		countdown = -1.0
-		if phase == Phase.READY:
-			start_btn.text = "웨이브 시작 (Space)"
-
-
-func _toggle_legend() -> void:
-	legend_hidden = not legend_hidden
-	progression_system._save_best()
-
-
-## 카드 도크·설명 칸을 접어 전장을 넓게 보거나 다시 연다 (F·모바일 버튼).
-func _toggle_focus_view() -> void:
-	_toggle_cards_hidden()
-
-
-func _toggle_bar() -> void:
-	bar_open = not bar_open
-	progression_system._save_best()
-
-
-func _update_auto_btn() -> void:
-	auto_btn.tooltip_text = "자동 시작: " + ("켬" if auto_start else "끔") + " (웨이브가 끝나고 카드 선택을 마치면 바로 다음 웨이브)"
-	auto_btn.queue_redraw()
-
-
-func _start_wave() -> void:
-	# 멀티는 준비 동기화·잠수 자동 진행을 우선한다. 한 기기의 배치로 시작을 거부하면
-	# 호스트의 wave 통지와 실제 단계가 달라지거나 대결이 무기한 멈출 수 있다.
-	var forced := TutPlay.on and tplay != null and tplay.force_start
-	if TutPlay.on and tplay != null and not tplay.can_start():
-		countdown = -1.0
-		return
-	if mp_mode == "" and not forced:
-		var blocked := _wave_start_block_reason()
-		if blocked != "":
-			countdown = -1.0
-			hud_system._show_toast(blocked)
-			return
-	if mp_mode == "coop" and not mp_wave_go:
-		countdown = -1.0
-		_mp_coop_ready()
-		return
-	countdown = -1.0
-	_drop_press()
-	boxing = false
-	selected.clear()
-	start_btn.visible = false
-	wave += 1
-	rest_ready = false
-	phase = Phase.WAVE
-	wave_active = true
-	choice_box.visible = false
-	reroll_btn.visible = false
-	to_spawn = spawn_count(wave)
-	mp_extra_left = mp_next_extra
-	mp_wave_extra = mp_next_extra
-	mp_next_extra = 0
-	mp_recv_n = 0
-	mp_idle_t = 0.0
-	# 진입 방향은 배지에 띄운 수대로 고르게 나눠 섞는다 (구체마다 무작위로 고르면 화살표의 수와 달라짐)
-	lane_bag.clear()
-	var lc := lane_counts(wave)
-	for i in lc.size():
-		for k in lc[i]:
-			lane_bag.append(i)
-	_wshuffle(lane_bag)
-	if mp_ghost:
-		to_spawn = 0  # 협동 참가자: 구체는 호스트가 보낸 대로
-		lane_bag.clear()
-	wave_leaks.clear()
-	leak_marks.clear()
-	wave_dmg = 0
-	jam_any = false
-	skill_cd = {}  # 중앙 기술은 웨이브마다 다시 찬다
-	skill_arm = ""
-	if not skill_ids.is_empty():
-		onboarding_system._guide("skill", "아래 기술 버튼%s을 누르고 쓸 곳을 누르면 웨이브 중에 도울 수 있어요. 웨이브마다 다시 차요" % ("" if touch_ui else "(1·2 키)"))
-	shield = _shield_wave()
-	rampart_left = _rampart_n()
-	if guide_t < 0.0:
-		guide_lines.clear()
-		guide_t = 0.0
-	for w in [10, 15, 20]:
-		if wave >= w:
-			progression_system._achieve("wave%d" % w)
-	Ach.on_wave_start(wave, towers.get_children(), Meta.map_id)
-	progression_system._ach_check()
-	spawn_interval = maxf(0.35, 1.2 - wave * 0.06)
-	spawn_timer = 0.5
-	wave_time = 0.0
-	late_n = {}
-	dps_hist.clear()
-	dps_t = 0.0
-	dps_n = 0
-	rank_t = RANK_HOLD + 0.05  # 피해가 다시 쌓인 뒤에 매긴다
-	for t in towers.get_children():
-		t.cd.clear()
-		t.fx.clear()
-		t.run_dealt += t.dealt
-		t.close_src()
-		t.wave_begin()
-		t.dealt = 0.0
-		t.rx_dealt = 0.0
-		t.queue_redraw()  # 레벨 숫자는 쉬는 시간에만
-	hint.text = ""
-	hud_system.big_banner("웨이브 %d" % wave, Color.WHITE)
-	sfx.play("wave", 0.0)
-
-
-## 모든 다음 웨이브 진입 방향에 적어도 하나의 오브젝트 공격이 닿는지 확인한다.
-## 시작 버튼·Space·자동 시작·넘기기·멀티 호스트가 모두 _start_wave를 지나므로 여기서 막는다.
-func _wave_start_block_reason() -> String:
-	if lanes.is_empty():
-		return ""
-	var w := wave + 1
-	var spread := lane_spread(w)
-	var missed: Array[String] = []
-	for i in lanes.size():
-		if not _wave_lane_covered(lanes[i], w, spread):
-			missed.append(compass(lanes[i]))
-	if missed.is_empty():
-		return ""
-	return "웨이브를 시작할 수 없어요: %s쪽 공격이 닿지 않아요. 오브젝트의 위치나 방향을 맞춰 주세요" % "·".join(missed)
-
-
-## 진입 길을 따라 여러 지점을 살펴 공격 사거리·방향 안에 들어오는 오브젝트를 찾는다.
-func _wave_lane_covered(a: float, w: int, spread: float) -> bool:
-	var path := _orb_path(a)
-	if path.size() < 2:
-		return true
-	var samples: Array[Vector2] = []
-	if Meta.map_id == "line":
-		for y in [-LINE_HALF + 20.0, 0.0, LINE_HALF - 20.0]:
-			var line_path := _orb_path(a, y)
-			for k in range(1, 9):
-				samples.append(line_path[0].lerp(line_path[1], float(k) / 9.0))
-	else:
-		for seg in range(path.size() - 1):
-			var length := path[seg].distance_to(path[seg + 1])
-			var n := maxi(1, ceili(length / 45.0))
-			for k in n:
-				samples.append(path[seg].lerp(path[seg + 1], float(k) / n))
-	for t: Tower in towers.get_children():
-		var reach := _wave_attack_reach(t)
-		if reach <= 0.0:
-			continue
-		for p in samples:
-			var v := p - t.position
-			var dist := v.length()
-			if dist < 8.0 or dist > reach:
-				continue
-			# 자동 조준·중력 우물은 공격 방향을 고정하지 않는다. 나머지는 공격 폭과
-			# 구체의 진입 부채꼴을 함께 고려해 중앙선을 겨눈 공격도 유효하게 판정한다.
-			if t.m("reflex") > 0 or t.pattern == "vortex":
-				return true
-			var half := 0.12
-			match t.pattern:
-				"spray": half = 0.35
-				"chain": half = 0.5
-				"sonic": half = 0.5
-				"clock": half = 0.7
-			var width := atan(18.0 / dist)
-			if absf(t.dir.angle_to(v)) <= maxf(half, width) + spread:
-				return true
-	return false
-
-
-## 기본 공격방식별 유효 사거리. 수치는 실제 공격·사거리 표시와 같은 기준이다.
-func _wave_attack_reach(t: Tower) -> float:
-	if t.pattern in Tower.FAR_PATS and t.m("reflex") == 0:
-		return Tower.FAR  # 직선탄·돌풍·물줄기·연쇄 번개는 화면 끝까지 (멀면 약해질 뿐)
-	return t.well_range() if t.pattern == "vortex" else t.reflex_range()
-
-
-func _game_over() -> void:
-	_mp_over()
-	onboarding_system._tut_event("over")
-	_log_wave()
-	phase = Phase.GAMEOVER
-	over_ms = Time.get_ticks_msec()
-	toast_timer = 0.0  # 넘기기 알림 등이 게임 오버 글 위에 남지 않게
-	wave_active = false
-	game_speed = 1.0
-	_update_speed_btn()
-	banner_queue.clear()  # 남은 가운데 글자가 게임 오버 글 위에 뜨지 않게 (새 업적은 아래 글에 나옴)
-	banner_t = minf(banner_t, 0.4)
-	# 기록은 지금 맵·규칙 버전의 저장값과 비교한다 (다른 키에서 남은 값이 섞이지 않게)
-	var prev := Meta.best_of(Meta.run_key())
-	var record := "  최고 기록!" if (score > prev[1] or wave > prev[0]) and mp_mode == "" else ""
-	if mp_mode == "":  # 멀티플레이 판은 혼자 하는 판 최고 기록에 넣지 않는다
-		best_score = maxi(score, prev[1])
-		best_wave = maxi(wave, prev[0])
-	if mp_mode == "":  # 멀티 판은 누적 처치·판 수(업적)에 넣지 않는다
-		Meta.total_kills += kills
-		Meta.games += 1
-	Ach.live_kills = 0
-	progression_system._ach_check()
-	if tutor:
-		Meta.tutor_next = false
-	progression_system._save_best()
-	_clear_run()
-	net.sync()
-	var ach := "\n새 업적: " + ", ".join(new_achievements) if not new_achievements.is_empty() else ""
-	# 판 전체에서 가장 많이 때린 오브젝트
-	var mvp := ""
-	var top: Tower = null
-	var total := 0.0
-	for t in towers.get_children():
-		total += t.run_dealt + t.dealt
-		if top == null or t.run_dealt + t.dealt > top.run_dealt + top.dealt:
-			top = t
-	if top and total > 0.0 and towers.get_child_count() > 1:
-		mvp = "\n최다 피해: %s (%d%%)" % [top.title(), roundi((top.run_dealt + top.dealt) / total * 100.0)]
-	var rs := hud_system._run_src()
-	if total > 0.0 and not rs.is_empty():
-		var tops := PackedStringArray()
-		for key in hud_system._src_top(rs, 3):
-			tops.append("%s %d%%" % [src_name(key), roundi(rs[key] / total * 100.0)])
-		mvp += "\n피해 출처: " + ", ".join(tops)
-	var md := "" if Modes.on.is_empty() else "\n모드: %s · 점수 x%.2f%s" % [Modes.names(), Modes.mul(), "\n쉽게 모드: 최고 기록 따로, 쉽게 모드 리더보드에 올라감" if Modes.easy() else ""]
-	if mp_mode != "":
-		record = ""
-		md = "\n" + mp_rank if mp_rank != "" else ""
-	var head: String = ("협동 끝" if mp_mode == "coop" else "탈락") if mp_mode != "" else "판 끝냄" if ended else "게임 오버"
-	over_data = {"head": head, "sub": "%s · %s" % [Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules]], "wave": wave, "score": score, "record": record != "", "best_wave": best_wave if mp_mode == "" else -1,
-		"kills": kills, "combo": best_combo, "towers": towers.get_child_count(), "ach": new_achievements.duplicate()}
-	# 아래 글은 그림으로 못 줄인 것만 (모드·순위·최다 피해·피해 출처, 온라인 순위는 나중에 붙음)
-	over_label.text = patchlog_system._kr_keep((md + mvp).strip_edges())
-	over_card.visible = true
-	over_card.queue_redraw()
-	over_label.visible = true
-	online_system._submit_run()
-	sfx.play("over", 0.0)
-	reroll_btn.visible = false
-	choice_box.visible = false
-	hint.text = ""
-
-
-## 게임 오버 그림 카드 (over_card 가운데가 화면 가운데 위쪽).
-func _draw_over_card() -> void:
-	if not over_label.visible or over_data.is_empty():
-		return
-	var d := over_data
-	var c := over_card
-	var W := 620.0
-	var x0 := -W / 2.0
-	var y := -210.0
-	# 업적 배지 줄 나누기를 먼저 해서 바탕 높이를 안다
-	var ach_rows: Array = []
-	var ach_w: Array = []
-	for a in d["ach"]:
-		var aw := ui_font.get_string_size(a, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 36.0
-		if ach_rows.is_empty() or ach_w[-1] + aw > W:
-			ach_rows.append([])
-			ach_w.append(0.0)
-		ach_rows[-1].append([a, aw])
-		ach_w[-1] += aw + 6.0
-	var bh := 84.0 + 96.0 + 50.0 + ach_rows.size() * 30.0 + 34.0
-	# 아래 남은 글(over_label: 모드·최다 피해·피해 출처)까지 바탕에 넣는다: 예전엔 바탕 밖 전장 위에 떠 읽기 어려웠다
-	var lab_h := 0.0
-	if over_label.text != "" and over_label.get_line_count() > 0:
-		lab_h = over_label.get_line_count() * over_label.get_line_height() + 10.0
-	bh += lab_h
-	# 점수 줄 아래에서 시작 (폰 글자 1.3이면 화면 높이가 줄어 제목이 점수 줄 둘째 줄을 덮었다), 아래 버튼 줄 위까지
-	var top_free := hud_system._dps_home().y - c.position.y
-	var bottom_free := (c.get_parent() as Control).size.y - 56.0 - c.position.y
-	if y - 6.0 < top_free:
-		y = maxf(minf(top_free, bottom_free - bh), y - 6.0) + 6.0
-	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color(0.03, 0.04, 0.06, 0.82)
-	bg.set_corner_radius_all(12)
-	c.draw_style_box(bg, Rect2(x0 - 10.0, y - 6.0, W + 20.0, bh))
-	c.draw_string(ui_font, Vector2(x0, y + 34.0), d["head"], HORIZONTAL_ALIGNMENT_CENTER, W, 34, Color.WHITE)
-	var sw := ui_font.get_string_size(d["sub"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 24.0
-	Icons.chip(c, ui_font, Rect2(-sw / 2.0, y + 46.0, sw, 24.0), "", Color.WHITE, d["sub"], Color(1, 1, 1, 0.65), 14, Color(1, 1, 1, 0.06), Color(1, 1, 1, 0.12))
-	# 큰 칩 둘: 웨이브 · 점수
-	y += 84.0
-	for i in 2:
-		var r := Rect2(-196.0 + i * 204.0, y, 188.0, 62.0)
-		var gold := i == 1
-		var sb := StyleBoxFlat.new()
-		sb.bg_color = Color(0.18, 0.15, 0.08, 0.95) if gold else Color(0.1, 0.12, 0.17, 0.95)
-		sb.border_color = Color(1, 0.85, 0.4, 0.6) if gold else Color(0.5, 0.7, 1, 0.4)
-		sb.set_border_width_all(2)
-		sb.set_corner_radius_all(8)
-		c.draw_style_box(sb, r)
-		Icons.draw(c, "score" if gold else "wave", r.position + Vector2(30, 31), 13.0, Color(1, 0.85, 0.4) if gold else Color(0.6, 0.8, 1))
-		var txt := num(d["score"]) if gold else str(d["wave"])
-		var fs := 32
-		while fs > 18 and ui_font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > 120.0:
-			fs -= 2
-		c.draw_string(ui_font, r.position + Vector2(54, 31 + fs * 0.36), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
-	if d["record"]:
-		Icons.chip(c, ui_font, Rect2(132.0, y - 9.0, 64.0, 20.0), "", Color.WHITE, "최고!", Color(0.12, 0.09, 0.0), 12, Color(1, 0.85, 0.4), Color(1, 0.85, 0.4))
-	elif d["best_wave"] >= 0:
-		Icons.draw(c, "best", Vector2(-110.0, y + 76.0), 6.0, Color(1, 1, 1, 0.5))
-		c.draw_string(ui_font, Vector2(-100.0, y + 80.0), "최고 %d" % d["best_wave"], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 1, 1, 0.5))
-	# 작은 칩: 처치 · 최고 콤보 · 오브젝트
-	y += 110.0
-	var smalls := [["kill", num(d["kills"]), "처치"], ["combo", str(d["combo"]), "최고 콤보"], ["tower", str(d["towers"]), "오브젝트"]]
-	for i in smalls.size():
-		var cx := -130.0 + i * 130.0
-		Glyph.ui(c, smalls[i][0], Vector2(cx - 22.0, y), 9.0, Color(0.85, 0.9, 1))
-		c.draw_string(ui_font, Vector2(cx - 8.0, y + 7.0), smalls[i][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color.WHITE)
-		c.draw_string(ui_font, Vector2(cx - 50.0, y + 24.0), smalls[i][2], HORIZONTAL_ALIGNMENT_CENTER, 100.0, 11, Color(1, 1, 1, 0.45))
-	# 새 업적 배지 (줄이 넘치면 다음 줄)
-	y += 42.0
-	for ri in ach_rows.size():
-		var x: float = -(ach_w[ri] - 6.0) / 2.0
-		for it in ach_rows[ri]:
-			var r := Rect2(x, y + ri * 30.0, it[1], 24.0)
-			Icons.chip(c, ui_font, r, "", Color.WHITE, "", Color.WHITE, 13, Color(0.15, 0.12, 0.2, 0.95), Color(0.8, 0.6, 1, 0.5))
-			Glyph.kind(c, "ach", r.position + Vector2(14, 12), 7.0, Color(1, 0.8, 0.4))
-			c.draw_string(ui_font, r.position + Vector2(26, 17), it[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
-			x += it[1] + 6.0
-	y += ach_rows.size() * 30.0
-	# 남은 글(over_label)은 배지 바로 아래, 나가는 법은 그 아래 바탕 끝 줄
-	if absf(over_label.offset_top - (y + 4.0)) > 0.5:
-		over_label.offset_top = y + 4.0  # (둘 다 화면 가운데 기준)
-		over_label.offset_bottom = y + 154.0
-	var dim := Color(1, 1, 1, 0.5)
-	var to_lobby := mp_mode != "" and mp.active()  # 멀티 판: 방이 남아 있으면 대기방으로
-	var hy := y + lab_h + 14.0
-	if touch_ui:
-		c.draw_string(ui_font, Vector2(x0, hy), "눌러서 대기방으로" if to_lobby else "눌러서 시작 화면으로", HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
-	else:
-		# 그림(마우스·집)만으로는 무엇을 누르면 어디로 가는지 알기 어려웠다: 글로
-		c.draw_string(ui_font, Vector2(x0, hy), "클릭 · R · Esc: " + ("대기방으로" if to_lobby else "시작 화면으로"), HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
-
-
-# ---------- 입력 ----------
-
-## 두 손가락 벌리기·모으기 = 확대, 두 손가락 끌기 = 이동. PC는 휠 = 확대(커서 쪽), 휠 누른 채 끌기 = 이동.
-## 처리했으면 true (그 입력은 게임·UI로 넘기지 않는다).
-func _zoom_input(event: InputEvent) -> bool:
-	if card_dock != null and card_dock.active():
-		if event is InputEventMouseButton and card_dock.over_ui(event.position):
-			if event.button_index == MOUSE_BUTTON_MIDDLE and not event.pressed:
-				mid_drag = false
-			return false
-		if event is InputEventScreenTouch and event.pressed and card_dock.over_ui(event.position):
-			return false
-	if title_label == null or title_label.visible or phase == Phase.GAMEOVER:
-		touches.clear()
-		pinch_lock = false
-		return false
-	if event is InputEventScreenTouch:
-		if event.pressed:
-			touches[event.index] = event.position
-		else:
-			touches.erase(event.index)
-		if touches.size() >= 2:
-			if not pinch_lock:
-				pinch_lock = true
-				_abort_touch_action()  # 첫 손가락이 시작한 놓기·끌기·그리기를 거둔다
-			var ps: Array = touches.values()
-			pinch_d = maxf((ps[0] as Vector2).distance_to(ps[1]), 1.0)
-			pinch_z = view_zoom
-		elif touches.is_empty():
-			var was := pinch_lock
-			pinch_lock = false
-			return was  # 마지막 손가락을 뗀 것도 누르기로 치지 않는다
-		return pinch_lock
-	if event is InputEventScreenDrag:
-		if not touches.has(event.index):
-			return pinch_lock
-		var prev: Vector2 = touches[event.index]
-		touches[event.index] = event.position
-		if touches.size() >= 2 and pinch_lock:
-			var ps: Array = touches.values()
-			var d := maxf((ps[0] as Vector2).distance_to(ps[1]), 1.0)
-			var mid: Vector2 = ((ps[0] as Vector2) + (ps[1] as Vector2)) / 2.0
-			_zoom_to(pinch_z * d / pinch_d, mid)
-			_pan_by((event.position - prev) / 2.0)  # 두 손가락의 가운데가 움직인 만큼
-			return true
-		return pinch_lock
-	if pinch_lock and (event is InputEventMouseButton or event is InputEventMouseMotion):
-		return true  # 손가락에서 흉내 낸 마우스
-	if event is InputEventMouseButton and event.device != InputEvent.DEVICE_ID_EMULATION:
-		if event.button_index == MOUSE_BUTTON_MIDDLE:
-			mid_drag = event.pressed and view_zoom > 1.0
-			return mid_drag or not event.pressed
-		if event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN] and not _over_scroll_ui(event.position):
-			if _wheel_turn(event):
-				return true
-			_zoom_to(view_zoom * (1.15 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / 1.15), event.position)
-			return true
-	if event is InputEventMouseMotion and mid_drag:
-		_pan_by(event.relative)
-		return true
-	return false
-
-
-## PC 쉬는 시간: 선택한 내 오브젝트 위에서 휠 = 그 자리에서 15도씩 돌리기 (Shift: 5도). 위로 굴리면 시계 반대.
-## 그 밖의 곳에서는 휠이 그대로 확대. 트랙패드처럼 잘게 오는 휠은 모아서 한 칸씩 돈다.
-func _wheel_turn(event: InputEventMouseButton) -> bool:
-	if touch_ui or perk_mode or get_tree().paused or not phase in [Phase.CHOOSE, Phase.READY] or press_t or boxing:
-		return false
-	if settings_panel.visible or notes_panel.visible or codex_panel.visible or vote_panel.visible or records_panel.visible or help_label.visible:
-		return false
-	var t := _tower_at(get_canvas_transform().affine_inverse() * event.position)
-	if t == null or not _mine(t) or not t in selected:
-		return false
-	wheel_acc += event.factor if event.factor > 0.0 else 1.0
-	if wheel_acc < 1.0:
-		return true
-	wheel_acc = 0.0
-	var step := deg_to_rad(5.0 if Input.is_key_pressed(KEY_SHIFT) else 15.0)
-	t.set_attack_direction(t.dir.rotated(-step if event.button_index == MOUSE_BUTTON_WHEEL_UP else step))
-	if tplay != null:
-		tplay.flags["aimed"] = true
-	t.queue_redraw()
-	sfx.play("place")
-	_save_run()
-	return true
-
-
-## 휠을 굴릴 창(도감·패치노트·도움말·DPS 표 등)이 마우스 아래 있으면 확대하지 않는다.
-func _over_scroll_ui(p: Vector2) -> bool:
-	var h := get_viewport().gui_get_hovered_control() if get_viewport().has_method("gui_get_hovered_control") else null
-	if h != null and h != ui_root and h != info:
-		return true
-	return settings_panel.visible or notes_panel.visible or help_label.visible or records_panel.visible or codex_panel.visible or vote_panel.visible or get_tree().paused
-
-
-## 두 번째 손가락이 닿으면: 첫 손가락으로 시작한 누르기·끌기·그리기·상자 선택을 없던 일로.
-func _abort_touch_action() -> void:
-	if press_t:
-		_drop_press()
-		_restore_hint()
-	boxing = false
-	aim_hold = false
-	if dragging and moving:
-		_cancel_step()
-
-
-## OS 포인터를 조회하지 않고 입력 이벤트의 화면 좌표를 현재 카메라로 변환한다.
-var pointer_position := Vector2.ZERO
-
-
-func _pointer_screen() -> Vector2:
-	return pointer_position
-
-
-func _pointer_world() -> Vector2:
-	return get_canvas_transform().affine_inverse() * pointer_position
-
-
-## 터치에서 흉내 낸 마우스는 장치 번호 EMULATION으로 구분한다.
-func _input(event: InputEvent) -> void:
-	var was_touch := touch_ui
-	if event is InputEventMouse:
-		pointer_position = event.position
-	if event is InputEventScreenTouch or event is InputEventScreenDrag:
-		pointer_position = event.position
-		touch_ui = true
-		touch_tip_t = TOUCH_TIP_SEC
-	elif event is InputEventMouseMotion and event.device != InputEvent.DEVICE_ID_EMULATION:
-		touch_ui = false
-	if touch_ui != was_touch:
-		get_tree().call_group("keycap", "queue_redraw")
-		if legend:
-			menu_system._refresh_legend()
-	if dps_panel != null and ((event is InputEventMouseButton or event is InputEventScreenTouch) and event.pressed):
-		dps_panel.press_check(event.position)
-		if card_dock != null:
-			card_dock.side.press_check(event.position)
-	if mp_mode != "" and ((event is InputEventMouseButton or event is InputEventScreenTouch or event is InputEventKey) and event.pressed):
-		_mp_presence()
-	if _info_input(event) or (card_dock != null and card_dock.handle_input(event)) or _zoom_input(event):
-		get_viewport().set_input_as_handled()
-
-
-func _info_tip_at(screen: Vector2) -> int:
-	if hud.is_visible_in_tree() and hud.get_global_rect().has_point(screen) and card_dock._tower_under(screen):
-		return -1
-	var at := ui_root.get_global_transform().affine_inverse() * screen
-	for i in range(tip_rects.size() - 1, -1, -1):
-		if tip_rects[i][0].has_point(at):
-			return i
-	return -1
-
-
-## 원래 터치와 흉내 낸 마우스의 누름/뗌을 각각 소비해 뒤 전장으로 넘기지 않는다.
-func _info_input(event: InputEvent) -> bool:
-	if card_dock == null or card_dock.input_blocked():
-		info_mouse_capture = false
-		info_touch_capture = -1
-		return false
-	if event is InputEventMouseMotion and info_mouse_capture:
-		return true
-	if event is InputEventScreenDrag and event.index == info_touch_capture:
-		return true
-	var mouse: bool = event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT
-	var touch: bool = event is InputEventScreenTouch
-	if mouse and not event.pressed and info_mouse_capture:
-		info_mouse_capture = false
-		return true
-	if touch and not event.pressed and event.index == info_touch_capture:
-		info_touch_capture = -1
-		return true
-	if not (mouse or touch) or not event.pressed:
-		return false
-	var at: Vector2 = (event as InputEventScreenTouch).position if touch else (event as InputEventMouseButton).position
-	var was := tip_pin
-	if touch:
-		tip_pin = -1
-	if card_dock.over_ui(at, false):
-		return false
-	var hit := _info_tip_at(at)
-	if hit < 0:
-		return false
-	_abort_touch_action()
-	if touch:
-		info_touch_capture = event.index
-		tip_pin = -1 if was == hit else hit
-	else:
-		info_mouse_capture = true
-	return true
-
-
-func _unhandled_input(event: InputEvent) -> void:
-	# 글 입력 칸(닉네임)에 쓰는 중엔 단축키를 막는다. 한글 조합 중 키는 입력 칸이 받지 않고 넘겨서
-	# ㅐ(O)·ㅔ(P)·ㅡ(M) 같은 글자가 설정 닫기·일시정지·소리 끄기로 먹혔다. Esc는 그대로 창을 닫는다.
-	if event is InputEventKey and get_viewport().gui_get_focus_owner() is LineEdit and event.keycode != KEY_ESCAPE:
-		return
-	if event is InputEventKey and event.pressed and not event.echo:
-		if coin_stage > 0 and event.keycode in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_1, KEY_2, KEY_3, KEY_KP_1, KEY_KP_2, KEY_KP_3]:
-			_coin_tap()
-			return
-		if event.keycode == KEY_O:
-			menu_system._toggle_settings()
-			return
-		if event.keycode == KEY_N and (title_label.visible or settings_panel.visible or notes_panel.visible):
-			patchlog_system._toggle_notes()
-			return
-		if event.keycode == KEY_ESCAPE and notes_panel.visible:
-			patchlog_system._close_notes()
-			return
-		if event.keycode == KEY_ESCAPE and (settings_panel.visible or records_panel.visible or help_label.visible or modes_panel.visible or codex_panel.visible or vote_panel.visible):
-			settings_panel.visible = false
-			codex_panel.visible = false
-			if vote_panel.visible:
-				vote_panel.hide_panel()
-			modes_panel.visible = false
-			records_panel.visible = false
-			help_label.visible = false
-			return
-		if title_label.visible:
-			match event.keycode:
-				KEY_H:
-					if help_label.visible:
-						help_label.visible = false
-					else:
-						onboarding_system._open_tut_list()
-				KEY_K:
-					menu_system._toggle_codex()
-				KEY_V:
-					if vote_btn and vote_btn.visible:
-						menu_system._toggle_vote()
-				KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
-					if prep:
-						progression_system._close_title()
-					elif continue_btn.visible:
-						_continue_run()
-					else:
-						menu_system._set_prep(true)
-				KEY_ESCAPE:
-					if prep:
-						menu_system._set_prep(false)
-				KEY_LEFT:
-					if prep:
-						menu_system._cycle_map(-1)
-				KEY_RIGHT:
-					if prep:
-						menu_system._cycle_map(1)
-				KEY_F:
-					if prep:
-						menu_system._toggle_flip()
-				KEY_UP:
-					if prep and Meta.games > 0:
-						menu_system._cycle_rules(-1)
-				KEY_DOWN:
-					if prep and Meta.games > 0:
-						menu_system._cycle_rules(1)
-				KEY_F11:
-					menu_system._toggle_fullscreen()
-				KEY_M:
-					_toggle_mute()  # 시작 화면에도 소리 버튼이 보인다
-			return
-		if get_tree().paused and event.keycode not in [KEY_ESCAPE, KEY_P, KEY_R, KEY_E, KEY_T, KEY_X, KEY_H, KEY_M, KEY_D, KEY_F11]:
-			return
-		if event.keycode == KEY_ESCAPE and phase == Phase.GAMEOVER:
-			if Time.get_ticks_msec() - over_ms > 800:
-				title_seen = false
-				_reload()
-			return
-		if event.keycode == KEY_F11:
-			menu_system._toggle_fullscreen()
-		elif event.keycode == KEY_F:
-			_toggle_focus_view()
-		elif event.keycode == KEY_R and get_tree().paused:
-			_pause_restart()
-		elif event.keycode == KEY_E and get_tree().paused:
-			_end_run()
-		elif event.keycode == KEY_T and get_tree().paused:
-			_leave(false)
-		elif event.keycode == KEY_X and get_tree().paused and OS.has_feature("pc"):
-			_leave(true)
-		elif event.keycode in [KEY_1, KEY_2, KEY_KP_1, KEY_KP_2] and phase == Phase.WAVE and not skill_ids.is_empty():
-			_arm_skill(event.keycode - (KEY_KP_1 if event.keycode >= KEY_KP_1 else KEY_1))
-		elif event.keycode == KEY_ESCAPE and skill_arm != "":
-			skill_arm = ""
-		elif event.keycode == KEY_H:
-			help_label.visible = not help_label.visible
-		elif event.keycode in [KEY_1, KEY_2, KEY_3, KEY_4, KEY_KP_1, KEY_KP_2, KEY_KP_3, KEY_KP_4] and phase == Phase.CHOOSE and help_label.visible == false and not get_tree().paused:
-			var i: int = event.keycode - (KEY_KP_1 if event.keycode >= KEY_KP_1 else KEY_1)
-			if perk_mode:
-				if i < perk_offer.size():
-					_on_perk(perk_offer[i])
-			elif i < offer.size():
-				_on_pick(offer[i])
-		elif event.keycode == KEY_Q and phase == Phase.CHOOSE:
-			_on_reroll()
-		elif event.keycode == KEY_S and not event.ctrl_pressed and not event.meta_pressed and not title_label.visible:
-			if skip_left > 0:
-				_toggle_skip_stop()
-			elif phase in [Phase.CHOOSE, Phase.READY]:
-				_on_skip()
-		elif event.keycode == KEY_V and phase == Phase.CHOOSE:
-			_toggle_cards_hidden()
-		elif event.keycode == KEY_Z and phase == Phase.CHOOSE and not perk_mode:
-			_set_card_detail(not Meta.card_detail)
-		elif event.keycode == KEY_D and phase in [Phase.CHOOSE, Phase.READY, Phase.WAVE]:
-			hud_system._toggle_dps()
-		elif event.keycode == KEY_A and (event.ctrl_pressed or event.meta_pressed) and phase in [Phase.CHOOSE, Phase.READY] and not perk_mode:
-			# 모두 선택: 한꺼번에 옮길 때
-			selected = _my_towers()
-			_restore_hint()
-		elif event.keycode == KEY_R and phase == Phase.GAMEOVER:
-			if Time.get_ticks_msec() - over_ms > 800:
-				title_seen = false
-				_reload()
-		elif event.keycode == KEY_M:
-			_toggle_mute()
-		elif event.keycode == KEY_SPACE and phase == Phase.READY:
-			_start_wave()
-		elif event.keycode == KEY_SPACE and phase == Phase.WAVE:
-			_toggle_speed()
-		elif event.keycode == KEY_SPACE and phase == Phase.CHOOSE:
-			hud_system._show_toast(("특성을" if perk_mode else "선택지를") + " 먼저 고르세요 (1·2·3 또는 클릭)")
-		elif event.keycode == KEY_ESCAPE and not get_tree().paused and (phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] or press_t or boxing or (not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY])):
-			_cancel_step()
-		elif event.keycode == KEY_ESCAPE and not get_tree().paused and card_dock.side.visible:
-			card_dock.close_inspector()
-			_restore_hint()
-		elif event.keycode == KEY_P or event.keycode == KEY_ESCAPE:
-			_toggle_pause()
-	if get_tree().paused:
-		return
-	if event is InputEventMouseButton and not card_dock.input_blocked() and card_dock.over_ui(event.position):
-		if not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			_drop_press()
-			boxing = false
-			aim_hold = false
-		return
-	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_RIGHT and aim_right:
-		aim_right = false
-		if phase == Phase.AIM:
-			if _pointer_world().distance_to(place_pos) > 30.0:
-				_confirm_aim()
-			else:
-				_cancel_step()  # 거의 안 끌고 뗀 우클릭: 그대로 둔다
-		return
-	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		if press_t:
-			_release_press()
-			return
-		if boxing:
-			_finish_box()
-			return
-		if phase == Phase.AIM and touch_ui and aim_hold:
-			_aim_release()
-			return
-		# 누른 채 끌어서 놓으면 그 방향으로 바로 확정
-		if phase == Phase.AIM and _pointer_world().distance_to(place_pos) > 40.0 and Time.get_ticks_msec() - aim_start_ms > 150:
-			_confirm_aim()
-		return
-	if not (event is InputEventMouseButton and event.pressed):
-		return
-	# 휠은 클릭이 아니다: 도감·패치노트는 끝까지 굴린 뒤의 휠이 여기로 넘어와 창이 닫혔다
-	if event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_LEFT, MOUSE_BUTTON_WHEEL_RIGHT]:
-		return
-	if event.button_index == MOUSE_BUTTON_RIGHT and (press_t or boxing):
-		_cancel_step()
-		return
-	# 오브젝트를 우클릭한 채 끌기: 그 자리에서 방향만 바꾸고, 떼면 확정
-	if event.button_index == MOUSE_BUTTON_RIGHT and phase in [Phase.CHOOSE, Phase.READY] and not perk_mode and not title_label.visible \
-			and not (settings_panel.visible or notes_panel.visible or codex_panel.visible or vote_panel.visible or records_panel.visible or help_label.visible):
-		var rt := _tower_at(_pointer_world())
-		if rt and _mine(rt):
-			_start_move(rt)
-			aim_right = phase == Phase.AIM
-			return
-	# 선택 해제보다 오브젝트 우클릭 조준을 먼저 처리한다. 빈 곳 우클릭은 선택 해제.
-	if event.button_index == MOUSE_BUTTON_RIGHT and not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY]:
-		_cancel_step()
-		return
-	if notes_panel.visible:
-		patchlog_system._close_notes()
-		return
-	if codex_panel.visible:
-		codex_panel.visible = false
-		return
-	if vote_panel.visible:
-		vote_panel.hide_panel()
-		return
-	if records_panel.visible:
-		records_panel.visible = false
-		return
-	if help_label.visible:
-		help_label.visible = false
-		return
-	if title_label.visible or settings_panel.visible:
-		return
-	if phase == Phase.GAMEOVER and event.button_index == MOUSE_BUTTON_LEFT:
-		if Time.get_ticks_msec() - over_ms > 800:
-			title_seen = false
-			_reload()
-		return
-	if card_dock != null and card_dock.over_ui(event.position):
-		return
-	var mpos := _pointer_world()
-	if event.button_index == MOUSE_BUTTON_LEFT and phase in [Phase.CHOOSE, Phase.READY, Phase.WAVE] and _tower_at(mpos) == null:
-		card_dock.inspected_tower = null
-		tip_tower = null
-		if not (Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META)):
-			selected.clear()
-	if perk_mode:
-		return
-	if phase == Phase.WAVE and skill_arm != "":
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			_use_skill(skill_arm, mpos)
-		else:
-			skill_arm = ""
-		return
-	if phase == Phase.WAVE and event.button_index == MOUSE_BUTTON_LEFT:
-		var t := _tower_at(mpos)
-		if t:
-			_select_tower(t)
-		return
-	if phase in [Phase.CHOOSE, Phase.READY] and event.button_index == MOUSE_BUTTON_LEFT:
-		var t := _tower_at(mpos)
-		if t:
-			# 짧게 클릭: 선택, Shift/Ctrl+클릭: 선택에 더하기·빼기, 끌기: 바로 이동
-			_begin_press(t, mpos)
-		else:
-			# 빈 곳을 끌면 선택 상자
-			boxing = true
-			box_start = mpos
-		return
-	if phase == Phase.MOVE:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			mpos = mpos.clamp(field_rect().position, field_rect().end)
-			if mpos.distance_to(core()) < 50.0:
-				hud_system._show_toast("중앙 점에 너무 가까워요")
-				return
-			var other := _tower_at(mpos, moving)
-			if other:
-				hud_system._show_toast("다른 오브젝트와 겹칠 수 없어요")
-				return
-			place_pos = mpos
-			moving.position = mpos
-			phase = Phase.AIM
-			aim_start_ms = Time.get_ticks_msec()
-			_aim_begin()
-			hint.text = ui_layout_system._th("클릭 또는 끌어서 놓기: 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 옮기기 취소")
-		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			_cancel_step()
-		return
-	if phase == Phase.PLACE and event.button_index == MOUSE_BUTTON_LEFT:
-		_place_card_at(mpos)
-	elif phase == Phase.AIM:
-		if event.button_index == MOUSE_BUTTON_LEFT and touch_ui:
-			aim_hold = true  # 터치: 누르는 동안 손가락을 따라 범위를 보여 주고, 떼면 [확정]을 기다린다
-		elif event.button_index == MOUSE_BUTTON_LEFT:
-			# 오브젝트 바로 위를 누르면 손을 뗄 때 정한다 (그 자리에서 바깥으로 끌어 조준)
-			if mpos.distance_to(place_pos) >= MERGE_DIST:
-				_confirm_aim()
-		elif event.button_index == MOUSE_BUTTON_RIGHT and not aim_right:
-			_cancel_step()
-	elif phase == Phase.PLACE and event.button_index == MOUSE_BUTTON_RIGHT:
-		_cancel_step()
-
-
-## 드롭은 손을 뗀 화면 좌표로 판정한다. 패널·창 밖·무효 대상에서는 카드를 소비하지 않는다.
-func _drop_carried_card(screen: Vector2) -> void:
-	if phase != Phase.PLACE or picked.is_empty() or not get_viewport_rect().has_point(screen) or card_dock.input_blocked() or card_dock.over_ui(screen):
-		return
-	var world := get_canvas_transform().affine_inverse() * screen
-	_place_card_at(world, true)
-
-
-func _place_card_at(mpos: Vector2, direct := false) -> void:
-	var target := _tower_at(mpos)
-	if TutPlay.on and tplay != null and not tplay.allow_place(target):
-		return
-	if target and not _place_ok(target):
-		# 넣을 수 없는 오브젝트는 흐리게 그리고 누르거나 끌 수 없다 (이유만 알림)
-		hud_system._show_toast(_place_refuse(target))
-		return
-	if target:
-		# 클릭은 손을 뗄 때 처리한다. 꾹 누르거나 끌면 카드를 유지한 채 옮긴다.
-		if direct:
-			_place_on(target)
-		else:
-			_begin_press(target, mpos)
-		return
-	if not field_rect().has_point(mpos):
-		hud_system._show_toast("전장 안에 놓으세요")
-		return
-	if mpos.distance_to(core()) < 50.0:
-		hud_system._show_toast("중앙 점에 너무 가까워요")
-		return
-	if picked["type"] != "elem":
-		_apply_card(target)
-		return
-	elif picked["e"] == Elem.STAR and star_full():
-		hud_system._show_toast(Tower.star_full_text())
-		return
-	else:
-		place_pos = mpos
-		phase = Phase.AIM
-		aim_start_ms = Time.get_ticks_msec()
-		_aim_begin()
-		aim_hold = touch_ui and not direct  # 놓은 손가락 그대로 끌어 방향을 볼 수 있다
-		if touch_ui:
-			hint.text = ui_layout_system._th(AIM_TOUCH_HINT + "   취소: 위치 다시 정하기")
-		else:
-			hint.text = ui_layout_system._th("클릭 또는 끌어서 놓기: 발사 방향 확정 (Shift: 15도 단위) (색칠된 곳이 공격 범위)\n우클릭/Esc: 위치 다시 정하기")
-
-## 카드 선택 막을 깔지: 선택지 카드가 펼쳐져 있을 때만 (일시정지 어둠이 있으면 그것만).
-func _card_dim_on() -> bool:
-	if card_dock != null and card_dock.active():
-		return false
-	return phase == Phase.CHOOSE and choice_box.visible and not cards_hidden and choice_box.get_child_count() > 0 \
-		and not title_label.visible and not get_tree().paused
-
-
-## 지금 고른 카드를 이 오브젝트에 넣을 수 있는지 (속성 종류·강화 종류별 상한·Pat.NO_MOD·별 상한·친구 오브젝트).
-func _place_ok(t: Tower) -> bool:
-	if picked.is_empty() or not is_instance_valid(t):
-		return false
-	return (_mine(t) or _req_ok(t)) and t.can_take(picked)
-
-
-## 넣을 수 없는 이유 (_place_ok가 false일 때).
-func _place_refuse(t: Tower) -> String:
-	if not _mine(t) and not _req_ok(t):
-		return "친구가 놓은 오브젝트에는 넣을 수 없어요" + (" (요청한 속성 %s만)" % Elem.NAMES[t.req_e] if t.req_e >= 0 else "")
-	return t.refuse_text(picked)
-
-
-## 카드를 놓는 중(PLACE): 넣을 수 없는 오브젝트는 흐리게. 다른 단계에서는 원래대로.
-func _update_place_dim() -> void:
-	var on := phase == Phase.PLACE and not picked.is_empty()
-	for t in towers.get_children():
-		var c := Color.WHITE
-		if on and not _place_ok(t):
-			c = PLACE_OFF
-		if t.modulate != c:
-			t.modulate = c
-
-
-## 고른 카드를 오브젝트에 넣는다 (PLACE에서 오브젝트를 짧게 클릭).
-func _place_on(target: Tower) -> void:
-	if not _mine(target):
-		if _req_ok(target) and target.can_take(picked):
-			_mp_give(target)  # 협동: 친구가 요청한 속성
-		else:
-			hud_system._show_toast(_place_refuse(target))
-		return
-	if picked["type"] != "elem":
-		_apply_card(target)
-		return
-	if not target.can_take(picked):
-		hud_system._show_toast(target.refuse_text(picked))
-		return
-	var fresh := Elem.new_reactions(target.eff_now(), picked["e"])
-	var msg: String = target.add(picked["e"], picked["lv"])
-	sfx.play("place")
-	if msg.begins_with("조합"):
-		# 긴 배너·토스트 글 대신 오브젝트 옆 그림 카드 (2026-11-05)
-		sfx.play("reaction", 0.0)
-		rx_card.show_for(target, fresh)
-		burst(target.position, Color(1, 0.85, 0.4), 30, 260.0)
-	else:
-		hud_system._show_toast(msg)
-	_after_place()
-
-
-func _begin_press(t: Tower, mpos: Vector2) -> void:
-	if mp_req_mode and phase in [Phase.CHOOSE, Phase.READY]:
-		if _mine(t):
-			_mp_req_open(t)
-		else:
-			hud_system._show_toast("내 오브젝트를 누르세요")
-		return
-	if not _mine(t):
-		if phase == Phase.PLACE and _req_ok(t):
-			_place_on(t)  # 요청한 속성을 넣어 주기 (옮기지는 못함)
-			return
-		if phase in [Phase.CHOOSE, Phase.READY]:
-			_select_tower(t)
-		else:
-			hud_system._show_toast("친구가 놓은 오브젝트는 바꿀 수 없어요")
-		return
-	press_t = t
-	press_pos = mpos
-	press_ms = Time.get_ticks_msec()
-	dragging = false
-
-
-## 누른 오브젝트: 꾹 누르거나(0.35초) 끌면 옮기기 시작한다. 선택된 것을 끌면 선택 전부가 함께.
-func _update_press() -> void:
-	if not press_t:
-		return
-	if card_dock.input_blocked() or not phase in [Phase.PLACE, Phase.CHOOSE, Phase.READY] or not is_instance_valid(press_t) or not _mine(press_t):
-		_drop_press()
-		return
-	var mpos := _pointer_world()
-	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-		_release_press()
-		return
-	if not dragging and (mpos.distance_to(press_pos) > 12.0 or Time.get_ticks_msec() - press_ms >= 350):
-		dragging = true
-		drag_group = selected.filter(func(t): return is_instance_valid(t) and _mine(t)) if press_t in selected else [press_t]
-		drag_origs = drag_group.map(func(t): return t.position)
-		for t in drag_group:
-			t.place_pop = 1.0
-		hint.text = ui_layout_system._th("끌어서 옮기는 중%s: 놓으면 그 자리에 둠 (방향은 그대로)\n우클릭/Esc: 취소" % (" (%d개)" % drag_group.size() if drag_group.size() > 1 else ""))
-	if dragging:
-		# 창 밖으로 끌어도 무리 전체가 화면 안에 남도록 이동량을 자른다
-		var delta := mpos - press_pos
-		var f := field_rect()
-		for i in drag_group.size():
-			if is_instance_valid(drag_group[i]):
-				var q: Vector2 = drag_origs[i] + delta
-				delta += q.clamp(f.position, f.end) - q
-		for i in drag_group.size():
-			if is_instance_valid(drag_group[i]):
-				drag_group[i].position = drag_origs[i] + delta
-				drag_group[i].queue_redraw()
-
-
-## 누른 오브젝트에서 손을 뗐을 때: 끌었으면 그 자리에 두고, 짧은 클릭이면 원래 클릭 동작.
-func _release_press() -> void:
-	if card_dock.input_blocked() or card_dock.over_ui(_pointer_screen()):
-		_drop_press()
-		_restore_hint()
-		return
-	var t := press_t
-	press_t = null
-	if not is_instance_valid(t) or not phase in [Phase.PLACE, Phase.CHOOSE, Phase.READY]:
-		_drop_press()
-		return
-	if not dragging:
-		if phase == Phase.PLACE:
-			_place_on(t)
-		elif Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META):
-			if t in selected:
-				selected.erase(t)
-			else:
-				selected.append(t)
-			_restore_hint()
-		elif phase in [Phase.CHOOSE, Phase.READY] and selected == [t] and card_dock.inspected_tower == t:
-			_edit_selected_direction()  # 이미 선택해 상세가 열린 오브젝트를 한 번 더 누르면 바로 방향 바꾸기
-		else:
-			_select_tower(t)
-		return
-	dragging = false
-	# 놓을 수 없는 자리가 하나라도 있으면 모두 원래 자리로
-	var bad := ""
-	for o in drag_group:
-		if is_instance_valid(o) and bad == "":
-			bad = _bad_spot(o, drag_group)
-	if bad != "":
-		hud_system._show_toast(bad)
-		_revert_drag()
-	elif drag_group[0].position.distance_to(drag_origs[0]) > 4.0:
-		sfx.play("place")
-	for o in drag_group:
-		if is_instance_valid(o):
-			o.place_pop = 1.0
-			o.queue_redraw()
-	if bad == "" and phase in [Phase.CHOOSE, Phase.READY]:
-		if drag_group.size() == 1:
-			_select_tower(t)
-		else:
-			selected = drag_group.duplicate()
-	drag_group.clear()
-	_restore_hint()
-	_save_run()
-
-
-## 옮기는 자리에 놓을 수 없으면 그 이유 (movers: 함께 움직이는 것들끼리는 겹쳐도 됨).
-func _bad_spot(o: Tower, movers: Array) -> String:
-	if o.position.distance_to(core()) < 50.0:
-		return "중앙 점에 너무 가까워요"
-	for other in towers.get_children():
-		if not other in movers and other.position.distance_to(o.position) < MERGE_DIST:
-			return "다른 오브젝트와 겹칠 수 없어요"
-	return ""
-
-
-func _revert_drag() -> void:
-	for i in drag_group.size():
-		if is_instance_valid(drag_group[i]):
-			drag_group[i].position = drag_origs[i]
-			drag_group[i].queue_redraw()
-
-
-func _drop_press() -> void:
-	if dragging:
-		_revert_drag()
-	press_t = null
-	dragging = false
-	drag_group.clear()
-
-
-## 선택 상자를 놓았을 때: 상자 안 오브젝트 선택 (Shift/Ctrl: 기존 선택에 더함). 짧은 클릭이면 선택 해제.
-func _finish_box() -> void:
-	boxing = false
-	if card_dock.input_blocked() or card_dock.over_ui(_pointer_screen()):
-		_restore_hint()
-		return
-	var r := Rect2(box_start, _pointer_world() - box_start).abs()
-	var add := Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META)
-	if not add:
-		selected.clear()
-	if r.size.length() > 8.0:
-		for t in towers.get_children():
-			if r.grow(Tower.RADIUS * 0.5).has_point(t.position) and not t in selected and _mine(t):
-				selected.append(t)
-	_restore_hint()
-
-
-func _select_tower(t: Tower) -> void:
-	selected = [t] if _mine(t) else []
-	card_dock.dismissed_tower = null
-	card_dock.hovered = null
-	card_dock.inspected_tower = t
-	tip_tower = t
-	_restore_hint()
-
-
-func _edit_selected_direction() -> void:
-	if phase in [Phase.CHOOSE, Phase.READY] and not card_dock.input_blocked() and selected.size() == 1 and is_instance_valid(selected[0]) and _mine(selected[0]):
-		_start_move(selected[0])
-
-
-## 단계에 맞는 안내 문구로 되돌린다 (선택 중이면 선택 안내).
-func _restore_hint() -> void:
-	selected = selected.filter(func(t): return is_instance_valid(t))
-	match phase:
-		Phase.PLACE:
-			hint.text = ui_layout_system._th(_place_hint())
-		Phase.CHOOSE:
-			hint.text = ui_layout_system._th(_choose_hint())
-		Phase.READY:
-			hint.text = ui_layout_system._th(READY_HINT if Meta.games < 3 else "")
-	if not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY, Phase.PLACE]:
-		hint.text = ("선택 %d개: 선택한 오브젝트 하나를 끌면 함께 이동\n빈 곳 누르기: 선택 해제" if touch_ui else "선택 %d개: 선택한 오브젝트 하나를 끌면 함께 이동\nShift/Ctrl+클릭: 더하기·빼기   Ctrl+A: 모두   Esc/우클릭: 선택 해제") % selected.size()
-
-
-## 조준 단계에 들어갈 때: 터치는 지금 방향(옮기는 오브젝트)을 붙잡아 두고 시작한다.
-func _aim_begin() -> void:
-	aim_hold = false
-	aim_d = moving.dir.normalized() if moving else Vector2.ZERO
-	aim_wait = aim_d != Vector2.ZERO
-
-
-## 아래 [확정] 버튼: 터치 조준에서 방향을 붙잡아 뒀을 때.
-func _ok_btn_on() -> bool:
-	return phase == Phase.AIM and touch_ui and aim_wait
-
-
-## 터치 조준에서 손가락을 뗄 때: 끌었던 방향을 붙잡아 두고 [확정]을 기다린다.
-## 오브젝트를 짧게 다시 누르면(끌지 않고 떼면) 붙잡아 둔 방향으로 확정.
-func _aim_release() -> void:
-	aim_hold = false
-	var d := _pointer_world() - place_pos
-	if d.length() >= AIM_TOUCH_MIN:
-		aim_d = d.normalized()
-		aim_wait = true
-	elif aim_wait and d.length() < MERGE_DIST:
-		_confirm_aim()
-
-
-## 방향 확정 (클릭, 또는 끌었다 놓기, 터치 [확정]).
-func _confirm_aim() -> void:
-	var d := _aim_dir(place_pos)
-	if d == Vector2.ZERO:
-		return
-	if moving:
-		if tplay != null:
-			tplay.flags["aimed"] = true  # 튜토리얼 '보스 길 쪽으로 돌리기': 이미 그쪽이라 거의 안 돌아도 한 번 정하면 된다
-		moving.position = place_pos
-		moving.set_attack_direction(d)
-		moving.place_pop = 1.0
-		sfx.play("place")
-		moving.queue_redraw()
-		moving = null
-		_end_move()
-		return
-	_place_tower(place_pos, d)
-
-	sfx.play("place")
-	_after_place()
-
-
-## 메인 메뉴: 맵·스킨 선택, 시작, 기록·업적, 설정, 도움말.
 const PREP_W := 640.0
 
 
 ## 준비 화면 칸: 화면 폭이 맵 카드 + 오른쪽 묶음(520)을 나란히 둘 만큼이면 두 칸
 const LEGEND_ICONS := ["pat", "elem", "mod", "link", "trig", "tower", "rx"]
-var short_re := RegEx.create_from_string("\\s*\\([^)]*\\)")  # 카드 간소화: 괄호 덧붙임 빼기  # 그림이 붙는 앞줄들 (_draw_legend_icons)
-
-
-## 오른쪽 설명 줄 앞 그림. 글자를 키우면 줄이 접히므로 앞줄들이 몇 줄로 접히는지 세어 자리를 맞춘다.
 static func _new_run_id() -> String:
 	return "%d-%06d" % [Time.get_unix_time_from_system(), randi() % 1000000]
 
@@ -4709,715 +1890,8 @@ const EASY_NOTICE_KEY := "easy_board"  # user://device.cfg [notice]: 다시 보�
 
 
 ## 쉽게 모드 안내 상자: 모드 창 맨 위에 뜬다 (판 시작은 막지 않음).
-func _save_run() -> void:
-	if mp_mode != "" or TutPlay.on:
-		return  # 멀티플레이 판·연습 판은 이어하기가 없다
-	if title_label.visible or not phase in [Phase.CHOOSE, Phase.READY] or press_t or dragging or coin_stage > 0:
-		return
-	var ts := towers.get_children()
-	var list: Array = []
-	for t in ts:
-		list.append(t.to_save())
-	var vals := {
-		"format": RUN_FORMAT, "version": ProjectSettings.get_setting("application/config/version", ""),
-		"map": Meta.map_id, "line_flip": Meta.line_flip, "rules": Meta.rules, "modes": Array(Modes.on), "wave": wave, "score": score, "kills": kills, "best_combo": best_combo,
-		"combo": combo, "combo_t": combo_t, "combo_bonus": combo_bonus,
-		"core_hp": core_hp, "core_max": core_max, "perks": perks.keys().map(func(k): return [k, perks[k]]), "regen_acc": regen_acc, "shield_keep": shield_keep, "orb_speed_mul": orb_speed_mul,
-		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
-		"rerolls_left": rerolls_left, "bonus_rerolls": bonus_rerolls, "picks_left": picks_left,
-		"vary": Vary.save(), "skip_left": skip_left, "skip_total": skip_total, "skip_stop": skip_stop, "bank_picks": bank_picks, "bank_rerolls": bank_rerolls, "bank_perks": bank_perks, "perk_rerolls": perk_rerolls, "coin_next": coin_next, "rest_ready": rest_ready,
-		"lanes": Array(lanes), "wave_resist": wave_resist, "boss": boss_plan, "achievements": new_achievements, "ach_run": Ach.run,
-		"state": "perk" if perk_mode else ("ready" if phase == Phase.READY else "choose"),
-		"offer": offer, "perk_offer": perk_offer.map(func(pk): return pk["id"]), "towers": list,
-		"log": run_log, "leaks": leak_log, "game_secs": run_game, "real_secs": run_real, "run_id": run_id,
-		"tutor": tutor, "tutor_given": tutor_given.keys(), "grow": legacy_grow, "skill_set": skill_set, "skill_used": skill_used, "ley": ley.map(func(p): return [p.x, p.y]),
-	}
-	var cfg := ConfigFile.new()
-	for k in vals:
-		cfg.set_value("run", k, vals[k])
-	cfg.save(RUN_PATH)
-	if run_id != moved_run:
-		# 같은 계정의 다른 기기에서 이어 할 수 있게 서버에도 (쉬는 시간마다, 끄면 마지막 것)
-		net.put_run(run_id, cfg.encode_to_text(), {"game": Net.game_version(), "platform": Net.platform(), "map": Meta.map_id,
-			"rules": Meta.rules, "wave": wave, "score": score})
-
-
-## drop: 서버의 같은 판도 지운다 (다른 기기가 가져가서 지우는 것이면 false).
-func _clear_run(drop := true) -> void:
-	if FileAccess.file_exists(RUN_PATH):
-		var key := online_system._local_run_key()
-		DirAccess.remove_absolute(RUN_PATH)
-		if drop and key != "" and key != moved_run:
-			net.drop_run(key)
-
-
-## 저장된 판 요약 {wave, map, rules, cfg} (없거나 형식이 다르면 빈 사전).
-func _run_info(path := "") -> Dictionary:
-	var cfg := ConfigFile.new()
-	if cfg.load(path if path != "" else RUN_PATH) != OK or Meta.val(cfg, "run", "format", 0) != RUN_FORMAT:
-		return {}
-	var map: String = Meta.val(cfg, "run", "map", "")
-	var r: int = Meta.val(cfg, "run", "rules", 0)
-	if not map in Meta.MAP_IDS or not r in Rules.OLD_IDS:
-		return {}
-	if not r in Rules.IDS:
-		r = 1  # 고를 수 없게 된 버전(2·4)과 폐기한 5로 저장된 판은 버전 1로 이어 한다
-	return {"wave": maxi(0, Meta.val(cfg, "run", "wave", 0)), "map": map, "rules": r, "cfg": cfg}
-
-
-## 시작 화면의 이어하기 버튼: 저장된 판이 있으면 그 판의 웨이브·맵·규칙을 보여 준다.
-func _refresh_continue() -> void:
-	var info := _run_info()
-	continue_btn.visible = not info.is_empty()
-	if continue_btn.visible:
-		remote_btn.visible = false
-	new_armed = 0.0
-	new_btn.text = "새로 시작" if continue_btn.visible else "시작"
-	if continue_btn.visible:
-		onboarding_system._tut_event("continue")
-		continue_info.text = "웨이브 %d부터 · %s · %s" % [info["wave"] + 1, Meta.MAPS[info["map"]]["name"], Rules.NAMES[info["rules"]]]
-		var n := 2 if mp_btn.visible else 1  # 이어하기 폭 = 타일 줄 폭 (일반 판·멀티)
-		continue_btn.custom_minimum_size.x = n * menu_system._tile_w() + 16 * (n - 1)
-	get_tree().call_group("keycap", "queue_redraw")  # [일반 판] 타일의 Enter 표시는 이어하기가 있으면 뺀다
-
-
-## 저장된 선택지 카드가 지금 판에서도 쓸 수 있는 형식인지.
-func _valid_card(cd: Variant) -> bool:
-	if not cd is Dictionary:
-		return false
-	match cd.get("type"):
-		"elem": return cd.get("e") in Elem.ALL and cd.get("lv") is int
-		"pat": return cd.get("id") in Pat.ALL_IDS
-		"mod": return Pat.MODS.has(cd.get("id"))
-		"link": return Pat.LINKS.has(cd.get("id"))
-		"trig": return Pat.TRIGS.has(cd.get("id"))
-		"cata": return false  # 예전 저장된 대격변 선택지 복원 방지
-	return false
-
-
-## 시작 화면 [이어하기]: 저장된 쉬는 시간으로 돌아간다.
-func _continue_run() -> void:
-	var info := _run_info()
-	if info.is_empty():
-		_clear_run()
-		_refresh_continue()
-		return
-	var cfg: ConfigFile = info["cfg"]
-	var g := func(k: String, d: Variant) -> Variant: return Meta.val(cfg, "run", k, d)
-	Meta.map_id = info["map"]
-	Meta.line_flip = g.call("line_flip", Meta.line_flip)
-	Meta.rules = info["rules"]
-	Modes.set_on(g.call("modes", []))  # 그 판을 시작할 때 고른 모드 (시작 화면에서 지금 고른 것과 달라도)
-	legacy_grow = g.call("grow", false) == true
-	_apply_rules()
-
-	menu_system._refresh_menu()
-	progression_system._save_best()
-	progression_system._hide_title()
-	wave = info["wave"]
-	score = maxi(0, g.call("score", 0))
-	kills = maxi(0, g.call("kills", 0))
-	best_combo = maxi(0, g.call("best_combo", 0))
-	combo = clampi(g.call("combo", 0), 0, best_combo)
-	combo_t = clampf(g.call("combo_t", 0.0), 0.0, COMBO_KEEP) if combo > 0 else 0.0
-	combo_bonus = maxi(0, g.call("combo_bonus", 0))
-	combo_hold = combo_t > 0.0
-	core_max = maxi(1, g.call("core_max", CORE_MAX_HP))
-	core_hp = clampi(g.call("core_hp", core_max), 1, core_max)
-	danger_lv = _danger_of(core_hp)
-	core_disp = float(core_hp)
-	# 특성은 고른 순서대로 [id, 횟수] 목록 (사전으로 저장하면 이름순으로 바뀌어 점수 줄 순서가 달라짐)
-	perks = {}
-	var pk_saved: Variant = cfg.get_value("run", "perks", [])
-	var pairs: Array = []
-	if pk_saved is Array:
-		pairs = pk_saved
-	elif pk_saved is Dictionary:  # v0.4.21~24 저장
-		pairs = pk_saved.keys().map(func(k): return [k, pk_saved[k]])
-	for pr in pairs:
-		if pr is Array and pr.size() == 2 and PERKS.any(func(pk): return pk["id"] == pr[0]) and pr[1] is int and pr[1] > 0:
-			perks[pr[0]] = pr[1]
-	regen_acc = clampf(float(g.call("regen_acc", 0.0)), 0.0, 0.999)
-	shield_keep = clampi(int(g.call("shield_keep", 0)), 0, 4)
-	orb_speed_mul = clampf(g.call("orb_speed_mul", 1.0), 0.05, 1.0)
-	Tower.dmg_mul = maxf(1.0, g.call("dmg_mul", 1.0))
-	Tower.spd_mul = maxf(1.0, g.call("spd_mul", 1.0))
-	Tower.reach_mul = maxf(1.0, g.call("reach_mul", 1.0))
-	Tower.tax_step = clampf(g.call("tax_step", Rules.tax_step), 0.0, Rules.tax_step)
-	rerolls_left = maxi(0, g.call("rerolls_left", 1))
-	bonus_rerolls = maxi(0, g.call("bonus_rerolls", 0))
-	picks_left = maxi(0, g.call("picks_left", 1))  # 특성 고르기 중에는 0
-	skip_left = maxi(0, int(g.call("skip_left", 0)))
-	skip_total = maxi(skip_left, int(g.call("skip_total", 0)))
-	skip_stop = g.call("skip_stop", false) == true
-	bank_picks = (g.call("bank_picks", []) as Array).filter(func(x): return x is int).map(func(x): return clampi(x, 0, wave))
-	bank_rerolls = maxi(0, int(g.call("bank_rerolls", 0)))
-	perk_rerolls = clampi(int(g.call("perk_rerolls", 1)), 0, 1)
-	bank_perks = maxi(0, int(g.call("bank_perks", 0)))
-	coin_next = str(g.call("coin_next", ""))
-	if not coin_next in ["double", "reroll"]:
-		coin_next = ""
-	rest_ready = g.call("rest_ready", false) == true
-	lanes.assign((g.call("lanes", []) as Array).filter(func(a): return a is float))
-	if lanes.is_empty():
-		_roll_lanes()
-	wave_resist = g.call("wave_resist", -1)
-	if not wave_resist in Elem.ALL:
-		wave_resist = -1
-	Vary.load_from(g.call("vary", {}))
-	_skills_new_run(int(g.call("skill_set", 0)))
-	ley = []
-	if leys_on():
-		for q in g.call("ley", []):
-			if q is Array and q.size() == 2 and (q[0] is float or q[0] is int) and (q[1] is float or q[1] is int):
-				ley.append(Vector2(q[0], q[1]).clamp(field_rect().position, field_rect().end))
-	skill_used = maxi(0, int(g.call("skill_used", 0)))
-	# 미리 뽑아 둔 보스 (없거나 형식이 다르면 새로 뽑음)
-	var bp: Variant = g.call("boss", {})
-	boss_plan = {}
-	if bp is Dictionary and bp.get("wave") is int and bp["wave"] == wave + 1 and bp.get("a") is float and bp.get("hp") is float and bp.get("spd") is float and bp.get("resist") is int and bp.get("sturdy") is bool:
-		boss_plan = {"wave": bp["wave"], "a": bp["a"], "hp": maxf(1.0, bp["hp"]), "spd": maxf(1.0, bp["spd"]), "resist": bp["resist"] if bp["resist"] in Elem.ALL else -1, "sturdy": bp["sturdy"], "y": clampf(float(bp.get("y", 0.0)), -LINE_HALF, LINE_HALF)}
-	else:
-		_plan_boss()
-	new_achievements = (g.call("achievements", []) as Array).filter(func(a): return a is String)
-	Ach.load_run(cfg.get_value("run", "ach_run", {}))
-	run_log = (g.call("log", []) as Array).filter(func(e): return e is Dictionary)
-	leak_log = (g.call("leaks", []) as Array).filter(func(e): return e is Dictionary and e.has("w") and e.has("n") and e.has("dmg") and e.has("kinds"))
-	run_game = maxf(0.0, g.call("game_secs", 0.0))
-	run_real = maxf(0.0, g.call("real_secs", 0.0))
-	run_id = str(g.call("run_id", ""))
-	if run_id == "":
-		run_id = _new_run_id()  # 판 번호가 없던 예전 저장
-	tutor = g.call("tutor", false)
-	tutor_given = {}
-	for k in g.call("tutor_given", []):
-		if k in TUTOR_OPEN:
-			tutor_given[k] = true
-	# 오브젝트: 연결선은 저장 순서 번호로 다시 잇는다 (못 읽은 것은 null로 자리만 지킴)
-	var raw: Array = g.call("towers", [])
-	var made: Array = []
-	for d in raw:
-		var t: Tower = null
-		if d is Dictionary:
-			t = Tower.new()
-			t.main = self
-			t.load_save(d)
-			var fr := field_rect()
-			t.position = t.position.clamp(fr.position, fr.end)  # 손으로 고친 저장에서 화면 밖 위치
-			if t.order.is_empty():
-				t.free()
-				t = null
-			else:
-				towers.add_child(t)
-		made.append(t)
-	# 예전 저장의 연결선("links")은 없어진 카드라 읽지 않는다
-	for t in towers.get_children():
-		t.eff = t.eff_now()
-	hud_system._refresh_build()
-	match g.call("state", "choose"):
-		"perk":
-			perk_offer = []
-			for id in g.call("perk_offer", []):
-				for pk in PERKS:
-					if pk["id"] == id and _card_enabled({"type": "perk", "id": id}):
-						perk_offer.append(pk)
-			if perk_offer.is_empty():
-				_start_perk()
-			else:
-				_show_perks()
-		"ready":
-			_clear_shots()
-			_update_preview()
-			_enter_ready()
-			if skip_left > 0:
-				countdown = 1.0  # 넘기는 중에 껐다: 이어서 넘긴다
-		_:
-			picks_left = maxi(1, picks_left)
-			offer = (g.call("offer", []) as Array).filter(_valid_card)
-			if offer.is_empty():
-				_make_choices()
-			else:
-				_show_offer()
-			_open_choose()
-	if old_run_ver == "":
-		hud_system._show_toast("웨이브 %d 앞 쉬는 시간부터 이어서 합니다" % (wave + 1))
-
-
-## 저장된 판이 지난 마이너 버전(x.Y)에서 저장됐으면 그 버전 (마이너가 같거나 저장이 없으면 "").
-## 패치(x.y.Z)만 바뀐 판은 그대로 이어 한다.
-func _old_run_version() -> String:
-	var info := _run_info()
-	if info.is_empty():
-		return ""
-	var v := str(Meta.val(info["cfg"], "run", "version", ""))
-	if Net.same_minor(v, Net.game_version()):
-		return ""
-	return v if v != "" else "?"
-
-
-## 마이너 버전이 바뀌면 지난 버전의 판은 이어 하지 않는다: 그 판을 불러와 지금 점수로 끝낸다
-## (판 끝내기와 같이 기록 저장·온라인 전송, 저장은 지움). 결과를 보여 주고 클릭하면 시작 화면.
-func _end_old_run(v: String) -> void:
-	old_run_ver = v
-	_continue_run()
-	perk_mode = false
-	ended = true
-	_game_over()
-	over_label.text = patchlog_system._kr_keep("v%s에서 하던 판은 새 버전(v%s)에서 이어 할 수 없어 지금 점수로 끝냈어요\n" % [v, Net.game_version()]) + over_label.text
-
-
-## 공격방식·강화·연계 카드를 오브젝트에 넣는다.
-func _apply_card(target: Tower) -> void:
-	if target == null:
-		hud_system._show_toast("오브젝트 위에 놓으세요")
-		return
-	if not _mine(target):
-		hud_system._show_toast("친구가 놓은 오브젝트에는 넣을 수 없어요")
-		return
-	var msg := ""
-	match picked["type"]:
-		"pat":
-			if not target.can_take(picked):
-				hud_system._show_toast(target.refuse_text(picked))
-				return
-			msg = target.set_pattern(picked["id"])
-		"mod":
-			if not target.can_take(picked):
-				hud_system._show_toast(target.refuse_text(picked))
-				return
-			msg = target.add_mod(picked["id"])
-		"link":
-			msg = target.add_link(picked["id"])
-		"trig":
-			if not target.can_take(picked):
-				hud_system._show_toast(target.refuse_text(picked))
-				return
-			msg = target.add_trig(picked["id"])
-	hud_system._show_toast(msg)
-	sfx.play("place")
-	burst(target.position, _card_color(picked), 16, 160.0)
-	_after_place()
-
-
-## 우클릭·Esc: 방향 고르기 → 위치 고르기 → 오브젝트 고르기 순으로 한 단계 되돌린다.
-func _cancel_step() -> void:
-	if press_t:
-		_drop_press()
-		_restore_hint()
-		return
-	if boxing:
-		boxing = false
-		return
-	if not selected.is_empty() and phase in [Phase.CHOOSE, Phase.READY]:
-		card_dock.close_inspector()
-		_restore_hint()
-		return
-	if moving:
-		var t := moving
-		moving.position = move_orig_pos
-		moving.set_attack_direction(move_orig_dir)
-		moving.queue_redraw()
-		moving = null
-		_end_move()
-		_select_tower(t)
-		return
-	if phase == Phase.AIM:
-		phase = Phase.PLACE
-		hint.text = ui_layout_system._th(PLACE_HINT)
-	elif phase == Phase.PLACE:
-		_back_to_choose()
-
-
-## 선택지를 그대로 둔 채 오브젝트 고르기로 돌아간다.
-func _back_to_choose() -> void:
-	card_dock.clear_gesture()
-	cards_hidden = false
-	tap_sel = offer.find(picked)
-	for button: Button in choice_box.get_children():
-		if button.get_meta("offer_card", {}) == picked:
-			card_dock.hovered = button
-	phase = Phase.CHOOSE
-	_tap_hover()
-	choice_box.visible = not cards_hidden
-	_update_reroll_btn()
-	hint.text = ui_layout_system._th(_choose_hint())
-	_save_run()
-
-
-## 방향 바꾸기를 끝내고 원래 단계로.
-func _end_move() -> void:
-	card_dock.clear_gesture()
-	card_dock.close_inspector()
-	aim_right = false
-	if move_return == Phase.READY:
-		_enter_ready()
-	else:
-		phase = Phase.CHOOSE
-		_set_cards_hidden(move_cards_hidden)
-		_restore_hint()
-		_save_run()
-
-
-## 선택한 오브젝트의 [방향 변경]·한 번 더 누르기 또는 우클릭 끌기로 제자리 방향을 편집한다.
-func _start_move(t: Tower) -> void:
-	move_cards_hidden = cards_hidden
-	move_return = phase
-	start_btn.visible = false
-	moving = t
-	move_orig_pos = t.position
-	move_orig_dir = t.dir
-	place_pos = t.position
-	phase = Phase.AIM
-	aim_start_ms = Time.get_ticks_msec()
-	_aim_begin()
-	choice_box.visible = false
-	reroll_btn.visible = false
-	if touch_ui:
-		hint.text = ui_layout_system._th(AIM_TOUCH_HINT + "   취소: 그대로 두기")
-	else:
-		hint.text = ui_layout_system._th("클릭 또는 끌어서 놓기: 방향 확정 (Shift: 15도 단위)   오브젝트 우클릭한 채 끌기로도 바로 됨\n우클릭/Esc: 그대로 두기")
-
-
-func _toggle_pause() -> void:
-	if phase == Phase.GAMEOVER or title_label.visible:
-		return
-	get_tree().paused = not get_tree().paused
-	if get_tree().paused:
-		_abort_touch_action()
-	paused_label.visible = get_tree().paused
-	pause_box.visible = get_tree().paused
-	paused_label.text = _pause_text()
-	restart_armed = 0.0
-	end_armed = 0.0
-	pause_btn.tooltip_text = "계속 (P)" if get_tree().paused else "일시정지 (P)"  # 그림 버튼이라 글은 말풍선에만
-
-
-## 일시정지에서 처음부터: 두 번 눌러야 (R 또는 버튼).
-func _pause_restart() -> void:
-	if restart_armed > 0.0:
-		get_tree().paused = false
-		if TutPlay.on and tplay != null:
-			var ch := tplay.start_ch
-			TutPlay.leave_meta()
-			TutPlay.pending = ch  # 연습 판: 그 장 처음부터
-		_reload()
-	else:
-		restart_armed = 2.0
-		paused_label.text = _pause_text() + "\n처음부터를 한 번 더 누르면 새 판"
-
-
-## 일시정지 글: 지금 나가면 어디서부터 이어지는지도 알려 준다. 키는 아래 그림 버튼 모서리에.
-func _pause_text() -> String:
-	var keys := "일시정지"
-	if TutPlay.on:
-		return keys + "\n연습 판이에요. 기록·업적은 남지 않아요"
-	if phase == Phase.WAVE:
-		return keys + "\n지금 나가면 웨이브 %d 앞 쉬는 시간부터 이어집니다" % wave
-	return keys + "\n지금 나가도 이 쉬는 시간부터 이어서 할 수 있어요"
-
-
-## 일시정지에서 판 끝내기: 두 번 누르면 지금 점수로 게임 오버 (기록 저장·온라인 전송은 보통 게임 오버와 같다).
-## 실수로 누르지 않게 처음 누르면 안내만 한다.
-func _end_run() -> void:
-	if TutPlay.on and tplay != null:
-		_toggle_pause()
-		tplay.ask_quit()  # 연습 판: 튜토리얼 끝내기 확인
-		return
-	if end_armed <= 0.0:
-		end_armed = 3.0
-		paused_label.text = _pause_text() + "\n판 끝내기를 한 번 더 누르면 지금 점수 %s로 끝냅니다 (기록·순위에 올라가요)" % num(score)
-		return
-	end_armed = 0.0
-	get_tree().paused = false
-	paused_label.visible = false
-	pause_box.visible = false
-	pause_btn.tooltip_text = "일시정지 (P)"
-	ended = true
-	_game_over()
-
-
-## 일시정지에서 시작 화면으로 가거나 게임을 끈다. 쉬는 시간이면 지금 상태를 저장하고,
-## 웨이브 중이면 그 웨이브 앞 쉬는 시간의 저장이 남는다 (시작 화면의 이어하기).
-func _leave(quit_game: bool) -> void:
-	if TutPlay.on and tplay != null and not quit_game:
-		tplay.finish(false)  # 연습 판에서 시작 화면으로 = 튜토리얼 끝내기
-		return
-	_save_run()
-	if quit_game:
-		TutPlay.leave_meta()
-	get_tree().paused = false
-	if quit_game:
-		get_tree().quit()
-		return
-	title_seen = false
-	_reload()
-
-
-# ---------- 기맥 (2026-10-31 "디펜스 한계 개선 F") ----------
-## 판마다 전장에 기맥 자리 ley_n개가 생긴다(판 번호로 정해 이어하기도 같음). 자리마다 ley_r 안 가장 가까운 오브젝트 하나가 피해 +ley_dmg.
 var ley: Array = []  # 기맥 자리 (전장 좌표)
 
-
-func leys_on() -> bool:
-	return Rules.t("ley_on") > 0.0 and mp_mode == "" and OS.get_environment("LEY") != "0"  # 봇 비교용: LEY=0이면 끔
-
-
-## 새 판: 중앙에서 150~360, 가장자리에서 90 넘게, 서로 220 넘게 떨어진 자리. 회랑은 문에서 150 넘게.
-func _ley_new_run() -> void:
-	ley = []
-	if not leys_on():
-		return
-	var rng := RandomNumberGenerator.new()
-	rng.seed = hash(run_id + "ley")
-	var fr := field_rect().grow(-90.0)
-	var c := core()
-	var n := int(Rules.t("ley_n"))
-	for tries in 400:
-		if ley.size() >= n:
-			break
-		var p := Vector2(rng.randf_range(fr.position.x, fr.end.x), rng.randf_range(fr.position.y, fr.end.y))
-		if Meta.map_id == "line":
-			p.y = c.y + rng.randf_range(-LINE_HALF + 50.0, LINE_HALF - 50.0)  # 회랑: 길 안에만
-		var d := absf(p.x - c.x) if Meta.map_id == "line" else p.distance_to(c)
-		if d < 150.0 or (Meta.map_id != "line" and d > 360.0):
-			continue
-		if ley.any(func(q): return q.distance_to(p) < 220.0):
-			continue
-		ley.append(p)
-
-
-## 이 오브젝트가 기맥 위인가: 어느 자리에서 ley_r 안이고, 그 자리에 가장 가까운 오브젝트.
-## 한 시뮬 단계 안에서는 맞을 때마다 다시 세지 않는다(ley_memo: sim_id → 결과).
-var ley_memo := {}
-var ley_memo_id := -1
-
-
-func on_ley(t: Node) -> bool:
-	if ley.is_empty():
-		return false
-	if phase == Phase.WAVE:
-		if ley_memo_id != sim_id:
-			ley_memo_id = sim_id
-			ley_memo = {}
-		var id := t.get_instance_id()
-		if not ley_memo.has(id):
-			ley_memo[id] = _on_ley(t)
-		return ley_memo[id]
-	return _on_ley(t)
-
-
-func _on_ley(t: Node) -> bool:
-	var r := Rules.t("ley_r")
-	for p in ley:
-		if t.position.distance_to(p) >= r:
-			continue
-		var mine := true
-		for o in towers.get_children():
-			if o != t and o.position.distance_to(p) < t.position.distance_to(p):
-				mine = false
-				break
-		if mine:
-			return true
-	return false
-
-
-func _draw_ley() -> void:
-	var now := Time.get_ticks_msec() / 1000.0
-	var r := Rules.t("ley_r")
-	for p in ley:
-		var used := false
-		for t in towers.get_children():
-			if t.position.distance_to(p) < r:
-				used = true
-				break
-		var a := 0.5 + 0.2 * sin(now * 2.0 + p.x * 0.01)
-		draw_circle(p, r, Color(BUILD_COLOR, 0.08 if not used else 0.16))
-		for k in 6:
-			var a0 := TAU * k / 6.0 + now * 0.4
-			draw_arc(p, r, a0, a0 + 0.6, 6, Color(BUILD_COLOR, a if not used else 0.9), 2.0)
-		draw_circle(p, 3.0, Color(BUILD_COLOR, a))
-
-
-# ---------- 중앙 기술 (Skill) ----------
-
-var auto_skills := false  # 봇·점검: 설정과 상관없이 자동 사용
-
-
-## 이번 판에 중앙 기술을 쓰는가 (멀티플레이·온라인 패치 skill_on 0이면 없음).
-func skills_on() -> bool:
-	return Rules.t("skill_on") > 0.0 and mp_mode == "" and OS.get_environment("SKILL") != "0"  # 봇 비교용: SKILL=0이면 끔
-
-
-func _skills_new_run(set_i: int) -> void:
-	skill_set = clampi(set_i, 0, Skill.SETS.size() - 1)
-	skill_ids = Skill.set_ids(skill_set).duplicate() if skills_on() else []
-	skill_cd = {}
-	skill_arm = ""
-	skill_used = 0
-
-
-func skill_left(id: String) -> float:
-	return skill_cd.get(id, 0.0)
-
-
-func _skill_tick(delta: float) -> void:
-	if skill_ids.is_empty() or mp_ghost:
-		return
-	for id in skill_cd.keys():
-		skill_cd[id] = maxf(skill_cd[id] - delta, 0.0)
-	if Meta.skill_auto or auto_skills:
-		for id in skill_ids:
-			if skill_left(id) <= 0.0 and id != skill_arm:
-				var p: Variant = Skill.auto_target(self, id)
-				if p != null:
-					_use_skill(id, p)
-
-
-## 기술 버튼(1·2 키): 쓸 곳을 누르기를 기다린다. 다시 누르면 취소.
-func _arm_skill(i: int) -> void:
-	if phase != Phase.WAVE or i < 0 or i >= skill_ids.size():
-		return
-	var id: String = skill_ids[i]
-	if skill_left(id) > 0.0:
-		hud_system._show_toast("%s: %d초 뒤에 다시 쓸 수 있어요" % [Skill.NAMES[id], ceili(skill_left(id))])
-		return
-	skill_arm = "" if skill_arm == id else id
-	if skill_arm != "":
-		# 이름(집중·붙잡기·낙인)만으로는 무엇을 하는지 몰라 설명을 같이 (2026-11-03)
-		hud_system._show_toast(("%s (%s): 쓸 곳을 누르세요" if touch_ui else "%s (%s): 쓸 곳을 클릭 (우클릭·Esc 취소)") % [Skill.NAMES[id], Skill.short(id)])
-
-
-## p에 기술을 쓴다. 적용할 대상이 없으면 쓰지 않는다 (누른 기술이면 이유를 알림).
-func _use_skill(id: String, p: Vector2) -> bool:
-	if phase != Phase.WAVE or skill_left(id) > 0.0 or not id in skill_ids:
-		return false
-	if not Skill.use(self, id, p):
-		if skill_arm == id:
-			if id == "hold" and not Skill.hold_targets(self, p).is_empty():
-				hud_system._show_toast("붙잡기: 구체가 기절·속박 면역 중이에요")
-			else:
-				hud_system._show_toast("집중: 오브젝트 위를 누르세요" if id == "focus" else "%s: 둘레에 구체가 없어요" % Skill.NAMES[id])
-		return false
-	skill_cd[id] = Skill.cd_full(id, perks.get("quick", 0))
-	skill_used += 1
-	if skill_arm == id:
-		skill_arm = ""
-	sfx.play("place")
-	return true
-
-
-## 기술 버튼: 웨이브 중에만, 다시 쓰기까지 남은 초를 글로.
-func _skill_ui() -> void:
-	var show := phase == Phase.WAVE and not skill_ids.is_empty() and not title_label.visible
-	for i in skill_btns.size():
-		var b: Button = skill_btns[i]
-		b.visible = show and i < skill_ids.size()
-		if not b.visible:
-			continue
-		var id: String = skill_ids[i]
-		var left := skill_left(id)
-		var txt: String = Skill.NAMES[id] if left <= 0.0 else "%s %d초" % [Skill.NAMES[id], ceili(left)]
-		if b.text != txt:
-			b.text = txt
-		var col: Color = Skill.COLORS[id]
-		b.modulate = Color(1, 1, 1, 1) if left <= 0.0 else Color(1, 1, 1, 0.55)
-		b.add_theme_color_override("font_color", col if left <= 0.0 else Color(1, 1, 1, 0.8))
-		b.tooltip_text = "%s (%d): %s · 다시 쓰기 %d초" % [Skill.NAMES[id], i + 1, Skill.desc(id), roundi(Skill.cd_full(id, perks.get("quick", 0)))]
-		var armed := skill_arm == id
-		if b.get_meta("armed", false) != armed:
-			b.set_meta("armed", armed)
-			var sb := StyleBoxFlat.new()
-			sb.bg_color = Color(col, 0.35) if armed else Color(0.06, 0.07, 0.1, 0.85)
-			sb.border_color = col
-			sb.set_border_width_all(3 if armed else 2)
-			sb.set_corner_radius_all(10)
-			for st in ["normal", "hover", "pressed"]:
-				b.add_theme_stylebox_override(st, sb)
-
-
-func _make_skill_btns(root: Control) -> void:
-	for i in 2:
-		var b := Button.new()
-		b.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-		b.position = Vector2(-176 + i * 186, -104)
-		b.size = Vector2(166, 50)
-		b.add_theme_font_size_override("font_size", 20)
-		b.focus_mode = Control.FOCUS_NONE
-		b.visible = false
-		b.pressed.connect(_arm_skill.bind(i))
-		root.add_child(b)
-		_keycap(b, str(i + 1))
-		skill_btns.append(b)
-
-
-## 기술 효과·고른 기술의 범위 (fx_layer, 전장 좌표).
-func _draw_skill_fx() -> void:
-	for q in skill_fx:
-		var k: float = 1.0 - q[2] / 0.5
-		fx_layer.draw_arc(q[0], q[1] * (0.6 + 0.4 * k), 0, TAU, 48, Color(q[3], 0.9 * (1.0 - k)), 4.0)
-	if skill_arm != "" and phase == Phase.WAVE:
-		var mp := _pointer_world()
-		var col: Color = Skill.COLORS[skill_arm]
-		if skill_arm == "focus":
-			var t := Skill.focus_tower(self, mp)
-			if t:
-				fx_layer.draw_arc(t.position, Tower.RADIUS + 12.0, 0, TAU, 28, col, 3.0)
-			fx_layer.draw_arc(mp, Skill.PICK_R, 0, TAU, 32, Color(col, 0.35), 1.5)
-		else:
-			var r := Skill.radius(skill_arm)
-			fx_layer.draw_circle(mp, r, Color(col, 0.12))
-			fx_layer.draw_arc(mp, r, 0, TAU, 48, Color(col, 0.8), 2.0)
-
-
-func _toggle_speed() -> void:
-	# Space·버튼: 1배속 ↔ 고른 배속
-	game_speed = _fast_now() if game_speed == 1.0 else 1.0
-	_update_speed_btn()
-
-
-## 빠르게 켤 때 배속
-func _fast_now() -> float:
-	return fast_speed
-
-
-func _update_speed_btn() -> void:
-	speed_btn.text = "x%d" % roundi(game_speed)
-	speed_btn.tooltip_text = "배속 x%d (Space)" % roundi(game_speed)
-	speed_btn.queue_redraw()
-	for i in SPEEDS.size():
-		if SPEEDS[i] == fast_speed:
-			speed_pick.select(i)
-
-
-func _on_speed_pick(i: int) -> void:
-	fast_speed = SPEEDS[i]
-	if game_speed > 1.0:
-		game_speed = _fast_now()
-	_update_speed_btn()
-	progression_system._save_best()
-
-
-func _tower_at(p: Vector2, except: Tower = null) -> Tower:
-	for t in towers.get_children():
-		if t != except and t.position.distance_to(p) < MERGE_DIST:
-			return t
-	return null
-
-
-func _place_tower(p: Vector2, d: Vector2) -> void:
-	var t := Tower.new()
-	t.add(picked["e"], picked["lv"])
-	t.dir = d
-	t.position = p
-	t.main = self
-	if mp_mode == "coop":
-		mp_tw_n += 1
-		t.owner_id = mp.my_id
-		t.net_id = mp.my_id * 100000 + mp_tw_n
-	towers.add_child(t)
-
-
-# ---------- 생성 ----------
 
 func spawn_proj(t: Tower, kind: String, l: int, d := Vector2.ZERO, off := Vector2.ZERO) -> Projectile:
 	var p := Projectile.new()
@@ -5908,7 +2382,7 @@ func _process(delta: float) -> void:
 	_mp_lobby_tick()
 	_mp_tick(delta)
 	if coin_stage > 0 and not get_tree().paused:
-		_coin_step(delta)
+		perks_system._coin_step(delta)
 	touch_tip_t -= delta
 	# 터치 자세히는 유지 중인 인스펙터를 기준으로 표시한다.
 	var tip_on := touch_ui and not title_label.visible and (is_instance_valid(card_dock.inspected_tower) if card_dock.active() else Engine.get_process_frames() - tip_frame <= 2)
@@ -5917,7 +2391,7 @@ func _process(delta: float) -> void:
 	if not tip_on:
 		tip_detail = false
 	detail_btn.visible = tip_on
-	aim_ok_btn.visible = _ok_btn_on() and not get_tree().paused
+	aim_ok_btn.visible = interaction_system._ok_btn_on() and not get_tree().paused
 	detail_btn.text = "간단히" if tip_detail else "자세히"
 	_place_apply_btn()
 	for c in [hint, skip_badge, hide_btn]:
@@ -6021,7 +2495,7 @@ func _process(delta: float) -> void:
 		help_scroll.scroll_vertical = 0  # 열 때마다 맨 위부터
 		if help_touch != touch_ui:  # 터치면 조작 안내를 버튼·누르기로
 			help_touch = touch_ui
-			help_label.text = patchlog_system._kr_keep(_help_text())
+			help_label.text = patchlog_system._kr_keep(run_flow_system._help_text())
 	help_scroll.visible = help_label.visible
 	if help_scroll.visible:
 		var hw2 := minf(1040.0, ui_root.size.x - 40.0)  # 글자를 키우면 화면 폭보다 넓어지던 것
@@ -6066,8 +2540,8 @@ func _process(delta: float) -> void:
 	pause_box.visible = show_pause
 	pause_dim.visible = dim
 	# 카드 선택 중: 카드 밖은 검은 막 (닫히면 곧바로 걷는다). 카드를 내리면(필드 보기) 막도 걷는다
-	card_dim.visible = _card_dim_on()
-	_update_place_dim()
+	card_dim.visible = interaction_system._card_dim_on()
+	interaction_system._update_place_dim()
 	# 일시정지 창 버튼이 어둠 밑 카드 글 위에 겹쳐 읽기 힘들던 것 (폰·글자 130%): 멈춘 동안 카드 줄은 더 옅게
 	choice_box.modulate.a = 0.25 if dim else 1.0
 	if pause_box.visible:
@@ -6086,13 +2560,13 @@ func _process(delta: float) -> void:
 	_soften_fx()
 	queue_redraw()
 	info.queue_redraw()
-	if phase == Phase.MOVE and moving and not get_tree().paused:
-		moving.position = _pointer_world().clamp(field_rect().position, field_rect().end)
-	_update_press()
-	if boxing and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-		_finish_box()  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
+	if phase == Phase.MOVE and interaction_system.moving and not get_tree().paused:
+		interaction_system.moving.position = interaction_system._pointer_world().clamp(field_rect().position, field_rect().end)
+	interaction_system._update_press()
+	if interaction_system.boxing and not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		interaction_system._finish_box()  # 창 밖에서 손을 떼 놓기 이벤트를 못 받은 경우
 	card_detail_btn.visible = phase == Phase.CHOOSE and not title_label.visible and coin_stage == 0 and not cards_hidden and not perk_mode
-	_update_skip_ui()
+	run_flow_system._update_skip_ui()
 	cancel_btn.visible = phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] and not title_label.visible and not get_tree().paused
 	if speed_btn.visible:
 		speed_btn.queue_redraw()
@@ -6159,8 +2633,8 @@ func _process(delta: float) -> void:
 			bt.offset_top = sy
 			bt.offset_bottom = sy + 40.0
 			sx += 86.0
-	_start_btn_layout()
-	_skill_ui()
+	cards_system._start_btn_layout()
+	abilities_system._skill_ui()
 	card_dock.tick()
 	restart_armed = maxf(restart_armed - delta, 0.0)
 	end_armed = maxf(end_armed - delta, 0.0)
@@ -6173,13 +2647,13 @@ func _process(delta: float) -> void:
 	var reading := (help_label.visible or settings_panel.visible or records_panel.visible or notes_panel.visible) and not title_label.visible
 	if countdown >= 0.0 and phase == Phase.READY:
 		# 오브젝트를 끌거나 상자로 고르는 동안은 자동 시작을 멈춘다 (시작하면 끌던 것이 되돌아감)
-		if press_t or boxing or reading:
+		if interaction_system.press_t or interaction_system.boxing or reading:
 			countdown = maxf(countdown, 1.0)
 		else:
 			countdown -= delta
 		start_btn.text = ui_layout_system._kh("%.1f초 뒤 시작 (Space: 바로)" % maxf(countdown, 0.0))
 		if countdown <= 0.0:
-			_start_wave()
+			run_flow_system._start_wave()
 	if reading:
 
 		return
@@ -6231,7 +2705,7 @@ func _sim_step(delta: float) -> void:
 	wave_time += delta
 	run_game += delta
 	hud_system._dps_sample(delta)
-	_skill_tick(delta)
+	abilities_system._skill_tick(delta)
 	# 콤보 유지 시간은 게임 시간으로 잰다: 배속을 올려도 점수가 달라지지 않는다
 	if combo_t > 0.0 and not combo_hold:
 		combo_t = maxf(combo_t - delta, 0.0)
@@ -6243,7 +2717,7 @@ func _sim_step(delta: float) -> void:
 	if mp_ghost:
 		return  # 협동 참가자: 웨이브 끝·게임 오버는 호스트가 알려 준다
 	if core_hp <= 0:
-		_game_over()
+		run_flow_system._game_over()
 	elif to_spawn == 0 and mp_extra_left == 0 and _alive_count(orbs) == 0:
 		combo_hold = true  # 쉬는 시간·카드 고르기 동안 콤보가 끊기지 않게
 		_log_wave()
@@ -6261,19 +2735,19 @@ func _sim_step(delta: float) -> void:
 		sfx.play("clear", 0.0)
 		_show_mvp()
 		if perks.has("regen"):
-			_heal_core(_regen_take())
+			perks_system._heal_core(perks_system._regen_take())
 		if wave % 5 == 0:
 			online_system._submit_run(false)  # 5웨이브마다 진행 중 기록 (중간에 꺼도 서버에 남게)
 		_mp_wave_cleared()
 		if skip_left > 1 and not skip_stop:
 			skip_left -= 1
-			_skip_rest()
+			run_flow_system._skip_rest()
 		elif skip_left > 0:
-			_end_skip(false)
+			run_flow_system._end_skip(false)
 		elif wave % 5 == 0:
-			_start_perk()
+			perks_system._start_perk()
 		else:
-			_start_choose()
+			run_flow_system._start_choose()
 
 
 ## 중앙 체력 비율로 위험 단계를 정한다. 단계가 올라가는 순간에만 큰 글·경고음 (설정에 따라 1배속).
@@ -6294,7 +2768,7 @@ func _check_danger() -> void:
 			hud_system._show_toast("중앙 위험: 이번 웨이브가 끝나면 넘기기를 멈춰요")
 		if Meta.danger_slow and game_speed > 1.0:
 			game_speed = 1.0
-			_update_speed_btn()
+			run_flow_system._update_speed_btn()
 			hud_system._show_toast("중앙 위험: 1배속으로 바꿨어요 (Space로 다시 빠르게)")
 	danger_lv = lv
 
@@ -6496,7 +2970,7 @@ func _resolve(delta: float) -> void:
 				for i in 2:
 					_spawn_child(o)
 			if o.kind == Orb.Kind.BOSS:
-				_heal_core(2)
+				perks_system._heal_core(2)
 				bonus_rerolls += 1
 				progression_system._achieve("boss")
 				hud_system._show_toast("보스 처치! 중앙 체력 +2" + ("" if Modes.has("narrow") else ", 새로고침 +1"))
@@ -6522,14 +2996,14 @@ func _resolve(delta: float) -> void:
 			# 성벽: 구체 하나당 한 번 밀어내고 한 조각 부서진다
 			o.walled = true
 			rampart_left -= 1
-			o.position += (o.position - o.target).normalized() * _perk_val("rampart_push") * (0.5 if o.kind == Orb.Kind.BOSS else 1.0)
+			o.position += (o.position - o.target).normalized() * perks_system._perk_val("rampart_push") * (0.5 if o.kind == Orb.Kind.BOSS else 1.0)
 			burst(o.position, Color(0.75, 0.6, 0.45), 12, 160.0)
 			sfx.play("hit", 0.0)
 		if _reached_core(o):
 			var hit_p: Vector2 = o.position if Meta.map_id == "line" else center()
-			var dmg: int = o.core_dmg - _shield_absorb(o.core_dmg)
+			var dmg: int = o.core_dmg - perks_system._shield_absorb(o.core_dmg)
 			if perks.has("riposte"):
-				_riposte(hit_p)
+				perks_system._riposte(hit_p)
 			if dmg <= 0:
 				sfx.play("shield", 0.0)
 				burst(hit_p, Color(0.55, 0.85, 1.0), 14, 200.0)
@@ -6684,20 +3158,20 @@ func _draw_tooltip() -> void:
 	if card_dock != null and cards_hidden:
 		return  # 전장 넓게 보기에서는 마우스 정보창도 접는다
 	# 터치는 마우스를 올려 둘 수 없으니, 눌러서 옮기기 시작한 오브젝트의 정보를 보여 준다
-	var touch_move := phase == Phase.MOVE and touch_ui and moving != null
+	var touch_move := phase == Phase.MOVE and touch_ui and interaction_system.moving != null
 	# 터치로 방향 바꾸기: 손가락은 쏠 쪽에 있으니 그 오브젝트 정보를 함께 보여 준다 ([자세히]로 수치까지)
-	var touch_aim := phase == Phase.AIM and touch_ui and moving != null
-	if (phase in [Phase.PLACE, Phase.GAMEOVER, Phase.MOVE, Phase.AIM] and not touch_move and not touch_aim) or title_label.visible or dragging or boxing:
+	var touch_aim := phase == Phase.AIM and touch_ui and interaction_system.moving != null
+	if (phase in [Phase.PLACE, Phase.GAMEOVER, Phase.MOVE, Phase.AIM] and not touch_move and not touch_aim) or title_label.visible or interaction_system.dragging or interaction_system.boxing:
 		return
 	# 터치는 손을 뗀 자리에 마우스가 남는다: 누르고 3초가 지나면 정보창을 닫는다
 	if touch_ui and not touch_move and not touch_aim and touch_tip_t <= 0.0:
 		return
-	if dps_panel.visible and dps_panel.get_global_rect().has_point(_pointer_screen()):
+	if dps_panel.visible and dps_panel.get_global_rect().has_point(interaction_system._pointer_screen()):
 		return  # DPS 표 위: 표 뒤에 가린 오브젝트 정보창이 뜨지 않게
-	var t := moving if touch_move or touch_aim else _tower_at(_pointer_world())
+	var t := interaction_system.moving if touch_move or touch_aim else interaction_system._tower_at(interaction_system._pointer_world())
 	# 터치로 [자세히]를 누르면 손가락이 버튼으로 가서 정보창이 사라졌다: 방금 보던 오브젝트를 이어서
 	if t == null and touch_ui and is_instance_valid(tip_tower) and detail_btn.visible \
-			and detail_btn.get_global_rect().has_point(_pointer_screen()):
+			and detail_btn.get_global_rect().has_point(interaction_system._pointer_screen()):
 		t = tip_tower
 	if t != null:
 		tip_tower = t
@@ -6826,7 +3300,7 @@ func _draw_tooltip() -> void:
 	var size := vw.end  # 화면 오른쪽 아래 끝 (월드 좌표. 폰은 전장 밖 양옆까지)
 	size.y = _tip_bottom()
 	var p := t.position + Vector2(28, -h / 2)
-	if touch_aim and _pointer_world().x > t.position.x:
+	if touch_aim and interaction_system._pointer_world().x > t.position.x:
 		p.x = t.position.x - 28.0 - (w + 16.0)  # 손가락(쏠 쪽) 반대편에
 	p.x = clampf(p.x, vw.position.x + 8, _right_limit() - w - 16)
 	var top := _tip_top()
@@ -6862,7 +3336,7 @@ func _ring_target() -> Tower:
 		return null
 	if card_dock.active() and card_dock.side.visible:
 		return card_dock.shown_tower
-	var h := _tower_at(_pointer_world())
+	var h := interaction_system._tower_at(interaction_system._pointer_world())
 	if h == null and touch_ui and is_instance_valid(tip_tower) and Engine.get_process_frames() - tip_frame <= 2:
 		h = tip_tower
 	return h
@@ -7010,7 +3484,7 @@ func _avoid_cards(r: Rect2, size: Vector2) -> Vector2:
 
 ## 마우스를 올린 구체의 체력·상태.
 func _draw_orb_tooltip() -> void:
-	var m := _pointer_world()
+	var m := interaction_system._pointer_world()
 	# 작은 구체도 잡기 쉽게 최소 14 안, 여럿이면 가장 가까운 것
 	var o: Orb = null
 	var bd := INF
@@ -7182,7 +3656,7 @@ func _draw_fx() -> void:
 	var vs := vw.size
 	_draw_margins(vw)
 	_draw_place_note(fx_layer)
-	_draw_skill_fx()
+	abilities_system._draw_skill_fx()
 	for i in 6:
 		var w := 14.0 * (6 - i)
 		var col := Color(0, 0, 0, 0.05)
@@ -7435,7 +3909,7 @@ func _draw() -> void:
 		for k in 4:
 			draw_circle(lf[0], 40.0 + k * 34.0, Color(1, 0.15, 0.2, 0.16 * f * (1.0 - k * 0.22)))
 
-	var mpos := _pointer_world()
+	var mpos := interaction_system._pointer_world()
 	if card_dock.active():
 		var preview := card_dock.preview_card()
 		if not preview.is_empty():
@@ -7456,18 +3930,18 @@ func _draw() -> void:
 			if not fresh.is_empty():
 				draw_arc(t.position, Tower.RADIUS + 10.0 + pulse2 * 4.0, 0, TAU, 32, Color(fresh[0]["color"], 0.9), 3.0)
 	if phase == Phase.PLACE and not picked.is_empty():
-		var col := _card_color(picked)
+		var col := cards_system._card_color(picked)
 		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 150.0)
 		var is_elem: bool = picked["type"] == "elem"
 		# 넣을 수 있는 오브젝트: 숨 쉬는 빛 + 고리 + 도는 점선 고리 (속성 카드는 새 반응이 생기면 그 반응 색).
 		# 넣을 수 없는 오브젝트는 _update_place_dim이 흐리게 하고 누를 수 없다 (작은 ✕)
 		var spin := Time.get_ticks_msec() / 1000.0 * 1.6
-		var target := _tower_at(mpos)
+		var target := interaction_system._tower_at(mpos)
 		place_note = {}
-		var pv: Array = target.preview(picked) if target and _place_ok(target) else []
+		var pv: Array = target.preview(picked) if target and interaction_system._place_ok(target) else []
 		var refuse: bool = target != null and (pv.is_empty() or (pv[0] as PackedStringArray)[0] == "넣을 수 없음")
 		for t in towers.get_children():
-			if not _place_ok(t):
+			if not interaction_system._place_ok(t):
 				if t != target:
 					draw_line(t.position + Vector2(-7, -7), t.position + Vector2(7, 7), Color(1, 0.35, 0.35, 0.55), 2.5)
 					draw_line(t.position + Vector2(7, -7), t.position + Vector2(-7, 7), Color(1, 0.35, 0.35, 0.55), 2.5)
@@ -7521,25 +3995,25 @@ func _draw() -> void:
 			draw_arc(mpos, 10.0, 0, TAU, 20, Color(col, 0.8), 2.0)
 			_draw_place_label(mpos + Vector2(-50, 28), "오브젝트 위에 놓기", Color(1, 1, 1, 0.7))
 	elif phase == Phase.AIM:
-		var sp: Dictionary = moving.spec() if moving else {"els": {picked["e"]: picked["lv"]}, "pat": Pat.DEFAULT, "plv": 1, "mods": {}}
+		var sp: Dictionary = interaction_system.moving.spec() if interaction_system.moving else {"els": {picked["e"]: picked["lv"]}, "pat": Pat.DEFAULT, "plv": 1, "mods": {}}
 		var col: Color = Elem.COLORS[sp["els"].keys()[0]]
-		if not moving:
+		if not interaction_system.moving:
 			draw_circle(place_pos, Tower.RADIUS, Color(col, 0.6))
 		var d := _aim_dir(place_pos)
 		if d != Vector2.ZERO:
 			Tower.draw_range(self, place_pos, d, sp)
-			if moving and not get_tree().paused:
-				moving.set_attack_direction(d)
+			if interaction_system.moving and not get_tree().paused:
+				interaction_system.moving.set_attack_direction(d)
 			draw_line(place_pos, place_pos + d * (Tower.RADIUS + 14.0), Color.WHITE, 3.0)
 	# 마우스를 올린 오브젝트의 공격 범위
-	if phase == Phase.MOVE and moving:
-		Tower.draw_range(self, mpos, moving.dir, moving.spec())
+	if phase == Phase.MOVE and interaction_system.moving:
+		Tower.draw_range(self, mpos, interaction_system.moving.dir, interaction_system.moving.spec())
 	# 연결선: 옮길 자리에서 이어지는지 미리 보여 준다
-	var movers: Array = [moving] if phase == Phase.MOVE and moving else (drag_group if dragging else [])
+	var movers: Array = [interaction_system.moving] if phase == Phase.MOVE and interaction_system.moving else (interaction_system.drag_group if interaction_system.dragging else [])
 	for mover in movers:
 		if not is_instance_valid(mover):
 			continue
-		if _bad_spot(mover, movers) != "":
+		if interaction_system._bad_spot(mover, movers) != "":
 			# 여기 놓으면 되돌아간다는 표시 (중앙에 너무 가깝거나 다른 오브젝트와 겹침)
 			draw_arc(mover.position, Tower.RADIUS + 10.0, 0, TAU, 32, Color(1, 0.25, 0.25, 0.75 + 0.25 * sin(Time.get_ticks_msec() / 90.0)), 4.0)
 	if (Input.is_key_pressed(KEY_ALT) or range_all) and not title_label.visible:
@@ -7556,13 +4030,13 @@ func _draw() -> void:
 				var tp: Vector2 = t.position + Vector2(-40, Tower.RADIUS + 20)
 				draw_string(ui_font, tp + Vector2(1, 1), txt, HORIZONTAL_ALIGNMENT_CENTER, 80, 14, Color(0, 0, 0, 0.8))
 				draw_string(ui_font, tp, txt, HORIZONTAL_ALIGNMENT_CENTER, 80, 14, Color(1, 0.9, 0.5))
-	elif dragging:
+	elif interaction_system.dragging:
 		# 끄는 동안: 옮기는 오브젝트들의 범위 (방향은 그대로)
-		for t in drag_group:
+		for t in interaction_system.drag_group:
 			if is_instance_valid(t):
 				Tower.draw_range(self, t.position, t.dir, t.spec())
 	elif phase in [Phase.CHOOSE, Phase.WAVE, Phase.READY]:
-		var hov := _tower_at(mpos) if not card_dock.over_ui(_pointer_screen()) else null
+		var hov := interaction_system._tower_at(mpos) if not card_dock.over_ui(interaction_system._pointer_screen()) else null
 		if hov == null:
 			hov = _ring_target()
 		if hov:
@@ -7576,13 +4050,13 @@ func _draw() -> void:
 		var ay := fp.y - Tower.RADIUS - 22.0 - pulse * 6.0
 		draw_colored_polygon(PackedVector2Array([Vector2(fp.x, ay + 12), Vector2(fp.x - 9, ay), Vector2(fp.x + 9, ay)]), Color(1, 0.9, 0.5))
 	# 여러 개 선택: 하늘색 점선 고리, 선택 상자
-	for t in selected:
+	for t in interaction_system.selected:
 		if is_instance_valid(t):
 			for i in 8:
 				var a0 := TAU * i / 8 + Time.get_ticks_msec() / 800.0
 				draw_arc(t.position, Tower.RADIUS + 12.0, a0, a0 + 0.45, 6, Color(0.5, 0.9, 1.0, 0.95), 2.5)
-	if boxing:
-		var r := Rect2(box_start, mpos - box_start).abs()
+	if interaction_system.boxing:
+		var r := Rect2(interaction_system.box_start, mpos - interaction_system.box_start).abs()
 		draw_rect(r, Color(0.5, 0.9, 1.0, 0.08))
 		draw_rect(r, Color(0.5, 0.9, 1.0, 0.8), false, 1.5)
 
@@ -7596,7 +4070,7 @@ func _draw_place_label(at: Vector2, text: String, color: Color) -> void:
 	var to_world := get_canvas_transform().affine_inverse() * ui_root.get_global_transform()
 	for rect in ui_layout_system._info_blockers():
 		avoid.append(to_world * rect)
-	avoid.append(Rect2(_pointer_world() - Vector2(24, 24), Vector2(48, 48)))
+	avoid.append(Rect2(interaction_system._pointer_world() - Vector2(24, 24), Vector2(48, 48)))
 	place_label_rect = ui_layout_system._free_badge(Rect2(at - Vector2(0, 14), Vector2(width, 18)), Vector2.UP, avoid, visible)
 	draw_string(ui_font, place_label_rect.position + Vector2(0, 14), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, color)
 
@@ -7696,7 +4170,7 @@ func _draw_core_guard(c: Vector2, now: float) -> void:
 				for k in rampart_left:
 					var m := c + dir * (RAMPART_R + k * 5.0)
 					draw_line(m - side, m + side, wcol, 4.0)
-	_draw_ley()
+	abilities_system._draw_ley()
 	for q in core_fx:
 		var k: float = 1.0 - q[2] / FX_RIPOSTE
 		draw_arc(q[0], q[1] * (0.3 + 0.7 * k), 0, TAU, 48, Color(1.0, 0.85, 0.5, 1.0 - k), 4.0)
@@ -7732,8 +4206,8 @@ func _draw_line_map(size: Vector2, mp: Dictionary, now: float) -> void:
 ## 방향 고르기. Shift를 누르면 15도 단위로 맞춘다.
 ## 터치: 손가락을 오브젝트에서 조금 떼어 대고 있는 동안만 손가락 쪽, 아니면 붙잡아 둔 방향(aim_d).
 func _aim_dir(from: Vector2) -> Vector2:
-	var d := _pointer_world() - from
-	if touch_ui and phase == Phase.AIM and (not aim_hold or d.length() < AIM_TOUCH_MIN):
+	var d := interaction_system._pointer_world() - from
+	if touch_ui and phase == Phase.AIM and (not interaction_system.aim_hold or d.length() < AIM_TOUCH_MIN):
 		return aim_d
 	if d.length() < 5.0:
 		return Vector2.ZERO
@@ -8024,13 +4498,13 @@ func _mp_req_toggle() -> void:
 		return
 	mp_req_mode = not mp_req_mode
 	mp_req_btn.text = "요청 취소" if mp_req_mode else "속성 요청"
-	hint.text = "속성을 요청할 내 오브젝트를 누르세요" if mp_req_mode else ui_layout_system._th(_choose_hint() if phase == Phase.CHOOSE else "")
+	hint.text = "속성을 요청할 내 오브젝트를 누르세요" if mp_req_mode else ui_layout_system._th(cards_system._choose_hint() if phase == Phase.CHOOSE else "")
 
 
 func _mp_req_open(t: Tower) -> void:
 	mp_req_mode = false
 	mp_req_btn.text = "속성 요청"
-	_restore_hint()
+	interaction_system._restore_hint()
 	var items: Array = []
 	for e in Elem.ALL:
 		if t.can_take({"type": "elem", "e": e, "lv": 1}):
@@ -8069,10 +4543,10 @@ func _mp_give(t: Tower) -> void:
 	mp.send({"t": "gift", "nid": t.net_id, "e": picked["e"], "lv": picked["lv"]}, t.owner_id)
 	hud_system._show_toast("%s에게 %s 속성을 넣어 줬어요" % [_mp_name(t.owner_id), Elem.NAMES[picked["e"]]])
 	sfx.play("place")
-	burst(t.position, _card_color(picked), 16, 160.0)
+	burst(t.position, cards_system._card_color(picked), 16, 160.0)
 	t.req_e = -1
 	t.queue_redraw()
-	_after_place()
+	cards_system._after_place()
 
 
 func _mp_recv_gift(from: int, msg: Dictionary) -> void:
@@ -8214,14 +4688,14 @@ func _mp_auto_rest() -> void:
 	mp_req_mode = false
 	mp_pop.visible = false
 	for i in 40:
-		if phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] or press_t or moving:
-			_cancel_step()
+		if phase in [Phase.PLACE, Phase.AIM, Phase.MOVE] or interaction_system.press_t or interaction_system.moving:
+			interaction_system._cancel_step()
 			continue
 		if perk_mode:
 			if coin_stage > 0:
 				break
 			var opts: Array = perk_offer.filter(func(pk): return pk["id"] != "coin")
-			_on_perk(opts[0] if not opts.is_empty() else perk_offer[0])
+			perks_system._on_perk(opts[0] if not opts.is_empty() else perk_offer[0])
 			continue
 		if phase != Phase.CHOOSE or picks_left <= 0 or offer.is_empty():
 			break
@@ -8229,7 +4703,7 @@ func _mp_auto_rest() -> void:
 			break
 	if phase == Phase.CHOOSE and not perk_mode:
 		picks_left = 0
-		_enter_ready()
+		cards_system._enter_ready()
 	mp_afk_n += 1
 	if mp_mode == "coop":
 		if mp_afk_n >= int(Rules.tune["mp_afk_after"]) and not mp_afk:
@@ -8245,11 +4719,11 @@ func _mp_auto_rest() -> void:
 			mp_auto_now = false
 			mp_rank = "%d번 연속 움직임이 없어 탈락했어요" % mp_afk_n
 			core_hp = 0
-			_game_over()
+			run_flow_system._game_over()
 			return
 		hud_system._show_toast("오래 움직임이 없어 웨이브를 시작했어요 (%d번 연속이면 탈락)" % int(Rules.tune["vs_idle_out"]))
 		if phase == Phase.READY:
-			_start_wave()
+			run_flow_system._start_wave()
 	mp_auto_now = false
 
 
@@ -8260,23 +4734,23 @@ func _mp_auto_pick() -> bool:
 		if o["type"] == "elem":
 			for t in mine:
 				if t.can_take(o) and not Elem.new_reactions(t.eff_now(), o["e"]).is_empty():
-					_on_pick(o)
-					_place_on(t)
+					cards_system._on_pick(o)
+					interaction_system._place_on(t)
 					return true
 		else:
 			for t in mine:
 				if t.can_take(o):
-					_on_pick(o)
-					_apply_card(t)
+					cards_system._on_pick(o)
+					cards_system._apply_card(t)
 					return true
 	for o in offer:
-		if o["type"] == "elem" and not (o["e"] == Elem.STAR and star_full()):
+		if o["type"] == "elem" and not (o["e"] == Elem.STAR and cards_system.star_full()):
 			var spot := _mp_auto_spot()
 			if spot.is_empty():
 				return false
-			_on_pick(o)
-			_place_tower(spot[0], spot[1])
-			_after_place()
+			cards_system._on_pick(o)
+			interaction_system._place_tower(spot[0], spot[1])
+			cards_system._after_place()
 			return true
 	return false
 
@@ -8397,12 +4871,12 @@ func _mp_failed(reason: String) -> void:
 		mp_rejoin_until = 0
 		mp_rank = "호스트가 나가 판이 끝났어요" if room_gone else reason
 		core_hp = 0
-		_game_over()
+		run_flow_system._game_over()
 	elif mp_mode == "vs" and not mp.is_host() and phase != Phase.GAMEOVER:
 		# 대결 참가자: 호스트와 끊기면 이 판은 끝 (끊긴 사람은 패배)
 		mp_rank = "연결이 끊겨 판이 끝났어요 (끊기면 패배)"
 		core_hp = 0
-		_game_over()
+		run_flow_system._game_over()
 	else:
 		hud_system._show_toast(reason)
 		for id in mp_others:
@@ -8666,7 +5140,7 @@ func _mp_start() -> void:
 func _mp_back_lobby() -> void:
 	mp_back = false
 	title_label.visible = true
-	_refresh_continue()
+	persistence_system._refresh_continue()
 	hint.text = ""
 	mp_panel.visible = true
 	if mp.active():
@@ -8695,7 +5169,7 @@ func _mp_begin(msg: Dictionary) -> void:
 	var r := int(msg.get("rules", 1))
 	Meta.rules = r if r in Rules.IDS else 1
 	Modes.set_on([])
-	_apply_rules()
+	run_flow_system._apply_rules()
 	mp_others.clear()
 	var names: Dictionary = msg.get("names", {})
 	for id in msg.get("ids", []):
@@ -8714,13 +5188,13 @@ func _mp_begin(msg: Dictionary) -> void:
 		coop_n = 1 + mp_others.size()
 		coop_orbs = 1.0 + float(Rules.tune["coop_orb_per"]) * (coop_n - 1)
 		auto_start = false
-		_update_auto_btn()
+		cards_system._update_auto_btn()
 	mp_panel.visible = false
 	var tn := Meta.tutor_next
 	Meta.tutor_next = false  # 멀티플레이는 첫 판 안내(카드 종류를 하나씩 엶) 없이
 	progression_system._hide_title()
 	lanes.clear()
-	_start_choose()
+	run_flow_system._start_choose()
 	Meta.tutor_next = tn
 	hud_system.big_banner("%s 시작! %d명" % ["대결" if mp_mode == "vs" else "협동", mp_others.size() + 1], Color(0.6, 0.9, 1.0))
 
@@ -8794,7 +5268,7 @@ func _mp_packet(from: int, msg: Dictionary) -> void:
 				mp_pending += n
 			else:
 				mp_next_extra += n
-				_update_preview()
+				waves_system._update_preview()
 			hud_system._show_toast("%s가 구체 %d개를 보냈어요 (다음 웨이브에 더 옴)" % [_mp_name(from), n])
 			sfx.play("danger", 0.0)
 		"tw":
@@ -8810,7 +5284,7 @@ func _mp_packet(from: int, msg: Dictionary) -> void:
 			var id := str(msg.get("id", ""))
 			if PERKS.any(func(pk): return pk["id"] == id):
 				perks[id] = perks.get(id, 0) + 1
-				_apply_perk(id)
+				perks_system._apply_perk(id)
 				hud_system._show_toast("%s 특성: %s (팀 전체)" % [_mp_name(from), _perk_name(id)])
 		"ready":
 			if mp.is_host():
@@ -8831,7 +5305,7 @@ func _mp_packet(from: int, msg: Dictionary) -> void:
 				mp_rank = "호스트가 판에서 내보냈어요"
 				mp_fail_msg = mp_rank
 				core_hp = 0
-				_game_over()
+				run_flow_system._game_over()
 		"gift":
 			_mp_recv_gift(from, msg)
 		"wave":
@@ -8840,7 +5314,7 @@ func _mp_packet(from: int, msg: Dictionary) -> void:
 				wave = int(msg.get("w", wave + 1)) - 1
 				mp_wave_go = true
 				_end_ghost_rest()
-				_start_wave()
+				run_flow_system._start_wave()
 				mp_wave_go = false
 				mp_i_ready = false
 		"next":
@@ -8848,7 +5322,7 @@ func _mp_packet(from: int, msg: Dictionary) -> void:
 				mp_next = msg
 				if int(msg.get("w", -1)) == wave:
 					_mp_ghost_rest()
-					_update_preview()
+					waves_system._update_preview()
 		"snap":
 			if mp_ghost and from == 1:
 				_mp_apply_snap(msg)
@@ -8861,7 +5335,7 @@ func _mp_packet(from: int, msg: Dictionary) -> void:
 				kills = int(msg.get("k", kills))
 				wave = int(msg.get("w", wave))
 				core_hp = 0
-				_game_over()
+				run_flow_system._game_over()
 
 
 ## 협동 호스트: 끊겼던 참가자가 같은 자리로 다시 이어짐 → 지금 판 상태를 통째로 보낸다.
@@ -8902,7 +5376,7 @@ func _mp_resync(msg: Dictionary) -> void:
 	for t in towers.get_children():
 		towers.remove_child(t)
 		t.queue_free()
-	selected.clear()
+	interaction_system.selected.clear()
 	for o in orbs.get_children():
 		o.queue_free()
 	mp_ghosts.clear()
@@ -8912,7 +5386,7 @@ func _mp_resync(msg: Dictionary) -> void:
 			for i in int(msg["perks"][id]):
 				if PERKS.any(func(pk): return pk["id"] == id):
 					perks[id] = perks.get(id, 0) + 1
-					_apply_perk(id)
+					perks_system._apply_perk(id)
 	else:
 		mp.started = true
 		mp_code_last = mp.code
@@ -8948,13 +5422,13 @@ func _mp_resync(msg: Dictionary) -> void:
 		mp_next["w"] = wave  # 호스트가 지금 웨이브 진입 방향을 보냈다 (평소 next는 쉬는 시간에 지난 웨이브 번호로)
 		_mp_ghost_rest()
 		mp_wave_go = true
-		_start_wave()
+		run_flow_system._start_wave()
 		mp_wave_go = false
 	else:
 		wave = int(msg.get("w", 0))
 		_mp_ghost_rest()
-		_enter_ready()
-		_update_preview()
+		cards_system._enter_ready()
+		waves_system._update_preview()
 	mp_i_ready = false
 	hud_system._refresh_dps()
 	hud_system._show_toast("다시 들어왔어요 (웨이브 %d)" % maxi(wave, 1))
@@ -9061,7 +5535,7 @@ func _mp_cursor_tick(delta: float) -> void:
 	mp_cur_t += delta
 	if mp_cur_t >= 1.0 / MP_CUR_HZ:
 		mp_cur_t = 0.0
-		var m := _pointer_world()
+		var m := interaction_system._pointer_world()
 		if m.distance_to(mp_cur_last) > 1.0 and not title_label.visible:
 			mp_cur_last = m
 			mp.send({"t": "cur", "x": roundf(m.x), "y": roundf(m.y)}, 0, false)
@@ -9293,14 +5767,14 @@ func _mp_try_go(force := false) -> void:
 	_mp_wait_end()
 	mp.send({"t": "wave", "w": wave + 1})
 	mp_wave_go = true
-	_start_wave()
+	run_flow_system._start_wave()
 	mp_wave_go = false
 
 
 ## 참가자: 호스트가 웨이브를 시작했는데 아직 고르는 중이면 그대로 닫는다.
 func _end_ghost_rest() -> void:
 	if phase in [Phase.PLACE, Phase.AIM, Phase.MOVE]:
-		_cancel_step()
+		interaction_system._cancel_step()
 	perk_mode = false
 	choice_box.visible = false
 
@@ -9332,9 +5806,9 @@ func _mp_ghost_clear(msg: Dictionary) -> void:
 	var sh: Variant = msg.get("sh", {})
 	_mp_ach_coop(wave, sh if sh is Dictionary else {})
 	if bool(msg.get("perk", false)):
-		_start_perk()
+		perks_system._start_perk()
 	else:
-		_start_choose()
+		run_flow_system._start_choose()
 
 
 ## 호스트: 전장 구체 상태를 보낸다 [번호, x, y, 체력, 최대, 종류, 보호막, 저항+1, 굳셈 + 2x(후반 구체 번호+1)].
@@ -9448,32 +5922,11 @@ func _mp_recv_towers(owner: int, list: Variant) -> void:
 			t.mp_apply(d)
 	for x in towers.get_children():
 		if x.owner_id == owner and not keep.has(x.net_id):
-			if x in selected:
-				selected.erase(x)
+			if x in interaction_system.selected:
+				interaction_system.selected.erase(x)
 			x.queue_free()
 
 
 # ---------- 별 상한·특성 ----------
 
 ## 별이 든 오브젝트(별·행성 합쳐)가 star_max개라 별을 새로 놓을 수 없다.
-func star_full() -> bool:
-	return Tower.star_count(self) >= int(Rules.t("star_max"))
-
-
-## 이 카드가 별 카드인데 새로 놓을 수도, 넣을(레벨업할) 오브젝트도 없다.
-func _star_blocked(card: Dictionary) -> bool:
-	return card.get("type") == "elem" and card.get("e") == Elem.STAR and star_full() and not _my_towers().any(func(t): return t.can_take(card))
-
-
-## 특성 하나를 얻는다.
-func _grant_perk(id: String) -> void:
-	perks[id] = perks.get(id, 0) + 1
-	_apply_perk(id)
-
-
-## 쉬는 시간 [시작] 버튼 자리 (일반 판 도크가 옮겨 두면 원래 자리로).
-func _start_btn_layout() -> void:
-	if start_btn.anchor_top != 1.0:
-		start_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-		start_btn.position = Vector2(-110, -100)
-		start_btn.size = Vector2(220, 44)

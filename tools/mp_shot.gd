@@ -65,14 +65,14 @@ func _initialize():
 				main.mp_others[2].merge({"w": 7, "hp": 6, "mx": 10, "sc": 4210}, true)
 				main.mp_others[3].merge({"w": 5, "alive": false, "sc": 1980}, true)
 				main.mp_next_extra = 3
-				main._update_preview()
+				main.waves_system._update_preview()
 			else:
 				main.mp_others[3]["gone"] = true
 				var now := Time.get_ticks_msec()  # 다른 사람 커서 (협동)
 				main.mp_cursors = {2: {"p": main.center() + Vector2(180, -90), "to": main.center() + Vector2(180, -90), "t": now}}
 			for i in 4:
 				main.picked = {"e": Elem.ALL[i], "lv": 1}
-				main._place_tower(main.center() + Vector2.from_angle(i * 1.6) * 140.0, Vector2.from_angle(i * 1.6))
+				main.interaction_system._place_tower(main.center() + Vector2.from_angle(i * 1.6) * 140.0, Vector2.from_angle(i * 1.6))
 				if mode == "coop":
 					main.towers.get_child(i).owner_id = 1 + i % 3
 			if mode == "coop":
@@ -81,7 +81,7 @@ func _initialize():
 				main.towers.get_child(1).queue_redraw()
 				main.mp_others[2]["afk"] = true
 				main.mp_wait_left = 32.0,
-		func(): _snap("mp_rest_" + mode); main.phase = main.Phase.READY; main._enter_ready(); main.mp_wave_go = true; main._start_wave(); main.mp_wave_go = false,
+		func(): _snap("mp_rest_" + mode); main.phase = main.Phase.READY; main.cards_system._enter_ready(); main.mp_wave_go = true; main.run_flow_system._start_wave(); main.mp_wave_go = false,
 		func():
 			_snap("mp_wave_" + mode)
 			if mode == "coop":
@@ -91,11 +91,11 @@ func _initialize():
 		func():
 			if mode == "coop":
 				_snap("mp_view_coop")
-			main._game_over(),
+			main.run_flow_system._game_over(),
 		func():
 			_snap("mp_over_" + mode)
 			# 끝 화면을 지나 대기방으로 (방 유지): 화면을 새로 만들고 민수는 아직 판 진행 중
-			main._mp_keep_room()
+			main.run_flow_system._mp_keep_room()
 			var old = main
 			old.get_parent().remove_child(old)
 			old.free()
@@ -119,7 +119,7 @@ func _initialize():
 			main.picked = {"type": "elem", "e": Elem.WATER, "lv": 1}
 			main.phase = main.Phase.PLACE)
 		steps.insert(at, func(): _snap("mp_rest_" + mode); main._mp_req_open(main.towers.get_child(0)))
-		steps[at + 2] = func(): _snap("mp_req_give"); main.picked = {}; main.phase = main.Phase.READY; main._enter_ready(); main.mp_wave_go = true; main._start_wave(); main.mp_wave_go = false
+		steps[at + 2] = func(): _snap("mp_req_give"); main.picked = {}; main.phase = main.Phase.READY; main.cards_system._enter_ready(); main.mp_wave_go = true; main.run_flow_system._start_wave(); main.mp_wave_go = false
 		steps.insert(at + 1, func(): _snap("mp_req_pop"))
 
 

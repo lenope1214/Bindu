@@ -48,8 +48,8 @@ func _initialize():
 		_tower(p, Elem.FIRE)
 	main.offer = [{"type":"elem", "e":Elem.WATER, "lv":1}, {"type":"mod", "id":"multi"}, {"type":"pat", "id":"laser"}]
 	main.picks_left = 1
-	main._show_offer()
-	main._open_choose()
+	main.cards_system._show_offer()
+	main.cards_system._open_choose()
 	main.banner_t = 0
 	main.banner_queue.clear()
 	main.toast_timer = 0
@@ -60,7 +60,7 @@ func _initialize():
 	main.touch_ui = args.size() > 2
 	main.choice_box.get_child(0).mouse_entered.emit()
 	if main.touch_ui:
-		main._on_card_tap(main.offer[0], 0)
+		main.cards_system._on_card_tap(main.offer[0], 0)
 	await snap("hover")
 	var hit: Button = main.choice_box.get_child(0)
 	var cr := hit.get_global_rect()
@@ -80,32 +80,32 @@ func _initialize():
 		var card: Dictionary = main.card_dock.preview_card()
 		ok("UI-29", not card.is_empty() and main.card_dock.target_ok(main.towers.get_child(5), card), "preview resolves applicable target")
 		ok("UI-29", hit.tooltip_text == "", "card does not open floating tooltip over world")
-	main._set_card_detail(true)
+	main.cards_system._set_card_detail(true)
 	await snap("detail")
 	if revised:
 		ok("UI-29", not main.card_dock.preview_card().is_empty(), "detail toggle retains card preview")
-	main._set_card_detail(false)
-	main._set_cards_hidden(true)
+	main.cards_system._set_card_detail(false)
+	main.cards_system._set_cards_hidden(true)
 	await snap("hidden")
 	check_camera("hide cards")
-	main._set_cards_hidden(false)
+	main.cards_system._set_cards_hidden(false)
 	await settle()
-	main._on_pick(main.offer[0])
+	main.cards_system._on_pick(main.offer[0])
 	await snap("place")
 	check_camera("place")
-	main._cancel_step()
+	main.interaction_system._cancel_step()
 	await settle()
 	ok("UI-28", main.phase == main.Phase.CHOOSE, "cancel returns to choice")
-	main._save_run()
+	main.persistence_system._save_run()
 	_clear()
-	main._continue_run()
+	main.persistence_system._continue_run()
 	main.toast_timer = 0
 	await settle()
 	check_camera("continue")
-	main._enter_ready()
+	main.cards_system._enter_ready()
 	await snap("ready")
 	check_camera("ready")
-	main._start_wave_from_ready()
+	main.cards_system._start_wave_from_ready()
 	main.banner_t = 0
 	main.banner_queue.clear()
 	await snap("wave")
@@ -116,8 +116,8 @@ func _initialize():
 		await snap("zoom")
 		ok("UI-28", main.view_zoom > 1.5, "zoom remains available inside board")
 		main.phase = main.Phase.CHOOSE
-		main._show_offer()
-		main._open_choose()
+		main.cards_system._show_offer()
+		main.cards_system._open_choose()
 		await settle()
 		var z: float = main.view_zoom
 		var wheel := InputEventMouseButton.new()
@@ -130,7 +130,7 @@ func _initialize():
 		ok("UI-28", main.view_zoom == z, "visible dock wheel cannot zoom world")
 		main._reset_zoom()
 	main.wave = 5
-	main._start_perk()
+	main.perks_system._start_perk()
 	main.banner_t = 0
 	main.banner_queue.clear()
 	main.toast_timer = 0
@@ -141,37 +141,37 @@ func _initialize():
 	main.bar_open = true
 	await snap("settings_expanded")
 	if revised:
-		main._toggle_pause()
+		main.run_flow_system._toggle_pause()
 		await snap("pause")
 		check_camera("pause")
-		main._toggle_pause()
+		main.run_flow_system._toggle_pause()
 		_fresh(12)
 		var target: Tower = _tower(Vector2(600, 440), Elem.FIRE)
-		main._on_pick({"type":"mod", "id":"rapid"})
+		main.cards_system._on_pick({"type":"mod", "id":"rapid"})
 		await settle()
 		var target_screen: Vector2 = main.get_canvas_transform() * target.position
 		VirtualInput.move(target_screen)
 		await process_frame
-		ok("UI-28", main._tower_at(main._pointer_world()) == target, "virtual pointer resolves transformed target")
+		ok("UI-28", main.interaction_system._tower_at(main.interaction_system._pointer_world()) == target, "virtual pointer resolves transformed target")
 		var count: int = target.mod_count()
 		await click_at(target_screen)
 		ok("UI-28", target.mod_count() == count + 1, "virtual input applies card to transformed target")
-		main._on_pick({"type":"mod", "id":"rapid"})
+		main.cards_system._on_pick({"type":"mod", "id":"rapid"})
 		await settle()
 		var area: Vector2 = main.card_dock.side.get_global_rect().get_center()
 		await click_at(area)
-		ok("UI-28", main.phase == main.Phase.PLACE and not main.boxing and target.mod_count() == count + 1, "inspector input does not place or start selection")
+		ok("UI-28", main.phase == main.Phase.PLACE and not main.interaction_system.boxing and target.mod_count() == count + 1, "inspector input does not place or start selection")
 		var card: Dictionary = {"type":"elem", "e":Elem.WATER, "lv":1}
 		main.phase = main.Phase.CHOOSE
 		main.offer = [card]
-		main._show_offer()
-		main._open_choose()
+		main.cards_system._show_offer()
+		main.cards_system._open_choose()
 		await settle()
 		main.touch_ui = true
-		main._on_card_tap(card, 0)
+		main.cards_system._on_card_tap(card, 0)
 		await settle()
 		ok("UI-29", not main.apply_btn.visible and main.phase == main.Phase.PLACE and main.picked == card, "touch selection carries card without obsolete apply step")
-		main._cancel_step()
+		main.interaction_system._cancel_step()
 		main.title_label.visible = true
 		await settle()
 		ok("UI-28", not main.card_dock.panel.visible and main.camera.zoom.is_equal_approx(Vector2.ONE), "return to title restores camera")

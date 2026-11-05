@@ -26,7 +26,7 @@ func _initialize():
 	await process_frame
 	Meta.rules = int(OS.get_environment("RULES")) if OS.get_environment("RULES") != "" else 1
 	Meta.map_id = "spiral"
-	main._apply_rules()
+	main.run_flow_system._apply_rules()
 	secs = float(OS.get_environment("SECS")) if OS.get_environment("SECS") != "" else 20.0
 	var stage := OS.get_environment("STAGE") if OS.get_environment("STAGE") != "" else "mid"
 	var st: Array = STAGES[stage]
@@ -110,7 +110,7 @@ func _run(j: Dictionary) -> Dictionary:
 	var t = null
 	if not j["els"].is_empty():
 		main.picked = {"e": j["els"][0], "lv": j["lv"]}
-		main._place_tower(c + ld * 100.0, ld)
+		main.interaction_system._place_tower(c + ld * 100.0, ld)
 		t = main.towers.get_child(0)
 		for k in range(1, j["els"].size()):
 			t.add(j["els"][k], j["lv"])
@@ -129,7 +129,7 @@ func _run(j: Dictionary) -> Dictionary:
 		# PPOS: 0 옆(왼) 1 옆(오른) 2 나선 다음 자리(중앙 둘레 0.8라디안 뒤) 3 길목 바깥쪽(중앙에서 160)
 		var pp: Vector2 = [c + ld * 100.0 + ld.orthogonal() * 50.0, c + ld * 100.0 - ld.orthogonal() * 50.0,
 			c + ld.rotated(0.8) * 100.0, c + ld * 160.0][int(OS.get_environment("PPOS"))]
-		main._place_tower(pp, (pp - c).normalized())
+		main.interaction_system._place_tower(pp, (pp - c).normalized())
 		pt = main.towers.get_child(main.towers.get_child_count() - 1)
 		if partner != "shot":
 			pt.set_pattern(partner)

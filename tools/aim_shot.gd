@@ -34,22 +34,22 @@ func _initialize():
 			main.tut.visible = false
 			var c: Vector2 = main.core()
 			main.picked = {"e": Elem.FIRE, "lv": 2}
-			main._place_tower(c + Vector2(140, -60), Vector2.RIGHT)
+			main.interaction_system._place_tower(c + Vector2(140, -60), Vector2.RIGHT)
 			main.picked = {"e": Elem.WATER, "lv": 2}
-			main._place_tower(c + Vector2(-150, 80), Vector2.LEFT)
+			main.interaction_system._place_tower(c + Vector2(-150, 80), Vector2.LEFT)
 			t = main.towers.get_child(0)
-			main._enter_ready(),
+			main.cards_system._enter_ready(),
 		func():
 			main.touch_ui = touch
-			main._select_tower(t),
+			main.interaction_system._select_tower(t),
 		func(): main.touch_ui = touch,
 		func():
 			_snap("aim_selected")
 			main.touch_ui = touch
-			main.pointer_position = t.get_global_transform_with_canvas().origin
-			main.press_t = t
-			main.dragging = false
-			main._release_press(),
+			main.interaction_system.pointer_position = t.get_global_transform_with_canvas().origin
+			main.interaction_system.press_t = t
+			main.interaction_system.dragging = false
+			main.interaction_system._release_press(),
 		func(): main.touch_ui = touch,
 		func(): _snap("aim_again"),
 	]
@@ -58,7 +58,7 @@ func _initialize():
 func _snap(n: String):
 	RenderingServer.force_draw()
 	main.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
-	print("SHOT ", n, " phase=", main.phase, " moving=", main.moving == t)
+	print("SHOT ", n, " phase=", main.phase, " moving=", main.interaction_system.moving == t)
 
 
 func _process(_d) -> bool:

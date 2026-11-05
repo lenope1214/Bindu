@@ -50,7 +50,7 @@ func _initialize() -> void:
 func detail_case() -> void:
 	await fixture()
 	target.position = Vector2(220, 300)
-	main._set_cards_hidden(true)
+	main.cards_system._set_cards_hidden(true)
 	await settle()
 	Input.emulate_mouse_from_touch = true
 	await touch(world(target.position), true)
@@ -70,7 +70,7 @@ func ownership_case() -> void:
 	await fixture()
 	target.position = Vector2(220, 300)
 	refused.position = Vector2(1060, 300)
-	main._set_cards_hidden(true)
+	main.cards_system._set_cards_hidden(true)
 	main.mp_mode = "coop"
 	main.mp.my_id = 1
 	target.owner_id = 1
@@ -82,15 +82,15 @@ func ownership_case() -> void:
 	all.pressed = true
 	VirtualInput.send(all)
 	await settle()
-	ok("MP-07", main.selected == [target], "협동 Ctrl+A는 내 오브젝트만 선택")
-	main.selected = [target, refused]
+	ok("MP-07", main.interaction_system.selected == [target], "협동 Ctrl+A는 내 오브젝트만 선택")
+	main.interaction_system.selected = [target, refused]
 	var mine_origin := target.position
 	await mouse_button(world(target.position), true)
 	await mouse_move(world(target.position) + Vector2(80, -60), true)
-	ok("MP-07", main.dragging and main.drag_group == [target] and refused.position == other_origin, "섞인 선택에서도 드래그 시작 시 소유권 재확인")
+	ok("MP-07", main.interaction_system.dragging and main.interaction_system.drag_group == [target] and refused.position == other_origin, "섞인 선택에서도 드래그 시작 시 소유권 재확인")
 	await mouse_button(world(target.position), false)
 	ok("MP-07", target.position != mine_origin and refused.position == other_origin, "내 것만 이동 확정, 친구 좌표 보존")
-	main.selected.clear()
+	main.interaction_system.selected.clear()
 	main.mp_mode = ""
 	main.mp_bar.hide()
 
@@ -101,8 +101,8 @@ func pause_input_case() -> void:
 	await key(KEY_P)
 	for code in [KEY_S, KEY_Q, KEY_SPACE, KEY_1]:
 		await key(code)
-	main._on_skip()
-	main._on_reroll()
+	main.run_flow_system._on_skip()
+	main.cards_system._on_reroll()
 	ok("UI-10", paused and main.phase == main.Phase.CHOOSE and main.picks_left == 2 and main.rerolls_left == original_rerolls and main.offer == original_offer and main.skip_left == 0, "정지 중 게임 단축키·직접 넘기기/새로고침 호출 차단")
 	await key(KEY_M)
 	ok("UI-10", paused, "정지 중 소리 조작은 정지를 풀지 않음")
@@ -114,7 +114,7 @@ func direction_case() -> void:
 	for select_first in [false, true]:
 		await fixture()
 		target.position = Vector2(220, 300)
-		main._set_cards_hidden(true)
+		main.cards_system._set_cards_hidden(true)
 		if select_first:
 			await mouse_click(world(target.position))
 		var original_dir: Vector2 = target.dir
@@ -125,25 +125,25 @@ func direction_case() -> void:
 		right.position = world(target.position)
 		VirtualInput.send(right)
 		await settle()
-		ok("UI-05", main.phase == main.Phase.AIM and main.moving == target and main.aim_right, "우클릭 즉시 방향 편집: 선택=%s" % select_first)
+		ok("UI-05", main.phase == main.Phase.AIM and main.interaction_system.moving == target and main.interaction_system.aim_right, "우클릭 즉시 방향 편집: 선택=%s" % select_first)
 		await mouse_move(world(target.position + Vector2(0, -120)))
 		right.pressed = false
 		right.position = world(target.position + Vector2(0, -120))
 		VirtualInput.send(right)
 		await settle()
-		ok("UI-05", main.phase == main.Phase.CHOOSE and main.moving == null and not target.dir.is_equal_approx(original_dir) and target.dir.dot(Vector2.UP) > 0.99, "우클릭 끌기 확정: 선택=%s" % select_first)
+		ok("UI-05", main.phase == main.Phase.CHOOSE and main.interaction_system.moving == null and not target.dir.is_equal_approx(original_dir) and target.dir.dot(Vector2.UP) > 0.99, "우클릭 끌기 확정: 선택=%s" % select_first)
 	await fixture()
 	target.position = Vector2(220, 300)
-	main._set_cards_hidden(true)
+	main.cards_system._set_cards_hidden(true)
 	await settle()
 	await mouse_button(world(target.position), true)
 	await mouse_move(world(target.position) + Vector2(80, -60), true)
 	await mouse_button(world(target.position), false)
-	ok("UI-05", main.selected == [target] and main.card_dock.inspected_tower == target, "마우스 드래그 후 선택·상세 유지")
+	ok("UI-05", main.interaction_system.selected == [target] and main.card_dock.inspected_tower == target, "마우스 드래그 후 선택·상세 유지")
 	await mouse_click(world(target.position))
-	ok("UI-05", main.phase == main.Phase.AIM and main.moving == target, "드래그 다음 클릭 한 번으로 방향 편집")
+	ok("UI-05", main.phase == main.Phase.AIM and main.interaction_system.moving == target, "드래그 다음 클릭 한 번으로 방향 편집")
 	await key(KEY_ESCAPE)
-	main._enter_ready()
+	main.cards_system._enter_ready()
 	var args := OS.get_cmdline_user_args()
 	main.touch_ui = phone or (args.size() > 2 and args[2] == "touch")
 	await settle()
@@ -161,15 +161,15 @@ func direction_case() -> void:
 		target.position = Vector2(220, 300)
 		await mouse_click(card_center(1))
 		await key(KEY_ESCAPE)
-		main._set_card_detail(true)
-		main._set_cards_hidden(folded)
+		main.cards_system._set_card_detail(true)
+		main.cards_system._set_cards_hidden(folded)
 		await mouse_click(world(target.position))
 		await mouse_click(main.card_dock.direction_btn.get_global_rect().get_center())
 		await key(KEY_ESCAPE)
-		ok("UI-05", main.cards_hidden == folded and main.selected == [target], "방향 취소는 카드 접힘·오브젝트 선택 복원: %s" % folded)
+		ok("UI-05", main.cards_hidden == folded and main.interaction_system.selected == [target], "방향 취소는 카드 접힘·오브젝트 선택 복원: %s" % folded)
 		await mouse_click(main.card_dock.direction_btn.get_global_rect().get_center())
 		await mouse_click(world(Vector2(650, 240)))
-		ok("UI-05", main.phase == main.Phase.CHOOSE and main.selected.is_empty() and not main.card_dock.side.visible and main.card_dock.preview_card().is_empty() and main.tap_sel == -1 and main.cards_hidden == folded, "방향 확정은 이전 카드 미리보기 없이 종료: %s" % folded)
+		ok("UI-05", main.phase == main.Phase.CHOOSE and main.interaction_system.selected.is_empty() and not main.card_dock.side.visible and main.card_dock.preview_card().is_empty() and main.tap_sel == -1 and main.cards_hidden == folded, "방향 확정은 이전 카드 미리보기 없이 종료: %s" % folded)
 		await snap("direction-finished-%s" % folded)
 
 func pause_inspector_case() -> void:
@@ -178,7 +178,7 @@ func pause_inspector_case() -> void:
 	for e in Elem.ALL:
 		target.add(e, 1)
 	target.eff = target.eff_now()
-	main._set_cards_hidden(true)
+	main.cards_system._set_cards_hidden(true)
 	await mouse_move(world(target.position))
 	await key(KEY_P)
 	ok("UI-07", paused and main.card_dock.side.visible and main.card_dock.side.z_index > main.pause_dim.z_index and not main.card_dock.direction_btn.visible, "일시정지 중에도 인스펙터를 메뉴 위에서 읽기 전용 표시")
@@ -216,7 +216,7 @@ func pause_inspector_case() -> void:
 	await mouse_move(world(target.position) + Vector2(80, -60), true)
 	await key(KEY_P)
 	await mouse_button(world(target.position), false)
-	ok("UI-07", paused and target.position == origin and main.press_t == null, "진행 중 드래그도 정지하면 원위치로 취소")
+	ok("UI-07", paused and target.position == origin and main.interaction_system.press_t == null, "진행 중 드래그도 정지하면 원위치로 취소")
 	await key(KEY_P)
 
 func overlap_tip(rect: Rect2) -> void:
@@ -253,7 +253,7 @@ func overlap_case() -> void:
 				event = event.duplicate()
 				event.pressed = false
 				VirtualInput.send(event)
-			ok("UI-28", count[0] == 1 and main.tip_pin == -1 and main.selected.is_empty() and main.press_t == null, "버튼·배지·오브젝트 겹침은 버튼 한 번만: touch=%s 회차=%d" % [touch_mode, run])
+			ok("UI-28", count[0] == 1 and main.tip_pin == -1 and main.interaction_system.selected.is_empty() and main.interaction_system.press_t == null, "버튼·배지·오브젝트 겹침은 버튼 한 번만: touch=%s 회차=%d" % [touch_mode, run])
 			button.pressed.disconnect(pressed)
 			await settle()
 	for emulate in [true, false]:
@@ -270,36 +270,36 @@ func overlap_case() -> void:
 			event = event.duplicate()
 			event.pressed = false
 			VirtualInput.send(event)
-			ok("UI-28", main.tip_pin == 0 and main.selected.is_empty() and main.press_t == null and not main.info_mouse_capture and main.info_touch_capture == -1, "배지·오브젝트 겹침은 배지만: emulate=%s 회차=%d" % [emulate, run])
+			ok("UI-28", main.tip_pin == 0 and main.interaction_system.selected.is_empty() and main.interaction_system.press_t == null and not main.interaction_system.info_mouse_capture and main.interaction_system.info_touch_capture == -1, "배지·오브젝트 겹침은 배지만: emulate=%s 회차=%d" % [emulate, run])
 			await settle()
 	Input.emulate_mouse_from_touch = true
 	await fixture()
-	main._set_cards_hidden(true)
+	main.cards_system._set_cards_hidden(true)
 	target.position = Vector2(220, 300)
 	await settle()
 	var origin := target.position
 	await mouse_button(world(target.position), true)
 	await mouse_move(main.card_dock.focus_btn.get_global_rect().get_center(), true)
 	await mouse_button(main.card_dock.focus_btn.get_global_rect().get_center(), false)
-	ok("UI-28", target.position == origin and main.phase == main.Phase.CHOOSE and main.press_t == null, "전장 드래그를 버튼 위에서 놓으면 이동 취소")
+	ok("UI-28", target.position == origin and main.phase == main.Phase.CHOOSE and main.interaction_system.press_t == null, "전장 드래그를 버튼 위에서 놓으면 이동 취소")
 	await fixture()
 	await mouse_click(card_center())
 	var cancel_at: Vector2 = main.cancel_btn.get_global_rect().get_center()
 	target.position = main.get_canvas_transform().affine_inverse() * cancel_at
 	await mouse_click(cancel_at)
-	ok("UI-28", main.phase == main.Phase.CHOOSE and main.picks_left == 2 and target.m("pierce") == 0 and main.selected.is_empty(), "카드 취소 버튼과 뒤 대상이 겹쳐도 취소만 실행")
+	ok("UI-28", main.phase == main.Phase.CHOOSE and main.picks_left == 2 and target.m("pierce") == 0 and main.interaction_system.selected.is_empty(), "카드 취소 버튼과 뒤 대상이 겹쳐도 취소만 실행")
 
 	main.help_label.visible = true
 	await settle()
 	var outside: Vector2 = main.ui_root.get_global_transform() * Vector2(4, 100)
 	overlap_tip(Rect2(outside - Vector2(8, 8), Vector2(16, 16)))
 	await mouse_click(outside)
-	ok("UI-28", not main.help_label.visible and main.selected.is_empty(), "모달 밖 클릭은 창만 닫고 뒤 정보·전장을 누르지 않음")
+	ok("UI-28", not main.help_label.visible and main.interaction_system.selected.is_empty(), "모달 밖 클릭은 창만 닫고 뒤 정보·전장을 누르지 않음")
 
 func hud_case() -> void:
 	for touch_mode in [false, true]:
 		await fixture()
-		main._set_cards_hidden(true)
+		main.cards_system._set_cards_hidden(true)
 		await settle()
 		var at: Vector2 = main.hud.get_global_rect().position + Vector2(20, main.hud.get_global_rect().size.y / 2.0)
 		target.position = main.get_canvas_transform().affine_inverse() * at
@@ -310,12 +310,12 @@ func hud_case() -> void:
 			await touch(at, false)
 		else:
 			await mouse_click(at)
-		ok("UI-36", main.selected == [target] and main.tip_pin == -1 and main.phase == main.Phase.CHOOSE, "점수 줄 밑 오브젝트는 단독 선택하고 칩은 함께 누르지 않음: %s" % touch_mode)
+		ok("UI-36", main.interaction_system.selected == [target] and main.tip_pin == -1 and main.phase == main.Phase.CHOOSE, "점수 줄 밑 오브젝트는 단독 선택하고 칩은 함께 누르지 않음: %s" % touch_mode)
 
 func perk_case() -> void:
 	await fixture()
 	main.perk_offer.assign(main.PERKS.filter(func(pk): return pk["id"] != "coin").slice(0, 3))
-	main._show_perks()
+	main.perks_system._show_perks()
 	main.banner_t = 0
 	main.banner_queue.clear()
 	await settle()
@@ -325,7 +325,7 @@ func perk_case() -> void:
 	await touch(at, true)
 	await create_timer(0.55).timeout
 	await settle()
-	ok("UI-16", main.card_dock.side.visible and main.perk_peek != null and main.perks == before, "특성 길게 누르기는 적용 없이 상세 열람")
+	ok("UI-16", main.card_dock.side.visible and main.perks_system.perk_peek != null and main.perks == before, "특성 길게 누르기는 적용 없이 상세 열람")
 	await snap("perk-long-press")
 	await touch(at, false)
 	ok("UI-16", main.perk_mode and main.perks == before, "길게 누른 손을 떼어도 특성을 적용하지 않음")
@@ -342,14 +342,14 @@ func inspector_case() -> void:
 		if stage == main.Phase.WAVE:
 			_orb(Vector2(650, 500), 1e6)  # 빈 전투가 즉시 끝나 단계 검증이 무의미해지지 않게
 		await mouse_click(world(target.position))
-		ok("UI-32", main.phase == stage and main.selected == [target] and main.card_dock.shown_tower == target, "선택한 상세 유지: %s" % stage)
+		ok("UI-32", main.phase == stage and main.interaction_system.selected == [target] and main.card_dock.shown_tower == target, "선택한 상세 유지: %s" % stage)
 		if stage == main.Phase.CHOOSE:
-			main._set_card_detail(true)
+			main.cards_system._set_card_detail(true)
 			await mouse_move(card_center(1))
 			ok("UI-32", main.card_dock.shown_tower == target and main.card_dock.preview_card().is_empty(), "선택한 오브젝트는 카드 호버보다 우선")
 		for run in 3:
 			await mouse_move(world(refused.position))
-			ok("UI-32", main.card_dock.shown_tower == refused and main.card_dock.inspected_tower == target and main.selected == [target], "다른 오브젝트 호버는 임시 표시: %s/%s" % [stage, run])
+			ok("UI-32", main.card_dock.shown_tower == refused and main.card_dock.inspected_tower == target and main.interaction_system.selected == [target], "다른 오브젝트 호버는 임시 표시: %s/%s" % [stage, run])
 			await mouse_move(world(Vector2(650, 240)))
 			ok("UI-32", main.card_dock.shown_tower == target, "호버 이탈 후 선택 상세 복귀: %s/%s" % [stage, run])
 		await key(KEY_P)
@@ -361,4 +361,4 @@ func inspector_case() -> void:
 		RenderingServer.force_draw()
 		main.get_viewport().get_texture().get_image().save_png(output.path_join("inspector-selected-%s.png" % stage))
 		await key(KEY_ESCAPE)
-		ok("UI-32", main.selected.is_empty() and main.card_dock.inspected_tower == null, "Esc로 선택·인스펙터 해제")
+		ok("UI-32", main.interaction_system.selected.is_empty() and main.card_dock.inspected_tower == null, "Esc로 선택·인스펙터 해제")

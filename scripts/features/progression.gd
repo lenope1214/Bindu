@@ -67,10 +67,10 @@ func _close_title() -> void:
 		session.new_armed = 2.5
 		session.new_btn.text = "정말 새로 시작?"
 		return
-	session._clear_run()
+	session.persistence_system._clear_run()
 	_hide_title()
 	session.lanes.clear()
-	session._start_choose()
+	session.run_flow_system._start_choose()
 
 
 func _hide_title() -> void:

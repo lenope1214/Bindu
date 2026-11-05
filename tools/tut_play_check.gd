@@ -80,7 +80,7 @@ func _run(how: String, ch: int, touch: bool) -> void:
 		same += 1
 		if same > 6000:
 			stuck = TutPlay.STEPS[tp.idx]["id"]
-			print("STUCK %s wave=%d phase=%d picks=%d offer=%s block=%s active=%s perk=%s skip=%d hp=%d" % [stuck, main.wave, main.phase, main.picks_left, str(main.offer), main._wave_start_block_reason(), tp._active(), main.perk_mode, main.skip_left, main.core_hp])
+			print("STUCK %s wave=%d phase=%d picks=%d offer=%s block=%s active=%s perk=%s skip=%d hp=%d" % [stuck, main.wave, main.phase, main.picks_left, str(main.offer), main.run_flow_system._wave_start_block_reason(), tp._active(), main.perk_mode, main.skip_left, main.core_hp])
 			break
 		if main.phase == main.Phase.WAVE:
 			main.game_speed = 8.0
@@ -123,21 +123,21 @@ func _act() -> void:
 			tp.btn_ok.pressed.emit()
 		"place", "second":
 			_pick(s["card"])
-			main._place_card_at(tp._spot(TutPlay.SPOT_FIRE if s["id"] == "place" else TutPlay.SPOT_WOOD), true)
+			main.interaction_system._place_card_at(tp._spot(TutPlay.SPOT_FIRE if s["id"] == "place" else TutPlay.SPOT_WOOD), true)
 			if s["id"] == "second":
 				_aim(Vector2.DOWN)
 		"aim":
 			_aim(Vector2.RIGHT)
 		"wave1":
 			if main.phase == main.Phase.READY:
-				main._start_wave_from_ready()
+				main.cards_system._start_wave_from_ready()
 		"move":
 			fire.position = tp._spot(TutPlay.SPOT_MOVE)
 		"turn":
-			main._start_move(fire)
+			main.interaction_system._start_move(fire)
 			_aim(fire.dir.rotated(-0.6))
 		"preview":
-			main._start_move(fire)
+			main.interaction_system._start_move(fire)
 			_aim((main.core() + Vector2.from_angle(main.boss_plan.get("a", 0.0)) * 240.0 - fire.position).normalized().rotated(0.1))
 		"zoom":
 			main._zoom_to(1.6, main.get_viewport_rect().size / 2.0)
@@ -145,27 +145,27 @@ func _act() -> void:
 			main._reset_zoom()
 		"stack", "trig", "link":
 			_pick(s["card"])
-			main._place_card_at(fire.position, true)
+			main.interaction_system._place_card_at(fire.position, true)
 			if s["id"] == "link":
 				fire.position = wood.position + Vector2(100, -50)
 				fire.set_attack_direction(tp._lane_dir(fire.position, 0.0))
 		"pat", "mod":
 			_pick(s["card"])
-			main._place_card_at((wood if s["id"] == "pat" else fire).position, true)
+			main.interaction_system._place_card_at((wood if s["id"] == "pat" else fire).position, true)
 		"detail":
-			main._set_card_detail(not Meta.card_detail)
+			main.cards_system._set_card_detail(not Meta.card_detail)
 			await process_frame
-			main._set_card_detail(not Meta.card_detail)
+			main.cards_system._set_card_detail(not Meta.card_detail)
 		"tools":
-			main._on_reroll()
-			main._set_cards_hidden(true)
+			main.cards_system._on_reroll()
+			main.cards_system._set_cards_hidden(true)
 			await process_frame
-			main._set_cards_hidden(false)
+			main.cards_system._set_cards_hidden(false)
 			main.range_all = true
 			await process_frame
 			main.range_all = false
 		"info":
-			main._select_tower(fire)
+			main.interaction_system._select_tower(fire)
 			main.tip_detail = true
 			main.touch_ui = true
 			await process_frame
@@ -178,29 +178,29 @@ func _act() -> void:
 			for id in main.skill_ids:
 				var p: Variant = Skill.auto_target(main, id)
 				if p != null:
-					main._use_skill(id, p)
+					main.abilities_system._use_skill(id, p)
 		"speed":
-			main._toggle_speed()
+			main.run_flow_system._toggle_speed()
 			await process_frame
-			main._toggle_speed()
-			main._toggle_pause()
+			main.run_flow_system._toggle_speed()
+			main.run_flow_system._toggle_pause()
 			await process_frame
-			main._toggle_pause()
+			main.run_flow_system._toggle_pause()
 			main.game_speed = 8.0
 		"perk":
 			if main.coin_stage > 0:
-				main._coin_tap()
+				main.perks_system._coin_tap()
 			elif main.perk_mode:
 				var coin: Array = main.perk_offer.filter(func(pk): return pk["id"] == "coin")
-				main._on_perk(coin[0] if not coin.is_empty() and main.perks.is_empty() else main.perk_offer[0])
+				main.perks_system._on_perk(coin[0] if not coin.is_empty() and main.perks.is_empty() else main.perk_offer[0])
 		"skip":
 			if main.skip_left == 0 and main.phase in [main.Phase.CHOOSE, main.Phase.READY]:
-				main._on_skip()
+				main.run_flow_system._on_skip()
 
 
 func _pick(card: Dictionary) -> void:
 	if main.phase == main.Phase.CHOOSE:
-		main._on_pick(card)
+		main.cards_system._on_pick(card)
 
 
 ## 방향 확정: 터치 조준처럼 붙잡아 둔 방향으로 (PC 클릭도 같은 _confirm_aim).
@@ -211,21 +211,21 @@ func _aim(d: Vector2) -> void:
 	main.aim_wait = true
 	var was: bool = main.touch_ui
 	main.touch_ui = true
-	main._confirm_aim()
+	main.interaction_system._confirm_aim()
 	main.touch_ui = was
 
 
 ## 이 쉬는 시간에 할 일이 끝난 뒤: 남은 카드를 놓고 웨이브를 시작한다.
 func _gate() -> void:
 	if main.perk_mode and not main.perk_offer.is_empty() and main.coin_stage == 0:
-		main._on_perk(main.perk_offer[0])
+		main.perks_system._on_perk(main.perk_offer[0])
 	elif main.coin_stage > 0:
-		main._coin_tap()
+		main.perks_system._coin_tap()
 	elif main.phase in [main.Phase.CHOOSE, main.Phase.PLACE] and main.picks_left > 0 and not main.offer.is_empty():
 		tp._skip_gate()  # 넣을 수 있는 카드를 골라 넣는다 (사람이 받아 주는 오브젝트를 고르듯)
 	elif main.phase == main.Phase.READY:
 		tp._cover_lanes()
-		if main._wave_start_block_reason() != "":
-			print("BLOCK %s (단계 %s)" % [main._wave_start_block_reason(), tp.step()["id"]])
+		if main.run_flow_system._wave_start_block_reason() != "":
+			print("BLOCK %s (단계 %s)" % [main.run_flow_system._wave_start_block_reason(), tp.step()["id"]])
 			tp.force_start = true
-		main._start_wave_from_ready()
+		main.cards_system._start_wave_from_ready()

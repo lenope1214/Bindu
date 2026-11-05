@@ -92,12 +92,12 @@ func _on_tut_closed() -> void:
 func _play_tutorial(ch := 0) -> void:
 	if session.mp_mode != "":
 		return
-	session._save_run()
+	session.persistence_system._save_run()
 	session.get_tree().paused = false
 	if TutPlay.on:
 		TutPlay.leave_meta()
 	TutPlay.pending = ch
-	session._reload()
+	session.run_flow_system._reload()
 
 
 ## 다시 불러온 뒤 (_ready): 시작 화면을 닫고 연습 판의 첫 쉬는 시간을 연다.
@@ -112,7 +112,7 @@ func _start_tut_play(ch: int) -> void:
 	session.wave = 0
 	Ach.mp = "tut"  # _ready가 멀티 표시를 지운 뒤라 다시 (누적 수·도감 수집이 오르지 않게)
 	session.tplay.setup(session, ch)
-	session._start_choose()
+	session.run_flow_system._start_choose()
 
 
 # ---------- 처음 안내 ----------

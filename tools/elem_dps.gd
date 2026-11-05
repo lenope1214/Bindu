@@ -25,7 +25,7 @@ func _initialize():
 			var tp = main.center() + Vector2(-420, 0)
 			# 속성 없는 비교용: 금속 Lv1을 넣고 부가효과 없이 보려면 따로 — 여기서는 빈 목록이면 불 Lv1 대신 직선탄만
 			main.picked = {"e": els[0] if els.size() > 0 else Elem.METAL, "lv": lv}
-			main._place_tower(tp, Vector2.RIGHT)
+			main.interaction_system._place_tower(tp, Vector2.RIGHT)
 			var t = main.towers.get_child(0)
 			if pat != "shot": t.set_pattern(pat)
 			var orbs := []

@@ -7,7 +7,7 @@ func _on_booted(info: Dictionary) -> void:
 	if info.is_empty() or session.update_btn == null:
 		return
 	if session.title_label.visible:
-		session._apply_rules()
+		session.run_flow_system._apply_rules()
 		session.menu_system._refresh_menu()
 	var latest: Variant = info.get("latest")
 	# 폰·태블릿은 스토어 주소만 연다 (App Store 2.5.2·3.1: 앱 밖에서 빌드를 받게 하지 않음)
@@ -41,7 +41,7 @@ func _on_progress_synced() -> void:
 	session.progression_system._save_best()
 	if session.title_label.visible:
 		Modes.set_on(Meta.modes if Meta.games > 0 else [])
-		session._apply_rules()
+		session.run_flow_system._apply_rules()
 		session.menu_system._refresh_menu()
 
 
@@ -81,16 +81,16 @@ func _on_run_claimed(d: Dictionary) -> void:
 		return
 	cfg.save(session.RUN_PATH)
 	session.moved_run = ""
-	session._refresh_continue()
+	session.persistence_system._refresh_continue()
 	if session.title_label.visible and session.continue_btn.visible:
-		session._continue_run()
+		session.persistence_system._continue_run()
 
 
 ## 다른 기기가 이 판을 가져갔다: 시작 화면이면 이어하기를 지우고, 하는 중이면 계속 하되 서버에는 더 올리지 않는다.
 func _on_run_moved(key: String) -> void:
 	if session.title_label.visible and _local_run_key() == key:
-		session._clear_run(false)
-		session._refresh_continue()
+		session.persistence_system._clear_run(false)
+		session.persistence_system._refresh_continue()
 		session.hud_system._show_toast("하던 판은 다른 기기에서 이어 하고 있어요")
 	elif session.run_id == key and session.moved_run != key:
 		session.moved_run = key

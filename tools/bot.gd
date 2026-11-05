@@ -32,13 +32,13 @@ var core0 := -1  # 재기 전 중앙 최대 체력
 func _set_modes():
 	modes_set = true
 	# 중앙 기술: 봇은 자동으로 쓴다 (SKILL=0이면 기술 없이, SKILLSET=0|1|2 묶음)
-	main.auto_skills = OS.get_environment("SKILL") != "0"
+	main.abilities_system.auto_skills = OS.get_environment("SKILL") != "0"
 	Meta.skill_set = int(OS.get_environment("SKILLSET")) if OS.get_environment("SKILLSET") != "" else 0
 	Modes.set_on(Array(OS.get_environment("MODES").split(",", false)))
 	# BOT_PATCH='{"orb_hp":0.8}': 온라인 패치 rules.all에 넣은 것처럼 (패치 전 수치 시험)
 	if OS.get_environment("BOT_PATCH") != "":
 		Patch.pending = {"id": -1, "data": {"rules": {"all": JSON.parse_string(OS.get_environment("BOT_PATCH"))}}}
-	main._apply_rules()
+	main.run_flow_system._apply_rules()
 	# VS=1: 대결 판 배율만 켠 혼자 판 (보낸 구체는 없음). COOP=N: N명 협동 근사 (구체·체력은 N명, 카드는 쉬는 시간마다 N명 몫)
 	main.vs_on = OS.get_environment("VS") != ""
 	if OS.get_environment("COOP") != "":
@@ -79,15 +79,15 @@ func _process(_d):
 		_set_modes()
 	if OS.get_environment("RULES") != "" and Meta.rules != int(OS.get_environment("RULES")):
 		Meta.rules = int(OS.get_environment("RULES"))
-		main._apply_rules()
+		main.run_flow_system._apply_rules()
 	if Meta.line_flip != (OS.get_environment("FLIP") != ""):
 		Meta.line_flip = not Meta.line_flip  # 회랑: 구체가 왼쪽에서
 		main.lanes.clear()
-		main._roll_lanes()
+		main.waves_system._roll_lanes()
 	if OS.get_environment("MAP") != "" and Meta.map_id != OS.get_environment("MAP"):
 		Meta.map_id = OS.get_environment("MAP")
 		main.lanes.clear()
-		main._roll_lanes()
+		main.waves_system._roll_lanes()
 	if OS.get_environment("DIAG") != "" and main.phase == 0 and main.wave != last_wave:
 		last_wave = main.wave
 		var info = []
@@ -97,14 +97,14 @@ func _process(_d):
 	main.game_speed = float(OS.get_environment("SPEED")) if OS.get_environment("SPEED") != "" else 1.0
 	if fast_now:
 		main.game_speed = float(OS.get_environment("FAST_SPEED")) if OS.get_environment("FAST_SPEED") != "" else 16.0
-	if main.phase == 6: main._start_wave()
+	if main.phase == 6: main.run_flow_system._start_wave()
 	# SKIP=3: SKIP_FROM(기본 8)웨이브부터 웨이브 넘기기를 3개씩 쓰고, 멈추면 쌓인 것을 다 고른 뒤 다시 넘긴다
 	if not main.bank_picks.is_empty() or main.bank_perks > 0:
 		skip_w = main.wave  # 넘기기를 멈춘 쉬는 시간: 이번엔 다 고른다
-	if OS.get_environment("SKIP") != "" and main.phase == 0 and main.wave >= (int(OS.get_environment("SKIP_FROM")) if OS.get_environment("SKIP_FROM") != "" else 8) and main.wave != skip_w and main.bank_picks.is_empty() and main.bank_perks == 0 and main._can_skip():
+	if OS.get_environment("SKIP") != "" and main.phase == 0 and main.wave >= (int(OS.get_environment("SKIP_FROM")) if OS.get_environment("SKIP_FROM") != "" else 8) and main.wave != skip_w and main.bank_picks.is_empty() and main.bank_perks == 0 and main.run_flow_system._can_skip():
 		skip_w = main.wave
 		Meta.skip_n = int(OS.get_environment("SKIP"))
-		main._on_skip()
+		main.run_flow_system._on_skip()
 		if OS.get_environment("DIAG") != "": print("SKIP w=", main.wave, " bank=", main.bank_picks, " rr=", main.bank_rerolls)
 		return false
 	if main.perk_mode:
@@ -112,10 +112,10 @@ func _process(_d):
 		var want := OS.get_environment("BOT_PERK")
 		var forced = null
 		if want != "":
-			for pk in main._perk_pool():
+			for pk in main.perks_system._perk_pool():
 				if pk["id"] == want:
 					forced = pk
-		main._on_perk(forced if forced != null else main.perk_offer[randi() % main.perk_offer.size()])
+		main.perks_system._on_perk(forced if forced != null else main.perk_offer[randi() % main.perk_offer.size()])
 		return false
 	if OS.get_environment("PICKS") != "" and main.phase == 0 and main.wave != picks_w:
 		picks_w = main.wave
@@ -176,7 +176,7 @@ func _process(_d):
 		if stack_all and ts.size() > 0 and pick["type"] == "elem":
 			target = ts[0]
 		if pick["type"] == "cata":
-			main._on_pick(pick); return false
+			main.cards_system._on_pick(pick); return false
 		# 상한: 넣을 수 없는 오브젝트면 넣을 수 있는 다른 오브젝트로, 없으면 속성은 새로 설치
 		if target and not target.can_take(pick):
 			target = null
@@ -185,28 +185,28 @@ func _process(_d):
 		if pick["type"] != "elem" and target == null:
 			for t in ts:
 				if t.can_take(pick): target = t; break
-		if pick["type"] == "elem" and target == null and pick["e"] == Elem.STAR and main.star_full():
+		if pick["type"] == "elem" and target == null and pick["e"] == Elem.STAR and main.cards_system.star_full():
 			pick = null  # 별·행성이 다 참: 다른 카드 (사람도 새로 놓을 수 없음)
 			for o in offer:
 				if o["type"] == "elem" and o["e"] != Elem.STAR: pick = o; break
 			if pick == null:
-				main._on_reroll()
+				main.cards_system._on_reroll()
 				if main.phase == 0 and main.rerolls_left <= 0 and main.offer == offer:
-					main.picks_left = 1; main._after_place()
+					main.picks_left = 1; main.cards_system._after_place()
 				return false
-		main._on_pick(pick)
+		main.cards_system._on_pick(pick)
 		if pick["type"] != "elem":
 			if target == null: target = ts[0] if ts.size() > 0 else null
 			if pick["type"] == "pat" and target and not target.can_pattern(pick["id"]): target = null
 			if target == null:
-				main._back_to_choose(); main._on_reroll()
+				main.interaction_system._back_to_choose(); main.cards_system._on_reroll()
 				if main.phase == 0 and main.rerolls_left <= 0 and main.offer == offer:
-					main.picks_left = 1; main._after_place()
+					main.picks_left = 1; main.cards_system._after_place()
 				return false
-			main._apply_card(target)
+			main.cards_system._apply_card(target)
 		elif target:
 			main.hud_system._show_toast(target.add(pick["e"], pick["lv"]))
-			main._after_place()
+			main.cards_system._after_place()
 		else:
 			var c = main.core()
 			# 오브젝트가 가장 적은 진입 방향에 설치
@@ -227,22 +227,22 @@ func _process(_d):
 				var k = ts.size()
 				var ud = 1 if k % 2 == 0 else -1
 				p = c + ld * (130 + 95 * (k / 2)) + Vector2(0, ud * (main.LINE_HALF + 30))
-				main._place_tower(p, Vector2(0, -ud))
+				main.interaction_system._place_tower(p, Vector2(0, -ud))
 			elif _smart():
 				# 사람처럼: 중앙 가까이에서 진입 방향 그대로 겨눈다
 				p = c + ld * (90 + 25 * (lane_i % 3)) + ld.orthogonal() * 22 * side
-				main._place_tower(p, ld)
+				main.interaction_system._place_tower(p, ld)
 			else:
 				p = c + ld * (150 + 30 * (lane_i % 3)) + ld.orthogonal() * 70 * side
 				# 직선탄은 진입 방향을 향해 겨눈다
-				main._place_tower(p, (c + ld * 600 - p).normalized())
-			main._after_place()
+				main.interaction_system._place_tower(p, (c + ld * 600 - p).normalized())
+			main.cards_system._after_place()
 	# CAP=<웨이브>: 그 웨이브에 닿으면 끝 (도파민처럼 판이 아주 길어지는 규칙에서 특성·카드 비교를 빨리)
 	var cap := int(OS.get_environment("CAP")) if OS.get_environment("CAP") != "" else 0
 	if main.phase == 4 or cap > 0 and main.wave >= cap or frames > 60 * 60 * (int(OS.get_environment("MINS")) if OS.get_environment("MINS") != "" else 25) / main.game_speed:
 		var ts = []
 		for t in main.towers.get_children(): ts.append(t.title())
-		print("RESULT wave=", main.wave, " score=", main.score, " mul=", Modes.mul(), " skills=", main.skill_used, " ", main._perk_text(), " towers=", ts)
+		print("RESULT wave=", main.wave, " score=", main.score, " mul=", Modes.mul(), " skills=", main.skill_used, " ", main.perks_system._perk_text(), " towers=", ts)
 		# 죽음 기록: 웨이브마다 새어 든 구체 수·방향·종류 (tools/run.sh bots가 모아 보여 줌)
 		for e in (main.leak_log if "leak_log" in main else []):
 			if e["n"] > 0:
@@ -282,7 +282,7 @@ func _rearrange():
 				p = c + ld * (90 + 25 * ((lane_i + k) % 3) + 30 * k) + ld.orthogonal() * 22 * side
 			else:
 				p = c + ld * (150 + 30 * ((lane_i + k) % 3) + 30 * k) + ld.orthogonal() * 70 * side
-			if main._tower_at(p, t) == null and p.distance_to(c) > 60:
+			if main.interaction_system._tower_at(p, t) == null and p.distance_to(c) > 60:
 				t.position = p.clamp(main.field_rect().position, main.field_rect().end)
 				t.dir = ld if _smart() else (c + ld * 600 - p).normalized()
 				t.queue_redraw()

@@ -29,16 +29,16 @@ func _initialize():
 			main.help_label.visible = false
 			for i in 5:
 				main.picked = {"type": "elem", "e": Elem.ALL[i * 2], "lv": 2}
-				main._place_tower(main.core() + Vector2.from_angle(i * 1.3 + 0.4) * 170.0, Vector2.RIGHT)
+				main.interaction_system._place_tower(main.core() + Vector2.from_angle(i * 1.3 + 0.4) * 170.0, Vector2.RIGHT)
 			Vary.new_run(true)
 			Vary.event = {"id": "eclipse", "el": {Elem.LIGHT: 0.6, Elem.DARK: 1.4}, "pt": {}}
 			Vary.next_event = {"id": "form", "el": {}, "pt": {"wisp": 0.6, "wall": 1.4, "spray": 1.4}}
 			Vary.adapt_el = {Elem.SOUL: 0.12}
 			Vary.adapt_pt = {"wisp": 0.08}
 			main.wave = 39
-			main._roll_lanes()
+			main.waves_system._roll_lanes()
 			main.phase = main.Phase.READY
-			main._update_preview()
+			main.waves_system._update_preview()
 			main.hud_system.hud_sig = "",
 		func():
 			var ch: Array = main.hud_chips.filter(func(c): return c[1] == "tag")
@@ -53,8 +53,8 @@ func _initialize():
 			Vary.sealed = {"elem": [Elem.FIRE, Elem.POISON, Elem.SOUL], "pat": ["wisp", "wall", "spray", "laser"], "link": ["pincer"]}
 			main.wave = 3
 			main.picks_left = 1
-			main._make_choices()
-			main._open_choose()
+			main.cards_system._make_choices()
+			main.cards_system._open_choose()
 			main.card_dim.visible = true
 			VirtualInput.move(Vector2(5, 700)),
 		func():

@@ -90,42 +90,42 @@ func _initialize():
 		func():
 			for i in 6:
 				main.picked = {"e": Elem.ALL[i], "lv": 2}
-				main._place_tower(main.core() + Vector2.from_angle(i * 1.0) * 160.0, Vector2.RIGHT)
+				main.interaction_system._place_tower(main.core() + Vector2.from_angle(i * 1.0) * 160.0, Vector2.RIGHT)
 			main.wave = 27
 			main.wave_time = 30.0
-			main._skills_new_run(1)
+			main.abilities_system._skills_new_run(1)
 			main.run_id = "shot"
-			main._ley_new_run()
+			main.abilities_system._ley_new_run()
 			main.hud_system.build_cache = [["elem:wood", 0.34], ["share:electric", 0.18], ["pat:spray", 0.12]]
 			main.offer = [{"type": "elem", "e": Elem.WOOD, "lv": 2}, {"type": "trig", "id": "echo"}, {"type": "link", "id": "pincer"}]
-			main._show_offer()
-			main._open_choose(),
+			main.cards_system._show_offer()
+			main.cards_system._open_choose(),
 		func():
 			_snap("cards")
 			# 폰: 한 번 누른 카드 (미리보기·다른 카드 옅게·[적용])
 			main.touch_ui = true
-			main._on_card_tap(main.offer[0], 0),
+			main.cards_system._on_card_tap(main.offer[0], 0),
 		func():
 			_snap("cards_tap")
 			# 카드 [자세히]: 켠 채 한 번 누른 카드는 위에 모든 내용 창 (마우스는 올리면 같은 창)
-			main._set_card_detail(true),
+			main.cards_system._set_card_detail(true),
 		func():
 			_snap("cards_detail_full")
 			main.tap_sel = -1
-			main._tap_hover(),
+			main.cards_system._tap_hover(),
 		func():
 			_snap("cards_detail")
-			main._set_card_detail(false)
+			main.cards_system._set_card_detail(false)
 			main.touch_ui = touch
 			# 전장 확대 2배 (오른쪽 위 [확대 풀기], 배지·카드·정보는 그대로 화면에)
-			main._set_cards_hidden(true)
+			main.cards_system._set_cards_hidden(true)
 			main._zoom_to(2.0, main.get_viewport_rect().size * Vector2(0.3, 0.5)),
 		func():
 			_snap("zoom")
 			main._reset_zoom()
-			main._set_cards_hidden(false)
+			main.cards_system._set_cards_hidden(false)
 			main.offer = [{"type": "pat", "id": Pat.PATTERN_IDS[2]}, {"type": "mod", "id": Pat.MOD_IDS[0]}, {"type": "cata", "id": "elem"}]
-			main._show_offer(),
+			main.cards_system._show_offer(),
 		func():
 			_snap("cards2")
 			# 첫 판처럼 처음 안내가 떠 있을 때 (안내 글과 카드 줄이 겹치지 않는지)
@@ -147,11 +147,11 @@ func _initialize():
 			# 강화 카드를 넣는 단계: 넣을 수 있는 오브젝트는 빛나는 고리, 못 넣는 것(관통 연사 ✕ 관통)은 흐리게·이유 글
 			main.towers.get_child(0).set_pattern("thorn")
 			main.towers.get_child(3).set_pattern("thorn")
-			main._on_pick({"type": "mod", "id": "pierce"})
+			main.cards_system._on_pick({"type": "mod", "id": "pierce"})
 			VirtualInput.move(main.towers.get_child(0).get_global_transform_with_canvas().origin),
 		# 넣을 수 있는 오브젝트에 올린 설명 상자 (다른 오브젝트를 가리지 않는 자리)
 		func(): _snap("place_mod"); VirtualInput.move(main.towers.get_child(1).get_global_transform_with_canvas().origin),
-		func(): _snap("place_mod_ok"); main._cancel_step(); main._set_cards_hidden(true),
+		func(): _snap("place_mod_ok"); main.interaction_system._cancel_step(); main.cards_system._set_cards_hidden(true),
 		func():
 			_snap("cards_hidden")
 			# 오브젝트 정보창 (마우스를 올렸을 때, 화면 오른쪽 아래 쪽 오브젝트라 창이 화면 끝에 닿는지)
@@ -162,7 +162,7 @@ func _initialize():
 			# 터치로 방향 바꾸기: 오브젝트 정보창이 손가락 반대편에, 아래에 [자세히]
 			main.touch_ui = true
 			var t: Node2D = main.towers.get_child(1)
-			main._start_move(t)
+			main.interaction_system._start_move(t)
 			VirtualInput.move(t.get_global_transform_with_canvas().origin + Vector2(160, 0)),
 		func(): main.touch_ui = true,  # 마우스를 옮기면(warp) touch_ui가 꺼진다
 		func(): main.tip_detail = true,
@@ -171,18 +171,18 @@ func _initialize():
 			main.tip_detail = false
 			# 터치 조준: 누른 채 끄는 동안 손가락 쪽 범위, 떼면 그 방향 유지 + [확정]
 			var t: Node2D = main.towers.get_child(1)
-			main.aim_hold = true
+			main.interaction_system.aim_hold = true
 			VirtualInput.move(t.get_global_transform_with_canvas().origin + Vector2(-120, -140)),
 		func(): main.touch_ui = true,
-		func(): _snap("aim_touch_hold"); main._aim_release(),
+		func(): _snap("aim_touch_hold"); main.interaction_system._aim_release(),
 		func():
 			_snap("aim_touch_wait")
-			main._cancel_step()
-			main.touch_ui = touch; main._set_cards_hidden(false); main.picks_left = 0; main._enter_ready(),  # 마우스를 옮기면 touch_ui가 꺼진다
+			main.interaction_system._cancel_step()
+			main.touch_ui = touch; main.cards_system._set_cards_hidden(false); main.picks_left = 0; main.cards_system._enter_ready(),  # 마우스를 옮기면 touch_ui가 꺼진다
 		# 카드를 다 고른 뒤: [웨이브 시작] 옆 [넘기기]·[×N]
 		func(): if main.tut and main.tut.visible: main.tut.close(),
-		func(): _snap("ready_skip"); main._on_skip(),
-		func(): _snap("skip_ready"); main._start_wave(),
+		func(): _snap("ready_skip"); main.run_flow_system._on_skip(),
+		func(): _snap("skip_ready"); main.run_flow_system._start_wave(),
 		func():
 			_snap("skip_wave")
 			# 웨이브 중 실시간 DPS 표 (폰은 접어 두고 시작하지만 겹침을 보려고 펼쳐 둔다)
@@ -194,29 +194,29 @@ func _initialize():
 				t.dealt = 60.0 * k
 				k *= 1.7
 			main.hud_system.dps_sig = ""
-			main._arm_skill(1)
+			main.abilities_system._arm_skill(1)
 			VirtualInput.move(main.get_global_transform_with_canvas() * (main.core() + Vector2(200, 60))),
 		func(): _snap("wave_dps"); main.skill_arm = ""; main.dps_hidden = Meta.dps_fold; _orb_tip(),
-		func(): _snap("orb_tip"); main.touch_ui = touch; main.skip_left = 0; VirtualInput.move(Vector2(5, 360)); main._start_perk(),
+		func(): _snap("orb_tip"); main.touch_ui = touch; main.skip_left = 0; VirtualInput.move(Vector2(5, 360)); main.perks_system._start_perk(),
 		func():
 			_snap("perks")
 			# 운명의 동전 연출: 장면마다 멈춰 두고 찍는다 (공중 → 떨어지는 중 → 모서리 → 결과 → 새 특성)
-			main.coin_anim = true
-			main._on_perk(main.PERKS[9])
+			main.perks_system.coin_anim = true
+			main.perks_system._on_perk(main.PERKS[9])
 			main.coin_next = "double"
 			main._process(0.0)  # 숨길 버튼·글을 한 번 정리하고
 			main.set_process(false)  # 장면을 멈춰 둔다 (일시정지는 일시정지 창이 떠서 안 씀)
-			main.coin_t = 0.5; main.coin_ang = 0.6; main.coin_fx.queue_redraw(),
+			main.perks_system.coin_t = 0.5; main.perks_system.coin_ang = 0.6; main.coin_fx.queue_redraw(),
 		func():
-			_snap("coin_air"); main._coin_drop()
-			main.coin_t = 0.45; main.coin_ang = main.coin_ang0 + main.coin_spin * 0.72; main.coin_fx.queue_redraw(),
-		func(): _snap("coin_fall"); main.coin_stage = 3; main.coin_t = 0.1; main.coin_fx.queue_redraw(),
-		func(): _snap("coin_edge"); main.set_process(true); main._coin_land(),
+			_snap("coin_air"); main.perks_system._coin_drop()
+			main.perks_system.coin_t = 0.45; main.perks_system.coin_ang = main.perks_system.coin_ang0 + main.perks_system.coin_spin * 0.72; main.coin_fx.queue_redraw(),
+		func(): _snap("coin_fall"); main.coin_stage = 3; main.perks_system.coin_t = 0.1; main.coin_fx.queue_redraw(),
+		func(): _snap("coin_edge"); main.set_process(true); main.perks_system._coin_land(),
 		func(): _snap("coin_land"),
 		func(): pass,
-		func(): _snap("coin_perks"); main._toggle_pause(),
+		func(): _snap("coin_perks"); main.run_flow_system._toggle_pause(),
 		func(): _snap("pause"); main.menu_system._toggle_settings(),
-		func(): _snap("pause_settings"); main.menu_system._toggle_settings(); main._toggle_pause(); main._game_over(),
+		func(): _snap("pause_settings"); main.menu_system._toggle_settings(); main.run_flow_system._toggle_pause(); main.run_flow_system._game_over(),
 		func(): _snap("gameover"),
 	]
 
@@ -239,7 +239,7 @@ func _rx_show(want: int) -> void:
 		print("SHOT rx_card 건너뜀: 새 조합이 생기는 오브젝트 없음")
 		return
 	if main.phase in [main.Phase.PLACE, main.Phase.AIM]:
-		main._back_to_choose()  # 넣는 단계에는 카드가 숨으니 고르기로 돌아가 찍는다
+		main.interaction_system._back_to_choose()  # 넣는 단계에는 카드가 숨으니 고르기로 돌아가 찍는다
 	best_t.add(best_e, 1)
 	main.rx_card.show_for(best_t, best)
 	main.rx_card.t = 1.05

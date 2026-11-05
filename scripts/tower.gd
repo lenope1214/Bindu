@@ -585,7 +585,7 @@ func detail_lines() -> Array:
 		fp.append("오브젝트 수 x%.2f" % (1.0 + Rules.crowd_bonus(main.towers.get_child_count())))
 	if dmg_mul != 1.0:
 		fp.append("특성 x%.2f" % dmg_mul)
-	if main and main.on_ley(self):
+	if main and main.abilities_system.on_ley(self):
 		fp.append("기맥 x%.2f" % (1.0 + Rules.t("ley_dmg")))
 	out.append(["  피해 배율: " + " · ".join(fp) + " (공명·강화·패치 포함 x%.2f)" % f, dim])
 	if shots > 1.0:
@@ -640,7 +640,7 @@ func dmg_factors() -> Dictionary:
 		mul.append(["오브젝트 %d개" % main.towers.get_child_count(), 1.0 + Rules.crowd_bonus(main.towers.get_child_count()), "i:crowd"])
 	if dmg_mul != 1.0:
 		mul.append(["특성", dmg_mul, "k:perk"])
-	if main and main.on_ley(self):
+	if main and main.abilities_system.on_ley(self):
 		mul.append(["기맥 위", 1.0 + Rules.t("ley_dmg"), "k:link"])
 	return {"chain": chain, "mul": mul, "f": hc["f"]}
 
@@ -759,7 +759,7 @@ func dmg_factor(rx := false) -> float:
 	f *= MapRule.tower_mul(elements, pattern)  # 맵 친화 속성·공격방식
 	if main and on_lane():
 		f *= 1.0 + Rules.t("map_cross_dmg")  # 십자로: 길목에서 길 따라 겨눔
-	if main and main.on_ley(self):
+	if main and main.abilities_system.on_ley(self):
 		f *= 1.0 + Rules.t("ley_dmg")  # 기맥 위
 	return f
 
@@ -828,7 +828,7 @@ func breakdown() -> Dictionary:
 		fs.append(["mod:multi", log((1 + mn("multi")) * multi_k())])
 	if dmg_mul * spd_mul > 1.0:
 		fs.append(["etc:perk", log(dmg_mul * spd_mul)])
-	if main and main.on_ley(self):
+	if main and main.abilities_system.on_ley(self):
 		fs.append(["etc:ley", log(1.0 + Rules.t("ley_dmg"))])
 	for id in mods:  # 강화 보정표로 늘어난 몫은 그 강화로 (줄어든 몫은 0 이하라 아래에서 빠짐)
 		fs.append(["mod:" + id, log(Pat.mod_fix(pattern, id, mf(id)))])

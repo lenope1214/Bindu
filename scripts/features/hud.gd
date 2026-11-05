@@ -463,7 +463,7 @@ func _show_toast(t: String) -> void:
 ## 점수·남은 구체만 바뀐 때는 0.1초에 한 번만 다시 쓴다. 글자 모양 계산이 비싸 고배속에서 프레임마다 쓰면
 ## 그것만으로 프레임당 몇 ms (8배속 부하 측정). 웨이브·중앙 체력 등이 바뀌면 바로.
 func _update_hud(force := false) -> void:
-	var urgent := "%d|%d|%d|%d|%d|%d|%d|%d|%d" % [session.wave, session.wave_dmg, session.core_hp, session.core_max, session.phase, session.towers.get_child_count(), session.selected.size(), session.perks.size(), 0]
+	var urgent := "%d|%d|%d|%d|%d|%d|%d|%d|%d" % [session.wave, session.wave_dmg, session.core_hp, session.core_max, session.phase, session.towers.get_child_count(), session.interaction_system.selected.size(), session.perks.size(), 0]
 	if not force and urgent == hud_urgent and session.hud_cool > 0.0:
 		return
 	hud_urgent = urgent
@@ -524,8 +524,8 @@ func _update_hud(force := false) -> void:
 	if session.wave > 0 or session.phase != session.Phase.WAVE:
 		var bt := "다음 웨이브 보스" if bl == 1 and session.phase != session.Phase.WAVE else ("이번 웨이브 보스" if bl == 0 else "보스까지 %d웨이브" % bl)
 		items.append(["boss", Color(1, 0.6, 0.75), "보스!" if bl == 0 else "보스까지 %d" % bl, Color(1, 0.75, 0.85), [[bt, W]], false])
-	if not session.selected.is_empty():
-		items.append(["sel", Color(0.6, 1, 0.7), str(session.selected.size()), W, [["선택한 오브젝트", W]], false])
+	if not session.interaction_system.selected.is_empty():
+		items.append(["sel", Color(0.6, 1, 0.7), str(session.interaction_system.selected.size()), W, [["선택한 오브젝트", W]], false])
 	var first := true
 	for pk in session.PERKS:
 		var n: int = session.perks.get(pk["id"], 0)

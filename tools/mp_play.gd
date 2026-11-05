@@ -86,7 +86,7 @@ func _process(d):
 		if OS.get_environment("MP_LOBBY") != "":
 			if main.phase != 4 and (role == "host" or main.mp_mode == "vs"):
 				main.core_hp = 0
-				main._game_over()
+				main.run_flow_system._game_over()
 			lobby_st = 1
 			return false
 		var mine: int = main._my_towers().size()
@@ -105,12 +105,12 @@ func _coop_bot() -> bool:
 	main.auto_start = false
 	main.game_speed = float(OS.get_environment("SPEED")) if OS.get_environment("SPEED") != "" else 1.0
 	if main.phase == 7:
-		main._cancel_step()
+		main.interaction_system._cancel_step()
 	if main.phase == 6:
-		main._start_wave()
+		main.run_flow_system._start_wave()
 		return false
 	if main.perk_mode:
-		main._on_perk(main.perk_offer[randi() % main.perk_offer.size()])
+		main.perks_system._on_perk(main.perk_offer[randi() % main.perk_offer.size()])
 		return false
 	if main.phase != 0 or main.offer.is_empty() or main.lanes.is_empty():
 		return false
@@ -136,11 +136,11 @@ func _coop_bot() -> bool:
 				break
 	if pick == null:
 		main.picks_left = 1
-		main._after_place()
+		main.cards_system._after_place()
 		return false
-	main._on_pick(pick)
+	main.cards_system._on_pick(pick)
 	if pick["type"] != "elem":
-		main._apply_card(target)
+		main.cards_system._apply_card(target)
 		return false
 	# 진입 방향마다 돌아가며, 사람마다 다른 쪽에 놓는다
 	placed += 1
@@ -148,8 +148,8 @@ func _coop_bot() -> bool:
 	var ld := Vector2.from_angle(la)
 	var side := 1.0 if main.mp.my_id % 2 == 0 else -1.0
 	var p: Vector2 = main.core() + ld * (90.0 + 30.0 * (placed % 4)) + ld.orthogonal() * 26.0 * side
-	main._place_tower(p, ld)
-	main._after_place()
+	main.interaction_system._place_tower(p, ld)
+	main.cards_system._after_place()
 	return false
 
 
@@ -161,9 +161,9 @@ func _lobby_step(d: float) -> bool:
 		lobby_t += d
 		if lobby_t < 1.5:
 			return false
-		print("MPLOBBY over ", role, " head=", main.over_data.get("head", ""))
+		print("MPLOBBY over ", role, " head=", main.run_flow_system.over_data.get("head", ""))
 		# 시작 화면으로 돌아가기와 같은 일 (봇은 current_scene이 아니라 직접 바꿔 끼운다)
-		main._mp_keep_room()
+		main.run_flow_system._mp_keep_room()
 		var old = main
 		root.remove_child(old)
 		old.free()

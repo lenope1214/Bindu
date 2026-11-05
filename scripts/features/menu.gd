@@ -114,8 +114,8 @@ func _build_menu(root: Control) -> void:
 		session.new_btn.add_theme_stylebox_override(st, gsb)
 	session.new_btn.pressed.connect(session.progression_system._close_title)
 	prep_box.add_child(session.new_btn)
-	session._icon_btn(session.new_btn, func(): return ["play", Color(1, 0.9, 0.6)])
-	session._keycap(session.new_btn, "Enter")
+	session.cards_system._icon_btn(session.new_btn, func(): return ["play", Color(1, 0.9, 0.6)])
+	session.cards_system._keycap(session.new_btn, "Enter")
 	# 맵 카드와 규칙·기술·모드·시작 묶음: 화면이 넓으면 두 칸(_prep_layout), 좁으면 위아래.
 	# 한 줄로 쌓으면 화면 높이를 넘어 준비 화면 전체가 줄었다 (PC 0.87배·폰 0.69배, 설명 글 9~11px)
 	prep_cols = GridContainer.new()
@@ -174,8 +174,8 @@ func _build_menu(root: Control) -> void:
 		if spec[2] == "vote":
 			session.vote_btn = b
 			b.visible = Net.vote_ok()
-		session._menu_glyph(b, spec[2], spec[0])
-		session._keycap(b, spec[3])
+		session.cards_system._menu_glyph(b, spec[2], spec[0])
+		session.cards_system._keycap(b, spec[3])
 	# 이어하기: 저장된 판이 있을 때만 (쉬는 시간마다 자동 저장)
 	# 아래 타일과 같은 카드 모양(호박색 테두리·이름·설명 줄), 폭은 타일 줄과 같게 (_refresh_continue)
 	session.continue_btn = Button.new()
@@ -189,7 +189,7 @@ func _build_menu(root: Control) -> void:
 		session.continue_btn.add_theme_stylebox_override(st, csb)
 	session.continue_info.add_theme_font_size_override("font_size", 17)
 	session.continue_info.add_theme_color_override("font_color", Color(1, 0.95, 0.85, 0.85))
-	session.continue_btn.pressed.connect(session._continue_run)
+	session.continue_btn.pressed.connect(session.persistence_system._continue_run)
 	session.continue_btn.visible = false
 	home_box.add_child(session.continue_btn)
 	home_box.move_child(session.continue_btn, 0)
@@ -220,7 +220,7 @@ func _build_menu(root: Control) -> void:
 	home_box.add_child(session.update_btn)
 	session.notes_btn = Button.new()
 	session.notes_btn.custom_minimum_size = Vector2(320, 52 if session._phone() else 36)
-	session._icon_btn(session.notes_btn, func(): return ["notes", Color(1, 1, 1, 0.8)])
+	session.cards_system._icon_btn(session.notes_btn, func(): return ["notes", Color(1, 1, 1, 0.8)])
 	session.notes_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	session.notes_btn.focus_mode = Control.FOCUS_NONE
 	session.notes_btn.pressed.connect(session.patchlog_system._toggle_notes)
@@ -559,7 +559,7 @@ func _tile(b: Button, title: String, col: Color, key: Variant) -> Label:
 	info.add_theme_color_override("font_color", Color(1, 1, 1, 0.72))
 	info.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	v.add_child(info)
-	session._keycap(b, key)
+	session.cards_system._keycap(b, key)
 	return info
 
 
@@ -996,7 +996,7 @@ func _cycle_skill(d: int) -> void:
 func _cycle_rules(d: int) -> void:
 	var i := Rules.IDS.find(Meta.rules)
 	Meta.rules = Rules.IDS[(i + d + Rules.IDS.size()) % Rules.IDS.size()]
-	session._apply_rules()
+	session.run_flow_system._apply_rules()
 	session.sfx.play("place")
 	_refresh_menu()
 	session.progression_system._save_best()
@@ -1267,7 +1267,7 @@ func _modes_changed() -> void:
 	Meta.modes = Array(Modes.on)
 	if not Modes.easy():
 		easy_notice.visible = false
-	session._apply_rules()
+	session.run_flow_system._apply_rules()
 	session.sfx.play("place")
 	_refresh_menu()
 	session.progression_system._save_best()

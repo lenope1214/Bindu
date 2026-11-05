@@ -37,7 +37,7 @@ func _initialize():
 	_fresh(12)
 	for e in Elem.ALL:
 		_tower(main.center() + Vector2.from_angle(e * 0.7) * 180.0, e)
-	main._start_choose()
+	main.run_flow_system._start_choose()
 	main.guide_lines.clear()
 	main.banner_queue.clear()
 	main.banner_t = 0
@@ -52,7 +52,7 @@ func _initialize():
 		main.perk_mode = false
 		main.offer = cards.slice(start, start + 4)
 		Meta.card_detail = false
-		main._show_offer()
+		main.cards_system._show_offer()
 		await settle()
 		for i in main.offer.size():
 			var card: Dictionary = main.offer[i]
@@ -61,8 +61,8 @@ func _initialize():
 			main.card_dock.inspected_tower = null
 			main.card_dock.hovered = button
 			VirtualInput.move(button.get_global_rect().get_center())
-			expected_name = main._card_content(card, 0)["head"]["name"]
-			expected_rows = main._card_full(card).map(func(row): return row[0])
+			expected_name = main.cards_system._card_content(card, 0)["head"]["name"]
+			expected_rows = main.cards_system._card_full(card).map(func(row): return row[0])
 			Meta.card_detail = false
 			await snap(tag + "_summary")
 			Meta.card_detail = true
@@ -70,7 +70,7 @@ func _initialize():
 			await bottom(tag)
 	for start in range(0, main.PERKS.size(), 4):
 		main.perk_offer = main.PERKS.slice(start, start + 4)
-		main._show_perks()
+		main.perks_system._show_perks()
 		await settle()
 		for i in main.perk_offer.size():
 			var button: Button = main.choice_box.get_child(i)
@@ -79,7 +79,7 @@ func _initialize():
 			VirtualInput.move(button.get_global_rect().get_center())
 			var tag: String = "perk_" + main.perk_offer[i]["id"]
 			expected_name = main.perk_offer[i]["name"]
-			expected_rows = [main._perk_desc(main.perk_offer[i])]
+			expected_rows = [main.perks_system._perk_desc(main.perk_offer[i])]
 			await snap(tag)
 			await bottom(tag)
 	FileAccess.open(output.path_join("captures.json"), FileAccess.WRITE).store_string(JSON.stringify(captures, "\t"))

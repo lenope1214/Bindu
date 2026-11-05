@@ -31,7 +31,7 @@ func _initialize() -> void:
 	main.toast_timer = 0
 	_fresh(0)
 	var tw := _tower(Vector2(280, 300), Elem.ILLUSION, 3)
-	main._enter_ready()
+	main.cards_system._enter_ready()
 	var shift := InputEventKey.new()
 	shift.keycode = KEY_SHIFT
 	shift.pressed = true
@@ -61,7 +61,7 @@ func _initialize() -> void:
 		RenderingServer.force_draw()
 		main.get_viewport().get_texture().get_image().save_png(output.path_join(rx["id"] + ".png"))
 		main.rx_card.hide_card()
-		main._select_tower(tw)
+		main.interaction_system._select_tower(tw)
 		main.tip_detail = true
 		await settle()
 		ok("UI-32", main.card_dock.detail.text.contains(main.patchlog_system._kr_keep(rx["desc"])), "선택 상세의 공용 설명 " + rx["id"])

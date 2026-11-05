@@ -37,28 +37,28 @@ func _initialize():
 		func():
 			var c: Vector2 = main.core()
 			main.picked = {"type": "elem", "e": Elem.BLOOD, "lv": 2}
-			main._place_tower(c + Vector2(-170, -60), Vector2.LEFT)
+			main.interaction_system._place_tower(c + Vector2(-170, -60), Vector2.LEFT)
 			main.picked = {"type": "elem", "e": Elem.ILLUSION, "lv": 2}
-			main._place_tower(c + Vector2(-150, 90), Vector2.LEFT)
+			main.interaction_system._place_tower(c + Vector2(-150, 90), Vector2.LEFT)
 			main.picked = {"type": "elem", "e": Elem.FIRE, "lv": 1}
-			main._place_tower(c + Vector2(170, 0), Vector2.RIGHT)
+			main.interaction_system._place_tower(c + Vector2(170, 0), Vector2.RIGHT)
 			main.towers.get_child(0).add(Elem.FIRE, 1)
 			main.towers.get_child(1).add(Elem.SOUND, 1)
 			for t in main.towers.get_children():
 				t.eff = t.eff_now()
 			main.wave = 12
 			main.offer = [{"type": "elem", "e": Elem.BLOOD, "lv": 2}, {"type": "elem", "e": Elem.ILLUSION, "lv": 1}, {"type": "elem", "e": Elem.POISON, "lv": 1}]
-			main._show_offer()
-			main._open_choose(),
+			main.cards_system._show_offer()
+			main.cards_system._open_choose(),
 		func():
 			_snap("ne_cards")
-			main._set_card_detail(true)
-			main._tap_hover(),
+			main.cards_system._set_card_detail(true)
+			main.cards_system._tap_hover(),
 		func():
 			_snap("ne_cards_detail")
-			main._set_card_detail(false)
+			main.cards_system._set_card_detail(false)
 			# 전장: 출혈·현혹 걸린 구체와 핏자국
-			main._set_cards_hidden(true)
+			main.cards_system._set_cards_hidden(true)
 			var c: Vector2 = main.core()
 			var bt: Tower = main.towers.get_child(0)
 			var it: Tower = main.towers.get_child(1)
@@ -93,7 +93,7 @@ func _initialize():
 		func(): pass,
 		func():
 			_snap("ne_tip")
-			main._set_cards_hidden(false)
+			main.cards_system._set_cards_hidden(false)
 			main.menu_system._toggle_codex()
 			main.codex_panel.tabs[0].pressed.emit(),
 		func():

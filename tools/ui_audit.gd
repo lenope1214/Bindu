@@ -34,12 +34,12 @@ func _initialize():
 			Meta.games = 1  # 아래 안내(READY_HINT)가 보이는 첫 판들
 			Meta.map_id = "plain"
 			Meta.rules = 1
-			main._clear_run(); main.progression_system._hide_title(); main.lanes.clear(); main._start_choose(),
+			main.persistence_system._clear_run(); main.progression_system._hide_title(); main.lanes.clear(); main.run_flow_system._start_choose(),
 		func():
 			# 오브젝트 많이 + 지난 웨이브 피해 (DPS 표가 뜨게)
 			for i in 14:
 				main.picked = {"e": Elem.ALL[i % Elem.ALL.size()], "lv": 3}
-				main._place_tower(main.core() + Vector2.from_angle(i * 0.45) * (120.0 + (i % 3) * 70.0), Vector2.RIGHT)
+				main.interaction_system._place_tower(main.core() + Vector2.from_angle(i * 0.45) * (120.0 + (i % 3) * 70.0), Vector2.RIGHT)
 			for t in main.towers.get_children():
 				t.dealt = 100000.0 + randf() * 900000.0
 			main.wave = 39  # 다음이 보스 웨이브(40), 섞여 나오는 종류 전부
@@ -51,9 +51,9 @@ func _initialize():
 				main.perks[pk["id"]] = 3
 			# 길목: 왼쪽 위(점수 줄·DPS 표), 위, 오른쪽 위(버튼), 아래(웨이브 시작·안내), 오른쪽 아래(속도 줄), 왼쪽 아래(버전)
 			main.lanes.assign([-2.5, -1.57, -0.45, 1.57, 0.55, 2.55, PI])
-			main._update_preview()
+			main.waves_system._update_preview()
 			main.picks_left = 0
-			main._enter_ready()
+			main.cards_system._enter_ready()
 			main.legend_hidden = false
 			main.menu_system._refresh_legend(),
 		func(): _snap("ready"),
@@ -61,13 +61,13 @@ func _initialize():
 			main.legend_hidden = true
 			main.menu_system._refresh_legend(),
 		func(): _snap("ready_nolegend"); main.leak_marks = [[-2.5, 12], [-0.45, 3], [1.57, 140]],
-		func(): _snap("ready_leak"); main.start_btn.visible = false; main._start_choose(true),  # 실제로는 웨이브가 끝나야 고르기라 [웨이브 시작]은 없다
+		func(): _snap("ready_leak"); main.start_btn.visible = false; main.run_flow_system._start_choose(true),  # 실제로는 웨이브가 끝나야 고르기라 [웨이브 시작]은 없다
 		func():
 			main.legend_hidden = false
 			main.menu_system._refresh_legend(),
 		func(): _snap("choose"),
 		func(): main.legend_hidden = true; main.menu_system._refresh_legend(),
-		func(): _snap("choose_nolegend"); main.leak_marks = []; main._start_wave(),
+		func(): _snap("choose_nolegend"); main.leak_marks = []; main.run_flow_system._start_wave(),
 		func(): main.score = 98765432109; main.hud_system._update_hud(true),
 		func(): _snap("wave"); main.hud_system._show_toast("업적: 아주 긴 업적 이름이 여기에 들어갑니다 · 칭호 해금"); main.hud_system.big_banner("웨이브 40 · 보스", Color.WHITE),
 		func(): _snap("wave_toast"),

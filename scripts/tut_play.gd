@@ -336,7 +336,7 @@ func finish(completed: bool, play := false) -> void:
 	pending = -1
 	get_tree().paused = false
 	m.title_seen = false
-	m._reload()
+	m.run_flow_system._reload()
 
 
 func ask_quit() -> void:
@@ -375,7 +375,7 @@ func _enter_step() -> void:
 	match step().get("id", ""):
 		"speed":
 			if not m.bar_open:
-				m._toggle_bar()  # 배속·일시정지 버튼이 접혀 있으면 펼쳐 둔다
+				m.cards_system._toggle_bar()  # 배속·일시정지 버튼이 접혀 있으면 펼쳐 둔다
 		"skip":
 			Meta.skip_n = 1
 		"end":
@@ -430,17 +430,17 @@ func is_done() -> bool:
 		"goal":
 			return m.towers.get_child_count() > 0 or m.phase != m.Phase.CHOOSE
 		"place":
-			return m.towers.get_child_count() > 0 or m.phase == m.Phase.AIM and m.moving == null
+			return m.towers.get_child_count() > 0 or m.phase == m.Phase.AIM and m.interaction_system.moving == null
 		"aim":
 			return m.towers.get_child_count() > 0
 		"wave1":
 			return m.wave >= 1 and m.phase != m.Phase.WAVE
 		"move":
-			return not m.dragging and m.press_t == null and _moved() > 40.0
+			return not m.interaction_system.dragging and m.interaction_system.press_t == null and _moved() > 40.0
 		"turn":
-			return m.phase != m.Phase.AIM and m.moving == null and _turned() > 0.35
+			return m.phase != m.Phase.AIM and m.interaction_system.moving == null and _turned() > 0.35
 		"preview":
-			return m.phase != m.Phase.AIM and m.moving == null and (_turned() > 0.35 or (_turned() > 0.02 or flags.has("aimed")) and _aims_boss())
+			return m.phase != m.Phase.AIM and m.interaction_system.moving == null and (_turned() > 0.35 or (_turned() > 0.02 or flags.has("aimed")) and _aims_boss())
 		"zoom":
 			return absf(m.view_zoom - base["zoom"]) > 0.2 or (m.view_pan - base["pan"]).length() > 40.0
 		"stack":
@@ -470,7 +470,7 @@ func is_done() -> bool:
 				flags["info"] = true
 			return flags.has("info")
 		"ley":
-			return m.ley.is_empty() or m.towers.get_children().any(func(tw): return m.on_ley(tw))
+			return m.ley.is_empty() or m.towers.get_children().any(func(tw): return m.abilities_system.on_ley(tw))
 		"skill":
 			return m.skill_ids.is_empty() or m.skill_used >= mini(2, m.skill_ids.size())
 		"speed":
@@ -667,13 +667,13 @@ func _do_skip(instant: bool) -> void:
 	match s["id"]:
 		"place":
 			_pick(s["card"])
-			m._place_card_at(_spot(SPOT_FIRE), true)
+			m.interaction_system._place_card_at(_spot(SPOT_FIRE), true)
 		"aim":
 			if m.phase == m.Phase.AIM:
 				m.picked = STEPS[1]["card"]
-				m._place_tower(m.place_pos, _lane_dir(m.place_pos, 0.0))
+				m.interaction_system._place_tower(m.place_pos, _lane_dir(m.place_pos, 0.0))
 				m.sfx.play("place")
-				m._after_place()
+				m.cards_system._after_place()
 			elif m.towers.get_child_count() == 0:
 				_put(STEPS[1]["card"], _spot(SPOT_FIRE), 0.0)
 		"wave1":
@@ -701,7 +701,7 @@ func _do_skip(instant: bool) -> void:
 			if f:
 				_pick(s["card"])
 				f.add(Elem.WATER, 1)
-				m._after_place()
+				m.cards_system._after_place()
 		"second":
 			_put(s["card"], _spot(SPOT_WOOD), PI / 2.0)
 		"pat", "mod", "trig", "link":
@@ -710,7 +710,7 @@ func _do_skip(instant: bool) -> void:
 				tw = m.towers.get_child(0)
 			if tw and not _card_done(s["id"]):
 				_pick(s["card"])
-				m._apply_card(tw)
+				m.cards_system._apply_card(tw)
 			if s["id"] == "link":
 				_pair_up()
 		"ley":
@@ -723,22 +723,22 @@ func _do_skip(instant: bool) -> void:
 			for id in m.skill_ids:
 				var p: Variant = Skill.auto_target(m, id)
 				if p != null:
-					m._use_skill(id, p)
+					m.abilities_system._use_skill(id, p)
 		"perk":
 			if m.perk_mode and m.coin_stage == 0 and not m.perk_offer.is_empty():
-				m._on_perk(m.perk_offer.filter(func(pk): return pk["id"] != "coin")[0])
+				m.perks_system._on_perk(m.perk_offer.filter(func(pk): return pk["id"] != "coin")[0])
 			elif m.coin_stage > 0:
-				m._coin_done()
+				m.perks_system._coin_done()
 				auto_perk = true
 			elif m.phase == m.Phase.WAVE and not instant:
 				auto_perk = true
 				_clear_wave()
 			elif instant:
 				m.wave = 5
-				m._clear_shots()
-				m._start_perk()
+				m.cards_system._clear_shots()
+				m.perks_system._start_perk()
 				if m.perk_mode and not m.perk_offer.is_empty():
-					m._on_perk(m.perk_offer.filter(func(pk): return pk["id"] != "coin")[0])
+					m.perks_system._on_perk(m.perk_offer.filter(func(pk): return pk["id"] != "coin")[0])
 		"skip":
 			if m.skip_left == 0:
 				flags["skip"] = true
@@ -748,26 +748,26 @@ func _do_skip(instant: bool) -> void:
 
 ## 카드를 들거나 방향을 정하던 중이면 쉬는 시간 처음으로 되돌린다.
 func _settle() -> void:
-	if m.press_t:
-		m._drop_press()
-	if m.moving:
-		m._cancel_step()
+	if m.interaction_system.press_t:
+		m.interaction_system._drop_press()
+	if m.interaction_system.moving:
+		m.interaction_system._cancel_step()
 	if m.phase == m.Phase.PLACE:
-		m._back_to_choose()
+		m.interaction_system._back_to_choose()
 
 
 func _pick(card: Dictionary) -> void:
 	if m.phase == m.Phase.CHOOSE:
-		m._on_pick(card)
+		m.cards_system._on_pick(card)
 	m.picked = card
 
 
 ## 속성 카드로 새 오브젝트를 놓고 방향까지.
 func _put(card: Dictionary, p: Vector2, lane: float) -> void:
 	_pick(card)
-	m._place_tower(p, _lane_dir(p, lane))
+	m.interaction_system._place_tower(p, _lane_dir(p, lane))
 	m.sfx.play("place")
-	m._after_place()
+	m.cards_system._after_place()
 
 
 func _first(e: int) -> Node:
@@ -795,7 +795,7 @@ func _pair_up() -> void:
 	if f == null or w == null:
 		return
 	var p: Vector2 = w.position + Vector2(100, -50)
-	if p.distance_to(m.core()) < 60.0 or m._tower_at(p, f) != null:
+	if p.distance_to(m.core()) < 60.0 or m.interaction_system._tower_at(p, f) != null:
 		p = w.position + Vector2(-100, -50)
 	f.position = p
 	f.set_attack_direction(_lane_dir(p, 0.0))
@@ -808,12 +808,12 @@ func _instant_wave() -> void:
 	m.picks_left = 0
 	m.wave += 1
 	m.wave_active = false
-	m._clear_shots()
+	m.cards_system._clear_shots()
 	for o in m.orbs.get_children():
 		o.queue_free()
 	m.to_spawn = 0
 	m.start_btn.visible = false
-	m._start_choose(true)
+	m.run_flow_system._start_choose(true)
 
 
 ## 웨이브 중 건너뛰기: 남은 구체를 치우면 다음 계산에서 웨이브가 끝난다.
@@ -835,7 +835,7 @@ func _skip_gate() -> void:
 		return
 	# 남은 고르기는 넣을 수 있는 카드를 골라 대신 (속성은 빈 곳에, 나머지는 받아 주는 오브젝트에)
 	if m.phase == m.Phase.PLACE:
-		m._back_to_choose()  # 들고 있던 카드는 내려놓고 넣을 수 있는 카드부터
+		m.interaction_system._back_to_choose()  # 들고 있던 카드는 내려놓고 넣을 수 있는 카드부터
 	var guard := 0
 	while m.phase == m.Phase.CHOOSE and m.picks_left > 0 and not m.perk_mode and guard < 8:
 		guard += 1
@@ -847,12 +847,12 @@ func _skip_gate() -> void:
 		if not put:
 			break
 	if m.perk_mode and not m.perk_offer.is_empty():
-		m._on_perk(m.perk_offer[0])
+		m.perks_system._on_perk(m.perk_offer[0])
 		return
 	if m.phase == m.Phase.READY:
 		_cover_lanes()
 		force_start = true
-		m._start_wave()
+		m.run_flow_system._start_wave()
 
 
 ## 카드 하나를 사람 대신 넣는다. 받아 줄 곳이 없으면 false (그 카드는 두고 다음 카드).
@@ -863,10 +863,10 @@ func _auto_card(cd: Dictionary) -> bool:
 	var keep: Dictionary = m.picked
 	m.picked = cd
 	for tw in m.towers.get_children():
-		if m._place_ok(tw):
+		if m.interaction_system._place_ok(tw):
 			m.picked = keep
 			_pick(cd)
-			m._apply_card(tw)
+			m.cards_system._apply_card(tw)
 			return true
 	m.picked = keep
 	return false
@@ -875,19 +875,19 @@ func _auto_card(cd: Dictionary) -> bool:
 func _free_spot() -> Vector2:
 	for k in 12:
 		var p: Vector2 = m.core() + Vector2.from_angle(k * TAU / 12.0 + 0.3) * 200.0
-		if m._tower_at(p) == null:
+		if m.interaction_system._tower_at(p) == null:
 			return p
 	return m.core() + Vector2(-200, -120)
 
 
 ## 웨이브를 시작할 수 없는 길목이 있으면 가장 가까운 오브젝트를 그쪽으로 돌린다.
 func _cover_lanes() -> void:
-	if m._wave_start_block_reason() == "":
+	if m.run_flow_system._wave_start_block_reason() == "":
 		return
 	var w: int = m.wave + 1
 	var spread: float = m.lane_spread(w)
 	for a in m.lanes:
-		if m._wave_lane_covered(a, w, spread):
+		if m.run_flow_system._wave_lane_covered(a, w, spread):
 			continue
 		var bestd := INF
 		var best: Node = null
@@ -925,7 +925,7 @@ func _process(delta: float) -> void:
 			_advance()
 	if auto_perk and m.perk_mode and m.coin_stage == 0 and not m.perk_offer.is_empty():
 		auto_perk = false
-		m._on_perk(m.perk_offer.filter(func(pk): return pk["id"] != "coin")[0])
+		m.perks_system._on_perk(m.perk_offer.filter(func(pk): return pk["id"] != "coin")[0])
 	_layout()
 	_refresh()
 	_dim_cards()
@@ -1042,7 +1042,7 @@ func _refresh() -> void:
 		txt = "카드를 골라 놓거나 넣으세요"
 	else:
 		txt = "[웨이브 시작]을 눌러 다음 웨이브를 막으세요" if tc else "[웨이브 시작](Space)을 눌러 다음 웨이브를 막으세요"
-		var why: String = m._wave_start_block_reason() if m.phase == m.Phase.READY else ""
+		var why: String = m.run_flow_system._wave_start_block_reason() if m.phase == m.Phase.READY else ""
 		if why != "":
 			txt += "\n" + why.replace("웨이브를 시작할 수 없어요: ", "")
 	body.text = PatchNotes.kr_keep(txt)
@@ -1140,7 +1140,7 @@ func _draw_marks() -> void:
 				var b := _world_to_ui(m.place_pos + Vector2.from_angle(m.lanes[0] if not m.lanes.is_empty() else 0.0) * 120.0)
 				_ring(b, 18.0)
 				_hand(a, b)
-				if m._ok_btn_on():
+				if m.interaction_system._ok_btn_on():
 					_box(m.aim_ok_btn)
 		"wave1":
 			if m.phase == m.Phase.READY:
@@ -1161,7 +1161,7 @@ func _draw_marks() -> void:
 				if s["id"] == "preview" and not m.boss_plan.is_empty():
 					tgt = m.core() + Vector2.from_angle(m.boss_plan["a"]) * 240.0
 				_hand(a, _world_to_ui(tgt))
-				if m._ok_btn_on():
+				if m.interaction_system._ok_btn_on():
 					_box(m.aim_ok_btn)
 		"zoom":
 			var c := _world_to_ui(m.core())
