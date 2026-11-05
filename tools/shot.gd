@@ -238,6 +238,8 @@ func _rx_show(want: int) -> void:
 	if best_t == null:
 		print("SHOT rx_card 건너뜀: 새 조합이 생기는 오브젝트 없음")
 		return
+	if main.phase in [main.Phase.PLACE, main.Phase.AIM]:
+		main._back_to_choose()  # 넣는 단계에는 카드가 숨으니 고르기로 돌아가 찍는다
 	best_t.add(best_e, 1)
 	main.rx_card.show_for(best_t, best)
 	main.rx_card.t = 1.05

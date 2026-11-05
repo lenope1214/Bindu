@@ -194,7 +194,7 @@ var tutor := false  # 이번 판이 첫 판 안내 판인지: 카드 종류를 �
 var tutor_given := {}  # 첫 판에 새로 연 카드 종류를 선택지에 한 번 넣었는지 (종류 -> true)
 var guide_label: Label  # 처음 생기는 일 한 줄 안내 (위쪽 가운데)
 const RX_CARD := preload("res://scripts/rx_card.gd")
-var rx_card  # RxCard: 속성을 합쳐 새 조합이 생기면 오브젝트 옆에 뜨는 그림 카드
+var rx_card: RxCard  # RxCard: 속성을 합쳐 새 조합이 생기면 오브젝트 옆에 뜨는 그림 카드
 var guide_lines: Array[String] = []
 var guide_topic := ""
 var guide_priority := 0
@@ -10247,8 +10247,9 @@ func _place_rx_card() -> void:
 	var cands: Array = []
 	for kk in 4:
 		var d := gap + kk * 36.0
-		cands.append(Vector2(o.x + d, o.y - sz.y * 0.35))
-		cands.append(Vector2(o.x - d - sz.x, o.y - sz.y * 0.35))
+		for ay in [0.35, 0.85, 0.0]:  # 옆자리는 오브젝트 높이에 맞춘 세 가지 (위 점수 줄·아래 카드 줄 중 빈 쪽으로)
+			cands.append(Vector2(o.x + d, o.y - sz.y * ay))
+			cands.append(Vector2(o.x - d - sz.x, o.y - sz.y * ay))
 		cands.append(Vector2(o.x - sz.x * 0.5, o.y - d - sz.y))
 		cands.append(Vector2(o.x - sz.x * 0.5, o.y + d))
 	var blocks: Array = [[to_ui * center(), CORE_RADIUS * zs + 12.0]]
