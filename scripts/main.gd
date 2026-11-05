@@ -1291,7 +1291,8 @@ func _panel_blocks(panel: Control) -> Array[Rect2]:
 		for c in hud_chips:
 			hb = c[0] if hb.size == Vector2.ZERO else hb.merge(c[0])
 		blocks.append(Rect2(hud.position + hb.position, hb.size).grow(4.0))
-	for c in [bar_box, start_btn, skip_badge, mp_bar, ver_label, legend] + skill_btns:
+	var dock_btns: Array = [card_dock.focus_btn, card_dock.skip_group, card_dock.panel, card_dock.footer] if card_dock != null else []
+	for c in [bar_box, start_btn, cancel_btn, aim_ok_btn, skip_badge, mp_bar, ver_label, legend] + skill_btns + dock_btns:
 		if c != null and c is Control and c.is_visible_in_tree():
 			blocks.append((inv * c.get_global_rect()).grow(4.0))
 	if phase == Phase.WAVE:

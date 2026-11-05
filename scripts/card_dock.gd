@@ -638,6 +638,9 @@ func _place_side(size: Vector2, cards: bool) -> void:
 	var bottom: float = panel.position.y - 12.0 if cards else size.y - 64.0
 	if game.hint.visible:
 		bottom = minf(bottom, game.hint.position.y - 8)
+	for b: Control in game.skill_btns:
+		if b.is_visible_in_tree():
+			bottom = minf(bottom, b.position.y - 8)  # 웨이브 중 오른쪽 아래 기술 버튼을 덮지 않게
 	var ltop := top
 	var rtop := top
 	if game.zoom_btn.is_visible_in_tree():
