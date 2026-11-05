@@ -10035,8 +10035,8 @@ func _draw_tooltip() -> void:
 		for pr in Share.aff(t)["pairs"]:
 			desc.append([Elem.aff_text(pr[0], pr[1]), AFF_COL["strong" if pr[2]["strong"] else "weak"], "k:rx"])
 		for x in Share.sites_of(t.eff_now()):
-			var nd: Array = Share.NAMED.get([x[0], x[1]], [])
-			desc.append(["자리 %s%s" % [x[2], ": " + nd[1] if not nd.is_empty() else ""], Color(0.75, 0.9, 1.0), "k:rx"])
+			var nd: String = Share.site_desc(x[0], x[1])
+			desc.append(["자리 %s%s" % [x[2], ": " + nd if nd != "" else ""], Color(0.75, 0.9, 1.0), "k:rx"])
 		_wind_buffs()  # 쉬는 시간에 새로 놓은 오브젝트도 바로 보이게
 		var tail: Array = []
 		if t.wind_buff > 0.0:

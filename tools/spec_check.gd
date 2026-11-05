@@ -673,7 +673,8 @@ func _real(c: Vector2) -> void:
 	# 이름 있는 자리
 	var ns := Share.new_sites({Elem.WATER: 1}, Elem.WOOD)
 	ok("REAL-08", Share.NAMED.size() == 10 and Share.site_name(Elem.WATER, Elem.WOOD) == "덩굴 길" and ns.has("덩굴 길")
-		and Share.site_name(Elem.FIRE, Elem.METAL) == "날 선 불" and Share.sites_of({Elem.FIRE: 1, Elem.ICE: 1}).size() == 1,
+		and Share.site_name(Elem.FIRE, Elem.METAL) == "날 선 불" and Share.sites_of({Elem.FIRE: 1, Elem.ICE: 1}).size() == 1
+		and Share.site_name(Elem.ILLUSION, Elem.EARTH) == "환영 · 땅" and Share.site_desc(Elem.ILLUSION, Elem.METAL) == Elem.pair_desc(Elem.ILLUSION, Elem.METAL),
 		"자리 이름: 이름 있는 칸 10개, 나머지는 꾸밈말+자리 (%s)" % ", ".join(ns))
 
 
@@ -3675,6 +3676,20 @@ func _rx_card() -> void:
 		for row in rows:
 			rows_ok = rows_ok and str(row["say"]).length() <= 14 and str(row["say"]) != ""
 	var say_ok: bool = Elem.ALL.all(func(e): return Elem.TRAIT_SAY.has(e))
+	var illusion_ok := true
+	for other in Elem.ALL:
+		if other == Elem.ILLUSION:
+			continue
+		var rx: Dictionary = Elem.reaction_of(Elem.ILLUSION, other)
+		var wanted: String = "환영 · " + Elem.NAMES[other]
+		illusion_ok = illusion_ok and rx["name"] == wanted and RxCard.title(rx["a"], rx["b"]) == wanted \
+			and Elem.pair_name(other, Elem.ILLUSION) == wanted and rx["desc"] == Elem.pair_desc(other, Elem.ILLUSION) \
+			and "220" in rx["desc"] and "40%" in rx["desc"] and "다음 공격" in rx["desc"]
+	illusion_ok = illusion_ok and "확률로 묶여요." in Elem.pair_desc(Elem.ILLUSION, Elem.EARTH) \
+		and "추가 피해를 주고 잠깐 멈칫하게 해요." in Elem.pair_desc(Elem.ILLUSION, Elem.METAL) \
+		and Elem.trait_name(Elem.ILLUSION) == "효과 전달"
+	ok("UI-37", illusion_ok, "환영 16짝: 속성 제목·전달 동작 원문을 조합 카드·도감·상세에 공용, 땅 묶임·금속 피해와 멈칫")
+
 	# 짝 셋이 한 번에 생기면 2장 + "+1"
 	rc.show_for(t, Elem.REACTIONS.slice(0, 3))
 	var capped: bool = rc.rxs.size() == 2 and rc.extra == 1
@@ -4136,7 +4151,7 @@ func _new_elems(c: Vector2) -> void:
 	ok("ELEM-15", got and d1 > d0 and not again and is_equal_approx(boss.confuse_t, Rules.illu_t * 0.5) and is_equal_approx(Share.illu_ch(it, 9), Rules.illu_max),
 		"환영 현혹: 되돌아 걸음 (거리 %.0f → %.0f), 다시 걸기 막힘, 보스 %.2f초, 확률 최대 %d%%" % [d0, d1, boss.confuse_t, roundi(Rules.illu_max * 100)])
 	_clear()
-	# 환영 비춤: 옆 오브젝트의 다음 공격에 이 오브젝트 효과, 한 번 쓰면 사라짐
+	# 환영 효과 전달: 옆 오브젝트의 다음 공격에 이 오브젝트 효과, 한 번 쓰면 사라짐
 	var mt := _tower(c + Vector2(-300, -200), Elem.ILLUSION, 3)
 	mt.add(Elem.FIRE, 1)
 	mt.eff = mt.eff_now()
@@ -4148,8 +4163,8 @@ func _new_elems(c: Vector2) -> void:
 	mt.hit(m1, 0.0)
 	var lit := nb.mirror_src == mt and far.mirror_src == null
 	nb.hit(m2, 0.0)
-	ok("ELEM-15", lit and m2.burn_t > 0.0 and nb.mirror_src == null,
-		"환영 비춤: 둘레 220 안 가장 가까운 오브젝트에 비침(%s), 그 오브젝트 다음 공격에 화상 %.1f, 쓰면 사라짐" % [lit, m2.burn_t])
+	ok("ELEM-15", lit and m2.burn_t > 0.0 and nb.mirror_src == null and Elem.trait_name(Elem.ILLUSION) == "효과 전달" and "2초 안" in Elem.TRAIT[Elem.ILLUSION],
+		"환영 효과 전달: 둘레 220 안 가장 가까운 오브젝트에 비침(%s), 그 오브젝트 다음 공격에 화상 %.1f, 쓰면 사라짐" % [lit, m2.burn_t])
 	_clear()
 	# 상성
 	var ab := Elem.aff_of(Elem.BLOOD, Elem.POISON)

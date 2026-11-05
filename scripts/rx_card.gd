@@ -84,9 +84,12 @@ func block_h(r: Dictionary, first: bool) -> float:
 	var h := 38.0 * k
 	if first:
 		h += PREV_H * k + 6.0
-	h += Elem.pair_rows(r["a"], r["b"]).size() * ROW_H * k
+	if Elem.ILLUSION in [r["a"], r["b"]]:
+		h += paragraph_height(r["desc"], int(14 * k)) + 6.0
+	else:
+		h += Elem.pair_rows(r["a"], r["b"]).size() * ROW_H * k
 	if aff_note(r) != "":
-		h += 22.0 * k
+		h += paragraph_height(aff_note(r), int(12 * k)) if Elem.ILLUSION in [r["a"], r["b"]] else 22.0 * k
 	return h + 6.0
 
 
@@ -96,6 +99,26 @@ static func named(a: int, b: int) -> String:
 		if Share.NAMED.has(key):
 			return Share.NAMED[key][0]
 	return ""
+
+
+## 환영 조합은 도감·상세와 같은 속성 제목을 쓴다.
+static func title(a: int, b: int) -> String:
+	if Elem.ILLUSION in [a, b]:
+		return Elem.pair_name(a, b)
+	var nm := named(a, b)
+	return nm if nm != "" else "새 조합"
+
+
+func paragraph(text: String, font_size: int) -> String:
+	return game._wrap_words(game._kr_keep(text), W * fs / 15.0 - 24.0, font_size)
+
+
+func paragraph_height(text: String, font_size: int) -> float:
+	return font.get_multiline_string_size(paragraph(text, font_size), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).y
+
+
+func _paragraph(at: Vector2, text: String, font_size: int, color: Color) -> void:
+	draw_multiline_string(font, at + Vector2(0, font.get_ascent(font_size)), paragraph(text, font_size), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, -1, color)
 
 
 ## 상성 배지 글 ("▲ 강 · 감전", 보통이면 "")
@@ -164,11 +187,10 @@ func _block(r: Dictionary, box: Rect2, first: bool, k: float) -> void:
 	Glyph.elem(self, r["a"], Vector2(x + 7 * k, y), 8.0 * k)
 	draw_string(font, Vector2(x + 17 * k, y + 5 * k), "+", HORIZONTAL_ALIGNMENT_LEFT, -1, int(14 * k), Color(1, 1, 1, 0.6))
 	Glyph.elem(self, r["b"], Vector2(x + 34 * k, y), 8.0 * k)
-	var nm := named(r["a"], r["b"])
-	var title := nm if nm != "" else "새 조합"
-	draw_string(font, Vector2(x + 48 * k, y + 6 * k), title, HORIZONTAL_ALIGNMENT_LEFT, -1, int(16 * k), GOLD)
+	var heading_text := title(r["a"], r["b"])
+	draw_string(font, Vector2(x + 48 * k, y + 6 * k), heading_text, HORIZONTAL_ALIGNMENT_LEFT, -1, int(16 * k), GOLD)
 	if found.has(r["id"]):
-		var tx := x + 56 * k + font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, int(16 * k)).x
+		var tx := x + 56 * k + font.get_string_size(heading_text, HORIZONTAL_ALIGNMENT_LEFT, -1, int(16 * k)).x
 		draw_string(font, Vector2(tx, y + 5 * k), "도감 +", HORIZONTAL_ALIGNMENT_LEFT, -1, int(12 * k), Color(0.6, 0.9, 1.0))
 	var badge := aff_badge(r)
 	if badge != "":
@@ -190,13 +212,20 @@ func _block(r: Dictionary, box: Rect2, first: bool, k: float) -> void:
 		draw_rect(pr, Color(0, 0, 0, 0.35))
 		_preview(pr, rows[cur], fmod(t, 2.0), r, k)
 		y += PREV_H * k + 6.0
-	for i in rows.size():
-		_row(Vector2(x, y + ROW_H * k * 0.5), rows[i], k, first and i == cur and rows.size() > 1)
-		y += ROW_H * k
+	if Elem.ILLUSION in [r["a"], r["b"]]:
+		_paragraph(Vector2(x, y), r["desc"], int(14 * k), Color(1, 1, 1, 0.92))
+		y += paragraph_height(r["desc"], int(14 * k)) + 6.0
+	else:
+		for i in rows.size():
+			_row(Vector2(x, y + ROW_H * k * 0.5), rows[i], k, first and i == cur and rows.size() > 1)
+			y += ROW_H * k
 	var note := aff_note(r)
 	if note != "":
 		var col2: Color = game.AFF_COL["weak"]
-		draw_string(font, Vector2(x, y + 12 * k), note, HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 24.0, int(12 * k), col2)
+		if Elem.ILLUSION in [r["a"], r["b"]]:
+			_paragraph(Vector2(x, y), note, int(12 * k), col2)
+		else:
+			draw_string(font, Vector2(x, y + 12 * k), note, HORIZONTAL_ALIGNMENT_LEFT, box.size.x - 24.0, int(12 * k), col2)
 
 
 ## 한 줄: [효과 그림 + 효과 이름] → (특징 그림) 짧은 말. 효과가 없는 짝(특징끼리)은 [특징 그림 + 특징 이름] 짧은 말
@@ -331,7 +360,7 @@ func _preview(r: Rect2, row: Dictionary, s: float, pair: Dictionary, k: float) -
 				draw_line(orbs[0], orbs[0] + move[0] + Vector2(60 * k, 0), Color(Elem.COLORS[Elem.BLOOD], 0.45), 6 * k)
 			move[1] = Vector2(-60 * k * u, (cy - orbs[1].y) * minf(u * 2.0, 1.0))
 			got[1] = u > 0.55
-		Elem.ILLUSION:  # 옆 오브젝트에 비춤: 아래 오브젝트 공격에 실림
+		Elem.ILLUSION:  # 효과 전달: 아래 오브젝트 공격에 실림
 			var ally := Vector2(src.x + 30 * k, r.end.y - 12 * k)
 			draw_circle(ally, 8 * k, Color(0.11, 0.13, 0.19))
 			draw_arc(ally, 8 * k, 0, TAU, 16, Color(Elem.COLORS[Elem.ILLUSION], 0.7), 1.5)

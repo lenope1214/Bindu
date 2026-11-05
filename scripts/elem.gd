@@ -87,7 +87,7 @@ const TRAIT := {
 	SOUL: "혼불이 실어 감: 소환된 혼불이 이 오브젝트의 공격처럼 맞혀 모든 효과를 그대로 걸어요.",
 	STAR: "초신성에 실음: 초신성이 맞힌 구체 모두에 효과 100%를 전해요.",
 	BLOOD: "핏자국에 남김: 맞은 구체가 지나간 길에 핏자국(1.5초)이 남아요. 뒤따라 밟은 구체에 효과 30%를 전해요.",
-	ILLUSION: "옆 오브젝트에 비춤: 둘레 220 안 가장 가까운 다른 오브젝트의 다음 공격에 이 오브젝트 효과 40%를 실어요.",
+	ILLUSION: "효과 전달: 둘레 220 안 가장 가까운 다른 오브젝트의 다음 공격(2초 안)에 이 오브젝트의 효과를 40% 실어요.",
 }
 
 ## 조합 카드 줄의 짧은 말: 이 속성의 특징이 다른 효과를 어떻게 옮기는지 (14자 이하, 2026-11-05 조합 카드)
@@ -429,6 +429,8 @@ static func _build_pairs() -> Array:
 
 ## 짝 이름: "화상 · 번개로 옮김"처럼 한쪽 효과 + 다른 쪽 특징 (실어 나를 효과가 없으면 두 특징 이름)
 static func pair_name(a: int, b: int) -> String:
+	if ILLUSION in [a, b]:
+		return "환영 · " + NAMES[b if a == ILLUSION else a]
 	# 2026-11-03: 꾸밈말("타오르는 메아리")은 뜻을 알기 어려워 "효과 · 특징" 그대로 잇는다 ("피해 되풀이 · 죽으면 불꽃")
 	if b in CARRY:
 		return "%s · %s" % [rider_name(b), trait_name(a)]
@@ -439,6 +441,8 @@ static func pair_name(a: int, b: int) -> String:
 
 ## 짝 설명: 두 방향을 모두 적는다.
 static func pair_desc(a: int, b: int) -> String:
+	if ILLUSION in [a, b]:
+		return illusion_desc(b if a == ILLUSION else a)
 	var parts := PackedStringArray()
 	for d in [[a, b], [b, a]]:
 		if d[1] in CARRY:
@@ -446,6 +450,28 @@ static func pair_desc(a: int, b: int) -> String:
 	if parts.is_empty():
 		return "%s(%s) · %s(%s) (특징끼리)" % [trait_name(a), NAMES[a], trait_name(b), NAMES[b]]
 	return " · ".join(parts)
+
+
+## 환영 조합은 비유로 이름을 만들지 않고, 전달 동작과 함께 적용되는 특징을 설명한다.
+static func illusion_desc(other: int) -> String:
+	var action: String
+	match other:
+		WOOD:
+			action = "전달한 효과는 이 오브젝트에서 멀리 적중할수록 세져요."
+		WIND:
+			action = "효과를 전달할 수 있는 범위가 넓어지고, 전달한 효과에 맞은 구체를 바깥으로 밀어내요."
+		ICE:
+			action = "전달한 효과가 오래가고, 맞은 구체에 냉기를 걸어요."
+		EARTH:
+			action = "다른 오브젝트에 전달한 효과가 적중하면, 맞은 구체가 확률로 묶여요."
+		METAL:
+			action = "다른 오브젝트에 전달한 효과가 적중하면, 추가 피해를 주고 잠깐 멈칫하게 해요."
+		TIME:
+			action = "전달한 효과가 적중하면, 잠시 뒤 효과를 한 번 더 걸어요."
+		_:
+			# 나르는 특징끼리는 두 방향 모두 남긴다: 다른 오브젝트에 전달 + 다른 특징으로 현혹 전달.
+			action = "%s 특징으로 현혹도 함께 전해요. %s" % [NAMES[other], (TRAIT[other] as String).get_slice(": ", 1)]
+	return "%s\n%s" % [(TRAIT[ILLUSION] as String).get_slice(": ", 1), action]
 
 
 ## 상성 설명 한 줄 ("상성 감전(강): 전기가 …", 보통이면 "")

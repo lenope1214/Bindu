@@ -61,7 +61,7 @@ static var GORE_STEP := 36.0  # 핏자국 간격(px, 구체가 이만큼 움직�
 static var GORE_MARK := 3.0  # 맞은 구체가 핏자국을 남기는 시간 (얼음 오래감을 곱함)
 static var ILLU_F := 0.4  # 환영 비춤: 옆 오브젝트 다음 공격에 실리는 효과 비율
 static var MIRROR_R := 220.0  # 비춤 둘레
-static var MIRROR_T := 2.0  # 비친 상이 남는 시간 (그 안에 쏜 다음 공격에)
+static var MIRROR_T := 2.0  # 전달한 효과이 남는 시간 (그 안에 쏜 다음 공격에)
 static var MIRROR_CD := 0.5  # 오브젝트마다 비추는 간격
 static var SEPSIS := 0.5  # 패혈: 멈춰 있어도 이동 속도의 이만큼 움직인 셈
 static var HUNGER := 0.15  # 굶주림: 핏자국을 밟은 구체가 받는 피해 +
@@ -145,7 +145,7 @@ const SITE_E := [Elem.FIRE, Elem.WATER, Elem.ELECTRIC, Elem.POISON, Elem.SOUND, 
 const MOD_E := [Elem.WOOD, Elem.WIND, Elem.ICE, Elem.EARTH, Elem.METAL, Elem.TIME]
 const SITE_NOUN := {Elem.FIRE: "불", Elem.WATER: "물길", Elem.ELECTRIC: "전기", Elem.POISON: "독", Elem.SOUND: "음파",
 	Elem.LIGHT: "빛줄기", Elem.DARK: "끌어당김", Elem.SOUL: "혼불", Elem.STAR: "초신성",
-	Elem.BLOOD: "핏자국", Elem.ILLUSION: "비친 상"}
+	Elem.BLOOD: "핏자국", Elem.ILLUSION: "효과 전달"}
 const MOD_ADJ := {Elem.WOOD: "자라는", Elem.WIND: "바람에 실린", Elem.ICE: "얼어붙은", Elem.EARTH: "다져진", Elem.METAL: "날 선", Elem.TIME: "되풀이되는"}
 ## 따로 이름을 준 칸 [자리, 바꾸는 특징] → [이름, 설명]
 const NAMED := {
@@ -164,9 +164,18 @@ const NAMED := {
 
 ## 자리 이름: 이름 있는 칸이면 그 이름, 아니면 "꾸밈말 자리"
 static func site_name(site: int, mod: int) -> String:
+	if site == Elem.ILLUSION:
+		return Elem.pair_name(site, mod)
 	if NAMED.has([site, mod]):
 		return NAMED[[site, mod]][0]
 	return "%s %s" % [MOD_ADJ[mod], SITE_NOUN[site]]
+
+
+## 환영 자리의 설명은 도감·조합 카드와 같은 원문을 쓴다.
+static func site_desc(site: int, mod: int) -> String:
+	if site == Elem.ILLUSION:
+		return Elem.pair_desc(site, mod)
+	return NAMED[[site, mod]][1] if NAMED.has([site, mod]) else ""
 
 
 ## 오브젝트에 생긴 자리들 [[자리, 바꾸는 특징, 이름]] (속성 묶음 els)
@@ -609,7 +618,7 @@ static func mark(tw: Object, o: Orb) -> void:
 			t2.mirror_f = ILLU_F * ki
 
 
-## 비친 상을 받은 오브젝트가 다음에 맞힐 때 (Tower.hit): 비춘 오브젝트 효과를 이 구체에 (한 번 쓰면 사라짐)
+## 전달한 효과을 받은 오브젝트가 다음에 맞힐 때 (Tower.hit): 비춘 오브젝트 효과를 이 구체에 (한 번 쓰면 사라짐)
 static func reflect(tw: Object, o: Orb) -> void:
 	var src: Object = tw.mirror_src
 	tw.mirror_src = null
