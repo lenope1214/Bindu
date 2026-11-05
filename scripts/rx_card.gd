@@ -44,13 +44,28 @@ func show_for(tw: Tower, fresh: Array) -> void:
 	found = {}
 	font = game.ui_font
 	fs = 15  # ui_root가 글자 크기 설정만큼 커진다
+	_resize()
+	visible = true
+	queue_redraw()
+
+
+## 화면(폰 1.3 등)에 두 장이 들어갈 빈자리가 없으면 한 장 + "+N"으로 줄인다 (main._place_rx_card가 부름)
+func shrink_to_one() -> bool:
+	if rxs.size() < 2:
+		return false
+	extra += rxs.size() - 1
+	rxs = rxs.slice(0, 1)
+	_resize()
+	queue_redraw()
+	return true
+
+
+func _resize() -> void:
 	_h = 0.0
 	for i in rxs.size():
 		_h += block_h(rxs[i], i == 0)
 	_h += 8.0 * (rxs.size() - 1) + (22.0 if extra > 0 else 0.0)
 	size = Vector2(W * fs / 15.0, _h)
-	visible = true
-	queue_redraw()
 
 
 func hide_card() -> void:

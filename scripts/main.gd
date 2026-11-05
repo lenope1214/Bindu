@@ -10274,6 +10274,9 @@ func _place_rx_card() -> void:
 		if sc < best_s:
 			best_s = sc
 			best = r
+	if best_s >= 1000.0 and rx_card.shrink_to_one():
+		_place_rx_card()  # 두 장이 UI에 걸리면 한 장 + "+N"으로 다시 자리를 잡는다
+		return
 	rx_card.position = best.position
 
 
