@@ -414,7 +414,7 @@ func _share() -> void:
 	var wt := _tower(c + Vector2(-200, 0), Elem.WIND, 3)
 	wt.add(Elem.ICE, 3)
 	wt.eff = wt.eff_now()
-	ok("SHR-08", is_equal_approx(Share.wide(wt), 1.0 + Share.WIND_R * Share.k(wt, Elem.WIND)) and is_equal_approx(Share.dur(wt), 1.0 + Share.ICE_T * Share.k(wt, Elem.ICE)) and Share.wide(wt) > 1.0, "바람 넓힘 범위 +40%%, 얼음 오래감 지속 x1.5 (특징 세기 곱, %.2f, %.2f)" % [Share.wide(wt), Share.dur(wt)])
+	ok("SHR-08", is_equal_approx(Share.wide(wt), 1.0 + Share.WIND_R * Share.k(wt, Elem.WIND)) and is_equal_approx(Share.dur(wt), 1.0 + Share.ICE_T * Share.k(wt, Elem.ICE)) and Share.wide(wt) > 1.0 and Elem.trait_name(Elem.ICE) == "지속 시간 연장" and "1.5배" in Elem.TRAIT[Elem.ICE], "바람 넓힘 범위 +40%%, 얼음 오래감 지속 x1.5 (특징 세기 곱, %.2f, %.2f)" % [Share.wide(wt), Share.dur(wt)])
 	_clear()
 	# 빛 꿰뚫음: 치명타 구체 뒤 일직선 구체에 효과
 	var vt := _tower(c + Vector2(-200, 0), Elem.LIGHT, 3)
@@ -558,7 +558,8 @@ func _affinity(c: Vector2) -> void:
 	var a1 := _orb(c, 1e6)
 	_grid.call()
 	at.hit(a1, 1.0)
-	ok("AFF-09", at.later.size() == Share.AFTER_N, "잔상: 시간 되풀이 %d번" % at.later.size())
+	ok("AFF-09", at.later.size() == Share.AFTER_N and Elem.aff_label(Elem.WATER, Elem.WOOD) == "성장 촉진(강)"
+		and "+30%에서 +50%" in Elem.aff_text(Elem.WATER, Elem.WOOD), "잔상: 시간 되풀이 %d번" % at.later.size())
 	_clear()
 	# 제어 회복: 물길은 늘 감속, 묻어둠이 터지면 묶음, 응축은 멈칫, 얼음 오래감은 빙결도 길게
 	var ft := _tower(c + Vector2(-200, 0), Elem.WATER, 1)
@@ -621,7 +622,7 @@ func _real(c: Vector2) -> void:
 	Share.carry(nt, o2, 0.3, "share:fire", at, 0.5)
 	ok("REAL-03", o2.position.x > x0, "실림: 자리에 닿은 구체를 바깥으로 밀어냄 (%.1f)" % (o2.position.x - x0))
 	_clear()
-	# 얼림·날선·되풀이
+	# 얼림·날 선·되풀이
 	var it: Tower = mk.call(Elem.ICE)
 	var mt: Tower = mk.call(Elem.METAL)
 	var tt: Tower = mk.call(Elem.TIME)
@@ -634,7 +635,7 @@ func _real(c: Vector2) -> void:
 	var n0 := tt.later.size()
 	Share.carry(tt, o5, 0.3, "share:fire", at, 0.5)
 	ok("REAL-04", o3.chill > 0.0 and mt.src.get("share:metal", 0.0) > 0.0 and o4.stagger_t > 0.0 and tt.later.size() > n0,
-		"얼림 냉기 %.2f · 날선 피해 %.1f·멈칫 · 되풀이 예약" % [o3.chill, mt.src.get("share:metal", 0.0)])
+		"얼림 냉기 %.2f · 날 선 피해 %.1f·멈칫 · 되풀이 예약" % [o3.chill, mt.src.get("share:metal", 0.0)])
 	_clear()
 	# 불 번짐: 타는 구체에 닿은 구체에 옮겨 붙음 (옮은 불은 다시 안 번짐)
 	var ft := _tower(c + Vector2(-260, 0), Elem.FIRE, 3)
@@ -672,7 +673,7 @@ func _real(c: Vector2) -> void:
 	# 이름 있는 자리
 	var ns := Share.new_sites({Elem.WATER: 1}, Elem.WOOD)
 	ok("REAL-08", Share.NAMED.size() == 10 and Share.site_name(Elem.WATER, Elem.WOOD) == "덩굴 길" and ns.has("덩굴 길")
-		and Share.site_name(Elem.FIRE, Elem.METAL) == "날선 불" and Share.sites_of({Elem.FIRE: 1, Elem.ICE: 1}).size() == 1,
+		and Share.site_name(Elem.FIRE, Elem.METAL) == "날 선 불" and Share.sites_of({Elem.FIRE: 1, Elem.ICE: 1}).size() == 1,
 		"자리 이름: 이름 있는 칸 10개, 나머지는 꾸밈말+자리 (%s)" % ", ".join(ns))
 
 
@@ -699,6 +700,10 @@ func _patterns() -> void:
 		for p in Pat.NO_MOD[mod]:
 			tab_ok = tab_ok and not Pat.mod_ok(p, mod) and Pat.no_mod_why(p, mod) != ""
 	ok("PAT-03", tab_ok, "Pat.NO_MOD 모든 칸에 못 넣는 이유 문구")
+	var saved_pattern: String = t.pattern
+	t.pattern = "wisp"
+	ok("PAT-03", t.range_text() == "추적 범위 %d · 혼불 %d개" % [roundi(Projectile.wisp_leash(0.0, t.rr(t.plv))), t.wisp_cap()], "혼불 사거리 표시는 추적 범위와 혼불 수")
+	t.pattern = saved_pattern
 
 
 
@@ -919,7 +924,8 @@ func _mods_area() -> void:
 	var rk: float = z._rapid()
 	var life: float = z.max_life
 	ok("MOD-09", is_equal_approx(rk, 1.0 + 2.0 * Rules.rapid_k) and is_equal_approx(life, 12.0 * w.sz())
-		and not Pat.mod_ok("clock", "homing") and not Pat.mod_ok("chain", "homing")
+		and ["wall", "wisp", "clock", "chain"].all(func(pat): return not Pat.mod_ok(pat, "homing"))
+		and not "혼불은" in Pat.MODS["homing"]["desc"] and "벽·혼불·시계침·연쇄 번개에는 못 넣어요." in Pat.MODS["homing"]["desc"]
 		and is_equal_approx(Pat.mod_fix("thorn", "homing", 2.0), 1.0) and is_equal_approx(Pat.mod_fix("thorn", "homing", 5.0), Pat.MOD_FIX["thorn"]["homing"]),
 		"벽 속사 2개 피해 속도 x%.2f, 크기 1개 벽 %.1f초, 시계침·연쇄 유도 막힘, 관통 연사 유도 2개 보정 x%.2f" % [rk, life, Pat.mod_fix("thorn", "homing", 2.0)])
 	# MOD-14 크기 피해는 공격방식 자기 공격에만: 보조 공격·실어 나른 특징 피해(dmg_k_bare)엔 안 붙고, 숨은 보정 칸도 정보 줄에 보인다

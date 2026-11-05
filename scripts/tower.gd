@@ -66,7 +66,7 @@ var tag := ""  # 지금 피해를 어느 출처로 셀지 (반응·반응 발사
 var recoil := 0.0  # 발사 반동
 var place_pop := 0.0  # 설치·겹치기 순간 커졌다 줄어드는 연출
 var rocks: Array = []
-var wisps: Array = []  # 떠 있는 목줄 혼불
+var wisps: Array = []  # 떠 있는 범위 제한 혼불
 var in_zone := false  # 지금 장판(바닥 효과)으로 때리는 중인지 (후반 구체 갑옷·흐림은 장판 피해를 그대로 받는다)
 var in_rx := false  # 지금 특수 반응 공격 중인지 (hit 피해 계산용)
 var clock_ph := 0.0  # 시계침 위상
@@ -410,7 +410,7 @@ static func base_hit(p: String) -> Array:
 
 
 
-## 목줄 혼불이 한꺼번에 떠 있는 수: 2 + 다중 발사.
+## 범위 제한 혼불이 한꺼번에 떠 있는 수: 2 + 다중 발사.
 func wisp_cap() -> int:
 	return 2 + roundi(mf("multi"))
 
@@ -490,7 +490,7 @@ func range_text() -> String:
 		"lob": return "화면 끝까지 (%d부터 약해짐, 지나간 띠 반지름 %d)" % [roundi(far_start()), roundi(lob_r(l) * s)]
 		"vortex": return "%d 안 구체 무리에 (우물 반지름 %d)" % [roundi(well_range()), roundi((100.0 + 10.0 * (l - 1)) * s)]
 		"wall": return "앞 %d~ (벽 %d개)" % [roundi(90.0 * rr(l)), 2 + roundi(mf("multi"))]
-		"wisp": return "목줄 %d (혼불 %d개가 오브젝트 둘레를 지키며 쫓아감)" % [roundi(Projectile.wisp_leash(mf("homing"), rr(l))), wisp_cap()]
+		"wisp": return "추적 범위 %d · 혼불 %d개" % [roundi(Projectile.wisp_leash(mf("homing"), rr(l))), wisp_cap()]
 		"shard": return "화면 끝까지 (파편 130)" if m("homing") == 0 else "%d (유도, 파편 130)" % roundi(Projectile.HOMING_TRAVEL)
 	if m("homing") > 0 and pattern in Pat.PROJECTILE:
 		return "%d (유도)" % roundi(Projectile.HOMING_TRAVEL)
@@ -1050,7 +1050,7 @@ func _mod_effect(id: String) -> String:
 			return "파편 확률 %d%%" % roundi(split_ch() * 100.0)
 		"homing":
 			if pattern == "wisp":
-				return "목줄 +%d%% · 휘는 힘 x%.2f" % [roundi(Projectile.WISP_LEASH_HOMING * f * 100.0), f]
+				return "추적 범위 +%d%% · 휘는 힘 x%.2f" % [roundi(Projectile.WISP_LEASH_HOMING * f * 100.0), f]
 			return "휘는 힘 x%.2f" % f
 		"bounce":
 			if pattern in Pat.PROJECTILE or pattern == "chain":

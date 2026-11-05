@@ -39,8 +39,8 @@ var chase_v := Vector2.ZERO
 var chase_t := 0.0  # 이번 확인 구간에서 쫓은 시간
 var chase_d0 := 0.0  # 확인 구간 시작 때 거리
 var gave_up := {}  # 못 따라잡아 포기한 구체 id
-var leash := 0.0  # 목줄 혼불: 오브젝트에서 이 거리 안 구체만 쫓는다 (0 = 제한 없음)
-var next_hit := 0.0  # 목줄 혼불: 다음에 때릴 수 있는 시각 (t)
+var leash := 0.0  # 범위 제한 혼불: 오브젝트에서 이 거리 안 구체만 쫓는다 (0 = 제한 없음)
+var next_hit := 0.0  # 범위 제한 혼불: 다음에 때릴 수 있는 시각 (t)
 var look := ""  # 그 모양
 var rxd := {}  # 그 반응 상태 (부메랑·커지기 등)
 
@@ -77,7 +77,7 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO, off := Vector2.ZE
 		"iron":
 			speed = P.iron_spd; dmg = H.iron * p; radius = P.iron_r; pierce = true
 		"wisp":
-			speed = P.wisp_spd; dmg = H.wisp * p; radius = P.wisp_r; max_travel = INF  # 목줄 혼불: 거리 대신 WISP_LIFE초 (finished)
+			speed = P.wisp_spd; dmg = H.wisp * p; radius = P.wisp_r; max_travel = INF  # 범위 제한 혼불: 거리 대신 WISP_LIFE초 (finished)
 		"ghost":
 			speed = P.ghost_spd; dmg = P.ghost_dmg * p; radius = P.ghost_r; max_travel = P.ghost_far
 	if k in Pat.PROJECTILE:
@@ -169,11 +169,11 @@ static var CHASE_CHECK := 0.8
 static var STEER_CONE := 1.6  # 유도 탄이 노리는 앞쪽 각도(라디안). 50도로 좁히면 덜 맞혀서 그대로 두고, 둘레를 도는 것은 포기 규칙으로 막는다
 static var HOMING_TRAVEL := 900.0  # 화면 끝까지 가던 탄도 유도가 붙으면 혼불처럼 900까지만
 static var WISP_SEEK := 380.0  # 반응·영혼 넋불(ghost)이 찾는 범위
-## 목줄 혼불 (2026-10-31 개편, 사용자 선택 A): 오브젝트 곁에 머물며 목줄 안 구체를 쫓아 여러 번 때린다.
+## 범위 제한 혼불 (2026-10-31 개편, 사용자 선택 A): 오브젝트 곁에 머물며 추적 범위 안 구체를 쫓아 여러 번 때린다.
 ## 떠 있는 수는 Tower.wisp_cap(), 사라지면 WISP_RESPAWN초 뒤 다시. 화면 끝까지 쫓아가던 예전 혼불이 배치와 상관없이 다 맞혀 너무 셌다
 static var WISP_LIFE := 6.0
 static var WISP_LEASH := 300.0  # 오브젝트에서 이만큼 안의 구체만 쫓는다 (공격방식 레벨 사거리·range_wisp 배율)
-static var WISP_LEASH_HOMING := 0.15  # 유도 하나마다 목줄 +15%
+static var WISP_LEASH_HOMING := 0.15  # 기존 저장값의 유도 하나마다 추적 범위 +15% (새 유도 카드는 혼불에 적용 불가)
 static var WISP_RESPAWN := 1.2
 
 
@@ -285,7 +285,7 @@ func fade_k() -> float:
 	return 1.0
 
 
-## 혼불·넋불: 구체를 쫓아간다. 목줄 혼불은 유도 강화면 더 빨리 돌고 목줄이 길어진다.
+## 혼불·넋불: 구체를 쫓아간다. 기존 저장값에 유도가 남은 혼불은 더 빨리 돌고 추적 범위가 넓어진다.
 func _seek(delta: float) -> void:
 	if not is_instance_valid(owner_tower):
 		return
@@ -298,7 +298,7 @@ func _seek(delta: float) -> void:
 	_chase(delta, WISP_SEEK, 0.0, (5.0 + 2.0 * homing) * delta)
 
 
-## 목줄 혼불이 쫓을 구체가 없을 때: 오브젝트 쪽으로 돌아와 둘레를 떠돈다.
+## 범위 제한 혼불이 쫓을 구체가 없을 때: 오브젝트 쪽으로 돌아와 둘레를 떠돈다.
 func _drift(lim: float) -> void:
 	var home: Vector2 = owner_tower.position
 	var to := home - position
@@ -378,7 +378,7 @@ func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 	return true
 
 
-## 목줄 혼불: 사라지지 않고 공격 간격마다 한 번 때린다. 맞힌 구체는 그 간격 동안 다시 쫓지 않는다.
+## 범위 제한 혼불: 사라지지 않고 공격 간격마다 한 번 때린다. 맞힌 구체는 그 간격 동안 다시 쫓지 않는다.
 func _wisp_hit(o: Orb, tw: Tower) -> bool:
 	if t < next_hit or hit.has(o):
 		return false

@@ -9,7 +9,7 @@ class_name Share
 ## 피해 출처 키는 "share:<특징 속성>" (Tower.src, 서버 통계).
 ## 실제 연상 개편 (2026-11-04): 특징은 두 종류.
 ## - 나르는 특징(SITE_E, 자리를 만듦): 불 번짐·물 물길·전기 튐·독 전염·소리 음파·빛 빛줄기·어둠 끌어당김·영혼 혼불·별 초신성.
-## - 바꾸는 특징(MOD_E, 자리를 바꿈): 나무 자람·바람 실림·얼음 얼림·땅 다짐·금속 날선·시간 되풀이. 같은 오브젝트의 모든 자리에 carry()가 한 번에 붙인다.
+## - 바꾸는 특징(MOD_E, 자리를 바꿈): 나무 자람·바람 실림·얼음 얼림·땅 다짐·금속 날 선·시간 되풀이. 같은 오브젝트의 모든 자리에 carry()가 한 번에 붙인다.
 ##   규칙이 모든 칸을 채우고, 이름 있는 칸(NAMED)만 따로 이름을 준다.
 
 ## 특징 속성 레벨별 세기 (Lv3에서 멈춤). 온라인 패치 rules.share_mul(전체) · rules.share_<속성>(특징마다)
@@ -47,7 +47,7 @@ static var GROW_ROOT := 0.4  # 자람: 덩굴 묶음 시간
 static var WIND_PUSH := 10.0  # 실림: 자리가 닿은 구체를 바깥으로 미는 거리(px)
 static var ICE_SITE := 0.4  # 얼림: 자리가 닿은 구체에 냉기
 static var EARTH_CH := 0.15  # 다짐: 자리가 닿은 구체가 묶일 확률
-static var METAL_SITE := 0.15  # 날선: 자리가 닿을 때 추가 피해 (위력 배율)
+static var METAL_SITE := 0.15  # 날 선: 자리가 닿을 때 추가 피해 (위력 배율)
 static var WOOD_VINE := 1.0  # 휘감기: 맞을 때마다 감기는 덩굴 (레벨마다, 3이면 묶임)
 static var WIND_HIT := 6.0  # 밀쳐냄: 맞은 구체를 미는 거리(px, 레벨마다)
 static var RILL_SLOW := 0.8  # 물길: 밟은 구체는 효과와 따로 늘 이만큼 느려짐 (제어 회복)
@@ -84,7 +84,7 @@ static var NEAR_CD := 0.2  # 둘레에 거는 간격 (오브젝트마다)
 static var QUAKE := 1.5  # 지진: 기절 확률·경직
 static var RUST := 0.15  # 녹: 중독된 구체가 받는 피해 +
 static var RESO_R := 0.5  # 공진: 음파 범위 +
-static var NOURISH_MAX := 0.5  # 자양: 자람 최대
+static var NOURISH_MAX := 0.5  # 성장 촉진: 자람 최대
 static var AFTER_N := 2  # 잔상: 시간 되풀이 횟수
 static var THERMO_DMG := 0.6  # 온도 충격: 냉기를 터뜨린 피해 (위력 배율)
 static var THERMO_STAG := 10.0  # 온도 충격: 멈칫 거리(px)
@@ -146,7 +146,7 @@ const MOD_E := [Elem.WOOD, Elem.WIND, Elem.ICE, Elem.EARTH, Elem.METAL, Elem.TIM
 const SITE_NOUN := {Elem.FIRE: "불", Elem.WATER: "물길", Elem.ELECTRIC: "전기", Elem.POISON: "독", Elem.SOUND: "음파",
 	Elem.LIGHT: "빛줄기", Elem.DARK: "끌어당김", Elem.SOUL: "혼불", Elem.STAR: "초신성",
 	Elem.BLOOD: "핏자국", Elem.ILLUSION: "비친 상"}
-const MOD_ADJ := {Elem.WOOD: "자라는", Elem.WIND: "바람에 실린", Elem.ICE: "얼어붙은", Elem.EARTH: "다져진", Elem.METAL: "날선", Elem.TIME: "되풀이되는"}
+const MOD_ADJ := {Elem.WOOD: "자라는", Elem.WIND: "바람에 실린", Elem.ICE: "얼어붙은", Elem.EARTH: "다져진", Elem.METAL: "날 선", Elem.TIME: "되풀이되는"}
 ## 따로 이름을 준 칸 [자리, 바꾸는 특징] → [이름, 설명]
 const NAMED := {
 	[Elem.WATER, Elem.WOOD]: ["덩굴 길", "물길을 따라 덩굴이 자라 갈수록 느리게 하다 끝에서 묶음"],
@@ -201,7 +201,7 @@ static func has_site(tw: Object) -> bool:
 
 
 ## 자리가 구체 o에 효과를 건다 (나르는 특징이 부름). at: 자리 가운데, stage: 자리 진행 0~1 (멀리·오래·끝으로 갈수록 1)
-## 바꾸는 특징: 자람(진행할수록 세지고 끝에 묶음) · 실림(바깥으로 밀기) · 얼림(냉기) · 다짐(확률 묶음) · 날선(추가 피해·멈칫) · 되풀이(잠시 뒤 한 번 더)
+## 바꾸는 특징: 자람(진행할수록 세지고 끝에 묶음) · 실림(바깥으로 밀기) · 얼림(냉기) · 다짐(확률 묶음) · 날 선(추가 피해·멈칫) · 되풀이(잠시 뒤 한 번 더)
 static func carry(tw: Object, o: Orb, f: float, key: String, at: Vector2, stage := 0.0, rep := false) -> void:
 	if f <= 0.0 or not is_instance_valid(tw) or not is_instance_valid(o) or o.hp <= 0.0:
 		return
