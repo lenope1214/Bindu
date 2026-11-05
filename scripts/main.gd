@@ -193,6 +193,8 @@ var bar_btn: Button
 var tutor := false  # 이번 판이 첫 판 안내 판인지: 카드 종류를 웨이브마다 하나씩 연다 (TUTOR_OPEN)
 var tutor_given := {}  # 첫 판에 새로 연 카드 종류를 선택지에 한 번 넣었는지 (종류 -> true)
 var guide_label: Label  # 처음 생기는 일 한 줄 안내 (위쪽 가운데)
+const RX_CARD := preload("res://scripts/rx_card.gd")
+var rx_card  # RxCard: 속성을 합쳐 새 조합이 생기면 오브젝트 옆에 뜨는 그림 카드
 var guide_lines: Array[String] = []
 var guide_topic := ""
 var guide_priority := 0
@@ -791,6 +793,8 @@ func _build_ui() -> void:
 	guide_label.add_theme_stylebox_override("normal", gsb)
 	guide_label.visible = false
 	root.add_child(guide_label)
+	rx_card = RX_CARD.new(self)
+	root.add_child(rx_card)
 	guide_more = Button.new()
 	guide_more.text = "더 알아보기"
 	guide_more.focus_mode = Control.FOCUS_NONE
@@ -3039,6 +3043,7 @@ func _guide(id: String, text: String) -> void:
 		"skill": "웨이브 중 기술 버튼으로 전투를 도울 수 있어요.",
 		"leak": "구체가 중앙에 닿았어요. 빈 길목을 보강하세요.",
 		"lanes": "빨간 부채꼴이 구체가 들어오는 길목이에요.",
+		"react": "조합: 한 속성의 효과가 다른 속성의 특징을 따라 퍼져요.",
 	}
 	var line: String = short.get(id, text.get_slice(". ", 0))
 	Meta.guide_seen[id] = true
@@ -5487,13 +5492,16 @@ func _place_on(target: Tower) -> void:
 	if not target.can_take(picked):
 		_show_toast(target.refuse_text(picked))
 		return
+	var fresh := Elem.new_reactions(target.eff_now(), picked["e"])
 	var msg: String = target.add(picked["e"], picked["lv"])
-	_show_toast(msg)
 	sfx.play("place")
 	if msg.begins_with("조합"):
+		# 긴 배너·토스트 글 대신 오브젝트 옆 그림 카드 (2026-11-05)
 		sfx.play("reaction", 0.0)
-		big_banner(msg + "!", Color(1, 0.8, 0.4))
+		rx_card.show_for(target, fresh)
 		burst(target.position, Color(1, 0.85, 0.4), 30, 260.0)
+	else:
+		_show_toast(msg)
 	_after_place()
 
 
@@ -8010,10 +8018,13 @@ func _check_progress() -> void:
 		Ach.on_reactions(rs.map(func(r): return r["id"]))
 		for r in rs:
 			if mp_mode == "" and not TutPlay.on and Meta.discover(r["id"]):
-				_show_toast("조합 도감에 추가: " + r["name"])
+				if rx_card.active():
+					rx_card.found[r["id"]] = true  # 카드 머리에 "도감 +" 표시
+				else:
+					_show_toast("조합 도감에 추가: " + r["name"])
 				_save_best()
 				_refresh_legend()
-				_guide("react", "새 조합 · %s(%s+%s): %s. 발견한 조합은 오른쪽 설명에 채워져요" % [r["name"], Elem.NAMES[r["a"]], Elem.NAMES[r["b"]], r["desc"]])
+				_guide("react", "")
 	if pincers >= 3:
 		_achieve("links3")
 	_ach_check()
@@ -9236,6 +9247,7 @@ func _roll_kind() -> int:
 # ---------- 루프 ----------
 
 func _process(delta: float) -> void:
+	_place_rx_card()
 	rank_t -= delta
 	if rank_t <= 0.0:
 		rank_t = RANK_STEP
@@ -10212,6 +10224,56 @@ func _tip_icon(id: String, c: Vector2, s: float, col: Color) -> void:
 		"e:": Glyph.elem(fx_layer, int(id.substr(2)), c, s)
 		"k:": Glyph.kind(fx_layer, id.substr(2), c, s, col)
 		_: Glyph.ui(fx_layer, id, c, s, Color(col, 1.0))
+
+
+## 조합 카드 자리: 그 오브젝트 오른쪽·왼쪽·위·아래 중 UI(카드 줄·설명·점수 줄)·다른 오브젝트·중앙을 가장 덜 가리는 곳 (ui_root 좌표).
+## 카드를 넣는 단계(PLACE)에는 놓을 곳을 가리지 않게 감추고, 시작 화면·게임 오버면 닫는다.
+func _place_rx_card() -> void:
+	if rx_card == null or not rx_card.visible:
+		return
+	if title_label.visible or phase == Phase.GAMEOVER:
+		rx_card.hide_card()
+		return
+	rx_card.self_modulate.a = 0.0 if phase in [Phase.PLACE, Phase.AIM] else 1.0
+	if not is_instance_valid(rx_card.tower):
+		return
+	var to_ui := ui_root.get_global_transform().affine_inverse() * get_canvas_transform()
+	var o := to_ui * rx_card.tower.position
+	var sz := rx_card.size
+	var zs := to_ui.get_scale().x
+	var gap := Tower.RADIUS * zs + 16.0
+	var lo := Vector2(8.0, 44.0)
+	var hi := (ui_root.size - sz - Vector2(8.0, 60.0)).max(lo)
+	var cands: Array = []
+	for kk in 4:
+		var d := gap + kk * 36.0
+		cands.append(Vector2(o.x + d, o.y - sz.y * 0.35))
+		cands.append(Vector2(o.x - d - sz.x, o.y - sz.y * 0.35))
+		cands.append(Vector2(o.x - sz.x * 0.5, o.y - d - sz.y))
+		cands.append(Vector2(o.x - sz.x * 0.5, o.y + d))
+	var blocks: Array = [[to_ui * center(), CORE_RADIUS * zs + 12.0]]
+	for t in towers.get_children():
+		blocks.append([to_ui * t.position, Tower.RADIUS * zs + 4.0])
+	var ui_blocks := _info_blockers()
+	if choice_box and choice_box.is_visible_in_tree():
+		ui_blocks.append(ui_root.get_global_transform().affine_inverse() * choice_box.get_global_rect())
+	var best := Rect2(cands[0] as Vector2, sz)
+	var best_s := INF
+	for p: Vector2 in cands:
+		var q := p.clamp(lo, hi)
+		var r := Rect2(q, sz)
+		var sc := q.distance_to(p) / 20.0 + p.distance_to(o) / 80.0
+		for bl in blocks:
+			var bp: Vector2 = bl[0]
+			if bp.clamp(r.position, r.end).distance_to(bp) < bl[1]:
+				sc += 12.0
+		for rect in ui_blocks:
+			if r.intersects(rect):
+				sc += 1000.0 + r.intersection(rect).get_area()
+		if sc < best_s:
+			best_s = sc
+			best = r
+	rx_card.position = best.position
 
 
 ## 정보창 글 배율: 폰은 화면이 작아 다른 글보다 14px 정보창이 유난히 작게 읽혔다

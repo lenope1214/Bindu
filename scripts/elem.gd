@@ -90,6 +90,40 @@ const TRAIT := {
 	ILLUSION: "옆 오브젝트에 비춤: 둘레 220 안 가장 가까운 다른 오브젝트의 다음 공격에 이 오브젝트 효과 40%를 실어요.",
 }
 
+## 조합 카드 줄의 짧은 말: 이 속성의 특징이 다른 효과를 어떻게 옮기는지 (14자 이하, 2026-11-05 조합 카드)
+const TRAIT_SAY := {
+	FIRE: "닿은 구체로 번져요",
+	WOOD: "멀리 갈수록 세져요",
+	WATER: "물길 밟으면 걸려요",
+	ELECTRIC: "번개 타고 옆 구체로",
+	WIND: "더 넓게 퍼져요",
+	ICE: "더 오래가요",
+	EARTH: "닿은 구체가 묶여요",
+	DARK: "죽으면 끌어모아 전해요",
+	LIGHT: "치명타 뒤 일직선으로",
+	POISON: "죽으면 주변으로",
+	METAL: "추가 피해가 붙어요",
+	SOUND: "음파 따라 둘레로",
+	TIME: "잠시 뒤 한 번 더",
+	SOUL: "혼불이 쫓아가 걸어요",
+	STAR: "초신성이 모두에게",
+	BLOOD: "핏자국 밟으면 걸려요",
+	ILLUSION: "옆 오브젝트에 실려요",
+}
+
+
+## 조합 카드 줄들: [{"eff": 효과 속성(-1이면 특징만), "by": 특징 속성, "say": 짧은 말}]. pair_desc와 같은 방향 규칙
+static func pair_rows(a: int, b: int) -> Array:
+	var out := []
+	for d in [[a, b], [b, a]]:
+		if d[1] in CARRY:
+			out.append({"eff": d[1], "by": d[0], "say": TRAIT_SAY[d[0]]})
+	if out.is_empty():
+		for e in [a, b]:
+			out.append({"eff": -1, "by": e, "say": TRAIT_SAY[e]})
+	return out
+
+
 ## 특징이 실어 나를 수 있는 효과(구체에 걸리는 적중 효과)
 const CARRY := [FIRE, WOOD, WATER, ELECTRIC, ICE, EARTH, DARK, POISON, METAL, SOUND, TIME, SOUL, BLOOD, ILLUSION]
 

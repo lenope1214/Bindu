@@ -111,6 +111,7 @@ func _initialize():
 	_vote()
 	_ugc()
 	_board_filters()
+	_rx_card()
 	_lint()
 	print("SPEC %s (실패 %d, 확인한 기능 %d개)" % ["통과" if fails == 0 else "실패", fails, seen.size()])
 	quit(1 if fails > 0 else 0)
@@ -3497,6 +3498,44 @@ func _ugc() -> void:
 	var del_ok: bool = OnlineConfig.SERVER_URL == "" or main.settings_panel.find_children("*", "Button", true, false).any(func(b): return b.text == "내 온라인 데이터 지우기")
 	ok("ONLINE-06", filt and hide_ok and people_ok and panel_ok and unblock_ok and del_ok,
 		"닉네임 거르기, 리더보드 차단한 사람 이름 가림·[신고·차단] 창(신고는 서버 report 있을 때만)·차단 풀기, 설정 데이터 지우기 버튼")
+
+
+## UI-37: 속성을 합쳐 새 조합이 생기면 긴 배너·토스트 대신 오브젝트 옆 그림 카드
+func _rx_card() -> void:
+	_fresh()
+	var c: Vector2 = main.center()
+	var t := _tower(c + Vector2(-200, -120), Elem.FIRE)
+	main.phase = main.Phase.PLACE
+	main.picked = {"type": "elem", "e": Elem.ELECTRIC, "lv": 1}
+	main.banner_t = 0.0
+	main.toast.text = ""
+	main._place_on(t)
+	var rc = main.rx_card
+	var shown: bool = rc.active() and rc.tower == t and rc.rxs.size() == 1 and rc.size.y > 120.0
+	var quiet: bool = not str(main.toast.text).begins_with("조합") and main.banner_t <= 0.0
+	main.phase = main.Phase.READY
+	main._place_rx_card()
+	var to_ui: Transform2D = main.ui_root.get_global_transform().affine_inverse() * main.get_canvas_transform()
+	var tp: Vector2 = to_ui * t.position
+	var cr: Rect2 = Rect2(rc.position, rc.size)
+	var clear_of_tower: bool = tp.clamp(cr.position, cr.end).distance_to(tp) >= Tower.RADIUS
+	var rows_ok := true
+	for r in Elem.REACTIONS:
+		var rows: Array = Elem.pair_rows(r["a"], r["b"])
+		rows_ok = rows_ok and rows.size() in [1, 2]
+		for row in rows:
+			rows_ok = rows_ok and str(row["say"]).length() <= 14 and str(row["say"]) != ""
+	var say_ok: bool = Elem.ALL.all(func(e): return Elem.TRAIT_SAY.has(e))
+	# 짝 셋이 한 번에 생기면 2장 + "+1"
+	rc.show_for(t, Elem.REACTIONS.slice(0, 3))
+	var capped: bool = rc.rxs.size() == 2 and rc.extra == 1
+	main.phase = main.Phase.GAMEOVER
+	main._place_rx_card()
+	var closed: bool = not rc.visible
+	main.phase = main.Phase.READY
+	ok("UI-37", shown and quiet and clear_of_tower and rows_ok and say_ok and capped and closed,
+		"조합 카드: 뜸 %s · 배너/토스트 없음 %s · 오브젝트 안 가림 %s · 줄 %s/%s · 2장+N %s · 게임 오버에 닫힘 %s" % [shown, quiet, clear_of_tower, rows_ok, say_ok, capped, closed])
+	_clear()
 
 
 func _lint() -> void:
