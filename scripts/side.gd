@@ -89,7 +89,9 @@ static func hit_one(tw: Object, o: Orb) -> void:
 	tw.main.beam(tw.position, o.position, col)
 	var old: String = tw.tag
 	tw.tag = "share:side"
+	tw.no_size = true
 	tw.hit(o, Tower.pw(tw.plv) * Rules.t("side_dmg"))
+	tw.no_size = false
 	tw.tag = old
 
 
@@ -148,7 +150,7 @@ static func big_hit(tw: Object, o: Orb) -> void:
 	if got.size() > BIG_CAP:
 		got.sort_custom(func(a, b): return a.position.distance_squared_to(at) < b.position.distance_squared_to(at))
 		got = got.slice(0, BIG_CAP)
-	var d0: float = Tower.pw(tw.plv) * Rules.t("side_dmg") * Rules.t("side_big_k") * tw.dmg_k(false)
+	var d0: float = Tower.pw(tw.plv) * Rules.t("side_dmg") * Rules.t("side_big_k") * tw.dmg_k_bare()
 	if e == Elem.DARK:
 		d0 *= 0.5  # 화면 전체는 피해를 반으로
 	var r0 := maxf(BIG_R * w, 1.0)

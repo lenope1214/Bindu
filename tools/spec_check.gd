@@ -922,6 +922,19 @@ func _mods_area() -> void:
 		and not Pat.mod_ok("clock", "homing") and not Pat.mod_ok("chain", "homing")
 		and is_equal_approx(Pat.mod_fix("thorn", "homing", 2.0), 1.0) and is_equal_approx(Pat.mod_fix("thorn", "homing", 5.0), Pat.MOD_FIX["thorn"]["homing"]),
 		"벽 속사 2개 피해 속도 x%.2f, 크기 1개 벽 %.1f초, 시계침·연쇄 유도 막힘, 관통 연사 유도 2개 보정 x%.2f" % [rk, life, Pat.mod_fix("thorn", "homing", 2.0)])
+	# MOD-14 크기 피해는 공격방식 자기 공격에만: 곁공격·실어 나른 특징 피해(dmg_k_bare)엔 안 붙고, 숨은 보정 칸도 정보 줄에 보인다
+	_clear()
+	var sz_t := _tower(c + Vector2(-200, 0))
+	sz_t.set_pattern("shot")
+	var bare0: float = sz_t.dmg_k(false)
+	sz_t.add_mod("size")
+	sz_t.add_mod("size")
+	sz_t._dk_id = -1
+	var own: float = sz_t.dmg_k(false)
+	var bare: float = sz_t.dmg_k_bare()
+	var line: String = sz_t.mod_effect("size")
+	ok("MOD-14", line.contains("이 공격방식 피해") and own > bare0 * 1.01 and is_equal_approx(bare, bare0) and is_equal_approx(own / bare, sz_t.size_part()) and not line.contains("보정"),
+		"크기 2개 직선탄: 자기 공격 x%.3f, 곁공격·특징 x%.3f · %s" % [own / bare0, bare / bare0, line])
 	# MOD-10 돌풍 다중 발사: 부채꼴이 아니라 같은 방향으로 나란히
 	_clear()
 	var g := _tower(c + Vector2(-300, 0))

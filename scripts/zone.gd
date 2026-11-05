@@ -335,7 +335,9 @@ func _hit(o: Orb, amount: float, k: float) -> void:
 	if is_instance_valid(owner_tower):
 		owner_tower.tag = src
 		owner_tower.in_zone = true
+		owner_tower.no_size = src.begins_with("share:")  # 특징이 만든 장판(물길·핏자국)은 크기 피해 없음
 		owner_tower.hit(o, amount * boost, k, {}, false)
+		owner_tower.no_size = false
 		owner_tower.in_zone = false
 		owner_tower.tag = ""
 	else:

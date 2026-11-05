@@ -1028,7 +1028,7 @@ func add_mod(id: String) -> String:
 func mod_effect(id: String) -> String:
 	var fx := Pat.mod_fix(pattern, id, mf(id))
 	var t := _mod_effect(id)
-	if absf(fx - 1.0) >= 0.005 and id != "dice":
+	if absf(fx - 1.0) >= 0.005 and id != "dice" and id != "size":  # 크기는 "이 공격방식 피해"에 합쳐 보임
 		t += " · 공격방식 보정 x%.2f" % fx
 	return t
 
@@ -1057,7 +1057,8 @@ func _mod_effect(id: String) -> String:
 				return "튕김 %.2f번" % f
 			return "맞힐 때 %.1f초마다 작은 탄 %d개가 튐" % [bounce_iv(), mn("bounce")]
 		"size":
-			return "크기·범위·사거리 +%d%%" % roundi((sz() - 1.0) * 100.0) + (" · 피해 +%d%%" % roundi(Rules.size_dmg * f * 100.0) if pattern in Pat.PROJECTILE else "")
+			var sp := roundi((size_part() - 1.0) * 100.0)
+			return "크기·범위·사거리 +%d%%" % roundi((sz() - 1.0) * 100.0) + (" · 이 공격방식 피해 %+d%%" % sp if sp != 0 else "")
 		"rapid":
 			return "공격 속도 +%d%%" % roundi(Rules.rapid_k * f * 100.0)
 		"pierce":
@@ -1818,6 +1819,24 @@ func _update_aim(orbs: Array, delta: float) -> void:
 	aim = aim.slerp(want, minf(1.0, delta * 6.0)).normalized()
 
 
+## 크기 강화가 주는 피해 몫 (탄 공격 +size_dmg/개 x 보정표 크기 칸). 공격방식 자기 공격에만 붙는다.
+func size_part() -> float:
+	if m("size") == 0:
+		return 1.0
+	var f := Pat.mod_fix(pattern, "size", mf("size"))
+	if pattern in Pat.PROJECTILE:
+		f *= 1.0 + Rules.size_dmg * mf("size")
+	return f
+
+
+## 곁공격·실어 나른 특징 피해용 배율: 크기 몫을 뺀다 (크기는 공격방식 자기 판정에만, 2026-11-05 사용자 결정)
+func dmg_k_bare() -> float:
+	return dmg_k(false) / size_part()
+
+
+var no_size := false  # 지금 hit이 곁공격처럼 공격방식 밖 공격인지 (크기 피해 빼기)
+
+
 ## 이 오브젝트의 공격이 구체에 닿았을 때. 겹친(나눠 받은) 모든 속성의 부가효과가 붙는다.
 ## k: 부가효과 세기 (한 방=1, 지속 공격=프레임 비례)
 ## extra: 더 얹을 속성 {속성: 레벨} (지금은 쓰는 곳 없음), can_split: 파편은 다시 분열하지 않는다
@@ -1829,7 +1848,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		els = els.duplicate()
 		for e in extra:
 			els[e] = maxi(els.get(e, 0), extra[e])
-	var d := dmg * dmg_k(in_rx)
+	var d := dmg * (dmg_k_bare() if no_size and not in_rx else dmg_k(in_rx))
 	var dx := dice_x if not in_rx else 1.0  # 주사위: 반응 피해에는 안 곱한다
 	d *= dx
 	# 발동: 축적·삼연이 실린 공격(쏘는 순간 바로 맞히는 공격), 마무리(약한 구체)

@@ -344,7 +344,7 @@ static func grow(tw: Object, o: Orb) -> float:
 
 ## 실어 나른 효과가 주는 순간 피해의 기준 (오브젝트 위력, 공격방식 배율 제외)
 static func ref_dmg(tw: Object) -> float:
-	return Tower.pw(tw.plv) * tw.dmg_k(false)
+	return Tower.pw(tw.plv) * tw.dmg_k_bare()
 
 
 ## 효과를 비율 f로 구체 o에 건다. key: 피해 출처 ("share:<특징>")

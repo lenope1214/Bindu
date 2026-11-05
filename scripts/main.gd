@@ -8720,7 +8720,7 @@ func sound_pulse(o: Orb) -> void:
 	var tw: Tower = o.tune_src if is_instance_valid(o.tune_src) else null
 	var l := maxi(o.tune_lv, 1)
 	var r := 70.0 + 10.0 * (l - 1)
-	var dmg := Rules.t("sound_pulse") * Tower.pw(l) * (tw.dmg_k(true) if tw else 1.3)
+	var dmg := Rules.t("sound_pulse") * Tower.pw(l) * (tw.dmg_k(true) / (1.0 + Rules.size_dmg * tw.mf("size") if tw.pattern in Pat.PROJECTILE else 1.0) if tw else 1.3)
 	# 소리 퍼짐 (특징 공유): 음파에 닿은 구체에 울림을 건 오브젝트 효과
 	var ks := Share.k(tw, Elem.SOUND) if tw else 0.0
 	if ks > 0.0:
