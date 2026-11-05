@@ -2438,8 +2438,8 @@ func _draw() -> void:
 	if req_e >= 0 and Elem.COLORS.has(req_e):
 		# 협동 속성 요청: 머리 위 그 속성 색 방울 + 물음표 (다른 사람이 그 속성을 넣어 줄 수 있음)
 		var c := Elem.COLORS[req_e] as Color
-		var p := Vector2(sz() + 8.0, -sz() - 12.0)
-		draw_line(p + Vector2(-5, 7), Vector2(sz() * 0.5, -sz() * 0.5), Color(1, 1, 1, 0.5), 1.5)
+		var p := Vector2(RADIUS + 8.0, -RADIUS - 12.0)
+		draw_line(p + Vector2(-5, 7), Vector2(RADIUS * 0.5, -RADIUS * 0.5), Color(1, 1, 1, 0.5), 1.5)
 		draw_circle(p, 10.0, Color(0, 0, 0, 0.7))
 		draw_circle(p, 8.0, c)
 		draw_arc(p, 10.5, 0.0, TAU, 24, Color(1, 1, 1, 0.95), 2.0)
@@ -2450,14 +2450,14 @@ func _draw() -> void:
 ## [보기] 필터로 고른 사람 것은 고리가 숨 쉬듯 밝아진다 (나머지는 main이 흐리게).
 func _draw_owner_glow() -> void:
 	var c := Mp.owner_color(owner_id)
-	var r := RADIUS * sz()
+	var r := RADIUS  # 몸은 크기와 무관하게 RADIUS로 그려진다
 	draw_circle(Vector2.ZERO, r + 14.0, Color(c, 0.08))
 	draw_circle(Vector2.ZERO, r + 8.0, Color(c, 0.14))
 
 
 func _draw_owner_mark() -> void:
 	var c := Mp.owner_color(owner_id)
-	var r := RADIUS * sz() + 5.0
+	var r := RADIUS + 5.0
 	draw_arc(Vector2.ZERO, r, 0.0, TAU, 40, c, 3.0, true)
 	var focus: bool = main != null and int(main.get("mp_view")) == owner_id
 	if focus:
