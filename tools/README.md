@@ -93,6 +93,16 @@ godot --headless --path . -s tools/update_check.gd -- 공개키.pem 서명 Bindu
 
 서명은 `server/app/main.py`의 `release_payload("windows", "9.9.9", "https://github.com/lenope1214/Bindu/releases/download/v9.9.9/Bindu-windows.zip", 해시, 크기)`를 `signing.sign`한 값. 실제 바꿔 끼우기(실행 중인 exe 이름 바꾸기·다시 켜기)는 Windows에서만 확인할 수 있다.
 
+운영 서버 `/v1/boot` 응답과 그 URL에서 내려받은 ZIP을 직접 확인할 때:
+
+```sh
+godot --headless --path . -s tools/update_check.gd -- --release /절대경로/boot.json /절대경로/Bindu-windows.zip
+GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh ui update_flow_check.gd /tmp/bindu-update-ui
+```
+
+`--release`는 내장 공개키로 실제 릴리스 서명·변조 거부·파일 해시·크기·단일 Windows EXE·PCK 내장을 검사한다. 파일 교체나 실행은 하지 않는다.
+`update_flow_check.gd`는 저장·네트워크를 분리한 실제 홈화면에서 가상 마우스 클릭, 진행률, 실패 재시도, 중복 연결, 플랫폼별 스토어 URL을 검사한다. 다운로드 시작은 가짜 Updater로 기록하므로 Windows EXE 교체 성공 증거는 아니다.
+
 ## 하단 카드 도크 전후 비교
 
 `tools/dock_check.gd`는 같은 시드·오브젝트 좌표·선택지를 사용해 PC/폰/태블릿 화면과 실제 Godot 입력 경로를 확인한다.
@@ -111,3 +121,16 @@ RESOLUTION=2556x1179 GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/ru
 `GODOT=<godot> tools/run.sh architecture`는 서비스 구독 중복/해제, 씬별 컨트롤러 독립성, WeakRef 해제, 순수 배치 규칙을 검사한다. `check`에도 포함된다.
 
 `python3 tools/architecture_audit.py`는 메인 분리 시점의 함수 529개가 누락되지 않았는지와 참조 경로 외 변경을 기록된 기준과 대조하는 일회성 마이그레이션 감사다. 새 동작을 구현할 때는 해당 함수의 변경 이유·회귀 검증을 `docs/architecture/main-boundaries.json`의 `reviewed_changes`에 기록한다. UI와 봇의 진입점은 `main.<feature>_system`으로 갱신되어 있다.
+
+## macOS 자체 업데이트 검증
+
+```sh
+python3 native/macos/tests/test_updater.py
+python3 tools/macos_update_smoke.py
+```
+
+첫 명령은 임시 `.app`·ZIP만 사용해 코드 서명·권한·심볼릭 링크 보존, 잘못된 해시·ZIP 경로·서명·버전 거부, 실제 앱 교체·재시작·시작 실패 복구를 검사합니다. 실제 macOS 프로세스 실행과 동일한 네이티브 보조 프로그램을 사용합니다.
+
+두 번째는 저장·접속 키가 분리된 실제 Bindu 앱 `0.0.1`·`0.0.2`를 내보냅니다. 로컬 HTTPS 서버와 시험용 릴리스 키를 사용하고 실제 홈화면 버튼 경로로 다운로드·검증·교체·새 앱 시작·진행 기록 보존·임시 파일 정리까지 검사합니다. `MACOS_SMOKE_OUT`으로 로그 출력 폴더를 지정할 수 있습니다(기본 `/tmp/bindu-macos-update-smoke`). 운영 릴리스·개인 게임 저장은 변경하지 않습니다.
+
+`build_macos.command`와 같은 Xcode·libarchive 빌드 의존성이 필요합니다. 테스트 앱은 ad-hoc 서명이며 Apple Silicon에서의 실행 성공을 Intel 실기 실행·Developer ID 공증·운영 배포 증거로 확대하지 않습니다.

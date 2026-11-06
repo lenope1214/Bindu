@@ -350,3 +350,34 @@ def test_card_enable_patch():
         assert json.loads(patch["payload"])["data"]["card_enabled"] == enabled
         admin = c.get("/admin", headers=A).text
         assert 'id="ptabs"' in admin and 'id="t-card-enable"' in admin
+
+
+def test_macos_release_hash_signature_and_failed_registration(monkeypatch):
+    import app.main as main_module
+
+    url = "https://example.com/v1.2.3/Bindu-macos.zip"
+    digest = hashlib.sha256(b"macos fixture").hexdigest()
+    calls = []
+
+    def fetch(address):
+        calls.append(address)
+        return digest, 13
+
+    monkeypatch.setattr(main_module, "fetch_hash", fetch)
+    with TestClient(app) as c:
+        r = c.put("/admin/releases/macos", json={"version": "1.2.3", "url": url}, headers=A)
+        assert r.status_code == 200 and r.json()["sha256"] == digest and r.json()["size"] == 13
+        assert calls == [url]
+        latest = c.get("/v1/boot", params={"game": "1.2.2", "platform": "macos"}).json()["latest"]
+        payload = main_module.release_payload("macos", "1.2.3", url, digest, 13)
+        assert signing.verify(payload, latest["sig"], PUB)
+        assert not signing.verify(payload.replace("macos", "windows"), latest["sig"], PUB)
+        assert c.get("/v1/boot", params={"game": "1.2.3", "platform": "macos"}).json()["latest"] is None
+
+        def broken(_address):
+            raise ValueError("unavailable")
+
+        monkeypatch.setattr(main_module, "fetch_hash", broken)
+        assert c.put("/admin/releases/macos", json={"version": "1.2.4", "url": url}, headers=A).status_code == 422
+        latest = c.get("/v1/boot", params={"game": "1.2.2", "platform": "macos"}).json()["latest"]
+        assert latest["version"] == "1.2.3" and latest["sha256"] == digest

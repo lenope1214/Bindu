@@ -107,7 +107,7 @@ func _draw_notes() -> void:
 	var latest: Variant = Net.info.get("latest")
 	if latest is Dictionary and str(latest.get("version", "")) != "":
 		var ln := str(latest.get("notes", ""))
-		out.append("[color=#ffd873]새 버전 v%s가 나왔어요. 시작 화면의 [받기]로 받을 수 있어요.%s[/color]\n" % [session._bb(str(latest["version"])), ("\n" + session._bb(ln)) if ln != "" else ""])
+		out.append("[color=#ffd873]새 버전 v%s가 나왔어요. 시작 화면의 [업데이트]를 눌러 주세요.%s[/color]\n" % [session._bb(str(latest["version"])), ("\n" + session._bb(ln)) if ln != "" else ""])
 	# 색 안내: 줄 앞 꼬리표가 무슨 뜻인지
 	var legend := PackedStringArray()
 	for k in BinduSession.NOTE_KINDS:

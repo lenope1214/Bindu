@@ -1,0 +1,10 @@
+{
+  "branch": "feat",
+  "source_base": "0bdf3349142952f39e60fa1785195d9737a77826",
+  "app_version": "0.11.2",
+  "zip_sha256": "55b7066dc63033b73d85d8deefc0698404e4e82c09e967a685bdb584656f3561",
+  "zip_size": 75815119,
+  "signing": "ad-hoc local QA; not notarized",
+  "architectures": "x86_64 arm64",
+  "native_source_sha256": "95707957c4a1862d09fdfb11d722e5296d2606290e955f7647db5cf6bc674830"
+}

@@ -1,0 +1,17 @@
+test_archive_traversal_and_external_symlink_are_rejected (__main__.UpdaterTests) ... ok
+test_concurrent_install_is_rejected_before_original_exits (__main__.UpdaterTests) ... ok
+test_corrupt_zip_with_matching_hash_is_rejected (__main__.UpdaterTests) ... ok
+test_hash_mismatch_keeps_original (__main__.UpdaterTests) ... ok
+test_missing_startup_ack_restores_previous_app (__main__.UpdaterTests) ... ok
+test_modified_bundle_signature_is_rejected (__main__.UpdaterTests) ... ok
+test_new_app_crash_restores_and_relaunches_old_app (__main__.UpdaterTests) ... ok
+test_prepare_preserves_permissions_symlinks_and_signatures (__main__.UpdaterTests) ... ok
+test_real_app_swap_launch_ack_cleanup_and_save_preservation (__main__.UpdaterTests) ... ok
+test_unwritable_install_parent_keeps_original (__main__.UpdaterTests) ... ok
+test_wrong_bundle_identifier_is_rejected (__main__.UpdaterTests) ... ok
+test_wrong_version_keeps_original (__main__.UpdaterTests) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 56.046s
+
+OK

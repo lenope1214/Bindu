@@ -1,0 +1,27 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+ok 홈 버튼 이름은 업데이트
+ok 클릭할 업데이트 버튼이 화면에 보임
+ok 외부 업데이트는 배포 페이지로 이동
+ok 새 응답에도 클릭 처리 중복 없음
+ok 클릭할 업데이트 버튼이 화면에 보임
+ok 한 클릭으로 앱 안 다운로드 시작·중복 클릭 차단
+ok 다운로드 진행률
+ok 진행 중 새 응답이 버튼을 숨기거나 재활성화하지 않음
+ok 실패 후 업데이트 버튼 복구
+ok 실패 이유 안내
+ok 클릭할 업데이트 버튼이 화면에 보임
+ok 재시도는 원래 릴리스로 앱 안에서 실행
+ok ios 외부 빌드 차단
+ok android 외부 빌드 차단
+ok iOS App Store 허용
+ok iOS TestFlight 허용
+ok iOS에서 Android 스토어 차단
+ok Android Google Play 허용
+ok Android에서 iOS 스토어 차단
+ok 스토어 유사 도메인 차단
+ok 최신 버전이면 버튼 숨김·릴리스 초기화
+UPDATE FLOW failures=0
+WARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

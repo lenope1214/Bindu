@@ -56,31 +56,42 @@ main에 `server/` 변경이 올라오면 집 PC가 5분 안에 알아서 다시 
 - **통계**: 특성·카드별 나온 횟수, 선택률, 고른 판의 평균 도달 웨이브 / 판이 끝났을 때 들어 있던 속성·공격방식·강화·연계의 비율, 평균 레벨, 평균 피해 몫 / 규칙 버전별 평균 웨이브 / 웨이브 분포. 규칙·맵·게임 버전·패치·기간으로 거르고 CSV로 내려받기.
   - 밸런스 표(선택률·구성·피해 출처·규칙·모드와 위 요약 숫자)는 **5웨이브 이상 간 판만** 셉니다. 그 전에 끝난 판은 지우지 않고 "이탈" 표(끝난 웨이브별 판 수·비율·기기 수, 이탈 CSV)로만 봅니다. 기본값은 환경 변수 `STATS_MIN_WAVE`(기본 5), 관리 페이지 "최소 웨이브" 칸이나 API `min_wave`로 그때그때 바꿀 수 있습니다(0이면 모든 판). 웨이브 분포 표는 모든 판.
 - **패치**: JSON을 붙여 넣고 올리면 서버가 서명해서 배포. 켜기·끄기, 게임 버전 범위, "새 시즌 시작".
-- **새 버전**: 플랫폼별 최신 버전과 받는 곳 URL. 게임이 시작 화면에 "새 버전 받기" 버튼을 띄움. Windows는 게임 안 업데이트(아래).
+- **새 버전**: 플랫폼별 최신 버전과 배포 URL. 설치 버전보다 높으면 시작 화면에 [업데이트] 버튼을 띄움. Windows·macOS는 게임 안 업데이트(아래), 나머지는 배포 페이지로 이동.
 - **판 기록**: 검증에 걸린 기록 보기, 리더보드에서 빼기, 기기 차단.
 
 ## 빌드 내려받기 (새 버전 알림)
 
 `server/downloads/`에 빌드 파일을 넣으면 `https://도메인/download/파일이름`으로 받을 수 있습니다.
-이름은 `Bindu-windows.zip`, `Bindu-macos.zip`으로 고정해 두고 새 빌드마다 덮어쓰면 됩니다.
+자동 업데이트용 파일은 버전별 경로로 보관하세요. 같은 URL의 파일을 덮어쓰면 등록된 해시와 달라질 수 있습니다.
 관리 페이지 "새 버전" 탭에 플랫폼별 버전과 주소를 적습니다:
 
 | 플랫폼 | 주소 |
 |---|---|
-| windows | `https://bindu.anon-chat.kr/download/Bindu-windows.zip` |
-| macos | `https://bindu.anon-chat.kr/download/Bindu-macos.zip` |
+| windows | `https://github.com/lenope1214/Bindu/releases/download/vX.Y.Z/Bindu-windows.zip` |
+| macos | `https://github.com/lenope1214/Bindu/releases/download/vX.Y.Z/Bindu-macos.zip` |
 | android | `https://play.google.com/store/apps/details?id=kr.chat.anon.bindu` |
-| ios | App Store 등록 후 앱 페이지 주소 |
+| ios | App Store 앱 페이지 또는 `https://testflight.apple.com/join/초대코드` |
 
-### Windows 게임 안 업데이트
+### Windows·macOS 게임 안 업데이트
 
-`PUT /admin/releases/windows`에 `sha256`을 안 주면 서버가 그 URL의 zip을 받아 해시·크기를 계산해 저장합니다(못 받으면 422, 이전 값 그대로).
+`PUT /admin/releases/windows` 또는 `/admin/releases/macos`에 `sha256`을 안 주면 서버가 그 URL의 zip을 받아 해시·크기를 계산해 저장합니다(못 받으면 422, 이전 값 그대로).
 `/v1/boot`는 `latest`에 `sha256`·`size`·`sig`(패치와 같은 키로 `bindu-release|플랫폼|버전|URL|해시|크기`에 서명)를 붙이고,
-게임(scripts/updater.gd)은 서명이 맞을 때만 [업데이트] 버튼을 띄워 zip을 받고 해시를 확인한 뒤 안의 exe로 바꿔 끼웁니다.
+게임(scripts/updater.gd)은 서명이 맞을 때만 앱 안 업데이트를 실행합니다. ZIP 해시·크기를 확인한 뒤 Windows는 EXE를, macOS는 검증한 `.app` 전체를 교체합니다.
 
 - URL은 **버전이 든 주소**(`https://github.com/lenope1214/Bindu/releases/download/vX.Y.Z/Bindu-windows.zip`)를 쓰세요. `latest/download`나 `/download/` 덮어쓰기 주소는 서버 등록 전에 파일이 먼저 바뀌면 해시가 안 맞아 업데이트가 실패합니다(게임은 원래 버전 그대로 두고 [직접 받기]로 바꿈).
 - `url`을 비우면 지난번 주소를 그대로 쓰고 해시는 다시 계산합니다. zip을 새로 올렸으면 버전을 그대로 두고 다시 PUT하면 해시가 갱신됩니다.
 - 서명 호환 점검: `godot --headless --path . -s tools/update_check.gd -- 공개키.pem 서명 zip 해시 크기`
+- 실패하면 기존 앱을 유지하고 [업데이트]를 다시 눌러 같은 릴리스를 재시도합니다. 새 버전 번호·변경 내용은 버튼 툴팁과 패치노트에 표시합니다.
+- 다운로드 폴더 등 **현재 사용자에게 쓰기 권한이 있는 폴더**에서 실행하세요. `Program Files`처럼 쓰기 권한이 없는 위치에서는 자동 교체할 수 없습니다.
+
+### 플랫폼별 범위
+
+- Windows: 현재 단일 EXE 빌드에서 다운로드·서명/해시 검증·교체·재실행 지원. 최신 버전이면 버튼을 숨깁니다. 서버가 버전·URL만 반환하거나 별도 PCK 빌드이면 배포 페이지로 이동합니다.
+- macOS: `build_macos.command`로 만든 독립 배포 `.app`은 [업데이트]로 다운로드·검증·전체 앱 교체·재시작합니다. Sparkle 없이 내장 보조 프로그램을 사용합니다. 코드 서명과 기존 Developer ID Team ID를 검증하고 새 앱의 시작 확인이 없으면 이전 앱으로 복구합니다. 쓰기 가능한 설치 폴더가 필요하며 DMG·App Translocation에서는 앱을 설치 폴더로 옮겨야 합니다. 개발용 `run_mac.command`는 기존의 main 소스 실행 방식을 유지합니다.
+- Android: 현재 [업데이트]는 Google Play 앱 페이지를 엽니다. 앱 내부 설치 흐름까지 제공하려면 [Google Play In-App Updates](https://developer.android.com/guide/playcore/in-app-updates)를 Godot Android 플러그인으로 연동해야 합니다. 직접 설치 APK는 별도의 패키지 설치 흐름과 사용자 승인이 필요합니다.
+- iOS: 현재 [업데이트]는 App Store 또는 TestFlight로 이동합니다. 일반 App Store 배포 앱의 실행 파일·기능 코드를 자체 서버에서 받아 바꾸는 방식은 [Apple 심사 지침 2.5.2](https://developer.apple.com/app-store/review/guidelines/#software-requirements)에 맞지 않습니다. 사용자가 앱을 삭제할 필요 없이 App Store/TestFlight에서 업데이트합니다.
+
+릴리스는 실제 설치 가능한 파일/스토어 버전이 준비된 뒤 해당 플랫폼에 등록하세요. 앱 버전은 새 릴리스보다 낮아야 알림이 나옵니다. TestFlight 설치 빌드 번호만 바뀌고 Godot `application/config/version`이 같으면 현재 비교 방식에서는 버튼이 나타나지 않습니다.
 
 ## 패치 JSON
 
@@ -207,3 +218,20 @@ pytest -q
 계정·진행 맞추기(로컬 서버 + 두 기기): `AUTH_TEST_PROVIDER=1`로 uvicorn을 띄우고, `SERVER_URL`을 그 주소로 바꾼 사본 두 개(config/name이 달라야 user:// 폴더가 다름)에서 `tools/sync_check.gd`를 `a1` → `b` → `a2` 순서로 (창이 있어야 Net이 켜져서 xvfb-run). 자세한 건 스크립트 머리말.
 
 백업: `docker compose exec db pg_dump -U bindu bindu > backup.sql`, 그리고 `server/keys/`.
+
+### macOS 빌드와 릴리스 등록
+
+```sh
+./build_macos.command                         # ad-hoc 서명 로컬 QA 빌드
+MACOS_SIGN_IDENTITY='Developer ID Application: ...' MACOS_NOTARY_PROFILE=bindu ./build_macos.command
+```
+
+Xcode 명령행 도구와 빌드용 libarchive 헤더(`brew install libarchive`)가 필요합니다. 실행 사용자에게는 추가 설치가 필요 없고 macOS의 시스템 libarchive를 사용합니다.
+결과는 `build/macos/Bindu.app`, `build/macos/Bindu-macos.zip`. helper와 앱은 Intel·Apple Silicon 공용입니다. 기본 ad-hoc 서명 빌드는 Developer ID 서명·공증한 일반 배포본과 구분하세요. `MACOS_NOTARY_PROFILE`은 미리 설정한 notarytool 키체인 프로필 이름입니다. 개인키·비밀번호를 저장소에 넣지 않습니다.
+
+1. 코드·`application/config/version`을 확정해 빌드하고 실제 업데이트 검사를 마칩니다.
+2. 서명·공증 완료 ZIP을 **버전별 변경 불가 URL**로 올립니다.
+3. 관리 페이지에서 플랫폼 `macos`, 버전·URL을 등록합니다. 이 서버 변경이 배포되면 ZIP 해시·크기를 자동 계산합니다. 기존 서버에도 `sha256`·`size`를 명시해서 PUT하면 공용 릴리스 서명이 생성됩니다.
+4. 구버전 시작 화면에서 [업데이트] → 진행률 → 새 버전 자동 시작을 확인합니다.
+
+설치된 앱에 업데이터가 없는 경우 첫 지원 빌드는 직접 설치해야 합니다. macOS App Store·App Sandbox용 업데이트가 아닙니다. 서버 개인키와 게임에 내장된 공개키는 기존 Windows와 동일한 쌍을 유지합니다.
