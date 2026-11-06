@@ -4,6 +4,7 @@ extends BinduFeature
 
 var info_sig: Array = []
 var info_rects: Array = []  # 이번 프레임 info에 그린 배지 [이름, Rect2(UI 좌표)] (화면 배치 점검 tools/ui_check.gd)
+var band_cache := {}  # 소용돌이 진입 띠 [가운데, 안쪽 끝, 바깥 끝] (_spiral_band)
 func _draw_info() -> void:
 	var session: BinduSession = self.session
 	session.tip_rects.clear()
@@ -299,17 +300,16 @@ func _draw_lane_fan(a: float, sp: float, now: float) -> void:
 	const N := 16
 	if Meta.map_id == "spiral":
 		var vr := session.viewport_system.arena().grow(2.0)
-		var mid := PackedVector2Array()
-		for q in session.spawning_system._orb_path(a):
-			if not mid.is_empty() or vr.has_point(q):
-				mid.append(q)
+		var band := _spiral_band(a, sp)
+		var full: PackedVector2Array = band[0]
+		var i0 := 0
+		while i0 < full.size() and not (vr.has_point(full[i0]) or vr.has_point(band[1][i0]) or vr.has_point(band[2][i0])):
+			i0 += 1
+		var mid := full.slice(i0)
+		var lo: PackedVector2Array = band[1].slice(i0)
+		var hi: PackedVector2Array = band[2].slice(i0)
 		if mid.size() < 2:
 			return
-		var lo := PackedVector2Array()
-		var hi := PackedVector2Array()
-		for q in mid:
-			lo.append(c + (q - c).rotated(-sp))
-			hi.append(c + (q - c).rotated(sp))
 		var fade := func(q: Vector2) -> Color: return Color(fill, fill.a * clampf((q.distance_to(c) - 40.0) / 360.0, 0.0, 1.0))
 		for i in range(1, mid.size()):
 			if vr.has_point(lo[i]) or vr.has_point(hi[i]):
@@ -325,10 +325,9 @@ func _draw_lane_fan(a: float, sp: float, now: float) -> void:
 		if rest:
 			for k in 5:
 				var f := fmod(now * 0.25 + k / 5.0, 1.0)
-				var q: Vector2 = mid[mini(int(f * (mid.size() - 1)), mid.size() - 1)]
-				for j in 3:
-					var r := (j - 1) * sp
-					session.draw_circle(c + (q - c).rotated(r), 2.5, Color(col, 0.5 * (1.0 - f)))
+				var qi := mini(int(f * (mid.size() - 1)), mid.size() - 1)
+				for q in [lo[qi], mid[qi], hi[qi]]:
+					session.draw_circle(q, 2.5, Color(col, 0.5 * (1.0 - f)))
 		return
 	var edge := PackedVector2Array()
 	for k in N + 1:
@@ -351,6 +350,79 @@ func _draw_lane_fan(a: float, sp: float, now: float) -> void:
 			for k in 3:
 				var f := fmod(now * 0.25 + k / 3.0 + j * 0.13, 1.0)
 				session.draw_circle(e.lerp(c, f * 0.85), 2.5, Color(col, 0.55 * (1.0 - f)))
+
+
+## 소용돌이 진입 띠: 진입 각도 a ± sp에서 실제로 나온 구체들이 지나가는 범위. [가운데 길, 한쪽 끝, 다른 쪽 끝].
+## 나오는 거리(_spawn_radius)가 각도마다 달라서, 가운데 길을 ±sp 돌리기만 하면 실제 길과 최대 약 14° 어긋났다
+## (회전 방향이 바뀐 뒤 길목 자리에 따라 띠 밖으로 들어옴). 그래서 각도를 여러 개 뽑아 같은 거리에서 벌어진 폭을 잰다.
+func _spiral_band(a: float, sp: float) -> Array:
+	var session: BinduSession = self.session
+	var c := session.viewport_system.center()
+	var sw := MapRule.swirl_sign(session.wave if session.phase == BinduSession.Phase.WAVE else session.wave + 1)
+	var key := "%.4f|%.4f|%d|%.0f|%.0f|%.3f" % [a, sp, int(sw), c.x, c.y, Rules.t("lane_margin")]
+	if band_cache.has(key):
+		return band_cache[key]
+	# 가운데 길은 가장 먼 데서 나오는 구체 거리부터 (모서리 쪽 구체는 가운데보다 바깥에서 나온다). 나선 식으로 그만큼 거슬러 올라간 자리에서 시작.
+	var swa := BinduSession.SPIRAL_SWIRL * sw
+	var r_mid := session.spawning_system._spawn_radius(a)
+	var r_max := r_mid
+	const K := 32
+	var paths: Array[PackedVector2Array] = []
+	for k in K + 1:
+		var ak := a - sp + 2.0 * sp * k / K
+		r_max = maxf(r_max, session.spawning_system._spawn_radius(ak))
+		paths.append(session.spawning_system._orb_path(ak))
+	var p := c + Vector2.from_angle(a + tan(swa) * log(r_max / r_mid)) * r_max
+	var mid := PackedVector2Array([p])
+	for k in 800:
+		var to := c - p
+		if to.length() <= 60.0:
+			break
+		p += to.normalized().rotated(swa) * 4.0
+		if k % 3 == 2:
+			mid.append(p)
+	mid.append(p)
+	mid.append(c)
+	var dmin := PackedFloat32Array()
+	var dmax := PackedFloat32Array()
+	dmin.resize(mid.size())
+	dmax.resize(mid.size())
+	dmin.fill(INF)
+	dmax.fill(-INF)
+	for path in paths:
+		var j := 0
+		for i in mid.size():
+			var q := mid[i] - c
+			var r := q.length()
+			if path.is_empty() or path[0].distance_to(c) < r:
+				continue  # 이 각도 구체는 이 거리보다 안쪽에서 나온다
+			while j + 1 < path.size() and path[j + 1].distance_to(c) > r:
+				j += 1
+			var p0 := path[j] - c
+			var p1 := (path[j + 1] - c) if j + 1 < path.size() else p0
+			var r0 := p0.length()
+			var r1 := p1.length()
+			var t := 0.0 if absf(r0 - r1) < 0.001 else clampf((r0 - r) / (r0 - r1), 0.0, 1.0)
+			var d := angle_difference(q.angle(), p0.lerp(p1, t).angle())
+			dmin[i] = minf(dmin[i], d)
+			dmax[i] = maxf(dmax[i], d)
+	# 구체가 하나도 지나지 않는 바깥 끝은 뺀다
+	var i0 := 0
+	while i0 < mid.size() - 2 and dmin[i0] > dmax[i0]:
+		i0 += 1
+	mid = mid.slice(i0)
+	var lo := PackedVector2Array()
+	var hi := PackedVector2Array()
+	for i in mid.size():
+		var q := mid[i] - c
+		var ok := dmin[i + i0] <= dmax[i + i0]
+		lo.append(c + q.rotated(dmin[i + i0] if ok else 0.0))
+		hi.append(c + q.rotated(dmax[i + i0] if ok else 0.0))
+	if band_cache.size() > 32:
+		band_cache.clear()
+	var out := [mid, lo, hi]
+	band_cache[key] = out
+	return out
 
 
 ## 보스 길 표시 자리 (그림과 진입 배지 비키기가 같은 값을 쓴다). 그릴 게 없으면 빈 사전.

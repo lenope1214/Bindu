@@ -1422,6 +1422,42 @@ func _waves() -> void:
 	var sl: float = main.lane_spread(30)
 	Meta.map_id = "plain"
 	ok("UI-27", inside and widest > sp * 0.9 and is_equal_approx(sp, 0.26) and is_equal_approx(main.lane_spread(25), 0.4) and is_equal_approx(main.lane_spread(40), 0.4) and sc == 0.06 and sl == 0.0, "구체는 진입 부채꼴(±%.2f) 안으로만, 폭 끝까지 옴 (가장 벗어난 %.2f)" % [sp, widest])
+	# 소용돌이 진입 띠: 실제 구체 이동 식으로 띠 안에 들어오는지 (두 회전 방향, 모서리 낀 길목 포함)
+	Meta.map_id = "spiral"
+	main.phase = main.Phase.READY
+	var sv_out := 0.0
+	var vc: Vector2 = main.viewport_system.center()
+	for wv in [3, 6, 31]:
+		main.wave = wv - 1
+		var sps: float = main.lane_spread(wv)
+		var sws: float = BinduSession.SPIRAL_SWIRL * MapRule.swirl_sign(wv)
+		for la in [0.3, 1.0, 2.0, -2.2]:
+			var band: Array = main.field_overlay_system._spiral_band(la, sps)
+			var bm: PackedVector2Array = band[0]
+			for k in 21:
+				var aa: float = la - sps + 2.0 * sps * k / 20.0
+				var p: Vector2 = vc + Vector2.from_angle(aa) * main.spawning_system._spawn_radius(aa)
+				var bi := 0
+				for n in 4000:
+					if p.distance_to(vc) <= 80.0:
+						break
+					p += (vc - p).normalized().rotated(sws) * 2.5 * MapRule.spiral_speed(p.distance_to(vc))
+					if n % 8 != 0 or not main.viewport_system.arena().has_point(p):
+						continue
+					var r := p.distance_to(vc)
+					while bi + 2 < bm.size() and bm[bi + 1].distance_to(vc) > r:
+						bi += 1
+					var r0 := bm[bi].distance_to(vc)
+					var t := clampf((r0 - r) / maxf(r0 - bm[bi + 1].distance_to(vc), 0.001), 0.0, 1.0)
+					var am := (bm[bi] - vc).angle()
+					am += angle_difference(am, (bm[bi + 1] - vc).angle()) * t
+					var lo := lerpf(angle_difference(am, (band[1][bi] - vc).angle()), angle_difference(am, (band[1][bi + 1] - vc).angle()), t)
+					var hi := lerpf(angle_difference(am, (band[2][bi] - vc).angle()), angle_difference(am, (band[2][bi + 1] - vc).angle()), t)
+					var d := angle_difference(am, (p - vc).angle())
+					sv_out = maxf(sv_out, maxf(lo - d, d - hi))
+	Meta.map_id = "plain"
+	main.wave = 10
+	ok("UI-39", sv_out < 0.03, "소용돌이 구체가 진입 띠 밖으로 벗어난 가장 큰 각도 %.1f° (1.7° 미만)" % rad_to_deg(sv_out))
 	ok("WAVE-06", main.resist_share(9) == 0.0 and main.resist_share(10) > 0.0 and main.sturdy_share(12) == 0.0 and main.sturdy_share(13) > 0.0, "저항 구체 10웨이브, 굳센 구체 13웨이브부터")
 
 	var kinds := {}
