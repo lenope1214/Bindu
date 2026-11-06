@@ -129,7 +129,7 @@ const TUNE := {
 	"hp_late_from": 150.0,  # 이 웨이브까지 구체 체력 x hp_growth, 그 뒤는 x hp_growth_late
 	"hp_growth_late": 1.03,  # hp_late_from 웨이브 뒤 웨이브마다 구체 체력 배율
 	"orb_n_cap_w": 150.0,  # 구체 수가 이 웨이브 수(3 + 2 x 웨이브)에서 멈춤, 넘는 몫은 구체 체력으로
-	"orb_spd_cap_w": 450.0,  # 구체 기본 속도(30 + 3 x 웨이브)가 이 웨이브 값에서 멈춤
+	"orb_spd_cap_w": 34.0,  # 구체 기본 속도(30 + 3 x 웨이브)가 이 웨이브 값에서 멈춤 (2026-11-06: 34 = 일반 구체 평균 약 150px/초)
 	# 후반 구체 (2026-10-31 사용자 "100·175·250·350·500웨이브에 하나씩", Orb.late, Main._late_trait)
 	"late_blink_from": 100.0,  # 깜빡 구체가 나오는 웨이브
 	"late_armor_from": 175.0,  # 갑옷 구체가 나오는 웨이브

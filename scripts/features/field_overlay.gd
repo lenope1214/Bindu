@@ -205,7 +205,7 @@ func _boss_eta() -> float:
 	for i in range(1, pts.size()):
 		L += pts[i - 1].distance_to(pts[i])
 	L -= BinduSession.CORE_RADIUS + 30.0  # 보스 반지름만큼 먼저 닿는다
-	return L / (session.boss_plan["spd"] * 0.45 * session.orb_speed_mul * Modes.speed() * session.spawning_system.lane_k(session.boss_plan["a"]))
+	return L / (session.boss_plan["spd"] * Orb.KIND.boss_spd * session.orb_speed_mul * Modes.speed() * session.spawning_system.lane_k(session.boss_plan["a"]))
 
 
 ## 다음 보스 안내 (쉬는 시간에 미리 뽑아 둔 그대로).

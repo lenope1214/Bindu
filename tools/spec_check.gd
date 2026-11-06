@@ -4137,8 +4137,8 @@ func _late_curve() -> void:
 	var g151: float = main.hp_growth(151)
 	var hp_ok := is_equal_approx(g150, pow(1.05, 140)) and is_equal_approx(g151, pow(1.05, 140) * 1.03 * 305.0 / 303.0)
 	var n_ok: bool = main.wave_size(150) == 303 and main.wave_size(400) == 303 and main.wave_size(100) == 203
-	var s_ok: bool = main.orb_base_speed(100) == 330.0 and main.orb_base_speed(450) == 1380.0 and main.orb_base_speed(600) == 1380.0
-	ok("WAVE-12", hp_ok and n_ok and s_ok, "후반 곡선: 체력 150까지 x1.05·뒤 x1.03(+수 상한 몫) %s, 구체 수 303 상한 %s, 속도 450웨이브 값 1380 상한 %s" % [hp_ok, n_ok, s_ok])
+	var s_ok: bool = main.orb_base_speed(20) == 90.0 and main.orb_base_speed(34) == 132.0 and main.orb_base_speed(600) == 132.0
+	ok("WAVE-12", hp_ok and n_ok and s_ok, "후반 곡선: 체력 150까지 x1.05·뒤 x1.03(+수 상한 몫) %s, 구체 수 303 상한 %s, 속도 34웨이브 값 132 상한 %s" % [hp_ok, n_ok, s_ok])
 
 
 ## 새 속성 피·환영 (2026-11-04)

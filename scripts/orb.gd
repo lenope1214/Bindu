@@ -8,7 +8,7 @@ enum Kind { NORMAL, FAST, TANK, BOSS }
 ## 구체 종류별 체력·속도 배율 (일반 구체 대비), 보스가 중앙에 주는 피해. 온라인 패치 rules "Orb.KIND.<이름>"
 static var KIND := {
 	"fast_hp": 0.6,  # 빠른 구체 체력 배율
-	"fast_spd": 1.62,  # 빠른 구체 속도 배율
+	"fast_spd": 1.15,  # 빠른 구체 속도 배율
 	"tank_hp": 2.5,  # 단단한 구체 체력 배율
 	"tank_spd": 0.6,  # 단단한 구체 속도 배율
 	"boss_hp": 12.0,  # 보스 체력 배율 (성난 보스 모드는 더 곱함)
