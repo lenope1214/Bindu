@@ -164,7 +164,7 @@ func _use_skill(id: String, p: Vector2) -> bool:
 ## 기술 버튼: 웨이브 중에만, 다시 쓰기까지 남은 초를 글로.
 func _skill_ui() -> void:
 	var session: BinduSession = self.session
-	var show := session.phase == BinduSession.Phase.WAVE and not session.skill_ids.is_empty() and not session.title_label.visible
+	var show := session.phase == session.Phase.WAVE and not session.skill_ids.is_empty() and not session.title_label.visible
 	for i in session.skill_btns.size():
 		var b: Button = session.skill_btns[i]
 		b.visible = show and i < session.skill_ids.size()
@@ -177,7 +177,9 @@ func _skill_ui() -> void:
 			b.text = txt
 		var col: Color = Skill.COLORS[id]
 		b.modulate = Color(1, 1, 1, 1) if left <= 0.0 else Color(1, 1, 1, 0.55)
-		b.add_theme_color_override("font_color", col if left <= 0.0 else Color(1, 1, 1, 0.8))
+		var fc: Color = col if left <= 0.0 else Color(1, 1, 1, 0.8)
+		if b.get_theme_color("font_color") != fc:  # 같은 값으로 덮어써도 테마가 바뀐 것으로 쳐 매 프레임 다시 그렸다
+			b.add_theme_color_override("font_color", fc)
 		b.tooltip_text = "%s (%d): %s · 다시 쓰기 %d초" % [Skill.NAMES[id], i + 1, Skill.desc(id), roundi(Skill.cd_full(id, session.perks.get("quick", 0)))]
 		var armed := session.skill_arm == id
 		if b.get_meta("armed", false) != armed:

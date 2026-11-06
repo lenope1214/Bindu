@@ -1,0 +1,24 @@
+UIFREQ ready: 프레임 0.19ms (노드 처리 0.31 · 그 밖 -0.12) · UI 다시 그리기 0.0/프레임 · 전장 2.3/프레임 · UI 글 바뀜 0.00/프레임 · 구체 0
+UIFREQ ready draw   59.9/s [전장] main(배경)
+UIFREQ ready draw   59.9/s [전장] Fx · 0.025ms/프레임
+UIFREQ ready draw   16.0/s [전장] Towers/*
+UIFREQ choose: 프레임 0.29ms (노드 처리 0.32 · 그 밖 -0.03) · UI 다시 그리기 0.0/프레임 · 전장 2.3/프레임 · UI 글 바뀜 0.00/프레임 · 구체 0
+UIFREQ choose draw   59.9/s [전장] main(배경)
+UIFREQ choose draw   59.9/s [전장] Fx · 0.029ms/프레임
+UIFREQ choose draw   16.0/s [전장] Towers/*
+UIFREQ wave: 프레임 8.52ms (노드 처리 6.21 · 그 밖 2.31) · UI 다시 그리기 2.3/프레임 · 전장 120.4/프레임 · UI 글 바뀜 0.22/프레임 · 구체 268
+UIFREQ wave draw 5657.9/s [전장] Orbs/*
+UIFREQ wave draw  958.4/s [전장] Towers/*
+UIFREQ wave draw  413.5/s [전장] Projectiles/*
+UIFREQ wave draw   73.1/s [전장] Zones/*
+UIFREQ wave draw   59.9/s [전장] main(배경)
+UIFREQ wave draw   59.9/s [전장] Fx · 0.576ms/프레임
+UIFREQ wave draw   32.0/s CanvasLayer/Control/Float_dps/VBoxContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer [<anonymous lambda>] · 0.001ms/프레임
+UIFREQ wave draw   32.0/s CanvasLayer/Control/Float_dps/VBoxContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer/Control [<anonymous lambda>] · 0.008ms/프레임
+UIFREQ wave draw   23.9/s CanvasLayer/Control/Control [_draw_info] · 0.005ms/프레임
+UIFREQ wave draw   23.8/s CanvasLayer/Control/Control [_draw_hud] · 0.028ms/프레임
+UIFREQ wave draw   12.0/s CanvasLayer/Control/Label
+UIFREQ wave draw    8.0/s CanvasLayer/Control/Float_dps/VBoxContainer/VBoxContainer/ScrollContainer/VBoxContainer
+UIFREQ wave draw    4.0/s CanvasLayer/Control/Float_dps/VBoxContainer/VBoxContainer/ScrollContainer
+UIFREQ wave text   12.9/s CanvasLayer/Control/Label
+UIFREQ wave text    0.1/s CanvasLayer/Control/Float_dps/VBoxContainer/HBoxContainer/Label

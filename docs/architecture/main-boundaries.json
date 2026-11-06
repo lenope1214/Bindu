@@ -529,7 +529,10 @@
     "star_full": "cards",
     "_star_blocked": "cards",
     "_grant_perk": "cards",
-    "_start_btn_layout": "cards"
+    "_start_btn_layout": "cards",
+    "_info_sig": "field_overlay",
+    "_font_size": "hud",
+    "_legacy_card_layout": "frame"
   },
   "state_owners": {
     "star_towers": "combat",
@@ -1279,7 +1282,10 @@
     "star_full": "3b26cc7677e7971a75dd127b5f7f5d5de3f042117a7ffb86a856e6973d12b69b",
     "_star_blocked": "f6ddc94b4967a9bd6c4508e8bee67982cd137c25df661587c8dd864c4794bdd1",
     "_grant_perk": "09d14a6e7abfc9080fee1a8e8d11ee4785dd7cc2b0d5f540fc3c664101edc26c",
-    "_start_btn_layout": "94d06a7b635de48877586568ccb845ee0ababf75536ade86d35f55842d56cf5c"
+    "_start_btn_layout": "94d06a7b635de48877586568ccb845ee0ababf75536ade86d35f55842d56cf5c",
+    "_info_sig": "0686a657327ed6ed2ca3d5975ddd71450098b4e1262628f22c71abbfd8ef5418",
+    "_font_size": "1554f5ff4c9d51c7c7e8d931b83ca7c8261178b4e062c2724afa7bc7bfe7815c",
+    "_legacy_card_layout": "b10321266306d3d243e45437f89519929e3abe98fe23188e5ce5e7ddc3a0f059"
   },
   "reviewed_changes": {
     "_ready": "Scene-owned service signal scope, identical registration order",
@@ -1290,7 +1296,7 @@
     "_show_perks": "Weak session liveness in delayed long press",
     "_mp_kick": "Weak session liveness in delayed kick",
     "_input": "Hide guidance before object GUI hit testing; pointer/touch regression",
-    "_process": "Guide layout preserved; remove separate popup placement",
+    "_process": "Port main UI redraw optimization into feature controllers during main merge",
     "_update_action_guide": "Suppress guidance while hovering or manipulating objects; TUT-03 regression",
     "_build_menu": "Remove obsolete combination popup setting; inspector is the single presentation",
     "_set_card_detail": "Explicit detail button or Z reopens dismissed inspector; UI-32 regression",
@@ -1306,6 +1312,10 @@
     "_continue_run": "Nonblocking lane warning and new direction highlight before card placement; WAVE-14 regression",
     "_mp_ghost_rest": "Nonblocking lane warning and new direction highlight before card placement; WAVE-14 regression",
     "_sim_step": "Share entity tick order with inspector; real versus preview parity matrix",
-    "_update_fx": "Share effect/cooldown lifetime with inspector; parity matrix"
+    "_update_fx": "Share effect/cooldown lifetime with inspector; parity matrix",
+    "_skill_ui": "Port main UI redraw optimization into feature controllers during main merge",
+    "_update_choice_header": "Port main UI redraw optimization into feature controllers during main merge",
+    "_info_sig": "Retain warning invalidation for tower direction/build and new lane markers",
+    "_legacy_card_layout": "Header text updates every frame while active dock exclusively owns geometry"
   }
 }

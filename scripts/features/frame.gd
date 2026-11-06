@@ -86,7 +86,7 @@ func _process(delta: float) -> void:
 		var tw := session.ui_font.get_string_size(session.toast.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x + 12.0
 		var wrap := tw > avail
 		session.toast.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if wrap else TextServer.AUTOWRAP_OFF
-		session.toast.add_theme_font_size_override("font_size", 18 if wrap else 22)  # 접을 때는 조금 작게 (세 줄로 전장 가운데를 덮지 않게)
+		session.hud_system._font_size(session.toast, 18 if wrap else 22)  # 접을 때는 조금 작게 (세 줄로 전장 가운데를 덮지 않게)
 		var w := minf(maxf(tw, 600.0), avail)
 		if not is_equal_approx(session.toast.size.x, w):
 			session.toast.size = Vector2(w, 0.0)
@@ -195,7 +195,10 @@ func _process(delta: float) -> void:
 	session.hud_system._refresh_dps()
 	session.field_view_system._soften_fx()
 	session.queue_redraw()
-	session.info.queue_redraw()
+	var isig := session.field_overlay_system._info_sig()
+	if isig != session.field_overlay_system.info_sig:
+		session.field_overlay_system.info_sig = isig.duplicate(true)
+		session.info.queue_redraw()
 	if session.phase == BinduSession.Phase.MOVE and session.interaction_system.moving and not session.get_tree().paused:
 		session.interaction_system.moving.position = session.interaction_system._pointer_world().clamp(session.combat_system.field_rect().position, session.combat_system.field_rect().end)
 	session.interaction_system._update_press()
@@ -204,72 +207,12 @@ func _process(delta: float) -> void:
 	session.card_detail_btn.visible = session.phase == BinduSession.Phase.CHOOSE and not session.title_label.visible and session.coin_stage == 0 and not session.cards_hidden and not session.perk_mode
 	session.run_flow_system._update_skip_ui()
 	session.cancel_btn.visible = session.phase in [BinduSession.Phase.PLACE, BinduSession.Phase.AIM, BinduSession.Phase.MOVE] and not session.title_label.visible and not session.get_tree().paused
-	if session.speed_btn.visible:
+	if session.speed_btn.visible and session.speed_btn.get_meta("fast", false) != (session.game_speed > 1.0):
+		session.speed_btn.set_meta("fast", session.game_speed > 1.0)
 		session.speed_btn.queue_redraw()
-	# 카드 줄은 오른쪽 설명을 피해 왼쪽으로 비켜 있다. 설명을 숨기면 가운데로, 버튼도 카드 가운데에 맞춘다
-	var cx := 0.0 if session.legend_hidden else -75.0
-	# 카드 4장이 오른쪽 설명 밑으로 들어가면(글자 크게) 쉬는 시간 동안 설명을 접고 가운데로
-	if session.legend.visible and session.phase == BinduSession.Phase.CHOOSE and session.choice_box.get_child_count() > 3 and session.ui_root.size.x / 2.0 + cx + 365.0 > session.legend.position.x - 8.0:
-		session.legend.visible = false
-		cx = 0.0
-	# 글자를 키우면(설정) 카드 줄 오른쪽이 설명 밑으로 들어가던 것: 설명 왼쪽까지 들어가게 왼쪽으로 옮기고, 모자라면 줄인다
-	var room := (session.legend.get_rect().position.x - 8.0) if session.legend.visible else session.ui_root.size.x - 8.0
-	var half := maxf(365.0, session.choice_box.get_combined_minimum_size().x / 2.0)  # 카드 4장은 730보다 넓다
-	var kw := minf((room - 8.0) / (half * 2.0), 1.0)
-	# 새로고침·내리기 버튼은 카드 바로 아래 한 줄에 (카드가 길어지면 버튼이 카드 글을 덮던 것).
-	# 카드+버튼 줄이 왼쪽 아래 안내 글에 닿으면 카드 줄을 위로 올리고, 그래도 모자라면(글자 크게) 0.7배까지 줄인다
-	var mid := session.ui_root.size.y / 2.0
-	var ch := session.choice_box.get_combined_minimum_size().y
-	var lim := session.ui_layout_system._bottom_free() - 6.0
-	var floor_y := (session.hud.position.y + session.hud.size.y + 8.0) if session.hud.visible else 8.0
-	if session.dps_panel.visible and session.ui_root.size.x / 2.0 + cx - 365.0 < 320.0:
-		floor_y += 44.0 + 48.0 + 6.0  # 왼쪽 위 DPS 표(머리 + 2줄, 나머지는 굴려 봄)를 덮지 않게
-	if session.guide_label.visible:
-		floor_y = maxf(floor_y, (session.guide_more.get_rect().end.y if session.guide_more.visible else session.guide_label.get_rect().end.y) + 26.0)  # 처음 안내 글이 카드 글 뒤로 겹치던 것 (고르기 꼬리표 자리 포함)
-	var need := ch + 8.0 + 40.0
-	var k := clampf(minf((lim - floor_y) / need, kw), minf(0.7, kw), 1.0)
-	cx = minf(cx, room - half * k - session.ui_root.size.x / 2.0)
-	cx = maxf(cx, 8.0 + half * k - session.ui_root.size.x / 2.0)
-	session.choice_box.offset_left = cx - half
-	session.choice_box.offset_right = cx + half
-	var ctop := maxf(minf(mid - 90.0, lim - need * k), floor_y)
-	session.choice_box.pivot_offset = Vector2(session.choice_box.size.x / 2.0, 0.0)
-	session.choice_box.scale = Vector2(k, k)
-	session.choice_box.offset_top = ctop - mid
-	session.choice_box.offset_bottom = session.choice_box.offset_top + ch
 	session.field_overlay_system._update_choice_header()
-	var by := session.choice_box.offset_top + ch * k + 8.0
-	# 카드 밑 한 줄 그림 버튼: [새로고침 N] [필드 보기] [넘기기] [×N]. 없는 버튼 자리는 당겨 가운데 맞춘다
-	var row: Array = []
-	for bt in [session.reroll_btn, session.card_detail_btn, session.skip_btn, session.skip_n_btn, session.apply_btn]:
-		if bt.visible:
-			row.append(bt)
-	var bw := {session.reroll_btn: 96.0, session.card_detail_btn: 104.0, session.hide_btn: 76.0, session.skip_btn: 76.0, session.skip_n_btn: 76.0}
-	if session.apply_btn.visible:
-		bw = {session.reroll_btn: 76.0, session.card_detail_btn: 88.0, session.hide_btn: 60.0, session.skip_btn: 60.0, session.skip_n_btn: 60.0}
-		bw[session.apply_btn] = maxf(120.0, session.ui_font.get_string_size(session.apply_btn.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x + 50.0)
-	var rw := -10.0
-	for bt in row:
-		rw += bw[bt] + 10.0
-	var bx := cx - rw / 2.0
-	for bt in row:
-		bt.offset_left = bx
-		bt.offset_right = bx + bw[bt]
-		bt.offset_top = by
-		bt.offset_bottom = by + 40.0
-		bx += bw[bt] + 10.0
-	if session.phase == BinduSession.Phase.READY and session.skip_btn.visible:
-		# 웨이브 시작 대기: [웨이브 시작] 바로 오른쪽에 [넘기기] [×N]
-		var pw: Vector2 = session.skip_btn.get_parent().size
-		var sx := session.start_btn.position.x + session.start_btn.size.x + 10.0 - pw.x / 2.0
-		var sy := session.start_btn.position.y + (session.start_btn.size.y - 40.0) / 2.0 - pw.y / 2.0
-		for bt in [session.skip_btn, session.skip_n_btn]:
-			bt.offset_left = sx
-			bt.offset_right = sx + 76.0
-			bt.offset_top = sy
-			bt.offset_bottom = sy + 40.0
-			sx += 86.0
-	session.cards_system._start_btn_layout()
+	if not session.card_dock.active():
+		_legacy_card_layout()
 	session.abilities_system._skill_ui()
 	session.card_dock.tick()
 	session.restart_armed = maxf(session.restart_armed - delta, 0.0)
@@ -309,3 +252,70 @@ func _process(delta: float) -> void:
 		session.combat_system._sim_step(dt)
 		if session.phase != BinduSession.Phase.WAVE:
 			break
+
+
+func _legacy_card_layout() -> void:
+	var session: BinduSession = self.session
+	# 카드 줄은 오른쪽 설명을 피해 왼쪽으로 비켜 있다. 설명을 숨기면 가운데로, 버튼도 카드 가운데에 맞춘다
+	var cx := 0.0 if session.legend_hidden else -75.0
+	# 카드 4장이 오른쪽 설명 밑으로 들어가면(글자 크게) 쉬는 시간 동안 설명을 접고 가운데로
+	if session.legend.visible and session.phase == BinduSession.Phase.CHOOSE and session.choice_box.get_child_count() > 3 and session.ui_root.size.x / 2.0 + cx + 365.0 > session.legend.position.x - 8.0:
+		session.legend.visible = false
+		cx = 0.0
+	# 글자를 키우면(설정) 카드 줄 오른쪽이 설명 밑으로 들어가던 것: 설명 왼쪽까지 들어가게 왼쪽으로 옮기고, 모자라면 줄인다
+	var room := (session.legend.get_rect().position.x - 8.0) if session.legend.visible else session.ui_root.size.x - 8.0
+	var half := maxf(365.0, session.choice_box.get_combined_minimum_size().x / 2.0)  # 카드 4장은 730보다 넓다
+	var kw := minf((room - 8.0) / (half * 2.0), 1.0)
+	# 새로고침·내리기 버튼은 카드 바로 아래 한 줄에 (카드가 길어지면 버튼이 카드 글을 덮던 것).
+	# 카드+버튼 줄이 왼쪽 아래 안내 글에 닿으면 카드 줄을 위로 올리고, 그래도 모자라면(글자 크게) 0.7배까지 줄인다
+	var mid := session.ui_root.size.y / 2.0
+	var ch := session.choice_box.get_combined_minimum_size().y
+	var lim := session.ui_layout_system._bottom_free() - 6.0
+	var floor_y := (session.hud.position.y + session.hud.size.y + 8.0) if session.hud.visible else 8.0
+	if session.dps_panel.visible and session.ui_root.size.x / 2.0 + cx - 365.0 < 320.0:
+		floor_y += 44.0 + 48.0 + 6.0  # 왼쪽 위 DPS 표(머리 + 2줄, 나머지는 굴려 봄)를 덮지 않게
+	if session.guide_label.visible:
+		floor_y = maxf(floor_y, (session.guide_more.get_rect().end.y if session.guide_more.visible else session.guide_label.get_rect().end.y) + 26.0)  # 처음 안내 글이 카드 글 뒤로 겹치던 것 (고르기 꼬리표 자리 포함)
+	var need := ch + 8.0 + 40.0
+	var k := clampf(minf((lim - floor_y) / need, kw), minf(0.7, kw), 1.0)
+	cx = minf(cx, room - half * k - session.ui_root.size.x / 2.0)
+	cx = maxf(cx, 8.0 + half * k - session.ui_root.size.x / 2.0)
+	session.choice_box.offset_left = cx - half
+	session.choice_box.offset_right = cx + half
+	var ctop := maxf(minf(mid - 90.0, lim - need * k), floor_y)
+	session.choice_box.pivot_offset = Vector2(session.choice_box.size.x / 2.0, 0.0)
+	session.choice_box.scale = Vector2(k, k)
+	session.choice_box.offset_top = ctop - mid
+	session.choice_box.offset_bottom = session.choice_box.offset_top + ch
+	var by := session.choice_box.offset_top + ch * k + 8.0
+	# 카드 밑 한 줄 그림 버튼: [새로고침 N] [필드 보기] [넘기기] [×N]. 없는 버튼 자리는 당겨 가운데 맞춘다
+	var row: Array = []
+	for bt in [session.reroll_btn, session.card_detail_btn, session.skip_btn, session.skip_n_btn, session.apply_btn]:
+		if bt.visible:
+			row.append(bt)
+	var bw := {session.reroll_btn: 96.0, session.card_detail_btn: 104.0, session.hide_btn: 76.0, session.skip_btn: 76.0, session.skip_n_btn: 76.0}
+	if session.apply_btn.visible:
+		bw = {session.reroll_btn: 76.0, session.card_detail_btn: 88.0, session.hide_btn: 60.0, session.skip_btn: 60.0, session.skip_n_btn: 60.0}
+		bw[session.apply_btn] = maxf(120.0, session.ui_font.get_string_size(session.apply_btn.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x + 50.0)
+	var rw := -10.0
+	for bt in row:
+		rw += bw[bt] + 10.0
+	var bx := cx - rw / 2.0
+	for bt in row:
+		bt.offset_left = bx
+		bt.offset_right = bx + bw[bt]
+		bt.offset_top = by
+		bt.offset_bottom = by + 40.0
+		bx += bw[bt] + 10.0
+	if session.phase == BinduSession.Phase.READY and session.skip_btn.visible:
+		# 웨이브 시작 대기: [웨이브 시작] 바로 오른쪽에 [넘기기] [×N]
+		var pw: Vector2 = session.skip_btn.get_parent().size
+		var sx := session.start_btn.position.x + session.start_btn.size.x + 10.0 - pw.x / 2.0
+		var sy := session.start_btn.position.y + (session.start_btn.size.y - 40.0) / 2.0 - pw.y / 2.0
+		for bt in [session.skip_btn, session.skip_n_btn]:
+			bt.offset_left = sx
+			bt.offset_right = sx + 76.0
+			bt.offset_top = sy
+			bt.offset_bottom = sy + 40.0
+			sx += 86.0
+	session.cards_system._start_btn_layout()

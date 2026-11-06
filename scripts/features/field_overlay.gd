@@ -2,6 +2,7 @@ class_name BinduFieldOverlay
 extends BinduFeature
 ## 진입 배지·보스 예고·전장 안내. 예약 콜백은 main의 순서를 따른다.
 
+var info_sig: Array = []
 var info_rects: Array = []  # 이번 프레임 info에 그린 배지 [이름, Rect2(UI 좌표)] (화면 배치 점검 tools/ui_check.gd)
 func _draw_info() -> void:
 	var session: BinduSession = self.session
@@ -466,7 +467,7 @@ func _choice_headroom() -> float:
 
 func _update_choice_header() -> void:
 	var session: BinduSession = self.session
-	session.choice_header.visible = session.phase == BinduSession.Phase.CHOOSE and not session.perk_mode and session.choice_box.visible and not session.cards_hidden \
+	session.choice_header.visible = session.phase == session.Phase.CHOOSE and not session.perk_mode and session.choice_box.visible and not session.cards_hidden \
 		and session.choice_box.get_child_count() > 0 and not session.title_label.visible and not session.get_tree().paused
 	if not session.choice_header.visible:
 		return
@@ -474,8 +475,10 @@ func _update_choice_header() -> void:
 	var first := inv * (session.choice_box.get_child(0) as Control).get_global_rect()
 	var last := inv * (session.choice_box.get_child(session.choice_box.get_child_count() - 1) as Control).get_global_rect()
 	session.choice_remaining.text = "%d장 더 선택 가능" % session.picks_left
-	session.choice_header.size = Vector2(last.end.x - first.position.x, BinduSession.CHOICE_HEADER_H)
-	session.choice_header.position = Vector2(first.position.x, first.position.y - BinduSession.CHOICE_HEADER_H - BinduSession.CHOICE_HEADER_GAP)
+	if session.card_dock.active():
+		return  # 자리는 카드 도크가 정한다 (여기서도 정하면 둘이 매 프레임 번갈아 바꿨다)
+	session.choice_header.size = Vector2(last.end.x - first.position.x, session.CHOICE_HEADER_H)
+	session.choice_header.position = Vector2(first.position.x, first.position.y - session.CHOICE_HEADER_H - session.CHOICE_HEADER_GAP)
 
 
 ## 터치 미리보기의 적용 동작. 위치는 카드 아래 조작 줄에서 함께 정한다.
@@ -508,3 +511,19 @@ func _draw_apply_icon() -> void:
 		Glyph.pat(session.apply_btn, head["pat"], c, 9.0, ink)
 	else:
 		Glyph.kind(session.apply_btn, head["kind"], c, 9.0, ink)
+
+
+func _info_sig() -> Array:
+	var session: BinduSession = self.session
+	if session.card_dim.visible and session.hover_elem >= 0:
+		return [Engine.get_process_frames()]  # 새 반응 고리가 숨쉬듯 움직인다: 매 프레임
+	var tw: Array = []
+	for t in session.towers.get_children():
+		tw.append([t.position, t.dir, t.pattern, t.plv, t.elements.duplicate(), t.mods.duplicate()])
+	# 전장 좌표(카메라·흔들림)는 쉬는 시간 배지만 따라간다: 웨이브 중엔 빼서 맞을 때 흔들려도 다시 그리지 않게
+	var resting := session.phase in [session.Phase.CHOOSE, session.Phase.PLACE, session.Phase.AIM, session.Phase.MOVE, session.Phase.READY]
+	return [session.waves_system.new_angles.duplicate(), session.info.size, session.get_canvas_transform() if resting or session.card_dim.visible else Transform2D(), session.ui_root.get_global_transform(), session.info.get_local_mouse_position(), session.tip_pin, session.touch_ui,
+		session.phase, session.wave, session.title_label.visible, session.get_tree().paused, session.lanes, Meta.map_id, Meta.line_flip, session.perk_mode, session.cards_hidden, session.picks_left,
+		Vary.count(), session.hud_system.hud_sig, session.hud.visible, session.hud.position, session.ui_layout_system._info_blockers(), session.choice_box.visible, session.choice_box.get_global_rect(),
+		session.card_dim.visible, session.choice_header.visible, session.choice_header.get_rect(), tw, session.leak_marks, session.wave_kinds, session.wave_info, session.boss_plan,
+		session.tap_sel, Meta.card_detail, session.card_dock.panel.visible, session.card_dock.panel.position, session.choice_box.get_child_count(), session.guide_label.visible]

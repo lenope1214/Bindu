@@ -590,3 +590,8 @@ func _draw_hud() -> void:
 	var session: BinduSession = self.session
 	for c in session.hud_chips:
 		Icons.chip(session.hud, session.ui_font, c[0], c[1], c[2], c[3], c[4], 17)
+
+
+static func _font_size(c: Control, n: int) -> void:
+	if not c.has_theme_font_size_override("font_size") or c.get_theme_font_size("font_size") != n:
+		c.add_theme_font_size_override("font_size", n)
