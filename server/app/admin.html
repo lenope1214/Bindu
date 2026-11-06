@@ -94,7 +94,7 @@
   <h2>피해 출처 (그 속성·공격방식·강화·반응이 실제로 낸 피해 몫)</h2>
   <p class="dim">화상·중독·반응·협공·전류·울림·분열 파편은 그 자리에서 센 값, 직접 타격 안의 배율(속성 겹침·나무·속사·다중 발사·무리 등) 몫은 추정. 공격방식 몫 = 배율을 다 걷어 낸 기본 피해. 피해 출처를 보내는 버전부터 모인다.</p>
   <div class="tbl" id="t-src"></div>
-  <h2>중앙 피해 (웨이브별: 그 웨이브를 치른 판 중 구체가 중앙에 닿은 판)</h2>
+  <h2>중앙 피해·여유 (웨이브별: 그 웨이브를 치른 판 중 구체가 중앙에 닿은 판, 오른쪽은 여유)</h2>
   <p class="dim" id="leak-note"></p>
   <div class="tbl" id="t-leak"></div>
   <h2>중앙에 닿은 구체 종류</h2><div class="tbl" id="t-leak-kind"></div>
@@ -268,8 +268,10 @@ $("load-stats").onclick = async () => {
   table($("t-final"), d.finals, [["이름", (r, raw) => raw ? r.key : nm(r.key)], ["판", r => r.runs, 1], ["들어 있던 비율", (r, raw) => raw ? r.presence : pct(r.presence), 1], ["", r => r.presence, 0, r => r.presence], ["평균 레벨", r => r.avg_amount, 1], ["오브젝트 몫", (r, raw) => raw ? r.avg_share : pct(r.avg_share), 1], ["평균 웨이브", r => r.avg_wave, 1]]);
   table($("t-src"), d.srcs || [], [["이름", (r, raw) => raw ? r.key : nm(r.key)], ["판", r => r.runs, 1], ["평균 몫 (모든 판)", (r, raw) => raw ? r.avg_share_all : pct(r.avg_share_all), 1], ["", r => r.avg_share_all, 0, r => r.avg_share_all * 4], ["있던 판의 평균 몫", (r, raw) => raw ? r.avg_share : pct(r.avg_share), 1], ["평균 웨이브", r => r.avg_wave, 1]]);
   const lw = d.leak_waves || [];
-  $("leak-note").textContent = `웨이브별 중앙 피해를 보낸 판 ${d.leak_runs || 0}판 기준. 피해는 실드에 막힌 것 포함, 깎인 체력은 실드 뺀 값.`;
-  table($("t-leak"), lw, [["웨이브", r => r.wave, 1], ["판", r => r.runs, 1], ["닿은 판", r => r.hit_runs, 1], ["닿은 판 비율", (r, raw) => raw ? r.hit_rate : pct(r.hit_rate), 1], ["", r => r.hit_rate, 0, r => r.hit_rate], ["평균 닿은 수", r => r.avg_n, 1], ["평균 피해", r => r.avg_dmg, 1], ["평균 깎인 체력", r => r.avg_lost, 1], ["끝 체력 평균", r => r.avg_hp, 1]]);
+  $("leak-note").textContent = `웨이브별 중앙 피해를 보낸 판 ${d.leak_runs || 0}판 기준. 피해는 실드에 막힌 것 포함, 깎인 체력은 실드 뺀 값. 여유 열(걸린 초~동시 최대 구체)은 값을 보낸 판(여유 판)만: 처치까지 초가 늘고 가장 가까운 처치 거리가 줄수록 아슬아슬한 웨이브.`;
+  table($("t-leak"), lw, [["웨이브", r => r.wave, 1], ["판", r => r.runs, 1], ["닿은 판", r => r.hit_runs, 1], ["닿은 판 비율", (r, raw) => raw ? r.hit_rate : pct(r.hit_rate), 1], ["", r => r.hit_rate, 0, r => r.hit_rate], ["평균 닿은 수", r => r.avg_n, 1], ["평균 피해", r => r.avg_dmg, 1], ["평균 깎인 체력", r => r.avg_lost, 1], ["끝 체력 평균", r => r.avg_hp, 1],
+    ["여유 판", r => r.m_runs, 1], ["걸린 초", r => r.m_secs ?? "", 1], ["오브젝트", r => r.m_towers ?? "", 1], ["나온 체력", r => r.m_hp_in ?? "", 1],
+    ["처치까지 초", r => r.m_life ?? "", 1], ["가장 가까운 처치(평균)", r => r.m_close ?? "", 1], ["가장 가까운 처치(최소)", r => r.m_close_min ?? "", 1], ["동시 최대 구체", r => r.m_peak ?? "", 1]]);
   const kn = {normal: "일반", fast: "빠른", tank: "단단한", boss: "보스"};
   table($("t-leak-kind"), d.leak_kinds || [], [["종류", (r, raw) => raw ? r.kind : (kn[r.kind] || r.kind)], ["닿은 수", r => r.n, 1], ["비율", (r, raw) => raw ? r.share : pct(r.share), 1], ["", r => r.share, 0, r => r.share], ["피해 합", r => r.dmg, 1], ["판", r => r.runs, 1]]);
   table($("t-modes"), d.picks.filter(r => r.kind === "mode"), [["모드", (r, raw) => raw ? r.key : nm(r.key)], ["판", r => r.runs_picked, 1], ["평균 웨이브", r => r.avg_wave_picked, 1]]);

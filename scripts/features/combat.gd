@@ -42,6 +42,8 @@ func _sim_step(delta: float) -> void:
 			session.combo_end = [session.combo, session.combo_bonus, 1.5]
 	_resolve(delta)
 	session.spawning_system._jam_tick()
+	if session.wave_stat.has("peak"):
+		session.wave_stat["peak"] = maxi(session.wave_stat["peak"], session.orbs.get_child_count())
 
 	if session.mp_ghost:
 		return  # 협동 참가자: 웨이브 끝·게임 오버는 호스트가 알려 준다
@@ -174,7 +176,14 @@ func _log_wave() -> void:
 		dirs[session.compass(session.lanes[i]) if i >= 0 and i < session.lanes.size() else "?"] = by_lane[i]
 		if i >= 0 and i < session.lanes.size():
 			session.leak_marks.append([session.lanes[i], by_lane[i]])
-	session.leak_log.append({"w": session.wave, "n": session.wave_leaks.size(), "dmg": dmg, "lost": lost, "dirs": dirs, "kinds": kinds, "kdmg": kdmg, "towers": session.towers.get_child_count(), "lanes": session.lanes.size(), "core": session.core_hp})
+	var ws: Dictionary = session.wave_stat
+	var kn: int = ws.get("kn", 0)
+	var dealt := 0.0
+	for t in session.towers.get_children():
+		dealt += t.dealt
+	session.leak_log.append({"w": session.wave, "n": session.wave_leaks.size(), "dmg": dmg, "lost": lost, "dirs": dirs, "kinds": kinds, "kdmg": kdmg, "towers": session.towers.get_child_count(), "lanes": session.lanes.size(), "core": session.core_hp,
+		"secs": snappedf(session.wave_time, 0.1), "hp_in": roundi(ws.get("hp", 0.0)), "dealt": roundi(dealt), "life": snappedf(ws.get("life", 0.0) / kn, 0.01) if kn > 0 else 0.0,
+		"close": roundi(ws.get("close", -1.0)), "peak": int(ws.get("peak", 0))})
 	if session.leak_log.size() > 200:
 		session.leak_log.pop_front()
 
@@ -205,8 +214,29 @@ func _leak_records() -> Array:
 			kinds[BinduSession.LEAK_KIND_KEYS.get(int(k), "other")] = int(e["kinds"][k])
 		for k in e.get("kdmg", {}):
 			kdmg[BinduSession.LEAK_KIND_KEYS.get(int(k), "other")] = int(e["kdmg"][k])
-		out.append({"w": int(e["w"]), "n": int(e["n"]), "dmg": int(e["dmg"]), "lost": int(e.get("lost", e["dmg"])), "hp": int(e.get("core", 0)), "kinds": kinds, "kdmg": kdmg})
+		out.append({"w": int(e["w"]), "n": int(e["n"]), "dmg": int(e["dmg"]), "lost": int(e.get("lost", e["dmg"])), "hp": int(e.get("core", 0)), "kinds": kinds, "kdmg": kdmg,
+			"t": int(e.get("towers", 0)), "secs": float(e.get("secs", 0.0)), "hp_in": int(e.get("hp_in", 0)), "dealt": int(e.get("dealt", 0)),
+			"life": float(e.get("life", 0.0)), "close": int(e.get("close", -1)), "peak": int(e.get("peak", 0))})
 	return out
+
+
+## 웨이브 여유 기록: 새 구체가 나올 때 체력(+실드)을 더한다.
+func stat_in(o: Orb) -> void:
+	var session: BinduSession = self.session
+	if session.wave_stat.has("hp") and not o.ghost:
+		session.wave_stat["hp"] += o.max_hp + o.shield
+
+
+## 처치한 구체: 나와서 죽기까지 걸린 시간, 중앙(목표)에서 가장 가까이 와서 죽은 거리.
+func _stat_kill(o: Orb) -> void:
+	var session: BinduSession = self.session
+	var ws: Dictionary = session.wave_stat
+	if not ws.has("kn"):
+		return
+	ws["kn"] += 1
+	ws["life"] += maxf(session.run_game - o.born, 0.0)
+	var d := o.position.distance_to(o.target)
+	ws["close"] = d if ws["close"] < 0.0 else minf(ws["close"], d)
 
 
 func _alive_count(n: Node) -> int:
@@ -319,6 +349,7 @@ func _resolve(delta: float, preview := false) -> void:
 				session.hud_system._show_toast("보스 처치! 중앙 체력 +2" + ("" if Modes.has("narrow") else ", 새로고침 +1"))
 			session.spawning_system.burst(o.position, o.death_color(), 10 if o.kind != Orb.Kind.BOSS else 40, 180.0)
 			session.kills += 1
+			_stat_kill(o)
 			_charge_on_kill(o)
 			if o.kind == Orb.Kind.BOSS:
 				session.shake = 0.4

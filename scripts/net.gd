@@ -61,7 +61,22 @@ static func same_minor(a: String, b: String) -> bool:
 
 ## 서버 주소가 있으면 패치·새 버전 확인과 리더보드 보기는 된다 (보내는 것이 없음).
 static func reachable() -> bool:
-	return OnlineConfig.SERVER_URL != "" and DisplayServer.get_name() != "headless"
+	return OnlineConfig.SERVER_URL != "" and DisplayServer.get_name() != "headless" and not (is_tool_run() and not _local_url(OnlineConfig.SERVER_URL))
+
+
+## 점검 도구(`godot -s tools/…`, BinduTools 사본)로 켠 게임: 실제 서버에 오류 로그·판 기록을 보내지 않는다 (로컬 시험 서버는 허용).
+static func is_tool_run() -> bool:
+	var ml := Engine.get_main_loop()
+	if ml != null and ml.get_script() != null:
+		return true
+	return str(ProjectSettings.get_setting("application/config/name", "")).begins_with("BinduTools")
+
+
+static func _local_url(url: String) -> bool:
+	for h in ["http://127.0.0.1", "http://localhost", "http://[::1]"]:
+		if url.begins_with(h):
+			return true
+	return false
 
 
 func _ready() -> void:
@@ -98,7 +113,16 @@ func _process(delta: float) -> void:
 func _update_ctx() -> void:
 	var m := get_parent()
 	ErrLog.set_ctx({"map": Meta.map_id, "rules": Meta.rules, "modes": ",".join(Modes.on), "skin": Meta.tower_skin,
-		"wave": int(m.get("wave")) if m and m.get("wave") != null else 0})
+		"wave": int(m.get("wave")) if m and m.get("wave") != null else 0, "ui": _ui_state(m)})
+
+
+## 백트레이스가 없는 오류(엔진이 부른 람다)를 좁히려고 같이 적는 화면 상태: 단계·특성 창·카드 고르는 중·터치·멀티
+static func _ui_state(m: Node) -> String:
+	if m == null or m.get("phase") == null:
+		return ""
+	var picked: Variant = m.get("picked")
+	return "phase=%d perk=%d pick=%d touch=%d mp=%s" % [int(m.get("phase")), int(bool(m.get("perk_mode"))),
+		int(picked is Dictionary and not (picked as Dictionary).is_empty()), int(bool(m.get("touch_ui"))), str(m.get("mp_mode"))]
 
 
 ## 쌓인 오류를 한 번에 보낸다 (기록 보내기를 끄면 안 보냄).
@@ -137,8 +161,17 @@ func _request(method: int, path: String, body := "", headers := PackedStringArra
 	http.queue_free()
 	var data: Variant = null
 	if res[0] == HTTPRequest.RESULT_SUCCESS:
-		data = JSON.parse_string((res[3] as PackedByteArray).get_string_from_utf8())
+		data = _parse_body((res[3] as PackedByteArray).get_string_from_utf8())
 	return {"code": res[1] if res[0] == HTTPRequest.RESULT_SUCCESS else 0, "data": data}
+
+
+## 서버 응답 본문: JSON이 아니면(Cloudflare 오류 페이지·빈 본문) 엔진 오류를 남기지 않고 null.
+static func _parse_body(text: String) -> Variant:
+	var t := text.strip_edges()
+	if not (t.begins_with("{") or t.begins_with("[")):
+		return null
+	var j := JSON.new()
+	return j.data if j.parse(t) == OK else null
 
 
 ## 시작 화면이 뜰 때: 켠 뒤 시간이 지났으면 새 버전·패치를 다시 묻는다 (켜 둔 채 새 버전이 나온 경우).

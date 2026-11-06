@@ -112,6 +112,7 @@ var touch_tip_t := 0.0  # 터치: 누른 뒤 정보창을 보여 줄 남은 시�
 const TOUCH_TIP_SEC := 3.0
 var wave_leaks: Array = []  # 이번 웨이브에 중앙에 닿은 구체 [나온 방향 번호, 종류, 피해, 실제로 깎인 체력(실드에 막히면 0)]
 var leak_log: Array = []  # 웨이브마다 누수 요약 (봇·통계·안내용)
+var wave_stat := {}  # 이번 웨이브 여유 (판 기록 leaks): hp 나온 구체 체력+실드 합, kn 처치 수, life 처치까지 걸린 시간 합, close 가장 가까이서 처치한 거리(-1 없음), peak 동시에 살아 있던 구체 최대 수
 var leak_flash: Array = []  # 화면 가장자리 붉은 번짐 [자리, 남은 시간]
 var boss_plan := {}  # 다음 보스: 쉬는 시간에 진입 각도·체력·속도·저항을 미리 정해 길과 정보를 정확히 보여 준다
 var touch_ui := OS.has_feature("mobile")  # 마지막 입력이 터치였는지 (터치는 마우스를 올려 둘 수 없다). 폰·태블릿은 첫 터치 전 첫 화면부터 터치용 글

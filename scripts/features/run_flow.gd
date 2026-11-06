@@ -346,6 +346,7 @@ func _start_wave() -> void:
 		session.lane_bag.clear()
 	session.wave_leaks.clear()
 	session.leak_marks.clear()
+	session.wave_stat = {"hp": 0.0, "kn": 0, "life": 0.0, "close": -1.0, "peak": 0}
 	session.wave_dmg = 0
 	session.jam_any = false
 	session.skill_cd = {}  # 중앙 기술은 웨이브마다 다시 찬다

@@ -285,7 +285,7 @@ func _ready() -> void:
 	_sw_req.request_completed.connect(func(res: int, code: int, _h, body: PackedByteArray):
 		if res != HTTPRequest.RESULT_SUCCESS or code != 200:
 			return
-		var j: Variant = JSON.parse_string(body.get_string_from_utf8())
+		var j: Variant = Net._parse_body(body.get_string_from_utf8())
 		if j is Dictionary:
 			sw_on = j.get("on", true) != false
 			sw_hide = not sw_on and j.get("hide", false) == true

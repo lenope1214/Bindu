@@ -108,11 +108,14 @@ func _show_perks() -> void:
 			if session.touch_ui and (ev is InputEventScreenTouch or (ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT)):
 				if ev.pressed:
 					perk_press = b
+					# 0.45초 안에 골라 버튼이 지워질 수 있다: 버튼을 직접 잡으면 엔진이 "Lambda capture … freed" 오류를 낸다
+					var bref: WeakRef = weakref(b)
 					session.get_tree().create_timer(0.45).timeout.connect(func():
-						if is_instance_valid(session) and perk_press == b and is_instance_valid(b) and session.perk_mode:
-							perk_peek = b
+						var bb: Button = bref.get_ref()
+						if bb != null and is_instance_valid(session) and perk_press == bb and session.perk_mode:
+							perk_peek = bb
 							session.card_dock.inspected_tower = null
-							session.card_dock.hovered = b)
+							session.card_dock.hovered = bb)
 				else:
 					perk_press = null)
 		b.pressed.connect(func():

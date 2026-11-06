@@ -332,6 +332,17 @@ def test_leaks():
         assert run["wave"] == 6
         # 너무 큰 값은 거부
         assert post_run(c, map="cross", device="dev-leak-dddd", leaks=[{"w": 1, "n": -1}]).status_code == 422
+        # 웨이브 여유: 보낸 판만 평균, 예전 기록(없음)은 빼고, 처치 없는 웨이브(close -1)는 거리 평균에서 뺌
+        m = dict(map="storm", game="0.6.1")
+        post_run(c, device="dev-margin-aaaa", wave=6, leaks=[{"w": 3, "n": 0, "dmg": 0, "lost": 0, "hp": 10, "t": 4, "secs": 20.0, "hp_in": 300,
+                                                              "dealt": 290, "life": 4.0, "close": 100, "peak": 8}], **m)
+        post_run(c, device="dev-margin-bbbb", wave=6, leaks=[{"w": 3, "n": 1, "dmg": 1, "lost": 1, "hp": 9, "t": 2, "secs": 30.0, "hp_in": 500,
+                                                              "dealt": 480, "life": 6.0, "close": -1, "peak": 12}], **m)
+        post_run(c, device="dev-margin-cccc", wave=6, leaks=[{"w": 3, "n": 0, "dmg": 0, "lost": 0, "hp": 10}], **m)
+        st = c.get("/admin/api/stats", params=m, headers=A).json()
+        w3 = {x["wave"]: x for x in st["leak_waves"]}[3]
+        assert w3["runs"] == 3 and w3["m_runs"] == 2 and w3["m_secs"] == 25.0 and w3["m_towers"] == 3.0 and w3["m_hp_in"] == 400
+        assert w3["m_life"] == 5.0 and w3["m_close"] == 100 and w3["m_close_min"] == 100 and w3["m_peak"] == 10.0
 
 
 def test_card_enable_patch():

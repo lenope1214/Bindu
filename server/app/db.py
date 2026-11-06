@@ -140,6 +140,14 @@ class Leak(Base):
     dmg: Mapped[int] = mapped_column(Integer, default=0)  # 구체가 준 피해 (실드에 막힌 것 포함)
     lost: Mapped[int] = mapped_column(Integer, default=0)  # 실제로 깎인 중앙 체력 (all 줄만)
     hp: Mapped[int] = mapped_column(Integer, default=0)  # 웨이브가 끝났을 때 중앙 체력 (all 줄만)
+    # 웨이브 여유 (all 줄만, 0.11.3 다음 버전부터. 예전 기록은 NULL)
+    secs: Mapped[float | None] = mapped_column(Float, nullable=True)  # 웨이브에 걸린 게임 시간
+    towers: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 오브젝트 수
+    hp_in: Mapped[int | None] = mapped_column(BigInteger, nullable=True)  # 나온 구체 체력+실드 합
+    dealt: Mapped[int | None] = mapped_column(BigInteger, nullable=True)  # 오브젝트가 준 피해 합
+    life: Mapped[float | None] = mapped_column(Float, nullable=True)  # 구체가 나와서 처치되기까지 평균 초
+    close: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 중앙(목표)에서 가장 가까이 와서 처치된 거리 px (-1: 처치 없음)
+    peak: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 동시에 살아 있던 구체 최대 수
 
 
 class ClientLog(Base):
@@ -276,9 +284,13 @@ def init_db() -> None:
     # create_all은 이미 있는 표에 열을 더하지 않는다: 나중에 생긴 열은 여기서
     have = {c["name"] for c in inspect(engine).get_columns("releases")}
     have_runs = {c["name"] for c in inspect(engine).get_columns("runs")}
+    have_leaks = {c["name"] for c in inspect(engine).get_columns("leaks")}
     small_score = [t for t in ("runs", "run_saves") if any(c["name"] == "score" and not isinstance(c["type"], BigInteger)
                                                           for c in inspect(engine).get_columns(t))]
     with engine.begin() as con:
+        for col, typ in (("secs", "FLOAT"), ("towers", "INTEGER"), ("hp_in", "BIGINT"), ("dealt", "BIGINT"), ("life", "FLOAT"), ("close", "INTEGER"), ("peak", "INTEGER")):
+            if col not in have_leaks:
+                con.execute(text(f"ALTER TABLE leaks ADD COLUMN \"{col}\" {typ}"))
         if "run_key" not in have_runs:
             con.execute(text("ALTER TABLE runs ADD COLUMN run_key VARCHAR(40) DEFAULT ''"))
             con.execute(text("CREATE INDEX IF NOT EXISTS ix_runs_run_key ON runs (run_key)"))

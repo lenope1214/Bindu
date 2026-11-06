@@ -159,7 +159,7 @@ func _draw_info() -> void:
 			session.tip_rects.append([sr, [["봉인 모드: 이번 판 선택지에 안 나오는 카드", Color(0.8, 0.8, 1.0)], [Vary.sealed_text(), Color(1, 1, 1, 0.9)], ["25·50웨이브에 하나씩 풀려요", Color(1, 1, 1, 0.6)]]])
 	session.cards_system._draw_card_full()
 	# 말풍선: 마우스를 올린 칩·배지 (터치는 누른 것)
-	var m := session.info.get_local_mouse_position()
+	var m := _mouse_local()
 	var hit := -1
 	for i in session.tip_rects.size():
 		if (session.tip_pin == i and session.touch_ui) or (not session.touch_ui and session.tip_rects[i][0].has_point(m)):
@@ -522,8 +522,16 @@ func _info_sig() -> Array:
 		tw.append([t.position, t.dir, t.pattern, t.plv, t.elements.duplicate(), t.mods.duplicate()])
 	# 전장 좌표(카메라·흔들림)는 쉬는 시간 배지만 따라간다: 웨이브 중엔 빼서 맞을 때 흔들려도 다시 그리지 않게
 	var resting := session.phase in [session.Phase.CHOOSE, session.Phase.PLACE, session.Phase.AIM, session.Phase.MOVE, session.Phase.READY]
-	return [session.waves_system.new_angles.duplicate(), session.info.size, session.get_canvas_transform() if resting or session.card_dim.visible else Transform2D(), session.ui_root.get_global_transform(), session.info.get_local_mouse_position(), session.tip_pin, session.touch_ui,
+	return [session.waves_system.new_angles.duplicate(), session.info.size, session.get_canvas_transform() if resting or session.card_dim.visible else Transform2D(), session.ui_root.get_global_transform(), _mouse_local(), session.tip_pin, session.touch_ui,
 		session.phase, session.wave, session.title_label.visible, session.get_tree().paused, session.lanes, Meta.map_id, Meta.line_flip, session.perk_mode, session.cards_hidden, session.picks_left,
 		Vary.count(), session.hud_system.hud_sig, session.hud.visible, session.hud.position, session.ui_layout_system._info_blockers(), session.choice_box.visible, session.choice_box.get_global_rect(),
 		session.card_dim.visible, session.choice_header.visible, session.choice_header.get_rect(), tw, session.leak_marks, session.wave_kinds, session.wave_info, session.boss_plan,
 		session.tap_sel, Meta.card_detail, session.card_dock.panel.visible, session.card_dock.panel.position, session.choice_box.get_child_count(), session.guide_label.visible]
+
+
+## 정보 칸 기준 마우스 위치. 터치 화면·마우스 없는 기기(iOS)는 묻지 않는다: 묻기만 해도 엔진이 "Mouse is not supported" 오류를 남긴다
+func _mouse_local() -> Vector2:
+	var session: BinduSession = self.session
+	if session.touch_ui or not DisplayServer.has_feature(DisplayServer.FEATURE_MOUSE):
+		return Vector2(-100000, -100000)
+	return session.info.get_local_mouse_position()

@@ -1578,19 +1578,30 @@ func _score_core() -> void:
 	# 웨이브별 중앙 피해: 실드에 막힌 것도 닿은 수·피해엔 들어가고 깎인 체력엔 안 들어감, 판 기록(leaks)·이어하기 저장
 	main.leak_log.clear()
 	main.shield = 1
+	# 웨이브 여유: 나온 체력 합·처치까지 시간·가장 가까운 처치 거리·걸린 시간
+	main.wave_stat = {"hp": 0.0, "kn": 0, "life": 0.0, "close": -1.0, "peak": 4}
+	main.wave_time = 12.34
+	var so := _orb(main.viewport_system.center() + Vector2(120, 0), 7.0)
+	so.shield = 3.0
+	main.combat_system.stat_in(so)
+	so.born = main.run_game - 2.0
+	main.combat_system._stat_kill(so)
+	so.queue_free()
 	_orb(main.viewport_system.center(), 5.0, Orb.Kind.FAST)
 	main.combat_system._resolve(1.0 / 60.0)
 	main.combat_system._log_wave()
 	var recs: Array = main.combat_system._leak_records()
 	var lr: Dictionary = recs[-1] if recs.size() == 1 else {}
 	var lk_ok: bool = lr.get("w") == main.wave and lr.get("n") == 3 and lr.get("dmg") == 4 and lr.get("lost") == 3 and lr.get("hp") == 7 \
-		and lr.get("kinds") == {"normal": 1, "boss": 1, "fast": 1} and lr.get("kdmg", {}).get("boss") == 2
+		and lr.get("kinds") == {"normal": 1, "boss": 1, "fast": 1} and lr.get("kdmg", {}).get("boss") == 2 \
+		and is_equal_approx(lr.get("secs", 0.0), 12.3) and lr.get("hp_in") == 10 and lr.get("close") == 120 and is_equal_approx(lr.get("life", 0.0), 2.0) \
+		and lr.get("peak") == 4 and lr.get("t") == main.towers.get_child_count() and lr.has("dealt")
 	main.phase = main.Phase.CHOOSE
 	main.perk_mode = false
 	main.persistence_system._save_run()
 	main.leak_log.clear()
 	main.persistence_system._continue_run()
-	ok("ONLINE-05", lk_ok and JSON.stringify(main.combat_system._leak_records(), "", true) == JSON.stringify(recs, "", true), "웨이브별 중앙 피해 기록(닿은 수·피해·깎인 체력·종류별) → 판 기록 leaks, 이어하기 뒤에도 그대로")
+	ok("ONLINE-05", lk_ok and JSON.stringify(main.combat_system._leak_records(), "", true) == JSON.stringify(recs, "", true), "웨이브별 중앙 피해(닿은 수·피해·깎인 체력·종류별)와 여유(걸린 시간·나온 체력·처치까지 시간·가장 가까운 처치·동시 최대·오브젝트 수·준 피해) → 판 기록 leaks, 이어하기 뒤에도 그대로")
 	main.persistence_system._clear_run()
 	main.shield = 0
 

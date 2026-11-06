@@ -499,11 +499,13 @@ func _on_delete_data(b: Button, nick_edit: LineEdit) -> void:
 		b.set_meta("armed", true)
 		b.text = "한 번 더 누르면 지워요"
 		b.add_theme_color_override("font_color", Color(1, 0.55, 0.5))
+		var bref: WeakRef = weakref(b)  # 4초 안에 설정 창을 닫아 버튼이 지워져도 오류가 안 나게
 		session.get_tree().create_timer(4.0).timeout.connect(func():
-			if is_instance_valid(b) and b.has_meta("armed") and not b.disabled:
-				b.remove_meta("armed")
-				b.text = "내 온라인 데이터 지우기"
-				b.remove_theme_color_override("font_color"))
+			var b2: Button = bref.get_ref()
+			if b2 != null and b2.has_meta("armed") and not b2.disabled:
+				b2.remove_meta("armed")
+				b2.text = "내 온라인 데이터 지우기"
+				b2.remove_theme_color_override("font_color"))
 		return
 	b.remove_meta("armed")
 	b.disabled = true

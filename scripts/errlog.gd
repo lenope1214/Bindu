@@ -60,7 +60,13 @@ func _log_message(message: String, error: bool) -> void:
 		_add("printerr", message.strip_edges(), "", 0, "", "")
 
 
+## 연결·TLS 실패: 기기 망 문제라 고칠 것이 없고, 보내려다 또 실패하면 같은 오류가 계속 쌓인다
+const NET_FILES := ["core/io/stream_peer_tcp.cpp", "modules/mbedtls/stream_peer_mbedtls.cpp", "core/io/http_client_tcp.cpp"]
+
+
 static func _add(kind: String, msg: String, file: String, line: int, fn: String, bt: String) -> void:
+	if file in NET_FILES:
+		return
 	# 엔진 위치(push_error는 모두 같음)에 스크립트 쪽 첫 줄을 더해 묶는다. 둘 다 없으면 글로
 	var top := _top_frame(bt)
 	var fp := "%s|%s|%d|%s|%s" % [kind, file, line, top, msg.left(200) if top == "" and file == "" else ""]
@@ -73,6 +79,10 @@ static func _add(kind: String, msg: String, file: String, line: int, fn: String,
 			_fresh.append(e)
 	elif _seen.size() < MAX_PER_SESSION:
 		e = _ctx.duplicate()
+		var ui: String = e.get("ui", "")
+		e.erase("ui")
+		if bt == "" and ui != "":
+			bt = "(스크립트 호출 줄 없음: 엔진이 부른 시그널·타이머) 화면 " + ui  # [0]이 없어 지문은 그대로
 		e.merge({"kind": kind, "msg": msg.left(MSG_MAX), "file": file.left(200), "line": line, "fn": fn.left(100),
 			"bt": bt.left(BT_MAX), "n": 1, "sent": 0, "t": int(Time.get_unix_time_from_system())})
 		_seen[fp] = e

@@ -249,6 +249,7 @@ func _spawn_orb(kind := -1, plan := {}) -> void:
 		if o.late == "":
 			_jam_trait(o)
 	session.orbs.add_child(o)
+	session.combat_system.stat_in(o)
 
 
 ## 후반 구체 (100·175·250·350·500웨이브~, Rules late_*). 종류마다 처음 late_share, 10웨이브마다 +late_share_step, 최대 late_share_max.
@@ -430,6 +431,7 @@ func spawn_minion(boss: Orb) -> void:
 	o.resist_e = boss.resist_e
 	o.minion = true
 	session.orbs.add_child(o)
+	session.combat_system.stat_in(o)
 
 
 ## 분열 구체가 터지면 작은 구체 2개.
@@ -446,6 +448,7 @@ func _spawn_child(parent: Orb) -> void:
 	o.resist_e = parent.resist_e
 	o.sturdy = parent.sturdy
 	session.orbs.add_child(o)
+	session.combat_system.stat_in(o)
 
 
 ## 웨이브가 오를수록 빠른 구체(4웨이브~), 단단한 구체(6웨이브~)가 섞인다.

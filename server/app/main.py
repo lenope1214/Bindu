@@ -51,7 +51,7 @@ CARD_ENABLE_KEYS = {f"{kind}.{card}" for kind, cards in {
 
 
 # 자동 배포 확인용: 서버 코드를 고쳐 배포할 때 바꾸면 /health로 새 이미지가 떴는지 밖에서 볼 수 있다
-SERVER_REV = "2026-11-06.1"
+SERVER_REV = "2026-11-06.2"
 
 
 
@@ -147,6 +147,14 @@ class LeakIn(BaseModel):
     hp: int = Field(0, ge=-1000, le=100000)  # 웨이브가 끝났을 때 중앙 체력
     kinds: dict[str, int] = {}  # 구체 종류별 닿은 수 {normal, fast, tank, boss}
     kdmg: dict[str, int] = {}  # 구체 종류별 피해
+    # 웨이브 여유 (0.11.3 다음 버전부터, 없으면 None)
+    t: int | None = Field(None, ge=0, le=10000)  # 오브젝트 수
+    secs: float | None = Field(None, ge=0, le=100000)  # 웨이브에 걸린 게임 시간
+    hp_in: int | None = Field(None, ge=0, le=10**15)  # 나온 구체 체력+실드 합
+    dealt: int | None = Field(None, ge=0, le=10**15)  # 오브젝트가 준 피해 합
+    life: float | None = Field(None, ge=0, le=100000)  # 처치까지 평균 초
+    close: int | None = Field(None, ge=-1, le=100000)  # 가장 가까이 와서 처치된 거리
+    peak: int | None = Field(None, ge=0, le=100000)  # 동시에 살아 있던 구체 최대 수
 
 
 LEAK_KINDS = ("normal", "fast", "tank", "boss")
@@ -254,7 +262,8 @@ async def submit_run(request: Request, x_bindu_mac: str = Header(default=""), au
         if lk.w in seen:  # 같은 웨이브가 두 번 오면 처음 것만
             continue
         seen.add(lk.w)
-        db.add(Leak(run_id=row.id, wave=lk.w, kind="all", n=lk.n, dmg=lk.dmg, lost=lk.lost, hp=lk.hp))
+        db.add(Leak(run_id=row.id, wave=lk.w, kind="all", n=lk.n, dmg=lk.dmg, lost=lk.lost, hp=lk.hp, secs=lk.secs, towers=lk.t,
+                    hp_in=lk.hp_in, dealt=lk.dealt, life=lk.life, close=lk.close, peak=lk.peak))
         for k in LEAK_KINDS:
             if lk.kinds.get(k, 0) > 0:
                 db.add(Leak(run_id=row.id, wave=lk.w, kind=k, n=min(lk.kinds[k], 100000), dmg=max(0, min(lk.kdmg.get(k, 0), 10_000_000))))

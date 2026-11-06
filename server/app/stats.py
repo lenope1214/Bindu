@@ -144,11 +144,19 @@ def leaks(db: Session, where):
     n_runs = db.scalar(select(func.count(distinct(Leak.run_id))).join(Run, Run.id == Leak.run_id).where(where, Leak.kind == "all")) or 0
     hit = func.sum(case((Leak.n > 0, 1), else_=0))
     rows = db.execute(
-        select(Leak.wave, func.count(Leak.id), hit, func.avg(Leak.n), func.avg(Leak.dmg), func.avg(Leak.lost), func.avg(Leak.hp))
+        select(Leak.wave, func.count(Leak.id), hit, func.avg(Leak.n), func.avg(Leak.dmg), func.avg(Leak.lost), func.avg(Leak.hp),
+               func.count(Leak.secs), func.avg(Leak.secs), func.avg(Leak.towers), func.avg(Leak.hp_in), func.avg(Leak.life),
+               func.avg(case((Leak.close >= 0, Leak.close), else_=None)), func.min(case((Leak.close >= 0, Leak.close), else_=None)), func.avg(Leak.peak))
         .join(Run, Run.id == Leak.run_id).where(where, Leak.kind == "all").group_by(Leak.wave).order_by(Leak.wave)).all()
+
+    def r(v, d=2):
+        return round(float(v), d) if v is not None else None
+    # 여유(m_*)는 그 값을 보낸 판(m_runs)만: 걸린 시간·오브젝트 수·나온 체력·처치까지 시간·가장 가까운 처치 거리(평균·최소)·동시 최대 구체
     waves = [{"wave": w, "runs": n, "hit_runs": int(h or 0), "hit_rate": round((h or 0) / n, 4) if n else 0.0,
               "avg_n": round(float(an or 0), 3), "avg_dmg": round(float(ad or 0), 3), "avg_lost": round(float(al or 0), 3),
-              "avg_hp": round(float(hp or 0), 2)} for w, n, h, an, ad, al, hp in rows]
+              "avg_hp": round(float(hp or 0), 2), "m_runs": int(mn or 0), "m_secs": r(ms, 1), "m_towers": r(mt, 1), "m_hp_in": r(mh, 0),
+              "m_life": r(ml), "m_close": r(mc, 0), "m_close_min": r(mcm, 0), "m_peak": r(mp, 1)}
+             for w, n, h, an, ad, al, hp, mn, ms, mt, mh, ml, mc, mcm, mp in rows]
     total_n = sum(x["avg_n"] * x["runs"] for x in waves) or 0
     krows = db.execute(
         select(Leak.kind, func.sum(Leak.n), func.sum(Leak.dmg), func.count(distinct(Leak.run_id)))
