@@ -1448,7 +1448,7 @@ func _waves() -> void:
 	for o in main.orbs.get_children():
 		if o.kind == Orb.Kind.BOSS:
 			boss = o
-	ok("WAVE-08", planned and boss != null and boss.core_dmg == 3, "5웨이브마다 마지막에 보스(중앙 3 피해), 앞 쉬는 시간에 미리 정함")
+	ok("WAVE-08", planned and boss != null and boss.core_dmg == 2, "5웨이브마다 마지막에 보스(중앙 2 피해), 앞 쉬는 시간에 미리 정함")
 	_clear()
 	main.wave_active = false
 	main.phase = main.Phase.CHOOSE
@@ -1564,7 +1564,7 @@ func _score_core() -> void:
 	main.combat_system._resolve(1.0 / 60.0)
 	ok("BOSS-01", main.core_hp == 7 and main.bonus_rerolls == 1, "보스 처치: 중앙 체력 +2, 새로고침 +1")
 
-	# 중앙에 닿으면 체력 -1(보스 -3), 누수 기록
+	# 중앙에 닿으면 체력 -1(보스 -2), 누수 기록
 	_clear()
 	main.core_hp = 10
 	main.wave_leaks.clear()
@@ -1573,7 +1573,7 @@ func _score_core() -> void:
 	var after_n: int = main.core_hp
 	_orb(main.viewport_system.center(), 5.0, Orb.Kind.BOSS)
 	main.combat_system._resolve(1.0 / 60.0)
-	ok("CORE-01", after_n == 9 and main.core_hp == 6 and main.wave_leaks.size() == 2, "구체가 중앙에 닿으면 -1, 보스 -3, 누수 기록")
+	ok("CORE-01", after_n == 9 and main.core_hp == 7 and main.wave_leaks.size() == 2, "구체가 중앙에 닿으면 -1, 보스 -2, 누수 기록")
 
 	# 웨이브별 중앙 피해: 실드에 막힌 것도 닿은 수·피해엔 들어가고 깎인 체력엔 안 들어감, 판 기록(leaks)·이어하기 저장
 	main.leak_log.clear()
@@ -1583,8 +1583,8 @@ func _score_core() -> void:
 	main.combat_system._log_wave()
 	var recs: Array = main.combat_system._leak_records()
 	var lr: Dictionary = recs[-1] if recs.size() == 1 else {}
-	var lk_ok: bool = lr.get("w") == main.wave and lr.get("n") == 3 and lr.get("dmg") == 5 and lr.get("lost") == 4 and lr.get("hp") == 6 \
-		and lr.get("kinds") == {"normal": 1, "boss": 1, "fast": 1} and lr.get("kdmg", {}).get("boss") == 3
+	var lk_ok: bool = lr.get("w") == main.wave and lr.get("n") == 3 and lr.get("dmg") == 4 and lr.get("lost") == 3 and lr.get("hp") == 7 \
+		and lr.get("kinds") == {"normal": 1, "boss": 1, "fast": 1} and lr.get("kdmg", {}).get("boss") == 2
 	main.phase = main.Phase.CHOOSE
 	main.perk_mode = false
 	main.persistence_system._save_run()
@@ -1837,7 +1837,7 @@ func _rules_modes() -> void:
 	Rules.apply(1)
 	var hz2: float = lz.hit_calc()["one"]
 	lz.free()
-	ok("PATCH-03", is_equal_approx(hz1, hz0 * 2.0) and is_equal_approx(hz2, hz0) and is_equal_approx(Orb.KIND.boss_hp, 12.0),
+	ok("PATCH-03", is_equal_approx(hz1, hz0 * 2.0) and is_equal_approx(hz2, hz0) and is_equal_approx(Orb.KIND.boss_hp, 10.0),
 		"게임 코드 수치 패치: Tower.HIT.laser 3.4 → 6.8이면 한 번 피해 %.2f → %.2f, 빼면 %.2f" % [hz0, hz1, hz2])
 
 	Modes.set_on(["rush", "stroll", "bogus", "rush", "fort"])

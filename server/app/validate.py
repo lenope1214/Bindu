@@ -55,7 +55,7 @@ def vtuple(v: str) -> tuple:
 # 게임 코드 수치 패치 키(Rules.CODE, "이름.변수[.칸]")로 바뀌면 점수·처치 상한도 넓혀야 하는 것. 기본값보다 커질 때만 반영
 CODE_KEYS = {
     "Main.CROSS_HP": 5.6, "Main.LINE_HP": 4.8, "Main.LINE_ORBS": 1.6, "Modes.SWARM": MODE_SWARM, "Modes.ANGRY_MINIONS": 2.0,
-    "Orb.KIND.tank_hp": 2.5, "Orb.KIND.boss_hp": 12.0, "Orb.KIND.fast_hp": 0.6, "Main.COMBO_KEEP": 3.0,
+    "Orb.KIND.tank_hp": 2.2, "Orb.KIND.boss_hp": 10.0, "Orb.KIND.fast_hp": 0.6, "Main.COMBO_KEEP": 3.0,
 }
 
 

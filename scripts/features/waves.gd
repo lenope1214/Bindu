@@ -143,7 +143,7 @@ func _update_preview() -> void:
 	if firsts.has(nw):
 		info_l.append(["처음 등장: " + firsts[nw], Color(1, 0.75, 0.75)])
 	if nw % 5 == 0:
-		info_l.insert(0, ["⚠ 보스 웨이브 · 놓치면 중앙 체력 -3", Color(1, 0.35, 0.4)])
+		info_l.insert(0, ["⚠ 보스 웨이브 · 놓치면 중앙 체력 -%d" % int(Orb.KIND.boss_core), Color(1, 0.35, 0.4)])
 		for l in session.field_overlay_system._boss_text().split("\n"):
 			info_l.append([l, Color(1, 0.75, 0.85)])
 	else:

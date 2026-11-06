@@ -9,11 +9,11 @@ enum Kind { NORMAL, FAST, TANK, BOSS }
 static var KIND := {
 	"fast_hp": 0.6,  # 빠른 구체 체력 배율
 	"fast_spd": 1.15,  # 빠른 구체 속도 배율
-	"tank_hp": 2.5,  # 단단한 구체 체력 배율
+	"tank_hp": 2.2,  # 단단한 구체 체력 배율
 	"tank_spd": 0.6,  # 단단한 구체 속도 배율
-	"boss_hp": 12.0,  # 보스 체력 배율 (성난 보스 모드는 더 곱함)
-	"boss_spd": 0.45,  # 보스 속도 배율
-	"boss_core": 3,  # 보스가 중앙에 닿으면 깎는 체력
+	"boss_hp": 10.0,  # 보스 체력 배율 (성난 보스 모드는 더 곱함)
+	"boss_spd": 0.4,  # 보스 속도 배율
+	"boss_core": 2,  # 보스가 중앙에 닿으면 깎는 체력
 }
 static var SLOW_FLOOR := 0.3  # 감속은 최대 70% (보스 50%)
 static var PUSH_BUDGET := 40.0  # 중앙 반대쪽으로 한 번에 밀릴 수 있는 거리 (보스 15)

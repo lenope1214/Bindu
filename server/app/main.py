@@ -51,7 +51,7 @@ CARD_ENABLE_KEYS = {f"{kind}.{card}" for kind, cards in {
 
 
 # 자동 배포 확인용: 서버 코드를 고쳐 배포할 때 바꾸면 /health로 새 이미지가 떴는지 밖에서 볼 수 있다
-SERVER_REV = "2026-11-04.2"
+SERVER_REV = "2026-11-06.1"
 
 
 

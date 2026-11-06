@@ -879,7 +879,7 @@ func _pic_boss() -> void:
 	var k := _ph(5.0)
 	var idx := mini(int(k * 20), 19)
 	_orb(pts[idx].lerp(pts[idx + 1], k * 20 - idx), 18, Color(0.85, 0.3, 0.7))
-	_txt(P(250, 222), "보스: 중앙 3 피해 · 잡으면 체력 +2", 15, Color(1, 0.6, 0.85))
+	_txt(P(250, 222), "보스: 중앙 %d 피해 · 잡으면 체력 +2" % int(Orb.KIND.boss_core), 15, Color(1, 0.6, 0.85))
 
 
 func _pic_perk() -> void:

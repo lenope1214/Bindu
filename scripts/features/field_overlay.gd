@@ -213,14 +213,14 @@ func _boss_text() -> String:
 	var session: BinduSession = self.session
 	if session.boss_plan.is_empty():
 		return "보스 등장! 중앙에 닿으면 체력 3 감소"
-	var sp := PackedStringArray(["보스: 체력 %s" % session.num(ceilf(session.boss_plan["hp"] * 12.0 * Modes.boss_hp()))])
+	var sp := PackedStringArray(["보스: 체력 %s" % session.num(ceilf(session.boss_plan["hp"] * Orb.KIND.boss_hp * Modes.boss_hp()))])
 	if session.boss_plan["resist"] >= 0:
 		sp.append("%s 저항" % Elem.NAMES[session.boss_plan["resist"]])
 	if session.boss_plan["sturdy"]:
 		sp.append("굳셈(밀기·감속·기절·냉기 절반)")
 	sp.append("웨이브 마지막에 나옴")
 	sp.append("%d초마다 빠른 부하 구체를 부름" % roundi(Orb.minion_every(session.boss_plan["wave"])))
-	return " · ".join(sp) + "\n보스 길: 화면의 분홍 선(흐르는 화살). 막지 않으면 나온 뒤 약 %d초에 중앙 (닿으면 체력 -3)" % roundi(_boss_eta())
+	return " · ".join(sp) + "\n보스 길: 화면의 분홍 선(흐르는 화살). 막지 않으면 나온 뒤 약 %d초에 중앙 (닿으면 체력 -%d)" % [roundi(_boss_eta()), int(Orb.KIND.boss_core)]
 
 
 ## 바람 버프 둘레: 늘 그리면 바람 오브젝트마다 큰 원이 겹쳐 어지러워서,

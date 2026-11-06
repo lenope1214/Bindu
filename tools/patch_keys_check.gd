@@ -60,19 +60,19 @@ func _initialize():
 		_ok("기본값 숫자 " + k, false)
 	# 게임 코드 수치 (Rules.CODE): "<이름>.<변수>[.<칸>]"
 	var mg: GDScript = load(Rules.CODE["Main"])
-	Patch.data = {"rules": {"all": {"Tower.HIT.laser": 5.0, "Orb.KIND.boss_hp": 20, "Orb.KIND.boss_core": 2.0, "Tower.CHARGE_MUL.0": 9.0,
+	Patch.data = {"rules": {"all": {"Tower.HIT.laser": 5.0, "Orb.KIND.boss_hp": 20, "Orb.KIND.boss_core": 4.0, "Tower.CHARGE_MUL.0": 9.0,
 		"Main.CORE_MAX_HP": 15.0, "Projectile.PROJ.shot_spd": 600, "Tower.SHAPE.spray_len": 250, "share_fire": 2.0,
 		"Tower.NOPE": 1, "Tower.HIT.nope": 1, "Tower.HIT": 3, "Rules.max_mod": 1}}}
 	Rules.apply(1)
 	_ok("코드 수치: Tower.HIT.laser", is_equal_approx(Tower.HIT.laser, 5.0) and is_equal_approx(Tower.HIT.shot, 2.4))
-	_ok("코드 수치: 정수 칸은 정수 (boss_core 2)", Orb.KIND.boss_core is int and Orb.KIND.boss_core == 2 and is_equal_approx(Orb.KIND.boss_hp, 20.0))
+	_ok("코드 수치: 정수 칸은 정수 (boss_core 4)", Orb.KIND.boss_core is int and Orb.KIND.boss_core == 4 and is_equal_approx(Orb.KIND.boss_hp, 20.0))
 	_ok("코드 수치: 배열 칸 CHARGE_MUL.0", is_equal_approx(Tower.CHARGE_MUL[0], 9.0) and is_equal_approx(Tower.CHARGE_MUL[1], 6.0))
 	_ok("코드 수치: Main.CORE_MAX_HP", mg.get("CORE_MAX_HP") == 15)
 	_ok("코드 수치: 탄 속도·분사 길이", is_equal_approx(Projectile.PROJ.shot_spd, 600.0) and is_equal_approx(Tower.SHAPE.spray_len, 250.0))
 	_ok("특징 세기 share_fire", is_equal_approx(Rules.share_k.get(Elem.FIRE, 0.0), 2.0))
 	Patch.data = {}
 	Rules.apply(1)
-	_ok("코드 수치: 패치 없으면 원래대로", is_equal_approx(Tower.HIT.laser, 3.4) and is_equal_approx(Orb.KIND.boss_hp, 12.0) and Orb.KIND.boss_core == 3
+	_ok("코드 수치: 패치 없으면 원래대로", is_equal_approx(Tower.HIT.laser, 3.4) and is_equal_approx(Orb.KIND.boss_hp, 10.0) and Orb.KIND.boss_core == 2
 		and is_equal_approx(Tower.CHARGE_MUL[0], 5.0) and mg.get("CORE_MAX_HP") == 10 and is_equal_approx(Projectile.PROJ.shot_spd, 440.0) and is_equal_approx(Rules.share_k.get(Elem.FIRE, 1.0), Rules.SHARE["fire"]))
 	_ok("패치 없으면 원래대로", is_equal_approx(Rules.t("spd_shot"), 1.0) and is_equal_approx(Tower.pw(3), 2.0))
 	print("PATCHCHECK %s keys=%d" % ["ok" if fails == 0 else "FAIL", Rules.DEFAULTS.size()])
