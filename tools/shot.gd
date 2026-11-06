@@ -23,34 +23,34 @@ func _initialize():
 		func():
 			Meta.ui_scale = z
 			main.touch_ui = touch
-			main._apply_ui_scale()
+			main.hud_system._apply_ui_scale()
 			# 가장 긴 시작 화면: 이어하기·새 버전 알림·공지까지, 준비 화면(title_prep)은 회랑(좌우 줄)·규칙 3·모드 줄
 			Meta.games = 5
 			Meta.rules = 3
 			Meta.map_id = "line"
-			main._refresh_menu()
+			main.menu_system._refresh_menu()
 			main.continue_info.text = "웨이브 29부터 · 소용돌이 · 랭크"
-			main.continue_btn.custom_minimum_size.x = 3 * main._tile_w() + 32
+			main.continue_btn.custom_minimum_size.x = 3 * main.menu_system._tile_w() + 32
 			main.continue_btn.visible = true
 			main.get_tree().call_group("keycap", "queue_redraw")
 			main.update_btn.text = "새 버전 0.9.9 받기"
 			main.update_btn.visible = true
 			main.notice_label.text = "공지: 시즌 2가 시작됐어요"
 			main.notice_label.visible = true,
-		func(): _snap("title"); main._set_prep(true),
-		func(): _snap("title_prep"); main._set_prep(false); main._toggle_notes(),
-		func(): _snap("notes"); main._toggle_notes(); main._toggle_records(),
+		func(): _snap("title"); main.menu_system._set_prep(true),
+		func(): _snap("title_prep"); main.menu_system._set_prep(false); main.patchlog_system._toggle_notes(),
+		func(): _snap("notes"); main.patchlog_system._toggle_notes(); main.menu_system._toggle_records(),
 		func():
-			_snap("records"); main._toggle_records(); main._toggle_board(),
+			_snap("records"); main.menu_system._toggle_records(); main.leaderboard_system._toggle_board(),
 		func():
 			# 서버 없이 순위 10줄을 채워 본다 (연결 실패가 먼저 온 뒤에 덮어쓴다)
 			var es := []
 			for i in 10:
 				es.append({"rank": i + 1, "nick": "닉네임%d" % i, "wave": 40 - i, "score": 9000000 - i * 1000, "me": i == 3, "ended": i != 1})
-			main._on_board_loaded({"tag": main._board_tag(), "period": "all", "entries": es})
-			main._on_board_loaded({"tag": main._board_tag(), "period": "week", "entries": es.slice(0, 5)}),
-		func(): _snap("board"); main._toggle_board(); main._toggle_settings(),
-		func(): _snap("settings"); main._toggle_settings(); main._toggle_codex(),
+			main.leaderboard_system._on_board_loaded({"tag": main.leaderboard_system._board_tag(), "period": "all", "entries": es})
+			main.leaderboard_system._on_board_loaded({"tag": main.leaderboard_system._board_tag(), "period": "week", "entries": es.slice(0, 5)}),
+		func(): _snap("board"); main.leaderboard_system._toggle_board(); main.menu_system._toggle_settings(),
+		func(): _snap("settings"); main.menu_system._toggle_settings(); main.menu_system._toggle_codex(),
 		func(): _snap("codex"); main.codex_panel.tabs[1].pressed.emit(),
 		func(): _snap("codex_pat"); main.codex_panel.tabs[5].pressed.emit(),
 		func(): _snap("codex_rx"); main.codex_panel.tabs[6].pressed.emit(),
@@ -71,87 +71,87 @@ func _initialize():
 			main.codex_panel.tabs[7].pressed.emit(),
 		func(): _snap("codex_ach"); (main.codex_panel.list.get_parent() as ScrollContainer).scroll_vertical = 100000,
 		func(): _snap("codex_ach_end"); main.codex_panel.tabs[0].pressed.emit(),
-		func(): _snap("codex_elem"); main._toggle_codex(); main._toggle_modes(),
-		func(): _snap("modes"); main.easy_notice.visible = true,
-		func(): _snap("modes_easy"); main.easy_notice.visible = false; main._toggle_modes(); main._open_tut(Tutorial.FIRST, true),
+		func(): _snap("codex_elem"); main.menu_system._toggle_codex(); main.menu_system._toggle_modes(),
+		func(): _snap("modes"); main.menu_system.easy_notice.visible = true,
+		func(): _snap("modes_easy"); main.menu_system.easy_notice.visible = false; main.menu_system._toggle_modes(); main.onboarding_system._open_tut(Tutorial.FIRST, true),
 		# 튜토리얼: 기기 첫 진입(건너뛰기) → 놓기(터치 글이 다름) → 항목 줄의 마지막 장 → 다른 그림 몇 개 → 다시 보기 목록
 		func(): _snap("tut_goal"); main.tut._next(); main.tut._next(); main.tut._next(),
 		func(): _snap("tut_place"); main.tut.qi = 3; main.tut.page = 1; main.tut._refresh(),
-		func(): _snap("tut_react"); main.tut.close(); main._open_tut(["boss", "mp"]); main.tut.page = 2; main.tut._refresh(),
+		func(): _snap("tut_react"); main.tut.close(); main.onboarding_system._open_tut(["boss", "mp"]); main.tut.page = 2; main.tut._refresh(),
 		func(): _snap("tut_coin"); main.tut._next(); main.tut._next(),
-		func(): _snap("tut_coop"); main.tut.close(); main._open_tut(["link"]),
-		func(): _snap("tut_link"); main.tut.close(); main._open_tut_list(),
+		func(): _snap("tut_coop"); main.tut.close(); main.onboarding_system._open_tut(["link"]),
+		func(): _snap("tut_link"); main.tut.close(); main.onboarding_system._open_tut_list(),
 		func(): _snap("tut_list"); main.tut.close(); main.help_label.visible = true,
 		func():
 			_snap("help"); main.help_label.visible = false; main.continue_btn.visible = false
 			main.remote_btn.text = "다른 기기에서 하던 판 이어하기   웨이브 29부터 · 소용돌이"
 			main.remote_btn.visible = true,
-		func(): _snap("title_remote"); main.remote_btn.visible = false; main._close_title(),
+		func(): _snap("title_remote"); main.remote_btn.visible = false; main.progression_system._close_title(),
 		func():
 			for i in 6:
 				main.picked = {"e": Elem.ALL[i], "lv": 2}
-				main._place_tower(main.core() + Vector2.from_angle(i * 1.0) * 160.0, Vector2.RIGHT)
+				main.interaction_system._place_tower(main.viewport_system.core() + Vector2.from_angle(i * 1.0) * 160.0, Vector2.RIGHT)
 			main.wave = 27
 			main.wave_time = 30.0
-			main._skills_new_run(1)
+			main.abilities_system._skills_new_run(1)
 			main.run_id = "shot"
-			main._ley_new_run()
-			main.build_cache = [["elem:wood", 0.34], ["share:electric", 0.18], ["pat:spray", 0.12]]
+			main.abilities_system._ley_new_run()
+			main.hud_system.build_cache = [["elem:wood", 0.34], ["share:electric", 0.18], ["pat:spray", 0.12]]
 			main.offer = [{"type": "elem", "e": Elem.WOOD, "lv": 2}, {"type": "trig", "id": "echo"}, {"type": "link", "id": "pincer"}]
-			main._show_offer()
-			main._open_choose(),
+			main.cards_system._show_offer()
+			main.cards_system._open_choose(),
 		func():
 			_snap("cards")
 			# 폰: 한 번 누른 카드 (미리보기·다른 카드 옅게·[적용])
 			main.touch_ui = true
-			main._on_card_tap(main.offer[0], 0),
+			main.cards_system._on_card_tap(main.offer[0], 0),
 		func():
 			_snap("cards_tap")
 			# 카드 [자세히]: 켠 채 한 번 누른 카드는 위에 모든 내용 창 (마우스는 올리면 같은 창)
-			main._set_card_detail(true),
+			main.cards_system._set_card_detail(true),
 		func():
 			_snap("cards_detail_full")
 			main.tap_sel = -1
-			main._tap_hover(),
+			main.cards_system._tap_hover(),
 		func():
 			_snap("cards_detail")
-			main._set_card_detail(false)
+			main.cards_system._set_card_detail(false)
 			main.touch_ui = touch
 			# 전장 확대 2배 (오른쪽 위 [확대 풀기], 배지·카드·정보는 그대로 화면에)
-			main._set_cards_hidden(true)
-			main._zoom_to(2.0, main.get_viewport_rect().size * Vector2(0.3, 0.5)),
+			main.cards_system._set_cards_hidden(true)
+			main.viewport_system._zoom_to(2.0, main.get_viewport_rect().size * Vector2(0.3, 0.5)),
 		func():
 			_snap("zoom")
-			main._reset_zoom()
-			main._set_cards_hidden(false)
+			main.viewport_system._reset_zoom()
+			main.cards_system._set_cards_hidden(false)
 			main.offer = [{"type": "pat", "id": Pat.PATTERN_IDS[2]}, {"type": "mod", "id": Pat.MOD_IDS[0]}, {"type": "cata", "id": "elem"}]
-			main._show_offer(),
+			main.cards_system._show_offer(),
 		func():
 			_snap("cards2")
 			# 첫 판처럼 처음 안내가 떠 있을 때 (안내 글과 카드 줄이 겹치지 않는지)
 			main.guide_lines.clear()
 			Meta.guide_seen.erase("start")
-			main._guide("start", "빨간 화살표가 구체가 들어오는 길목이에요. 속성 카드를 고른 뒤 길목 쪽 빈 곳을 눌러 놓고, 한 번 더 눌러 쏠 방향을 정하세요"),
+			main.onboarding_system._guide("start", "빨간 화살표가 구체가 들어오는 길목이에요. 속성 카드를 고른 뒤 길목 쪽 빈 곳을 눌러 놓고, 한 번 더 눌러 쏠 방향을 정하세요"),
 		func():
 			_snap("cards_guide")
 			main.guide_lines.clear()
 			main.guide_label.visible = false
-			# 조합 카드: 속성을 합쳐 새 조합이 생긴 오브젝트 옆 그림 카드 (카드 줄·설명을 피한 자리)
+			# 조합을 적용한 오브젝트의 통합 공격 인스펙터
 			_rx_show(1),
 		func():
-			_snap("rx_card")
+			_snap("combination_inspector")
 			_rx_show(2),
 		func():
-			_snap("rx_card_multi")
-			main.rx_card.hide_card()
+			_snap("combination_inspector_multi")
+			main.card_dock.close_inspector()
 			# 강화 카드를 넣는 단계: 넣을 수 있는 오브젝트는 빛나는 고리, 못 넣는 것(관통 연사 ✕ 관통)은 흐리게·이유 글
 			main.towers.get_child(0).set_pattern("thorn")
 			main.towers.get_child(3).set_pattern("thorn")
-			main._on_pick({"type": "mod", "id": "pierce"})
+			main.cards_system._on_pick({"type": "mod", "id": "pierce"})
 			VirtualInput.move(main.towers.get_child(0).get_global_transform_with_canvas().origin),
 		# 넣을 수 있는 오브젝트에 올린 설명 상자 (다른 오브젝트를 가리지 않는 자리)
 		func(): _snap("place_mod"); VirtualInput.move(main.towers.get_child(1).get_global_transform_with_canvas().origin),
-		func(): _snap("place_mod_ok"); main._cancel_step(); main._set_cards_hidden(true),
+		func(): _snap("place_mod_ok"); main.interaction_system._cancel_step(); main.cards_system._set_cards_hidden(true),
 		func():
 			_snap("cards_hidden")
 			# 오브젝트 정보창 (마우스를 올렸을 때, 화면 오른쪽 아래 쪽 오브젝트라 창이 화면 끝에 닿는지)
@@ -162,7 +162,7 @@ func _initialize():
 			# 터치로 방향 바꾸기: 오브젝트 정보창이 손가락 반대편에, 아래에 [자세히]
 			main.touch_ui = true
 			var t: Node2D = main.towers.get_child(1)
-			main._start_move(t)
+			main.interaction_system._start_move(t)
 			VirtualInput.move(t.get_global_transform_with_canvas().origin + Vector2(160, 0)),
 		func(): main.touch_ui = true,  # 마우스를 옮기면(warp) touch_ui가 꺼진다
 		func(): main.tip_detail = true,
@@ -171,18 +171,18 @@ func _initialize():
 			main.tip_detail = false
 			# 터치 조준: 누른 채 끄는 동안 손가락 쪽 범위, 떼면 그 방향 유지 + [확정]
 			var t: Node2D = main.towers.get_child(1)
-			main.aim_hold = true
+			main.interaction_system.aim_hold = true
 			VirtualInput.move(t.get_global_transform_with_canvas().origin + Vector2(-120, -140)),
 		func(): main.touch_ui = true,
-		func(): _snap("aim_touch_hold"); main._aim_release(),
+		func(): _snap("aim_touch_hold"); main.interaction_system._aim_release(),
 		func():
 			_snap("aim_touch_wait")
-			main._cancel_step()
-			main.touch_ui = touch; main._set_cards_hidden(false); main.picks_left = 0; main._enter_ready(),  # 마우스를 옮기면 touch_ui가 꺼진다
+			main.interaction_system._cancel_step()
+			main.touch_ui = touch; main.cards_system._set_cards_hidden(false); main.picks_left = 0; main.cards_system._enter_ready(),  # 마우스를 옮기면 touch_ui가 꺼진다
 		# 카드를 다 고른 뒤: [웨이브 시작] 옆 [넘기기]·[×N]
 		func(): if main.tut and main.tut.visible: main.tut.close(),
-		func(): _snap("ready_skip"); main._on_skip(),
-		func(): _snap("skip_ready"); main._start_wave(),
+		func(): _snap("ready_skip"); main.run_flow_system._on_skip(),
+		func(): _snap("skip_ready"); main.run_flow_system._start_wave(),
 		func():
 			_snap("skip_wave")
 			# 웨이브 중 실시간 DPS 표 (폰은 접어 두고 시작하지만 겹침을 보려고 펼쳐 둔다)
@@ -193,30 +193,30 @@ func _initialize():
 				main.dps_hist[t.get_instance_id()] = [0.0, 40.0 * k]
 				t.dealt = 60.0 * k
 				k *= 1.7
-			main.dps_sig = ""
-			main._arm_skill(1)
-			VirtualInput.move(main.get_global_transform_with_canvas() * (main.core() + Vector2(200, 60))),
+			main.hud_system.dps_sig = ""
+			main.abilities_system._arm_skill(1)
+			VirtualInput.move(main.get_global_transform_with_canvas() * (main.viewport_system.core() + Vector2(200, 60))),
 		func(): _snap("wave_dps"); main.skill_arm = ""; main.dps_hidden = Meta.dps_fold; _orb_tip(),
-		func(): _snap("orb_tip"); main.touch_ui = touch; main.skip_left = 0; VirtualInput.move(Vector2(5, 360)); main._start_perk(),
+		func(): _snap("orb_tip"); main.touch_ui = touch; main.skip_left = 0; VirtualInput.move(Vector2(5, 360)); main.perks_system._start_perk(),
 		func():
 			_snap("perks")
 			# 운명의 동전 연출: 장면마다 멈춰 두고 찍는다 (공중 → 떨어지는 중 → 모서리 → 결과 → 새 특성)
-			main.coin_anim = true
-			main._on_perk(main.PERKS[9])
+			main.perks_system.coin_anim = true
+			main.perks_system._on_perk(main.PERKS[9])
 			main.coin_next = "double"
-			main._process(0.0)  # 숨길 버튼·글을 한 번 정리하고
+			main.frame_system._process(0.0)  # 숨길 버튼·글을 한 번 정리하고
 			main.set_process(false)  # 장면을 멈춰 둔다 (일시정지는 일시정지 창이 떠서 안 씀)
-			main.coin_t = 0.5; main.coin_ang = 0.6; main.coin_fx.queue_redraw(),
+			main.perks_system.coin_t = 0.5; main.perks_system.coin_ang = 0.6; main.coin_fx.queue_redraw(),
 		func():
-			_snap("coin_air"); main._coin_drop()
-			main.coin_t = 0.45; main.coin_ang = main.coin_ang0 + main.coin_spin * 0.72; main.coin_fx.queue_redraw(),
-		func(): _snap("coin_fall"); main.coin_stage = 3; main.coin_t = 0.1; main.coin_fx.queue_redraw(),
-		func(): _snap("coin_edge"); main.set_process(true); main._coin_land(),
+			_snap("coin_air"); main.perks_system._coin_drop()
+			main.perks_system.coin_t = 0.45; main.perks_system.coin_ang = main.perks_system.coin_ang0 + main.perks_system.coin_spin * 0.72; main.coin_fx.queue_redraw(),
+		func(): _snap("coin_fall"); main.coin_stage = 3; main.perks_system.coin_t = 0.1; main.coin_fx.queue_redraw(),
+		func(): _snap("coin_edge"); main.set_process(true); main.perks_system._coin_land(),
 		func(): _snap("coin_land"),
 		func(): pass,
-		func(): _snap("coin_perks"); main._toggle_pause(),
-		func(): _snap("pause"); main._toggle_settings(),
-		func(): _snap("pause_settings"); main._toggle_settings(); main._toggle_pause(); main._game_over(),
+		func(): _snap("coin_perks"); main.run_flow_system._toggle_pause(),
+		func(): _snap("pause"); main.menu_system._toggle_settings(),
+		func(): _snap("pause_settings"); main.menu_system._toggle_settings(); main.run_flow_system._toggle_pause(); main.run_flow_system._game_over(),
 		func(): _snap("gameover"),
 	]
 
@@ -236,14 +236,14 @@ func _rx_show(want: int) -> void:
 				best_e = e
 				best = fr
 	if best_t == null:
-		print("SHOT rx_card 건너뜀: 새 조합이 생기는 오브젝트 없음")
+		print("SHOT combination_inspector 건너뜀: 새 조합이 생기는 오브젝트 없음")
 		return
 	if main.phase in [main.Phase.PLACE, main.Phase.AIM]:
-		main._back_to_choose()  # 넣는 단계에는 카드가 숨으니 고르기로 돌아가 찍는다
+		main.interaction_system._back_to_choose()  # 넣는 단계에는 카드가 숨으니 고르기로 돌아가 찍는다
 	best_t.add(best_e, 1)
-	main.rx_card.show_for(best_t, best)
-	main.rx_card.t = 1.05
-	main._place_rx_card()
+	main.card_dock.inspector_dismissed = false
+	main.interaction_system._select_tower(best_t)
+	main.card_dock._update_side()
 
 
 func _snap(n: String):
@@ -267,7 +267,7 @@ func _process(_d) -> bool:
 ## 상태가 많은 구체에 마우스를 올린다 (구체 정보창이 한 줄로 화면 밖까지 나가지 않는지)
 func _orb_tip() -> void:
 	if main.orbs.get_child_count() == 0:
-		main._spawn_orb(2)  # 단단한 구체
+		main.spawning_system._spawn_orb(2)  # 단단한 구체
 	var o = main.orbs.get_child(0)
 	o.position = main.get_canvas_transform().affine_inverse() * Vector2(760, 440)  # 막 나온 구체는 화면 끝이라 가운데로
 	o.shield = 30.0; o.splits = true; o.burn_t = 2.0; o.poison_t = 2.0; o.vuln_t = 2.0; o.slow_timer = 2.0

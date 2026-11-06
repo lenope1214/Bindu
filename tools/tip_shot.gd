@@ -22,25 +22,25 @@ func _initialize():
 		func():
 			Meta.ui_scale = z
 			main.touch_ui = touch
-			main._apply_ui_scale()
-			main.tut_first = false
+			main.hud_system._apply_ui_scale()
+			main.onboarding_system.tut_first = false
 			Tutorial.loaded = true
 			for tp in Tutorial.TOPICS:
 				Tutorial.seen[tp["id"]] = true
-			main._close_title(),
+			main.progression_system._close_title(),
 		func():
 			if not main.legend_hidden:
-				main._toggle_legend()
-			var c: Vector2 = main.core()
+				main.cards_system._toggle_legend()
+			var c: Vector2 = main.viewport_system.core()
 			# 별 넷이 중앙 둘레에, 바람 하나, 행성(별2·영혼8 혼불) 하나
 			for i in 4:
 				main.picked = {"e": Elem.STAR, "lv": 2}
-				main._place_tower(c + Vector2.from_angle(i * TAU / 4 + 0.5) * 130.0, Vector2.RIGHT)
+				main.interaction_system._place_tower(c + Vector2.from_angle(i * TAU / 4 + 0.5) * 130.0, Vector2.RIGHT)
 				main.towers.get_child(i).add(Elem.FIRE + i, 3)
 			main.picked = {"e": Elem.WIND, "lv": 3}
-			main._place_tower(c + Vector2(-60, 200), Vector2.UP)
+			main.interaction_system._place_tower(c + Vector2(-60, 200), Vector2.UP)
 			main.picked = {"e": Elem.SOUL, "lv": 8}
-			main._place_tower(c + Vector2(90, -150), Vector2.RIGHT)
+			main.interaction_system._place_tower(c + Vector2(90, -150), Vector2.RIGHT)
 			planet = main.towers.get_child(main.towers.get_child_count() - 1)
 			planet.add(Elem.STAR, 2)
 			planet.add(Elem.LIGHT, 2)
@@ -50,9 +50,9 @@ func _initialize():
 			main.wave_time = 30.0
 			for t in main.towers.get_children():
 				t.dealt = 900.0 + 400.0 * t.get_index()
-			main._skills_new_run(1)
-			main._open_choose()
-			main._set_cards_hidden(true),
+			main.abilities_system._skills_new_run(1)
+			main.cards_system._open_choose()
+			main.cards_system._set_cards_hidden(true),
 		func(): _hover(),
 		func(): _touch(),
 		func(): _touch(),  # 마우스를 옮기면(warp) touch_ui가 꺼진다: 다음 프레임에 다시

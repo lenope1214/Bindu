@@ -26,7 +26,7 @@ func _initialize():
 	await process_frame
 	Meta.rules = int(OS.get_environment("RULES")) if OS.get_environment("RULES") != "" else 1
 	Meta.map_id = "spiral"
-	main._apply_rules()
+	main.run_flow_system._apply_rules()
 	secs = float(OS.get_environment("SECS")) if OS.get_environment("SECS") != "" else 20.0
 	var stage := OS.get_environment("STAGE") if OS.get_environment("STAGE") != "" else "mid"
 	var st: Array = STAGES[stage]
@@ -86,7 +86,7 @@ func _clear():
 
 ## 봇 eff_lane과 같은 식: 각도 a에서 나온 구체가 중앙 170 거리를 지날 때의 각도
 func _eff_lane(a: float) -> float:
-	var c = main.center()
+	var c = main.viewport_system.center()
 	var p = c + Vector2(cos(a), sin(a)) * 650
 	while p.distance_to(c) > 170:
 		p += (c - p).normalized().rotated(main.SPIRAL_SWIRL) * 4.0
@@ -105,12 +105,12 @@ func _run(j: Dictionary) -> Dictionary:
 	main.to_spawn = 0
 	main.core_hp = 99999
 	var a0 := -PI / 2.0
-	var c = main.center()
+	var c = main.viewport_system.center()
 	var ld := Vector2.from_angle(_eff_lane(a0))
 	var t = null
 	if not j["els"].is_empty():
 		main.picked = {"e": j["els"][0], "lv": j["lv"]}
-		main._place_tower(c + ld * 100.0, ld)
+		main.interaction_system._place_tower(c + ld * 100.0, ld)
 		t = main.towers.get_child(0)
 		for k in range(1, j["els"].size()):
 			t.add(j["els"][k], j["lv"])
@@ -129,7 +129,7 @@ func _run(j: Dictionary) -> Dictionary:
 		# PPOS: 0 옆(왼) 1 옆(오른) 2 나선 다음 자리(중앙 둘레 0.8라디안 뒤) 3 길목 바깥쪽(중앙에서 160)
 		var pp: Vector2 = [c + ld * 100.0 + ld.orthogonal() * 50.0, c + ld * 100.0 - ld.orthogonal() * 50.0,
 			c + ld.rotated(0.8) * 100.0, c + ld * 160.0][int(OS.get_environment("PPOS"))]
-		main._place_tower(pp, (pp - c).normalized())
+		main.interaction_system._place_tower(pp, (pp - c).normalized())
 		pt = main.towers.get_child(main.towers.get_child_count() - 1)
 		if partner != "shot":
 			pt.set_pattern(partner)
@@ -149,7 +149,7 @@ func _run(j: Dictionary) -> Dictionary:
 			spawn_t = 1.0 / 3.0
 			var o = Orb.new(); o.main = main
 			var a := a0 + spawn_rng.randf_range(-0.12, 0.12)
-			o.position = c + Vector2.from_angle(a) * main._spawn_radius()
+			o.position = c + Vector2.from_angle(a) * main.spawning_system._spawn_radius()
 			o.from_a = a
 			o.target = c
 			o.swirl = main.SPIRAL_SWIRL

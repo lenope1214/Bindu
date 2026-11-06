@@ -18,7 +18,7 @@ func _initialize():
 	await process_frame
 	Meta.rules = int(OS.get_environment("RULES")) if OS.get_environment("RULES") != "" else 1
 	Meta.map_id = "spiral"
-	main._apply_rules()
+	main.run_flow_system._apply_rules()
 	secs = float(_env("SECS", "20"))
 	mode = _env("MODE", "immortal")
 	ospd = float(_env("OSPD", "90"))
@@ -100,10 +100,10 @@ func _run(j: Dictionary) -> Dictionary:
 	_clear()
 	main.wave = wave if mode == "kill" else 20
 	main.phase = main.Phase.WAVE; main.wave_active = true; main.wave_time = 10.0; main.to_spawn = 0
-	var c = main.center()
+	var c = main.viewport_system.center()
 	var ld := Vector2.UP
 	main.picked = {"e": Elem.SOUL, "lv": 3}
-	main._place_tower(c + ld * 100.0, ld)
+	main.interaction_system._place_tower(c + ld * 100.0, ld)
 	var t = main.towers.get_child(0)
 	if j.has("e2"):
 		t.add(j["e2"], 3)
@@ -121,7 +121,7 @@ func _run(j: Dictionary) -> Dictionary:
 		# 연계 짝: 옆(50)에 금속 직선탄 하나. 공명·협공은 혼불 쪽에
 		main.picked = {"e": Elem.METAL, "lv": 3}
 		var pp: Vector2 = c + ld * 100.0 + ld.orthogonal() * 45.0
-		main._place_tower(pp, ld)
+		main.interaction_system._place_tower(pp, ld)
 		var pt = main.towers.get_child(main.towers.get_child_count() - 1)
 		for i in j["ln"]:
 			t.add_link(j["link"])
@@ -140,11 +140,11 @@ func _run(j: Dictionary) -> Dictionary:
 		if spawn_t <= 0 and f < frames - 60 * 6:
 			spawn_t = 0.5 if mode == "immortal" else 0.35
 			if mode == "kill":
-				main._spawn_orb()
+				main.spawning_system._spawn_orb()
 			else:
 				var o = Orb.new(); o.main = main
 				var a := rng.randf_range(0, TAU)
-				o.position = c + Vector2.from_angle(a) * main._spawn_radius()
+				o.position = c + Vector2.from_angle(a) * main.spawning_system._spawn_radius()
 				o.from_a = a; o.target = c; o.swirl = main.SPIRAL_SWIRL
 				o.setup(Orb.Kind.NORMAL, 1000000, ospd)
 				main.orbs.add_child(o)

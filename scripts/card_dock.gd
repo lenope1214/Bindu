@@ -16,6 +16,7 @@ var side: FloatPanel  # 오브젝트·카드 정보창 (공용 떠 있는 창 �
 var inspector_header: HBoxContainer  # 머리 줄의 창별 버튼 칸 (방향 변경·터치 자세히)
 var direction_btn: Button
 var close_btn: Button
+var inspector_dismissed := false  # X로 닫으면 명시적으로 자세히를 다시 켤 때까지 유지
 var dismissed_tower: Tower
 var heading: Label
 var detail: RichTextLabel
@@ -119,7 +120,7 @@ func _init(main) -> void:
 	side.fold_pressed.connect(func():
 		Meta.panel_fold["info"] = not side.folded
 		side.set_folded(not side.folded)
-		game._save_best())
+		game.progression_system._save_best())
 	side.set_folded(Meta.panel_fold.get("info", false))
 	game.ui_root.add_child(side)
 	var content := side.body
@@ -131,11 +132,11 @@ func _init(main) -> void:
 	direction_btn.theme = controls_theme
 	direction_btn.focus_mode = Control.FOCUS_NONE
 	direction_btn.custom_minimum_size = Vector2(88, 36)
-	direction_btn.pressed.connect(game._edit_selected_direction)
+	direction_btn.pressed.connect(game.interaction_system._edit_selected_direction)
 	inspector_header.add_child(direction_btn)
 	close_btn = side.close_btn
 	close_btn.tooltip_text = "상세 닫기 (Esc)"
-	side.close_pressed.connect(close_inspector)
+	side.close_pressed.connect(func(): close_inspector(true))
 	scroll = ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -163,7 +164,7 @@ func _init(main) -> void:
 	focus_btn.theme = controls_theme
 	focus_btn.focus_mode = Control.FOCUS_NONE
 	focus_btn.add_theme_font_size_override("font_size", 14)
-	focus_btn.pressed.connect(game._toggle_focus_view)
+	focus_btn.pressed.connect(game.cards_system._toggle_focus_view)
 	focus_btn.z_index = 10
 	game.ui_root.add_child(focus_btn)
 
@@ -185,16 +186,16 @@ func camera_fit() -> void:
 	fit = minf(board.size.x / Meta.FIELD.x, board.size.y / Meta.FIELD.y)
 	var half: Vector2 = board.size / (fit * game.view_zoom) / 2.0
 	var limits: Vector2 = (half - Meta.FIELD / 2.0).max(Vector2.ZERO)
-	var p: Vector2 = game.center() + game.view_pan
+	var p: Vector2 = game.viewport_system.center() + game.view_pan
 	p = p.clamp(-limits + half, Meta.FIELD + limits - half)
-	game.view_pan = p - game.center()
+	game.view_pan = p - game.viewport_system.center()
 	game.camera.zoom = Vector2.ONE * fit * game.view_zoom
 	game.camera.position = p - (board.get_center() - game.get_viewport_rect().size / 2.0) / (fit * game.view_zoom)
 	game.camera.force_update_scroll()
 
 func world_view() -> Rect2:
 	var size: Vector2 = screen_board().size / maxf(0.01, fit * game.view_zoom)
-	return Rect2(game.center() + game.view_pan - size / 2.0, size)
+	return Rect2(game.viewport_system.center() + game.view_pan - size / 2.0, size)
 
 func over_ui(p: Vector2, include_info := true) -> bool:
 	if not active():
@@ -210,7 +211,7 @@ func over_ui(p: Vector2, include_info := true) -> bool:
 		if hovered_control is BaseButton and hovered_control.mouse_filter != Control.MOUSE_FILTER_IGNORE and hovered_control.is_visible_in_tree() and hovered_control.get_global_rect().has_point(p):
 			return true
 		hovered_control = hovered_control.get_parent() as Control
-	if include_info and ((game.hud.is_visible_in_tree() and game.hud.get_global_rect().has_point(p) and not _tower_under(p)) or game._info_tip_at(p) >= 0):
+	if include_info and ((game.hud.is_visible_in_tree() and game.hud.get_global_rect().has_point(p) and not _tower_under(p)) or game.interaction_system._info_tip_at(p) >= 0):
 		return true
 	var bar_rect := Rect2()
 	for c: Control in game.bar_box.get_children():
@@ -225,10 +226,10 @@ func over_ui(p: Vector2, include_info := true) -> bool:
 
 ## 점수 줄 칩·떠 있는 창(DPS 표·정보창) 밑에 오브젝트가 있으면 오브젝트가 먼저 (누르기·옮기기·방향 바꾸기). 창은 FloatPanel.cover가 마우스도 통과시킨다
 func _tower_under(p: Vector2) -> bool:
-	return game._tower_at(game.get_canvas_transform().affine_inverse() * p) != null
+	return game.interaction_system._tower_at(game.get_canvas_transform().affine_inverse() * p) != null
 
 func carrying() -> bool:
-	return active() and not game.picked.is_empty() and game.moving == null \
+	return active() and not game.picked.is_empty() and game.interaction_system.moving == null \
 		and game.phase in [game.Phase.PLACE, game.Phase.AIM]
 
 func input_blocked(include_pause := true) -> bool:
@@ -281,7 +282,7 @@ func handle_input(event: InputEvent) -> bool:
 			game.touch_ui = true
 			return true
 		if pointer_id >= 0 and event.index != pointer_id:
-			game.touches[pointer_id] = touch_position
+			game.interaction_system.touches[pointer_id] = touch_position
 			clear_gesture()
 			touch_capture = false
 			return false
@@ -306,7 +307,7 @@ func handle_input(event: InputEvent) -> bool:
 				return true
 	if pending_card.is_empty():
 		if suppress_tap and event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			game.call_deferred("_release_card_tap_guard")
+			game.cards_system.call_deferred("_release_card_tap_guard")
 			return true
 		return false
 	var motion: bool = (event is InputEventMouseMotion and pointer_id == -1) \
@@ -316,7 +317,7 @@ func handle_input(event: InputEvent) -> bool:
 	if motion and not card_dragging and pointer.distance_to(press_origin) >= 12.0:
 		card_dragging = true
 		suppress_tap = true
-		game._on_pick(pending_card)
+		game.cards_system._on_pick(pending_card)
 		tick()
 	if released:
 		var dropped := card_dragging
@@ -324,11 +325,11 @@ func handle_input(event: InputEvent) -> bool:
 		var was_touch := pointer_id >= 0
 		clear_gesture()
 		if dropped:
-			game._drop_carried_card(pointer)
+			game.interaction_system._drop_carried_card(pointer)
 		elif was_touch:
-			game._on_card_tap(tapped, game.offer.find(tapped))
+			game.cards_system._on_card_tap(tapped, game.offer.find(tapped))
 		if dropped or was_touch:
-			game.call_deferred("_release_card_tap_guard")
+			game.cards_system.call_deferred("_release_card_tap_guard")
 		return dropped or was_touch
 	return motion and card_dragging
 
@@ -342,13 +343,13 @@ func preview_card() -> Dictionary:
 	return {}
 
 func target_ok(t: Tower, card: Dictionary) -> bool:
-	return (game._mine(t) or (game.mp_mode == "coop" and card.get("type") == "elem" and t.req_e >= 0 and t.req_e == card.get("e", -1))) and t.can_take(card)
+	return (game.multiplayer_system._mine(t) or (game.mp_mode == "coop" and card.get("type") == "elem" and t.req_e >= 0 and t.req_e == card.get("e", -1))) and t.can_take(card)
 
 func watch(b: Button, card: Dictionary) -> void:
 	b.set_meta("offer_card", card)
 	b.mouse_entered.connect(func():
 		if not game.touch_ui:
-			if game.selected.is_empty():
+			if game.interaction_system.selected.is_empty():
 				inspected_tower = null
 			hovered = b)
 	b.gui_input.connect(_card_gui_input.bind(b, card))
@@ -403,7 +404,7 @@ func tick() -> void:
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	if choosing and not game.perk_mode:
-		game._update_reroll_btn()
+		game.cards_system._update_reroll_btn()
 	var x := size.x - 12.0
 	var skip_visible: bool = game.skip_btn.visible and not blocked and (cards or game.phase == game.Phase.READY)
 	game.skip_btn.visible = skip_visible
@@ -423,7 +424,7 @@ func tick() -> void:
 		button.position = Vector2(x, panel.position.y + 8)
 		button.size = Vector2(w, CONTROL_HEIGHT)
 		x -= 8
-	game._update_choice_header()
+	game.field_overlay_system._update_choice_header()
 	game.choice_header.visible = game.choice_header.visible and cards
 	state.visible = cards and not game.choice_header.visible
 	state.text = "특성 선택 · 하나 선택"
@@ -441,7 +442,7 @@ func tick() -> void:
 	game.detail_btn.visible = side.visible and shown_tower != null and game.touch_ui
 	game.start_btn.visible = game.phase == game.Phase.READY and not blocked
 	game.cancel_btn.visible = game.phase in [game.Phase.PLACE, game.Phase.AIM, game.Phase.MOVE] and not blocked
-	game.aim_ok_btn.visible = game._ok_btn_on() and not blocked
+	game.aim_ok_btn.visible = game.interaction_system._ok_btn_on() and not blocked
 	var actions: Array = [game.start_btn, game.cancel_btn, game.aim_ok_btn].filter(func(button): return button.visible)
 	var width := 240.0 if game.start_btn.visible else 144.0
 	var action_y := size.y - (112.0 if game.bar_open else 52.0)
@@ -458,10 +459,10 @@ func tick() -> void:
 	if not blocked and not game.guide_label.visible:
 		var status := operation_text()
 		if status != "":
-			game.hint.text = game._kr_keep(status)
+			game.hint.text = game.patchlog_system._kr_keep(status)
 			_top_left(game.hint)
 			game.hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			game._font_size(game.hint, 14)
+			game.hud_system._font_size(game.hint, 14)
 			if not game.hint.has_theme_stylebox_override("normal"):
 				var box := surface()
 				box.content_margin_top = 6
@@ -476,7 +477,7 @@ func tick() -> void:
 			game.hint.z_index = 2
 			game.hint.show()
 	_place_side(size, cards)
-	game.cancel_btn.text = game._kh("카드 돌려놓기 (Esc)") if carrying() and game.phase == game.Phase.PLACE else game._kh("취소 (Esc)")
+	game.cancel_btn.text = game.ui_layout_system._kh("카드 돌려놓기 (Esc)") if carrying() and game.phase == game.Phase.PLACE else game.ui_layout_system._kh("취소 (Esc)")
 	for i in game.skill_btns.size():
 		var button: Button = game.skill_btns[i]
 		button.z_index = 2
@@ -509,25 +510,25 @@ static func _top_left(c: Control) -> void:
 
 
 func operation_text() -> String:
-	game.selected = game.selected.filter(func(t): return is_instance_valid(t) and not t.is_queued_for_deletion())
+	game.interaction_system.selected = game.interaction_system.selected.filter(func(t): return is_instance_valid(t) and not t.is_queued_for_deletion())
 	var cancel := "아래 버튼으로 취소" if game.touch_ui else "Esc 취소"
-	if game.dragging:
-		return "%d개 이동 중 · %s" % [game.drag_group.size(), "손을 떼어 배치" if game.touch_ui else cancel]
-	if game.boxing:
+	if game.interaction_system.dragging:
+		return "%d개 이동 중 · %s" % [game.interaction_system.drag_group.size(), "손을 떼어 배치" if game.touch_ui else cancel]
+	if game.interaction_system.boxing:
 		return "영역 선택 중 · %s" % ("손을 떼어 선택" if game.touch_ui else cancel)
 	match game.phase:
 		game.Phase.PLACE:
 			return "카드 놓는 중 · %s" % cancel
 		game.Phase.AIM:
-			return ("방향 편집 중" if game.moving else "설치 방향 정하는 중") + " · " + cancel
+			return ("방향 편집 중" if game.interaction_system.moving else "설치 방향 정하는 중") + " · " + cancel
 		game.Phase.MOVE:
 			return "위치 편집 중 · %s" % cancel
 		game.Phase.CHOOSE, game.Phase.READY, game.Phase.WAVE:
-			if not game.selected.is_empty():
+			if not game.interaction_system.selected.is_empty():
 				var again := ""
-				if game.selected.size() == 1 and game.phase != game.Phase.WAVE:
+				if game.interaction_system.selected.size() == 1 and game.phase != game.Phase.WAVE:
 					again = "한 번 더 누르면 방향 · " if game.touch_ui else "한 번 더 클릭·휠: 방향 · "
-				return "오브젝트 %d개 선택 · %s%s" % [game.selected.size(), again, "빈 곳을 눌러 해제" if game.touch_ui else "Esc 해제"]
+				return "오브젝트 %d개 선택 · %s%s" % [game.interaction_system.selected.size(), again, "빈 곳을 눌러 해제" if game.touch_ui else "Esc 해제"]
 	return ""
 
 
@@ -541,12 +542,14 @@ func layout_skip(at: Vector2, height: float) -> void:
 		button.size = Vector2(96 if i == 1 else 108, height)
 
 
-func close_inspector() -> void:
-	dismissed_tower = game._tower_at(game._pointer_world())
-	game.selected.clear()
+func close_inspector(explicit := false) -> void:
+	if explicit:
+		inspector_dismissed = true
+	dismissed_tower = game.interaction_system._tower_at(game.interaction_system._pointer_world())
+	game.interaction_system.selected.clear()
 	game.tap_sel = -1
 	game.hover_elem = -1
-	game._tap_hover()
+	game.cards_system._tap_hover()
 	game.tip_tower = null
 	inspected_tower = null
 	shown_tower = null
@@ -557,15 +560,18 @@ func close_inspector() -> void:
 
 
 func _update_side() -> void:
-	var mouse: Vector2 = game._pointer_screen()
-	var tower: Tower = game._tower_at(game._pointer_world()) if not over_ui(mouse) else null
+	if inspector_dismissed:
+		side.hide()
+		return
+	var mouse: Vector2 = game.interaction_system._pointer_screen()
+	var tower: Tower = game.interaction_system._tower_at(game.interaction_system._pointer_world()) if not over_ui(mouse) else null
 	if tower == dismissed_tower:
 		tower = null
 	else:
 		dismissed_tower = null
 	# 선택은 고정 대상, 전장 호버는 이번 프레임의 임시 대상이다.
 	var selected_tower: Tower = null
-	for candidate in game.selected:
+	for candidate in game.interaction_system.selected:
 		if is_instance_valid(candidate) and not candidate.is_queued_for_deletion() and candidate.get_parent() == game.towers:
 			if selected_tower == null or candidate == inspected_tower:
 				selected_tower = candidate
@@ -585,7 +591,7 @@ func _update_side() -> void:
 	if not card.is_empty():
 		inspected_tower = null
 		has_content = true
-		var cc: Dictionary = game._card_content(card, 0)
+		var cc: Dictionary = game.cards_system._card_content(card, 0)
 		title = cc["head"]["name"]
 		var take := 0
 		var reaction := 0
@@ -595,9 +601,9 @@ func _update_side() -> void:
 			take += 1
 			if card["type"] == "elem" and not Elem.new_reactions(t.eff_now(), card["e"]).is_empty():
 				reaction += 1
-		pic.show_card(card, cc["head"], take, reaction, game._combo_parts(card["e"])["els"] if card["type"] == "elem" else [], _pic_w())
-		var full: Array = game._card_full(card)
-		var fit_name: String = game.core_fit(card)
+		pic.show_card(card, cc["head"], take, reaction, game.waves_system._combo_parts(card["e"])["els"] if card["type"] == "elem" else [], _pic_w())
+		var full: Array = game.cards_system._card_full(card)
+		var fit_name: String = game.hud_system.core_fit(card)
 		if fit_name != "":
 			full.append(["주력 %s 강화" % fit_name, Color.WHITE])
 		if MapRule.card_aff(card):
@@ -631,22 +637,21 @@ func _update_side() -> void:
 			for o: Tower in game.towers.get_children():
 				total += o.dealt
 			var part: float = tower.dealt / total if total > 0.0 and game.towers.get_child_count() > 1 else -1.0
-			var more: bool = game._tip_detail_on()
+			var more: bool = game.field_view_system._tip_detail_on()
 			pic.show_tower(tower, more, part, "이번 웨이브 몫" if game.phase == game.Phase.WAVE else "지난 웨이브 몫", _pic_w())
-			# 그림으로 못 보이는 것만 글로: 자세히일 때 반응 설명 (공격 모양은 미리보기가 보여 준다)
-			if more:
-				for rx in tower.reactions():
-					text += ("\n\n" if text != "" else "") + str(rx["name"]) + ": " + str(rx["desc"])
+			# 조합의 발동 조건은 기본 정보에도 표시한다. 공격 모습은 위의 공용 미리보기에서 보여 준다.
+			for rx in tower.reactions():
+				text += ("\n\n" if text != "" else "") + ("NEW · " if tower.new_reactions.has(rx["id"]) else "") + str(rx["name"]) + ": " + str(rx["desc"])
 	if pic.mode != "" and ((pic.mode == "tower" and shown_tower == null) or (pic.mode == "card" and card.is_empty())):
 		pic.clear()
-	direction_btn.visible = shown_tower != null and game.selected.size() == 1 and shown_tower == game.selected[0] and game._mine(shown_tower) and game.phase in [game.Phase.CHOOSE, game.Phase.READY] and not game.get_tree().paused
+	direction_btn.visible = shown_tower != null and game.interaction_system.selected.size() == 1 and shown_tower == game.interaction_system.selected[0] and game.multiplayer_system._mine(shown_tower) and game.phase in [game.Phase.CHOOSE, game.Phase.READY] and not game.get_tree().paused
 	heading.visible = not (game.touch_ui and pic.mode == "tower")
 	detail.visible = text != ""
 	var sig: String = title + "|" + text + ("|" + str(tower.get_instance_id()) if is_instance_valid(tower) and card.is_empty() else "")
 	side.visible = active() and has_content and (card.is_empty() or Meta.card_detail)
 	if sig != side_signature:
 		heading.text = "오브젝트 정보" if pic.mode == "tower" else ("카드 정보" if pic.mode == "card" else title)
-		detail.text = game._kr_keep(text)
+		detail.text = game.patchlog_system._kr_keep(text)
 		scroll.scroll_vertical = 0
 		side_signature = sig
 
@@ -772,7 +777,7 @@ func draw_card(b: Button, col: Color) -> void:
 	if not game.touch_ui:
 		Glyph.keycap(b, font, Vector2(b.size.x - 8, 8), str(h["idx"]))
 	var summary := summary_text(b)
-	var lines: PackedStringArray = game._wrap_words(game._kr_keep(summary), b.size.x - 28, 14).split("\n")
+	var lines: PackedStringArray = game.onboarding_system._wrap_words(game.patchlog_system._kr_keep(summary), b.size.x - 28, 14).split("\n")
 	var visible_lines := mini(2, lines.size())
 	for i in visible_lines:
 		var line := lines[i]

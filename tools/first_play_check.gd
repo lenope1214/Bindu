@@ -26,7 +26,7 @@ func _initialize():
 	Meta.sim_phone = main.touch_ui
 	if Meta.sim_phone:
 		Meta.sim_safe = Rect2(86, 0, 86, 38)
-	main._apply_ui_scale()
+	main.hud_system._apply_ui_scale()
 	for i in 5:
 		await process_frame
 	ok("TUT-01", main.tut.visible and main.tut.mode == "welcome" and Tutorial.seen.is_empty(), "native fresh device shows one-goal welcome")
@@ -38,48 +38,48 @@ func _initialize():
 	main.tut.btn_next.pressed.emit()
 	ok("TUT-01", TutPlay.pending == 0 and Tutorial.done, "play starts the play tutorial practice run")
 	TutPlay.pending = -1  # 여기서는 첫 일반 판 흐름(TUT-06)을 이어서 본다
-	main._set_prep(true)
-	main._close_title()
+	main.menu_system._set_prep(true)
+	main.progression_system._close_title()
 	main.auto_start = false
 	main.set_process(false)
 	await snap("choose")
-	ok("TUT-06", main.picks_left == 2 and main._first_action_text().contains("하나"), "first choice keeps two picks")
+	ok("TUT-06", main.picks_left == 2 and main.onboarding_system._first_action_text().contains("하나"), "first choice keeps two picks")
 	var card: Dictionary = main.offer[0]
-	main._on_card_tap(card, 0)
+	main.cards_system._on_card_tap(card, 0)
 	ok("TUT-06", main.phase == main.Phase.PLACE and main.picks_left == 2 and not main.choice_box.visible, "first tap holds card without consuming a pick")
 	if main.touch_ui:
 		await snap("preview")
 	await snap("place")
 	main.phase = main.Phase.AIM
 	await snap("aim")
-	main._cancel_step()
-	ok("TUT-06", main.phase == main.Phase.PLACE and main._first_action_text().contains("빈 곳"), "aim cancel returns to placement")
-	main._back_to_choose()
-	main._set_cards_hidden(true)
-	ok("TUT-06", main._first_action_text().contains("다시 열어"), "field view retains next action")
-	main._set_cards_hidden(false)
-	main._on_pick(card)
-	main._place_tower(main.center() + Vector2(-180, 120), Vector2.RIGHT)
-	main._after_place(card)
+	main.interaction_system._cancel_step()
+	ok("TUT-06", main.phase == main.Phase.PLACE and main.onboarding_system._first_action_text().contains("빈 곳"), "aim cancel returns to placement")
+	main.interaction_system._back_to_choose()
+	main.cards_system._set_cards_hidden(true)
+	ok("TUT-06", main.onboarding_system._first_action_text().contains("다시 열어"), "field view retains next action")
+	main.cards_system._set_cards_hidden(false)
+	main.cards_system._on_pick(card)
+	main.interaction_system._place_tower(main.viewport_system.center() + Vector2(-180, 120), Vector2.RIGHT)
+	main.cards_system._after_place(card)
 	await snap("one_left")
-	ok("TUT-06", main.picks_left == 1 and main.phase == main.Phase.CHOOSE and main._first_action_text().contains("한 장 더"), "first completed placement still needs one card")
-	main._save_run()
-	main._continue_run()
-	ok("TUT-06", main.picks_left == 1 and main.phase == main.Phase.CHOOSE and main._first_action_text().contains("한 장 더"), "saved initial rest resumes correct action")
+	ok("TUT-06", main.picks_left == 1 and main.phase == main.Phase.CHOOSE and main.onboarding_system._first_action_text().contains("한 장 더"), "first completed placement still needs one card")
+	main.persistence_system._save_run()
+	main.persistence_system._continue_run()
+	ok("TUT-06", main.picks_left == 1 and main.phase == main.Phase.CHOOSE and main.onboarding_system._first_action_text().contains("한 장 더"), "saved initial rest resumes correct action")
 	card = main.offer[0]
-	main._on_pick(card)
-	main._place_tower(main.center() + Vector2(180, 120), Vector2.LEFT)
-	main._after_place(card)
+	main.cards_system._on_pick(card)
+	main.interaction_system._place_tower(main.viewport_system.center() + Vector2(180, 120), Vector2.LEFT)
+	main.cards_system._after_place(card)
 	await snap("ready")
-	ok("TUT-06", main.picks_left == 0 and main.phase == main.Phase.READY and main._first_action_text().contains("웨이브"), "two real placements enable start action")
+	ok("TUT-06", main.picks_left == 0 and main.phase == main.Phase.READY and main.onboarding_system._first_action_text().contains("웨이브"), "two real placements enable start action")
 	main.lanes.clear()  # 방어 배치 정책은 spec에서 검사하고, 여기서는 첫 행동 안내 종료를 확인한다.
-	main._start_wave_from_ready()
-	ok("TUT-06", main.wave == 1 and main._first_action_text() == "", "action guide ends only after wave starts")
-	main._guide("skill", "긴 설명")
-	main._tut_tick()
-	ok("TUT-03", not main.tut.visible and not paused and main.tut_queue.is_empty(), "event does not pause or open another modal")
+	main.cards_system._start_wave_from_ready()
+	ok("TUT-06", main.wave == 1 and main.onboarding_system._first_action_text() == "", "action guide ends only after wave starts")
+	main.onboarding_system._guide("skill", "긴 설명")
+	main.onboarding_system._tut_tick()
+	ok("TUT-03", not main.tut.visible and not paused and main.onboarding_system.tut_queue.is_empty(), "event does not pause or open another modal")
 	Meta.guide_on = false
-	main._process(0.0)
+	main.frame_system._process(0.0)
 	ok("TUT-03", not main.guide_label.visible and not main.guide_more.visible, "turning guidance off hides current hint immediately")
 	Meta.guide_on = true
 	Tutorial.load_file()
@@ -89,10 +89,10 @@ func _initialize():
 	quit(1 if fails else 0)
 func snap(tag: String):
 	for i in 6:
-		main._process(0.0)
+		main.frame_system._process(0.0)
 		await process_frame
 	RenderingServer.force_draw()
 	main.get_viewport().get_texture().get_image().save_png(output.path_join(tag + ".png"))
 	var bad: int = preload("res://tools/ui_check.gd").check(main, tag)
 	fails += bad
-	print("NATIVE SHOT ", tag, " action=", main._first_action_text(), " ui=", bad)
+	print("NATIVE SHOT ", tag, " action=", main.onboarding_system._first_action_text(), " ui=", bad)

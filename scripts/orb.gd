@@ -109,7 +109,15 @@ var root_dr := 0  # 연달아 걸린 기절 횟수
 var root_dr_t := 0.0  # 마지막 기절 뒤 지난 시간
 var root_immune := 0.0  # 기절 면역 남은 시간
 var flash := 0.0
-var main: Node
+var _combat_port: BinduCombat
+var _field_view_port: BinduFieldView
+var _spawning_port: BinduSpawning
+var main: BinduSession:
+	set(value):
+		main = value
+		_combat_port = value.combat_system if value != null else null
+		_field_view_port = value.field_view_system if value != null else null
+		_spawning_port = value.spawning_system if value != null else null
 var dmg_acc := 0.0  # 피해 숫자 팝업용 누적
 var pop_t := 0.0
 var age := 0.0  # 등장 연출
@@ -168,7 +176,7 @@ func step(delta: float) -> void:
 		minion_t -= delta
 		if minion_t <= 0.0:
 			minion_t = minion_every(main.wave)
-			main.spawn_minion(self)
+			_spawning_port.spawn_minion(self)
 	if slow_timer > 0.0: slow_timer = maxf(slow_timer - delta, 0.0)
 	if root_timer > 0.0: root_timer = maxf(root_timer - delta, 0.0)
 	if stagger_t > 0.0: stagger_t = maxf(stagger_t - delta, 0.0)
@@ -217,7 +225,7 @@ func step(delta: float) -> void:
 	# 피해 숫자는 0.35초마다 묶어서 표시
 	pop_t -= delta
 	if pop_t <= 0.0 and dmg_acc >= 1.0 and main:
-		main.popup(position, dmg_acc, Color.WHITE, false)
+		_spawning_port.popup(position, dmg_acc, Color.WHITE, false)
 		dmg_acc = 0.0
 		pop_t = 0.35
 	var mult := slow_factor if slow_timer > 0.0 else 1.0
@@ -285,7 +293,7 @@ func _redraw_if_changed() -> void:
 		| int(radius()) << 22
 	if kind == Kind.FAST:
 		sg |= posmod(roundi((target - position).angle() / TAU * 90.0), 90) << 30
-	if Meta.orb_hp_on or (main and main.tip_orb == self):
+	if Meta.orb_hp_on or (main and _field_view_port.tip_orb == self):
 		sg |= (ceili(hp) + 1) << 37
 	# 천천히 도는 표시는 초당 16~30번만 다시 그린다 (보호막 육각·저항 점선·저주 눈·메아리 바늘. 후반엔 구체 절반이 이것들이라 매 프레임 다시 그렸다)
 	var spin := 0
@@ -333,7 +341,7 @@ func hurt(amount: float, crit := false, source = null) -> float:
 		shield -= absorbed
 		d -= absorbed
 		if shield <= 0.0 and main:
-			main.burst(position, Color(0.6, 0.9, 1.0), 8, 140.0)
+			_spawning_port.burst(position, Color(0.6, 0.9, 1.0), 8, 140.0)
 			main.sfx.play("shield", 0.0)
 	hp -= d
 	if echo_t > 0.0:
@@ -341,7 +349,7 @@ func hurt(amount: float, crit := false, source = null) -> float:
 	if amount > 0.3:
 		flash = 0.08
 	if crit and main:
-		main.popup(position, d, Color(1, 0.9, 0.3), true)
+		_spawning_port.popup(position, d, Color(1, 0.9, 0.3), true)
 		main.sfx.play("crit")
 	elif amount >= 0.5 and main:
 		main.sfx.play("hit", 0.12)
@@ -360,7 +368,7 @@ func _echo_release() -> void:
 		return
 	_credit(echo_src, hurt(d, false, echo_src), false, "elem:time")
 	if main and d >= 1.0:
-		main.popup(position, d, Elem.COLORS[Elem.TIME], true, "되풀이")
+		_spawning_port.popup(position, d, Elem.COLORS[Elem.TIME], true, "되풀이")
 
 
 ## 시간 메아리를 건다. 이미 기록 중이면 더 큰 비율로만 바꾼다.
@@ -393,7 +401,7 @@ func _late_step(delta: float, mult: float) -> void:
 				if dist > 0.0:
 					var dir := to.normalized().rotated(swirl) if swirl != 0.0 else to.normalized()
 					if main:
-						main.burst(position, Color(0.75, 0.6, 1.0), 6, 90.0)
+						_spawning_port.burst(position, Color(0.75, 0.6, 1.0), 6, 90.0)
 					position += dir * dist
 		"mender":
 			if silence_t > 0.0:
@@ -404,7 +412,7 @@ func _late_step(delta: float, mult: float) -> void:
 				heal_fx = 0.4
 				if main:
 					var rr := Rules.t("late_heal_r")
-					for o in main.near(position, rr):
+					for o in _combat_port.near(position, rr):
 						if o == self or o.hp <= 0.0 or o.kind == Kind.BOSS or o.position.distance_to(position) > rr + o.radius():
 							continue
 						var h: float = o.max_hp * Rules.t("late_heal") * (0.5 if o.burn_t > 0.0 or o.poison_t > 0.0 else 1.0)
@@ -425,14 +433,14 @@ func _late_step(delta: float, mult: float) -> void:
 			prey = null
 			var best := 160.0
 			var my_d := position.distance_to(target)
-			for o in main.near(position, 160.0):
+			for o in _combat_port.near(position, 160.0):
 				if o == self or o.hp <= 0.0 or o.kind == Kind.BOSS or o.late == "devour" or o.ghost:
 					continue
 				var d: float = o.position.distance_to(position)
 				if d < best and o.position.distance_to(target) < my_d:
 					best = d
 					prey = o
-			for o in main.near(position, r + 12.0):
+			for o in _combat_port.near(position, r + 12.0):
 				if o == self or o.hp <= 0.0 or o.kind == Kind.BOSS or o.late == "devour" or o.ghost or o.is_queued_for_deletion():
 					continue
 				if o.position.distance_to(position) > r + o.radius():
@@ -442,7 +450,7 @@ func _late_step(delta: float, mult: float) -> void:
 				hp += gain
 				eaten += 1
 				core_dmg = mini(1 + eaten, int(Rules.t("late_devour_core")))
-				main.burst(o.position, Color(0.85, 0.35, 0.45), 8, 120.0)
+				_spawning_port.burst(o.position, Color(0.85, 0.35, 0.45), 8, 120.0)
 				o.queue_free()
 				if eaten % 3 == 0:
 					digest_t = 0.5
@@ -781,7 +789,7 @@ func _draw() -> void:
 	for i in icons.size():
 		draw_circle(Vector2(-(icons.size() - 1) * 4.0 + i * 8.0, -r - 9.0), 3.0, icons[i])
 	# 체력 숫자: 보스·마우스를 올린 구체·설정에서 켠 때만 (평소엔 위의 붉은 고리로 본다)
-	if kind == Kind.BOSS or Meta.orb_hp_on or (main and main.tip_orb == self):
+	if kind == Kind.BOSS or Meta.orb_hp_on or (main and _field_view_port.tip_orb == self):
 		var font := ThemeDB.fallback_font
 		var txt := str(ceili(hp))
 		var size := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_CENTER, -1, 12)

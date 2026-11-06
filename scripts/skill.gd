@@ -68,7 +68,7 @@ static func focus_tower(main, p: Vector2) -> Tower:
 ## 붙잡기 범위 안 생존 구체. near는 격자 후보라 실제 거리도 확인한다.
 static func hold_targets(main, p: Vector2) -> Array:
 	var r := radius("hold")
-	return main.near(p, r).filter(func(o): return o.hp > 0.0 and o.position.distance_to(p) < r + o.radius())
+	return main.combat_system.near(p, r).filter(func(o): return o.hp > 0.0 and o.position.distance_to(p) < r + o.radius())
 
 
 ## p에 쓴다. 효과를 적용한 대상이 없으면 false (쿨다운을 쓰지 않는다).
@@ -91,14 +91,14 @@ static func use(main, id: String, p: Vector2) -> bool:
 		"brand":
 			var any := false
 			var r := Rules.t("skill_brand_r")
-			for o in main.near(p, r):
+			for o in main.combat_system.near(p, r):
 				if o.hp > 0.0 and o.position.distance_to(p) < r + o.radius():
 					o.amp["brand"] = [Rules.t("skill_brand_amp"), Rules.t("skill_brand_t")]
 					any = true
 			if not any:
 				return false
 	main.skill_fx.append([p, radius(id), 0.5, col])
-	main.burst(p, col, 14, 180.0)
+	main.spawning_system.burst(p, col, 14, 180.0)
 	return true
 
 
@@ -110,7 +110,7 @@ static func auto_target(main, id: String) -> Variant:
 		var best: Tower = null
 		var bn := 2
 		for t in main.towers.get_children():
-			var n: int = main.near(t.position, 300.0).size()
+			var n: int = main.combat_system.near(t.position, 300.0).size()
 			if n > bn:
 				bn = n
 				best = t
@@ -119,12 +119,12 @@ static func auto_target(main, id: String) -> Variant:
 	var need := 3 if id == "hold" else 4
 	var best_p: Variant = null
 	var best_n := need - 1
-	for o in main.targets:
+	for o in main.combat_system.targets:
 		if not is_instance_valid(o) or o.hp <= 0.0:
 			continue
-		if id == "hold" and not main._near_core(o, 260.0):
+		if id == "hold" and not main.combat_system._near_core(o, 260.0):
 			continue
-		var n: int = main.near(o.position, r).size()
+		var n: int = main.combat_system.near(o.position, r).size()
 		if o.kind == Orb.Kind.BOSS:
 			n += need
 		if n > best_n:

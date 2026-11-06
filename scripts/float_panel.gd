@@ -161,7 +161,7 @@ func _par() -> Control:
 
 
 func _local_pointer() -> Vector2:
-	return _par().get_global_transform().affine_inverse() * game._pointer_screen()
+	return _par().get_global_transform().affine_inverse() * game.interaction_system._pointer_screen()
 
 
 ## 머리 줄 누르기: 놓을 때 옮기지 않았으면 접기·펴기, 꾹 누르거나(HOLD) 끌면(DRAG_MIN) 집어 옮긴다.
@@ -216,7 +216,7 @@ func _after_move() -> void:
 	grip.queue_redraw()
 	_update_pin_tip()
 	moved.emit()
-	game._save_best()
+	game.progression_system._save_best()
 
 
 func _update_pin_tip() -> void:
@@ -235,7 +235,7 @@ func saved_pos() -> Vector2:
 ## 붙을 자리 여섯 곳 (위·아래 x 왼쪽·가운데·오른쪽, 왼쪽 위 좌표). 위는 점수 줄 아래, 아래는 아래 버튼 줄 위.
 func slots() -> Array[Vector2]:
 	var ps := _par().size
-	var top: float = game._dps_home().y
+	var top: float = game.hud_system._dps_home().y
 	var bottom := maxf(top, ps.y - size.y - 64.0)
 	var out: Array[Vector2] = []
 	for y in [top, bottom]:
@@ -266,7 +266,7 @@ func snap(p: Vector2) -> Vector2:
 ## 옮겨 둔 자리: 점수 줄·아래 버튼·기술 버튼 등(game._panel_blocks)과 겹치면 위나 아래로 비켜 화면 안에.
 func place(p: Vector2) -> Vector2:
 	var ps := _par().size
-	var blocks: Array[Rect2] = game._panel_blocks(self)
+	var blocks: Array[Rect2] = game.hud_system._panel_blocks(self)
 	for _i in 3:
 		var r := Rect2(p, size)
 		var hit := false
@@ -348,7 +348,7 @@ func cover(fade: bool) -> void:
 		return
 	var inv: Transform2D = game.get_canvas_transform().affine_inverse()
 	var pr: Rect2 = inv * get_global_rect()
-	var wp: Vector2 = game._pointer_world()
+	var wp: Vector2 = game.interaction_system._pointer_world()
 	var under := false
 	if fade and not pr.has_point(wp):
 		for t in game.towers.get_children():
@@ -356,12 +356,12 @@ func cover(fade: bool) -> void:
 				under = true
 				break
 		if not under:
-			for arr in game._lane_arrows():
+			for arr in game.ui_layout_system._lane_arrows():
 				if pr.grow(14.0).has_point(arr[0]):
 					under = true
 					break
 	modulate.a = 0.4 if under and drag != 2 else 1.0
-	set_pass(drag == 0 and pr.has_point(wp) and game._tower_at(wp) != null)
+	set_pass(drag == 0 and pr.has_point(wp) and game.interaction_system._tower_at(wp) != null)
 
 
 ## 누르는 순간 다시 판정 (마우스가 움직이지 않고 눌러도 맞게).
@@ -370,4 +370,4 @@ func press_check(screen: Vector2) -> void:
 		return
 	var inv: Transform2D = game.get_canvas_transform().affine_inverse()
 	var wp: Vector2 = inv * screen
-	set_pass((inv * get_global_rect()).has_point(wp) and game._tower_at(wp) != null)
+	set_pass((inv * get_global_rect()).has_point(wp) and game.interaction_system._tower_at(wp) != null)

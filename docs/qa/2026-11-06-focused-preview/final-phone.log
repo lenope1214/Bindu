@@ -1,0 +1,11 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+ok   UI-37 주변 오브젝트·공격·보조 공격은 숨김
+ok   UI-37 다섯 속성을 생략하지 않고 미리보기 위에서 줄바꿈
+ok   UI-37 적 명중과 표적 보충이 계속 이어짐
+ok   UI-37 전장 바깥을 향한 오브젝트도 예시 표적 명중을 보여 줌
+ok   UI-37 단일 오브젝트 미리보기 검사 완료
+USABILITY case=focused-preview failures=0 ui=0
+WARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

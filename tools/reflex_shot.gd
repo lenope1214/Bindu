@@ -33,31 +33,31 @@ func _run() -> void:
 	Meta.rules = 1
 	Meta.map_id = map_id
 	Modes.set_on([])
-	main._apply_rules()
-	main._hide_title()
+	main.run_flow_system._apply_rules()
+	main.progression_system._hide_title()
 	main.guide_label.hide()
-	main._apply_ui_scale()
+	main.hud_system._apply_ui_scale()
 	main.touch_ui = touch
 	main.wave = 12
 	main.picks_left = 1
 	main.picked = {"type": "elem", "e": Elem.WATER, "lv": 1}
-	main._place_tower(main.center() + Vector2(-180, 0), Vector2.RIGHT)
+	main.interaction_system._place_tower(main.viewport_system.center() + Vector2(-180, 0), Vector2.RIGHT)
 	var t: Tower = main.towers.get_child(main.towers.get_child_count() - 1)
 	main.offer = [{"type": "mod", "id": "reflex"}, {"type": "mod", "id": "homing"}, {"type": "elem", "e": Elem.WOOD, "lv": 1}]
-	main._show_offer()
-	main._open_choose()
+	main.cards_system._show_offer()
+	main.cards_system._open_choose()
 	await _snap("reflex_card")
-	main._on_card_tap(main.offer[0], 0)
-	main._set_card_detail(true)
+	main.cards_system._on_card_tap(main.offer[0], 0)
+	main.cards_system._set_card_detail(true)
 	await _snap("reflex_detail")
-	main._on_pick(main.offer[0])
-	main._apply_card(t)
-	main._enter_ready()
+	main.cards_system._on_pick(main.offer[0])
+	main.cards_system._apply_card(t)
+	main.cards_system._enter_ready()
 	t.set_pattern("spray")
 	var o := Orb.new()
 	o.main = main
 	o.position = t.position + Vector2.LEFT * 130.0
-	o.target = main.center()
+	o.target = main.viewport_system.center()
 	o.setup(Orb.Kind.NORMAL, 1000.0, 0.0)
 	main.orbs.add_child(o)
 	main.phase = main.Phase.WAVE
@@ -66,7 +66,7 @@ func _run() -> void:
 	main.range_all = map_id == "storm"
 	main.tap_sel = -1
 	main.to_spawn = 0
-	main._resolve(0.1)
+	main.combat_system._resolve(0.1)
 	if t.dir != Vector2.RIGHT or t.aim.x > -0.99 or o.hp >= 1000.0:
 		push_error("후방 자동 조준·명중 검증 실패")
 		bad += 1

@@ -105,3 +105,9 @@ RESOLUTION=2556x1179 GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/ru
 
 기준 main 사본에 같은 검사 파일을 복사하면 before 캡처도 얻을 수 있다. 전장 상태는 같고 레이아웃만 다르다.
 폰/태블릿은 Mac 모의이며 실기기 조작의 증거는 아니다. 캡처와 범위는 `docs/qa/2026-11-03-card-dock/README.md` 참고.
+
+## 아키텍처 경계 검사
+
+`GODOT=<godot> tools/run.sh architecture`는 서비스 구독 중복/해제, 씬별 컨트롤러 독립성, WeakRef 해제, 순수 배치 규칙을 검사한다. `check`에도 포함된다.
+
+`python3 tools/architecture_audit.py`는 메인 분리 시점의 함수 529개가 누락되지 않았는지와 참조 경로 외 변경을 기록된 기준과 대조하는 일회성 마이그레이션 감사다. 새 동작을 구현할 때는 해당 함수의 변경 이유·회귀 검증을 `docs/architecture/main-boundaries.json`의 `reviewed_changes`에 기록한다. UI와 봇의 진입점은 `main.<feature>_system`으로 갱신되어 있다.

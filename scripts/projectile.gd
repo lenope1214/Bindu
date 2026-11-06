@@ -102,7 +102,7 @@ func setup(k: String, tower: Tower, l: int, d := Vector2.ZERO, off := Vector2.ZE
 		far_from *= wk
 	position = tower.position + d * Tower.RADIUS + off
 	if k == "blob":
-		zone = tower.main.spawn_zone("trail", l, position, tower)
+		zone = tower._spawning_port.spawn_zone("trail", l, position, tower)
 		zone.trail("puddle")
 		zone.add_pt(position)
 
@@ -134,7 +134,7 @@ func step(delta: float) -> void:
 		seg_acc += vel.length() * delta
 		if seg_acc >= zone.radius * 0.8:
 			seg_acc = 0.0
-			if not is_instance_valid(owner_tower) or owner_tower.main.field_rect().grow(zone.radius).has_point(position):  # 전장 밖엔 띠를 남기지 않는다
+			if not is_instance_valid(owner_tower) or owner_tower._combat_port.field_rect().grow(zone.radius).has_point(position):  # 전장 밖엔 띠를 남기지 않는다
 				zone.add_pt(position, Tower.far_k(flown, far_from))  # 투척 장판: 예전 사거리 너머 띠는 약하다
 	if form and is_instance_valid(owner_tower):
 		path_acc += vel.length() * delta
@@ -239,7 +239,7 @@ func _chase(delta: float, r: float, cone: float, lim: float) -> void:
 		var bd := INF
 		var full: Orb = null
 		var fd := INF
-		for o in owner_tower.main.near(owner_tower.position if leash > 0.0 else position, leash if leash > 0.0 else r):
+		for o in owner_tower._combat_port.near(owner_tower.position if leash > 0.0 else position, leash if leash > 0.0 else r):
 			if not _can_chase(o, r, cone):
 				continue
 			var dd: float = o.position.distance_to(position)
@@ -363,7 +363,7 @@ func _on_hit(o: Orb, delta: float, tw: Tower) -> bool:
 		# 튕김: 아직 안 맞힌 가장 가까운 구체 쪽으로
 		var best: Orb = null
 		var bd := 140.0
-		for other in tw.main.near(position, bd):
+		for other in tw._combat_port.near(position, bd):
 			if not hit.has(other) and other.hp > 0.0 and other.position.distance_to(position) < bd:
 				bd = other.position.distance_to(position)
 				best = other

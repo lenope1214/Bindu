@@ -21,34 +21,34 @@ func _initialize():
 	steps = [
 		func():
 			Meta.guide_on = false  # 튜토리얼(처음 켤 때·멀티플레이 처음)이 화면을 가리지 않게
-			main.tut_first = false
+			main.onboarding_system.tut_first = false
 			if main.tut and main.tut.panel.visible:
 				main.tut.close()
 			Meta.ui_scale = z
 			main.touch_ui = touch
-			main._apply_ui_scale()
+			main.hud_system._apply_ui_scale()
 			Meta.games = 5
-			main._refresh_menu()
+			main.menu_system._refresh_menu()
 			main.mp_btn.visible = true,
-		func(): _snap("mp_title"); main._toggle_mp_lobby(),
+		func(): _snap("mp_title"); main.lobby_system._toggle_mp_lobby(),
 		func():
 			_snap("mp_lobby")
-			main.mp_load_msg = "방에 들어가는 중"  # 접속 화면 (중개 서버 단계): 연결 없이 그리기만
-			main.mp_load_host = false
-			main.mp_load_view.visible = true
-			main.mp_host_box.visible = false
-			main.mp_join_box.visible = false
-			main.mp_desc.visible = false
+			main.lobby_system.mp_load_msg = "방에 들어가는 중"  # 접속 화면 (중개 서버 단계): 연결 없이 그리기만
+			main.lobby_system.mp_load_host = false
+			main.lobby_system.mp_load_view.visible = true
+			main.lobby_system.mp_host_box.visible = false
+			main.lobby_system.mp_join_box.visible = false
+			main.lobby_system.mp_desc.visible = false
 			main.mp_status.text = "",
 		func():
 			_snap("mp_connecting")
-			main.mp_load_view.visible = false
+			main.lobby_system.mp_load_view.visible = false
 			main.mp.my_id = 2  # 참가자: 방에 들어왔지만 호스트와 아직 안 이어짐 → 도는 고리
 			main.mp.code = "K7QX2M"
 			main.mp.mode = mode
 			main.mp.joined_ms = Time.get_ticks_msec() - 9000
 			main.mp.peers = {1: {"name": "빈두장인", "pf": "windows", "conn": null, "ok": false}, 2: {"name": "민수", "pf": "ios", "conn": null, "ok": true}}
-			main._mp_refresh_lobby(),
+			main.lobby_system._mp_refresh_lobby(),
 		func():
 			_snap("mp_wait_host")
 			main.mp.my_id = 1
@@ -57,22 +57,22 @@ func _initialize():
 			main.mp.peers = {1: {"name": "빈두장인", "pf": "windows", "conn": null, "ok": true}, 2: {"name": "민수", "pf": "ios", "conn": null, "ok": true}, 3: {"name": "", "pf": "android", "conn": null, "ok": false}}
 			main.mp.diag_sent = {3: true}
 			main.mp.ping = {2: 38, 3: 212}
-			main._mp_refresh_lobby(),
+			main.lobby_system._mp_refresh_lobby(),
 		func():
 			_snap("mp_room_" + mode)
-			main._mp_begin({"mode": mode, "seed": 77, "map": "plain", "rules": 1, "ids": [1, 2, 3], "names": {1: "빈두장인", 2: "민수", 3: ""}})
+			main.multiplayer_system._mp_begin({"mode": mode, "seed": 77, "map": "plain", "rules": 1, "ids": [1, 2, 3], "names": {1: "빈두장인", 2: "민수", 3: ""}})
 			if mode == "vs":
 				main.mp_others[2].merge({"w": 7, "hp": 6, "mx": 10, "sc": 4210}, true)
 				main.mp_others[3].merge({"w": 5, "alive": false, "sc": 1980}, true)
 				main.mp_next_extra = 3
-				main._update_preview()
+				main.waves_system._update_preview()
 			else:
 				main.mp_others[3]["gone"] = true
 				var now := Time.get_ticks_msec()  # 다른 사람 커서 (협동)
-				main.mp_cursors = {2: {"p": main.center() + Vector2(180, -90), "to": main.center() + Vector2(180, -90), "t": now}}
+				main.mp_cursors = {2: {"p": main.viewport_system.center() + Vector2(180, -90), "to": main.viewport_system.center() + Vector2(180, -90), "t": now}}
 			for i in 4:
 				main.picked = {"e": Elem.ALL[i], "lv": 1}
-				main._place_tower(main.center() + Vector2.from_angle(i * 1.6) * 140.0, Vector2.from_angle(i * 1.6))
+				main.interaction_system._place_tower(main.viewport_system.center() + Vector2.from_angle(i * 1.6) * 140.0, Vector2.from_angle(i * 1.6))
 				if mode == "coop":
 					main.towers.get_child(i).owner_id = 1 + i % 3
 			if mode == "coop":
@@ -81,33 +81,33 @@ func _initialize():
 				main.towers.get_child(1).queue_redraw()
 				main.mp_others[2]["afk"] = true
 				main.mp_wait_left = 32.0,
-		func(): _snap("mp_rest_" + mode); main.phase = main.Phase.READY; main._enter_ready(); main.mp_wave_go = true; main._start_wave(); main.mp_wave_go = false,
+		func(): _snap("mp_rest_" + mode); main.phase = main.Phase.READY; main.cards_system._enter_ready(); main.mp_wave_go = true; main.run_flow_system._start_wave(); main.mp_wave_go = false,
 		func():
 			_snap("mp_wave_" + mode)
 			if mode == "coop":
 				main.mp_view = 2  # [보기] 필터: 민수 것만 진하게
-				main._mp_view_next.call()  # 2 → 다음, 다시 2로 맞춘다
+				main.lobby_system._mp_view_next.call()  # 2 → 다음, 다시 2로 맞춘다
 				main.mp_view = 2,
 		func():
 			if mode == "coop":
 				_snap("mp_view_coop")
-			main._game_over(),
+			main.run_flow_system._game_over(),
 		func():
 			_snap("mp_over_" + mode)
 			# 끝 화면을 지나 대기방으로 (방 유지): 화면을 새로 만들고 민수는 아직 판 진행 중
-			main._mp_keep_room()
+			main.run_flow_system._mp_keep_room()
 			var old = main
 			old.get_parent().remove_child(old)
 			old.free()
 			main = load("res://main.tscn").instantiate()
 			VirtualInput.mount(main, root)
-			main.tut_first = false
+			main.onboarding_system.tut_first = false
 			if main.tut and main.tut.panel.visible:
 				main.tut.close()
 			main.touch_ui = touch
-			main._apply_ui_scale()
+			main.hud_system._apply_ui_scale()
 			main.mp.in_game = {2: true}
-			main._mp_refresh_lobby(),
+			main.lobby_system._mp_refresh_lobby(),
 		func(): _snap("mp_lobby_back_" + mode),
 	]
 	if mode == "coop":
@@ -115,11 +115,11 @@ func _initialize():
 		at -= 2  # [보기]·대기방 단계가 뒤에 붙음
 		steps.insert(at, func():
 			main.mp_wait_left = -1.0
-			main.mp_pop.visible = false
+			main.lobby_system.mp_pop.visible = false
 			main.picked = {"type": "elem", "e": Elem.WATER, "lv": 1}
 			main.phase = main.Phase.PLACE)
-		steps.insert(at, func(): _snap("mp_rest_" + mode); main._mp_req_open(main.towers.get_child(0)))
-		steps[at + 2] = func(): _snap("mp_req_give"); main.picked = {}; main.phase = main.Phase.READY; main._enter_ready(); main.mp_wave_go = true; main._start_wave(); main.mp_wave_go = false
+		steps.insert(at, func(): _snap("mp_rest_" + mode); main.lobby_system._mp_req_open(main.towers.get_child(0)))
+		steps[at + 2] = func(): _snap("mp_req_give"); main.picked = {}; main.phase = main.Phase.READY; main.cards_system._enter_ready(); main.mp_wave_go = true; main.run_flow_system._start_wave(); main.mp_wave_go = false
 		steps.insert(at + 1, func(): _snap("mp_req_pop"))
 
 

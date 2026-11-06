@@ -23,8 +23,8 @@ var modes_set := false
 func _set_modes():
 	modes_set = true
 	Modes.set_on(Array(OS.get_environment("MODES").split(",", false)))
-	main._apply_rules()
-	main.start_modes()
+	main.run_flow_system._apply_rules()
+	main.hud_system.start_modes()
 	main.picks_left = maxi(Rules.open_picks, Rules.picks)
 	main.rerolls_left = Modes.rerolls(1)
 var cont_w := -1
@@ -34,12 +34,12 @@ func _snap() -> String:
 		parts.append("%s|%s|%.0f,%.0f|%.2f" % [t.title(), t.extras_text(), t.position.x, t.position.y, t.dir.angle()])
 	parts.append("w=%d s=%d k=%d core=%d/%d perks=%s rr=%d picks=%d lanes=%d resist=%d dmg=%.2f spd=%.2f tax=%.3f perk=%s" % [main.wave, main.score, main.kills, main.core_hp, main.core_max, main.perks, main.rerolls_left, main.picks_left, main.lanes.size(), main.wave_resist, Tower.dmg_mul, Tower.spd_mul, Tower.tax_step, main.perk_mode])
 	if not main.perk_mode:
-		parts.append(str(main.offer.map(func(c): return main._card_key(c))))
+		parts.append(str(main.offer.map(func(c): return main.cards_system._card_key(c))))
 	return "\n".join(parts)
 var wave_ms := 0
 func _process(_d):
 	frames += 1
-	if OS.get_environment("CONT") != "" and main.phase == 0 and main.wave > 0 and main.wave % 4 == 0 and main.wave != cont_w and not main.dragging:
+	if OS.get_environment("CONT") != "" and main.phase == 0 and main.wave > 0 and main.wave % 4 == 0 and main.wave != cont_w and not main.interaction_system.dragging:
 		cont_w = main.wave
 		var before := _snap()
 		DirAccess.copy_absolute("user://run.cfg", "user://run_bk.cfg")
@@ -47,7 +47,7 @@ func _process(_d):
 		main = load("res://main.tscn").instantiate()
 		root.add_child(main)
 		DirAccess.copy_absolute("user://run_bk.cfg", "user://run.cfg")
-		main._continue_run()
+		main.persistence_system._continue_run()
 		var after := _snap()
 		if before == after:
 			print("CONT w=", cont_w, " OK")
@@ -64,7 +64,7 @@ func _process(_d):
 		dumped = true
 		print("STUCK real=", Time.get_ticks_msec() - wave_ms, " wave=", main.wave, " t=", main.wave_time, " to_spawn=", main.to_spawn, " alive=", main.orbs.get_child_count(), " proj=", main.projectiles.get_child_count(), " zones=", main.zones.get_child_count())
 		for o in main.orbs.get_children():
-			print("  ORB kind=", o.kind, " pos=", o.position, " d=", o.position.distance_to(main.center()), " hp=", o.hp, "/", o.max_hp, " sh=", o.shield, " spd=", o.speed, " slow=", o.slow_factor, " root=", o.root_timer, " frozen=", o.frozen_t, " prison=", o.prison_t, " push=", o.push_budget, " q=", o.is_queued_for_deletion(), " target=", o.target, " age=", o.age, " resist=", o.resist_e, " sturdy=", o.sturdy)
+			print("  ORB kind=", o.kind, " pos=", o.position, " d=", o.position.distance_to(main.viewport_system.center()), " hp=", o.hp, "/", o.max_hp, " sh=", o.shield, " spd=", o.speed, " slow=", o.slow_factor, " root=", o.root_timer, " frozen=", o.frozen_t, " prison=", o.prison_t, " push=", o.push_budget, " q=", o.is_queued_for_deletion(), " target=", o.target, " age=", o.age, " resist=", o.resist_e, " sturdy=", o.sturdy)
 		for t in main.towers.get_children():
 			print("  TW ", t.title(), " @", t.position, " ", t.extras_text(), " rx=", t.reactions().map(func(r): return r["name"]))
 		quit()
@@ -82,11 +82,11 @@ func _process(_d):
 		_set_modes()
 	if OS.get_environment("RULES") != "" and Meta.rules != int(OS.get_environment("RULES")):
 		Meta.rules = int(OS.get_environment("RULES"))
-		main._apply_rules()
+		main.run_flow_system._apply_rules()
 	if OS.get_environment("MAP") != "" and Meta.map_id != OS.get_environment("MAP"):
 		Meta.map_id = OS.get_environment("MAP")
 		main.lanes.clear()
-		main._roll_lanes()
+		main.waves_system._roll_lanes()
 	if OS.get_environment("DIAG") != "" and main.phase == 0 and main.wave != last_wave:
 		last_wave = main.wave
 		var info = []
@@ -99,16 +99,9 @@ func _process(_d):
 	main.game_speed = float(OS.get_environment("SPEED")) if OS.get_environment("SPEED") != "" else 1.0
 	if main.phase == 6:
 		_rearrange()
-		var blocked: String = main._wave_start_block_reason()
-		if blocked != "":
-			print("STUCK ready wave=", main.wave, " ", blocked)
-			for t in main.towers.get_children():
-				print("  TOWER ", t.title(), " p=", t.position, " dir=", t.dir, " reach=", main._wave_attack_reach(t))
-			quit(1)
-			return false
-		main._start_wave()
+		main.run_flow_system._start_wave()
 	if main.perk_mode:
-		main._on_perk(main.perk_offer[randi() % 3])
+		main.perks_system._on_perk(main.perk_offer[randi() % 3])
 		return false
 	if OS.get_environment("PICKS") != "" and main.phase == 0 and main.wave != picks_w:
 		picks_w = main.wave
@@ -122,7 +115,7 @@ func _process(_d):
 		var uncovered = false
 		for cand0 in main.lanes:
 			var cand = eff_lane(cand0)
-			var lp = main.center() + Vector2(cos(cand), sin(cand)) * 170
+			var lp = main.viewport_system.center() + Vector2(cos(cand), sin(cand)) * 170
 			if not ts.any(func(t): return t.position.distance_to(lp) < 160): uncovered = true
 		if uncovered or ts.size() < main.lanes.size() + 1:
 			for o in offer:
@@ -163,7 +156,7 @@ func _process(_d):
 		if stack_all and ts.size() > 0 and pick["type"] == "elem":
 			target = ts[0]
 		if pick["type"] == "cata":
-			main._on_pick(pick); return false
+			main.cards_system._on_pick(pick); return false
 		# 상한: 넣을 수 없는 오브젝트면 넣을 수 있는 다른 오브젝트로, 없으면 속성은 새로 설치
 		if target and not target.can_take(pick):
 			target = null
@@ -172,21 +165,21 @@ func _process(_d):
 		if pick["type"] != "elem" and target == null:
 			for t in ts:
 				if t.can_take(pick): target = t; break
-		main._on_pick(pick)
+		main.cards_system._on_pick(pick)
 		if pick["type"] != "elem":
 			if target == null: target = ts[0] if ts.size() > 0 else null
 			if pick["type"] == "pat" and target and not target.can_pattern(pick["id"]): target = null
 			if target == null:
-				main._back_to_choose(); main._on_reroll()
+				main.interaction_system._back_to_choose(); main.cards_system._on_reroll()
 				if main.phase == 0 and main.rerolls_left <= 0 and main.offer == offer:
-					main.picks_left = 1; main._after_place()
+					main.picks_left = 1; main.cards_system._after_place()
 				return false
-			main._apply_card(target)
+			main.cards_system._apply_card(target)
 		elif target:
-			main._show_toast(target.add(pick["e"], pick["lv"]))
-			main._after_place()
+			main.hud_system._show_toast(target.add(pick["e"], pick["lv"]))
+			main.cards_system._after_place()
 		else:
-			var c = main.center()
+			var c = main.viewport_system.center()
 			# 오브젝트가 가장 적은 진입 방향에 설치
 			var la = eff_lane(main.lanes[0])
 			var fewest = 999
@@ -204,22 +197,22 @@ func _process(_d):
 			if OS.get_environment("SMART") != "":
 				# 사람처럼: 중앙 가까이에서 진입 방향 그대로 겨눈다
 				p = c + ld * (90 + 25 * (lane_i % 3)) + ld.orthogonal() * 22 * side
-				main._place_tower(p, ld)
+				main.interaction_system._place_tower(p, ld)
 			else:
 				p = c + ld * (150 + 30 * (lane_i % 3)) + ld.orthogonal() * 70 * side
 				# 직선탄은 진입 방향을 향해 겨눈다
-				main._place_tower(p, (c + ld * 600 - p).normalized())
-			main._after_place()
+				main.interaction_system._place_tower(p, (c + ld * 600 - p).normalized())
+			main.cards_system._after_place()
 	if main.phase == 4 or frames > 60 * 60 * (int(OS.get_environment("MINS")) if OS.get_environment("MINS") != "" else 25) / main.game_speed:
 		var ts = []
 		for t in main.towers.get_children(): ts.append(t.title())
-		print("RESULT wave=", main.wave, " score=", main.score, " ", main._perk_text(), " towers=", ts)
+		print("RESULT wave=", main.wave, " score=", main.score, " ", main.perks_system._perk_text(), " towers=", ts)
 		return true
 	return false
 
 ## 저장 비교 뒤에만 재배치한다. 옮겨 간 길목도 지키도록 남는 오브젝트를 배정한다.
 func _rearrange():
-	var c = main.core()
+	var c = main.viewport_system.core()
 	var ts = main.towers.get_children()
 	var keep = []
 	var missing = []
@@ -239,7 +232,7 @@ func _rearrange():
 		var ld = Vector2.from_angle(a)
 		for k in 12:
 			var p = c + ld * (90 + 30 * (k / 2)) + ld.orthogonal() * (22 if k % 2 == 0 else -22)
-			if main.field_rect().has_point(p) and main._tower_at(p, t) == null:
+			if main.combat_system.field_rect().has_point(p) and main.interaction_system._tower_at(p, t) == null:
 				t.position = p
 				t.dir = ld
 				t.queue_redraw()
@@ -249,7 +242,7 @@ func _rearrange():
 # 소용돌이 맵: 구체가 반지름 r을 지날 때의 각도
 func eff_lane(a):
 	if Meta.map_id != "spiral": return a
-	var c = main.center()
+	var c = main.viewport_system.center()
 	var p = c + Vector2(cos(a), sin(a)) * 650
 	while p.distance_to(c) > 170:
 		p += (c - p).normalized().rotated(0.6) * 4.0

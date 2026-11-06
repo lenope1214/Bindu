@@ -13,7 +13,7 @@ func _orb(p: Vector2, id: String) -> Orb:
 	var o := Orb.new()
 	o.main = main
 	o.position = p
-	o.target = main.center()
+	o.target = main.viewport_system.center()
 	o.setup(Orb.Kind.NORMAL, 40.0, 0.0)
 	o.late = id
 	o.age = 1.0
@@ -28,37 +28,37 @@ func _initialize():
 	touch = a.size() > 2 and a[2] == "touch"
 	main = load("res://main.tscn").instantiate()
 	VirtualInput.mount(main, root)
-	main.tut_first = false
+	main.onboarding_system.tut_first = false
 	steps = [
 		func():
 			Meta.ui_scale = z
 			main.touch_ui = touch
-			main._apply_ui_scale()
-			main._hide_title()
+			main.hud_system._apply_ui_scale()
+			main.progression_system._hide_title()
 			main.tut.close()
 			main.tutor = false,
 		func():
 			main.tut.close()
 			main.wave = 99
 			main.lanes.clear()
-			main._roll_lanes()
-			main._update_preview()
+			main.waves_system._roll_lanes()
+			main.waves_system._update_preview()
 			main.queue_redraw(),
 		func():
 			# 안내 배지에 마우스를 올린 것처럼: 첫 진입 화살표 말풍선
 			if not main.tip_rects.is_empty():
 				VirtualInput.move(main.tip_rects[0][0].get_center()),
-		func(): _snap("late_preview_100"); main.wave = 499; main._update_preview(),
+		func(): _snap("late_preview_100"); main.wave = 499; main.waves_system._update_preview(),
 		func(): pass,
 		func():
 			if not main.tip_rects.is_empty():
 				VirtualInput.move(main.tip_rects[0][0].get_center()),
-		func(): _snap("late_preview_500"); VirtualInput.move(Vector2(5, 360)); main._start_wave(),
+		func(): _snap("late_preview_500"); VirtualInput.move(Vector2(5, 360)); main.run_flow_system._start_wave(),
 		func():
 			for o in main.orbs.get_children():
 				o.free()
 			main.to_spawn = 0
-			var c: Vector2 = main.center()
+			var c: Vector2 = main.viewport_system.center()
 			var b := _orb(c + Vector2(-330, -150), "blink")
 			b.late_t = 0.4
 			var ar := _orb(c + Vector2(-150, -190), "armor")

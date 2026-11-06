@@ -61,7 +61,7 @@ static var GORE_STEP := 36.0  # 핏자국 간격(px, 구체가 이만큼 움직�
 static var GORE_MARK := 3.0  # 맞은 구체가 핏자국을 남기는 시간 (얼음 오래감을 곱함)
 static var ILLU_F := 0.4  # 환영 비춤: 옆 오브젝트 다음 공격에 실리는 효과 비율
 static var MIRROR_R := 220.0  # 비춤 둘레
-static var MIRROR_T := 2.0  # 비친 상이 남는 시간 (그 안에 쏜 다음 공격에)
+static var MIRROR_T := 2.0  # 전달한 효과이 남는 시간 (그 안에 쏜 다음 공격에)
 static var MIRROR_CD := 0.5  # 오브젝트마다 비추는 간격
 static var SEPSIS := 0.5  # 패혈: 멈춰 있어도 이동 속도의 이만큼 움직인 셈
 static var HUNGER := 0.15  # 굶주림: 핏자국을 밟은 구체가 받는 피해 +
@@ -145,7 +145,7 @@ const SITE_E := [Elem.FIRE, Elem.WATER, Elem.ELECTRIC, Elem.POISON, Elem.SOUND, 
 const MOD_E := [Elem.WOOD, Elem.WIND, Elem.ICE, Elem.EARTH, Elem.METAL, Elem.TIME]
 const SITE_NOUN := {Elem.FIRE: "불", Elem.WATER: "물길", Elem.ELECTRIC: "전기", Elem.POISON: "독", Elem.SOUND: "음파",
 	Elem.LIGHT: "빛줄기", Elem.DARK: "끌어당김", Elem.SOUL: "혼불", Elem.STAR: "초신성",
-	Elem.BLOOD: "핏자국", Elem.ILLUSION: "비친 상"}
+	Elem.BLOOD: "핏자국", Elem.ILLUSION: "효과 전달"}
 const MOD_ADJ := {Elem.WOOD: "자라는", Elem.WIND: "바람에 실린", Elem.ICE: "얼어붙은", Elem.EARTH: "다져진", Elem.METAL: "날 선", Elem.TIME: "되풀이되는"}
 ## 따로 이름을 준 칸 [자리, 바꾸는 특징] → [이름, 설명]
 const NAMED := {
@@ -164,9 +164,18 @@ const NAMED := {
 
 ## 자리 이름: 이름 있는 칸이면 그 이름, 아니면 "꾸밈말 자리"
 static func site_name(site: int, mod: int) -> String:
+	if site == Elem.ILLUSION:
+		return Elem.pair_name(site, mod)
 	if NAMED.has([site, mod]):
 		return NAMED[[site, mod]][0]
 	return "%s %s" % [MOD_ADJ[mod], SITE_NOUN[site]]
+
+
+## 환영 자리의 설명은 도감·조합 카드와 같은 원문을 쓴다.
+static func site_desc(site: int, mod: int) -> String:
+	if site == Elem.ILLUSION:
+		return Elem.pair_desc(site, mod)
+	return NAMED[[site, mod]][1] if NAMED.has([site, mod]) else ""
 
 
 ## 오브젝트에 생긴 자리들 [[자리, 바꾸는 특징, 이름]] (속성 묶음 els)
@@ -427,7 +436,7 @@ static func carry_n(tw: Object) -> int:
 ## 둘레 구체 모두에 (자기 빼고)
 static func around(tw: Object, main: Node, at: Vector2, r: float, f: float, key: String, skip: Object = null) -> int:
 	var n := 0
-	for o in main.near(at, r + 20.0):
+	for o in main.combat_system.near(at, r + 20.0):
 		if o != skip and is_instance_valid(o) and o.hp > 0.0 and o.position.distance_to(at) < r + o.radius():
 			carry(tw, o, f, key, at, o.position.distance_to(at) / maxf(r, 1.0))
 			n += 1
@@ -444,7 +453,7 @@ static func spread(o: Orb) -> void:
 		return
 	var r := o.radius() + FIRE_R * wide(tw) * (1.0 + BLAZE_R if has(tw, "blaze") else 1.0)
 	if around(tw, o.main, o.position, r, FIRE_F * kf, "share:fire", o) > 0:
-		o.main.burst(o.position, Elem.COLORS[Elem.FIRE], 3, 60.0)
+		o._spawning_port.burst(o.position, Elem.COLORS[Elem.FIRE], 3, 60.0)
 
 
 ## 독 전염: 중독된 채 죽으면 주변에 효과
@@ -466,11 +475,11 @@ static func pull(o: Orb) -> void:
 	if kd <= 0.0:
 		return
 	var r := DARK_R * wide(tw)
-	for other in o.main.near(o.position, r + 20.0):
+	for other in o._combat_port.near(o.position, r + 20.0):
 		if other != o and is_instance_valid(other) and other.hp > 0.0 and other.position.distance_to(o.position) < r:
 			other.push((o.position - other.position).normalized() * DARK_PULL * kd)
 			carry(tw, other, DARK_F * kd, "share:dark", o.position, other.position.distance_to(o.position) / r)
-	o.main.burst(o.position, Elem.COLORS[Elem.DARK], 8, -90.0)
+	o._spawning_port.burst(o.position, Elem.COLORS[Elem.DARK], 8, -90.0)
 
 
 ## 빛 꿰뚫음: 치명타가 난 구체 뒤쪽 일직선
@@ -484,14 +493,14 @@ static func pierce(tw: Object, o: Orb) -> void:
 		d = tw.aim
 	var length := LIGHT_LEN * wide(tw)
 	var mid := o.position + d * length * 0.5
-	for other in tw.main.near(mid, length * 0.5 + 20.0):
+	for other in tw._combat_port.near(mid, length * 0.5 + 20.0):
 		if other == o or not is_instance_valid(other) or other.hp <= 0.0:
 			continue
 		var rel: Vector2 = other.position - o.position
 		var along := rel.dot(d)
 		if along > 0.0 and along < length and absf(rel.cross(d)) < LIGHT_W + other.radius():
 			carry(tw, other, LIGHT_F * kl, "share:light", other.position - d, along / length)
-	tw.main.beam(o.position, o.position + d * length, Elem.COLORS[Elem.LIGHT])
+	tw._spawning_port.beam(o.position, o.position + d * length, Elem.COLORS[Elem.LIGHT])
 
 
 ## Tower.hit에서: 자리가 없는 오브젝트는 공격 자체를 자리로 본다 (땅 다짐: 맞은 구체가 확률로 묶임) · 시간 되풀이(맞힌 구체에 효과 한 번 더)
@@ -529,7 +538,7 @@ static func aff_hit(tw: Object, o: Orb, k: float, lit: bool, had_chill: float) -
 		var d: float = o.hurt(ref_dmg(tw) * THERMO_DMG * minf(had_chill, 3.0) / 3.0 * o.resist_mul(els), false, tw)
 		tw.credit(d, "aff:thermo")
 		if tw.main:
-			tw.main.burst(o.position, Color(0.8, 0.9, 1.0), 6, 100.0)
+			tw._spawning_port.burst(o.position, Color(0.8, 0.9, 1.0), 6, 100.0)
 	if o.hp <= 0.0:
 		return
 	if ids.has("rust") and els.has(Elem.POISON) and o.poison_t > 0.0:
@@ -546,7 +555,7 @@ static func aff_hit(tw: Object, o: Orb, k: float, lit: bool, had_chill: float) -
 		return
 	tw.aff_cd = NEAR_CD
 	var r := NEAR_R * wide(tw)
-	for other in tw.main.near(o.position, r + 20.0):
+	for other in tw._combat_port.near(o.position, r + 20.0):
 		if other == o or not is_instance_valid(other) or other.hp <= 0.0 or other.position.distance_to(o.position) > r + other.radius():
 			continue
 		if blz:
@@ -568,7 +577,7 @@ static func gore(o: Orb) -> void:
 		return
 	var old_tag: String = tw.tag
 	tw.tag = "share:blood"
-	var z: Zone = tw.main.spawn_zone("gore", tw.plv, o.position, tw)
+	var z: Zone = tw._spawning_port.spawn_zone("gore", tw.plv, o.position, tw)
 	tw.tag = old_tag
 	z.amt = kb
 	z.maker = o
@@ -609,7 +618,7 @@ static func mark(tw: Object, o: Orb) -> void:
 			t2.mirror_f = ILLU_F * ki
 
 
-## 비친 상을 받은 오브젝트가 다음에 맞힐 때 (Tower.hit): 비춘 오브젝트 효과를 이 구체에 (한 번 쓰면 사라짐)
+## 전달한 효과을 받은 오브젝트가 다음에 맞힐 때 (Tower.hit): 비춘 오브젝트 효과를 이 구체에 (한 번 쓰면 사라짐)
 static func reflect(tw: Object, o: Orb) -> void:
 	var src: Object = tw.mirror_src
 	tw.mirror_src = null
@@ -617,4 +626,4 @@ static func reflect(tw: Object, o: Orb) -> void:
 		return
 	carry(src, o, tw.mirror_f, "share:illusion", tw.position, 0.0)
 	if tw.main and tw.main.pulses.size() < 40:
-		tw.main.beam(src.position, tw.position, Elem.COLORS[Elem.ILLUSION])
+		tw._spawning_port.beam(src.position, tw.position, Elem.COLORS[Elem.ILLUSION])

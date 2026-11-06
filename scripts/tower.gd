@@ -9,6 +9,7 @@ extends Node2D
 
 const RADIUS := 18.0
 
+var new_reactions := {}  # 이번 실행에서 새로 생긴 조합. 인스펙터에서 읽을 때까지 유지
 var elements := {}  # 속성 -> 겹친 수(=그 속성 레벨)
 var order: Array[int] = []  # 넣은 순서
 var pattern := Pat.DEFAULT
@@ -75,7 +76,7 @@ var ring_n := 0  # 그 구간에 터뜨린 수
 var clock_hit := {}  # 시계침: 이번 한 번 훑는 동안 맞힌 구체 ([바늘 번호, 구체] -> true, 다중 발사 바늘은 따로 센다)
 var light_cd := 0.0  # 빛 꿰뚫음 다시 쓸 때까지 (Share.pierce)
 var mirror_cd := 0.0  # 환영 비춤 다시 쓸 때까지 (Share.mark)
-var mirror_src: Object = null  # 옆 환영 오브젝트가 비춘 상: 다음 공격에 그 오브젝트 효과 (Share.reflect)
+var mirror_src: Object = null  # 옆 환영 오브젝트가 전달한 효과: 다음 공격에 그 오브젝트 효과 (Share.reflect)
 var mirror_t := 0.0
 var mirror_f := 0.0
 var aff_cd := 0.0  # 상성 둘레 효과(눈보라·비바람·증기) 다시 쓸 때까지 (Share.aff_hit)
@@ -84,7 +85,21 @@ var side_n := 0  # 지난 큰 보조 공격 뒤 보조 공격 수 (Side)
 var side_big_fx := 0.0  # 큰 보조 공격 번쩍임
 var chain_end := Vector2.ZERO  # 연쇄 번개가 마지막으로 친 자리
 var later: Array = []  # [남은 초, Callable]: 잠시 뒤 효과 (시간 되풀이, Share.on_hit)
-var main: Node
+var _abilities_port: BinduAbilities
+var _combat_port: BinduCombat
+var _hud_port: BinduHud
+var _multiplayer_port: BinduMultiplayer
+var _spawning_port: BinduSpawning
+var _viewport_port: BinduViewport
+var main: BinduSession:
+	set(value):
+		main = value
+		_abilities_port = value.abilities_system if value != null else null
+		_combat_port = value.combat_system if value != null else null
+		_hud_port = value.hud_system if value != null else null
+		_multiplayer_port = value.multiplayer_system if value != null else null
+		_spawning_port = value.spawning_system if value != null else null
+		_viewport_port = value.viewport_system if value != null else null
 var owner_id := 0  # 협동 멀티플레이: 놓은 사람 id (0이면 혼자 하는 판)
 var net_id := 0  # 협동 멀티플레이: 기기끼리 같은 오브젝트를 찾는 번호
 var req_e := -1  # 협동: 주인이 요청한 속성 (-1 없음). 다른 사람이 그 속성 카드만 넣을 수 있다
@@ -186,7 +201,7 @@ func jam(sec: float) -> bool:
 	jam_t = sec
 	jam_imm = sec + Rules.t("jam_imm")
 	if main:
-		main.burst(position, Color(0.55, 0.45, 0.7), 10, 120.0)
+		_spawning_port.burst(position, Color(0.55, 0.45, 0.7), 10, 120.0)
 	return true
 
 
@@ -265,7 +280,7 @@ func _fire_mul(commit: bool) -> Array:
 		mul *= third_mul(tg("third"))
 		size *= Rules.t("third_size")
 		key = "trig:third"
-	var strike: bool = tg("charge") > 0 and charge >= charge_need() and main != null and not main.near(position, 450.0).is_empty()
+	var strike: bool = tg("charge") > 0 and charge >= charge_need() and main != null and not _combat_port.near(position, 450.0).is_empty()
 	if strike:
 		var n := tg("charge")
 		mul *= charge_mul(n)
@@ -276,7 +291,7 @@ func _fire_mul(commit: bool) -> Array:
 			third_n += 1
 		if strike:
 			charge = 0.0
-			main.burst(position, Pat.TRIG_COLOR, 24, 220.0)
+			_spawning_port.burst(position, Pat.TRIG_COLOR, 24, 220.0)
 		if key != "":
 			_notify_allies(position + aim * 120.0)
 	return [mul, size, key]
@@ -300,7 +315,7 @@ func _notify_allies(p: Vector2) -> void:
 func _answer(p: Vector2) -> void:
 	answer_cd = Rules.t("answer_cd")
 	var d := (p - position).normalized() if p.distance_to(position) > 1.0 else dir
-	var pr: Projectile = main.spawn_proj(self, "shot", plv, d)
+	var pr: Projectile = _spawning_port.spawn_proj(self, "shot", plv, d)
 	pr.src = "trig:answer"
 	pr.dmg *= answer_dmg(tg("answer"))
 	pr.form_init()
@@ -585,7 +600,7 @@ func detail_lines() -> Array:
 		fp.append("오브젝트 수 x%.2f" % (1.0 + Rules.crowd_bonus(main.towers.get_child_count())))
 	if dmg_mul != 1.0:
 		fp.append("특성 x%.2f" % dmg_mul)
-	if main and main.on_ley(self):
+	if main and _abilities_port.on_ley(self):
 		fp.append("기맥 x%.2f" % (1.0 + Rules.t("ley_dmg")))
 	out.append(["  피해 배율: " + " · ".join(fp) + " (공명·강화·패치 포함 x%.2f)" % f, dim])
 	if shots > 1.0:
@@ -640,7 +655,7 @@ func dmg_factors() -> Dictionary:
 		mul.append(["오브젝트 %d개" % main.towers.get_child_count(), 1.0 + Rules.crowd_bonus(main.towers.get_child_count()), "i:crowd"])
 	if dmg_mul != 1.0:
 		mul.append(["특성", dmg_mul, "k:perk"])
-	if main and main.on_ley(self):
+	if main and _abilities_port.on_ley(self):
 		mul.append(["기맥 위", 1.0 + Rules.t("ley_dmg"), "k:link"])
 	return {"chain": chain, "mul": mul, "f": hc["f"]}
 
@@ -713,7 +728,7 @@ func bounce_iv() -> float:
 ## 탄이 아닌 공격의 튕김: 맞힌 구체 o에서 가까운 다른 구체로 작은 탄 튕김 개수만큼 (직선탄 한 발 x bounce_hit)
 func _area_bounce(o: Orb) -> void:
 	var cands: Array = []
-	for other in main.near(o.position, 140.0):
+	for other in _combat_port.near(o.position, 140.0):
 		if other != o and other.hp > 0.0 and other.position.distance_to(o.position) < 140.0:
 			cands.append(other)
 	if cands.is_empty():
@@ -721,7 +736,7 @@ func _area_bounce(o: Orb) -> void:
 	bounce_cd = bounce_iv()
 	cands.sort_custom(func(a, b): return a.position.distance_squared_to(o.position) < b.position.distance_squared_to(o.position))
 	for i in mini(mn("bounce"), cands.size()):
-		var p: Projectile = main.spawn_proj(self, "frag", plv, (cands[i].position - o.position).normalized())
+		var p: Projectile = _spawning_port.spawn_proj(self, "frag", plv, (cands[i].position - o.position).normalized())
 		p.src = "mod:bounce"
 		p.dmg = 2.4 * pw(plv) * Rules.bounce_hit
 		p.max_travel = 160.0
@@ -759,14 +774,14 @@ func dmg_factor(rx := false) -> float:
 	f *= MapRule.tower_mul(elements, pattern)  # 맵 친화 속성·공격방식
 	if main and on_lane():
 		f *= 1.0 + Rules.t("map_cross_dmg")  # 십자로: 길목에서 길 따라 겨눔
-	if main and main.on_ley(self):
+	if main and _abilities_port.on_ley(self):
 		f *= 1.0 + Rules.t("ley_dmg")  # 기맥 위
 	return f
 
 
 ## 십자로: 길 위에서 길을 따라 겨누는지 (혼불은 떠돌아서 제외)
 func on_lane() -> bool:
-	return pattern != "wisp" and main != null and MapRule.on_lane(position, dir, main.center(), main.lanes)
+	return pattern != "wisp" and main != null and MapRule.on_lane(position, dir, _viewport_port.center(), main.lanes)
 
 
 ## hit용 피해 배율. 한 계산 조각 안에서는 변하지 않으니 조각마다 한 번만 계산한다
@@ -828,7 +843,7 @@ func breakdown() -> Dictionary:
 		fs.append(["mod:multi", log((1 + mn("multi")) * multi_k())])
 	if dmg_mul * spd_mul > 1.0:
 		fs.append(["etc:perk", log(dmg_mul * spd_mul)])
-	if main and main.on_ley(self):
+	if main and _abilities_port.on_ley(self):
 		fs.append(["etc:ley", log(1.0 + Rules.t("ley_dmg"))])
 	for id in mods:  # 강화 보정표로 늘어난 몫은 그 강화로 (줄어든 몫은 0 이하라 아래에서 빠짐)
 		fs.append(["mod:" + id, log(Pat.mod_fix(pattern, id, mf(id)))])
@@ -883,7 +898,9 @@ func color() -> Color:
 ## 속성을 겹친다. 결과 메시지를 돌려준다.
 func add(e: int, n: int) -> String:
 	var fresh := Elem.new_reactions(eff_now(), e)
+	for reaction in fresh: new_reactions[reaction["id"]] = true
 	elements[e] = mini(lv(e) + n, elem_cap())
+	eff = eff_now()
 	if not order.has(e):
 		order.append(e)
 	place_pop = 1.0
@@ -1296,7 +1313,7 @@ func roll_dice() -> void:
 		dice_miss = 0
 		dice_x = Rules.dice_top
 		if main:
-			main.burst(position, Color(1, 0.85, 0.3), 6, 90.0)
+			_spawning_port.burst(position, Color(1, 0.85, 0.3), 6, 90.0)
 	else:
 		dice_x = Rules.t("dice_mid") if best >= 4 else 1.0
 
@@ -1470,7 +1487,7 @@ func attack(delta: float, orbs: Array) -> void:
 			if _ready_to("p", BASE_IV[pattern] / spd(l), dp):
 				var n := shots()
 				for i in n:
-					var pr: Projectile = main.spawn_proj(self, "gust", l, aim, aim.orthogonal() * Rules.t("gust_gap") * (i - (n - 1) / 2.0))
+					var pr: Projectile = _spawning_port.spawn_proj(self, "gust", l, aim, aim.orthogonal() * Rules.t("gust_gap") * (i - (n - 1) / 2.0))
 					pr.dmg *= mk
 					pr.form_init()
 		"shot", "thorn", "shard", "iron":
@@ -1478,7 +1495,7 @@ func attack(delta: float, orbs: Array) -> void:
 				var ls := lanes()
 				var ds := dirs()
 				for i in ds.size():
-					var pr: Projectile = main.spawn_proj(self, pattern, l, ds[i], ls[i])
+					var pr: Projectile = _spawning_port.spawn_proj(self, pattern, l, ds[i], ls[i])
 					pr.dmg *= mk  # 다중 발사: 한 발 피해 감소
 					pr.form_init()
 		"spray":
@@ -1514,7 +1531,7 @@ func attack(delta: float, orbs: Array) -> void:
 		"wall":
 			rocks = rocks.filter(func(r): return is_instance_valid(r))
 			if _ready_to("p", Rules.t("wall_iv") / spd(l), dp) and rocks.size() < 2 + roundi(mf("multi")):
-				main.spawn_rock(self, l)
+				_spawning_port.spawn_rock(self, l)
 		"vortex":
 			# 중력 우물 (2026-11-01 사용자 "블랙홀을 중력·흡수 컨셉으로"): 사거리 안 구체가 가장 빽빽한 곳에 떨어져
 			# 끌어모으고, 안에 든 구체가 다른 오브젝트에게 받은 피해 일부를 모았다가 끝에 터진다 (Zone.well).
@@ -1524,7 +1541,7 @@ func attack(delta: float, orbs: Array) -> void:
 				if spots.is_empty():
 					cd["p"] = 0.3
 				for p in spots:
-					main.spawn_zone("vortex", l, p, self).well()
+					_spawning_port.spawn_zone("vortex", l, p, self).well()
 		"laser":
 			if _ready_to("p", BASE_IV.laser / spd(l), dp):
 				fx["laser"] = 0.3
@@ -1537,7 +1554,7 @@ func attack(delta: float, orbs: Array) -> void:
 				var ls := lanes()
 				var ds := dirs()
 				for i in ds.size():
-					main.spawn_proj(self, "blob", l, ds[i], ls[i]).form_init()
+					_spawning_port.spawn_proj(self, "blob", l, ds[i], ls[i]).form_init()
 		"sonic":
 			# 부채꼴로 퍼지는 파동: 안의 구체를 모두 치고, 멀수록 약하다 (끝에서 50%)
 			if _ready_to("p", BASE_IV.sonic / spd(l), dp):
@@ -1564,7 +1581,7 @@ func attack(delta: float, orbs: Array) -> void:
 			wisps = wisps.filter(func(w): return is_instance_valid(w) and not w.is_queued_for_deletion())
 			var cap := wisp_cap()
 			if wisps.size() < cap and _ready_to("p", Projectile.WISP_RESPAWN / spd(l), dp):
-				var pr: Projectile = main.spawn_proj(self, "wisp", l, aim.rotated(randf_range(-0.8, 0.8)))
+				var pr: Projectile = _spawning_port.spawn_proj(self, "wisp", l, aim.rotated(randf_range(-0.8, 0.8)))
 				# 다중 발사: 혼불 수가 늘고, 모두 합친 세기는 다른 공격방식의 다중 발사와 같게 ((1 + 다중) x 한 발 배율)
 				pr.dmg *= mk * (1.0 + mf("multi")) * 2.0 / cap
 				pr.form_init()
@@ -1613,8 +1630,8 @@ func _pincer(o: Orb) -> void:
 	d = o.hurt(d, false, self)
 	credit(d, "link:pincer")
 	if main:
-		main.popup(o.position, d, Color(1.0, 0.55, 0.85), true, "협공")
-		main.burst(o.position, Color(1.0, 0.55, 0.85), 8, 120.0)
+		_spawning_port.popup(o.position, d, Color(1.0, 0.55, 0.85), true, "협공")
+		_spawning_port.burst(o.position, Color(1.0, 0.55, 0.85), 8, 120.0)
 
 
 ## 특징 공유: 잠시 뒤 효과(시간 되풀이)·빛줄기 간격 (Share).
@@ -1645,9 +1662,9 @@ func well_spots(n: int) -> Array:
 	var out: Array = []
 	var rng := well_range()
 	var cand: Array = []
-	for o in main.near(position, rng):
+	for o in _combat_port.near(position, rng):
 		if o.hp > 0.0 and o.position.distance_to(position) <= rng:
-			cand.append([main.near(o.position, 110.0).size(), o.position])
+			cand.append([_combat_port.near(o.position, 110.0).size(), o.position])
 	cand.sort_custom(func(a, b): return a[0] > b[0])
 	for c in cand:
 		if out.size() >= n:
@@ -1685,7 +1702,7 @@ func clock_a() -> float:
 func _chain_list(orbs: Array, d: Vector2, rng: float, n: int) -> Array:
 	var first: Orb = null
 	var best := rng
-	for o in main.near_t(position, rng):
+	for o in _combat_port.near_t(position, rng):
 		var v: Vector2 = o.position - position
 		if v.length() < best and absf(d.angle_to(v)) < 0.5:
 			best = v.length()
@@ -1697,7 +1714,7 @@ func _chain_list(orbs: Array, d: Vector2, rng: float, n: int) -> Array:
 	while out.size() < n:
 		var nxt: Orb = null
 		var nd := 110.0
-		for o in main.near_t(cur.position, nd):
+		for o in _combat_port.near_t(cur.position, nd):
 			if not out.has(o) and o.position.distance_to(cur.position) < nd:
 				nd = o.position.distance_to(cur.position)
 				nxt = o
@@ -1724,7 +1741,7 @@ func _ring(o: Orb, amount: float) -> void:
 	o.ring = 0.0
 	o.ring_cd = Rules.t("sound_cd")
 	if main:
-		main.sound_pulse(o)
+		_spawning_port.sound_pulse(o)
 
 
 ## 물길: 공격 방향으로 흐르는 띠. 웨이브가 시작되면 물이 앞으로 흘러 나간다.
@@ -1797,7 +1814,7 @@ func _update_aim(orbs: Array, delta: float) -> void:
 	# 가장 가까운 구체가 아니라 구체가 가장 많이 모인 쪽으로 (2026-10-30: 가까운 한 개를 따라가 무리 가운데를 벗어나
 	# 분사·음파·물줄기·레이저·시계침에서 유도가 피해를 0.65~0.86배로 깎던 것)
 	var angs := PackedFloat32Array()
-	for o in main.near_t(position, 400.0):
+	for o in _combat_port.near_t(position, 400.0):
 		var v: Vector2 = o.position - position
 		if v.length() < 400.0:
 			var a := dir.angle_to(v)
@@ -1898,10 +1915,10 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	o.last_rx = in_rx or tag.begins_with("share:")
 	dealt += d
 	# 별: 둘레 별 오브젝트가 이 피해의 일부를 복사해 별빛으로 모은다 (이 피해는 줄지 않는다)
-	if not in_nova and main and not main.star_towers.is_empty():
+	if not in_nova and main and not _combat_port.star_towers.is_empty():
 		# 한 피해를 여러 별이 받으면 별 수로 나눠 받는다 (별을 겹쳐 둬도 보너스는 1개분, 2026-11-01)
 		var feeders: Array = []
-		for s2 in main.star_towers:
+		for s2 in _combat_port.star_towers:
 			if s2 == self or s2.position.distance_to(position) < Rules.t("star_r"):
 				feeders.append(s2)
 		for s2 in feeders:
@@ -1957,7 +1974,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	if els.has(Elem.DARK):
 		o.vuln(Rules.dark_t * dm, (Rules.dark_vuln + Rules.dark_lv * els.get(Elem.DARK, 0)) * g * Share.am(self, Elem.DARK), self)
 	if els.has(Elem.ELECTRIC) and randf() < Rules.elec_ch * k * Share.am(self, Elem.ELECTRIC):
-		main.arc(o, d * Rules.elec_dmg * els.get(Elem.ELECTRIC, 0), self)
+		_spawning_port.arc(o, d * Rules.elec_dmg * els.get(Elem.ELECTRIC, 0), self)
 	if els.has(Elem.SOUND):
 		# 울림을 걸어 둔다: 3초 동안 어느 오브젝트에 맞아도 쌓인다
 		if o.tune_t <= 0.0 or els.get(Elem.SOUND, 0) >= o.tune_lv:
@@ -1991,7 +2008,7 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		_area_bounce(o)
 	if can_split and m("split") > 0 and randf() < split_ch() * minf(k, 1.0):
 		for i in 2:
-			var p: Projectile = main.spawn_proj(self, "frag", plv, Vector2.from_angle(randf() * TAU))
+			var p: Projectile = _spawning_port.spawn_proj(self, "frag", plv, Vector2.from_angle(randf() * TAU))
 			p.src = "mod:split"
 			p.dmg *= Rules.t("split_dmg")
 			p.position = o.position
@@ -2233,10 +2250,10 @@ func _nova_aim_tick(delta: float) -> void:
 func _nova_pick() -> Orb:
 	var best: Orb = null
 	var bn := -1
-	for o in main.near(position, 450.0):
+	for o in _combat_port.near(position, 450.0):
 		if o.hp <= 0.0 or o.position.distance_to(position) > 450.0:
 			continue
-		var n: int = main.near(o.position, 110.0).size()
+		var n: int = _combat_port.near(o.position, 110.0).size()
 		if n > bn:
 			bn = n
 			best = o
@@ -2264,7 +2281,7 @@ func _supernova(c: Orb) -> void:
 	in_nova = true
 	var r := NOVA_R + 10.0 * (lv(Elem.STAR) - 1)
 	var hits := []
-	for o in main.near(c.position, r + 30.0):
+	for o in _combat_port.near(c.position, r + 30.0):
 		if o.hp > 0.0 and o.position.distance_to(c.position) < r + o.radius():
 			hits.append(o)
 	if not c in hits:
@@ -2277,7 +2294,7 @@ func _supernova(c: Orb) -> void:
 			var rr := Elem.reaction_of(ids[i], ids[j])
 			if not rr.is_empty():
 				rx_bonus += 0.15
-				main.burst(c.position, rr["color"], 12, 200.0)
+				_spawning_port.burst(c.position, rr["color"], 12, 200.0)
 	var total := 0.0
 	var cap := {}  # 보스마다 이번 초신성(행성 효과 포함)으로 더 깎을 수 있는 체력 (star_boss_cap, nova_hurt가 채움)
 	for o in hits:
@@ -2302,8 +2319,8 @@ func _supernova(c: Orb) -> void:
 	nova_pos = c.position
 	nova_from = position
 	nova_aim = null
-	main.burst(c.position, Elem.COLORS[Elem.STAR], 40, 320.0)
-	main.popup(c.position + Vector2(0, -30), total, Elem.COLORS[Elem.STAR], true, "초신성!", 1.2)
+	_spawning_port.burst(c.position, Elem.COLORS[Elem.STAR], 40, 320.0)
+	_spawning_port.popup(c.position + Vector2(0, -30), total, Elem.COLORS[Elem.STAR], true, "초신성!", 1.2)
 	main.shake = maxf(main.shake, 0.25)
 	_notify_allies(c.position)
 
@@ -2344,7 +2361,7 @@ func _nova_follow(at: Vector2, hits: Array, _pool: float, _cap: Dictionary) -> v
 	for o in hits:
 		Share.carry(self, o, Share.STAR_F * ks, "share:star", at, o.position.distance_to(at) / 200.0)
 	var e := planet()
-	main.burst(at, Elem.COLORS[e] if e >= 0 else NOVA_COL, 24, 240.0)
+	_spawning_port.burst(at, Elem.COLORS[e] if e >= 0 else NOVA_COL, 24, 240.0)
 
 
 ## 여진: 잡은 구체 자리에서 작은 탄이 고르게 사방으로 (쏘는 방향은 판마다 조금씩 돈다).
@@ -2354,7 +2371,7 @@ func _echo(o: Orb) -> void:
 	var n := int(Rules.t("echo_n")) + tg("echo") - 1
 	var a0 := randf() * TAU
 	for i in n:
-		var p: Projectile = main.spawn_proj(self, "frag", plv, Vector2.from_angle(a0 + TAU * i / n))
+		var p: Projectile = _spawning_port.spawn_proj(self, "frag", plv, Vector2.from_angle(a0 + TAU * i / n))
 		p.src = "trig:echo"
 		p.dmg *= Rules.t("echo_dmg")
 		p.position = o.position
@@ -2370,7 +2387,7 @@ func form_path(pos: Vector2) -> void:
 		return
 	var old_tag := tag
 	tag = "share:water"
-	var z: Zone = main.spawn_zone("rill", plv, pos, self)
+	var z: Zone = _spawning_port.spawn_zone("rill", plv, pos, self)
 	z.amt = a
 	z.life *= Share.dur(self)
 	z.max_life = z.life
@@ -2383,7 +2400,7 @@ const FORM_ZONES := ["rill"]
 
 ## d 방향 부채꼴 안의 구체에 효과.
 func _cone(_orbs: Array, d: Vector2, rng: float, half: float, f: Callable) -> void:
-	for o in main.near_t(position, rng):
+	for o in _combat_port.near_t(position, rng):
 		var v: Vector2 = o.position - position
 		if v.length() < rng + o.radius() and absf(d.angle_to(v)) < half:
 			f.call(o)
@@ -2391,7 +2408,7 @@ func _cone(_orbs: Array, d: Vector2, rng: float, half: float, f: Callable) -> vo
 
 ## from에서 d 방향 띠(길이 length, 반폭 half_w) 안의 구체에 효과.
 func _band(_orbs: Array, from: Vector2, d: Vector2, length: float, half_w: float, f: Callable) -> void:
-	for o in main.near_t(from + d * length * 0.5, length * 0.5 + half_w + 32.0):
+	for o in _combat_port.near_t(from + d * length * 0.5, length * 0.5 + half_w + 32.0):
 		var v: Vector2 = o.position - from
 		var along := v.dot(d)
 		if along > -o.radius() and along < length + o.radius() and absf(v.cross(d)) < half_w + o.radius():
@@ -2401,7 +2418,7 @@ func _band(_orbs: Array, from: Vector2, d: Vector2, length: float, half_w: float
 ## d 방향 직선 위의 구체에 효과.
 func _line(_orbs: Array, d: Vector2, length: float, width: float, f: Callable, off := Vector2.ZERO) -> void:
 	var p0 := position + off  # off: 다중 발사 짝수 개일 때 나란히 쏘는 옆 간격 (lanes)
-	for o in main.near_t(p0 + d * length * 0.5, length * 0.5 + width):
+	for o in _combat_port.near_t(p0 + d * length * 0.5, length * 0.5 + width):
 		var v: Vector2 = o.position - p0
 		var along := v.dot(d)
 		if along > 0.0 and along < length and absf(v.cross(d)) < width + o.radius():
@@ -2412,7 +2429,7 @@ func _line(_orbs: Array, d: Vector2, length: float, width: float, f: Callable, o
 func _chain(orbs: Array, d: Vector2, l: int, used: Dictionary) -> bool:
 	var first: Orb = null
 	var best: float = FAR
-	for o in main.near_t(position, best):
+	for o in _combat_port.near_t(position, best):
 		var v: Vector2 = o.position - position
 		if not used.has(o) and v.length() < best and absf(d.angle_to(v)) < SHAPE.chain_ang:
 			best = v.length()
@@ -2430,7 +2447,7 @@ func _chain(orbs: Array, d: Vector2, l: int, used: Dictionary) -> bool:
 		hit(cur, HIT.chain * pw(l) * multi_k() * fk)
 		var nxt: Orb = null
 		var nd: float = SHAPE.chain_jump * sz()
-		for o in main.near_t(cur.position, nd):
+		for o in _combat_port.near_t(cur.position, nd):
 			if not hitset.has(o) and o.position.distance_to(cur.position) < nd:
 				nd = o.position.distance_to(cur.position)
 				nxt = o
@@ -2439,7 +2456,7 @@ func _chain(orbs: Array, d: Vector2, l: int, used: Dictionary) -> bool:
 		cur = nxt
 	chain_end = cur.position
 	# 번개는 구체·블랙홀에 가려지지 않게 맨 위 층(main)에 그린다
-	main.bolt(pts)
+	_spawning_port.bolt(pts)
 	return true
 
 
@@ -2484,7 +2501,7 @@ func _draw_owner_mark() -> void:
 		draw_arc(Vector2.ZERO, r + 4.0 + 3.0 * k, 0.0, TAU, 36, Color(c, 0.35 + 0.4 * k), 2.0, true)
 	if main == null or owner_id == main.mp.my_id:
 		return
-	var nm: String = main._mp_name(owner_id)
+	var nm: String = _multiplayer_port._mp_name(owner_id)
 	var p := Vector2(r * 0.71, r * 0.71)  # 오른쪽 아래 (왕관은 왼쪽 위, 요청 방울은 오른쪽 위)
 	draw_circle(p, 8.5, Color(0, 0, 0, 0.75))
 	draw_circle(p, 7.0, c)
@@ -2502,7 +2519,7 @@ const RANK_COLORS := [Color(1.0, 0.82, 0.25), Color(0.85, 0.88, 0.95), Color(0.8
 func _draw_rank() -> void:
 	if not main:
 		return
-	var r: int = main.rank_of.get(get_instance_id(), 0)
+	var r: int = _hud_port.rank_of.get(get_instance_id(), 0)
 	if r == 0:
 		return
 	var c: Color = RANK_COLORS[r - 1]
@@ -2542,7 +2559,7 @@ func _draw_rank() -> void:
 func _process(delta: float) -> void:
 	if crown_t > 0.0:
 		crown_t = maxf(crown_t - delta, 0.0)
-	if main and main.rank_of.has(get_instance_id()):
+	if main and _hud_port.rank_of.has(get_instance_id()):
 		queue_redraw()  # 왕관 흔들림·반짝임 (오브젝트 최대 3개)
 	if place_pop > 0.0:
 		place_pop = maxf(place_pop - delta * 3.0, 0.0)

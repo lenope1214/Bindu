@@ -34,9 +34,9 @@ func _initialize():
 			main.wave_time = 10.0
 			main.to_spawn = 0
 			main.core_hp = 999
-			var tp = main.center() + Vector2(-420, 0)
+			var tp = main.viewport_system.center() + Vector2(-420, 0)
 			main.picked = {"e": r["a"], "lv": 1}
-			main._place_tower(tp, Vector2.LEFT if head else Vector2.RIGHT)
+			main.interaction_system._place_tower(tp, Vector2.LEFT if head else Vector2.RIGHT)
 			var t = main.towers.get_child(0)
 			t.add(r["b"], 1)  # SOLO면 같은 속성 Lv2
 			var k0: int = main.kills

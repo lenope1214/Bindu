@@ -554,7 +554,7 @@ static func apply(v: int) -> void:
 ## 목록·설명은 tools/rule_keys.gd가 만든다 (관리 화면 수치 편집 표).
 const CODE := {
 	"Tower": "res://scripts/tower.gd", "Projectile": "res://scripts/projectile.gd", "Orb": "res://scripts/orb.gd",
-	"Main": "res://scripts/main.gd", "Modes": "res://scripts/modes.gd", "Share": "res://scripts/share.gd",
+	"Main": "res://scripts/app/session.gd", "Modes": "res://scripts/modes.gd", "Share": "res://scripts/share.gd",
 	"Pat": "res://scripts/pattern.gd", "MapRule": "res://scripts/maprule.gd", "Skill": "res://scripts/skill.gd",
 }
 static var _code_orig := {}  # "Tower.HIT" → 패치 전 값 (처음 바꿀 때 기억해 두고, 다음 apply마다 되돌린다)

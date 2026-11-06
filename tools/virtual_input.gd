@@ -10,6 +10,9 @@ static func mount(main: Node, window: Window) -> void:
 	window.mode = Window.MODE_MINIMIZED
 	window.set_deferred("mode", Window.MODE_MINIMIZED)
 	window.gui_embed_subwindows = true
+	var tree := Engine.get_main_loop() as SceneTree
+	if not tree.node_added.is_connected(_isolate_clipboard):
+		tree.node_added.connect(_isolate_clipboard)
 	if not is_instance_valid(viewport):
 		viewport = SubViewport.new()
 		viewport.name = "AutomationViewport"
@@ -52,3 +55,9 @@ static func move(at: Vector2, mask := 0) -> void:
 	event.global_position = at
 	event.button_mask = mask
 	send(event)
+
+## 무작위 우클릭으로 텍스트 메뉴가 열릴 때 OS 클립보드를 조회하지 않는다.
+## headless에는 클립보드가 없고, native 검사에서도 개인 클립보드를 사용하면 안 된다.
+static func _isolate_clipboard(node: Node) -> void:
+	if (node is LineEdit or node is TextEdit) and node.get_viewport() == viewport:
+		node.set("context_menu_enabled", false)

@@ -87,7 +87,7 @@ static func _collect(c: Node, out: Array) -> void:
 
 static func check(main, tag: String, extra: Array = []) -> int:
 	var vp: Rect2 = main.get_viewport().get_visible_rect()
-	var pad: Rect2 = main._safe_pad() if main.has_method("_safe_pad") else Rect2()
+	var pad: Rect2 = main.hud_system._safe_pad() if main.hud_system.has_method("_safe_pad") else Rect2()
 	vp = Rect2(vp.position + pad.position, vp.size - pad.position - pad.size)  # 노치·홈 막대 밖은 화면 밖
 	var units := _units(main)
 	var items: Array = []  # [이름, 화면 rect, node or null]
@@ -101,7 +101,7 @@ static func check(main, tag: String, extra: Array = []) -> int:
 	# 그림으로 그린 것(진입 배지·점수 칩): ui_root 좌표 → 화면 좌표
 	var xf: Transform2D = main.ui_root.get_global_transform()
 	if extra.is_empty() and main.get("info_rects") != null:
-		extra = main.info_rects
+		extra = main.field_overlay_system.info_rects
 	for e in extra:
 		items.append([e[0], xf * (e[1] as Rect2), null])
 	# 화면 전체 어둠(일시정지·튜토리얼): 그 밑에 깔린 것은 일부러 가린 것이라 보지 않는다

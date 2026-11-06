@@ -20,8 +20,8 @@ func _initialize():
 		func():
 			Meta.ui_scale = z
 			main.touch_ui = touch
-			main._apply_ui_scale()
-			main.tut_first = false
+			main.hud_system._apply_ui_scale()
+			main.onboarding_system.tut_first = false
 			Tutorial.loaded = true
 			Tutorial.done = true
 			for tp in Tutorial.TOPICS:
@@ -29,24 +29,24 @@ func _initialize():
 			if main.tut.visible:
 				main.tut.close()
 			get_paused_fix()
-			main._close_title(),
+			main.progression_system._close_title(),
 		func():
 			if not main.legend_hidden:
-				main._toggle_legend()
-			var c: Vector2 = main.core()
+				main.cards_system._toggle_legend()
+			var c: Vector2 = main.viewport_system.core()
 			var es := [Elem.FIRE, Elem.ICE, Elem.LIGHT, Elem.WIND, Elem.SOUL, Elem.EARTH, Elem.WATER]
 			var dl := [2400.0, 1500.0, 3100.0, 400.0, 900.0, 1250.0, 600.0]
 			for i in es.size():
 				main.picked = {"e": es[i], "lv": 3}
-				main._place_tower(c + Vector2.from_angle(i * TAU / es.size() + 0.3) * 170.0, Vector2.RIGHT)
+				main.interaction_system._place_tower(c + Vector2.from_angle(i * TAU / es.size() + 0.3) * 170.0, Vector2.RIGHT)
 				var t = main.towers.get_child(i)
 				t.add(es[(i + 2) % es.size()], 2)
 			for i in es.size():
 				main.towers.get_child(i).dealt = dl[i]
 			main.wave = 24
 			main.wave_time = 30.0
-			main._rank_update()
-			main._set_cards_hidden(true),
+			main.hud_system._rank_update()
+			main.cards_system._set_cards_hidden(true),
 		func(): VirtualInput.move(Vector2(5, 5)),
 		func(): _snap("rank"),
 	]
@@ -61,7 +61,7 @@ func _snap(n: String):
 	RenderingServer.force_draw()
 	main.get_viewport().get_texture().get_image().save_png(out.path_join("%s_%s%s%s.png" % [n, z, "_touch" if touch else "", "_phone" if Meta.sim_phone else ""]))
 	var img: Image = main.get_viewport().get_texture().get_image()
-	var c: Vector2 = main.core()
+	var c: Vector2 = main.viewport_system.core()
 	var sc: Transform2D = main.get_viewport().get_final_transform() * main.get_canvas_transform()
 	var cc := sc * c
 	var hw := 260.0 * sc.get_scale().x

@@ -28,9 +28,9 @@ func _initialize():
 				main.wave_time = 10.0
 				main.to_spawn = 0
 				main.core_hp = 999
-				var tp = main.center() + Vector2(-420, 0)
+				var tp = main.viewport_system.center() + Vector2(-420, 0)
 				main.picked = {"e": e, "lv": 1}
-				main._place_tower(tp, Vector2.RIGHT if sc == "cross" else Vector2.LEFT)
+				main.interaction_system._place_tower(tp, Vector2.RIGHT if sc == "cross" else Vector2.LEFT)
 				var t = main.towers.get_child(0)
 				for i in plv:
 					t.set_pattern(p)

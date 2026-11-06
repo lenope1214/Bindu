@@ -18,10 +18,10 @@ func _initialize():
 	Meta.map_id = Meta.MAP_IDS[(sd / 4) % Meta.MAP_IDS.size()]
 	# 모드도 시드마다 몇 개씩 (반대 쌍은 set_on이 거른다)
 	Modes.set_on(Modes.ORDER.filter(func(_m): return randf() < 0.25))
-	main._apply_rules()
-	main.start_modes()
+	main.run_flow_system._apply_rules()
+	main.hud_system.start_modes()
 	main.lanes.clear()
-	main._roll_lanes()
+	main.waves_system._roll_lanes()
 	# 짝수 시드는 첫 판(카드 단계별·처음 안내)으로. 헤드리스는 원래 첫 판 안내를 끈다
 	main.tutor = sd % 2 == 0
 	Meta.guide_seen = {}
@@ -30,7 +30,7 @@ func _initialize():
 	var z: float = Meta.UI_SCALES[sd % Meta.UI_SCALES.size()]
 	main.ready.connect(func():
 		Meta.ui_scale = z
-		main._apply_ui_scale())
+		main.hud_system._apply_ui_scale())
 	print("FUZZR rules=", Meta.rules, " map=", Meta.map_id, " tutor=", main.tutor, " ui=", z, " modes=", ",".join(Modes.on))
 func _mouse(pos: Vector2, btn: int, pressed: bool, shift := false):
 	var e := InputEventMouseButton.new()
@@ -75,7 +75,7 @@ func _process(_d):
 		main.cancel_btn.emit_signal("pressed")
 	if main.get_tree().paused and randf() < 0.05: _key(KEY_P)
 	if f % 1000 == 0:
-		print("FUZZ f=%d phase=%d wave=%d towers=%d sel=%d" % [f, main.phase, main.wave, main.towers.get_child_count(), main.selected.size()])
+		print("FUZZ f=%d phase=%d wave=%d towers=%d sel=%d" % [f, main.phase, main.wave, main.towers.get_child_count(), main.interaction_system.selected.size()])
 	if f >= n:
 		print("FUZZ DONE frames=%d" % f)
 		return true

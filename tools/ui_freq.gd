@@ -51,12 +51,12 @@ func _initialize():
 func _place() -> void:
 	if main.title_label.visible:
 		main.title_label.visible = false
-		main._start_choose()
-	var c: Vector2 = main.center()
+		main.run_flow_system._start_choose()
+	var c: Vector2 = main.viewport_system.center()
 	for i in 16:
 		var a := TAU * i / 16
 		main.picked = {"e": Elem.ALL[i % Elem.ALL.size()], "lv": 3}
-		main._place_tower(c + Vector2(cos(a), sin(a)) * (150 + 70 * (i % 3)), Vector2(cos(a + 1.6), sin(a + 1.6)))
+		main.interaction_system._place_tower(c + Vector2(cos(a), sin(a)) * (150 + 70 * (i % 3)), Vector2(cos(a + 1.6), sin(a + 1.6)))
 		var t = main.towers.get_child(i)
 		t.set_pattern(Pat.PATTERN_IDS[i % Pat.PATTERN_IDS.size()])
 		for k in 2:
@@ -73,15 +73,15 @@ func _begin(s: String) -> void:
 	match s:
 		"ready":
 			main.wave = 12
-			main._enter_ready()
+			main.cards_system._enter_ready()
 			main.countdown = -1.0
 		"choose":
 			main.wave = 13
-			main._start_choose()
+			main.run_flow_system._start_choose()
 		"wave":
 			Rules.orb_hp = 40.0
 			main.wave = 29
-			main._start_wave()
+			main.run_flow_system._start_wave()
 			main.to_spawn = 400
 			main.spawn_interval = 0.02
 			main.game_speed = 1.0

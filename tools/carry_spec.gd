@@ -10,7 +10,7 @@ func _initialize() -> void:
 	main = load("res://main.tscn").instantiate()
 	root.add_child(main)
 	await process_frame
-	main._hide_title()
+	main.progression_system._hide_title()
 	_carry_cards()
 	_tutorial()
 	print("CARRY SPEC failures=%d features=%d" % [fails, seen.size()])
