@@ -267,6 +267,21 @@ cd server && ./setup.sh https://도메인 && docker compose up -d --build
 - 패치 탭의 카드 사용 여부 표에서 속성·공격방식·강화·발동·연계·특성을 `1`(사용) 또는 `0`(미사용)으로 바꿀 수 있음. 새 게임 빌드와 패치 서버 배포가 필요하며, 속성 카드는 하나 이상 켜 둬야 함.
 - 게임의 웨이브·점수 공식을 바꾸면 `server/app/validate.py`도 맞춘다(점수 검증 상한).
 
+## macOS 설치형 앱 빌드
+
+```sh
+./build_macos.command
+# 일반 배포용 Developer ID 서명·공증
+MACOS_SIGN_IDENTITY='Developer ID Application: ...' MACOS_NOTARY_PROFILE=bindu ./build_macos.command
+```
+
+- Xcode 명령행 도구와 libarchive 헤더(`brew install libarchive`) 필요. Godot 내보내기 템플릿은 없으면 자동 설치.
+- 결과: `build/macos/Bindu.app`, `build/macos/Bindu-macos.zip` (Intel·Apple Silicon 공용).
+- 기본은 로컬 QA용 ad-hoc 서명. 일반 배포본은 Developer ID 서명·공증 후 배포.
+- 설치형 앱은 시작 화면 [업데이트]로 다운로드·앱 교체·재시작. 기존 Windows 업데이트 서버를 재사용하며 Sparkle은 사용하지 않음.
+- 개발용 `run_mac.command`의 main 소스 실행 흐름은 그대로. 설치형 앱과 배포·업데이트 방식이 다름.
+- 릴리스 등록·실패 복구·검증: [서버 안내](server/README.md), [도구 안내](tools/README.md).
+
 ## Windows exe 빌드 (Mac에서)
 Finder에서 `build_windows.command`를 더블클릭하거나 터미널에서 실행.
 ```

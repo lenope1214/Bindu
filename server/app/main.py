@@ -522,7 +522,7 @@ def set_release(platform: str, body: ReleaseIn, db: Session = Depends(get_db)):
     sha, size = body.sha256.strip().lower(), body.size
     if sha and not re.fullmatch(r"[0-9a-f]{64}", sha):
         raise HTTPException(422, "sha256: 16진수 64자")
-    if not sha and url and platform == "windows":
+    if not sha and url and platform in {"windows", "macos"}:
         try:
             sha, size = fetch_hash(url)
         except Exception as e:

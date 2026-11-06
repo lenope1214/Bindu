@@ -1,0 +1,12 @@
+"GET /v1/boot?game=0.0.1&platform=macos&patch=0 HTTP/1.1" 200 -
+"GET /Bindu-macos.zip HTTP/1.1" 200 -
+"GET /v1/boot?game=0.0.2&platform=macos&patch=0 HTTP/1.1" 200 -
+"GET /v1/boot?game=0.0.1&platform=macos&patch=0 HTTP/1.1" 200 -
+"GET /Bindu-macos.zip HTTP/1.1" 200 -
+"GET /v1/boot?game=0.0.2&platform=macos&patch=0 HTTP/1.1" 200 -
+"GET /v1/boot?game=0.0.1&platform=macos&patch=0 HTTP/1.1" 200 -
+"GET /Bindu-macos.zip HTTP/1.1" 200 -
+"GET /v1/boot?game=0.0.2&platform=macos&patch=0 HTTP/1.1" 200 -
+"GET /v1/boot?game=0.0.1&platform=macos&patch=0 HTTP/1.1" 200 -
+"GET /Bindu-macos.zip HTTP/1.1" 200 -
+"GET /v1/boot?game=0.0.2&platform=macos&patch=0 HTTP/1.1" 200 -

@@ -376,7 +376,7 @@ var run_id := ""  # 판 번호: 5웨이브마다 보내는 진행 기록과 끝 
 var run_log: Array = []  # 선택지 기록 [{w, k: card|perk, o: 나온 것, p: 고른 것(새로고침이면 "")}]
 var run_game := 0.0  # 웨이브 진행 게임 시간 합
 var run_real := 0.0  # 실제로 플레이한 시간 (시작 화면·일시정지 빼고)
-var update_btn: Button  # 시작 화면: 새 버전 받기
+var update_btn: Button  # 시작 화면: 업데이트
 var notice_label: Label  # 시작 화면: 패치 공지
 var board_box: VBoxContainer  # 리더보드 창 (records_panel 안): 왼쪽 필터 칩·오른쪽 순위 표
 var legacy_grow := false  # 정원(씨앗 나무)이 있던 버전에서 씨앗 나무를 켜고 시작해 이어 하는 판: 예전처럼 'grow'를 붙여 일반 리더보드에 섞이지 않게
@@ -480,9 +480,9 @@ func boot() -> void:
 	service_signals.connect_to(net.rates_loaded, func(): if codex_panel.visible: codex_panel._draw_list())
 	online_system.updater = Updater.new()
 	add_child(online_system.updater)
-	online_system.updater.cleanup()
 	service_signals.connect_to(online_system.updater.progress, online_system._on_update_progress)
 	service_signals.connect_to(online_system.updater.failed, online_system._on_update_failed)
+	online_system.updater.cleanup()
 	patchlog_system.notes = PatchNotes.new()
 	add_child(patchlog_system.notes)
 	service_signals.connect_to(patchlog_system.notes.loaded, patchlog_system._draw_notes)

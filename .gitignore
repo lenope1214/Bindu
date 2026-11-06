@@ -16,3 +16,5 @@ keystore/
 password.txt
 # macOS
 .DS_Store
+# Python QA tools
+__pycache__/
