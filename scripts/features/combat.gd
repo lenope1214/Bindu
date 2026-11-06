@@ -245,7 +245,7 @@ func _resolve(delta: float, preview := false) -> void:
 	# 바닥 효과
 	for z in session.zones.get_children():
 		if not z.is_queued_for_deletion():
-			z.affect(z.trail_orbs(session) if z.kind == "trail" else near(z.position, z.radius if z.kind != "mine" else 80.0), delta)
+			z.affect(z.trail_orbs(session) if z.kind == "trail" else z.path_orbs(session) if z.kind == "gore" else near(z.position, z.radius if z.kind != "mine" else 80.0), delta)
 	if session.prof_on:
 		us = _prof_add("장판", us)
 

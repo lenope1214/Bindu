@@ -570,19 +570,24 @@ static func aff_hit(tw: Object, o: Orb, k: float, lit: bool, had_chill: float) -
 ## 피 핏자국: 핏자국을 남기는 구체가 GORE_STEP 움직일 때마다 (Orb._blood_step). 장판은 그 구체가 지나간 자리에만
 static func gore(o: Orb) -> void:
 	var tw: Object = o.gore_src
-	if not is_instance_valid(tw) or tw.main == null or tw.main.zones.get_child_count() >= 160:
+	if not is_instance_valid(tw) or tw.main == null:
 		return
 	var kb := k(tw, Elem.BLOOD)
 	if kb <= 0.0:
 		return
-	var old_tag: String = tw.tag
-	tw.tag = "share:blood"
-	var z: Zone = tw._spawning_port.spawn_zone("gore", tw.plv, o.position, tw)
-	tw.tag = old_tag
+	# 구체 하나에 핏자국 장판 하나 (점을 더함). 남긴 오브젝트가 바뀌면 새 줄
+	var z: Zone = o.gore_zone as Zone if is_instance_valid(o.gore_zone) else null
+	if z == null or z.is_queued_for_deletion() or z.owner_tower != tw:
+		if tw.main.zones.get_child_count() >= 160:
+			return
+		var old_tag: String = tw.tag
+		tw.tag = "share:blood"
+		z = tw._spawning_port.spawn_zone("gore", tw.plv, o.position, tw)
+		tw.tag = old_tag
+		z.gore_path(o)
+		o.gore_zone = z
 	z.amt = kb
-	z.maker = o
-	z.life = GORE_T * dur(tw) * (STANCH_T if has(tw, "stanch") else 1.0)
-	z.max_life = z.life
+	z.add_gore_pt(o.position, kb, GORE_T * dur(tw) * (STANCH_T if has(tw, "stanch") else 1.0))
 
 
 ## 핏자국을 밟은 구체 (Zone gore, 같은 구체는 0.5초에 한 번, 핏자국을 남긴 구체는 빼고)

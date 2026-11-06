@@ -98,6 +98,7 @@ var bleed_pos := Vector2.ZERO  # 지난 프레임 자리 (움직인 거리)
 var gore_src: Object = null  # 피 핏자국: 이 오브젝트 효과를 지나간 길에 남긴다 (Share.gore)
 var gore_t := 0.0
 var gore_acc := 0.0
+var gore_zone: Object = null  # 지금 점을 더하는 핏자국 줄 (Zone)
 var confuse_t := 0.0  # 환영 현혹: 남은 시간 동안 왔던 길을 되돌아 걷는다
 var confuse_cd := 0.0
 var dread := false  # 상성 악몽: 현혹된 동안 받는 피해↑ x1.5

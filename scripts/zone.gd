@@ -37,12 +37,21 @@ var pk := PackedFloat32Array()  # trail: 점마다 피해 몫 (투척 장판이 
 var orb_k := {}  # trail: trail_orbs가 고른 구체마다 닿은 점 중 가장 센 몫
 var feeding := true  # trail: 탄이 아직 날아가며 점을 더하는 중
 var dps := 0.0  # trail: 안에 있는 구체에 초당 피해 (레벨 배율 전)
+var pl := PackedFloat32Array()  # 핏자국: 점마다 남는 시간
+var pid := PackedInt32Array()  # 핏자국: 점 번호 (구체마다 점별 0.5초 쿨)
+var next_pid := 0
+var pt_cd := {}  # 핏자국: 구체 → {점 번호: 다시 효과를 줄 수 있는 시각 t}
+var hit_acc := 0.0  # 블랙홀: 피해를 묶어 주는 시간 (0.1초마다)
+var redraw_acc := 0.0
+const GORE_PTS := 80  # 핏자국 한 줄에 남는 점 최대
+const WELL_HIT_DT := 0.1  # 블랙홀 피해·감속을 이만큼 모아 한 번에 (끌기는 매 프레임)
 
 ## 효과 줄이기(설정)에서 옅게 그리는 장판: 물길·투척 장판. 블랙홀·바위 벽은 막거나 끌어서 그대로
 const SOFT := ["trail", "rill", "gore"]
 ## 모양이 바뀌지 않고 옅어지기만 하는 장판: 한 번 그리고 self_modulate로 옅게 (물길이 100개 가까이 깔려 매 프레임 다시 그리던 것). 바위 벽은 아예 그대로
-const STILL := ["rill", "gore"]
+const STILL := ["rill"]
 ## 구체 자신이 지나간 길에 남는 장판 (피 핏자국, Share.gore). 오브젝트와 고정 거리가 아니다 (ELEM-10)
+## 핏자국은 구체 하나에 장판 하나: 지나온 점을 들고 점마다 따로 사라진다 (예전엔 점마다 장판이라 수백 개가 쌓여 렉, 2026-11-06)
 const ORB_PATH := ["gore"]
 
 
@@ -84,6 +93,56 @@ func add_pt(p: Vector2, k := 1.0) -> void:
 	born.append(t)
 	pk.append(k)
 	life = max_life
+
+
+## 핏자국 줄: 구체 o가 남긴다 (Share.gore가 점을 더함)
+func gore_path(o: Object) -> void:
+	maker = o
+	position = Vector2.ZERO
+	feeding = true
+
+
+func add_gore_pt(p: Vector2, k: float, lifetime: float) -> void:
+	pts.append(p)
+	born.append(t)
+	pk.append(k)
+	pl.append(lifetime)
+	pid.append(next_pid)
+	next_pid += 1
+	if pts.size() > GORE_PTS:
+		_drop_pts(pts.size() - GORE_PTS)
+	queue_redraw()
+
+
+func _drop_pts(n: int) -> void:
+	pts = pts.slice(n)
+	born = born.slice(n)
+	pk = pk.slice(n)
+	if kind == "gore":
+		pl = pl.slice(n)
+		pid = pid.slice(n)
+
+
+## 점들이 걸친 격자 칸의 구체 중 점 하나에라도 닿은 구체 (핏자국)
+func path_orbs(main) -> Array:
+	var out: Array = []
+	if pts.is_empty():
+		return out
+	var g: float = main.GRID
+	var pad := radius + 32.0
+	var cells := {}
+	for p in pts:
+		for x in range(floori((p.x - pad) / g), floori((p.x + pad) / g) + 1):
+			for y in range(floori((p.y - pad) / g), floori((p.y + pad) / g) + 1):
+				cells[Vector2i(x, y)] = true
+	for key in cells:
+		var cell = main.combat_system.grid.get(key)
+		if not cell:
+			continue
+		for o in cell:
+			if is_instance_valid(o) and not o.is_queued_for_deletion() and o != maker:
+				out.append(o)
+	return out
 
 
 ## 지나간 자리 장판 안의 구체. 점들이 걸친 격자 칸을 한 번씩만 모아 그 안의 구체를 점과 비교한다.
@@ -151,6 +210,15 @@ func _p() -> float:
 func affect(orbs: Array, delta: float) -> void:
 	t += delta
 	tick -= delta
+	if kind == "gore":
+		_gore_affect(orbs)
+		return
+	var well_dt := 0.0
+	if kind == "vortex":
+		hit_acc += delta
+		if hit_acc >= WELL_HIT_DT:
+			well_dt = hit_acc
+			hit_acc = 0.0
 	for o in orbs:
 		# 지나간 자리 장판(trail)은 trail_orbs가 이미 골랐다. 나머지는 모두 원 안의 구체에만 듣는다:
 		# 원 밖이면 match까지 가지 않는다 (불씨·물길이 한 번에 100개 가까이 깔려 장판 계산의 절반이던 것)
@@ -171,9 +239,11 @@ func affect(orbs: Array, delta: float) -> void:
 				# 중력 우물: 가운데로 끈다 (안에서 죽은 구체마다 +10%, 최대 +50%), 가운데 둘레는 느리게
 				var v: Vector2 = position - o.position
 				o.push(v.limit_length(pull * (1.0 + minf(0.1 * eaten, 0.5)) * delta))
+				if well_dt <= 0.0:
+					continue  # 피해·감속은 0.1초마다 모아서 (구체 100개 넘게 매 프레임 피해 계산 전체를 돌던 것)
 				if v.length() < Rules.t("well_core"):
 					o.slow(0.5, 0.2)
-				_hit(o, Rules.t("vortex_dmg") * _p() * delta, delta * 3.0)
+				_hit(o, Rules.t("vortex_dmg") * _p() * well_dt, well_dt * 3.0)
 				if o.hp <= 0.0 and not eaten_set.has(o):
 					eaten_set[o] = true
 					eaten += 1
@@ -183,11 +253,6 @@ func affect(orbs: Array, delta: float) -> void:
 					rill_cd[o] = life - 0.5
 					o.slow(Share.RILL_SLOW, Share.RILL_T)  # 효과와 따로 늘 느려짐 (제어 회복 2026-11-04)
 					Share.carry(owner_tower, o, Share.WATER_F * amt, "share:water", position, 1.0 - life / maxf(max_life, 0.01))
-			"gore":
-				# 피 핏자국: 뒤따라 밟은 구체에 오브젝트 효과 (같은 구체는 0.5초에 한 번, 남긴 구체는 빼고)
-				if o != maker and is_instance_valid(owner_tower) and (not rill_cd.has(o) or life <= rill_cd[o]):
-					rill_cd[o] = life - 0.5
-					Share.gore_step(owner_tower, o, amt, position, 1.0 - life / maxf(max_life, 0.01))
 			"rock":
 				var away: Vector2 = (o.position - position).normalized()
 				o.position = position + away * (radius + o.radius())
@@ -198,8 +263,53 @@ func affect(orbs: Array, delta: float) -> void:
 		life = 0.0
 
 
+## 핏자국: 점마다 같은 구체는 0.5초에 한 번 (예전 점마다 장판일 때와 같음), 남긴 구체는 빼고
+func _gore_affect(orbs: Array) -> void:
+	if not is_instance_valid(owner_tower):
+		return
+	if pt_cd.size() > 300:
+		pt_cd.clear()  # 죽은 구체가 쌓이지 않게
+	for o in orbs:
+		if o == maker or o.hp <= 0.0:
+			continue
+		var rr: float = radius + o.radius()
+		rr *= rr
+		for i in pts.size():
+			if o.position.distance_squared_to(pts[i]) >= rr:
+				continue
+			var cd: Dictionary = pt_cd.get(o, {})
+			if cd.get(pid[i], -1.0) > t:
+				continue
+			if cd.size() > 24:
+				for key in cd.keys():
+					if key < pid[0]:
+						cd.erase(key)
+			cd[pid[i]] = t + 0.5
+			pt_cd[o] = cd
+			Share.gore_step(owner_tower, o, pk[i], pts[i], clampf((t - born[i]) / maxf(pl[i], 0.01), 0.0, 1.0))
+			if o.hp <= 0.0:
+				break
+
+
 ## main이 웨이브 중 호출한다(배속이면 한 프레임에 여러 번).
 func step(delta: float) -> void:
+	if kind == "gore":
+		t += delta
+		var drop := 0
+		while drop < pts.size() and t - born[drop] >= pl[drop]:
+			drop += 1
+		if drop > 0:
+			_drop_pts(drop)
+			queue_redraw()
+		feeding = is_instance_valid(maker) and not maker.is_queued_for_deletion() and maker.hp > 0.0 and maker.gore_t > 0.0 and maker.gore_zone == self
+		if pts.is_empty() and not feeding:
+			queue_free()
+			return
+		redraw_acc += delta
+		if redraw_acc >= 0.15:  # 옅어지는 것만: 자주 다시 그리지 않는다
+			redraw_acc = 0.0
+			queue_redraw()
+		return
 	if kind == "trail":
 		t += delta
 		# 다 사라진 앞쪽 점은 버린다
@@ -283,11 +393,14 @@ func _draw() -> void:
 		"rill":
 			_ground(Elem.COLORS[Elem.WATER], a, 0.25)
 		"gore":
-			# 핏자국: 작은 핏방울 셋 (테두리 없이)
+			# 핏자국: 점마다 작은 핏방울 셋 (테두리 없이), 오래된 점일수록 옅게
 			var bc: Color = Elem.COLORS[Elem.BLOOD]
-			draw_circle(Vector2.ZERO, radius * 0.75, Color(bc, 0.45 * a))
-			draw_circle(Vector2(radius * 0.6, radius * 0.35), radius * 0.35, Color(bc, 0.4 * a))
-			draw_circle(Vector2(-radius * 0.5, -radius * 0.45), radius * 0.25, Color(bc, 0.4 * a))
+			for i in pts.size():
+				var pa := clampf(1.0 - (t - born[i]) / maxf(pl[i], 0.01), 0.0, 1.0)
+				var q := pts[i]
+				draw_circle(q, radius * 0.75, Color(bc, 0.45 * pa))
+				draw_circle(q + Vector2(radius * 0.6, radius * 0.35), radius * 0.35, Color(bc, 0.4 * pa))
+				draw_circle(q + Vector2(-radius * 0.5, -radius * 0.45), radius * 0.25, Color(bc, 0.4 * pa))
 		"rock":
 			var pts := PackedVector2Array()
 			for i in 7:

@@ -4182,7 +4182,7 @@ func _new_elems(c: Vector2) -> void:
 		lead.burn_t = 0.0
 		gore.affect([lead], 0.1)
 		self_ok = lead.burn_t == 0.0
-		back.position = gore.position
+		back.position = gore.pts[gore.pts.size() - 1]
 		gore.affect([back], 0.1)
 	ok("ELEM-14", lead.gore_src == gt and gore != null and back.burn_t > 0.0 and self_ok and back.bleed_t > 0.0,
 		"피 핏자국: 구체가 지나간 길에 핏자국(%s), 밟은 뒤 구체 화상 %.1f·출혈 %.1f, 남긴 구체는 안 밟음 %s" % [gore != null, back.burn_t, back.bleed_t, self_ok])
