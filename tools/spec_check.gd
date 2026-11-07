@@ -29,6 +29,7 @@ func _fresh(w := 5) -> void:
 	Meta.map_id = "plain"
 	main.run_flow_system._apply_rules()
 	Rules.tune["map_on"] = 0.0  # 맵 규칙은 _maps()에서만 켠다 (다른 검사의 피해·카드 수치가 평원 규칙에 흔들리지 않게)
+	Rules.tune["nat_on"] = 0.0  # 자연 현상·기질·문턱은 _nature()에서만 켠다 (다른 검사의 효과 수치가 기질 배율에 흔들리지 않게)
 	Tower.dmg_mul = 1.0
 	Tower.spd_mul = 1.0
 	Tower.reach_mul = 1.0
@@ -262,6 +263,7 @@ func _elements() -> void:
 ## 속성 Lv5 값 (2026-11-01): 금속은 맞힌 피해 +8%/레벨, 어둠 약화는 +20% + 4%/레벨, 물 감속은 0.85 - 0.03/레벨
 func _elem_lv5() -> void:
 	_clear()
+	Rules.tune["nat_on"] = 0.0  # 기질 배율 전 기본값 (자연 현상은 _nature()에서)
 	var c: Vector2 = main.viewport_system.center()
 	var mt := _tower(c + Vector2(-200, 0), Elem.METAL, 5)
 	var hc := mt.hit_calc()
@@ -467,6 +469,8 @@ func _share() -> void:
 	_affinity(c)
 	_real(c)
 	_clear()
+	_nature(c)
+	_clear()
 	_new_elems(c)
 
 
@@ -591,6 +595,100 @@ func _affinity(c: Vector2) -> void:
 	var shock: Dictionary = Elem.reaction_of(Elem.WATER, Elem.ELECTRIC)
 	ok("AFF-11", shock.get("aff", "") == "strong" and Elem.aff_label(Elem.WATER, Elem.ELECTRIC) == "감전(강)" and Elem.aff_text(Elem.FIRE, Elem.WATER).begins_with("상성 증기(약)")
 		and main.src_name("aff:thermo") == "상성 온도 충격", "도감·정보창 상성 글 (%s)" % Elem.aff_label(Elem.WATER, Elem.ELECTRIC))
+
+
+## 자연 현상·속성 4특성 (2026-11-07 브랜치 elements-nature): 상태·변환·기질·문턱·도파민 순환
+func _nature(c: Vector2) -> void:
+	var _grid := func():
+		main.combat_system.targets = main.orbs.get_children()
+		main.combat_system._build_grid()
+	Nature.reset()
+	var nat_keep: float = Rules.tune["nat_on"]
+	Rules.tune["nat_on"] = 1.0
+	var ft := _tower(c + Vector2(-260, 0), Elem.FIRE, 1)
+	var wt := _tower(c + Vector2(-260, 120), Elem.WATER, 1)
+	# 증기: 젖은 구체에 열 → 젖음이 사라지고 둘레가 느려짐
+	var a := _orb(c, 1e6)
+	var b := _orb(c + Vector2(30, 0), 1e6)
+	_grid.call()
+	Nature.touch(wt, a, Elem.WATER, 1.0)
+	var wet := Nature.has(a, "wet")
+	Nature.touch(ft, a, Elem.FIRE, 1.0)
+	ok("NAT-01", wet and not Nature.has(a, "wet") and b.slow_timer > 0.0 and ft.src.get("nat:steam", 0.0) > 0.0, "증기: 젖음+열 → 둘레 감속·데임")
+	_clear()
+	# 녹음: 얼음막에 열 → 젖음, 온도 충격 피해
+	ft = _tower(c + Vector2(-260, 0), Elem.FIRE, 1)
+	wt = _tower(c + Vector2(-260, 120), Elem.WATER, 1)
+	var it := _tower(c + Vector2(-260, -120), Elem.ICE, 1)
+	a = _orb(c, 1e6)
+	_grid.call()
+	Nature.touch(wt, a, Elem.WATER, 1.0)
+	Nature.touch(it, a, Elem.ICE, 1.0)
+	var iced := Nature.has(a, "ice") and not Nature.has(a, "wet")
+	a.nat_cd = 0.0
+	Nature.touch(ft, a, Elem.FIRE, 1.0)
+	ok("NAT-02", iced and Nature.has(a, "wet") and not Nature.has(a, "ice") and ft.src.get("nat:melt", 0.0) > 0.0, "얼어붙음(젖음+얼음) · 녹음(얼음막+열 → 젖음·피해)")
+	_clear()
+	# 덩굴 회로: 젖은 덩굴로 이어진 구체 모두에
+	var et := _tower(c + Vector2(-260, 0), Elem.ELECTRIC, 1)
+	var net: Array = []
+	for i in 4:
+		var o := _orb(c + Vector2(i * 60, 0), 1e6)
+		o.vine = 2.0
+		o.nat["wet"] = 3.0
+		net.append(o)
+	_grid.call()
+	var fly := Nature.electric(et, net[0], 5.0)
+	ok("NAT-03", fly and et.src.get("nat:circuit", 0.0) > 0.0 and net[3].hp < 1e6, "덩굴 회로: 젖은 덩굴 4개에 한꺼번에 (피해 %.1f)" % et.src.get("nat:circuit", 0.0))
+	_clear()
+	# 접지·낙뢰목
+	et = _tower(c + Vector2(-260, 0), Elem.ELECTRIC, 1)
+	var g := _orb(c, 1e6)
+	var gn := _orb(c + Vector2(30, 0), 1e6)
+	var dv := _orb(c + Vector2(0, 200), 1e6)
+	_grid.call()
+	g.nat["ground"] = 2.0
+	var g_fly := Nature.electric(et, g, 5.0)
+	dv.vine = 2.0
+	var t_fly := Nature.electric(et, dv, 5.0)
+	ok("NAT-04", not g_fly and gn.root_timer > 0.0 and not t_fly and dv.vine < 2.0 and dv.burn_t > 0.0, "접지(튀지 않고 둘레 기절) · 낙뢰목(마른 덩굴이 타 버림)")
+	_clear()
+	# 문턱: 게이지가 차면 터지고, 맞은 구체의 다른 게이지를 채움 (연쇄)
+	et = _tower(c + Vector2(-260, 0), Elem.ELECTRIC, 2)
+	var x := _orb(c, 1e6)
+	_grid.call()
+	x.gauge[Elem.FIRE] = 10.0
+	x.gauge_src[Elem.FIRE] = et
+	for i in 30:
+		Nature.fill(et, x, Elem.ELECTRIC, 2, 1.0)
+		if not Nature.queue.is_empty():
+			break
+	var queued := not Nature.queue.is_empty()
+	Nature.tick(0.2)
+	ok("NAT-05", queued and et.src.get("burst:electric", 0.0) > 0.0 and x.gauge.get(Elem.FIRE, 0.0) >= 40.0, "저항 돌파: 전하가 차면 방전, 다른 게이지 +40 (불 %.0f)" % x.gauge.get(Elem.FIRE, 0.0))
+	_clear()
+	# 기질: 전기 전하는 처음 약하고 연달아 맞힐수록 셈
+	et = _tower(c + Vector2(-260, 0), Elem.ELECTRIC, 1)
+	var y := _orb(c, 1e6)
+	var q0: float = Nature.quirk(et, y, Elem.ELECTRIC).x
+	for i in 4:
+		Nature.count_hit(et, y)
+	var q4: float = Nature.quirk(et, y, Elem.ELECTRIC).x
+	ok("NAT-06", q0 < 1.0 and q4 > 1.0 and Nature.QUIRK.size() == Elem.ALL.size() and Nature.BURST.size() == Elem.ALL.size() - 1, "기질 17·문턱 16, 전하 x%.2f → x%.2f" % [q0, q4])
+	_clear()
+	# 도파민 모드 속성 순환
+	var keep := Rules.version
+	var els := {Elem.FIRE: 1, Elem.WATER: 1, Elem.ICE: 1, Elem.WOOD: 1, Elem.EARTH: 1}
+	var order := [Elem.FIRE, Elem.WATER, Elem.ICE, Elem.WOOD, Elem.EARTH]
+	Rules.version = 3
+	var r0 := Nature.rotate(els, order, 0.0)
+	var r1 := Nature.rotate(els, order, Rules.t("rot_iv") + 0.01)
+	Rules.version = 1
+	var r2 := Nature.rotate(els, order, 0.0)
+	Rules.version = keep
+	ok("NAT-07", r0.size() == 3 and r1.size() == 3 and r0.keys() != r1.keys() and r2.size() == 5, "도파민 모드만 3개씩 돌아가며 (%s → %s)" % [r0.keys(), r1.keys()])
+	Nature.reset()
+	Rules.tune["nat_on"] = nat_keep
 
 
 ## 실제 연상 개편 (2026-11-04): 나르는 특징(자리) · 바꾸는 특징 · 휘감기 · 밀쳐냄 · 불 번짐 · 이름 있는 자리

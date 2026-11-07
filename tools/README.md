@@ -36,6 +36,7 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh ui shot.gd /tmp/
 | `tip_shot.gd` | `tools/run.sh ui tip_shot.gd <폴더> [글자 크기] [touch] [phone]`: 별 넷·바람 곁의 행성(별+영혼 혼불)에 올린 오브젝트 정보창 기본(tip_basic)·자세히(tip_detail) | PNG |
 | `rank_shot.gd` | `tools/run.sh ui rank_shot.gd <폴더> [글자 크기] [touch] [phone]`: 오브젝트 7개에 피해를 나눠 준 뒤 1위 왕관·2·3위 메달·DPS 표 순위 색 (rank, 가운데 확대 rank_zoom) | PNG |
 | `nova_shot.gd` | `tools/run.sh ui nova_shot.gd <폴더> [글자 크기] [touch]`: 초신성 그림(별·행성 게이지, 85% 예고 조준 고리, 다 참, 터지는 순간·퍼지는 중) | PNG |
+| `nature_shot.gd` | `tools/run.sh ui nature_shot.gd <폴더> [글자 크기] [touch]`: 자연 현상(덩굴 회로·증기·문턱 저항 돌파)과 구체 위 게이지 호·상태 점 | PNG |
 | `side_shot.gd` | `tools/run.sh ui side_shot.gd <폴더> [글자 크기] [touch]`: 섞인 보조 공격 모양(번개 3마리·물폭탄 지나간 길·그림자 낙하·유성우·핏줄·휩쓸기) 스크린샷 | PNG |
 | `late_shot.gd` | `tools/run.sh ui late_shot.gd <폴더> [글자 크기] [touch]`: 후반 구체 다섯 종 안내(100·500웨이브 배지)·전장 위 모양(깜빡 예고·갑옷 깨짐·치유 맥동·흐림·포식 입) | PNG |
 | `board_shot.gd` | `tools/run.sh ui board_shot.gd <폴더> [글자 크기] [touch] [phone]`: 서버 없이 순위를 채워 리더보드 기본·이번 주·지난 시즌·빈 기록·신고·차단 창 스크린샷. 사본의 online_config SERVER_URL은 http://127.0.0.1:9로 | PNG |

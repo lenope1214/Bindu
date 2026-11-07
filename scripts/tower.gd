@@ -85,6 +85,7 @@ var side_n := 0  # 지난 큰 보조 공격 뒤 보조 공격 수 (Side)
 var side_big_fx := 0.0  # 큰 보조 공격 번쩍임
 var side_mix_n := 0  # 일식(빛+어둠) 작은 일식까지 센 보조 공격 수 (Side)
 var chain_end := Vector2.ZERO  # 연쇄 번개가 마지막으로 친 자리
+var cata_lap := -1  # 도파민 모드 대격변: 마지막으로 터진 바퀴 (Nature.cataclysm)
 var later: Array = []  # [남은 초, Callable]: 잠시 뒤 효과 (시간 되풀이, Share.on_hit)
 var _abilities_port: BinduAbilities
 var _combat_port: BinduCombat
@@ -1886,7 +1887,9 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 		d *= fm
 	var crit := dx >= Rules.dice_top and k >= 1.0  # 대박은 치명타처럼 금색 숫자
 	var lit := false  # 빛 치명타
-	var cc := minf(Rules.light_ch * els.get(Elem.LIGHT, 0), Rules.light_max) * Share.am(self, Elem.LIGHT) if els.has(Elem.LIGHT) else 0.0
+	# 기질 (Nature): 속성마다 효과 배율. 자기 효과엔 그대로, 다른 효과엔 절반 세기
+	var q := Nature.qmap(self, o, els)
+	var cc := minf(Rules.light_ch * els.get(Elem.LIGHT, 0), Rules.light_max) * Share.am(self, Elem.LIGHT) * Nature.qm(q, Elem.LIGHT) if els.has(Elem.LIGHT) else 0.0
 	if force_crit or cc > 0.0 and randf() < cc * minf(k, 1.0):
 		d *= Rules.light_mul
 		crit = k >= 1.0
@@ -1957,25 +1960,25 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	var g := Share.grow(self, o)
 	var had_chill := o.chill
 	if els.has(Elem.FIRE):
-		o.burn(Rules.fire_dps * els.get(Elem.FIRE, 0) * rm * g * Share.am(self, Elem.FIRE), Rules.fire_t * dm, self)
+		o.burn(Rules.fire_dps * els.get(Elem.FIRE, 0) * rm * g * Share.am(self, Elem.FIRE) * Nature.qm(q, Elem.FIRE), Rules.fire_t * dm, self)
 	if els.has(Elem.POISON):
-		o.poison(Rules.poison_dps * els.get(Elem.POISON, 0) * rm * g * Share.am(self, Elem.POISON), Rules.poison_t * dm, self)
+		o.poison(Rules.poison_dps * els.get(Elem.POISON, 0) * rm * g * Share.am(self, Elem.POISON) * Nature.qm(q, Elem.POISON), Rules.poison_t * dm, self)
 	if els.has(Elem.ICE):
-		o.add_chill(Rules.ice_chill * k * els.get(Elem.ICE, 0) * g * Share.am(self, Elem.ICE), dm)
+		o.add_chill(Rules.ice_chill * k * els.get(Elem.ICE, 0) * g * Share.am(self, Elem.ICE) * Nature.qm(q, Elem.ICE), dm)
 	if els.has(Elem.WATER):
-		o.slow(Share.slow_f(els.get(Elem.WATER, 0), Share.am(self, Elem.WATER)), Rules.water_t * dm)
+		o.slow(Share.slow_f(els.get(Elem.WATER, 0), Share.am(self, Elem.WATER) * Nature.qm(q, Elem.WATER)), Rules.water_t * dm)
 	if els.has(Elem.WOOD):
-		o.entangle(Share.WOOD_VINE * els.get(Elem.WOOD, 0) * minf(k, 1.0) * Share.am(self, Elem.WOOD), dm)
+		o.entangle(Share.WOOD_VINE * els.get(Elem.WOOD, 0) * minf(k, 1.0) * Share.am(self, Elem.WOOD) * Nature.qm(q, Elem.WOOD), dm)
 	if els.has(Elem.WIND) and o.hp > 0.0:
 		var away := o.position - position
 		if away.length() > 0.5:
-			o.knock(away.normalized() * Share.WIND_HIT * els.get(Elem.WIND, 0) * minf(k, 1.0) * Share.am(self, Elem.WIND))
-	if els.has(Elem.EARTH) and randf() < Share.root_ch(self, els.get(Elem.EARTH, 0)) * k * g:
+			o.knock(away.normalized() * Share.WIND_HIT * els.get(Elem.WIND, 0) * minf(k, 1.0) * Share.am(self, Elem.WIND) * Nature.qm(q, Elem.WIND))
+	if els.has(Elem.EARTH) and randf() < Share.root_ch(self, els.get(Elem.EARTH, 0)) * k * g * Nature.qm(q, Elem.EARTH):
 		o.root(Rules.earth_t * dm)
 	if els.has(Elem.DARK):
-		o.vuln(Rules.dark_t * dm, (Rules.dark_vuln + Rules.dark_lv * els.get(Elem.DARK, 0)) * g * Share.am(self, Elem.DARK), self)
-	if els.has(Elem.ELECTRIC) and randf() < Rules.elec_ch * k * Share.am(self, Elem.ELECTRIC):
-		_spawning_port.arc(o, d * Rules.elec_dmg * els.get(Elem.ELECTRIC, 0), self)
+		o.vuln(Rules.dark_t * dm, (Rules.dark_vuln + Rules.dark_lv * els.get(Elem.DARK, 0)) * g * Share.am(self, Elem.DARK) * Nature.qm(q, Elem.DARK), self)
+	if els.has(Elem.ELECTRIC) and Nature.electric(self, o, d * Rules.elec_dmg * els.get(Elem.ELECTRIC, 0)) and randf() < Rules.elec_ch * k * Share.am(self, Elem.ELECTRIC) * minf(Nature.qm(q, Elem.ELECTRIC), 1.0):
+		_spawning_port.arc(o, d * Rules.elec_dmg * els.get(Elem.ELECTRIC, 0) * Nature.qm(q, Elem.ELECTRIC), self)
 	if els.has(Elem.SOUND):
 		# 울림을 걸어 둔다: 3초 동안 어느 오브젝트에 맞아도 쌓인다
 		if o.tune_t <= 0.0 or els.get(Elem.SOUND, 0) >= o.tune_lv:
@@ -1985,16 +1988,24 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	if o.tune_t > 0.0:
 		_ring(o, minf(k, 1.0))
 	if els.has(Elem.TIME):
-		o.echo(minf(Rules.time_base + Rules.time_lv * els.get(Elem.TIME, 0), Rules.time_max) * minf(g, 1.5), Rules.time_t * dm, self)
+		o.echo(minf(Rules.time_base + Rules.time_lv * els.get(Elem.TIME, 0), Rules.time_max) * minf(g, 1.5) * Nature.qm(q, Elem.TIME), Rules.time_t * dm, self)
 	if els.has(Elem.SOUL):
 		if o.soul_t <= 0.0 or els.get(Elem.SOUL, 0) >= o.soul_lv:
 			o.soul_lv = els.get(Elem.SOUL, 0)
 			o.soul_src = self
 		o.soul_t = maxf(o.soul_t, Rules.soul_t * dm)
 	if els.has(Elem.BLOOD):
-		o.bleed(Share.bleed_k(self, els.get(Elem.BLOOD, 0), rm) * g, Rules.blood_t * dm, self, "elem:blood", Share.has(self, "sepsis"))
-	if els.has(Elem.ILLUSION) and o.hp > 0.0 and randf() < Share.illu_ch(self, els.get(Elem.ILLUSION, 0)) * minf(k, 1.0) * minf(g, 1.5):
+		o.bleed(Share.bleed_k(self, els.get(Elem.BLOOD, 0), rm) * g * Nature.qm(q, Elem.BLOOD), Rules.blood_t * dm, self, "elem:blood", Share.has(self, "sepsis"))
+	if els.has(Elem.ILLUSION) and o.hp > 0.0 and randf() < Share.illu_ch(self, els.get(Elem.ILLUSION, 0)) * minf(k, 1.0) * minf(g, 1.5) * Nature.qm(q, Elem.ILLUSION):
 		o.confuse(Rules.illu_t * dm, Share.has(self, "nightmare"))
+	# 자연 현상 (Nature): 상태를 남기고 부딪치는 상태는 변환, 문턱 게이지를 채운다
+	if Nature.on() and o.hp > 0.0:
+		var kk := minf(k, 1.0)
+		for e in Nature.rotate(els, order, t):  # 도파민 모드: 상태·문턱은 몇 개씩 돌아가며 (효과는 위에서 모두 걸었음)
+			Nature.touch(self, o, e, kk)
+			Nature.fill(self, o, e, els[e], kk * g * Share.am(self, e))
+		Nature.cataclysm(self, o)
+		Nature.count_hit(self, o)
 	# 특징 공유: 금속 응축 · 빛 꿰뚫음 · 땅 묻어둠 · 시간 되풀이 (나머지 특징은 전류·음파·죽을 때·물길에서)
 	if o.hp > 0.0:
 		Share.condense(self, o, Share.carry_n(self), minf(k, 1.0))

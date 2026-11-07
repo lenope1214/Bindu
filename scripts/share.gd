@@ -411,6 +411,12 @@ static func apply(tw: Object, o: Orb, f: float, key: String) -> void:
 				continue
 		n += 1
 	condense(tw, o, n, f, key)
+	# 자연 현상 (Nature): 실려 온 효과도 상태를 남기고 게이지를 채운다 (전달×문턱, 비율 nat_gauge_carry)
+	if Nature.on() and o.hp > 0.0:
+		var carried := not key.begins_with("burst:")
+		for e in Nature.rotate(els, tw.order, tw.t):
+			Nature.touch(tw, o, e, f)
+			Nature.fill(tw, o, e, els[e], f, carried)
 
 
 ## 금속 응축: 효과 n개를 걸 때 추가 피해

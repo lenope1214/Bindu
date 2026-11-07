@@ -399,6 +399,9 @@ func _card_full(card: Dictionary) -> Array:
 			var e: int = card["e"]
 			out.append(["효과 (맞힌 구체에) · " + Elem.rider(e), Elem.COLORS[e].lightened(0.3)])
 			out.append(["특징 (이 오브젝트의 효과를 다른 구체로) · " + Elem.TRAIT[e], W])
+			if Nature.on():
+				for ln in Nature.card_lines(e):
+					out.append([ln, D])
 			var seen := {}
 			for t in session.towers.get_children():
 				if not t.can_take({"type": "elem", "e": e}):

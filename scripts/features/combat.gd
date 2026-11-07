@@ -506,6 +506,7 @@ func step_entities(delta: float) -> void:
 		for n in layer.get_children():
 			if not n.is_queued_for_deletion():
 				n.step(delta)
+	Nature.tick(delta)  # 문턱: 이번 프레임에 찬 게이지를 예산만큼 터뜨린다
 
 
 ## 전투 이펙트와 전역 효과 타이머. 카메라·UI 갱신은 호출자가 담당한다.

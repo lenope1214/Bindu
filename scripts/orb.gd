@@ -118,6 +118,12 @@ var root_dr := 0  # 연달아 걸린 기절 횟수
 var root_dr_t := 0.0  # 마지막 기절 뒤 지난 시간
 var root_immune := 0.0  # 기절 면역 남은 시간
 var flash := 0.0
+var nat := {}  # 자연 현상 상태 → 남은 시간 (Nature.STATES)
+var nat_cd := 0.0  # 변환 간격
+var gauge := {}  # 문턱 게이지: 속성 → 0~100 (Nature)
+var gauge_src := {}  # 속성 → 게이지를 채운 오브젝트
+var burst_cd := {}  # 속성 → 같은 문턱 다시 터지기까지
+var qh := {}  # 기질: 오브젝트 id → [연달아 맞은 수, 마지막 맞은 때, 지난 간격]
 var _combat_port: BinduCombat
 var _field_view_port: BinduFieldView
 var _spawning_port: BinduSpawning
@@ -180,6 +186,8 @@ func step(delta: float) -> void:
 		_redraw_if_changed()
 		return
 	if pincer_cd > 0.0: pincer_cd = maxf(pincer_cd - delta, 0.0)
+	if nat_cd > 0.0 or not nat.is_empty() or not gauge.is_empty() or not burst_cd.is_empty():
+		Nature.orb_step(self, delta)
 	# A6: 보스는 주기적으로 빠른 부하를 부른다
 	if kind == Kind.BOSS and main and silence_t <= 0.0:
 		minion_t -= delta
@@ -323,6 +331,8 @@ func _redraw_if_changed() -> void:
 		sg ^= 0x5bd1e995
 	if confuse_t > 0.0:
 		sg ^= 0x2c1b3c6d
+	if not nat.is_empty() or not gauge.is_empty():
+		sg ^= Nature.sig(self)
 	if sg != _sig:
 		_sig = sg
 		queue_redraw()
@@ -806,6 +816,8 @@ func _draw() -> void:
 			draw_line(d * (r + 2.0), d * (r + 9.0), Color(1.0, 0.45, 0.55, 0.9), 2.0)
 	for i in icons.size():
 		draw_circle(Vector2(-(icons.size() - 1) * 4.0 + i * 8.0, -r - 9.0), 3.0, icons[i])
+	if not nat.is_empty() or not gauge.is_empty():
+		Nature.draw_orb(self, r)
 	# 체력 숫자: 보스·마우스를 올린 구체·설정에서 켠 때만 (평소엔 위의 붉은 고리로 본다)
 	if kind == Kind.BOSS or Meta.orb_hp_on or (main and _field_view_port.tip_orb == self):
 		var font := ThemeDB.fallback_font

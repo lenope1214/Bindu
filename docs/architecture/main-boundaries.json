@@ -1316,6 +1316,8 @@
     "_skill_ui": "Port main UI redraw optimization into feature controllers during main merge",
     "_update_choice_header": "Port main UI redraw optimization into feature controllers during main merge",
     "_info_sig": "Retain warning invalidation for tower direction/build and new lane markers",
-    "_legacy_card_layout": "Header text updates every frame while active dock exclusively owns geometry"
+    "_legacy_card_layout": "Header text updates every frame while active dock exclusively owns geometry",
+    "arc": "Nature: electric range by orb state and grounding/circuit hook (elements-nature)",
+    "_card_full": "Nature: card detail shows quirk, threshold and state lines (elements-nature)"
   }
 }

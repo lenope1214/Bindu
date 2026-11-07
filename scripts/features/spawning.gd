@@ -107,7 +107,7 @@ func beam(a: Vector2, b: Vector2, c: Color) -> void:
 func arc(from: Orb, dmg: float, src: Tower = null, cap = null) -> void:  # cap: 초신성 보스 상한 (Tower.nova_hurt)
 	var session: BinduSession = self.session
 	var best: Orb = null
-	var bd := 90.0 * (Share.wide(src) if src else 1.0) * (1.0 + Share.SHOCK_R if Share.has(src, "shock") else 1.0)
+	var bd := 90.0 * (Share.wide(src) if src else 1.0) * (1.0 + Share.SHOCK_R if Share.has(src, "shock") else 1.0) * Nature.arc_range(from)
 	for o in session.combat_system.near(from.position, bd):
 		if o != from and is_instance_valid(o) and o.hp > 0.0:
 			var d: float = o.position.distance_to(from.position)
@@ -118,6 +118,7 @@ func arc(from: Orb, dmg: float, src: Tower = null, cap = null) -> void:  # cap: 
 		var got: float = src.nova_hurt(best, dmg, cap) if src and cap is Dictionary else best.hurt(dmg, false, src)
 		if src:
 			src.credit(got, "elem:electric")
+			Nature.electric(src, best, got)  # 자연 현상: 접지·덩굴 회로·낙뢰목
 			if Share.has(src, "shock"):
 				best.stagger(Share.SHOCK_STAG)  # 감전 (상성)
 			# 전기 튐 (특징 공유): 전류가 튀면 오브젝트 효과도 튄다
