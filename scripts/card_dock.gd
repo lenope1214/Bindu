@@ -1,12 +1,25 @@
 class_name CardDock
 extends RefCounted
 ## 카드 팔레트와 전장 카메라는 독립적이다. 카드를 들면 팔레트만 접는다.
-const CARD_HEIGHT := 94.0
-const CONTROL_HEIGHT := 36.0
-const HEADER_HEIGHT := CONTROL_HEIGHT + 16.0
-const FOOTER_HEIGHT := CONTROL_HEIGHT + 24.0
-const HEIGHT := HEADER_HEIGHT + CARD_HEIGHT + 8.0 + FOOTER_HEIGHT
-const SKIP_WIDTH := 204.0
+## 폰은 글자를 키워(Meta.fs) 버튼·카드도 K배 크게 쓴다 (fit_phone)
+static var K := 1.0
+static var CONTROL_HEIGHT := 36.0
+static var HEADER_HEIGHT := CONTROL_HEIGHT + 16.0
+static var FOOTER_HEIGHT := CONTROL_HEIGHT + 24.0
+static var CARD_HEIGHT := 94.0
+static var HEIGHT := HEADER_HEIGHT + 94.0 + 8.0 + FOOTER_HEIGHT
+static var SKIP_WIDTH := 204.0
+
+
+## 폰이면 카드 줄·버튼을 키운다 (글 두 줄·아래 줄이 커진 글자에 맞게)
+static func fit_phone() -> void:
+	K = 1.22 if Meta.phone() else 1.0
+	CONTROL_HEIGHT = roundf(36.0 * K)
+	HEADER_HEIGHT = CONTROL_HEIGHT + 16.0
+	FOOTER_HEIGHT = CONTROL_HEIGHT + 24.0
+	CARD_HEIGHT = 116.0 if K > 1.0 else 94.0
+	HEIGHT = HEADER_HEIGHT + CARD_HEIGHT + 8.0 + FOOTER_HEIGHT
+	SKIP_WIDTH = roundf(204.0 * K)
 var game
 var panel: Panel
 var footer: Panel
@@ -74,7 +87,7 @@ static func make_controls_theme() -> Theme:
 		for color_name in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color", "font_hover_pressed_color"]:
 			theme.set_color(color_name, type, Color("e1e9f4"))
 		theme.set_color("font_disabled_color", type, Color("78889d"))
-		theme.set_font_size("font_size", type, 15)
+		theme.set_font_size("font_size", type, Meta.fs(15))
 	theme.set_stylebox("panel", "PopupMenu", surface())
 	var hover := surface()
 	hover.bg_color = Color("223149")
@@ -83,6 +96,7 @@ static func make_controls_theme() -> Theme:
 
 func _init(main) -> void:
 	game = main
+	fit_phone()
 	panel = Panel.new()
 	panel.name = "CardDock"
 	panel.set_meta("layout_background", true)
@@ -108,7 +122,7 @@ func _init(main) -> void:
 	skip_group.hide()
 	game.ui_root.add_child(skip_group)
 	state = Label.new()
-	state.add_theme_font_size_override("font_size", 16)
+	state.add_theme_font_size_override("font_size", Meta.fs(16))
 	state.add_theme_color_override("font_color", Color("d9e5f5"))
 	state.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(state)
@@ -126,7 +140,7 @@ func _init(main) -> void:
 	var content := side.body
 	inspector_header = side.tools
 	heading = side.title
-	heading.add_theme_font_size_override("font_size", 15)
+	heading.add_theme_font_size_override("font_size", Meta.fs(15))
 	direction_btn = Button.new()
 	direction_btn.text = "방향 변경"
 	direction_btn.theme = controls_theme
@@ -150,7 +164,7 @@ func _init(main) -> void:
 	pic.hide()
 	column.add_child(pic)
 	detail = RichTextLabel.new()
-	detail.add_theme_font_size_override("normal_font_size", 14)
+	detail.add_theme_font_size_override("normal_font_size", Meta.fs(14))
 	detail.add_theme_color_override("default_color", Color("c5cfdc"))
 	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detail.scroll_active = false
@@ -163,7 +177,7 @@ func _init(main) -> void:
 	focus_btn = Button.new()
 	focus_btn.theme = controls_theme
 	focus_btn.focus_mode = Control.FOCUS_NONE
-	focus_btn.add_theme_font_size_override("font_size", 14)
+	focus_btn.add_theme_font_size_override("font_size", Meta.fs(14))
 	focus_btn.pressed.connect(game.cards_system._toggle_focus_view)
 	focus_btn.z_index = 10
 	game.ui_root.add_child(focus_btn)
@@ -418,7 +432,7 @@ func tick() -> void:
 		button.visible = button.visible and cards
 		if not button.visible:
 			continue
-		var w := 96.0 if button == game.card_detail_btn else 80.0
+		var w := (96.0 if button == game.card_detail_btn else 80.0) * K
 		x -= w
 		_top_left(button)
 		button.position = Vector2(x, panel.position.y + 8)
@@ -432,7 +446,7 @@ func tick() -> void:
 	if game.choice_header.visible:
 		_top_left(game.choice_header)
 		game.choice_header.position = Vector2(12, panel.position.y + 8)
-		game.choice_header.size = Vector2(maxf(240, minf(340, x - 24)), CONTROL_HEIGHT)
+		game.choice_header.size = Vector2(maxf(240 * K, minf(340 * K, x - 24)), CONTROL_HEIGHT)
 	_update_side()
 	# 상세는 필요할 때 떠 있는 패널로 읽는다. 표시 여부는 전장 크기에 영향을 주지 않는다.
 	side.visible = side.visible and not carrying() and not input_blocked(false)
@@ -444,18 +458,18 @@ func tick() -> void:
 	game.cancel_btn.visible = game.phase in [game.Phase.PLACE, game.Phase.AIM, game.Phase.MOVE] and not blocked
 	game.aim_ok_btn.visible = game.interaction_system._ok_btn_on() and not blocked
 	var actions: Array = [game.start_btn, game.cancel_btn, game.aim_ok_btn].filter(func(button): return button.visible)
-	var width := 240.0 if game.start_btn.visible else 144.0
-	var action_y := size.y - (112.0 if game.bar_open else 52.0)
+	var width := (240.0 if game.start_btn.visible else 144.0) * K
+	var action_y := size.y - (112.0 if game.bar_open else 52.0) * K
 	var ready_skip: bool = game.phase == game.Phase.READY and skip_visible
-	var left := (size.x - 240 - 8 - SKIP_WIDTH) / 2
+	var left := (size.x - 240 * K - 8 - SKIP_WIDTH) / 2
 	for i in actions.size():
 		var button: Button = actions[i]
 		_top_left(button)
 		var bx: float = left if ready_skip and button == game.start_btn else (size.x - actions.size() * (width + 8)) / 2 + i * (width + 8)
 		button.position = Vector2(bx, action_y)  # 자리를 한 번에 (두 번 나눠 정하면 매 프레임 움직인 것으로 쳐 다시 그렸다)
-		button.size = Vector2(width, 44)
+		button.size = Vector2(width, 44 * K)
 	if ready_skip:
-		layout_skip(Vector2(left + 248, action_y), 44)
+		layout_skip(Vector2(left + 240 * K + 8, action_y), 44 * K)
 	if not blocked and not game.guide_label.visible:
 		var status := operation_text()
 		if status != "":
@@ -498,7 +512,7 @@ func tick() -> void:
 	focus_btn.tooltip_text = "카드 패널 보기/접기 (F / V)"
 	_top_left(focus_btn)
 	focus_btn.position = Vector2(12, size.y - 48)
-	focus_btn.size = Vector2(110, CONTROL_HEIGHT)
+	focus_btn.size = Vector2(110 * K, CONTROL_HEIGHT)
 	game.ver_label.visible = not focus_btn.visible
 	var badge_pos := Vector2((size.x - game.skip_badge.size.x) / 2.0, size.y - HEIGHT - 40 if cards else size.y - 100)
 	if game.skip_badge.visible:
@@ -550,8 +564,8 @@ func layout_skip(at: Vector2, height: float) -> void:
 	for i in 2:
 		var button: Button = [game.skip_btn, game.skip_n_btn][i]
 		_top_left(button)
-		button.position = at + Vector2(108 if i == 1 else 0, 0)
-		button.size = Vector2(96 if i == 1 else 108, height)
+		button.position = at + Vector2(108 * K if i == 1 else 0.0, 0)
+		button.size = Vector2((96 if i == 1 else 108) * K, height)
 
 
 func close_inspector(explicit := false) -> void:
@@ -786,21 +800,26 @@ func draw_card(b: Button, col: Color) -> void:
 	else:
 		Glyph.kind(b, h["kind"], Vector2(18, 22), 8, col)
 	var name: String = h["name"] + (" " + h["lv"] if h.has("lv") else "")
-	b.draw_string(font, Vector2(36, 28), name, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 64, 18, col.lightened(0.2))
+	var fs_name := Meta.fs(18)
+	var fs_body := Meta.fs(14)
+	var fs_foot := Meta.fs(11)
+	var lh := fs_body + 4.0
+	var body_y := 51.0 + (fs_name - 18)
+	b.draw_string(font, Vector2(36, 28 + (fs_name - 18) * 0.5), name, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 64, fs_name, col.lightened(0.2))
 	if not game.touch_ui:
 		Glyph.keycap(b, font, Vector2(b.size.x - 8, 8), str(h["idx"]))
 	var summary := summary_text(b)
-	var lines: PackedStringArray = game.onboarding_system._wrap_words(game.patchlog_system._kr_keep(summary), b.size.x - 28, 14).split("\n")
+	var lines: PackedStringArray = game.onboarding_system._wrap_words(game.patchlog_system._kr_keep(summary), b.size.x - 28, fs_body).split("\n")
 	var visible_lines := mini(2, lines.size())
 	for i in visible_lines:
 		var line := lines[i]
 		if i == visible_lines - 1 and lines.size() > visible_lines:
-			while line.length() > 0 and font.get_string_size(line + "…", HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x > b.size.x - 28:
+			while line.length() > 0 and font.get_string_size(line + "…", HORIZONTAL_ALIGNMENT_LEFT, -1, fs_body).x > b.size.x - 28:
 				line = line.left(-1)
 			line += "…"
-		b.draw_string(font, Vector2(14, 51 + 18 * i), line, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 28, 14, Color("d2dae6"))
+		b.draw_string(font, Vector2(14, body_y + lh * i), line, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 28, fs_body, Color("d2dae6"))
 	var foot := "특성 · 길게 누르면 자세히" if game.touch_ui else "특성 · 올리면 오른쪽에 자세히"
 	var destinations: Array = b.get_meta("card_foot", [])
 	if not destinations.is_empty():
 		foot = " · ".join(destinations.map(func(it): return it[1]))
-	b.draw_string(font, Vector2(14, 86), foot, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 28, 11, Color("8294aa"))
+	b.draw_string(font, Vector2(14, b.size.y - 8.0), foot, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 28, fs_foot, Color("8294aa"))

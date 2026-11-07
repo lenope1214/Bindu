@@ -200,7 +200,7 @@ func _make_skill_btns(root: Control) -> void:
 		b.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 		b.position = Vector2(-176 + i * 186, -104)
 		b.size = Vector2(166, 50)
-		b.add_theme_font_size_override("font_size", 20)
+		b.add_theme_font_size_override("font_size", Meta.fs(20))
 		b.focus_mode = Control.FOCUS_NONE
 		b.visible = false
 		b.pressed.connect(_arm_skill.bind(i))

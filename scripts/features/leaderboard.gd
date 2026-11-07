@@ -119,7 +119,7 @@ func _build_board() -> void:
 	session.board_box.add_child(head)
 	var t := Label.new()
 	t.text = "리더보드"
-	t.add_theme_font_size_override("font_size", 22)
+	t.add_theme_font_size_override("font_size", Meta.fs(22))
 	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(t)
 	var close := Button.new()
@@ -145,7 +145,7 @@ func _build_board() -> void:
 	for g in [["map", "맵"], ["rules", "규칙"], ["kind", "기록"], ["season", "시즌"]]:
 		var gl := Label.new()
 		gl.text = g[1]
-		gl.add_theme_font_size_override("font_size", 14)
+		gl.add_theme_font_size_override("font_size", Meta.fs(14))
 		gl.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
 		left.add_child(gl)
 		var flow := HFlowContainer.new()
@@ -176,7 +176,7 @@ func _build_board() -> void:
 	board_period_note = Label.new()
 	board_period_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	board_period_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	board_period_note.add_theme_font_size_override("font_size", 14)
+	board_period_note.add_theme_font_size_override("font_size", Meta.fs(14))
 	board_period_note.add_theme_color_override("font_color", Color(1, 1, 1, 0.5))
 	tabs.add_child(board_period_note)
 	right.add_child(_board_row(null))  # 열 이름
@@ -193,14 +193,14 @@ func _build_board() -> void:
 	session.board_box.add_child(foot)
 	board_hint = Label.new()
 	board_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	board_hint.add_theme_font_size_override("font_size", 14)
+	board_hint.add_theme_font_size_override("font_size", Meta.fs(14))
 	board_hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
 	foot.add_child(board_hint)
 	board_ugc_btn = Button.new()
 	board_ugc_btn.text = "신고·차단"
 	board_ugc_btn.tooltip_text = "부적절한 닉네임을 신고하거나, 이 기기에서 그 사람 이름을 가립니다"
 	board_ugc_btn.focus_mode = Control.FOCUS_NONE
-	board_ugc_btn.add_theme_font_size_override("font_size", 15)
+	board_ugc_btn.add_theme_font_size_override("font_size", Meta.fs(15))
 	board_ugc_btn.custom_minimum_size = Vector2(140, 44 if ph else 32)
 	board_ugc_btn.pressed.connect(_board_ugc_open)
 	foot.add_child(board_ugc_btn)
@@ -213,7 +213,7 @@ func _board_chip(text: String, on_press: Callable) -> Button:
 	b.text = text
 	b.focus_mode = Control.FOCUS_NONE
 	b.custom_minimum_size = Vector2(64, 44 if session.viewport_system._phone() else 32)
-	b.add_theme_font_size_override("font_size", 15)
+	b.add_theme_font_size_override("font_size", Meta.fs(15))
 	b.pressed.connect(on_press)
 	return b
 
@@ -307,7 +307,7 @@ func _board_row(e: Variant) -> PanelContainer:
 	for i in cols.size():
 		var l := Label.new()
 		l.text = cols[i]
-		l.add_theme_font_size_override("font_size", fs if i != 2 else 13)
+		l.add_theme_font_size_override("font_size", Meta.fs(fs if i != 2 else 13))
 		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		l.custom_minimum_size.x = widths[i]
 		if i == 1:
@@ -332,7 +332,7 @@ func _board_row(e: Variant) -> PanelContainer:
 func _board_msg(text: String) -> void:
 	var l := Label.new()
 	l.text = text
-	l.add_theme_font_size_override("font_size", 16)
+	l.add_theme_font_size_override("font_size", Meta.fs(16))
 	l.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
 	l.custom_minimum_size.y = 40.0
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -429,11 +429,11 @@ func _board_ugc_open() -> void:
 	session.board_ugc_panel.add_child(v)
 	var t := Label.new()
 	t.text = "신고·차단"
-	t.add_theme_font_size_override("font_size", 20)
+	t.add_theme_font_size_override("font_size", Meta.fs(20))
 	v.add_child(t)
 	var hint := Label.new()
 	hint.text = "신고하면 운영자가 24시간 안에 확인해 이름을 지우거나 차단해요.\n차단하면 이 기기에서 그 사람 이름이 가려지고 멀티 방에서도 막혀요."
-	hint.add_theme_font_size_override("font_size", 14)
+	hint.add_theme_font_size_override("font_size", Meta.fs(14))
 	hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
 	v.add_child(hint)
 	var sc := ScrollContainer.new()
@@ -455,7 +455,7 @@ func _board_ugc_open() -> void:
 		l.text = "(차단한 플레이어) " + str(Meta.blocked[pid]) if Meta.blocked.has(pid) else str(board_people[pid])
 		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		l.clip_text = true
-		l.add_theme_font_size_override("font_size", 17)
+		l.add_theme_font_size_override("font_size", Meta.fs(17))
 		row.add_child(l)
 		row.add_child(_ugc_buttons(pid, str(board_people[pid]), "board", func():
 			_draw_board_again()
@@ -485,7 +485,7 @@ func _ugc_buttons(pid: String, nick: String, where: String, after: Callable) -> 
 	rb.text = "신고"
 	rb.focus_mode = Control.FOCUS_NONE
 	rb.custom_minimum_size = Vector2(72, 40 if session.viewport_system._phone() else 32)
-	rb.add_theme_font_size_override("font_size", 15)
+	rb.add_theme_font_size_override("font_size", Meta.fs(15))
 	rb.disabled = pid == "" or not Net.report_ok()
 	rb.tooltip_text = "부적절한 닉네임 신고" if not rb.disabled else "지금은 신고할 수 없어요 (온라인 연결 필요)"
 	rb.pressed.connect(func():
@@ -507,7 +507,7 @@ func _ugc_buttons(pid: String, nick: String, where: String, after: Callable) -> 
 	bb.text = "차단 풀기" if on else "차단"
 	bb.focus_mode = Control.FOCUS_NONE
 	bb.custom_minimum_size = Vector2(90, 40 if session.viewport_system._phone() else 32)
-	bb.add_theme_font_size_override("font_size", 15)
+	bb.add_theme_font_size_override("font_size", Meta.fs(15))
 	bb.disabled = pid == ""
 	bb.tooltip_text = "이 기기에서 이 사람 이름을 가리고 멀티 방에서 막아요"
 	bb.pressed.connect(func():

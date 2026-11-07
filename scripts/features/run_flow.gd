@@ -535,7 +535,7 @@ func _draw_over_card() -> void:
 			ach_w.append(0.0)
 		ach_rows[-1].append([a, aw])
 		ach_w[-1] += aw + 6.0
-	var bh := 84.0 + 96.0 + 50.0 + ach_rows.size() * 30.0 + 34.0
+	var bh := 84.0 + 96.0 + 50.0 + (Meta.fs(11) - 11) + ach_rows.size() * 30.0 + 34.0 + (Meta.fs(13) - 13)
 	# 아래 남은 글(over_label: 모드·최다 피해·피해 출처)까지 바탕에 넣는다: 예전엔 바탕 밖 전장 위에 떠 읽기 어려웠다
 	var lab_h := 0.0
 	if session.over_label.text != "" and session.over_label.get_line_count() > 0:
@@ -551,8 +551,8 @@ func _draw_over_card() -> void:
 	bg.set_corner_radius_all(12)
 	c.draw_style_box(bg, Rect2(x0 - 10.0, y - 6.0, W + 20.0, bh))
 	c.draw_string(session.ui_font, Vector2(x0, y + 34.0), d["head"], HORIZONTAL_ALIGNMENT_CENTER, W, 34, Color.WHITE)
-	var sw := session.ui_font.get_string_size(d["sub"], HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 24.0
-	Icons.chip(c, session.ui_font, Rect2(-sw / 2.0, y + 46.0, sw, 24.0), "", Color.WHITE, d["sub"], Color(1, 1, 1, 0.65), 14, Color(1, 1, 1, 0.06), Color(1, 1, 1, 0.12))
+	var sw := session.ui_font.get_string_size(d["sub"], HORIZONTAL_ALIGNMENT_LEFT, -1, Meta.fs(14)).x + 24.0
+	Icons.chip(c, session.ui_font, Rect2(-sw / 2.0, y + 46.0, sw, 28.0), "", Color.WHITE, d["sub"], Color(1, 1, 1, 0.65), Meta.fs(14), Color(1, 1, 1, 0.06), Color(1, 1, 1, 0.12))
 	# 큰 칩 둘: 웨이브 · 점수
 	y += 84.0
 	for i in 2:
@@ -574,7 +574,7 @@ func _draw_over_card() -> void:
 		Icons.chip(c, session.ui_font, Rect2(132.0, y - 9.0, 64.0, 20.0), "", Color.WHITE, "최고!", Color(0.12, 0.09, 0.0), 12, Color(1, 0.85, 0.4), Color(1, 0.85, 0.4))
 	elif d["best_wave"] >= 0:
 		Icons.draw(c, "best", Vector2(-110.0, y + 76.0), 6.0, Color(1, 1, 1, 0.5))
-		c.draw_string(session.ui_font, Vector2(-100.0, y + 80.0), "최고 %d" % d["best_wave"], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 1, 1, 0.5))
+		c.draw_string(session.ui_font, Vector2(-100.0, y + 80.0), "최고 %d" % d["best_wave"], HORIZONTAL_ALIGNMENT_LEFT, -1, Meta.fs(12), Color(1, 1, 1, 0.5))
 	# 작은 칩: 처치 · 최고 콤보 · 오브젝트
 	y += 110.0
 	var smalls := [["kill", session.num(d["kills"]), "처치"], ["combo", str(d["combo"]), "최고 콤보"], ["tower", str(d["towers"]), "오브젝트"]]
@@ -582,9 +582,9 @@ func _draw_over_card() -> void:
 		var cx := -130.0 + i * 130.0
 		Glyph.ui(c, smalls[i][0], Vector2(cx - 22.0, y), 9.0, Color(0.85, 0.9, 1))
 		c.draw_string(session.ui_font, Vector2(cx - 8.0, y + 7.0), smalls[i][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color.WHITE)
-		c.draw_string(session.ui_font, Vector2(cx - 50.0, y + 24.0), smalls[i][2], HORIZONTAL_ALIGNMENT_CENTER, 100.0, 11, Color(1, 1, 1, 0.45))
+		c.draw_string(session.ui_font, Vector2(cx - 50.0, y + 13.0 + Meta.fs(11)), smalls[i][2], HORIZONTAL_ALIGNMENT_CENTER, 100.0, Meta.fs(11), Color(1, 1, 1, 0.45))
 	# 새 업적 배지 (줄이 넘치면 다음 줄)
-	y += 42.0
+	y += 31.0 + Meta.fs(11)
 	for ri in ach_rows.size():
 		var x: float = -(ach_w[ri] - 6.0) / 2.0
 		for it in ach_rows[ri]:
@@ -602,11 +602,11 @@ func _draw_over_card() -> void:
 	var to_lobby := session.mp_mode != "" and session.mp.active()  # 멀티 판: 방이 남아 있으면 대기방으로
 	var hy := y + lab_h + 14.0
 	if session.touch_ui:
-		c.draw_string(session.ui_font, Vector2(x0, hy), "눌러서 대기방으로" if to_lobby else "눌러서 시작 화면으로", HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
+		c.draw_string(session.ui_font, Vector2(x0, hy), "눌러서 대기방으로" if to_lobby else "눌러서 시작 화면으로", HORIZONTAL_ALIGNMENT_CENTER, W, Meta.fs(13), dim)
 	else:
 		# 그림(마우스·집)만으로는 무엇을 누르면 어디로 가는지 알기 어려웠다: 글로
 		# 폰·태블릿엔 키보드 안내를 띄우지 않는다
-		c.draw_string(session.ui_font, Vector2(x0, hy), ("눌러서 " if session.touch_ui else "클릭 · R · Esc: ") + ("대기방으로" if to_lobby else "시작 화면으로"), HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
+		c.draw_string(session.ui_font, Vector2(x0, hy), ("눌러서 " if session.touch_ui else "클릭 · R · Esc: ") + ("대기방으로" if to_lobby else "시작 화면으로"), HORIZONTAL_ALIGNMENT_CENTER, W, Meta.fs(13), dim)
 
 
 # ---------- 입력 ----------

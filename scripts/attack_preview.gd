@@ -26,7 +26,7 @@ func _init() -> void:
 	texture = viewport.get_texture()
 	caption = Label.new()
 	caption.position = Vector2(6, 4)
-	caption.add_theme_font_size_override("font_size", 11)
+	caption.add_theme_font_size_override("font_size", Meta.fs(11))
 	caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(caption)
 	world = BinduSession.new()

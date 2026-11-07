@@ -37,7 +37,8 @@ func _initialize():
 			Meta.map_id = "line"
 			main.menu_system._refresh_menu()
 			main.continue_info.text = "웨이브 29부터 · 소용돌이 · 랭크"
-			main.continue_btn.custom_minimum_size.x = 3 * main.menu_system._tile_w() + 32
+			if not Meta.sim_phone:
+				main.continue_btn.custom_minimum_size.x = 3 * main.menu_system._tile_w() + 32
 			main.continue_btn.visible = true
 			main.get_tree().call_group("keycap", "queue_redraw")
 			main.update_btn.text = "새 버전 0.9.9 받기"

@@ -41,12 +41,12 @@ func _build_menu(root: Control) -> void:
 	session.title_box = box
 	var logo := Label.new()
 	logo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	logo.add_theme_font_size_override("font_size", 72)
+	logo.add_theme_font_size_override("font_size", 56 if session.viewport_system._phone() else 72)
 	logo.text = "빈두"
 	box.add_child(logo)
 	var desc := Label.new()
 	desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	desc.add_theme_font_size_override("font_size", 19)
+	desc.add_theme_font_size_override("font_size", Meta.fs(19))
 	desc.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
 	desc.text = "밖에서 몰려오는 구체를 막아 중앙 점을 지키세요\n공격방식·속성·강화·연계를 조합해 오브젝트를 키우세요"
 	desc.visible = not session.viewport_system._phone()  # 폰: 줄을 줄여야 시작 화면을 덜 줄여서 버튼이 손가락 크기로 남는다
@@ -54,7 +54,7 @@ func _build_menu(root: Control) -> void:
 	# [일반 판]을 누르면 나오는 준비 화면 (맵·오는 쪽·규칙·모드 + 시작)
 	prep_title = Label.new()
 	prep_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	prep_title.add_theme_font_size_override("font_size", 38)
+	prep_title.add_theme_font_size_override("font_size", Meta.fs(38))
 	prep_title.text = "일반 판"
 	prep_title.visible = false
 	box.add_child(prep_title)
@@ -107,7 +107,7 @@ func _build_menu(root: Control) -> void:
 	session.new_btn.custom_minimum_size = Vector2(BinduSession.PREP_W, 72 if session.viewport_system._phone() else 64)
 	session.new_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	session.new_btn.focus_mode = Control.FOCUS_NONE
-	session.new_btn.add_theme_font_size_override("font_size", 24)
+	session.new_btn.add_theme_font_size_override("font_size", Meta.fs(24))
 	for st in ["normal", "hover", "pressed"]:
 		var gsb := StyleBoxFlat.new()
 		gsb.bg_color = Color(0.15, 0.22, 0.13) if st == "normal" else Color(0.2, 0.3, 0.17)
@@ -142,7 +142,7 @@ func _build_menu(root: Control) -> void:
 	session.prep_back.custom_minimum_size = Vector2(150, 56 if session.viewport_system._phone() else 42)
 	session.prep_back.position = Vector2(20, 20)
 	session.prep_back.focus_mode = Control.FOCUS_NONE
-	session.prep_back.add_theme_font_size_override("font_size", 18)
+	session.prep_back.add_theme_font_size_override("font_size", Meta.fs(18))
 	session.prep_back.pressed.connect(func(): _set_prep(false))
 	session.prep_back.visible = false
 	session.title_label.add_child(session.prep_back)
@@ -172,7 +172,7 @@ func _build_menu(root: Control) -> void:
 		b.focus_mode = Control.FOCUS_NONE
 		b.pressed.connect(spec[1])
 		row.add_child(b)
-		b.custom_minimum_size = Vector2(78, 64 if session.viewport_system._phone() else 54)
+		b.custom_minimum_size = Vector2(96, 66) if session.viewport_system._phone() else Vector2(78, 54)
 		b.tooltip_text = spec[4]
 		if spec[2] == "vote":
 			session.vote_btn = b
@@ -190,17 +190,23 @@ func _build_menu(root: Control) -> void:
 		csb.bg_color = Color(0.13, 0.11, 0.07) if st == "normal" else Color(0.18, 0.15, 0.09)
 		csb.border_color = Color(BinduSession.CONT_COL, 0.8 if st == "normal" else 1.0)
 		session.continue_btn.add_theme_stylebox_override(st, csb)
-	session.continue_info.add_theme_font_size_override("font_size", 17)
+	session.continue_info.add_theme_font_size_override("font_size", Meta.fs(17))
 	session.continue_info.add_theme_color_override("font_color", Color(1, 0.95, 0.85, 0.85))
 	session.continue_btn.pressed.connect(session.persistence_system._continue_run)
 	session.continue_btn.visible = false
-	home_box.add_child(session.continue_btn)
-	home_box.move_child(session.continue_btn, 0)
+	if session.viewport_system._phone():
+		# 폰: 이어하기를 일반 판 타일 옆에 (위아래로 쌓으면 시작 화면이 화면보다 길어져 통째로 줄고 글이 작아졌다)
+		session.continue_btn.custom_minimum_size.y = 170
+		tiles.add_child(session.continue_btn)
+		tiles.move_child(session.continue_btn, 0)
+	else:
+		home_box.add_child(session.continue_btn)
+		home_box.move_child(session.continue_btn, 0)
 	session.remote_btn = Button.new()
 	session.remote_btn.custom_minimum_size = Vector2(630, 56 if session.viewport_system._phone() else 44)
 	session.remote_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	session.remote_btn.focus_mode = Control.FOCUS_NONE
-	session.remote_btn.add_theme_font_size_override("font_size", 17)
+	session.remote_btn.add_theme_font_size_override("font_size", Meta.fs(17))
 	session.remote_btn.pressed.connect(session.online_system._claim_remote_run)
 	session.remote_btn.visible = false
 	home_box.add_child(session.remote_btn)
@@ -227,13 +233,18 @@ func _build_menu(root: Control) -> void:
 	session.notes_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	session.notes_btn.focus_mode = Control.FOCUS_NONE
 	session.notes_btn.pressed.connect(session.patchlog_system._toggle_notes)
-	home_box.add_child(session.notes_btn)
-	home_box.move_child(session.notes_btn, session.update_btn.get_index())
+	if session.viewport_system._phone():
+		row.add_child(session.notes_btn)  # 폰: 그림 버튼 줄 끝에 (한 줄 아끼기)
+		session.notes_btn.custom_minimum_size = Vector2(300, 66)
+		session.notes_btn.size_flags_vertical = Control.SIZE_FILL
+	else:
+		home_box.add_child(session.notes_btn)
+		home_box.move_child(session.notes_btn, session.update_btn.get_index())
 	session.notice_label = Label.new()
 	session.notice_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	session.notice_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	session.notice_label.custom_minimum_size = Vector2(630, 0)
-	session.notice_label.add_theme_font_size_override("font_size", 16)
+	session.notice_label.add_theme_font_size_override("font_size", Meta.fs(16))
 	session.notice_label.add_theme_color_override("font_color", Color(0.75, 0.9, 1.0))
 	session.notice_label.visible = false
 	home_box.add_child(session.notice_label)
@@ -247,7 +258,7 @@ func _build_menu(root: Control) -> void:
 	session.records_panel.offset_right = 430.0
 	session.records_panel.offset_top = -325.0
 	session.records_panel.offset_bottom = 285.0
-	session.records_panel.add_theme_font_size_override("font_size", 15)
+	session.records_panel.add_theme_font_size_override("font_size", Meta.fs(15))
 	session.records_panel.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var rsb := StyleBoxFlat.new()
 	rsb.bg_color = Color(0.05, 0.06, 0.09, 1.0)
@@ -290,7 +301,7 @@ func _build_menu(root: Control) -> void:
 	session.settings_panel.z_index = 22  # 일시정지 어둠(z 20) 위에
 	session.settings_panel.set_anchors_preset(Control.PRESET_CENTER)
 	# 폰: 켜기·끄기 줄을 두 칸으로 나누고 줄을 손가락 크기로 (한 칸이면 창이 화면보다 길어져 줄어들고 줄이 3mm 남짓이었다)
-	var sw := 920.0 if session.viewport_system._phone() else 480.0
+	var sw := clampf(session.viewport_system._phone_ui_w(), 480.0, 980.0) if session.viewport_system._phone() else 480.0
 	session.settings_panel.position = Vector2(-sw / 2.0, 0)
 	session.settings_panel.size = Vector2(sw, 0)
 	session.settings_panel.grow_vertical = Control.GROW_DIRECTION_BOTH  # 내용 높이에 맞춰 위아래로 자라 가운데에 (온라인 줄이 생기면 아래가 잘리던 것)
@@ -303,7 +314,7 @@ func _build_menu(root: Control) -> void:
 	var st := Label.new()
 	st.text = "설정 (O / Esc: 닫기)"
 	st.add_to_group("key_hint")
-	st.add_theme_font_size_override("font_size", 22)
+	st.add_theme_font_size_override("font_size", Meta.fs(22))
 	sv.add_child(st)
 	# 음량: 전체 x 배경음·효과음 (따로 줄일 수 있게)
 	_volume_row(sv, "전체 음량", func(): return Meta.volume, func(v): Meta.volume = v)
@@ -331,8 +342,8 @@ func _build_menu(root: Control) -> void:
 		zrow.add_child(zb)
 	sv.add_child(zrow)
 	# 오브젝트·중앙 모양 (예전엔 시작 화면에 있었다)
-	skin_label = _menu_row(sv, func(): _cycle_skin("tower", -1), func(): _cycle_skin("tower", 1), sw - 160.0)
-	core_label = _menu_row(sv, func(): _cycle_skin("core", -1), func(): _cycle_skin("core", 1), sw - 160.0)
+	skin_label = _menu_row(sv, func(): _cycle_skin("tower", -1), func(): _cycle_skin("tower", 1), sw - (220.0 if session.viewport_system._phone() else 160.0))
+	core_label = _menu_row(sv, func(): _cycle_skin("core", -1), func(): _cycle_skin("core", 1), sw - (220.0 if session.viewport_system._phone() else 160.0))
 	var cbox: Container = sv
 	if session.viewport_system._phone():
 		var grid := GridContainer.new()
@@ -344,6 +355,11 @@ func _build_menu(root: Control) -> void:
 	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 속성 그림)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"], ["웨이브 넘기기 중 중앙이 위험하면 멈춤 (체력 50%)", "skip_danger"], ["중앙 기술 자동 사용 (구체가 몰린 곳에)", "skill_auto"], ["효과 줄이기 (장판·터지는 효과를 옅게, 많을수록 더)", "fx_low"], ["피해 1~3위 왕관·메달", "rank_on"]]:
 		var cb := CheckButton.new()
 		cb.text = spec[0]
+		if cbox != sv:
+			# 폰 두 칸: 글자를 키워 긴 줄은 두 줄로 접는다 (한 줄이면 창이 화면보다 넓어졌다)
+			cb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			cb.custom_minimum_size.x = (sw - 60.0) / 2.0
+			cb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var key: String = spec[1]
 		match key:
 			"shake_on": cb.button_pressed = Meta.shake_on
@@ -419,7 +435,7 @@ func _build_menu(root: Control) -> void:
 		ne.custom_minimum_size = Vector2(240, 0)
 		var nbad := Label.new()  # 욕설·운영자 사칭 등 (NickFilter): 저장하지 않고 익명으로
 		nbad.text = "쓸 수 없는 낱말이 있어요"
-		nbad.add_theme_font_size_override("font_size", 14)
+		nbad.add_theme_font_size_override("font_size", Meta.fs(14))
 		nbad.add_theme_color_override("font_color", Color(1, 0.5, 0.45))
 		nbad.visible = NickFilter.bad(Meta.nickname)
 		ne.text_changed.connect(func(t):
@@ -434,7 +450,7 @@ func _build_menu(root: Control) -> void:
 		var arow := HBoxContainer.new()
 		arow.add_theme_constant_override("separation", 8)
 		account_label = Label.new()
-		account_label.add_theme_font_size_override("font_size", 14)
+		account_label.add_theme_font_size_override("font_size", Meta.fs(14))
 		account_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
 		account_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		account_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -540,13 +556,13 @@ func _tile(b: Button, title: String, col: Color, key: Variant) -> Label:
 	var n := Label.new()
 	n.text = title
 	n.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	n.add_theme_font_size_override("font_size", 26)
+	n.add_theme_font_size_override("font_size", Meta.fs(26))
 	n.add_theme_color_override("font_color", col)
 	v.add_child(n)
 	var info := Label.new()
 	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	info.add_theme_font_size_override("font_size", 15)
+	info.add_theme_font_size_override("font_size", Meta.fs(15))
 	info.add_theme_color_override("font_color", Color(1, 1, 1, 0.72))
 	info.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	v.add_child(info)
@@ -556,7 +572,7 @@ func _tile(b: Button, title: String, col: Color, key: Variant) -> Label:
 
 func _tile_w() -> float:
 	var session: BinduSession = self.session
-	return 230.0 if session.viewport_system._phone() else 210.0
+	return 290.0 if session.viewport_system._phone() else 210.0
 
 
 ## 시작 화면: 첫 화면(큰 타일) ↔ 일반 판 준비 화면.
@@ -612,7 +628,7 @@ func _prep_name(t: String) -> Label:
 	n.text = t
 	n.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	n.custom_minimum_size = Vector2(96, 0)
-	n.add_theme_font_size_override("font_size", 15)
+	n.add_theme_font_size_override("font_size", Meta.fs(15))
 	n.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
 	return n
 
@@ -621,7 +637,7 @@ func _prep_main() -> Label:
 	var l := Label.new()
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	l.add_theme_font_size_override("font_size", 19)
+	l.add_theme_font_size_override("font_size", Meta.fs(19))
 	return l
 
 
@@ -632,7 +648,7 @@ func _prep_sub() -> Label:
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l.custom_minimum_size = Vector2(BinduSession.PREP_W - 220.0, 0)
 	l.set_meta("sub_w", true)
-	l.add_theme_font_size_override("font_size", 14)
+	l.add_theme_font_size_override("font_size", Meta.fs(14))
 	l.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
 	return l
 
@@ -755,12 +771,12 @@ func _draw_map_card(b: Button) -> void:
 	b.draw_style_box(sb, r)
 	var cx := b.size.x / 2.0
 	var nc := Color(1, 0.92, 0.7) if sel else Color(1, 1, 1, 0.85)
-	b.draw_string(session.ui_font, Vector2(0, 22), m["name"], HORIZONTAL_ALIGNMENT_CENTER, b.size.x, 16, nc)
+	b.draw_string(session.ui_font, Vector2(0, 22), m["name"], HORIZONTAL_ALIGNMENT_CENTER, b.size.x, Meta.fs(16), nc)
 	if id in Meta.TRIAL_MAPS:
 		b.draw_string(session.ui_font, Vector2(0, 35), "시험", HORIZONTAL_ALIGNMENT_CENTER, b.size.x, 10, Color(1, 1, 1, 0.45))
 	_draw_map_path(b, id, Vector2(cx, 62.0), 20.0, Color(acc, 0.75 if sel else 0.5))
 	var rt := MapRule.rule_text(id).get_slice(":", 0)
-	b.draw_string(session.ui_font, Vector2(0, 100), rt, HORIZONTAL_ALIGNMENT_CENTER, b.size.x, 13, Color(BinduSession.MAP_AFF_COLOR, 0.95 if sel else 0.7))
+	b.draw_string(session.ui_font, Vector2(0, 100), rt, HORIZONTAL_ALIGNMENT_CENTER, b.size.x, Meta.fs(13), Color(BinduSession.MAP_AFF_COLOR, 0.95 if sel else 0.7))
 	# 친화 속성 그림 (자주 나오고 피해 +)
 	var es: Array = MapRule.aff("elem", id)
 	var gap := 26.0
@@ -769,7 +785,7 @@ func _draw_map_card(b: Button) -> void:
 		Glyph.elem(b, es[i], Vector2(x0 + gap * i, 118.0), 9.0)
 	var best := Meta.best_of(Meta.run_key(id))
 	if best[0] > 0:
-		b.draw_string(session.ui_font, Vector2(0, b.size.y - 6.0), "최고 %d" % best[0], HORIZONTAL_ALIGNMENT_CENTER, b.size.x, 11, Color(1, 1, 1, 0.5))
+		b.draw_string(session.ui_font, Vector2(0, b.size.y - 6.0), "최고 %d" % best[0], HORIZONTAL_ALIGNMENT_CENTER, b.size.x, Meta.fs(11), Color(1, 1, 1, 0.5))
 
 
 ## 맵 카드 가운데 길 모양 그림 (구체가 들어오는 모양). c 가운데, s 반지름.
@@ -1159,18 +1175,18 @@ func _build_modes(root: Control, sb: StyleBox) -> void:
 	var t := Label.new()
 	t.text = "모드 (시험)   (Esc: 닫기)"
 	t.add_to_group("key_hint")
-	t.add_theme_font_size_override("font_size", 22)
+	t.add_theme_font_size_override("font_size", Meta.fs(22))
 	v.add_child(t)
 	modes_head = Label.new()
 	modes_head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	modes_head.custom_minimum_size = Vector2(620, 0)
-	modes_head.add_theme_font_size_override("font_size", 16)
+	modes_head.add_theme_font_size_override("font_size", Meta.fs(16))
 	v.add_child(modes_head)
 	_build_easy_notice(v)
 	for hard in [true, false]:
 		var l := Label.new()
 		l.text = "어렵게 (점수 올라감)" if hard else "쉽게 (점수 내려감 · 쉽게 모드 리더보드 · 최고 기록 따로)"
-		l.add_theme_font_size_override("font_size", 17)
+		l.add_theme_font_size_override("font_size", Meta.fs(17))
 		l.add_theme_color_override("font_color", Color(1, 0.65, 0.5) if hard else Color(0.6, 0.85, 1.0))
 		v.add_child(l)
 		var g := GridContainer.new()
@@ -1185,8 +1201,12 @@ func _build_modes(root: Control, sb: StyleBox) -> void:
 			b.toggle_mode = true
 			b.focus_mode = Control.FOCUS_NONE
 			b.custom_minimum_size = Vector2(306, 54)
+			if session.viewport_system._phone():
+				# 폰: 커진 글자로 설명 줄이 길어져 창이 화면 밖으로 나가던 것 → 칸 폭에서 접는다
+				b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				b.custom_minimum_size.x = clampf((session.viewport_system._phone_ui_w() - 60.0) / 2.0, 306.0, 470.0)
 			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-			b.add_theme_font_size_override("font_size", 15)
+			b.add_theme_font_size_override("font_size", Meta.fs(15))
 			b.add_theme_color_override("font_pressed_color", Color(1, 0.88, 0.45))
 			b.add_theme_color_override("font_hover_pressed_color", Color(1, 0.88, 0.45))
 			b.pressed.connect(func(): _toggle_mode(id))
@@ -1245,7 +1265,7 @@ func _build_easy_notice(v: VBoxContainer) -> void:
 	var l := Label.new()
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.custom_minimum_size = Vector2(600, 0)
-	l.add_theme_font_size_override("font_size", 17)
+	l.add_theme_font_size_override("font_size", Meta.fs(17))
 	l.text = session.patchlog_system._kr_keep("쉽게 모드를 켰어요\n쉽게 모드를 하나라도 켠 판은 일반 리더보드에 오르지 않고 \"쉽게 모드\" 리더보드에만 올라가요. 어렵게 모드와 함께 켜도 같아요. 최고 기록도 따로 세요.")
 	box.add_child(l)
 	var row := HBoxContainer.new()
@@ -1253,7 +1273,7 @@ func _build_easy_notice(v: VBoxContainer) -> void:
 	box.add_child(row)
 	easy_notice_skip = CheckBox.new()
 	easy_notice_skip.text = "다시 보지 않기"
-	easy_notice_skip.add_theme_font_size_override("font_size", 16)
+	easy_notice_skip.add_theme_font_size_override("font_size", Meta.fs(16))
 	easy_notice_skip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(easy_notice_skip)
 	var ok_btn := Button.new()

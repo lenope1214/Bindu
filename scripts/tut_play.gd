@@ -202,7 +202,7 @@ func _button(text: String, f: Callable, parent: Control) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.focus_mode = Control.FOCUS_NONE
-	b.add_theme_font_size_override("font_size", 15)
+	b.add_theme_font_size_override("font_size", Meta.fs(15))
 	b.pressed.connect(f)
 	parent.add_child(b)
 	return b
@@ -221,7 +221,7 @@ func _build_panel() -> void:
 	top.add_theme_constant_override("separation", 8)
 	v.add_child(top)
 	head = Label.new()
-	head.add_theme_font_size_override("font_size", 13)
+	head.add_theme_font_size_override("font_size", Meta.fs(13))
 	head.add_theme_color_override("font_color", Color(0.62, 0.68, 0.8))
 	head.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.clip_text = true
@@ -229,7 +229,7 @@ func _build_panel() -> void:
 	btn_skip = _button("건너뛰기 ▸", skip_step, top)
 	btn_all = _button("전체 건너뛰기 ✕", ask_quit, top)
 	body = Label.new()
-	body.add_theme_font_size_override("font_size", 17)
+	body.add_theme_font_size_override("font_size", Meta.fs(17))
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(body)
 	var bottom := HBoxContainer.new()
@@ -256,7 +256,7 @@ func _build_ask() -> void:
 	ask.add_child(v)
 	var h := Label.new()
 	h.text = "튜토리얼을 끝낼까요?"
-	h.add_theme_font_size_override("font_size", 20)
+	h.add_theme_font_size_override("font_size", Meta.fs(20))
 	h.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(h)
 	var s := Label.new()
@@ -265,7 +265,7 @@ func _build_ask() -> void:
 	s.custom_minimum_size.x = 360
 	s.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	s.add_theme_color_override("font_color", Color(0.7, 0.75, 0.85))
-	s.add_theme_font_size_override("font_size", 15)
+	s.add_theme_font_size_override("font_size", Meta.fs(15))
 	v.add_child(s)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -290,12 +290,12 @@ func _build_end() -> void:
 	end_box.add_child(v)
 	var h := Label.new()
 	h.text = "튜토리얼 끝"
-	h.add_theme_font_size_override("font_size", 24)
+	h.add_theme_font_size_override("font_size", Meta.fs(24))
 	v.add_child(h)
 	var s := Label.new()
 	s.text = "판 밖에서 쓰는 것들은 시작 화면에 있어요"
 	s.add_theme_color_override("font_color", Color(0.7, 0.75, 0.85))
-	s.add_theme_font_size_override("font_size", 15)
+	s.add_theme_font_size_override("font_size", Meta.fs(15))
 	v.add_child(s)
 	end_list = VBoxContainer.new()
 	end_list.add_theme_constant_override("separation", 6)
@@ -307,13 +307,13 @@ func _build_end() -> void:
 		a.text = it[0]
 		a.custom_minimum_size.x = 110
 		a.add_theme_color_override("font_color", Color(0.45, 0.85, 0.9))
-		a.add_theme_font_size_override("font_size", 16)
+		a.add_theme_font_size_override("font_size", Meta.fs(16))
 		r.add_child(a)
 		var b := Label.new()
 		b.text = PatchNotes.kr_keep(it[1])
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.add_theme_font_size_override("font_size", 15)
+		b.add_theme_font_size_override("font_size", Meta.fs(15))
 		r.add_child(b)
 		end_list.add_child(r)
 	var row := HBoxContainer.new()

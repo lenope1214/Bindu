@@ -73,6 +73,8 @@ func _refresh_continue() -> void:
 		session.onboarding_system._tut_event("continue")
 		session.continue_info.text = "웨이브 %d부터 · %s · %s" % [info["wave"] + 1, Meta.MAPS[info["map"]]["name"], Rules.NAMES[info["rules"]]]
 		var n := 2 if session.mp_btn.visible else 1  # 이어하기 폭 = 타일 줄 폭 (일반 판·멀티)
+		if session.viewport_system._phone():
+			n = 1  # 폰: 이어하기는 타일 줄 안 한 칸 (menu._build)
 		session.continue_btn.custom_minimum_size.x = n * session.menu_system._tile_w() + 16 * (n - 1)
 	session.get_tree().call_group("keycap", "queue_redraw")  # [일반 판] 타일의 Enter 표시는 이어하기가 있으면 뺀다
 

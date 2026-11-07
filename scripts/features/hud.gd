@@ -236,7 +236,7 @@ func _dps_row(t: Tower, rank: int, dps: float, total: float, live := false) -> C
 		l.horizontal_alignment = c[2]
 		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		l.add_theme_font_size_override("font_size", 13)
+		l.add_theme_font_size_override("font_size", Meta.fs(13))
 		l.add_theme_color_override("font_color", c[3])
 		if c[1] > 0:
 			l.custom_minimum_size.x = c[1]
@@ -593,5 +593,6 @@ func _draw_hud() -> void:
 
 
 static func _font_size(c: Control, n: int) -> void:
-	if not c.has_theme_font_size_override("font_size") or c.get_theme_font_size("font_size") != n:
-		c.add_theme_font_size_override("font_size", n)
+	var want := Meta.fs(n)
+	if not c.has_theme_font_size_override("font_size") or c.get_theme_font_size("font_size") != want:
+		c.add_theme_font_size_override("font_size", want)

@@ -72,6 +72,11 @@ func _process(delta: float) -> void:
 	if session.tplay != null:
 		session.guide_label.position.y = maxf(session.guide_label.position.y, session.tplay.panel_bottom() + 8.0)
 	session.ui_layout_system._beside_legend(session.guide_label, 0.0)
+	# 폈던 DPS 표와 겹치면 표 오른쪽으로 (글자를 키운 폰·태블릿에서 안내가 넓어져 표 위에 덮였다)
+	if session.dps_panel and session.dps_panel.visible and session.guide_label.visible:
+		var dr := session.dps_panel.get_rect()
+		if session.guide_label.get_rect().intersects(dr):
+			session.guide_label.position.x = dr.end.x + 8.0
 	session.onboarding_system._update_action_guide()
 	if session.guide_label.visible:
 		session.toast.position.y = maxf(session.toast.position.y, session.guide_more.get_rect().end.y + 8.0)

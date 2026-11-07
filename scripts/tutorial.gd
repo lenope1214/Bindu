@@ -185,12 +185,12 @@ func setup(sb: StyleBox, help: Callable) -> void:
 	var hb := HBoxContainer.new()
 	v.add_child(hb)
 	head = Label.new()
-	head.add_theme_font_size_override("font_size", 22)
+	head.add_theme_font_size_override("font_size", Meta.fs(22))
 	head.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.clip_text = true
 	hb.add_child(head)
 	count = Label.new()
-	count.add_theme_font_size_override("font_size", 15)
+	count.add_theme_font_size_override("font_size", Meta.fs(15))
 	count.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
 	hb.add_child(count)
 
@@ -207,7 +207,7 @@ func setup(sb: StyleBox, help: Callable) -> void:
 	pages_box.add_child(pic)
 	body = Label.new()
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	body.add_theme_font_size_override("font_size", 18)
+	body.add_theme_font_size_override("font_size", Meta.fs(18))
 	body.custom_minimum_size = Vector2(0, 80)
 	body.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	pages_box.add_child(body)
@@ -300,7 +300,7 @@ func _fill_play_row() -> void:
 		pb.focus_mode = Control.FOCUS_NONE
 		pb.custom_minimum_size = Vector2(0, 52 if phone else 40)
 		pb.add_theme_color_override("font_color", Color(0.55, 0.92, 0.95))
-		pb.add_theme_font_size_override("font_size", 17 if ch == 0 else 15)
+		pb.add_theme_font_size_override("font_size", Meta.fs(17 if ch == 0 else 15))
 		var chi: int = maxi(ch - 1, 0)
 		pb.pressed.connect(func():
 			close()
@@ -479,7 +479,7 @@ func _process(delta: float) -> void:
 	var hh := avail.y - 24.0 if phone else minf(560.0, avail.y - 48.0)
 	panel.size = Vector2(w, hh)
 	panel.position = ((avail - panel.size) / 2.0).floor()
-	body.add_theme_font_size_override("font_size", 20 if phone else 18)
+	body.add_theme_font_size_override("font_size", Meta.fs(20 if phone else 18))
 	body.custom_minimum_size.x = minf(w - 48.0, 760.0)  # 읽기 좋은 폭 (넓은 폰 화면에서 한 줄이 1500px까지 늘어났다)
 	if mode in ["pages", "welcome"]:
 		pic.queue_redraw()

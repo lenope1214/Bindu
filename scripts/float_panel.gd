@@ -74,7 +74,7 @@ func _init(panel_id := "", main = null, closable := false) -> void:
 	title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	title.custom_minimum_size.x = 0
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	title.add_theme_font_size_override("font_size", 14)
+	title.add_theme_font_size_override("font_size", Meta.fs(14))
 	title.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
 	head.add_child(title)
 	var gap := Control.new()  # 제목을 숨겨도(폰 오브젝트 정보) 버튼은 오른쪽에 붙게
@@ -108,7 +108,7 @@ func _head_btn(text: String) -> Button:
 	b.text = text
 	b.focus_mode = Control.FOCUS_NONE
 	b.custom_minimum_size = Vector2(26, 26)
-	b.add_theme_font_size_override("font_size", 16)
+	b.add_theme_font_size_override("font_size", Meta.fs(16))
 	for s in ["normal", "hover", "pressed", "hover_pressed", "focus"]:
 		var sb := StyleBoxFlat.new()
 		sb.bg_color = Color(1, 1, 1, 0.0 if s == "focus" else (0.16 if s in ["hover", "hover_pressed"] else 0.06))

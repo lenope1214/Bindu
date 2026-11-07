@@ -804,8 +804,8 @@ func _menu_glyph(b: Button, icon: String, label: String) -> void:
 	b.draw.connect(func():
 		var hov := b.is_hovered()
 		var c := Color(1, 1, 1, 1.0 if hov else 0.9)
-		var fs := 13
-		Glyph.ui(b, icon, Vector2(b.size.x / 2.0, b.size.y * 0.4), 10.0, c)
+		var fs := Meta.fs(13)
+		Glyph.ui(b, icon, Vector2(b.size.x / 2.0, b.size.y * 0.4), 10.0 if fs < 17 else 13.0, c)
 		b.draw_string(session.ui_font, Vector2(0, b.size.y - 7.0), label, HORIZONTAL_ALIGNMENT_CENTER, b.size.x, fs, Color(c, 0.75)))
 
 

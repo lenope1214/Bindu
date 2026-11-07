@@ -86,6 +86,33 @@ static var sim_safe := Rect2()  # 점검 도구: 안전 영역 밖 여백 흉내
 static var ui_scale := 1.0  # 글자·버튼 크기 (UI_SCALES 중 하나). 폰은 기본 1.3
 static var modes: Array = []  # 시작 화면에서 고른 모드 (Modes). 다음 판에도 남는다
 const UI_SCALES := [0.7, 0.85, 1.0, 1.15, 1.3]
+
+
+## 폰 글자 크기: 폰 화면(가로 약 15cm)은 같은 배율에서도 글이 작아 보여 작은 글을 더 키운다. 큰 제목(30 이상)은 그대로, 나머지는 x1.3에 최소 18
+static func fs(n: float) -> int:
+	if not (sim_phone or OS.has_feature("mobile")) or n >= 30.0:
+		return roundi(n)
+	return clampi(roundi(n * 1.3), 18, maxi(30, roundi(n)))
+
+
+## BBCode 글 속 [font_size=N]도 fs로 (폰만 바뀜)
+static func fs_bb(t: String) -> String:
+	if not (sim_phone or OS.has_feature("mobile")):
+		return t
+	var re := RegEx.create_from_string("\\[font_size=(\\d+)\\]")
+	var out := ""
+	var at := 0
+	for m in re.search_all(t):
+		out += t.substr(at, m.get_start() - at) + "[font_size=%d]" % fs(int(m.get_string(1)))
+		at = m.get_end()
+	return out + t.substr(at)
+
+
+## 폰인지 (OS가 폰·태블릿이거나 점검 도구가 폰 화면 흉내)
+static func phone() -> bool:
+	return sim_phone or OS.has_feature("mobile")
+
+
 static var loaded := false
 const EASY_TAG := "~easy"  # 쉽게 모드를 쓴 판의 기록 키 끝 (run_key)
 static var line_flip := false  # 회랑 맵: false면 구체가 오른쪽에서 와서 왼쪽 끝 문으로, true면 반대

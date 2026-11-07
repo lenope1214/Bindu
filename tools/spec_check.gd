@@ -3260,6 +3260,17 @@ func _meta_misc() -> void:
 		if vs.has(key):
 			vs[key].value = vol_save[i]
 	ok("UI-40", vol_rows and vol_ok, "음량 따로: 전체·배경음·효과음 슬라이더 %s, 반영 %s" % [vol_rows, vol_ok])
+	# 폰 글자 크기: 폰만 작은 글을 키우고 PC는 그대로, 폰은 카드 줄도 키 큰 판
+	var was_phone := Meta.sim_phone
+	Meta.sim_phone = false
+	CardDock.fit_phone()
+	var fs_pc: bool = Meta.fs(13) == 13 and Meta.fs(18) == 18 and Meta.fs(72) == 72 and is_equal_approx(CardDock.CARD_HEIGHT, 94.0) and Meta.fs_bb("[font_size=12]a") == "[font_size=12]a"
+	Meta.sim_phone = true
+	CardDock.fit_phone()
+	var fs_phone: bool = Meta.fs(11) == 18 and Meta.fs(18) == 23 and Meta.fs(24) == 30 and Meta.fs(72) == 72 and CardDock.CARD_HEIGHT > 94.0 and CardDock.CONTROL_HEIGHT > 36.0 and Meta.fs_bb("[font_size=12]a") == "[font_size=18]a"
+	Meta.sim_phone = was_phone
+	CardDock.fit_phone()
+	ok("UI-41", fs_pc and fs_phone, "폰 글자 크기: PC 그대로 %s, 폰 키움 %s" % [fs_pc, fs_phone])
 	main.run_flow_system._on_skip()
 	ok("SKIP-02", skip_forecast and main.skip_left == 3 and main.bank_picks.size() == 2, "넘기기: 이번 고르기를 쌓아 두고 n웨이브 진행 (남은 %d, 쌓인 고르기 %d)" % [main.skip_left, main.bank_picks.size()])
 	main.skip_left = 0

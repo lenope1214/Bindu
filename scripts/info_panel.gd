@@ -137,6 +137,8 @@ func card_h() -> float:
 # ---------------- 그리기 도구 ----------------
 
 func _txt(p: Vector2, s: String, fs: float, col := Color("d9e5f5"), w := -1.0) -> void:
+	if fs < 13.0 and Meta.phone():
+		fs = 13.0  # 폰: 아주 작은 설명 글(10~12)이 읽히지 않았다
 	draw_string(font, p, s, HORIZONTAL_ALIGNMENT_LEFT, w, int(fs), col)
 
 

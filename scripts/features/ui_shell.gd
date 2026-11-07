@@ -14,7 +14,7 @@ func _build_ui() -> void:
 	font.font_names = PackedStringArray(["Apple SD Gothic Neo", "Noto Sans CJK KR", "Malgun Gothic", "sans-serif"])
 	theme.default_font = font
 	session.ui_font = font
-	theme.default_font_size = 18
+	theme.default_font_size = Meta.fs(18)
 	root.theme = theme
 	layer.add_child(root)
 	session.ui_root = root
@@ -34,7 +34,7 @@ func _build_ui() -> void:
 	session.hint.grow_vertical = Control.GROW_DIRECTION_BEGIN  # 줄이 늘면 위로 (아래는 버전 표시)
 	session.hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	session.hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	session.hint.add_theme_font_size_override("font_size", 15)
+	session.hint.add_theme_font_size_override("font_size", Meta.fs(15))
 	root.add_child(session.hint)
 
 	session.ver_label = Label.new()
@@ -52,7 +52,7 @@ func _build_ui() -> void:
 	session.toast.position = Vector2(-300, 100)  # 점수 줄·보스 체력 막대 아래
 	session.toast.size = Vector2(600, 30)
 	session.toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	session.toast.add_theme_font_size_override("font_size", 22)
+	session.toast.add_theme_font_size_override("font_size", Meta.fs(22))
 	session.toast.add_theme_color_override("font_outline_color", Color.BLACK)
 	session.toast.add_theme_constant_override("outline_size", 5)
 	root.add_child(session.toast)
@@ -63,7 +63,7 @@ func _build_ui() -> void:
 	session.guide_label.position = Vector2(-300, 140)
 	session.guide_label.size = Vector2(600, 0)
 	session.guide_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	session.guide_label.add_theme_font_size_override("font_size", 16)
+	session.guide_label.add_theme_font_size_override("font_size", Meta.fs(16))
 	session.guide_label.add_theme_color_override("font_color", Color(1, 0.93, 0.7))
 	var gsb := StyleBoxFlat.new()
 	gsb.bg_color = Color(0.08, 0.07, 0.04, 0.9)
@@ -131,11 +131,11 @@ func _build_ui() -> void:
 	var cht := Label.new()
 	cht.text = "카드 선택"
 	cht.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cht.add_theme_font_size_override("font_size", 16)
+	cht.add_theme_font_size_override("font_size", Meta.fs(16))
 	cht.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	chr.add_child(cht)
 	session.choice_remaining = Label.new()
-	session.choice_remaining.add_theme_font_size_override("font_size", 16)
+	session.choice_remaining.add_theme_font_size_override("font_size", Meta.fs(16))
 	session.choice_remaining.add_theme_color_override("font_color", Color(1, 0.88, 0.5))
 	session.choice_remaining.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	chr.add_child(session.choice_remaining)
@@ -151,7 +151,7 @@ func _build_ui() -> void:
 	session.range_btn.position = Vector2(-280, 10)
 	session.range_btn.size = Vector2(112, 30)
 	session.range_btn.focus_mode = Control.FOCUS_NONE
-	session.range_btn.add_theme_font_size_override("font_size", 14)
+	session.range_btn.add_theme_font_size_override("font_size", Meta.fs(14))
 	session.range_btn.pressed.connect(func(): session.range_all = not session.range_all)
 	session.range_btn.visible = false
 	root.add_child(session.range_btn)
@@ -161,12 +161,12 @@ func _build_ui() -> void:
 	session.zoom_btn.position = Vector2(-400, 10)
 	session.zoom_btn.size = Vector2(112, 30)
 	session.zoom_btn.focus_mode = Control.FOCUS_NONE
-	session.zoom_btn.add_theme_font_size_override("font_size", 14)
+	session.zoom_btn.add_theme_font_size_override("font_size", Meta.fs(14))
 	session.zoom_btn.pressed.connect(session.viewport_system._reset_zoom)
 	session.zoom_btn.visible = false
 	root.add_child(session.zoom_btn)
 	session.legend.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # 긴 줄이 화면 밖으로 잘리지 않게
-	session.legend.add_theme_font_size_override("font_size", 14)
+	session.legend.add_theme_font_size_override("font_size", Meta.fs(14))
 	# 옅은 바탕: 지나가는 구체 위에서도, 글자를 키워(설정) 카드와 겹칠 때도 읽히게
 	var lsb := StyleBoxFlat.new()
 	lsb.bg_color = Color(0.02, 0.03, 0.05, 0.85)
@@ -196,7 +196,7 @@ func _build_ui() -> void:
 	session.apply_btn.set_anchors_preset(Control.PRESET_CENTER)
 	session.apply_btn.focus_mode = Control.FOCUS_NONE
 	session.apply_btn.draw.connect(session.field_overlay_system._draw_apply_icon)
-	session.apply_btn.add_theme_font_size_override("font_size", 17)
+	session.apply_btn.add_theme_font_size_override("font_size", Meta.fs(17))
 	# 선택 조작 줄의 기본 동작을 금색으로 강조
 	for st in ["normal", "hover", "pressed"]:
 		var asb := StyleBoxFlat.new()
@@ -243,7 +243,7 @@ func _build_ui() -> void:
 	session.card_detail_btn = Button.new()
 	session.card_detail_btn.set_anchors_preset(Control.PRESET_CENTER)
 	session.card_detail_btn.focus_mode = Control.FOCUS_NONE
-	session.card_detail_btn.add_theme_font_size_override("font_size", 14)
+	session.card_detail_btn.add_theme_font_size_override("font_size", Meta.fs(14))
 	session.card_detail_btn.text = "자세히"
 	session.card_detail_btn.toggle_mode = true
 	session.card_detail_btn.button_pressed = Meta.card_detail
@@ -326,7 +326,7 @@ func _build_ui() -> void:
 	session.start_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	session.start_btn.position = Vector2(-110, -100)
 	session.start_btn.size = Vector2(220, 44)
-	session.start_btn.add_theme_font_size_override("font_size", 20)
+	session.start_btn.add_theme_font_size_override("font_size", Meta.fs(20))
 	session.start_btn.pressed.connect(session.cards_system._start_wave_from_ready)
 	session.start_btn.visible = false
 	root.add_child(session.start_btn)
@@ -336,7 +336,7 @@ func _build_ui() -> void:
 	session.cancel_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	session.cancel_btn.position = Vector2(-70, -100)  # 웨이브 시작 버튼 자리 (옮기기·설치 중엔 비어 있다)
 	session.cancel_btn.size = Vector2(140, 40)
-	session.cancel_btn.add_theme_font_size_override("font_size", 18)
+	session.cancel_btn.add_theme_font_size_override("font_size", Meta.fs(18))
 	session.cancel_btn.pressed.connect(session.interaction_system._cancel_step)
 	session.cancel_btn.visible = false
 	root.add_child(session.cancel_btn)
@@ -345,7 +345,7 @@ func _build_ui() -> void:
 	session.aim_ok_btn.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	session.aim_ok_btn.position = Vector2(-70.0 + 150.0, -100.0)  # 취소 오른쪽
 	session.aim_ok_btn.size = Vector2(140, 40)
-	session.aim_ok_btn.add_theme_font_size_override("font_size", 18)
+	session.aim_ok_btn.add_theme_font_size_override("font_size", Meta.fs(18))
 	session.aim_ok_btn.focus_mode = Control.FOCUS_NONE
 	session.aim_ok_btn.pressed.connect(func():
 		if session.phase == BinduSession.Phase.AIM and session.aim_wait:
@@ -397,7 +397,7 @@ func _build_ui() -> void:
 	session.paused_label.size = Vector2(700, 80)  # 글줄이 늘면 아래로 자란다
 	session.paused_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	session.paused_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	session.paused_label.add_theme_font_size_override("font_size", 20)
+	session.paused_label.add_theme_font_size_override("font_size", Meta.fs(20))
 	session.paused_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	session.paused_label.add_theme_constant_override("outline_size", 5)
 	session.paused_label.text = session.run_flow_system._pause_text()
@@ -462,7 +462,7 @@ func _build_ui() -> void:
 	session.banner.position = Vector2(-400, -140)
 	session.banner.size = Vector2(800, 60)
 	session.banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	session.banner.add_theme_font_size_override("font_size", 40)
+	session.banner.add_theme_font_size_override("font_size", Meta.fs(40))
 	session.banner.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	session.banner.add_theme_constant_override("outline_size", 6)
 	session.banner.visible = false
@@ -479,7 +479,7 @@ func _build_ui() -> void:
 	session.over_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	session.over_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	session.over_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # 최다 피해 오브젝트 이름 등이 길면 화면 밖으로 나가던 것: 900 안에서 접는다
-	session.over_label.add_theme_font_size_override("font_size", 18)
+	session.over_label.add_theme_font_size_override("font_size", Meta.fs(18))
 	session.over_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
 	session.over_label.visible = false
 	root.add_child(session.over_label)
@@ -492,7 +492,7 @@ func _build_ui() -> void:
 	session.vote_over_btn.focus_mode = Control.FOCUS_NONE
 	session.vote_over_btn.size = Vector2(220, 44)
 	session.vote_over_btn.position = Vector2(-110, 200)
-	session.vote_over_btn.add_theme_font_size_override("font_size", 17)
+	session.vote_over_btn.add_theme_font_size_override("font_size", Meta.fs(17))
 	session.vote_over_btn.add_theme_color_override("font_color", Color(1, 0.86, 0.35))
 	session.vote_over_btn.tooltip_text = "이번 판에 쓴 카드 중 다음 패치에서 강해졌으면·약해졌으면·바뀌었으면 하는 것에 투표"
 	session.vote_over_btn.pressed.connect(func(): session.menu_system._toggle_vote(true))
@@ -524,7 +524,7 @@ func _build_ui() -> void:
 	# 긴 줄은 창 안에서 줄바꿈 (오른쪽 끝이 화면 밖으로 잘리던 것)
 	session.help_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	session.help_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	session.help_label.add_theme_font_size_override("font_size", 15)
+	session.help_label.add_theme_font_size_override("font_size", Meta.fs(15))
 	var hsb := StyleBoxFlat.new()
 	hsb.bg_color = Color(0.05, 0.06, 0.09, 1.0)  # 뒤 카드·설명 글자가 비쳐 보이지 않게
 	hsb.set_border_width_all(1)

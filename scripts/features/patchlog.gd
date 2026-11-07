@@ -17,6 +17,13 @@ func _build_notes(root: Control) -> void:
 	session.notes_panel.offset_right = 430.0
 	session.notes_panel.offset_top = -300.0
 	session.notes_panel.offset_bottom = 270.0
+	if session.viewport_system._phone():
+		# 폰: 화면 높이(글자 130%면 약 520)에 맞는 창이라 줄어들지 않는다 (줄어들면 키운 글자가 도로 작아졌다)
+		var nw := clampf(session.viewport_system._phone_ui_w() / 2.0, 430.0, 480.0)
+		session.notes_panel.offset_left = -nw
+		session.notes_panel.offset_right = nw
+		session.notes_panel.offset_top = -245.0
+		session.notes_panel.offset_bottom = 245.0
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.05, 0.06, 0.09, 1.0)
 	sb.set_border_width_all(1)
@@ -33,12 +40,12 @@ func _build_notes(root: Control) -> void:
 	v.add_child(head)
 	var t := Label.new()
 	t.text = "패치노트"
-	t.add_theme_font_size_override("font_size", 22)
+	t.add_theme_font_size_override("font_size", Meta.fs(22))
 	head.add_child(t)
 	notes_status = Label.new()
 	notes_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	notes_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	notes_status.add_theme_font_size_override("font_size", 13)
+	notes_status.add_theme_font_size_override("font_size", Meta.fs(13))
 	notes_status.add_theme_color_override("font_color", Color(1, 1, 1, 0.5))
 	head.add_child(notes_status)
 	var sc := ScrollContainer.new()
@@ -51,8 +58,8 @@ func _build_notes(root: Control) -> void:
 	notes_text.scroll_active = false
 	notes_text.mouse_filter = Control.MOUSE_FILTER_PASS  # 터치로 끌면 위의 ScrollContainer가 굴린다
 	notes_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	notes_text.add_theme_font_size_override("normal_font_size", 15)
-	notes_text.add_theme_font_size_override("bold_font_size", 15)
+	notes_text.add_theme_font_size_override("normal_font_size", Meta.fs(15))
+	notes_text.add_theme_font_size_override("bold_font_size", Meta.fs(15))
 	notes_text.add_theme_constant_override("line_separation", 3)
 	notes_text.add_theme_constant_override("paragraph_separation", 8)
 	notes_text.meta_underlined = false
@@ -163,7 +170,7 @@ func _draw_notes() -> void:
 		if not rows.is_empty():
 			out.append("[ul bullet= ]%s[/ul]" % "\n".join(rows))
 		out.append("")
-	notes_text.text = _kr_keep("\n".join(out))
+	notes_text.text = Meta.fs_bb(_kr_keep("\n".join(out)))
 	match PatchNotes.source:
 		"online":
 			notes_status.text = "최신 (인터넷)"

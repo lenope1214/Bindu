@@ -72,18 +72,18 @@ func setup(perk_list: Array, sb: StyleBox, net_node: Net) -> void:
 	v.add_child(head)
 	title_label = Label.new()
 	title_label.add_to_group("key_hint")  # 터치 화면에서 main이 키 안내를 뺀다
-	title_label.add_theme_font_size_override("font_size", 22)
+	title_label.add_theme_font_size_override("font_size", Meta.fs(22))
 	head.add_child(title_label)
 	left_label = Label.new()
 	left_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	left_label.add_theme_font_size_override("font_size", 16)
+	left_label.add_theme_font_size_override("font_size", Meta.fs(16))
 	left_label.add_theme_color_override("font_color", Codex.FAV_COLOR)
 	head.add_child(left_label)
 	var tip := Label.new()
 	tip.text = "다음 패치에서 강해졌으면 ▲, 약해졌으면 ▼, 바뀌었으면 하는 점이 있으면 ✎ (한 줄 의견). 다시 누르면 취소"
 	tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	tip.add_theme_font_size_override("font_size", 14)
+	tip.add_theme_font_size_override("font_size", Meta.fs(14))
 	tip.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
 	v.add_child(tip)
 	tab_row = HBoxContainer.new()
@@ -123,13 +123,13 @@ func setup(perk_list: Array, sb: StyleBox, net_node: Net) -> void:
 	sc.add_child(list)
 	last_label = Label.new()
 	last_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	last_label.add_theme_font_size_override("font_size", 13)
+	last_label.add_theme_font_size_override("font_size", Meta.fs(13))
 	last_label.add_theme_color_override("font_color", Color(0.7, 0.85, 1.0))
 	last_label.visible = false
 	v.add_child(last_label)
 	status = Label.new()
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status.add_theme_font_size_override("font_size", 14)
+	status.add_theme_font_size_override("font_size", Meta.fs(14))
 	status.add_theme_color_override("font_color", Color(1, 0.8, 0.5))
 	v.add_child(status)
 	var row := HBoxContainer.new()
@@ -419,7 +419,7 @@ func _row(x: Dictionary) -> Control:
 	n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	n.clip_text = true
 	n.custom_minimum_size.x = 60
-	n.add_theme_font_size_override("font_size", 17)
+	n.add_theme_font_size_override("font_size", Meta.fs(17))
 	n.add_theme_color_override("font_color", x["color"])
 	if x.get("desc", "") != "":
 		n.tooltip_text = PatchNotes.kr_keep(x["desc"])
@@ -435,7 +435,7 @@ func _row(x: Dictionary) -> Control:
 		dl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		dl.clip_text = true
 		dl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		dl.add_theme_font_size_override("font_size", 13)
+		dl.add_theme_font_size_override("font_size", Meta.fs(13))
 		dl.add_theme_color_override("font_color", Color(1, 1, 1, 0.45))
 		dl.tooltip_text = n.tooltip_text
 		dl.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -443,7 +443,7 @@ func _row(x: Dictionary) -> Control:
 	var note := LineEdit.new()
 	note.max_length = NOTE_MAX
 	note.placeholder_text = "어떻게 바뀌면 좋을지 한 줄로 (선택, %d자)" % NOTE_MAX
-	note.add_theme_font_size_override("font_size", 14)
+	note.add_theme_font_size_override("font_size", Meta.fs(14))
 	note.text = picks[key]["note"] if picks.has(key) else ""
 	note.visible = picks.has(key) and picks[key]["dir"] == "fix"
 	note.editable = can_vote
@@ -454,7 +454,7 @@ func _row(x: Dictionary) -> Control:
 		b.tooltip_text = DIR_NAME[d]
 		b.focus_mode = Control.FOCUS_NONE
 		b.custom_minimum_size = Vector2(52, 40)
-		b.add_theme_font_size_override("font_size", 18)
+		b.add_theme_font_size_override("font_size", Meta.fs(18))
 		b.disabled = not can_vote
 		var on: bool = picks.has(key) and picks[key]["dir"] == d
 		var sb := StyleBoxFlat.new()

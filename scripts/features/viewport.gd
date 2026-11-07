@@ -6,6 +6,12 @@ func _phone() -> bool:
 	return OS.has_feature("mobile") or Meta.sim_phone
 
 
+## 폰·태블릿에서 창을 놓을 UI 폭 (글자 130% 기준). 20:9 폰은 약 1060, 4:3 태블릿은 약 740
+func _phone_ui_w() -> float:
+	var v := session.get_viewport_rect().size
+	return v.x / maxf(1.3, Meta.ui_scale) - 90.0  # 만들 때 한 번 재므로 폰 기본 130% 이상으로 잰다
+
+
 func center() -> Vector2:
 	return Meta.FIELD / 2.0
 

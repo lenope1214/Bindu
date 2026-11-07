@@ -589,8 +589,8 @@ func _draw_boss_bar() -> void:
 	session.fx_layer.draw_rect(Rect2(p, Vector2(w * clampf(hp / mx, 0.0, 1.0), 10)), Color(1, 0.3, 0.4))
 	session.fx_layer.draw_rect(Rect2(p, Vector2(w, 10)), Color(1, 1, 1, 0.3), false, 1.0)
 	var txt := "보스%s  %d / %d" % [" x%d" % n if n > 1 else "", ceili(hp), ceili(mx)]
-	session.fx_layer.draw_string(session.ui_font, p + Vector2(1, -3), txt, HORIZONTAL_ALIGNMENT_CENTER, w, 14, Color(0, 0, 0, 0.8))
-	session.fx_layer.draw_string(session.ui_font, p + Vector2(0, -4), txt, HORIZONTAL_ALIGNMENT_CENTER, w, 14, Color(1, 0.85, 0.88))
+	session.fx_layer.draw_string(session.ui_font, p + Vector2(1, -3), txt, HORIZONTAL_ALIGNMENT_CENTER, w, Meta.fs(14), Color(0, 0, 0, 0.8))
+	session.fx_layer.draw_string(session.ui_font, p + Vector2(0, -4), txt, HORIZONTAL_ALIGNMENT_CENTER, w, Meta.fs(14), Color(1, 0.85, 0.88))
 
 
 ## 콤보 점수 배율: 콤보마다 +10%, 콤보 20부터 x3.
@@ -870,8 +870,8 @@ func _draw() -> void:
 			for t in session.towers.get_children():
 				var txt := "%d%%" % roundi(t.dealt / total * 100.0)
 				var tp: Vector2 = t.position + Vector2(-40, Tower.RADIUS + 20)
-				session.draw_string(session.ui_font, tp + Vector2(1, 1), txt, HORIZONTAL_ALIGNMENT_CENTER, 80, 14, Color(0, 0, 0, 0.8))
-				session.draw_string(session.ui_font, tp, txt, HORIZONTAL_ALIGNMENT_CENTER, 80, 14, Color(1, 0.9, 0.5))
+				session.draw_string(session.ui_font, tp + Vector2(1, 1), txt, HORIZONTAL_ALIGNMENT_CENTER, 80, Meta.fs(14), Color(0, 0, 0, 0.8))
+				session.draw_string(session.ui_font, tp, txt, HORIZONTAL_ALIGNMENT_CENTER, 80, Meta.fs(14), Color(1, 0.9, 0.5))
 	elif session.interaction_system.dragging:
 		# 끄는 동안: 옮기는 오브젝트들의 범위 (방향은 그대로)
 		for t in session.interaction_system.drag_group:
@@ -915,7 +915,7 @@ func _draw_place_label(at: Vector2, text: String, color: Color) -> void:
 		avoid.append(to_world * rect)
 	avoid.append(Rect2(session.interaction_system._pointer_world() - Vector2(24, 24), Vector2(48, 48)))
 	place_label_rect = session.ui_layout_system._free_badge(Rect2(at - Vector2(0, 14), Vector2(width, 18)), Vector2.UP, avoid, visible)
-	session.draw_string(session.ui_font, place_label_rect.position + Vector2(0, 14), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, color)
+	session.draw_string(session.ui_font, place_label_rect.position + Vector2(0, 14), text, HORIZONTAL_ALIGNMENT_LEFT, -1, Meta.fs(14), color)
 
 
 ## 카드를 넣을 오브젝트에 올렸을 때의 설명 글 (main._draw가 place_note에 담고, 오브젝트 위에 보이게 fx_layer가 그린다).

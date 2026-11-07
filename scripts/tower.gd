@@ -2685,7 +2685,7 @@ func _draw_body() -> void:
 		_draw_symbols(total, skin)
 		draw_set_transform(Vector2.ZERO)
 	if total > 1 and not (main and main.wave_active):  # 레벨 숫자는 쉬는 시간에만 (웨이브 중 글자 줄이기)
-		draw_string(ThemeDB.fallback_font, Vector2(-6, -RADIUS - 6), str(total), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color.WHITE)
+		draw_string(ThemeDB.fallback_font, Vector2(-6, -RADIUS - 6), str(total), HORIZONTAL_ALIGNMENT_LEFT, -1, Meta.fs(13), Color.WHITE)
 	# 강화 개수: 아래쪽 작은 점
 	var nm := 0
 	for id in mods:

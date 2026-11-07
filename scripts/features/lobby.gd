@@ -41,13 +41,13 @@ func _build_mp_lobby(root: Control) -> void:
 	var head := Label.new()
 	head.text = "멀티플레이"
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	head.add_theme_font_size_override("font_size", 28)
+	head.add_theme_font_size_override("font_size", Meta.fs(28))
 	box.add_child(head)
 	var desc := Label.new()
 	mp_desc = desc
 	desc.text = "대결: 같은 웨이브를 각자 막고, 실수 없이 막으면 상대에게 구체를 보냄\n협동: 한 전장을 함께 막음 (호스트 기기가 계산, 인원만큼 구체가 많아짐)\n맵·규칙은 호스트가 시작 화면에서 고른 것으로, 모드는 끈 채로 합니다"
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	desc.add_theme_font_size_override("font_size", 15)
+	desc.add_theme_font_size_override("font_size", Meta.fs(15))
 	desc.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
 	box.add_child(desc)
 	mp_host_box = HBoxContainer.new()
@@ -70,7 +70,7 @@ func _build_mp_lobby(root: Control) -> void:
 	mp_code_edit.placeholder_text = "방 코드 6자리"
 	mp_code_edit.custom_minimum_size = Vector2(220, 46)
 	mp_code_edit.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	mp_code_edit.add_theme_font_size_override("font_size", 22)
+	mp_code_edit.add_theme_font_size_override("font_size", Meta.fs(22))
 	# 글자 수 제한(max_length) 대신 넣을 때마다 코드 글자만 남긴다: "방 코드 3EL3MP" 같은 글을 붙여 넣어도 코드만
 	mp_code_edit.text_changed.connect(func(t):
 		var c := Mp.clean_code(t)
@@ -109,7 +109,7 @@ func _build_mp_lobby(root: Control) -> void:
 	session.mp_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	session.mp_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	session.mp_status.custom_minimum_size = Vector2(600, 30)
-	session.mp_status.add_theme_font_size_override("font_size", 18)
+	session.mp_status.add_theme_font_size_override("font_size", Meta.fs(18))
 	box.add_child(session.mp_status)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -128,7 +128,7 @@ func _build_mp_lobby(root: Control) -> void:
 	mp_close_btn.pressed.connect(_toggle_mp_lobby)
 	row.add_child(mp_close_btn)
 	session.mp_bar = Label.new()  # 점수 줄 바로 아래 (_mp_tick이 자리를 맞춘다)
-	session.mp_bar.add_theme_font_size_override("font_size", 15)
+	session.mp_bar.add_theme_font_size_override("font_size", Meta.fs(15))
 	session.mp_bar.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	session.mp_bar.add_theme_constant_override("outline_size", 4)
 	session.mp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -143,21 +143,21 @@ func _build_mp_lobby(root: Control) -> void:
 	session.mp_view_btn.text = "보기: 모두"
 	session.mp_view_btn.tooltip_text = "누구 오브젝트인지 골라 보기: 모두 → 나 → 친구마다 (고른 사람 것만 진하게, 나머지는 흐리게)"
 	session.mp_view_btn.focus_mode = Control.FOCUS_NONE
-	session.mp_view_btn.add_theme_font_size_override("font_size", 14)
+	session.mp_view_btn.add_theme_font_size_override("font_size", Meta.fs(14))
 	session.mp_view_btn.pressed.connect(_mp_view_next)
 	session.mp_act.add_child(session.mp_view_btn)
 	session.mp_req_btn = Button.new()
 	session.mp_req_btn.text = "속성 요청"
 	session.mp_req_btn.tooltip_text = "내 오브젝트 하나에 원하는 속성을 요청해요. 친구가 그 속성 카드를 고르면 넣어 줄 수 있어요 (쉬는 시간마다 1장)"
 	session.mp_req_btn.focus_mode = Control.FOCUS_NONE
-	session.mp_req_btn.add_theme_font_size_override("font_size", 14)
+	session.mp_req_btn.add_theme_font_size_override("font_size", Meta.fs(14))
 	session.mp_req_btn.pressed.connect(_mp_req_toggle)
 	session.mp_act.add_child(session.mp_req_btn)
 	session.mp_kick_btn = Button.new()
 	session.mp_kick_btn.text = "내보내기"
 	session.mp_kick_btn.tooltip_text = "호스트: 판에서 사람을 내보내요 (그 사람 오브젝트는 남고, 다시 들어올 수 없어요)"
 	session.mp_kick_btn.focus_mode = Control.FOCUS_NONE
-	session.mp_kick_btn.add_theme_font_size_override("font_size", 14)
+	session.mp_kick_btn.add_theme_font_size_override("font_size", Meta.fs(14))
 	session.mp_kick_btn.pressed.connect(_mp_kick_open)
 	session.mp_act.add_child(session.mp_kick_btn)
 	mp_pop = PanelContainer.new()
@@ -189,7 +189,7 @@ func _mp_pop_show(title: String, items: Array) -> void:
 	head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	head.custom_minimum_size = Vector2(420, 0)
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	head.add_theme_font_size_override("font_size", 17)
+	head.add_theme_font_size_override("font_size", Meta.fs(17))
 	box.add_child(head)
 	var grid := GridContainer.new()
 	grid.columns = 4 if items.size() > 4 else maxi(1, items.size())
@@ -680,7 +680,7 @@ func _mp_refresh_lobby(keep_status := true) -> void:
 	mp_room_box.add_child(code_row)
 	var cl := Label.new()
 	cl.text = "%s 방 코드  %s" % ["대결" if session.mp.mode == "vs" else "협동", session.mp.code]
-	cl.add_theme_font_size_override("font_size", 22)
+	cl.add_theme_font_size_override("font_size", Meta.fs(22))
 	code_row.add_child(cl)
 	var cb := Button.new()
 	cb.text = "복사"
@@ -692,7 +692,7 @@ func _mp_refresh_lobby(keep_status := true) -> void:
 	code_row.add_child(cb)
 	var cnt := Label.new()
 	cnt.text = "%d/%d명" % [session.mp.names().size(), Mp.MAX_PLAYERS]
-	cnt.add_theme_font_size_override("font_size", 16)
+	cnt.add_theme_font_size_override("font_size", Meta.fs(16))
 	cnt.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
 	code_row.add_child(cnt)
 	if wait_host:
@@ -751,19 +751,19 @@ func _mp_member_row(id: int, pf: String, host: bool, text: String, state: String
 	row.add_child(ic)
 	var l := Label.new()
 	l.text = ("★ " if host else "    ") + text  # ★ 자리를 비워 이름 시작을 맞춤
-	l.add_theme_font_size_override("font_size", 20)
+	l.add_theme_font_size_override("font_size", Meta.fs(20))
 	row.add_child(l)
 	if state == "연결 중":
 		row.add_child(_mp_spinner(8.0))
 	if state != "":
 		var sl := Label.new()
 		sl.text = state
-		sl.add_theme_font_size_override("font_size", 16)
+		sl.add_theme_font_size_override("font_size", Meta.fs(16))
 		sl.add_theme_color_override("font_color", Color(1, 0.45, 0.4) if state == "연결 안 됨" else Color(1, 1, 1, 0.55))
 		row.add_child(sl)
 	elif id != session.mp.my_id and id > 0:
 		var pl := Label.new()
-		pl.add_theme_font_size_override("font_size", 16)
+		pl.add_theme_font_size_override("font_size", Meta.fs(16))
 		pl.tooltip_text = "왕복 지연 (호스트와의 연결 기준)"
 		row.add_child(pl)
 		mp_ping_labels[id] = pl
