@@ -9,7 +9,7 @@ class_name Side
 ## 모양 = 대표 나르는 특징(shape_e). 여러 대상(전기·소리·영혼·피·환영) · 장판 던지기(물·독·불: 맞은 구체가 지나간 길에만 장판, ELEM-10)
 ## · 맵 전체(어둠·별·빛) · 나르는 특징 없음은 휩쓸기. 큰 보조 공격은 같은 모양의 큰 판. 어울리는 짝 6개는 SPECIAL이 덮어쓴다.
 ## 오브젝트와 고정된 거리에 생기는 장판은 없다 (사용자 결정 2026-10-30).
-## 온라인 패치: rules.side_iv · side_dmg · side_r · side_big_n · side_big_k · side_mix_k(섞인 보조 공격 피해 배율)
+## 온라인 패치: rules.side_iv · side_dmg · side_r · side_big_n · side_big_k · side_mix_k(섞인 보조 공격 피해 배율) · side_mix_floor(처음 맞힌 구체 최소 피해)
 const BIG_R := 200.0  # 큰 보조 공격 둥근 터짐 반지름 (바람 넓힘 곱)
 const BIG_CHAIN := 10  # 전기: 이어지는 구체 수
 const BIG_JUMP := 160.0  # 전기: 다음 구체까지 거리 (바람 넓힘 곱)
@@ -202,7 +202,10 @@ static func tick(tw: Object, delta: float) -> void:
 		else:
 			big_hit(tw, o)
 	elif mixed(tw):
+		var hp0: float = o.hp
 		mix_hit(tw, o, false)
+		if not shape_e(tw) in [Elem.DARK, Elem.STAR]:  # 어둠·별은 가까운 구체가 아닌 먼 곳을 친다
+			floor_hit(tw, o, hp0)
 	else:
 		hit_one(tw, o)
 
@@ -230,6 +233,17 @@ static func hit_one(tw: Object, o: Orb) -> void:
 	tw.hit(o, Tower.pw(tw.plv) * Rules.t("side_dmg"))
 	tw.no_size = false
 	tw.tag = old
+
+
+## 섞인 보통 보조 공격이 처음 맞힌 구체는 적어도 한 마리 보조 공격만큼 받는다 (초반 오브젝트가 적을 때 약해지지 않게)
+## 모자란 만큼만 피해로 채운다 (효과·특징은 다시 싣지 않음)
+static func floor_hit(tw: Object, o: Orb, hp0: float) -> void:
+	if not is_instance_valid(o) or o.hp <= 0.0:
+		return
+	var want: float = Tower.pw(tw.plv) * Rules.t("side_dmg") * Rules.t("side_mix_floor") * tw.dmg_k_bare() * o.resist_mul(_els(tw))
+	var lack: float = want - maxf(hp0 - o.hp, 0.0)
+	if lack > 0.0:
+		tw.credit(o.hurt(lack, false, tw), "share:side")
 
 
 ## 큰 보조 공격

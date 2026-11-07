@@ -2548,6 +2548,16 @@ func _side_mix() -> void:
 	main.side_big_t = 0.0
 	_clear()
 	ok("SIDE-11", big_ok and throw_big == Side.BIG_THROW_N, "섞인 큰 보조 공격: 메아리 큰 판 8마리 모두 %s · 물폭탄 %d마리에 묻힘" % [big_ok, throw_big])
+	_clear()
+	# SIDE-12 처음 맞힌 구체 최소 피해 (보통 보조 공격)
+	var fl: Tower = mk.call([[Elem.FIRE, 2], [Elem.WOOD, 1]])
+	var fo: Orb = _orb(fl.position + Vector2(120, 0), 1e6)
+	_grid.call()
+	fl.side_n = 0
+	var want: float = Tower.pw(fl.plv) * Rules.t("side_dmg") * Rules.t("side_mix_floor") * fl.dmg_k_bare() * fo.resist_mul(Side._els(fl))
+	fire.call(fl)
+	var took: float = 1e6 - fo.hp
+	ok("SIDE-12", Rules.t("side_mix_floor") > 0.0 and took >= want * 0.99, "섞인 보조 공격 처음 맞힌 구체: %.1f 받음 (최소 %.1f)" % [took, want])
 
 
 # ---------- 기록·도감·화면 글 ----------
