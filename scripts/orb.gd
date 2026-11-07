@@ -97,6 +97,14 @@ var bleed_sep := false  # 상성 패혈: 중독된 동안은 멈춰 있어도 �
 var bleed_pos := Vector2.ZERO  # 지난 프레임 자리 (움직인 거리)
 var gore_src: Object = null  # 피 핏자국: 이 오브젝트 효과를 지나간 길에 남긴다 (Share.gore)
 var gore_t := 0.0
+var smear_src: Object = null  # 섞인 보조 공격 장판 던지기: 묻힌 오브젝트 (Side.smear)
+var smear_e := -1  # 묻은 속성
+var smear_t := 0.0  # 장판을 남기는 남은 시간
+var smear_zone: Object = null  # 지금 점을 더하는 장판 줄
+var smear_acc := 0.0
+var link_grp: Array = []  # 피 핏줄 엮기: 함께 묶인 구체들 (weakref, Side.link)
+var link_t := 0.0
+var link_src: Object = null
 var gore_acc := 0.0
 var gore_zone: Object = null  # 지금 점을 더하는 핏자국 줄 (Zone)
 var confuse_t := 0.0  # 환영 현혹: 남은 시간 동안 왔던 길을 되돌아 걷는다
@@ -189,6 +197,8 @@ func step(delta: float) -> void:
 	if soul_t > 0.0: soul_t = maxf(soul_t - delta, 0.0)
 	if confuse_cd > 0.0: confuse_cd = maxf(confuse_cd - delta, 0.0)
 	if gore_t > 0.0: gore_t = maxf(gore_t - delta, 0.0)
+	if smear_t > 0.0: smear_t = maxf(smear_t - delta, 0.0)
+	if link_t > 0.0: link_t = maxf(link_t - delta, 0.0)
 	if silence_t > 0.0: silence_t = maxf(silence_t - delta, 0.0)
 	if not amp.is_empty():
 		for key in amp.keys():
@@ -269,6 +279,11 @@ func _blood_step(delta: float) -> void:
 		if gore_acc >= Share.GORE_STEP:
 			gore_acc = 0.0
 			Share.gore(self)
+	if smear_t > 0.0 and is_instance_valid(smear_src):
+		smear_acc += moved
+		if smear_acc >= Side.SMEAR_STEP:
+			smear_acc = 0.0
+			Side.smear_pt(self)
 
 
 ## 구체는 위치가 바뀌어도 다시 그릴 필요가 없다(노드 위치로 옮겨진다). 모양을 바꾸는 상태가 달라졌을 때만 다시 그린다.
@@ -345,6 +360,8 @@ func hurt(amount: float, crit := false, source = null) -> float:
 			_spawning_port.burst(position, Color(0.6, 0.9, 1.0), 8, 140.0)
 			main.sfx.play("shield", 0.0)
 	hp -= d
+	if link_t > 0.0:
+		Side.share_link(self, d)
 	if echo_t > 0.0:
 		echo_amt += d * echo_frac
 	if amount > 0.3:

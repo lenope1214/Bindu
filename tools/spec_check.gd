@@ -106,6 +106,7 @@ func _initialize():
 	_meta_misc()
 	_carry_cards()
 	_side()
+	_side_mix()
 	_multiplayer()
 	_tutorial()
 	_vote()
@@ -2308,6 +2309,245 @@ func _side() -> void:
 	ok("SIDE-04", waits, "큰 보조 공격은 화면에 하나씩: 다른 오브젝트는 보통 보조 공격, 차례는 다음으로 미룸 (맞은 수 %d)" % n_hit)
 	main.side_big_t = 0.0
 	_clear()
+
+
+# ---------- 섞인 보조 공격 ----------
+
+func _side_mix() -> void:
+	_fresh()
+	var c: Vector2 = main.viewport_system.center()
+	var _grid := func():
+		main.combat_system.targets = main.orbs.get_children()
+		main.live_orbs = main.orbs.get_children()
+		main.combat_system._build_grid()
+	var mk := func(els: Array, pos := Vector2(-300, 0)) -> Tower:
+		var t: Tower = _tower(c + pos, els[0][0], els[0][1], Vector2.RIGHT)
+		for i in range(1, els.size()):
+			t.add(els[i][0], els[i][1])
+		t.eff = t.eff_now()
+		t.side_cd = 0.0
+		t.side_n = 0
+		return t
+	var fire := func(t: Tower) -> void:
+		main.side_big_t = 0.0
+		t.side_cd = 0.0
+		Side.tick(t, 0.01)
+	var hurt_n := func(arr: Array) -> int:
+		return arr.filter(func(o): return is_instance_valid(o) and o.hp < 1e6).size()
+	# SIDE-05 모양 고르기
+	var a: Tower = mk.call([[Elem.FIRE, 3], [Elem.WOOD, 1]])
+	var b: Tower = mk.call([[Elem.FIRE, 1], [Elem.WATER, 1]], Vector2(-300, 100))
+	var n0: Tower = mk.call([[Elem.WOOD, 2], [Elem.EARTH, 2]], Vector2(-300, 200))
+	var one: Tower = mk.call([[Elem.FIRE, 3]], Vector2(-300, -100))
+	ok("SIDE-05", Side.shape_e(a) == Elem.FIRE and Side.mix_name(a) == "불덩이" and Side.shape_e(b) == Elem.FIRE and Side.shape_e(n0) == -1 and Side.mix_name(n0) == "휩쓸기" and Side.mix_name(one) == "" and not Side.mixed(one) and Side.mix_desc(a) != "",
+		"섞인 보조 공격 모양: 불3+나무1 %s, 불1+물1(먼저 넣은 불) %s, 나무+땅 %s, 불 하나 '%s'" % [Side.mix_name(a), Side.mix_name(b), Side.mix_name(n0), Side.mix_name(one)])
+	_clear()
+	# SIDE-06 여러 대상
+	var et: Tower = mk.call([[Elem.ELECTRIC, 2], [Elem.METAL, 1]])
+	var chain: Array = []
+	for i in 4:
+		chain.append(_orb(et.position + Vector2(0, -120 - i * 100), 1e6))
+	_grid.call()
+	fire.call(et)
+	var elec_ok: bool = hurt_n.call(chain) == 3 and chain[3].hp >= 1e6
+	_clear()
+	var st: Tower = mk.call([[Elem.SOUND, 2], [Elem.WOOD, 1]])
+	var ring: Array = []
+	for i in 4:
+		ring.append(_orb(st.position + Vector2.from_angle(i * 1.3) * (120 + i * 30), 1e6))
+	_grid.call()
+	fire.call(st)
+	var sound_ok: bool = hurt_n.call(ring) == 3
+	_clear()
+	var bt: Tower = mk.call([[Elem.BLOOD, 2], [Elem.WOOD, 1]])
+	var bl: Array = []
+	for i in 3:
+		bl.append(_orb(bt.position + Vector2(100 + i * 60, -100), 1e6))
+	_grid.call()
+	fire.call(bt)
+	var hp1: float = bl[1].hp
+	bl[0].hurt(100.0)
+	var blood_ok: bool = bl[0].link_t > 0.0 and absf((hp1 - bl[1].hp) - 30.0) < 0.5
+	_clear()
+	var so: Tower = mk.call([[Elem.SOUL, 2], [Elem.WOOD, 1]])
+	for i in 3:
+		_orb(so.position + Vector2(150, -80 + i * 80), 1e6)
+	_grid.call()
+	fire.call(so)
+	var ghosts := 0
+	for p in main.projectiles.get_children():
+		if p.kind == "ghost" and p.src == "share:side":
+			ghosts += 1
+	_clear()
+	var it: Tower = mk.call([[Elem.ILLUSION, 2], [Elem.WOOD, 1]])
+	var it2: Tower = _tower(it.position + Vector2(150, 100), Elem.FIRE, 1)
+	var near_me := _orb(it.position + Vector2(-100, -50), 1e6)
+	var near_it2 := _orb(it2.position + Vector2(250, 100), 1e6)  # 내 둘레 300 밖, 옆 오브젝트 둘레 안
+	_grid.call()
+	fire.call(it)
+	var illu_ok: bool = near_me.hp < 1e6 and near_it2.hp < 1e6
+	_clear()
+	ok("SIDE-06", elec_ok and sound_ok and blood_ok and ghosts == 3 and illu_ok,
+		"여러 대상: 번개 3마리 %s · 메아리 3마리 %s · 핏줄 30%% 나눔 %s · 혼불 %d개 · 분신 옆 오브젝트 자리 %s" % [elec_ok, sound_ok, blood_ok, ghosts, illu_ok])
+	# SIDE-07 장판 던지기: 묻힌 구체가 지나간 길에만
+	var wt: Tower = mk.call([[Elem.WATER, 2], [Elem.FIRE, 1]])
+	var lead := _orb(wt.position + Vector2(150, 0), 1e6, Orb.Kind.NORMAL, 60.0)
+	var back := _orb(wt.position + Vector2(-900, 0), 1e6)
+	_grid.call()
+	fire.call(wt)
+	var smeared: bool = lead.smear_t > 0.0 and lead.smear_e == Elem.WATER
+	for i in 60:
+		lead.step(1.0 / 60.0)
+	var sz: Zone = null
+	for z in main.zones.get_children():
+		if z.kind == "smear":
+			sz = z
+	var self_ok := true
+	var near_tower := true
+	if sz:
+		lead.slow_timer = 0.0
+		sz.affect([lead], 0.1)
+		self_ok = lead.slow_timer == 0.0
+		for q in sz.pts:
+			near_tower = near_tower and q.distance_to(wt.position) > 100.0
+		back.position = sz.pts[sz.pts.size() - 1]
+		sz.affect([back], 0.1)
+	var step_ok: bool = sz != null and back.hp < 1e6 and back.slow_timer > 0.0 and back.burn_t > 0.0
+	_clear()
+	var pt: Tower = mk.call([[Elem.POISON, 2], [Elem.WOOD, 1]])
+	var dier := _orb(pt.position + Vector2(150, 0), 1e6)
+	var nb := _orb(pt.position + Vector2(190, 0), 1e6)
+	_grid.call()
+	fire.call(pt)
+	nb.poison_t = 0.0
+	dier.hp = 0.0
+	main.combat_system._death_effects(dier)
+	var burst_ok: bool = nb.poison_t > 0.0
+	_clear()
+	ok("SIDE-07", smeared and step_ok and self_ok and near_tower and burst_ok and Zone.ORB_PATH.has("smear"),
+		"장판 던지기: 묻힘 %s, 지나간 길 장판을 밟은 구체 피해·감속·화상 %s, 묻은 구체는 안 밟음 %s, 오브젝트 곁 장판 없음 %s, 독병 죽으면 둘레 중독 %s" % [smeared, step_ok, self_ok, near_tower, burst_ok])
+	# SIDE-08 맵 전체
+	var dt: Tower = mk.call([[Elem.DARK, 2], [Elem.WOOD, 1]])
+	var close := _orb(dt.position + Vector2(150, 0), 1e6)
+	var big := _orb(dt.position + Vector2(700, 100), 5e6)
+	var pulled := _orb(big.position + Vector2(60, 0), 1e6)
+	_grid.call()
+	var px: float = pulled.position.x
+	fire.call(dt)
+	var dark_ok: bool = big.hp < 5e6 and close.hp >= 1e6 and pulled.position.x < px
+	_clear()
+	var sr: Tower = mk.call([[Elem.STAR, 2], [Elem.WOOD, 1]])
+	var lone := _orb(sr.position + Vector2(150, 0), 1e6)
+	var pack: Array = []
+	for i in 4:
+		pack.append(_orb(sr.position + Vector2(600 + i * 15, 150), 1e6))
+	_grid.call()
+	fire.call(sr)
+	var star_ok: bool = hurt_n.call(pack) == 4 and lone.hp >= 1e6
+	_clear()
+	var lt: Tower = mk.call([[Elem.LIGHT, 2], [Elem.WOOD, 1]])
+	var first := _orb(lt.position + Vector2(150, 0), 1e6)
+	var far1 := _orb(lt.position + Vector2(700, 0), 1e6)
+	var off := _orb(lt.position + Vector2(400, 120), 1e6)
+	_grid.call()
+	fire.call(lt)
+	var light_ok: bool = first.hp < 1e6 and far1.hp < 1e6 and off.hp >= 1e6
+	_clear()
+	ok("SIDE-08", dark_ok and star_ok and light_ok, "맵 전체: 그림자 낙하 체력 많은 먼 구체·끌어당김 %s · 유성 몰린 곳 %s · 빛줄기 화면 끝까지 %s" % [dark_ok, star_ok, light_ok])
+	# SIDE-09 휩쓸기·시간
+	var wd: Tower = mk.call([[Elem.WOOD, 2], [Elem.EARTH, 2]])
+	var s1 := _orb(wd.position + Vector2(150, 0), 1e6)
+	var s2 := _orb(wd.position + Vector2(200, 30), 1e6)
+	var s3 := _orb(wd.position + Vector2(150, 200), 1e6)
+	_grid.call()
+	fire.call(wd)
+	var sweep_ok: bool = s1.hp < 1e6 and s2.hp < 1e6 and s3.hp >= 1e6
+	_clear()
+	var tt: Tower = mk.call([[Elem.SOUND, 2], [Elem.TIME, 1]])
+	var to := _orb(tt.position + Vector2(150, 0), 1e6)
+	_grid.call()
+	fire.call(tt)
+	var h1: float = to.hp
+	tt.later = tt.later.map(func(x): return [0.0, x[1]])
+	tt._share_tick(0.01)
+	var again: bool = to.hp < h1
+	_clear()
+	ok("SIDE-09", sweep_ok and again, "휩쓸기 둘레 80 %s · 시간 0.8초 뒤 한 번 더 %s" % [sweep_ok, again])
+	# SIDE-10 특별 칸
+	var ld: Tower = mk.call([[Elem.DARK, 2], [Elem.LIGHT, 1]])
+	var faraway := _orb(ld.position + Vector2(900, -150), 1e6)
+	var nearby := _orb(ld.position + Vector2(150, 0), 1e7)  # 그림자 낙하는 이 구체로 (체력 가장 많음), 먼 구체는 작은 일식만
+	_grid.call()
+	for i in Side.MINI_ECLIPSE_N:
+		fire.call(ld)
+	var eclipse_ok: bool = Side.has_sp(ld, "eclipse") and nearby.hp < 1e7 and faraway.hp < 1e6 and ld.side_mix_n == 0
+	_clear()
+	var we: Tower = mk.call([[Elem.WATER, 2], [Elem.ELECTRIC, 1]])
+	var ew: Tower = mk.call([[Elem.ELECTRIC, 2], [Elem.WATER, 1]], Vector2(-300, 150))
+	var shock_ok: bool = Side.has_sp(we, "shock") and not Side.has_sp(ew, "shock")
+	_clear()
+	var fw: Tower = mk.call([[Elem.FIRE, 2], [Elem.WIND, 1]])
+	var wh: Array = []
+	for i in 3:
+		wh.append(_orb(fw.position + Vector2(150 + i * 100, 0), 1e6))
+	_grid.call()
+	fire.call(fw)
+	var wheel_ok: bool = wh.all(func(o): return o.smear_t > 0.0)
+	_clear()
+	var pd: Tower = mk.call([[Elem.POISON, 2], [Elem.DARK, 1]])
+	var cd := _orb(pd.position + Vector2(150, 0), 1e6)
+	var cn := _orb(pd.position + Vector2(210, 0), 1e6)
+	_grid.call()
+	fire.call(pd)
+	var cx: float = cn.position.x
+	cd.hp = 0.0
+	Side.on_death(cd)
+	var curse_ok: bool = Side.has_sp(pd, "curse") and cn.position.x < cx
+	_clear()
+	var sd: Tower = mk.call([[Elem.SOUL, 2], [Elem.DARK, 1]])
+	_orb(sd.position + Vector2(150, 0), 1e6)
+	var heavy := _orb(sd.position + Vector2(900, 0), 9e6)
+	_grid.call()
+	fire.call(sd)
+	var doom_ok := false
+	for p in main.projectiles.get_children():
+		if p.kind == "ghost" and p.position.distance_to(heavy.position) < 100.0:
+			doom_ok = true
+	_clear()
+	var sl: Tower = mk.call([[Elem.STAR, 2], [Elem.LIGHT, 1]])
+	var pk1: Array = []
+	var pk2: Array = []
+	_orb(sl.position + Vector2(150, 0), 1e6)
+	for i in 3:
+		pk1.append(_orb(sl.position + Vector2(500 + i * 15, -150), 1e6))
+		pk2.append(_orb(sl.position + Vector2(500 + i * 15, 200), 1e6))
+	_grid.call()
+	fire.call(sl)
+	var shower_ok: bool = hurt_n.call(pk1) > 0 and hurt_n.call(pk2) > 0
+	_clear()
+	ok("SIDE-10", eclipse_ok and shock_ok and wheel_ok and curse_ok and doom_ok and shower_ok,
+		"특별 칸: 일식 %s · 감전 물폭탄(물 모양만) %s · 불바퀴 3마리 %s · 저주병 %s · 저승길 %s · 유성우 %s" % [eclipse_ok, shock_ok, wheel_ok, curse_ok, doom_ok, shower_ok])
+	# SIDE-11 큰 판
+	var bs: Tower = mk.call([[Elem.SOUND, 2], [Elem.WOOD, 1]])
+	var many: Array = []
+	for i in 8:
+		many.append(_orb(bs.position + Vector2.from_angle(i * 0.7) * (100 + i * 20), 1e6))
+	_grid.call()
+	bs.side_n = int(Rules.t("side_big_n")) - 1
+	fire.call(bs)
+	var big_ok: bool = hurt_n.call(many) == 8 and main.side_big_t > 0.0 and bs.side_n == 0
+	_clear()
+	var bw: Tower = mk.call([[Elem.WATER, 2], [Elem.WOOD, 1]])
+	var bw_o: Array = []
+	for i in 4:
+		bw_o.append(_orb(bw.position + Vector2(120 + i * 40, 0), 1e6))
+	_grid.call()
+	bw.side_n = int(Rules.t("side_big_n")) - 1
+	fire.call(bw)
+	var throw_big: int = bw_o.filter(func(o): return o.smear_t > 0.0).size()
+	main.side_big_t = 0.0
+	_clear()
+	ok("SIDE-11", big_ok and throw_big == Side.BIG_THROW_N, "섞인 큰 보조 공격: 메아리 큰 판 8마리 모두 %s · 물폭탄 %d마리에 묻힘" % [big_ok, throw_big])
 
 
 # ---------- 기록·도감·화면 글 ----------

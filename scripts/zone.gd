@@ -18,7 +18,8 @@ var dead := false
 var src := ""  # 피해 출처 (Tower.src 키, 비면 직접 타격)
 var amt := 1.0  # 물길 세기 (Share.k 물)
 var rill_cd := {}  # 물길·핏자국: 구체 → 다시 효과를 줄 수 있는 남은 수명
-var maker: Object = null  # 핏자국을 남긴 구체 (자기 핏자국은 밟지 않음)
+var maker: Object = null  # 핏자국·묻은 장판을 남긴 구체 (자기 것은 밟지 않음)
+var elem := -1  # smear: 묻은 속성 (Side.smear, 물·독·불)
 var boost := 1.0  # 축적·삼연이 실린 장판·바위·블랙홀 (Tower.fire_boost)
 var vel := Vector2.ZERO  # 움직이는 장판 (블랙홀, 물 흐름)
 var dir := Vector2.RIGHT
@@ -47,12 +48,13 @@ const GORE_PTS := 80  # 핏자국 한 줄에 남는 점 최대
 const WELL_HIT_DT := 0.1  # 블랙홀 피해·감속을 이만큼 모아 한 번에 (끌기는 매 프레임)
 
 ## 효과 줄이기(설정)에서 옅게 그리는 장판: 물길·투척 장판. 블랙홀·바위 벽은 막거나 끌어서 그대로
-const SOFT := ["trail", "rill", "gore"]
+const SOFT := ["trail", "rill", "gore", "smear"]
 ## 모양이 바뀌지 않고 옅어지기만 하는 장판: 한 번 그리고 self_modulate로 옅게 (물길이 100개 가까이 깔려 매 프레임 다시 그리던 것). 바위 벽은 아예 그대로
 const STILL := ["rill"]
 ## 구체 자신이 지나간 길에 남는 장판 (피 핏자국, Share.gore). 오브젝트와 고정 거리가 아니다 (ELEM-10)
 ## 핏자국은 구체 하나에 장판 하나: 지나온 점을 들고 점마다 따로 사라진다 (예전엔 점마다 장판이라 수백 개가 쌓여 렉, 2026-11-06)
-const ORB_PATH := ["gore"]
+## smear: 섞인 보조 공격 장판 던지기 (Side.smear) — 던져 묻힌 구체가 지나간 길에만
+const ORB_PATH := ["gore", "smear"]
 
 
 func setup(k: String, l: int, tower: Tower) -> void:
@@ -66,6 +68,8 @@ func setup(k: String, l: int, tower: Tower) -> void:
 			radius = 22.0; max_life = 1.0
 		"gore":
 			radius = 16.0; max_life = Share.GORE_T
+		"smear":
+			radius = 20.0; max_life = Side.SMEAR_LIFE
 		"rock":
 			radius = Rules.t("wall_r"); max_life = 12.0; hp = Rules.t("wall_hp") * l
 			if is_instance_valid(tower):
@@ -118,7 +122,7 @@ func _drop_pts(n: int) -> void:
 	pts = pts.slice(n)
 	born = born.slice(n)
 	pk = pk.slice(n)
-	if kind == "gore":
+	if kind in ORB_PATH:
 		pl = pl.slice(n)
 		pid = pid.slice(n)
 
@@ -210,7 +214,7 @@ func _p() -> float:
 func affect(orbs: Array, delta: float) -> void:
 	t += delta
 	tick -= delta
-	if kind == "gore":
+	if kind in ORB_PATH:
 		_gore_affect(orbs)
 		return
 	var well_dt := 0.0
@@ -286,14 +290,18 @@ func _gore_affect(orbs: Array) -> void:
 						cd.erase(key)
 			cd[pid[i]] = t + 0.5
 			pt_cd[o] = cd
-			Share.gore_step(owner_tower, o, pk[i], pts[i], clampf((t - born[i]) / maxf(pl[i], 0.01), 0.0, 1.0))
+			var stg := clampf((t - born[i]) / maxf(pl[i], 0.01), 0.0, 1.0)
+			if kind == "smear":
+				Side.smear_step(owner_tower, o, elem, pts[i], stg)
+			else:
+				Share.gore_step(owner_tower, o, pk[i], pts[i], stg)
 			if o.hp <= 0.0:
 				break
 
 
 ## main이 웨이브 중 호출한다(배속이면 한 프레임에 여러 번).
 func step(delta: float) -> void:
-	if kind == "gore":
+	if kind in ORB_PATH:
 		t += delta
 		var drop := 0
 		while drop < pts.size() and t - born[drop] >= pl[drop]:
@@ -301,7 +309,10 @@ func step(delta: float) -> void:
 		if drop > 0:
 			_drop_pts(drop)
 			queue_redraw()
-		feeding = is_instance_valid(maker) and not maker.is_queued_for_deletion() and maker.hp > 0.0 and maker.gore_t > 0.0 and maker.gore_zone == self
+		if kind == "smear":
+			feeding = is_instance_valid(maker) and not maker.is_queued_for_deletion() and maker.hp > 0.0 and maker.smear_t > 0.0 and maker.smear_zone == self
+		else:
+			feeding = is_instance_valid(maker) and not maker.is_queued_for_deletion() and maker.hp > 0.0 and maker.gore_t > 0.0 and maker.gore_zone == self
 		if pts.is_empty() and not feeding:
 			queue_free()
 			return
@@ -401,6 +412,13 @@ func _draw() -> void:
 				draw_circle(q, radius * 0.75, Color(bc, 0.45 * pa))
 				draw_circle(q + Vector2(radius * 0.6, radius * 0.35), radius * 0.35, Color(bc, 0.4 * pa))
 				draw_circle(q + Vector2(-radius * 0.5, -radius * 0.45), radius * 0.25, Color(bc, 0.4 * pa))
+		"smear":
+			# 묻은 장판: 점마다 그 속성 색 웅덩이, 오래된 점일수록 옅게
+			var sc: Color = Elem.COLORS[elem] if elem >= 0 else Color(0.7, 0.8, 1.0)
+			for i in pts.size():
+				var pa := clampf(1.0 - (t - born[i]) / maxf(pl[i], 0.01), 0.0, 1.0)
+				draw_circle(pts[i], radius * 0.9, Color(sc, 0.28 * pa))
+				draw_circle(pts[i] + Vector2(radius * 0.4, -radius * 0.3), radius * 0.4, Color(sc, 0.35 * pa))
 		"rock":
 			var pts := PackedVector2Array()
 			for i in 7:

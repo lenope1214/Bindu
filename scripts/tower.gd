@@ -83,6 +83,7 @@ var aff_cd := 0.0  # 상성 둘레 효과(눈보라·비바람·증기) 다시 �
 var side_cd := 1.0  # 보조 공격까지 남은 시간 (Side)
 var side_n := 0  # 지난 큰 보조 공격 뒤 보조 공격 수 (Side)
 var side_big_fx := 0.0  # 큰 보조 공격 번쩍임
+var side_mix_n := 0  # 일식(빛+어둠) 작은 일식까지 센 보조 공격 수 (Side)
 var chain_end := Vector2.ZERO  # 연쇄 번개가 마지막으로 친 자리
 var later: Array = []  # [남은 초, Callable]: 잠시 뒤 효과 (시간 되풀이, Share.on_hit)
 var _abilities_port: BinduAbilities

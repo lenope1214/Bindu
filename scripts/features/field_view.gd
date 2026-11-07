@@ -79,6 +79,9 @@ func _draw_tooltip() -> void:
 		var sts: Array = Share.sites_of(t.eff_now()).map(func(x): return x[2])
 		if not sts.is_empty():
 			lines.append(["자리: " + " · ".join(sts), Color(0.75, 0.9, 1.0)])
+		var smix := Side.mix_name(t)
+		if smix != "":
+			lines.append(["보조 공격: " + smix, Color(1.0, 0.85, 0.7)])
 		if not share_line.is_empty():
 			lines.append(share_line)
 	else:
@@ -107,6 +110,8 @@ func _draw_tooltip() -> void:
 		for x in Share.sites_of(t.eff_now()):
 			var nd: String = Share.site_desc(x[0], x[1])
 			desc.append(["자리 %s%s" % [x[2], ": " + nd if nd != "" else ""], Color(0.75, 0.9, 1.0), "k:rx"])
+		if Side.mixed(t):
+			desc.append(["보조 공격 %s: %s" % [Side.mix_name(t), Side.mix_desc(t)], Color(1.0, 0.85, 0.7), "k:rx"])
 		session.onboarding_system._wind_buffs()  # 쉬는 시간에 새로 놓은 오브젝트도 바로 보이게
 		var tail: Array = []
 		if t.wind_buff > 0.0:

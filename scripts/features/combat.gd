@@ -275,7 +275,7 @@ func _resolve(delta: float, preview := false) -> void:
 	# 바닥 효과
 	for z in session.zones.get_children():
 		if not z.is_queued_for_deletion():
-			z.affect(z.trail_orbs(session) if z.kind == "trail" else z.path_orbs(session) if z.kind == "gore" else near(z.position, z.radius if z.kind != "mine" else 80.0), delta)
+			z.affect(z.trail_orbs(session) if z.kind == "trail" else z.path_orbs(session) if z.kind in Zone.ORB_PATH else near(z.position, z.radius if z.kind != "mine" else 80.0), delta)
 	if session.prof_on:
 		us = _prof_add("장판", us)
 
@@ -495,6 +495,7 @@ func _death_effects(o: Orb) -> void:
 		Share.pull(o)  # 어둠 끌어당김
 	if o.soul_t > 0.0:
 		session.spawning_system._soul_wisp(o)
+	Side.on_death(o)  # 섞인 보조 공격: 독병·저주병
 
 
 ## 실제 전투와 미리보기의 이동·타이머 순서를 공용으로 유지한다.
