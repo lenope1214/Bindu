@@ -1008,6 +1008,21 @@ func _auto_default() -> void:
 	walker.speed = 60.0
 	walker.step(0.1)
 	var walk_ok := walker.walk_vel.is_equal_approx(Vector2(0, -60))
+	# 정한 방향 쪽 먼저: 오른쪽(방향) 45도 안의 먼 구체가 뒤쪽 가까운 구체보다 먼저, 방향 쪽에 없으면 가장 가까운 구체
+	_clear()
+	t = _tower(c, Elem.WIND, 1, Vector2.RIGHT)
+	var near_back := _orb(c + Vector2.LEFT * 80.0, 1000.0)
+	var far_front := _orb(c + Vector2(300, 100), 1000.0)
+	var off_side := _orb(c + Vector2(0, 150), 1000.0)
+	t._update_aim([near_back, far_front, off_side], 0.016)
+	var pref_ok := t.reflex_target == far_front
+	t._update_aim([near_back, off_side], 0.016)
+	pref_ok = pref_ok and t.reflex_target == near_back
+	Rules.tune["aim_pref"] = 0.0
+	t._update_aim([near_back, far_front, off_side], 0.016)
+	pref_ok = pref_ok and t.reflex_target == near_back
+	Rules.tune["aim_pref"] = Rules.DEFAULTS["aim_pref"]
+	ok("MOD-13", pref_ok, "자동 조준 정한 방향 먼저: 방향 45도 안 구체 우선, 없으면 가장 가까운 구체, aim_pref 0이면 방향 무시")
 	ok("MOD-13", pool_ok and aim_ok and save_ok, "자동 조준 기본: 카드·도감 분모에서 빠짐, 강화 없이 후방·화면 끝 조준, 감산 없음, 혼불 제외, 예전 저장의 카드 버림")
 	ok("MOD-13", lead_ok and walk_ok, "자동 조준 예측: 탄 속도로 만나는 곳을 앞질러 겨눔, 바로 닿는 공격·aim_lead 0은 지금 자리, 구체 걸음 속도 기록")
 	_clear()

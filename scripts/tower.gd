@@ -1858,11 +1858,23 @@ func _update_aim(orbs: Array, delta: float) -> void:
 	if auto_aim():
 		reflex_target = null
 		var best := INF
+		# 정한 방향 쪽 먼저 (2026-11-07): 방향 ±aim_pref 안의 가장 가까운 구체, 없으면 사거리 안 아무 쪽이나 가장 가까운 구체
+		var pref := Rules.t("aim_pref") if Rules.t("auto_aim") > 0.0 else 0.0
+		var in_pref := false
 		for o in orbs:
 			if not is_instance_valid(o) or o.hp <= 0.0:
 				continue
-			var dist: float = o.position.distance_to(position)
-			if dist <= best and dist <= reflex_range(o.position - position):
+			var v: Vector2 = o.position - position
+			var dist: float = v.length()
+			if dist > reflex_range(v):
+				continue
+			var inside := pref > 0.0 and absf(dir.angle_to(v)) <= pref
+			if inside and not in_pref:
+				in_pref = true
+				best = INF
+			elif in_pref and not inside:
+				continue
+			if dist <= best:
 				best = dist
 				reflex_target = o
 		if reflex_target != null and best > 0.001:
