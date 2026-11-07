@@ -574,7 +574,7 @@ func _draw_apply_icon() -> void:
 	var head: Dictionary = session.apply_btn.get_meta("choice_icon", {})
 	if head.is_empty():
 		return
-	var tw := session.ui_font.get_string_size(session.apply_btn.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x
+	var tw := session.ui_font.get_string_size(session.apply_btn.text, HORIZONTAL_ALIGNMENT_LEFT, -1, Meta.fs(17)).x
 	var c := Vector2((session.apply_btn.size.x - tw - 26.0) / 2.0 + 9.0, session.apply_btn.size.y / 2.0)
 	var ink := Color(0.12, 0.09, 0.02)
 	if head.has("e"):

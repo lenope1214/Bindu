@@ -225,6 +225,11 @@ func _build_panel() -> void:
 	head.add_theme_color_override("font_color", Color(0.62, 0.68, 0.8))
 	head.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.clip_text = true
+	if Meta.phone():
+		# 폰: 글자를 키우면 "단계 2/23 · 지키기 기본 · 카드 들어 놓기"가 버튼에 밀려 잘렸다 → 두 줄로 접는다
+		head.clip_text = false
+		head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		head.custom_minimum_size.x = 160
 	top.add_child(head)
 	btn_skip = _button("건너뛰기 ▸", skip_step, top)
 	btn_all = _button("전체 건너뛰기 ✕", ask_quit, top)
@@ -967,10 +972,11 @@ func _layout() -> void:
 	var hud: Control = m.hud
 	var left: float = hud.position.x + hud.size.x + 10.0
 	var right: float = minf(m.ui_layout_system._right_panel_x(), size.x - (300.0 if m.range_btn.visible or m.zoom_btn.visible else 0.0)) - 10.0
-	var w := minf(620.0, right - left)
+	var maxw := 780.0 if m.viewport_system._phone() else 620.0  # 폰: 글자를 키워 칸이 길어지지 않게 넓게
+	var w := minf(maxw, right - left)
 	var top := 8.0
 	if w < 420.0:
-		w = minf(620.0, size.x - 32.0)
+		w = minf(maxw, size.x - 32.0)
 		left = (size.x - w) / 2.0
 		top = hud.position.y + hud.size.y + 6.0
 		# 점수 줄 아래 왼쪽 DPS 표는 가리지 않게 그 오른쪽으로 (자리가 모자라면 표 아래로)
@@ -993,11 +999,13 @@ func _layout() -> void:
 	panel.reset_size()
 	panel.size.x = w
 	panel.position = Vector2(left, top).floor()
+	if panel.get_rect().end.x > size.x - 12.0:
+		panel.position.x = floorf(maxf(8.0, size.x - 12.0 - panel.size.x))  # 안 글이 칸보다 넓어 오른쪽 끝을 넘던 것 (폰 글자 크게)
 	body.custom_minimum_size.x = w - 28.0
 	ask.reset_size()
 	ask.position = ((size - ask.size) / 2.0).floor()
 	if end_box.visible:
-		var ew := minf(640.0, size.x - 32.0)
+		var ew := minf(880.0 if m.viewport_system._phone() else 640.0, size.x - 32.0)
 		end_box.size = Vector2(ew, 0)
 		end_box.reset_size()
 		end_box.size.x = ew

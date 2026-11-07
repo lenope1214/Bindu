@@ -33,6 +33,7 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh ui shot.gd /tmp/
 | `ui_audit.gd` | `tools/run.sh ui ui_audit.gd <폴더> [글자 크기] [touch] [phone]`: 일곱 길목(점수 줄·DPS 표·버튼·웨이브 시작·안내 쪽)·큰 점수·오브젝트 14개·특성 8개·놓친 구체·긴 알림으로 꽉 채운 쉬는 시간·카드·웨이브 화면. `RESOLUTION`으로 화면비(2400x1080 20:9, 2048x1536 4:3 등), phone이면 노치 안전 영역도 흉내 | PNG + `UI BAD <수>` |
 | `reflex_shot.gd` | `tools/run.sh ui reflex_shot.gd <출력 폴더> [글자 크기=1.3] [touch]`: 반응 카드 앞면·상세·후방 공격. 프로젝트 이름이 BinduTools로 시작하는 사본에서만 실행 | PNG 3장 + UI 검사 + 후방 조준·명중 검증 |
 | `vary_shot.gd` | `tools/run.sh ui vary_shot.gd <폴더> [글자 크기] [touch]`: 판마다 다른 흐름 점수 줄 칩 말풍선(이벤트·예고·봉인·적응) 스크린샷 | PNG |
+| `text_stress_shot.gd` | `tools/run.sh ui text_stress_shot.gd <폴더> [글자 크기] [touch] [phone]`: 긴 이어하기·공지·새 버전 글, 모드 여럿 고른 준비 화면, 카드 4장, 긴 알림·안내·아래 안내, 특성, 일시정지, 큰 점수·업적 8개 결과 화면. 폰 글자 크게(UI-41)에서 겹침·밀림 찾기 | PNG, `UI` 줄, `UI BAD <수>` |
 | `tip_shot.gd` | `tools/run.sh ui tip_shot.gd <폴더> [글자 크기] [touch] [phone]`: 별 넷·바람 곁의 행성(별+영혼 혼불)에 올린 오브젝트 정보창 기본(tip_basic)·자세히(tip_detail) | PNG |
 | `rank_shot.gd` | `tools/run.sh ui rank_shot.gd <폴더> [글자 크기] [touch] [phone]`: 오브젝트 7개에 피해를 나눠 준 뒤 1위 왕관·2·3위 메달·DPS 표 순위 색 (rank, 가운데 확대 rank_zoom) | PNG |
 | `nova_shot.gd` | `tools/run.sh ui nova_shot.gd <폴더> [글자 크기] [touch]`: 초신성 그림(별·행성 게이지, 85% 예고 조준 고리, 다 참, 터지는 순간·퍼지는 중) | PNG |

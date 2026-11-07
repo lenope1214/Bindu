@@ -88,7 +88,7 @@ func _process(delta: float) -> void:
 		if session.dps_panel.visible and session.dps_panel.get_rect().end.y > session.toast.position.y:
 			left = session.dps_panel.get_rect().end.x + 8.0
 		var avail := maxf(240.0, right - left)
-		var tw := session.ui_font.get_string_size(session.toast.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x + 12.0
+		var tw := session.ui_font.get_string_size(session.toast.text, HORIZONTAL_ALIGNMENT_LEFT, -1, Meta.fs(22)).x + 12.0  # 실제 글자 크기로 (폰은 키움)
 		var wrap := tw > avail
 		session.toast.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if wrap else TextServer.AUTOWRAP_OFF
 		session.hud_system._font_size(session.toast, 18 if wrap else 22)  # 접을 때는 조금 작게 (세 줄로 전장 가운데를 덮지 않게)
@@ -110,12 +110,29 @@ func _process(delta: float) -> void:
 	session.banner.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if session.ui_font.get_string_size(session.banner.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x > session.banner.size.x else TextServer.AUTOWRAP_OFF
 	if session.choice_box.visible and not session.cards_hidden and session.choice_box.get_child_count() > 0:
 		# 카드가 떠 있으면 "웨이브 N" 큰 글이 카드 윗변에 걸치지 않게 그 위로
-		session.banner.position.y = maxf(minf(session.banner.position.y, session.choice_box.get_rect().position.y - session.banner.size.y - 4.0), session.hud.position.y + session.hud.size.y + 12.0)
+		# 카드 줄 머리(카드 선택·새로고침·넘기기 버튼)까지 피한다: 폰은 카드 줄이 키가 커서 큰 글이 머리 줄 위에 걸쳤다
+		var dock_top: float = session.card_dock.panel.position.y if session.card_dock.panel.visible else session.choice_box.get_rect().position.y
+		session.banner.position.y = maxf(minf(session.banner.position.y, minf(dock_top, session.choice_box.get_rect().position.y) - session.banner.size.y - 4.0), session.hud.position.y + session.hud.size.y + 12.0)
+	# 폰은 위 안내 칸·카드 줄이 키가 커서 알림과 큰 글이 들어갈 틈이 없을 때가 있다: 알림은 카드 머리 줄 위로 올리고,
+	# 그래도 큰 글과 겹치면 큰 글이 떠 있는 동안 알림을 잠깐 감춘다 (시간은 그대로 흘러 큰 글이 사라지면 다시 보임)
+	var toast_hide := false
+	if session.toast.visible and session.card_dock.panel.visible and not session.cards_hidden:
+		var tr := session.toast.get_rect()
+		if tr.end.y > session.card_dock.panel.position.y - 4.0:
+			session.toast.position.y = maxf(session.hud.position.y + session.hud.size.y + 6.0, session.card_dock.panel.position.y - tr.size.y - 4.0)
+		if session.banner_t > 0.0 and session.banner.get_rect().intersects(session.toast.get_rect()):
+			toast_hide = true
+	var ta := 0.0 if toast_hide else 1.0
+	if not is_equal_approx(session.toast.self_modulate.a, ta):
+		session.toast.self_modulate.a = ta
 	session.banner_t -= delta
 	if session.banner_t <= 0.0 and not session.banner_queue.is_empty():
 		var nb: Array = session.banner_queue.pop_front()
 		session.hud_system.big_banner(nb[0], nb[1])
 	session.banner.visible = session.banner_t > 0.0
+	# 연습 판 안내 칸과 카드 줄 사이에 틈이 없으면(폰) "웨이브 N" 큰 글은 안내 칸 위에 겹쳐 그리지 않는다 (웨이브 수는 점수 줄에 있다)
+	if session.banner.visible and session.tplay != null and session.tplay.panel.visible and session.banner.get_rect().intersects(session.tplay.panel.get_rect()):
+		session.banner.visible = false
 	session.banner.modulate.a = clampf(session.banner_t / 0.4, 0.0, 1.0)
 	session.legend.visible = session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.PLACE, BinduSession.Phase.AIM, BinduSession.Phase.MOVE, BinduSession.Phase.READY] and not session.title_label.visible
 	session.range_btn.visible = session.touch_ui and not session.title_label.visible and session.phase != BinduSession.Phase.GAMEOVER
@@ -301,7 +318,7 @@ func _legacy_card_layout() -> void:
 	var bw := {session.reroll_btn: 96.0, session.card_detail_btn: 104.0, session.hide_btn: 76.0, session.skip_btn: 76.0, session.skip_n_btn: 76.0}
 	if session.apply_btn.visible:
 		bw = {session.reroll_btn: 76.0, session.card_detail_btn: 88.0, session.hide_btn: 60.0, session.skip_btn: 60.0, session.skip_n_btn: 60.0}
-		bw[session.apply_btn] = maxf(120.0, session.ui_font.get_string_size(session.apply_btn.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x + 50.0)
+		bw[session.apply_btn] = maxf(120.0, session.ui_font.get_string_size(session.apply_btn.text, HORIZONTAL_ALIGNMENT_LEFT, -1, Meta.fs(17)).x + 50.0)
 	var rw := -10.0
 	for bt in row:
 		rw += bw[bt] + 10.0

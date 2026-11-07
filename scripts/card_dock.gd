@@ -482,7 +482,7 @@ func tick() -> void:
 				box.content_margin_top = 6
 				box.content_margin_bottom = 6
 				game.hint.add_theme_stylebox_override("normal", box)
-			var status_width: float = minf(size.x - 24, game.ui_font.get_string_size(status, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 24)
+			var status_width: float = minf(size.x - 24, game.ui_font.get_string_size(status, HORIZONTAL_ALIGNMENT_LEFT, -1, Meta.fs(14)).x + 24)
 			# 글자 확대·줄바꿈으로 늘어난 실제 높이만큼 위로 올려 버튼과 8px 띄운다.
 			game.hint.size = Vector2(status_width, 0)
 			var status_height: float = maxf(34, game.hint.get_combined_minimum_size().y)

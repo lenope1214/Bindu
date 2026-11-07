@@ -906,7 +906,7 @@ func _draw() -> void:
 func _draw_place_label(at: Vector2, text: String, color: Color) -> void:
 	var session: BinduSession = self.session
 	var visible := session.viewport_system.view_rect().grow(-8)
-	var width := session.ui_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+	var width := session.ui_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, Meta.fs(14)).x
 	at.x = clampf(at.x, visible.position.x, maxf(visible.position.x, visible.end.x - width))
 	at.y = clampf(at.y, visible.position.y + 14, visible.end.y)
 	var avoid: Array[Rect2] = []
