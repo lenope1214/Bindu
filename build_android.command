@@ -38,3 +38,5 @@ mv -f build/android/Bindu.aab Bindu.aab
 rm -rf build
 sed -i '' "s/^version\/code=$CODE$/version\/code=$((CODE + 1))/" export_presets.cfg
 echo "완료: $PWD/Bindu.aab (versionCode $CODE, $(du -h Bindu.aab | cut -f1))"
+# ./build_android.command upload "출시 노트" → Play 내부 테스트에 올림 (tools/play_upload.py)
+if [[ "${1:-}" == upload ]]; then "${PLAY_PY:-python3}" tools/play_upload.py Bindu.aab "${2:-}"; fi
