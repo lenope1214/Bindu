@@ -226,8 +226,29 @@ func _initialize():
 		func(): _snap("coin_perks"); main.run_flow_system._toggle_pause(),
 		func(): _snap("pause"); main.menu_system._toggle_settings(),
 		func(): _snap("pause_settings"); main.menu_system._toggle_settings(); main.run_flow_system._toggle_pause(); main.run_flow_system._game_over(),
-		func(): _snap("gameover"),
+		func(): _snap("gameover"); _fake_hist(); main.run_flow_system._open_detail(),
+		func():
+			_snap("gameover_detail")
+			main.run_detail.sel = 1
+			main.run_detail.queue_redraw(),
+		func():
+			_snap("gameover_detail_one")
+			main.run_detail.close(),
 	]
+
+
+## 결과 상세 그림용: 오브젝트마다 웨이브 18개쯤 기록을 지어 넣는다 (찍는 판은 웨이브를 다 돌지 않음).
+func _fake_hist() -> void:
+	var i := 0
+	for t in main.towers.get_children():
+		t.hist = []
+		t.run_dealt = 0.0
+		t.dealt = 0.0
+		for w in range(1, 19):
+			var d := roundi(40.0 * w * w * (1.0 + 0.6 * sin(w * 0.7 + i)) / (1.0 + i * 0.5))
+			t.hist.append([w, d, (w + i) % 5, 12.0 + w * 0.8])
+			t.run_dealt += d
+		i += 1
 
 
 ## 오브젝트 하나에 새 조합이 가장 많이(want개 이상) 생기는 속성을 더하고 조합 카드를 띄운다 (미리보기는 중간 장면)

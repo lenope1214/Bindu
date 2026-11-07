@@ -59,6 +59,8 @@ var rx_dealt := 0.0  # 그중 특수 반응 피해 (측정·표시용)
 var trail_hit := {}  # 지나간 자리 장판: 구체 → 마지막으로 맞은 sim_id (띠가 겹쳐도 한 조각에 한 번)
 var fx_a := 1.0  # 이 오브젝트 탄·장판 진하기 (피해 몫이 작을수록 옅게, main._soften_fx)
 var run_dealt := 0.0  # 지난 웨이브들까지 합친 피해 (게임 오버 요약용)
+var wave_kills := 0  # 이번 웨이브 처치 (마지막으로 피해를 준 오브젝트가 가져감)
+var hist: Array = []  # 결과 상세: 끝난 웨이브마다 [웨이브, 피해, 처치, 웨이브 초]
 ## 피해 출처 (DPS 표·판 기록 통계). 키: "hit"(직접 타격, breakdown()이 배율별로 나눔), elem:fire, share:electric(특징), mod:split, link:pincer ...
 var src := {}  # 이번(또는 지난) 웨이브, 날것
 var chase_n := {}  # 구체 id -> 이 오브젝트의 유도·혼불 탄 몇 개가 쫓는지 (Projectile._chase)
@@ -1180,13 +1182,13 @@ func spec() -> Dictionary:
 func to_save() -> Dictionary:
 	return {"elements": elements, "order": Array(order), "pattern": pattern, "plv": plv, "mods": mods,
 		"reso": reso, "pincer": pincer, "trigs": trigs, "charge": charge, "third_n": third_n, "star_sum": star_sum, "star_e": star_e, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt,
-		"src": src, "run_src": run_src}
+		"src": src, "run_src": run_src, "hist": hist}
 
 
 ## 협동 멀티플레이: 다른 기기에 보낼 오브젝트 상태 (피해 기록은 빼서 웨이브 중에 자꾸 바뀌지 않게).
 func mp_state() -> Dictionary:
 	var d := to_save()
-	for k in ["dealt", "run_dealt", "src", "run_src"]:
+	for k in ["dealt", "run_dealt", "src", "run_src", "hist"]:
 		d.erase(k)
 	d["nid"] = net_id
 	d["rq"] = req_e
@@ -1196,7 +1198,7 @@ func mp_state() -> Dictionary:
 ## 협동 멀티플레이: 받은 상태로 이 오브젝트를 바꾼다 (피해 기록은 이 기기 것을 둔다).
 func mp_apply(d0: Dictionary) -> void:
 	var d := d0.duplicate(true)  # 내 mp_state()를 그대로 받아도 아래에서 지우는 사전과 겹치지 않게
-	var keep := [dealt, run_dealt, src, run_src]
+	var keep := [dealt, run_dealt, src, run_src, hist]
 	elements.clear()
 	order.clear()
 	mods.clear()
@@ -1207,6 +1209,7 @@ func mp_apply(d0: Dictionary) -> void:
 	run_dealt = keep[1]
 	src = keep[2]
 	run_src = keep[3]
+	hist = keep[4]
 	req_e = int(d0.get("rq", -1)) if d0.get("rq", -1) is int or d0.get("rq", -1) is float else -1
 	if not req_e in Elem.ALL:
 		req_e = -1
@@ -1262,9 +1265,31 @@ func load_save(d: Dictionary) -> void:
 		set_attack_direction(dir)
 	dealt = maxf(0.0, _float(d.get("dealt")))
 	run_dealt = maxf(0.0, _float(d.get("run_dealt")))
+	hist.clear()
+	var hs: Variant = d.get("hist", [])
+	if hs is Array:
+		for h in hs:
+			if h is Array and h.size() >= 4:
+				hist.append([_int(h[0]), maxi(0, _int(h[1])), maxi(0, _int(h[2])), maxf(0.0, _float(h[3]))])
 	src = _src_dict(d.get("src"))
 	run_src = _src_dict(d.get("run_src"))
 	set_attack_direction(dir)
+
+
+## 결과 상세: 판 전체 처치 (끝난 웨이브 + 지금 웨이브).
+func run_kills() -> int:
+	var n := wave_kills
+	for h in hist:
+		n += h[2]
+	return n
+
+
+## 끝난 웨이브 기록을 남긴다 (웨이브 끝·게임 오버에 한 번).
+func log_wave(w: int, secs: float) -> void:
+	if not hist.is_empty() and hist[-1][0] == w:
+		return
+	hist.append([w, roundi(dealt), wave_kills, snappedf(secs, 0.1)])
+	wave_kills = 0
 
 
 ## 방향 변경 시 공격 계산과 총구 표시를 같은 프레임에 갱신한다.

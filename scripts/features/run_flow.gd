@@ -289,6 +289,7 @@ func _update_skip_ui() -> void:
 ## 선택지 화면을 연다 (offer는 이미 정해져 있음).
 func _reload() -> void:
 	var session: BinduSession = self.session
+	session.run_detail.close()
 	_mp_keep_room()
 	if session.is_inside_tree() and session.get_tree().current_scene != null:
 		session.get_tree().reload_current_scene()
@@ -515,6 +516,23 @@ func _game_over() -> void:
 	session.hint.visible = false  # 카드 줄이 꺼진 뒤라 빈 안내 상자가 결과 아래에 남았다
 
 
+## 결과 상세를 열 수 있는지: 혼자·멀티 모두, 내 오브젝트가 하나라도 있으면 (연습 판 제외).
+func detail_ok() -> bool:
+	var session: BinduSession = self.session
+	return session.phase == BinduSession.Phase.GAMEOVER and not TutPlay.on and not over_data.is_empty() and not session.multiplayer_system._my_towers().is_empty()
+
+
+## 결과 화면 [결과 상세]에서 버튼 줄 아래 투표 버튼까지 거리 (남은 글 끝 기준).
+func over_tail_h() -> float:
+	return 92.0 if detail_ok() else 34.0
+
+
+func _open_detail() -> void:
+	var session: BinduSession = self.session
+	if detail_ok():
+		session.run_detail.open(session, session.multiplayer_system._my_towers())
+
+
 ## 게임 오버 그림 카드 (over_card 가운데가 화면 가운데 위쪽).
 func _draw_over_card() -> void:
 	var session: BinduSession = self.session
@@ -541,6 +559,8 @@ func _draw_over_card() -> void:
 	if session.over_label.text != "" and session.over_label.get_line_count() > 0:
 		lab_h = session.over_label.get_line_count() * session.over_label.get_line_height() + 10.0
 	bh += lab_h
+	if detail_ok():
+		bh += 58.0  # [결과 상세] 버튼 줄 + 그 아래 나가는 법 글 줄
 	# 점수 줄 아래에서 시작 (폰 글자 1.3이면 화면 높이가 줄어 제목이 점수 줄 둘째 줄을 덮었다), 아래 버튼 줄 위까지
 	var top_free := session.hud_system._dps_home().y - c.position.y
 	var bottom_free := (c.get_parent() as Control).size.y - 56.0 - c.position.y
@@ -601,6 +621,11 @@ func _draw_over_card() -> void:
 	var dim := Color(1, 1, 1, 0.5)
 	var to_lobby := session.mp_mode != "" and session.mp.active()  # 멀티 판: 방이 남아 있으면 대기방으로
 	var hy := y + lab_h + 14.0
+	var detail := detail_ok()
+	session.over_detail_btn.visible = detail
+	if detail:
+		session.over_detail_btn.position = Vector2(-session.over_detail_btn.size.x / 2.0, hy - 10.0)
+		hy += 58.0
 	if session.touch_ui:
 		c.draw_string(session.ui_font, Vector2(x0, hy), "눌러서 대기방으로" if to_lobby else "눌러서 시작 화면으로", HORIZONTAL_ALIGNMENT_CENTER, W, Meta.fs(13), dim)
 	else:

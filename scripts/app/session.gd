@@ -303,6 +303,8 @@ var codex_panel: Codex  # 도감·선호 표시 (시작 화면, K)
 var vote_panel: Vote  # 다음 패치 투표 (시작 화면 V, 판 끝난 화면 버튼)
 var vote_btn: Button  # 시작 화면 [투표]: 투표 API가 있는 서버일 때만
 var vote_over_btn: Button  # 판 끝난 화면 [다음 패치 투표]
+var over_detail_btn: Button  # 판 끝난 화면 [결과 상세]
+var run_detail: RunDetail  # 결과 상세 창 (오브젝트별 웨이브 DPS·처치)
 var tut: Tutorial  # 튜토리얼 카드·다시 보기 목록 (시작 화면 [튜토리얼]·일시정지)
 var tplay: TutPlay = null  # 플레이 튜토리얼 연습 판의 안내 칸 (TutPlay.on일 때만)
 var tut_paused := false  # 튜토리얼을 띄우느라 판을 멈췄다 (닫으면 다시 진행)

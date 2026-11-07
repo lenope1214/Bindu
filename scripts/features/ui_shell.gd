@@ -507,6 +507,18 @@ func _build_ui() -> void:
 	session.over_card.visible = false
 	root.add_child(session.over_card)
 	root.move_child(session.over_card, session.over_label.get_index())  # 바탕이 남은 글(over_label)을 덮지 않게 글 밑에
+	session.over_detail_btn = Button.new()
+	session.over_detail_btn.text = "결과 상세"
+	session.over_detail_btn.tooltip_text = "오브젝트마다 웨이브별 DPS·처치를 봐요"
+	session.over_detail_btn.focus_mode = Control.FOCUS_NONE
+	session.over_detail_btn.size = Vector2(150, 52)
+	session.over_detail_btn.add_theme_font_size_override("font_size", 18)
+	session.over_detail_btn.add_theme_color_override("font_color", Color(0.7, 0.85, 1.0))
+	session.over_detail_btn.pressed.connect(session.run_flow_system._open_detail)
+	session.over_detail_btn.visible = false
+	session.over_card.add_child(session.over_detail_btn)
+	session.run_detail = RunDetail.new()
+	root.add_child(session.run_detail)
 
 	session.dps_hidden = Meta.dps_fold
 	session.hud_system._build_dps(root)
