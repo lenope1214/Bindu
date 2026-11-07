@@ -189,7 +189,7 @@ static func cat_keys(cat: String) -> Array:
 	match cat:
 		"elem": return Patch.ELEM_KEYS.map(func(k): return "elem:" + k)
 		"pat": return Pat.ALL_IDS.filter(func(id): return id != Pat.DEFAULT).map(func(id): return "pat:" + id)
-		"mod": return Pat.MOD_IDS.map(func(id): return "mod:" + id)
+		"mod": return Pat.mod_ids().map(func(id): return "mod:" + id)
 		"link": return Pat.LINK_IDS.map(func(id): return "link:" + id)
 		"trig": return Pat.TRIG_IDS.map(func(id): return "trig:" + id)
 		"perk": return perk_ids.map(func(id): return "perk:" + id)

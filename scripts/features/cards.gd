@@ -136,7 +136,7 @@ func _tutor_card(k: String) -> Dictionary:
 	var ids: Array = []
 	match k:
 		"pat": ids = Pat.PATTERN_IDS.slice(1)
-		"mod": ids = Pat.MOD_IDS.duplicate()
+		"mod": ids = Pat.mod_ids().duplicate()
 		"link": ids = ["pincer"] if session.towers.get_child_count() >= 2 else ["reso"]
 		"trig": ids = Pat.TRIG_IDS.duplicate()
 	ids.shuffle()
@@ -214,7 +214,7 @@ func _roll_card() -> Dictionary:
 	var patterns: Array = Vary.open("pat", Pat.PATTERN_IDS.slice(1)).filter(func(id):
 		var cd := {"type": "pat", "id": id}
 		return _card_enabled(cd) and ts.any(func(t): return t.can_take(cd)))
-	var mods: Array = Pat.MOD_IDS.filter(func(id):
+	var mods: Array = Pat.mod_ids().filter(func(id):
 		var cd := {"type": "mod", "id": id}
 		return _card_enabled(cd) and ts.any(func(t): return t.can_take(cd)))
 	var trigs: Array = Pat.TRIG_IDS.filter(func(id):

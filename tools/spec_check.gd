@@ -1044,6 +1044,7 @@ func _mods_area() -> void:
 		"크기 2개 직선탄: 자기 공격 x%.3f, 보조 공격·특징 x%.3f · %s" % [own / bare0, bare / bare0, line])
 	# MOD-10 돌풍 다중 발사: 부채꼴이 아니라 같은 방향으로 나란히
 	_clear()
+	Rules.tune["auto_aim"] = 0.0  # 정한 방향으로 나란히 나가는지 (구체 없이)
 	var g := _tower(c + Vector2(-300, 0))
 	g.set_pattern("gust")
 	g.add_mod("multi")
@@ -1061,12 +1062,75 @@ func _mods_area() -> void:
 	main.wave_active = false
 	main.phase = main.Phase.CHOOSE
 	_clear()
+	Rules.tune["auto_aim"] = Rules.DEFAULTS["auto_aim"]
 	ok("MOD-10", same, "돌풍 다중 2개: 돌풍 %d개가 같은 방향으로 나란히" % dirs.size())
+
+
+# 자동 조준 기본 기능 (2026-11-07, rules.auto_aim 1): 카드 없이 전방위·감산 없음·카드 풀/도감에서 빠짐·예전 저장 버림·예측 조준.
+func _auto_default() -> void:
+	_fresh()
+	var c: Vector2 = main.viewport_system.center()
+	var card := {"type": "mod", "id": "reflex"}
+	var t := _tower(c, Elem.WIND)
+	var pool_ok := not "reflex" in Pat.mod_ids() and not t.can_take(card) and not "mod:reflex" in Ach.cat_keys("mod")
+	var back := _orb(c + Vector2.LEFT * 120.0, 1000.0)
+	t._update_aim([back], 0.016)
+	var aim_ok := t.auto_aim() and t.reflex_target == back and t.aim.is_equal_approx(Vector2.LEFT) and is_equal_approx(t.final_damage_mul(), 1.0)
+	var far := _orb(c + Vector2.RIGHT * 900.0, 1000.0)
+	t._update_aim([far], 0.016)
+	aim_ok = aim_ok and t.reflex_target == far  # 직선탄은 화면 끝까지 겨눔
+	var wisp := _tower(c + Vector2(0, 200))
+	wisp.set_pattern("wisp")
+	aim_ok = aim_ok and not wisp.auto_aim()
+	var sv := t.to_save()
+	sv["mods"] = {"reflex": 1, "rapid": 2}
+	var restored := Tower.new()
+	restored.load_save(sv)
+	var save_ok := restored.m("reflex") == 0 and restored.m("rapid") == 2 and restored.mod_count() == 2
+	restored.free()
+	# 예측 조준: 위로 걷는 구체는 지금 자리보다 위를 겨눈다. 바로 닿는 공격(분사)과 aim_lead 0은 지금 자리
+	var walker := _orb(c + Vector2.RIGHT * 300.0, 1000.0)
+	walker.walk_vel = Vector2(0, -100)
+	var d := t.lead_dir(walker)
+	var tt := 300.0 / sqrt(440.0 * 440.0 - 100.0 * 100.0)
+	var lead_ok := d.is_equal_approx((Vector2(300, -100.0 * tt)).normalized())
+	t.pattern = "spray"
+	lead_ok = lead_ok and t.lead_dir(walker).is_equal_approx(Vector2.RIGHT)
+	t.pattern = "shot"
+	Rules.tune["aim_lead"] = 0.0
+	lead_ok = lead_ok and t.lead_dir(walker).is_equal_approx(Vector2.RIGHT)
+	Rules.tune["aim_lead"] = Rules.DEFAULTS["aim_lead"]
+	walker.walk_vel = Vector2.ZERO
+	walker.position = c + Vector2.RIGHT * 300.0
+	walker.target = walker.position + Vector2(0, -500)
+	walker.speed = 60.0
+	walker.step(0.1)
+	var walk_ok := walker.walk_vel.is_equal_approx(Vector2(0, -60))
+	# 정한 방향 쪽 먼저: 오른쪽(방향) 45도 안의 먼 구체가 뒤쪽 가까운 구체보다 먼저, 방향 쪽에 없으면 가장 가까운 구체
+	_clear()
+	t = _tower(c, Elem.WIND, 1, Vector2.RIGHT)
+	var near_back := _orb(c + Vector2.LEFT * 80.0, 1000.0)
+	var far_front := _orb(c + Vector2(300, 100), 1000.0)
+	var off_side := _orb(c + Vector2(0, 150), 1000.0)
+	t._update_aim([near_back, far_front, off_side], 0.016)
+	var pref_ok := t.reflex_target == far_front
+	t._update_aim([near_back, off_side], 0.016)
+	pref_ok = pref_ok and t.reflex_target == near_back
+	Rules.tune["aim_pref"] = 0.0
+	t._update_aim([near_back, far_front, off_side], 0.016)
+	pref_ok = pref_ok and t.reflex_target == near_back
+	Rules.tune["aim_pref"] = Rules.DEFAULTS["aim_pref"]
+	ok("MOD-13", pref_ok, "자동 조준 정한 방향 먼저: 방향 45도 안 구체 우선, 없으면 가장 가까운 구체, aim_pref 0이면 방향 무시")
+	ok("MOD-13", pool_ok and aim_ok and save_ok, "자동 조준 기본: 카드·도감 분모에서 빠짐, 강화 없이 후방·화면 끝 조준, 감산 없음, 혼불 제외, 예전 저장의 카드 버림")
+	ok("MOD-13", lead_ok and walk_ok, "자동 조준 예측: 탄 속도로 만나는 곳을 앞질러 겨눔, 바로 닿는 공격·aim_lead 0은 지금 자리, 구체 걸음 속도 기록")
+	_clear()
 
 
 # 반응: 기존 방향 고정과 다른 전방위 조준·최종 감산·모드/저장 경계.
 func _reflex() -> void:
+	_auto_default()
 	_fresh()
+	Rules.tune["auto_aim"] = 0.0  # 아래는 예전 강화 카드 방식(rules.auto_aim 0) 검사
 	var c: Vector2 = main.viewport_system.center()
 	var card := {"type": "mod", "id": "reflex"}
 	var t := _tower(c + Vector2(-100, 0), Elem.WIND)
@@ -1077,9 +1141,11 @@ func _reflex() -> void:
 	var cap_ok := t.m("reflex") == 1 and not t.can_take(card) and other.can_take(card) and t.refuse_text(card).contains("1개")
 	Meta.rules = 3
 	main.run_flow_system._apply_rules()
+	Rules.tune["auto_aim"] = 0.0
 	cap_ok = cap_ok and not t.can_take(card)
 	Meta.rules = 1
 	main.run_flow_system._apply_rules()
+	Rules.tune["auto_aim"] = 0.0
 	var restored := Tower.new()
 	restored.load_save(t.to_save())
 	var save_ok := restored.m("reflex") == 1 and not restored.can_take(card)
@@ -1170,6 +1236,7 @@ func _reflex() -> void:
 	ok("MOD-13", patterns_ok and text_ok, "반응: 방향 공격 13종 후방 조준·카드 앞면 1회/피해 감산 안내")
 	# 실제 전투 경로에서 방향 고정 분사는 후방에 0, 반응은 피해 발생.
 	_fresh()
+	Rules.tune["auto_aim"] = 0.0
 	t = _tower(c + Vector2(-100, 0), Elem.WATER)
 	t.set_pattern("spray")
 	victim = _orb(t.position + Vector2.LEFT * 100.0, 1000.0)
@@ -1183,6 +1250,7 @@ func _reflex() -> void:
 # PR #11 리뷰: 기존 검사가 놓친 쿨다운·실제 사거리·처형 경계를 재현한다.
 func _reflex_review_regressions() -> void:
 	_fresh()
+	Rules.tune["auto_aim"] = 0.0
 	var c: Vector2 = main.viewport_system.center()
 	var t := _tower(c, Elem.FIRE)
 	t.add(Elem.WOOD, 1)
@@ -1193,6 +1261,7 @@ func _reflex_review_regressions() -> void:
 	ok("MOD-13", t.cd["p"] < 1.0,
 		"반응 대기: 구체가 없어도 기본 공격 쿨다운은 흐름 (%.4f)" % t.cd["p"])
 	_fresh()
+	Rules.tune["auto_aim"] = 0.0
 	t = _tower(c, Elem.WIND, 3)
 	t.add_mod("reflex")
 	var ranges_ok := true
@@ -1212,6 +1281,7 @@ func _reflex_review_regressions() -> void:
 		pr.free()
 	ok("MOD-13", ranges_ok, "반응: 바람·크기·유도 보정 뒤 실제 탄 사거리와 일치 %s" % [details])
 	_fresh()
+	Rules.tune["auto_aim"] = 0.0
 	Meta.map_id = "storm"
 	Rules.tune["map_on"] = 1.0
 	main.lanes.assign([0.0])
@@ -1233,6 +1303,7 @@ func _reflex_review_regressions() -> void:
 		pr.free()
 	ok("MOD-13", weather_ok, "반응 폭풍: 순풍/역풍의 실제 탄 사거리 안만 감지")
 	_fresh()
+	Rules.tune["auto_aim"] = 0.0
 	t = _tower(c)
 	t.pattern = "wall"
 	t.add_mod("reflex")
@@ -1592,6 +1663,7 @@ func _waves() -> void:
 ## 미방어 길목은 참고 경고만. 단일 오브젝트 집중 투자도 진행할 수 있다.
 func _wave_start_guard() -> void:
 	_fresh(2)
+	Rules.tune["auto_aim"] = 0.0  # 방향을 고정하는 경우의 경고 (자동 조준이면 사거리 안 길목은 막은 것으로 본다)
 	main.mp_mode = ""
 	main.lanes.assign([0.0, PI])
 	main.waves_system.mark_new_angles([0.0])

@@ -477,6 +477,8 @@ func big_banner(t: String, col: Color) -> void:
 
 func _show_toast(t: String) -> void:
 	var session: BinduSession = self.session
+	if session.toast == null:  # 튜토리얼 재생 등 알림 칸을 안 만든 판
+		return
 	session.toast.text = session.patchlog_system._kr_keep(t)  # 좁은 자리에서 두 줄로 접힐 때 한글 낱말 중간에서 끊기지 않게
 	session.toast_timer = 2.0
 

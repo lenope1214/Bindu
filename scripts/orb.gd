@@ -51,6 +51,7 @@ var last_rx := false  # 마지막으로 맞은 피해가 특징이 실어 나른
 var born := 0.0  # 나온 때 (main.run_game, 업적 보스 순살)
 var max_hp := 1.0
 var speed := 50.0
+var walk_vel := Vector2.ZERO  # 지난 프레임 스스로 걸은 속도 (밀림·순간이동 빼고, 자동 조준 예측용)
 var target := Vector2.ZERO
 var slow_timer := 0.0
 var slow_factor := 1.0
@@ -255,6 +256,7 @@ func step(delta: float) -> void:
 		_late_step(delta, mult)
 		if digest_t > 0.0:
 			mult = 0.0
+	var walk_from := position
 	if confuse_t > 0.0:
 		# 환영 현혹: 왔던 길을 되돌아 걷는다 (중앙에서 멀어지는 쪽으로, 느리게)
 		confuse_t = maxf(confuse_t - delta, 0.0)
@@ -267,6 +269,8 @@ func step(delta: float) -> void:
 		position += (target - position).normalized().rotated(swirl) * speed * mult * delta
 	else:
 		position = position.move_toward(target, speed * mult * delta)
+	if delta > 0.0:
+		walk_vel = (position - walk_from) / delta
 	_blood_step(delta)
 	_redraw_if_changed()
 
