@@ -3238,6 +3238,28 @@ func _meta_misc() -> void:
 	var paused_unchanged: bool = main.phase == main.Phase.CHOOSE and main.picks_left == 2 and main.rerolls_left == paused_rerolls and main.offer == paused_offer and main.skip_left == 0
 	main.get_tree().paused = false
 	ok("UI-10", paused_unchanged, "일시정지 중 선택·새로고침·넘기기·시작 입력은 상태를 바꾸지 않음")
+	# 음량: 설정 창에 전체·배경음·효과음 슬라이더, 배경음·효과음은 따로 효과음 플레이어·배경음 크기에 반영, 0이면 안 남
+	var vs: Dictionary = main.menu_system.volume_sliders
+	var vol_save := [Meta.volume, Meta.music_volume, Meta.sfx_volume]
+	var vol_rows: bool = vs.has("전체 음량") and vs.has("배경음") and vs.has("효과음") and vs.values().all(func(sl): return main.settings_panel.is_ancestor_of(sl))
+	var vol_ok := false
+	if vol_rows:
+		vs["배경음"].value = 0.5
+		vs["효과음"].value = 0.0
+		var sfx: Sfx = main.sfx
+		var music_half: bool = is_equal_approx(Meta.music_volume, 0.5) and absf(sfx.music_player.volume_db - (Sfx.MUSIC_DB + linear_to_db(0.5))) < 0.1 and not sfx.music_player.stream_paused
+		var fx_off: bool = Meta.sfx_volume == 0.0 and sfx.sfx_vol == 0.0 and sfx.players[0].volume_db < -50.0
+		vs["효과음"].value = 1.0
+		vs["배경음"].value = 0.0
+		var music_off: bool = sfx.music_player.stream_paused and is_equal_approx(sfx.players[0].volume_db, 0.0)
+		vs["전체 음량"].value = 0.5
+		var master_ok: bool = absf(AudioServer.get_bus_volume_db(0) - linear_to_db(0.5)) < 0.1
+		vol_ok = music_half and fx_off and music_off and master_ok
+	for i in 3:
+		var key: String = ["전체 음량", "배경음", "효과음"][i]
+		if vs.has(key):
+			vs[key].value = vol_save[i]
+	ok("UI-40", vol_rows and vol_ok, "음량 따로: 전체·배경음·효과음 슬라이더 %s, 반영 %s" % [vol_rows, vol_ok])
 	main.run_flow_system._on_skip()
 	ok("SKIP-02", skip_forecast and main.skip_left == 3 and main.bank_picks.size() == 2, "넘기기: 이번 고르기를 쌓아 두고 n웨이브 진행 (남은 %d, 쌓인 고르기 %d)" % [main.skip_left, main.bank_picks.size()])
 	main.skip_left = 0

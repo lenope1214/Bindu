@@ -14,6 +14,9 @@ var next_lead := 0
 var last_play := {}  # 이름 -> 마지막 재생 시각(초), 너무 잦은 재생 방지
 var muted := false
 var music_player: AudioStreamPlayer
+const MUSIC_DB := -9.0  # 배경음 기본 크기 (배경음 100%일 때)
+var music_vol := 1.0  # 설정의 배경음 0~1
+var sfx_vol := 1.0  # 설정의 효과음 0~1
 
 ## 이름: [시작 주파수, 끝 주파수, 길이(초), 파형, 잡음 비율, 음량]
 const DEFS := {
@@ -74,13 +77,13 @@ func _create_music() -> void:
 	stream.data = data
 	music_player = AudioStreamPlayer.new()
 	music_player.stream = stream
-	music_player.volume_db = -9.0
+	music_player.volume_db = MUSIC_DB + linear_to_db(maxf(music_vol, 0.001))
 	add_child(music_player)
 	music_player.play()
 
 
 func play(name: String, pitch_jitter := 0.06) -> void:
-	if muted or not sounds.has(name):
+	if muted or sfx_vol <= 0.0 or not sounds.has(name):
 		return
 	var now := Time.get_ticks_msec() / 1000.0
 	if now - last_play.get(name, -1.0) < MIN_GAP.get(name, 0.0):
@@ -100,8 +103,24 @@ func play(name: String, pitch_jitter := 0.06) -> void:
 
 func set_muted(value: bool) -> void:
 	muted = value
+	_apply_music_pause()
+
+
+## 설정의 배경음·효과음 크기(0~1). 0이면 그쪽 소리는 아예 안 남.
+func set_levels(music: float, effects: float) -> void:
+	music_vol = clampf(music, 0.0, 1.0)
+	sfx_vol = clampf(effects, 0.0, 1.0)
+	var db := linear_to_db(maxf(sfx_vol, 0.001))
+	for p in players + lead:
+		p.volume_db = db
 	if music_player:
-		music_player.stream_paused = value
+		music_player.volume_db = MUSIC_DB + linear_to_db(maxf(music_vol, 0.001))
+	_apply_music_pause()
+
+
+func _apply_music_pause() -> void:
+	if music_player:
+		music_player.stream_paused = muted or music_vol <= 0.0
 
 
 ## notes: [[시작Hz, 끝Hz, 길이], ...] 를 이어 붙인 16비트 모노 소리.

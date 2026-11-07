@@ -2,6 +2,7 @@ class_name BinduMenu
 extends BinduFeature
 ## 시작·준비·설정·모드 UI. 예약 콜백은 main의 순서를 따른다.
 
+var volume_sliders := {}  # 설정 음량 슬라이더: "전체 음량"·"배경음"·"효과음" -> HSlider
 var account_label: Label  # 설정: 계정 상태 한 줄
 var map_label: Label  # 준비 화면 맵 카드 아래 설명 (고른 맵 이름·규칙, 작은 설명은 meta "sub")
 var map_cards: Array[Button] = []  # 준비 화면 맵 카드 (Meta.MAP_IDS 순서, _draw_map_card)
@@ -304,25 +305,10 @@ func _build_menu(root: Control) -> void:
 	st.add_to_group("key_hint")
 	st.add_theme_font_size_override("font_size", 22)
 	sv.add_child(st)
-	var vrow := HBoxContainer.new()
-	var vl := Label.new()
-	vl.text = "음량 %d%%" % roundi(Meta.volume * 100.0)
-	vl.custom_minimum_size = Vector2(120, 0)
-	vrow.add_child(vl)
-	var slider := HSlider.new()
-	slider.min_value = 0.0
-	slider.max_value = 1.0
-	slider.step = 0.05
-	slider.value = Meta.volume
-	slider.custom_minimum_size = Vector2(240, 30)
-	slider.focus_mode = Control.FOCUS_NONE
-	slider.value_changed.connect(func(v):
-		Meta.volume = v
-		vl.text = "음량 %d%%" % roundi(v * 100.0)
-		_apply_volume()
-		session.progression_system._save_best())
-	vrow.add_child(slider)
-	sv.add_child(vrow)
+	# 음량: 전체 x 배경음·효과음 (따로 줄일 수 있게)
+	_volume_row(sv, "전체 음량", func(): return Meta.volume, func(v): Meta.volume = v)
+	_volume_row(sv, "배경음", func(): return Meta.music_volume, func(v): Meta.music_volume = v)
+	_volume_row(sv, "효과음", func(): return Meta.sfx_volume, func(v): Meta.sfx_volume = v)
 	var zrow := HBoxContainer.new()
 	zrow.add_theme_constant_override("separation", 6)
 	var zl := Label.new()
@@ -1326,5 +1312,35 @@ func _toggle_fullscreen() -> void:
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if full else DisplayServer.WINDOW_MODE_FULLSCREEN)
 
 
+## 설정 창 음량 한 줄: 이름 + 퍼센트 + 슬라이더 (0~100%, 5% 단위)
+func _volume_row(parent: Container, title: String, getter: Callable, setter: Callable) -> HSlider:
+	var row := HBoxContainer.new()
+	var lab := Label.new()
+	lab.text = "%s %d%%" % [title, roundi(getter.call() * 100.0)]
+	lab.custom_minimum_size = Vector2(150, 0)
+	row.add_child(lab)
+	var slider := HSlider.new()
+	slider.name = "Vol_" + title
+	slider.min_value = 0.0
+	slider.max_value = 1.0
+	slider.step = 0.05
+	slider.value = getter.call()
+	slider.custom_minimum_size = Vector2(240, 30)
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	slider.focus_mode = Control.FOCUS_NONE
+	slider.value_changed.connect(func(v):
+		setter.call(v)
+		lab.text = "%s %d%%" % [title, roundi(v * 100.0)]
+		_apply_volume()
+		session.progression_system._save_best())
+	row.add_child(slider)
+	parent.add_child(row)
+	volume_sliders[title] = slider
+	return slider
+
+
 func _apply_volume() -> void:
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(Meta.volume, 0.001)))
+	if session.sfx:
+		session.sfx.set_levels(Meta.music_volume, Meta.sfx_volume)

@@ -53,7 +53,9 @@ static var coin_streak := 0  # 운명의 동전 연속 앞면 (판을 넘어 이
 static var title := ""  # 고른 칭호 (업적 id, 리더보드 닉네임 옆)
 static var total_kills := 0
 static var games := 0
-static var volume := 1.0
+static var volume := 1.0  # 전체 음량
+static var music_volume := 1.0  # 배경음 (전체 음량에 곱함)
+static var sfx_volume := 1.0  # 효과음 (전체 음량에 곱함)
 static var shake_on := true
 static var numbers_on := true
 static var symbols_on := true  # 속성 색 위에 속성 그림 표시 (색만으로 구분하기 어려울 때). 새 저장은 켬
@@ -161,6 +163,8 @@ static func load_into(cfg: ConfigFile) -> void:
 	coin_streak = val(cfg, "meta", "coin_streak", 0)
 	title = val(cfg, "meta", "title", "")
 	volume = val(cfg, "settings", "volume", 1.0)
+	music_volume = val(cfg, "settings", "music_volume", 1.0)
+	sfx_volume = val(cfg, "settings", "sfx_volume", 1.0)
 	shake_on = val(cfg, "settings", "shake", true)
 	numbers_on = val(cfg, "settings", "numbers", true)
 	symbols_on = val(cfg, "settings", "symbols", false)  # 예전 저장(키가 없던 v0.4.20 이전)은 그대로 끔
@@ -195,6 +199,8 @@ static func load_into(cfg: ConfigFile) -> void:
 	if not ui_scale in UI_SCALES:
 		ui_scale = 1.0
 	volume = clampf(volume, 0.0, 1.0)
+	music_volume = clampf(music_volume, 0.0, 1.0)
+	sfx_volume = clampf(sfx_volume, 0.0, 1.0)
 	# 예전 저장의 최고 기록은 평원 기록으로 옮긴다
 	if not map_best.has("plain") and cfg.has_section_key("best", "wave"):
 		map_best["plain"] = [cfg.get_value("best", "wave", 0), cfg.get_value("best", "score", 0)]
@@ -235,6 +241,8 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("meta", "title", title)
 	cfg.set_value("meta", "modes", modes)
 	cfg.set_value("settings", "volume", volume)
+	cfg.set_value("settings", "music_volume", music_volume)
+	cfg.set_value("settings", "sfx_volume", sfx_volume)
 	cfg.set_value("settings", "shake", shake_on)
 	cfg.set_value("settings", "numbers", numbers_on)
 	cfg.set_value("settings", "symbols", symbols_on)
