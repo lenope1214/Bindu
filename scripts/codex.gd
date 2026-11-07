@@ -43,7 +43,7 @@ func entries(c: String) -> Array:
 					var no := Pat.no_mods(id)
 					out.append({"key": "pat:" + id, "name": Pat.pname(id), "desc": Pat.PATTERNS[id]["desc"] + ("\n못 넣는 강화: " + "·".join(no) if not no.is_empty() else ""), "color": Pat.pcolor(id).lightened(0.15)})
 		"mod":
-			for id in Pat.MOD_IDS:
+			for id in Pat.mod_ids():
 				out.append({"key": "mod:" + id, "name": Pat.MODS[id]["name"], "desc": Pat.mdesc(id), "color": Color(1, 0.82, 0.4)})
 		"link":
 			for id in Pat.LINK_IDS:

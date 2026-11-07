@@ -37,13 +37,13 @@ func _init() -> void:
 	Patch.pending = {"id": 0, "data": {"rules": {"all": {"orb_hp": 1.3}, "2": {"max_mod": 4, "mod_decay": true}}}}
 	Patch.commit()
 	Rules.apply(2)
-	ok = _check("규칙 덮어쓰기 (버전 2)", Rules.max_mod == 4 and Rules.mod_decay and is_equal_approx(Rules.orb_hp, 1.3) and Rules.max_elems == 2) and ok
+	ok = _check("규칙 덮어쓰기 (버전 2)", Rules.max_mod == 4 and Rules.mod_decay and is_equal_approx(Rules.orb_hp, 1.3 * _auto_hp()) and Rules.max_elems == 2) and ok
 	Rules.apply(1)
-	ok = _check("다른 버전엔 all만", Rules.max_mod == 5 and not Rules.mod_decay and is_equal_approx(Rules.orb_hp, 1.3)) and ok
+	ok = _check("다른 버전엔 all만", Rules.max_mod == 5 and not Rules.mod_decay and is_equal_approx(Rules.orb_hp, 1.3 * _auto_hp())) and ok
 	Patch.pending = {"id": 0, "data": {}}
 	Patch.commit()
 	Rules.apply(1)
-	ok = _check("패치 없으면 내장 값", is_equal_approx(Rules.orb_hp, 1.0) and Patch.elem_mul.is_empty()) and ok
+	ok = _check("패치 없으면 내장 값", is_equal_approx(Rules.orb_hp, _auto_hp()) and Patch.elem_mul.is_empty()) and ok
 	print("결과: ", "모두 통과" if ok else "실패 있음")
 	quit(0 if ok else 1)
 
@@ -51,3 +51,8 @@ func _init() -> void:
 func _check(name: String, cond: bool) -> bool:
 	print(("  통과  " if cond else "  실패  ") + name)
 	return cond
+
+
+## 자동 조준이 기본이면 구체 체력에 rules.auto_hp가 곱해진다 (Rules.apply 끝)
+func _auto_hp() -> float:
+	return Rules.t("auto_hp") if Rules.t("auto_aim") > 0.0 else 1.0

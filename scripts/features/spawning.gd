@@ -34,7 +34,7 @@ func spawn_rock(t: Tower, l: int) -> void:
 	var inner := session.viewport_system.arena().grow(-100.0)
 	# 빈 자리 중 앞쪽부터 (Tower.rock_slot). 가장자리에 밀려 같은 자리에 겹치는 바위는 세우지 않는다
 	for k in 2 + roundi(t.mf("multi")):
-		var p := (t.position + Tower.rock_slot(t.aim if t.m("reflex") > 0 else t.dir, k, l)).clamp(inner.position, inner.end)
+		var p := (t.position + Tower.rock_slot(t.aim if t.auto_aim() else t.dir, k, l)).clamp(inner.position, inner.end)
 		if not t.rocks.any(func(r): return r.position.distance_to(p) < 40.0):
 			t.rocks.append(spawn_zone("rock", l, p, t))
 			return
