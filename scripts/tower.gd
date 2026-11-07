@@ -1780,6 +1780,42 @@ func reflex_range(toward := Vector2.ZERO) -> float:
 	return reflex_range_of(pattern, plv, total_level(), mf("size"), 0.0, mf("homing"), mf("multi"), weather)
 
 
+## 지키는 곳까지 남은 거리: 중앙까지, 회랑 맵은 문(세로선)까지 가로 거리.
+func goal_dist(o: Orb) -> float:
+	if main == null:
+		return o.position.distance_to(position)
+	if Meta.map_id == "line":
+		return absf(o.position.x - main.viewport_system.core().x)
+	return o.position.distance_to(main.viewport_system.center())
+
+
+## 자동 조준 대상 (2026-11-07): 사거리 안에서 지키는 곳에 가장 가까운 구체를 먼저.
+## 그 구체와 지키는 곳까지 거리가 aim_band 안으로 비슷한 구체끼리는 정한 방향(±aim_pref) 쪽을 먼저, 그다음 지키는 곳에 가까운 것.
+func _guard_pick(orbs: Array) -> Orb:
+	var cand := []
+	var top := INF
+	for o in orbs:
+		if not is_instance_valid(o) or o.hp <= 0.0:
+			continue
+		var v: Vector2 = o.position - position
+		if v.length() > reflex_range(v):
+			continue
+		var g := goal_dist(o)
+		cand.append([o, g, Rules.t("aim_pref") > 0.0 and absf(dir.angle_to(v)) <= Rules.t("aim_pref")])
+		top = minf(top, g)
+	var pick: Orb = null
+	var pick_g := INF
+	var pick_in := false
+	for c in cand:
+		if c[1] > top + Rules.t("aim_band"):
+			continue
+		if pick == null or (c[2] and not pick_in) or (c[2] == pick_in and c[1] < pick_g):
+			pick = c[0]
+			pick_g = c[1]
+			pick_in = c[2]
+	return pick
+
+
 ## 날아가는 탄의 속도 (예측 조준용). 바로 닿는 공격(분사·레이저·번개 등)은 0.
 func lead_speed() -> float:
 	var P := Projectile.PROJ
@@ -1858,25 +1894,18 @@ func _update_aim(orbs: Array, delta: float) -> void:
 	if auto_aim():
 		reflex_target = null
 		var best := INF
-		# 정한 방향 쪽 먼저 (2026-11-07): 방향 ±aim_pref 안의 가장 가까운 구체, 없으면 사거리 안 아무 쪽이나 가장 가까운 구체
-		var pref := Rules.t("aim_pref") if Rules.t("auto_aim") > 0.0 else 0.0
-		var in_pref := false
-		for o in orbs:
-			if not is_instance_valid(o) or o.hp <= 0.0:
-				continue
-			var v: Vector2 = o.position - position
-			var dist: float = v.length()
-			if dist > reflex_range(v):
-				continue
-			var inside := pref > 0.0 and absf(dir.angle_to(v)) <= pref
-			if inside and not in_pref:
-				in_pref = true
-				best = INF
-			elif in_pref and not inside:
-				continue
-			if dist <= best:
-				best = dist
-				reflex_target = o
+		if Rules.t("auto_aim") > 0.0:
+			reflex_target = _guard_pick(orbs)
+			best = reflex_target.position.distance_to(position) if reflex_target != null else INF
+		else:
+			# 예전 강화 카드: 사거리 안 가장 가까운 구체
+			for o in orbs:
+				if not is_instance_valid(o) or o.hp <= 0.0:
+					continue
+				var dist: float = o.position.distance_to(position)
+				if dist <= best and dist <= reflex_range(o.position - position):
+					best = dist
+					reflex_target = o
 		if reflex_target != null and best > 0.001:
 			aim = lead_dir(reflex_target)
 		return

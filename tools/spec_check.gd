@@ -1008,21 +1008,28 @@ func _auto_default() -> void:
 	walker.speed = 60.0
 	walker.step(0.1)
 	var walk_ok := walker.walk_vel.is_equal_approx(Vector2(0, -60))
-	# 정한 방향 쪽 먼저: 오른쪽(방향) 45도 안의 먼 구체가 뒤쪽 가까운 구체보다 먼저, 방향 쪽에 없으면 가장 가까운 구체
+	# 지키는 곳 먼저: 중앙에 가장 가까운 구체, 중앙까지 거리가 비슷하면(aim_band) 정한 방향 쪽, 회랑은 문까지 가로 거리
 	_clear()
-	t = _tower(c, Elem.WIND, 1, Vector2.RIGHT)
-	var near_back := _orb(c + Vector2.LEFT * 80.0, 1000.0)
-	var far_front := _orb(c + Vector2(300, 100), 1000.0)
-	var off_side := _orb(c + Vector2(0, 150), 1000.0)
-	t._update_aim([near_back, far_front, off_side], 0.016)
-	var pref_ok := t.reflex_target == far_front
-	t._update_aim([near_back, off_side], 0.016)
-	pref_ok = pref_ok and t.reflex_target == near_back
+	var cc: Vector2 = main.viewport_system.center()
+	t = _tower(cc + Vector2(150, 0), Elem.WIND, 1, Vector2.UP)
+	var near_core := _orb(cc + Vector2(0, 60), 1000.0)  # 중앙 60, 방향 밖
+	var near_tower := _orb(cc + Vector2(150, -150), 1000.0)  # 정한 방향 바로 앞이지만 중앙 212
+	t._update_aim([near_tower, near_core], 0.016)
+	var pref_ok := t.reflex_target == near_core
+	var front_tie := _orb(cc + Vector2(100, -60), 1000.0)  # 중앙 117(차 57 < aim_band), 방향 40도 안
+	t._update_aim([near_tower, near_core, front_tie], 0.016)
+	pref_ok = pref_ok and t.reflex_target == front_tie
 	Rules.tune["aim_pref"] = 0.0
-	t._update_aim([near_back, far_front, off_side], 0.016)
-	pref_ok = pref_ok and t.reflex_target == near_back
+	t._update_aim([near_tower, near_core, front_tie], 0.016)
+	pref_ok = pref_ok and t.reflex_target == near_core
 	Rules.tune["aim_pref"] = Rules.DEFAULTS["aim_pref"]
-	ok("MOD-13", pref_ok, "자동 조준 정한 방향 먼저: 방향 45도 안 구체 우선, 없으면 가장 가까운 구체, aim_pref 0이면 방향 무시")
+	Meta.map_id = "line"
+	var gate: float = main.viewport_system.core().x
+	var line_a := _orb(Vector2(gate + 40, cc.y + 200), 1000.0)  # 문 가로 40 (세로로는 멀어도)
+	var line_b := _orb(Vector2(gate + 300, cc.y), 1000.0)
+	pref_ok = pref_ok and is_equal_approx(t.goal_dist(line_a), 40.0) and t.goal_dist(line_b) > t.goal_dist(line_a)
+	Meta.map_id = "plain"
+	ok("MOD-13", pref_ok, "자동 조준 지키는 곳 먼저: 중앙에 가까운 구체 우선, 비슷하면 정한 방향 쪽, aim_pref 0이면 방향 무시, 회랑은 문까지 가로 거리")
 	ok("MOD-13", pool_ok and aim_ok and save_ok, "자동 조준 기본: 카드·도감 분모에서 빠짐, 강화 없이 후방·화면 끝 조준, 감산 없음, 혼불 제외, 예전 저장의 카드 버림")
 	ok("MOD-13", lead_ok and walk_ok, "자동 조준 예측: 탄 속도로 만나는 곳을 앞질러 겨눔, 바로 닿는 공격·aim_lead 0은 지금 자리, 구체 걸음 속도 기록")
 	_clear()
