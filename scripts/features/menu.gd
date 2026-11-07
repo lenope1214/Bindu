@@ -96,6 +96,9 @@ func _build_menu(root: Control) -> void:
 	mv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	mh.add_child(mv)
 	modes_label = _prep_main()
+	# 모드를 여럿 고르면 이름 줄이 길어 [바꾸기 ▶]가 줄 밖으로 밀렸다: 칸 안에서 접는다
+	modes_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	modes_label.custom_minimum_size.x = 160
 	mv.add_child(modes_label)
 	var msub := _prep_sub()
 	mv.add_child(msub)

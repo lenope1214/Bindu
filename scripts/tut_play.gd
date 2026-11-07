@@ -1030,7 +1030,7 @@ func _refresh() -> void:
 	btn_ok.visible = s.get("id", "") == "goal"
 	if s.is_empty() or s["id"] == "end":
 		return
-	head.text = "단계 %d/%d · %s · %s" % [idx + 1, STEPS.size(), CHAPTERS[s["ch"]], s["name"]]
+	head.text = PatchNotes.kr_keep("단계 %d/%d · %s · %s" % [idx + 1, STEPS.size(), CHAPTERS[s["ch"]], s["name"]])  # 폰에서 두 줄로 접힐 때 낱말 중간에서 끊기지 않게
 	var txt := ""
 	if done_t >= 0.0:
 		txt = "✓ 잘했어요"
