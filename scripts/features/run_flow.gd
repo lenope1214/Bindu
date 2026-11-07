@@ -265,7 +265,8 @@ func _update_skip_ui() -> void:
 	session.skip_btn.visible = show_btn
 	session.skip_n_btn.visible = show_btn
 	# 글자를 키우면(폰 기본) 카드 아래 버튼 줄이 왼쪽 아래 안내 글까지 내려와 겹친다. 카드를 고르라는 글이라 겹칠 때만 숨긴다
-	session.hint.visible = not (show_btn and session.hint.get_global_rect().intersects(session.skip_btn.get_global_rect()))
+	# 글이 빈 안내는 띄우지 않는다 (판 끝 화면 아래에 빈 상자로 남았다)
+	session.hint.visible = session.hint.text != "" and not (show_btn and session.hint.get_global_rect().intersects(session.skip_btn.get_global_rect()))
 	if show_btn:
 		var n := int(Meta.skip_n)
 		var deferred := "특성 선택 1회 보류" if session.perk_mode else "카드 선택 %d회 보류 · 새로고침 %d회 보류" % [session.picks_left, session.rerolls_left]
@@ -604,7 +605,8 @@ func _draw_over_card() -> void:
 		c.draw_string(session.ui_font, Vector2(x0, hy), "눌러서 대기방으로" if to_lobby else "눌러서 시작 화면으로", HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
 	else:
 		# 그림(마우스·집)만으로는 무엇을 누르면 어디로 가는지 알기 어려웠다: 글로
-		c.draw_string(session.ui_font, Vector2(x0, hy), "클릭 · R · Esc: " + ("대기방으로" if to_lobby else "시작 화면으로"), HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
+		# 폰·태블릿엔 키보드 안내를 띄우지 않는다
+		c.draw_string(session.ui_font, Vector2(x0, hy), ("눌러서 " if session.touch_ui else "클릭 · R · Esc: ") + ("대기방으로" if to_lobby else "시작 화면으로"), HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
 
 
 # ---------- 입력 ----------
