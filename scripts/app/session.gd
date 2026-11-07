@@ -71,6 +71,7 @@ const SAVE_PATH := "user://best.cfg"
 const RUN_PATH := "user://run.cfg"  # 이어하기: 쉬는 시간마다 저장, 게임 오버면 지움
 const OLD_GARDEN_RUN := "user://garden.cfg"  # 예전 정원 모드 저장 판 (정원을 없애서 읽지 않고 지운다)
 const RUN_FORMAT := 1
+const REVIVE_PATH := "user://run_revive.cfg"  # 게임 오버 때 마지막 쉬는 시간 저장을 옮겨 둔 것 ([광고 보고 한 번 더]용)
 const READY_HINT := "Space 또는 [웨이브 시작]: 시작   오브젝트 클릭: 선택 · 한 번 더 클릭: 방향 바꾸기   끌기: 옮기기"
 ## 첫 판: 카드 종류가 열리는 웨이브 (그 웨이브 앞 쉬는 시간부터 나온다). 속성은 처음부터
 const TUTOR_OPEN := {"pat": 3, "mod": 4, "trig": 5, "link": 6}
@@ -218,6 +219,7 @@ var aim_wait := false  # 방향을 붙잡아 두고 [확정]을 기다리는 중
 var restart_armed := 0.0  # 일시정지 중 R 두 번이면 처음부터
 var end_armed := 0.0  # 일시정지 중 판 끝내기 두 번이면 지금 점수로 게임 오버
 var ended := false  # 스스로 끝낸 판 (게임 오버 글 제목만 다름)
+var revived := false  # [광고 보고 한 번 더]를 쓴 판: 다시는 못 쓰고, 그 뒤 기록은 리더보드에 보내지 않는다
 var old_run_ver := ""  # 지난 게임 버전에서 저장된 판을 끝낼 때 그 버전 (기록은 그 버전으로 보냄)
 var over_ms := 0  # 게임 오버 시각: 직후 클릭이 결과를 못 보고 넘기지 않게
 var countdown := -1.0  # 자동 시작까지 남은 시간
@@ -303,6 +305,8 @@ var codex_panel: Codex  # 도감·선호 표시 (시작 화면, K)
 var vote_panel: Vote  # 다음 패치 투표 (시작 화면 V, 판 끝난 화면 버튼)
 var vote_btn: Button  # 시작 화면 [투표]: 투표 API가 있는 서버일 때만
 var vote_over_btn: Button  # 판 끝난 화면 [다음 패치 투표]
+var over_home_btn: Button  # 판 끝난 화면 [시작 화면으로] (광고가 되는 폰: 아무 데나 눌러 나가기 대신)
+var over_revive_btn: Button  # 판 끝난 화면 [광고 보고 한 번 더]
 var tut: Tutorial  # 튜토리얼 카드·다시 보기 목록 (시작 화면 [튜토리얼]·일시정지)
 var tplay: TutPlay = null  # 플레이 튜토리얼 연습 판의 안내 칸 (TutPlay.on일 때만)
 var tut_paused := false  # 튜토리얼을 띄우느라 판을 멈췄다 (닫으면 다시 진행)
@@ -383,6 +387,7 @@ var board_box: VBoxContainer  # 리더보드 창 (records_panel 안): 왼쪽 필
 var legacy_grow := false  # 정원(씨앗 나무)이 있던 버전에서 씨앗 나무를 켜고 시작해 이어 하는 판: 예전처럼 'grow'를 붙여 일반 리더보드에 섞이지 않게
 var board_ugc_panel: PanelContainer  # 리더보드 위에 뜨는 신고·차단 목록
 static var title_seen := false  # 다시 시작하면 타이틀은 건너뛴다
+static var revive_pending := false  # [광고 보고 한 번 더]: 다시 불러오면 옮겨 둔 쉬는 시간부터 이어 함
 ## 멀티 판이 끝나도 방은 남는다: 판 끝 화면을 지나 다시 불러올 때 Mp 노드를 루트에 잠시 옮겨 두고(연결 유지)
 ## 새 화면이 받아 대기방(멀티플레이 창)을 연다. 방이 없어졌으면 그 까닭을 창에 보여 준다.
 static var mp_keep: Mp = null
@@ -493,10 +498,15 @@ func boot() -> void:
 	online_system._on_booted(Net.info)  # 다시 시작했을 때: 이미 받아 둔 새 버전·공지
 	# 창 제목에도 한글 이름과 버전 (작업 표시줄에서 어떤 빌드인지 보이게)
 	get_window().title = "빈두 v%s" % ProjectSettings.get_setting("application/config/version", "?")
+	if Meta.games >= 1 and not TutPlay.on:
+		Ads.start()  # 광고(폰만): 첫 판을 마친 뒤부터 준비 (유럽·영국 동의 창이 첫 화면을 막지 않게)
 	if TutPlay.on and TutPlay.pending >= 0:
 		onboarding_system._start_tut_play(TutPlay.pending)
 	elif mp_back:
 		lobby_system._mp_back_lobby()
+	elif revive_pending:
+		revive_pending = false
+		persistence_system._continue_run()  # [광고 보고 한 번 더]: 옮겨 둔 쉬는 시간부터
 	elif title_seen or DisplayServer.get_name() == "headless":
 		run_flow_system._start_choose()
 	elif persistence_system._old_run_version() != "":

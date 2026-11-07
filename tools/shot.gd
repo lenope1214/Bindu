@@ -217,8 +217,37 @@ func _initialize():
 		func(): _snap("coin_perks"); main.run_flow_system._toggle_pause(),
 		func(): _snap("pause"); main.menu_system._toggle_settings(),
 		func(): _snap("pause_settings"); main.menu_system._toggle_settings(); main.run_flow_system._toggle_pause(); main.run_flow_system._game_over(),
-		func(): _snap("gameover"),
+		func():
+			_snap("gameover")
+			# 광고가 되는 폰의 결과 화면: [한 번 더]·[시작 화면으로] 버튼 + 아래 배너 자리(회색 상자, 실제 배너는 네이티브)
+			main.phase = main.Phase.CHOOSE
+			Ads.sim = true
+			Meta.games = 5
+			main.persistence_system._save_run()
+			main.run_flow_system._game_over()
+			_ad_box(),
+		func(): _snap("gameover_ads"); Ads.sim = false,
 	]
+
+
+func _ad_box() -> void:
+	var vs: Vector2 = main.get_viewport().get_visible_rect().size
+	var h: float = vs.y * Ads.banner_frac()
+	var layer := CanvasLayer.new()
+	layer.layer = 100
+	var r := ColorRect.new()
+	r.color = Color(0.85, 0.86, 0.88)
+	r.size = Vector2(h * 6.4, h)
+	r.position = Vector2((vs.x - r.size.x) / 2.0, vs.y - h)
+	var l := Label.new()
+	l.text = "광고 (배너 자리)"
+	l.add_theme_color_override("font_color", Color(0.35, 0.36, 0.4))
+	l.size = r.size
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	r.add_child(l)
+	layer.add_child(r)
+	main.add_child(layer)
 
 
 ## 오브젝트 하나에 새 조합이 가장 많이(want개 이상) 생기는 속성을 더하고 조합 카드를 띄운다 (미리보기는 중간 장면)

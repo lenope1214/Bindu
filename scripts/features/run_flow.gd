@@ -265,7 +265,7 @@ func _update_skip_ui() -> void:
 	session.skip_btn.visible = show_btn
 	session.skip_n_btn.visible = show_btn
 	# 글자를 키우면(폰 기본) 카드 아래 버튼 줄이 왼쪽 아래 안내 글까지 내려와 겹친다. 카드를 고르라는 글이라 겹칠 때만 숨긴다
-	session.hint.visible = not (show_btn and session.hint.get_global_rect().intersects(session.skip_btn.get_global_rect()))
+	session.hint.visible = session.phase != BinduSession.Phase.GAMEOVER and not (show_btn and session.hint.get_global_rect().intersects(session.skip_btn.get_global_rect()))
 	if show_btn:
 		var n := int(Meta.skip_n)
 		var deferred := "특성 선택 1회 보류" if session.perk_mode else "카드 선택 %d회 보류 · 새로고침 %d회 보류" % [session.picks_left, session.rerolls_left]
@@ -288,6 +288,7 @@ func _update_skip_ui() -> void:
 ## 선택지 화면을 연다 (offer는 이미 정해져 있음).
 func _reload() -> void:
 	var session: BinduSession = self.session
+	Ads.hide_banner()  # 결과 화면 배너는 결과 화면에서만
 	_mp_keep_room()
 	if session.is_inside_tree() and session.get_tree().current_scene != null:
 		session.get_tree().reload_current_scene()
@@ -469,6 +470,13 @@ func _game_over() -> void:
 	if session.tutor:
 		Meta.tutor_next = false
 	session.progression_system._save_best()
+	# [광고 보고 한 번 더]: 마지막 쉬는 시간 저장을 옮겨 둔다 (판마다 1번, 혼자 하는 보통 판만)
+	var revive_ok := Ads.enabled() and session.mp_mode == "" and not TutPlay.on and not session.tutor and not session.ended \
+		and not session.revived and session.old_run_ver == "" and FileAccess.file_exists(BinduSession.RUN_PATH)
+	if FileAccess.file_exists(BinduSession.REVIVE_PATH):
+		DirAccess.remove_absolute(BinduSession.REVIVE_PATH)
+	if revive_ok:
+		DirAccess.copy_absolute(BinduSession.RUN_PATH, BinduSession.REVIVE_PATH)
 	session.persistence_system._clear_run()
 	session.net.sync()
 	var ach := "\n새 업적: " + ", ".join(session.new_achievements) if not session.new_achievements.is_empty() else ""
@@ -489,12 +497,17 @@ func _game_over() -> void:
 			tops.append("%s %d%%" % [session.src_name(key), roundi(rs[key] / total * 100.0)])
 		mvp += "\n피해 출처: " + ", ".join(tops)
 	var md := "" if Modes.on.is_empty() else "\n모드: %s · 점수 x%.2f%s" % [Modes.names(), Modes.mul(), "\n쉽게 모드: 최고 기록 따로, 쉽게 모드 리더보드에 올라감" if Modes.easy() else ""]
+	if session.revived:
+		md += "\n한 번 더 한 판이라 리더보드에는 올라가지 않아요"
 	if session.mp_mode != "":
 		record = ""
 		md = "\n" + session.mp_rank if session.mp_rank != "" else ""
 	var head: String = ("협동 끝" if session.mp_mode == "coop" else "탈락") if session.mp_mode != "" else "판 끝냄" if session.ended else "게임 오버"
 	over_data = {"head": head, "sub": "%s · %s" % [Meta.map_name(Meta.map_id), Rules.NAMES[Meta.rules]], "wave": session.wave, "score": session.score, "record": record != "", "best_wave": session.best_wave if session.mp_mode == "" else -1,
-		"kills": session.kills, "combo": session.best_combo, "towers": session.towers.get_child_count(), "ach": session.new_achievements.duplicate()}
+		"kills": session.kills, "combo": session.best_combo, "towers": session.towers.get_child_count(), "ach": session.new_achievements.duplicate(), "revive": revive_ok}
+	# 결과 화면 아래 배너: 광고가 되는 폰에서, 처음 3판·멀티·튜토리얼·첫 판 안내 판은 없음
+	if Ads.enabled() and session.mp_mode == "" and not TutPlay.on and not session.tutor and Meta.games >= Ads.BANNER_FROM_GAME:
+		Ads.show_banner()
 	# 아래 글은 그림으로 못 줄인 것만 (모드·순위·최다 피해·피해 출처, 온라인 순위는 나중에 붙음)
 	session.over_label.text = session.patchlog_system._kr_keep((md + mvp).strip_edges())
 	session.over_card.visible = true
@@ -505,6 +518,59 @@ func _game_over() -> void:
 	session.reroll_btn.visible = false
 	session.choice_box.visible = false
 	session.hint.text = ""
+	session.hint.visible = false  # 빈 안내 상자(폰 카드 줄 바탕)가 결과 화면 버튼·나가는 법 줄을 가리지 않게
+
+
+## 결과 화면을 버튼([시작 화면으로]·[광고 보고 한 번 더])으로 나가는지: 광고가 되는 폰에서 혼자 한 판.
+## (그 밖엔 예전처럼 아무 데나 누르기·R·Esc)
+func over_buttons() -> bool:
+	var session: BinduSession = self.session
+	return session.phase == BinduSession.Phase.GAMEOVER and Ads.enabled() and session.mp_mode == "" and not TutPlay.on and not over_data.is_empty()
+
+
+func _over_home() -> void:
+	var session: BinduSession = self.session
+	if Time.get_ticks_msec() - session.over_ms <= 800:
+		return
+	BinduSession.title_seen = false
+	_reload()
+
+
+## [광고 보고 한 번 더]: 광고를 끝까지 보면 옮겨 둔 쉬는 시간부터 중앙 체력 Ads.REVIVE_HP로 다시.
+func _revive() -> void:
+	var session: BinduSession = self.session
+	if not over_data.get("revive", false) or not Ads.rewarded_ready():
+		return
+	session.over_revive_btn.disabled = true
+	Ads.show_rewarded(func(ok: bool) -> void:
+		if not ok:
+			session.over_revive_btn.disabled = false
+			session.hud_system._show_toast("광고를 끝까지 보면 한 번 더 할 수 있어요")
+			return
+		_do_revive())
+
+
+func _do_revive() -> void:
+	if _prepare_revive():
+		BinduSession.revive_pending = true
+		_reload()
+
+
+## 옮겨 둔 쉬는 시간 저장을 이어하기 저장으로 되돌린다 (한 번 더 표시·중앙 체력). 없으면 false.
+func _prepare_revive() -> bool:
+	var session: BinduSession = self.session
+	var cfg := ConfigFile.new()
+	if cfg.load(BinduSession.REVIVE_PATH) != OK:
+		return false
+	cfg.set_value("run", "revived", true)
+	cfg.set_value("run", "core_hp", mini(Ads.REVIVE_HP, int(cfg.get_value("run", "core_max", BinduSession.CORE_MAX_HP))))
+	cfg.save(BinduSession.RUN_PATH)
+	DirAccess.remove_absolute(BinduSession.REVIVE_PATH)
+	# 게임 오버 때 센 판 수·처치는 이어 한 판이 끝날 때 다시 센다
+	Meta.games = maxi(0, Meta.games - 1)
+	Meta.total_kills = maxi(0, Meta.total_kills - session.kills)
+	session.progression_system._save_best()
+	return true
 
 
 ## 게임 오버 그림 카드 (over_card 가운데가 화면 가운데 위쪽).
@@ -533,9 +599,13 @@ func _draw_over_card() -> void:
 	if session.over_label.text != "" and session.over_label.get_line_count() > 0:
 		lab_h = session.over_label.get_line_count() * session.over_label.get_line_height() + 10.0
 	bh += lab_h
+	var btns := over_buttons()
+	if btns:
+		bh += 34.0  # 나가는 법 글 줄(34) 대신 버튼 줄(68)
 	# 점수 줄 아래에서 시작 (폰 글자 1.3이면 화면 높이가 줄어 제목이 점수 줄 둘째 줄을 덮었다), 아래 버튼 줄 위까지
 	var top_free := session.hud_system._dps_home().y - c.position.y
-	var bottom_free := (c.get_parent() as Control).size.y - 56.0 - c.position.y
+	# 아래 버튼 줄(설정 등) 위까지, 결과 화면 배너가 있으면 배너 위까지 (배너가 가운데라 양옆 버튼과는 안 겹친다)
+	var bottom_free := (c.get_parent() as Control).size.y * (1.0 - Ads.banner_frac()) - (8.0 if Ads.banner_on else 56.0) - c.position.y
 	if y - 6.0 < top_free:
 		y = maxf(minf(top_free, bottom_free - bh), y - 6.0) + 6.0
 	var bg := StyleBoxFlat.new()
@@ -593,6 +663,17 @@ func _draw_over_card() -> void:
 	var dim := Color(1, 1, 1, 0.5)
 	var to_lobby := session.mp_mode != "" and session.mp.active()  # 멀티 판: 방이 남아 있으면 대기방으로
 	var hy := y + lab_h + 14.0
+	session.over_home_btn.visible = btns
+	session.over_revive_btn.visible = btns and over_data.get("revive", false) and Ads.rewarded_ready()
+	if btns:
+		# 광고가 되는 폰: 버튼으로만 나간다 (아무 데나 누르면 아래 배너를 잘못 누르기 쉬움)
+		var bw := session.over_home_btn.size.x
+		var both := session.over_revive_btn.visible
+		var rw := session.over_revive_btn.size.x
+		var row_w := (rw + 12.0 + bw) if both else bw
+		session.over_revive_btn.position = Vector2(-row_w / 2.0, hy - 10.0)
+		session.over_home_btn.position = Vector2(-row_w / 2.0 + ((rw + 12.0) if both else 0.0), hy - 10.0)
+		return
 	if session.touch_ui:
 		c.draw_string(session.ui_font, Vector2(x0, hy), "눌러서 대기방으로" if to_lobby else "눌러서 시작 화면으로", HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
 	else:

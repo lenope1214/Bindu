@@ -508,6 +508,25 @@ func _build_ui() -> void:
 	session.over_card.visible = false
 	root.add_child(session.over_card)
 	root.move_child(session.over_card, session.over_label.get_index())  # 바탕이 남은 글(over_label)을 덮지 않게 글 밑에
+	# 광고가 되는 폰의 결과 화면 버튼 (자리는 _draw_over_card가 바탕 끝 줄에 맞춤)
+	session.over_revive_btn = Button.new()
+	session.over_revive_btn.text = "▶ 광고 보고 한 번 더"
+	session.over_revive_btn.tooltip_text = "광고를 끝까지 보면 이 웨이브 앞 쉬는 시간부터 중앙 %d로 다시 해요. 판마다 한 번, 이어 한 판은 리더보드에 올라가지 않아요" % Ads.REVIVE_HP
+	session.over_revive_btn.focus_mode = Control.FOCUS_NONE
+	session.over_revive_btn.size = Vector2(250, 52)
+	session.over_revive_btn.add_theme_font_size_override("font_size", 18)
+	session.over_revive_btn.add_theme_color_override("font_color", Color(1, 0.84, 0.43))
+	session.over_revive_btn.pressed.connect(session.run_flow_system._revive)
+	session.over_revive_btn.visible = false
+	session.over_card.add_child(session.over_revive_btn)
+	session.over_home_btn = Button.new()
+	session.over_home_btn.text = "시작 화면으로"
+	session.over_home_btn.focus_mode = Control.FOCUS_NONE
+	session.over_home_btn.size = Vector2(190, 52)
+	session.over_home_btn.add_theme_font_size_override("font_size", 18)
+	session.over_home_btn.pressed.connect(session.run_flow_system._over_home)
+	session.over_home_btn.visible = false
+	session.over_card.add_child(session.over_home_btn)
 
 	session.dps_hidden = Meta.dps_fold
 	session.hud_system._build_dps(root)

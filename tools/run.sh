@@ -39,6 +39,8 @@ copy_project() {
 	local d
 	d=$(mktemp -d)
 	cp -r "$ROOT/scripts" "$ROOT/tools" "$ROOT/docs" "$ROOT/main.tscn" "$ROOT/project.godot" "$ROOT/icon.svg" "$d/"
+	# 광고(AdMob) GDScript는 scripts/ads.gd가 쓴다 (PC에선 네이티브 없이 꺼짐). webrtc 등 다른 addons는 그대로 뺀다
+	mkdir -p "$d/addons" && cp -r "$ROOT/addons/admob" "$d/addons/"
 	# config/name이 다르면 user:// 폴더가 달라 실제 게임의 기록·이어하기를 건드리지 않는다
 	sed -i.bak "s/^config\/name=.*/config\/name=\"BinduTools$1\"/" "$d/project.godot"
 	cat > "$d/override.cfg" <<'CFG'

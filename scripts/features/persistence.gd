@@ -24,7 +24,7 @@ func _save_run() -> void:
 		"state": "perk" if session.perk_mode else ("ready" if session.phase == BinduSession.Phase.READY else "choose"),
 		"offer": session.offer, "perk_offer": session.perk_offer.map(func(pk): return pk["id"]), "towers": list,
 		"log": session.run_log, "leaks": session.leak_log, "game_secs": session.run_game, "real_secs": session.run_real, "run_id": session.run_id,
-		"tutor": session.tutor, "tutor_given": session.tutor_given.keys(), "grow": session.legacy_grow, "skill_set": session.skill_set, "skill_used": session.skill_used, "ley": session.ley.map(func(p): return [p.x, p.y]),
+		"tutor": session.tutor, "revived": session.revived, "tutor_given": session.tutor_given.keys(), "grow": session.legacy_grow, "skill_set": session.skill_set, "skill_used": session.skill_used, "ley": session.ley.map(func(p): return [p.x, p.y]),
 	}
 	var cfg := ConfigFile.new()
 	for k in vals:
@@ -187,6 +187,7 @@ func _continue_run() -> void:
 	if session.run_id == "":
 		session.run_id = session._new_run_id()  # 판 번호가 없던 예전 저장
 	session.tutor = g.call("tutor", false)
+	session.revived = g.call("revived", false) == true
 	session.tutor_given = {}
 	for k in g.call("tutor_given", []):
 		if k in BinduSession.TUTOR_OPEN:

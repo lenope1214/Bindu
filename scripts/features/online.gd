@@ -161,8 +161,8 @@ func _on_update_failed(reason: String) -> void:
 
 func _submit_run(done := true) -> void:
 	var session: BinduSession = self.session
-	if not Net.enabled() or session.mp_mode != "" or TutPlay.on:
-		return
+	if not Net.enabled() or session.mp_mode != "" or TutPlay.on or session.revived:
+		return  # [광고 보고 한 번 더]를 쓴 판은 리더보드에 올리지 않는다 (죽은 때 점수는 이미 보냄)
 	var ts := session.towers.get_children()
 	var total := 0.0
 	for t in ts:

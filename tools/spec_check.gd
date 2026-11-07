@@ -103,6 +103,7 @@ func _initialize():
 	_vary()
 	_maps()
 	_save_load()
+	await _ads()
 	_meta_misc()
 	_carry_cards()
 	_side()
@@ -2129,6 +2130,98 @@ func _maps() -> void:
 	Rules.tune["map_on"] = mo
 	main.menu_system._refresh_menu()
 	ok("MAPX-09", n_ok and picked and aff_shown, "준비 화면 맵 카드: 맵마다 한 장, 누르면 그 맵, 아래 설명에 친화 카드")
+
+
+# ---------- 광고 (결과 화면만) ----------
+
+## 판 하나를 쉬는 시간 저장까지 만들고 게임 오버. games_before = 이번 판 전에 끝낸 판 수.
+func _ads_over(games_before: int, tutor := false, ended := false) -> void:
+	_fresh(9)
+	var c: Vector2 = main.viewport_system.center()
+	_tower(c + Vector2(-200, 30), Elem.FIRE, 2, Vector2.UP)
+	main.score = 500
+	main.core_hp = 8
+	main.tutor = tutor
+	main.phase = main.Phase.CHOOSE
+	main.perk_mode = false
+	main.persistence_system._save_run()
+	main.core_hp = 0
+	main.ended = ended
+	Meta.games = games_before
+	main.run_flow_system._game_over()
+
+
+func _ads_reset() -> void:
+	Ads.hide_banner()
+	main.run_flow_system.over_data = {}
+	main.over_card.visible = false
+	main.over_label.visible = false
+	main.over_home_btn.visible = false
+	main.over_revive_btn.visible = false
+	main.phase = main.Phase.CHOOSE
+	main.revived = false
+	main.ended = false
+	main.tutor = false
+	if FileAccess.file_exists(main.REVIVE_PATH):
+		DirAccess.remove_absolute(main.REVIVE_PATH)
+	main.persistence_system._clear_run()
+	_clear()
+
+
+func _ads() -> void:
+	var games0: int = Meta.games
+	# PC(이 검사 환경)는 광고 없음: 버튼·배너·한 번 더 모두 없음, 예전처럼 아무 데나 눌러 나감
+	Ads.sim = false
+	_ads_over(10)
+	ok("ADS-01", not Ads.enabled() and not main.run_flow_system.over_buttons() and not Ads.banner_on and not main.run_flow_system.over_data.get("revive", true) \
+		and not FileAccess.file_exists(main.REVIVE_PATH), "PC·플러그인 없음: 광고·결과 화면 버튼 없음")
+	_ads_reset()
+	# 광고가 되는 폰: 처음 3판은 배너 없음, 4번째 판부터 결과 화면 배너. 결과 화면은 버튼으로만 나감
+	Ads.sim = true
+	Ads.sim_ready = true
+	_ads_over(2)
+	var no_banner_early: bool = not Ads.banner_on
+	_ads_reset()
+	_ads_over(3)
+	ok("ADS-02", no_banner_early and Ads.banner_on and main.run_flow_system.over_buttons(), "배너는 4번째 판 결과 화면부터, 결과 화면은 버튼으로 나감")
+	Ads.hide_banner()
+	var hid: bool = not Ads.banner_on
+	_ads_reset()
+	# 한 번 더: 마지막 쉬는 시간 저장을 옮겨 두고, 되살리면 같은 웨이브·중앙 5·한 번 더 표시, 판 수·처치는 다시 셈
+	_ads_over(5)
+	var kept: bool = FileAccess.file_exists(main.REVIVE_PATH) and main.run_flow_system.over_data.get("revive", false) and not FileAccess.file_exists(main.RUN_PATH)
+	var g_after: int = Meta.games
+	var prepared: bool = main.run_flow_system._prepare_revive()
+	main.run_flow_system.over_data = {}
+	main.phase = main.Phase.CHOOSE
+	_clear()
+	main.persistence_system._continue_run()
+	ok("ADS-03", hid and kept and prepared and main.wave == 9 and main.core_hp == Ads.REVIVE_HP and main.revived and main.score == 500 and Meta.games == g_after - 1 \
+		and not FileAccess.file_exists(main.REVIVE_PATH), "한 번 더: 그 웨이브 앞 쉬는 시간부터 중앙 5, 판 수는 이어 한 판이 끝날 때 다시 셈")
+	# 판마다 1번: 한 번 더 한 판이 다시 끝나면 버튼 없음, 결과 글에 리더보드 안내
+	main.persistence_system._save_run()
+	main.core_hp = 0
+	main.run_flow_system._game_over()
+	var once: bool = not main.run_flow_system.over_data.get("revive", true) and not FileAccess.file_exists(main.REVIVE_PATH) and main.over_label.text.replace(char(0x2060), "").contains("리더보드")
+	_ads_reset()
+	# 판 끝내기·첫 판 안내 판은 한 번 더 없음
+	_ads_over(5, false, true)
+	var no_end: bool = not main.run_flow_system.over_data.get("revive", true)
+	_ads_reset()
+	_ads_over(5, true)
+	var no_tutor: bool = not main.run_flow_system.over_data.get("revive", true) and not Ads.banner_on
+	_ads_reset()
+	Ads.sim_ready = false
+	_ads_over(5)
+	main.over_card.queue_redraw()
+	await process_frame
+	await process_frame
+	var hidden_unready: bool = not main.over_revive_btn.visible and main.over_home_btn.visible
+	_ads_reset()
+	ok("ADS-04", once and no_end and no_tutor and hidden_unready, "한 번 더는 판마다 1번, 판 끝내기·첫 판 안내 판은 없음, 광고가 준비 안 됐으면 버튼 숨김")
+	Ads.sim = false
+	Ads.sim_ready = true
+	Meta.games = games0
 
 
 # ---------- 이어하기 ----------

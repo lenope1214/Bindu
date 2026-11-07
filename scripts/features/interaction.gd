@@ -430,6 +430,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if session.title_label.visible or session.settings_panel.visible:
 		return
 	if session.phase == BinduSession.Phase.GAMEOVER and event.button_index == MOUSE_BUTTON_LEFT:
+		if session.run_flow_system.over_buttons():
+			return  # 광고가 되는 폰: 광고를 잘못 누르지 않게 [시작 화면으로] 버튼으로만 나간다
 		if Time.get_ticks_msec() - session.over_ms > 800:
 			BinduSession.title_seen = false
 			session.run_flow_system._reload()
