@@ -500,7 +500,19 @@ func tick() -> void:
 	focus_btn.position = Vector2(12, size.y - 48)
 	focus_btn.size = Vector2(110, CONTROL_HEIGHT)
 	game.ver_label.visible = not focus_btn.visible
-	game.skip_badge.position = Vector2((size.x - game.skip_badge.size.x) / 2.0, size.y - HEIGHT - 40 if cards else size.y - 100)
+	var badge_pos := Vector2((size.x - game.skip_badge.size.x) / 2.0, size.y - HEIGHT - 40 if cards else size.y - 100)
+	if game.skip_badge.visible:
+		# 아래 조작 안내(hint)와 겹치면 그 위로, 오른쪽 기술 버튼과 겹치면 왼쪽으로 비킨다.
+		var badge := Rect2(badge_pos, game.skip_badge.size)
+		if game.hint.visible and badge.intersects(Rect2(game.hint.position, game.hint.size)):
+			badge_pos.y = game.hint.position.y - game.skip_badge.size.y - 6
+		var avoid: Array[Control] = []
+		avoid.append_array(game.skill_btns)
+		avoid.append(side)
+		for c: Control in avoid:
+			if c.visible and Rect2(badge_pos, game.skip_badge.size).intersects(c.get_rect()):
+				badge_pos.x = maxf(12.0, minf(badge_pos.x, c.position.x - game.skip_badge.size.x - 8))
+	game.skip_badge.position = badge_pos
 
 ## 왼쪽 위 기준으로 바꾸기: 이미 그렇다면 건드리지 않는다 (set_anchors_preset은 같은 값이어도 다시 그리기를 부른다:
 ## 매 프레임 부르면 카드 줄·버튼이 매 프레임 다시 그려졌다).
@@ -702,7 +714,8 @@ func _place_side(size: Vector2, cards: bool) -> void:
 		var overlay := control.get_rect()
 		for i in cands.size():
 			var candidate: Rect2 = cands[i]
-			if overlay.position.x < candidate.end.x and overlay.end.x > candidate.position.x:
+			# 잠깐 뜨는 글(알림·배너) 아래로 내리면 창이 카드 줄 머리 버튼(새로고침·넘기기)을 덮을 만큼 좁아지면 그대로 둔다.
+			if overlay.position.x < candidate.end.x and overlay.end.x > candidate.position.x and overlay.end.y + 8 <= bottom - 100.0:
 				candidate.position.y = maxf(candidate.position.y, overlay.end.y + 8)
 				cands[i] = candidate
 	var scores := []

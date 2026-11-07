@@ -13,7 +13,7 @@ func _on_booted(info: Dictionary) -> void:
 		session.run_flow_system._apply_rules()
 		session.menu_system._refresh_menu()
 	var latest: Variant = info.get("latest")
-	# 모바일은 해당 플랫폼의 스토어·TestFlight 주소만 연다.
+	# 모바일은 해당 플랫폼의 스토어 주소만 연다 (App Store 빌드가 TestFlight로 보내면 심사 2.2 위험, TestFlight는 자체 앱이 업데이트 알림).
 	if latest is Dictionary and not update_url_allowed(str(latest.get("url", "")), Net.platform()):
 		latest = null
 	if latest is Dictionary and str(latest.get("url", "")) != "" and not updater.busy:
@@ -33,7 +33,7 @@ func _on_booted(info: Dictionary) -> void:
 static func update_url_allowed(url: String, platform: String) -> bool:
 	match platform:
 		"ios":
-			return url.begins_with("https://apps.apple.com/") or url.begins_with("https://testflight.apple.com/join/")
+			return url.begins_with("https://apps.apple.com/")
 		"android":
 			return url.begins_with("https://play.google.com/store/apps/")
 	return url.begins_with("https://")

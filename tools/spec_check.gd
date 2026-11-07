@@ -2491,7 +2491,7 @@ func _meta_misc() -> void:
 	ok("UI-20", copy_ok, "카드·특성·도감 공유 원문과 요약·상세: 해요체, 수치 라벨 허용 (%d줄)" % copy_texts.size())
 	var unit_text := "12개까지 1.5초 40%를"
 	var kept_units := PatchNotes.kr_keep(unit_text)
-	ok("UI-20", kept_units.contains("2\u2060개") and kept_units.contains("5\u2060초") and kept_units.contains("0\u2060%\u2060를") and kept_units.replace("\u2060", "") == unit_text and PatchNotes.kr_keep(kept_units) == kept_units, "숫자·단위 줄바꿈 방지: 원문 보존·중복 적용 안전")
+	ok("UI-20", kept_units.contains("2\u2060개") and kept_units.contains("5\u2060초") and kept_units.contains("0\u2060%\u2060를") and kept_units.replace("\u2060", "") == unit_text and PatchNotes.kr_keep(kept_units) == kept_units and PatchNotes.kr_keep("[bgcolor=#4a2422][font_size=12] 고침 [/font_size][/bgcolor]") == "[bgcolor=#4a2422][font_size=12] 고\u2060침 [/font_size][/bgcolor]", "숫자·단위 줄바꿈 방지: 원문 보존·중복 적용 안전·BBCode 태그(색·크기 숫자)는 그대로")
 	ok("UI-20", basic_ok and conditions and combo_ok and full_ok and on_ok and no_floating_tip and dock_brief, "카드 기본 효과: 15속성·0/12/50웨이브 %s, 조건 %s, 반응 그림 %s, 자세히 보존 %s" % [basic_ok, conditions, combo_ok, full_ok])
 
 	# 카드 선택 막: 선택지가 펼쳐져 있으면 검은 막(카드·카드 줄 버튼은 그 위), 필드 보기·카드를 고르면 곧바로 걷힘

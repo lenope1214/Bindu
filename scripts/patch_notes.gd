@@ -21,12 +21,21 @@ static var fetched := false  # 다시 시작해도 한 번만
 ## 버전이 없는 절(초기 기록)은 v가 빈 글자.
 ## "다음 버전 (미배포)" 절은 배포 전 작업 기록이라 플레이어에게 보이지 않게 뺀다 (내장본·온라인본 모두).
 static var _kr_re := RegEx.create_from_string("([가-힣0-9%])(?=[가-힣0-9%])")
+static var _tag_re := RegEx.create_from_string("\\[/?[a-z_]+[^\\[\\]\\n]*\\]")  # [color=…]·[/b]처럼 영문 소문자로 시작하는 BBCode 태그만 ([적용] 같은 버튼 이름은 그대로 붙인다)
 
 
 ## 한글 낱말이 글자 사이에서 끊기지 않게 (Godot은 한글을 글자마다 줄바꿈함, 언어 설정과 무관).
 ## 붙은 한글·숫자·% 사이에 U+2060을 넣어 12개·40% 같은 수치와 단위도 붙인다. 줄바꿈하는 글에만 쓴다
+## BBCode 태그 안([color=#4a2422]·[font_size=19] 등)은 건드리지 않는다: 숫자 사이에 끼면 색·크기를 못 읽어 흰 칸이 됐다.
 static func kr_keep(t: String) -> String:
-	return _kr_re.sub(t, "$1\u2060", true)
+	if not t.contains("["):
+		return _kr_re.sub(t, "$1\u2060", true)
+	var out := ""
+	var at := 0
+	for m in _tag_re.search_all(t):
+		out += _kr_re.sub(t.substr(at, m.get_start() - at), "$1\u2060", true) + m.get_string()
+		at = m.get_end()
+	return out + _kr_re.sub(t.substr(at), "$1\u2060", true)
 
 
 static func parse(text: String) -> Array:

@@ -70,7 +70,7 @@ func _run() -> void:
 	for p in ["ios", "android"]:
 		check(not BinduOnline.update_url_allowed("https://example.com/Bindu.zip", p), p + " 외부 빌드 차단")
 	check(BinduOnline.update_url_allowed("https://apps.apple.com/kr/app/id123", "ios"), "iOS App Store 허용")
-	check(BinduOnline.update_url_allowed("https://testflight.apple.com/join/abcd", "ios"), "iOS TestFlight 허용")
+	check(not BinduOnline.update_url_allowed("https://testflight.apple.com/join/abcd", "ios"), "iOS TestFlight 차단 (App Store 빌드)")
 	check(not BinduOnline.update_url_allowed("https://play.google.com/store/apps/details?id=x", "ios"), "iOS에서 Android 스토어 차단")
 	check(BinduOnline.update_url_allowed("https://play.google.com/store/apps/details?id=x", "android"), "Android Google Play 허용")
 	check(not BinduOnline.update_url_allowed("https://apps.apple.com/kr/app/id123", "android"), "Android에서 iOS 스토어 차단")

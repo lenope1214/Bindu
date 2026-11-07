@@ -19,8 +19,15 @@ func _initialize():
 		Meta.sim_safe = Rect2(86, 0, 86, 38)  # 노치 있는 폰 가로: 양옆 노치·둥근 모서리, 아래 홈 막대
 	main = load("res://main.tscn").instantiate()
 	VirtualInput.mount(main, root)
+	# 새 사본(user:// 비어 있음, session이 _ready에서 파일을 읽은 뒤)이면 첫 진입 튜토리얼 카드가 모든 화면을 덮는다: 기기 첫 소개는 본 것으로 (튜토리얼 화면은 아래에서 직접 연다)
+	Tutorial.done = true
+	Tutorial.play_done = true
 	steps = [
 		func():
+			Tutorial.done = true
+			Tutorial.play_done = true
+			if main.tut and main.tut.visible:
+				main.tut.close()
 			Meta.ui_scale = z
 			main.touch_ui = touch
 			main.hud_system._apply_ui_scale()

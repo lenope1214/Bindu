@@ -455,6 +455,12 @@ func _game_over() -> void:
 	_update_speed_btn()
 	session.banner_queue.clear()  # 남은 가운데 글자가 게임 오버 글 위에 뜨지 않게 (새 업적은 아래 글에 나옴)
 	session.banner_t = minf(session.banner_t, 0.4)
+	# 특성 고르기·동전 연출 중에 판을 끝내면(일시정지 [판 끝내기]) 특성 카드 줄과 동전이 결과 화면 위에 남았다.
+	session.perk_mode = false
+	session.coin_stage = 0
+	if session.coin_fx:
+		session.coin_fx.visible = false
+		session.coin_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# 기록은 지금 맵·규칙 버전의 저장값과 비교한다 (다른 키에서 남은 값이 섞이지 않게)
 	var prev := Meta.best_of(Meta.run_key())
 	var record := "  최고 기록!" if (session.score > prev[1] or session.wave > prev[0]) and session.mp_mode == "" else ""
@@ -505,6 +511,7 @@ func _game_over() -> void:
 	session.reroll_btn.visible = false
 	session.choice_box.visible = false
 	session.hint.text = ""
+	session.hint.visible = false  # 카드 줄이 꺼진 뒤라 빈 안내 상자가 결과 아래에 남았다
 
 
 ## 게임 오버 그림 카드 (over_card 가운데가 화면 가운데 위쪽).
