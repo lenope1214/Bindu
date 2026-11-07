@@ -821,6 +821,7 @@ func _toggle_mute() -> void:
 	session.sfx.set_muted(not session.sfx.muted)
 	session.mute_btn.tooltip_text = "소리: " + ("끔" if session.sfx.muted else "켬") + " (M)"
 	session.mute_btn.queue_redraw()
+	session.menu_system._sync_volume_ui()
 	session.progression_system._save_best()
 
 

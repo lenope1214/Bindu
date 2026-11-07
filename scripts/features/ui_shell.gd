@@ -283,8 +283,7 @@ func _build_ui() -> void:
 	bar.add_child(session.fx_pick)
 	session.mute_btn = Button.new()
 	session.mute_btn.custom_minimum_size = Vector2(44, 36)
-	session.mute_btn.pressed.connect(session.cards_system._toggle_mute)
-	session.mute_btn.pressed.connect(session.cards_system._icon_toast.bind(session.mute_btn))
+	session.mute_btn.pressed.connect(func(): session.menu_system._toggle_sound_pop())  # 작은 소리 창 (켜기·끄기·음량). M은 바로 켜기·끄기
 	session.cards_system._icon_btn(session.mute_btn, func(): return ["mute" if session.sfx.muted else "sound", Color(1, 1, 1, 0.9)])
 	bar.add_child(session.mute_btn)
 	session.auto_btn = Button.new()
@@ -512,6 +511,7 @@ func _build_ui() -> void:
 	session.dps_hidden = Meta.dps_fold
 	session.hud_system._build_dps(root)
 	session.menu_system._build_menu(root)
+	session.menu_system._build_sound_pop(root)
 
 	# 도움말은 굴려 보는 창 안에 (줄이 많아 화면 높이에 맞춰 줄이면 글자를 읽을 수 없게 작아지던 것).
 	# 열고 닫는 것은 그대로 help_label.visible, 창(help_scroll)은 _process에서 따라간다

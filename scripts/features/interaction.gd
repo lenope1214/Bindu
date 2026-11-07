@@ -240,6 +240,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.keycode == KEY_N and (session.title_label.visible or session.settings_panel.visible or session.notes_panel.visible):
 			session.patchlog_system._toggle_notes()
 			return
+		if event.keycode == KEY_ESCAPE and session.menu_system.sound_pop.visible:
+			session.menu_system._close_sound_pop()
+			return
 		if event.keycode == KEY_ESCAPE and session.notes_panel.visible:
 			session.patchlog_system._close_notes()
 			return

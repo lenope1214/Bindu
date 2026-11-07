@@ -58,7 +58,8 @@ func _initialize():
 			main.leaderboard_system._on_board_loaded({"tag": main.leaderboard_system._board_tag(), "period": "all", "entries": es})
 			main.leaderboard_system._on_board_loaded({"tag": main.leaderboard_system._board_tag(), "period": "week", "entries": es.slice(0, 5)}),
 		func(): _snap("board"); main.leaderboard_system._toggle_board(); main.menu_system._toggle_settings(),
-		func(): _snap("settings"); main.menu_system._toggle_settings(); main.menu_system._toggle_codex(),
+		func(): _snap("settings"); main.menu_system._toggle_settings(); main.menu_system._toggle_sound_pop(),
+		func(): _snap("sound_pop"); main.menu_system._close_sound_pop(); main.menu_system._toggle_codex(),
 		func(): _snap("codex"); main.codex_panel.tabs[1].pressed.emit(),
 		func(): _snap("codex_pat"); main.codex_panel.tabs[5].pressed.emit(),
 		func(): _snap("codex_rx"); main.codex_panel.tabs[6].pressed.emit(),

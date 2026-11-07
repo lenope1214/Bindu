@@ -3271,6 +3271,31 @@ func _meta_misc() -> void:
 	Meta.sim_phone = was_phone
 	CardDock.fit_phone()
 	ok("UI-41", fs_pc and fs_phone, "폰 글자 크기: PC 그대로 %s, 폰 키움 %s" % [fs_pc, fs_phone])
+	# 소리 버튼: 누르면 작은 창(켜기·끄기 + 음량 세 줄), 창에서 끄면 소리 꺼짐, 창 음량은 설정 창과 같은 값, 바깥·버튼 다시 누르면 닫힘
+	var mm = main.menu_system
+	var was_muted: bool = main.sfx.muted
+	var mv_save: float = Meta.music_volume
+	main.mute_btn.pressed.emit()
+	var pop_open: bool = mm.sound_pop.visible and was_muted == main.sfx.muted
+	var pop_sl: Array = mm.sound_panel.find_children("Vol_*", "HSlider", true, false)
+	var pop_rows: bool = pop_sl.size() == 3 and mm.sound_toggle != null and mm.sound_toggle.button_pressed == not main.sfx.muted
+	mm.sound_toggle.button_pressed = main.sfx.muted  # 반대로 = 끄기(켜져 있었으면)
+	var pop_mute: bool = main.sfx.muted != was_muted
+	mm.sound_toggle.button_pressed = not mm.sound_toggle.button_pressed
+	var pop_back: bool = main.sfx.muted == was_muted
+	var pop_music: HSlider = pop_sl.filter(func(x): return x.name == "Vol_배경음")[0] if pop_sl.size() == 3 else null
+	var pop_sync := false
+	if pop_music:
+		pop_music.value = 0.25
+		pop_sync = is_equal_approx(Meta.music_volume, 0.25) and is_equal_approx(vs["배경음"].value, 0.25)
+		pop_music.value = mv_save
+	var pr: Rect2 = mm.sound_panel.get_global_rect()
+	var br: Rect2 = main.mute_btn.get_global_rect()
+	var vr: Rect2 = main.get_viewport_rect()
+	var pop_place: bool = pr.end.y <= br.position.y + 1.0 and vr.encloses(pr)
+	main.mute_btn.pressed.emit()
+	var pop_closed: bool = not mm.sound_pop.visible
+	ok("UI-42", pop_open and pop_rows and pop_mute and pop_back and pop_sync and pop_closed and pop_place, "소리 버튼 작은 창: 열림 %s, 켜기·음량 세 줄 %s, 끄기 %s·다시 켜기 %s, 설정과 같은 값 %s, 버튼 위·화면 안 %s, 닫힘 %s" % [pop_open, pop_rows, pop_mute, pop_back, pop_sync, pop_place, pop_closed])
 	main.run_flow_system._on_skip()
 	ok("SKIP-02", skip_forecast and main.skip_left == 3 and main.bank_picks.size() == 2, "넘기기: 이번 고르기를 쌓아 두고 n웨이브 진행 (남은 %d, 쌓인 고르기 %d)" % [main.skip_left, main.bank_picks.size()])
 	main.skip_left = 0

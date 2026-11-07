@@ -2,7 +2,11 @@ class_name BinduMenu
 extends BinduFeature
 ## 시작·준비·설정·모드 UI. 예약 콜백은 main의 순서를 따른다.
 
-var volume_sliders := {}  # 설정 음량 슬라이더: "전체 음량"·"배경음"·"효과음" -> HSlider
+var volume_sliders := {}  # 설정 창 음량 슬라이더: "전체 음량"·"배경음"·"효과음" -> HSlider
+var volume_rows: Array = []  # 음량 줄 전부 [이름, 슬라이더, 글, getter] (설정 창 + 소리 버튼 작은 창, 서로 맞춤)
+var sound_pop: Control  # 오른쪽 아래 소리 버튼을 누르면 뜨는 작은 창 (바깥 막 + 창)
+var sound_panel: PanelContainer
+var sound_toggle: CheckButton  # 작은 창의 소리 켜기·끄기
 var account_label: Label  # 설정: 계정 상태 한 줄
 var map_label: Label  # 준비 화면 맵 카드 아래 설명 (고른 맵 이름·규칙, 작은 설명은 meta "sub")
 var map_cards: Array[Button] = []  # 준비 화면 맵 카드 (Meta.MAP_IDS 순서, _draw_map_card)
@@ -1332,12 +1336,12 @@ func _toggle_fullscreen() -> void:
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED if full else DisplayServer.WINDOW_MODE_FULLSCREEN)
 
 
-## 설정 창 음량 한 줄: 이름 + 퍼센트 + 슬라이더 (0~100%, 5% 단위)
-func _volume_row(parent: Container, title: String, getter: Callable, setter: Callable) -> HSlider:
+## 음량 한 줄: 이름 + 퍼센트 + 슬라이더 (0~100%, 5% 단위). 같은 이름 줄은 설정 창·소리 창 어디서 바꿔도 서로 맞춤
+func _volume_row(parent: Container, title: String, getter: Callable, setter: Callable, label_w := 150.0, slider_w := 240.0) -> HSlider:
 	var row := HBoxContainer.new()
 	var lab := Label.new()
 	lab.text = "%s %d%%" % [title, roundi(getter.call() * 100.0)]
-	lab.custom_minimum_size = Vector2(150, 0)
+	lab.custom_minimum_size = Vector2(label_w, 0)
 	row.add_child(lab)
 	var slider := HSlider.new()
 	slider.name = "Vol_" + title
@@ -1345,19 +1349,87 @@ func _volume_row(parent: Container, title: String, getter: Callable, setter: Cal
 	slider.max_value = 1.0
 	slider.step = 0.05
 	slider.value = getter.call()
-	slider.custom_minimum_size = Vector2(240, 30)
+	slider.custom_minimum_size = Vector2(slider_w, 30)
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	slider.focus_mode = Control.FOCUS_NONE
 	slider.value_changed.connect(func(v):
 		setter.call(v)
-		lab.text = "%s %d%%" % [title, roundi(v * 100.0)]
 		_apply_volume()
+		_sync_volume_ui()
 		session.progression_system._save_best())
 	row.add_child(slider)
 	parent.add_child(row)
-	volume_sliders[title] = slider
+	if not volume_sliders.has(title):
+		volume_sliders[title] = slider
+	volume_rows.append([title, slider, lab, getter])
 	return slider
+
+
+## 모든 음량 줄의 슬라이더·글과 소리 창 켜기 버튼을 지금 값에 맞춤
+func _sync_volume_ui() -> void:
+	for r in volume_rows:
+		var v: float = r[3].call()
+		r[1].set_value_no_signal(v)
+		r[2].text = "%s %d%%" % [r[0], roundi(v * 100.0)]
+	if sound_toggle:
+		sound_toggle.set_pressed_no_signal(not session.sfx.muted)
+		sound_toggle.text = "소리 켜짐" if not session.sfx.muted else "소리 꺼짐"
+
+
+## 소리 버튼 작은 창: 소리 켜기·끄기 + 전체·배경음·효과음. 바깥을 누르거나 Esc·버튼을 다시 누르면 닫힘
+func _build_sound_pop(root: Control) -> void:
+	sound_pop = Control.new()
+	sound_pop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	sound_pop.z_index = 24  # 일시정지 어둠(20)·창(22)·안내(23) 위
+	sound_pop.mouse_filter = Control.MOUSE_FILTER_STOP
+	sound_pop.visible = false
+	sound_pop.gui_input.connect(func(e):
+		if (e is InputEventMouseButton or e is InputEventScreenTouch) and e.pressed:
+			_close_sound_pop())
+	root.add_child(sound_pop)
+	sound_panel = PanelContainer.new()
+	var sb: StyleBox = session.settings_panel.get_theme_stylebox("panel").duplicate()
+	sound_panel.add_theme_stylebox_override("panel", sb)
+	sound_pop.add_child(sound_panel)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 6)
+	sound_panel.add_child(v)
+	sound_toggle = CheckButton.new()
+	sound_toggle.focus_mode = Control.FOCUS_NONE
+	sound_toggle.tooltip_text = "소리 켜기·끄기 (M)"
+	sound_toggle.toggled.connect(func(on):
+		if on == session.sfx.muted:
+			session.cards_system._toggle_mute())
+	v.add_child(sound_toggle)
+	_volume_row(v, "전체 음량", func(): return Meta.volume, func(x): Meta.volume = x, 160.0, 180.0)
+	_volume_row(v, "배경음", func(): return Meta.music_volume, func(x): Meta.music_volume = x, 160.0, 180.0)
+	_volume_row(v, "효과음", func(): return Meta.sfx_volume, func(x): Meta.sfx_volume = x, 160.0, 180.0)
+	_sync_volume_ui()
+
+
+func _toggle_sound_pop() -> void:
+	if sound_pop.visible:
+		_close_sound_pop()
+		return
+	_sync_volume_ui()
+	sound_pop.visible = true
+	sound_panel.reset_size()
+	# 소리 버튼 바로 위, 오른쪽 끝을 버튼에 맞춤 (화면 밖으로 나가지 않게)
+	var ui: Control = session.ui_root
+	var k: float = ui.scale.x
+	var br: Rect2 = session.mute_btn.get_global_rect()
+	var b_pos: Vector2 = (br.position - ui.global_position) / k
+	var b_end: Vector2 = (br.end - ui.global_position) / k
+	var sz: Vector2 = sound_panel.get_combined_minimum_size()
+	var x := clampf(b_end.x - sz.x, 8.0, ui.size.x - sz.x - 8.0)
+	var y := clampf(b_pos.y - sz.y - 6.0, 8.0, ui.size.y - sz.y - 8.0)
+	sound_panel.position = Vector2(x, y)
+
+
+func _close_sound_pop() -> void:
+	if sound_pop:
+		sound_pop.visible = false
 
 
 func _apply_volume() -> void:
