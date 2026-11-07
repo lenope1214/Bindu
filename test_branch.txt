@@ -1,0 +1,4 @@
+이 브랜치(elements-nature)는 시험판이에요.
+- override.cfg: 저장(이어하기·업적·기록)을 진짜 게임과 다른 폴더(Bindu-nature-test)에
+- 이 파일이 있으면 리더보드·통계·온라인 패치 서버를 쓰지 않아요 (Net.reachable)
+main에 합칠 때 이 파일과 override.cfg를 지우세요.

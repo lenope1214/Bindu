@@ -61,8 +61,8 @@ static func same_minor(a: String, b: String) -> bool:
 
 ## 서버 주소가 있으면 패치·새 버전 확인과 리더보드 보기는 된다 (보내는 것이 없음).
 static func reachable() -> bool:
-	if OS.get_environment("BINDU_OFFLINE") == "1":
-		return false  # 시험 브랜치 실행(run_mac_nature.command): 리더보드·통계·패치 서버를 쓰지 않는다
+	if OS.get_environment("BINDU_OFFLINE") == "1" or FileAccess.file_exists("res://test_branch.txt"):
+		return false  # 시험 브랜치(test_branch.txt가 든 브랜치): 리더보드·통계·패치 서버를 쓰지 않는다. main에 합칠 때 그 파일과 override.cfg를 지운다
 	return OnlineConfig.SERVER_URL != "" and DisplayServer.get_name() != "headless" and not (is_tool_run() and not _local_url(OnlineConfig.SERVER_URL))
 
 
