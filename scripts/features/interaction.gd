@@ -296,6 +296,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if session.get_tree().paused and event.keycode not in [KEY_ESCAPE, KEY_P, KEY_R, KEY_E, KEY_T, KEY_X, KEY_H, KEY_M, KEY_D, KEY_F11]:
 			return
+		if session.run_detail.visible and event.keycode in [KEY_ESCAPE, KEY_R]:
+			session.run_detail.close()  # 결과 상세 먼저 닫고, 한 번 더 누르면 시작 화면
+			return
 		if event.keycode == KEY_ESCAPE and session.phase == BinduSession.Phase.GAMEOVER:
 			if Time.get_ticks_msec() - session.over_ms > 800:
 				BinduSession.title_seen = false

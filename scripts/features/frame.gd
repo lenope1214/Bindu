@@ -146,29 +146,30 @@ func _process(delta: float) -> void:
 	# 투표 버튼: 투표 API가 있는 서버(boot의 vote)에 닿았을 때만. 판 끝난 화면 버튼은 남은 글 바로 아래
 	if session.vote_btn:
 		session.vote_btn.visible = Net.vote_ok()
-	session.vote_over_btn.visible = session.over_label.visible and session.phase == BinduSession.Phase.GAMEOVER and session.mp_mode == "" and Net.vote_ok() and not session.vote_panel.visible
+	session.vote_over_btn.visible = session.over_label.visible and session.phase == BinduSession.Phase.GAMEOVER and session.mp_mode == "" and Net.vote_ok() and not session.vote_panel.visible and not session.run_detail.visible
 	# 보상형 광고가 결과 화면이 뜬 뒤에 준비되면 [한 번 더] 버튼 줄을 다시 맞춘다
 	if session.run_flow_system.over_buttons() and session.over_revive_btn.visible != (session.run_flow_system.over_data.get("revive", false) and Ads.rewarded_ready()):
 		session.over_card.queue_redraw()
 	if session.vote_over_btn.visible:
 		var lh := session.over_label.get_line_count() * session.over_label.get_line_height() if session.over_label.text != "" else 0
-		session.vote_over_btn.position = Vector2(session.over_label.position.x + (session.over_label.size.x - session.vote_over_btn.size.x) / 2.0, session.over_label.position.y + lh + (90.0 if session.run_flow_system.over_buttons() else 34.0))  # 바탕 끝 나가는 법 줄(광고가 되는 폰은 버튼 줄) 아래
-	session.hud.visible = not session.title_label.visible  # 시작 화면엔 메뉴에 최고 기록이 따로 있다
+		session.vote_over_btn.position = Vector2(session.over_label.position.x + (session.over_label.size.x - session.vote_over_btn.size.x) / 2.0, session.over_label.position.y + lh + session.run_flow_system.over_tail_h())  # 바탕 끝 버튼 줄·나가는 법 줄 아래
+	var on_result := session.phase == BinduSession.Phase.GAMEOVER  # 결과 화면: 위 정보 줄·설정 버튼 줄은 숨긴다 (결과 카드·결과 상세에 다 있음)
+	session.hud.visible = not session.title_label.visible and not on_result  # 시작 화면엔 메뉴에 최고 기록이 따로 있다
 	# 시작 화면에서 일시정지·배속 버튼을 누르면 메뉴 위에 일시정지 창이 뜨던 문제
 	# 게임 중엔 펼쳤을 때만 보인다 (단축키 M·P·Space는 접어도 된다). 시작 화면엔 소리·자동 시작만
 	var in_game := not session.title_label.visible
-	session.bar_btn.visible = in_game
+	session.bar_btn.visible = in_game and not on_result
 	# 펼쳤을 땐 좁은 ▶만 (버튼 줄이 왼쪽 아래 안내 문구까지 뻗지 않게)
 	session.bar_btn.text = "▶" if session.bar_open else "◀ 설정"
 	session.bar_btn.custom_minimum_size.x = 40.0 if session.bar_open else 96.0
 	session.bar_btn.tooltip_text = "설정 버튼 접기" if session.bar_open else "소리·자동 시작·일시정지·배속 버튼 펼치기"
-	session.mute_btn.visible = not in_game or session.bar_open
-	session.auto_btn.visible = not in_game or session.bar_open
-	session.pause_btn.visible = in_game and session.bar_open
-	session.speed_group.visible = in_game and session.bar_open
-	session.speed_btn.visible = in_game and session.bar_open
-	session.speed_pick.visible = in_game and session.bar_open
-	session.fx_pick.visible = in_game and session.bar_open
+	session.mute_btn.visible = (not in_game or session.bar_open) and not on_result
+	session.auto_btn.visible = (not in_game or session.bar_open) and not on_result
+	session.pause_btn.visible = in_game and session.bar_open and not on_result
+	session.speed_group.visible = in_game and session.bar_open and not on_result
+	session.speed_btn.visible = in_game and session.bar_open and not on_result
+	session.speed_pick.visible = in_game and session.bar_open and not on_result
+	session.fx_pick.visible = in_game and session.bar_open and not on_result
 	session.hud_cool -= delta
 	session.hud_system._update_hud()
 	# 일시정지 위에 설정·도움말 등을 열면 일시정지 글·버튼은 잠깐 숨기고, 어둠은 남겨 창이 그 위에 뜬다 (창 z 22 > 어둠 20)

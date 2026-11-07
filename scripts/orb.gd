@@ -47,6 +47,7 @@ var digest_t := 0.0  # 포식: 소화하느라 멈춘 시간
 var prey: Object = null  # 포식: 쫓는 앞 구체
 var minion := false  # 보스가 부른 부하 (모드 '성난 보스'의 처치 점수 계산)
 var hp := 1.0
+var last_by: Object = null  # 마지막으로 피해를 준 오브젝트 (처치를 그 오브젝트 몫으로, 결과 상세)
 var last_rx := false  # 마지막으로 맞은 피해가 특징이 실어 나른 몫인가 (업적 "특징으로 마무리"). hurt()가 끄고 그 피해를 준 쪽이 켠다
 var born := 0.0  # 나온 때 (main.run_game, 업적 보스 순살)
 var max_hp := 1.0
@@ -331,6 +332,7 @@ func _vk() -> float:
 func hurt(amount: float, crit := false, source = null) -> float:
 	if is_instance_valid(source):
 		amount *= source.final_damage_mul()
+		last_by = source
 	var d := amount * (1.0 + _vk() if vuln_t > 0.0 else 1.0)
 	last_rx = false
 	if not amp.is_empty():

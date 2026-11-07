@@ -104,6 +104,7 @@ func _initialize():
 	_maps()
 	_save_load()
 	await _ads()
+	await _result_detail()
 	_meta_misc()
 	_carry_cards()
 	_side()
@@ -2222,6 +2223,68 @@ func _ads() -> void:
 	Ads.sim = false
 	Ads.sim_ready = true
 	Meta.games = games0
+
+
+# ---------- 결과 상세 ----------
+
+func _result_detail() -> void:
+	# 처치는 마지막으로 맞힌 오브젝트 몫: 실제 전투 경로에서 쓰러뜨린 구체가 그 오브젝트 처치로
+	_fresh(3)
+	var c: Vector2 = main.viewport_system.center()
+	var a := _tower(c + Vector2(-100, 0), Elem.FIRE, 2, Vector2.RIGHT)
+	var b := _tower(c + Vector2(100, 120), Elem.WATER, 1, Vector2.DOWN)
+	a.set_pattern("spray")
+	var vo := _orb(a.position + Vector2.RIGHT * 100.0, 0.1)
+	for i in 30:
+		main.combat_system._resolve(1.0 / 60.0)
+	var killed: bool = a.wave_kills >= 1 and b.wave_kills == 0
+	# 웨이브가 끝나면 [웨이브, 피해, 처치, 초]로 남기고 이번 웨이브 처치는 비운다 (같은 웨이브는 한 번만)
+	a.dealt = 400.0
+	a.wave_kills = 3
+	b.dealt = 100.0
+	main.wave = 3
+	main.wave_time = 20.0
+	main.combat_system._log_wave()
+	main.combat_system._log_wave()
+	var logged: bool = a.hist == [[3, 400, 3, 20.0]] and a.wave_kills == 0 and b.hist.size() == 1
+	var saved: Dictionary = a.to_save()
+	var a2 := _tower(c + Vector2(-100, -150), Elem.FIRE)
+	a2.load_save(JSON.parse_string(JSON.stringify(saved)))
+	var kept: bool = a2.hist.size() == 1 and int(a2.hist[0][1]) == 400 and int(a2.hist[0][2]) == 3
+	a2.free()
+	ok("RES-01", killed and logged and kept, "처치는 마지막으로 맞힌 오브젝트 몫, 웨이브마다 피해·처치·시간 기록, 이어하기에 저장")
+	# 결과 화면: 위 정보 줄·설정 버튼 줄은 숨기고 [결과 상세]로 오브젝트별 표·웨이브 그래프
+	a.run_dealt = 0.0
+	b.run_dealt = 0.0
+	a.dealt = 0.0
+	b.dealt = 0.0
+	a.hist = [[1, 100, 1, 10.0], [2, 300, 2, 10.0]]
+	b.hist = [[2, 900, 4, 10.0]]
+	a.run_dealt = 400.0
+	b.run_dealt = 900.0
+	main.score = 100
+	main.core_hp = 0
+	main.wave = 2
+	main.phase = main.Phase.CHOOSE
+	main.run_flow_system._game_over()
+	main.over_card.queue_redraw()
+	await process_frame
+	await process_frame
+	var hidden: bool = not main.hud.visible and not main.bar_btn.visible and not main.pause_btn.visible and not main.mute_btn.visible
+	var btn: bool = main.over_detail_btn.visible
+	main.over_detail_btn.pressed.emit()
+	var rd: RunDetail = main.run_detail
+	var rows: Array = rd.rows
+	var table: bool = rd.visible and rows.size() == 3 and rows[0]["name"] == "전체" and rows[1]["dealt"] == 900.0 and rows[2]["kills"] == 3 \
+		and is_equal_approx(RunDetail.avg_dps(rows[2]["hist"]), 20.0) and rows[0]["hist"].size() == 2 and int(rows[0]["hist"][1][1]) == 1200 and int(rows[0]["hist"][1][2]) == 6
+	var ev := InputEventKey.new()
+	ev.keycode = KEY_ESCAPE
+	ev.pressed = true
+	main.over_ms = Time.get_ticks_msec() - 2000
+	main.interaction_system._unhandled_input(ev)
+	var esc: bool = not rd.visible and main.phase == main.Phase.GAMEOVER
+	ok("RES-02", hidden and btn and table and esc, "결과 화면: 위 정보 줄·설정 숨김, [결과 상세] 오브젝트별 피해 몫·처치·평균 DPS·웨이브 그래프, Esc로 닫기")
+	_ads_reset()
 
 
 # ---------- 이어하기 ----------

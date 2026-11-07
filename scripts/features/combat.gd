@@ -186,6 +186,8 @@ func _log_wave() -> void:
 		"close": roundi(ws.get("close", -1.0)), "peak": int(ws.get("peak", 0))})
 	if session.leak_log.size() > 200:
 		session.leak_log.pop_front()
+	for t in session.towers.get_children():
+		t.log_wave(session.wave, session.wave_time)
 
 
 ## 지난 웨이브 누수 안내 한 줄 ("지난 웨이브 누수: 북동쪽 3개(빠른 2) · 남쪽 1개"), 없으면 빈 문자열.
@@ -349,6 +351,8 @@ func _resolve(delta: float, preview := false) -> void:
 				session.hud_system._show_toast("보스 처치! 중앙 체력 +2" + ("" if Modes.has("narrow") else ", 새로고침 +1"))
 			session.spawning_system.burst(o.position, o.death_color(), 10 if o.kind != Orb.Kind.BOSS else 40, 180.0)
 			session.kills += 1
+			if is_instance_valid(o.last_by) and o.last_by is Tower:
+				o.last_by.wave_kills += 1
 			_stat_kill(o)
 			_charge_on_kill(o)
 			if o.kind == Orb.Kind.BOSS:

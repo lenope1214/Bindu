@@ -289,6 +289,7 @@ func _update_skip_ui() -> void:
 func _reload() -> void:
 	var session: BinduSession = self.session
 	Ads.hide_banner()  # 결과 화면 배너는 결과 화면에서만
+	session.run_detail.close()
 	_mp_keep_room()
 	if session.is_inside_tree() and session.get_tree().current_scene != null:
 		session.get_tree().reload_current_scene()
@@ -528,6 +529,25 @@ func over_buttons() -> bool:
 	return session.phase == BinduSession.Phase.GAMEOVER and Ads.enabled() and session.mp_mode == "" and not TutPlay.on and not over_data.is_empty()
 
 
+## 결과 상세를 열 수 있는지: 혼자·멀티 모두, 내 오브젝트가 하나라도 있으면 (연습 판 제외).
+func detail_ok() -> bool:
+	var session: BinduSession = self.session
+	return session.phase == BinduSession.Phase.GAMEOVER and not TutPlay.on and not over_data.is_empty() and not session.multiplayer_system._my_towers().is_empty()
+
+
+## 결과 화면 [결과 상세]에서 버튼 줄 아래 투표 버튼까지 거리 (남은 글 끝 기준).
+func over_tail_h() -> float:
+	if over_buttons():
+		return 90.0
+	return 92.0 if detail_ok() else 34.0
+
+
+func _open_detail() -> void:
+	var session: BinduSession = self.session
+	if detail_ok():
+		session.run_detail.open(session, session.multiplayer_system._my_towers())
+
+
 func _over_home() -> void:
 	var session: BinduSession = self.session
 	if Time.get_ticks_msec() - session.over_ms <= 800:
@@ -600,8 +620,11 @@ func _draw_over_card() -> void:
 		lab_h = session.over_label.get_line_count() * session.over_label.get_line_height() + 10.0
 	bh += lab_h
 	var btns := over_buttons()
+	var detail := detail_ok()
 	if btns:
 		bh += 34.0  # 나가는 법 글 줄(34) 대신 버튼 줄(68)
+	elif detail:
+		bh += 58.0  # [결과 상세] 버튼 줄 + 그 아래 나가는 법 글 줄
 	# 점수 줄 아래에서 시작 (폰 글자 1.3이면 화면 높이가 줄어 제목이 점수 줄 둘째 줄을 덮었다), 아래 버튼 줄 위까지
 	var top_free := session.hud_system._dps_home().y - c.position.y
 	# 아래 버튼 줄(설정 등) 위까지, 결과 화면 배너가 있으면 배너 위까지 (배너가 가운데라 양옆 버튼과는 안 겹친다)
@@ -665,15 +688,24 @@ func _draw_over_card() -> void:
 	var hy := y + lab_h + 14.0
 	session.over_home_btn.visible = btns
 	session.over_revive_btn.visible = btns and over_data.get("revive", false) and Ads.rewarded_ready()
+	session.over_detail_btn.visible = detail
 	if btns:
 		# 광고가 되는 폰: 버튼으로만 나간다 (아무 데나 누르면 아래 배너를 잘못 누르기 쉬움)
-		var bw := session.over_home_btn.size.x
-		var both := session.over_revive_btn.visible
-		var rw := session.over_revive_btn.size.x
-		var row_w := (rw + 12.0 + bw) if both else bw
-		session.over_revive_btn.position = Vector2(-row_w / 2.0, hy - 10.0)
-		session.over_home_btn.position = Vector2(-row_w / 2.0 + ((rw + 12.0) if both else 0.0), hy - 10.0)
+		var row: Array = []
+		for b in [session.over_revive_btn, session.over_detail_btn, session.over_home_btn]:
+			if b.visible:
+				row.append(b)
+		var row_w := -12.0
+		for b in row:
+			row_w += b.size.x + 12.0
+		var bx := -row_w / 2.0
+		for b in row:
+			b.position = Vector2(bx, hy - 10.0)
+			bx += b.size.x + 12.0
 		return
+	if detail:
+		session.over_detail_btn.position = Vector2(-session.over_detail_btn.size.x / 2.0, hy - 10.0)
+		hy += 58.0
 	if session.touch_ui:
 		c.draw_string(session.ui_font, Vector2(x0, hy), "눌러서 대기방으로" if to_lobby else "눌러서 시작 화면으로", HORIZONTAL_ALIGNMENT_CENTER, W, 13, dim)
 	else:
