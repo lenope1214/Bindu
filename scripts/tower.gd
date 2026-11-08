@@ -493,7 +493,7 @@ func spd_parts_text() -> String:
 
 ## 사거리 (글자). draw_range·attack()과 같은 값.
 func range_text() -> String:
-	if m("reflex") > 0:
+	if auto_aim():
 		return "%d 안 전방위 자동 조준" % roundi(reflex_range()) + (" (폭풍 바람에 따라 변함)" if MapRule.on() and MapRule.is_map("storm") else "")
 	var l := plv
 	var s := sz()
@@ -941,12 +941,24 @@ func can_take(card: Dictionary) -> bool:
 
 
 func mod_cap(id: String) -> int:
-	return 1 if id == "reflex" else Rules.max_mod
+	if id == "reflex":
+		return 0 if Rules.t("auto_aim") > 0.0 else 1
+	return Rules.max_mod
 
 
-## 최종 피해 감산: 공격방식·반응·지속 피해의 마지막 피해 처리에서 한 번 적용.
+## 자동 조준 (2026-11-07 기본 기능, rules.auto_aim): 혼불·블랙홀은 원래 전방위라 빼고 모든 오브젝트.
+static func auto_base(pat: String) -> bool:
+	return Rules.t("auto_aim") > 0.0 and not pat in Pat.NO_MOD["reflex"]
+
+
+## 이 오브젝트가 방향을 고정하지 않고 가까운 구체를 겨누는지 (기본 기능 또는 예전 강화 카드).
+func auto_aim() -> bool:
+	return m("reflex") > 0 or auto_base(pattern)
+
+
+## 최종 피해 감산: 공격방식·반응·지속 피해의 마지막 피해 처리에서 한 번 적용. 강화 카드로 얻은 자동 조준만 -10%.
 func final_damage_mul() -> float:
-	return 0.9 if m("reflex") > 0 else 1.0
+	return 0.9 if m("reflex") > 0 and Rules.t("auto_aim") <= 0.0 else 1.0
 
 
 ## 든 강화 합계 (Rules.mod_total까지).
@@ -1220,7 +1232,11 @@ func load_save(d: Dictionary) -> void:
 	if ms is Dictionary:
 		for id in ms:
 			if Pat.MODS.has(id) and _int(ms[id]) > 0:
-				mods[id] = mini(1, _int(ms[id])) if id == "reflex" else _int(ms[id])
+				if id == "reflex":
+					if Rules.t("auto_aim") <= 0.0:  # 기본 기능이 된 뒤 예전 저장의 자동 조준 카드는 강화 칸을 차지하지 않게 버린다
+						mods[id] = 1
+				else:
+					mods[id] = _int(ms[id])
 	reso = maxi(0, _int(d.get("reso")))
 	pincer = maxi(0, _int(d.get("pincer")))
 	var tgs: Variant = d.get("trigs", {})
@@ -1478,7 +1494,7 @@ func attack(delta: float, orbs: Array) -> void:
 				burst_key = f[2]
 		if burst_t > 0.0:
 			_set_fire([burst_mul, burst_size, burst_key])
-	var can_fire := m("reflex") == 0 or is_instance_valid(reflex_target)
+	var can_fire := not auto_aim() or is_instance_valid(reflex_target)
 	if not can_fire and cd.has("p"):
 		# 기본 공격만 건너뛰었으므로 그 쿨다운만 진행. 반응은 아래 _reactions에서 한 번 진행한다.
 		cd["p"] = maxf(0.0, cd["p"] - dp)
@@ -1756,9 +1772,90 @@ func chan_w(l: int) -> float:
 
 
 ## 반응의 감지 사거리. 공격·정보창과 같은 크기/레벨/사거리 보정을 쓴다.
+## 자동 조준이 기본 기능이면 화면 끝까지 가는 방향성 공격(직선탄·돌풍·물줄기·연쇄 번개·투척 장판)은 화면 끝까지 겨눈다 (멀면 약해질 뿐, PAT-07).
 func reflex_range(toward := Vector2.ZERO) -> float:
+	if Rules.t("auto_aim") > 0.0 and pattern in FAR_PATS:
+		return FAR
 	var weather := MapRule.wind_k(toward, MapRule.wind_dir(main.lanes)) if main and MapRule.on() else 1.0
 	return reflex_range_of(pattern, plv, total_level(), mf("size"), 0.0, mf("homing"), mf("multi"), weather)
+
+
+## 지키는 곳까지 남은 거리: 중앙까지, 회랑 맵은 문(세로선)까지 가로 거리.
+func goal_dist(o: Orb) -> float:
+	if main == null:
+		return o.position.distance_to(position)
+	if Meta.map_id == "line":
+		return absf(o.position.x - main.viewport_system.core().x)
+	return o.position.distance_to(main.viewport_system.center())
+
+
+## 자동 조준 대상 (2026-11-07): 사거리 안에서 지키는 곳에 가장 가까운 구체를 먼저.
+## 그 구체와 지키는 곳까지 거리가 aim_band 안으로 비슷한 구체끼리는 정한 방향(±aim_pref) 쪽을 먼저, 그다음 지키는 곳에 가까운 것.
+func _guard_pick(orbs: Array) -> Orb:
+	var cand := []
+	var top := INF
+	for o in orbs:
+		if not is_instance_valid(o) or o.hp <= 0.0:
+			continue
+		var v: Vector2 = o.position - position
+		if v.length() > reflex_range(v):
+			continue
+		var g := goal_dist(o)
+		cand.append([o, g, Rules.t("aim_pref") > 0.0 and absf(dir.angle_to(v)) <= Rules.t("aim_pref")])
+		top = minf(top, g)
+	var pick: Orb = null
+	var pick_g := INF
+	var pick_in := false
+	for c in cand:
+		if c[1] > top + Rules.t("aim_band"):
+			continue
+		if pick == null or (c[2] and not pick_in) or (c[2] == pick_in and c[1] < pick_g):
+			pick = c[0]
+			pick_g = c[1]
+			pick_in = c[2]
+	return pick
+
+
+## 날아가는 탄의 속도 (예측 조준용). 바로 닿는 공격(분사·레이저·번개 등)은 0.
+func lead_speed() -> float:
+	var P := Projectile.PROJ
+	match pattern:
+		"shot": return P.shot_spd
+		"thorn": return P.thorn_spd
+		"gust": return P.gust_spd
+		"shard": return P.shard_spd
+		"iron": return P.iron_spd
+		"lob": return P.blob_spd
+	return 0.0
+
+
+## 자동 조준 방향: 탄이 날아가는 동안 구체가 걸어갈 만큼 앞질러 겨눈다 (rules.aim_lead, 2026-11-07).
+## 구체 속도는 지난 프레임에 스스로 걸은 거리(Orb.walk_vel, 밀림·순간이동 제외). 3초보다 멀리 앞서지는 않는다.
+func lead_dir(o: Orb) -> Vector2:
+	var to: Vector2 = o.position - position
+	var sp := lead_speed()
+	var k := Rules.t("aim_lead")
+	var v: Vector2 = o.walk_vel
+	if sp <= 0.0 or k <= 0.0 or v.length_squared() < 1.0:
+		return to.normalized()
+	var a := v.dot(v) - sp * sp
+	var b := 2.0 * to.dot(v)
+	var c := to.dot(to)
+	var t := -1.0
+	if absf(a) < 0.001:
+		if b < 0.0:
+			t = -c / b
+	else:
+		var disc := b * b - 4.0 * a * c
+		if disc >= 0.0:
+			var r := sqrt(disc)
+			var t1 := (-b - r) / (2.0 * a)
+			var t2 := (-b + r) / (2.0 * a)
+			t = minf(t1, t2) if minf(t1, t2) > 0.0 else maxf(t1, t2)
+	if t <= 0.0:
+		return to.normalized()
+	var aimed := to + v * minf(t, 3.0) * k
+	return aimed.normalized() if aimed.length_squared() > 0.01 else to.normalized()
 
 
 ## Projectile.setup → form_init 순서대로: 유한 탄에 맵 바람, 그 뒤 속성 바람을 적용.
@@ -1794,18 +1891,23 @@ static func reflex_range_of(pat: String, l: int, total: int, size_n: float, wind
 
 ## 유도 강화: 범위·광선 공격은 앞쪽 가장 가까운 구체 쪽으로 방향이 돈다(최대 0.1라디안씩).
 func _update_aim(orbs: Array, delta: float) -> void:
-	if m("reflex") > 0:
+	if auto_aim():
 		reflex_target = null
 		var best := INF
-		for o in orbs:
-			if not is_instance_valid(o) or o.hp <= 0.0:
-				continue
-			var dist: float = o.position.distance_to(position)
-			if dist <= best and dist <= reflex_range(o.position - position):
-				best = dist
-				reflex_target = o
+		if Rules.t("auto_aim") > 0.0:
+			reflex_target = _guard_pick(orbs)
+			best = reflex_target.position.distance_to(position) if reflex_target != null else INF
+		else:
+			# 예전 강화 카드: 사거리 안 가장 가까운 구체
+			for o in orbs:
+				if not is_instance_valid(o) or o.hp <= 0.0:
+					continue
+				var dist: float = o.position.distance_to(position)
+				if dist <= best and dist <= reflex_range(o.position - position):
+					best = dist
+					reflex_target = o
 		if reflex_target != null and best > 0.001:
-			aim = (reflex_target.position - position).normalized()
+			aim = lead_dir(reflex_target)
 		return
 	var n := mf("homing")
 	if n == 0.0 or pattern in Pat.PROJECTILE:
@@ -2894,7 +2996,7 @@ static func draw_range(ci: CanvasItem, o: Vector2, d: Vector2, sp: Dictionary, f
 		c = Elem.COLORS[els.keys()[0]]
 	if focus >= 0:
 		c.a = 0.35
-	if md.get("reflex", 0) > 0:
+	if md.get("reflex", 0) > 0 or auto_base(sp["pat"]):
 		var total := 0
 		for e in els:
 			total += int(els[e])

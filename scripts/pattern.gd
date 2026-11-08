@@ -49,6 +49,13 @@ const MODS := {
 
 const MOD_IDS := ["multi", "split", "homing", "bounce", "size", "rapid", "pierce", "dice", "reflex"]
 
+
+## 지금 카드로 나오는 강화 (자동 조준이 기본 기능이면 자동 조준 카드는 빠진다). 도감·업적 분모·카드 풀은 이것을 쓴다.
+static func mod_ids() -> Array:
+	if Rules.t("auto_aim") > 0.0:
+		return MOD_IDS.filter(func(id): return id != "reflex")
+	return MOD_IDS
+
 ## 넣어도 효과가 없는 강화 → 공격방식. 그 오브젝트에는 넣을 수 없고, 넣을 곳이 없으면 선택지에서도 빠진다.
 ## 이 강화가 든 오브젝트는 그 공격방식으로 바꿀 수도 없다.
 ## 새 공격방식을 넣을 때 여기에 같이 적는다.
@@ -125,7 +132,7 @@ static func no_mod_why(pat: String, mod: String) -> String:
 ## 이 공격방식에 넣을 수 없는 강화 이름들 (설명용).
 static func no_mods(pat: String) -> PackedStringArray:
 	var out := PackedStringArray()
-	for id in MOD_IDS:
+	for id in mod_ids():
 		if not mod_ok(pat, id):
 			out.append(MODS[id]["name"])
 	return out

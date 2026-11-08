@@ -422,7 +422,7 @@ func _wave_lane_covered(a: float, w: int, spread: float) -> bool:
 				continue
 			# 자동 조준·중력 우물은 공격 방향을 고정하지 않는다. 나머지는 공격 폭과
 			# 구체의 진입 부채꼴을 함께 고려해 중앙선을 겨눈 공격도 유효하게 판정한다.
-			if t.m("reflex") > 0 or t.pattern == "vortex":
+			if t.auto_aim() or t.pattern == "vortex":
 				return true
 			var half := 0.12
 			match t.pattern:
@@ -438,7 +438,7 @@ func _wave_lane_covered(a: float, w: int, spread: float) -> bool:
 
 ## 기본 공격방식별 유효 사거리. 수치는 실제 공격·사거리 표시와 같은 기준이다.
 func _wave_attack_reach(t: Tower) -> float:
-	if t.pattern in Tower.FAR_PATS and t.m("reflex") == 0:
+	if t.pattern in Tower.FAR_PATS and not t.auto_aim():
 		return Tower.FAR  # 직선탄·돌풍·물줄기·연쇄 번개는 화면 끝까지 (멀면 약해질 뿐)
 	return t.well_range() if t.pattern == "vortex" else t.reflex_range()
 
