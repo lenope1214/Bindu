@@ -35,7 +35,7 @@ mkdir -p build/android
 
 [[ -f build/android/Bindu.aab ]] || { echo "빌드 실패: 위 로그를 확인해 주세요." >&2; exit 1; }
 mv -f build/android/Bindu.aab Bindu.aab
-rm -rf build
+rm -rf build/android
 sed -i '' "s/^version\/code=$CODE$/version\/code=$((CODE + 1))/" export_presets.cfg
 echo "완료: $PWD/Bindu.aab (versionCode $CODE, $(du -h Bindu.aab | cut -f1))"
 # ./build_android.command upload "출시 노트" → Play 내부 테스트에 올림 (tools/play_upload.py)

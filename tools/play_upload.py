@@ -14,7 +14,7 @@ import jwt
 import requests
 
 PKG = "kr.chat.anon.bindu"
-TRACK = "internal"
+TRACK = os.environ.get("PLAY_TRACK", "internal")  # 비공개 테스트: alpha
 KEY = os.path.expanduser(os.environ.get("PLAY_KEY", "~/.appstoreconnect/play-key.json"))
 API = f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{PKG}"
 UP = f"https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/{PKG}"
@@ -50,7 +50,7 @@ def main() -> None:
         rel["releaseNotes"] = [{"language": "ko-KR", "text": notes[:500]}]
     ok(requests.put(f"{API}/edits/{edit}/tracks/{TRACK}", headers=h, json={"track": TRACK, "releases": [rel]}, timeout=60))
     ok(requests.post(f"{API}/edits/{edit}:commit", headers=h, timeout=120))
-    print(f"versionCode {code}: 내부 테스트에 올림 ({status})")
+    print(f"versionCode {code}: {TRACK} 트랙에 올림 ({status})")
 
 
 if __name__ == "__main__":
