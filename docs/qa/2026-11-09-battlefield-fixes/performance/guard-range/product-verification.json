@@ -1,0 +1,50 @@
+{
+  "product_tower_sha256": "b7ee6e9fe7c9eecea4ff4092349be8fe9014400ff344c5cef5f56b3c74d51652",
+  "parent_fixture_sha256": "84c9ff99d254ee90e9ef77c9d3b5454964a2f578733c5316fb05493f1482a795",
+  "head_before_performance_commit": "41cb14278b6b9d85015ce78891d413a8b641b1e5",
+  "full_check": {
+    "exit": 0,
+    "log": "final-check.log",
+    "spec_features": 252,
+    "gift_assertions": 86,
+    "parity_cases": 345,
+    "parity_samples": 4140,
+    "fuzz_seeds": 4,
+    "continue_restore_waves": [
+      4,
+      8,
+      12
+    ],
+    "continued_to_wave": 13,
+    "server_tests_passed": 28,
+    "server_warnings": 1
+  },
+  "targeting": {
+    "exit": 0,
+    "comparisons": 41564,
+    "exercised_pattern_levels": 45,
+    "mismatches": 0,
+    "result": "product-green/results.json"
+  },
+  "native": {
+    "conditions_per_variant": 6,
+    "total_samples": 720,
+    "virtual_pause_probes": 12,
+    "behavior_ui_runtime_errors": 0,
+    "record": "native/run.json"
+  },
+  "real_combat_replay": {
+    "cases": 570,
+    "state_samples": 6840,
+    "states_and_final_rng_equal": true,
+    "precision": "1e-5 floats/positions in existing parity schema; not all runtime fields",
+    "record": "replay/run.json"
+  },
+  "reproduction_update": "After first observations, candidate/replay/native drivers pin baseline guard to602e344 to prevent self-comparison after product adoption. Reconstructed baseline and candidate Tower SHA match observed native run exactly. No timing rerun claimed for this driver-only change.",
+  "limits": [
+    "No physical device or human-task proof.",
+    "One sequential observational native pair, not a CI timing budget or exact causal effect size.",
+    "Overall x8 delay unresolved; BF49 stays partial.",
+    "Existing ObjectDB2 warning in targeting/parity tools retained."
+  ]
+}

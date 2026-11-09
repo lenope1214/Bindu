@@ -1817,26 +1817,51 @@ func goal_dist(o: Orb) -> float:
 ## 자동 조준 대상 (2026-11-07): 사거리 안에서 지키는 곳에 가장 가까운 구체를 먼저.
 ## 그 구체와 지키는 곳까지 거리가 aim_band 안으로 비슷한 구체끼리는 정한 방향(±aim_pref) 쪽을 먼저, 그다음 지키는 곳에 가까운 것.
 func _guard_pick(orbs: Array) -> Orb:
+	if orbs.is_empty():
+		return null
+	if orbs.size() == 1:
+		var only = orbs[0]
+		if not is_instance_valid(only) or only.hp <= 0.0:
+			return null
+		var toward: Vector2 = only.position - position
+		if toward.length() > reflex_range(toward):
+			return null
+		var goal := goal_dist(only)
+		return only if not (goal > goal + Rules.t("aim_band")) else null
 	var closest: Orb = null
 	var closest_g := INF
 	var preferred: Orb = null
 	var preferred_g := INF
 	var aim_pref := Rules.t("aim_pref")
-	for o in orbs:
-		if not is_instance_valid(o) or o.hp <= 0.0:
+	var range_ready := false
+	var fixed_range := 0.0
+	var directional_range := false
+	var goal_ready := false
+	var goal_center := Vector2.ZERO
+	var line_goal := false
+	for orb in orbs:
+		if not is_instance_valid(orb) or orb.hp <= 0.0:
 			continue
-		var v: Vector2 = o.position - position
-		if v.length() > reflex_range(v):
+		var v: Vector2 = orb.position - position
+		if not range_ready:
+			var far_guard: bool = Rules.t("auto_aim") > 0.0 and pattern in Tower.FAR_PATS
+			directional_range = not far_guard and main != null and MapRule.is_map("storm") and (pattern in ["shot", "gust", "lob"] or (pattern in Pat.PROJECTILE and mf("homing") > 0.0))
+			if not directional_range:
+				fixed_range = reflex_range(v)
+			range_ready = true
+		if v.length() > (reflex_range(v) if directional_range else fixed_range):
 			continue
-		var g := goal_dist(o)
-		if closest == null or g < closest_g:
-			closest = o
-			closest_g = g
-		if aim_pref > 0.0 and absf(dir.angle_to(v)) <= aim_pref and (preferred == null or g < preferred_g):
-			preferred = o
-			preferred_g = g
-	# 각 집합의 첫 최소값만 있으면 기존의 전체 후보·두 번째 순회와 같다.
-	# 엄격한 <로 동률 입력 순서를 유지하고, 음수 band는 기존처럼 대상 없음이다.
+		if not goal_ready:
+			line_goal = main != null and Meta.map_id == "line"
+			goal_center = position if main == null else (main.viewport_system.core() if line_goal else main.viewport_system.center())
+			goal_ready = true
+		var distance: float = absf(orb.position.x - goal_center.x) if line_goal else orb.position.distance_to(goal_center)
+		if closest == null or distance < closest_g:
+			closest = orb
+			closest_g = distance
+		if aim_pref > 0.0 and absf(dir.angle_to(v)) <= aim_pref and (preferred == null or distance < preferred_g):
+			preferred = orb
+			preferred_g = distance
 	var limit := closest_g + Rules.t("aim_band")
 	if preferred != null and not (preferred_g > limit):
 		return preferred

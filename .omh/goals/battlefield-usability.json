@@ -578,7 +578,8 @@
       "verification": "local_evidence_with_external_gaps",
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/remaining-user-tasks.md",
-        "docs/qa/2026-11-09-battlefield-fixes/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/performance/guard-range/README.md"
       ]
     },
     {
@@ -743,21 +744,36 @@
         "Result native PC/phone7 assertions each; undo keeps new hist and wave_kills.",
         "Draft PR pending remote creation; overall50-item goal remains active."
       ]
+    },
+    {
+      "type": "guard_range_local_verification",
+      "facts": [
+        "Corrected targeting fixture: actual15patterns/levels1,3,8,41564cases0 target/RNG mismatch; intentional exclusive-band mutant detects2 cases. Old14527 execution is historical, not proof of15-pattern coverage.",
+        "Frozen baseline vs candidate real combat replay:570cases6840 normalized state samples plus final RNG identical. Precision and schema limits documented.",
+        "Matched native6conditions per variant:720samples total,12 virtual pause probes, behavior/UI/runtime errors0. Attack CPU reduced41.4-54.5percent; main CPU20.4-36.7percent in this sequential observational pair.",
+        "Product Tower matches measured candidate SHA256 b7ee6e9fe7c9eecea4ff4092349be8fe9014400ff344c5cef5f56b3c74d51652. Overall x8 delay and physical/human gaps remain open.",
+        "After product adoption full check exit0:SPEC252/gift86/parity345cases4140samples/fuzz4/continue4,8,12to13/server28. Actual product vs original2pass41564cases0 mismatch."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/performance/guard-range/README.md"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "BF-49: evaluate a bounded optimization against the observed 5-16 point trail distribution and actual affect cost; preserve target order, damage, timers and RNG; no unconditional replacement of the rejected candidate.",
+    "next_local_action": "BF-49: profile remaining attack/zone/movement/render cost in the observed native mix before another optimization; preserve ordered state and RNG. Current guard improvement is adopted but overall high-speed delay remains unresolved.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },
   "delivery": {
     "instruction": "Task commits, pull latest main, rebase current branch, create PR",
-    "status": "validated_ready_for_draft_pr",
+    "status": "draft_pr_open_followup_verified",
     "main": "8704b78688ee9be638e0ddd24eb91d54f3f56194",
     "feature_branch": "codex/battlefield-usability-audit",
     "backup_ref": "backup/battlefield-usability-before-rebase-20261110",
     "evidence": "docs/qa/2026-11-09-battlefield-fixes/delivery/README.md",
-    "goal_complete": false
+    "goal_complete": false,
+    "pr_url": "https://github.com/lenope1214/Bindu/pull/17",
+    "fixture_commit": "41cb142"
   }
 }

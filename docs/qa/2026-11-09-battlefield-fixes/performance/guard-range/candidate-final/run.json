@@ -1,0 +1,25 @@
+{
+  "contract": "0 ordered-target/RNG mismatches against current product. Timing is observational; no user-approved numerical frame budget or CI threshold declared.",
+  "benchmark": true,
+  "head": "602e3447d4527d69c6a281b0e51030c94974b7e8",
+  "candidate_sha256": "5b2ecda62398c3f5b8609e20e8b186515ad4f1d41a67b73ce4fc2084f42ed5f9",
+  "command": [
+    "/Applications/Godot.app/Contents/MacOS/Godot",
+    "--headless",
+    "--audio-driver",
+    "Dummy",
+    "--path",
+    "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-guard-candidate-fnb8kn0u",
+    "-s",
+    "tools/battlefield_guard_range_check.gd",
+    "--",
+    "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/guard-range/candidate-final",
+    "both"
+  ],
+  "exit": 0,
+  "runtime_errors": [],
+  "comparisons": 41564,
+  "mismatch_count": 0,
+  "isolated_save_removed": true,
+  "temporary_project_removed": true
+}

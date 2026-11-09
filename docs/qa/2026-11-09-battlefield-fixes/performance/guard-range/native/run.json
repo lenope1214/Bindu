@@ -1,0 +1,170 @@
+{
+  "scope": "Sequential native SubViewport, 16 towers/~300 orbs, seed9009, fixed1/60 delta, warmup30/sample60, speeds1/4/8 and full/reduced effects. Observational CPU/draw-return, not physical FPS or a CI timing gate.",
+  "variants": {
+    "baseline": {
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-guard-native-gy26xca4",
+        "--resolution",
+        "1280x720",
+        "-s",
+        "tools/battlefield_load_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/guard-range/native/baseline",
+        "1.0",
+        "pc",
+        "load",
+        "60"
+      ],
+      "tower_sha256": "65fe9ec651dd0b9ec2eb1cf6f7b91d31e512d4442c425c5024e3d9d438ca4700",
+      "exit": 0,
+      "assertion_failures": 0,
+      "ui_checker_messages": 0,
+      "isolated_save_removed": true,
+      "temporary_project_removed": true
+    },
+    "candidate": {
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-guard-native-bbq0bkp4",
+        "--resolution",
+        "1280x720",
+        "-s",
+        "tools/battlefield_load_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/guard-range/native/candidate",
+        "1.0",
+        "pc",
+        "load",
+        "60"
+      ],
+      "tower_sha256": "b7ee6e9fe7c9eecea4ff4092349be8fe9014400ff344c5cef5f56b3c74d51652",
+      "exit": 0,
+      "assertion_failures": 0,
+      "ui_checker_messages": 0,
+      "isolated_save_removed": true,
+      "temporary_project_removed": true
+    }
+  },
+  "source_differences": [
+    "res://project.godot",
+    "res://scripts/tower.gd"
+  ],
+  "project_setting_difference": "Unique BinduTools config/name per save-isolated variant; other project settings are copied unchanged.",
+  "comparisons": [
+    {
+      "condition": "x1-fx-full",
+      "attack_cpu_ms_per_sample": {
+        "baseline": 14.85195,
+        "candidate": 8.69933333333333,
+        "delta_percent": -41.426322245002645
+      },
+      "main_cpu_mean_ms": {
+        "baseline": 21.9548833333333,
+        "candidate": 17.4850333333333,
+        "delta_percent": -20.359251890050313
+      },
+      "forced_draw_interval_mean_ms": {
+        "baseline": 49.2440166666667,
+        "candidate": 46.0970333333333,
+        "delta_percent": -6.390590261219686
+      }
+    },
+    {
+      "condition": "x1-fx-reduced",
+      "attack_cpu_ms_per_sample": {
+        "baseline": 14.8041666666667,
+        "candidate": 7.34598333333333,
+        "delta_percent": -50.37894736842119
+      },
+      "main_cpu_mean_ms": {
+        "baseline": 21.92415,
+        "candidate": 14.71625,
+        "delta_percent": -32.876531131195506
+      },
+      "forced_draw_interval_mean_ms": {
+        "baseline": 49.6984,
+        "candidate": 43.23185,
+        "delta_percent": -13.011585886064736
+      }
+    },
+    {
+      "condition": "x4-fx-full",
+      "attack_cpu_ms_per_sample": {
+        "baseline": 58.1216833333333,
+        "candidate": 28.64405,
+        "delta_percent": -50.71710185039946
+      },
+      "main_cpu_mean_ms": {
+        "baseline": 94.7035166666667,
+        "candidate": 65.3368666666667,
+        "delta_percent": -31.00903855911017
+      },
+      "forced_draw_interval_mean_ms": {
+        "baseline": 153.4707,
+        "candidate": 125.635933333333,
+        "delta_percent": -18.13686043438063
+      }
+    },
+    {
+      "condition": "x4-fx-reduced",
+      "attack_cpu_ms_per_sample": {
+        "baseline": 60.8225166666667,
+        "candidate": 27.6848166666667,
+        "delta_percent": -54.482618964303484
+      },
+      "main_cpu_mean_ms": {
+        "baseline": 98.4486833333333,
+        "candidate": 62.3175,
+        "delta_percent": -36.700524689597145
+      },
+      "forced_draw_interval_mean_ms": {
+        "baseline": 155.794883333333,
+        "candidate": 120.384966666667,
+        "delta_percent": -22.728549172506675
+      }
+    },
+    {
+      "condition": "x8-fx-full",
+      "attack_cpu_ms_per_sample": {
+        "baseline": 108.96575,
+        "candidate": 54.3023166666667,
+        "delta_percent": -50.165701913980584
+      },
+      "main_cpu_mean_ms": {
+        "baseline": 193.83175,
+        "candidate": 127.47125,
+        "delta_percent": -34.23613520488774
+      },
+      "forced_draw_interval_mean_ms": {
+        "baseline": 275.338233333333,
+        "candidate": 213.89325,
+        "delta_percent": -22.31618275074272
+      }
+    },
+    {
+      "condition": "x8-fx-reduced",
+      "attack_cpu_ms_per_sample": {
+        "baseline": 120.363833333333,
+        "candidate": 62.7082333333333,
+        "delta_percent": -47.901099859730735
+      },
+      "main_cpu_mean_ms": {
+        "baseline": 198.429383333333,
+        "candidate": 144.107033333333,
+        "delta_percent": -27.376162283761285
+      },
+      "forced_draw_interval_mean_ms": {
+        "baseline": 283.171583333333,
+        "candidate": 234.4411,
+        "delta_percent": -17.208818328345576
+      }
+    }
+  ]
+}

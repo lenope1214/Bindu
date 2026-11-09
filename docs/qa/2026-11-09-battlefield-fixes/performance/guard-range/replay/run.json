@@ -1,0 +1,165 @@
+{
+  "contract": "Identical normalized real-combat state and final global RNG against current product; not physical gameplay proof.",
+  "variants": {
+    "baseline": {
+      "tower_sha256": "65fe9ec651dd0b9ec2eb1cf6f7b91d31e512d4442c425c5024e3d9d438ca4700",
+      "suites": {
+        "basic": {
+          "cases": 300,
+          "samples": 3600,
+          "trace_sha256": "045b55818849530cb797d17bd5af4474c98dbc955a17fa96a5a7904d855037ff",
+          "result": [
+            "PARITY suite=basic cases=300 samples=3600 failures=0"
+          ],
+          "command": [
+            "/Applications/Godot.app/Contents/MacOS/Godot",
+            "--headless",
+            "--audio-driver",
+            "Dummy",
+            "--path",
+            "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-guard-replay-gsgfobwh",
+            "-s",
+            "tools/preview_parity_check.gd",
+            "--",
+            "unused",
+            "1.0",
+            "pc",
+            "basic"
+          ]
+        },
+        "context": {
+          "cases": 225,
+          "samples": 2700,
+          "trace_sha256": "2416d6c26ba5d4fe278c964ec4161ccfb77ddca9143a5f5781585129705f1293",
+          "result": [
+            "PARITY suite=context cases=225 samples=2700 failures=0"
+          ],
+          "command": [
+            "/Applications/Godot.app/Contents/MacOS/Godot",
+            "--headless",
+            "--audio-driver",
+            "Dummy",
+            "--path",
+            "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-guard-replay-gsgfobwh",
+            "-s",
+            "tools/preview_parity_check.gd",
+            "--",
+            "unused",
+            "1.0",
+            "pc",
+            "context"
+          ]
+        },
+        "deaths": {
+          "cases": 45,
+          "samples": 540,
+          "trace_sha256": "3a8d9f9b0f9fc55879babb2de569865faa05c2e87eeaedfda04ea265d5f662f0",
+          "result": [
+            "PARITY suite=deaths cases=45 samples=540 failures=0"
+          ],
+          "command": [
+            "/Applications/Godot.app/Contents/MacOS/Godot",
+            "--headless",
+            "--audio-driver",
+            "Dummy",
+            "--path",
+            "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-guard-replay-gsgfobwh",
+            "-s",
+            "tools/preview_parity_check.gd",
+            "--",
+            "unused",
+            "1.0",
+            "pc",
+            "deaths"
+          ]
+        }
+      },
+      "isolated_save_removed": true,
+      "temporary_project_removed": true
+    },
+    "candidate": {
+      "tower_sha256": "b7ee6e9fe7c9eecea4ff4092349be8fe9014400ff344c5cef5f56b3c74d51652",
+      "suites": {
+        "basic": {
+          "cases": 300,
+          "samples": 3600,
+          "trace_sha256": "045b55818849530cb797d17bd5af4474c98dbc955a17fa96a5a7904d855037ff",
+          "result": [
+            "PARITY suite=basic cases=300 samples=3600 failures=0"
+          ],
+          "command": [
+            "/Applications/Godot.app/Contents/MacOS/Godot",
+            "--headless",
+            "--audio-driver",
+            "Dummy",
+            "--path",
+            "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-guard-replay-keyhji6q",
+            "-s",
+            "tools/preview_parity_check.gd",
+            "--",
+            "unused",
+            "1.0",
+            "pc",
+            "basic"
+          ]
+        },
+        "context": {
+          "cases": 225,
+          "samples": 2700,
+          "trace_sha256": "2416d6c26ba5d4fe278c964ec4161ccfb77ddca9143a5f5781585129705f1293",
+          "result": [
+            "PARITY suite=context cases=225 samples=2700 failures=0"
+          ],
+          "command": [
+            "/Applications/Godot.app/Contents/MacOS/Godot",
+            "--headless",
+            "--audio-driver",
+            "Dummy",
+            "--path",
+            "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-guard-replay-keyhji6q",
+            "-s",
+            "tools/preview_parity_check.gd",
+            "--",
+            "unused",
+            "1.0",
+            "pc",
+            "context"
+          ]
+        },
+        "deaths": {
+          "cases": 45,
+          "samples": 540,
+          "trace_sha256": "3a8d9f9b0f9fc55879babb2de569865faa05c2e87eeaedfda04ea265d5f662f0",
+          "result": [
+            "PARITY suite=deaths cases=45 samples=540 failures=0"
+          ],
+          "command": [
+            "/Applications/Godot.app/Contents/MacOS/Godot",
+            "--headless",
+            "--audio-driver",
+            "Dummy",
+            "--path",
+            "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-guard-replay-keyhji6q",
+            "-s",
+            "tools/preview_parity_check.gd",
+            "--",
+            "unused",
+            "1.0",
+            "pc",
+            "deaths"
+          ]
+        }
+      },
+      "isolated_save_removed": true,
+      "temporary_project_removed": true
+    }
+  },
+  "equal_suites": [
+    "basic",
+    "context",
+    "deaths"
+  ],
+  "cases": 570,
+  "samples": 6840,
+  "precision": "Existing parity schema: floats/positions snapped to 1e-5; ordered entities, damage/status/projectile/zone fields and final next RNG; not every runtime field."
+}

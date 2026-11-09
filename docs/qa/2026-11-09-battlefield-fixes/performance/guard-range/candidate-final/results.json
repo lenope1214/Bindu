@@ -1,0 +1,1066 @@
+{
+	"benchmark": [
+		{
+			"actual_median_ms": 0.000125,
+			"actual_ms_per_call": [
+				0.000125,
+				0.000125,
+				0.000125,
+				0.0001,
+				0.000125,
+				0.000125,
+				0.000125
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 0,
+			"pattern": "plain/shot/0",
+			"reference_median_ms": 0.0003,
+			"reference_ms_per_call": [
+				0.00035,
+				0.000325,
+				0.000325,
+				0.0003,
+				0.000275,
+				0.0003,
+				0.0003
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.000925,
+			"actual_ms_per_call": [
+				0.000925,
+				0.000925,
+				0.000925,
+				0.000925,
+				0.000925,
+				0.00095,
+				0.000925
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 1,
+			"pattern": "plain/shot/1",
+			"reference_median_ms": 0.0011,
+			"reference_ms_per_call": [
+				0.0011,
+				0.0011,
+				0.001075,
+				0.0011,
+				0.001075,
+				0.0011,
+				0.0011
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.11435,
+			"actual_ms_per_call": [
+				0.114325,
+				0.114725,
+				0.114675,
+				0.11435,
+				0.11435,
+				0.114975,
+				0.114075
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 300,
+			"pattern": "plain/shot/300",
+			"reference_median_ms": 0.2144,
+			"reference_ms_per_call": [
+				0.21525,
+				0.21455,
+				0.21395,
+				0.2144,
+				0.2145,
+				0.214325,
+				0.21325
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.000125,
+			"actual_ms_per_call": [
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 0,
+			"pattern": "plain/spray/0",
+			"reference_median_ms": 0.000325,
+			"reference_ms_per_call": [
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.0003
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.00295,
+			"actual_ms_per_call": [
+				0.00295,
+				0.00295,
+				0.00295,
+				0.00295,
+				0.00295,
+				0.00295,
+				0.00295
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 1,
+			"pattern": "plain/spray/1",
+			"reference_median_ms": 0.003125,
+			"reference_ms_per_call": [
+				0.003125,
+				0.003125,
+				0.00315,
+				0.003125,
+				0.00315,
+				0.003125,
+				0.00315
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.089375,
+			"actual_ms_per_call": [
+				0.088075,
+				0.087825,
+				0.08975,
+				0.090075,
+				0.089,
+				0.08945,
+				0.089375
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 300,
+			"pattern": "plain/spray/300",
+			"reference_median_ms": 0.899175,
+			"reference_ms_per_call": [
+				0.891775,
+				0.89045,
+				0.903025,
+				0.899175,
+				0.8953,
+				0.906325,
+				0.9046
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.000125,
+			"actual_ms_per_call": [
+				0.000125,
+				0.0001,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 0,
+			"pattern": "plain/wall/0",
+			"reference_median_ms": 0.00035,
+			"reference_ms_per_call": [
+				0.00035,
+				0.00035,
+				0.00035,
+				0.00035,
+				0.000325,
+				0.00035,
+				0.000325
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.005575,
+			"actual_ms_per_call": [
+				0.0056,
+				0.005575,
+				0.005575,
+				0.005575,
+				0.005575,
+				0.005575,
+				0.005575
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 1,
+			"pattern": "plain/wall/1",
+			"reference_median_ms": 0.005775,
+			"reference_ms_per_call": [
+				0.0058,
+				0.005775,
+				0.005775,
+				0.005775,
+				0.005775,
+				0.005775,
+				0.00575
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.077825,
+			"actual_ms_per_call": [
+				0.077525,
+				0.077375,
+				0.080075,
+				0.0793,
+				0.077825,
+				0.078,
+				0.07725
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 300,
+			"pattern": "plain/wall/300",
+			"reference_median_ms": 1.644125,
+			"reference_ms_per_call": [
+				1.644125,
+				1.642825,
+				1.653075,
+				1.65975,
+				1.6443,
+				1.6398,
+				1.64075
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.000125,
+			"actual_ms_per_call": [
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 0,
+			"pattern": "plain/iron/0",
+			"reference_median_ms": 0.000325,
+			"reference_ms_per_call": [
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.003875,
+			"actual_ms_per_call": [
+				0.0039,
+				0.003875,
+				0.003875,
+				0.003875,
+				0.003875,
+				0.003875,
+				0.0039
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 1,
+			"pattern": "plain/iron/1",
+			"reference_median_ms": 0.00405,
+			"reference_ms_per_call": [
+				0.004075,
+				0.00405,
+				0.004025,
+				0.00405,
+				0.00405,
+				0.004025,
+				0.004025
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.1183,
+			"actual_ms_per_call": [
+				0.119875,
+				0.1242,
+				0.11835,
+				0.1183,
+				0.118,
+				0.1181,
+				0.118175
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 300,
+			"pattern": "plain/iron/300",
+			"reference_median_ms": 1.084625,
+			"reference_ms_per_call": [
+				1.093925,
+				1.108075,
+				1.0963,
+				1.08275,
+				1.08315,
+				1.084625,
+				1.081175
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.000125,
+			"actual_ms_per_call": [
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 0,
+			"pattern": "line/shot/0",
+			"reference_median_ms": 0.000325,
+			"reference_ms_per_call": [
+				0.000325,
+				0.000325,
+				0.00035,
+				0.00035,
+				0.000325,
+				0.000325,
+				0.000325
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.001175,
+			"actual_ms_per_call": [
+				0.0012,
+				0.0012,
+				0.001175,
+				0.0012,
+				0.001175,
+				0.001175,
+				0.001175
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 1,
+			"pattern": "line/shot/1",
+			"reference_median_ms": 0.001325,
+			"reference_ms_per_call": [
+				0.00135,
+				0.00135,
+				0.001325,
+				0.001325,
+				0.001325,
+				0.00135,
+				0.001325
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.11285,
+			"actual_ms_per_call": [
+				0.111525,
+				0.1108,
+				0.11285,
+				0.113225,
+				0.113475,
+				0.114125,
+				0.11255
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 300,
+			"pattern": "line/shot/300",
+			"reference_median_ms": 0.281125,
+			"reference_ms_per_call": [
+				0.281125,
+				0.279725,
+				0.279925,
+				0.280975,
+				0.2821,
+				0.283625,
+				0.2825
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.000125,
+			"actual_ms_per_call": [
+				0.000125,
+				0.000125,
+				0.000125,
+				0.0001,
+				0.000125,
+				0.000125,
+				0.000125
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 0,
+			"pattern": "line/spray/0",
+			"reference_median_ms": 0.000325,
+			"reference_ms_per_call": [
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.00035,
+				0.000325
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.003,
+			"actual_ms_per_call": [
+				0.003025,
+				0.003,
+				0.003,
+				0.003025,
+				0.003,
+				0.003,
+				0.003
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 1,
+			"pattern": "line/spray/1",
+			"reference_median_ms": 0.003175,
+			"reference_ms_per_call": [
+				0.003175,
+				0.003175,
+				0.00315,
+				0.003175,
+				0.003175,
+				0.003175,
+				0.003175
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.0873,
+			"actual_ms_per_call": [
+				0.08715,
+				0.087225,
+				0.090175,
+				0.08985,
+				0.0872,
+				0.0873,
+				0.08765
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 300,
+			"pattern": "line/spray/300",
+			"reference_median_ms": 0.9364,
+			"reference_ms_per_call": [
+				0.9364,
+				0.937575,
+				0.948625,
+				0.94635,
+				0.933775,
+				0.92985,
+				0.93535
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.000125,
+			"actual_ms_per_call": [
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 0,
+			"pattern": "line/wall/0",
+			"reference_median_ms": 0.000325,
+			"reference_ms_per_call": [
+				0.000325,
+				0.000325,
+				0.0003,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.005525,
+			"actual_ms_per_call": [
+				0.00555,
+				0.00555,
+				0.005525,
+				0.005525,
+				0.005525,
+				0.005525,
+				0.005525
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 1,
+			"pattern": "line/wall/1",
+			"reference_median_ms": 0.0057,
+			"reference_ms_per_call": [
+				0.00575,
+				0.0057,
+				0.0057,
+				0.0057,
+				0.005725,
+				0.005725,
+				0.0057
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.077325,
+			"actual_ms_per_call": [
+				0.077475,
+				0.0773,
+				0.07695,
+				0.07685,
+				0.077325,
+				0.077475,
+				0.077325
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 300,
+			"pattern": "line/wall/300",
+			"reference_median_ms": 1.636325,
+			"reference_ms_per_call": [
+				1.63415,
+				1.630775,
+				1.628925,
+				1.658775,
+				1.636325,
+				1.65165,
+				1.6532
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.000125,
+			"actual_ms_per_call": [
+				0.000125,
+				0.000125,
+				0.00015,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 0,
+			"pattern": "line/iron/0",
+			"reference_median_ms": 0.000325,
+			"reference_ms_per_call": [
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.0003
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.00415,
+			"actual_ms_per_call": [
+				0.00415,
+				0.004125,
+				0.00415,
+				0.00415,
+				0.00415,
+				0.00415,
+				0.004125
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 1,
+			"pattern": "line/iron/1",
+			"reference_median_ms": 0.004275,
+			"reference_ms_per_call": [
+				0.004275,
+				0.0043,
+				0.0043,
+				0.0043,
+				0.004275,
+				0.004275,
+				0.004275
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.11685,
+			"actual_ms_per_call": [
+				0.11685,
+				0.117425,
+				0.12155,
+				0.12165,
+				0.11545,
+				0.11555,
+				0.114925
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 300,
+			"pattern": "line/iron/300",
+			"reference_median_ms": 1.1545,
+			"reference_ms_per_call": [
+				1.167875,
+				1.1824,
+				1.177225,
+				1.149125,
+				1.15405,
+				1.1545,
+				1.152025
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.000125,
+			"actual_ms_per_call": [
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.00015
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 0,
+			"pattern": "storm/shot/0",
+			"reference_median_ms": 0.000325,
+			"reference_ms_per_call": [
+				0.00035,
+				0.000325,
+				0.000325,
+				0.00035,
+				0.000325,
+				0.000325,
+				0.000325
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.00445,
+			"actual_ms_per_call": [
+				0.00445,
+				0.00445,
+				0.004475,
+				0.004425,
+				0.004425,
+				0.004425,
+				0.004475
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 1,
+			"pattern": "storm/shot/1",
+			"reference_median_ms": 0.0046,
+			"reference_ms_per_call": [
+				0.0046,
+				0.004575,
+				0.0046,
+				0.004575,
+				0.0046,
+				0.0046,
+				0.0046
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 1.201775,
+			"actual_ms_per_call": [
+				1.210175,
+				1.195075,
+				1.201775,
+				1.1905,
+				1.1896,
+				1.203225,
+				1.225925
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 300,
+			"pattern": "storm/shot/300",
+			"reference_median_ms": 1.250725,
+			"reference_ms_per_call": [
+				1.260325,
+				1.250725,
+				1.27255,
+				1.240275,
+				1.238625,
+				1.25035,
+				1.25605
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.000125,
+			"actual_ms_per_call": [
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 0,
+			"pattern": "storm/spray/0",
+			"reference_median_ms": 0.000325,
+			"reference_ms_per_call": [
+				0.00035,
+				0.00035,
+				0.000325,
+				0.00035,
+				0.000325,
+				0.000325,
+				0.000325
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.00355,
+			"actual_ms_per_call": [
+				0.003625,
+				0.00355,
+				0.003675,
+				0.00355,
+				0.00355,
+				0.00355,
+				0.00355
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 1,
+			"pattern": "storm/spray/1",
+			"reference_median_ms": 0.0037,
+			"reference_ms_per_call": [
+				0.0037,
+				0.0037,
+				0.003725,
+				0.0037,
+				0.0037,
+				0.003725,
+				0.0037
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.08975,
+			"actual_ms_per_call": [
+				0.089175,
+				0.0911,
+				0.08975,
+				0.0895,
+				0.0899,
+				0.0899,
+				0.08905
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 300,
+			"pattern": "storm/spray/300",
+			"reference_median_ms": 1.06735,
+			"reference_ms_per_call": [
+				1.051575,
+				1.0468,
+				1.06735,
+				1.069,
+				1.068625,
+				1.066125,
+				1.070525
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.000125,
+			"actual_ms_per_call": [
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 0,
+			"pattern": "storm/wall/0",
+			"reference_median_ms": 0.000325,
+			"reference_ms_per_call": [
+				0.00035,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.006075,
+			"actual_ms_per_call": [
+				0.006075,
+				0.00605,
+				0.006075,
+				0.00605,
+				0.006075,
+				0.006075,
+				0.006075
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 1,
+			"pattern": "storm/wall/1",
+			"reference_median_ms": 0.006225,
+			"reference_ms_per_call": [
+				0.0062,
+				0.006225,
+				0.006225,
+				0.006225,
+				0.0062,
+				0.006225,
+				0.00625
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.0783,
+			"actual_ms_per_call": [
+				0.07935,
+				0.07915,
+				0.0783,
+				0.0779,
+				0.078,
+				0.078475,
+				0.07785
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 300,
+			"pattern": "storm/wall/300",
+			"reference_median_ms": 1.77965,
+			"reference_ms_per_call": [
+				1.82245,
+				1.772025,
+				1.7767,
+				1.7765,
+				1.779975,
+				1.81875,
+				1.77965
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.000125,
+			"actual_ms_per_call": [
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.000125,
+				0.0001
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 0,
+			"pattern": "storm/iron/0",
+			"reference_median_ms": 0.000325,
+			"reference_ms_per_call": [
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325,
+				0.000325
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 0.0039,
+			"actual_ms_per_call": [
+				0.0039,
+				0.0039,
+				0.0039,
+				0.0039,
+				0.003925,
+				0.003925,
+				0.0039
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 1,
+			"pattern": "storm/iron/1",
+			"reference_median_ms": 0.004075,
+			"reference_ms_per_call": [
+				0.00405,
+				0.004075,
+				0.004075,
+				0.004075,
+				0.004075,
+				0.004075,
+				0.004075
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		},
+		{
+			"actual_median_ms": 1.196925,
+			"actual_ms_per_call": [
+				1.194775,
+				1.192125,
+				1.196575,
+				1.201575,
+				1.2044,
+				1.196925,
+				1.226425
+			],
+			"batches": 7,
+			"calls_per_batch": 40,
+			"orbs": 300,
+			"pattern": "storm/iron/300",
+			"reference_median_ms": 1.256075,
+			"reference_ms_per_call": [
+				1.244025,
+				1.242525,
+				1.24035,
+				1.2709,
+				1.262825,
+				1.256075,
+				1.270675
+			],
+			"scope": "current product vs candidate in test tool; headless CPU, not native frame/FPS"
+		}
+	],
+	"comparisons": 41564,
+	"display_server": "headless",
+	"engine": {
+		"build": "official",
+		"hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+		"hex": 263938,
+		"major": 4,
+		"minor": 7,
+		"patch": 2,
+		"status": "stable",
+		"string": "4.7.2-stable (official)",
+		"timestamp": 0
+	},
+	"exercised_pattern_levels": {
+		"chain:1": 900,
+		"chain:3": 967,
+		"chain:8": 900,
+		"clock:1": 900,
+		"clock:3": 966,
+		"clock:8": 900,
+		"gust:1": 900,
+		"gust:3": 967,
+		"gust:8": 900,
+		"iron:1": 900,
+		"iron:3": 966,
+		"iron:8": 900,
+		"laser:1": 900,
+		"laser:3": 967,
+		"laser:8": 900,
+		"lob:1": 900,
+		"lob:3": 966,
+		"lob:8": 900,
+		"shard:1": 900,
+		"shard:3": 967,
+		"shard:8": 900,
+		"shot:1": 900,
+		"shot:3": 1019,
+		"shot:8": 900,
+		"sonic:1": 900,
+		"sonic:3": 966,
+		"sonic:8": 900,
+		"spray:1": 900,
+		"spray:3": 967,
+		"spray:8": 900,
+		"stream:1": 900,
+		"stream:3": 967,
+		"stream:8": 900,
+		"thorn:1": 900,
+		"thorn:3": 967,
+		"thorn:8": 900,
+		"vortex:1": 900,
+		"vortex:3": 967,
+		"vortex:8": 900,
+		"wall:1": 900,
+		"wall:3": 967,
+		"wall:8": 900,
+		"wisp:1": 900,
+		"wisp:3": 966,
+		"wisp:8": 912
+	},
+	"finite_position_cases": true,
+	"maps": [
+		"plain",
+		"spiral",
+		"cross",
+		"storm",
+		"line"
+	],
+	"mismatch_count": 0,
+	"mismatches": [],
+	"patterns": [
+		"shot",
+		"spray",
+		"thorn",
+		"stream",
+		"chain",
+		"gust",
+		"shard",
+		"wall",
+		"vortex",
+		"laser",
+		"lob",
+		"iron",
+		"sonic",
+		"clock",
+		"wisp"
+	],
+	"rng_contract": "reference and actual leave global RNG untouched",
+	"tool_sha256": "8a746261c1722d9d6fd713c63b6916ce4f0a073337305c5d167af0d99c098bec",
+	"tower_sha256": "65fe9ec651dd0b9ec2eb1cf6f7b91d31e512d4442c425c5024e3d9d438ca4700"
+}
