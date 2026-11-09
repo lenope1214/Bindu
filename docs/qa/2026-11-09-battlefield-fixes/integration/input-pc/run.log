@@ -1,0 +1,38 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+ok   BF-01 설정이 게임 단축키를 소유: 카드·새로고침·넘기기·시작 불변
+ok   BF-01 도움말 뒤 소비 없음
+ok   BF-05 Ctrl+Z가 plain Z 자세히를 실행하지 않음
+ok   BF-01 수정키 조합이 plain 게임 명령을 실행하지 않음
+UI ok 01-modal-input
+ok   BF-04 노드 순서 대신 가까운 대상 선택 (거리 24 대 11)
+ok   BF-04 동률은 위치 기준으로 결정되어 생성 순서와 무관
+ok   BF-12 반복 선택은 방향 편집에 들어가지 않음
+ok   BF-03 명시적 재선택은 닫은 정보 복구
+UI ok 02-nearest-selection
+ok   BF-13 정지한 길게 누르기는 이동 아님
+ok   BF-14 일반 휠은 선택 위에서도 확대
+ok   BF-03 전투 중 닫기 뒤 명시적 재선택으로 정보 복구
+ok   BF-06 정보가 열려 있어도 전투 Esc 즉시 정지
+UI ok 03-wave-immediate-pause
+ok   BF-09 기본 자동 조준 새 설치는 방향 확정 없이 1회 완료
+UI ok 04-auto-aim-placement
+ok   BF-16 터치 그룹 편집 API 존재
+ok   BF-16 터치 선택 모드로 떨어진 대상 추가
+ok   BF-16 터치 선택 모드로 제외
+ok   BF-17 그룹 방향 함께 회전
+ok   BF-17 그룹 명시적 방향 편집·확정
+ok   BF-17 그룹 방향 취소는 원래 방향·선택 복원
+ok   BF-19 Tab 대상 순환
+ok   BF-19 키보드로 선택 이동
+UI ok 05-keyboard-group
+ok   BF-19 키보드만으로 카드 선택·새 설치 완료
+ok   BF-19 키보드만으로 적용 대상 순환·강화 적용 완료
+ok   BF-15 드래그 유효성 API 존재
+ok   BF-15 손을 떼기 전 중앙 배치 불가 이유 제공
+UI ok 06-invalid-drag-preview
+ok   BF-15 무효 드래그는 안전하게 원복
+BATTLEFIELD INPUT failures=0 ui=0
+WARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

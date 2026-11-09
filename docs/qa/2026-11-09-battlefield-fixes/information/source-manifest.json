@@ -1,0 +1,11 @@
+{
+  "base": "e25b6eab5b4e64cca7ee5e0089d50e149588e9b9",
+  "scope": "HEAD plus information-owner files only; full shared branch integration remains root responsibility",
+  "files": {
+    "scripts/info_panel.gd": "d70a0db592343b96bc16e0496d1c41d06e78770cfe7b4eb7b3b49ac2eb736d27",
+    "scripts/attack_preview.gd": "62a220cdd0ea0a981d0c8ca81a9d27d5c15713979c1c7864937825f8fc048e1f",
+    "scripts/features/hud.gd": "f3971bdfa3419300819767009244c901f37ce1d90f39c32fb21a609a726dffff",
+    "scripts/features/field_view.gd": "ed8677596c9e98445a968c5bb58e7a0d304d3ea292dd1ca3690d2adb90beb5c9",
+    "tools/battlefield_information_check.gd": "b7b6bfb848040e8c2797cf9a14cd76b9466692346b106a93ee015efc8fecfb0a"
+  }
+}

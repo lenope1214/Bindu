@@ -1,0 +1,14 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+FAIL BF-30 진행 수를 직접 선택하는 API
+FAIL BF-31 실제 전투·카드 보류가 실행 전에 설명됨
+FAIL BF-26 디스크 없는 상태 복원·저장 경계 API
+FAIL BF-37 기술 버튼에 효과가 보임
+FAIL BF-38 실제 초·웨이브 재충전 표시
+FAIL BF-36 조준 속도 정책 API
+FAIL BF-40 수동·자동 모드 제어 API
+UI ok skills
+BATTLEFIELD FLOW failures=7 ui=0
+WARNING: 6 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

@@ -1,0 +1,22 @@
+{
+	"autowrap": 3,
+	"column": "[P: (857.5, 176.8), S: (383.5, 718.9)]",
+	"column_minimum": "(91.0, 553.0)",
+	"content_height": 207,
+	"content_width": 294,
+	"detail": "[P: (857.5, 626.6), S: (383.5, 269.1)]",
+	"detail_local_size": "(295.0, 207.0)",
+	"detail_minimum": "(1.0, 207.0)",
+	"fit_content": true,
+	"font_size": 18,
+	"horizontal_scroll_max": 91.0,
+	"horizontal_scroll_page": 91.0,
+	"longest_token": "소⁠환(영⁠혼)",
+	"longest_token_width": 74.0,
+	"panel": "[P: (844.5, 101.4), S: (419.9, 709.828)]",
+	"panel_local_size": "(323.0, 546.0215)",
+	"scroll": "[P: (857.5, 176.8), S: (393.9, 621.4)]",
+	"scroll_local_size": "(303.0, 478.0)",
+	"text": "NEW · 혼⁠불 소⁠환 · 물⁠길⁠에 남⁠김: 혼⁠불 소⁠환(영⁠혼) → 물⁠길⁠에 남⁠김(물) · 감⁠속(물) → 혼⁠불⁠이 실⁠어 감(영⁠혼)\n\nNEW · 감⁠속 · 치⁠명⁠타 관⁠통: 감⁠속(물) → 치⁠명⁠타 관⁠통(빛)\n\nNEW · 혼⁠불 소⁠환 · 치⁠명⁠타 관⁠통: 혼⁠불 소⁠환(영⁠혼) → 치⁠명⁠타 관⁠통(빛)",
+	"too_wide_tokens": []
+}

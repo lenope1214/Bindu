@@ -1,0 +1,1436 @@
+{
+	"{ \"kind\": \"perk\", \"name\": \"끈적한 공간\", \"idx\": 4 }": {
+		"body_descent": 6.0,
+		"capture": "perk_slow.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 56.0,
+		"lines": [
+			"모⁠든 구⁠체 이⁠동 속⁠도 -8⁠%"
+		],
+		"name": "끈적한 공간",
+		"shown": [
+			"모⁠든 구⁠체 이⁠동 속⁠도 -8⁠%"
+		],
+		"summary": "모든 구체 이동 속도 -8%",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"kind\": \"perk\", \"name\": \"넉넉한 선택\", \"idx\": 1 }": {
+		"body_descent": 6.0,
+		"capture": "perk_slow.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 56.0,
+		"lines": [
+			"쉬⁠는 시⁠간⁠마⁠다 새⁠로⁠고⁠침 +1"
+		],
+		"name": "넉넉한 선택",
+		"shown": [
+			"쉬⁠는 시⁠간⁠마⁠다 새⁠로⁠고⁠침 +1"
+		],
+		"summary": "쉬는 시간마다 새로고침 +1",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"kind\": \"perk\", \"name\": \"넘친 회복\", \"idx\": 3 }": {
+		"body_descent": 6.0,
+		"capture": "perk_overflow.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"체⁠력⁠이 가⁠득⁠할 때 받⁠은 회⁠복⁠은 실⁠드⁠로",
+			"쌓⁠여⁠요. (회⁠복 특⁠성·보⁠스 처⁠치, 최⁠대 2,",
+			"웨⁠이⁠브⁠가 지⁠나⁠도 남⁠아⁠요.)"
+		],
+		"name": "넘친 회복",
+		"shown": [
+			"체⁠력⁠이 가⁠득⁠할 때 받⁠은 회⁠복⁠은 실⁠드⁠로",
+			"쌓⁠여⁠요. (회⁠복 특⁠성·보⁠스 처⁠치, 최⁠대 2,",
+			"웨⁠이⁠브⁠가 지⁠나⁠도 남⁠아⁠요.)"
+		],
+		"summary": "체력이 가득할 때 받은 회복은 실드로 쌓여요. (회복 특성·보스 처치, 최대 2, 웨이브가 지나도 남아요.)",
+		"tail": [],
+		"truncated": false,
+		"width": 340.0
+	},
+	"{ \"kind\": \"perk\", \"name\": \"단단한 중앙\", \"idx\": 4 }": {
+		"body_descent": 6.0,
+		"capture": "perk_core.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"중⁠앙 최⁠대 체⁠력 +3, 체⁠력⁠을 모⁠두",
+			"회⁠복⁠해⁠요."
+		],
+		"name": "단단한 중앙",
+		"shown": [
+			"중⁠앙 최⁠대 체⁠력 +3, 체⁠력⁠을 모⁠두",
+			"회⁠복⁠해⁠요."
+		],
+		"summary": "중앙 최대 체력 +3, 체력을 모두 회복해요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"kind\": \"perk\", \"name\": \"반격 파동\", \"idx\": 1 }": {
+		"body_descent": 6.0,
+		"capture": "perk_overflow.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"중⁠앙⁠이 맞⁠을 때⁠마⁠다(실⁠드 포⁠함) 파⁠동⁠이 퍼⁠져",
+			"가⁠까⁠운 구⁠체⁠를 밀⁠어⁠내⁠고 피⁠해⁠를 줘⁠요.",
+			"(겹⁠치⁠면 피⁠해 +5⁠0⁠%)"
+		],
+		"name": "반격 파동",
+		"shown": [
+			"중⁠앙⁠이 맞⁠을 때⁠마⁠다(실⁠드 포⁠함) 파⁠동⁠이 퍼⁠져",
+			"가⁠까⁠운 구⁠체⁠를 밀⁠어⁠내⁠고 피⁠해⁠를 줘⁠요.",
+			"(겹⁠치⁠면 피⁠해 +5⁠0⁠%)"
+		],
+		"summary": "중앙이 맞을 때마다(실드 포함) 파동이 퍼져 가까운 구체를 밀어내고 피해를 줘요. (겹치면 피해 +50%)",
+		"tail": [],
+		"truncated": false,
+		"width": 340.0
+	},
+	"{ \"kind\": \"perk\", \"name\": \"빠른 손\", \"idx\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "perk_overflow.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"중⁠앙 기⁠술⁠을 다⁠시 쓰⁠기⁠까⁠지 -2⁠0⁠% (겹⁠치⁠면",
+			"곱)"
+		],
+		"name": "빠른 손",
+		"shown": [
+			"중⁠앙 기⁠술⁠을 다⁠시 쓰⁠기⁠까⁠지 -2⁠0⁠% (겹⁠치⁠면",
+			"곱)"
+		],
+		"summary": "중앙 기술을 다시 쓰기까지 -20% (겹치면 곱)",
+		"tail": [],
+		"truncated": false,
+		"width": 340.0
+	},
+	"{ \"kind\": \"perk\", \"name\": \"성벽\", \"idx\": 4 }": {
+		"body_descent": 6.0,
+		"capture": "perk_rampart_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"매 웨⁠이⁠브 벽 · 최⁠대 4⁠조⁠각",
+			"(벽 레⁠벨⁠합+고⁠른 횟⁠수)×1",
+			"다⁠가⁠온 구⁠체⁠를 밀⁠쳐⁠요"
+		],
+		"name": "성벽",
+		"shown": [
+			"매 웨⁠이⁠브 벽 · 최⁠대 4⁠조⁠각",
+			"(벽 레⁠벨⁠합+고⁠른 횟⁠수)×1",
+			"다⁠가⁠온 구⁠체⁠를 밀⁠쳐⁠요"
+		],
+		"summary": "매 웨이브 벽 · 최대 4조각\n(벽 레벨합+고른 횟수)×1\n다가온 구체를 밀쳐요",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"kind\": \"perk\", \"name\": \"속사\", \"idx\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "perk_core.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 56.0,
+		"lines": [
+			"모⁠든 공⁠격 속⁠도 +1⁠2⁠%"
+		],
+		"name": "속사",
+		"shown": [
+			"모⁠든 공⁠격 속⁠도 +1⁠2⁠%"
+		],
+		"summary": "모든 공격 속도 +12%",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"kind\": \"perk\", \"name\": \"실드\", \"idx\": 3 }": {
+		"body_descent": 6.0,
+		"capture": "perk_rampart_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"매 웨⁠이⁠브 실⁠드 +1 · 최⁠대 3",
+			"피⁠격 시 체⁠력 대⁠신 소⁠모",
+			"다⁠음 웨⁠이⁠브 이⁠월 없⁠음"
+		],
+		"name": "실드",
+		"shown": [
+			"매 웨⁠이⁠브 실⁠드 +1 · 최⁠대 3",
+			"피⁠격 시 체⁠력 대⁠신 소⁠모",
+			"다⁠음 웨⁠이⁠브 이⁠월 없⁠음"
+		],
+		"summary": "매 웨이브 실드 +1 · 최대 3\n피격 시 체력 대신 소모\n다음 웨이브 이월 없음",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"kind\": \"perk\", \"name\": \"운명의 동전\", \"idx\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "perk_rampart_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"새 특⁠성 3⁠개",
+			"앞⁠면 2⁠회 적⁠용 / 뒷⁠면 1⁠회",
+			"뒷⁠면 새⁠로⁠고⁠침 +2"
+		],
+		"name": "운명의 동전",
+		"shown": [
+			"새 특⁠성 3⁠개",
+			"앞⁠면 2⁠회 적⁠용 / 뒷⁠면 1⁠회",
+			"뒷⁠면 새⁠로⁠고⁠침 +2"
+		],
+		"summary": "새 특성 3개\n앞면 2회 적용 / 뒷면 1회\n뒷면 새로고침 +2",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"kind\": \"perk\", \"name\": \"원거리\", \"idx\": 3 }": {
+		"body_descent": 6.0,
+		"capture": "perk_core.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 56.0,
+		"lines": [
+			"모⁠든 사⁠거⁠리 +1⁠2⁠%"
+		],
+		"name": "원거리",
+		"shown": [
+			"모⁠든 사⁠거⁠리 +1⁠2⁠%"
+		],
+		"summary": "모든 사거리 +12%",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"kind\": \"perk\", \"name\": \"조화\", \"idx\": 1 }": {
+		"body_descent": 6.0,
+		"capture": "perk_rampart_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"겹⁠치⁠기 속⁠도 감⁠소 ×0.5",
+			"1⁠회⁠만 · 속⁠도 최⁠대 +2⁠0⁠%"
+		],
+		"name": "조화",
+		"shown": [
+			"겹⁠치⁠기 속⁠도 감⁠소 ×0.5",
+			"1⁠회⁠만 · 속⁠도 최⁠대 +2⁠0⁠%"
+		],
+		"summary": "겹치기 속도 감소 ×0.5\n1회만 · 속도 최대 +20%",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"kind\": \"perk\", \"name\": \"행운\", \"idx\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "perk_slow.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"속⁠성 카⁠드⁠가 Lv2⁠로 나⁠올 확⁠률",
+			"+2⁠0⁠%"
+		],
+		"name": "행운",
+		"shown": [
+			"속⁠성 카⁠드⁠가 Lv2⁠로 나⁠올 확⁠률",
+			"+2⁠0⁠%"
+		],
+		"summary": "속성 카드가 Lv2로 나올 확률 +20%",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"kind\": \"perk\", \"name\": \"화력\", \"idx\": 1 }": {
+		"body_descent": 6.0,
+		"capture": "perk_core.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 56.0,
+		"lines": [
+			"모⁠든 피⁠해 +1⁠5⁠%"
+		],
+		"name": "화력",
+		"shown": [
+			"모⁠든 피⁠해 +1⁠5⁠%"
+		],
+		"summary": "모든 피해 +15%",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"kind\": \"perk\", \"name\": \"회복\", \"idx\": 3 }": {
+		"body_descent": 6.0,
+		"capture": "perk_slow.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"웨⁠이⁠브⁠를 마⁠칠 때⁠마⁠다 중⁠앙 체⁠력",
+			"+1 (겹⁠쳐 고⁠르⁠면 하⁠나⁠당 +0.5)"
+		],
+		"name": "회복",
+		"shown": [
+			"웨⁠이⁠브⁠를 마⁠칠 때⁠마⁠다 중⁠앙 체⁠력",
+			"+1 (겹⁠쳐 고⁠르⁠면 하⁠나⁠당 +0.5)"
+		],
+		"summary": "웨이브를 마칠 때마다 중앙 체력 +1 (겹쳐 고르면 하나당 +0.5)",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 0, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "elem_3_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"맞⁠은 구⁠체⁠를 태⁠워 한⁠동⁠안 계⁠속",
+			"피⁠해⁠를 줘⁠요."
+		],
+		"name": "불",
+		"shown": [
+			"맞⁠은 구⁠체⁠를 태⁠워 한⁠동⁠안 계⁠속",
+			"피⁠해⁠를 줘⁠요."
+		],
+		"summary": "맞은 구체를 태워 한동안 계속 피해를 줘요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 1, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "elem_3_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"덩⁠굴⁠이 감⁠겨 느⁠려⁠지⁠다 묶⁠이⁠고,",
+			"감⁠긴 구⁠체⁠에 더 아⁠프⁠게 맞⁠혀⁠요."
+		],
+		"name": "나무",
+		"shown": [
+			"덩⁠굴⁠이 감⁠겨 느⁠려⁠지⁠다 묶⁠이⁠고,",
+			"감⁠긴 구⁠체⁠에 더 아⁠프⁠게 맞⁠혀⁠요."
+		],
+		"summary": "덩굴이 감겨 느려지다 묶이고, 감긴 구체에 더 아프게 맞혀요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 10, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "elem_11_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"맞⁠힐 때 피⁠해⁠를 더⁠하⁠고 구⁠체⁠를",
+			"잠⁠깐 멈⁠칫⁠하⁠게 해⁠요."
+		],
+		"name": "금속",
+		"shown": [
+			"맞⁠힐 때 피⁠해⁠를 더⁠하⁠고 구⁠체⁠를",
+			"잠⁠깐 멈⁠칫⁠하⁠게 해⁠요."
+		],
+		"summary": "맞힐 때 피해를 더하고 구체를 잠깐 멈칫하게 해요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 11, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "elem_11_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"울⁠림⁠이 남⁠은 구⁠체⁠는 세 번 맞⁠을",
+			"때⁠마⁠다 주⁠변⁠에 음⁠파⁠를 터⁠뜨⁠려⁠요."
+		],
+		"name": "소리",
+		"shown": [
+			"울⁠림⁠이 남⁠은 구⁠체⁠는 세 번 맞⁠을",
+			"때⁠마⁠다 주⁠변⁠에 음⁠파⁠를 터⁠뜨⁠려⁠요."
+		],
+		"summary": "울림이 남은 구체는 세 번 맞을 때마다 주변에 음파를 터뜨려요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 12, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "elem_15_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"맞⁠은 구⁠체⁠가 잠⁠시 동⁠안 받⁠은",
+			"피⁠해 일⁠부⁠를 나⁠중⁠에 한 번 더",
+			"받⁠아⁠요."
+		],
+		"name": "시간",
+		"shown": [
+			"맞⁠은 구⁠체⁠가 잠⁠시 동⁠안 받⁠은",
+			"피⁠해 일⁠부⁠를 나⁠중⁠에 한 번 더",
+			"받⁠아⁠요."
+		],
+		"summary": "맞은 구체가 잠시 동안 받은 피해 일부를 나중에 한 번 더 받아요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 13, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "elem_15_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"맞⁠은 구⁠체⁠가 곧 죽⁠으⁠면 확⁠률⁠로",
+			"다⁠른 구⁠체⁠를 쫓⁠는 혼⁠불⁠이",
+			"나⁠와⁠요."
+		],
+		"name": "영혼",
+		"shown": [
+			"맞⁠은 구⁠체⁠가 곧 죽⁠으⁠면 확⁠률⁠로",
+			"다⁠른 구⁠체⁠를 쫓⁠는 혼⁠불⁠이",
+			"나⁠와⁠요."
+		],
+		"summary": "맞은 구체가 곧 죽으면 확률로 다른 구체를 쫓는 혼불이 나와요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 14, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "elem_15_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"주⁠변⁠과 자⁠신⁠의 공⁠격 피⁠해⁠를",
+			"복⁠사⁠해 모⁠으⁠고, 다 차⁠면",
+			"폭⁠발⁠해⁠요."
+		],
+		"name": "별",
+		"shown": [
+			"주⁠변⁠과 자⁠신⁠의 공⁠격 피⁠해⁠를",
+			"복⁠사⁠해 모⁠으⁠고, 다 차⁠면",
+			"폭⁠발⁠해⁠요."
+		],
+		"summary": "주변과 자신의 공격 피해를 복사해 모으고, 다 차면 폭발해요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 15, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "elem_15_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"맞⁠은 구⁠체⁠가 움⁠직⁠이⁠는 만⁠큼",
+			"피⁠해⁠를 줘⁠요. 빠⁠른 구⁠체⁠일⁠수⁠록",
+			"아⁠파⁠요."
+		],
+		"name": "피",
+		"shown": [
+			"맞⁠은 구⁠체⁠가 움⁠직⁠이⁠는 만⁠큼",
+			"피⁠해⁠를 줘⁠요. 빠⁠른 구⁠체⁠일⁠수⁠록",
+			"아⁠파⁠요."
+		],
+		"summary": "맞은 구체가 움직이는 만큼 피해를 줘요. 빠른 구체일수록 아파요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 16, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "pat_thorn_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"확⁠률⁠로 구⁠체⁠가 잠⁠깐 왔⁠던 길⁠을",
+			"되⁠돌⁠아⁠가⁠요."
+		],
+		"name": "환영",
+		"shown": [
+			"확⁠률⁠로 구⁠체⁠가 잠⁠깐 왔⁠던 길⁠을",
+			"되⁠돌⁠아⁠가⁠요."
+		],
+		"summary": "확률로 구체가 잠깐 왔던 길을 되돌아가요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 2, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "elem_3_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 56.0,
+		"lines": [
+			"맞⁠은 구⁠체⁠를 느⁠리⁠게 해⁠요."
+		],
+		"name": "물",
+		"shown": [
+			"맞⁠은 구⁠체⁠를 느⁠리⁠게 해⁠요."
+		],
+		"summary": "맞은 구체를 느리게 해요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 3, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "elem_3_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"확⁠률⁠로 주⁠변 구⁠체⁠에 전⁠기⁠가",
+			"튀⁠어⁠요."
+		],
+		"name": "전기",
+		"shown": [
+			"확⁠률⁠로 주⁠변 구⁠체⁠에 전⁠기⁠가",
+			"튀⁠어⁠요."
+		],
+		"summary": "확률로 주변 구체에 전기가 튀어요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 4, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "elem_7_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"맞⁠은 구⁠체⁠를 바⁠람⁠으⁠로 조⁠금⁠씩",
+			"밀⁠어⁠내⁠요."
+		],
+		"name": "바람",
+		"shown": [
+			"맞⁠은 구⁠체⁠를 바⁠람⁠으⁠로 조⁠금⁠씩",
+			"밀⁠어⁠내⁠요."
+		],
+		"summary": "맞은 구체를 바람으로 조금씩 밀어내요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 5, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "elem_7_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"냉⁠기⁠를 쌓⁠아 구⁠체⁠를 잠⁠깐",
+			"멈⁠춰⁠요."
+		],
+		"name": "얼음",
+		"shown": [
+			"냉⁠기⁠를 쌓⁠아 구⁠체⁠를 잠⁠깐",
+			"멈⁠춰⁠요."
+		],
+		"summary": "냉기를 쌓아 구체를 잠깐 멈춰요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 6, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "elem_7_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"맞⁠은 구⁠체⁠를 확⁠률⁠로 잠⁠깐",
+			"기⁠절⁠시⁠켜⁠요."
+		],
+		"name": "땅",
+		"shown": [
+			"맞⁠은 구⁠체⁠를 확⁠률⁠로 잠⁠깐",
+			"기⁠절⁠시⁠켜⁠요."
+		],
+		"summary": "맞은 구체를 확률로 잠깐 기절시켜요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 7, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "elem_7_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"맞⁠은 구⁠체⁠가 받⁠는 피⁠해⁠를",
+			"늘⁠려⁠요."
+		],
+		"name": "어둠",
+		"shown": [
+			"맞⁠은 구⁠체⁠가 받⁠는 피⁠해⁠를",
+			"늘⁠려⁠요."
+		],
+		"summary": "맞은 구체가 받는 피해를 늘려요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 8, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "elem_11_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"확⁠률⁠로 치⁠명⁠타⁠를 내 더 큰",
+			"피⁠해⁠를 줘⁠요."
+		],
+		"name": "빛",
+		"shown": [
+			"확⁠률⁠로 치⁠명⁠타⁠를 내 더 큰",
+			"피⁠해⁠를 줘⁠요."
+		],
+		"summary": "확률로 치명타를 내 더 큰 피해를 줘요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"elem\", \"e\": 9, \"lv\": 2 }": {
+		"body_descent": 6.0,
+		"capture": "elem_11_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"독⁠으⁠로 계⁠속 피⁠해⁠를 주⁠고,",
+			"죽⁠으⁠면 주⁠변⁠에 독⁠이 퍼⁠져⁠요."
+		],
+		"name": "독",
+		"shown": [
+			"독⁠으⁠로 계⁠속 피⁠해⁠를 주⁠고,",
+			"죽⁠으⁠면 주⁠변⁠에 독⁠이 퍼⁠져⁠요."
+		],
+		"summary": "독으로 계속 피해를 주고, 죽으면 주변에 독이 퍼져요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"link\", \"id\": \"pincer\" }": {
+		"body_descent": 6.0,
+		"capture": "trig_echo_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"최⁠대 체⁠력 1⁠0⁠% 피⁠해",
+			"다⁠른 오⁠브⁠젝⁠트⁠와 3⁠초 안⁠에 같⁠은",
+			"구⁠체 명⁠중"
+		],
+		"name": "협공",
+		"shown": [
+			"최⁠대 체⁠력 1⁠0⁠% 피⁠해",
+			"다⁠른 오⁠브⁠젝⁠트⁠와 3⁠초 안⁠에 같⁠은",
+			"구⁠체 명⁠중"
+		],
+		"summary": "최대 체력 10% 피해\n다른 오브젝트와 3초 안에 같은 구체 명중",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"link\", \"id\": \"reso\" }": {
+		"body_descent": 6.0,
+		"capture": "trig_echo_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"가⁠까⁠이(거⁠리 1⁠5⁠0 안) 있⁠는 다⁠른",
+			"오⁠브⁠젝⁠트 하⁠나⁠당 피⁠해 +1⁠2⁠%"
+		],
+		"name": "공명",
+		"shown": [
+			"가⁠까⁠이(거⁠리 1⁠5⁠0 안) 있⁠는 다⁠른",
+			"오⁠브⁠젝⁠트 하⁠나⁠당 피⁠해 +1⁠2⁠%"
+		],
+		"summary": "가까이(거리 150 안) 있는 다른 오브젝트 하나당 피해 +12%",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"mod\", \"id\": \"bounce\" }": {
+		"body_descent": 6.0,
+		"capture": "mod_pierce_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"탄⁠은 주⁠변⁠으⁠로 튀⁠고 번⁠개⁠는 한",
+			"번 더 튀⁠어⁠요. 다⁠른 공⁠격⁠은 옆",
+			"구⁠체⁠에 작⁠은 탄⁠을 보⁠내⁠요."
+		],
+		"name": "튕김",
+		"shown": [
+			"탄⁠은 주⁠변⁠으⁠로 튀⁠고 번⁠개⁠는 한",
+			"번 더 튀⁠어⁠요. 다⁠른 공⁠격⁠은 옆",
+			"구⁠체⁠에 작⁠은 탄⁠을 보⁠내⁠요."
+		],
+		"summary": "탄은 주변으로 튀고 번개는 한 번 더 튀어요. 다른 공격은 옆 구체에 작은 탄을 보내요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"mod\", \"id\": \"dice\" }": {
+		"body_descent": 6.0,
+		"capture": "trig_echo_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"공⁠격⁠마⁠다 주⁠사⁠위⁠를 굴⁠려 높⁠은",
+			"눈⁠이⁠면 피⁠해⁠가 커⁠져⁠요. 반⁠응",
+			"피⁠해⁠에⁠는 적⁠용⁠되⁠지 않⁠아⁠요."
+		],
+		"name": "주사위",
+		"shown": [
+			"공⁠격⁠마⁠다 주⁠사⁠위⁠를 굴⁠려 높⁠은",
+			"눈⁠이⁠면 피⁠해⁠가 커⁠져⁠요. 반⁠응",
+			"피⁠해⁠에⁠는 적⁠용⁠되⁠지 않⁠아⁠요."
+		],
+		"summary": "공격마다 주사위를 굴려 높은 눈이면 피해가 커져요. 반응 피해에는 적용되지 않아요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"mod\", \"id\": \"homing\" }": {
+		"body_descent": 6.0,
+		"capture": "mod_homing_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"휘⁠면 약⁠해⁠짐 · 최⁠저 5⁠5⁠%",
+			"불⁠가: 벽·혼⁠불",
+			"시⁠계⁠침·연⁠쇄 번⁠개"
+		],
+		"name": "유도",
+		"shown": [
+			"휘⁠면 약⁠해⁠짐 · 최⁠저 5⁠5⁠%",
+			"불⁠가: 벽·혼⁠불",
+			"시⁠계⁠침·연⁠쇄 번⁠개"
+		],
+		"summary": "휘면 약해짐 · 최저 55%\n불가: 벽·혼불\n시계침·연쇄 번개",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"mod\", \"id\": \"multi\" }": {
+		"body_descent": 6.0,
+		"capture": "mod_homing_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"공⁠격⁠이 하⁠나 더 나⁠가⁠요.",
+			"벽·블⁠랙⁠홀·투⁠척 장⁠판⁠을 빼⁠고",
+			"하⁠나⁠하⁠나⁠의 피⁠해⁠는 줄⁠어⁠요."
+		],
+		"name": "다중 발사",
+		"shown": [
+			"공⁠격⁠이 하⁠나 더 나⁠가⁠요.",
+			"벽·블⁠랙⁠홀·투⁠척 장⁠판⁠을 빼⁠고",
+			"하⁠나⁠하⁠나⁠의 피⁠해⁠는 줄⁠어⁠요."
+		],
+		"summary": "공격이 하나 더 나가요. 벽·블랙홀·투척 장판을 빼고 하나하나의 피해는 줄어요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"mod\", \"id\": \"pierce\" }": {
+		"body_descent": 6.0,
+		"capture": "mod_pierce_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"탄 +1⁠관⁠통 · 매⁠번 피⁠해 ×0.5",
+			"그 외 공⁠격 피⁠해 +6⁠%",
+			"보⁠호⁠막 +2⁠5⁠% · 갑⁠옷 2⁠0⁠% 무⁠시"
+		],
+		"name": "관통",
+		"shown": [
+			"탄 +1⁠관⁠통 · 매⁠번 피⁠해 ×0.5",
+			"그 외 공⁠격 피⁠해 +6⁠%",
+			"보⁠호⁠막 +2⁠5⁠% · 갑⁠옷 2⁠0⁠% 무⁠시"
+		],
+		"summary": "탄 +1관통 · 매번 피해 ×0.5\n그 외 공격 피해 +6%\n보호막 +25% · 갑옷 20% 무시",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"mod\", \"id\": \"rapid\" }": {
+		"body_descent": 6.0,
+		"capture": "mod_pierce_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 56.0,
+		"lines": [
+			"공⁠격 속⁠도 +1⁠0⁠%"
+		],
+		"name": "속사",
+		"shown": [
+			"공⁠격 속⁠도 +1⁠0⁠%"
+		],
+		"summary": "공격 속도 +10%",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"mod\", \"id\": \"reflex\" }": {
+		"body_descent": 6.0,
+		"capture": "mod_homing_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"사⁠거⁠리 안 가⁠까⁠운 구⁠체⁠를",
+			"전⁠방⁠위⁠로 조⁠준⁠해⁠요. 최⁠종 피⁠해",
+			"-1⁠0⁠% · 오⁠브⁠젝⁠트⁠당 1⁠회"
+		],
+		"name": "자동 조준",
+		"shown": [
+			"사⁠거⁠리 안 가⁠까⁠운 구⁠체⁠를",
+			"전⁠방⁠위⁠로 조⁠준⁠해⁠요. 최⁠종 피⁠해",
+			"-1⁠0⁠% · 오⁠브⁠젝⁠트⁠당 1⁠회"
+		],
+		"summary": "사거리 안 가까운 구체를 전방위로 조준해요. 최종 피해 -10% · 오브젝트당 1회",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"mod\", \"id\": \"size\" }": {
+		"body_descent": 6.0,
+		"capture": "mod_pierce_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"탄 크⁠기·범⁠위·사⁠거⁠리 +1⁠2⁠%",
+			"(공⁠격⁠방⁠식 자⁠기 공⁠격 피⁠해⁠도",
+			"조⁠금 오⁠름, 탄⁠은 +4⁠%)"
+		],
+		"name": "크기",
+		"shown": [
+			"탄 크⁠기·범⁠위·사⁠거⁠리 +1⁠2⁠%",
+			"(공⁠격⁠방⁠식 자⁠기 공⁠격 피⁠해⁠도",
+			"조⁠금 오⁠름, 탄⁠은 +4⁠%)"
+		],
+		"summary": "탄 크기·범위·사거리 +12% (공격방식 자기 공격 피해도 조금 오름, 탄은 +4%)",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"mod\", \"id\": \"split\" }": {
+		"body_descent": 6.0,
+		"capture": "mod_homing_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"맞⁠은 구⁠체⁠에⁠서 확⁠률⁠로 약⁠한 파⁠편",
+			"2⁠개⁠가 튀⁠어⁠요. 벽·투⁠척 장⁠판⁠에⁠는",
+			"못 넣⁠어⁠요."
+		],
+		"name": "분열",
+		"shown": [
+			"맞⁠은 구⁠체⁠에⁠서 확⁠률⁠로 약⁠한 파⁠편",
+			"2⁠개⁠가 튀⁠어⁠요. 벽·투⁠척 장⁠판⁠에⁠는",
+			"못 넣⁠어⁠요."
+		],
+		"summary": "맞은 구체에서 확률로 약한 파편 2개가 튀어요. 벽·투척 장판에는 못 넣어요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"pat\", \"id\": \"chain\" }": {
+		"body_descent": 6.0,
+		"capture": "pat_shard_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"앞⁠쪽 구⁠체⁠를 치⁠고 주⁠변⁠으⁠로",
+			"튀⁠어⁠요."
+		],
+		"name": "연쇄 번개",
+		"shown": [
+			"앞⁠쪽 구⁠체⁠를 치⁠고 주⁠변⁠으⁠로",
+			"튀⁠어⁠요."
+		],
+		"summary": "앞쪽 구체를 치고 주변으로 튀어요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"pat\", \"id\": \"clock\" }": {
+		"body_descent": 6.0,
+		"capture": "pat_wisp_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 56.0,
+		"lines": [
+			"앞⁠쪽⁠을 바⁠늘⁠이 왕⁠복⁠하⁠며 훑⁠어⁠요."
+		],
+		"name": "시계침",
+		"shown": [
+			"앞⁠쪽⁠을 바⁠늘⁠이 왕⁠복⁠하⁠며 훑⁠어⁠요."
+		],
+		"summary": "앞쪽을 바늘이 왕복하며 훑어요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"pat\", \"id\": \"gust\" }": {
+		"body_descent": 6.0,
+		"capture": "pat_shard_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"넓⁠은 바⁠람⁠이 지⁠나⁠가⁠며 옆⁠으⁠로",
+			"밀⁠어⁠요."
+		],
+		"name": "돌풍",
+		"shown": [
+			"넓⁠은 바⁠람⁠이 지⁠나⁠가⁠며 옆⁠으⁠로",
+			"밀⁠어⁠요."
+		],
+		"summary": "넓은 바람이 지나가며 옆으로 밀어요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"pat\", \"id\": \"iron\" }": {
+		"body_descent": 6.0,
+		"capture": "pat_wisp_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 56.0,
+		"lines": [
+			"느⁠리⁠고 무⁠거⁠운 관⁠통⁠탄⁠을 쏴⁠요."
+		],
+		"name": "철구",
+		"shown": [
+			"느⁠리⁠고 무⁠거⁠운 관⁠통⁠탄⁠을 쏴⁠요."
+		],
+		"summary": "느리고 무거운 관통탄을 쏴요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"pat\", \"id\": \"laser\" }": {
+		"body_descent": 6.0,
+		"capture": "pat_lob_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 56.0,
+		"lines": [
+			"충⁠전 후 화⁠면 끝⁠까⁠지 관⁠통⁠해⁠요."
+		],
+		"name": "레이저",
+		"shown": [
+			"충⁠전 후 화⁠면 끝⁠까⁠지 관⁠통⁠해⁠요."
+		],
+		"summary": "충전 후 화면 끝까지 관통해요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"pat\", \"id\": \"lob\" }": {
+		"body_descent": 6.0,
+		"capture": "pat_lob_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"느⁠린 탄⁠이 지⁠나⁠간 자⁠리⁠에 속⁠성",
+			"장⁠판⁠이 남⁠아⁠요. 유⁠도⁠하⁠면 휜 길",
+			"그⁠대⁠로 남⁠아⁠요."
+		],
+		"name": "투척 장판",
+		"shown": [
+			"느⁠린 탄⁠이 지⁠나⁠간 자⁠리⁠에 속⁠성",
+			"장⁠판⁠이 남⁠아⁠요. 유⁠도⁠하⁠면 휜 길",
+			"그⁠대⁠로 남⁠아⁠요."
+		],
+		"summary": "느린 탄이 지나간 자리에 속성 장판이 남아요. 유도하면 휜 길 그대로 남아요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"pat\", \"id\": \"shard\" }": {
+		"body_descent": 6.0,
+		"capture": "pat_shard_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 56.0,
+		"lines": [
+			"맞⁠으⁠면 파⁠편 3⁠개⁠로 갈⁠라⁠져⁠요."
+		],
+		"name": "파편탄",
+		"shown": [
+			"맞⁠으⁠면 파⁠편 3⁠개⁠로 갈⁠라⁠져⁠요."
+		],
+		"summary": "맞으면 파편 3개로 갈라져요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"pat\", \"id\": \"shot\" }": {
+		"body_descent": 6.0,
+		"capture": "pat_thorn_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 56.0,
+		"lines": [
+			"정⁠한 방⁠향⁠으⁠로 탄⁠을 쏴⁠요."
+		],
+		"name": "직선탄",
+		"shown": [
+			"정⁠한 방⁠향⁠으⁠로 탄⁠을 쏴⁠요."
+		],
+		"summary": "정한 방향으로 탄을 쏴요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"pat\", \"id\": \"sonic\" }": {
+		"body_descent": 6.0,
+		"capture": "pat_wisp_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"부⁠채⁠꼴⁠로 퍼⁠지⁠는 파⁠동⁠이⁠에⁠요.",
+			"관⁠통⁠하⁠고, 멀⁠수⁠록 약⁠해⁠져⁠요."
+		],
+		"name": "음파",
+		"shown": [
+			"부⁠채⁠꼴⁠로 퍼⁠지⁠는 파⁠동⁠이⁠에⁠요.",
+			"관⁠통⁠하⁠고, 멀⁠수⁠록 약⁠해⁠져⁠요."
+		],
+		"summary": "부채꼴로 퍼지는 파동이에요. 관통하고, 멀수록 약해져요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"pat\", \"id\": \"spray\" }": {
+		"body_descent": 6.0,
+		"capture": "pat_thorn_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"부⁠채⁠꼴⁠로 계⁠속 뿜⁠어⁠요. (지⁠속",
+			"피⁠해)"
+		],
+		"name": "분사",
+		"shown": [
+			"부⁠채⁠꼴⁠로 계⁠속 뿜⁠어⁠요. (지⁠속",
+			"피⁠해)"
+		],
+		"summary": "부채꼴로 계속 뿜어요. (지속 피해)",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"pat\", \"id\": \"stream\" }": {
+		"body_descent": 6.0,
+		"capture": "pat_shard_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 78.0,
+		"lines": [
+			"주⁠기⁠적⁠으⁠로 길⁠게 뿜⁠어 맞⁠은",
+			"구⁠체⁠를 멈⁠춰 세⁠워⁠요."
+		],
+		"name": "물줄기",
+		"shown": [
+			"주⁠기⁠적⁠으⁠로 길⁠게 뿜⁠어 맞⁠은",
+			"구⁠체⁠를 멈⁠춰 세⁠워⁠요."
+		],
+		"summary": "주기적으로 길게 뿜어 맞은 구체를 멈춰 세워요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"pat\", \"id\": \"thorn\" }": {
+		"body_descent": 6.0,
+		"capture": "pat_thorn_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 56.0,
+		"lines": [
+			"작⁠은 가⁠시⁠를 빠⁠르⁠게 쏴⁠요. (관⁠통)"
+		],
+		"name": "관통 연사",
+		"shown": [
+			"작⁠은 가⁠시⁠를 빠⁠르⁠게 쏴⁠요. (관⁠통)"
+		],
+		"summary": "작은 가시를 빠르게 쏴요. (관통)",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"pat\", \"id\": \"vortex\" }": {
+		"body_descent": 6.0,
+		"capture": "pat_lob_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"구⁠체 무⁠리⁠에 우⁠물 · 끌⁠어⁠모⁠음",
+			"다⁠른 오⁠브⁠젝⁠트⁠의 피⁠해⁠를 모⁠아",
+			"끝⁠날 때 함⁠께 폭⁠발"
+		],
+		"name": "블랙홀",
+		"shown": [
+			"구⁠체 무⁠리⁠에 우⁠물 · 끌⁠어⁠모⁠음",
+			"다⁠른 오⁠브⁠젝⁠트⁠의 피⁠해⁠를 모⁠아",
+			"끝⁠날 때 함⁠께 폭⁠발"
+		],
+		"summary": "구체 무리에 우물 · 끌어모음\n다른 오브젝트의 피해를 모아\n끝날 때 함께 폭발",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"pat\", \"id\": \"wall\" }": {
+		"body_descent": 6.0,
+		"capture": "pat_lob_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"앞⁠에 바⁠위 벽⁠을 세⁠워 막⁠아⁠요.",
+			"무⁠너⁠질 때 둘⁠레⁠에 돌 파⁠편⁠이",
+			"나⁠와⁠요."
+		],
+		"name": "벽",
+		"shown": [
+			"앞⁠에 바⁠위 벽⁠을 세⁠워 막⁠아⁠요.",
+			"무⁠너⁠질 때 둘⁠레⁠에 돌 파⁠편⁠이",
+			"나⁠와⁠요."
+		],
+		"summary": "앞에 바위 벽을 세워 막아요. 무너질 때 둘레에 돌 파편이 나와요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"pat\", \"id\": \"wisp\" }": {
+		"body_descent": 6.0,
+		"capture": "pat_wisp_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"오⁠브⁠젝⁠트 곁⁠을 떠⁠돌⁠며 가⁠까⁠이 온",
+			"구⁠체⁠를 쫓⁠아 때⁠리⁠는 혼⁠불 2⁠개⁠가",
+			"나⁠와⁠요."
+		],
+		"name": "혼불",
+		"shown": [
+			"오⁠브⁠젝⁠트 곁⁠을 떠⁠돌⁠며 가⁠까⁠이 온",
+			"구⁠체⁠를 쫓⁠아 때⁠리⁠는 혼⁠불 2⁠개⁠가",
+			"나⁠와⁠요."
+		],
+		"summary": "오브젝트 곁을 떠돌며 가까이 온 구체를 쫓아 때리는 혼불 2개가 나와요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"trig\", \"id\": \"answer\" }": {
+		"body_descent": 6.0,
+		"capture": "trig_answer_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 56.0,
+		"lines": [
+			"근⁠처 다⁠른 오⁠브⁠젝⁠트⁠가 발⁠동·반⁠응 공⁠격⁠을 하⁠면 그⁠쪽⁠으⁠로 한 발 더 쏴⁠요."
+		],
+		"name": "따라 쏘기",
+		"shown": [
+			"근⁠처 다⁠른 오⁠브⁠젝⁠트⁠가 발⁠동·반⁠응 공⁠격⁠을 하⁠면 그⁠쪽⁠으⁠로 한 발 더 쏴⁠요."
+		],
+		"summary": "근처 다른 오브젝트가 발동·반응 공격을 하면 그쪽으로 한 발 더 쏴요.",
+		"tail": [],
+		"truncated": false,
+		"width": 1043.0
+	},
+	"{ \"type\": \"trig\", \"id\": \"charge\" }": {
+		"body_descent": 6.0,
+		"capture": "trig_finish_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"근⁠처 처⁠치⁠로 힘⁠을 모⁠아",
+			"다⁠음 공⁠격⁠을 강⁠화⁠해⁠요",
+			"다⁠음 웨⁠이⁠브⁠에⁠도 힘 유⁠지"
+		],
+		"name": "모아 강타",
+		"shown": [
+			"근⁠처 처⁠치⁠로 힘⁠을 모⁠아",
+			"다⁠음 공⁠격⁠을 강⁠화⁠해⁠요",
+			"다⁠음 웨⁠이⁠브⁠에⁠도 힘 유⁠지"
+		],
+		"summary": "근처 처치로 힘을 모아\n다음 공격을 강화해요\n다음 웨이브에도 힘 유지",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"trig\", \"id\": \"echo\" }": {
+		"body_descent": 6.0,
+		"capture": "trig_echo_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"이 오⁠브⁠젝⁠트⁠가 구⁠체⁠를 잡⁠으⁠면 그",
+			"자⁠리⁠에⁠서 작⁠은 탄⁠이 사⁠방⁠으⁠로",
+			"나⁠가⁠요."
+		],
+		"name": "처치 폭발",
+		"shown": [
+			"이 오⁠브⁠젝⁠트⁠가 구⁠체⁠를 잡⁠으⁠면 그",
+			"자⁠리⁠에⁠서 작⁠은 탄⁠이 사⁠방⁠으⁠로",
+			"나⁠가⁠요."
+		],
+		"summary": "이 오브젝트가 구체를 잡으면 그 자리에서 작은 탄이 사방으로 나가요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"trig\", \"id\": \"finish\" }": {
+		"body_descent": 6.0,
+		"capture": "trig_finish_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"체⁠력⁠이 얼⁠마 남⁠지 않⁠은 구⁠체⁠를",
+			"더 세⁠게 때⁠려⁠요. 보⁠스⁠에⁠게⁠는",
+			"효⁠과⁠가 절⁠반⁠이⁠에⁠요."
+		],
+		"name": "마무리",
+		"shown": [
+			"체⁠력⁠이 얼⁠마 남⁠지 않⁠은 구⁠체⁠를",
+			"더 세⁠게 때⁠려⁠요. 보⁠스⁠에⁠게⁠는",
+			"효⁠과⁠가 절⁠반⁠이⁠에⁠요."
+		],
+		"summary": "체력이 얼마 남지 않은 구체를 더 세게 때려요. 보스에게는 효과가 절반이에요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"trig\", \"id\": \"third\" }": {
+		"body_descent": 6.0,
+		"capture": "trig_finish_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"세 번⁠째 공⁠격⁠마⁠다 강⁠해⁠져⁠요.",
+			"계⁠속 뿜⁠는 공⁠격⁠은 일⁠정 시⁠간⁠마⁠다",
+			"잠⁠깐 강⁠해⁠져⁠요."
+		],
+		"name": "3타 강타",
+		"shown": [
+			"세 번⁠째 공⁠격⁠마⁠다 강⁠해⁠져⁠요.",
+			"계⁠속 뿜⁠는 공⁠격⁠은 일⁠정 시⁠간⁠마⁠다",
+			"잠⁠깐 강⁠해⁠져⁠요."
+		],
+		"summary": "세 번째 공격마다 강해져요. 계속 뿜는 공격은 일정 시간마다 잠깐 강해져요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	},
+	"{ \"type\": \"trig\", \"id\": \"vanguard\" }": {
+		"body_descent": 6.0,
+		"capture": "trig_finish_bottom.png",
+		"font_size": 18,
+		"foot_ascent": 17.0,
+		"foot_baseline": 136.0,
+		"height": 144.0,
+		"last_body_baseline": 100.0,
+		"lines": [
+			"체⁠력⁠이 많⁠이 남⁠은 구⁠체⁠를 더",
+			"세⁠게 때⁠려⁠요. 보⁠스⁠에⁠게⁠는 효⁠과⁠가",
+			"절⁠반⁠이⁠에⁠요."
+		],
+		"name": "앞줄 강타",
+		"shown": [
+			"체⁠력⁠이 많⁠이 남⁠은 구⁠체⁠를 더",
+			"세⁠게 때⁠려⁠요. 보⁠스⁠에⁠게⁠는 효⁠과⁠가",
+			"절⁠반⁠이⁠에⁠요."
+		],
+		"summary": "체력이 많이 남은 구체를 더 세게 때려요. 보스에게는 효과가 절반이에요.",
+		"tail": [],
+		"truncated": false,
+		"width": 252.0
+	}
+}

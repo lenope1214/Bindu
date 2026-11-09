@@ -1,0 +1,106 @@
+# 전장 사용성 개선 실행 기록
+
+범위: [진단 BF-01–50](battlefield-usability-audit-2026-11-09.md) 전부. 사용자의 `전부 수정하기` 지시에 따라 구현과 검증을 진행한다. 밸런스 수치·자동 조준 우선순위·전장 크기·사거리·사용자 카메라 배율은 보존한다.
+
+## Phase checklist
+
+- [x] Bootstrap and baseline verification
+- [x] Input implementation and local verification — input owner
+- [x] Information implementation and local verification — information owner
+- [x] Flow implementation and local verification — flow owner
+- [x] Core UI integration and local verification — root
+- [x] Independent local review — separately assigned read-only reviewer
+- [x] Local evidence and cleanup — root; physical evidence remains pending
+
+## Ownership and dependency topology
+
+세 구현 묶음은 아래 파일 소유권을 지키며 병렬 진행한다. 공유 API 변경은 root에게 먼저 알린다. 공통 명세·기존 검사 수정·핵심 UI 통합은 root가 단독 수행한다. 모든 구현이 끝난 뒤 root가 전체 check와 native 입력·화면 검사를 수행하고, 별도 읽기 전용 리뷰를 거친다.
+
+- input owner: `scripts/features/interaction.gd`, `scripts/domain/placement_policy.gd`, 신규 `tools/battlefield_input_check.gd`와 해당 증거.
+- information owner: `scripts/info_panel.gd`, `scripts/attack_preview.gd`, `scripts/features/hud.gd`, `scripts/features/field_view.gd`, 신규 `tools/battlefield_information_check.gd`와 해당 증거.
+- flow owner: `scripts/features/run_flow.gd`, `scripts/features/abilities.gd`, `scripts/features/menu.gd`, `scripts/features/progression.gd`, `scripts/features/persistence.gd`, `scripts/meta.gd`, 신규 `tools/battlefield_flow_check.gd`와 해당 증거.
+- root: `scripts/card_dock.gd`, `scripts/features/cards.gd`, `scripts/features/frame.gd`, `scripts/features/ui_shell.gd`, `scripts/features/viewport.gd`, `scripts/app/session.gd`, `scripts/features/perks.gd`, 공통 명세·기존 검사·추가 UI 파일·문서·통합.
+
+## Decisions
+
+- 전투 중 즉시 정지를 항상 노출하고 싱글 포커스 상실 정지는 기본 켬. 멀티 판은 임의로 전체 정지하지 않는다.
+- 자동 조준이 적용되는 새 설치는 기본 방향으로 완료하고, 방향 선호 편집은 별도 명시적 행동으로 유지한다. 연습 판의 방향 학습 단계는 보존한다.
+- 일반 카드는 기존 한 번 눌러 들기·드래그를 유지하면서 별도 소비 없는 읽기 경로를 제공한다. 읽기와 실행을 같은 제스처에 겹치지 않는다.
+- 되돌리기는 새 무작위 정보를 더 얻지 않는 결정적 복원이 필요하다. 카드 적용·이동·회전의 복원 범위와 무작위 상태·기록을 함께 검증한다. 재추첨·특성·진행 경계가 복원을 제한할 수 있다。
+- 가설 BF-44–50도 구현·재현 과제로 남긴다. 실제 기기·실통신·성능·접근성 증거가 없으면 완료로 표시하지 않는다.
+
+## Verification
+
+각 소유자는 새 검사에서 수정 전 실패와 수정 후 통과를 기록하고 격리 native 화면을 확인한다. 공통 gate는 `GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh check`, 기존 carry/usability/first-play 검사, PC 100/130%·폰 130%·태블릿 화면 검사다. 구현된 변경에 맞는 명세와 검사를 같은 변경 범위에서 갱신한다.
+
+현재 상태: 세 구현 묶음과 공통 UI를 통합했다. 공통 gate(명세250·전달 상태86·서버28개 포함)와 PC/폰 native16묶음은 통과했다. 협동3인 전달·재접속·유실14조건과 PC/폰 후속은 로컬 검증을 마쳤으며, 후반 고배속 전체 지연은 아직 해결하지 못했다. 실기기는 사용자가 현재 연결하기 어렵다고 답했으므로 물리 검증 항목을 미확인으로 유지한다. 항목별 상태는 `.omh/goals/battlefield-usability.json`에 기록한다. 미관찰 결과를 통과로 표시하지 않는다.
+
+
+## 구현과 확인 범위
+
+아래 ‘연결 검사’는 구현을 확인할 검사이며 최종 통과 선언이 아니다. 묶음별 초기 로그와 최신 통합 결과를 구분한다. [입력 증거](qa/2026-11-09-battlefield-fixes/input/README.md), [정보 증거](qa/2026-11-09-battlefield-fixes/information/README.md), [진행 증거](qa/2026-11-09-battlefield-fixes/flow/README.md), [실통신 증거](qa/2026-11-09-battlefield-fixes/multiplayer/README.md), [부하 관찰](qa/2026-11-09-battlefield-fixes/performance/README.md).
+
+| 진단 | 구현·변경 | 연결 검사 |
+|---|---|---|
+| BF-01 | 읽기 모달 단축키 차단, 정지·오래된 정보 버튼의 카드 선택 재검증 | input, core |
+| BF-02 | 카드별 정보 버튼·소비 없는 전체 읽기·이전/다음·닫기 복원 | core |
+| BF-03 | X 뒤 명시적 재선택으로 정보 재열기 | input |
+| BF-04 | 화면상 가장 가까운 대상과 생성 순서 독립 동률 선택 | input |
+| BF-05 | 기존 Tower·Callable·공격 카운터를 보존하는 편집 이력, 표시된 경계 뒤 무효화 | undo, core |
+| BF-06 | 전투 Esc 한 번 즉시 정지 | input |
+| BF-07 | 싱글 포커스 상실 정지 기본 켬·설정 저장·명시적 재개 | flow, lifecycle |
+| BF-08 | 선택·명시적 읽기 동안 시작 카운트다운 유예 | spec, lifecycle |
+| BF-09 | 기본 자동 조준 일반 설치에서 별도 방향 단계 생략 | input |
+| BF-10 | 위치 다시 정하기·카드 돌려놓기·편집 취소를 단계에 맞게 표시 | core, carry |
+| BF-11 | 하단 상태에 든 카드 이름 표시 | spec, carry |
+| BF-12 | 재클릭은 선택 유지, 방향은 명시 버튼·E | input, usability |
+| BF-13 | 정지한 꾹 누르기는 이동 안 함 | input |
+| BF-14 | 일반 휠 확대·Alt+휠 회전 | input, spec |
+| BF-15 | 기존 빨간 무효 고리 유지·구체적인 거절 이유를 drag 중 하단 표시 | input |
+| BF-16 | 선택 추가·제외와 전체 선택 화면 버튼 | input |
+| BF-17 | 선택 그룹 공통 방향·상대 회전·취소 원복 | input, undo |
+| BF-18 | 선택 반경·끌기 기준을 화면 좌표에서 계산 | input |
+| BF-19 | Tab 순환·화살표 배치/이동·Enter 적용·버튼 포커스 | input |
+| BF-20 | 폰 명시 선택 시 목록을 접고 정보 공간 확보, 내용 전체 스크롤 | core, layout |
+| BF-21 | 핵심 수치 먼저, 공격 예시는 별도 열기 | information, usability |
+| BF-22 | 정보창·진행 배지·조작 안내 실제 사각형 회피 | layout |
+| BF-23 | 선택 유지 중 카드 호버는 임시 카드 비교, 이탈 후 선택 정보 복귀 | usability |
+| BF-24 | 카드 높이·핵심 요약 최대 세 줄, 긴 협공 요약 축약 | card_writing, layout |
+| BF-25 | 전체 정보에서 대상별 적용 가능·변화·새 조합·거절 이유 비교 | information, core |
+| BF-26 | 평소 전투 저장 상태·정지 메뉴에 실제 성공/실패·복원 경계 | flow, lifecycle |
+| BF-27 | 현재 자동 조준·방향 선호·상한·조작 설명 갱신, 오래된 README 규칙 보관 | spec, 문서 대조 |
+| BF-28 | 대상별 거절 이유와 가능한 대안 후보 읽기, 무효 drag 구체적 이유 | information, input |
+| BF-29 | 다시 뽑기와 잔여 수 표시, 0회는 disabled 상태 유지 | spec, layout |
+| BF-30 | 1·3·5·10 직접 선택 메뉴 | flow, carry |
+| BF-31 | ‘연속 진행’, 실제 전투·카드 선택 보류 설명 | flow |
+| BF-32 | 현재 웨이브 뒤 멈춤과 즉시 정지 구분 | flow |
+| BF-33 | 보류 특성·카드·다시 뽑기 횟수 노출 | flow |
+| BF-34 | 설정 접힘과 독립된 상단 즉시 정지 | core |
+| BF-35 | 시작 직후 450ms 단축키 가속 방지, 명시 버튼 즉시 반응 | flow |
+| BF-36 | 싱글 수동 기술 조준 0.25 감속 기본 켬·선택 해제 가능 | flow |
+| BF-37 | 기술 버튼에 실제 효과·대상, 자동/수동 상태 | flow |
+| BF-38 | 게임 초와 배속을 반영한 실제 약 대기시간·웨이브 재충전 설명 | flow |
+| BF-39 | 조준 중 유효/면역 개수·고리·무효 소비 방지 | information |
+| BF-40 | 전투 화면에서 기술 자동/수동 직접 전환 | flow |
+| BF-41 | DPS 행 클릭·터치·Enter로 전장 대상 선택 | information |
+| BF-42 | 기본 공격 계산치·실전 피해/시간·포함 범위 구분 | information |
+| BF-43 | 직접 피해와 제어/전달 역할 구분. 비활성 순풍을 바람 지원으로 설명하던 신규 오류도 리뷰에서 제거 | information |
+| BF-44 | 지난 웨이브 방향·종류·실제 손실·통과 시 저항/보호막/면역 읽기 UI. 모든 누수를 빈 길목으로 단정하던 기존 안내도 수정. 원인별 3과제·행동 성공률 비교는 미확인 | core, 후속 과제 |
+| BF-45 | 움직이는 적 명시적 정보 고정·선택 전환·소멸 해제. 실제 폰 추적은 미확인 | information, input, 실기기 대기 |
+| BF-46 | 권한/요청 설명·준비 취소·대기 타이머 해제. 로컬2인 협동/대결·3인 전달14조건·PC/폰 후속 검증 통과 | multiplayer, 실기기/인터넷 대기 |
+| BF-47 | focus 알림별 입력 정리·저장 성공·재개/복원 경계. 잠금·전화·OS 종료는 미확인 | lifecycle, 실기기 대기 |
+| BF-48 | 가림 실패를 실재 결함으로 확정하지 않음. 좌우손·작은 폰 실기기 비교 후 오프셋/렌즈 최소 개입 결정 필요 | 실기기 대기 |
+| BF-49 | 16개·구체 300개·1/4/8배속 native 측정에서 계산 병목 확인, main과 동일 조건 비교·조준 함수 최적화 후에도 8배속 전체 지연 남음 | performance, 실기기 대기 |
+| BF-50 | PC 70/85/100/115/130·태블릿/폰 모의 레이아웃과 화면 버튼/문구/포커스 경로 검사. 실제 색각·대비 과제·스크린리더는 미확인 | layout, 후속 과제 |
+
+## 새로 찾은 회귀 위험
+
+- 카드 정보창의 ‘이 카드 들기’가 정지 상태와 보류 이후 이전 offer를 재검증하지 않던 경로를 수정했다. 중앙 진입점에서 CHOOSE·양수 선택수·현재 offer·일반 카드·입력 허용을 모두 확인한다. `core`에서 정지·늦은 callback을 따로 검증한다.
+- 카드 편집 복원을 저장 파일 역직렬화로 처리하면 기존 Tower의 지연 함수·런타임 카운터를 잃는다. 별도 이력 서비스로 바꾸고 기존 객체를 제자리 복원한다. 초기 스냅샷 API는 제품에서 제거했다.
+- 협동 3인 이상에서 동시에 같은 속성 요청을 충족시키려 할 때 기부자 카드만 소모될 가능성이 소스 리뷰에서 추가 발견됐다. 기존 main에도 있던 경로이며 두 참가자 성공 검증으로 배제되지 않는다. 예약 → 소유자 적용 → host 확정 → 기부자 단일 소비 프로토콜로 수정했다. 같은 offer·선택 문맥·연결 epoch·요청 revision을 묶고, 재접속·완료 유실·강제 시작·명시 퇴장과 중립 대기 표시·폰 알림 겹침을 로컬에서 검증했다. 인터넷/실기기·OS 종료 증거는 남는다. [구현](qa/2026-11-09-battlefield-fixes/multiplayer/gift/implementation.md), [독립 반례 검토](qa/2026-11-09-battlefield-fixes/multiplayer/gift/review.md).
+
+기록된 자동/합성 성공을 인간 사용성·실기기 성공으로 바꾸지 않는다. 가설의 사용자 과제·물리 증거가 남아 있으므로 ‘50개 전부 해결’로 보고하지 않는다.
+
+## 잔여 검증 재개점
+
+[실기기·사용자 과제](qa/2026-11-09-battlefield-fixes/remaining-user-tasks.md)에 BF-44–50의 실제 과제·관찰·현재 미실행 상태를 정리했다. BF-49의 8배속 장판/공격 비용은 로컬에서도 추가 개선 대상이다. 장판 선별 후보는 동일성57개를 통과했지만 짧음/밀집에서 느려져 제품 반영을 보류했고, 실제 혼합의 최대13점·적용 비용을 별도 계측했다. 최신 UI 뒤 공통 전체 검사도 다시 통과했다. 실기기 부재 때문에 로컬 성능 문제까지 해결한 것으로 처리하지 않는다.

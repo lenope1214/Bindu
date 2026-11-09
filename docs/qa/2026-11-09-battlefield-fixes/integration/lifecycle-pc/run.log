@@ -1,0 +1,82 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+ok   BF-47 choose: 백그라운드 알림이 정지·입력 상태 정리
+ok   BF-47 choose: 늦은 release·복귀는 소비·설치·자동 재개 없음
+UI ok choose-2017
+ok   BF-47 choose: 명시적 재개 가능
+ok   BF-47 choose: 재시작 복원은 쉬는 시간·무입력 상태
+ok   BF-47 choose: 원래 저장한 offer 보존
+ok   BF-47 choose: 백그라운드 알림이 정지·입력 상태 정리
+ok   BF-47 choose: 늦은 release·복귀는 소비·설치·자동 재개 없음
+UI ok choose-2015
+ok   BF-47 choose: 명시적 재개 가능
+ok   BF-47 choose: 재시작 복원은 쉬는 시간·무입력 상태
+ok   BF-47 choose: 원래 저장한 offer 보존
+ok   BF-47 place: 백그라운드 알림이 정지·입력 상태 정리
+ok   BF-47 place: 늦은 release·복귀는 소비·설치·자동 재개 없음
+UI ok place-2017
+ok   BF-47 place: 명시적 재개 가능
+ok   BF-47 place: 재시작 복원은 쉬는 시간·무입력 상태
+ok   BF-47 place: 원래 저장한 offer 보존
+ok   BF-47 place: 백그라운드 알림이 정지·입력 상태 정리
+ok   BF-47 place: 늦은 release·복귀는 소비·설치·자동 재개 없음
+UI ok place-2015
+ok   BF-47 place: 명시적 재개 가능
+ok   BF-47 place: 재시작 복원은 쉬는 시간·무입력 상태
+ok   BF-47 place: 원래 저장한 offer 보존
+ok   BF-47 aim: 백그라운드 알림이 정지·입력 상태 정리
+ok   BF-47 aim: 늦은 release·복귀는 소비·설치·자동 재개 없음
+UI ok aim-2017
+ok   BF-47 aim: 명시적 재개 가능
+ok   BF-47 aim: 재시작 복원은 쉬는 시간·무입력 상태
+ok   BF-47 aim: 원래 저장한 offer 보존
+ok   BF-47 aim: 백그라운드 알림이 정지·입력 상태 정리
+ok   BF-47 aim: 늦은 release·복귀는 소비·설치·자동 재개 없음
+UI ok aim-2015
+ok   BF-47 aim: 명시적 재개 가능
+ok   BF-47 aim: 재시작 복원은 쉬는 시간·무입력 상태
+ok   BF-47 aim: 원래 저장한 offer 보존
+ok   BF-47 ready: 백그라운드 알림이 정지·입력 상태 정리
+ok   BF-47 ready: 늦은 release·복귀는 소비·설치·자동 재개 없음
+UI ok ready-2017
+ok   BF-47 ready: 명시적 재개 가능
+ok   BF-47 ready: 재시작 복원은 쉬는 시간·무입력 상태
+ok   BF-47 ready: 백그라운드 알림이 정지·입력 상태 정리
+ok   BF-47 ready: 늦은 release·복귀는 소비·설치·자동 재개 없음
+UI ok ready-2015
+ok   BF-47 ready: 명시적 재개 가능
+ok   BF-47 ready: 재시작 복원은 쉬는 시간·무입력 상태
+ok   BF-47 wave: 백그라운드 알림이 정지·입력 상태 정리
+ok   BF-47 wave: 늦은 release·복귀는 소비·설치·자동 재개 없음
+UI ok wave-2017
+ok   BF-47 wave: 명시적 재개 가능
+ok   BF-47 wave: 재시작 복원은 쉬는 시간·무입력 상태
+ok   BF-47 wave: 백그라운드 알림이 정지·입력 상태 정리
+ok   BF-47 wave: 늦은 release·복귀는 소비·설치·자동 재개 없음
+UI ok wave-2015
+ok   BF-47 wave: 명시적 재개 가능
+ok   BF-47 wave: 재시작 복원은 쉬는 시간·무입력 상태
+ok   BF-47 skill: 백그라운드 알림이 정지·입력 상태 정리
+ok   BF-47 skill: 늦은 release·복귀는 소비·설치·자동 재개 없음
+UI ok skill-2017
+ok   BF-47 skill: 명시적 재개 가능
+ok   BF-47 skill: 재시작 복원은 쉬는 시간·무입력 상태
+ok   BF-47 skill: 백그라운드 알림이 정지·입력 상태 정리
+ok   BF-47 skill: 늦은 release·복귀는 소비·설치·자동 재개 없음
+UI ok skill-2015
+ok   BF-47 skill: 명시적 재개 가능
+ok   BF-47 skill: 재시작 복원은 쉬는 시간·무입력 상태
+ok   BF-47 continuous: 백그라운드 알림이 정지·입력 상태 정리
+ok   BF-47 continuous: 늦은 release·복귀는 소비·설치·자동 재개 없음
+UI ok continuous-2017
+ok   BF-47 continuous: 명시적 재개 가능
+ok   BF-47 continuous: 재시작 복원은 쉬는 시간·무입력 상태
+ok   BF-47 continuous: 백그라운드 알림이 정지·입력 상태 정리
+ok   BF-47 continuous: 늦은 release·복귀는 소비·설치·자동 재개 없음
+UI ok continuous-2015
+ok   BF-47 continuous: 명시적 재개 가능
+ok   BF-47 continuous: 재시작 복원은 쉬는 시간·무입력 상태
+BATTLEFIELD LIFECYCLE failures=0 ui=0
+WARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

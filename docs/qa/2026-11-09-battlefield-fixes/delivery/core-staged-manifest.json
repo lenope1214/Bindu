@@ -1,0 +1,12 @@
+{
+  "tree": "b06ede9692a041fd2f2094b1aaf80da86c47c0af",
+  "exit_code": 0,
+  "script_errors": false,
+  "temporary_project": "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-staged-core-h7g10opm",
+  "temporary_project_removed_after_context": true,
+  "command": [
+    "bash",
+    "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-staged-core-h7g10opm/tools/run.sh",
+    "spec"
+  ]
+}
