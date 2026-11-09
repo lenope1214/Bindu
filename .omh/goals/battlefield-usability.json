@@ -603,12 +603,13 @@
       "diagnostic_status": "가설",
       "title": "화면·시각 조건별 접근성 사각지대가 남아 있다",
       "implementation": "partial",
-      "verification": "selected_keyboard126_locally_verified; assistive_technology_colour_contrast_physical_human_remaining",
+      "verification": "selected_keyboard126_and_native_AX_names_help_one_press_verified; whole_assistive_navigation_colour_contrast_physical_human_remaining",
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/remaining-user-tasks.md",
         "docs/qa/2026-11-09-battlefield-fixes/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md",
-        "docs/qa/2026-11-09-battlefield-fixes/keyboard/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/keyboard/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility/README.md"
       ]
     }
   ],
@@ -1005,11 +1006,27 @@
         "docs/qa/2026-11-09-battlefield-fixes/performance/input-service/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/input-service/summary.json"
       ]
+    },
+    {
+      "type": "native_accessibility_names_and_press_verified_with_limits",
+      "facts": [
+        "Five product scripts add names/help only. Frozenb7/current8states selected game and visible-control layout/text/focus/disabled/tooltip equal.",
+        "Actual AX choose3/pause6 nameless buttons become0; perk names/help and slider/domain names observed. Actual one native AXPress card ->held/PLACE, picks2/camera/positions preserved.",
+        "Keyboard3profiles126 and additive worker buffer canary3 pass. Prior task24 direct parse violation fixed in ccee2d3 without relaxing UI34; existing send body byte-identical.",
+        "Final fullcheck252/86/parity345/fuzz4x3000 actualexit0/restore4,8,12to13/server28 exit0. One-time architecture41old/new0, runtime boundary0.",
+        "An earlier fullcheck fuzz2 hit message queue OOM and signal11/exit134.128124780byte raw retained; root cause and exact original input sequence unproven. Final pass is not proof of OOM fix.",
+        "Raw AXChildren is not visible-child/VoiceOver navigation proof; speech/mobile/physical/human/full50 remain open."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility/summary.json",
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility/fuzz-oom.json"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "Deliver task24 evidence commit via latest main pull/rebase/push/PR update. Next inspect BF50 semantic/accessibility-tree exposure and remaining keyboard paths. Input-service prototype remains unadopted: actual OS-frame return, speed/game-time/debt and RNG policy require explicit controlled experiment; UIKit/physical/human/full50 remain open.",
+    "next_local_action": "Deliver scoped QA and accessibility commits, latest main pull/rebase/push/PR update. Then prioritize I15: reproduce message-queue OOM using recorded input/config and baseline/current comparison; do not count a later successful fuzz as a fix. Continue BF50 actual assistive navigation/visible descendants and full field tasks; full50 remains active.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },
@@ -1095,6 +1112,25 @@
       "verification": "native_virtual_GUI_3profiles126_assertions",
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/keyboard/README.md"
+      ]
+    },
+    {
+      "id": "I-14",
+      "title": "직접 그린 카드와 메뉴의 접근성 이름 누락",
+      "implementation": "implemented",
+      "verification": "selected_native_AX_names_help_action_verified; whole_accessibility_HOLD",
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility/README.md"
+      ]
+    },
+    {
+      "id": "I-15",
+      "title": "무작위 조작 중 메시지큐 고갈과 엔진 종료",
+      "implementation": "unresolved",
+      "verification": "observed_once; raw_retained; exact_replay_and_root_cause_unproven",
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility/fuzz-oom.json",
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility/full-check-fixed.log"
       ]
     }
   ]

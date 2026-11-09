@@ -1293,16 +1293,16 @@
     "_update_press": "Pure group clamp policy, same iteration order; Screen-space nearest picking, explicit group editing, keyboard placement, modal/modifier guards, undo hooks and touch de-duplication; input/undo/core/usability regressions; scoped delta from e25b6ea, final gate tracked in battlefield-usability-implementation.md",
     "_on_delete_data": "Weak session liveness after await",
     "_ugc_buttons": "Weak session liveness after await",
-    "_show_perks": "Weak session liveness in delayed long press",
+    "_show_perks": "Weak session liveness in delayed long press Accessibility follow-up exposes existing description/coin text and actual owned count; visual/focus/card policy unchanged.",
     "_mp_kick": "Weak session liveness in delayed kick",
     "_input": "Hide guidance before object GUI hit testing; pointer/touch regression; Screen-space nearest picking, explicit group editing, keyboard placement, modal/modifier guards, undo hooks and touch de-duplication; input/undo/core/usability regressions; scoped delta from e25b6ea, final gate tracked in battlefield-usability-implementation.md",
     "_process": "Port main UI redraw optimization into feature controllers during main merge; Always available pause, read-time countdown hold and skill aim factor; core/flow/lifecycle regressions; scoped delta from e25b6ea, final gate tracked in battlefield-usability-implementation.md Latest follow-up also positions notifications below the actual multiplayer action row and retains that lower bound when fitting above cards. Inspector-reading follow-up: place the wave banner in the free horizontal span beside either left or right inspector; retain HUD/card vertical fitting and field/camera/simulation behavior. Paired native reading/overlap and desktop flow/core checks.",
     "_update_action_guide": "Suppress guidance while hovering or manipulating objects; TUT-03 regression",
-    "_build_menu": "Remove obsolete combination popup setting; inspector is the single presentation; Persisted focus-pause and manual-skill slowdown options; flow regression; scoped delta from e25b6ea, final gate tracked in battlefield-usability-implementation.md",
+    "_build_menu": "Remove obsolete combination popup setting; inspector is the single presentation; Persisted focus-pause and manual-skill slowdown options; flow regression; scoped delta from e25b6ea, final gate tracked in battlefield-usability-implementation.md Accessibility follow-up names UI scale buttons and skin-cycle rows without changing values/layout/actions.",
     "_set_card_detail": "Explicit detail button or Z reopens dismissed inspector; UI-32 regression",
     "_resolve": "Preview focus limits attacks to selected tower; production and parity mode retain full simulation",
     "_draw_fx": "Preview draws combat effects without HUD or tooltips; Pinned orb information, eligible/immune skill preview and inspector priority; information/input/usability regressions; scoped delta from e25b6ea, final gate tracked in battlefield-usability-implementation.md; Read-only same-style popup draw selection; original popup storage, lifetime, numeric/different-style rows, canvas and RNG preserved; native feedback contract UI-50.; Reduced-FX decoration-only guards preserve default native command args/order, protected reduced commands, raw effect/combat state and per-draw RNG; paired native UI-51 contract/benchmark.",
-    "_build_ui": "Remove separate combination popup; inspector NEW and discovery regression; Connect direct count menu and current card-reader guidance; core/flow regressions; scoped delta from e25b6ea, final gate tracked in battlefield-usability-implementation.md",
+    "_build_ui": "Remove separate combination popup; inspector NEW and discovery regression; Connect direct count menu and current card-reader guidance; core/flow regressions; scoped delta from e25b6ea, final gate tracked in battlefield-usability-implementation.md Accessibility follow-up names speed and settings controls without changing focus/input/layout.",
     "_place_on": "Remove separate combination popup; inspector NEW and discovery regression; Screen-space nearest picking, explicit group editing, keyboard placement, modal/modifier guards, undo hooks and touch de-duplication; input/undo/core/usability regressions; scoped delta from e25b6ea, final gate tracked in battlefield-usability-implementation.md",
     "_check_progress": "Remove separate combination popup; inspector NEW and discovery regression",
     "_start_wave": "Nonblocking lane warning and new direction highlight before card placement; WAVE-14 regression; Direct continuous-wave count, deferred-work/stop labels, speed-key debounce, save/help/MP status and edit boundaries; flow/core/MP regressions; scoped delta from e25b6ea, final gate tracked in battlefield-usability-implementation.md",
@@ -1391,6 +1391,12 @@
     "_mp_tick": "I-04: drive bounded transaction retries and accurately disable request UI during negotiation or settlement.",
     "_mp_send_towers": "I-04: publish body and choice context as one revision; retain plain TW compatibility under a protocol-zero host.",
     "_info_blockers": "BF-46/I-04 follow-up: include the visible multiplayer action row so field labels avoid actual request/view/kick buttons; PC/phone native collision proof and responsive recheck. BF-40/BF-50: include both skill buttons and their mode toggle so lane/status badges avoid every visible skill control.",
-    "_panel_blocks": "BF-40/BF-50 native iOS follow-up: all skill controls include the manual/auto mode toggle so movable information/DPS panels avoid it. Exact simulator rects/native touch and unchanged camera checked."
+    "_panel_blocks": "BF-40/BF-50 native iOS follow-up: all skill controls include the manual/auto mode toggle so movable information/DPS panels avoid it. Exact simulator rects/native touch and unchanged camera checked.",
+    "_card_button": "Expose existing full-card text as accessibility description; no draw, input, card consumption, simulation or RNG change.",
+    "_card_paint": "Name custom-painted cards from displayed index/kind/title/level. Existing drawing/layout/focus and input paths stay unchanged.",
+    "_menu_glyph": "Expose the existing painted menu caption as the accessible name; no visual or action change.",
+    "_tile": "Expose existing tile title as accessible name; no layout/action change.",
+    "_prep_row": "Name the two arrows using the existing row title and previous/next direction; callbacks unchanged.",
+    "_menu_row": "Optional row title names skin-cycle arrows; both existing callers supply displayed domain; width/defaults/callbacks unchanged."
   }
 }

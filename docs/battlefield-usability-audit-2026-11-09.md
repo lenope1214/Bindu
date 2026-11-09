@@ -469,3 +469,5 @@ Tab→←→E→↑→Enter에서 현재 오브젝트가 아니라 이동 전 �
 BF-49 후속: [지속/성장 효과 호출 조사](qa/2026-11-09-battlefield-fixes/performance/zone-hit/README.md)에서 없는 효과 helper를 생략했다.4줄의 CPU 개선은 반복 관찰됐지만 native8배속 합성 큐170–212ms와 화면 밀도·물리 입력 과제는 남는다. 400은 live 유지 수이며 매 표본400개가 항상 공격 가능하다는 뜻은 아니다.
 
 [계산 중 입력 처리 실험](qa/2026-11-09-battlefield-fixes/performance/input-service/README.md): 제품70개 스크립트는 유지하고 격리 사본만 시험했다. native ABBA240표본의 전투/난수/시간 동일,28개 실제 계산 중 버퍼 입력과 재진입/삭제를 확인했다. 정지 큐114–154ms→7–12ms와 CPU+0.19–0.30%를 구분하며, 즉시 force-draw의 메뉴 미표시도 기록했다. 실제 UIKit 수신·일반 조작·첫 화면 표시를 증명하지 못해 제품 적용은 보류한다. 전체50개와 BF-49/PERF-01은 미완료다.
+
+[접근성 이름 후속](qa/2026-11-09-battlefield-fixes/accessibility/README.md): 카드·그림 메뉴·설정/접기 조작의 이름과 기존 설명을 연결했다. 실제 macOS AX 이름/도움말·native AXPress 카드 들기와8상태의 선택한 게임/배치/포커스 비교, 키보드126·최종 전체 회귀를 확인했다. raw AXChildren을 화면 가시성·VoiceOver 음성/탐색 성공으로 확대하지 않는다. 앞선 fuzz의 메시지큐 고갈128MB 원본은 보존했고 I-15 원인은 미확정이다. 최종 통과를 충돌 해결로 보지 않으며 전체50개는 active다.

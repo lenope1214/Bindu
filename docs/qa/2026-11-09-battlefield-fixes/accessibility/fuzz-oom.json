@@ -1,0 +1,24 @@
+{
+  "status": "observed_once_root_cause_unproven",
+  "seed_label": 2,
+  "frames_done": false,
+  "exit": 134,
+  "original": "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-check.GzLMl6/fuzz-raw/f_2.txt",
+  "local_copy": "fuzz-oom-original.txt",
+  "bytes": 128124780,
+  "sha256": "356d38bc7d662b955c11905c1ba7b78e9e1b7f284c6e68bbb824ff0f25edaf3f",
+  "first_lines": [
+    "Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org",
+    "",
+    "FUZZR rules=1 map=plain tutor=true ui=1.0 modes=glass,narrow",
+    "FUZZ f=1000 phase=6 wave=0 towers=2 sel=1",
+    "FUZZ f=2000 phase=3 wave=1 towers=2 sel=1",
+    "Failed method: Control::_update_minimum_size. Message queue out of memory. Message queue out of memory. Try increasing 'memory/limits/message_queue/max_size_mb' in project settings.",
+    "Object was deleted while awaiting a callback."
+  ],
+  "limits": [
+    "Nominal fuzz seed does not freeze all wall-clock/global random behavior; exact original input sequence was not recorded.",
+    "No queue-memory budget increase, test relaxation or deletion of raw failure.",
+    "Existing VirtualInput.send restored verbatim; new buffer-only helper additive. A later pass cannot establish an OOM fix."
+  ]
+}

@@ -101,6 +101,7 @@ func _show_perks() -> void:
 		b.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
 		b.focus_mode = Control.FOCUS_NONE
 		b.set_meta("perk_desc", desc + ("\n\n" + coin if coin != "" else ""))
+		b.accessibility_description = "현재 보유 %d개. %s" % [have, b.get_meta("perk_desc")]
 		b.set_meta("perk_summary", _perk_summary(pk))
 		b.mouse_entered.connect(func():
 			session.card_dock.inspected_tower = null

@@ -302,11 +302,13 @@ func _build_ui() -> void:
 	session.speed_group.add_theme_constant_override("separation", 0)
 	bar.add_child(session.speed_group)
 	session.speed_btn = Button.new()
+	session.speed_btn.accessibility_name = "배속 전환"
 	session.speed_btn.custom_minimum_size = Vector2(72, 36)
 	session.speed_btn.pressed.connect(session.run_flow_system._toggle_speed)
 	session.cards_system._icon_btn(session.speed_btn, func(): return ["speed", Color(1, 0.85, 0.45) if session.game_speed > 1.0 else Color(1, 1, 1, 0.9)])
 	session.speed_group.add_child(session.speed_btn)
 	session.speed_pick = OptionButton.new()
+	session.speed_pick.accessibility_name = "빠른 배속 선택"
 	for sp in BinduSession.SPEEDS:
 		session.speed_pick.add_item("x%d" % roundi(sp))
 	session.speed_pick.custom_minimum_size = Vector2(64, 36)
@@ -316,6 +318,7 @@ func _build_ui() -> void:
 	session.speed_group.add_child(session.speed_pick)
 	# 맨 오른쪽: 접으면 이것만 남고, 펼치면 왼쪽으로 버튼이 늘어선다
 	session.bar_btn = Button.new()
+	session.bar_btn.accessibility_name = "설정 버튼"
 	session.bar_btn.custom_minimum_size = Vector2(96, 36)
 	session.bar_btn.pressed.connect(session.cards_system._toggle_bar)
 	bar.add_child(session.bar_btn)

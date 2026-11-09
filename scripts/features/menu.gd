@@ -338,6 +338,7 @@ func _build_menu(root: Control) -> void:
 	for v in Meta.UI_SCALES:
 		var zb := Button.new()
 		zb.text = "%d%%" % roundi(v * 100.0)
+		zb.accessibility_name = "글자·버튼 크기"
 		zb.toggle_mode = true
 		zb.button_group = zg
 		zb.button_pressed = is_equal_approx(v, Meta.ui_scale)
@@ -350,8 +351,8 @@ func _build_menu(root: Control) -> void:
 		zrow.add_child(zb)
 	sv.add_child(zrow)
 	# 오브젝트·중앙 모양 (예전엔 시작 화면에 있었다)
-	skin_label = _menu_row(sv, func(): _cycle_skin("tower", -1), func(): _cycle_skin("tower", 1), sw - (220.0 if session.viewport_system._phone() else 160.0))
-	core_label = _menu_row(sv, func(): _cycle_skin("core", -1), func(): _cycle_skin("core", 1), sw - (220.0 if session.viewport_system._phone() else 160.0))
+	skin_label = _menu_row(sv, func(): _cycle_skin("tower", -1), func(): _cycle_skin("tower", 1), sw - (220.0 if session.viewport_system._phone() else 160.0), "오브젝트 모양")
+	core_label = _menu_row(sv, func(): _cycle_skin("core", -1), func(): _cycle_skin("core", 1), sw - (220.0 if session.viewport_system._phone() else 160.0), "중앙 모양")
 	var cbox: Container = sv
 	if session.viewport_system._phone():
 		var grid := GridContainer.new()
@@ -550,6 +551,7 @@ func _on_delete_data(b: Button, nick_edit: LineEdit) -> void:
 ## ◀ 글자 ▶ 한 줄.
 ## 시작 화면 큰 타일: 버튼 위에 이름(색)과 설명 줄. 설명 Label을 돌려준다.
 func _tile(b: Button, title: String, col: Color, key: Variant) -> Label:
+	b.accessibility_name = title
 	var session: BinduSession = self.session
 	b.text = ""
 	b.custom_minimum_size = Vector2(_tile_w(), 170 if session.viewport_system._phone() else 150)
@@ -683,6 +685,7 @@ func _prep_row(box: BoxContainer, title: String, prev: Callable, next: Callable)
 	var bs := Vector2(56, 52) if OS.has_feature("mobile") else Vector2(40, 40)
 	var a := Button.new()
 	a.text = "◀"
+	a.accessibility_name = title + " 이전"
 	a.flat = true
 	a.focus_mode = Control.FOCUS_NONE
 	a.custom_minimum_size = bs
@@ -706,6 +709,7 @@ func _prep_row(box: BoxContainer, title: String, prev: Callable, next: Callable)
 	v.add_child(sub)
 	var b := Button.new()
 	b.text = "▶"
+	b.accessibility_name = title + " 다음"
 	b.flat = true
 	b.focus_mode = Control.FOCUS_NONE
 	b.custom_minimum_size = bs
@@ -841,7 +845,7 @@ func _prep_set(l: Label, main_t: String, sub_t: String) -> void:
 	sub.visible = sub_t != ""
 
 
-func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0) -> Label:
+func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0, title := "선택") -> Label:
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 12)
@@ -850,6 +854,7 @@ func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0) ->
 	var bs := Vector2(64, 56) if OS.has_feature("mobile") else Vector2(44, 40)
 	var a := Button.new()
 	a.text = "◀"
+	a.accessibility_name = title + " 이전"
 	a.focus_mode = Control.FOCUS_NONE
 	a.custom_minimum_size = bs
 	a.pressed.connect(prev)
@@ -867,6 +872,7 @@ func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0) ->
 	row.add_child(l)
 	var b := Button.new()
 	b.text = "▶"
+	b.accessibility_name = title + " 다음"
 	b.focus_mode = Control.FOCUS_NONE
 	b.custom_minimum_size = bs
 	b.pressed.connect(next)
@@ -1397,6 +1403,7 @@ func _volume_row(parent: Container, title: String, getter: Callable, setter: Cal
 	row.add_child(lab)
 	var slider := HSlider.new()
 	slider.name = "Vol_" + title
+	slider.accessibility_name = title
 	slider.min_value = 0.0
 	slider.max_value = 1.0
 	slider.step = 0.05

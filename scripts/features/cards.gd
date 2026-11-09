@@ -304,6 +304,7 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 	var rows: Array = cc["rows"]
 	var foot: Array = cc["foot"]
 	b.set_meta("full", _card_full(card))
+	b.accessibility_description = "\n".join(b.get_meta("full").map(func(row): return str(row[0])))
 	b.set_meta("summary", _card_content(card, 0)["rows"])
 	session.card_dock.watch(b, card)
 	var fit := session.hud_system.core_fit(card)
@@ -553,6 +554,8 @@ func _draw_card_full() -> void:
 func _card_paint(b: Button, head: Dictionary, rows: Array, foot: Array, col: Color, base_fs := 14, count := 3) -> void:
 	var session: BinduSession = self.session
 	b.text = ""
+	var kind: String = {"elem": "속성", "pat": "공격방식", "mod": "강화", "trig": "발동", "link": "연계", "perk": "특성"}.get(head.get("kind", ""), "")
+	b.accessibility_name = "카드 %d. %s %s%s" % [head.get("idx", 1), kind, head.get("name", ""), " " + str(head["lv"]) if head.has("lv") else ""]
 	var cw := 230.0 if count <= 3 else 166.0  # 4장일 때는 좁게
 	var fs := base_fs
 	var lay: Array = []
@@ -871,6 +874,7 @@ func _keycap(b: Button, key: Variant) -> void:
 func _menu_glyph(b: Button, icon: String, label: String) -> void:
 	var session: BinduSession = self.session
 	b.text = ""
+	b.accessibility_name = label
 	b.draw.connect(func():
 		var hov := b.is_hovered()
 		var c := Color(1, 1, 1, 1.0 if hov else 0.9)
