@@ -1,0 +1,65 @@
+{
+  "baseline_ref": "ef82a0963614c15d4a03a3e770a7a3641dbe028b",
+  "precision": "Existing parity fields plus delayed timers, repeat cooldown, gore source validity and mirror state; floats/positions normalized1e-5. Not every runtime field.",
+  "variants": {
+    "baseline": {
+      "tower_sha256": "b7ee6e9fe7c9eecea4ff4092349be8fe9014400ff344c5cef5f56b3c74d51652",
+      "suites": {
+        "hit_traits": {
+          "cases": 90,
+          "samples": 1080,
+          "trace_sha256": "bd5e4ee48d52083eeac2cffae2f15ba7a9249947c7b7bbbc12886dec21dc825a",
+          "command": [
+            "/Applications/Godot.app/Contents/MacOS/Godot",
+            "--headless",
+            "--audio-driver",
+            "Dummy",
+            "--path",
+            "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-replay-iztn3f__",
+            "-s",
+            "tools/preview_parity_check.gd",
+            "--",
+            "unused",
+            "1.0",
+            "pc",
+            "hit_traits"
+          ]
+        }
+      },
+      "isolated_save_removed": true,
+      "temporary_project_removed": true
+    },
+    "candidate": {
+      "tower_sha256": "fc9510c7d5463bf9610bb6c2acc4d57964122a4c12d0c5eaaced577df8e5764d",
+      "suites": {
+        "hit_traits": {
+          "cases": 90,
+          "samples": 1080,
+          "trace_sha256": "bd5e4ee48d52083eeac2cffae2f15ba7a9249947c7b7bbbc12886dec21dc825a",
+          "command": [
+            "/Applications/Godot.app/Contents/MacOS/Godot",
+            "--headless",
+            "--audio-driver",
+            "Dummy",
+            "--path",
+            "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-replay-gbaa7owr",
+            "-s",
+            "tools/preview_parity_check.gd",
+            "--",
+            "unused",
+            "1.0",
+            "pc",
+            "hit_traits"
+          ]
+        }
+      },
+      "isolated_save_removed": true,
+      "temporary_project_removed": true
+    }
+  },
+  "equal_suites": [
+    "hit_traits"
+  ],
+  "cases": 90,
+  "samples": 1080
+}

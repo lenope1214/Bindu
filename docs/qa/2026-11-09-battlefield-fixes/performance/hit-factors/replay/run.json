@@ -1,0 +1,251 @@
+{
+  "baseline_ref": "ef82a0963614c15d4a03a3e770a7a3641dbe028b",
+  "precision": "Existing parity fields plus delayed timers, repeat cooldown, gore source validity and mirror state; floats/positions normalized1e-5. Not every runtime field.",
+  "variants": {
+    "baseline": {
+      "tower_sha256": "b7ee6e9fe7c9eecea4ff4092349be8fe9014400ff344c5cef5f56b3c74d51652",
+      "suites": {
+        "basic": {
+          "cases": 300,
+          "samples": 3600,
+          "trace_sha256": "5c3a3cc7885b0e66e73abb0d5c25fbcfb63531ff0f6488b9d1adebd4fe23c93c",
+          "command": [
+            "/Applications/Godot.app/Contents/MacOS/Godot",
+            "--headless",
+            "--audio-driver",
+            "Dummy",
+            "--path",
+            "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-replay-ytgt6ieo",
+            "-s",
+            "tools/preview_parity_check.gd",
+            "--",
+            "unused",
+            "1.0",
+            "pc",
+            "basic"
+          ]
+        },
+        "hit_traits": {
+          "cases": 450,
+          "samples": 5400,
+          "trace_sha256": "90ef257a9aeb9b884f33cf9345006e3a49c6f11d228b01f75363580f66d209f2",
+          "command": [
+            "/Applications/Godot.app/Contents/MacOS/Godot",
+            "--headless",
+            "--audio-driver",
+            "Dummy",
+            "--path",
+            "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-replay-ytgt6ieo",
+            "-s",
+            "tools/preview_parity_check.gd",
+            "--",
+            "unused",
+            "1.0",
+            "pc",
+            "hit_traits"
+          ]
+        },
+        "deaths": {
+          "cases": 45,
+          "samples": 540,
+          "trace_sha256": "dc4da64a8469ec58164620e8b164a27bbbcdc25804d83c88de083366cad2e23a",
+          "command": [
+            "/Applications/Godot.app/Contents/MacOS/Godot",
+            "--headless",
+            "--audio-driver",
+            "Dummy",
+            "--path",
+            "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-replay-ytgt6ieo",
+            "-s",
+            "tools/preview_parity_check.gd",
+            "--",
+            "unused",
+            "1.0",
+            "pc",
+            "deaths"
+          ]
+        }
+      },
+      "isolated_save_removed": true,
+      "temporary_project_removed": true
+    },
+    "candidate": {
+      "tower_sha256": "fc9510c7d5463bf9610bb6c2acc4d57964122a4c12d0c5eaaced577df8e5764d",
+      "suites": {
+        "basic": {
+          "cases": 300,
+          "samples": 3600,
+          "trace_sha256": "5c3a3cc7885b0e66e73abb0d5c25fbcfb63531ff0f6488b9d1adebd4fe23c93c",
+          "command": [
+            "/Applications/Godot.app/Contents/MacOS/Godot",
+            "--headless",
+            "--audio-driver",
+            "Dummy",
+            "--path",
+            "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-replay-wv5g6nl5",
+            "-s",
+            "tools/preview_parity_check.gd",
+            "--",
+            "unused",
+            "1.0",
+            "pc",
+            "basic"
+          ]
+        },
+        "hit_traits": {
+          "cases": 450,
+          "samples": 5400,
+          "trace_sha256": "90ef257a9aeb9b884f33cf9345006e3a49c6f11d228b01f75363580f66d209f2",
+          "command": [
+            "/Applications/Godot.app/Contents/MacOS/Godot",
+            "--headless",
+            "--audio-driver",
+            "Dummy",
+            "--path",
+            "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-replay-wv5g6nl5",
+            "-s",
+            "tools/preview_parity_check.gd",
+            "--",
+            "unused",
+            "1.0",
+            "pc",
+            "hit_traits"
+          ]
+        },
+        "deaths": {
+          "cases": 45,
+          "samples": 540,
+          "trace_sha256": "dc4da64a8469ec58164620e8b164a27bbbcdc25804d83c88de083366cad2e23a",
+          "command": [
+            "/Applications/Godot.app/Contents/MacOS/Godot",
+            "--headless",
+            "--audio-driver",
+            "Dummy",
+            "--path",
+            "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-replay-wv5g6nl5",
+            "-s",
+            "tools/preview_parity_check.gd",
+            "--",
+            "unused",
+            "1.0",
+            "pc",
+            "deaths"
+          ]
+        }
+      },
+      "isolated_save_removed": true,
+      "temporary_project_removed": true
+    },
+    "mutant": {
+      "tower_sha256": "aea5851294463d52a7f37eafd23a3182f0c66c8cfd20a3098929fc509a5cd875",
+      "suites": {
+        "hit_traits": {
+          "cases": 450,
+          "samples": 5400,
+          "trace_sha256": "62d6f4abc3cc443e08495e30fb859c4d9df4a48edb5caf1c06199e2778461f7b",
+          "command": [
+            "/Applications/Godot.app/Contents/MacOS/Godot",
+            "--headless",
+            "--audio-driver",
+            "Dummy",
+            "--path",
+            "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-replay-evsdq5q9",
+            "-s",
+            "tools/preview_parity_check.gd",
+            "--",
+            "unused",
+            "1.0",
+            "pc",
+            "hit_traits"
+          ]
+        }
+      },
+      "isolated_save_removed": true,
+      "temporary_project_removed": true
+    }
+  },
+  "equal_suites": [
+    "basic",
+    "hit_traits",
+    "deaths"
+  ],
+  "cases": 795,
+  "samples": 9540,
+  "mutant_detected_cases": [
+    "shot/single:6",
+    "shot/single:12",
+    "shot/trait-pair:[6, 1]",
+    "shot/trait-pair:[12, 10]",
+    "shot/trait-pair:[12, 5]",
+    "spray/single:6",
+    "spray/single:12",
+    "spray/trait-pair:[6, 1]",
+    "spray/trait-pair:[12, 10]",
+    "spray/trait-pair:[12, 5]",
+    "thorn/single:6",
+    "thorn/single:12",
+    "thorn/trait-pair:[6, 1]",
+    "thorn/trait-pair:[12, 10]",
+    "thorn/trait-pair:[12, 5]",
+    "stream/single:6",
+    "stream/single:12",
+    "stream/trait-pair:[6, 1]",
+    "stream/trait-pair:[12, 10]",
+    "stream/trait-pair:[12, 5]",
+    "chain/single:6",
+    "chain/single:12",
+    "chain/trait-pair:[6, 1]",
+    "chain/trait-pair:[12, 10]",
+    "chain/trait-pair:[12, 5]",
+    "gust/single:6",
+    "gust/single:12",
+    "gust/trait-pair:[6, 1]",
+    "gust/trait-pair:[12, 10]",
+    "gust/trait-pair:[12, 5]",
+    "shard/single:6",
+    "shard/single:12",
+    "shard/trait-pair:[6, 1]",
+    "shard/trait-pair:[12, 10]",
+    "shard/trait-pair:[12, 5]",
+    "wall/single:6",
+    "wall/single:12",
+    "wall/trait-pair:[6, 1]",
+    "wall/trait-pair:[12, 10]",
+    "wall/trait-pair:[12, 5]",
+    "vortex/single:6",
+    "vortex/single:12",
+    "vortex/trait-pair:[6, 1]",
+    "vortex/trait-pair:[12, 10]",
+    "vortex/trait-pair:[12, 5]",
+    "laser/single:6",
+    "laser/single:12",
+    "laser/trait-pair:[6, 1]",
+    "laser/trait-pair:[12, 10]",
+    "laser/trait-pair:[12, 5]",
+    "lob/single:6",
+    "lob/single:12",
+    "lob/trait-pair:[6, 1]",
+    "lob/trait-pair:[12, 10]",
+    "lob/trait-pair:[12, 5]",
+    "iron/single:6",
+    "iron/single:12",
+    "iron/trait-pair:[6, 1]",
+    "iron/trait-pair:[12, 10]",
+    "iron/trait-pair:[12, 5]",
+    "sonic/single:6",
+    "sonic/single:12",
+    "sonic/trait-pair:[6, 1]",
+    "sonic/trait-pair:[12, 10]",
+    "sonic/trait-pair:[12, 5]",
+    "clock/single:6",
+    "clock/single:12",
+    "clock/trait-pair:[6, 1]",
+    "clock/trait-pair:[12, 10]",
+    "clock/trait-pair:[12, 5]",
+    "wisp/single:6",
+    "wisp/single:12",
+    "wisp/trait-pair:[6, 1]",
+    "wisp/trait-pair:[12, 10]",
+    "wisp/trait-pair:[12, 5]"
+  ]
+}

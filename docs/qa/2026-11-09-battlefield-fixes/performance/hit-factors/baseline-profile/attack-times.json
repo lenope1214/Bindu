@@ -1,0 +1,174 @@
+{
+	"_guard_pick/chain": {
+		"calls": 516,
+		"us": 53901
+	},
+	"_guard_pick/clock": {
+		"calls": 516,
+		"us": 33853
+	},
+	"_guard_pick/gust": {
+		"calls": 516,
+		"us": 53251
+	},
+	"_guard_pick/iron": {
+		"calls": 516,
+		"us": 54225
+	},
+	"_guard_pick/laser": {
+		"calls": 516,
+		"us": 54278
+	},
+	"_guard_pick/lob": {
+		"calls": 516,
+		"us": 52400
+	},
+	"_guard_pick/shard": {
+		"calls": 516,
+		"us": 54766
+	},
+	"_guard_pick/shot": {
+		"calls": 1032,
+		"us": 108967
+	},
+	"_guard_pick/sonic": {
+		"calls": 516,
+		"us": 32659
+	},
+	"_guard_pick/spray": {
+		"calls": 516,
+		"us": 34390
+	},
+	"_guard_pick/stream": {
+		"calls": 516,
+		"us": 53490
+	},
+	"_guard_pick/thorn": {
+		"calls": 516,
+		"us": 56256
+	},
+	"_guard_pick/wall": {
+		"calls": 516,
+		"us": 37899
+	},
+	"attack/chain": {
+		"calls": 516,
+		"us": 81908
+	},
+	"attack/clock": {
+		"calls": 516,
+		"us": 238230
+	},
+	"attack/gust": {
+		"calls": 516,
+		"us": 63145
+	},
+	"attack/iron": {
+		"calls": 516,
+		"us": 62263
+	},
+	"attack/laser": {
+		"calls": 516,
+		"us": 96173
+	},
+	"attack/lob": {
+		"calls": 516,
+		"us": 65374
+	},
+	"attack/shard": {
+		"calls": 516,
+		"us": 65515
+	},
+	"attack/shot": {
+		"calls": 1032,
+		"us": 135984
+	},
+	"attack/sonic": {
+		"calls": 516,
+		"us": 81011
+	},
+	"attack/spray": {
+		"calls": 516,
+		"us": 1306704
+	},
+	"attack/stream": {
+		"calls": 516,
+		"us": 1164762
+	},
+	"attack/thorn": {
+		"calls": 516,
+		"us": 216730
+	},
+	"attack/vortex": {
+		"calls": 516,
+		"us": 15383
+	},
+	"attack/wall": {
+		"calls": 516,
+		"us": 47125
+	},
+	"attack/wisp": {
+		"calls": 516,
+		"us": 8390
+	},
+	"hit/chain": {
+		"calls": 173,
+		"us": 13890
+	},
+	"hit/clock": {
+		"calls": 1621,
+		"us": 45583
+	},
+	"hit/gust": {
+		"calls": 1317,
+		"us": 45704
+	},
+	"hit/iron": {
+		"calls": 672,
+		"us": 26176
+	},
+	"hit/laser": {
+		"calls": 762,
+		"us": 32872
+	},
+	"hit/lob": {
+		"calls": 37396,
+		"us": 790117
+	},
+	"hit/shard": {
+		"calls": 242,
+		"us": 13033
+	},
+	"hit/shot": {
+		"calls": 288,
+		"us": 28015
+	},
+	"hit/sonic": {
+		"calls": 1037,
+		"us": 27016
+	},
+	"hit/spray": {
+		"calls": 40265,
+		"us": 918508
+	},
+	"hit/stream": {
+		"calls": 46553,
+		"us": 810712
+	},
+	"hit/thorn": {
+		"calls": 3235,
+		"us": 83686
+	},
+	"hit/vortex": {
+		"calls": 9790,
+		"us": 172673
+	},
+	"hit/wall": {
+		"calls": 1278,
+		"us": 50215
+	},
+	"hit/wisp": {
+		"calls": 58,
+		"us": 7354
+	}
+}

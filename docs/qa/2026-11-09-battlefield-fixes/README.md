@@ -23,6 +23,7 @@
 | 실제 로컬 멀티 | 협동3인14조건·협동/대결2인·PC/폰 대기 표시 후속, 총67 actor 실행·651단언·행동/UI실패0. 검사 뒤 QA 종료에서 발생한 SCTP3줄과 종료 절차 교정 후 strict0을 분리 보존 | [멀티 증거](multiplayer/README.md), [거래 후속](multiplayer/gift/README.md) |
 | 후반 부하 | 16개 오브젝트·약300구체, 1/4/8배속×효과 줄이기 켬/끔, 30준비+180표본/조건. main/current 동일 도구 비교 | [측정 의미·결과](performance/README.md) |
 | 자동 조준 계산 | 기존 fixture 범위 오류 정정. 실제15종×레벨1/3/8·41,564대상/RNG 동등, 의도적 경계 오류2건 검출. 사거리 호출 내 재사용과 native6조건 개선 관찰 | [정정](performance/targeting/README.md), [후속 증거](performance/guard-range/README.md) |
+| hit 후처리 비용 | 없는 특징 호출 생략. 실제 전투885사례/10,620표본 상태·예약·RNG 동등, 의도적 조건 오류75건 검출. 혼합8배속 ABBA main CPU2.4–4.8% 감소, 모두 활성 경로는 큰 이득 없음 | [후속 증거](performance/hit-factors/README.md) |
 | 장판 추가 후보 | 동일성57개·실제 효과/RNG 일치, fallback 제거2종 검출. 짧음/밀집/이동에서 느려져 제품 반영 보류. 실제 혼합의 점 분포·조회/적용 비용도 별도 계측 | [후보 판단](performance/zones/README.md), [native 혼합](performance/zones/native-mix/README.md) |
 
 native는 Godot4.7.2/macOS·빈 운영 URL·고유 BinduTools 저장·최소화/no_focus 창의 SubViewport 입력/렌더링이다. 각 묶음의 manifest와 로그에서 실제 소스·실행 조건을 확인한다. 시뮬레이션 결과·강제 draw 시간·GPU시간(현재 미제공)·물리 디스플레이/OS 입력을 구분한다.

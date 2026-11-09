@@ -30,3 +30,5 @@
 [Draft PR #17](https://github.com/lenope1214/Bindu/pull/17)을 생성했다. `41cb142`는 실제15종·레벨1/3/8을 실행하도록 조준 검사 fixture를 수정하고 기존 범위 주장을 정정한 별도 커밋이다. 기존14,527회 실행 자체는 사실이지만15종 커버리지·방식별 headless 표기의 근거로 사용하지 않는다.
 
 8번째 성능 작업은 [호출 내 사거리·목표 중심 재사용](qa/2026-11-09-battlefield-fixes/performance/guard-range/README.md)으로 분리한다. 실제 전투 상태/RNG 비교와 동일 native6조건에서 개선을 관찰했다. 제품 반영 후 전체 회귀·원래2pass 참조 검사도 다시 통과했다. 전체50개 목표와 BF-49의 남은 지연은 미완료다.
+
+9번째 작업은 [없는 특징의 hit 후처리 생략](qa/2026-11-09-battlefield-fixes/performance/hit-factors/README.md)이다. 상태·예약·RNG885사례/10,620표본, 조건 오류 변형75사례 검출, native6조건·headless ABBA와 제품 반영 후 전체 회귀를 기록한다. 혼합8배속의 반복 비용은 줄었지만 모든 조합/렌더 조건의 개선을 주장하지 않는다.

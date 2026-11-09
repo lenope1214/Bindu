@@ -2150,13 +2150,15 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	if els.has(Elem.ILLUSION) and o.hp > 0.0 and randf() < Share.illu_ch(self, els.get(Elem.ILLUSION, 0)) * minf(k, 1.0) * minf(g, 1.5):
 		o.confuse(Rules.illu_t * dm, Share.has(self, "nightmare"))
 	# 특징 공유: 금속 응축 · 빛 꿰뚫음 · 땅 묻어둠 · 시간 되풀이 (나머지 특징은 전류·음파·죽을 때·물길에서)
-	if o.hp > 0.0:
+	if els.has(Elem.METAL) and o.hp > 0.0:
 		Share.condense(self, o, Share.carry_n(self), minf(k, 1.0))
 	if lit:
 		Share.pierce(self, o)
 	Share.aff_hit(self, o, k, lit, had_chill)
-	Share.on_hit(self, o, false)
-	Share.mark(self, o)
+	if els.has(Elem.EARTH) or els.has(Elem.TIME):
+		Share.on_hit(self, o, false)
+	if els.has(Elem.BLOOD) or els.has(Elem.ILLUSION):
+		Share.mark(self, o)
 	if not in_rx and mirror_src != null and mirror_t > 0.0:
 		Share.reflect(self, o)
 	if not in_rx and bounce_cd <= 0.0 and m("bounce") > 0 and not pattern in Pat.PROJECTILE and pattern != "chain" and not tag.begins_with("mod:"):

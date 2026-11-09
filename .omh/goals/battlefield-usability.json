@@ -579,7 +579,8 @@
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/remaining-user-tasks.md",
         "docs/qa/2026-11-09-battlefield-fixes/README.md",
-        "docs/qa/2026-11-09-battlefield-fixes/performance/guard-range/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/performance/guard-range/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/README.md"
       ]
     },
     {
@@ -757,11 +758,26 @@
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/performance/guard-range/README.md"
       ]
+    },
+    {
+      "type": "absent_trait_dispatch_verified",
+      "facts": [
+        "Measured residual hit144687calls3065554us. Affinity/trait calls exceed1million; attribution allocation loop only64633us, left unchanged.",
+        "Rejected local _els micro-candidate due fallback regression; Share.gd unchanged.",
+        "Conditional metal/earth-time/blood-illusion dispatch preserves ordered state, delayed timers and RNG in885cases10620samples. Intended or-to-and mutant detected75cases.",
+        "Native6conditions per variant720samples12virtual pause probes pass. Headless ABBA8runs960samples: mixed x8 main CPU reduced2.37-4.83percent; all-active full increased0.15percent. No all-case FPS claim.",
+        "Product matches measured candidate fc9510c7d5463bf9610bb6c2acc4d57964122a4c12d0c5eaaced577df8e5764d. Full check after adoption exit0:SPEC252/gift86/parity345cases4140samples/fuzz4/continue4,8,12to13/server28.",
+        "Overall50-item goal remains active; physical/human tasks and high-speed delay unresolved."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/product-verification.json"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "BF-49: profile remaining attack/zone/movement/render cost in the observed native mix before another optimization; preserve ordered state and RNG. Current guard improvement is adopted but overall high-speed delay remains unresolved.",
+    "next_local_action": "BF-49: verify exported runtime and actual event-queue saturation, then reduce remaining zone/attack/movement/render cost in the observed mix. Current dispatch reduction is adopted; overall high-speed delay remains unresolved.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },

@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """Isolated native profile of attack/targeting; not a product change or FPS promise."""
 from pathlib import Path
-import hashlib,json,os,re,shutil,subprocess,tempfile,uuid
+import argparse,hashlib,json,os,re,shutil,subprocess,tempfile,uuid
 ROOT=Path(__file__).resolve().parents[5]
 OUT=Path(__file__).resolve().parent/'baseline-profile'
 GODOT='/Applications/Godot.app/Contents/MacOS/Godot'
 
 def main():
+ global OUT
+ parser=argparse.ArgumentParser();parser.add_argument('--output',type=Path);args=parser.parse_args()
+ if args.output is not None:OUT=args.output.resolve()
+ assert not OUT.exists() or not any(OUT.iterdir()),'Use a fresh --output directory; existing evidence is preserved'
+ OUT.parent.mkdir(parents=True,exist_ok=True)
  OUT.mkdir(exist_ok=True)
  record={'scope':'One native x8/full-effects workload. 30 warmup and30 measured frames, fixed1/60 delta. Inclusive wrapper CPU, not physical presentation or uninstrumented FPS.','head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()}
  with tempfile.TemporaryDirectory(prefix='bindu-guard-profile-') as directory:

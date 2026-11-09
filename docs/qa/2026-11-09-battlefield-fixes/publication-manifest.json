@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/README.md",
-      "bytes": 8762,
-      "sha256": "b4fd5a18b33df306bc763acaf17cc3585840c0aae56d4432818bd53cab9b8b68",
+      "bytes": 9060,
+      "sha256": "2253c0aeee0da8138b95e32dab86b9cdb194b330bddd8718a702f44c0a699a24",
       "published": true
     },
     {
@@ -19300,14 +19300,638 @@
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/performance/guard-range/run_profile.py",
-      "bytes": 4745,
-      "sha256": "368db64efaed601d5b49744612db8e0c4f450aec841c7a606ee9e85b2a455aa4",
+      "bytes": 5083,
+      "sha256": "a8621f001cbbd26a44c5eafeb2f47e0979ec1f1e8a1e3dcafb38f515dffe7550",
       "published": true
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/performance/guard-range/run_replay.py",
       "bytes": 6270,
       "sha256": "c245ae10d08292faf7f0f14ea9e5ad7d8767f81e1a832202b2f41b6f84812d98",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/README.md",
+      "bytes": 9565,
+      "sha256": "3ea528c8ae717f6386c8d21141687adda2b37e5c887d095cc2542985fc7bc277",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/affinity-profile/import.log",
+      "bytes": 10742,
+      "sha256": "7dfb5e835bd65c37b91e2b6a5a53ba65d04048e4e3759c821891b2bf006e5101",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/affinity-profile/instrumented-share.txt",
+      "bytes": 28787,
+      "sha256": "27b02320430cafbb38845710c4bfc5701219090d5ed20158583bfc6836294d66",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/affinity-profile/measurements.json",
+      "bytes": 11462,
+      "sha256": "247f56d67b11b04c9311823d555051f7b94d982f74299fb85aaa9566f7515350",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/affinity-profile/native.log",
+      "bytes": 2475,
+      "sha256": "a78727d91094f89ca665feeae6f3ef2aca4fcce28370179adf152805e02c99b4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/affinity-profile/run.json",
+      "bytes": 1085,
+      "sha256": "873e25677ad03cd39183433c0fbe27c5d78aa0efbbc6cd03af673d07b7d92e5a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/affinity-profile/share-times.json",
+      "bytes": 145,
+      "sha256": "25713ac312d49d2d10c3a6d10e1620d02e1454e46a5ccb4d136689e5a4f3bdd4",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/affinity-profile/x8-fx-full.png",
+      "bytes": 551830,
+      "sha256": "e5cb1d78d612e4a1905ef8d55aa11813b0e5e8c95f44ae40508bd5d3e9c938c4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/attribution-profile/instrumented-share.txt",
+      "bytes": 28787,
+      "sha256": "27b02320430cafbb38845710c4bfc5701219090d5ed20158583bfc6836294d66",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/attribution-profile-fixed/attribution-times.json",
+      "bytes": 34,
+      "sha256": "8de9853bf0200edd8dcd51c36627194d26af62d40775af01d236467cab9e30b3",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/attribution-profile-fixed/import.log",
+      "bytes": 10742,
+      "sha256": "7dfb5e835bd65c37b91e2b6a5a53ba65d04048e4e3759c821891b2bf006e5101",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/attribution-profile-fixed/instrumented-share.txt",
+      "bytes": 28787,
+      "sha256": "27b02320430cafbb38845710c4bfc5701219090d5ed20158583bfc6836294d66",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/attribution-profile-fixed/instrumented-tower.txt",
+      "bytes": 135507,
+      "sha256": "95ffc0918177bfe416ce25f668ff027c49961ba53ab46bf6f8cc1ef5dd41abb3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/attribution-profile-fixed/measurements.json",
+      "bytes": 11480,
+      "sha256": "87f5d15499d87872af71160c3470051fed6b81da04673ab312d466e65f63c2d7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/attribution-profile-fixed/native.log",
+      "bytes": 2493,
+      "sha256": "fba0b12d883841e76c9fa5c925832b8df1f738caea4c2565087e6026b6f9cb2d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/attribution-profile-fixed/run.json",
+      "bytes": 1255,
+      "sha256": "357295b30acf1b70bc416522461a17d4d928a3a1a3121bc210cca613e2086b2e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/attribution-profile-fixed/share-times.json",
+      "bytes": 145,
+      "sha256": "c50d1d3970271f08796c977a4ea18199af32c2e0e204287eaa9ffeb0d94fee03",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/attribution-profile-fixed/x8-fx-full.png",
+      "bytes": 544378,
+      "sha256": "72222e70bb02670f9f057bf34580e09d95805e4169dd17f4001e84ea197cb555",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/baseline-profile/attack-times.json",
+      "bytes": 2309,
+      "sha256": "cd9e0e1fba4db2883d0f3adebe8f851b67e01be0e0fdbbd9a6a5924a800e6ebc",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/baseline-profile/import.log",
+      "bytes": 10742,
+      "sha256": "7dfb5e835bd65c37b91e2b6a5a53ba65d04048e4e3759c821891b2bf006e5101",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/baseline-profile/instrumented-tower.txt",
+      "bytes": 136485,
+      "sha256": "2a79e025b49324da7eda2079a8e6627b61e49273ef1d03b36b2c2220019b89a5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/baseline-profile/measurements.json",
+      "bytes": 11520,
+      "sha256": "6673a0b6f75d8bfb0a11ab1c54a38cef06868c2e6e086c526313bad350aacd27",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/baseline-profile/native.log",
+      "bytes": 2496,
+      "sha256": "ffd46c3ea7d5195ac76eb498dd7e72458d4bbe86bad25d3ca594ebc22f016fe0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/baseline-profile/run.json",
+      "bytes": 7899,
+      "sha256": "71b4c76d0dffafa3c64cdb61664090b3c3b7cdc596877ede666068f8cb3bfc0c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/baseline-profile/x8-fx-full.png",
+      "bytes": 531200,
+      "sha256": "d4fa3c973c0a50c82d7e271f64e38b06ffb5b53bba7645036906f3b51c7597fa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/all_active/0-baseline/cpu.log",
+      "bytes": 5931,
+      "sha256": "2f0a8b7687810d4f21fae48765f26fd12ae9ae579fd4b18a5dffe21a97fd21ac",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/all_active/0-baseline/import.log",
+      "bytes": 10800,
+      "sha256": "2c2880a274b6cc4ab4f3a47d526e8082dee86ed4ca0f59fb5950c0b0dc853b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/all_active/0-baseline/measurements.json",
+      "bytes": 15886,
+      "sha256": "5ff37cdf4ac2ee085206e20e2e34e1e7cd2b667a01285adf9ea696c119e85e75",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/all_active/1-candidate/cpu.log",
+      "bytes": 5923,
+      "sha256": "fcfe98e48293f6b5b65130c75d4b55073dd96e2110ff92fc2f010dc08d63738d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/all_active/1-candidate/import.log",
+      "bytes": 10800,
+      "sha256": "2c2880a274b6cc4ab4f3a47d526e8082dee86ed4ca0f59fb5950c0b0dc853b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/all_active/1-candidate/measurements.json",
+      "bytes": 15878,
+      "sha256": "585af5a3d095e01004b9c156f0d0d679a75f6e80bf9d9145aa00124c47f6557c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/all_active/2-candidate/cpu.log",
+      "bytes": 5950,
+      "sha256": "4079dae43edbb1fa1d0467a05fdef3b5bf320ec1bb531fc9d877707f2d12b3de",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/all_active/2-candidate/import.log",
+      "bytes": 10800,
+      "sha256": "2c2880a274b6cc4ab4f3a47d526e8082dee86ed4ca0f59fb5950c0b0dc853b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/all_active/2-candidate/measurements.json",
+      "bytes": 15905,
+      "sha256": "897b08a1a18a34f90eeef85a4ce0248430f560f9cc26f044f7c403a881387f0f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/all_active/3-baseline/cpu.log",
+      "bytes": 5908,
+      "sha256": "2f69f5d1ab3ccd12a05e7bbe6328e449b37b9e76b7bc31e44c4b303aa49fcf6c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/all_active/3-baseline/import.log",
+      "bytes": 10800,
+      "sha256": "2c2880a274b6cc4ab4f3a47d526e8082dee86ed4ca0f59fb5950c0b0dc853b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/all_active/3-baseline/measurements.json",
+      "bytes": 15863,
+      "sha256": "8dd4a4cc5f59983923d9bdc970eac1e7a98c74906f7bc5823cbacdaefa185640",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/mixed/0-baseline/cpu.log",
+      "bytes": 5970,
+      "sha256": "17671a0f8af388e3c5012e0f5f696467c5a1331940a89c4c225bcca74b4e82cd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/mixed/0-baseline/import.log",
+      "bytes": 10800,
+      "sha256": "2c2880a274b6cc4ab4f3a47d526e8082dee86ed4ca0f59fb5950c0b0dc853b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/mixed/0-baseline/measurements.json",
+      "bytes": 15925,
+      "sha256": "2966e4b3c4c5c964d8a0113f9cdcc4e6b14e1e0ce470270c06f368426a1d8c8d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/mixed/1-candidate/cpu.log",
+      "bytes": 5907,
+      "sha256": "5aab1112ad25106f649d52f76e58e1080364b607f1a6ca0d7c6ee4ed4c6c65f4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/mixed/1-candidate/import.log",
+      "bytes": 10800,
+      "sha256": "2c2880a274b6cc4ab4f3a47d526e8082dee86ed4ca0f59fb5950c0b0dc853b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/mixed/1-candidate/measurements.json",
+      "bytes": 15862,
+      "sha256": "56917b1ba161cdbd4d7fda12da0da02b7385024d00e55c70ec2ae54e8d9d0942",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/mixed/2-candidate/cpu.log",
+      "bytes": 5816,
+      "sha256": "bef8b90889b15135453a127f588354ea0146976236dd59b40e9488cc25c9b7b1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/mixed/2-candidate/import.log",
+      "bytes": 10800,
+      "sha256": "2c2880a274b6cc4ab4f3a47d526e8082dee86ed4ca0f59fb5950c0b0dc853b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/mixed/2-candidate/measurements.json",
+      "bytes": 15902,
+      "sha256": "4b12efd16d998e3cbc4e5d95a11b2790d82cbf20b3d117678c64cd81d6a618b9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/mixed/3-baseline/cpu.log",
+      "bytes": 5767,
+      "sha256": "a5122f27ad21f5767a0ea0b85a749dc22a826957c90a1e1ef1dd6c335689280c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/mixed/3-baseline/import.log",
+      "bytes": 10800,
+      "sha256": "2c2880a274b6cc4ab4f3a47d526e8082dee86ed4ca0f59fb5950c0b0dc853b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/mixed/3-baseline/measurements.json",
+      "bytes": 15853,
+      "sha256": "2755da6b21e15be94fac17653974347363f54d8d10b5c441838902f3b605e82c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/cpu-abba/run.json",
+      "bytes": 101550,
+      "sha256": "200264ff94a1749a01278c7c2b47ef961500af3acc96aad34e4a98ef7e810095",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/els-candidate/check.log",
+      "bytes": 103,
+      "sha256": "0b2b09d58214b4a92d0227277bad522992cd05823809463a736e64727a259126",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/els-candidate/import.log",
+      "bytes": 10800,
+      "sha256": "2c2880a274b6cc4ab4f3a47d526e8082dee86ed4ca0f59fb5950c0b0dc853b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/els-candidate/results.json",
+      "bytes": 4158,
+      "sha256": "1f00e0e2c0aa9ffe8026cd31d2e2d68000cb6824eab947a7407bac85885738bd",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/els-candidate/run.json",
+      "bytes": 511,
+      "sha256": "3c10e34fdbbb24fbc1ade72d36a376dcd02d521bb06e7c8cfbe536a58d33fcfb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/final-check.log",
+      "bytes": 871,
+      "sha256": "3bc22e28701e066190f63cd1ea5d312bf5b138ac369b6b0c188084a0b291a5d5",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/baseline/import.log",
+      "bytes": 10800,
+      "sha256": "2c2880a274b6cc4ab4f3a47d526e8082dee86ed4ca0f59fb5950c0b0dc853b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/baseline/measurements.json",
+      "bytes": 35096,
+      "sha256": "a302185dc87c3e5dfcfc5888ac94eb4d4d40036545f1c42697d05ea7f6d1f895",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/baseline/native.log",
+      "bytes": 20419,
+      "sha256": "c87b3ba21e8c719ac62ea73520fdd5fbb3105b02cafc53ade92c5def34b451fc",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/baseline/x1-fx-full.png",
+      "bytes": 360141,
+      "sha256": "42b08289e2a064fecd728e4f3e37d5645374acab89cbd260e3c1d9dafabd001e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/baseline/x1-fx-reduced.png",
+      "bytes": 350038,
+      "sha256": "3db44b0609da812455a794f2dbc91244ce2c6c7e99b0da4d0948e798f75bbc23",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/baseline/x4-fx-full.png",
+      "bytes": 514796,
+      "sha256": "ba4c4a7ee3b95ba4dab1ab8d9744b6899c7091e213a8129a1e123593551baffe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/baseline/x4-fx-reduced.png",
+      "bytes": 473104,
+      "sha256": "92c0352a769e6530a43dc41157c6a3aecd43ecd7e7927f9095e3ab6f0050a644",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/baseline/x8-fx-full.png",
+      "bytes": 557020,
+      "sha256": "cb5fec3749d0dad40a846d8aa8f952bd58c780d5619b3f30b1e9fbaf405b546c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/baseline/x8-fx-reduced.png",
+      "bytes": 494143,
+      "sha256": "209403b4b0ad1d8439cc06ddd7107b690d5685648d0de2feca0ddd4e50d14a8b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/candidate/import.log",
+      "bytes": 10800,
+      "sha256": "2c2880a274b6cc4ab4f3a47d526e8082dee86ed4ca0f59fb5950c0b0dc853b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/candidate/measurements.json",
+      "bytes": 35049,
+      "sha256": "b31bef7be5633e5e11a263b677fabf8cf8e374d31eb8ca3e22d3d413b4da5fe9",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/candidate/native.log",
+      "bytes": 20371,
+      "sha256": "c017bbcb6de80486e3933d79cda64441db25f1221d58b1cd7742726b868fb30e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/candidate/x1-fx-full.png",
+      "bytes": 359408,
+      "sha256": "dcead696178a1bfcb6d2a74e1b9d9d4072becec3f035df6b3cb2d54a5f13f0d3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/candidate/x1-fx-reduced.png",
+      "bytes": 354487,
+      "sha256": "47b94cdb3acfa5a99ad1eaf8529db0405a37e112e6c7760de6ad4ceb066ae3fe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/candidate/x4-fx-full.png",
+      "bytes": 506460,
+      "sha256": "96eb087ed5a68469eb8b6271945a32cec6f53187968e148477bca378b8313fc1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/candidate/x4-fx-reduced.png",
+      "bytes": 476921,
+      "sha256": "36651eed778275c7d27a2f69f6490a6b021b7569617398092c6e6f388a0e543b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/candidate/x8-fx-full.png",
+      "bytes": 547035,
+      "sha256": "994276c609a9aa9052d328080a1e644ff51919fd1452db6889f324b124ddb250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/candidate/x8-fx-reduced.png",
+      "bytes": 517903,
+      "sha256": "a086856876ad8182f8784a3c92928a8468ea20d1d85e5aab9c73b80f65ca3a10",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/run.json",
+      "bytes": 5329,
+      "sha256": "33c99b6c3da08b3554a55c14c45bb60a46ddc2c22250c49eda7143564e6d650a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/product-verification.json",
+      "bytes": 1649,
+      "sha256": "1611107e84683c3d6dffc1dbd7a006edaf69e660ba04377f3977479c9e1d3374",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/baseline/basic-traces.json",
+      "bytes": 2988949,
+      "sha256": "5c3a3cc7885b0e66e73abb0d5c25fbcfb63531ff0f6488b9d1adebd4fe23c93c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/baseline/basic.log",
+      "bytes": 878,
+      "sha256": "4c22c2adca41abca5fff7edf3a88feb24c15a6a434bc5848548d18b712d50f21",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/baseline/deaths-traces.json",
+      "bytes": 179535,
+      "sha256": "dc4da64a8469ec58164620e8b164a27bbbcdc25804d83c88de083366cad2e23a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/baseline/deaths.log",
+      "bytes": 863,
+      "sha256": "f875ee09a693020f13f9bfc2f43b98f3974486b906e02ba33045cc172790dc42",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/baseline/hit_traits-traces.json",
+      "bytes": 5462296,
+      "sha256": "90ef257a9aeb9b884f33cf9345006e3a49c6f11d228b01f75363580f66d209f2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/baseline/hit_traits.log",
+      "bytes": 884,
+      "sha256": "3e055b00792a860c3ed74074a74aa72fad325c81415af9895563c04b192d9b9f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/baseline/import.log",
+      "bytes": 10800,
+      "sha256": "2c2880a274b6cc4ab4f3a47d526e8082dee86ed4ca0f59fb5950c0b0dc853b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/candidate/basic-traces.json",
+      "bytes": 2988949,
+      "sha256": "5c3a3cc7885b0e66e73abb0d5c25fbcfb63531ff0f6488b9d1adebd4fe23c93c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/candidate/basic.log",
+      "bytes": 878,
+      "sha256": "4c22c2adca41abca5fff7edf3a88feb24c15a6a434bc5848548d18b712d50f21",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/candidate/deaths-traces.json",
+      "bytes": 179535,
+      "sha256": "dc4da64a8469ec58164620e8b164a27bbbcdc25804d83c88de083366cad2e23a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/candidate/deaths.log",
+      "bytes": 863,
+      "sha256": "f875ee09a693020f13f9bfc2f43b98f3974486b906e02ba33045cc172790dc42",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/candidate/hit_traits-traces.json",
+      "bytes": 5462296,
+      "sha256": "90ef257a9aeb9b884f33cf9345006e3a49c6f11d228b01f75363580f66d209f2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/candidate/hit_traits.log",
+      "bytes": 884,
+      "sha256": "3e055b00792a860c3ed74074a74aa72fad325c81415af9895563c04b192d9b9f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/candidate/import.log",
+      "bytes": 10800,
+      "sha256": "2c2880a274b6cc4ab4f3a47d526e8082dee86ed4ca0f59fb5950c0b0dc853b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/mutant/hit_traits-traces.json",
+      "bytes": 5444282,
+      "sha256": "62d6f4abc3cc443e08495e30fb859c4d9df4a48edb5caf1c06199e2778461f7b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/mutant/hit_traits.log",
+      "bytes": 884,
+      "sha256": "3e055b00792a860c3ed74074a74aa72fad325c81415af9895563c04b192d9b9f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/mutant/import.log",
+      "bytes": 10800,
+      "sha256": "2c2880a274b6cc4ab4f3a47d526e8082dee86ed4ca0f59fb5950c0b0dc853b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay/run.json",
+      "bytes": 7504,
+      "sha256": "ca67d1649fd2c0817d730adedefbdb37ea567e13893dfe3af02b10c5c53db5f3",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay-triples/baseline/hit_traits-traces.json",
+      "bytes": 1202050,
+      "sha256": "bd5e4ee48d52083eeac2cffae2f15ba7a9249947c7b7bbbc12886dec21dc825a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay-triples/baseline/hit_traits.log",
+      "bytes": 870,
+      "sha256": "10217213cb93d1bb46d6a0b5e5b947a28303a44b73e9b1309e60d033a25dfc4b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay-triples/baseline/import.log",
+      "bytes": 10800,
+      "sha256": "2c2880a274b6cc4ab4f3a47d526e8082dee86ed4ca0f59fb5950c0b0dc853b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay-triples/candidate/hit_traits-traces.json",
+      "bytes": 1202050,
+      "sha256": "bd5e4ee48d52083eeac2cffae2f15ba7a9249947c7b7bbbc12886dec21dc825a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay-triples/candidate/hit_traits.log",
+      "bytes": 870,
+      "sha256": "10217213cb93d1bb46d6a0b5e5b947a28303a44b73e9b1309e60d033a25dfc4b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay-triples/candidate/import.log",
+      "bytes": 10800,
+      "sha256": "2c2880a274b6cc4ab4f3a47d526e8082dee86ed4ca0f59fb5950c0b0dc853b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/replay-triples/run.json",
+      "bytes": 2030,
+      "sha256": "23e1f69a70171f0ba9dc865f57f4bc9e67697949f81ce7ce3e5a7abdb1a508e4",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/run_cpu.py",
+      "bytes": 4769,
+      "sha256": "e2ad8dcf2ae810c16162c3319c3c381a5e2ffc016c76497ee64a0e8f0fd374f3",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/run_native.py",
+      "bytes": 4505,
+      "sha256": "2a3d68109b00596f4f084c822b7dd2fc3034496e7734539cc3ba22fc66face48",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/run_profile.py",
+      "bytes": 5567,
+      "sha256": "f41f032a777436c199dfe02ffe6e821f07cb47176fd940090ac0032986ae71e2",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/run_replay.py",
+      "bytes": 8608,
+      "sha256": "452cd1ac64caf77f5c33419795451971d21e7e321c923af02e41754f216a5b7d",
       "published": true
     },
     {

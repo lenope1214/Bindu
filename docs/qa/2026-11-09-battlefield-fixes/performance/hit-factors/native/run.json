@@ -1,0 +1,171 @@
+{
+  "scope": "Sequential native SubViewport, 16 towers/~300 orbs, seed9009, fixed1/60 delta, warmup30/sample60, speeds1/4/8 and full/reduced effects. Observational CPU/draw-return, not physical FPS or a CI timing gate.",
+  "baseline_hit_ref": "ef82a0963614c15d4a03a3e770a7a3641dbe028b",
+  "variants": {
+    "baseline": {
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-native-tw8tfkf8",
+        "--resolution",
+        "1280x720",
+        "-s",
+        "tools/battlefield_load_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/baseline",
+        "1.0",
+        "pc",
+        "load",
+        "60"
+      ],
+      "tower_sha256": "b7ee6e9fe7c9eecea4ff4092349be8fe9014400ff344c5cef5f56b3c74d51652",
+      "exit": 0,
+      "assertion_failures": 0,
+      "ui_checker_messages": 0,
+      "isolated_save_removed": true,
+      "temporary_project_removed": true
+    },
+    "candidate": {
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-native-njiqwpae",
+        "--resolution",
+        "1280x720",
+        "-s",
+        "tools/battlefield_load_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/native/candidate",
+        "1.0",
+        "pc",
+        "load",
+        "60"
+      ],
+      "tower_sha256": "fc9510c7d5463bf9610bb6c2acc4d57964122a4c12d0c5eaaced577df8e5764d",
+      "exit": 0,
+      "assertion_failures": 0,
+      "ui_checker_messages": 0,
+      "isolated_save_removed": true,
+      "temporary_project_removed": true
+    }
+  },
+  "source_differences": [
+    "res://project.godot",
+    "res://scripts/tower.gd"
+  ],
+  "project_setting_difference": "Unique BinduTools config/name per save-isolated variant; other project settings are copied unchanged.",
+  "comparisons": [
+    {
+      "condition": "x1-fx-full",
+      "attack_cpu_ms_per_sample": {
+        "baseline": 7.17476666666667,
+        "candidate": 6.57806666666667,
+        "delta_percent": -8.31664676667766
+      },
+      "main_cpu_mean_ms": {
+        "baseline": 14.2576,
+        "candidate": 13.6314166666667,
+        "delta_percent": -4.3919266449704
+      },
+      "forced_draw_interval_mean_ms": {
+        "baseline": 41.8738666666667,
+        "candidate": 42.2534333333333,
+        "delta_percent": 0.9064523935372604
+      }
+    },
+    {
+      "condition": "x1-fx-reduced",
+      "attack_cpu_ms_per_sample": {
+        "baseline": 6.92146666666667,
+        "candidate": 6.52563333333333,
+        "delta_percent": -5.71892277166699
+      },
+      "main_cpu_mean_ms": {
+        "baseline": 13.9618666666667,
+        "candidate": 13.48955,
+        "delta_percent": -3.382904864679259
+      },
+      "forced_draw_interval_mean_ms": {
+        "baseline": 41.3445833333333,
+        "candidate": 42.3839166666667,
+        "delta_percent": 2.5138319207475446
+      }
+    },
+    {
+      "condition": "x4-fx-full",
+      "attack_cpu_ms_per_sample": {
+        "baseline": 28.17785,
+        "candidate": 25.7617833333333,
+        "delta_percent": -8.574347108337566
+      },
+      "main_cpu_mean_ms": {
+        "baseline": 63.5685166666667,
+        "candidate": 59.7113333333333,
+        "delta_percent": -6.067757335851109
+      },
+      "forced_draw_interval_mean_ms": {
+        "baseline": 121.486616666667,
+        "candidate": 117.798483333333,
+        "delta_percent": -3.0358350858131544
+      }
+    },
+    {
+      "condition": "x4-fx-reduced",
+      "attack_cpu_ms_per_sample": {
+        "baseline": 28.2878833333333,
+        "candidate": 25.1532,
+        "delta_percent": -11.081364046915166
+      },
+      "main_cpu_mean_ms": {
+        "baseline": 64.1454833333333,
+        "candidate": 60.2342333333333,
+        "delta_percent": -6.097467501608977
+      },
+      "forced_draw_interval_mean_ms": {
+        "baseline": 121.342366666667,
+        "candidate": 117.029883333333,
+        "delta_percent": -3.5539799097380254
+      }
+    },
+    {
+      "condition": "x8-fx-full",
+      "attack_cpu_ms_per_sample": {
+        "baseline": 53.2495833333333,
+        "candidate": 48.5673166666667,
+        "delta_percent": -8.793057848652841
+      },
+      "main_cpu_mean_ms": {
+        "baseline": 132.781316666667,
+        "candidate": 126.208516666667,
+        "delta_percent": -4.950094007954686
+      },
+      "forced_draw_interval_mean_ms": {
+        "baseline": 220.223116666667,
+        "candidate": 215.1655,
+        "delta_percent": -2.296587544132478
+      }
+    },
+    {
+      "condition": "x8-fx-reduced",
+      "attack_cpu_ms_per_sample": {
+        "baseline": 55.2819666666667,
+        "candidate": 56.4723,
+        "delta_percent": 2.153203666777359
+      },
+      "main_cpu_mean_ms": {
+        "baseline": 137.19745,
+        "candidate": 135.318316666667,
+        "delta_percent": -1.3696561658638862
+      },
+      "forced_draw_interval_mean_ms": {
+        "baseline": 226.73415,
+        "candidate": 225.838366666667,
+        "delta_percent": -0.3950809056919691
+      }
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "scope": "Native x8/full effects. Warm30/sample30. Inclusive static-function wrappers; nested times must not be added. Instrumentation is not a before/after FPS measurement.",
+  "head": "ef82a0963614c15d4a03a3e770a7a3641dbe028b",
+  "original_share_sha256": "40c9869ed438a18cf6442c1d90973c99792cd596f4f71739616b8d3ad9d94de2",
+  "command": [
+    "/Applications/Godot.app/Contents/MacOS/Godot",
+    "--audio-driver",
+    "Dummy",
+    "--path",
+    "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-profile-ujv3atk2",
+    "--resolution",
+    "1280x720",
+    "-s",
+    "tools/battlefield_load_check.gd",
+    "--",
+    "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/affinity-profile",
+    "1.0",
+    "pc",
+    "load",
+    "30"
+  ],
+  "exit": 0,
+  "inclusive_totals": {
+    "aff": {
+      "calls": 1054536,
+      "us": 547886
+    },
+    "am": {
+      "calls": 463752,
+      "us": 766465
+    },
+    "k": {
+      "calls": 1548840,
+      "us": 855257
+    }
+  },
+  "isolated_save_removed": true,
+  "temporary_project_removed": true
+}
