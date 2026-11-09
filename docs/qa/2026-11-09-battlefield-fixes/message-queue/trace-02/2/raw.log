@@ -1,0 +1,7 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+FUZZR rules=1 map=plain tutor=true ui=1.0 modes=glass,narrow
+FUZZ f=1000 phase=0 wave=1 towers=3 sel=0
+FUZZ f=2000 phase=6 wave=1 towers=3 sel=0
+FUZZ f=3000 phase=3 wave=2 towers=3 sel=1
+FUZZ DONE frames=3000

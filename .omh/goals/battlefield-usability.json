@@ -1022,16 +1022,30 @@
         "docs/qa/2026-11-09-battlefield-fixes/accessibility/summary.json",
         "docs/qa/2026-11-09-battlefield-fixes/accessibility/fuzz-oom.json"
       ]
+    },
+    {
+      "type": "message_queue_diagnosis_without_product_fix",
+      "facts": [
+        "Same70product hashes across8nominal and2traced runs; product and existing tools unchanged. Shared4vsper-worker4 all3000/exit0, no cause exclusion from0vs0.",
+        "Native LLDB-DAP launch denied by macOS attach permission. No stops, breakpoint verification, native stack, watchpoint or protection bypass. Static image lookups have no matching symbols.",
+        "QA-copy-only observer validates6212logical inputs/4direct cancels and2x3000before/after frames, queue high-water32768; no fault reproduced. Original input/RNG/deferred ordering not captured.",
+        "Initial trace01 observer-before-tree viewport error retained/excluded. Trace02 guard succeeds; initial FUZZR modes differ from first actual process-frame modes, so nominal settings are not sustained coverage proof.",
+        "All owned jobs/processes/temp projects/QA saves terminal/removed. Local commit only; final-only rebase/push instruction retained. Full goal active."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/message-queue/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/message-queue/summary.json"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "Deliver scoped QA and accessibility commits, latest main pull/rebase/push/PR update. Then prioritize I15: reproduce message-queue OOM using recorded input/config and baseline/current comparison; do not count a later successful fuzz as a fix. Continue BF50 actual assistive navigation/visible descendants and full field tasks; full50 remains active.",
+    "next_local_action": "I15 remains unresolved after8original nominal and2traced3000frame runs. Use recorded logical input/actual config and obtain permitted symbolized native fault evidence; do not treat later passes as a fix. Continue BF50 actual assistive navigation and high-speed/physical/human gaps. Keep task commits local. Latest main pull/rebase/push and existing PR update once only at the end of all work.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },
   "delivery": {
-    "instruction": "Task commits, pull latest main, rebase current branch, create PR",
+    "instruction": "Task-specific local commits during remaining work. Latest main pull, current-branch rebase, push and existing PR update once at the very end, per user clarification.",
     "status": "draft_pr_open_followup_verified",
     "main": "8704b78688ee9be638e0ddd24eb91d54f3f56194",
     "feature_branch": "codex/battlefield-usability-audit",
@@ -1127,10 +1141,11 @@
       "id": "I-15",
       "title": "무작위 조작 중 메시지큐 고갈과 엔진 종료",
       "implementation": "unresolved",
-      "verification": "observed_once; raw_retained; exact_replay_and_root_cause_unproven",
+      "verification": "observed_once;8nominal_and2traced_runs_no_recurrence;DAP_launch_denied;exact_replay_and_root_cause_unproven",
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/accessibility/fuzz-oom.json",
-        "docs/qa/2026-11-09-battlefield-fixes/accessibility/full-check-fixed.log"
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility/full-check-fixed.log",
+        "docs/qa/2026-11-09-battlefield-fixes/message-queue/README.md"
       ]
     }
   ]

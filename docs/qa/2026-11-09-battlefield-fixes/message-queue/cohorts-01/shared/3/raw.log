@@ -1,0 +1,9 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+FUZZR rules=3 map=plain tutor=false ui=1.15 modes=glass,angry
+FUZZ f=1000 phase=6 wave=0 towers=2 sel=0
+FUZZ f=2000 phase=6 wave=1 towers=3 sel=0
+FUZZ f=3000 phase=3 wave=2 towers=3 sel=0
+FUZZ DONE frames=3000
+WARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

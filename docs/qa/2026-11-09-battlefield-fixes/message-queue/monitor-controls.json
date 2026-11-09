@@ -1,0 +1,26 @@
+[
+  {
+    "pid": 96302,
+    "exit": 0,
+    "stop_reason": null,
+    "output_bytes": 2097152,
+    "retained_bytes": 1048576,
+    "owned_process_terminal": true,
+    "elapsed_seconds": 0.012228582999999998,
+    "case": "cap",
+    "scope": "Synthetic monitor control only; not a Godot or historical fault reproduction",
+    "raw_sha256": "8f990ba0b577b51cf009ea049368c16bbda1b21e1b93be07a824758bb253c39b"
+  },
+  {
+    "pid": 96303,
+    "exit": -15,
+    "stop_reason": "observed_queue_failure_stop_before_statistics_flood",
+    "output_bytes": 29,
+    "retained_bytes": 29,
+    "owned_process_terminal": true,
+    "elapsed_seconds": 0.11558737500000002,
+    "case": "split-fault",
+    "scope": "Synthetic monitor control only; not a Godot or historical fault reproduction",
+    "raw_sha256": "4fa583a4d1140923ec7d7254cb0fc9bc48440ba3690a84a106a9fdc84cbee10e"
+  }
+]

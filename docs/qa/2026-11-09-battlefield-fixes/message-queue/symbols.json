@@ -1,0 +1,31 @@
+{
+  "scope": "Static image lookup only; no process launched, no permission bypass, no function-absence claim.",
+  "results": [
+    {
+      "command": [
+        "xcrun",
+        "lldb",
+        "--batch",
+        "-o",
+        "image lookup -rn Control::_update_minimum_size",
+        "/Applications/Godot.app/Contents/MacOS/Godot"
+      ],
+      "exit": 1,
+      "stdout": "(lldb) target create \"/Applications/Godot.app/Contents/MacOS/Godot\"\nCurrent executable set to '/Applications/Godot.app/Contents/MacOS/Godot' (arm64).\n(lldb) image lookup -rn Control::_update_minimum_size\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "xcrun",
+        "lldb",
+        "--batch",
+        "-o",
+        "image lookup -rn CallQueue::push_callablep",
+        "/Applications/Godot.app/Contents/MacOS/Godot"
+      ],
+      "exit": 1,
+      "stdout": "(lldb) target create \"/Applications/Godot.app/Contents/MacOS/Godot\"\nCurrent executable set to '/Applications/Godot.app/Contents/MacOS/Godot' (arm64).\n(lldb) image lookup -rn CallQueue::push_callablep\n",
+      "stderr": ""
+    }
+  ]
+}

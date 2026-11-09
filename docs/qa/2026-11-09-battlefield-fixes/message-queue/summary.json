@@ -1,0 +1,699 @@
+{
+  "schema": "message_queue_diagnosis/v1",
+  "captured_utc": "2026-11-09T23:22:34.154810+00:00",
+  "product_ref": "ba4afd8caf94442f1a68fa815264da60e214a509",
+  "product_70_hashes_equal_workspace_and_both_cohorts": true,
+  "product_and_existing_tools_diff_from_HEAD": "none",
+  "cohorts": {
+    "shared": {
+      "runs": 4,
+      "queue_failures": 0,
+      "other_failures": 0
+    },
+    "per-worker": {
+      "runs": 4,
+      "queue_failures": 0,
+      "other_failures": 0
+    }
+  },
+  "cohort_scope": "8 original nominal-seed runs, not exact historical replay; minimal copy URLs blank; fixedfps60; no queue failures observed. 0/4 vs0/4 does not establish or refute a rare shared-save cause.",
+  "debugger": {
+    "launch": "denied_by_macos_attach_permission",
+    "adapter_terminal": true,
+    "stops": 0,
+    "breakpoints_verified": false,
+    "native_stack_or_watchpoint": "not_observed",
+    "protection_bypass": false,
+    "evidence": "dap-01/run.json",
+    "launch_attempts": 2,
+    "latest_evidence": "dap-02/run.json",
+    "native_fault_capture_path": "not_validated"
+  },
+  "trace_runs": [
+    {
+      "seed": 2,
+      "exit": 0,
+      "frames_done": true,
+      "queue_failure": false,
+      "counts": {
+        "start": 1,
+        "frame_before": 3000,
+        "frame_after": 3000,
+        "input": 3109,
+        "direct_cancel": 1,
+        "done": 1
+      },
+      "input_types": {
+        "InputEventScreenTouch": 198,
+        "InputEventMouseMotion": 1900,
+        "InputEventMouseButton": 533,
+        "InputEventKey": 478
+      },
+      "sequence_contiguous": true,
+      "frames_contiguous_1_to_3000": true,
+      "trace_bytes": 3121834,
+      "trace_sha256": "6a964485aa0ceb61ab95570a5c8916070a670c30eb704b4bc85ec7e19ed39521",
+      "trace_local_path": "trace-02/2/trace.jsonl",
+      "peak_message_buffer_bytes": 32768.0,
+      "minimum_changes": 17088,
+      "max_changes_between_script_frame_begins": 53,
+      "controls_seen": 1649,
+      "controls_alive_at_done": 474,
+      "highest_lifetime_change_counts": [
+        {
+          "alive": true,
+          "changes": 1710,
+          "path": "/root/AutomationViewport/Main/@CanvasLayer@24/@Control@25/CardInspector/@VBoxContainer@27/@VBoxContainer@36/@ScrollContainer@47/@VBoxContainer@48"
+        },
+        {
+          "alive": true,
+          "changes": 1663,
+          "path": "/root/AutomationViewport/Main/@CanvasLayer@24/@Control@25/CardInspector"
+        },
+        {
+          "alive": true,
+          "changes": 1663,
+          "path": "/root/AutomationViewport/Main/@CanvasLayer@24/@Control@25/CardInspector/@VBoxContainer@27"
+        },
+        {
+          "alive": true,
+          "changes": 1659,
+          "path": "/root/AutomationViewport/Main/@CanvasLayer@24/@Control@25/CardInspector/@VBoxContainer@27/@HBoxContainer@28"
+        },
+        {
+          "alive": true,
+          "changes": 1659,
+          "path": "/root/AutomationViewport/Main/@CanvasLayer@24/@Control@25/CardInspector/@VBoxContainer@27/@VBoxContainer@36/@ScrollContainer@47"
+        },
+        {
+          "alive": true,
+          "changes": 1604,
+          "path": "/root/AutomationViewport/Main/@CanvasLayer@24/@Control@25/CardInspector/@VBoxContainer@27/@VBoxContainer@36"
+        }
+      ],
+      "initial_config_before_tree_ready": {
+        "inside_tree": false,
+        "map": "plain",
+        "modes": [
+          "glass",
+          "narrow"
+        ],
+        "rules": 1,
+        "tutor": true,
+        "ui_scale_actual": 1.0,
+        "user_data_dir": "/Users/leeseongjin/Library/Application Support/Godot/app_userdata/BinduToolsMessageQueueTrace4d62cd22b66f484fa4759e99eada254a",
+        "viewport": null
+      },
+      "first_process_frame_state": {
+        "cancel_visible": false,
+        "core_hp": 10,
+        "modes": [],
+        "paused": false,
+        "phase": 0,
+        "picks": 2,
+        "queue_peak_bytes": 32768.0,
+        "selected": 0,
+        "towers": 0,
+        "ui_scale_actual": 1.0,
+        "wave": 0
+      },
+      "done_config": {
+        "inside_tree": true,
+        "map": "plain",
+        "modes": [],
+        "rules": 1,
+        "tutor": false,
+        "ui_scale_actual": 1.0,
+        "user_data_dir": "/Users/leeseongjin/Library/Application Support/Godot/app_userdata/BinduToolsMessageQueueTrace4d62cd22b66f484fa4759e99eada254a",
+        "viewport": "[P: (0.0, 0.0), S: (1280.0, 1280.0)]"
+      },
+      "first_input_samples": [
+        {
+          "canceled": false,
+          "engine_process_frame": 1,
+          "frame": 2,
+          "index": 0,
+          "kind": "input",
+          "position": [
+            765.218872070312,
+            660.1923828125
+          ],
+          "pressed": false,
+          "sequence": 1,
+          "ticks_usec": 807342,
+          "type": "InputEventScreenTouch"
+        },
+        {
+          "alt": false,
+          "button_mask": 0,
+          "ctrl": false,
+          "engine_process_frame": 2,
+          "frame": 3,
+          "global_position": [
+            917.972290039062,
+            642.721862792969
+          ],
+          "kind": "input",
+          "meta": false,
+          "position": [
+            917.972290039062,
+            642.721862792969
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "sequence": 2,
+          "shift": false,
+          "ticks_usec": 808618,
+          "type": "InputEventMouseMotion",
+          "velocity": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "alt": false,
+          "button_mask": 0,
+          "ctrl": false,
+          "engine_process_frame": 2,
+          "frame": 3,
+          "global_position": [
+            917.972290039062,
+            642.721862792969
+          ],
+          "kind": "input",
+          "meta": false,
+          "position": [
+            917.972290039062,
+            642.721862792969
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "sequence": 3,
+          "shift": false,
+          "ticks_usec": 808778,
+          "type": "InputEventMouseMotion",
+          "velocity": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "alt": false,
+          "button_index": 2,
+          "button_mask": 0,
+          "ctrl": false,
+          "double_click": false,
+          "engine_process_frame": 4,
+          "factor": 1.0,
+          "frame": 5,
+          "global_position": [
+            616.549194335938,
+            891.725402832031
+          ],
+          "kind": "input",
+          "meta": false,
+          "position": [
+            616.549194335938,
+            891.725402832031
+          ],
+          "pressed": true,
+          "sequence": 4,
+          "shift": false,
+          "ticks_usec": 809917,
+          "type": "InputEventMouseButton"
+        },
+        {
+          "alt": false,
+          "button_index": 2,
+          "button_mask": 0,
+          "ctrl": false,
+          "double_click": false,
+          "engine_process_frame": 4,
+          "factor": 1.0,
+          "frame": 5,
+          "global_position": [
+            616.549194335938,
+            891.725402832031
+          ],
+          "kind": "input",
+          "meta": false,
+          "position": [
+            616.549194335938,
+            891.725402832031
+          ],
+          "pressed": false,
+          "sequence": 5,
+          "shift": false,
+          "ticks_usec": 809993,
+          "type": "InputEventMouseButton"
+        },
+        {
+          "alt": false,
+          "button_mask": 0,
+          "ctrl": false,
+          "engine_process_frame": 6,
+          "frame": 7,
+          "global_position": [
+            882.625244140625,
+            1193.109375
+          ],
+          "kind": "input",
+          "meta": false,
+          "position": [
+            882.625244140625,
+            1193.109375
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "sequence": 6,
+          "shift": false,
+          "ticks_usec": 810858,
+          "type": "InputEventMouseMotion",
+          "velocity": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "alt": false,
+          "button_mask": 0,
+          "ctrl": false,
+          "engine_process_frame": 6,
+          "frame": 7,
+          "global_position": [
+            882.625244140625,
+            1193.109375
+          ],
+          "kind": "input",
+          "meta": false,
+          "position": [
+            882.625244140625,
+            1193.109375
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "sequence": 7,
+          "shift": false,
+          "ticks_usec": 810901,
+          "type": "InputEventMouseMotion",
+          "velocity": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "alt": false,
+          "button_mask": 0,
+          "ctrl": false,
+          "engine_process_frame": 8,
+          "frame": 9,
+          "global_position": [
+            543.119567871094,
+            1029.64526367188
+          ],
+          "kind": "input",
+          "meta": false,
+          "position": [
+            543.119567871094,
+            1029.64526367188
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "sequence": 8,
+          "shift": false,
+          "ticks_usec": 812188,
+          "type": "InputEventMouseMotion",
+          "velocity": [
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--headless",
+        "--fixed-fps",
+        "60",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-message-trace-0ymrs0t9",
+        "-s",
+        "tools/fuzz_trace.gd",
+        "--",
+        "2",
+        "3000"
+      ],
+      "source_instrumentation": {
+        "tools/virtual_input.gd": "6ab4e63148f9b52d39a2111e54f3fe4ee8ef572c84e6fafebf2eb1461ecafd8a",
+        "tools/fuzz.gd": "e77b62a5ca54c181f1ef459aeb8ac4d50056ed3c62fdad6667e95cf8212d767d",
+        "tools/message_queue_trace.gd": "97b6a33d3ad4cffa69996a68b6514589e85180320df4f67f66c9a7708d5b8bed",
+        "tools/fuzz_trace.gd": "b29062326b9391054c3fd7d570a0488522fa4a36ecfb7f2832ae8bcc460a8d00"
+      },
+      "cleanup": {
+        "owned_process_terminal": true,
+        "temporary_project_removed": true,
+        "isolated_save_removed": true
+      }
+    },
+    {
+      "seed": 4,
+      "exit": 0,
+      "frames_done": true,
+      "queue_failure": false,
+      "counts": {
+        "start": 1,
+        "frame_before": 3000,
+        "frame_after": 3000,
+        "input": 3103,
+        "direct_cancel": 3,
+        "done": 1
+      },
+      "input_types": {
+        "InputEventMouseButton": 587,
+        "InputEventKey": 410,
+        "InputEventScreenTouch": 190,
+        "InputEventMouseMotion": 1916
+      },
+      "sequence_contiguous": true,
+      "frames_contiguous_1_to_3000": true,
+      "trace_bytes": 3317655,
+      "trace_sha256": "f962acc759deb7653e852050d64d978b12be22301aeb993d3a4bb5d6ea827c36",
+      "trace_local_path": "trace-02/4/trace.jsonl",
+      "peak_message_buffer_bytes": 32768.0,
+      "minimum_changes": 14639,
+      "max_changes_between_script_frame_begins": 53,
+      "controls_seen": 2528,
+      "controls_alive_at_done": 470,
+      "highest_lifetime_change_counts": [
+        {
+          "alive": true,
+          "changes": 1121,
+          "path": "/root/AutomationViewport/Main/@CanvasLayer@24/@Control@25/CardInspector/@VBoxContainer@27/@HBoxContainer@28"
+        },
+        {
+          "alive": true,
+          "changes": 1118,
+          "path": "/root/AutomationViewport/Main/@CanvasLayer@24/@Control@25/CardInspector"
+        },
+        {
+          "alive": true,
+          "changes": 1118,
+          "path": "/root/AutomationViewport/Main/@CanvasLayer@24/@Control@25/CardInspector/@VBoxContainer@27"
+        },
+        {
+          "alive": true,
+          "changes": 1067,
+          "path": "/root/AutomationViewport/Main/@CanvasLayer@24/@Control@25/CardInspector/@VBoxContainer@27/@VBoxContainer@36/@ScrollContainer@47/@VBoxContainer@48"
+        },
+        {
+          "alive": true,
+          "changes": 1035,
+          "path": "/root/AutomationViewport/Main/@CanvasLayer@24/@Control@25/CardInspector/@VBoxContainer@27/@VBoxContainer@36"
+        },
+        {
+          "alive": true,
+          "changes": 991,
+          "path": "/root/AutomationViewport/Main/@CanvasLayer@24/@Control@25/CardInspector/@VBoxContainer@27/@VBoxContainer@36/@HBoxContainer@59"
+        }
+      ],
+      "initial_config_before_tree_ready": {
+        "inside_tree": false,
+        "map": "spiral",
+        "modes": [
+          "glass",
+          "angry"
+        ],
+        "rules": 1,
+        "tutor": true,
+        "ui_scale_actual": 1.0,
+        "user_data_dir": "/Users/leeseongjin/Library/Application Support/Godot/app_userdata/BinduToolsMessageQueueTrace92edfa4306534738a799cb94fe9bf572",
+        "viewport": null
+      },
+      "first_process_frame_state": {
+        "cancel_visible": false,
+        "core_hp": 10,
+        "modes": [],
+        "paused": false,
+        "phase": 0,
+        "picks": 2,
+        "queue_peak_bytes": 32768.0,
+        "selected": 0,
+        "towers": 0,
+        "ui_scale_actual": 1.3,
+        "wave": 0
+      },
+      "done_config": {
+        "inside_tree": true,
+        "map": "spiral",
+        "modes": [],
+        "rules": 1,
+        "tutor": false,
+        "ui_scale_actual": 1.3,
+        "user_data_dir": "/Users/leeseongjin/Library/Application Support/Godot/app_userdata/BinduToolsMessageQueueTrace92edfa4306534738a799cb94fe9bf572",
+        "viewport": "[P: (0.0, 0.0), S: (1280.0, 1280.0)]"
+      },
+      "first_input_samples": [
+        {
+          "alt": false,
+          "button_index": 1,
+          "button_mask": 0,
+          "ctrl": false,
+          "double_click": false,
+          "engine_process_frame": 1,
+          "factor": 1.0,
+          "frame": 2,
+          "global_position": [
+            620.149475097656,
+            852.459594726562
+          ],
+          "kind": "input",
+          "meta": false,
+          "position": [
+            620.149475097656,
+            852.459594726562
+          ],
+          "pressed": true,
+          "sequence": 1,
+          "shift": false,
+          "ticks_usec": 817016,
+          "type": "InputEventMouseButton"
+        },
+        {
+          "alt": false,
+          "ctrl": false,
+          "echo": false,
+          "engine_process_frame": 2,
+          "frame": 3,
+          "keycode": 4194319,
+          "kind": "input",
+          "meta": false,
+          "physical_keycode": 4194319,
+          "pressed": true,
+          "sequence": 2,
+          "shift": false,
+          "ticks_usec": 818160,
+          "type": "InputEventKey",
+          "unicode": 0
+        },
+        {
+          "alt": false,
+          "ctrl": false,
+          "echo": false,
+          "engine_process_frame": 2,
+          "frame": 3,
+          "keycode": 4194319,
+          "kind": "input",
+          "meta": false,
+          "physical_keycode": 4194319,
+          "pressed": false,
+          "sequence": 3,
+          "shift": false,
+          "ticks_usec": 818220,
+          "type": "InputEventKey",
+          "unicode": 0
+        },
+        {
+          "alt": false,
+          "button_index": 1,
+          "button_mask": 0,
+          "ctrl": false,
+          "double_click": false,
+          "engine_process_frame": 3,
+          "factor": 1.0,
+          "frame": 4,
+          "global_position": [
+            156.074691772461,
+            732.516479492188
+          ],
+          "kind": "input",
+          "meta": false,
+          "position": [
+            156.074691772461,
+            732.516479492188
+          ],
+          "pressed": true,
+          "sequence": 4,
+          "shift": false,
+          "ticks_usec": 818889,
+          "type": "InputEventMouseButton"
+        },
+        {
+          "alt": false,
+          "button_index": 1,
+          "button_mask": 0,
+          "ctrl": false,
+          "double_click": false,
+          "engine_process_frame": 4,
+          "factor": 1.0,
+          "frame": 5,
+          "global_position": [
+            110.919425964355,
+            704.685791015625
+          ],
+          "kind": "input",
+          "meta": false,
+          "position": [
+            110.919425964355,
+            704.685791015625
+          ],
+          "pressed": true,
+          "sequence": 5,
+          "shift": false,
+          "ticks_usec": 819489,
+          "type": "InputEventMouseButton"
+        },
+        {
+          "canceled": false,
+          "engine_process_frame": 5,
+          "frame": 6,
+          "index": 0,
+          "kind": "input",
+          "position": [
+            1266.50830078125,
+            578.353210449219
+          ],
+          "pressed": false,
+          "sequence": 6,
+          "ticks_usec": 820061,
+          "type": "InputEventScreenTouch"
+        },
+        {
+          "alt": false,
+          "button_mask": 0,
+          "ctrl": false,
+          "engine_process_frame": 9,
+          "frame": 10,
+          "global_position": [
+            375.277221679688,
+            10.8646116256714
+          ],
+          "kind": "input",
+          "meta": false,
+          "position": [
+            375.277221679688,
+            10.8646116256714
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "sequence": 7,
+          "shift": false,
+          "ticks_usec": 822914,
+          "type": "InputEventMouseMotion",
+          "velocity": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "alt": false,
+          "button_mask": 0,
+          "ctrl": false,
+          "engine_process_frame": 9,
+          "frame": 10,
+          "global_position": [
+            375.277221679688,
+            10.8646116256714
+          ],
+          "kind": "input",
+          "meta": false,
+          "position": [
+            375.277221679688,
+            10.8646116256714
+          ],
+          "relative": [
+            0.0,
+            0.0
+          ],
+          "sequence": 8,
+          "shift": false,
+          "ticks_usec": 823061,
+          "type": "InputEventMouseMotion",
+          "velocity": [
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--headless",
+        "--fixed-fps",
+        "60",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-message-trace-hkwa3m5e",
+        "-s",
+        "tools/fuzz_trace.gd",
+        "--",
+        "4",
+        "3000"
+      ],
+      "source_instrumentation": {
+        "tools/virtual_input.gd": "6ab4e63148f9b52d39a2111e54f3fe4ee8ef572c84e6fafebf2eb1461ecafd8a",
+        "tools/fuzz.gd": "e77b62a5ca54c181f1ef459aeb8ac4d50056ed3c62fdad6667e95cf8212d767d",
+        "tools/message_queue_trace.gd": "97b6a33d3ad4cffa69996a68b6514589e85180320df4f67f66c9a7708d5b8bed",
+        "tools/fuzz_trace.gd": "b29062326b9391054c3fd7d570a0488522fa4a36ecfb7f2832ae8bcc460a8d00"
+      },
+      "cleanup": {
+        "owned_process_terminal": true,
+        "temporary_project_removed": true,
+        "isolated_save_removed": true
+      }
+    }
+  ],
+  "excluded_attempt": {
+    "path": "trace-01/2/raw.log",
+    "reason": "Observer queried viewport before Main entered tree; engine reached3000/exit0, but runtime ERROR invalidates a pass. Guarded observer readiness in trace02; original retained.",
+    "product_failure": false
+  },
+  "observations": [
+    "Actual mode list is empty at the first process frame in both trace02 runs, despite initial nominal FUZZR modes. Initial values are not proof of sustained coverage.",
+    "Both traced runs have ordinary cumulative inspector minimum-size changes. No per-control64-change script-frame burst or queue exhaustion was observed. This does not establish historical root cause.",
+    "Performance.MEMORY_MESSAGE_BUFFER_MAX is queue high-water monitor, not current occupancy or native resident memory.",
+    "Observer flushes JSONL after each record and changes timing. It records logical input before viewport transform, direct cancel, selected state, control lifetime counts and frame-local bursts; it does not capture global RNG state, all game fields, OS input, or exact deferred callback order."
+  ],
+  "reproduction": "not_observed",
+  "root_cause": "not_observed",
+  "product_fix": "none",
+  "no_owned_processes_remaining": true,
+  "goal_complete": false,
+  "delivery": "Local task commit only; latest main pull/rebase/push/PR update once at final completion.",
+  "monitor_controls": "monitor-controls.json",
+  "diagnostic_scripts_sha256": {
+    "run.py": "7c6e9a1f1c0f2dbaf4f285116cd585908c6dd9c2df77f5faa429830f12480c5f",
+    "fuzz_trace.gd": "b29062326b9391054c3fd7d570a0488522fa4a36ecfb7f2832ae8bcc460a8d00",
+    "run_dap.py": "92f51f22db97457f3f292752cc0da7842439c29e46dca9af3e0dc6ff37479489",
+    "trace.gd": "97b6a33d3ad4cffa69996a68b6514589e85180320df4f67f66c9a7708d5b8bed",
+    "run_trace.py": "91ee53f6e34009e5fbeb5fd6747bd641f24b60eb29a7e27f721ade6ee86988f2"
+  }
+}

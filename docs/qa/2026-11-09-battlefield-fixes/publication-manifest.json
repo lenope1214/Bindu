@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/README.md",
-      "bytes": 15041,
-      "sha256": "341fd720d659ec50f3d3d99a8c6dd1d3b078f0c8a2dbae4bfd39dc5e9bf87d9e",
+      "bytes": 15619,
+      "sha256": "8e23d4300684ec1417b01557d05423b1498a98de61a2fe12d6c927386ed5b158",
       "published": true
     },
     {
@@ -39859,6 +39859,342 @@
       "bytes": 2570,
       "sha256": "c54073dee676e24c20b72fc8ab0ded2150fa18d7b8783b4ec33ed7938596899f",
       "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/README.md",
+      "bytes": 7218,
+      "sha256": "29b8729305c89b448986b15ebcfe25521aacce797ef859a5851bb7011f3e9980",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/per-worker/1/raw.log",
+      "bytes": 424,
+      "sha256": "70e965133f135a24cd96a430b712c5cceb51982570f8ea95b3ca5c7234e6f995",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/per-worker/1/result.json",
+      "bytes": 902,
+      "sha256": "01b8325abae12a8d11ec5cb6ca7778aa6c1c2ae5f50375b501cad0c4ecdb730e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/per-worker/2/raw.log",
+      "bytes": 413,
+      "sha256": "ab29cfe42927c7d738520051e864697979b15a71d8b95db2c86a5390c0e3a7b2",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/per-worker/2/result.json",
+      "bytes": 892,
+      "sha256": "3e9ea3991c4491fd03f75ff4c5256370ee2c4a88f657a5ca1a9a65dafb705265",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/per-worker/3/raw.log",
+      "bytes": 414,
+      "sha256": "d9135a634c3e41f2cc7dd9b457fb0faad2ac1769609154a92ac310b039ca9936",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/per-worker/3/result.json",
+      "bytes": 893,
+      "sha256": "aaefd3d68e18d7e390b9fa825390bcbb839e52c62eda15a8edb04c147f7c3ce8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/per-worker/4/raw.log",
+      "bytes": 413,
+      "sha256": "3d1cea90532fe4c23d75713327620fae122249f8ad6a91780fd5ef928c77e942",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/per-worker/4/result.json",
+      "bytes": 891,
+      "sha256": "711656e95fa6a13c942177b95cecd2aae0a59455f1c2fb673da1dd306cd1327c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/per-worker/import-0.log",
+      "bytes": 11728,
+      "sha256": "786146e137d24720f740fba017d3ee5b728ee54db18ec446f0588a459a8459aa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/per-worker/import-1.log",
+      "bytes": 11728,
+      "sha256": "786146e137d24720f740fba017d3ee5b728ee54db18ec446f0588a459a8459aa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/per-worker/import-2.log",
+      "bytes": 11728,
+      "sha256": "786146e137d24720f740fba017d3ee5b728ee54db18ec446f0588a459a8459aa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/per-worker/import-3.log",
+      "bytes": 11728,
+      "sha256": "786146e137d24720f740fba017d3ee5b728ee54db18ec446f0588a459a8459aa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/run.json",
+      "bytes": 16820,
+      "sha256": "c5c32248d16c5fa94cea2ae1879c9d460b4dfc52ad07218eb5153f365f8d70ac",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/shared/1/raw.log",
+      "bytes": 424,
+      "sha256": "ccb3435c885040392a3ed8462938d34875b3267eb35162d0ad4661cdb46c2046",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/shared/1/result.json",
+      "bytes": 896,
+      "sha256": "de4fb21de7f6741489e5add9ee23beb919a475e7df9e935ff018496ca6f43712",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/shared/2/raw.log",
+      "bytes": 413,
+      "sha256": "fc78debb226495eea6501a9a516ccf0fb81793f3c5b866d0ca8743dd51de5cfd",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/shared/2/result.json",
+      "bytes": 892,
+      "sha256": "583de303c8d6c4c162df45905fe0d12daa71e88fa034bd5bce80654ce27ae4c2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/shared/3/raw.log",
+      "bytes": 414,
+      "sha256": "baae93ecdacf91f1ff7b159b5b5892c6b316c00d9ee09663cac6f0dac7445345",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/shared/3/result.json",
+      "bytes": 886,
+      "sha256": "53b4e0f6883875e0c08f014940f11e74ec38096ff663497cb2b98f3d7244f8e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/shared/4/raw.log",
+      "bytes": 282,
+      "sha256": "7cdf4c45d1d7388c5265049660ca0db41318ae7ff169f5f6094db4715f1ce54c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/shared/4/result.json",
+      "bytes": 885,
+      "sha256": "1a2055de21cff84d0eb708b3f33378b6684803c688eae3ce9b8111fb0d251bce",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/cohorts-01/shared/import-0.log",
+      "bytes": 11728,
+      "sha256": "786146e137d24720f740fba017d3ee5b728ee54db18ec446f0588a459a8459aa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/dap-01/adapter-stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/dap-01/dap.jsonl",
+      "bytes": 2205,
+      "sha256": "ca6abde58e4cedc435520ec160541792908f217b68355b61179b4b9193d9e7ef",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/dap-01/import.log",
+      "bytes": 11728,
+      "sha256": "786146e137d24720f740fba017d3ee5b728ee54db18ec446f0588a459a8459aa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/dap-01/run.json",
+      "bytes": 10190,
+      "sha256": "188be45544f7aeb87c8108f8bc3d0ee6b397ad9ef89bbdd87ab58ed5f21c002a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/dap-02/adapter-stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/dap-02/dap.jsonl",
+      "bytes": 2205,
+      "sha256": "ca6abde58e4cedc435520ec160541792908f217b68355b61179b4b9193d9e7ef",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/dap-02/import.log",
+      "bytes": 11728,
+      "sha256": "786146e137d24720f740fba017d3ee5b728ee54db18ec446f0588a459a8459aa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/dap-02/run.json",
+      "bytes": 10438,
+      "sha256": "894e1b43e2aa60d9b91e09e9f643574b96031716ea22386d5e287df60ec21a45",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/fuzz_trace.gd",
+      "bytes": 398,
+      "sha256": "b29062326b9391054c3fd7d570a0488522fa4a36ecfb7f2832ae8bcc460a8d00",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/monitor-cap.log",
+      "bytes": 1048576,
+      "sha256": "8f990ba0b577b51cf009ea049368c16bbda1b21e1b93be07a824758bb253c39b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/monitor-controls.json",
+      "bytes": 861,
+      "sha256": "1df14382d645cd458d7bf21d2ee00ff89da18de6c12e7bc8e01a25fcb4016612",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/monitor-split-fault.log",
+      "bytes": 29,
+      "sha256": "4fa583a4d1140923ec7d7254cb0fc9bc48440ba3690a84a106a9fdc84cbee10e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/plan.json",
+      "bytes": 3434,
+      "sha256": "d1a16ed226f4fedb07cae02b0647d41f215527eeef211e9cdaa16bd6b0bb905c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/run.py",
+      "bytes": 5079,
+      "sha256": "7c6e9a1f1c0f2dbaf4f285116cd585908c6dd9c2df77f5faa429830f12480c5f",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/run_dap.py",
+      "bytes": 9154,
+      "sha256": "92f51f22db97457f3f292752cc0da7842439c29e46dca9af3e0dc6ff37479489",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/run_trace.py",
+      "bytes": 8662,
+      "sha256": "91ee53f6e34009e5fbeb5fd6747bd641f24b60eb29a7e27f721ade6ee86988f2",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/summary.json",
+      "bytes": 21101,
+      "sha256": "f97c0ec6862227fdd302f5b60cfb38807add4d52ae3e1a455540b7ea461e26f6",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/symbols.json",
+      "bytes": 1094,
+      "sha256": "4b5c02c58b798f2e40b23af60d3bc7efdbab42784e2215ad2054e1303715ef95",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/trace-01/2/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/trace-01/2/raw.log",
+      "bytes": 754,
+      "sha256": "a061bd02431c4ffa9fb98cd0c444f88f5bbaa9aca648c9ec65e9d1dbf460149b",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/trace-01/2/result.json",
+      "bytes": 194829,
+      "sha256": "2d1a32b8a8919bbca87665bc5b10e036587ed75580962b1904a21631784cc435",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/trace-01/2/trace.jsonl",
+      "bytes": 2645542,
+      "sha256": "a3ed0e520ad867ff5679dea8b5bb799717662c015ad0c5e1bc051dd31094f642",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/trace-01/run.json",
+      "bytes": 219359,
+      "sha256": "dc44d1a3fb37a3ef20dca489c340a43a29fa705bc73ab5b391b2b00c6846bf2f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/trace-02/2/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/trace-02/2/raw.log",
+      "bytes": 282,
+      "sha256": "6ec8c27c29f9f2c2f98652deb3bca1dbf67d11bea786a57b170207139942de4b",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/trace-02/2/result.json",
+      "bytes": 420756,
+      "sha256": "6d907e17f4f4a6b2a423150b107981facbbca831c1db72725822efa08d671f92",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/trace-02/2/trace.jsonl",
+      "bytes": 3121834,
+      "sha256": "6a964485aa0ceb61ab95570a5c8916070a670c30eb704b4bc85ec7e19ed39521",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/trace-02/4/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/trace-02/4/raw.log",
+      "bytes": 413,
+      "sha256": "a3ca0feb3e33c9dc98352d4dd2efcdfefb487ea79054074738e5d7a93fa32736",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/trace-02/4/result.json",
+      "bytes": 656215,
+      "sha256": "069c0331f3e13da6690931072fdd26c40e6bea6b1d0e0224cc2b62668d01342a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/trace-02/4/trace.jsonl",
+      "bytes": 3317655,
+      "sha256": "f962acc759deb7653e852050d64d978b12be22301aeb993d3a4bb5d6ea827c36",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/trace-02/run.json",
+      "bytes": 1170118,
+      "sha256": "95e04d53981b19a0d917c31895a05ce885a53feb68e637c251d8eba2b4540bae",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/message-queue/trace.gd",
+      "bytes": 5155,
+      "sha256": "97b6a33d3ad4cffa69996a68b6514589e85180320df4f67f66c9a7708d5b8bed",
+      "published": true
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/README.md",
