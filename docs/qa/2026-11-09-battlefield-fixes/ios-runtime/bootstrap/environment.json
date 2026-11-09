@@ -1,0 +1,13 @@
+{
+  "xcode": "Xcode 27.2\nBuild version 27B52\n",
+  "godot": "4.7.2.stable.official.ed1daf0bf\n",
+  "sdk": "27.2\n",
+  "host_arch": "arm64\n",
+  "runtime": "iOS26.5",
+  "device": "iPhone17 Simulator",
+  "maestro": "2.11.0",
+  "source_ref": "e81fc300c00fb125342854b9e49a20162f250b9e",
+  "product_sources_match_except_isolated_urls": true,
+  "no_webRTC_extension": true,
+  "qa_bundle_separate": true
+}

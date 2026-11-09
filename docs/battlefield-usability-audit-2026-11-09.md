@@ -396,6 +396,7 @@ macOS의 Godot 4.7.2 native 렌더러에서 PC 1280×720 / 글자 100%·130%, �
 - **검증:** CHOOSE·PLACE·AIM·READY·WAVE·스킬 조준·넘기기 각각에서 홈 이동·잠금·전화 중단·강제 종료 후 복귀한다. 로컬 저장과 온라인 복원도 분리한다.
 - **개선 후보·완료 기준:** 복원 지점과 취소된 미완료 행동을 명확히 알리고 중복 카드 소비·유령 터치·예상 못 한 재개가 없다.
 - **근거 범위:** [모바일 알림](../scripts/app/session.gd#L515), [저장 조건](../scripts/features/persistence.gd#L5). 합성 알림 결과를 실제 iOS·Android 증거로 확장하지 않았다.
+- **후속 증거:** [실제 iOS Simulator](qa/2026-11-09-battlefield-fixes/ios-runtime/README.md)의7상태 UIKit 전환·native 재개·실제 프로세스 재실행/이어하기를 확인했다. 실기기·잠금·전화·Jetsam·Android·release·멀티 공백은 남는다.
 
 ### BF-48 · P2 · 가설 — 엄지손가락이 대상·적용 미리보기를 가릴 수 있다
 

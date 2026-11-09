@@ -108,7 +108,8 @@
       "implementation": "implemented",
       "verification": "local_verified",
       "evidence": [
-        "docs/qa/2026-11-09-battlefield-fixes/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/README.md"
       ]
     },
     {
@@ -555,8 +556,10 @@
       "verification": "local_evidence_with_external_gaps",
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/remaining-user-tasks.md",
-        "docs/qa/2026-11-09-battlefield-fixes/README.md"
-      ]
+        "docs/qa/2026-11-09-battlefield-fixes/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/README.md"
+      ],
+      "remaining": "Actual iOS Simulator UIKit app switching/native resume and terminated-process restoration verified in custom debug single-player. Physical finger release loss, device lock/phone/Jetsam, Android, release and multiplayer remain unverified."
     },
     {
       "id": "BF-48",
@@ -868,11 +871,25 @@
         "docs/qa/2026-11-09-battlefield-fixes/multiplayer/mixed-version/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/multiplayer/mixed-version/summary.json"
       ]
+    },
+    {
+      "type": "actual_ios_simulator_lifecycle_verified",
+      "facts": [
+        "Same product70GDScript source as e81fc30; isolated URLs/bundle/saves, no WebRTC. No product code or release build setting changes.",
+        "Matched engine ARM64 debug simulator source build succeeded; helper reproduced exact template SHA and fresh app export/build. Initial x86 archive/environment and fixture/coordinate failures excluded and preserved.",
+        "Seven actual UIKit app-switch/foreground cases pass129native assertions; positive logger probe, runtime errors0/unexpected warnings0. Native XCTest resume does not leak card/skill actions, same PID pauses, actual terminated process restores saved choices/ready in new PID.",
+        "Independent saved-record bank/skip/armed-mode checks35pass. Final common check252/86/28,345parity cases4140samples/fuzz4/restore4,8,12to13 pass.",
+        "Physical/human tasks, Android, actual phone/lock/Jetsam/release/multiplayer interruption, high-speed saturation/PERF01 remain open."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/summary.json"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "Review remaining BF44-50 evidence and high-speed overload policy without treating synthetic input as physical proof. Run remaining-user-tasks.md when devices and human participants become available; full50 goal remains active.",
+    "next_local_action": "Continue BF49 high-speed queue/remaining render cost investigation and remaining-user-tasks when physical devices and human participants are available. Actual iOS Simulator evidence does not close full50.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },

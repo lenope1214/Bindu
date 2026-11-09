@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/README.md",
-      "bytes": 11919,
-      "sha256": "c7a78118d26d124a39ff3b0308b80db5c0fbc7233d2c7536573eba4535e98a14",
+      "bytes": 12612,
+      "sha256": "570da72852ae736e254efb608bc8a4c3ede47693c0cbf9a046fe45d6d520302c",
       "published": true
     },
     {
@@ -6019,6 +6019,4038 @@
       "bytes": 30440,
       "sha256": "1e7f0ab1c8bb78d12c7e9ab4694b8620df3fd1c1aa5d33b595e77d91c37a37d6",
       "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/README.md",
+      "bytes": 13600,
+      "sha256": "6b856ea74112a07b3959be18b81f0c0511ba4479be8791326da6527033e3f4c6",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/adopted-build.json",
+      "bytes": 7590,
+      "sha256": "8b9b1cbd5b29f22a224460488585377f7a9e45eb156c6a67921c08fcbf1b5cee",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/adopted-export.log",
+      "bytes": 25928,
+      "sha256": "80f8098cf2ca375e04516d0a6821a15422ba8608e4b2bf81c771fb707f1dc7ad",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/adopted-import.log",
+      "bytes": 9096,
+      "sha256": "94f871dab328ca72fdc80469f2132abc01507a4bb0f2f189e2220457c1997b94",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/adopted-monitor.gd",
+      "bytes": 8170,
+      "sha256": "eab5391a0fd101241b7e203f99fc7516ecc62d02f55b0ee5240cc881810c27d5",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/adopted-xcode.log",
+      "bytes": 76413,
+      "sha256": "23ec02eb8d17bd941e86972271be8c72d21f5c3af2ab631e2168af27dbef7ba8",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/architecture.txt",
+      "bytes": 265,
+      "sha256": "25c9fea878e6647c2f7669002ee216c512a110a93e4ca5fe395b277d7b8db6b7",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/arm64-build-command.txt",
+      "bytes": 163,
+      "sha256": "c9449ebf969ccf2199b4dde07f47144abb1cf455ddc46a8fc45edb86f6e147ac",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/arm64-engine-build-exit.txt",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/arm64-engine-build.log",
+      "bytes": 1347535,
+      "sha256": "59f773e1371f423c73e55cad3b29742988212b73357e2774bb119a774ff7890f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/arm64-template-source.json",
+      "bytes": 733,
+      "sha256": "1e2fb228496349821395ef099e1034f6253036faba9156bb103ab06da42c95ce",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/continuous-build.json",
+      "bytes": 7593,
+      "sha256": "62ae38bf77de7e731f3c331db069acdeffc251541d715f6866bcd3ad1520b093",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/continuous-export.log",
+      "bytes": 25976,
+      "sha256": "b24741f8a3c19b7b77e71919765b11e8c1f66fa66c13f04ce3637b0303714e85",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/continuous-import.log",
+      "bytes": 9096,
+      "sha256": "94f871dab328ca72fdc80469f2132abc01507a4bb0f2f189e2220457c1997b94",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/continuous-monitor.gd",
+      "bytes": 8712,
+      "sha256": "701774a3be1828d961d996d561ceb20bfb063bab0183d4b77472891df8e8e869",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/continuous-xcode.log",
+      "bytes": 77655,
+      "sha256": "c81a4214aed6e345532f615cd6bb29079e0a420f54def031f274cd7e40f6d5a4",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/environment.json",
+      "bytes": 400,
+      "sha256": "7b5ef96d2eb0ecf01b1bcd30c5e1ad24b47be19b2900493f739a81302e326df7",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/export-canonical-clean.log",
+      "bytes": 25896,
+      "sha256": "73bf9acd1d0152a02895dff437f737dee1a6ee6bc270310033e9611e373573cb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/failure-digest.txt",
+      "bytes": 3579,
+      "sha256": "3a3e825069adfb0dfafa055c110353231337361653032bdb766f0f2e514e0a61",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/maestro-resume-oriented.log",
+      "bytes": 200,
+      "sha256": "a7a9920a1588dbc32ccd6d91c53508aea708849a189d88b20b101f252031b84d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/maestro-resume.log",
+      "bytes": 1394,
+      "sha256": "fab345dfcb56c6b419262d74afa4bfd352b8b77a3ce37f9516da7b6ed1c878a2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/probe-parser.log",
+      "bytes": 560,
+      "sha256": "6b566b53f765041b4dd134453ab65f014162d720a4dd3a9c246c440f1f9aa0f4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/reproduced-template.json",
+      "bytes": 780,
+      "sha256": "21a41c003ad085ee015cd518e7e2fa20a6a9a07418b5092353bb4175ea079b5f",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/template-source.json",
+      "bytes": 417,
+      "sha256": "949e080dbde5b5c6b3ab7b6db6ab8aa2846e9f0938caf723e9df06aaab52814c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/triage.json",
+      "bytes": 3361,
+      "sha256": "6f676a1e5746970a2d5c2390fbf9af98cb5b32a7569049c025755697d8a58d03",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/xcode-build-x86.log",
+      "bytes": 76936,
+      "sha256": "4462def57e5c5d4c509620aaea68cee3331318f6c8146d3c605ada3d89ba5e70",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/xcode-build.log",
+      "bytes": 762677,
+      "sha256": "c9a5a860572b25092aab2eabce24e5ce178aafc9b455647528d52b0e3548ba97",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/xcode-canonical-clean-exit.txt",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/bootstrap/xcode-canonical-clean.log",
+      "bytes": 78881,
+      "sha256": "2ae125d435016ab2b75c9661636b797a6730864f2e15e9140f888f68a3cfdace",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/build_template.py",
+      "bytes": 2662,
+      "sha256": "bf64a2bff3897ca48b512243da9b30846bc156d53616e1e862c651c2edc7a5f3",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/cleanup.json",
+      "bytes": 2124,
+      "sha256": "f682aa4173b1cb07e577cb3b322eabf679e30b1677df5db457acace4848ca431",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/fetch_template.py",
+      "bytes": 2933,
+      "sha256": "cc77dcd3f92e76b303147aae66fc88c976d0f14ae02d80ff906db4f8c24ab998",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/full-check-exit.txt",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/full-check.log",
+      "bytes": 871,
+      "sha256": "150badc8730c90e51535b027308d67745402a7b58cca862a62bd63e04a1ecf29",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/background.json",
+      "bytes": 3855,
+      "sha256": "99330c7d34701bfaa1a5c239434c3b1325f00009bb0d3e19e7e14aa626b5f50b",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/before.json",
+      "bytes": 3747,
+      "sha256": "9bd283fed2b294150115ddb5c55841952e8c0e1a4d16138df7b5ad9d86a68389",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/continue-junit.xml",
+      "bytes": 481,
+      "sha256": "413856feec54197feecc92481859f8fa51b28a2c236d9036859edd1b0d22364d",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/continue-maestro/.maestro/tests/2026-11-10_041250/continue/commands.json",
+      "bytes": 2698,
+      "sha256": "cfa2381518a2dc54f6923989b218b445a61e397668c139568ed6765d388966ae",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/continue-maestro/.maestro/tests/2026-11-10_041250/continue/logs/device-simulator.log",
+      "bytes": 319556,
+      "sha256": "28d1de6d17ebe60b1608b54d7ef25589c0bacf21669da2ab779741c5ccde5a68",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/continue-maestro/.maestro/tests/2026-11-10_041250/continue/logs/device-xctest.log",
+      "bytes": 10920,
+      "sha256": "179d286b761f4755dfa8013d38b733122e62337088ab84443d2d0aef2acdbc16",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/continue-maestro/.maestro/tests/2026-11-10_041250/continue/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "b03c285a49535c6ac73de7c669bfb7409e5be013b9e9949c4ccd1f05cc5bce33",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/continue-maestro/.maestro/tests/2026-11-10_041250/continue/manifest.json",
+      "bytes": 727,
+      "sha256": "659437fc0a79dd7be2118d901099e844a46bc5727c4c1ffd21f9ccc2accaea6a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/continue-maestro/.maestro/tests/2026-11-10_041250/maestro.log",
+      "bytes": 11475,
+      "sha256": "5c6099bb7fd9e0114d023faf101e6c4758c542516dc12730490d448663d3b537",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/continue-maestro/.maestro/tests/2026-11-10_041250/xctest_runner_2026-11-10_041253.log",
+      "bytes": 11045,
+      "sha256": "dc58748f8f0b8e3e9c123c1e274c75a60ca61016e505727b4bc6e1763cf95239",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/continue-maestro.log",
+      "bytes": 193,
+      "sha256": "62b2a317d6526874014189e235530e136a8213f2ba5c35bcd08379e7b7a1d058",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/continue.yaml",
+      "bytes": 139,
+      "sha256": "e39dd931287d99e885e81f03411e69a7e32b7d2e1eedcb395f0fbd7d262a840c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/foreground-junit.xml",
+      "bytes": 490,
+      "sha256": "3273cbbc0fd78714ab4a041a64b096097455ccdaf5fcbe554ac8893f0df80424",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/foreground-maestro/.maestro/tests/2026-11-10_041239/foreground/commands.json",
+      "bytes": 2594,
+      "sha256": "b302fed735e4e480fc6318dce32ea88d58cef606be0e1394c035f3a77d9cae69",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/foreground-maestro/.maestro/tests/2026-11-10_041239/foreground/logs/device-simulator.log",
+      "bytes": 76823,
+      "sha256": "345d45d682176c0f0b58c7718380e0449b4ac3a4edd1d0c13dd32435873e757c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/foreground-maestro/.maestro/tests/2026-11-10_041239/foreground/logs/device-xctest.log",
+      "bytes": 6868,
+      "sha256": "8c6101f72fde087b5201b03417f2175dfd1613ba0fff2fdbef23a136cf01f0c2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/foreground-maestro/.maestro/tests/2026-11-10_041239/foreground/logs/maestro.log",
+      "bytes": 1915,
+      "sha256": "b4c2b70ee24328aebae9d731cd3915c5ab8d2d3546b3ede826fda3df047dceb6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/foreground-maestro/.maestro/tests/2026-11-10_041239/foreground/manifest.json",
+      "bytes": 725,
+      "sha256": "248c0b28b070c0c1681c56c21f217c5547ff9275bedd1fff8eefdd04f6a7ade0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/foreground-maestro/.maestro/tests/2026-11-10_041239/maestro.log",
+      "bytes": 11472,
+      "sha256": "3d4fdfcb5065b22de835e7aa554b6eff5e5255e9b5699d0c77345a3e43dcbb79",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/foreground-maestro/.maestro/tests/2026-11-10_041239/xctest_runner_2026-11-10_041242.log",
+      "bytes": 6993,
+      "sha256": "01590bf8526fd26f68ac978f03c15ccf0cab1b013f6e6dc543752b6a72c99e2c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/foreground-maestro.log",
+      "bytes": 195,
+      "sha256": "a9474893a83306aa84b3553ff1d3eb8a6906618190c211b86da5bfa09306deed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/relaunch.txt",
+      "bytes": 39,
+      "sha256": "2ca5cc8e058baca5f2d4530fbd6d9e03a44c399d0d03ac68ec19b4dc35ddae00",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/restarted.json",
+      "bytes": 2932,
+      "sha256": "a67e180f345d4ec5537e1ecbb64d7066b3b56f64ceabddc9d30f2925243866e7",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/restarted.png",
+      "bytes": 174447,
+      "sha256": "03a26a8e23bc3fd1206f62bbc261c1a9e402acabda58870c5cec694df2270222",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/restored.json",
+      "bytes": 3722,
+      "sha256": "47c23a28fd23ac1077a0939872719ebf07240a24c91ec376e385c4a1f6da322f",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/restored.png",
+      "bytes": 303077,
+      "sha256": "2831684fdfe32d7976671f7395b5f68500a995166de159f8d9848a9417a15dd5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/resume-junit.xml",
+      "bytes": 474,
+      "sha256": "85b8f46ac4bdee8bd9feac9cf531c60430394f953f87be13b32d17a4b14d42b4",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/resume-maestro/.maestro/tests/2026-11-10_041228/maestro.log",
+      "bytes": 11467,
+      "sha256": "90c489471b99a727413adc5d0f962327fb73d98819cbe1dc3f7f05d2e3571ab5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/resume-maestro/.maestro/tests/2026-11-10_041228/resume/commands.json",
+      "bytes": 2695,
+      "sha256": "f7777229ca166d716b0e4b5254b5870e3aeabccbb5f29b1affde966c13a8fffd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/resume-maestro/.maestro/tests/2026-11-10_041228/resume/logs/device-simulator.log",
+      "bytes": 223138,
+      "sha256": "0b92ab94854174597cdd2f2ccdad43ef37a9e0c16d19eb37c13da5fa99cca8dc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/resume-maestro/.maestro/tests/2026-11-10_041228/resume/logs/device-xctest.log",
+      "bytes": 11586,
+      "sha256": "edbcbefd7d539fd450c276e4f64fac172579f9cda6ab30a0051e44874c002063",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/resume-maestro/.maestro/tests/2026-11-10_041228/resume/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "31a4183bbfd811ce95e0d77711d15a2f4c1be98fd7a90430188eefd82607f46d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/resume-maestro/.maestro/tests/2026-11-10_041228/resume/manifest.json",
+      "bytes": 727,
+      "sha256": "d3783a15f0443097df43fd3e10ee86d7341fdb0d232b380e434aec3c8be36fa5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/resume-maestro/.maestro/tests/2026-11-10_041228/xctest_runner_2026-11-10_041231.log",
+      "bytes": 11711,
+      "sha256": "7f755569873d5d0789ef1f559afca10af7dc8f884e7a4f0a55f736f7c46207e3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/resume-maestro.log",
+      "bytes": 191,
+      "sha256": "69419b3686e902c0811b442308d67fb5012166a6b74d758bad66178b38554221",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/resume.yaml",
+      "bytes": 139,
+      "sha256": "f61c0069c863f25cedbe8e297b2d27aba124bc8adc1326a65afddaeb7179801e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/resumed.json",
+      "bytes": 4332,
+      "sha256": "7097b524e0f05b2fa17fdf998466fb0786e159961692f533adfa8f5d1719b94e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/returned.json",
+      "bytes": 3965,
+      "sha256": "d6a191ad8672c24501b953a62c8ff6826a8358dc1da6b6acca17281f2b06ed15",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/aim/returned.png",
+      "bytes": 240702,
+      "sha256": "e5df266f74d5e53b00eefc19ef073676be464bbef72fb354a7bb3009e05e77cf",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/background.json",
+      "bytes": 3495,
+      "sha256": "3001362202055b492b59fe80e5fb77f153d0cf2b8725ebd6575bb6293d1fbce9",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/before.json",
+      "bytes": 3389,
+      "sha256": "cdfdf86942a90fcccd0dd2400e570356a3ea683be2c7736e462fece0cb318bfb",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/continue-junit.xml",
+      "bytes": 485,
+      "sha256": "09367f84ed83f3b56295f2799043e13aca815f111cc6af8eef9f2956b11ccdf8",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/continue-maestro/.maestro/tests/2026-11-10_041141/continue/commands.json",
+      "bytes": 2699,
+      "sha256": "6c9eb2192565ffbabb4a5c8b6b57936f65b971880ec47896465cae76937f3896",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/continue-maestro/.maestro/tests/2026-11-10_041141/continue/logs/device-simulator.log",
+      "bytes": 194118,
+      "sha256": "35b310c53630b118b212f0e6827f8b96aac1417038453ca58d77f7c757147a16",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/continue-maestro/.maestro/tests/2026-11-10_041141/continue/logs/device-xctest.log",
+      "bytes": 10918,
+      "sha256": "117541b727e393c94de5572e2c6193e657d3741e1d02f1f6cc87527bcbc46003",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/continue-maestro/.maestro/tests/2026-11-10_041141/continue/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "53bb4ec14515d8dc97418fbb0a6ce100124a2af87551e7ef7ca91c1d11e6bb60",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/continue-maestro/.maestro/tests/2026-11-10_041141/continue/manifest.json",
+      "bytes": 727,
+      "sha256": "9396aab589e4693031b8a220904340d566e8f8173a1174b0758b708e81a16663",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/continue-maestro/.maestro/tests/2026-11-10_041141/maestro.log",
+      "bytes": 11482,
+      "sha256": "d33e9bb8738576dbafc15cb9c2ca732f4eceabf83cda63d9280db90ff4345aa1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/continue-maestro/.maestro/tests/2026-11-10_041141/xctest_runner_2026-11-10_041144.log",
+      "bytes": 11043,
+      "sha256": "d258c874c7d755b0c2508a54de18547e0dd3219ad2325d8c7f3faf0d6e311bcd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/continue-maestro.log",
+      "bytes": 193,
+      "sha256": "c89af2ce6140e32e6ee6e47fcda13d4fafef25cd4dfb99fd182bba851607787e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/continue.yaml",
+      "bytes": 139,
+      "sha256": "e39dd931287d99e885e81f03411e69a7e32b7d2e1eedcb395f0fbd7d262a840c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/foreground-junit.xml",
+      "bytes": 492,
+      "sha256": "cec16ac1125f37473a9a178b9fed034c68b58deec252d7f40ceb91c154c02fcd",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/foreground-maestro/.maestro/tests/2026-11-10_041129/foreground/commands.json",
+      "bytes": 2594,
+      "sha256": "904011dc5c5d1e63f9f1c8fdaceb5e51cb14560a3947cb3ca2ce100ee721ea0c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/foreground-maestro/.maestro/tests/2026-11-10_041129/foreground/logs/device-simulator.log",
+      "bytes": 65221,
+      "sha256": "ec76b7a10799d3ab9ccb50122e081683f1488482680905f48accd78f27f1595a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/foreground-maestro/.maestro/tests/2026-11-10_041129/foreground/logs/device-xctest.log",
+      "bytes": 6602,
+      "sha256": "3e41b06336b77d6a9dc94f57201b43bd24e935df04306e7ba8b41b771adddfe2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/foreground-maestro/.maestro/tests/2026-11-10_041129/foreground/logs/maestro.log",
+      "bytes": 1915,
+      "sha256": "fc101dcd61bb9f3f818ef64718683714f6024ba9432408622549faae725a9de0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/foreground-maestro/.maestro/tests/2026-11-10_041129/foreground/manifest.json",
+      "bytes": 725,
+      "sha256": "edc366fd2a2eed40e815fa00e8817b00cc1d0adb452a2136b242a0d619807aa1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/foreground-maestro/.maestro/tests/2026-11-10_041129/maestro.log",
+      "bytes": 11481,
+      "sha256": "aa2f9a3142e84935bafc0b6a3d72a8300436da96d425a3bdab0814037e49ab88",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/foreground-maestro/.maestro/tests/2026-11-10_041129/xctest_runner_2026-11-10_041133.log",
+      "bytes": 6727,
+      "sha256": "436a93056a9c4fa19cb72018e8663f21e482ec8f03c1885de29d23b0b73718d9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/foreground-maestro.log",
+      "bytes": 195,
+      "sha256": "a9474893a83306aa84b3553ff1d3eb8a6906618190c211b86da5bfa09306deed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/relaunch.txt",
+      "bytes": 39,
+      "sha256": "3bdda13043803c6b8c7f51051029d30598c5eedc5134c41cd70a0b4a93c6aea2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/restarted.json",
+      "bytes": 2935,
+      "sha256": "28217cbc237a9f6c8bb4a74078c6c6292f1efe4404b1daf07ffba53d12377f65",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/restarted.png",
+      "bytes": 174700,
+      "sha256": "237b95b238d74dd7b636d609d608b1e19cb7d148bdc98656557db9d77d27534f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/restored.json",
+      "bytes": 3725,
+      "sha256": "d714412ed9eba9709ca9585323773ab2cb6a813c286c0429ae3d2cc75269a3c7",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/restored.png",
+      "bytes": 323362,
+      "sha256": "e5315818589606f3d1ca8e966683147392555fb5c91f150303dd04cc5e0f118b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/resume-junit.xml",
+      "bytes": 477,
+      "sha256": "86b9697118222176caf94d4dc4f8673af5c280b17c946a91f4db4ff46c4ff7f9",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/resume-maestro/.maestro/tests/2026-11-10_041119/maestro.log",
+      "bytes": 11476,
+      "sha256": "76f9af8c2d3cace00a0b88d7bdebc702719214686218110b2b7f6240b10c5820",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/resume-maestro/.maestro/tests/2026-11-10_041119/resume/commands.json",
+      "bytes": 2694,
+      "sha256": "4a11155eefc01a959202b6199f5fd4345cfcd42a6072c889fe87f7d12491862c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/resume-maestro/.maestro/tests/2026-11-10_041119/resume/logs/device-simulator.log",
+      "bytes": 240704,
+      "sha256": "30e65df3f3495896391f9523a5775c1bac6b1ae383b2ad93061fc125f3df8493",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/resume-maestro/.maestro/tests/2026-11-10_041119/resume/logs/device-xctest.log",
+      "bytes": 10654,
+      "sha256": "1b06b25e4ac6faa810eb26a0baaee11d8bf80b534b4dd868958b0613b1fa9e3d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/resume-maestro/.maestro/tests/2026-11-10_041119/resume/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "2040796c157116680d41b1a353cad8dfd718407c5afc0fc40aa498d299dd6950",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/resume-maestro/.maestro/tests/2026-11-10_041119/resume/manifest.json",
+      "bytes": 727,
+      "sha256": "ad0f502cb09e57ffd4dd462c69adb15f1effedeafa36246347ba1389f1549ec5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/resume-maestro/.maestro/tests/2026-11-10_041119/xctest_runner_2026-11-10_041122.log",
+      "bytes": 10779,
+      "sha256": "9354dc9ffbf5866bb9be1d668db101cbc6d7f7957fcbe2a7edb66998f1ee006e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/resume-maestro.log",
+      "bytes": 191,
+      "sha256": "701cd9f8ae6fd2f4043ab7f388788a8f929f80638704c5fd5b88cfc07e62cb37",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/resume.yaml",
+      "bytes": 139,
+      "sha256": "f61c0069c863f25cedbe8e297b2d27aba124bc8adc1326a65afddaeb7179801e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/resumed.json",
+      "bytes": 3972,
+      "sha256": "c9a5c264f0157f5a5e0e39a99f2002016f2de05d3ac5e9a1b7bdc7a22ed4ade3",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/returned.json",
+      "bytes": 3603,
+      "sha256": "19376475b99661c6b0b7955abe7208e6412a6b5a5377a8eeab3103e3e5678bdc",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/choose/returned.png",
+      "bytes": 225266,
+      "sha256": "cf74e4929bb8127bdc9f0868ef8e168693fecd2cf3f4dfcbb3059b37630bba75",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/background.json",
+      "bytes": 3499,
+      "sha256": "83734576a3174f3846568a81ff1fbe9dc9f8c6549cfdf1c72f73d7a33fc533fb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/before.json",
+      "bytes": 3391,
+      "sha256": "7fd5a87da8530312ddb510d37f7304e17fe07905e7b51149d1544ff84403b2e9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/continue-junit.xml",
+      "bytes": 489,
+      "sha256": "f0599221b3b9a0f673a1987f83c8a9c2e1ba7212624c7545d2b0ac440ac9fb8c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/continue-maestro/.maestro/tests/2026-11-10_041508/continue/commands.json",
+      "bytes": 2698,
+      "sha256": "c56ba3d3eb7e5ba82874adabb8653705c9e46bf902790b8bce32a86c04e56fb2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/continue-maestro/.maestro/tests/2026-11-10_041508/continue/logs/device-simulator.log",
+      "bytes": 182974,
+      "sha256": "05f03d40777e7e11ad984eb698ba48aa8eb33fb3393dd9289254caddf8542e49",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/continue-maestro/.maestro/tests/2026-11-10_041508/continue/logs/device-xctest.log",
+      "bytes": 10654,
+      "sha256": "6811f9baabbf145261bd53be2790ebea8edb27bafc98bbb5473926989d56448c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/continue-maestro/.maestro/tests/2026-11-10_041508/continue/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "ad574894104da9546f36c8818b2a1a7e676dfcb31d6ca54b74eaf8472d18a345",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/continue-maestro/.maestro/tests/2026-11-10_041508/continue/manifest.json",
+      "bytes": 727,
+      "sha256": "55b3d4ba04b5f6e00fcdb019cbbbae3ff4f50a5cfb6ed020c33d8c28a138b05d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/continue-maestro/.maestro/tests/2026-11-10_041508/maestro.log",
+      "bytes": 11495,
+      "sha256": "9d2d9d8c764f4ed5e8966087167d7ff642e39d604c9475729643827b91290037",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/continue-maestro/.maestro/tests/2026-11-10_041508/xctest_runner_2026-11-10_041511.log",
+      "bytes": 10779,
+      "sha256": "faae8f71a17213ff2399bbb9aba6cbb315b7bc7ad1b87dc4443703532177fdcf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/continue-maestro.log",
+      "bytes": 193,
+      "sha256": "c89af2ce6140e32e6ee6e47fcda13d4fafef25cd4dfb99fd182bba851607787e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/continue.yaml",
+      "bytes": 139,
+      "sha256": "e39dd931287d99e885e81f03411e69a7e32b7d2e1eedcb395f0fbd7d262a840c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/foreground-junit.xml",
+      "bytes": 497,
+      "sha256": "e52b5fb62fd4eb33199d4c7fd23d7d8af64bb9f76c66c5f7477bd6e2c51f9eac",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/foreground-maestro/.maestro/tests/2026-11-10_041458/foreground/commands.json",
+      "bytes": 2594,
+      "sha256": "1a0b2d859502ef2e0820cbaa51295e9e074ac2fc3b298c9dd7c6175d7975ab5f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/foreground-maestro/.maestro/tests/2026-11-10_041458/foreground/logs/device-simulator.log",
+      "bytes": 104086,
+      "sha256": "62dc3214a84e342922c8e183ec71b34151e506bde0fadce12be27761d2bf3d23",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/foreground-maestro/.maestro/tests/2026-11-10_041458/foreground/logs/device-xctest.log",
+      "bytes": 6734,
+      "sha256": "a0176e4460e7497908fa019dde3ef0b677367a56ba34e51a9a240cf909f96e3e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/foreground-maestro/.maestro/tests/2026-11-10_041458/foreground/logs/maestro.log",
+      "bytes": 1915,
+      "sha256": "61f4fa11dfe1a6c6ff779f35767f714d77012277494c70f749eaca89c5497eab",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/foreground-maestro/.maestro/tests/2026-11-10_041458/foreground/manifest.json",
+      "bytes": 726,
+      "sha256": "ad360abbb759e8e523b051c4f001041875c955bd0364955c557045af934e16f5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/foreground-maestro/.maestro/tests/2026-11-10_041458/maestro.log",
+      "bytes": 11492,
+      "sha256": "3e79d5230827753ce77ca716643eff55222dbd97f83bc3f5923a01cf776b93f7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/foreground-maestro/.maestro/tests/2026-11-10_041458/xctest_runner_2026-11-10_041501.log",
+      "bytes": 6859,
+      "sha256": "ea6f6009af0e188f2e81c6f27168be708480781608e238cdc0d331397018adb1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/foreground-maestro.log",
+      "bytes": 195,
+      "sha256": "a9474893a83306aa84b3553ff1d3eb8a6906618190c211b86da5bfa09306deed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/relaunch.txt",
+      "bytes": 39,
+      "sha256": "9309f69b966ade2cef8e3d2f48986354c7b9bbadfe54c29abfd70e5884490fdf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/restarted.json",
+      "bytes": 2747,
+      "sha256": "d116a8e66af9c8b4f311f5bee1047ddf48a7261e7e23ab7b39616127f186a67b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/restarted.png",
+      "bytes": 174894,
+      "sha256": "607efccb5ade00714407cabb9c851ac19ce02c108521a7cfe1a5625f0aa9d130",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/resume-junit.xml",
+      "bytes": 481,
+      "sha256": "9635b97b7f6bc27d1693f44c819c944f6c1a1f411e016fdc0ed069cd6ebfee3e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/resume-maestro/.maestro/tests/2026-11-10_041447/maestro.log",
+      "bytes": 11487,
+      "sha256": "5597393f9ee33372bb60458f8c0828c915454ef1b2953d5103637f170f0311d4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/resume-maestro/.maestro/tests/2026-11-10_041447/resume/commands.json",
+      "bytes": 2695,
+      "sha256": "a0b7732b05b18e66aa564eb6ff39900ebed3d8f74641aba95007978df1ed13e9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/resume-maestro/.maestro/tests/2026-11-10_041447/resume/logs/device-simulator.log",
+      "bytes": 259479,
+      "sha256": "cc60c53b540964a377a02cf8b9b2c2937c18acab211dbfddafe7525aa94a43c7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/resume-maestro/.maestro/tests/2026-11-10_041447/resume/logs/device-xctest.log",
+      "bytes": 11319,
+      "sha256": "8579008f99f398d7dccefd7045badbb6ee93f656153daa3457b945b1b68692b6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/resume-maestro/.maestro/tests/2026-11-10_041447/resume/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "a80f5b0d19dc3e32719fac5bb3076e7af255213212f5d4114099fea00cde943d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/resume-maestro/.maestro/tests/2026-11-10_041447/resume/manifest.json",
+      "bytes": 727,
+      "sha256": "05ca47ce5d0c8927b1aacd94f324b3661ff3a69c5078aa03935d6cbfc618581e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/resume-maestro/.maestro/tests/2026-11-10_041447/xctest_runner_2026-11-10_041450.log",
+      "bytes": 11444,
+      "sha256": "4ec53348ebfb18bdc3a92bff2c62bab46438f117e7d544aae7432a6a76029059",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/resume-maestro.log",
+      "bytes": 191,
+      "sha256": "69419b3686e902c0811b442308d67fb5012166a6b74d758bad66178b38554221",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/resume.yaml",
+      "bytes": 139,
+      "sha256": "f61c0069c863f25cedbe8e297b2d27aba124bc8adc1326a65afddaeb7179801e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/resumed.json",
+      "bytes": 3976,
+      "sha256": "fe50b9e236d4f17c6090079b2d3f806e36a268faf714229837550e3d468030d7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/returned.json",
+      "bytes": 3609,
+      "sha256": "d5b75908fcfbbe0cebcb22cd8c154c13606a75e6e7473f11388ffd63be4c5cdb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/continuous/returned.png",
+      "bytes": 300172,
+      "sha256": "dd01e662cff2b9e4d722a614d3d88ddb26ea97ecf9745bd13b051a790691e563",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/background.json",
+      "bytes": 3861,
+      "sha256": "235c80cfd6bd56127ca7ff0ce5c9cab494e509c3483c40a6c0a3b023243c0b19",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/before.json",
+      "bytes": 3753,
+      "sha256": "43e0d603e5ab37fb7a39a8a71721102d146a2655f44db028d7a2bf3619fe53aa",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/continue-junit.xml",
+      "bytes": 484,
+      "sha256": "acfefacfa05050a30bc54bb2481f8320698d75998ccf646138248e4797d2265a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/continue-maestro/.maestro/tests/2026-11-10_041215/continue/commands.json",
+      "bytes": 2698,
+      "sha256": "84ded097496964e377934933ae423a1bb7a9d37b5ded16925d183c13cd9e3290",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/continue-maestro/.maestro/tests/2026-11-10_041215/continue/logs/device-simulator.log",
+      "bytes": 180915,
+      "sha256": "799288682f030c58eae512d7a084ea00bcc5fbd81b19eb1b5849cbb5d3e28afe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/continue-maestro/.maestro/tests/2026-11-10_041215/continue/logs/device-xctest.log",
+      "bytes": 10654,
+      "sha256": "91e025dab3c59b55a0b76398207578f3a93e7a4192ee13c429109ffeb2b91909",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/continue-maestro/.maestro/tests/2026-11-10_041215/continue/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "ced8b0068b186747d50ee6983d9351336081d5dddce48537cb0c06438341a9c9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/continue-maestro/.maestro/tests/2026-11-10_041215/continue/manifest.json",
+      "bytes": 727,
+      "sha256": "68bb926813865128e834a0acd2818fa654e353ffcbdef6dd6878780b83ad4938",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/continue-maestro/.maestro/tests/2026-11-10_041215/maestro.log",
+      "bytes": 11481,
+      "sha256": "676fabdec46818fc24b9f36c23591f39874db6a2d44e2b06914c6eab0448843d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/continue-maestro/.maestro/tests/2026-11-10_041215/xctest_runner_2026-11-10_041217.log",
+      "bytes": 10779,
+      "sha256": "e51589362b94890b23f6c78f435272a30246c5bd19688f0d12e5365df4f2fa5a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/continue-maestro.log",
+      "bytes": 193,
+      "sha256": "c89af2ce6140e32e6ee6e47fcda13d4fafef25cd4dfb99fd182bba851607787e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/continue.yaml",
+      "bytes": 139,
+      "sha256": "e39dd931287d99e885e81f03411e69a7e32b7d2e1eedcb395f0fbd7d262a840c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/foreground-junit.xml",
+      "bytes": 492,
+      "sha256": "c1f53828b96049779562c3fbeaee1173eb8f6fc0d6f34a027e64ddc7699badba",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/foreground-maestro/.maestro/tests/2026-11-10_041204/foreground/commands.json",
+      "bytes": 2594,
+      "sha256": "8cb21bbfc56875f4934008b26f561680b71c4dd28f12ee4c18e809cc8176dd5d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/foreground-maestro/.maestro/tests/2026-11-10_041204/foreground/logs/device-simulator.log",
+      "bytes": 86580,
+      "sha256": "73bc048c5b60d0229caba9c17ca76624db27febe001381c7f632a503a3b53dcd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/foreground-maestro/.maestro/tests/2026-11-10_041204/foreground/logs/device-xctest.log",
+      "bytes": 6735,
+      "sha256": "85d0f6c97b6e60583e21cae20104497be4b4a2c2be57ee3822af6b919afbf33b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/foreground-maestro/.maestro/tests/2026-11-10_041204/foreground/logs/maestro.log",
+      "bytes": 1915,
+      "sha256": "a3cb7d61fc5fca53ebcb6eda06c632b5e200a57c7cbe84f61e62ce6846b8c151",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/foreground-maestro/.maestro/tests/2026-11-10_041204/foreground/manifest.json",
+      "bytes": 725,
+      "sha256": "dd01e05c726021ef1fd29b5531f45837214fa0f5bd5dd77941d0f6dc3eb8f695",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/foreground-maestro/.maestro/tests/2026-11-10_041204/maestro.log",
+      "bytes": 11478,
+      "sha256": "018d8f35092de84398c172519203059955384bed519b2a603fbb1e06c12487a3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/foreground-maestro/.maestro/tests/2026-11-10_041204/xctest_runner_2026-11-10_041207.log",
+      "bytes": 6860,
+      "sha256": "d8bcdd833b1b7e827f4dc139d11a7e1427d90d0722dd5ab3627934e8b58112f5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/foreground-maestro.log",
+      "bytes": 195,
+      "sha256": "22d155b99aeb00aa30dc4b19e7e65948bd9b9b3607c9ab1cc231c449c609b23b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/relaunch.txt",
+      "bytes": 39,
+      "sha256": "1b10dae03a6dc5348bc88566d15d080f602aebbfa84d4118f76a6bd166cfe721",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/restarted.json",
+      "bytes": 2934,
+      "sha256": "16ca446068177b043e882ea7328b669037cd00b95e3f40c730fe38804db497fd",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/restarted.png",
+      "bytes": 174905,
+      "sha256": "84e5929444a6c205b8abdfd740b57630c221afd91e8ee2f01039eb2d272347e7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/restored.json",
+      "bytes": 3724,
+      "sha256": "da2dc0497be22f7e6bf45972c003aef63f00dd31ee5b89bcdbbae5fff6a56a50",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/restored.png",
+      "bytes": 296647,
+      "sha256": "aa3b49014be1c40de6b28c9e23fc10eaf4939beaa7f4a6ad6524333e5f73d3f2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/resume-junit.xml",
+      "bytes": 475,
+      "sha256": "dccc703cb193efc35c1cd8a6cd27cba65ed898d05c04515ffeebea4d1e4e6df3",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/resume-maestro/.maestro/tests/2026-11-10_041154/maestro.log",
+      "bytes": 11473,
+      "sha256": "718b2cf4abcd12e6bc1521366e4abf5174fecf63ad48956786d5aedf0fd0a964",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/resume-maestro/.maestro/tests/2026-11-10_041154/resume/commands.json",
+      "bytes": 2694,
+      "sha256": "6ad96ba1fc6e5e20d375824dd01cf2534eade232066ae57cb557e851703f95de",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/resume-maestro/.maestro/tests/2026-11-10_041154/resume/logs/device-simulator.log",
+      "bytes": 228355,
+      "sha256": "1224e8f9db12d71f2765fb59beb023437571c708dd4fa3e765e16c6b11469333",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/resume-maestro/.maestro/tests/2026-11-10_041154/resume/logs/device-xctest.log",
+      "bytes": 10655,
+      "sha256": "a8f393589485c4e58bc249b3929fc8e3c75809919759640a27927e59e8b06419",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/resume-maestro/.maestro/tests/2026-11-10_041154/resume/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "c7caf410faec7cb58e3a18916676dcce78cb2c800ba2c98a54df57372263d043",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/resume-maestro/.maestro/tests/2026-11-10_041154/resume/manifest.json",
+      "bytes": 727,
+      "sha256": "aec1b8bc3d3bbb7a2d092091ca2b2893300762412c4d01657e01a45a4b8e3860",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/resume-maestro/.maestro/tests/2026-11-10_041154/xctest_runner_2026-11-10_041157.log",
+      "bytes": 10780,
+      "sha256": "0d4688ab19bd82af1e6946e43de5a869df1ba022884aa707cc6d5d67ac37e0b2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/resume-maestro.log",
+      "bytes": 191,
+      "sha256": "701cd9f8ae6fd2f4043ab7f388788a8f929f80638704c5fd5b88cfc07e62cb37",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/resume.yaml",
+      "bytes": 139,
+      "sha256": "f61c0069c863f25cedbe8e297b2d27aba124bc8adc1326a65afddaeb7179801e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/resumed.json",
+      "bytes": 4338,
+      "sha256": "0549d3739b429130c6ca5f4c92eaffc4bab343facb5df010c8ce97348f3eb993",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/returned.json",
+      "bytes": 3971,
+      "sha256": "3b2d693ade119765fd0d799dea40569dd180fc1f95e76dd4767dc168d6c6c211",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/place/returned.png",
+      "bytes": 244297,
+      "sha256": "fd0135697dff4eaee8bae89173ffa13f151fa750c2616e42da6a1cccf9513a85",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/background.json",
+      "bytes": 3860,
+      "sha256": "d560ff65dd269697904307013c9addc588687b57f201dc6edb57a20cdfc77e23",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/before.json",
+      "bytes": 3752,
+      "sha256": "fd0d9e83339faa2b383e939e27bd6836df79fb780cfdc41f5169ddca69f467f0",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/continue-junit.xml",
+      "bytes": 483,
+      "sha256": "fd46662204630910ed73d9c6a5206bcc3faae347e96aa7971c7b2f2b5b7755fa",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/continue-maestro/.maestro/tests/2026-11-10_041324/continue/commands.json",
+      "bytes": 2698,
+      "sha256": "1f75010b35ee158bfd903c8d0195fc0745994ab8bfcd84ff5721283841469f62",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/continue-maestro/.maestro/tests/2026-11-10_041324/continue/logs/device-simulator.log",
+      "bytes": 187490,
+      "sha256": "898992d07339c29dc0c8b1f1591ebfdc879027ddf29383f9102674e03120ad09",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/continue-maestro/.maestro/tests/2026-11-10_041324/continue/logs/device-xctest.log",
+      "bytes": 10918,
+      "sha256": "7eba0db98380d90bdd7851f50f58774fb0122bf35434caa184fd4a4b55f67da9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/continue-maestro/.maestro/tests/2026-11-10_041324/continue/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "7c9fd364b633ddfc78fcd2e22c7fe0dc0f8368b46359f879a3eb2afbf2209111",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/continue-maestro/.maestro/tests/2026-11-10_041324/continue/manifest.json",
+      "bytes": 727,
+      "sha256": "6e5e01066dc9bd9e66e3cfbfe88f3f91666c22920492478a8550bf4c7c00b266",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/continue-maestro/.maestro/tests/2026-11-10_041324/maestro.log",
+      "bytes": 11480,
+      "sha256": "8b12fc7ca5fa96279493a4f0a96c5eb8f33d8606febdf9c230abce90ad36343e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/continue-maestro/.maestro/tests/2026-11-10_041324/xctest_runner_2026-11-10_041327.log",
+      "bytes": 11043,
+      "sha256": "8bb64e3071efcaf1cf82571770aa2c82de4e2b4c0067eebc291018b3eefd5f5c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/continue-maestro.log",
+      "bytes": 193,
+      "sha256": "c89af2ce6140e32e6ee6e47fcda13d4fafef25cd4dfb99fd182bba851607787e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/continue.yaml",
+      "bytes": 139,
+      "sha256": "e39dd931287d99e885e81f03411e69a7e32b7d2e1eedcb395f0fbd7d262a840c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/foreground-junit.xml",
+      "bytes": 492,
+      "sha256": "3af00427b64f48155443eeac1492f01ee808d3795cda0618235c01ce297eee31",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/foreground-maestro/.maestro/tests/2026-11-10_041314/foreground/commands.json",
+      "bytes": 2594,
+      "sha256": "aab7a044c169e7beeee8198c05292ecf126709ce5421b849cdc69c753c72289a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/foreground-maestro/.maestro/tests/2026-11-10_041314/foreground/logs/device-simulator.log",
+      "bytes": 125826,
+      "sha256": "871d1f662e3b167bae0c418d69fa997b1f069d173861a7ddf66cd19efcf300d1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/foreground-maestro/.maestro/tests/2026-11-10_041314/foreground/logs/device-xctest.log",
+      "bytes": 6734,
+      "sha256": "3c51ab564026d254d2c8c37fa31aadb3e73df5710d1f0cca5a85ac33e59617c4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/foreground-maestro/.maestro/tests/2026-11-10_041314/foreground/logs/maestro.log",
+      "bytes": 1915,
+      "sha256": "f153158b9c0ffdffc36688555834f73065d4473481b777687cffe7aaede7b302",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/foreground-maestro/.maestro/tests/2026-11-10_041314/foreground/manifest.json",
+      "bytes": 726,
+      "sha256": "dc505b7e2759fd964e54f14cdae542f4e9b38d3648d760fb70b492d6792e2a74",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/foreground-maestro/.maestro/tests/2026-11-10_041314/maestro.log",
+      "bytes": 11477,
+      "sha256": "759b4c8c5e3ed1d196feea5a3844dfbe71068fa106c202f6f54c072b5ae49615",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/foreground-maestro/.maestro/tests/2026-11-10_041314/xctest_runner_2026-11-10_041317.log",
+      "bytes": 6859,
+      "sha256": "c53b5fcf81d50bedd65c6d07da7899c2ad2e341b44d44fafcf8e7a68cd771e64",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/foreground-maestro.log",
+      "bytes": 195,
+      "sha256": "a9474893a83306aa84b3553ff1d3eb8a6906618190c211b86da5bfa09306deed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/relaunch.txt",
+      "bytes": 39,
+      "sha256": "04668a70289697bdc6106e052dafbccfc15c5e11fe258a2994315f53c72bb67a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/restarted.json",
+      "bytes": 2933,
+      "sha256": "f7b882c84fc53d5191fc836a2a3c8b50f2d43a7c092008a7b0244456a3482bba",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/restarted.png",
+      "bytes": 174804,
+      "sha256": "9bfa03876535a61ff9461d1c06e840220279801fea4e60adc703d26a7813cf76",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/restored.json",
+      "bytes": 3539,
+      "sha256": "9e78fac6aaf4991843cc3459bc5e7045119f8f88f5a48492ecc02fd5405cae5f",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/restored.png",
+      "bytes": 236192,
+      "sha256": "fa2fa672af8af0149921521037b454dcd2e9e4e02726b1f29f91d3995f53cc1b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/resume-junit.xml",
+      "bytes": 476,
+      "sha256": "5f0e2cfbda9f6766b6e43dafaf57336ab8dc04d101f6329b3812bafd661fda34",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/resume-maestro/.maestro/tests/2026-11-10_041303/maestro.log",
+      "bytes": 11473,
+      "sha256": "3edff288f649adbe74d9fd20be614ff58ed96ec9bbc83752681a0dedbbf74a48",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/resume-maestro/.maestro/tests/2026-11-10_041303/resume/commands.json",
+      "bytes": 2695,
+      "sha256": "65d94b0ab5151abdebf057e700da7859458b1024933a704ab27bb7237bc4b2d7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/resume-maestro/.maestro/tests/2026-11-10_041303/resume/logs/device-simulator.log",
+      "bytes": 181063,
+      "sha256": "76879daef485200e6efb9b93cfd4a045c1ed71c6d0feee905ee297b6ad09d3ac",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/resume-maestro/.maestro/tests/2026-11-10_041303/resume/logs/device-xctest.log",
+      "bytes": 10787,
+      "sha256": "e26afe44c24f1a19559696b62a8c5268a12f714711098abbfcaec1ad0c14aafb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/resume-maestro/.maestro/tests/2026-11-10_041303/resume/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "3ec02ecb95f8716ef186f0884fe63a614d2ad17637c6a13d4e6bc70e4b6733ef",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/resume-maestro/.maestro/tests/2026-11-10_041303/resume/manifest.json",
+      "bytes": 727,
+      "sha256": "3f812e109469bbe115a73f0dd7429a01932c2df26d4c5df72c332d74919bf061",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/resume-maestro/.maestro/tests/2026-11-10_041303/xctest_runner_2026-11-10_041305.log",
+      "bytes": 10912,
+      "sha256": "a296e947b0980519c1661fa92dd0c5590d512ba09507d85efd432f700dd3e693",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/resume-maestro.log",
+      "bytes": 191,
+      "sha256": "69419b3686e902c0811b442308d67fb5012166a6b74d758bad66178b38554221",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/resume.yaml",
+      "bytes": 139,
+      "sha256": "f61c0069c863f25cedbe8e297b2d27aba124bc8adc1326a65afddaeb7179801e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/resumed.json",
+      "bytes": 4337,
+      "sha256": "c56f8963a1b1782f0464eefea74de621e024389cebd0800fcbd4c162336e0e46",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/returned.json",
+      "bytes": 3970,
+      "sha256": "cc325516cc1cc0f2d97fe98d8e2533615bf9596f929f691d398e7c12f438bf19",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/ready/returned.png",
+      "bytes": 244489,
+      "sha256": "ef108fe422e8a02c47c5292e84eea66c697b9b41937bf7f1fcae9fd98e871945",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/run.json",
+      "bytes": 3669,
+      "sha256": "33398728745be4a21205ac23bd14d246f90d77eca8718f8b54d14e626259f44e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/background.json",
+      "bytes": 3851,
+      "sha256": "b73b778cea9977716932483b2261fa4f271a912d77dc9669d94a09c7ad1b5ce5",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/before.json",
+      "bytes": 3743,
+      "sha256": "7951b06f6885f049708028514874dc9c4952956b252faaaf750191b2e7734a71",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/continue-junit.xml",
+      "bytes": 483,
+      "sha256": "fd6597567232c52de05be73d0ef44c939562e97e910a4f6b73efb1b274256da5",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/continue-maestro/.maestro/tests/2026-11-10_041433/continue/commands.json",
+      "bytes": 2699,
+      "sha256": "658f07cb7586ed74d54910c3f32683526eaadba360f13eb7f5773caeab3d081d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/continue-maestro/.maestro/tests/2026-11-10_041433/continue/logs/device-simulator.log",
+      "bytes": 211131,
+      "sha256": "9f33a25a28c13714e42afa3904452bab66ce173ce882ffe487f8b3317bba218c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/continue-maestro/.maestro/tests/2026-11-10_041433/continue/logs/device-xctest.log",
+      "bytes": 11320,
+      "sha256": "70a7608aa6edfb2672eb98b6537e47d10e84eeca7f31258f5bb831caf5be79d4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/continue-maestro/.maestro/tests/2026-11-10_041433/continue/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "b9a6f6c6ccc56d44633e846912f08130678673e5ab9620eeb25d4db7d52122fb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/continue-maestro/.maestro/tests/2026-11-10_041433/continue/manifest.json",
+      "bytes": 727,
+      "sha256": "9434d4badadd027c924560565d4a880d42847fe392b347bed53ada1ba1b3b7d3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/continue-maestro/.maestro/tests/2026-11-10_041433/maestro.log",
+      "bytes": 11481,
+      "sha256": "28e83d1974448ceccc0e8169914ed72b0fa344fd93472608df47bfcd419e562a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/continue-maestro/.maestro/tests/2026-11-10_041433/xctest_runner_2026-11-10_041436.log",
+      "bytes": 11445,
+      "sha256": "b781c70ba4ec6a0bca5dafb509bf330edfb9373b6101adc98db2107a5230366c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/continue-maestro.log",
+      "bytes": 193,
+      "sha256": "4e9973310f58c1d51e7c5e40eea02c2bbd33c2379f350b3bf8797bcb6a4f875d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/continue.yaml",
+      "bytes": 139,
+      "sha256": "e39dd931287d99e885e81f03411e69a7e32b7d2e1eedcb395f0fbd7d262a840c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/foreground-junit.xml",
+      "bytes": 491,
+      "sha256": "f1a14b9ed3694588600b0fea6f816d354d734cc72169d7d805619f514c49d59b",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/foreground-maestro/.maestro/tests/2026-11-10_041422/foreground/commands.json",
+      "bytes": 2594,
+      "sha256": "e5b6b0c2157d7bc6dfccfa623c4e8edbfce4bb4a9b38f9d8a3320a4d87a4e0e3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/foreground-maestro/.maestro/tests/2026-11-10_041422/foreground/logs/device-simulator.log",
+      "bytes": 67749,
+      "sha256": "656a467b20c8fba792813b538adafed10056589e244a68db5ed46d83a775613f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/foreground-maestro/.maestro/tests/2026-11-10_041422/foreground/logs/device-xctest.log",
+      "bytes": 6733,
+      "sha256": "73f6585ae02f488b775b6c28af44b9c59fa9305f6511c76decc55f37d37d65a2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/foreground-maestro/.maestro/tests/2026-11-10_041422/foreground/logs/maestro.log",
+      "bytes": 1915,
+      "sha256": "3ac39b2a9b5c6c7d3a754d75aded2bf086d7fb1f515acd0dcbbbc230fb9a33e9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/foreground-maestro/.maestro/tests/2026-11-10_041422/foreground/manifest.json",
+      "bytes": 725,
+      "sha256": "ba23655edcde62e866cc34eb3c58a4575158b36b3106a1b6ea82c0e371886bdf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/foreground-maestro/.maestro/tests/2026-11-10_041422/maestro.log",
+      "bytes": 11476,
+      "sha256": "065ff837bc7c22b1afd9e1bf796ab8661035b1c28b87fca8090d4736197d1d65",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/foreground-maestro/.maestro/tests/2026-11-10_041422/xctest_runner_2026-11-10_041425.log",
+      "bytes": 6858,
+      "sha256": "09d96c1303584b737a272fcd10669555866316435d33b9fab51258c23c337c64",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/foreground-maestro.log",
+      "bytes": 195,
+      "sha256": "a9474893a83306aa84b3553ff1d3eb8a6906618190c211b86da5bfa09306deed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/relaunch.txt",
+      "bytes": 39,
+      "sha256": "248800197b8d4285f8a5a2bdab1426953575995b805288724cd7c2d8294004ce",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/restarted.json",
+      "bytes": 2933,
+      "sha256": "6acbec1289546951a77a4d6911db83f729c9f1dc0d21ba51536636aa66bd9c0b",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/restarted.png",
+      "bytes": 174608,
+      "sha256": "8d184c3f82b43b3df6045c47e0480f50c56e849928f1b146727fdd2a68e57319",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/restored.json",
+      "bytes": 3539,
+      "sha256": "d1102a46962c1968b6db0aeb5a544d5c93edad94a2926d253b663fc662ea9b70",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/restored.png",
+      "bytes": 233050,
+      "sha256": "0cbd505f38d3c4bca9a310d191e62244ae0c729aa07366a5e6205614d688dfe5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/resume-junit.xml",
+      "bytes": 475,
+      "sha256": "b8d51020c4819f864ff5c2ff9edac56c292f1d22b74e4504481aae20a5b72ded",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/resume-maestro/.maestro/tests/2026-11-10_041412/maestro.log",
+      "bytes": 11472,
+      "sha256": "7826d12816c9f103f07121d8a036aa61d2685f08218b3b21bbaa670486a1417f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/resume-maestro/.maestro/tests/2026-11-10_041412/resume/commands.json",
+      "bytes": 2695,
+      "sha256": "5b4e2082313012eec984edf9162d291cb7dc837f16ca6747f7e353e20aa24faf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/resume-maestro/.maestro/tests/2026-11-10_041412/resume/logs/device-simulator.log",
+      "bytes": 293839,
+      "sha256": "5f5f79fd875abb6c62746933c0f7122c97bd5ea24edc81e2e55915473e90e28b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/resume-maestro/.maestro/tests/2026-11-10_041412/resume/logs/device-xctest.log",
+      "bytes": 11185,
+      "sha256": "a4e7117fcf37c3eafb6e7a5e78f3ff62af93f2e711e8cf56e22ae5ddb9921a33",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/resume-maestro/.maestro/tests/2026-11-10_041412/resume/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "d1071eeda923b7ccd941a468fef3f89926e4692871fd19b57351e2ddc947749a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/resume-maestro/.maestro/tests/2026-11-10_041412/resume/manifest.json",
+      "bytes": 727,
+      "sha256": "2ad6cd4d6fb6a5273f42048d62af1f87a0c12338a59ef20a5bfcd88b4039bf0d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/resume-maestro/.maestro/tests/2026-11-10_041412/xctest_runner_2026-11-10_041415.log",
+      "bytes": 11310,
+      "sha256": "3475b6e443eccb17131af5d2d1dfc695f1f56946d1907c0a6ab9966dc9a2d7fa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/resume-maestro.log",
+      "bytes": 191,
+      "sha256": "701cd9f8ae6fd2f4043ab7f388788a8f929f80638704c5fd5b88cfc07e62cb37",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/resume.yaml",
+      "bytes": 139,
+      "sha256": "f61c0069c863f25cedbe8e297b2d27aba124bc8adc1326a65afddaeb7179801e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/resumed.json",
+      "bytes": 4328,
+      "sha256": "f504a6c067efd02bd48cec440b77f892f369c5f36868e119e83001dd39f93689",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/returned.json",
+      "bytes": 3961,
+      "sha256": "b12bff19855ebf1f2c2f6b9608e4d96ad13a55963c2a563493078b2b4d2a6b42",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/returned.png",
+      "bytes": 248166,
+      "sha256": "445c23c7fa8f5796b2381334c960f6d3ef96796fffd0feb58a313de7c355da53",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/background.json",
+      "bytes": 3845,
+      "sha256": "6c3185f88aa9919c2368d460b152d852530464491c200befa6197c5eae9653b5",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/before.json",
+      "bytes": 3737,
+      "sha256": "0bdd3aec8017ad6af7358747712aeac91dea578de03312e3da7e7fe63e34c74b",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/continue-junit.xml",
+      "bytes": 483,
+      "sha256": "6180abdd5da744a66af1fb3a623d061eac08bd1c2bc7bc6609c5168e875a646c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/continue-maestro/.maestro/tests/2026-11-10_041358/continue/commands.json",
+      "bytes": 2699,
+      "sha256": "f0069c78ac63012aa3f21aafab1f1e6ca339902d9624fe2832c1707500588c45",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/continue-maestro/.maestro/tests/2026-11-10_041358/continue/logs/device-simulator.log",
+      "bytes": 339502,
+      "sha256": "67b31246364b0c30dae939f06de670f14de95baed5d9b7aba2ae1130f31c564f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/continue-maestro/.maestro/tests/2026-11-10_041358/continue/logs/device-xctest.log",
+      "bytes": 11451,
+      "sha256": "4e4383e7c05f8ede53594a3fc76bc4db5b4f4d185c8080e9882411e46f1f63d9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/continue-maestro/.maestro/tests/2026-11-10_041358/continue/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "1f55abf59178bb6e7a17a811ac27856c6aee903ce0460f71049bcbfa3822caa1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/continue-maestro/.maestro/tests/2026-11-10_041358/continue/manifest.json",
+      "bytes": 727,
+      "sha256": "f3d76b0995611a844ed814fc00f375a146ebe80384104e3551a35f4681694ba4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/continue-maestro/.maestro/tests/2026-11-10_041358/maestro.log",
+      "bytes": 11478,
+      "sha256": "eb06fc5ed62b63c72c9c0a73bc2dff87730aa3782c8962e2d8a4747b9df0b1b1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/continue-maestro/.maestro/tests/2026-11-10_041358/xctest_runner_2026-11-10_041401.log",
+      "bytes": 11576,
+      "sha256": "623904cb37bdc8f7e461300eb95ac67954ce88e505dd53fb7779ade48e1a05fd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/continue-maestro.log",
+      "bytes": 193,
+      "sha256": "c89af2ce6140e32e6ee6e47fcda13d4fafef25cd4dfb99fd182bba851607787e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/continue.yaml",
+      "bytes": 139,
+      "sha256": "e39dd931287d99e885e81f03411e69a7e32b7d2e1eedcb395f0fbd7d262a840c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/foreground-junit.xml",
+      "bytes": 491,
+      "sha256": "ad88218144aba1e57e2c09e54ab165c589cfe617b522caab7cdbb205dcc79c54",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/foreground-maestro/.maestro/tests/2026-11-10_041348/foreground/commands.json",
+      "bytes": 2594,
+      "sha256": "181cad8c2b2b283f68a58f2eeb36e21a2a67e8102d6f2061c20d9be43f70428c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/foreground-maestro/.maestro/tests/2026-11-10_041348/foreground/logs/device-simulator.log",
+      "bytes": 129563,
+      "sha256": "bbe66b67e6ff1b73f5608dba38e937cfccc6280fe6f4483dcdcf5d11138c346a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/foreground-maestro/.maestro/tests/2026-11-10_041348/foreground/logs/device-xctest.log",
+      "bytes": 6735,
+      "sha256": "33721786d05a7ac4e38d15ca973b746179bf0eaba40698e6a25d5dbc4a52296a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/foreground-maestro/.maestro/tests/2026-11-10_041348/foreground/logs/maestro.log",
+      "bytes": 1915,
+      "sha256": "36ba414f65020b3c773e1f1133de918e5f80bc55ae74c1f4eb21c44776e65796",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/foreground-maestro/.maestro/tests/2026-11-10_041348/foreground/manifest.json",
+      "bytes": 726,
+      "sha256": "d46af3b623ba2822b54c75aaf217d55eaa233d7d3509b6c2f79a77e96a65efd3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/foreground-maestro/.maestro/tests/2026-11-10_041348/maestro.log",
+      "bytes": 11475,
+      "sha256": "bb9f77f192e5246560f02635f99b4a3863c572b2a1c4be36f0ad57511a1c395c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/foreground-maestro/.maestro/tests/2026-11-10_041348/xctest_runner_2026-11-10_041351.log",
+      "bytes": 6860,
+      "sha256": "5f28c05357a88c5fca3b58cce20922e68069fe38cf930de73cfc06a0def75c41",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/foreground-maestro.log",
+      "bytes": 195,
+      "sha256": "22d155b99aeb00aa30dc4b19e7e65948bd9b9b3607c9ab1cc231c449c609b23b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/relaunch.txt",
+      "bytes": 39,
+      "sha256": "59c468b2273dcf4dfdf9381d0f1df262c231723b09d6e380e2646b26acc6091a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/restarted.json",
+      "bytes": 2932,
+      "sha256": "2abc1e09aa8adde2efe7b6446f2ef3d6ee2c9ff4bf44c05379c6aa7077041c63",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/restarted.png",
+      "bytes": 174503,
+      "sha256": "7d1a37472f4ab66bcf02911f21de2d6447c0760916b4d4dae753ae5473d5cc4e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/restored.json",
+      "bytes": 3538,
+      "sha256": "82009ff6914e7cc4b877fc1aa05125c7a569d32045e35877e9dd1e40f3ff2545",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/restored.png",
+      "bytes": 217286,
+      "sha256": "7e41fc5e546a563a82cca50de67cfe07d0d0f0202e623091f622227e2a7c5e77",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/resume-junit.xml",
+      "bytes": 475,
+      "sha256": "308c1da915c2ee27b2b4409a8db2ab047dca5668cb67ac23bb6590bfa95f34e2",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/resume-maestro/.maestro/tests/2026-11-10_041337/maestro.log",
+      "bytes": 11470,
+      "sha256": "0a7040353bd804017fcf7918769b7671c2906a04b82af8ec8ceee8bf11db9b7a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/resume-maestro/.maestro/tests/2026-11-10_041337/resume/commands.json",
+      "bytes": 2695,
+      "sha256": "4fffcdd99aceb8257df950df61b4c78fe5441ae6bd373a7b2f9a2e567f4f041a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/resume-maestro/.maestro/tests/2026-11-10_041337/resume/logs/device-simulator.log",
+      "bytes": 253200,
+      "sha256": "33c1c37c3130d730ffc723ec02e1dbbca075f096c16cc0769ad275f0736f0a1e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/resume-maestro/.maestro/tests/2026-11-10_041337/resume/logs/device-xctest.log",
+      "bytes": 10786,
+      "sha256": "c95dc3367e997a0b22a98b66b80f092fdfb7ccd1ac9ae508238d8932a8a96735",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/resume-maestro/.maestro/tests/2026-11-10_041337/resume/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "5559bde7773e349865d2eae83118c3611bfdf6c8f58169b50e3c77d4a5f7e568",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/resume-maestro/.maestro/tests/2026-11-10_041337/resume/manifest.json",
+      "bytes": 727,
+      "sha256": "8642f129c8affefc96a05fc809e7f5e08a40bece20df539d0a9a2caa6c9ed6d2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/resume-maestro/.maestro/tests/2026-11-10_041337/xctest_runner_2026-11-10_041340.log",
+      "bytes": 10911,
+      "sha256": "c82ab17178c5568aa71b83c75baaaac1f66ca9ceaad468b1e8a0537bb55863b8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/resume-maestro.log",
+      "bytes": 191,
+      "sha256": "701cd9f8ae6fd2f4043ab7f388788a8f929f80638704c5fd5b88cfc07e62cb37",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/resume.yaml",
+      "bytes": 139,
+      "sha256": "f61c0069c863f25cedbe8e297b2d27aba124bc8adc1326a65afddaeb7179801e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/resumed.json",
+      "bytes": 4322,
+      "sha256": "aa242d6841f3e505407cc892ca2f27b0da891f4a06644b18bdf978c865a465b8",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/returned.json",
+      "bytes": 3955,
+      "sha256": "ddb1c3f25ffddc984d2e183e75d2d572c8a7360f9cd2e42c31e0606c840e0875",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/wave/returned.png",
+      "bytes": 240048,
+      "sha256": "ecd1a7c79447f1412893983248482b4d2be828b848a703fe5195ca0ac2bc4c58",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted.log",
+      "bytes": 3363,
+      "sha256": "44e5c3b8fec9416850a3733602b951de91bfda4372250ed5a3fb3868d53d1c70",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/background.json",
+      "bytes": 3158,
+      "sha256": "154146ceb86a7359b3cdb7dae46fd20f5950e8e4b8360d5bdd945d7cfeadd019",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/before.json",
+      "bytes": 3052,
+      "sha256": "2ca3db12e8424f1989c57ad94c5b26dfb3441bcb3a46e4b7bc6e5ae84425e9c4",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/continue-junit.xml",
+      "bytes": 491,
+      "sha256": "1e28a9c1ef480611e0877f7ad5b4a97f1bca211909e05aa58b8f69e11dc4b2b7",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/continue-maestro/.maestro/tests/2026-11-10_041721/continue/commands.json",
+      "bytes": 2698,
+      "sha256": "14e7ab8eed9bca176bc981b98d5d14e33d3f3af853109d5bcbfcaaaaf655e093",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/continue-maestro/.maestro/tests/2026-11-10_041721/continue/logs/device-simulator.log",
+      "bytes": 246889,
+      "sha256": "65b87b4f556e58f0b033da4c6e1137e053d52f46b3be5273a1ffbfc58821cd77",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/continue-maestro/.maestro/tests/2026-11-10_041721/continue/logs/device-xctest.log",
+      "bytes": 10787,
+      "sha256": "a12550002ec43d5e5088c4f18ffb08c9274cdf262d8d0fe404d631ce74c9a3de",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/continue-maestro/.maestro/tests/2026-11-10_041721/continue/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "908ffd64f5c6289a2cdc0cea3ea846629a800f766b5801b08d140a4b6aaaf301",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/continue-maestro/.maestro/tests/2026-11-10_041721/continue/manifest.json",
+      "bytes": 727,
+      "sha256": "a0cf3ef2ff5f0792246c2da80ff0d327d12c92da1708150e710dc90edbbe9aee",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/continue-maestro/.maestro/tests/2026-11-10_041721/maestro.log",
+      "bytes": 11504,
+      "sha256": "e6979de77457ea69b3ee4ed5077d2b9a08049859f8e91bd0c87dcdfff8796725",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/continue-maestro/.maestro/tests/2026-11-10_041721/xctest_runner_2026-11-10_041723.log",
+      "bytes": 10912,
+      "sha256": "02cfd60e50c9bc11824c369a6e1a3a70ec432cd9a055430c215413284b1669b4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/continue-maestro.log",
+      "bytes": 193,
+      "sha256": "62b2a317d6526874014189e235530e136a8213f2ba5c35bcd08379e7b7a1d058",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/continue.yaml",
+      "bytes": 139,
+      "sha256": "e39dd931287d99e885e81f03411e69a7e32b7d2e1eedcb395f0fbd7d262a840c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/foreground-junit.xml",
+      "bytes": 500,
+      "sha256": "c6cd5574c04fe42d5e5a4f76ab4df056d1b18d38f29761b49c4ca18fd75d6c96",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/foreground-maestro/.maestro/tests/2026-11-10_041710/foreground/commands.json",
+      "bytes": 2594,
+      "sha256": "5a004c9c6251d010fb8d81e9c3b47c039c5b206a79eb9c326499c5ab1b959dec",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/foreground-maestro/.maestro/tests/2026-11-10_041710/foreground/logs/device-simulator.log",
+      "bytes": 67753,
+      "sha256": "f99d4f876977e30c7d533429d2d2afde9b1adc4041e69194f3699a461c951ba1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/foreground-maestro/.maestro/tests/2026-11-10_041710/foreground/logs/device-xctest.log",
+      "bytes": 6734,
+      "sha256": "a8e60205b34c58c3204969f0a8715bc28735be476bd557690bfb0bebe536d370",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/foreground-maestro/.maestro/tests/2026-11-10_041710/foreground/logs/maestro.log",
+      "bytes": 1915,
+      "sha256": "f79f50a96301881c93b8350bcfe4ee7f12d075a62af577e489763ca89c5d344f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/foreground-maestro/.maestro/tests/2026-11-10_041710/foreground/manifest.json",
+      "bytes": 725,
+      "sha256": "3a89349592513de8cb71b040821cab771c35ae3f0993f2b8ec560109620c81b6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/foreground-maestro/.maestro/tests/2026-11-10_041710/maestro.log",
+      "bytes": 11501,
+      "sha256": "6901bf71269ad89c0df4eb92d469868c351d618ccfea7528e850d9d65e4c0807",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/foreground-maestro/.maestro/tests/2026-11-10_041710/xctest_runner_2026-11-10_041713.log",
+      "bytes": 6859,
+      "sha256": "f5f557cc341c816323d234946cee2ce5775cb7a2eea87f2851a52c75b3a00c61",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/foreground-maestro.log",
+      "bytes": 195,
+      "sha256": "a9474893a83306aa84b3553ff1d3eb8a6906618190c211b86da5bfa09306deed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/relaunch.txt",
+      "bytes": 39,
+      "sha256": "dd947688c46e01c739ff9a4b0593aa9dc8d89e8823a1d4aa1debb778fff3d5dd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/restarted.json",
+      "bytes": 2775,
+      "sha256": "083332aae8a48e539647efd18a7365cc59b8004ac3d8c37b4c1aca23f2977b10",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/restarted.png",
+      "bytes": 174489,
+      "sha256": "7d74ebf45dafaf7e01c6b6d6ff82da3a61e4d7cbc1e8471ae689adb9e45b9df8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/restored.json",
+      "bytes": 3601,
+      "sha256": "d032f68af257237fa3f7397cfcfd9b1766c71e04cc2cf447a003fc06c5fcd88f",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/restored.png",
+      "bytes": 259451,
+      "sha256": "21dc4818e64eeebb7e60400eb0c09bd09cfde1292dd96e7981e90794ac6e1ba7",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/resume-junit.xml",
+      "bytes": 484,
+      "sha256": "e17751dc719e5134fc4c1e1b21568b57a746af73cfad5b1e43a8f53bd0bb9f48",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/resume-maestro/.maestro/tests/2026-11-10_041701/maestro.log",
+      "bytes": 11497,
+      "sha256": "5e468d6f27cd452554ecefc80ab270e297f631f47eaf9f14936b51e529f900ac",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/resume-maestro/.maestro/tests/2026-11-10_041701/resume/commands.json",
+      "bytes": 2694,
+      "sha256": "8ff838a1c32d264333f438dc4a008d70cfa95a7ec3d785850ed27f265b7b090f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/resume-maestro/.maestro/tests/2026-11-10_041701/resume/logs/device-simulator.log",
+      "bytes": 227287,
+      "sha256": "e7ea7eac47dd98099e220f1425e8e9034f708a62c889fbf6761e010f7bbf8730",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/resume-maestro/.maestro/tests/2026-11-10_041701/resume/logs/device-xctest.log",
+      "bytes": 10654,
+      "sha256": "45f4671c155c478d90a07dae3d18d61680e0b7775165fe7a1126069c83b3452c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/resume-maestro/.maestro/tests/2026-11-10_041701/resume/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "1542f06f5f8a7841291e185e866a61f6439edb64775342c08a3cdd3e249fd7e7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/resume-maestro/.maestro/tests/2026-11-10_041701/resume/manifest.json",
+      "bytes": 727,
+      "sha256": "3136ddd04dfd23b0036c06d5739dc7a02e79ad9b762dbd2b13d5eb897f5e16fa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/resume-maestro/.maestro/tests/2026-11-10_041701/xctest_runner_2026-11-10_041703.log",
+      "bytes": 10779,
+      "sha256": "a97c8a30d86ed1a426e8280832de739dab4abbd7688a8d64ba2bc53ac3621bd8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/resume-maestro.log",
+      "bytes": 191,
+      "sha256": "701cd9f8ae6fd2f4043ab7f388788a8f929f80638704c5fd5b88cfc07e62cb37",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/resume.yaml",
+      "bytes": 139,
+      "sha256": "f61c0069c863f25cedbe8e297b2d27aba124bc8adc1326a65afddaeb7179801e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/resumed.json",
+      "bytes": 3635,
+      "sha256": "3e1d6f87c155e056ccac542faefce533b2b42371e870b1faf5f572ea7bebe4ca",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/returned.json",
+      "bytes": 3266,
+      "sha256": "092d757ebbcb8f02361f6f6eafec5b79d424d8edb5aaf973a1d40240edf94d3e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/continuous/returned.png",
+      "bytes": 271045,
+      "sha256": "338cfa01235ffb6b6e89308ad3b7b6cea6113b85c997e7e43d6d1f090c03b2aa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous/run.json",
+      "bytes": 1316,
+      "sha256": "ec1ae9eb5896f9dca0c099b9f38cb604beaf681fb8c5726187c4e9e5ca40ae0f",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous.log",
+      "bytes": 33,
+      "sha256": "61300ad22a1d2b8e5e0abe17d5f00ad77aa446a926a330ae12e3154460e9e389",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/background.json",
+      "bytes": 3855,
+      "sha256": "db0a95a855ecd6dc0ad7c48a3b34754fb32f59c563fcdf4dd2a4b556bc86f60f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/before.json",
+      "bytes": 3747,
+      "sha256": "2b46034da273f879c245f497c20fab07ecd26eb0880c34c5fc5d685944462ab3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/continue-junit.xml",
+      "bytes": 479,
+      "sha256": "ae3e4ba524a0711c979948b74cf5634c067834c5d2ca9bf064bf6613108df53b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/continue-maestro/.maestro/tests/2026-11-10_040803/continue/commands.json",
+      "bytes": 2699,
+      "sha256": "5150c975ed471531bd9586e9f0659fca633a7be98095f9f64eeeda2600bf0e22",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/continue-maestro/.maestro/tests/2026-11-10_040803/continue/logs/device-simulator.log",
+      "bytes": 320399,
+      "sha256": "4084b87ed605a4a7753813b7cc838582ed21086b5f1b8cb7c320e5aaaf7ae0ae",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/continue-maestro/.maestro/tests/2026-11-10_040803/continue/logs/device-xctest.log",
+      "bytes": 10654,
+      "sha256": "4a0142d7f4832623977c295236843c8589930994412451667dba5608e5c53b17",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/continue-maestro/.maestro/tests/2026-11-10_040803/continue/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "314087a2f76428952a17fc4bdf3cc864ec74329ae9f35623b2f37c9d2750c3b1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/continue-maestro/.maestro/tests/2026-11-10_040803/continue/manifest.json",
+      "bytes": 727,
+      "sha256": "cc9bc0c19d433380a218e8f4b0461eaa9a39e5009cfb0437979c807fec0579e9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/continue-maestro/.maestro/tests/2026-11-10_040803/maestro.log",
+      "bytes": 11469,
+      "sha256": "bc22f869976b503e940306e5e4ee8251848272f4f2b4759959fdfc885519d822",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/continue-maestro/.maestro/tests/2026-11-10_040803/xctest_runner_2026-11-10_040806.log",
+      "bytes": 10779,
+      "sha256": "263c555b6eebb2229cd0c94006462dc95b219f4c4c78a170b1aadf1591ad4255",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/continue-maestro.log",
+      "bytes": 193,
+      "sha256": "c89af2ce6140e32e6ee6e47fcda13d4fafef25cd4dfb99fd182bba851607787e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/continue.yaml",
+      "bytes": 139,
+      "sha256": "e39dd931287d99e885e81f03411e69a7e32b7d2e1eedcb395f0fbd7d262a840c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/foreground-junit.xml",
+      "bytes": 488,
+      "sha256": "de8070bef1a38d6c7d4f2ddfdac50bff01717b4462787ed9c928e0b3654dbf05",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/foreground-maestro/.maestro/tests/2026-11-10_040753/foreground/commands.json",
+      "bytes": 2594,
+      "sha256": "1c074ea6fe2ef89eab994c9f85fb5bebe769c9a8f89af96c0d92e87146299ec1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/foreground-maestro/.maestro/tests/2026-11-10_040753/foreground/logs/device-simulator.log",
+      "bytes": 152601,
+      "sha256": "43d92bbe7eb833f08564f0dbb0fca80ae7ce2fb776c87d7f0f215cd69729a1bd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/foreground-maestro/.maestro/tests/2026-11-10_040753/foreground/logs/device-xctest.log",
+      "bytes": 6603,
+      "sha256": "58efab37dce9ac15834c72104e9c9623f7e8236c1cfe867ffb9b5931b6ac4f70",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/foreground-maestro/.maestro/tests/2026-11-10_040753/foreground/logs/maestro.log",
+      "bytes": 1915,
+      "sha256": "7c084407b2686706eebf70b87a6009b4283a8d767b2ab14ee22f6c4469024961",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/foreground-maestro/.maestro/tests/2026-11-10_040753/foreground/manifest.json",
+      "bytes": 726,
+      "sha256": "6f2fb96b883e3da04ef37e182894e2b3d4076a7e350df186feafccb879e66395",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/foreground-maestro/.maestro/tests/2026-11-10_040753/maestro.log",
+      "bytes": 11467,
+      "sha256": "f291992ac303f181e98ee37ce5cba35dbfe06ab746c7b7e623a72acad3d46265",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/foreground-maestro/.maestro/tests/2026-11-10_040753/xctest_runner_2026-11-10_040756.log",
+      "bytes": 6728,
+      "sha256": "e9103942b33c8901581dba97a97bac2cf7eedeb5f48bd8d3921af70c00d82f56",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/foreground-maestro.log",
+      "bytes": 195,
+      "sha256": "a9474893a83306aa84b3553ff1d3eb8a6906618190c211b86da5bfa09306deed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/relaunch.txt",
+      "bytes": 39,
+      "sha256": "d995fff25b0618636294d8e36b2669e8ebc378c4a1f83c7a9580cc099f606022",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/restarted.json",
+      "bytes": 2932,
+      "sha256": "3dd628170a82f084d4ee9d7bc293454336ef6486e08fa8120424001bff91611b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/restarted.png",
+      "bytes": 174621,
+      "sha256": "ca68de55097474cd2cd0a221f20865f647587a9cbc15afd7eefc5a2bdfc387fe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/restored.json",
+      "bytes": 3722,
+      "sha256": "19d10215ab8a2c80fe7bf8fec1af8df9588d13ee13b62f775f60afd12c5d4841",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/restored.png",
+      "bytes": 280563,
+      "sha256": "449040171c643f0b0397d8b2ae7685ac806d9ae8d314a21ea7bbde5467d8345f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/resume-junit.xml",
+      "bytes": 472,
+      "sha256": "2bf2cd1fffee52f7750625dd453a4b3507cf3923b8c8817a53dd517600668927",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/resume-maestro/.maestro/tests/2026-11-10_040743/maestro.log",
+      "bytes": 11459,
+      "sha256": "46fc774462eacdaae152b030db3d7abe543d4a9f8925d3f5a22d4a8f6f2d3b65",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/resume-maestro/.maestro/tests/2026-11-10_040743/resume/commands.json",
+      "bytes": 2695,
+      "sha256": "89db31a552686b357b7e7832fb35cc0a902c2fa85f824eae8bc13424d5ff85f2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/resume-maestro/.maestro/tests/2026-11-10_040743/resume/logs/device-simulator.log",
+      "bytes": 284722,
+      "sha256": "039736ce5e85147e254b8c22811fc2fa1c515be88540a334abce8f1a3203fc74",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/resume-maestro/.maestro/tests/2026-11-10_040743/resume/logs/device-xctest.log",
+      "bytes": 11052,
+      "sha256": "9802a174127e2d19381958bccc0fe16dc7e6f0ae0f8b782ebad01f5ad8d0290b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/resume-maestro/.maestro/tests/2026-11-10_040743/resume/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "ab27076b17ab30bb4795892a6e981d3ba055995c52e1064954bc92c6f11b3d26",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/resume-maestro/.maestro/tests/2026-11-10_040743/resume/manifest.json",
+      "bytes": 727,
+      "sha256": "b491767441b897d7a1d3a26eb1aedd65c021858781631fe8cd185b9a46a7dc66",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/resume-maestro/.maestro/tests/2026-11-10_040743/xctest_runner_2026-11-10_040745.log",
+      "bytes": 11177,
+      "sha256": "34776ef360b66189cb2b4a70d1e002cfd494fd3648222806a8d7540c6b0dbb39",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/resume-maestro.log",
+      "bytes": 191,
+      "sha256": "701cd9f8ae6fd2f4043ab7f388788a8f929f80638704c5fd5b88cfc07e62cb37",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/resume.yaml",
+      "bytes": 139,
+      "sha256": "f61c0069c863f25cedbe8e297b2d27aba124bc8adc1326a65afddaeb7179801e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/resumed.json",
+      "bytes": 4332,
+      "sha256": "0f413c42cc76d6350640c242b5c5b56e93a606383d5a5f7d921a33cf1a0d37fb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/returned.json",
+      "bytes": 3965,
+      "sha256": "dea3231af280559b70a00b902bec4bf9f20285c2465eb390cf256cb68484dd8b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/aim/returned.png",
+      "bytes": 234424,
+      "sha256": "999b0472d4111a29ba00175bd227a929226173294c9b4e129e5d525431301f2c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/background.json",
+      "bytes": 3864,
+      "sha256": "8e0db030098c0e5b306dc75b264f9d4d6f07592d8fc535c301526929ded252e3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/before.json",
+      "bytes": 3754,
+      "sha256": "8670d7ffb3436f074fd477d2a351b6e30b2d52a8b500322cae23e4bf5eb2a04c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/continue-junit.xml",
+      "bytes": 483,
+      "sha256": "ea489ad6a483348ffa9a14bdfcf827b6c85ad14164d6a32854d9c1fcbbee11c6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/continue-maestro/.maestro/tests/2026-11-10_040655/continue/commands.json",
+      "bytes": 2698,
+      "sha256": "8fa491c25971da37352a0538d66e872c70a9fdd85586cd30deac69cb1f32e407",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/continue-maestro/.maestro/tests/2026-11-10_040655/continue/logs/device-simulator.log",
+      "bytes": 180181,
+      "sha256": "45c79e99c39cad2f751609a5f04739de8338c99746e642e32cc29c531eb5e67f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/continue-maestro/.maestro/tests/2026-11-10_040655/continue/logs/device-xctest.log",
+      "bytes": 10654,
+      "sha256": "6792c69402e6f3f1440224e5971c81e797a90a439ef4a2654d099f9ec4df2eb1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/continue-maestro/.maestro/tests/2026-11-10_040655/continue/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "8f2b5011486cf4e04db8c3571278c6981a4798b73bdffbe20211ba8b31e30778",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/continue-maestro/.maestro/tests/2026-11-10_040655/continue/manifest.json",
+      "bytes": 727,
+      "sha256": "6151bce85fcf5ace64524be279c467d39ef5378a239b50768ded3cb541a124b8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/continue-maestro/.maestro/tests/2026-11-10_040655/maestro.log",
+      "bytes": 11478,
+      "sha256": "f4eb68b81d5d63cae9e0c9fe48727efb72dfbcfc1e3bd5eda6252b95f782294c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/continue-maestro/.maestro/tests/2026-11-10_040655/xctest_runner_2026-11-10_040657.log",
+      "bytes": 10779,
+      "sha256": "d31d8603ad44c12faa65f5e11bd1fc05ab3448e9bedb3a7d8ea673eac707fe16",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/continue-maestro.log",
+      "bytes": 193,
+      "sha256": "62b2a317d6526874014189e235530e136a8213f2ba5c35bcd08379e7b7a1d058",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/continue.yaml",
+      "bytes": 139,
+      "sha256": "e39dd931287d99e885e81f03411e69a7e32b7d2e1eedcb395f0fbd7d262a840c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/foreground-junit.xml",
+      "bytes": 491,
+      "sha256": "23b09dd3efab02cb69bc6d5fe422957e9b404857c46a753918cb186c8007667d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/foreground-maestro/.maestro/tests/2026-11-10_040644/foreground/commands.json",
+      "bytes": 2594,
+      "sha256": "7b26a321945b61517dc227b7178451e21ba4d8ec2f91f04f3702c90022d305fd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/foreground-maestro/.maestro/tests/2026-11-10_040644/foreground/logs/device-simulator.log",
+      "bytes": 22259,
+      "sha256": "5745c551ce72da1c3b04a94882b42a1a75166d682ebad591622f083b19d2d269",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/foreground-maestro/.maestro/tests/2026-11-10_040644/foreground/logs/device-xctest.log",
+      "bytes": 6734,
+      "sha256": "aa9f883b7d5de1eaf492d2173c6a9a1e925bdf0bb0a19d8038fba07ab4899b1a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/foreground-maestro/.maestro/tests/2026-11-10_040644/foreground/logs/maestro.log",
+      "bytes": 1915,
+      "sha256": "6446528fef4b8ba3266cbe42903f2ec14e8d9c5427d56fca8d361c8b5e682900",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/foreground-maestro/.maestro/tests/2026-11-10_040644/foreground/manifest.json",
+      "bytes": 725,
+      "sha256": "34ccf5ab13dd8ab54953ea78397a35fb7ad4bbff838231e90b4eeed1dbd3e92f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/foreground-maestro/.maestro/tests/2026-11-10_040644/maestro.log",
+      "bytes": 11474,
+      "sha256": "147edcb54408cf95c1e97ede98611bdf00dcdc530dbababb259645d1ca8fdffc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/foreground-maestro/.maestro/tests/2026-11-10_040644/xctest_runner_2026-11-10_040647.log",
+      "bytes": 6859,
+      "sha256": "49cc34370d0709cbf57df70d247e5a80447f1f65b9ab7608d76266ec34cd18cc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/foreground-maestro.log",
+      "bytes": 195,
+      "sha256": "a9474893a83306aa84b3553ff1d3eb8a6906618190c211b86da5bfa09306deed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/relaunch.txt",
+      "bytes": 39,
+      "sha256": "52acdfc59b9adcad5f31b150b3186a4d972ed7fade1594956c4a637b353a9d75",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/restarted.json",
+      "bytes": 2935,
+      "sha256": "f09ff464bd8eff8d0b627f4487aa246701f828649241fc020986c440724813c3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/restarted.png",
+      "bytes": 174960,
+      "sha256": "a1704d5cc5f18326494d9fb64827c7088c0456234ba83e85998dd47c1c1ee303",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/restored.json",
+      "bytes": 3725,
+      "sha256": "a8ae70853680204cb37a4773e0e90bb4c62fc11fae3e46f9178c309f66f16f12",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/restored.png",
+      "bytes": 292257,
+      "sha256": "8fdea02e85cb94577fb4105e12a3b50bde5f282d82ac1ce45598ab41f042fe40",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/resume-junit.xml",
+      "bytes": 475,
+      "sha256": "ebabc1b419395267add1df5aa674a01c98ce53f74feeb3a1e5d5358eced8dbd0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/resume-maestro/.maestro/tests/2026-11-10_040633/maestro.log",
+      "bytes": 11469,
+      "sha256": "d6fa3710ddf250e924ff4400fe8af8b61d785e818e7f874988489da2ad433e02",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/resume-maestro/.maestro/tests/2026-11-10_040633/resume/commands.json",
+      "bytes": 2695,
+      "sha256": "823983428b668d0b8d415df16aaa09765a5a08142ae747aa36a601130d31a403",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/resume-maestro/.maestro/tests/2026-11-10_040633/resume/logs/device-simulator.log",
+      "bytes": 179764,
+      "sha256": "a424e8c03478aa7034a4e67a1d1dda1133297806420ed37a13b6d9331baf0d45",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/resume-maestro/.maestro/tests/2026-11-10_040633/resume/logs/device-xctest.log",
+      "bytes": 10652,
+      "sha256": "2b8f3567630174d044070a8572de1e417cc87be94b77875fbce3aa34ec856377",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/resume-maestro/.maestro/tests/2026-11-10_040633/resume/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "0ca7becdd3d0acf114402481c9ddefe932013a8e2862ae37a88fa5bb2cc54459",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/resume-maestro/.maestro/tests/2026-11-10_040633/resume/manifest.json",
+      "bytes": 727,
+      "sha256": "711c8c88f13aa967e1180af73c8ca72de31e4a62556cd10e8250aa394541937c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/resume-maestro/.maestro/tests/2026-11-10_040633/xctest_runner_2026-11-10_040636.log",
+      "bytes": 10777,
+      "sha256": "963bf9a693fe839153d79e918c423f182bbcda6168f325bb1461c571edfa3aa9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/resume-maestro.log",
+      "bytes": 191,
+      "sha256": "69419b3686e902c0811b442308d67fb5012166a6b74d758bad66178b38554221",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/resume.yaml",
+      "bytes": 139,
+      "sha256": "f61c0069c863f25cedbe8e297b2d27aba124bc8adc1326a65afddaeb7179801e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/resumed.json",
+      "bytes": 4345,
+      "sha256": "8f67a837e33a9691b1b462eba29e3e8797e14b8ad0ac64abad5f982695158a4b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/returned.json",
+      "bytes": 3976,
+      "sha256": "aada0574330ac218e1d03012310297fdbe4d04ebafb949425de38032ca679f80",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/choose/returned.png",
+      "bytes": 219682,
+      "sha256": "008cbf9e1ee10664fdc8f6547c5d27ccc284d24ee15e3fa50112695afc6991b5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/continuous/before.json",
+      "bytes": 3404,
+      "sha256": "4f494da21997a580dd5c2a807ec672a3b1da5dae5e0f481cc73acdf38dbb9474",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/background.json",
+      "bytes": 3861,
+      "sha256": "71f00fde959627416abcc60556807d782ac7116d193fcd128c20047d453c6d11",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/before.json",
+      "bytes": 3753,
+      "sha256": "fb8815c88f3e9c5089be9f31b7362a6d1a74a40235de309c4e1b1456b51c6188",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/continue-junit.xml",
+      "bytes": 482,
+      "sha256": "37e5ce00f577baaa888457c1150682360db4afa27370fc1764e284c3309bd6c3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/continue-maestro/.maestro/tests/2026-11-10_040730/continue/commands.json",
+      "bytes": 2698,
+      "sha256": "6eb03697714853f8a6fb876fd73211dd2497b33bbd0f681fc5479fa5e64cf662",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/continue-maestro/.maestro/tests/2026-11-10_040730/continue/logs/device-simulator.log",
+      "bytes": 201456,
+      "sha256": "93121f0d62947dc157979b6d9c81be4382b416ecbe37a3942bb8d51cdaf5d83f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/continue-maestro/.maestro/tests/2026-11-10_040730/continue/logs/device-xctest.log",
+      "bytes": 10789,
+      "sha256": "0f6451100b6dd1af925e7c27d8907680c86ef9e5326b630c6fc9a90486480c83",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/continue-maestro/.maestro/tests/2026-11-10_040730/continue/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "8ddbcb8b53526a9acd1be5ee2a8e997ae30033964bf4756b3d8ecd1bd503cf2f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/continue-maestro/.maestro/tests/2026-11-10_040730/continue/manifest.json",
+      "bytes": 727,
+      "sha256": "13aae9bce755b554cfc37c82d75d89dac81dfa4d5b4232494ee3418f87cc0e07",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/continue-maestro/.maestro/tests/2026-11-10_040730/maestro.log",
+      "bytes": 11475,
+      "sha256": "da22fddc7c1b8e74abe32211b38b266ef5a06c82ff4ace102eee3429727f1ad0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/continue-maestro/.maestro/tests/2026-11-10_040730/xctest_runner_2026-11-10_040732.log",
+      "bytes": 10914,
+      "sha256": "7a97ca6d6dcb666e5722e27377cbef311cc881ef4198092596f4cdec7f75c125",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/continue-maestro.log",
+      "bytes": 193,
+      "sha256": "c89af2ce6140e32e6ee6e47fcda13d4fafef25cd4dfb99fd182bba851607787e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/continue.yaml",
+      "bytes": 139,
+      "sha256": "e39dd931287d99e885e81f03411e69a7e32b7d2e1eedcb395f0fbd7d262a840c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/foreground-junit.xml",
+      "bytes": 490,
+      "sha256": "93114d5c4d690c214573c44fb08e3fa46395ccb8da891c2eb21792adb2e0f0da",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/foreground-maestro/.maestro/tests/2026-11-10_040719/foreground/commands.json",
+      "bytes": 2594,
+      "sha256": "e65d838bff3ef4c7c65e12a21bd79a3cd3271f15731716fcc8fd50f1082860ad",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/foreground-maestro/.maestro/tests/2026-11-10_040719/foreground/logs/device-simulator.log",
+      "bytes": 43700,
+      "sha256": "ff51d196a595f511ff5ed260ace6eaef39bdcbfd46efff7ce36ee92df7072c08",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/foreground-maestro/.maestro/tests/2026-11-10_040719/foreground/logs/device-xctest.log",
+      "bytes": 6866,
+      "sha256": "f0b273590ea24fb9be6c17220b05b6f75990b00103fa4040b4a19c8553fb4441",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/foreground-maestro/.maestro/tests/2026-11-10_040719/foreground/logs/maestro.log",
+      "bytes": 1915,
+      "sha256": "eb7c8ab26ba8f4a08899e9a037aa946803a09b31ecdc66ebd0d4416aeba93c72",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/foreground-maestro/.maestro/tests/2026-11-10_040719/foreground/manifest.json",
+      "bytes": 725,
+      "sha256": "8ab4bfd86f88bb09229dbd54e14ba122df45608d0e10b919b7bd24c8eebf80d1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/foreground-maestro/.maestro/tests/2026-11-10_040719/maestro.log",
+      "bytes": 11470,
+      "sha256": "766ed34a12f27434c83dee0310c88c06bd7d3f26303535ca3dccd5c735f9e51a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/foreground-maestro/.maestro/tests/2026-11-10_040719/xctest_runner_2026-11-10_040722.log",
+      "bytes": 6991,
+      "sha256": "29845b111bee3139ada67f7212a5309e44a6789b79b7cd83ad2f82f78f8ff1f2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/foreground-maestro.log",
+      "bytes": 195,
+      "sha256": "a9474893a83306aa84b3553ff1d3eb8a6906618190c211b86da5bfa09306deed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/relaunch.txt",
+      "bytes": 39,
+      "sha256": "2ea87790dfcd9757fd1e16fdc74e6b689965010292a84f2beef8fae6b1e620f3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/restarted.json",
+      "bytes": 2934,
+      "sha256": "81e7dfce1bce4d0a55cca7251d7629a0dd1108d26f45c172848c997a1b98a563",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/restarted.png",
+      "bytes": 174731,
+      "sha256": "113d8a370d8143c129b4611e03f5a35cf1e4cd7ba4a212751342fcd13c15eef5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/restored.json",
+      "bytes": 3724,
+      "sha256": "01abbeb9e4ac62b6b652c471cb7f7dc3e4470333b1cebb3ddd4f4f46fdfe30b6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/restored.png",
+      "bytes": 298849,
+      "sha256": "deeffcffe12568802766ef91cb22d521ed7aa902559ac6644d614ee89306e5be",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/resume-junit.xml",
+      "bytes": 473,
+      "sha256": "660b62d44fd3f54918a91e5c7b0ff344c3679d47037790ad4450776210a98815",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/resume-maestro/.maestro/tests/2026-11-10_040707/maestro.log",
+      "bytes": 11468,
+      "sha256": "fb073a66ecffb9e09df39aa5eef02ed354d67ce5c90491611749ea1425252d07",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/resume-maestro/.maestro/tests/2026-11-10_040707/resume/commands.json",
+      "bytes": 2695,
+      "sha256": "0ce65bbd4502ab85bacc2a219eea3b583e1c224aed4af217422bfc4166cc5c99",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/resume-maestro/.maestro/tests/2026-11-10_040707/resume/logs/device-simulator.log",
+      "bytes": 193851,
+      "sha256": "2ba1cb88fe4c1183089a316ae382fd15402aa1e6e6e0a4c50322ce1ad11c12ef",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/resume-maestro/.maestro/tests/2026-11-10_040707/resume/logs/device-xctest.log",
+      "bytes": 11453,
+      "sha256": "378cad4a90d681a62e531c8dcc42b03ced77a61ccea63386732e721a25d6b189",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/resume-maestro/.maestro/tests/2026-11-10_040707/resume/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "7e44f6aad8d9f17cfdda007023789d9c0f8b19bb8ca6032ac9a1381d12228cc9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/resume-maestro/.maestro/tests/2026-11-10_040707/resume/manifest.json",
+      "bytes": 727,
+      "sha256": "dd6cc5680184c007bf249ff0b3f4eae6de2d20475bb994b0c08b5835ea1d7842",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/resume-maestro/.maestro/tests/2026-11-10_040707/xctest_runner_2026-11-10_040710.log",
+      "bytes": 11578,
+      "sha256": "a40f4e958a60f8385e49ae412d86f4dff46ec3d49aaa28e10f59cc33b6c4aaf1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/resume-maestro.log",
+      "bytes": 191,
+      "sha256": "6839bffb4aa8c0497d108e8c1bd5c60c3f65b20b1854030a5f57e842fa3d09ce",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/resume.yaml",
+      "bytes": 139,
+      "sha256": "f61c0069c863f25cedbe8e297b2d27aba124bc8adc1326a65afddaeb7179801e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/resumed.json",
+      "bytes": 4338,
+      "sha256": "a677d9b651e62fe04ef3a295f2047669f38aa176f044a6cb94186c95268caca6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/returned.json",
+      "bytes": 3971,
+      "sha256": "c58a46445aa7593d773847836febe4d04d213a09178933ddd3c49f03c5cae911",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/place/returned.png",
+      "bytes": 242925,
+      "sha256": "3730109c66f9084893abbec3d92ad24fb5f32b94d015202071620bd7d408591e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/background.json",
+      "bytes": 3860,
+      "sha256": "93e582d02d5b1ab2589d2ccb8c898469f8d4344b6ad38ccc3f07fa5e2fa0ae09",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/before.json",
+      "bytes": 3752,
+      "sha256": "ca9331b6806dfbfbbe2be114cbe1d36bc30dc56001916f04e7b06d5490e6e085",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/continue-junit.xml",
+      "bytes": 482,
+      "sha256": "7c0ac2abf48aaa4b40fee71c4ab46012227be008a6234b38c2bf7b8dee9c2891",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/continue-maestro/.maestro/tests/2026-11-10_040837/continue/commands.json",
+      "bytes": 2699,
+      "sha256": "83ea1a1c0bf9c023204d913ecbeae4416eb645a1b1e91118082b81c94ab8ab89",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/continue-maestro/.maestro/tests/2026-11-10_040837/continue/logs/device-simulator.log",
+      "bytes": 194798,
+      "sha256": "ee1de958a0314eb29362f2d90676c2b53cf49d2fa5bbe4ce3bad65de0240e5d3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/continue-maestro/.maestro/tests/2026-11-10_040837/continue/logs/device-xctest.log",
+      "bytes": 11054,
+      "sha256": "8e8163a84b39459c70bb0bf0de7cb2131bc79c217f8ea68f0c36d4abf548479b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/continue-maestro/.maestro/tests/2026-11-10_040837/continue/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "e56431c44b68ab5ee949a14412a03de0b7456ec38e3ccb43a5d9f7632200b25c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/continue-maestro/.maestro/tests/2026-11-10_040837/continue/manifest.json",
+      "bytes": 727,
+      "sha256": "4f896e2f973e300e59ce6a981f2600d5433551a337a7666afaa5827d5f4a0235",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/continue-maestro/.maestro/tests/2026-11-10_040837/maestro.log",
+      "bytes": 11475,
+      "sha256": "325f176f267c3d78610dbb06981268808219858861cb192532abedb93d872dee",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/continue-maestro/.maestro/tests/2026-11-10_040837/xctest_runner_2026-11-10_040839.log",
+      "bytes": 11179,
+      "sha256": "8ace9a7752d7a34a17094d76202fd7d4f011ca1f67e8ccf163eec107da093ad4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/continue-maestro.log",
+      "bytes": 193,
+      "sha256": "4e9973310f58c1d51e7c5e40eea02c2bbd33c2379f350b3bf8797bcb6a4f875d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/continue.yaml",
+      "bytes": 139,
+      "sha256": "e39dd931287d99e885e81f03411e69a7e32b7d2e1eedcb395f0fbd7d262a840c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/foreground-junit.xml",
+      "bytes": 490,
+      "sha256": "0204ca4c3c436996ace2ad9171b6abb01e56329ea3277102f2c2381f66aba5d1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/foreground-maestro/.maestro/tests/2026-11-10_040826/foreground/commands.json",
+      "bytes": 2594,
+      "sha256": "10af2ee7b42fbc50c7f3d4a8f6be4a3ffe860d42ad4cdcbcd47468ef6aaa1647",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/foreground-maestro/.maestro/tests/2026-11-10_040826/foreground/logs/device-simulator.log",
+      "bytes": 116209,
+      "sha256": "17ffafec747af262d6a093ef07ea4221d543ce0261d95b0967a2b01684606c2d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/foreground-maestro/.maestro/tests/2026-11-10_040826/foreground/logs/device-xctest.log",
+      "bytes": 6735,
+      "sha256": "3325804fb50d9e22b59cec2dc0249684fa05d61094ec6ce46564b28c6148e9f9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/foreground-maestro/.maestro/tests/2026-11-10_040826/foreground/logs/maestro.log",
+      "bytes": 1915,
+      "sha256": "e14608eb79e64309a04a0ab36da41b4c88691f0c99af9441109ce39dbe055624",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/foreground-maestro/.maestro/tests/2026-11-10_040826/foreground/manifest.json",
+      "bytes": 726,
+      "sha256": "19a5c4b183cdbe208daf83a1901a7b1d765fa4ae0c1fdb76499cbc0e4d73d099",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/foreground-maestro/.maestro/tests/2026-11-10_040826/maestro.log",
+      "bytes": 11472,
+      "sha256": "150711e0e1dea88bd17a0b8111284f8f75afcdeec7774f9266be66b51cb8b955",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/foreground-maestro/.maestro/tests/2026-11-10_040826/xctest_runner_2026-11-10_040829.log",
+      "bytes": 6860,
+      "sha256": "ab8864b6d064d7d57537cd016f355bb596beb0b94a5fdf007ad8340a51e852a4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/foreground-maestro.log",
+      "bytes": 195,
+      "sha256": "a9474893a83306aa84b3553ff1d3eb8a6906618190c211b86da5bfa09306deed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/relaunch.txt",
+      "bytes": 39,
+      "sha256": "a40210ca8fe379d70be5a6836f80beeb324ece1482f923a235cfbb8216c380e0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/restarted.json",
+      "bytes": 2933,
+      "sha256": "d978c2294c59e1c77c4663272b893b1340b29629a34aa67e51ab433d5e4a4f01",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/restarted.png",
+      "bytes": 174876,
+      "sha256": "fd8c317f6116eede9a0426d3fbde8f411101ad5405e05d23f10df0b421267ab5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/restored.json",
+      "bytes": 3539,
+      "sha256": "3c5983e263a26fab9f4a98c130b95a663a612a6488bc9d92476c6b63c220370f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/restored.png",
+      "bytes": 211619,
+      "sha256": "615a783bdde40910af6af745d7e166f292f02f5125269bd490e937f07e87ac9b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/resume-junit.xml",
+      "bytes": 473,
+      "sha256": "80d15756305a605e7e4b811fc5e9895b4c43f7fb6ecde47594a2f5e5b6695709",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/resume-maestro/.maestro/tests/2026-11-10_040817/maestro.log",
+      "bytes": 11467,
+      "sha256": "605686b7e77b93209303bd9ed6a4d1e500c6d68739138ac929179b662dde4404",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/resume-maestro/.maestro/tests/2026-11-10_040817/resume/commands.json",
+      "bytes": 2695,
+      "sha256": "d42498a7c83957937481dabbefc3730783097c3ac0a5b7f5ba915c6cbd92c825",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/resume-maestro/.maestro/tests/2026-11-10_040817/resume/logs/device-simulator.log",
+      "bytes": 308033,
+      "sha256": "5e63294b3218583c2881208c168f0bccac6fe064a5119c6a543d7eac3871c4f1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/resume-maestro/.maestro/tests/2026-11-10_040817/resume/logs/device-xctest.log",
+      "bytes": 11054,
+      "sha256": "e33675225452715c641d7143bbd9334ab6148d79ae8403b46e8bee4ac89b9ea9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/resume-maestro/.maestro/tests/2026-11-10_040817/resume/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "196fd3682ae713d4e4e599c61b0f9f7758f151dbb6c1e4ce19da4fc73aa16e4d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/resume-maestro/.maestro/tests/2026-11-10_040817/resume/manifest.json",
+      "bytes": 727,
+      "sha256": "f88775eb02153a5859489c85cb30273e482f7ef9f64076f8c3f2e526fb8bd595",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/resume-maestro/.maestro/tests/2026-11-10_040817/xctest_runner_2026-11-10_040819.log",
+      "bytes": 11179,
+      "sha256": "ed1322544928f9da22bc62d739c9a285c8b52764ce948d4f5561da72ffdc0767",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/resume-maestro.log",
+      "bytes": 191,
+      "sha256": "701cd9f8ae6fd2f4043ab7f388788a8f929f80638704c5fd5b88cfc07e62cb37",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/resume.yaml",
+      "bytes": 139,
+      "sha256": "f61c0069c863f25cedbe8e297b2d27aba124bc8adc1326a65afddaeb7179801e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/resumed.json",
+      "bytes": 4337,
+      "sha256": "b0e1194853822cf9f69f92c9c7861e580566b65bbb5a2356f23bf1a7cc1cdabd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/returned.json",
+      "bytes": 3970,
+      "sha256": "c23bbdde9923f42558312317e73fc1440ed01216ee00c65f7eb8b9e26b3a862f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/ready/returned.png",
+      "bytes": 233271,
+      "sha256": "b2dcc9cd0f1a4387f454f9a36e422c99592ebac4dea60987e4efff7c23431b95",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/run.json",
+      "bytes": 3669,
+      "sha256": "4da6a627dd389f1e57e958cf329657d0655da8dcceb3869f5ce1e4d0bdfa88ac",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/background.json",
+      "bytes": 3851,
+      "sha256": "f3bf1be70940156936d2084742be7c508fd1e58b8f64a396e022ddafad0b7ea2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/before.json",
+      "bytes": 3743,
+      "sha256": "f07b0db6a66224bf6d8ca744128510caf4d6df73fac91a8a0b60260d19a0c7ef",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/continue-junit.xml",
+      "bytes": 482,
+      "sha256": "64a5e60f3ca54745f07441c7cdfd850abd5680374cf1d6763a4291c8a10f565e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/continue-maestro/.maestro/tests/2026-11-10_040948/continue/commands.json",
+      "bytes": 2699,
+      "sha256": "6aa26dbb035a196bc022c9f044d34c428368f963e3823fc469641cf427905dbf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/continue-maestro/.maestro/tests/2026-11-10_040948/continue/logs/device-simulator.log",
+      "bytes": 189791,
+      "sha256": "7794d07931e5d676529eb06ebcdc53017ec47c3923aceedf2286981af49cb6d5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/continue-maestro/.maestro/tests/2026-11-10_040948/continue/logs/device-xctest.log",
+      "bytes": 10655,
+      "sha256": "919be91269e6f103a5c6231ec7b24e2b95bbd1b6b772bdb582dd2a37be57102d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/continue-maestro/.maestro/tests/2026-11-10_040948/continue/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "55c31bc186fe7e1e81ab48a7c3b37d7dbab7c8b876fdd8e3af4a440da327ea66",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/continue-maestro/.maestro/tests/2026-11-10_040948/continue/manifest.json",
+      "bytes": 727,
+      "sha256": "84ca211f8371d7268d9032add26fe7665ff26944a9798d38d449ad36a0521efa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/continue-maestro/.maestro/tests/2026-11-10_040948/maestro.log",
+      "bytes": 11475,
+      "sha256": "514694d9107c831de891d35ee1ec77319b8c367166deb1d5629e480ba72f4772",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/continue-maestro/.maestro/tests/2026-11-10_040948/xctest_runner_2026-11-10_040951.log",
+      "bytes": 10780,
+      "sha256": "e288daed52346f798cbe49c67253cda2884ecc6ad55319a0fef9bdc59787a937",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/continue-maestro.log",
+      "bytes": 193,
+      "sha256": "4e9973310f58c1d51e7c5e40eea02c2bbd33c2379f350b3bf8797bcb6a4f875d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/continue.yaml",
+      "bytes": 139,
+      "sha256": "e39dd931287d99e885e81f03411e69a7e32b7d2e1eedcb395f0fbd7d262a840c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/foreground-junit.xml",
+      "bytes": 490,
+      "sha256": "5c1f39d336b3508a48798251c07f5077f60f915bed1aa2612a75946243f7c866",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/foreground-maestro/.maestro/tests/2026-11-10_040937/foreground/commands.json",
+      "bytes": 2594,
+      "sha256": "7f5225598dd38b18a1b8bead15c74ad93038c51c72d85838bfb794c35c253e0f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/foreground-maestro/.maestro/tests/2026-11-10_040937/foreground/logs/device-simulator.log",
+      "bytes": 67427,
+      "sha256": "41c2c473e120a57fd0cc0acbb4900e2865a38dc36d0e00deb1e762f27ea873f3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/foreground-maestro/.maestro/tests/2026-11-10_040937/foreground/logs/device-xctest.log",
+      "bytes": 6736,
+      "sha256": "988dfaa3d3efd2acfab8f65e5db7f1908f51baf40dc52b3612c7748432ebcb49",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/foreground-maestro/.maestro/tests/2026-11-10_040937/foreground/logs/maestro.log",
+      "bytes": 1915,
+      "sha256": "ee575544a810827e9d42d19e9dde395c5abac5fd1a1d07fd7f466c66738e9335",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/foreground-maestro/.maestro/tests/2026-11-10_040937/foreground/manifest.json",
+      "bytes": 725,
+      "sha256": "179ec0b0cfac119a3a220058cf9e040f7a0c108d1fb751eb668c51d86117debb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/foreground-maestro/.maestro/tests/2026-11-10_040937/maestro.log",
+      "bytes": 11473,
+      "sha256": "1d3cc49939a5821a4e75afc4391d20476a393a335f10608aaf4bb4b86bedaf04",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/foreground-maestro/.maestro/tests/2026-11-10_040937/xctest_runner_2026-11-10_040940.log",
+      "bytes": 6861,
+      "sha256": "856b4ab21e033cbaab3decc0b14d7c7485ed5443331bb75e81f059aae2e40bd8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/foreground-maestro.log",
+      "bytes": 195,
+      "sha256": "a9474893a83306aa84b3553ff1d3eb8a6906618190c211b86da5bfa09306deed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/relaunch.txt",
+      "bytes": 39,
+      "sha256": "c050d359b4f31426c58c1556b41ed04e91bd6601286aa717c3d8af8581ec6bbc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/restarted.json",
+      "bytes": 2933,
+      "sha256": "f608eb6a9196c367ff0f2e6ef1fec7ee2c8e796ac42ab97d42ca24c3269b4fff",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/restarted.png",
+      "bytes": 174522,
+      "sha256": "3655360bad2d82e05ac4e64a5a2aac2fcfd15caea78376eb24e2199a76875e7f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/restored.json",
+      "bytes": 3539,
+      "sha256": "ee956885d4a67c1e23ff3a805f1e0c8beff4ae73b4d33a18deef4dd9179c45a4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/restored.png",
+      "bytes": 245067,
+      "sha256": "afede98b75f90936edba7e9f081a592816a20828d4c28eaeb252b9938d9b6943",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/resume-junit.xml",
+      "bytes": 474,
+      "sha256": "bf6f88183b4a92d0b4f0a960b9a85396a51128db1012621579384b48772c1bca",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/resume-maestro/.maestro/tests/2026-11-10_040925/maestro.log",
+      "bytes": 11467,
+      "sha256": "eb77c34d31c60f967c65f989a171a32f6b7f62825fcc92411e257da9600afeba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/resume-maestro/.maestro/tests/2026-11-10_040925/resume/commands.json",
+      "bytes": 2695,
+      "sha256": "c037df5f4c9e2089458d9c48138cf930f3fd4565fab7e96296c2afe2774a13ca",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/resume-maestro/.maestro/tests/2026-11-10_040925/resume/logs/device-simulator.log",
+      "bytes": 212589,
+      "sha256": "8b2a988bda44434f613470b1bccdd3dfbead404b6f580df2b720ed7c74771f51",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/resume-maestro/.maestro/tests/2026-11-10_040925/resume/logs/device-xctest.log",
+      "bytes": 11185,
+      "sha256": "341139096a7d7ade9d32a5cb32f816cf3c029e489f52217acc9fa2947d2ddd1e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/resume-maestro/.maestro/tests/2026-11-10_040925/resume/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "3d87c6180fc7f60d79d01ab26ff75b145ff70728229b781d469da4d566410f9e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/resume-maestro/.maestro/tests/2026-11-10_040925/resume/manifest.json",
+      "bytes": 727,
+      "sha256": "eeb60ce0aafbe1b88415758b0ba18ed7e6de1b8abda60fd822acb1666006d8bb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/resume-maestro/.maestro/tests/2026-11-10_040925/xctest_runner_2026-11-10_040928.log",
+      "bytes": 11310,
+      "sha256": "309c6edba3b5fe3b3230bce2b4af335bae618f863141ec7f8e7dcd94823c09ab",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/resume-maestro.log",
+      "bytes": 191,
+      "sha256": "6839bffb4aa8c0497d108e8c1bd5c60c3f65b20b1854030a5f57e842fa3d09ce",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/resume.yaml",
+      "bytes": 139,
+      "sha256": "f61c0069c863f25cedbe8e297b2d27aba124bc8adc1326a65afddaeb7179801e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/resumed.json",
+      "bytes": 4328,
+      "sha256": "db4036bfe9f0a452f0b8b571f8c690162886ff7da8db9299fa1419171a046feb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/returned.json",
+      "bytes": 3961,
+      "sha256": "df69050508d443bb8fd835f3914d1167985da0951091118cb31acaf2c084c6ef",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/skill/returned.png",
+      "bytes": 239714,
+      "sha256": "2a6f7507239584d48b2107ec079deb412f3dcf93dedf78e26c63d265c3a1874c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/background.json",
+      "bytes": 3845,
+      "sha256": "47010fc2bf9950ef0606c642a8a481d76b30bace3d2ffa8c11ebf48e7b3ffde3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/before.json",
+      "bytes": 3737,
+      "sha256": "642b3ae64b298cf88d14adf3d6951e462d141e0e09262b959717c9b3b42ef69d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/continue-junit.xml",
+      "bytes": 481,
+      "sha256": "1b5f7fa18410c6d1fda33bdfdb21b58ae1b8579328416c6cc5ab54a99590a04f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/continue-maestro/.maestro/tests/2026-11-10_040912/continue/commands.json",
+      "bytes": 2698,
+      "sha256": "a44fa6a00bb72885f5efaaca50dde33878cc47de74d0e4eb52e9069283f04280",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/continue-maestro/.maestro/tests/2026-11-10_040912/continue/logs/device-simulator.log",
+      "bytes": 182772,
+      "sha256": "b5e1d5c7f79d493704490e702282d5773b4580ed7bd9c4c305a6e73d1a89991f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/continue-maestro/.maestro/tests/2026-11-10_040912/continue/logs/device-xctest.log",
+      "bytes": 10655,
+      "sha256": "c680d42c5c01d763f89cb97c7d5df78667c94d1ae21e580922a4dd835f144c14",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/continue-maestro/.maestro/tests/2026-11-10_040912/continue/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "43dd6e703683132ed058e38d27328d7c69d7fcf163e819b9293d019d8b5092db",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/continue-maestro/.maestro/tests/2026-11-10_040912/continue/manifest.json",
+      "bytes": 727,
+      "sha256": "880978fe73b3cf5d1abd106261f8028fc308aaadb8d2ac05baa77aa171070b85",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/continue-maestro/.maestro/tests/2026-11-10_040912/maestro.log",
+      "bytes": 11472,
+      "sha256": "03a0c7119aea6239131679a0605657e1fea8dbe12f47f82c64d2f99788bfd48c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/continue-maestro/.maestro/tests/2026-11-10_040912/xctest_runner_2026-11-10_040915.log",
+      "bytes": 10780,
+      "sha256": "2ded96a0b2dba79bb88a6b82825143ef545dda72f9057cfb1e7517591e37c68a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/continue-maestro.log",
+      "bytes": 193,
+      "sha256": "c89af2ce6140e32e6ee6e47fcda13d4fafef25cd4dfb99fd182bba851607787e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/continue.yaml",
+      "bytes": 139,
+      "sha256": "e39dd931287d99e885e81f03411e69a7e32b7d2e1eedcb395f0fbd7d262a840c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/foreground-junit.xml",
+      "bytes": 489,
+      "sha256": "ca4ebb866efc61e968a3720485abc9564958b8444a44e0069d053c880ef96f99",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/foreground-maestro/.maestro/tests/2026-11-10_040901/foreground/commands.json",
+      "bytes": 2594,
+      "sha256": "a421d9fb5908e84f3dcbd64e2aed621a95054d6117d14ef4a09c4b2db9021a2e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/foreground-maestro/.maestro/tests/2026-11-10_040901/foreground/logs/device-simulator.log",
+      "bytes": 125247,
+      "sha256": "828389f9cb37ad2911a7ed463f9643c52b11c7edfaa18497e344dfa6bc8b85f5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/foreground-maestro/.maestro/tests/2026-11-10_040901/foreground/logs/device-xctest.log",
+      "bytes": 6735,
+      "sha256": "fcfc3ebb4cedfe0fea659c22597f8b7b20c98a14a7eed5609d059fd7131c4680",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/foreground-maestro/.maestro/tests/2026-11-10_040901/foreground/logs/maestro.log",
+      "bytes": 1915,
+      "sha256": "a246672c24f8b38fcf7534348b3782e9d1263eda3db0172d7a093da070c2b7bc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/foreground-maestro/.maestro/tests/2026-11-10_040901/foreground/manifest.json",
+      "bytes": 726,
+      "sha256": "a8d8d4d70e1aa845fe49f44bc0be8cd6ffdff1fb3218d5216c28469a26fa88cc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/foreground-maestro/.maestro/tests/2026-11-10_040901/maestro.log",
+      "bytes": 11469,
+      "sha256": "bc17c3fac383253f67080e868258769e60a1a265e0ba3885ec78501da32beecb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/foreground-maestro/.maestro/tests/2026-11-10_040901/xctest_runner_2026-11-10_040905.log",
+      "bytes": 6860,
+      "sha256": "53158dee83ac98885cc1b9924a4978b94bc8b80babc89ac858bbedf765d98c00",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/foreground-maestro.log",
+      "bytes": 195,
+      "sha256": "a9474893a83306aa84b3553ff1d3eb8a6906618190c211b86da5bfa09306deed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/relaunch.txt",
+      "bytes": 39,
+      "sha256": "885ba16d46414eec5958a9fbb91f9d013c51fb51082a047a994748439d994043",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/restarted.json",
+      "bytes": 2932,
+      "sha256": "118d34c8dc32375c399074436845a7ebe534e367e18698e016e989e2076c5336",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/restarted.png",
+      "bytes": 174545,
+      "sha256": "f4370fa60567b04f22e35e94d678be5f720d28329ade101ef9bac5e06f94652f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/restored.json",
+      "bytes": 3538,
+      "sha256": "97491dd7491c7da02cfb6e4da715823ac021df8bfe0045603d00187e4048c242",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/restored.png",
+      "bytes": 225600,
+      "sha256": "8e4a85fcf681bddc83a67c2d111ce67e9401fa86a6c4cd20d5e084db6eba5fda",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/resume-junit.xml",
+      "bytes": 473,
+      "sha256": "5b11453c24590e246138348e2743a2728c4c349e8bd5f450a81f0956283f2baa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/resume-maestro/.maestro/tests/2026-11-10_040851/maestro.log",
+      "bytes": 11464,
+      "sha256": "f5b856151c36c8b2947ddca4885c589201978ecbf86dbad14048985b51e612e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/resume-maestro/.maestro/tests/2026-11-10_040851/resume/commands.json",
+      "bytes": 2695,
+      "sha256": "42ac234c9cf8878be3cfb485b8ef887e677201f608ec4776c8857b19ee8bd4eb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/resume-maestro/.maestro/tests/2026-11-10_040851/resume/logs/device-simulator.log",
+      "bytes": 179241,
+      "sha256": "01465e80f902e0072ee41aa13fbf136f75e7f579f687d5877de048dfd44bc1ec",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/resume-maestro/.maestro/tests/2026-11-10_040851/resume/logs/device-xctest.log",
+      "bytes": 10653,
+      "sha256": "00a42516d9c1f6584b72470dfd247bf8e93d97b64a53859ccc24a9b12ee59f4b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/resume-maestro/.maestro/tests/2026-11-10_040851/resume/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "790cb3bba1e7d51a8c920adbfc34a0e398247f6aa24c810707ff23815fe43130",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/resume-maestro/.maestro/tests/2026-11-10_040851/resume/manifest.json",
+      "bytes": 727,
+      "sha256": "bc5013042163b3f89fe4fc287d018b05c9f702a26f1b14ca64940cd404080abd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/resume-maestro/.maestro/tests/2026-11-10_040851/xctest_runner_2026-11-10_040853.log",
+      "bytes": 10778,
+      "sha256": "7ea243e90076098e233c07a61f301090470eb75c696786f7d1f7054cc62fc976",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/resume-maestro.log",
+      "bytes": 191,
+      "sha256": "69419b3686e902c0811b442308d67fb5012166a6b74d758bad66178b38554221",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/resume.yaml",
+      "bytes": 139,
+      "sha256": "f61c0069c863f25cedbe8e297b2d27aba124bc8adc1326a65afddaeb7179801e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/resumed.json",
+      "bytes": 4322,
+      "sha256": "a2a7b1a84e1235b7bed8c5328b4efec4722877455287ac794fca8ed501d30b98",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/returned.json",
+      "bytes": 3955,
+      "sha256": "b21da8e8e4b06abe7864a4929e8eb6525bf9aaf2da281a0f55cf1e4780c27a84",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-final/wave/returned.png",
+      "bytes": 232722,
+      "sha256": "a37e2d232e02813d08866927bf167a8da123323fcb8944ee1e1528adc2f32e46",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-first/choose/before.json",
+      "bytes": 3127,
+      "sha256": "1a868d2a3694007cb0b91a729fcbb902290f1803bb133dd15a08012e03970479",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-first/run.json",
+      "bytes": 837,
+      "sha256": "f42a862ee2f00011a2075ff000515751409d35e31c2f80f064f49e0d0069f412",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/background.json",
+      "bytes": 3864,
+      "sha256": "87e20e8713e71076e631c8a3b638071f5aa47636f8a33f53acb495211fc67671",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/before.json",
+      "bytes": 3754,
+      "sha256": "01c9bc803d28a0bb45c94e521f20cfb95828f11f136a2053feb25d894398fe41",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/continue-junit.xml",
+      "bytes": 483,
+      "sha256": "b813bc64999aaf035043f954e710a30aafbd892ba6c7089c10f0b861d910c861",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/continue-maestro/.maestro/tests/2026-11-10_040434/continue/commands.json",
+      "bytes": 2699,
+      "sha256": "557fa75831fcba21fdaf51513684c7e35d4ec91380c32bf578d0d8e97c0cac07",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/continue-maestro/.maestro/tests/2026-11-10_040434/continue/logs/device-simulator.log",
+      "bytes": 238239,
+      "sha256": "00010ee6da5970f92608960ce47af6a08fcd2329fd8122ec7c061a9cee8f381e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/continue-maestro/.maestro/tests/2026-11-10_040434/continue/logs/device-xctest.log",
+      "bytes": 10922,
+      "sha256": "657af143b635532a72a8bfbbd763546e3dc3c84711493bbec31e15d7c175b969",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/continue-maestro/.maestro/tests/2026-11-10_040434/continue/logs/maestro.log",
+      "bytes": 1824,
+      "sha256": "1bb97b8be1e6da13c6818c8c80f0057600037f4f1ee7c36a64081ccd420e0795",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/continue-maestro/.maestro/tests/2026-11-10_040434/continue/manifest.json",
+      "bytes": 727,
+      "sha256": "781fef2aaf480ed1f9b481fb0e02b787208b6e3fa24e15efba32339eba7490ab",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/continue-maestro/.maestro/tests/2026-11-10_040434/maestro.log",
+      "bytes": 11481,
+      "sha256": "07960accef0c61e81ae5e60b10a87de3248d673c96f3018d398c632be0f5420b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/continue-maestro/.maestro/tests/2026-11-10_040434/xctest_runner_2026-11-10_040437.log",
+      "bytes": 11047,
+      "sha256": "d7245c72cc5c83b624db39dc0d6e267b5a2a8dea193e9304e62c312fe2570f09",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/continue-maestro.log",
+      "bytes": 193,
+      "sha256": "c89af2ce6140e32e6ee6e47fcda13d4fafef25cd4dfb99fd182bba851607787e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/continue.yaml",
+      "bytes": 139,
+      "sha256": "463cc265dbc60d5d10bd72e3da63059325ed5ad4a02e3a64da4d139293d28a67",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/relaunch.txt",
+      "bytes": 39,
+      "sha256": "eed2e8ac58ae3f01714dd5e5c6e5d8d751a2d054c34d17e347b876ddb9125d07",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/restarted.json",
+      "bytes": 2935,
+      "sha256": "6767402786227c5b6ef3f6164998e2f8e271d2df87cdd26e873b05ecd72bc83a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/restarted.png",
+      "bytes": 174650,
+      "sha256": "3b1a04168d4ceffb66d0158c6b2d79bea25fab1e3fba3586d4691a62da01f255",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/resume-junit.xml",
+      "bytes": 475,
+      "sha256": "c2a4bcdfb071b6262deb521aadd09c149726bf300326922fc7411f0520bd241f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/resume-maestro/.maestro/tests/2026-11-10_040422/maestro.log",
+      "bytes": 11471,
+      "sha256": "7c3dc79ed04a978a80223bd45326426d91cbf823cf06d9d7301850b433f1beae",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/resume-maestro/.maestro/tests/2026-11-10_040422/resume/commands.json",
+      "bytes": 2695,
+      "sha256": "8ee72162e32c12d2a410d54c98549b34faa77ca9bb3abd50c90e437ff69beae5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/resume-maestro/.maestro/tests/2026-11-10_040422/resume/logs/device-simulator.log",
+      "bytes": 281860,
+      "sha256": "e1674ed49d09f08b31a351954bbe6072ed5461245d136882b74395f04b310194",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/resume-maestro/.maestro/tests/2026-11-10_040422/resume/logs/device-xctest.log",
+      "bytes": 11185,
+      "sha256": "189df7483812508c609a5478fb9dbc5ba72364409e636ef81f6173507c6ffcc5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/resume-maestro/.maestro/tests/2026-11-10_040422/resume/logs/maestro.log",
+      "bytes": 1825,
+      "sha256": "01f285442770fcc5dcc76e25f40757230f9b83e3cd218ae15870485cc4c80b64",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/resume-maestro/.maestro/tests/2026-11-10_040422/resume/manifest.json",
+      "bytes": 727,
+      "sha256": "6edd0a2f514bc3efc1366fa5a0a67cead1d30aeed709e1b6bd74d355aa4f028a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/resume-maestro/.maestro/tests/2026-11-10_040422/xctest_runner_2026-11-10_040425.log",
+      "bytes": 11310,
+      "sha256": "ed9e0faf6213fecbffb5fb2b965a44ce01f430c12e2e156b2a9141f15f79e466",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/resume-maestro.log",
+      "bytes": 191,
+      "sha256": "69419b3686e902c0811b442308d67fb5012166a6b74d758bad66178b38554221",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/resume.yaml",
+      "bytes": 139,
+      "sha256": "f61c0069c863f25cedbe8e297b2d27aba124bc8adc1326a65afddaeb7179801e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/resumed.json",
+      "bytes": 4345,
+      "sha256": "030bd08a225d8c389df91f78923a5e06050973d4ac50274a5af3b5a9d7ba1fde",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/returned.json",
+      "bytes": 3976,
+      "sha256": "f05ea365469467eb06a12ac19ff9e287b0f6268cfb9a34dac9a7e38b4815fecb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/choose/returned.png",
+      "bytes": 214735,
+      "sha256": "044f5fa563ac7a6026c352adcfc8efbee27598e2c1334778683b6e23fb846a75",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-matrix/run.json",
+      "bytes": 837,
+      "sha256": "275d15336be487915d0772d68ee1a289029446149f95d452f60bb777c547f393",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/background.json",
+      "bytes": 3495,
+      "sha256": "60122fd60da22e9fe22a4ce9a45c24b4c5bc757e861f37d707bfcb4a987aee94",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/before.json",
+      "bytes": 3389,
+      "sha256": "5a77337853a59c23147097657f5ebdd70f53478ec98083dd51a09692c00cc675",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/continue-junit.xml",
+      "bytes": 483,
+      "sha256": "da2f455c016f1f27936a4d9561762e778df0c0da85a417fd04550d1535ba410a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/continue-maestro/.maestro/tests/2026-11-10_040157/continue/commands.json",
+      "bytes": 2699,
+      "sha256": "60cef1d28ccc5f7fff27df9871a4c3f7876fd028c93be51ab3f71e1214434cbb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/continue-maestro/.maestro/tests/2026-11-10_040157/continue/logs/device-simulator.log",
+      "bytes": 189224,
+      "sha256": "5f343b39439eb18a926725a5c4472e5e2b08c313eedb860e22725f5b3f63108a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/continue-maestro/.maestro/tests/2026-11-10_040157/continue/logs/device-xctest.log",
+      "bytes": 10654,
+      "sha256": "db96bf702456354a7eca7897b9b05d14b5fd5dda1c766be4604d1754cc4af82e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/continue-maestro/.maestro/tests/2026-11-10_040157/continue/logs/maestro.log",
+      "bytes": 1824,
+      "sha256": "855926b51e0611691df5e7e45cf266fd04f30584da59e7078fe1623af400662d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/continue-maestro/.maestro/tests/2026-11-10_040157/continue/manifest.json",
+      "bytes": 727,
+      "sha256": "390bff0aacced5e09db08e81f62370ce149ba9dc96697fead145fbf0c084fd48",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/continue-maestro/.maestro/tests/2026-11-10_040157/maestro.log",
+      "bytes": 11477,
+      "sha256": "093c2073d76d026ecacb7af7d1b03b88cd84d36d36fbf56b3e99a660c4a7c154",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/continue-maestro/.maestro/tests/2026-11-10_040157/xctest_runner_2026-11-10_040200.log",
+      "bytes": 10779,
+      "sha256": "780e9a3520b3713ae044eaa8bab284965f86508096d8eb21a7ed747c3091bc40",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/continue-maestro.log",
+      "bytes": 193,
+      "sha256": "c89af2ce6140e32e6ee6e47fcda13d4fafef25cd4dfb99fd182bba851607787e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/continue.yaml",
+      "bytes": 139,
+      "sha256": "463cc265dbc60d5d10bd72e3da63059325ed5ad4a02e3a64da4d139293d28a67",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/relaunch.txt",
+      "bytes": 39,
+      "sha256": "cd1401789cd11acb987ba985b777b406fee788f9e9778ee599f8a20705b693e7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/restarted.json",
+      "bytes": 2935,
+      "sha256": "a5607f999fe42829cb5f29fe35ac5e5ff9752cb48c18f250a3d41ee2965a7063",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/restarted.png",
+      "bytes": 82721,
+      "sha256": "4f921d01ea98e7592b62def0182a3d3d025a446a5691d8f897a87e693453a94c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/resume-junit.xml",
+      "bytes": 475,
+      "sha256": "ac091f7a6fa945195ad0992250e3f171573b5b2bd7a05d1201be0b003cbaa2f2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/resume-maestro/.maestro/tests/2026-11-10_040140/maestro.log",
+      "bytes": 11801,
+      "sha256": "8f7297b63294dfc5ab2875834e0a2ee27614d9f6629a8564fa31245b45e2fd6a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/resume-maestro/.maestro/tests/2026-11-10_040140/resume/commands.json",
+      "bytes": 2695,
+      "sha256": "fd450634e265fa3cc4c8c333e5b275abd88890ba21e98ed30c46e4aeaaeceffb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/resume-maestro/.maestro/tests/2026-11-10_040140/resume/logs/device-simulator.log",
+      "bytes": 495467,
+      "sha256": "7706c746bbb5d926b86d4ab676765b2b48f033c13b4adbb408c06149ef9f0a76",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/resume-maestro/.maestro/tests/2026-11-10_040140/resume/logs/device-xctest.log",
+      "bytes": 19086,
+      "sha256": "6c90f3babc41bb3e33ff9c6a7e9985280c4c3e76c22c9d713ada4ed0a506d9de",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/resume-maestro/.maestro/tests/2026-11-10_040140/resume/logs/maestro.log",
+      "bytes": 2158,
+      "sha256": "60f846e9b0ae80f747eda7e6064bc72efd379b57243babea7eac1783398ea9c2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/resume-maestro/.maestro/tests/2026-11-10_040140/resume/manifest.json",
+      "bytes": 727,
+      "sha256": "2f2ebd6a5b22a3c3ca1391b3315a71b6a78601f807c34259dbe610e58beb7b78",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/resume-maestro/.maestro/tests/2026-11-10_040140/xctest_runner_2026-11-10_040143.log",
+      "bytes": 19211,
+      "sha256": "4816e55a80663de8d09ba7fb2739640bf3ca5298f299bc66b7f1f58092fc3beb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/resume-maestro.log",
+      "bytes": 191,
+      "sha256": "b92daca58b017d0976e3abbce3b1cf69df0ea5139863272f4b36a6dd7a987125",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/resume.yaml",
+      "bytes": 139,
+      "sha256": "f61c0069c863f25cedbe8e297b2d27aba124bc8adc1326a65afddaeb7179801e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/resumed.json",
+      "bytes": 3972,
+      "sha256": "6acdcf456117407b692c59579e61bfb2bed9cb249c3d3db7b9e5f0bfaea07928",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/returned.json",
+      "bytes": 3603,
+      "sha256": "e391dffa325888e2c56c24e3977e12f715f61638babb79f52e451ec74287b4a7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/choose/returned.png",
+      "bytes": 231304,
+      "sha256": "071939fcc3f984ebe53c127ba049551e7bb2cbc2396a2efbc3e7eea2ae5b03b5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-smoke/run.json",
+      "bytes": 837,
+      "sha256": "ae921b5ac0e434d4b36ddeccd0186e53e4784c99579a43f216b5ff7337cd8bbf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/prepare_app.py",
+      "bytes": 3923,
+      "sha256": "fecd3ceced2ae0bdc6eaf8b2ef6a6855ff4d9f9b7b0c2f4ea6ff021978589f61",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/run_lifecycle.py",
+      "bytes": 9700,
+      "sha256": "b6d45ef124caad0d1951ee809d36888d1b56e0b831cd74925ba3e388dfdb0995",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/sandbox-final/account.cfg",
+      "bytes": 136,
+      "sha256": "25dcdc384b2933859f36dc5100a651aad82456ecd84fe83500ea6f57162cc598",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/sandbox-final/best.cfg",
+      "bytes": 1167,
+      "sha256": "8c663e923f8c837fc65dd7a2809bfca982cf90ad2b5b434562af41e5b8a6fe33",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/sandbox-final/device.cfg",
+      "bytes": 45,
+      "sha256": "22173757e21f82f210fd799f0b3f7c1166ab42fee56a14e94019028116d0bc69",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/sandbox-final/ios-qa-status.json",
+      "bytes": 2338,
+      "sha256": "218f28a4c02d586afb97eefac33b846a43e6cad53f570fe58cf07d5d35b9bb7d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/sandbox-final/run.cfg",
+      "bytes": 1695,
+      "sha256": "b1ffcf52df9bbde3bc0dd720a03de48132a0161678408869ac54d91f410d18e9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/sandbox-final/shader_cache/CanvasShaderGLES3/9fd373027ff88c4cc643c9ca4e7b84a922d8d6bb8e275bf0665e6af005208e9c/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 52,
+      "sha256": "8536ab4dedf7da6734c268f305dd61615ded0f618d255807f1a24086adfc0c4f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/sandbox-final/shader_cache/CopyShaderGLES3/5368c91b75ff19d583b7b032eb036430ae1fb3b5df2aefe26f2172b22e45f2c3/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 88,
+      "sha256": "69fe071475748522956e23b9705d21528c248b975396c29be75c1feb0651568c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/sandbox-final/shader_cache/FeedShaderGLES3/4d6f88e14600bd50ab613390a90ba5bb1eb6a331d97369a79fa5d8b5f51f6e7c/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 28,
+      "sha256": "d5d95a2771931e0f52c31da022cc0c0050b9b8ed410d53b6898a015126ced977",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/sandbox-final/shader_cache/PostShaderGLES3/f57603353f0170bf5c93e3121d8a3179514d92795f4eb41c830aee2ea195036d/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 28,
+      "sha256": "d5d95a2771931e0f52c31da022cc0c0050b9b8ed410d53b6898a015126ced977",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/sandbox-final/shader_cache/SceneShaderGLES3/e0035651aed114f69bc48f3aeb8826b38659393011875fb62fc74c20cc59b91f/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 40,
+      "sha256": "a35ef63010150fd4ee16d0fcdb319f3318505fa1d4e5bb19478c46392138cbe0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/summarize.py",
+      "bytes": 3572,
+      "sha256": "40d595ce8ce6f8900a148fc00aedccea11e4bf5fd32f0154b02957b9fb946a3b",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/summary.json",
+      "bytes": 2501,
+      "sha256": "17944a9c76ebc19ef54299886661a57b045b0ba553c86643cd6428d70d11fb8d",
+      "published": true
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/legacy-native/README.md",
@@ -26974,8 +31006,8 @@
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/remaining-user-tasks.md",
-      "bytes": 4682,
-      "sha256": "7f4a4f78b6030cb98498045b0ec2f7094a6cf92fbfc4b840966f5ea664dbd07e",
+      "bytes": 5007,
+      "sha256": "d3114d5bbc3dbe1458d3d4097b171c212b48d039056fe1a909846d0bed33ff08",
       "published": true
     },
     {

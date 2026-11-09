@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites>
+  <testsuite name="Test Suite" device="BinduUsabilityQA-iPhone - iOS 26.5 - 83665C8B-22A3-435C-A726-3B902D8BF082" tests="1" failures="0" time="1.58" timestamp="2026-11-10T04:14:27">
+    <testcase id="foreground" name="foreground" classname="foreground" file="docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted/skill/foreground.yaml" time="1.575" timestamp="2026-11-10T04:14:27" status="SUCCESS"/>
+  </testsuite>
+</testsuites>

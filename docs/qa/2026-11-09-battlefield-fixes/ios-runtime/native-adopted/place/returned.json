@@ -1,0 +1,210 @@
+{
+  "bank_picks": [],
+  "command": "31151c98a7444f8cafb14f204018d68b",
+  "continue_at": [
+    0.402236431837082,
+    0.476513236761093
+  ],
+  "continue_visible": true,
+  "debug_build": true,
+  "editor": false,
+  "input_events": [
+    {
+      "at_ms": 19471,
+      "index": 0,
+      "position": [
+        624.925720214844,
+        343.880615234375
+      ],
+      "pressed": true,
+      "qa_fixture": false
+    },
+    {
+      "at_ms": 19842,
+      "index": 0,
+      "position": [
+        624.925720214844,
+        343.880615234375
+      ],
+      "pressed": false,
+      "qa_fixture": false
+    }
+  ],
+  "ios": true,
+  "mobile": true,
+  "mouse_buttons": 0,
+  "mouse_emulation": true,
+  "notifications": [
+    {
+      "at_ms": 23223,
+      "what": 2017
+    },
+    {
+      "at_ms": 23942,
+      "what": 2015
+    },
+    {
+      "at_ms": 24181,
+      "what": 2016
+    },
+    {
+      "at_ms": 24182,
+      "what": 2014
+    }
+  ],
+  "offer": [
+    {
+      "id": "pierce",
+      "type": "mod"
+    },
+    {
+      "e": 0,
+      "lv": 1,
+      "type": "elem"
+    },
+    {
+      "e": 1,
+      "lv": 1,
+      "type": "elem"
+    }
+  ],
+  "os": "iOS",
+  "pause_setting": true,
+  "pause_ui_visible": true,
+  "paused": true,
+  "pending_card_empty": true,
+  "phase": 1,
+  "phase_name": "PLACE",
+  "picks": 2,
+  "pid": 26256,
+  "pinch_lock": false,
+  "press_empty": true,
+  "resume_at": [
+    0.323334395885468,
+    0.297346591949463
+  ],
+  "resume_can_process": true,
+  "runtime_log": [
+    {
+      "code": "BinduIOSQA logger probe",
+      "file": "core/variant/variant_utility.cpp",
+      "function": "push_warning",
+      "line": 1033,
+      "rationale": "",
+      "type": 1
+    }
+  ],
+  "save_text": "자동 저장됨 · 웨이브 5 준비부터 이어하기",
+  "saved": {
+    "bank_perks": 0,
+    "bank_picks": [],
+    "bank_rerolls": 0,
+    "offer": [
+      {
+        "id": "pierce",
+        "type": "mod"
+      },
+      {
+        "e": 0,
+        "lv": 1,
+        "type": "elem"
+      },
+      {
+        "e": 1,
+        "lv": 1,
+        "type": "elem"
+      }
+    ],
+    "picks_left": 2,
+    "run_id": "ios-lifecycle-place",
+    "sha256": "18c584e931c39671bf7f5203b01dff6edfce074bff68e4a0f0982a23b34cdfa1",
+    "skip_left": 0,
+    "state": "choose",
+    "towers": [
+      {
+        "charge": 0.0,
+        "dealt": 0.0,
+        "dir": "(1.0, 0.0)",
+        "elements": {
+          "2": 1
+        },
+        "hist": [],
+        "mods": {},
+        "order": [
+          2
+        ],
+        "pattern": "shot",
+        "pincer": 0,
+        "plv": 1,
+        "pos": "(300.0, 320.0)",
+        "reso": 0,
+        "run_dealt": 0.0,
+        "run_src": {},
+        "src": {},
+        "star_e": {},
+        "star_sum": 0.0,
+        "third_n": 0,
+        "trigs": {}
+      },
+      {
+        "charge": 0.0,
+        "dealt": 0.0,
+        "dir": "(-1.0, 0.0)",
+        "elements": {
+          "2": 1
+        },
+        "hist": [],
+        "mods": {},
+        "order": [
+          2
+        ],
+        "pattern": "shot",
+        "pincer": 0,
+        "plv": 1,
+        "pos": "(950.0, 320.0)",
+        "reso": 0,
+        "run_dealt": 0.0,
+        "run_src": {},
+        "src": {},
+        "star_e": {},
+        "star_sum": 0.0,
+        "third_n": 0,
+        "trigs": {}
+      }
+    ],
+    "wave": 4
+  },
+  "skill_arm": "",
+  "skill_cd": {},
+  "skill_used": 0,
+  "skip_left": 0,
+  "stage": "place",
+  "template": true,
+  "title_visible": false,
+  "touches_empty": true,
+  "towers": [
+    {
+      "elements": {
+        "2": 1
+      },
+      "mods": {},
+      "pos": [
+        300.0,
+        320.0
+      ]
+    },
+    {
+      "elements": {
+        "2": 1
+      },
+      "mods": {},
+      "pos": [
+        950.0,
+        320.0
+      ]
+    }
+  ],
+  "user_dir": "/Users/leeseongjin/Library/Developer/CoreSimulator/Devices/83665C8B-22A3-435C-A726-3B902D8BF082/data/Containers/Data/Application/AD286A75-B1DF-4157-881A-AC4E45FE9EB8/Documents",
+  "viewport": "[P: (0.0, 0.0), S: (1565.0, 720.0)]",
+  "wave": 4
+}

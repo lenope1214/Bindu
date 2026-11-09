@@ -1,0 +1,150 @@
+{
+  "scope": "Actual iOS Simulator UIKit notifications and native XCTest touch. Valid state fixtures only, no platform notification injection. Not physical device, phone call/Jetsam, Internet or performance proof.",
+  "device": {
+    "dataPath": "/Users/leeseongjin/Library/Developer/CoreSimulator/Devices/83665C8B-22A3-435C-A726-3B902D8BF082/data",
+    "dataPathSize": 2015657984,
+    "logPath": "/Users/leeseongjin/Library/Logs/CoreSimulator/83665C8B-22A3-435C-A726-3B902D8BF082",
+    "udid": "83665C8B-22A3-435C-A726-3B902D8BF082",
+    "lastUsedAt": "2026-11-09T18:39:14Z",
+    "isAvailable": true,
+    "logPathSize": 454656,
+    "deviceTypeIdentifier": "com.apple.CoreSimulator.SimDeviceType.iPhone-17",
+    "state": "Booted",
+    "name": "BinduUsabilityQA-iPhone"
+  },
+  "bundle": "dev.bindu.usabilityqa.lifecycle",
+  "cases": {
+    "choose": {
+      "checks": 18,
+      "before_pid": 25843,
+      "restart_pid": 26256,
+      "notification_types": [
+        2014,
+        2015,
+        2016,
+        2017
+      ],
+      "runtime_log": [
+        {
+          "code": "BinduIOSQA logger probe",
+          "file": "core/variant/variant_utility.cpp",
+          "function": "push_warning",
+          "line": 1033,
+          "rationale": "",
+          "type": 1
+        }
+      ],
+      "passed": true
+    },
+    "place": {
+      "checks": 18,
+      "before_pid": 26256,
+      "restart_pid": 27163,
+      "notification_types": [
+        2014,
+        2015,
+        2016,
+        2017
+      ],
+      "runtime_log": [
+        {
+          "code": "BinduIOSQA logger probe",
+          "file": "core/variant/variant_utility.cpp",
+          "function": "push_warning",
+          "line": 1033,
+          "rationale": "",
+          "type": 1
+        }
+      ],
+      "passed": true
+    },
+    "aim": {
+      "checks": 18,
+      "before_pid": 27163,
+      "restart_pid": 28031,
+      "notification_types": [
+        2014,
+        2015,
+        2016,
+        2017
+      ],
+      "runtime_log": [
+        {
+          "code": "BinduIOSQA logger probe",
+          "file": "core/variant/variant_utility.cpp",
+          "function": "push_warning",
+          "line": 1033,
+          "rationale": "",
+          "type": 1
+        }
+      ],
+      "passed": true
+    },
+    "ready": {
+      "checks": 18,
+      "before_pid": 28031,
+      "restart_pid": 28893,
+      "notification_types": [
+        2014,
+        2015,
+        2016,
+        2017
+      ],
+      "runtime_log": [
+        {
+          "code": "BinduIOSQA logger probe",
+          "file": "core/variant/variant_utility.cpp",
+          "function": "push_warning",
+          "line": 1033,
+          "rationale": "",
+          "type": 1
+        }
+      ],
+      "passed": true
+    },
+    "wave": {
+      "checks": 19,
+      "before_pid": 28893,
+      "restart_pid": 29755,
+      "notification_types": [
+        2014,
+        2015,
+        2016,
+        2017
+      ],
+      "runtime_log": [
+        {
+          "code": "BinduIOSQA logger probe",
+          "file": "core/variant/variant_utility.cpp",
+          "function": "push_warning",
+          "line": 1033,
+          "rationale": "",
+          "type": 1
+        }
+      ],
+      "passed": true
+    },
+    "skill": {
+      "checks": 19,
+      "before_pid": 29755,
+      "restart_pid": 30616,
+      "notification_types": [
+        2014,
+        2015,
+        2016,
+        2017
+      ],
+      "runtime_log": [
+        {
+          "code": "BinduIOSQA logger probe",
+          "file": "core/variant/variant_utility.cpp",
+          "function": "push_warning",
+          "line": 1033,
+          "rationale": "",
+          "type": 1
+        }
+      ],
+      "passed": true
+    }
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "scope": "Actual iOS Simulator UIKit notifications and native XCTest touch. Valid state fixtures only, no platform notification injection. Not physical device, phone call/Jetsam, Internet or performance proof.",
+  "cases": {
+    "choose": {
+      "native_driver_checks": 18,
+      "passed": true,
+      "bank_and_skill_checks": 5,
+      "initial_phase": "CHOOSE",
+      "restored_phase": "CHOOSE",
+      "skip_left": 0,
+      "bank_picks": []
+    },
+    "place": {
+      "native_driver_checks": 18,
+      "passed": true,
+      "bank_and_skill_checks": 5,
+      "initial_phase": "PLACE",
+      "restored_phase": "CHOOSE",
+      "skip_left": 0,
+      "bank_picks": []
+    },
+    "aim": {
+      "native_driver_checks": 18,
+      "passed": true,
+      "bank_and_skill_checks": 5,
+      "initial_phase": "AIM",
+      "restored_phase": "CHOOSE",
+      "skip_left": 0,
+      "bank_picks": []
+    },
+    "ready": {
+      "native_driver_checks": 18,
+      "passed": true,
+      "bank_and_skill_checks": 5,
+      "initial_phase": "READY",
+      "restored_phase": "READY",
+      "skip_left": 0,
+      "bank_picks": []
+    },
+    "wave": {
+      "native_driver_checks": 19,
+      "passed": true,
+      "bank_and_skill_checks": 5,
+      "initial_phase": "WAVE",
+      "restored_phase": "READY",
+      "skip_left": 0,
+      "bank_picks": []
+    },
+    "skill": {
+      "native_driver_checks": 19,
+      "passed": true,
+      "bank_and_skill_checks": 5,
+      "initial_phase": "WAVE",
+      "restored_phase": "READY",
+      "skip_left": 0,
+      "bank_picks": []
+    },
+    "continuous": {
+      "native_driver_checks": 19,
+      "passed": true,
+      "bank_and_skill_checks": 5,
+      "initial_phase": "WAVE",
+      "restored_phase": "READY",
+      "skip_left": 3,
+      "bank_picks": [
+        4,
+        4
+      ]
+    }
+  },
+  "native_driver_checks": 129,
+  "additional_record_checks": 35,
+  "runtime_errors": 0,
+  "unexpected_runtime_warnings": 0,
+  "known_warning": "One intentional BinduIOSQA logger probe per process, not zero warnings",
+  "raw_runs": {
+    "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-adopted": "33398728745be4a21205ac23bd14d246f90d77eca8718f8b54d14e626259f44e",
+    "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/native-continuous": "ec1ae9eb5896f9dca0c099b9f38cb604beaf681fb8c5726187c4e9e5ca40ae0f"
+  },
+  "adoption": "First six observed cases plus continuous rerun with post-continue READY observer. Product scripts unchanged; QA observer hashes recorded per build."
+}

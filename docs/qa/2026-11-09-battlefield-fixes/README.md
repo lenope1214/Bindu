@@ -1,6 +1,8 @@
 # 전장 사용성 수정 검증 기록
 
-**최신 후속:** [혼합 버전 협동](multiplayer/mixed-version/README.md)에서 미지원/지원 확인 중·업데이트 후 새 판 안내를 구분했다. 현재 제품의 실제 native15actor426단언과 전체 check252/86/28을 통과했다. 이전 STUN 미사용 설명도 정정했다. 실기기·사람 과제·고배속 전체 지연·PERF-01은 미완료다.
+**최신 후속:** [실제 iOS Simulator lifecycle](ios-runtime/README.md)에서7상태129개 native 단언과 bank/skip/조준 원자료35개 검사를 통과했다. 실제 UIKit 앱 전환·같은 PID 재개·새 PID 저장 복원을 확인했다. custom ARM64 debug 싱글 QA이며 제품 소스는 변경하지 않았다. 실기기·잠금·전화·Jetsam·멀티·성능·사람 과제는 미완료다.
+
+**협동 후속:** [혼합 버전 협동](multiplayer/mixed-version/README.md)에서 미지원/지원 확인 중·업데이트 후 새 판 안내를 구분했다. 현재 제품의 실제 native15actor426단언과 전체 check252/86/28을 통과했다. 이전 STUN 미사용 설명도 정정했다. 실기기·사람 과제·고배속 전체 지연·PERF-01은 미완료다.
 
 **효과 설정 후속:** [효과 설정 구분](fx-controls/README.md) 단계에서 전장 빠른 메뉴·설정창 동기화·폰 안전 영역을 고쳤다. PC/폰100·130% 실제 가상 입력108단언을 통과했다.
 
@@ -20,6 +22,7 @@
 | 카드 읽기·정지·마지막 적용 복원·기록 읽기 | PC/폰 각각16단언·실패0·UI0 | [PC](integration/core-pc/run.log), [폰](integration/core-phone/run.log) |
 | 입력 | PC26·폰25단언, 실패0·UI0 | [PC](integration/input-pc/run.log), [폰](integration/input-phone/run.log) |
 | 진행·기술·실제 로컬 저장/이어하기 | 각각31단언·실패0. PC UI0, 폰 설정 모달의 의도된 뒤 HUD 겹침8건 | [PC](integration/flow-pc/run.log), [폰](integration/flow-phone/run.log) |
+| 실제 iOS Simulator 중단·복귀 | CHOOSE/PLACE/AIM/READY/WAVE/기술/연속 전투7상태. 실제 앱 전환·native 재개·새 PID 이어하기, runtime 오류/예상 밖 경고0. 양성 대조 경고는 별도 | [실행·빌드·범위](ios-runtime/README.md) |
 | 합성 중단·복귀 | 각각62단언·실패0·UI0. CHOOSE/PLACE/AIM/READY/WAVE/기술/연속 진행 × focus-out/paused 알림 | [PC](integration/lifecycle-pc/run.log), [폰](integration/lifecycle-phone/run.log) |
 | 원래 객체를 보존하는 undo | PC/폰 각각43단언·실패0·UI0, 실제 버튼 뒤 키보드 포커스와 터치 중복 포함 | [별도 증거](undo/README.md) |
 | 기존 카드 조작 | PC127·폰130단언, 실패0·UI0. 기존 드래그/취소/카메라 보존과 새 폰 읽기 경로 | [기존 검사 보완](legacy-native/README.md) |
@@ -50,7 +53,7 @@ native는 Godot4.7.2/macOS·빈 운영 URL·고유 BinduTools 저장·최소화/
 - 설정 모달의8개 경고는 하나의 모달 바탕과 뒤 HUD의 겹침이다. 입력 차단은 별도 검사했다. 모든 UI 경고를0이라고 보고하지 않는다.
 - 아키텍처의 일회성 마이그레이션 감사는 main부터51개 미기록 변화가 있었다. 현재 reviewed_changes103개에 이번 실제 변경 함수의 범위·이유가 기록됐고, 남은43개는 모두 기준 main에도 있던 항목이다. 새 미검토 실패0, runtime 경계 검사0실패와 구분한다. 일회성 감사 전체가 통과했다는 뜻은 아니다. [baseline](architecture-baseline.log), [최신](architecture-final.log).
 - 일부 도구는 종료 시 ObjectDB 경고2~6개를 남긴다. 오류 없이 종료했다는 사실과 누수 원인 미분석을 구분한다. undo의 WAVE 종료6개를 원래2개와 동일하다고 주장하지 않는다.
-- 실제 iOS/Android, 손가락 가림·흔들림·작은 폰, 잠금/전화/OS 종료, 중급 폰 부하, 인터넷 NAT/손실, 색각·대비·스크린리더, 실제 사용자 과제 성공률은 미검증이다. 사용자는 현재 실기기 연결이 어렵다고 답했다.
+- 실기기 iOS/Android, 손가락 가림·흔들림·작은 폰, 실기기 잠금/전화/OS 종료, 중급 폰 부하, 인터넷 NAT/손실, 색각·대비·스크린리더, 실제 사용자 과제 성공률은 미검증이다. 사용자는 현재 실기기 연결이 어렵다고 답했다.
 - 추가 I-04(3인 동시 선물의 거절/손실)는 기존 main의 경합이다. 예약·소유자 적용·host 확정·단일 소비·완료 재시도로 수정했고, 독립 반례13개와 전달 상태86개를 통과했다. 실제 통신 결과·종료 잡음·마지막 화면 수정의 범위는 [거래 검증](multiplayer/gift/README.md)을 따른다. 기존 두 참가자 성공 자료로 이 경합을 통과 처리하지 않는다.
 - `final-check.log`는 마지막 pending 표시·알림 위치 수정 직전, `final-check-after-ui.log`는 그 뒤의 전체 재검사다. 후자는 최신 제품 소스에서 exit0이며 `final-layout`·협동 PC/폰 고정 사본과 scripts 해시가 같다. 일반 native16묶음의 중간 소스 경계는 해당 README에 계속 명시한다.
 - [실기기·사용자 과제](remaining-user-tasks.md)는 준비만 됐으며 미실행이다. BF-44–50의 실제 관찰 전까지 가설·물리 검증 공백을 완료로 바꾸지 않는다.

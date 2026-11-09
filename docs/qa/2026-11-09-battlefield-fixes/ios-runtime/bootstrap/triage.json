@@ -1,0 +1,73 @@
+{
+  "classification": "environment_and_qa_failures_only",
+  "product_source_changes": [],
+  "initial_failure": {
+    "command": "xcodebuild -project BinduIOSQA.xcodeproj -scheme BinduIOSQA -configuration Debug -sdk iphonesimulator ARCHS=arm64 CODE_SIGNING_ALLOWED=NO build",
+    "observed_wrapper_exit": 1,
+    "raw_xcode_exit_recorded": false,
+    "symptom": "x86_64 object members ignored while linking arm64; undefined _main",
+    "official_simulator_architecture": "Non-fat file: /tmp/bindu-ios-qa-bootstrap/official-sim-lib.a is architecture: x86_64",
+    "x86_build": "Succeeded, but simulator installation rejected mismatched architecture",
+    "rosetta_installed": false
+  },
+  "repair": {
+    "engine_ref": "ed1daf0bf001b61586d9930840f2f1394092c079",
+    "scons": "4.11.1",
+    "custom_arm64_debug_template_exit": 0,
+    "canonical_xcode_exit": 0,
+    "release_template_modified": false
+  },
+  "qa_failures_excluded": [
+    "Missing export include_filter in initial preset",
+    "Generated export placed inside source project and imported; corrected to outside project",
+    "QA monitor GDScript inference errors corrected before export",
+    "Fractional Maestro percentages rejected; integer coordinates adopted",
+    "Landscape app on portrait XCTest orientation: corrected with setOrientation LANDSCAPE_RIGHT",
+    "Cold app continue coordinates read before container layout: foreground and settle first",
+    "Continuous fixture assumed WAVE before actual READY start; corrected fixture only",
+    "Continuous save restores READY then resumes automatically after1s. Old host waited only for READY after Maestro returned, so missed transient state. Post-product callback observer records actual restoration; no product change."
+  ],
+  "nonzero_logs_preserved": true,
+  "scope": "Custom debug Simulator single-player only; no physical device, shipped release, multiplayer, phone-call/Jetsam proof",
+  "schema": "build_failure_triage/v1",
+  "plan": {
+    "scope": "isolated local QA export only",
+    "executor": "root sequential local tool calls",
+    "network": "official versioned source/template and SCons bootstrap",
+    "stop_condition": "unsigned ARM64 Simulator app builds and lifecycle observer executes"
+  },
+  "failure_cluster_matrix": {
+    "environment": [
+      "prebuilt simulator library architecture mismatch"
+    ],
+    "configuration": [
+      "export preset and export output under project"
+    ],
+    "syntax": [
+      "test-only GDScript variable inference"
+    ],
+    "test_fixture": [
+      "native orientation/coordinates and continuous READY assumption"
+    ],
+    "product_code": [],
+    "ci_dco": "not_observed"
+  },
+  "hypotheses": [
+    {
+      "cause": "prebuilt simulator archive is x86_64 on arm64 host",
+      "confidence": "confirmed by lipo and linker diagnostics"
+    }
+  ],
+  "minimal_fix_handoff": {
+    "executor": "root",
+    "direction": "build matching ARM64 debug simulator slice outside repository; no product build settings changed"
+  },
+  "rerun_plan": {
+    "targeted": "actual arm64 template/app builds completed; native cohort recorded separately",
+    "broad_local": "full-check.log exit0",
+    "ci": "not_observed",
+    "dco": "not_observed"
+  },
+  "verdict": "ROUTE_TO_VERIFICATION_GATE",
+  "verdict_scope": "Triage alone is not PASS; observed build outputs and native run have separate records"
+}

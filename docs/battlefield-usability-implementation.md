@@ -88,7 +88,7 @@
 | BF-44 | 지난 웨이브 방향·종류·실제 손실·통과 시 저항/보호막/면역 읽기 UI. 모든 누수를 빈 길목으로 단정하던 기존 안내도 수정. 원인별 3과제·행동 성공률 비교는 미확인 | core, 후속 과제 |
 | BF-45 | 움직이는 적 명시적 정보 고정·선택 전환·소멸 해제. 실제 폰 추적은 미확인 | information, input, 실기기 대기 |
 | BF-46 | 권한/요청 설명·준비 취소·대기 타이머 해제. 로컬2인 협동/대결·3인 전달14조건·PC/폰 후속 검증. 최신 혼합 소스3인과 지원 안내는15actor426단언 통과 | multiplayer, 실기기/인터넷 대기 |
-| BF-47 | focus 알림별 입력 정리·저장 성공·재개/복원 경계. 잠금·전화·OS 종료는 미확인 | lifecycle, 실기기 대기 |
+| BF-47 | 합성 알림과 실제 iOS Simulator7상태의 UIKit 전환·native 재개·새 PID 저장 복원. 실기기 잠금·전화·Jetsam·멀티는 미확인 | [iOS 후속](qa/2026-11-09-battlefield-fixes/ios-runtime/README.md), lifecycle, 실기기 대기 |
 | BF-48 | 가림 실패를 실재 결함으로 확정하지 않음. 좌우손·작은 폰 실기기 비교 후 오프셋/렌즈 최소 개입 결정 필요 | 실기기 대기 |
 | BF-49 | 조준·타격 비용 절감, release 입력 큐 측정. 16개·구체400개 장면에서 겹치는 같은 상태 문구를 최신 것만 표시. 고배속 전체 지연·PERF-01·실기기 확인은 미완료 | performance, feedback-density, 실기기 대기 |
 | BF-50 | PC 70/85/100/115/130·태블릿/폰 모의 레이아웃과 화면 버튼/문구/포커스 경로 검사. 실제 색각·대비 과제·스크린리더는 미확인 | layout, 후속 과제 |
@@ -124,3 +124,5 @@
 [혼합 버전 후속](qa/2026-11-09-battlefield-fixes/multiplayer/mixed-version/README.md): 구host 판의 미지원과 프로토콜1의 참가자 지원 미확인을 구분하고 hover 없이 복구 행동을 표시한다. 최신 제품 PC/폰15actor426단언에서 실제 WebRTC·카드 보관·정상 자기 편집/TW·준비/W1·전원 신규의 단일 소비/정산을 통과했다. 기존 STUN 미사용 주장을 실제 ICE 기록으로 정정했으며 제품 네트워크 기본값은 바꾸지 않았다. 실기기·인터넷/NAT·OS kill·구release 바이너리와 사람 과제는 미완료다.
 
 [2026-11-10 전달 기록](battlefield-delivery-2026-11-10.md)에 작업별 커밋·복구 ref·main pull/rebase·충돌 해결을 기록했다. 최신 main의 결과 상세·v1.0.0·빌드 설정을 유지하며 [전체 재검증](qa/2026-11-09-battlefield-fixes/delivery/README.md)을 마쳤다. 실기기·사용자 과제와 후반 전체 지연은 그대로 미완료다.
+
+[실제 iOS Simulator 후속](qa/2026-11-09-battlefield-fixes/ios-runtime/README.md): 제품 코드 변경 없이 별도 ARM64 debug 앱에서7상태129개 native 단언·원자료35개 검사를 통과했다. 실제 UIKit 알림과 재개 터치, 실제 프로세스 종료 뒤 새 PID에서 저장 복원을 기록했다. 운영 URL/저장/bundle을 격리하고 WebRTC를 제외했다. 실기기·손가락 release 유실·잠금·전화·Jetsam·Android·release·멀티·성능·사람 과제를 대체하지 않으며 BF-47은 partial, 전체50개는 active다.

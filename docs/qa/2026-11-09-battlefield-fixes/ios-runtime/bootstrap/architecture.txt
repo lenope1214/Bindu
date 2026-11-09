@@ -1,0 +1,3 @@
+Official extracted simulator archive: Non-fat file: /tmp/bindu-ios-qa-bootstrap/official-sim-lib.a is architecture: x86_64
+
+Custom archive: Non-fat file: /tmp/bindu-ios-qa-bootstrap/godot-src/bin/libgodot.ios.template_debug.arm64.simulator.a is architecture: arm64
