@@ -28,6 +28,7 @@ var new_read_time := 0.0
 var new_read_keys := ""
 var t := 0.0
 var _w := 300.0
+var preview_visible := false  # 공격 예시는 명시적으로 펼칠 때만 실행한다.
 
 
 func _init(main) -> void:
@@ -70,15 +71,46 @@ func show_tower(tw: Tower, more: bool, part: float, label: String, w: float) -> 
 	tower = tw
 	attack_preview.configure(tw)
 	_w = w
-	attack_preview.position = Vector2(0, tower_header_h() + 8.0)
+	attack_preview.position = Vector2(0, tower_header_h() + 8.0 + 142.0 + support_h())
 	attack_preview.size = Vector2(w, AttackPreview.HEIGHT)
-	attack_preview.show()
+	attack_preview.visible = preview_visible
 	detail = more
 	share = part
 	share_label = label
 	_w = w
 	custom_minimum_size = Vector2(0, tower_h())
 	show()
+
+
+func set_preview_visible(on: bool) -> void:
+	preview_visible = on
+	if mode == "tower" and is_instance_valid(tower):
+		show_tower(tower, detail, share, share_label, _w)
+	queue_redraw()
+
+
+## 카드 도크가 짧은 요약을 따로 보여줄 때 재사용하는 실제 계산값.
+func summary_lines(tw: Tower) -> PackedStringArray:
+	var hc: Dictionary = tw.hit_calc()
+	var one: float = hc["one"] + hc["metal"]
+	var iv: float = tw.attack_iv()
+	var shots: float = hc["shots"] if tw.pattern != "wall" else 1.0
+	var dps: float = one * shots * (1.0 / iv if iv > 0.0 else 1.0)
+	return PackedStringArray(["기본 공격 계산 %s/초 · %s" % [Tower.tip_num(dps), ("초당 %s번" % Tower.tip_num(1.0 / iv)) if iv > 0.0 else "계속 공격"], tw.range_text(), targeting_summary(tw)])
+
+
+func targeting_summary(tw: Tower) -> String:
+	if tw.auto_aim():
+		return "위험 우선 · 비슷하면 정한 방향 선호"
+	if tw.pattern == "wisp":
+		return "혼불: 범위 안 구체 추적"
+	if tw.pattern == "vortex":
+		return "블랙홀: 구체가 모인 곳"
+	return "정한 방향으로 공격"
+
+
+func support_h() -> float:
+	return 22.0 if is_instance_valid(tower) and game.hud_system.support_summary(tower) != "" else 0.0
 
 
 func show_card(c: Dictionary, hd: Dictionary, n_take: int, n_react: int, els: Array, w: float) -> void:
@@ -111,7 +143,9 @@ func tower_header_h() -> float:
 
 
 func tower_h() -> float:
-	var h := tower_header_h() + 8.0 + AttackPreview.HEIGHT + 8.0 + 52.0 * 2 + 8.0 + 8.0  # 제목·미리보기·타일
+	var h := tower_header_h() + 8.0 + 142.0 + support_h()  # 제목·수치·조준·지원 역할을 먼저 읽는다.
+	if preview_visible:
+		h += AttackPreview.HEIGHT + 8.0
 	if share >= 0.0:
 		h += 22.0
 	h += 22.0  # 자세히 안내 / 구분선
@@ -375,8 +409,6 @@ func _draw_tower() -> void:
 	var rnum := rt
 	var match_num := RegEx.create_from_string("\\d+").search(rt)
 	if match_num: rnum = match_num.get_string()
-	_box(Rect2(0, y, w, AttackPreview.HEIGHT), Color(0, 0, 0, 0.3))
-	y += AttackPreview.HEIGHT + 8.0
 	# 숫자 타일 2x2
 	var tw2 := (w - 8.0) / 2.0
 	var shots: float = hc["shots"] if tw.pattern != "wall" else 1.0
@@ -387,13 +419,22 @@ func _draw_tower() -> void:
 	var pc := roundi((tw.pspd() - 1.0) * 100.0)
 	_tile(Rect2(tw2 + 8, y, tw2, 52), "rate", BLUE, rate, "1초에" + ("  (%s%d%%)" % ["+" if pc > 0 else "", pc] if pc != 0 else ""))
 	var dps := one * shots * (1.0 / iv if iv > 0.0 else 1.0)
-	_tile(Rect2(0, y + 60, tw2, 52), "kill", Color(1, 0.6, 0.4), Tower.tip_num(dps), "초당 피해 (계산)")
+	_tile(Rect2(0, y + 60, tw2, 52), "kill", Color(1, 0.6, 0.4), Tower.tip_num(dps), "기본 공격 계산/초")
 	var ci := tw.crit_info()
 	if ci[0] > 0.0:
 		_tile(Rect2(tw2 + 8, y + 60, tw2, 52), "e:%d" % Elem.LIGHT, Color.WHITE, "%d%%" % roundi(ci[0] * 100.0), "치명타 ×%s" % ci[1])
 	else:
 		_tile(Rect2(tw2 + 8, y + 60, tw2, 52), "range", GREEN, "끝까지" if far else rnum, ("%s부터 약해짐" % rnum) if far else "사거리")
 	y += 120.0
+	_txt(Vector2(0, y + 14), targeting_summary(tw), 12, BLUE, w)
+	y += 22.0
+	var support: String = game.hud_system.support_summary(tw)
+	if support != "":
+		_txt(Vector2(0, y + 14), support, 12, GREEN, w)
+		y += 22.0
+	if preview_visible:
+		_box(Rect2(0, y, w, AttackPreview.HEIGHT), Color(0, 0, 0, 0.3))
+		y += AttackPreview.HEIGHT + 8.0
 	if share >= 0.0:
 		_txt(Vector2(0, y + 12), share_label, 12, DIM)
 		var bx := _tw(share_label, 12) + 8.0

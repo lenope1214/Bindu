@@ -165,7 +165,7 @@ func _process(delta: float) -> void:
 	var on := is_visible_in_tree() and is_instance_valid(source)
 	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if on else SubViewport.UPDATE_DISABLED
 	if not on: return
-	caption.text = ("NEW · " if not source.new_reactions.is_empty() else "") + "기본·특수 공격 · 예시 표적"
+	caption.text = ("NEW · " if not source.new_reactions.is_empty() else "") + "공격 예시 · 실측 DPS와 다름"
 	accumulator += minf(delta, 0.1)
 	while accumulator >= 1.0 / 60.0:
 		advance(1.0 / 60.0)

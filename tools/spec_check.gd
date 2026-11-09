@@ -75,6 +75,7 @@ func _orb(p: Vector2, hp: float, kind := Orb.Kind.NORMAL, spd := 0.0) -> Orb:
 	return o
 
 
+## 적용 가능 조회의 협상 fixture. 실제 전송·정산은 gift state/native 검사에서 별도로 확인한다.
 func _initialize():
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools"):
 		print("FAIL 실제 게임 저장 폴더를 쓰게 됨: tools/run.sh spec 으로 돌리세요")
@@ -1847,13 +1848,13 @@ func _perks() -> void:
 	main.cards_system._on_reroll()
 	var after: Array = main.perk_offer.map(func(p): return p["id"])
 	var diff: bool = after.size() == 3 and not after.any(func(id): return id in before)
-	var gone: bool = main.perk_rerolls == 0 and not main.reroll_btn.visible
+	var gone: bool = main.perk_rerolls == 0 and main.reroll_btn.visible and main.reroll_btn.disabled
 	main.cards_system._on_reroll()  # 다 쓰면 그대로
 	var same: bool = main.perk_offer.map(func(p): return p["id"]) == after
 	main.perks_system._start_perk()  # 다음 특성 선택에는 다시 1번
 	var pr1: int = main.perk_rerolls
 	ok("PERK-12", pr0 == 1 and shown and diff and gone and same and pr1 == 1 and main.rerolls_left == 2 and main.perk_mode,
-		"특성 새로고침: 선택마다 1번(%d·%d), 다른 특성 3개, 다 쓰면 버튼 숨김, 카드 새로고침 %d 그대로" % [pr0, pr1, main.rerolls_left])
+		"특성 새로고침: 선택마다 1번(%d·%d), 다른 특성 3개, 다 쓰면 비활성 표시, 카드 새로고침 %d 그대로" % [pr0, pr1, main.rerolls_left])
 	main.perk_mode = false
 
 
@@ -2959,6 +2960,10 @@ func _meta_misc() -> void:
 		main.frame_system._process(0.0)
 		toggles = toggles and not main.card_dock.panel.visible and main.hide_btn.visible and main.offer == same_offer
 	main.cards_system._set_cards_hidden(false)
+	main.phase = main.Phase.CHOOSE
+	main.perk_mode = false
+	main.picks_left = maxi(main.picks_left, 1)
+	main.offer = [{"type": "mod", "id": "pierce"}]
 	main.cards_system._on_pick({"type": "mod", "id": "pierce"})
 	main.frame_system._process(0.016)
 	var dim_off: bool = not main.card_dim.visible and main.phase == main.Phase.PLACE
@@ -3164,15 +3169,16 @@ func _meta_misc() -> void:
 	var drop_selects: bool = main.interaction_system.selected == [dt] and dock.inspected_tower == dt
 	main.interaction_system.press_t = dt
 	main.interaction_system._release_press()
-	drop_selects = drop_selects and main.phase == main.Phase.AIM and main.interaction_system.moving == dt
+	drop_selects = drop_selects and main.phase == main.Phase.READY and main.interaction_system.moving == null and main.interaction_system.selected == [dt]
 	main.interaction_system._cancel_step()
-	ok("UI-05", drop_selects, "끌어 놓기 후 선택·상세 유지, 다음 클릭은 방향 편집")
+	ok("UI-05", drop_selects, "끌어 놓기 후 선택·상세 유지, 반복 클릭은 선택 유지")
 	var status_gap: bool = main.hint.get_rect().end.y <= main.start_btn.position.y - 7.9
 	ok("UI-35", status_gap, "상태 안내는 실제 높이로 웨이브 버튼 위 8px 간격")
 	main.phase = main.Phase.WAVE
 	dock._update_side()
 	main.interaction_system._edit_selected_direction()
-	var wave_readonly: bool = not dock.direction_btn.visible and main.phase == main.Phase.WAVE and main.interaction_system.moving == null
+	dock.tick()
+	var wave_readonly: bool = not dock.direction_btn.is_visible_in_tree() and main.phase == main.Phase.WAVE and main.interaction_system.moving == null
 	main.phase = main.Phase.READY
 	var right := InputEventMouseButton.new()
 	right.button_index = MOUSE_BUTTON_RIGHT
@@ -3199,8 +3205,7 @@ func _meta_misc() -> void:
 	main.interaction_system.press_t = dt
 	main.interaction_system.dragging = false
 	main.interaction_system._release_press()
-	var tap_again: bool = main.phase == main.Phase.AIM and main.interaction_system.moving == dt
-	main.interaction_system._cancel_step()
+	var tap_again: bool = main.phase == main.Phase.READY and main.interaction_system.moving == null
 	tap_again = tap_again and main.phase == main.Phase.READY and dt.dir == original_dir and main.interaction_system.selected == [dt]
 	# 선택한 오브젝트 위에서 휠: 15도씩 돌리기, 선택 안 한 오브젝트 위·전투 중이면 확대
 	var was_touch_w: bool = main.touch_ui
@@ -3211,6 +3216,8 @@ func _meta_misc() -> void:
 	wheel.factor = 1.0
 	wheel.position = main.get_canvas_transform() * dt.position
 	var a0: float = dt.dir.angle()
+	var plain_wheel_zooms: bool = not main.interaction_system._wheel_turn(wheel)
+	wheel.alt_pressed = true
 	var wheel_turns: bool = main.interaction_system._wheel_turn(wheel) and absf(angle_difference(a0, dt.dir.angle()) + deg_to_rad(-15.0)) < 0.01
 	main.phase = main.Phase.WAVE
 	var wheel_wave_zooms: bool = not main.interaction_system._wheel_turn(wheel)
@@ -3220,7 +3227,7 @@ func _meta_misc() -> void:
 	main.interaction_system.selected = [dt]
 	main.touch_ui = was_touch_w
 	dt.set_attack_direction(original_dir)
-	tap_again = tap_again and wheel_turns and wheel_wave_zooms and wheel_unselected_zooms
+	tap_again = tap_again and plain_wheel_zooms and wheel_turns and wheel_wave_zooms and wheel_unselected_zooms
 	dock.direction_btn.pressed.emit()
 	dock.tick()
 	var edit_status: bool = main.hint.visible and main.patchlog_system._kr_keep("방향 편집 중") in main.hint.text
@@ -3237,8 +3244,12 @@ func _meta_misc() -> void:
 	main.cards_hidden = false
 	dock.close_inspector()
 	main.interaction_system.selected = [dt]
+	main.phase = main.Phase.CHOOSE
+	main.perk_mode = false
+	main.picks_left = maxi(main.picks_left, 1)
+	main.offer = [{"type": "mod", "id": "multi"}]
 	main.cards_system._on_pick({"type": "mod", "id": "multi"})
-	var carry_status: bool = main.interaction_system.selected.is_empty() and main.hint.visible and main.patchlog_system._kr_keep("카드 놓는 중") in main.hint.text and main.patchlog_system._kr_keep("Esc 취소") in main.hint.text
+	var carry_status: bool = main.interaction_system.selected.is_empty() and main.hint.visible and main.patchlog_system._kr_keep("다중 발사 놓는 중") in main.hint.text and main.patchlog_system._kr_keep("Esc 취소") in main.hint.text
 	var was_touch: bool = main.touch_ui
 	main.touch_ui = true
 	var touch_status: bool = "버튼으로 취소" in dock.operation_text() and not "Esc" in dock.operation_text()
@@ -3258,7 +3269,7 @@ func _meta_misc() -> void:
 	main.phase = old_phase
 	main.guide_label.visible = status_guide_visible
 	ok("UI-35", selection_status and edit_status and carry_status and touch_status and deleted_selection and state_before_guide and guide_priority, "선택·편집·카드 상태 %s/%s/%s · 터치 %s · 삭제 %s" % [selection_status, edit_status, carry_status, touch_status, deleted_selection])
-	ok("UI-05", click_selects and wave_readonly and edits_selected and cancel_restores and finished_clean and tap_again, "클릭은 선택, 한 번 더 누르기·[방향 변경]으로 방향 편집·취소 복원, 휠 15도 %s, 전투 중 읽기 전용" % tap_again)
+	ok("UI-05", click_selects and wave_readonly and edits_selected and cancel_restores and finished_clean and tap_again, "반복 클릭은 선택 유지, [방향 변경]으로 편집·취소 복원, Alt+휠 15도 %s, 전투 중 읽기 전용" % tap_again)
 	# UI-36: 점수 줄 칩 밑에 깔린 오브젝트는 점수 줄이 막지 않는다
 	var hud_ok := true
 	if main.hud.is_visible_in_tree() and main.hud.size.x > 40.0:
@@ -3341,7 +3352,7 @@ func _meta_misc() -> void:
 	var guide_was_visible: bool = main.guide_label.visible
 	main.guide_label.hide()
 	main.card_dock.tick()
-	var preview_status: bool = main.hint.visible and main.patchlog_system._kr_keep("카드 놓는 중") in main.hint.text
+	var preview_status: bool = main.hint.visible and main.patchlog_system._kr_keep("다중 발사 놓는 중") in main.hint.text
 	preview_target.free()
 	main.card_dock.tick()
 	ok("UI-25", preview_status and main.hint.visible, "대상 미리보기 중 상태 유지 %s/%s · 문구 %s · 입력 차단 %s" % [preview_status, main.hint.visible, main.hint.text, main.card_dock.input_blocked()])
@@ -3417,10 +3428,10 @@ func _meta_misc() -> void:
 	var was_phone := Meta.sim_phone
 	Meta.sim_phone = false
 	CardDock.fit_phone()
-	var fs_pc: bool = Meta.fs(13) == 13 and Meta.fs(18) == 18 and Meta.fs(72) == 72 and is_equal_approx(CardDock.CARD_HEIGHT, 94.0) and Meta.fs_bb("[font_size=12]a") == "[font_size=12]a"
+	var fs_pc: bool = Meta.fs(13) == 13 and Meta.fs(18) == 18 and Meta.fs(72) == 72 and is_equal_approx(CardDock.CARD_HEIGHT, 112.0) and Meta.fs_bb("[font_size=12]a") == "[font_size=12]a"
 	Meta.sim_phone = true
 	CardDock.fit_phone()
-	var fs_phone: bool = Meta.fs(11) == 18 and Meta.fs(18) == 23 and Meta.fs(24) == 30 and Meta.fs(72) == 72 and CardDock.CARD_HEIGHT > 94.0 and CardDock.CONTROL_HEIGHT > 36.0 and Meta.fs_bb("[font_size=12]a") == "[font_size=18]a"
+	var fs_phone: bool = Meta.fs(11) == 18 and Meta.fs(18) == 23 and Meta.fs(24) == 30 and Meta.fs(72) == 72 and is_equal_approx(CardDock.CARD_HEIGHT, 144.0) and CardDock.CONTROL_HEIGHT > 36.0 and Meta.fs_bb("[font_size=12]a") == "[font_size=18]a"
 	Meta.sim_phone = was_phone
 	CardDock.fit_phone()
 	ok("UI-41", fs_pc and fs_phone, "폰 글자 크기: PC 그대로 %s, 폰 키움 %s" % [fs_pc, fs_phone])
@@ -3459,7 +3470,7 @@ func _meta_misc() -> void:
 	main.countdown = -1.0
 	main.run_flow_system._update_skip_ui()
 	main.card_dock.tick()
-	var ready_btn: bool = main.skip_btn.visible and main.card_dock.skip_group.visible and is_equal_approx(main.skip_btn.get_rect().end.x, main.skip_n_btn.position.x) and main.skip_btn.text == "넘기기" and main.skip_n_btn.text == "3웨이브 ▸"
+	var ready_btn: bool = main.skip_btn.visible and main.card_dock.skip_group.visible and is_equal_approx(main.skip_btn.get_rect().end.x, main.skip_n_btn.position.x) and main.skip_btn.text == "연속 진행" and main.skip_n_btn.text == "3웨이브 ▾"
 	main.run_flow_system._on_skip()
 	ok("SKIP-03", ready_btn and main.skip_left == 3 and main.bank_picks.is_empty() and main.phase == main.Phase.READY, "웨이브 시작 대기에서도 넘기기 (버튼 %s, 남은 %d)" % [ready_btn, main.skip_left])
 	main.skip_left = 0

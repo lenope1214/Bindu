@@ -64,7 +64,11 @@ func _process(delta: float) -> void:
 	if session.hint.text != _hint_kept:
 		session.hint.text = session.patchlog_system._kr_keep(session.hint.text)  # 줄이 접힐 때 한글 낱말 중간("방향 바/꾸기")에서 끊기지 않게
 		_hint_kept = session.hint.text
-	session.toast.position.y = maxf(100.0, session.hud.position.y + session.hud.size.y + 36.0)  # 점수 줄이 길어져도 보스 체력 막대 아래
+	var toast_top := maxf(100.0, session.hud.position.y + session.hud.size.y + 36.0)
+	for multiplayer_row: Control in [session.mp_bar, session.mp_act]:
+		if multiplayer_row != null and multiplayer_row.is_visible_in_tree():
+			toast_top = maxf(toast_top, multiplayer_row.get_rect().end.y + 8.0)
+	session.toast.position.y = toast_top  # 점수·멀티 상태·실제 행동 버튼 줄 아래
 	if session.tplay != null:
 		session.toast.position.y = maxf(session.toast.position.y, session.tplay.panel_bottom() + 8.0)  # 연습 판 안내 칸 아래
 	# 안내·큰 글자도 점수 줄이 길어지거나 글자를 키우면(설정) 그 아래로 밀어 겹치지 않게
@@ -80,6 +84,7 @@ func _process(delta: float) -> void:
 	session.onboarding_system._update_action_guide()
 	if session.guide_label.visible:
 		session.toast.position.y = maxf(session.toast.position.y, session.guide_more.get_rect().end.y + 8.0)
+	toast_top = session.toast.position.y
 	# 왼쪽 위 DPS 표를 펼쳐 두면 알림이 표 위에 겹치던 것 (글자 115% 이상·표가 길 때): 표와 오른쪽 설명 사이에 두고,
 	# 글이 그 폭보다 길면 두 줄로 접는다 (예전엔 표 아래로 내려 카드 줄 밑에 깔렸다: 봉인·이벤트 알림)
 	if session.toast.visible:
@@ -119,7 +124,7 @@ func _process(delta: float) -> void:
 	if session.toast.visible and session.card_dock.panel.visible and not session.cards_hidden:
 		var tr := session.toast.get_rect()
 		if tr.end.y > session.card_dock.panel.position.y - 4.0:
-			session.toast.position.y = maxf(session.hud.position.y + session.hud.size.y + 6.0, session.card_dock.panel.position.y - tr.size.y - 4.0)
+			session.toast.position.y = maxf(toast_top, session.card_dock.panel.position.y - tr.size.y - 4.0)
 		if session.banner_t > 0.0 and session.banner.get_rect().intersects(session.toast.get_rect()):
 			toast_hide = true
 	var ta := 0.0 if toast_hide else 1.0
@@ -184,7 +189,7 @@ func _process(delta: float) -> void:
 	session.bar_btn.tooltip_text = "설정 버튼 접기" if session.bar_open else "소리·자동 시작·일시정지·배속 버튼 펼치기"
 	session.mute_btn.visible = (not in_game or session.bar_open) and not on_result
 	session.auto_btn.visible = (not in_game or session.bar_open) and not on_result
-	session.pause_btn.visible = in_game and session.bar_open and not on_result
+	session.pause_btn.visible = in_game and not on_result
 	session.speed_group.visible = in_game and session.bar_open and not on_result
 	session.speed_btn.visible = in_game and session.bar_open and not on_result
 	session.speed_pick.visible = in_game and session.bar_open and not on_result
@@ -249,7 +254,7 @@ func _process(delta: float) -> void:
 	var reading := (session.help_label.visible or session.settings_panel.visible or session.records_panel.visible or session.notes_panel.visible) and not session.title_label.visible
 	if session.countdown >= 0.0 and session.phase == BinduSession.Phase.READY:
 		# 오브젝트를 끌거나 상자로 고르는 동안은 자동 시작을 멈춘다 (시작하면 끌던 것이 되돌아감)
-		if session.interaction_system.press_t or session.interaction_system.boxing or reading:
+		if session.interaction_system.press_t or session.interaction_system.boxing or reading or not session.interaction_system.selected.is_empty() or not session.card_dock.reading_card.is_empty() or session.card_dock.reading_review:
 			session.countdown = maxf(session.countdown, 1.0)
 		else:
 			session.countdown -= delta
@@ -270,7 +275,7 @@ func _process(delta: float) -> void:
 	# 공격 주기·충돌이 배속과 상관없이 1배속과 같게 나온다.
 	var steps := ceili(session.game_speed)
 	# 프레임이 한 번 크게 끊겨도(창 끌기·버벅임) 한 조각이 1/20초를 넘지 않게: 구체가 지뢰·벽을 건너뛰지 않는다
-	var dt := minf(delta, 0.05) * session.game_speed / steps
+	var dt := minf(delta, 0.05) * session.game_speed * session.abilities_system.skill_speed_factor() / steps
 	for i in steps:
 		session.combat_system._sim_step(dt)
 		if session.phase != BinduSession.Phase.WAVE:

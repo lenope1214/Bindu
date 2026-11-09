@@ -7,7 +7,12 @@ var _badge_memo := {}  # _free_badge 답 (입력 hash → Rect2)
 var _badge_cands: Array[Vector2] = []  # _free_badge가 볼 자리 (안쪽 칸, 옆 칸), 가까운 순
 func _bottom_free() -> float:
 	var session: BinduSession = self.session
-	return session.hint.position.y - 4.0 if session.hint.text != "" else session.ui_root.size.y - 60.0
+	var bottom: float = session.hint.position.y - 8.0 if session.hint.visible and session.hint.text != "" else session.ui_root.size.y - 60.0
+	if session.card_dock != null and session.card_dock.active():
+		for control: Control in [session.card_dock.panel, session.card_dock.edit_tools, session.start_btn, session.skip_badge]:
+			if control != null and control.is_visible_in_tree():
+				bottom = minf(bottom, control.position.y - 8.0)
+	return bottom
 
 
 ## 진입 화살표 자리 [화살 끝(월드), 들어오는 방향, lanes 번호]. 화살 그림(_draw·_draw_line_map)과 배지가 같은 자리를 쓴다.
@@ -109,7 +114,7 @@ func _info_blockers() -> Array[Rect2]:
 	var session: BinduSession = self.session
 	var out: Array[Rect2] = []
 	var inv := session.ui_root.get_global_transform().affine_inverse()
-	for c: Control in [session.hud, session.dps_panel, session.legend, session.range_btn, session.zoom_btn, session.start_btn, session.skip_badge, session.bar_box, session.toast, session.banner, session.guide_label, session.guide_more,  session.mp_bar, session.ver_label, session.hint, session.apply_btn, session.reroll_btn, session.card_detail_btn, session.hide_btn, session.skip_btn, session.skip_n_btn, session.cancel_btn, session.detail_btn, session.aim_ok_btn, session.card_dock.focus_btn, session.card_dock.panel, session.card_dock.side, session.card_dock.footer]:
+	for c: Control in [session.hud, session.dps_panel, session.legend, session.range_btn, session.zoom_btn, session.start_btn, session.skip_badge, session.bar_box, session.toast, session.banner, session.guide_label, session.guide_more, session.mp_bar, session.mp_act, session.ver_label, session.hint, session.apply_btn, session.reroll_btn, session.card_detail_btn, session.hide_btn, session.skip_btn, session.skip_n_btn, session.cancel_btn, session.detail_btn, session.aim_ok_btn, session.card_dock.focus_btn, session.card_dock.panel, session.card_dock.side, session.card_dock.footer]:
 		if c == null or not c.is_visible_in_tree():
 			continue
 		if (c is Label and str(c.text) == "") or (c == session.hud and session.hud_chips.is_empty()):

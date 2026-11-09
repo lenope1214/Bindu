@@ -9,9 +9,91 @@ var fx_k := 1.0  # 터지는 효과 진하기 (효과 줄이기 설정이면 0.5
 var stars := PackedVector3Array()  # 배경 점 (x, y, 밝기)
 
 var tip_orb: Node = null  # 마우스를 올린 구체 (그 구체만 체력 숫자를 보인다)
+var _pinned_orb: WeakRef
+
+
+func pinned_orb() -> Orb:
+	var o: Orb = _pinned_orb.get_ref() if _pinned_orb != null else null
+	if not is_instance_valid(o) or o.is_queued_for_deletion() or o.get_parent() != session.orbs or o.hp <= 0.0:
+		_pinned_orb = null
+		return null
+	return o
+
+
+func clear_orb_pin() -> void:
+	_pinned_orb = null
+	session.fx_layer.queue_redraw()
+
+
+func nearest_orb(p: Vector2) -> Orb:
+	var best: Orb = null
+	var distance := INF
+	var scale := maxf(session.get_canvas_transform().x.length(), 0.01)
+	for o: Orb in session.orbs.get_children():
+		if o.is_queued_for_deletion() or o.hp <= 0.0:
+			continue
+		var d := p.distance_to(o.position)
+		var hit := maxf(o.radius() + 4.0, (28.0 if session.touch_ui else 14.0) / scale)
+		if d <= hit and d < distance:
+			distance = d
+			best = o
+	return best
+
+
+func pin_orb_at(p: Vector2) -> bool:
+	var o := nearest_orb(p)
+	if o == null:
+		return false
+	_pinned_orb = weakref(o)
+	session.fx_layer.queue_redraw()
+	return true
+
+
+## Skill.use와 같은 범위·면역 규칙을 조회하며 상태를 변경하지 않는다.
+func skill_aim_info(id: String, p: Vector2) -> Dictionary:
+	var eligible: Array = []
+	var immune: Array = []
+	if id == "focus":
+		var t := Skill.focus_tower(session, p)
+		if t != null:
+			eligible.append(t)
+	else:
+		var radius := Skill.radius(id)
+		for o: Orb in session.orbs.get_children():
+			if o.is_queued_for_deletion() or o.hp <= 0.0 or o.position.distance_to(p) >= radius + o.radius():
+				continue
+			if id == "hold" and o.root_immune > 0.0:
+				immune.append(o)
+			else:
+				eligible.append(o)
+	var text := "적용 %d개" % eligible.size()
+	if not immune.is_empty():
+		text += " · 기절 면역 %d개" % immune.size()
+	if eligible.is_empty():
+		text = "오브젝트 위를 고르세요" if id == "focus" else ("모두 기절 면역" if not immune.is_empty() else "범위 안 구체 없음")
+	return {"eligible":eligible, "immune":immune, "count":eligible.size(), "immune_count":immune.size(), "text":text}
+
+
+func _draw_skill_targets() -> void:
+	if session.skill_arm == "" or session.phase != BinduSession.Phase.WAVE:
+		return
+	var info := skill_aim_info(session.skill_arm, session.interaction_system._pointer_world())
+	var col: Color = Skill.COLORS[session.skill_arm]
+	for target in info["eligible"]:
+		var radius: float = Tower.RADIUS if target is Tower else target.radius()
+		session.fx_layer.draw_arc(target.position, radius + 8.0, 0, TAU, 28, col, 2.5)
+	for target: Orb in info["immune"]:
+		var size := target.radius() + 7.0
+		session.fx_layer.draw_line(target.position + Vector2(-size, -size), target.position + Vector2(size, size), Color(1, 0.55, 0.5), 2.5)
+		session.fx_layer.draw_line(target.position + Vector2(-size, size), target.position + Vector2(size, -size), Color(1, 0.55, 0.5), 2.5)
+
+
 func _draw_tooltip() -> void:
 	var session: BinduSession = self.session
 	tip_orb = null
+	if pinned_orb() != null and session.phase == BinduSession.Phase.WAVE and not session.title_label.visible and not session.card_dock.input_blocked(false):
+		_draw_orb_tooltip()
+		return
 	if session.card_dock != null and session.cards_hidden:
 		return  # 전장 넓게 보기에서는 마우스 정보창도 접는다
 	# 터치는 마우스를 올려 둘 수 없으니, 눌러서 옮기기 시작한 오브젝트의 정보를 보여 준다
@@ -304,21 +386,16 @@ func _avoid_cards(r: Rect2, size: Vector2) -> Vector2:
 ## 마우스를 올린 구체의 체력·상태.
 func _draw_orb_tooltip() -> void:
 	var session: BinduSession = self.session
-	var m := session.interaction_system._pointer_world()
-	# 작은 구체도 잡기 쉽게 최소 14 안, 여럿이면 가장 가까운 것
-	var o: Orb = null
-	var bd := INF
-	for x in session.live_orbs:
-		if not is_instance_valid(x) or x.hp <= 0.0:
-			continue
-		var d: float = x.position.distance_to(m)
-		if d <= maxf(x.radius() + 4.0, 14.0) and d < bd:
-			o = x
-			bd = d
+	var o := pinned_orb()
+	var pinned := o != null
+	if o == null:
+		o = nearest_orb(session.interaction_system._pointer_world())
 	tip_orb = o
 	if o:
 		var kinds := ["구체", "빠른 구체", "단단한 구체", "보스"]
 		var parts := PackedStringArray([kinds[o.kind], "체력 %d/%d" % [ceili(o.hp), roundi(o.max_hp)]])
+		if pinned:
+			parts.insert(0, "적 정보 고정 · 빈 곳을 누르면 해제")
 		if o.shield > 0.0: parts.append("보호막 %d" % ceili(o.shield))
 		if o.splits: parts.append("분열")
 		if o.jam != "": parts.append(BinduSession.JAM_NAMES[o.jam])
@@ -359,8 +436,14 @@ func _draw_orb_tooltip() -> void:
 		var lh := fs + 6.0
 		var bh := lh * rows.size() + 4.0
 		var p: Vector2 = o.position + Vector2(-w / 2 - 8, -o.radius() - 16 - bh)
+		if pinned:
+			# 고정 정보는 움직이는 적·손가락에서 분리하고 선택한 적 반대편에 둔다.
+			var view := session.viewport_system.view_rect()
+			p = Vector2(view.position.x + 12.0 if o.position.x > view.get_center().x else _right_limit() - w - 16.0, _tip_top() + 8.0)
 		p.x = clampf(p.x, session.viewport_system.view_rect().position.x + 8.0, maxf(session.viewport_system.view_rect().position.x + 8.0, _right_limit() - w - 16))
-		p.y = maxf(p.y, _tip_top())
+		p.y = clampf(p.y, _tip_top(), maxf(_tip_top(), _tip_bottom() - bh))
+		if pinned:
+			session.fx_layer.draw_arc(o.position, o.radius() + 6.0, 0, TAU, 28, Color(1, 0.9, 0.5), 2.0)
 		session.fx_layer.draw_rect(Rect2(p, Vector2(w + 16, bh)), Color(0.05, 0.06, 0.09, 0.9))
 		for i in rows.size():
 			session.fx_layer.draw_string(session.ui_font, p + Vector2(8, fs + 3 + lh * i), rows[i], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
@@ -483,6 +566,7 @@ func _draw_fx(preview := false) -> void:
 		_draw_margins(vw)
 		_draw_place_note(session.fx_layer)
 		session.abilities_system._draw_skill_fx()
+		_draw_skill_targets()
 		for i in 6:
 			var w := 14.0 * (6 - i)
 			var col := Color(0, 0, 0, 0.05)
@@ -808,8 +892,12 @@ func _draw() -> void:
 				var a0 := spin + k * TAU / 4.0
 				session.draw_arc(t.position, Tower.RADIUS + 20.0, a0, a0 + 0.8, 8, Color(hc, 0.6), 2.0)
 		if target and refuse:
-			# 넣을 수 없는 오브젝트 위: 범위·설명 없이 빨간 고리 + 큰 ✕ + "넣을 수 없음" 하나만 (이유는 누르면 알림으로)
-			place_note = {"t": target, "lines": PackedStringArray(["넣을 수 없음"]), "col": Color(1, 0.3, 0.32), "fs": 18, "refuse": true}
+			# 거절 이유는 누르기 전에도 읽을 수 있게 유지한다.
+			var alternatives := 0
+			for candidate: Tower in session.towers.get_children():
+				if session.interaction_system._place_ok(candidate):
+					alternatives += 1
+			place_note = {"t": target, "lines": PackedStringArray(["넣을 수 없음", session.interaction_system._place_refuse(target), "다른 적용 대상 %d개" % alternatives]), "col": Color(1, 0.3, 0.32), "fs": 16, "refuse": true}
 		elif target:
 			var lines: PackedStringArray = pv[0]
 			Tower.draw_range(session, target.position, target.dir, pv[1], session.picked["e"] if is_elem else -2)
@@ -930,6 +1018,11 @@ func _draw_place_note(ci: CanvasItem) -> void:
 	var lines: PackedStringArray = place_note["lines"]
 	var col: Color = place_note["col"]
 	var fs: int = place_note["fs"]
+	var max_width := maxf(180.0, minf(620.0, _right_limit() - session.viewport_system.view_rect().position.x - 32.0))
+	var wrapped := PackedStringArray()
+	for line in lines:
+		wrapped.append_array(session.onboarding_system._wrap_words(line, max_width, fs).split("\n"))
+	lines = wrapped
 	var o := target.position
 	if place_note["refuse"]:
 		ci.draw_arc(o, Tower.RADIUS + 8.0, 0, TAU, 32, col, 3.0)

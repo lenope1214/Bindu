@@ -212,9 +212,14 @@ func _mp_packet(from: int, msg: Dictionary) -> void:
 				session.perks_system._apply_perk(id)
 				session.hud_system._show_toast("%s 특성: %s (팀 전체)" % [_mp_name(from), _perk_name(id)])
 		"ready":
-			if session.mp.is_host():
-				session.mp_ready[from] = true
+			if session.mp.is_host() and session.phase == BinduSession.Phase.READY:
+				session.mp_ready[from] = msg.get("ready", true) == true
+				if not session.mp_ready[from]:
+					_mp_cancel_wait_if_empty()
 				_mp_try_go()
+		"wait_cancel":
+			if from == 1 and session.phase == BinduSession.Phase.READY:
+				session.lobby_system._mp_wait_end()
 		"wait":
 			# 협동: 누군가 웨이브 시작을 눌렀다. 아직 고르는 사람은 정해진 시간 안에 고르고, 지나면 대신 고른다
 			session.mp_wait_ids = (msg.get("ids", []) as Array).map(func(x): return int(x))
@@ -672,12 +677,23 @@ func _mp_coop_ready() -> void:
 	if not session.mp_auto_now:
 		session.mp_afk_n = 0  # 스스로 눌렀다
 	if session.mp.is_host():
-		session.mp_ready[1] = true
+		session.mp_ready[1] = not session.mp_ready.get(1, false)
+		session.start_btn.text = "준비 취소 · 친구 기다리는 중" if session.mp_ready[1] else "준비 완료"
+		if not session.mp_ready[1]:
+			_mp_cancel_wait_if_empty()
 		_mp_try_go()
-	elif not session.mp_i_ready:
-		session.mp_i_ready = true
-		session.mp.send({"t": "ready"}, 1)
-		session.start_btn.text = "친구를 기다리는 중…"
+	else:
+		session.mp_i_ready = not session.mp_i_ready
+		session.mp.send({"t": "ready", "ready":session.mp_i_ready}, 1)
+		session.start_btn.text = "준비 취소 · 친구 기다리는 중" if session.mp_i_ready else "준비 완료"
+	if not (session.mp_ready.get(1, false) if session.mp.is_host() else session.mp_i_ready):
+		session.hud_system._show_toast("준비를 취소했어요. 배치를 조정한 뒤 다시 준비하세요")
+
+func _mp_cancel_wait_if_empty() -> void:
+	if session.mp_ready.values().any(func(ready): return ready == true):
+		return
+	session.lobby_system._mp_wait_end()
+	session.mp.send({"t":"wait_cancel"})
 
 
 ## force: 기다림이 다 지나 안 누른 사람(응답 없는 기기)을 두고 시작.
@@ -703,7 +719,7 @@ func _mp_try_go(force := false) -> void:
 			session.mp.send({"t": "wait", "s": w, "ids": left})
 			_mp_packet(1, {"t": "wait", "s": w, "ids": left})  # 호스트 자신에게도
 		if host_ok:
-			session.start_btn.text = "친구를 기다리는 중 (%d/%d)" % [have + 1, need.size() + 1]
+			session.start_btn.text = "친구를 준비 취소 (%d/%d)" % [have + 1, need.size() + 1]
 		return
 	if session.phase != BinduSession.Phase.READY:
 		return

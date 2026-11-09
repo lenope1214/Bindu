@@ -489,13 +489,15 @@ func _mp_auto_pick() -> bool:
 		if o["type"] == "elem":
 			for t in mine:
 				if t.can_take(o) and not Elem.new_reactions(t.eff_now(), o["e"]).is_empty():
-					session.cards_system._on_pick(o)
+					if not session.cards_system._on_pick(o):
+						return false
 					session.interaction_system._place_on(t)
 					return true
 		else:
 			for t in mine:
 				if t.can_take(o):
-					session.cards_system._on_pick(o)
+					if not session.cards_system._on_pick(o):
+						return false
 					session.cards_system._apply_card(t)
 					return true
 	for o in session.offer:
@@ -503,7 +505,8 @@ func _mp_auto_pick() -> bool:
 			var spot := _mp_auto_spot()
 			if spot.is_empty():
 				return false
-			session.cards_system._on_pick(o)
+			if not session.cards_system._on_pick(o):
+				return false
 			session.interaction_system._place_tower(spot[0], spot[1])
 			session.cards_system._after_place()
 			return true

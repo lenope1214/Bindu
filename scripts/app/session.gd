@@ -513,9 +513,9 @@ func boot() -> void:
 			menu_system._set_prep(true)  # 튜토리얼 끝 [첫 판 시작]: 일반 판 준비 화면
 
 
-## 창이 포커스를 잃어도 판은 계속 진행된다 (직접 조작이 없으니 멈추지 않음).
+## 싱글 판은 포커스 상실 때 정지하며 돌아온 뒤 명시적으로 재개한다.
 func _notification(what: int) -> void:
-	if what in [NOTIFICATION_WM_WINDOW_FOCUS_OUT, NOTIFICATION_APPLICATION_PAUSED] and card_dock != null:
+	if what in [NOTIFICATION_WM_WINDOW_FOCUS_OUT, NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_APPLICATION_PAUSED] and card_dock != null:
 		card_dock.clear_gesture()
 	# Android 뒤로가기 = Esc (한 단계 되돌리기 / 일시정지)
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
@@ -530,6 +530,9 @@ func _notification(what: int) -> void:
 		interaction_system.mid_drag = false
 		interaction_system.info_mouse_capture = false
 		interaction_system.info_touch_capture = -1
+		interaction_system._abort_touch_action()
+		if Meta.pause_on_focus_loss and mp_mode == "" and title_label != null and not title_label.visible and phase != Phase.GAMEOVER and not get_tree().paused:
+			run_flow_system._toggle_pause()
 	# 창을 닫거나 (모바일) 앱이 뒤로 가면 지금 쉬는 시간 상태를 한 번 더 저장 (옮긴 위치까지)
 	if (what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED) and towers and title_label:
 		persistence_system._save_run()

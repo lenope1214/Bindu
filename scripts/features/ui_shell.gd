@@ -226,7 +226,7 @@ func _build_ui() -> void:
 	session.skip_n_btn = Button.new()
 	session.skip_n_btn.set_anchors_preset(Control.PRESET_CENTER)
 	session.skip_n_btn.tooltip_text = "넘길 웨이브 수 바꾸기 (1·3·5·10)"
-	session.skip_n_btn.pressed.connect(session.run_flow_system._cycle_skip_n)
+	session.skip_n_btn.pressed.connect(session.run_flow_system.open_skip_picker)
 	session.skip_n_btn.visible = false
 	session.skip_n_btn.z_index = 2  # 카드 선택 막(card_dim) 위
 	root.add_child(session.skip_n_btn)
@@ -247,7 +247,7 @@ func _build_ui() -> void:
 	session.card_detail_btn.text = "자세히"
 	session.card_detail_btn.toggle_mode = true
 	session.card_detail_btn.button_pressed = Meta.card_detail
-	session.card_detail_btn.tooltip_text = "카드 설명 자세히 (Z): 켜면 설명 전체, 카드에 올리면(터치는 한 번 누르면) 위에 모든 내용"
+	session.card_detail_btn.tooltip_text = "카드 설명 자세히 (Z) · 카드의 [정보]로 소비 없이 전체 설명과 대상 비교 읽기"
 	session.card_detail_btn.toggled.connect(session.cards_system._set_card_detail)
 	session.cards_system._icon_btn(session.card_detail_btn, func(): return ["help", Color(1, 0.88, 0.5) if Meta.card_detail else Color(1, 1, 1, 0.7)])
 	session.cards_system._keycap(session.card_detail_btn, "Z")

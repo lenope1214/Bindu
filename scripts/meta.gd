@@ -69,6 +69,8 @@ static var panel_fold := {}  # 떠 있는 창 접기 (DPS 표는 dps_fold를 따
 static var skip_n := 3  # 웨이브 넘기기 한 번에 넘길 웨이브 수 (1·3·5·10)
 static var skill_set := 0  # 중앙 기술 묶음 (Skill.SETS 번호, 일반 판 준비 화면)
 static var skill_auto := false  # 중앙 기술 자동 사용 (설정)
+static var pause_on_focus_loss := true  # 싱글: 다른 앱으로 이동하면 명시적으로 재개할 때까지 정지
+static var skill_aim_slow := true  # 싱글 수동 기술 조준 중 1/4 속도 (배속에 곱함)
 static var skip_danger := true  # 넘기는 중 중앙 체력이 50% 아래로 처음 떨어지면 그 웨이브 뒤 멈춤
 static var danger_slow := false  # 중앙 체력이 50%·25% 아래로 처음 떨어질 때 1배속으로 (기본 끔)
 static var orb_hp_on := false  # 모든 구체에 체력 숫자 (끄면 고리만, 보스·마우스를 올린 구체는 숫자도)
@@ -203,6 +205,8 @@ static func load_into(cfg: ConfigFile) -> void:
 	skip_danger = val(cfg, "settings", "skip_danger", true)
 	skill_set = clampi(int(val(cfg, "settings", "skill_set", 0)), 0, 2)
 	skill_auto = val(cfg, "settings", "skill_auto", false) == true
+	pause_on_focus_loss = val(cfg, "settings", "pause_on_focus_loss", true) == true
+	skill_aim_slow = val(cfg, "settings", "skill_aim_slow", true) == true
 	fx_low = val(cfg, "settings", "fx_low", false)
 	rank_on = val(cfg, "settings", "rank_on", true)
 	card_detail = val(cfg, "settings", "card_detail", false)
@@ -279,6 +283,8 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("settings", "skip_danger", skip_danger)
 	cfg.set_value("settings", "skill_set", skill_set)
 	cfg.set_value("settings", "skill_auto", skill_auto)
+	cfg.set_value("settings", "pause_on_focus_loss", pause_on_focus_loss)
+	cfg.set_value("settings", "skill_aim_slow", skill_aim_slow)
 	cfg.set_value("settings", "fx_low", fx_low)
 	cfg.set_value("settings", "rank_on", rank_on)
 	cfg.set_value("settings", "card_detail", card_detail)

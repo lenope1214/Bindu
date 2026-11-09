@@ -23,18 +23,19 @@ func _apply_rules() -> void:
 ## 도움말: 상한·장수는 고른 규칙 버전에 따라 다르다.
 func _help_text() -> String:
 	var session: BinduSession = self.session
-	var elems := "속성 %d종까지, 레벨은 제한 없음" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "종류 제한 없음"
+	var elems := ("속성 %d종까지" % Rules.max_elems if Rules.max_elems < Rules.NO_CAP else "종류 제한 없음") + " · 같은 속성 Lv%d까지" % Tower.elem_cap()
 	var mods := "강화는 종류마다 %d개, 한 오브젝트에 합쳐 %d개까지" % [Rules.max_mod, Rules.mod_total] if Rules.max_mod < Rules.NO_CAP else "강화는 제한 없이 쌓이지만 쌓을수록 효과가 절반씩"
 	var keys := [
 		"[조작]",
 		"1 / 2 / 3 또는 클릭: 카드 선택     Q: 선택지 새로고침     V: 선택지 내리고 필드 보기",
-		"S: 웨이브 넘기기 — 카드 선택을 미루고 웨이브 n개(1·3·5·10)를 연달아 진행, 멈추면 쌓인 특성·카드·새로고침을 한꺼번에 (넘기는 중 S: 멈추기)",
-		"속성 카드: 빈 곳에 설치(직선탄) → 클릭(또는 끌어서 놓기)으로 방향, Shift: 15도",
+		"S: 연속 진행 — 카드 선택을 미루고 실제 전투를 연속 진행. 횟수는 1·3·5·10 직접 선택. 전투 중 S는 이번 웨이브 뒤 멈춤, 즉시 정지는 P/Esc",
+		"속성 카드: 빈 곳에 설치(직선탄), 오브젝트 위면 속성 겹치기. 자동 조준은 중앙에 가까운 구체 우선, 비슷한 위험도면 정한 방향 쪽 우선",
 		"속성 카드를 오브젝트 위에: 속성 겹치기 (%s)" % elems,
 		"공격방식·강화·연계 카드: 오브젝트 위에 놓기 (효과가 없는 강화는 못 넣음: 관통 연사·돌풍·철구에 관통·튕김, 벽에 유도, 벽·투척 장판에 분열)",
-		"오브젝트 끌기: 방향은 그대로 두고 옮기기 (카드를 고른 뒤에는 꾹 눌러서)",
+		"오브젝트 끌기: 방향은 그대로 두고 옮기기. 움직이지 않고 누르고 있는 동안에는 옮기지 않아요",
 		"빈 곳 끌기 / Shift·Ctrl+클릭 / Ctrl+A(모두): 여러 개 선택 → 그중 하나를 끌면 함께 이동",
-		"오브젝트 클릭: 선택 · 쉬는 시간에 선택한 오브젝트를 한 번 더 클릭하거나 상세의 [방향 변경]: 방향 바꾸기 · 선택한 오브젝트 위에서 휠: 15도씩 돌리기(Shift: 5도) · 우클릭한 채 끌기: 바로 조준",
+		"Tab / Shift+Tab: 오브젝트 순환 · 방향키: 선택 이동/설치 위치 · Enter: 적용·확정 · E: 방향 편집 · [ / ]: 15도 회전(Shift: 5도)",
+		"오브젝트 클릭: 선택 · [방향 변경] 또는 우클릭한 채 끌기: 방향 선호 편집 · 휠: 확대/축소 · Alt+휠: 선택 대상 방향 조정",
 		"Alt 누르고 있기: 모든 오브젝트의 공격 범위·피해 비율 보기     우클릭 / Esc: 한 단계 되돌리기, 선택 해제",
 		"왼쪽 위 DPS 표: 웨이브 중엔 최근 5초 실시간 DPS, 쉬는 시간엔 지난 웨이브 DPS와 비율. 줄에 마우스를 올리면 그 오브젝트를 짚어 줌   D: 표 접기·펴기 (저장됨)",
 		"Space: 웨이브 시작(자동 시작 끔일 때) / 웨이브 중 빠르게 켜기·끄기 (배율은 오른쪽 아래에서 x2~x8)",
@@ -50,16 +51,16 @@ func _help_text() -> String:
 	# 폰·태블릿: 키보드·마우스 안내 대신 버튼·누르기로
 	var touch := [
 		"[조작 · 터치]",
-		"카드 누르기: 카드 선택   [새로고침]: 선택지 바꾸기   [필드 보기]: 카드를 내리고 필드 보기",
+		"카드 본문 누르기: 들기 · 카드 [정보]: 소비 없이 읽기 · [다시 뽑기]: 선택지 바꾸기 · [카드 접기]: 전장 보기",
 		"화면 아래 [전장 넓게] / [패널 보기]: 카드·설명 패널 접기·복구",
-		"[웨이브 n개 넘기기]: 카드 선택을 미루고 웨이브 n개(1·3·5·10)를 연달아 진행, 멈추면 쌓인 특성·카드·새로고침을 한꺼번에 (넘기는 중 아래 표시를 누르면 멈춤)",
-		"속성 카드: 빈 곳을 눌러 설치(직선탄) → 쏠 쪽을 누르거나 끌어서 놓아 방향",
+		"[연속 진행]: 카드 선택을 미루고 실제 전투를 연속 진행. 횟수는 옆에서 1·3·5·10 직접 선택. 전투 중 멈춤은 이번 웨이브 뒤, 즉시 정지는 일시정지 버튼",
+		"속성 카드: 빈 곳에 설치(직선탄), 오브젝트 위면 속성 겹치기. 자동 조준은 중앙에 가까운 구체 우선, 비슷한 위험도면 정한 방향 쪽 우선",
 		"속성 카드를 오브젝트 위에: 속성 겹치기 (%s)" % elems,
 		"공격방식·강화·연계 카드: 오브젝트를 눌러 넣기 (효과가 없는 강화는 못 넣음: 관통 연사·돌풍·철구에 관통·튕김, 벽에 유도, 벽·투척 장판에 분열)",
-		"오브젝트 누르기: 선택 · 쉬는 시간에 선택한 오브젝트를 한 번 더 누르기: 쏠 방향 바꾸기   누른 채 끌기: 옮기기 (방향은 그대로)",
+		"오브젝트 누르기: 선택 · [방향]: 자동 조준 방향 선호 편집 · 누른 채 끌기: 옮기기 (방향은 그대로)",
 		"[취소]: 한 단계 되돌리기   [범위 보기]: 모든 오브젝트의 공격 범위·피해 비율",
 		"왼쪽 위 DPS 표: 웨이브 중엔 최근 5초 실시간 DPS, 쉬는 시간엔 지난 웨이브 DPS와 비율. 제목을 누르면 접기·펴기 (저장됨)",
-		"오른쪽 아래 [◀ 설정]: 소리·자동 시작·일시정지(시작 화면으로·판 끝내기·처음부터)·배속(x2~x8)",
+		"[일시정지]: 즉시 정지·시작 화면으로·판 끝내기·처음부터. 오른쪽 아래 [설정]은 소리·자동 시작·배속(x2~x8)",
 		"쉬는 시간마다 자동 저장: 게임을 꺼도 시작 화면의 [이어하기]로 그 쉬는 시간부터",
 		"첫 판은 카드가 단계별로 열려요 (공격방식 3·강화 4·연계 6웨이브)",
 		"처음 생기는 일엔 위쪽에 한 줄 안내 (설정에서 끄기·처음부터 다시 보기)",
@@ -85,6 +86,10 @@ func _help_text() -> String:
 ## 실행 중인 빌드가 최신인지 알아보도록 구석에 표시 (버전은 project.godot의 config/version).
 func _ver_text() -> String:
 	return "빈두 v%s · 규칙 %s" % [ProjectSettings.get_setting("application/config/version", "?"), Rules.NAMES[Meta.rules]]
+
+
+var wave_started_ms := -1000
+var skip_picker: PopupMenu
 
 
 ## 웨이브 구체 수: 기존 공식 3 + 2w. 150웨이브 이후에는 기존처럼 수를 고정하고 초과 몫은 체력으로 반영한다.
@@ -162,6 +167,7 @@ func _on_skip() -> void:
 	if TutPlay.on and session.tplay != null and not session.tplay.allow_skip():
 		session.hud_system._show_toast("웨이브 넘기기는 튜토리얼 마지막 장에서 해 봐요")
 		return
+	session.cards_system.clear_edit_history()
 	if session.perk_mode:
 		session.perk_mode = false
 		session.bank_perks += 1
@@ -172,13 +178,14 @@ func _on_skip() -> void:
 	session.skip_left = session.skip_total
 	session.skip_stop = false
 	_bank_rest()
-	session.hud_system._show_toast("웨이브 %d개 넘기기: 카드 선택은 멈춘 뒤 한꺼번에 (%s)" % [session.skip_total, "아래 표시를 누르면 멈춤" if session.touch_ui else "S: 멈추기"])
+	session.hud_system._show_toast("%d웨이브 연속 전투 · 선택 보류\n전투 중 멈춤은 이번 웨이브 뒤, 즉시 정지는 일시정지" % session.skip_total)
 
 
 ## 이번 쉬는 시간의 남은 고르기·새로고침을 쌓고 바로 다음 웨이브로 (1초 뒤 시작).
 ## picks_left에는 이미 쌓인 고르기(bank_picks)도 들어 있다.
 func _bank_rest() -> void:
 	var session: BinduSession = self.session
+	session.card_dock.close_inspector()
 	for i in session.picks_left - session.bank_picks.size():
 		session.bank_picks.append(session.wave)
 	session.picks_left = 0
@@ -249,11 +256,42 @@ func _toggle_skip_stop() -> void:
 	session.hud_system._show_toast("이번 웨이브가 끝나면 넘기기를 멈춰요" if session.skip_stop else "넘기기를 계속해요")
 
 
-func _cycle_skip_n() -> void:
-	var session: BinduSession = self.session
-	var i := BinduSession.SKIP_NS.find(int(Meta.skip_n))
-	Meta.skip_n = BinduSession.SKIP_NS[(i + 1) % BinduSession.SKIP_NS.size()]
+func set_skip_n(n: int) -> void:
+	if not n in BinduSession.SKIP_NS:
+		return
+	Meta.skip_n = n
 	session.progression_system._save_best()
+	_update_skip_ui()
+
+
+## 회전 버튼 대신 원하는 횟수를 직접 고른다. 선택만으로 전투를 시작하지 않는다.
+func open_skip_picker() -> void:
+	if session.card_dock.input_blocked():
+		return
+	if not is_instance_valid(skip_picker):
+		skip_picker = PopupMenu.new()
+		skip_picker.name = "ContinuousWaveCount"
+		skip_picker.add_theme_font_size_override("font_size", Meta.fs(16))
+		skip_picker.id_pressed.connect(set_skip_n)
+		session.ui_root.add_child(skip_picker)
+	skip_picker.clear()
+	for n in BinduSession.SKIP_NS:
+		skip_picker.add_radio_check_item("%d웨이브 연속 전투" % n, n)
+		skip_picker.set_item_checked(skip_picker.item_count - 1, int(Meta.skip_n) == n)
+	skip_picker.set_focused_item(BinduSession.SKIP_NS.find(int(Meta.skip_n)))
+	var at := session.skip_n_btn.get_global_rect()
+	skip_picker.popup(Rect2i(Vector2i(at.position - Vector2(0, 180)), Vector2i(maxi(220, roundi(at.size.x)), 0)))
+
+
+## 기존 호출자 호환: 직접 고르기 메뉴를 연다.
+func _cycle_skip_n() -> void:
+	open_skip_picker()
+
+
+func deferred_choices_text() -> String:
+	var cards := maxi(session.picks_left, session.bank_picks.size())
+	var perks := session.bank_perks + (1 if session.perk_mode else 0)
+	return "특성 %d · 카드 %d · 새로고침 %d" % [perks, cards, session.rerolls_left + session.bank_rerolls]
 
 
 ## 넘기기 버튼·넘기는 중 표시 (매 프레임).
@@ -270,26 +308,28 @@ func _update_skip_ui() -> void:
 	if show_btn:
 		var n := int(Meta.skip_n)
 		var deferred := "특성 선택 1회 보류" if session.perk_mode else "카드 선택 %d회 보류 · 새로고침 %d회 보류" % [session.picks_left, session.rerolls_left]
-		session.skip_btn.tooltip_text = "%d웨이브 넘기기 (S)\n%s\n미룬 카드·새로고침·특성은 멈춘 뒤 한꺼번에 고릅니다. 중앙이 위험해지면(설정) 그 웨이브가 끝나고 멈춥니다" % [n, deferred]
-		session.skip_btn.text = "넘기기"
-		session.skip_n_btn.text = "%d웨이브 ▸" % n
+		session.skip_btn.tooltip_text = "%d웨이브 연속 진행 (S)\n전투는 그대로 진행해요. %s\n보류 내역: %s\n멈춘 뒤 특성부터, 그다음 카드를 하나씩 고릅니다. 전투 중 멈춤은 이번 웨이브가 끝난 뒤 적용돼요. 즉시 정지는 일시정지 버튼을 누르세요." % [n, deferred, deferred_choices_text()]
+		session.skip_btn.text = "연속 진행"
+		session.skip_n_btn.text = "%d웨이브 ▾" % n
+		session.skip_n_btn.tooltip_text = "연속 전투 횟수 직접 선택 · 선택만으로 시작하지 않아요"
 	session.skip_badge.visible = session.skip_left > 0 and session.phase in [BinduSession.Phase.WAVE, BinduSession.Phase.READY] and not session.title_label.visible
 	if session.skip_badge.visible:
 		var done := session.skip_total - session.skip_left + 1
-		var cards := session.bank_picks.size()
-		var extra := " · 특성 %d" % session.bank_perks if session.bank_perks > 0 else ""
+		var count := deferred_choices_text()
 		if session.skip_stop:
-			session.skip_badge.text = session.ui_layout_system._kh("이번 웨이브 뒤 멈춤 · 쌓인 카드 %d%s (S: 계속)" % [cards, extra], true)
+			session.skip_badge.text = "이번 웨이브 뒤 멈춤 · " + count
 		elif session.phase == BinduSession.Phase.READY:
-			session.skip_badge.text = session.ui_layout_system._kh("넘기는 중 %d/%d · 쌓인 카드 %d%s (S: 지금 멈추고 선택)" % [done, session.skip_total, cards, extra], true)
+			session.skip_badge.text = "연속 전투 %d/%d · %s\n지금 멈추고 선택" % [done, session.skip_total, count]
 		else:
-			session.skip_badge.text = session.ui_layout_system._kh("넘기는 중 %d/%d · 쌓인 카드 %d%s (S: 멈추기)" % [done, session.skip_total, cards, extra], true)
+			session.skip_badge.text = "연속 전투 %d/%d · %s\n이번 웨이브 뒤 멈추기" % [done, session.skip_total, count]
+		session.skip_badge.tooltip_text = "보류: %s\n%s\n즉시 정지: 일시정지 버튼" % [deferred_choices_text(), "누르면 연속 진행을 계속해요" if session.skip_stop else "전투 중에는 이번 웨이브 뒤에 멈춥니다"]
 
 
 ## 선택지 화면을 연다 (offer는 이미 정해져 있음).
 func _reload() -> void:
 	var session: BinduSession = self.session
 	session.run_detail.close()
+	session.cards_system.clear_edit_history()
 	_mp_keep_room()
 	if session.is_inside_tree() and session.get_tree().current_scene != null:
 		session.get_tree().reload_current_scene()
@@ -319,12 +359,15 @@ func _start_wave() -> void:
 		session.countdown = -1.0
 		session.multiplayer_system._mp_coop_ready()
 		return
+	session.cards_system.clear_edit_history()
 	session.countdown = -1.0
+	session.card_dock.reading_review = false
 	session.interaction_system._drop_press()
 	session.interaction_system.boxing = false
 	session.interaction_system.selected.clear()
 	session.start_btn.visible = false
 	session.wave += 1
+	wave_started_ms = Time.get_ticks_msec()
 	session.rest_ready = false
 	session.phase = BinduSession.Phase.WAVE
 	session.wave_active = true
@@ -446,6 +489,7 @@ func _wave_attack_reach(t: Tower) -> float:
 
 func _game_over() -> void:
 	var session: BinduSession = self.session
+	session.cards_system.clear_edit_history()
 	session.multiplayer_system._mp_over()
 	session.onboarding_system._tut_event("over")
 	session.combat_system._log_wave()
@@ -668,15 +712,32 @@ func _pause_restart() -> void:
 		session.paused_label.text = _pause_text() + "\n처음부터를 한 번 더 누르면 새 판"
 
 
+## 소유권·대기 행동을 설명하는 공용 상태. 준비/연결 상태를 추측해 완료로 표시하지 않는다.
+func multiplayer_status_text() -> String:
+	if session.mp_mode == "":
+		return ""
+	var mode := "협동" if session.mp_mode == "coop" else "대결"
+	if session.mp_fail_msg != "":
+		return mode + " · 연결을 확인하세요 · " + session.mp_fail_msg
+	if session.phase == BinduSession.Phase.GAMEOVER:
+		return mode + " · 판 종료 · 대기방으로 돌아갈 수 있어요"
+	if session.mp_mode == "coop" and session.phase == BinduSession.Phase.READY:
+		var ready: bool = session.mp_ready.get(session.mp.my_id, false) if session.mp.is_host() else session.mp_i_ready
+		return "협동 · 내 준비 완료 · 친구 준비 대기" if ready else "협동 · 내 준비 필요 · 배치를 마치고 웨이브 시작"
+	if session.phase == BinduSession.Phase.WAVE:
+		return mode + (" · 함께 전투 중" if session.mp_mode == "coop" else " · 각자 전투 중")
+	return mode + " · 내 오브젝트만 이동 · 친구 속성 요청에는 카드 적용 가능"
+
+
 ## 일시정지 글: 지금 나가면 어디서부터 이어지는지도 알려 준다. 키는 아래 그림 버튼 모서리에.
 func _pause_text() -> String:
 	var session: BinduSession = self.session
 	var keys := "일시정지"
+	if session.mp_mode != "":
+		return keys + "\n" + multiplayer_status_text() + "\n멀티 판은 이어하기가 없어요. 시작 화면으로 나가면 이 판에서 나갑니다."
 	if TutPlay.on:
 		return keys + "\n연습 판이에요. 기록·업적은 남지 않아요"
-	if session.phase == BinduSession.Phase.WAVE:
-		return keys + "\n지금 나가면 웨이브 %d 앞 쉬는 시간부터 이어집니다" % session.wave
-	return keys + "\n지금 나가도 이 쉬는 시간부터 이어서 할 수 있어요"
+	return keys + "\n" + session.persistence_system.save_status_text()
 
 
 ## 일시정지에서 판 끝내기: 두 번 누르면 지금 점수로 게임 오버 (기록 저장·온라인 전송은 보통 게임 오버와 같다).
@@ -720,11 +781,18 @@ func _leave(quit_game: bool) -> void:
 
 # ---------- 기맥 (2026-10-31 "디펜스 한계 개선 F") ----------
 ## 판마다 전장에 기맥 자리 ley_n개가 생긴다(판 번호로 정해 이어하기도 같음). 자리마다 ley_r 안 가장 가까운 오브젝트 하나가 피해 +ley_dmg.
-func _toggle_speed() -> void:
+func _toggle_speed(from_shortcut := false) -> void:
 	var session: BinduSession = self.session
+	if from_shortcut and not speed_shortcut_ready():
+		return
 	# Space·버튼: 1배속 ↔ 고른 배속
 	session.game_speed = _fast_now() if session.game_speed == 1.0 else 1.0
 	_update_speed_btn()
+
+
+## 시작 입력을 연달아 눌러 의도하지 않은 가속이 생기지 않게 한다.
+func speed_shortcut_ready() -> bool:
+	return Time.get_ticks_msec() - wave_started_ms >= 450
 
 
 ## 빠르게 켤 때 배속

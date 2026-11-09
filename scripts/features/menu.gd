@@ -359,7 +359,7 @@ func _build_menu(root: Control) -> void:
 		grid.add_theme_constant_override("v_separation", 4)
 		sv.add_child(grid)
 		cbox = grid
-	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 속성 그림)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"], ["웨이브 넘기기 중 중앙이 위험하면 멈춤 (체력 50%)", "skip_danger"], ["중앙 기술 자동 사용 (구체가 몰린 곳에)", "skill_auto"], ["효과 줄이기 (장판·터지는 효과를 옅게, 많을수록 더)", "fx_low"], ["피해 1~3위 왕관·메달", "rank_on"]]:
+	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 속성 그림)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"], ["웨이브 넘기기 중 중앙이 위험하면 멈춤 (체력 50%)", "skip_danger"], ["다른 앱으로 이동하면 정지 (싱글 판)", "pause_on_focus_loss"], ["기술 조준 중 1/4 속도 (싱글 판)", "skill_aim_slow"], ["중앙 기술 자동 사용 (구체가 몰린 곳에)", "skill_auto"], ["효과 줄이기 (장판·터지는 효과를 옅게, 많을수록 더)", "fx_low"], ["피해 1~3위 왕관·메달", "rank_on"]]:
 		var cb := CheckButton.new()
 		cb.text = spec[0]
 		if cbox != sv:
@@ -376,9 +376,11 @@ func _build_menu(root: Control) -> void:
 			"danger_slow": cb.button_pressed = Meta.danger_slow
 			"skip_danger": cb.button_pressed = Meta.skip_danger
 			"skill_auto": cb.button_pressed = Meta.skill_auto
+			"pause_on_focus_loss": cb.button_pressed = Meta.pause_on_focus_loss
+			"skill_aim_slow": cb.button_pressed = Meta.skill_aim_slow
 			"fx_low": cb.button_pressed = Meta.fx_low
 			"rank_on": cb.button_pressed = Meta.rank_on
-		cb.focus_mode = Control.FOCUS_NONE
+		cb.focus_mode = Control.FOCUS_ALL
 		cb.toggled.connect(func(on):
 			match key:
 				"shake_on": Meta.shake_on = on
@@ -387,6 +389,8 @@ func _build_menu(root: Control) -> void:
 				"danger_slow": Meta.danger_slow = on
 				"skip_danger": Meta.skip_danger = on
 				"skill_auto": Meta.skill_auto = on
+				"pause_on_focus_loss": Meta.pause_on_focus_loss = on
+				"skill_aim_slow": Meta.skill_aim_slow = on
 				"fx_low": Meta.fx_low = on
 				"rank_on":
 					Meta.rank_on = on

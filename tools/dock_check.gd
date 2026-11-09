@@ -147,6 +147,10 @@ func _initialize():
 		main.run_flow_system._toggle_pause()
 		_fresh(12)
 		var target: Tower = _tower(Vector2(600, 440), Elem.FIRE)
+		main.phase = main.Phase.CHOOSE
+		main.perk_mode = false
+		main.picks_left = maxi(main.picks_left, 1)
+		main.offer = [{"type":"mod", "id":"rapid"}]
 		main.cards_system._on_pick({"type":"mod", "id":"rapid"})
 		await settle()
 		var target_screen: Vector2 = main.get_canvas_transform() * target.position
@@ -156,6 +160,10 @@ func _initialize():
 		var count: int = target.mod_count()
 		await click_at(target_screen)
 		ok("UI-28", target.mod_count() == count + 1, "virtual input applies card to transformed target")
+		main.phase = main.Phase.CHOOSE
+		main.perk_mode = false
+		main.picks_left = maxi(main.picks_left, 1)
+		main.offer = [{"type":"mod", "id":"rapid"}]
 		main.cards_system._on_pick({"type":"mod", "id":"rapid"})
 		await settle()
 		var area: Vector2 = main.card_dock.side.get_global_rect().get_center()

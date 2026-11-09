@@ -1,6 +1,10 @@
 class_name BinduPersistence
 extends BinduFeature
 ## 판 스냅샷 검증·저장·복원. 예약 콜백은 main의 순서를 따른다.
+var restoring := false
+var last_local_save_wave := -1
+var last_local_save_unix := 0
+var last_save_error := OK
 
 func _save_run() -> void:
 	var session: BinduSession = self.session
@@ -8,6 +12,26 @@ func _save_run() -> void:
 		return  # 멀티플레이 판·연습 판은 이어하기가 없다
 	if session.title_label.visible or not session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY] or session.interaction_system.press_t or session.interaction_system.dragging or session.coin_stage > 0:
 		return
+	if restoring:
+		return
+	var cfg := _capture_cfg()
+	var saved: Error = cfg.save(BinduSession.RUN_PATH)
+	if saved != OK:
+		if last_save_error != saved:
+			session.hud_system._show_toast("저장하지 못했어요. 쉬는 시간에 다시 시도합니다")
+		last_save_error = saved
+		return
+	last_save_error = OK
+	last_local_save_wave = session.wave
+	last_local_save_unix = int(Time.get_unix_time_from_system())
+	if session.run_id != session.moved_run:
+		# 서버 복원은 로컬 저장 성공 뒤에만 요청한다.
+		session.net.put_run(session.run_id, cfg.encode_to_text(), {"game": Net.game_version(), "platform": Net.platform(), "map": Meta.map_id,
+			"rules": Meta.rules, "wave": session.wave, "score": session.score})
+
+
+func _capture_cfg() -> ConfigFile:
+	var session: BinduSession = self.session
 	var ts := session.towers.get_children()
 	var list: Array = []
 	for t in ts:
@@ -23,22 +47,36 @@ func _save_run() -> void:
 		"new_angles": session.waves_system.new_angles, "lanes": Array(session.lanes), "wave_resist": session.wave_resist, "boss": session.boss_plan, "achievements": session.new_achievements, "ach_run": Ach.run,
 		"state": "perk" if session.perk_mode else ("ready" if session.phase == BinduSession.Phase.READY else "choose"),
 		"offer": session.offer, "perk_offer": session.perk_offer.map(func(pk): return pk["id"]), "towers": list,
-		"log": session.run_log, "leaks": session.leak_log, "game_secs": session.run_game, "real_secs": session.run_real, "run_id": session.run_id,
+		"log": session.run_log, "leaks": session.leak_log, "game_secs": session.run_game, "real_secs": session.run_real, "wave_time": session.wave_time, "run_id": session.run_id,
 		"tutor": session.tutor, "tutor_given": session.tutor_given.keys(), "grow": session.legacy_grow, "skill_set": session.skill_set, "skill_used": session.skill_used, "ley": session.ley.map(func(p): return [p.x, p.y]),
 	}
 	var cfg := ConfigFile.new()
 	for k in vals:
 		cfg.set_value("run", k, vals[k])
-	cfg.save(BinduSession.RUN_PATH)
-	if session.run_id != session.moved_run:
-		# 같은 계정의 다른 기기에서 이어 할 수 있게 서버에도 (쉬는 시간마다, 끄면 마지막 것)
-		session.net.put_run(session.run_id, cfg.encode_to_text(), {"game": Net.game_version(), "platform": Net.platform(), "map": Meta.map_id,
-			"rules": Meta.rules, "wave": session.wave, "score": session.score})
+	return cfg
+
+
+func save_status_text() -> String:
+	if session.mp_mode != "":
+		return "멀티 판 · 이어하기 없음"
+	if TutPlay.on:
+		return "연습 판 · 기록과 이어하기 없음"
+	if last_save_error != OK:
+		return "자동 저장 실패 · 쉬는 시간에 다시 시도"
+	if session.phase == BinduSession.Phase.WAVE:
+		return "나가면 웨이브 %d 앞 쉬는 시간부터" % session.wave
+	if last_local_save_wave >= 0:
+		return "자동 저장됨 · 웨이브 %d 준비부터 이어하기" % (last_local_save_wave + 1)
+	return "쉬는 시간에 자동 저장 · 전투 중에는 앞 쉬는 시간부터"
 
 
 ## drop: 서버의 같은 판도 지운다 (다른 기기가 가져가서 지우는 것이면 false).
 func _clear_run(drop := true) -> void:
 	var session: BinduSession = self.session
+	last_local_save_wave = -1
+	last_local_save_unix = 0
+	last_save_error = OK
+	session.cards_system.clear_edit_history()
 	if FileAccess.file_exists(BinduSession.RUN_PATH):
 		var key := session.online_system._local_run_key()
 		DirAccess.remove_absolute(BinduSession.RUN_PATH)
@@ -49,7 +87,13 @@ func _clear_run(drop := true) -> void:
 ## 저장된 판 요약 {wave, map, rules, cfg} (없거나 형식이 다르면 빈 사전).
 func _run_info(path := "") -> Dictionary:
 	var cfg := ConfigFile.new()
-	if cfg.load(path if path != "" else BinduSession.RUN_PATH) != OK or Meta.val(cfg, "run", "format", 0) != BinduSession.RUN_FORMAT:
+	if cfg.load(path if path != "" else BinduSession.RUN_PATH) != OK:
+		return {}
+	return _info_from_cfg(cfg)
+
+
+func _info_from_cfg(cfg: ConfigFile) -> Dictionary:
+	if Meta.val(cfg, "run", "format", 0) != BinduSession.RUN_FORMAT:
 		return {}
 	var map: String = Meta.val(cfg, "run", "map", "")
 	var r: int = Meta.val(cfg, "run", "rules", 0)
@@ -101,8 +145,32 @@ func _continue_run() -> void:
 		_clear_run()
 		_refresh_continue()
 		return
+	restoring = true
+	_restore_info(info)
+	restoring = false
+	last_local_save_wave = session.wave
+	last_save_error = OK
+
+
+func _restore_info(info: Dictionary) -> void:
+	var session: BinduSession = self.session
 	var cfg: ConfigFile = info["cfg"]
 	var g := func(k: String, d: Variant) -> Variant: return Meta.val(cfg, "run", k, d)
+	session.interaction_system._drop_press()
+	session.interaction_system.moving = null
+	session.interaction_system.selected.clear()
+	session.interaction_system.boxing = false
+	session.card_dock.clear_gesture()
+	session.card_dock.close_inspector()
+	session.tip_tower = null
+	session.dps_focus = null
+	session.cards_system._clear_shots()
+	for t in session.towers.get_children():
+		t.free()
+	session.picked = {}
+	session.perk_mode = false
+	session.countdown = -1.0
+	session.wave_active = false
 	Meta.map_id = info["map"]
 	Meta.line_flip = g.call("line_flip", Meta.line_flip)
 	Meta.rules = info["rules"]
@@ -114,6 +182,7 @@ func _continue_run() -> void:
 	session.progression_system._save_best()
 	session.progression_system._hide_title()
 	session.wave = info["wave"]
+	session.wave_time = maxf(0.0, float(g.call("wave_time", 0.0)))
 	session.score = maxi(0, g.call("score", 0))
 	session.kills = maxi(0, g.call("kills", 0))
 	session.best_combo = maxi(0, g.call("best_combo", 0))
