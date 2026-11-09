@@ -1,0 +1,80 @@
+{
+  "engine_commit": "ed1daf0bf001b61586d9930840f2f1394092c079",
+  "source_root": "/tmp/bindu-ios-qa-bootstrap/godot-src",
+  "kind": "local source inspection, not UIKit/OS delivery measurement",
+  "files": [
+    {
+      "path": "servers/display/display_server.cpp",
+      "sha256": "b6b1d626f24d63ed6555f906c376db408321c9e2cb8e6b6d2f055e8ffcd2df5d",
+      "lines": [
+        1702,
+        1702
+      ],
+      "finding": "process_events is GDScript-bound."
+    },
+    {
+      "path": "platform/macos/display_server_macos.mm",
+      "sha256": "57800301ae2770745c92854f38eee1f0dd859ae08f5c7d711f4d13fd48a9cf27",
+      "lines": [
+        3180,
+        3221
+      ],
+      "finding": "Drains Cocoa NSEvents, deferred menu callbacks, key events and buffered Input events. It asserts main-thread invocation."
+    },
+    {
+      "path": "platform/android/display_server_android.cpp",
+      "sha256": "0487b6c64c88529e361a44160a0ce4a0ca138e8fd79994ed71467a120196b11e",
+      "lines": [
+        654,
+        656
+      ],
+      "finding": "Only flushes already-buffered Input events."
+    },
+    {
+      "path": "drivers/apple_embedded/display_server_apple_embedded.mm",
+      "sha256": "99917d4f29e0d7d91d5bc0fe496501f100e0fb2cc4d7072e1cffd20a89b57ca4",
+      "lines": [
+        242,
+        244
+      ],
+      "finding": "Only flushes already-buffered Input events; does not pump the UIKit run loop."
+    },
+    {
+      "path": "drivers/apple_embedded/godot_view_apple_embedded.mm",
+      "sha256": "ee116714ab1ac863ace4fd23debac98faa498ed5f51e3a0c96120e0f86af720a",
+      "lines": [
+        204,
+        267
+      ],
+      "finding": "CADisplayLink is installed on the current run loop with main-thread comment. drawView drains CFRunLoop before renderOnView; not between game steps."
+    },
+    {
+      "path": "drivers/apple_embedded/godot_view_renderer.mm",
+      "sha256": "deb76f84e79af974811e93086232bf00956d1eb3734cfdf4f1ffeb25de661d27",
+      "lines": [
+        111,
+        116
+      ],
+      "finding": "renderOnView calls OS_AppleEmbedded.iterate synchronously."
+    },
+    {
+      "path": "drivers/apple_embedded/os_apple_embedded.mm",
+      "sha256": "e89fa0a4f09eea31dddadf7a308e60b1cde4901badecd5a93a533361d1969db8",
+      "lines": [
+        220,
+        239
+      ],
+      "finding": "iterate processes buffered input then calls Main::iteration."
+    },
+    {
+      "path": "core/input/input.cpp",
+      "sha256": "932d50b4682057f2c56fa060b160cf39d7b17306d2a76cf85aba3fa801b7f28f",
+      "lines": [
+        1519,
+        1584
+      ],
+      "finding": "parse_input_event and flush_buffered_events are thread-safe; accumulated events are buffered. QA uses a fresh event per press/release."
+    }
+  ],
+  "conclusion": "Worker-to-Input buffer service can be tested in isolation. A reduced synthetic-buffer queue cannot establish iOS touch acquisition or display latency; drawView pumps UIKit before synchronous Main::iteration."
+}

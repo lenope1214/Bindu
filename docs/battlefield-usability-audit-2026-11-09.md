@@ -467,3 +467,5 @@ Tab이 전장 대상만 순환하고 GUI 포커스는 비어 있어 공격 예�
 Tab→←→E→↑→Enter에서 현재 오브젝트가 아니라 이동 전 좌표를 기준으로 대각선 조준이 확정됐다. 편집 진입 시 키보드 기준점을 초기화하고 같은 실제 키 순서로 위 방향 확정을 확인했다. [음성 재현과 수정](qa/2026-11-09-battlefield-fixes/keyboard/README.md).
 
 BF-49 후속: [지속/성장 효과 호출 조사](qa/2026-11-09-battlefield-fixes/performance/zone-hit/README.md)에서 없는 효과 helper를 생략했다.4줄의 CPU 개선은 반복 관찰됐지만 native8배속 합성 큐170–212ms와 화면 밀도·물리 입력 과제는 남는다. 400은 live 유지 수이며 매 표본400개가 항상 공격 가능하다는 뜻은 아니다.
+
+[계산 중 입력 처리 실험](qa/2026-11-09-battlefield-fixes/performance/input-service/README.md): 제품70개 스크립트는 유지하고 격리 사본만 시험했다. native ABBA240표본의 전투/난수/시간 동일,28개 실제 계산 중 버퍼 입력과 재진입/삭제를 확인했다. 정지 큐114–154ms→7–12ms와 CPU+0.19–0.30%를 구분하며, 즉시 force-draw의 메뉴 미표시도 기록했다. 실제 UIKit 수신·일반 조작·첫 화면 표시를 증명하지 못해 제품 적용은 보류한다. 전체50개와 BF-49/PERF-01은 미완료다.

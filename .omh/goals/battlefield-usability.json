@@ -582,7 +582,7 @@
       "diagnostic_status": "가설",
       "title": "후반 효과 밀도·지연이 입력 실패처럼 느껴질 수 있다",
       "implementation": "partial",
-      "verification": "partial_local_CPU_improvement; highspeed_queue/PERF01/physical/human_remaining",
+      "verification": "partial_local_CPU_improvement; input_service_prototype_only; UIKit/highspeed_queue/PERF01/physical/human_remaining",
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/remaining-user-tasks.md",
         "docs/qa/2026-11-09-battlefield-fixes/README.md",
@@ -593,7 +593,8 @@
         "docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/fx-controls/README.md",
-        "docs/qa/2026-11-09-battlefield-fixes/performance/zone-hit/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/performance/zone-hit/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/performance/input-service/README.md"
       ]
     },
     {
@@ -988,11 +989,27 @@
         "docs/qa/2026-11-09-battlefield-fixes/performance/zone-hit/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/zone-hit/summary.json"
       ]
+    },
+    {
+      "type": "input_service_prototype_validated_not_adopted",
+      "facts": [
+        "Product70 scripts unchanged at524286d. Existing8steps/dt maintained for no input; isolated event servicing between steps only.",
+        "Native ABBA4processes/240samples: normalized states/timers/RNG/population/time/steps equal and28probe starting states/RNG equal. All28requests actually buffered during compute.",
+        "Pause6samples per variant:113.899to154.495ms baseline vs6.782to12.405ms prototype. CPU+0.19to+0.30%; no numeric budget pass.",
+        "Pause/settings/speed cancel old batch; resume8steps without debt, reentrant extra0, immediate free plus2engine frames safe.",
+        "Immediate force_draw/visibility did not prove menu drawing. Separate2process render follow-up visually confirms menu after2engine frames, not first presentation.",
+        "iOS/Android process_events only flush Input; actual UIKit acquisition and general actions/full50 remain unresolved. No prototype product adoption.",
+        "QA invalid Tower field and reused-session unequal start failures preserved/excluded; fresh sessions repair fixture without relaxing comparison."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/performance/input-service/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/performance/input-service/summary.json"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "Deliver task23 scoped commit via latest main pull/rebase/push/PR update. Then prototype bounded main-thread work/input service in isolation without silently changing speed/game-time/debt policy; continue BF50 accessibility and physical/human tasks. Full50 active.",
+    "next_local_action": "Deliver task24 evidence commit via latest main pull/rebase/push/PR update. Next inspect BF50 semantic/accessibility-tree exposure and remaining keyboard paths. Input-service prototype remains unadopted: actual OS-frame return, speed/game-time/debt and RNG policy require explicit controlled experiment; UIKit/physical/human/full50 remain open.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },

@@ -72,3 +72,5 @@ native는 Godot4.7.2/macOS·빈 운영 URL·고유 BinduTools 저장·최소화/
 [키보드 정보 읽기/전장 복귀](keyboard/README.md): F6 진입·카드 읽기·설명 스크롤·예시·접기/닫기·정지/복귀·방향 편집과 모달 보호126단언. macOS 가상 GUI 관찰이며 스크린리더/스위치/실기기 전체 접근성은 미확인.
 
 [없는 지속/성장 호출](performance/zone-hit/README.md): 제품4줄, 동결 참조/실제 전투/예약/RNG/직접 extra·fallback 검사와 제어 CPU/native ABBA. 모든 효과 활성 CPU 증가·1배속 draw 간격 증가·남은 긴 합성 입력 대기 및 거절한 후보를 함께 기록한다.
+
+[계산 중 입력 처리 실험](performance/input-service/README.md): 제품70개 스크립트는 유지하고 격리 사본만 시험했다. native ABBA240표본의 전투/난수/시간 동일,28개 실제 계산 중 버퍼 입력과 재진입/삭제를 확인했다. 정지 큐114–154ms→7–12ms와 CPU+0.19–0.30%를 구분하며, 즉시 force-draw의 메뉴 미표시도 기록했다. 실제 UIKit 수신·일반 조작·첫 화면 표시를 증명하지 못해 제품 적용은 보류한다. 전체50개와 BF-49/PERF-01은 미완료다.
