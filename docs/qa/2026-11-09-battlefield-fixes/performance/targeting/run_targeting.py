@@ -54,11 +54,19 @@ def main() -> int:
         with (output / "import.log").open("w") as log:
             imported = subprocess.run([godot, "--headless", "--import", "--path", tmp], stdout=log, stderr=subprocess.STDOUT, timeout=300)
         record["import_exit"] = imported.returncode
+        assert imported.returncode == 0 and not re.search(r"SCRIPT ERROR|Parse Error|Compile Error", (output / "import.log").read_text()), "import failed"
         command = [godot, "--headless", "--audio-driver", "Dummy", "--path", tmp, "-s", "tools/battlefield_targeting_check.gd", "--", str(output), "both" if args.benchmark else "check"]
         record["command"] = command
         with (output / "check.log").open("w") as log:
             result = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, timeout=180)
         record["exit"] = result.returncode
+        assert not re.search(r"^(?:SCRIPT ERROR|ERROR:)", (output / "check.log").read_text(), re.M), "runtime errors"
+        data = json.loads((output / "results.json").read_text())
+        assert data["comparisons"] == 41564
+        assert set(data["exercised_pattern_levels"]) == {pattern + ":" + str(level) for pattern in data["patterns"] for level in [1, 3, 8]}
+        record["comparisons"] = data["comparisons"]
+        record["mismatch_count"] = data["mismatch_count"]
+        assert result.returncode == (1 if data["mismatch_count"] else 0)
     shutil.rmtree(userdata, ignore_errors=True)
     record["isolated_userdata_removed"] = not userdata.exists()
     record["temporary_project_removed"] = True

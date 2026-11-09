@@ -7,6 +7,7 @@ var mismatches: Array = []
 var mismatch_count := 0
 var pool: Array = []
 var benchmark: Array = []
+var exercised_pattern_levels := {}
 
 func _initialize() -> void:
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools") or OnlineConfig.SERVER_URL != "" or OnlineConfig.MP_URL != "":
@@ -53,15 +54,16 @@ func _initialize() -> void:
 		for auto_aim in [0.0, 1.0]:
 			Rules.tune["auto_aim"] = auto_aim
 			for pattern in Pat.PATTERN_IDS:
-				t.set_pattern(pattern)
-				for angle in [0.0, PI / 2.0, -2.2]:
-					t.set_attack_direction(Vector2.from_angle(angle))
-					place_boundaries(t)
-					for pref in [-1.0, 0.0, 0.12, 0.6, PI]:
-						Rules.tune["aim_pref"] = pref
-						for band in [-100.0, -0.0001, 0.0, 0.0001, 40.0, 1000.0]:
-							Rules.tune["aim_band"] = band
-							compare(t, pool, "%s/%s/auto%s/dir%s/pref%s/band%s" % [map_id, pattern, auto_aim, angle, pref, band])
+				for fixture_level in [1, 3, 8]:
+					configure_pattern(t, pattern, fixture_level)
+					for angle in [0.0, PI / 2.0, -2.2]:
+						t.set_attack_direction(Vector2.from_angle(angle))
+						place_boundaries(t)
+						for pref in [-1.0, 0.0, 0.12, 0.6, PI]:
+							Rules.tune["aim_pref"] = pref
+							for band in [-100.0, -0.0001, 0.0, 0.0001, 40.0, 1000.0]:
+								Rules.tune["aim_band"] = band
+								compare(t, pool, "%s/%s/L%s/auto%s/dir%s/pref%s/band%s" % [map_id, pattern, fixture_level, auto_aim, angle, pref, band])
 		cases.append(map_id)
 	# main이 없는 재사용 경로는 중앙 대신 오브젝트와의 거리를 쓴다.
 	t.main = null
@@ -79,7 +81,7 @@ func _initialize() -> void:
 		Rules.tune["auto_aim"] = float(i % 2)
 		Rules.tune["aim_pref"] = rng.randf_range(-0.2, PI)
 		Rules.tune["aim_band"] = rng.randf_range(-20.0, 300.0)
-		t.set_pattern(Pat.PATTERN_IDS[i % Pat.PATTERN_IDS.size()])
+		configure_pattern(t, Pat.PATTERN_IDS[i % Pat.PATTERN_IDS.size()])
 		t.set_attack_direction(Vector2.from_angle(rng.randf_range(-PI, PI)))
 		for j in 44:
 			pool[j].position = main.viewport_system.center() + Vector2(rng.randf_range(-650, 650), rng.randf_range(-400, 400))
@@ -87,7 +89,7 @@ func _initialize() -> void:
 		compare(t, pool, "seeded-%d" % i)
 	if args.size() < 2 or args[1] != "check":
 		run_benchmark(t)
-	var report := {"comparisons":comparisons, "mismatch_count":mismatch_count, "mismatches":mismatches, "maps":cases, "patterns":Pat.PATTERN_IDS, "finite_position_cases":true, "rng_contract":"reference and actual leave global RNG untouched", "benchmark":benchmark, "engine":Engine.get_version_info(), "display_server":DisplayServer.get_name(), "tower_sha256":FileAccess.get_sha256("res://scripts/tower.gd"), "tool_sha256":FileAccess.get_sha256("res://tools/battlefield_targeting_check.gd")}
+	var report := {"comparisons":comparisons, "mismatch_count":mismatch_count, "mismatches":mismatches, "maps":cases, "patterns":Pat.PATTERN_IDS, "finite_position_cases":true, "rng_contract":"reference and actual leave global RNG untouched", "benchmark":benchmark, "exercised_pattern_levels":exercised_pattern_levels, "engine":Engine.get_version_info(), "display_server":DisplayServer.get_name(), "tower_sha256":FileAccess.get_sha256("res://scripts/tower.gd"), "tool_sha256":FileAccess.get_sha256("res://tools/battlefield_targeting_check.gd")}
 	var file := FileAccess.open(output.path_join("results.json"), FileAccess.WRITE)
 	file.store_string(JSON.stringify(report, "\t"))
 	file.close()
@@ -95,6 +97,19 @@ func _initialize() -> void:
 	for row in benchmark:
 		print("BENCH ", JSON.stringify(row))
 	quit(1 if not mismatches.is_empty() else 0)
+
+## Independent fixture, not a gameplay card action. Every requested pattern/level is explicit.
+func configure_pattern(t: Tower, id: String, level := 3) -> void:
+	t.pattern = id
+	t.plv = level
+	t.mods.clear()
+	for mod_id in ["size", "homing", "multi"]:
+		if Pat.mod_ok(id, mod_id): t.mods[mod_id] = 3
+	t.eff = t.eff_now()
+
+func note_case(t: Tower) -> void:
+	var key := t.pattern + ":" + str(t.plv)
+	exercised_pattern_levels[key] = int(exercised_pattern_levels.get(key, 0)) + 1
 
 func make_pool() -> void:
 	var center: Vector2 = main.viewport_system.center()
@@ -113,6 +128,7 @@ func place_boundaries(t: Tower) -> void:
 		pool[48 + i].position = t.position + t.dir * (reach + [-epsilon, 0.0, epsilon][i])
 
 func compare(t: Tower, candidates: Array, label: String) -> void:
+	note_case(t)
 	comparisons += 1
 	seed(12345)
 	var expected_rng := randi()
@@ -132,7 +148,7 @@ func manual_boundaries(t: Tower) -> void:
 	Rules.tune["auto_aim"] = 1.0
 	Rules.tune["aim_pref"] = 0.1
 	Rules.tune["aim_band"] = 40.0
-	t.set_pattern("shot")
+	configure_pattern(t, "shot")
 	t.position = main.viewport_system.center() + Vector2(200, 0)
 	t.set_attack_direction(Vector2.RIGHT)
 	var near := _orb(main.viewport_system.center() + Vector2(-10, 0), 100.0)
@@ -151,6 +167,14 @@ func manual_boundaries(t: Tower) -> void:
 	for offset in [-0.0000001, 0.0, 0.0000001]:
 		Rules.tune["aim_pref"] = edge_angle + offset
 		compare(t, [near, cone_edge], "exact-cone-%s" % offset)
+	for single in [near, preferred, cone_edge]:
+		for pref in [-1.0, 0.6]:
+			Rules.tune["aim_pref"] = pref
+			for band in [-1000.0, -0.0001, 0.0, 0.0001, 40.0, 1000.0]:
+				Rules.tune["aim_band"] = band
+				compare(t, [single], "single-healthy/pref%s/band%s" % [pref, band])
+	var outside := _orb(t.position + Vector2.RIGHT * (Tower.FAR + 1.0), 100.0)
+	compare(t, [outside], "single-outside-range")
 	compare(t, [], "empty")
 	compare(t, [null], "null-only")
 	for hp in [0.0, -1.0]:
@@ -169,7 +193,7 @@ func run_benchmark(t: Tower) -> void:
 	for i in 300:
 		candidates.append(_orb(Vector2(90 + (i % 25) * 44, 105 + floori(i / 25.0) * 43), 100.0))
 	for pattern in ["shot", "spray", "wall"]:
-		t.set_pattern(pattern)
+		configure_pattern(t, pattern)
 		for i in 60:
 			guard_reference(t, candidates)
 			t._guard_pick(candidates)

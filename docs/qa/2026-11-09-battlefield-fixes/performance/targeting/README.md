@@ -1,5 +1,11 @@
 # 자동 조준의 후보 할당·두 번째 순회 제거
 
+## 2026-11-10 검사 범위 정정
+
+기존 도구는 공격방식을 바꿀 때 `set_pattern()`의 거절을 확인하지 않았다. 첫 비기본 방식 뒤 교체가 거절돼 **아래 14,527회가 실제 15종을 모두 실행했다는 설명과 방식별 headless 표기는 잘못됐다.** 기존 로그·측정값은 보존하지만, 15종 커버리지와 방식별 성능 근거로 사용하지 않는다. native 부하 도구는 새 Tower마다 한 번 설정하므로 이 결함과 별개다.
+
+검사 fixture를 실제 `pattern`·`plv`로 구성하고 호환 강화만 설정하도록 수정했다. 15종 × 레벨1/3/8의 실제 실행 횟수를 기록·검증한다. 단일 정상 구체·음수 band도 추가해 총41,564회다. [수정 검사](coverage-corrected/green/results.json)는 불일치0·exit0, [의도적 경계 오류](coverage-corrected/red/results.json)는2건을 검출해 exit1이었다. [실행 기록](coverage-corrected/green/run.json)과 [변형 기록](coverage-corrected/red/run.json)에 임시 저장 정리도 남겼다. 아래 결과는 정정 전의 역사 기록이다.
+
 제품 수정은 `scripts/tower.gd`의 `_guard_pick` 한 함수다. 각 유효·사거리 안 구체에서 전체 첫 최소 거리와 방향 선호 집합의 첫 최소 거리만 보관한다. 선호 최소값이 `전체 최소 + aim_band` 안이면 선호 후보, 아니면 전체 최소 후보를 반환한다. 음수 band의 대상 없음, strict `<` 동률 순서, 기존 거리·사거리 함수, 방향 원뿔의 `<=`, 난수 미사용을 유지한다.
 
 [`battlefield_targeting_check.gd`](../../../../../tools/battlefield_targeting_check.gd)는 교체 전 2pass·후보 배열 함수를 참조로 보존했다. 함수명과 명시적 Tower 수신자 `t.` 외에 원문과 일치하는 것을 [별도 해시](reference-source.json)로 확인했다. 참조도 동일 기능 코드의 거리·사거리 함수를 호출하므로 해당 함수 자체의 규칙을 재검증하는 검사는 아니다.
