@@ -1,6 +1,6 @@
 # 전장 사용성 수정 검증 기록
 
-**최신 전달 상태:** main8704b78 rebase 뒤 [새 전체 검증](delivery/README.md)을 통과했다. 아래 수치는 수정 과정의 보존 기록이며 최신252개 명세·55 actor 통신 결과와 구분한다.
+**최신 후속:** [상태 문구 표시 수정](performance/feedback-density/README.md) 뒤 전체 check252/86/28, native884·동일 장면1,744·release442개 단언을 통과했다. 기존 [main8704b78 rebase 전달 검증](delivery/README.md)과 아래 단계별 보존 결과를 구분한다. 고배속 지연·PERF-01·실기기/사람 과제는 미완료다.
 
 작업 진행 중. 브랜치 `codex/battlefield-usability-audit`, 기준 main `e25b6eab5b4e64cca7ee5e0089d50e149588e9b9`. [진단 50개](../../battlefield-usability-audit-2026-11-09.md), [항목별 구현·잔여 범위](../../battlefield-usability-implementation.md). 일반 조작·협동 거래·마지막 화면 수정의 증거를 아래처럼 구분한다. 실기기·사용자 과제와 후반 고배속 전체 지연은 미해결 범위다.
 
@@ -24,6 +24,7 @@
 | 후반 부하 | 16개 오브젝트·약300구체, 1/4/8배속×효과 줄이기 켬/끔, 30준비+180표본/조건. main/current 동일 도구 비교 | [측정 의미·결과](performance/README.md) |
 | 자동 조준 계산 | 기존 fixture 범위 오류 정정. 실제15종×레벨1/3/8·41,564대상/RNG 동등, 의도적 경계 오류2건 검출. 사거리 호출 내 재사용과 native6조건 개선 관찰 | [정정](performance/targeting/README.md), [후속 증거](performance/guard-range/README.md) |
 | hit 후처리 비용 | 없는 특징 호출 생략. 실제 전투885사례/10,620표본 상태·예약·RNG 동등, 의도적 조건 오류75건 검출. 혼합8배속 ABBA main CPU2.4–4.8% 감소, 모두 활성 경로는 큰 이득 없음 | [후속 증거](performance/hit-factors/README.md) |
+| 상태 문구 겹침 | 같은 스타일의 겹치는 문구만 최신 표시. PC/폰100·130%에서 중복 문구 감소·같은 상태 겹침0. 실제 재그리기·release 검사는 별도 기록 | [표시 밀도 증거](performance/feedback-density/README.md) |
 | release/입력 큐 | 격리 macOS release에서 template/debug 상태 확인. 현재8배속 main CPU100.75ms, 합성 요청 큐 대기130–145ms. 스택 추적 off는 지연 이득 없이 진단3프레임 소실돼 보류 | [export·큐·진단 증거](performance/export-runtime/README.md) |
 | 장판 추가 후보 | 동일성57개·실제 효과/RNG 일치, fallback 제거2종 검출. 짧음/밀집/이동에서 느려져 제품 반영 보류. 실제 혼합의 점 분포·조회/적용 비용도 별도 계측 | [후보 판단](performance/zones/README.md), [native 혼합](performance/zones/native-mix/README.md) |
 

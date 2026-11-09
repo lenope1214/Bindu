@@ -1,0 +1,5 @@
+{
+  "adopted": false,
+  "reason": "Native release checks passed but driver incorrectly required FileAccess source-file SHA to equal the pre-export source SHA. Export remaps scripts; source-file hashing is unavailable at the original res path. Driver must record pre-export source and PCK hashes separately.",
+  "replacement": "release-verified/"
+}

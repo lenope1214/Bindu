@@ -581,7 +581,8 @@
         "docs/qa/2026-11-09-battlefield-fixes/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/guard-range/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/README.md",
-        "docs/qa/2026-11-09-battlefield-fixes/performance/export-runtime/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/performance/export-runtime/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/README.md"
       ]
     },
     {
@@ -787,11 +788,26 @@
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/performance/export-runtime/README.md"
       ]
+    },
+    {
+      "type": "status_popup_density_verified",
+      "facts": [
+        "Read-only same-style popup draw selection preserves numeric/different-style messages, original store/lifetime/combat/camera/RNG. Only FieldView popup rendering changes.",
+        "Final native4profiles884assertions; frozen-scene actual draw2profiles1744assertions/1284callbacks; local macOS release2profiles442assertions. Behavior/UI/runtime errors0; isolated saves/projects removed.",
+        "Initial sparse-label1.13ms candidate replaced after measurement; final sparse popup CPU0.43-0.45ms vs raw0.17ms. Positive overhead remains; no final whole-frame PERF01/no-regression claim.",
+        "Final fullcheck exit0:SPEC252/gift86/parity345cases4140samples/fuzz4/continue4,8,12to13/server28. Architecture43 baseline-only unreviewed, new0.",
+        "Invalid synchronous redraw comparison and minimized render-signal wait excluded, owned processes terminal. Export source-hash remap assertion fixed separately.",
+        "Full50 goal remains active: high-speed saturation, PERF01 and physical/human gaps unresolved."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/summary.json"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "BF-49: reduce overlapping repeated floating status text in the draw layer without changing popup data, damage or RNG. Queued-input release evidence shows remaining saturation; a nonblocking user preference question on overload speed vs responsiveness is pending.",
+    "next_local_action": "BF49: remaining high-speed saturation/input queue and PERF01 whole-frame no-regression proof; overload speed policy preference remains pending. Status-popup density change locally verified and delivered in task11; do not close physical/human gaps.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },

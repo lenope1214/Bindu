@@ -1,0 +1,52 @@
+{
+  "scope": "Same frozen scene raw/selected draws. Temporary FieldView passthrough and actual popup draw counter/timing/RNG probe; no product switch introduced.",
+  "profiles": {
+    "pc100": {
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-feedback-draw-im6vvs4r",
+        "--resolution",
+        "1280x720",
+        "-s",
+        "tools/battlefield_feedback_draw_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/matched-final/pc100",
+        "1.0",
+        "pc",
+        "after"
+      ],
+      "checks": 872,
+      "failures": 0,
+      "ui_errors": 0
+    },
+    "phone130": {
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-feedback-draw-im6vvs4r",
+        "--resolution",
+        "852x393",
+        "-s",
+        "tools/battlefield_feedback_draw_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/matched-final/phone130",
+        "1.3",
+        "phone",
+        "after"
+      ],
+      "checks": 872,
+      "failures": 0,
+      "ui_errors": 0
+    }
+  },
+  "product_field_view_sha256": "de936c328f4b690e437c43075bc23cbfe47340aa0a7f20561676d72e2c5900d9",
+  "instrumented_field_view_sha256": "041a92e48fb3a18d285043eb7304a426bf3e9cfed045650fbfc53d8a746eef2f",
+  "only_patch": "raw-row guard, four QA fields and timing/counter/next-RNG instrumentation around actual popup draw block; false uses unchanged product helper",
+  "isolated_save_removed": true,
+  "temporary_project_removed": true
+}

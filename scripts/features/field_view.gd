@@ -557,6 +557,68 @@ func _draw_margins(vw: Rect2) -> void:
 	session.fx_layer.draw_rect(ar, Color(1, 1, 1, 0.08), false, 1.0)
 
 
+## 같은 문구·색·크기의 상태 글자가 겹치면 최신 것만 그린다.
+## 숫자·서로 다른 알림은 유지한다. 원본 popup/수명/RNG는 건드리지 않는다.
+## 같은 상태 문구가 겹치면 최신 것만 그린다. 원본·수명·피해 숫자는 보존한다.
+func _popup_draw_rows() -> Array:
+	var rows: Array = session.popups
+	if rows.size() < 2:
+		return rows
+	var counts := {}
+	var repeats := false
+	for row in rows:
+		var text: String = row[1]
+		if not text.is_valid_int():
+			counts[text] = counts.get(text, 0) + 1
+			repeats = repeats or counts[text] > 1
+	if not repeats:
+		return rows
+	var kept: Array = []
+	var occupied := {}
+	var metrics := {}
+	var canvas: Transform2D = session.fx_layer.get_global_transform_with_canvas()
+	for index in range(rows.size() - 1, -1, -1):
+		var row: Array = rows[index]
+		var text: String = row[1]
+		if counts.get(text, 0) < 2:
+			kept.append(row)
+			continue
+		var size := 22 if row[4] else 14
+		var metric_key := text + ("|22" if row[4] else "|14")
+		if not metrics.has(metric_key):
+			metrics[metric_key] = Rect2(Vector2(0.0, -session.ui_font.get_ascent(size)), Vector2(session.ui_font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x, session.ui_font.get_height(size)))
+		var local: Rect2 = metrics[metric_key]
+		var screen: Rect2 = (canvas * Rect2(row[0] + local.position, local.size)).grow(2.0)
+		# 화면 칸을 공유하는 문구만 비교한다. 흩어진 문구의 전수 쌍 비교를 피한다.
+		var first := Vector2i(floori(screen.position.x / 128.0), floori(screen.position.y / 64.0))
+		var last := Vector2i(floori(screen.end.x / 128.0), floori(screen.end.y / 64.0))
+		var cells: Dictionary = occupied.get(text, {})
+		var overlaps := false
+		for x in range(first.x, last.x + 1):
+			for y in range(first.y, last.y + 1):
+				for prior in cells.get(Vector2i(x, y), []):
+					var prior_rect: Rect2 = prior[0]
+					if prior[1] == row[3] and prior[2] == row[4] and prior_rect.intersects(screen):
+						overlaps = true
+						break
+				if overlaps:
+					break
+			if overlaps:
+				break
+		if overlaps:
+			continue
+		for x in range(first.x, last.x + 1):
+			for y in range(first.y, last.y + 1):
+				var cell := Vector2i(x, y)
+				if not cells.has(cell):
+					cells[cell] = []
+				cells[cell].append([screen, row[3], row[4]])
+		occupied[text] = cells
+		kept.append(row)
+	kept.reverse()
+	return kept
+
+
 func _draw_fx(preview := false) -> void:
 	var session: BinduSession = self.session
 	if not preview:
@@ -624,7 +686,7 @@ func _draw_fx(preview := false) -> void:
 			session.fx_layer.draw_circle(q, 6.0, Color(ec, 0.5 * al))
 	for p in session.particles:
 		session.fx_layer.draw_circle(p[0], p[4] * clampf(p[2] / 0.4, 0.2, 1.0), Color(p[3], p[3].a * fx_k))
-	for p in session.popups:
+	for p in _popup_draw_rows():
 		var size := 22 if p[4] else 14
 		var a := clampf(p[2] / 0.3, 0.0, 1.0)
 		# 숫자는 기본 글꼴, 한글이 든 글자(콤보·최다 피해)는 한글 글꼴

@@ -1,5 +1,7 @@
 # 최신 main rebase 뒤 전달 검증
 
+본 표는6번째 전달 snapshot이다. 이후 조준·hit·release 진단·[상태 문구 표시 후속](../performance/feedback-density/README.md)이 있다. 문구 표시 변경 뒤 전체 check252/86/28과 별도 native/release 검증을 다시 통과했다. 이전55 actor 실통신을 최신 FieldView 변경 뒤 재실행한 것으로 읽지 않는다.
+
 기준 main `8704b78688ee9be638e0ddd24eb91d54f3f56194`. v1.0.0·결과 상세·Android/iOS 빌드 설정을 보존했다. [충돌 해결](rebase-resolution.md), [출발·복구 ref](rebase-before.json), [통합 집계·제품 해시](rebased-verification.json).
 
 | 실행 | 관찰 결과 | 증거 |

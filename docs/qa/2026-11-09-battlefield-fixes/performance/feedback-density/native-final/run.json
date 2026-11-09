@@ -1,0 +1,113 @@
+{
+  "variant": "after",
+  "baseline": "ec266a6ec5d8ec09e100c60c14536537add96d83",
+  "scope": "Native SubViewport geometry and pointer behavior,16towers/~400orbs x8 fixed1/60delta. No CPU/FPS improvement claim.",
+  "profiles": {
+    "pc100": {
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-feedback-sf3imkg2",
+        "--resolution",
+        "1280x720",
+        "-s",
+        "tools/battlefield_feedback_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/native-final/pc100",
+        "1.0",
+        "pc",
+        "after"
+      ],
+      "checks": 221,
+      "failures": 0,
+      "ui_errors": 0,
+      "raw_popup_count": 121,
+      "draw_popup_count": 26,
+      "same_status_overlap_pairs_before": 775,
+      "same_status_overlap_pairs_after": 0,
+      "field_view_sha256": "de936c328f4b690e437c43075bc23cbfe47340aa0a7f20561676d72e2c5900d9"
+    },
+    "pc130": {
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-feedback-sf3imkg2",
+        "--resolution",
+        "1280x720",
+        "-s",
+        "tools/battlefield_feedback_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/native-final/pc130",
+        "1.3",
+        "pc",
+        "after"
+      ],
+      "checks": 221,
+      "failures": 0,
+      "ui_errors": 0,
+      "raw_popup_count": 121,
+      "draw_popup_count": 25,
+      "same_status_overlap_pairs_before": 1183,
+      "same_status_overlap_pairs_after": 0,
+      "field_view_sha256": "de936c328f4b690e437c43075bc23cbfe47340aa0a7f20561676d72e2c5900d9"
+    },
+    "phone100": {
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-feedback-sf3imkg2",
+        "--resolution",
+        "852x393",
+        "-s",
+        "tools/battlefield_feedback_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/native-final/phone100",
+        "1.0",
+        "phone",
+        "after"
+      ],
+      "checks": 221,
+      "failures": 0,
+      "ui_errors": 0,
+      "raw_popup_count": 121,
+      "draw_popup_count": 28,
+      "same_status_overlap_pairs_before": 936,
+      "same_status_overlap_pairs_after": 0,
+      "field_view_sha256": "de936c328f4b690e437c43075bc23cbfe47340aa0a7f20561676d72e2c5900d9"
+    },
+    "phone130": {
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-feedback-sf3imkg2",
+        "--resolution",
+        "852x393",
+        "-s",
+        "tools/battlefield_feedback_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/native-final/phone130",
+        "1.3",
+        "phone",
+        "after"
+      ],
+      "checks": 221,
+      "failures": 0,
+      "ui_errors": 0,
+      "raw_popup_count": 121,
+      "draw_popup_count": 25,
+      "same_status_overlap_pairs_before": 976,
+      "same_status_overlap_pairs_after": 0,
+      "field_view_sha256": "de936c328f4b690e437c43075bc23cbfe47340aa0a7f20561676d72e2c5900d9"
+    }
+  },
+  "isolated_save_removed": true,
+  "temporary_project_removed": true
+}
