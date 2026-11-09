@@ -1817,8 +1817,11 @@ func goal_dist(o: Orb) -> float:
 ## 자동 조준 대상 (2026-11-07): 사거리 안에서 지키는 곳에 가장 가까운 구체를 먼저.
 ## 그 구체와 지키는 곳까지 거리가 aim_band 안으로 비슷한 구체끼리는 정한 방향(±aim_pref) 쪽을 먼저, 그다음 지키는 곳에 가까운 것.
 func _guard_pick(orbs: Array) -> Orb:
-	var cand := []
-	var top := INF
+	var closest: Orb = null
+	var closest_g := INF
+	var preferred: Orb = null
+	var preferred_g := INF
+	var aim_pref := Rules.t("aim_pref")
 	for o in orbs:
 		if not is_instance_valid(o) or o.hp <= 0.0:
 			continue
@@ -1826,19 +1829,18 @@ func _guard_pick(orbs: Array) -> Orb:
 		if v.length() > reflex_range(v):
 			continue
 		var g := goal_dist(o)
-		cand.append([o, g, Rules.t("aim_pref") > 0.0 and absf(dir.angle_to(v)) <= Rules.t("aim_pref")])
-		top = minf(top, g)
-	var pick: Orb = null
-	var pick_g := INF
-	var pick_in := false
-	for c in cand:
-		if c[1] > top + Rules.t("aim_band"):
-			continue
-		if pick == null or (c[2] and not pick_in) or (c[2] == pick_in and c[1] < pick_g):
-			pick = c[0]
-			pick_g = c[1]
-			pick_in = c[2]
-	return pick
+		if closest == null or g < closest_g:
+			closest = o
+			closest_g = g
+		if aim_pref > 0.0 and absf(dir.angle_to(v)) <= aim_pref and (preferred == null or g < preferred_g):
+			preferred = o
+			preferred_g = g
+	# 각 집합의 첫 최소값만 있으면 기존의 전체 후보·두 번째 순회와 같다.
+	# 엄격한 <로 동률 입력 순서를 유지하고, 음수 band는 기존처럼 대상 없음이다.
+	var limit := closest_g + Rules.t("aim_band")
+	if preferred != null and not (preferred_g > limit):
+		return preferred
+	return closest if closest != null and not (closest_g > limit) else null
 
 
 ## 날아가는 탄의 속도 (예측 조준용). 바로 닿는 공격(분사·레이저·번개 등)은 0.

@@ -1,0 +1,240 @@
+{
+	"gore/affect/0/compact": {
+		"calls": 14778,
+		"max_points": 0,
+		"points": 0,
+		"targets": 0,
+		"us": 5135
+	},
+	"gore/affect/1-4/compact": {
+		"calls": 22578,
+		"max_points": 4,
+		"points": 29115,
+		"targets": 487974,
+		"us": 614652
+	},
+	"gore/affect/1-4/spread": {
+		"calls": 1285,
+		"max_points": 3,
+		"points": 2880,
+		"targets": 33878,
+		"us": 56552
+	},
+	"gore/path_orbs/0/compact": {
+		"calls": 14778,
+		"max_points": 0,
+		"points": 0,
+		"targets": 0,
+		"us": 2959
+	},
+	"gore/path_orbs/1-4/compact": {
+		"calls": 22578,
+		"max_points": 4,
+		"points": 29115,
+		"targets": 487974,
+		"us": 148516
+	},
+	"gore/path_orbs/1-4/spread": {
+		"calls": 1285,
+		"max_points": 3,
+		"points": 2880,
+		"targets": 33878,
+		"us": 10405
+	},
+	"gore/step/0/compact": {
+		"calls": 14930,
+		"max_points": 0,
+		"points": 0,
+		"targets": 0,
+		"us": 7102
+	},
+	"gore/step/1-4/compact": {
+		"calls": 22578,
+		"max_points": 4,
+		"points": 29115,
+		"targets": 0,
+		"us": 10587
+	},
+	"gore/step/1-4/spread": {
+		"calls": 1285,
+		"max_points": 3,
+		"points": 2880,
+		"targets": 0,
+		"us": 571
+	},
+	"rill/affect/0/compact": {
+		"calls": 50889,
+		"max_points": 0,
+		"points": 0,
+		"targets": 605377,
+		"us": 322991
+	},
+	"rill/step/0/compact": {
+		"calls": 51672,
+		"max_points": 0,
+		"points": 0,
+		"targets": 0,
+		"us": 13445
+	},
+	"rock/affect/0/compact": {
+		"calls": 1253,
+		"max_points": 0,
+		"points": 0,
+		"targets": 42513,
+		"us": 92975
+	},
+	"rock/step/0/compact": {
+		"calls": 1253,
+		"max_points": 0,
+		"points": 0,
+		"targets": 0,
+		"us": 2706
+	},
+	"smear/affect/0/compact": {
+		"calls": 618,
+		"max_points": 0,
+		"points": 0,
+		"targets": 0,
+		"us": 225
+	},
+	"smear/affect/1-4/compact": {
+		"calls": 2199,
+		"max_points": 4,
+		"points": 3230,
+		"targets": 46195,
+		"us": 81881
+	},
+	"smear/affect/1-4/spread": {
+		"calls": 18,
+		"max_points": 4,
+		"points": 58,
+		"targets": 455,
+		"us": 992
+	},
+	"smear/path_orbs/0/compact": {
+		"calls": 618,
+		"max_points": 0,
+		"points": 0,
+		"targets": 0,
+		"us": 133
+	},
+	"smear/path_orbs/1-4/compact": {
+		"calls": 2199,
+		"max_points": 4,
+		"points": 3230,
+		"targets": 46195,
+		"us": 15331
+	},
+	"smear/path_orbs/1-4/spread": {
+		"calls": 18,
+		"max_points": 4,
+		"points": 58,
+		"targets": 455,
+		"us": 170
+	},
+	"smear/step/0/compact": {
+		"calls": 629,
+		"max_points": 0,
+		"points": 0,
+		"targets": 0,
+		"us": 389
+	},
+	"smear/step/1-4/compact": {
+		"calls": 2199,
+		"max_points": 4,
+		"points": 3230,
+		"targets": 0,
+		"us": 1150
+	},
+	"smear/step/1-4/spread": {
+		"calls": 18,
+		"max_points": 4,
+		"points": 58,
+		"targets": 0,
+		"us": 9
+	},
+	"trail/affect/1-4/compact": {
+		"calls": 1866,
+		"max_points": 4,
+		"points": 3900,
+		"targets": 1403,
+		"us": 14179
+	},
+	"trail/affect/1-4/spread": {
+		"calls": 462,
+		"max_points": 4,
+		"points": 1848,
+		"targets": 826,
+		"us": 11069
+	},
+	"trail/affect/5-16/spread": {
+		"calls": 8510,
+		"max_points": 13,
+		"points": 87322,
+		"targets": 91293,
+		"us": 1290687
+	},
+	"trail/step/0/compact": {
+		"calls": 40,
+		"max_points": 0,
+		"points": 0,
+		"targets": 0,
+		"us": 42
+	},
+	"trail/step/1-4/compact": {
+		"calls": 1812,
+		"max_points": 4,
+		"points": 3846,
+		"targets": 0,
+		"us": 598
+	},
+	"trail/step/1-4/spread": {
+		"calls": 462,
+		"max_points": 4,
+		"points": 1848,
+		"targets": 0,
+		"us": 149
+	},
+	"trail/step/5-16/spread": {
+		"calls": 8510,
+		"max_points": 13,
+		"points": 87322,
+		"targets": 0,
+		"us": 2654
+	},
+	"trail/trail_orbs/1-4/compact": {
+		"calls": 1866,
+		"max_points": 4,
+		"points": 3900,
+		"targets": 1403,
+		"us": 26246
+	},
+	"trail/trail_orbs/1-4/spread": {
+		"calls": 462,
+		"max_points": 4,
+		"points": 1848,
+		"targets": 826,
+		"us": 12110
+	},
+	"trail/trail_orbs/5-16/spread": {
+		"calls": 8510,
+		"max_points": 13,
+		"points": 87322,
+		"targets": 91293,
+		"us": 594873
+	},
+	"vortex/affect/0/compact": {
+		"calls": 4344,
+		"max_points": 0,
+		"points": 0,
+		"targets": 385685,
+		"us": 466465
+	},
+	"vortex/step/0/compact": {
+		"calls": 4338,
+		"max_points": 0,
+		"points": 0,
+		"targets": 0,
+		"us": 7380
+	}
+}
