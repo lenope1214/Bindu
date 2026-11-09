@@ -1,0 +1,82 @@
+{
+  "scope": "Task14 actual native synthetic UI input, no physical-device/release/whole-frame claim",
+  "baseline_ref": "c150ce3147e6a4c85e2e57458af34d9cad99ac6a",
+  "product_files": {
+    "scripts/app/session.gd": "0fb331752fe50955428e7369dcefc5dce234ea206d81d2077ad4a48a8ab6ab6c",
+    "scripts/features/ui_shell.gd": "384a8fe01c69c5e7d7acc75f90cbfcf623a9a54c8f23eb786b32f6564a804e11",
+    "scripts/features/menu.gd": "1c528f2915836f3ad9aebc14a16a7d3499e19a2eb3cf38b66d3fe5d93867d080"
+  },
+  "protected_sources_unchanged": {
+    "scripts/features/field_view.gd": "f51e19e7078d71a97c3cfb5b844c91dcaa1e49097ecbc00a83024ea01da95299",
+    "scripts/share.gd": "21675f90ad253da6014d93fb7eaa3af96bfbd4aed8e0ee22375f4194e61c1de0",
+    "scripts/tower.gd": "fc9510c7d5463bf9610bb6c2acc4d57964122a4c12d0c5eaaced577df8e5764d"
+  },
+  "native_copied_scripts_match_checkout_except_blank_urls": true,
+  "native_qa_match_checkout": true,
+  "native_checks": 108,
+  "native_profiles": {
+    "pc100": {
+      "checks": 27,
+      "failures": 0,
+      "camera_unchanged": true,
+      "popup_inside_safe_rect": true,
+      "bar_before": "[P: (664.0, 672.0), S: (604.0, 36.0)]",
+      "bar_after": "[P: (664.0, 672.0), S: (604.0, 36.0)]"
+    },
+    "pc130": {
+      "checks": 27,
+      "failures": 0,
+      "camera_unchanged": true,
+      "popup_inside_safe_rect": true,
+      "bar_before": "[P: (479.2, 657.6), S: (785.2, 46.8)]",
+      "bar_after": "[P: (479.2, 657.6), S: (785.2, 46.8)]"
+    },
+    "phone100": {
+      "checks": 27,
+      "failures": 0,
+      "camera_unchanged": true,
+      "popup_inside_safe_rect": true,
+      "bar_before": "[P: (854.0, 626.0), S: (604.0, 44.0)]",
+      "bar_after": "[P: (854.0, 626.0), S: (604.0, 44.0)]"
+    },
+    "phone130": {
+      "checks": 27,
+      "failures": 0,
+      "camera_unchanged": true,
+      "popup_inside_safe_rect": true,
+      "bar_before": "[P: (669.2001, 609.2), S: (785.2, 57.2)]",
+      "bar_after": "[P: (669.2001, 609.2), S: (785.2, 57.2)]"
+    }
+  },
+  "full_check": {
+    "exit_code": 0,
+    "spec_features": 252,
+    "gift_assertions": 86,
+    "parity_cases": 345,
+    "parity_samples": 4140,
+    "fuzz_seeds": 4,
+    "continue_restore_waves": [
+      4,
+      8,
+      12
+    ],
+    "continue_reached_wave": 13,
+    "server_passed": 28,
+    "log_sha256": "f0ac4b10c6d392738bb2fa39e851e60642745e1c0f7b65d8cb82a839947b65fd"
+  },
+  "architecture": {
+    "baseline_only_unreviewed": 43,
+    "new_unreviewed": 0,
+    "whole_one_time_audit_pass": false
+  },
+  "isolated_cleanup": {
+    "isolated_save_removed": true,
+    "temporary_project_removed": true
+  },
+  "evidence_sha256": {
+    "baseline-verified/run.json": "919eab2c663a768e3dfa23d2237f67b327329504670204e7ebc1081f298a5f1e",
+    "product-final-native/run.json": "7c088412f8867ea62843ecee029fc82d2c24648ca46a039ea382460b4d6d9d7c",
+    "run_native.py": "2d1d15c679cb8de5ab62f8fea4cf6284bcf9f3e7b0c9472a518250e9ab2c9a0d"
+  },
+  "goal_complete": false
+}

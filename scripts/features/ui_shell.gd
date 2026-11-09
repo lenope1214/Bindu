@@ -270,17 +270,16 @@ func _build_ui() -> void:
 	session.bar_box = bar
 	bar.theme = session.card_dock.controls_theme
 	# 글 대신 아이콘 (이름·단축키는 올리면 말풍선)
-	session.fx_pick = OptionButton.new()
-	for i in BinduSession.FX_DPS.size():
-		session.fx_pick.add_item("효과 %d%%" % roundi(maxf(0.15, 1.0 - BinduSession.FX_DPS[i]) * 100))
-	session.fx_pick.select(Meta.fx_dps)
+	session.fx_pick = MenuButton.new()
+	session.fx_pick.flat = false
 	session.fx_pick.custom_minimum_size = Vector2(104, 36)
 	session.fx_pick.focus_mode = Control.FOCUS_NONE
-	session.fx_pick.tooltip_text = "피해를 적게 주는 오브젝트의 탄·장판 진하기\n(가장 센 오브젝트와 비교해 약할수록 이 값까지 옅어짐. 센 오브젝트는 그대로)"
-	session.fx_pick.item_selected.connect(func(i):
-		Meta.fx_dps = i
-		session.progression_system._save_best())
+	session.fx_pick.tooltip_text = "장식 후광·작은 입자 줄이기와 약한 공격의 진하기를 각각 설정합니다"
+	session.fx_pick.about_to_popup.connect(session.menu_system._refresh_fx_menu)
+	session.fx_pick.about_to_popup.connect(func(): session.menu_system._fit_fx_popup.call_deferred())
+	session.fx_pick.get_popup().id_pressed.connect(session.menu_system._on_fx_menu_pick)
 	bar.add_child(session.fx_pick)
+	session.menu_system._refresh_fx_menu()
 	session.mute_btn = Button.new()
 	session.mute_btn.custom_minimum_size = Vector2(44, 36)
 	session.mute_btn.pressed.connect(func(): session.menu_system._toggle_sound_pop())  # 작은 소리 창 (켜기·끄기·음량). M은 바로 켜기·끄기

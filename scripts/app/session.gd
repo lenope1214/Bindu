@@ -137,7 +137,7 @@ var sim_id := 0  # 계산 조각 번호: 조각 안에서 변하지 않는 값(�
 var prof_on := false  # tools/perf.gd: 부분별 계산 시간 기록
 var fx_layer: Node2D  # 피해 숫자·파편 (맨 위)
 const FX_DPS := [0.0, 0.4, 0.7, 0.9]  # Meta.fx_dps별로 피해 몫이 작은 오브젝트 효과를 옅게 하는 세기
-var fx_pick: OptionButton  # 아래 버튼 줄: 그 세기 고르기
+var fx_pick: MenuButton  # 아래 버튼 줄: 장식 줄이기·약한 공격 진하기를 각각 설정
 var popups: Array = []  # [위치, 글자, 남은 시간, 색, 큰 글씨]
 var particles: Array = []  # [위치, 속도, 남은 시간, 색, 크기]
 var camera: Camera2D

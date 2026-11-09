@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/README.md",
-      "bytes": 10826,
-      "sha256": "b07752b8c052a145749a55650b8e74dc5d4f4ae89fe5a79e8cf41f640968d0d7",
+      "bytes": 11295,
+      "sha256": "9c18913903d09c090f13042a80b2219878f16eeb7592f22ce4b0f3f8ecf6bad4",
       "published": true
     },
     {
@@ -3072,6 +3072,744 @@
       "path": "docs/qa/2026-11-09-battlefield-fixes/flow/phone.log",
       "bytes": 3061,
       "sha256": "c996cb61aefe2bad2fdf724ce640087596c4fb3589666ed4f9f367a5d8bc640d",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/README.md",
+      "bytes": 5443,
+      "sha256": "3e3065ddeda70c928d38d7f939e15f6897aa4438c735c3afdfb6b3540b839757",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/architecture.log",
+      "bytes": 2559,
+      "sha256": "56100687ac26ea2044943f0670a16da78fc0ba85752a5b3a38c0845f2a884293",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline/import.log",
+      "bytes": 11148,
+      "sha256": "48fd7e56f69fbe29981396fe0e99d9287db9baa8c0e60835cbd4c8ce0084b45d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline/pc100/native.log",
+      "bytes": 478,
+      "sha256": "5a2e1cf4b0b560ba4b46f95443d1b570977a8b046e3fb3db0d64a90d68295a47",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline/run.json",
+      "bytes": 7083,
+      "sha256": "6942c56ecd59598784ab75d161cc1063e29d298cb733b0bd72ad69c77050ccbb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-final/import.log",
+      "bytes": 11148,
+      "sha256": "48fd7e56f69fbe29981396fe0e99d9287db9baa8c0e60835cbd4c8ce0084b45d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-final/pc100/effects-menu.png",
+      "bytes": 110607,
+      "sha256": "f49ef827868680831a8a588195c4f3c5eec5d521fa435b59c1402cd2ea3c6cd8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-final/pc100/native.log",
+      "bytes": 882,
+      "sha256": "e2b49f32a0762ec2bec3255f11be8223749a64a38ecba435d44fd20c1d1513d4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-final/pc100/results.json",
+      "bytes": 705,
+      "sha256": "6c088722c85a4accba1f1ed87e2584e0131814caa87566e95cc741814332077a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-final/pc100/settings-effects.png",
+      "bytes": 118937,
+      "sha256": "3fe462030403074e1c698efeb9fc00004b26e2e48aaab3601a2f77718ff210e9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-final/run.json",
+      "bytes": 7083,
+      "sha256": "6942c56ecd59598784ab75d161cc1063e29d298cb733b0bd72ad69c77050ccbb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-native/import.log",
+      "bytes": 11148,
+      "sha256": "48fd7e56f69fbe29981396fe0e99d9287db9baa8c0e60835cbd4c8ce0084b45d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-native/pc100/effects-menu.png",
+      "bytes": 106976,
+      "sha256": "081304e7661566839cafab6f78269e5fb93514200918978cd344d2ccddd10ed2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-native/pc100/native.log",
+      "bytes": 834,
+      "sha256": "bfbeb05ad54837fd9b82f93b9352b27c88ccf678c7bf3b27625c3dcca065a448",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-native/pc100/results.json",
+      "bytes": 704,
+      "sha256": "4236d90c7a3391ab84146d15e2df0aea4d3352bbcc16ba0e2721bb7a2afb0e92",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-native/pc100/settings-effects.png",
+      "bytes": 119521,
+      "sha256": "8caab1f7458ed56df0e3acbd0f1ac1b0eb190602a8d9dcebbef6323f549928bf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-native/phone130/effects-menu.png",
+      "bytes": 101485,
+      "sha256": "238dbc2452e5e18675aa1f0dd67484efe8c15a57f71ec92a4d706241b60a66c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-native/phone130/native.log",
+      "bytes": 834,
+      "sha256": "bfbeb05ad54837fd9b82f93b9352b27c88ccf678c7bf3b27625c3dcca065a448",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-native/phone130/results.json",
+      "bytes": 687,
+      "sha256": "4d023c50daa63724edf4281dba3d8bd07a1c58f723d31ee128e5cfa15c1bafdc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-native/phone130/settings-effects.png",
+      "bytes": 92001,
+      "sha256": "2bf026f6e459fcd940530292e24d9f47808d4cf57f8c19c42db5d5ca13f04ece",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-native/run.json",
+      "bytes": 8939,
+      "sha256": "a7840b89f8b19c435c9e24c1e048e6e4b0ab376a6f8a686f7684d3803ee43152",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-v2/import.log",
+      "bytes": 11148,
+      "sha256": "48fd7e56f69fbe29981396fe0e99d9287db9baa8c0e60835cbd4c8ce0084b45d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-v2/pc100/effects-menu.png",
+      "bytes": 98675,
+      "sha256": "28f0788c83876cc17f05db6e64e4d5561cb78e1f2a9257982e5cd3ee4553907f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-v2/pc100/native.log",
+      "bytes": 751,
+      "sha256": "6a9dcbfe624dd986ddff9c22b35c5327d383edd1c7a1fe04a88fd65580cf0778",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-v2/pc100/results.json",
+      "bytes": 705,
+      "sha256": "6c088722c85a4accba1f1ed87e2584e0131814caa87566e95cc741814332077a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-v2/pc100/settings-effects.png",
+      "bytes": 115298,
+      "sha256": "c5faf34195a56a25362a2a131956c1922ec801c272d249dcdb7d92d9fe26aca8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-v2/run.json",
+      "bytes": 7083,
+      "sha256": "6942c56ecd59598784ab75d161cc1063e29d298cb733b0bd72ad69c77050ccbb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-verified/import.log",
+      "bytes": 11148,
+      "sha256": "48fd7e56f69fbe29981396fe0e99d9287db9baa8c0e60835cbd4c8ce0084b45d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-verified/pc100/effects-menu.png",
+      "bytes": 73815,
+      "sha256": "c146fa0594f70b9c55aa68348a4bb9e159c6539f1239990a6ba8744f969ea9a7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-verified/pc100/native.log",
+      "bytes": 909,
+      "sha256": "4529628e89c9102fff1032808dd26293c921d79944ab501ae76ab685861dbfc3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-verified/pc100/results.json",
+      "bytes": 791,
+      "sha256": "c29be3b199b9fb41c51646f1966a8949c45b56c6e7afbfdfacea40e19714fad7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-verified/pc100/settings-effects.png",
+      "bytes": 116812,
+      "sha256": "9edbd148fc36d2069b68fce4d48d5993f7c44cb9528983086664de5b38a53d5d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-verified/phone130/effects-menu.png",
+      "bytes": 54330,
+      "sha256": "f783c6e27c39d2ddd7d683d581c45e73a4354eab91ddf96f23d24c4795076ffb",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-verified/phone130/native.log",
+      "bytes": 1040,
+      "sha256": "e3eb17a23b50a329f8c13ea006e884582517b6d4e35769ab9ab90c9db376c043",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-verified/phone130/results.json",
+      "bytes": 776,
+      "sha256": "96c48620a65fb9e6cb477b7da01596f6e7477c85183b3a959aae29d6712d3120",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-verified/phone130/settings-effects.png",
+      "bytes": 92116,
+      "sha256": "72ddb5a347edd046c7516669749f2b0b4769c6c226afabec4fa038d3bcab29ef",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/baseline-verified/run.json",
+      "bytes": 9464,
+      "sha256": "919eab2c663a768e3dfa23d2237f67b327329504670204e7ebc1081f298a5f1e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/final-full-check.log",
+      "bytes": 871,
+      "sha256": "f0ac4b10c6d392738bb2fa39e851e60642745e1c0f7b65d8cb82a839947b65fd",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/full-check.log",
+      "bytes": 871,
+      "sha256": "411d052f46b8988082ef205d30cfa6de4365e4da81ab50a8218ac90cadfe9634",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/import.log",
+      "bytes": 11148,
+      "sha256": "48fd7e56f69fbe29981396fe0e99d9287db9baa8c0e60835cbd4c8ce0084b45d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/pc100/effects-menu.png",
+      "bytes": 105375,
+      "sha256": "1cc24a83da52a34ab5d1285cde3d066ed4d26cb7d750dda6f5ff4d04d7e945ed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/pc100/effects-reduced.png",
+      "bytes": 104930,
+      "sha256": "4bdedd3d0f217d9dc5c2164328ad84a4d5b557d8e159eae759442d0ec6824f1e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/pc100/native.log",
+      "bytes": 1613,
+      "sha256": "5727121c2e106c8268366c61d4848d0a27c3684d1dc5953dbc9e232d8fcecb34",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/pc100/results.json",
+      "bytes": 881,
+      "sha256": "3209eb55b46ddc9bf939328c5d2171c11bd080446f8fd0c127f18778e9b9150b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/pc100/settings-effects.png",
+      "bytes": 114565,
+      "sha256": "d956e34f2c07b83ef50925e6188f29bc314a49fb4a9991e7006d8d51a31a9368",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/pc130/effects-menu.png",
+      "bytes": 162167,
+      "sha256": "4326fc134c4e5592c1d80d74cf036a635c6febe3fb93e67c5afd874504f58f96",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/pc130/effects-reduced.png",
+      "bytes": 162603,
+      "sha256": "ddb0ab703907cc1fe1c06b5bbaae94cb26c1b970019d05e2253be63c710b26ae",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/pc130/native.log",
+      "bytes": 1744,
+      "sha256": "f7c2b2d3045bd66c9ec9b1c0d6399be9ea6449b05bdd3e4b03324bb0f26382af",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/pc130/results.json",
+      "bytes": 881,
+      "sha256": "65e131b6ee34d0c856d98c23255789880d17371827348df7d9d977535440369a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/pc130/settings-effects.png",
+      "bytes": 115831,
+      "sha256": "6f90c956b847180537cf6d477cb13f304b35098f26856f0a0d26da1878c8e39d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/phone100/effects-menu.png",
+      "bytes": 80582,
+      "sha256": "a96798fc408dcb2c59866dd7505f448e18a10dcb6df5d072d51c2778fb2b8410",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/phone100/effects-reduced.png",
+      "bytes": 81514,
+      "sha256": "9eb76752980e2bfd75c10dacb877e3970931446cbc17a5847a96d6933e2d10e0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/phone100/native.log",
+      "bytes": 1744,
+      "sha256": "f7c2b2d3045bd66c9ec9b1c0d6399be9ea6449b05bdd3e4b03324bb0f26382af",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/phone100/results.json",
+      "bytes": 856,
+      "sha256": "75af71ddc267101f271267d72488ca547e74381ade497af73f09a37ef4737695",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/phone100/settings-effects.png",
+      "bytes": 74282,
+      "sha256": "202a18eacd916be4086d17eccbb84e7628617008b9fbe20d484360625e7fb74b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/phone130/effects-menu.png",
+      "bytes": 97439,
+      "sha256": "8efcab4f31e5fde3aabfc4cb660ca4575e7ccd5c75e6e38dbcd99d46c4bdc2a4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/phone130/effects-reduced.png",
+      "bytes": 98903,
+      "sha256": "9118c3ddfc82ef2d66e1b5f43f8b07abd7647be188c69007faed35c83bae811f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/phone130/native.log",
+      "bytes": 1744,
+      "sha256": "f7c2b2d3045bd66c9ec9b1c0d6399be9ea6449b05bdd3e4b03324bb0f26382af",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/phone130/results.json",
+      "bytes": 864,
+      "sha256": "f08f24931cfc2a596882ad6145e3765c7e3529639d0c3f6b9fbc77bba9e9b397",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/phone130/settings-effects.png",
+      "bytes": 92137,
+      "sha256": "fce344df8ca4493bd50405b61be73cfe54bc0a25972c55fbceed7b61c55ff280",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final/run.json",
+      "bytes": 11984,
+      "sha256": "516584d215a357c1baa2b6cbe55e3c2e05415882d7f34f4127c7b5d13be6d4e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/import.log",
+      "bytes": 11148,
+      "sha256": "48fd7e56f69fbe29981396fe0e99d9287db9baa8c0e60835cbd4c8ce0084b45d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/pc100/effects-button.png",
+      "bytes": 61962,
+      "sha256": "57d19a3724a675f8db68cbb9e76e454902ad6dd664fa6b6e6800d8fb049b3cce",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/pc100/effects-menu.png",
+      "bytes": 76177,
+      "sha256": "4b83dc3c19b06d6c8afb2a947dc1c0080372f80353e0854dfa6f4fde16c6b47b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/pc100/effects-reduced-button.png",
+      "bytes": 61936,
+      "sha256": "5b702196fa7bc67b95a2cfce2a7074207d50b1a37562ee19d43234511be5021c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/pc100/effects-reduced.png",
+      "bytes": 75833,
+      "sha256": "867636f91d5fb73ddd375cdce033685aee7fd3a3502f974ca72923cb867475f1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/pc100/native.log",
+      "bytes": 2032,
+      "sha256": "f8dda608bdfc71bc25c1a46d1dfc9553173dd9410a522123524278cda5f01dad",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/pc100/results.json",
+      "bytes": 967,
+      "sha256": "fbe86920ca6d1dc996cf0309491b6c07669173d43d59bcc88de7bf7046947f06",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/pc100/settings-effects.png",
+      "bytes": 115315,
+      "sha256": "e3e2f7f1fa353bd06731e0281f6b18656191cf0acd2ddd12db845831ca4615e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/pc130/effects-button.png",
+      "bytes": 72552,
+      "sha256": "1fb611a04bb2e871dae376f8478f2e7da5b45f0bbe3cd0c7c86712e7d7ed9073",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/pc130/effects-menu.png",
+      "bytes": 97670,
+      "sha256": "a8da14951919135aa44b85b44d089743858840ae217cbd23416f5431951004a3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/pc130/effects-reduced-button.png",
+      "bytes": 72903,
+      "sha256": "0301f0901de2c38cc7b4a6a5e0304039a76779c8659071f20d5875b29181bb18",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/pc130/effects-reduced.png",
+      "bytes": 97237,
+      "sha256": "fc6724b378ebb2eff78886a8496ac8e4cfa113889740e7f44ca5050e969cc118",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/pc130/native.log",
+      "bytes": 2032,
+      "sha256": "f8dda608bdfc71bc25c1a46d1dfc9553173dd9410a522123524278cda5f01dad",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/pc130/results.json",
+      "bytes": 967,
+      "sha256": "91b00cc9aad4af1cd05937bcd7a672ea73ad9bd94627a7af62271969ae94cee8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/pc130/settings-effects.png",
+      "bytes": 114964,
+      "sha256": "ddc7dc04b61c63d2a5af692af1154618e76da19f5a197372acd2ca0f3c3b7bc0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/phone100/effects-button.png",
+      "bytes": 36315,
+      "sha256": "0ac909078d9e69f2a55b5e63992468fbbdd5762b18f4b85c9fdc814800c364ee",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/phone100/effects-menu.png",
+      "bytes": 46488,
+      "sha256": "4930cb7958ad176a9e1cef41e1a1a0d5bb911c28e764ad655269e3a2f4b94658",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/phone100/effects-reduced-button.png",
+      "bytes": 37792,
+      "sha256": "7ece8d2ff53d3e22771ab6f622e4b931f185368838832255ef561bc5c0673b59",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/phone100/effects-reduced.png",
+      "bytes": 64375,
+      "sha256": "fadb8fb414b10266787771f76a95655c71e617df623076965824d85c83ecdd0e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/phone100/native.log",
+      "bytes": 2032,
+      "sha256": "f8dda608bdfc71bc25c1a46d1dfc9553173dd9410a522123524278cda5f01dad",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/phone100/results.json",
+      "bytes": 943,
+      "sha256": "5aed6fc35e27678773949f16861cc7b4b3d0d8128617637b5905912b889949f3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/phone100/settings-effects.png",
+      "bytes": 74093,
+      "sha256": "1debbdf438712d3aefd6d43aae95c984a69fb0bf3862d014b71ec4a7fd498872",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/phone130/effects-button.png",
+      "bytes": 40975,
+      "sha256": "09b426bd0164730b5194dc54f7e3d80cad2c4b60e17e78459a884e4d3dd2accb",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/phone130/effects-menu.png",
+      "bytes": 57003,
+      "sha256": "cf2ca506b5416946566257ff6b94662d55b6ee9dd0cb4c060f799171f572aac7",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/phone130/effects-reduced-button.png",
+      "bytes": 43212,
+      "sha256": "34bc29a39d8c633236912104a586c30f7125cd1544596cb3ff4d7c245ba18e97",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/phone130/effects-reduced.png",
+      "bytes": 60249,
+      "sha256": "a2405d074afd8aeebaeb13cac8cec46167b5f9a9e82f0c9dc9010404fd173513",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/phone130/native.log",
+      "bytes": 2032,
+      "sha256": "f8dda608bdfc71bc25c1a46d1dfc9553173dd9410a522123524278cda5f01dad",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/phone130/results.json",
+      "bytes": 951,
+      "sha256": "9a07d31ce20f669f1f14422e4f303a3aadcb3d3cafeca32d711c8a2af274cb85",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/phone130/settings-effects.png",
+      "bytes": 91584,
+      "sha256": "db959eec587fd292053b0fa47e8862af8be15ca6ae805620023a0312e8662af6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-final-native/run.json",
+      "bytes": 12699,
+      "sha256": "7c088412f8867ea62843ecee029fc82d2c24648ca46a039ea382460b4d6d9d7c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-full-check.log",
+      "bytes": 871,
+      "sha256": "d07190b38be3e12ce33d502d9a42200192d1349ebb538da872e8715011b9df52",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-native/import.log",
+      "bytes": 11148,
+      "sha256": "48fd7e56f69fbe29981396fe0e99d9287db9baa8c0e60835cbd4c8ce0084b45d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-native/pc100/effects-menu.png",
+      "bytes": 116110,
+      "sha256": "0fd35b5e71ec1f22dbdd4e4bba96e27ca315deffb273b15fe1a01757a87d725e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-native/pc100/effects-reduced.png",
+      "bytes": 136359,
+      "sha256": "e436c72deda6a7c2e3b998d66600ce06cdea4c36649e20564663f4abb17348a5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-native/pc100/native.log",
+      "bytes": 1551,
+      "sha256": "777a15ce49896d9aa7e24135e7f4c0e18e40eb88f4eeae4569c0e7d1e8f0398d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-native/pc100/results.json",
+      "bytes": 855,
+      "sha256": "130d5eef1af0285d9d8e4c420893cadf614ed1b881ecae161a721c3a1bbebc44",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-native/pc100/settings-effects.png",
+      "bytes": 116235,
+      "sha256": "0b790024e56d629c810717c36fe05f57a04c32f7e4dfdb0b1cf0d67590cbba7b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-native/run.json",
+      "bytes": 7078,
+      "sha256": "066ebb24c48d2a8addf6c0a4d5b14b7a4435992d42f5a1cd5a6990cba0dd3def",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verification.json",
+      "bytes": 2953,
+      "sha256": "c62c3ada73f025bcb791e9a43e8319ec628f3e7b7f4ecc7bf5e2527723d96454",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/import.log",
+      "bytes": 11148,
+      "sha256": "48fd7e56f69fbe29981396fe0e99d9287db9baa8c0e60835cbd4c8ce0084b45d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/pc100/effects-menu.png",
+      "bytes": 77625,
+      "sha256": "08dc63df7827a43e2384539fea5ce228936af8a88757304351cc346546721e42",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/pc100/effects-reduced.png",
+      "bytes": 77151,
+      "sha256": "d459b0893eb58d65c6a1b672aab759a4058d260f626b8b86d381724b61c2caf9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/pc100/native.log",
+      "bytes": 1971,
+      "sha256": "ea4a5c5823c59c24b8f03f3b8db2b30c5ae95a1b81f97929ab0d760ee5f0faec",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/pc100/results.json",
+      "bytes": 967,
+      "sha256": "cc70d545259674cbc06cc0aff05ae2b06d06f567b6815efe6b88c39a87368843",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/pc100/settings-effects.png",
+      "bytes": 115437,
+      "sha256": "dfa3292713e6dddc3f600c7286757c5dfbc2a6f3dac6d01451d534ba19a962eb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/pc130/effects-menu.png",
+      "bytes": 103557,
+      "sha256": "49b663a135785bdcc2ca3b41b48926d5a3d3eed7b3e0e98375933b931ee7f884",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/pc130/effects-reduced.png",
+      "bytes": 102953,
+      "sha256": "fd4ebd184c36c5dea4ce50bacb570ef078ea1e7112c39c96b15f0580aecdaa09",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/pc130/native.log",
+      "bytes": 1840,
+      "sha256": "4e2a5b5ec106b2109e3b66a1ac46c67bd3993df4009968fe6cfa0f7b79846257",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/pc130/results.json",
+      "bytes": 967,
+      "sha256": "6b17eeb6ec334fef4c7dead385911bfb74d04f02a3df788a55028791e807dcb4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/pc130/settings-effects.png",
+      "bytes": 115538,
+      "sha256": "cfda0797479c17de51130eb18a68401be1fa285685b966a4cbba758e051d346b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/phone100/effects-menu.png",
+      "bytes": 46726,
+      "sha256": "8ad73d86d561c5c958d90be12372807afbbba5231bc2eb90ba104a532407c241",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/phone100/effects-reduced.png",
+      "bytes": 64106,
+      "sha256": "b0c0b282bdd8221d0fea4426355750fd992f3fbc36f291c9994a04f1dde6baf4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/phone100/native.log",
+      "bytes": 1971,
+      "sha256": "ea4a5c5823c59c24b8f03f3b8db2b30c5ae95a1b81f97929ab0d760ee5f0faec",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/phone100/results.json",
+      "bytes": 943,
+      "sha256": "bcc8f89c84b3c8c2e28d8419d46c40e0323cbf04ee6a8b58fffde6d763afc313",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/phone100/settings-effects.png",
+      "bytes": 73446,
+      "sha256": "a05f0a3d073aafeaa1ef8fa9e64924b5047c49b6a2b7aaefeb5a2a4936abe691",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/phone130/effects-menu.png",
+      "bytes": 59319,
+      "sha256": "dd8d77966100b9f46192b1e04878a82d7e81a388fdfec1f996050d558dd331d2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/phone130/effects-reduced.png",
+      "bytes": 62281,
+      "sha256": "252bfebf9d4bed023f1018cd444164e6113b3cd61c447fec619f0fe2274e0957",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/phone130/native.log",
+      "bytes": 1971,
+      "sha256": "ea4a5c5823c59c24b8f03f3b8db2b30c5ae95a1b81f97929ab0d760ee5f0faec",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/phone130/results.json",
+      "bytes": 951,
+      "sha256": "2eb5bdcd29ff2b4a8a19f2373a145d219186b9854e422a199be8f39d1a508b00",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/phone130/settings-effects.png",
+      "bytes": 91794,
+      "sha256": "4e37cd53904cbe047db36dc6e2cea7a24938dc5b7c11795f88a3791dbb80da53",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verified/run.json",
+      "bytes": 12699,
+      "sha256": "cf297cd06f56eccdf5e75eb938c66e0ef3e005a91d2f1ac25e5c7c81d4c20328",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/fx-controls/run_native.py",
+      "bytes": 3573,
+      "sha256": "2d1d15c679cb8de5ab62f8fea4cf6284bcf9f3e7b0c9472a518250e9ab2c9a0d",
       "published": true
     },
     {

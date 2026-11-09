@@ -1,0 +1,33 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+ok   UI-52 기존 기본값: 장식 켬·약한 공격30%
+ok   UI-52 공통 버튼 표면·메뉴 열기 표시 유지
+ok   UI-52 옵션 줄에서 효과 메뉴가 실제 입력으로 열림
+ok   UI-52 효과 메뉴 전체가 화면 안에 표시
+ok   UI-52 메뉴가 노치·홈 막대를 제외한 UI 안전 영역 안에 표시
+ok   UI-52 효과 줄이기는 진하기와 구분되는 체크 항목
+ok   UI-52 효과 줄이기는 진하기를 유지하고 한 번만 적용·닫힘
+ok   UI-52 빠른 버튼·설정 스위치 즉시 동기화
+ok   UI-52 진하기 0 선택은 효과 줄이기를 보존
+ok   UI-52 진하기 1 선택은 효과 줄이기를 보존
+ok   UI-52 진하기 3 선택은 효과 줄이기를 보존
+ok   UI-52 진하기 2 선택은 효과 줄이기를 보존
+ok   UI-52 재개방 시 두 설정의 체크 상태 일치
+ok   UI-52 Esc는 빠른 메뉴만 닫고 전투 정지를 유발하지 않음
+ok   UI-52 방향키로 효과 줄이기 항목 탐색
+ok   UI-52 키보드로 줄이기 해제·진하기 보존·설정 동기화
+ok   UI-52 독립된 두 설정 저장·복원
+ok   UI-52 정지 화면 진입
+ok   UI-52 정지 화면 설정 버튼 존재
+ok   UI-52 정지 화면 설정 실제 입력·정지 유지
+ok   UI-52 설정의 효과 줄이기 스위치 존재
+ok   UI-52 설정 실제 클릭/터치가 효과 줄이기 전환·정지 유지
+ok   UI-52 설정 변경 뒤 빠른 메뉴 체크 상태 일치
+ok   UI-52 효과 줄임 상태로 재개방해도 UI 안전 영역 유지
+ok   UI-52 설정 조작 전후 전장 카메라 불변
+ok   UI-52 효과 줄이기 상태 표시 전후 옵션 줄 크기·위치 불변
+ok   UI-52 전투·선택 횟수·배속 보존과 명시적 재개
+FX CONTROLS failures=0 ui=0
+WARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

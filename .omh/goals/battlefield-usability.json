@@ -584,7 +584,8 @@
         "docs/qa/2026-11-09-battlefield-fixes/performance/export-runtime/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/README.md",
-        "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/fx-controls/README.md"
       ]
     },
     {
@@ -837,11 +838,25 @@
         "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-verification.json"
       ]
+    },
+    {
+      "type": "effects_controls_verified",
+      "facts": [
+        "Quick effects menu separates decorative reduction from weak-attack opacity; Settings checkbox/menu/button stay synchronized without changing defaults or opacity values.",
+        "Original phone popup extended38logical units into home inset. Final popup fits existing safe UI bounds; option bar and camera unchanged.",
+        "Final native PC/phone100/130:4profiles108assertions, failures0; mouse/touch/arrow/Enter/Esc/settings/persistence and WAVE8x state preserved. Current copied product/QA hashes match checkout; isolated cleanup verified.",
+        "Final fullcheck exit0:SPEC252/gift86/parity345cases4140samples/fuzz4/continue4,8,12to13/server28. Architecture43 baseline-only, new0.",
+        "Physical/human tasks, internet transport and high-speed saturation/PERF01 remain open; prior release and full UI cohorts remain stage-specific."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/fx-controls/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verification.json"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "Re-profile remaining battle CPU and inspect practical access to low-effects control. Keep full50 scope, physical/human tasks, high-speed input queue and PERF01 open; speed-policy preference remains pending.",
+    "next_local_action": "Review remaining BF44-50 evidence and high-speed overload policy without treating synthetic input as physical proof. Run remaining-user-tasks.md when devices and human participants become available; full50 goal remains active.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },

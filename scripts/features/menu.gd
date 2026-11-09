@@ -7,6 +7,7 @@ var volume_rows: Array = []  # 음량 줄 전부 [이름, 슬라이더, 글, get
 var sound_pop: Control  # 오른쪽 아래 소리 버튼을 누르면 뜨는 작은 창 (바깥 막 + 창)
 var sound_panel: PanelContainer
 var sound_toggle: CheckButton  # 작은 창의 소리 켜기·끄기
+var fx_low_toggle: CheckButton  # 빠른 효과 메뉴와 설정 창의 장식 줄이기 상태를 맞춘다
 var account_label: Label  # 설정: 계정 상태 한 줄
 var map_label: Label  # 준비 화면 맵 카드 아래 설명 (고른 맵 이름·규칙, 작은 설명은 meta "sub")
 var map_cards: Array[Button] = []  # 준비 화면 맵 카드 (Meta.MAP_IDS 순서, _draw_map_card)
@@ -378,7 +379,9 @@ func _build_menu(root: Control) -> void:
 			"skill_auto": cb.button_pressed = Meta.skill_auto
 			"pause_on_focus_loss": cb.button_pressed = Meta.pause_on_focus_loss
 			"skill_aim_slow": cb.button_pressed = Meta.skill_aim_slow
-			"fx_low": cb.button_pressed = Meta.fx_low
+			"fx_low":
+				fx_low_toggle = cb
+				cb.button_pressed = Meta.fx_low
 			"rank_on": cb.button_pressed = Meta.rank_on
 		cb.focus_mode = Control.FOCUS_ALL
 		cb.toggled.connect(func(on):
@@ -391,7 +394,7 @@ func _build_menu(root: Control) -> void:
 				"skill_auto": Meta.skill_auto = on
 				"pause_on_focus_loss": Meta.pause_on_focus_loss = on
 				"skill_aim_slow": Meta.skill_aim_slow = on
-				"fx_low": Meta.fx_low = on
+				"fx_low": _set_fx_low(on)
 				"rank_on":
 					Meta.rank_on = on
 					session.hud_system._rank_update()
@@ -1158,9 +1161,51 @@ func _toggle_records() -> void:
 	session.records_panel.text = session.patchlog_system._kr_keep("\n".join(lines))
 
 
-# ---------- 온라인 ----------
+## 전장 빠른 메뉴: 장식 생략과 공격 진하기를 독립적으로 고른다.
+func _refresh_fx_menu() -> void:
+	var popup := session.fx_pick.get_popup()
+	popup.clear()
+	popup.add_check_item("효과 줄이기 (후광·작은 입자)", 0)
+	popup.set_item_checked(0, Meta.fx_low)
+	popup.set_item_tooltip(0, "장식 후광과 작은 입자를 줄입니다. 피해 숫자와 공격 범위는 유지합니다.")
+	popup.add_separator("약한 공격 진하기")
+	for i in BinduSession.FX_DPS.size():
+		var percent := roundi(maxf(0.15, 1.0 - BinduSession.FX_DPS[i]) * 100)
+		popup.add_radio_check_item("최소 %d%%" % percent, i + 1)
+		var index := popup.item_count - 1
+		popup.set_item_checked(index, Meta.fx_dps == i)
+		popup.set_item_tooltip(index, "피해가 작은 오브젝트의 탄·장판을 이 진하기까지 옅게 합니다. 가장 센 오브젝트는 원래 진하기를 유지합니다.")
+	session.fx_pick.text = "효과 줄임 ▾" if Meta.fx_low else "효과 ▾"
 
-## 서버 응답(켤 때, 시작 화면으로 돌아올 때): 시작 화면이면 받은 패치를 바로 적용하고, 새 버전·공지를 띄운다.
+
+func _set_fx_low(on: bool) -> void:
+	Meta.fx_low = on
+	if is_instance_valid(fx_low_toggle):
+		fx_low_toggle.set_pressed_no_signal(on)
+	_refresh_fx_menu()
+
+
+func _fit_fx_popup() -> void:
+	var popup := session.fx_pick.get_popup()
+	if not popup.visible:
+		return
+	# Window의 화면 끝 보정은 폰의 노치·홈 막대 여백을 모른다. 최종 크기로 UI 안전 영역에 맞춘다.
+	var bounds := session.ui_root.get_global_rect()
+	var last := (bounds.end - Vector2(popup.size)).max(bounds.position)
+	popup.position = Vector2i(Vector2(popup.position).clamp(bounds.position, last).round())
+
+
+func _on_fx_menu_pick(id: int) -> void:
+	if id == 0:
+		_set_fx_low(not Meta.fx_low)
+	elif id >= 1 and id <= BinduSession.FX_DPS.size():
+		Meta.fx_dps = id - 1
+		_refresh_fx_menu()
+	else:
+		return
+	session.progression_system._save_best()
+
+
 func _toggle_settings() -> void:
 	var session: BinduSession = self.session
 	session.settings_panel.visible = not session.settings_panel.visible

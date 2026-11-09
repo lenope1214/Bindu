@@ -1,6 +1,8 @@
 # 전장 사용성 수정 검증 기록
 
-**최신 후속:** [저강도 FX 장식 생략](performance/fx-quality/README.md) 뒤 실제 명령/RNG 계약·정지 장면 비용 비교·저강도 release442단언과 전체 check를 통과했다. 기본 설정은 끔이며 실기기/FPS·전체 지연·PERF-01은 미완료다.
+**최신 후속:** [효과 설정 구분](fx-controls/README.md)에서 전장 빠른 메뉴·설정창 동기화·폰 안전 영역을 고쳤다. PC/폰100·130% 실제 가상 입력108단언을 통과했다. 실기기·사람 과제·고배속 전체 지연·PERF-01은 미완료다.
+
+**렌더 후속:** [저강도 FX 장식 생략](performance/fx-quality/README.md) 단계의 실제 명령/RNG 계약·정지 장면 비용 비교·저강도 release442단언과 전체 check를 통과했다. 기본 설정은 끔이다.
 
 **상성 후속:** [상성 입력 재사용](performance/zone-application/README.md) 뒤 제품2,988단언·전투1,110사례/13,320표본·동일 전투량 ABBA·release442단언과 전체 check를 확인했다. 아래 표시 수정은 직전 단계다.
 
@@ -29,6 +31,7 @@
 | 자동 조준 계산 | 기존 fixture 범위 오류 정정. 실제15종×레벨1/3/8·41,564대상/RNG 동등, 의도적 경계 오류2건 검출. 사거리 호출 내 재사용과 native6조건 개선 관찰 | [정정](performance/targeting/README.md), [후속 증거](performance/guard-range/README.md) |
 | hit 후처리 비용 | 없는 특징 호출 생략. 실제 전투885사례/10,620표본 상태·예약·RNG 동등, 의도적 조건 오류75건 검출. 혼합8배속 ABBA main CPU2.4–4.8% 감소, 모두 활성 경로는 큰 이득 없음 | [후속 증거](performance/hit-factors/README.md) |
 | 효과 줄이기 | 후광·보조 고리·작은 입자 생략. 기본/보호한 명령·같은 draw RNG 유지. 강제 재그리기 callback약57%·반환약31% 감소 관찰, 실기기 FPS 아님 | [제품·명령·측정](performance/fx-quality/README.md) |
+| 효과 설정 구분 | 빠른 메뉴에서 줄이기·약한 공격 진하기 독립 선택, 설정창 동기화·노치/홈 안전 영역. PC/폰100·130% 실제 가상 입력 | [제품·화면·입력](fx-controls/README.md) |
 | 상성 조회 비용 | 마지막 속성 값 사본/비트키 재사용. 동일 전투량 ABBA main CPU0.77–1.29% 감소 관찰, native 일부 draw 증가·전체 지연은 남음 | [제품·동일성·측정](performance/zone-application/README.md) |
 | 상태 문구 겹침 | 같은 스타일의 겹치는 문구만 최신 표시. PC/폰100·130%에서 중복 문구 감소·같은 상태 겹침0. 실제 재그리기·release 검사는 별도 기록 | [표시 밀도 증거](performance/feedback-density/README.md) |
 | release/입력 큐 | 격리 macOS release에서 template/debug 상태 확인. 현재8배속 main CPU100.75ms, 합성 요청 큐 대기130–145ms. 스택 추적 off는 지연 이득 없이 진단3프레임 소실돼 보류 | [export·큐·진단 증거](performance/export-runtime/README.md) |
