@@ -32,3 +32,5 @@
 8번째 성능 작업은 [호출 내 사거리·목표 중심 재사용](qa/2026-11-09-battlefield-fixes/performance/guard-range/README.md)으로 분리한다. 실제 전투 상태/RNG 비교와 동일 native6조건에서 개선을 관찰했다. 제품 반영 후 전체 회귀·원래2pass 참조 검사도 다시 통과했다. 전체50개 목표와 BF-49의 남은 지연은 미완료다.
 
 9번째 작업은 [없는 특징의 hit 후처리 생략](qa/2026-11-09-battlefield-fixes/performance/hit-factors/README.md)이다. 상태·예약·RNG885사례/10,620표본, 조건 오류 변형75사례 검출, native6조건·headless ABBA와 제품 반영 후 전체 회귀를 기록한다. 혼합8배속의 반복 비용은 줄었지만 모든 조합/렌더 조건의 개선을 주장하지 않는다.
+
+10번째 작업은 [macOS release QA export와 입력 큐·오류 진단 검증](qa/2026-11-09-battlefield-fixes/performance/export-runtime/README.md)이다. 제품 코드를 바꾸지 않고 고배속 큐 대기가 release에도 남는 것을 확인했다. 원래 스택 추적 설정은 유지했고, 중복 상태 문자의 가림을 다음 수정 대상으로 기록했다. 실패/중첩 QA 표본은 제외·보존하고 성공한 실행과 분리했다.

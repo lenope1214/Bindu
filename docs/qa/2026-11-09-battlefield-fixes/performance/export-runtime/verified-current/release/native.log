@@ -1,0 +1,29 @@
+sandbox_extension_issue_file_to_process failed for /var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-export-runtime-nwi213uj/build/BinduQA.app: 1 (Operation not permitted)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+MEASURE {"condition":"x1-fx-full","elapsed_ms":1375.284,"forced_render_interval_ms":{"max":63.419,"mean":45.8421666666667,"median":45.426,"nonzero_samples":30,"p95":51.123},"fx_low":false,"main_frame_cpu_ms":{"max":25.143,"mean":9.61173333333333,"median":8.747,"nonzero_samples":30,"p95":12.424},"mean_orbs":300.0,"mean_projectiles":39.1666666666667,"mean_zones":89.4666666666667,"pause_probes":[],"profiled_parts_ms_per_sample":{"UI·효과":0.3424,"목록·격자":0.182533333333333,"발사체 판정":0.585433333333333,"오브젝트 공격":4.9498,"이동":0.847033333333333,"장판":2.48036666666667,"처치·나머지":0.184966666666667},"raw_forced_render_interval_ms":[42.304,42.692,42.376,42.019,45.426,40.788,46.144,43.978,42.239,41.647,41.328,43.451,39.969,44.099,42.192,42.038,46.983,47.175,47.127,43.813,47.831,49.46,48.775,50.25,46.585,50.517,49.384,51.123,50.133,63.419],"raw_main_frame_cpu_ms":[8.83,8.722,8.594,8.399,10.192,8.718,7.158,8.014,7.027,7.184,7.291,8.833,7.621,7.469,8.211,8.467,7.98,9.105,10.034,8.747,8.354,12.126,10.123,10.501,10.639,12.424,11.249,10.539,10.658,25.143],"raw_viewport_render_cpu_ms":[13.0819997787476,12.4490003585815,11.9759998321533,12.3739995956421,12.2110004425049,12.293999671936,12.4139995574951,11.5459995269775,14.3760004043579,13.201000213623,13.0790004730225,12.7340002059937,13.1239995956421,13.0340003967285,12.4429998397827,13.7679996490479,12.8800001144409,12.4739999771118,13.6960000991821,13.7040004730225,13.4949998855591,12.7229995727539,14.0989999771118,13.4230003356934,13.7779998779297,14.1859998703003,12.9139995574951,14.0299997329712,14.1379995346069,14.4350004196167],"samples":30,"simulation_game_seconds":0.5,"simulation_to_force_draw_return_ms":{"max":36.601,"mean":20.1681,"median":19.13,"nonzero_samples":30,"p95":23.581},"speed":1.0,"viewport_render_cpu_ms":{"max":14.4350004196167,"mean":13.1359999656677,"median":13.0819997787476,"nonzero_samples":30,"p95":14.3760004043579},"viewport_render_gpu_ms":{"max":0.0,"mean":0.0,"median":0.0,"nonzero_samples":0,"p95":0.0}}
+UI ok x1-fx-full
+MEASURE {"condition":"x8-fx-full","elapsed_ms":5807.666,"forced_render_interval_ms":{"max":214.513,"mean":193.5882,"median":195.786,"nonzero_samples":30,"p95":211.246},"fx_low":false,"main_frame_cpu_ms":{"max":114.245,"mean":100.747633333333,"median":104.032,"nonzero_samples":30,"p95":111.316},"mean_orbs":299.966666666667,"mean_projectiles":100.633333333333,"mean_zones":160.433333333333,"pause_probes":[],"profiled_parts_ms_per_sample":{"UI·효과":0.760833333333333,"목록·격자":1.45926666666667,"발사체 판정":7.66783333333333,"오브젝트 공격":39.2923,"이동":9.9882,"장판":40.0201666666667,"처치·나머지":1.48256666666667},"raw_forced_render_interval_ms":[169.516,167.528,190.261,191.709,189.922,190.915,183.296,167.588,176.155,189.237,195.843,197.243,193.02,183.296,181.434,201.399,200.936,201.37,203.046,204.087,187.66,196.844,211.246,214.513,210.882,206.269,195.786,192.815,207.821,206.009],"raw_main_frame_cpu_ms":[88.666,84.284,104.117,104.531,101.142,104.265,97.128,81.614,89.871,100.801,106.852,105.269,101.091,90.846,91.918,109.018,104.032,103.389,107.103,111.215,90.019,100.59,111.316,114.245,108.655,104.818,96.067,93.609,111.056,104.902],"raw_viewport_render_cpu_ms":[31.3850002288818,31.3209991455078,30.8169994354248,31.8589992523193,33.189998626709,32.8580017089844,33.4640007019043,32.8520011901855,33.5299987792969,32.8530006408691,32.4249992370605,34.5439987182617,34.523998260498,34.6269989013672,35.7449989318848,35.5559997558594,34.6559982299805,36.0089988708496,37.3639984130859,37.3030014038086,37.1199989318848,35.3409996032715,38.3300018310547,36.2770004272461,38.2309989929199,38.3219985961914,39.1839981079102,38.6660003662109,37.3009986877441,37.2560005187988],"samples":30,"simulation_game_seconds":4.0,"simulation_to_force_draw_return_ms":{"max":133.154,"mean":118.4271,"median":120.691,"nonzero_samples":30,"p95":130.359},"spWARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+eed":8.0,"viewport_render_cpu_ms":{"max":39.1839981079102,"mean":35.0969995498657,"median":35.3409996032715,"nonzero_samples":30,"p95":38.6660003662109},"viewport_render_gpu_ms":{"max":0.0,"mean":0.0,"median":0.0,"nonzero_samples":0,"p95":0.0}}
+UI ok x8-fx-full
+ok   BF-49 queued synthetic pause request delivered
+ok   BF-49 queued pause reached state and menu
+ok   BF-49 queued probe resumed
+ok   BF-49 queued synthetic pause request delivered
+ok   BF-49 queued pause reached state and menu
+ok   BF-49 queued probe resumed
+ok   BF-49 queued synthetic pause request delivered
+ok   BF-49 queued pause reached state and menu
+ok   BF-49 queued probe resumed
+ok   BF-49 queued synthetic pause request delivered
+ok   BF-49 queued pause reached state and menu
+ok   BF-49 queued probe resumed
+ok   BF-49 queued synthetic pause request delivered
+ok   BF-49 queued pause reached state and menu
+ok   BF-49 queued probe resumed
+ok   BF-49 queued synthetic pause request delivered
+ok   BF-49 queued pause reached state and menu
+ok   BF-49 queued probe resumed
+BATTLEFIELD LOAD mode=load conditions=2 failures=0 ui=0

@@ -1,0 +1,7 @@
+{
+  "adopted_as_performance_evidence": false,
+  "reason": "QA queue probe referenced pause_menu instead of actual pause_box; fixed against existing pause_probe source. Also replaced frame-count wait with a2second deadline.",
+  "process_terminal": true,
+  "temporary_project_removed": true,
+  "isolated_save_removed": true
+}

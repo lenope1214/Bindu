@@ -1,0 +1,7 @@
+sandbox_extension_issue_file_to_process failed for /var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-export-runtime-7bkmleq6/build/BinduQA.app: 1 (Operation not permitted)
+ERROR: BinduQA controlled trace probe
+   at: push_error (core/variant/variant_utility.cpp:1023)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+QA DIAGNOSTIC {"debug_build":false,"events":[{"bt":"","file":"core/variant/variant_utility.cpp","fn":"push_error","kind":"error","line":1023,"msg":"BinduQA controlled trace probe","n":1,"t":1794241310}],"expected_events":true,"leaf_in_backtrace":false,"mid_in_backtrace":false,"root_in_backtrace":false,"template":true,"tracking_setting":false}

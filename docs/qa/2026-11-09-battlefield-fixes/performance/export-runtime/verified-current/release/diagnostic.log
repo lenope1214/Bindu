@@ -1,0 +1,13 @@
+sandbox_extension_issue_file_to_process failed for /var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-export-runtime-nwi213uj/build/BinduQA.app: 1 (Operation not permitted)
+ERROR: BinduQA controlled trace probe
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] qa_error_leaf (res://qa/battlefield_load_check.gd:332)
+       [1] qa_error_mid (res://qa/battlefield_load_check.gd:329)
+       [2] qa_error_root (res://qa/battlefield_load_check.gd:326)
+       [3] qa_diagnostic (res://qa/battlefield_load_check.gd:316)
+       [4] _initialize (res://qa/battlefield_load_check.gd:22)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+QA DIAGNOSTIC {"debug_build":false,"events":[{"bt":"GDScript backtrace (most recent call first):\n    [0] qa_error_leaf (res://qa/battlefield_load_check.gd:332)\n    [1] qa_error_mid (res://qa/battlefield_load_check.gd:329)\n    [2] qa_error_root (res://qa/battlefield_load_check.gd:326)\n    [3] qa_diagnostic (res://qa/battlefield_load_check.gd:316)\n    [4] _initialize (res://qa/battlefield_load_check.gd:22)","file":"core/variant/variant_utility.cpp","fn":"push_error","kind":"error","line":1023,"msg":"BinduQA controlled trace probe","n":1,"t":1794241212}],"expected_events":true,"leaf_in_backtrace":true,"mid_in_backtrace":true,"root_in_backtrace":true,"template":true,"tracking_setting":true}

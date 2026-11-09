@@ -109,6 +109,8 @@
 
 [hit 후속](qa/2026-11-09-battlefield-fixes/performance/hit-factors/README.md): 없는 금속·땅/시간·피/환영 특징의 호출과 불필요한 운반 개수 계산을 생략했다. 실제 전투885사례/10,620표본의 상태·예약·RNG 동등, 잘못된 조건 변형75사례 검출, 전체 검사252/86/28 통과다. 기존 혼합8배속 ABBA에서 main CPU2.4–4.8% 감소했고 모두 활성인 조합에서는 큰 이득이 없었다. 남은 고배속 지연과 실기기 검증은 계속 미완료다.
 
+[release/큐 후속](qa/2026-11-09-battlefield-fixes/performance/export-runtime/README.md): 로컬 macOS release QA 앱의 실제 template/debug 플래그를 확인했다. 현재8배속 main CPU100.75ms, 합성 요청→dispatch130–145ms, dispatch→정지 상태 약0.14ms로 큐 대기가 남았다. 물리 OS 입력 측정은 아니다. 스택 추적을 끈 임시 사본은 큐 지연 이득이 없고 오류의 스크립트3프레임이 사라져 제품 설정을 유지했다. release 캡처에서 동일 상태 문자의 겹침도 확인해 다음 표시 개선 대상으로 유지한다.
+
 ## 최신 main 반영과 전달
 
 [2026-11-10 전달 기록](battlefield-delivery-2026-11-10.md)에 작업별 커밋·복구 ref·main pull/rebase·충돌 해결을 기록했다. 최신 main의 결과 상세·v1.0.0·빌드 설정을 유지하며 [전체 재검증](qa/2026-11-09-battlefield-fixes/delivery/README.md)을 마쳤다. 실기기·사용자 과제와 후반 전체 지연은 그대로 미완료다.

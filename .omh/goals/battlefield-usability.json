@@ -580,7 +580,8 @@
         "docs/qa/2026-11-09-battlefield-fixes/remaining-user-tasks.md",
         "docs/qa/2026-11-09-battlefield-fixes/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/guard-range/README.md",
-        "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/performance/export-runtime/README.md"
       ]
     },
     {
@@ -773,11 +774,24 @@
         "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/product-verification.json"
       ]
+    },
+    {
+      "type": "exported_runtime_queue_verified",
+      "facts": [
+        "Isolated macOS4.7.2 release QA export observed:template true,debug false. Product scripts/settings unchanged apart from empty operational URLs in temporary copies.",
+        "Current release x8 main CPU100.75ms and queued synthetic pause wait130.09-144.59ms despite dispatch-to-state0.138-0.147ms. Not physical OS input.",
+        "Tracking-off temporary release did not reduce observed x8 queue wait; all three controlled script frames disappeared from ErrLog. Production setting kept true.",
+        "Three failed/overlapped QA executions preserved and excluded. Owned processes terminated and terminal state verified; exclusive lock and fatal-error cleanup added. Adopted runs and isolated cleanup verified.",
+        "Actual release screenshot shows overlapping repeated status text. Next action is draw-layer density reduction with popup data/RNG preserved; full50 goal remains active."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/performance/export-runtime/README.md"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "BF-49: verify exported runtime and actual event-queue saturation, then reduce remaining zone/attack/movement/render cost in the observed mix. Current dispatch reduction is adopted; overall high-speed delay remains unresolved.",
+    "next_local_action": "BF-49: reduce overlapping repeated floating status text in the draw layer without changing popup data, damage or RNG. Queued-input release evidence shows remaining saturation; a nonblocking user preference question on overload speed vs responsiveness is pending.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },
