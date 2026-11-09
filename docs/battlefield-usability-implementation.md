@@ -113,6 +113,8 @@
 
 [표시 밀도 후속](qa/2026-11-09-battlefield-fixes/performance/feedback-density/README.md): 동일 문구·색·크기의 화면상 겹침만 렌더 단계에서 줄인다. 피해 숫자·서로 다른 상태·원본 popup과 수명·전투·카메라·RNG는 유지한다. PC/폰100·130% 검사와 동일 정지 장면의 실제 재그리기를 구분해 기록한다. 별도 실행 성능은 일부 증가·변동이 있어 PERF-01을 통과 처리하지 않는다.
 
+[상성 조회 후속](qa/2026-11-09-battlefield-fixes/performance/zone-application/README.md): 같은 속성 입력의 비트키를 재사용한다. 제품2,988단언·실제 전투1,110사례/13,320표본 동등·잘못된 alias12건 검출·반영 후 전체 회귀와 release442단언 통과다. 전투량/끝 상태/RNG가 같은 제어 ABBA에서 main CPU0.77–1.29% 감소를 관찰했다. 매번 입력 교체와 빈 입력의 미세 비용 증가, native draw 일부 증가·전체 고배속 지연은 남는다.
+
 ## 최신 main 반영과 전달
 
 [2026-11-10 전달 기록](battlefield-delivery-2026-11-10.md)에 작업별 커밋·복구 ref·main pull/rebase·충돌 해결을 기록했다. 최신 main의 결과 상세·v1.0.0·빌드 설정을 유지하며 [전체 재검증](qa/2026-11-09-battlefield-fixes/delivery/README.md)을 마쳤다. 실기기·사용자 과제와 후반 전체 지연은 그대로 미완료다.

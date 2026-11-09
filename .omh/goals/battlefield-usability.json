@@ -582,7 +582,8 @@
         "docs/qa/2026-11-09-battlefield-fixes/performance/guard-range/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/export-runtime/README.md",
-        "docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/README.md"
       ]
     },
     {
@@ -803,11 +804,27 @@
         "docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/summary.json"
       ]
+    },
+    {
+      "type": "affinity_last_input_mask_verified",
+      "facts": [
+        "Actual16tower/400orb zone application profile: Share.carry94377calls1284554us inclusive; tiny rapid path deprioritized. Product Zone and audio unchanged.",
+        "Rejected per-Tower cache due fallback/single/empty micro regressions. Adopted bounded last-input value snapshot/mask only,9Share lines; existing shared result dictionary alias and global clear semantics preserved.",
+        "Actual product affinity2988assertions pass; bad alias mutant12detections. Frozen/current real combat1110cases13320normalized state/delayed/mirror/gore samples plus next RNG identical.",
+        "Native6conditions/variant720samples12virtual pauses pass, mainCPU0.82-4.17percent lower but draw interval increases in2conditions. Not PERF01/all-case FPS proof.",
+        "Uncontrolled sound/time RNG caused unequal perf workloads; preserved without causal speed claim. Controlled sound-muted headless ABBA8runs960samples verifies entity sequences/end-state/nextRNG all equal; mainCPU0.766-1.289percent lower. Churning/empty micro overhead remains.",
+        "Product source matches measured candidate21675f90ad253da6014d93fb7eaa3af96bfbd4aed8e0ee22375f4194e61c1de0. Pre-export source manifest verifies all copied scripts; local macOS release442checks and full252/86/28check pass.",
+        "Goal remains active; high-speed saturation, PERF01, physical/human tasks unresolved."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/product-verification.json"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "BF49: remaining high-speed saturation/input queue and PERF01 whole-frame no-regression proof; overload speed policy preference remains pending. Status-popup density change locally verified and delivered in task11; do not close physical/human gaps.",
+    "next_local_action": "Re-profile remaining Share/Zone costs in the equal-workload sound-muted fixture before another optimization. High-speed input queue, PERF01 and physical/human tasks stay open; overload speed-policy preference remains pending.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },

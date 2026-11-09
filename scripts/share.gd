@@ -115,11 +115,20 @@ static func k(tw: Object, e: int) -> float:
 static var _aff := {}
 
 
+static var _aff_last_elements := {}  # 상성 키 조회의 마지막 값 사본: 직접 수정도 감지
+static var _aff_last_mask := 0
+
 static func aff(tw: Object) -> Dictionary:
 	var els := _els(tw)
+	if _aff_last_elements == els:
+		var cached = _aff.get(_aff_last_mask)
+		if cached != null:
+			return cached
 	var ck := 0
 	for e in els:
 		ck |= 1 << int(e)
+	_aff_last_elements = els.duplicate()
+	_aff_last_mask = ck
 	if _aff.has(ck):
 		return _aff[ck]
 	var ks: Array = els.keys()

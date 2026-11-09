@@ -1,0 +1,527 @@
+{
+  "baseline_share_ref": "9426f14aada006ca4f600a19680390579423cb4b",
+  "scope": "Headless actual simulation CPU,16towers/400in-arena moving orb goal, x8 full/reduced effects, warm30/sample60. ABBA order. Two runs per variant/workload. Headless rendering and snapshots omitted; not native FPS.",
+  "controlled": true,
+  "comparisons": [
+    {
+      "workload": "mixed",
+      "condition": "x8-fx-full",
+      "main_frame_cpu_ms": {
+        "baseline": [
+          136.536533333333,
+          136.069383333333
+        ],
+        "candidate": [
+          135.213066666667,
+          135.305866666667
+        ],
+        "baseline_mean": 136.302958333333,
+        "candidate_mean": 135.25946666666698,
+        "delta_percent": -0.7655678786619879
+      },
+      "attack": {
+        "baseline": [
+          39.1078833333333,
+          39.0779666666667
+        ],
+        "candidate": [
+          38.9467666666667,
+          39.1085333333333
+        ],
+        "baseline_mean": 39.092924999999994,
+        "candidate_mean": 39.027649999999994,
+        "delta_percent": -0.1669739473319054
+      },
+      "zone": {
+        "baseline": [
+          61.11735,
+          60.8122333333333
+        ],
+        "candidate": [
+          60.1624333333333,
+          60.20775
+        ],
+        "baseline_mean": 60.964791666666656,
+        "candidate_mean": 60.18509166666665,
+        "delta_percent": -1.2789349043676235
+      }
+    },
+    {
+      "workload": "mixed",
+      "condition": "x8-fx-reduced",
+      "main_frame_cpu_ms": {
+        "baseline": [
+          142.757566666667,
+          142.64015
+        ],
+        "candidate": [
+          140.952183333333,
+          141.525933333333
+        ],
+        "baseline_mean": 142.6988583333335,
+        "candidate_mean": 141.239058333333,
+        "delta_percent": -1.0229934682382202
+      },
+      "attack": {
+        "baseline": [
+          42.7461666666667,
+          42.71755
+        ],
+        "candidate": [
+          42.3560833333333,
+          42.6018666666667
+        ],
+        "baseline_mean": 42.73185833333335,
+        "candidate_mean": 42.478975000000005,
+        "delta_percent": -0.5917910973136431
+      },
+      "zone": {
+        "baseline": [
+          63.05825,
+          62.9447166666667
+        ],
+        "candidate": [
+          62.01365,
+          62.2587333333333
+        ],
+        "baseline_mean": 63.001483333333354,
+        "candidate_mean": 62.13619166666665,
+        "delta_percent": -1.3734464982174344
+      }
+    },
+    {
+      "workload": "metal_earth_blood",
+      "condition": "x8-fx-full",
+      "main_frame_cpu_ms": {
+        "baseline": [
+          143.0246,
+          142.84885
+        ],
+        "candidate": [
+          141.3022,
+          140.886233333333
+        ],
+        "baseline_mean": 142.936725,
+        "candidate_mean": 141.0942166666665,
+        "delta_percent": -1.2890377426329591
+      },
+      "attack": {
+        "baseline": [
+          64.0902166666667,
+          64.16585
+        ],
+        "candidate": [
+          63.2461333333333,
+          63.1730666666667
+        ],
+        "baseline_mean": 64.12803333333335,
+        "candidate_mean": 63.209599999999995,
+        "delta_percent": -1.4321869634757012
+      },
+      "zone": {
+        "baseline": [
+          51.4215666666667,
+          51.2085833333333
+        ],
+        "candidate": [
+          50.4532833333333,
+          50.3349333333333
+        ],
+        "baseline_mean": 51.315075,
+        "candidate_mean": 50.39410833333331,
+        "delta_percent": -1.7947292616578903
+      }
+    },
+    {
+      "workload": "metal_earth_blood",
+      "condition": "x8-fx-reduced",
+      "main_frame_cpu_ms": {
+        "baseline": [
+          149.15215,
+          148.725933333333
+        ],
+        "candidate": [
+          147.254183333333,
+          147.00655
+        ],
+        "baseline_mean": 148.9390416666665,
+        "candidate_mean": 147.1303666666665,
+        "delta_percent": -1.21437265861285
+      },
+      "attack": {
+        "baseline": [
+          64.6829166666667,
+          64.6555333333333
+        ],
+        "candidate": [
+          63.7844333333333,
+          63.7538
+        ],
+        "baseline_mean": 64.669225,
+        "candidate_mean": 63.76911666666665,
+        "delta_percent": -1.3918650383290543
+      },
+      "zone": {
+        "baseline": [
+          56.4535333333333,
+          56.1673333333333
+        ],
+        "candidate": [
+          55.3545833333333,
+          55.2862666666667
+        ],
+        "baseline_mean": 56.3104333333333,
+        "candidate_mean": 55.320425,
+        "delta_percent": -1.7581259364013113
+      }
+    }
+  ],
+  "all_repeated_workloads_and_next_rng_equal": true,
+  "isolated_projects_and_saves_removed": true,
+  "runs": [
+    {
+      "workload": "mixed",
+      "trial": 0,
+      "variant": "baseline",
+      "share_sha256": "40c9869ed438a18cf6442c1d90973c99792cd596f4f71739616b8d3ad9d94de2",
+      "harness_sha256": "f619eeaa003e695a392f09cf4b404f404b44590d39e32086156fc3580bebc4dd",
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--headless",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-cpu-o80eefk7",
+        "--resolution",
+        "1280x720",
+        "-s",
+        "tools/battlefield_load_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/cpu-controlled/mixed/0-baseline",
+        "1.0",
+        "pc",
+        "load",
+        "60"
+      ],
+      "conditions": [
+        {
+          "condition": "x8-fx-full",
+          "main_cpu_mean_ms": 136.536533333333,
+          "zone_cpu_ms": 61.11735,
+          "next_rng": 2803113127,
+          "samples": 60,
+          "mean_orbs": 400.0
+        },
+        {
+          "condition": "x8-fx-reduced",
+          "main_cpu_mean_ms": 142.757566666667,
+          "zone_cpu_ms": 63.05825,
+          "next_rng": 2532377029,
+          "samples": 60,
+          "mean_orbs": 400.0
+        }
+      ]
+    },
+    {
+      "workload": "mixed",
+      "trial": 1,
+      "variant": "candidate",
+      "share_sha256": "21675f90ad253da6014d93fb7eaa3af96bfbd4aed8e0ee22375f4194e61c1de0",
+      "harness_sha256": "f619eeaa003e695a392f09cf4b404f404b44590d39e32086156fc3580bebc4dd",
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--headless",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-cpu-hkqwnjem",
+        "--resolution",
+        "1280x720",
+        "-s",
+        "tools/battlefield_load_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/cpu-controlled/mixed/1-candidate",
+        "1.0",
+        "pc",
+        "load",
+        "60"
+      ],
+      "conditions": [
+        {
+          "condition": "x8-fx-full",
+          "main_cpu_mean_ms": 135.213066666667,
+          "zone_cpu_ms": 60.1624333333333,
+          "next_rng": 2803113127,
+          "samples": 60,
+          "mean_orbs": 400.0
+        },
+        {
+          "condition": "x8-fx-reduced",
+          "main_cpu_mean_ms": 140.952183333333,
+          "zone_cpu_ms": 62.01365,
+          "next_rng": 2532377029,
+          "samples": 60,
+          "mean_orbs": 400.0
+        }
+      ]
+    },
+    {
+      "workload": "mixed",
+      "trial": 2,
+      "variant": "candidate",
+      "share_sha256": "21675f90ad253da6014d93fb7eaa3af96bfbd4aed8e0ee22375f4194e61c1de0",
+      "harness_sha256": "f619eeaa003e695a392f09cf4b404f404b44590d39e32086156fc3580bebc4dd",
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--headless",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-cpu-1t8qnb3k",
+        "--resolution",
+        "1280x720",
+        "-s",
+        "tools/battlefield_load_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/cpu-controlled/mixed/2-candidate",
+        "1.0",
+        "pc",
+        "load",
+        "60"
+      ],
+      "conditions": [
+        {
+          "condition": "x8-fx-full",
+          "main_cpu_mean_ms": 135.305866666667,
+          "zone_cpu_ms": 60.20775,
+          "next_rng": 2803113127,
+          "samples": 60,
+          "mean_orbs": 400.0
+        },
+        {
+          "condition": "x8-fx-reduced",
+          "main_cpu_mean_ms": 141.525933333333,
+          "zone_cpu_ms": 62.2587333333333,
+          "next_rng": 2532377029,
+          "samples": 60,
+          "mean_orbs": 400.0
+        }
+      ]
+    },
+    {
+      "workload": "mixed",
+      "trial": 3,
+      "variant": "baseline",
+      "share_sha256": "40c9869ed438a18cf6442c1d90973c99792cd596f4f71739616b8d3ad9d94de2",
+      "harness_sha256": "f619eeaa003e695a392f09cf4b404f404b44590d39e32086156fc3580bebc4dd",
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--headless",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-cpu-l7g68kp9",
+        "--resolution",
+        "1280x720",
+        "-s",
+        "tools/battlefield_load_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/cpu-controlled/mixed/3-baseline",
+        "1.0",
+        "pc",
+        "load",
+        "60"
+      ],
+      "conditions": [
+        {
+          "condition": "x8-fx-full",
+          "main_cpu_mean_ms": 136.069383333333,
+          "zone_cpu_ms": 60.8122333333333,
+          "next_rng": 2803113127,
+          "samples": 60,
+          "mean_orbs": 400.0
+        },
+        {
+          "condition": "x8-fx-reduced",
+          "main_cpu_mean_ms": 142.64015,
+          "zone_cpu_ms": 62.9447166666667,
+          "next_rng": 2532377029,
+          "samples": 60,
+          "mean_orbs": 400.0
+        }
+      ]
+    },
+    {
+      "workload": "metal_earth_blood",
+      "trial": 0,
+      "variant": "baseline",
+      "share_sha256": "40c9869ed438a18cf6442c1d90973c99792cd596f4f71739616b8d3ad9d94de2",
+      "harness_sha256": "ef52b33918f8c055abd40f0910a12f9f98f100bc5e97d62084b734d3c8e166d0",
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--headless",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-cpu-dgj065w3",
+        "--resolution",
+        "1280x720",
+        "-s",
+        "tools/battlefield_load_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/cpu-controlled/metal_earth_blood/0-baseline",
+        "1.0",
+        "pc",
+        "load",
+        "60"
+      ],
+      "conditions": [
+        {
+          "condition": "x8-fx-full",
+          "main_cpu_mean_ms": 143.0246,
+          "zone_cpu_ms": 51.4215666666667,
+          "next_rng": 1430135145,
+          "samples": 60,
+          "mean_orbs": 400.0
+        },
+        {
+          "condition": "x8-fx-reduced",
+          "main_cpu_mean_ms": 149.15215,
+          "zone_cpu_ms": 56.4535333333333,
+          "next_rng": 4160446577,
+          "samples": 60,
+          "mean_orbs": 400.0
+        }
+      ]
+    },
+    {
+      "workload": "metal_earth_blood",
+      "trial": 1,
+      "variant": "candidate",
+      "share_sha256": "21675f90ad253da6014d93fb7eaa3af96bfbd4aed8e0ee22375f4194e61c1de0",
+      "harness_sha256": "ef52b33918f8c055abd40f0910a12f9f98f100bc5e97d62084b734d3c8e166d0",
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--headless",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-cpu-g9g00_pn",
+        "--resolution",
+        "1280x720",
+        "-s",
+        "tools/battlefield_load_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/cpu-controlled/metal_earth_blood/1-candidate",
+        "1.0",
+        "pc",
+        "load",
+        "60"
+      ],
+      "conditions": [
+        {
+          "condition": "x8-fx-full",
+          "main_cpu_mean_ms": 141.3022,
+          "zone_cpu_ms": 50.4532833333333,
+          "next_rng": 1430135145,
+          "samples": 60,
+          "mean_orbs": 400.0
+        },
+        {
+          "condition": "x8-fx-reduced",
+          "main_cpu_mean_ms": 147.254183333333,
+          "zone_cpu_ms": 55.3545833333333,
+          "next_rng": 4160446577,
+          "samples": 60,
+          "mean_orbs": 400.0
+        }
+      ]
+    },
+    {
+      "workload": "metal_earth_blood",
+      "trial": 2,
+      "variant": "candidate",
+      "share_sha256": "21675f90ad253da6014d93fb7eaa3af96bfbd4aed8e0ee22375f4194e61c1de0",
+      "harness_sha256": "ef52b33918f8c055abd40f0910a12f9f98f100bc5e97d62084b734d3c8e166d0",
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--headless",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-cpu-t6pczqmu",
+        "--resolution",
+        "1280x720",
+        "-s",
+        "tools/battlefield_load_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/cpu-controlled/metal_earth_blood/2-candidate",
+        "1.0",
+        "pc",
+        "load",
+        "60"
+      ],
+      "conditions": [
+        {
+          "condition": "x8-fx-full",
+          "main_cpu_mean_ms": 140.886233333333,
+          "zone_cpu_ms": 50.3349333333333,
+          "next_rng": 1430135145,
+          "samples": 60,
+          "mean_orbs": 400.0
+        },
+        {
+          "condition": "x8-fx-reduced",
+          "main_cpu_mean_ms": 147.00655,
+          "zone_cpu_ms": 55.2862666666667,
+          "next_rng": 4160446577,
+          "samples": 60,
+          "mean_orbs": 400.0
+        }
+      ]
+    },
+    {
+      "workload": "metal_earth_blood",
+      "trial": 3,
+      "variant": "baseline",
+      "share_sha256": "40c9869ed438a18cf6442c1d90973c99792cd596f4f71739616b8d3ad9d94de2",
+      "harness_sha256": "ef52b33918f8c055abd40f0910a12f9f98f100bc5e97d62084b734d3c8e166d0",
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--headless",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-hit-cpu-l0h7avhm",
+        "--resolution",
+        "1280x720",
+        "-s",
+        "tools/battlefield_load_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/cpu-controlled/metal_earth_blood/3-baseline",
+        "1.0",
+        "pc",
+        "load",
+        "60"
+      ],
+      "conditions": [
+        {
+          "condition": "x8-fx-full",
+          "main_cpu_mean_ms": 142.84885,
+          "zone_cpu_ms": 51.2085833333333,
+          "next_rng": 1430135145,
+          "samples": 60,
+          "mean_orbs": 400.0
+        },
+        {
+          "condition": "x8-fx-reduced",
+          "main_cpu_mean_ms": 148.725933333333,
+          "zone_cpu_ms": 56.1673333333333,
+          "next_rng": 4160446577,
+          "samples": 60,
+          "mean_orbs": 400.0
+        }
+      ]
+    }
+  ]
+}

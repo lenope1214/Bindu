@@ -1,0 +1,82 @@
+{
+	"Zone._gore_affect/gore": {
+		"calls": 41104,
+		"us": 855543
+	},
+	"Zone._gore_affect/smear": {
+		"calls": 2443,
+		"us": 119080
+	},
+	"Zone._hit/rock": {
+		"calls": 381,
+		"us": 21806
+	},
+	"Zone._hit/trail": {
+		"calls": 58586,
+		"us": 1246799
+	},
+	"Zone._hit/vortex": {
+		"calls": 11454,
+		"us": 180030
+	},
+	"Zone._p/rock": {
+		"calls": 48,
+		"us": 11
+	},
+	"Zone._p/trail": {
+		"calls": 58586,
+		"us": 16187
+	},
+	"Zone._p/vortex": {
+		"calls": 11831,
+		"us": 3036
+	},
+	"Zone._rapid/rock": {
+		"calls": 333,
+		"us": 242
+	},
+	"Zone._rapid/trail": {
+		"calls": 58586,
+		"us": 34535
+	},
+	"Zone.affect/gore": {
+		"calls": 41104,
+		"us": 888257
+	},
+	"Zone.affect/rill": {
+		"calls": 17735,
+		"us": 98229
+	},
+	"Zone.affect/rock": {
+		"calls": 1044,
+		"us": 28065
+	},
+	"Zone.affect/smear": {
+		"calls": 2443,
+		"us": 121369
+	},
+	"Zone.affect/trail": {
+		"calls": 8622,
+		"us": 1461826
+	},
+	"Zone.affect/vortex": {
+		"calls": 2640,
+		"us": 327097
+	},
+	"share.gd.carry": {
+		"calls": 94377,
+		"us": 1284554
+	},
+	"share.gd.gore_step": {
+		"calls": 28490,
+		"us": 473310
+	},
+	"tower.gd.hit/direct": {
+		"calls": 71566,
+		"us": 1480894
+	},
+	"tower.gd.hit/zone": {
+		"calls": 70421,
+		"us": 1367926
+	}
+}

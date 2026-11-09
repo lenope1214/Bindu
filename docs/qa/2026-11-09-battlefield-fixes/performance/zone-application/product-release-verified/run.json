@@ -1,0 +1,65 @@
+{
+  "scope": "Local ad-hoc macOS release QA MainLoop; exact product FieldView. Phone is a simulated layout, not an iPhone. No production upload.",
+  "profiles": {
+    "pc100": {
+      "checks": 221,
+      "failures": 0,
+      "ui_errors": 0,
+      "raw_popup_count": 121,
+      "draw_popup_count": 22,
+      "same_status_overlap_pairs_before": 885,
+      "same_status_overlap_pairs_after": 0,
+      "runtime_features": {
+        "debug_build": false,
+        "editor": false,
+        "template": true
+      },
+      "command": [
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-feedback-release-_gchgs4e/build/BinduFeedbackQA.app/Contents/MacOS/BinduToolsFeedbackRelease2bac9cae07a840119bf1feef1155e676",
+        "--audio-driver",
+        "Dummy",
+        "--resolution",
+        "1280x720",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/product-release-verified/pc100",
+        "1.0",
+        "pc",
+        "after"
+      ]
+    },
+    "phone130": {
+      "checks": 221,
+      "failures": 0,
+      "ui_errors": 0,
+      "raw_popup_count": 121,
+      "draw_popup_count": 25,
+      "same_status_overlap_pairs_before": 876,
+      "same_status_overlap_pairs_after": 0,
+      "runtime_features": {
+        "debug_build": false,
+        "editor": false,
+        "template": true
+      },
+      "command": [
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-feedback-release-_gchgs4e/build/BinduFeedbackQA.app/Contents/MacOS/BinduToolsFeedbackRelease2bac9cae07a840119bf1feef1155e676",
+        "--audio-driver",
+        "Dummy",
+        "--resolution",
+        "852x393",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/product-release-verified/phone130",
+        "1.3",
+        "phone",
+        "after"
+      ]
+    }
+  },
+  "field_view_sha256": "de936c328f4b690e437c43075bc23cbfe47340aa0a7f20561676d72e2c5900d9",
+  "qa_mainloop_sha256": "21d7e5f4163e6c51bea129dc3b5527440215e6391924f87af90d3c035700926f",
+  "binary_sha256": "7094ed072f5cba194c9fa8e3b333736b2a677bffa7fbf4b720010bc7e4982f22",
+  "pack_sha256": "66284159e3cc6a0d8ae009eb5728fcef5bc76c23e18ec5ff1d24935e05ba0ed1",
+  "runtime_source_hash_note": "Export remaps scripts; exact product source verified before packing, not via FileAccess original source path.",
+  "runtime_fileaccess_field_view_sha256": "",
+  "isolated_save_removed": true,
+  "temporary_project_removed": true
+}

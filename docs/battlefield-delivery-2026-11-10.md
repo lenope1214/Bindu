@@ -36,3 +36,5 @@
 10번째 작업은 [macOS release QA export와 입력 큐·오류 진단 검증](qa/2026-11-09-battlefield-fixes/performance/export-runtime/README.md)이다. 제품 코드를 바꾸지 않고 고배속 큐 대기가 release에도 남는 것을 확인했다. 원래 스택 추적 설정은 유지했고, 중복 상태 문자의 가림을 다음 수정 대상으로 기록했다. 실패/중첩 QA 표본은 제외·보존하고 성공한 실행과 분리했다.
 
 11번째 작업은 [겹치는 상태 문구의 표시 정리](qa/2026-11-09-battlefield-fixes/performance/feedback-density/README.md)다. 원본 popup·피해 숫자·수명·RNG를 보존하며 같은 문구/색/크기의 겹침만 최신 표시로 줄인다. 실제 그리기 콜백·동일 장면·macOS release 확인을 기존 검증과 구분한다. 별도 성능 실행의 일부 증가를 숨기지 않고 PERF-01과 고배속 지연은 미완료로 남긴다.
+
+12번째 작업은 [같은 속성 입력의 상성 비트키 재사용](qa/2026-11-09-battlefield-fixes/performance/zone-application/README.md)이다. Tower별 캐시는 보류하고 Share에 마지막 값 사본 하나만 둔다. 실제 전투량·끝 상태·RNG까지 같은 ABBA와 제품/전투/release/전체 검사를 통과했으며, 제어되지 않은 이전 성능 수치는 인과 개선률로 쓰지 않는다. 배속·사운드·밸런스·카메라는 유지한다.

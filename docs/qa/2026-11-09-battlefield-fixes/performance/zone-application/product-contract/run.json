@@ -1,0 +1,193 @@
+{
+  "baseline": "9426f14aada006ca4f600a19680390579423cb4b",
+  "scope": "Headless exact affinity result/alias/input/RNG contract and isolated microbenchmark. Not whole-frame or physical FPS.",
+  "mutant_alias": false,
+  "cache_kind": "product",
+  "candidate_share_sha256": "21675f90ad253da6014d93fb7eaa3af96bfbd4aed8e0ee22375f4194e61c1de0",
+  "candidate_tower_sha256": "fc9510c7d5463bf9610bb6c2acc4d57964122a4c12d0c5eaaced577df8e5764d",
+  "qa_tool_sha256": "b51616289b6f06f16e2fc0220168fe0c29d345f23827ac1bcaf2d2a235ad83b1",
+  "command": [
+    "/Applications/Godot.app/Contents/MacOS/Godot",
+    "--headless",
+    "--audio-driver",
+    "Dummy",
+    "--path",
+    "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-affinity-cache-vl_g6tg9",
+    "-s",
+    "tools/battlefield_affinity_cache_check.gd",
+    "--",
+    "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/product-contract",
+    "normal"
+  ],
+  "result": {
+    "checks": 2988,
+    "failures": 0,
+    "mutant_detections": 0,
+    "timings": [
+      {
+        "candidate_median_us": 0.3851,
+        "candidate_us": [
+          0.3851,
+          0.38695,
+          0.38425,
+          0.38515,
+          0.383,
+          0.3864,
+          0.38495
+        ],
+        "case": "tower-effective",
+        "reference_median_us": 0.47305,
+        "reference_us": [
+          0.47015,
+          0.47295,
+          0.4743,
+          0.4733,
+          0.4734,
+          0.473,
+          0.47305
+        ]
+      },
+      {
+        "candidate_median_us": 0.3742,
+        "candidate_us": [
+          0.37535,
+          0.3753,
+          0.3742,
+          0.37365,
+          0.37405,
+          0.3738,
+          0.3754
+        ],
+        "case": "tower-fallback",
+        "reference_median_us": 0.4255,
+        "reference_us": [
+          0.4255,
+          0.4242,
+          0.4251,
+          0.4244,
+          0.42585,
+          0.42575,
+          0.4282
+        ]
+      },
+      {
+        "candidate_median_us": 0.37145,
+        "candidate_us": [
+          0.3708,
+          0.3695,
+          0.38255,
+          0.3845,
+          0.37145,
+          0.37255,
+          0.3693
+        ],
+        "case": "tower-single",
+        "reference_median_us": 0.4016,
+        "reference_us": [
+          0.39805,
+          0.3975,
+          0.4088,
+          0.4065,
+          0.40445,
+          0.3998,
+          0.4016
+        ]
+      },
+      {
+        "candidate_median_us": 0.3649,
+        "candidate_us": [
+          0.3628,
+          0.36345,
+          0.36445,
+          0.3649,
+          0.37275,
+          0.372,
+          0.3702
+        ],
+        "case": "tower-empty",
+        "reference_median_us": 0.3566,
+        "reference_us": [
+          0.3551,
+          0.35295,
+          0.3544,
+          0.3583,
+          0.3566,
+          0.3606,
+          0.35945
+        ]
+      },
+      {
+        "candidate_median_us": 0.39125,
+        "candidate_us": [
+          0.4062,
+          0.397,
+          0.3891,
+          0.3941,
+          0.39095,
+          0.3908,
+          0.39125
+        ],
+        "case": "other-effective",
+        "reference_median_us": 0.48745,
+        "reference_us": [
+          0.4899,
+          0.49575,
+          0.518,
+          0.48655,
+          0.48745,
+          0.48655,
+          0.4853
+        ]
+      },
+      {
+        "candidate_median_us": 0.3793,
+        "candidate_us": [
+          0.3789,
+          0.3824,
+          0.3793,
+          0.3788,
+          0.37965,
+          0.37985,
+          0.37905
+        ],
+        "case": "other-fallback",
+        "reference_median_us": 0.43165,
+        "reference_us": [
+          0.4302,
+          0.43095,
+          0.4323,
+          0.4319,
+          0.43165,
+          0.43115,
+          0.4322
+        ]
+      },
+      {
+        "candidate_median_us": 0.7871,
+        "candidate_us": [
+          0.7858,
+          0.78515,
+          0.7963,
+          0.7969,
+          0.79525,
+          0.7871,
+          0.78445
+        ],
+        "case": "churn-keys",
+        "reference_median_us": 0.5414,
+        "reference_us": [
+          0.53925,
+          0.539,
+          0.53685,
+          0.5447,
+          0.5456,
+          0.5414,
+          0.5429
+        ]
+      }
+    ]
+  },
+  "exit": 0,
+  "isolated_save_removed": true,
+  "temporary_project_removed": true
+}
