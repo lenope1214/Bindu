@@ -1,0 +1,15 @@
+appId: dev.bindu.usabilityqa.lifecycle
+---
+- launchApp:
+    stopApp: false
+- setOrientation: LANDSCAPE_RIGHT
+- tapOn:
+    point: "69%,82%"
+- tapOn:
+    point: "89%,82%"
+- tapOn:
+    point: "89%,82%"
+- tapOn:
+    point: "69%,73%"
+- tapOn:
+    point: "69%,73%"

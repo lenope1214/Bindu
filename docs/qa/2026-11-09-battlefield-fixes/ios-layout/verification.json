@@ -1,0 +1,32 @@
+{
+  "full_check_exit": 0,
+  "full_check_log": "full-check-verified.log",
+  "fuzz_complete_exit0_seeds": 4,
+  "desktop_cohorts": 4,
+  "desktop_source_matches_current_except_isolated_urls": true,
+  "desktop_summaries": {
+    "pc130-battlefield_information_check": [
+      "INFORMATION failures=0 ui=0"
+    ],
+    "pc130-battlefield_flow_check": [
+      "BATTLEFIELD FLOW failures=0 ui=0"
+    ],
+    "phone130-battlefield_information_check": [
+      "INFORMATION failures=0 ui=0"
+    ],
+    "phone130-battlefield_flow_check": [
+      "BATTLEFIELD FLOW failures=0 ui=8"
+    ]
+  },
+  "native_summary": "summary.json",
+  "native_cases": 302,
+  "native_control_checks": 12,
+  "remaining": [
+    "I08fresh mobile default",
+    "I09primary stats below scroll fold",
+    "physical/human/accessibility",
+    "high-speed/PERF01"
+  ],
+  "overall_goal_complete": false,
+  "visual_reading_verdict": "88/REVISE, I09primary metrics partly below fold"
+}

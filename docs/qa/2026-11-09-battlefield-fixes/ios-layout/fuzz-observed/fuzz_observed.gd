@@ -1,0 +1,89 @@
+extends SceneTree
+## 무작위 입력(클릭·끌기·키)을 오래 넣어 스크립트 오류를 찾는다. 인자: 시드 프레임수
+var main
+var f := 0
+var n := 6000
+var held := false
+var seed_n := 1
+var keys := [KEY_1, KEY_2, KEY_3, KEY_4, KEY_Q, KEY_V, KEY_SPACE, KEY_ESCAPE, KEY_TAB, KEY_H, KEY_P, KEY_E, KEY_R, KEY_ENTER, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_O, KEY_M, KEY_SHIFT]
+func _initialize():
+	var a := OS.get_cmdline_user_args()
+	seed(int(a[0]) if a.size() > 0 else 1)
+	if a.size() > 1: n = int(a[1])
+	main = load("res://main.tscn").instantiate()
+	VirtualInput.mount(main, root)
+	var sd: int = int(a[0]) if a.size() > 0 else 1
+	seed_n = sd
+	Meta.rules = Rules.IDS[sd % Rules.IDS.size()]
+	Meta.map_id = Meta.MAP_IDS[(sd / 4) % Meta.MAP_IDS.size()]
+	# 모드도 시드마다 몇 개씩 (반대 쌍은 set_on이 거른다)
+	Modes.set_on(Modes.ORDER.filter(func(_m): return randf() < 0.25))
+	main.run_flow_system._apply_rules()
+	main.hud_system.start_modes()
+	main.lanes.clear()
+	main.waves_system._roll_lanes()
+	# 짝수 시드는 첫 판(카드 단계별·처음 안내)으로. 헤드리스는 원래 첫 판 안내를 끈다
+	main.tutor = sd % 2 == 0
+	Meta.guide_seen = {}
+	Meta.guide_on = true
+	# 글자·버튼 크기도 시드마다 돌아가며 (창 맞추기·툴팁 크기 코드도 돌게)
+	var z: float = Meta.UI_SCALES[sd % Meta.UI_SCALES.size()]
+	main.ready.connect(func():
+		Meta.ui_scale = z
+		main.hud_system._apply_ui_scale())
+	main.ready.connect(_trace_exit_buttons)
+	print("FUZZR rules=", Meta.rules, " map=", Meta.map_id, " tutor=", main.tutor, " ui=", z, " modes=", ",".join(Modes.on))
+func _mouse(pos: Vector2, btn: int, pressed: bool, shift := false):
+	var e := InputEventMouseButton.new()
+	e.position = pos; e.global_position = pos; e.button_index = btn; e.pressed = pressed; e.shift_pressed = shift
+	VirtualInput.send(e)
+func _move(pos: Vector2):
+	VirtualInput.move(pos)
+	var e := InputEventMouseMotion.new()
+	e.position = pos; e.global_position = pos
+	VirtualInput.send(e)
+func _key(k: int):
+	for p in [true, false]:
+		var e := InputEventKey.new()
+		e.keycode = k; e.physical_keycode = k; e.pressed = p
+		VirtualInput.send(e)
+func _process(_d):
+	f += 1
+	if main.core_hp < 5: main.core_hp = 10  # 오래 돌도록
+	var vs: Vector2 = main.get_viewport().get_visible_rect().size
+	var r := randf()
+	var pos := Vector2(randf() * vs.x, randf() * vs.y)
+	if randf() < 0.5 and main.towers.get_child_count() > 0:
+		# 오브젝트 근처를 자주 누른다
+		pos = main.towers.get_child(randi() % main.towers.get_child_count()).position + Vector2(randf_range(-20, 20), randf_range(-20, 20))
+		pos = main.get_canvas_transform() * pos
+	if r < 0.08:
+		_mouse(pos, MOUSE_BUTTON_LEFT, true, randf() < 0.2); held = true
+	elif r < 0.16 and held:
+		_move(pos); _mouse(pos, MOUSE_BUTTON_LEFT, false); held = false
+	elif r < 0.40:
+		_move(pos)
+	elif r < 0.43:
+		_mouse(pos, MOUSE_BUTTON_RIGHT, true); _mouse(pos, MOUSE_BUTTON_RIGHT, false)
+	elif r < 0.50:
+		_key(keys[randi() % keys.size()])
+	elif r < 0.56:
+		# 터치 (흉내 낸 마우스) + 화면의 취소 버튼
+		var t := InputEventScreenTouch.new()
+		t.position = pos; t.pressed = randf() < 0.5
+		VirtualInput.send(t)
+	elif r < 0.58 and main.cancel_btn.visible:
+		main.cancel_btn.emit_signal("pressed")
+	if main.get_tree().paused and randf() < 0.05: _key(KEY_P)
+	if f % 1000 == 0:
+		print("FUZZ f=%d phase=%d wave=%d towers=%d sel=%d" % [f, main.phase, main.wave, main.towers.get_child_count(), main.interaction_system.selected.size()])
+	if f >= n:
+		print("FUZZ DONE frames=%d" % f)
+		return true
+	return false
+
+func _trace_exit_buttons() -> void:
+	for control in main.ui_root.find_children("*","Button",true,false):
+		if control.tooltip_text=="게임 종료" or control.tooltip_text.begins_with("끄기"):
+			print("FUZZ EXIT_TARGET ",control.tooltip_text)
+			control.pressed.connect(func(): print("FUZZ USER_EXIT frames=",f," tooltip=",control.tooltip_text))

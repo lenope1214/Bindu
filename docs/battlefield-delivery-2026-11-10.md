@@ -27,6 +27,10 @@
 
 ## PR과 후속 작업
 
+17번째 커밋은 fuzz 진단의 실제 종료 코드·완료 표식·실패 원자료를 보존한다. 입력/종료 동작/통과 기준은 유지하며, 완료 없는 exit0 음성 반례도 실패로 검출했다.
+
+18번째 작업은 [기술 조작부 가림·초기 표시](qa/2026-11-09-battlefield-fixes/ios-layout/README.md)다. 정보창과 선택 안내의 가림, 첫 정상 테두리를 수정하고 현재 iOS Simulator302장면·native12단언·122조건 카메라/상태 비교·전체 회귀·desktop4묶음을 검증했다. I-08 모바일 첫 설치 기본 배율과 실기기·사용자·고배속 지연은 미완료로 유지한다.
+
 16번째 작업은 [실제 iOS Simulator lifecycle](qa/2026-11-09-battlefield-fixes/ios-runtime/README.md)이다. 제품 코드 변경 없이 같은 소스의 custom ARM64 debug 앱에서7상태129개 native 단언·보류 카드/연속 진행/조준 원자료35개 검사를 통과했다. 빌드 아키텍처·좌표·fixture 오류와 채택 결과를 분리하고 공통 회귀252/86/28도 재확인했다. 실기기·전화·잠금·Jetsam·멀티·사람 과제·고배속 지연은 남긴다.
 
 15번째 작업은 [혼합 버전 협동과 지원 안내](qa/2026-11-09-battlefield-fixes/multiplayer/mixed-version/README.md)다. 기존 main·수정 전 브랜치·현재 소스의 실제3인 WebRTC를 비교하고, 미지원과 지원 확인 중을 구분해 업데이트·새 판 복구 행동을 표시한다. 최신 제품 PC/폰15actor426단언과 전체 회귀252/86/28을 통과했다. QA ICE 조건과 이전 STUN 미사용 주장의 정정도 증거에 포함한다.

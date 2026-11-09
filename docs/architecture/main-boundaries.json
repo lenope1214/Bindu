@@ -1313,7 +1313,7 @@
     "_mp_ghost_rest": "Nonblocking lane warning and new direction highlight before card placement; WAVE-14 regression",
     "_sim_step": "Share entity tick order with inspector; real versus preview parity matrix",
     "_update_fx": "Share effect/cooldown lifetime with inspector; parity matrix",
-    "_skill_ui": "Port main UI redraw optimization into feature controllers during main merge; Visible skill effects/cooldown/auto mode and optional single-player aim slowdown; battlefield_flow/information regressions; scoped delta from e25b6ea, final gate tracked in battlefield-usability-implementation.md",
+    "_skill_ui": "Port main UI redraw optimization into feature controllers during main merge; Visible skill effects/cooldown/auto mode and optional single-player aim slowdown; battlefield_flow/information regressions; scoped delta from e25b6ea, final gate tracked in battlefield-usability-implementation.md BF-37 native iOS follow-up: initialize the existing normal border when armed metadata is absent; later unchanged frames retain the original redraw cache.",
     "_update_choice_header": "Port main UI redraw optimization into feature controllers during main merge",
     "_info_sig": "Retain warning invalidation for tower direction/build and new lane markers",
     "_legacy_card_layout": "Header text updates every frame while active dock exclusively owns geometry",
@@ -1390,6 +1390,7 @@
     "_mp_resync": "I-04: clear obsolete gestures, restore atomic gift context and authorize the exact host wave before starting it.",
     "_mp_tick": "I-04: drive bounded transaction retries and accurately disable request UI during negotiation or settlement.",
     "_mp_send_towers": "I-04: publish body and choice context as one revision; retain plain TW compatibility under a protocol-zero host.",
-    "_info_blockers": "BF-46/I-04 follow-up: include the visible multiplayer action row so field labels avoid actual request/view/kick buttons; PC/phone native collision proof and responsive recheck."
+    "_info_blockers": "BF-46/I-04 follow-up: include the visible multiplayer action row so field labels avoid actual request/view/kick buttons; PC/phone native collision proof and responsive recheck. BF-40/BF-50: include both skill buttons and their mode toggle so lane/status badges avoid every visible skill control.",
+    "_panel_blocks": "BF-40/BF-50 native iOS follow-up: all skill controls include the manual/auto mode toggle so movable information/DPS panels avoid it. Exact simulator rects/native touch and unchanged camera checked."
   }
 }

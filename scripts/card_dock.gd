@@ -644,7 +644,6 @@ func tick() -> void:
 			game.hint.position = Vector2((size.x - status_width) / 2, (panel.position.y if cards else action_y) - status_height - 8)
 			game.hint.z_index = 2
 			game.hint.show()
-	_place_side(size, cards)
 	game.cancel_btn.text = game.ui_layout_system._kh("카드 돌려놓기 (Esc)") if carrying() and game.phase == game.Phase.PLACE else game.ui_layout_system._kh("위치 다시 정하기 (Esc)" if carrying() else "편집 취소 (Esc)")
 	if gift_waiting:
 		game.cancel_btn.text = "전달 확인 중"
@@ -667,6 +666,9 @@ func tick() -> void:
 		auto.position = Vector2(size.x - 12 - skills_width + 10, size.y - 178)
 		auto.size = Vector2(186, 36)
 		auto.z_index = 2
+	_avoid_skill_hint()
+	# 같은 프레임에 배치한 기술·모드 버튼 위로 정보창이 내려오지 않게 한다.
+	_place_side(size, cards)
 	if game.zoom_btn.visible:
 		_top_left(game.zoom_btn)
 		# 점수 줄 첫 줄(웨이브·점수·중앙 체력) 오른쪽 빈자리: 예전 (12, 64)는 둘째 줄 칩(모드·맵 규칙)을 덮었다
@@ -719,7 +721,7 @@ func tick() -> void:
 		if game.hint.visible and badge.intersects(Rect2(game.hint.position, game.hint.size)):
 			badge_pos.y = game.hint.position.y - game.skip_badge.size.y - 6
 		var avoid: Array[Control] = []
-		avoid.append_array(game.skill_btns)
+		avoid.append_array(game.abilities_system.skill_controls())
 		avoid.append(side)
 		for c: Control in avoid:
 			if c.visible and Rect2(badge_pos, game.skip_badge.size).intersects(c.get_rect()):
@@ -737,6 +739,23 @@ func tick() -> void:
 static func _top_left(c: Control) -> void:
 	if c.anchor_left != 0.0 or c.anchor_top != 0.0 or c.anchor_right != 0.0 or c.anchor_bottom != 0.0:
 		c.set_anchors_preset(Control.PRESET_TOP_LEFT)
+
+
+## 선택 안내는 기술 왼쪽에 둔다. 폭이 부족하면 원문을 접고 기존 아래쪽 간격을 지킨다.
+func _avoid_skill_hint() -> void:
+	if not game.hint.is_visible_in_tree():
+		return
+	var original: Rect2 = game.hint.get_rect()
+	var right: float = game.ui_root.size.x - 12.0
+	for control: Control in game.abilities_system.skill_controls():
+		if control.is_visible_in_tree() and original.intersects(control.get_rect()):
+			right = minf(right, control.position.x - 8.0)
+	if right >= game.ui_root.size.x - 12.0:
+		return
+	game.hint.size = Vector2(minf(original.size.x, maxf(1.0, right - 12.0)), 0.0)
+	var height: float = maxf(34.0, game.hint.get_combined_minimum_size().y)
+	game.hint.size.y = height
+	game.hint.position = Vector2(clampf(original.position.x, 12.0, maxf(12.0, right - game.hint.size.x)), original.end.y - height)
 
 
 func operation_text() -> String:
@@ -947,7 +966,7 @@ func _place_side(size: Vector2, cards: bool) -> void:
 	var bottom: float = panel.position.y - 12.0 if cards else size.y - 64.0
 	if game.hint.visible:
 		bottom = minf(bottom, game.hint.position.y - 8)
-	for b: Control in game.skill_btns:
+	for b: Control in game.abilities_system.skill_controls():
 		if b.is_visible_in_tree():
 			bottom = minf(bottom, b.position.y - 8)  # 웨이브 중 오른쪽 아래 기술 버튼을 덮지 않게
 	var ltop := top

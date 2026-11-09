@@ -126,3 +126,5 @@
 [2026-11-10 전달 기록](battlefield-delivery-2026-11-10.md)에 작업별 커밋·복구 ref·main pull/rebase·충돌 해결을 기록했다. 최신 main의 결과 상세·v1.0.0·빌드 설정을 유지하며 [전체 재검증](qa/2026-11-09-battlefield-fixes/delivery/README.md)을 마쳤다. 실기기·사용자 과제와 후반 전체 지연은 그대로 미완료다.
 
 [실제 iOS Simulator 후속](qa/2026-11-09-battlefield-fixes/ios-runtime/README.md): 제품 코드 변경 없이 별도 ARM64 debug 앱에서7상태129개 native 단언·원자료35개 검사를 통과했다. 실제 UIKit 알림과 재개 터치, 실제 프로세스 종료 뒤 새 PID에서 저장 복원을 기록했다. 운영 URL/저장/bundle을 격리하고 WebRTC를 제외했다. 실기기·손가락 release 유실·잠금·전화·Jetsam·Android·release·멀티·성능·사람 과제를 대체하지 않으며 BF-47은 partial, 전체50개는 active다.
+
+[실제 iOS 기술 조작부 후속](qa/2026-11-09-battlefield-fixes/ios-layout/README.md): I-05 정보창/모드 가림, I-06 첫 표면 누락, I-07 선택 안내/기술 가림을 수정했다. iPhone/iPad5배율302장면, 실제 UIKit 선택·취소·자동/수동12단언,122조건 카메라/전장/상태 비교와 공통 전체 회귀·desktop4묶음을 통과했다. 폰 flow의 기존 설정 모달 UI8경고·desktop ObjectDB 종료 경고·기존 감사43개를 구분한다. I-08 첫 설치의 모바일 배율 기본값 불일치는 미수정이며 전체50개는 active다.

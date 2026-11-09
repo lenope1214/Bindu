@@ -91,6 +91,15 @@ func _draw_ley() -> void:
 
 var auto_skills := false  # 봇·점검: 설정과 상관없이 자동 사용
 var skill_auto_btn: Button
+
+## 전투 조작부 전체. 정보창·배지는 수동/자동 전환도 기술 버튼과 함께 피한다.
+func skill_controls() -> Array[Control]:
+	var controls: Array[Control] = []
+	for button: Button in session.skill_btns:
+		controls.append(button)
+	if is_instance_valid(skill_auto_btn):
+		controls.append(skill_auto_btn)
+	return controls
 var _automatic_cast := false
 
 
@@ -221,7 +230,7 @@ func _skill_ui() -> void:
 			b.add_theme_color_override("font_color", fc)
 		b.tooltip_text = "%s (%d): %s\n%s\n웨이브마다 재충전 · 현재 x%.2f · %s" % [Skill.NAMES[id], i + 1, Skill.desc(id), skill_cooldown_text(id), session.game_speed * skill_speed_factor(), skill_mode_text()]
 		var armed := session.skill_arm == id
-		if b.get_meta("armed", false) != armed:
+		if not b.has_meta("armed") or b.get_meta("armed") != armed:
 			b.set_meta("armed", armed)
 			var sb := StyleBoxFlat.new()
 			sb.bg_color = Color(col, 0.35) if armed else Color(0.06, 0.07, 0.1, 0.85)

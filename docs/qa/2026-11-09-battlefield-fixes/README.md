@@ -1,6 +1,8 @@
 # 전장 사용성 수정 검증 기록
 
-**최신 후속:** [실제 iOS Simulator lifecycle](ios-runtime/README.md)에서7상태129개 native 단언과 bank/skip/조준 원자료35개 검사를 통과했다. 실제 UIKit 앱 전환·같은 PID 재개·새 PID 저장 복원을 확인했다. custom ARM64 debug 싱글 QA이며 제품 소스는 변경하지 않았다. 실기기·잠금·전화·Jetsam·멀티·성능·사람 과제는 미완료다.
+**최신 후속:** [기술 조작부 가림·첫 표시](ios-layout/README.md). 실제 iPhone/iPad Simulator의 정보창/모드 겹침12건·선택 안내 겹침12건과 첫 테두리 누락을 수정했다. 현재5배율302장면·실제 UIKit 터치12단언과 전체 회귀를 통과했다. 첫 설치의 모바일 기본 배율 불일치 I-08은 새 미수정 항목이며 실기기·사람 과제·고배속 지연도 남는다.
+
+**lifecycle 후속:** [실제 iOS Simulator lifecycle](ios-runtime/README.md)에서7상태129개 native 단언과 bank/skip/조준 원자료35개 검사를 통과했다. 실제 UIKit 앱 전환·같은 PID 재개·새 PID 저장 복원을 확인했다. custom ARM64 debug 싱글 QA이며 제품 소스는 변경하지 않았다. 실기기·잠금·전화·Jetsam·멀티·성능·사람 과제는 미완료다.
 
 **협동 후속:** [혼합 버전 협동](multiplayer/mixed-version/README.md)에서 미지원/지원 확인 중·업데이트 후 새 판 안내를 구분했다. 현재 제품의 실제 native15actor426단언과 전체 check252/86/28을 통과했다. 이전 STUN 미사용 설명도 정정했다. 실기기·사람 과제·고배속 전체 지연·PERF-01은 미완료다.
 
@@ -22,6 +24,7 @@
 | 카드 읽기·정지·마지막 적용 복원·기록 읽기 | PC/폰 각각16단언·실패0·UI0 | [PC](integration/core-pc/run.log), [폰](integration/core-phone/run.log) |
 | 입력 | PC26·폰25단언, 실패0·UI0 | [PC](integration/input-pc/run.log), [폰](integration/input-phone/run.log) |
 | 진행·기술·실제 로컬 저장/이어하기 | 각각31단언·실패0. PC UI0, 폰 설정 모달의 의도된 뒤 HUD 겹침8건 | [PC](integration/flow-pc/run.log), [폰](integration/flow-phone/run.log) |
+| 실제 iOS 기술 조작부 | 5배율×3세트×5상태×옵션 줄,2기기302장면·겹침/문구 잘림/초기 표면 위반0. native 터치12단언·122일치 조건의 카메라/전장/오브젝트 보존 | [장면·소스·회귀](ios-layout/README.md) |
 | 실제 iOS Simulator 중단·복귀 | CHOOSE/PLACE/AIM/READY/WAVE/기술/연속 전투7상태. 실제 앱 전환·native 재개·새 PID 이어하기, runtime 오류/예상 밖 경고0. 양성 대조 경고는 별도 | [실행·빌드·범위](ios-runtime/README.md) |
 | 합성 중단·복귀 | 각각62단언·실패0·UI0. CHOOSE/PLACE/AIM/READY/WAVE/기술/연속 진행 × focus-out/paused 알림 | [PC](integration/lifecycle-pc/run.log), [폰](integration/lifecycle-phone/run.log) |
 | 원래 객체를 보존하는 undo | PC/폰 각각43단언·실패0·UI0, 실제 버튼 뒤 키보드 포커스와 터치 중복 포함 | [별도 증거](undo/README.md) |

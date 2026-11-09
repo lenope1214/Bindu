@@ -1,0 +1,319 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started 프로젝트 초기화 (5 steps)[39m[0m
+[   0% ] [90m[1mfirst_scan_filesystem[22m | 파일 구조 스캔 중...[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | 전역 클래스 이름을 불러오는 중...[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | GDExtensions 검증 중...[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | 오토로드 스크립트를 만드는 중...[39m[0m
+[  66% ] [90m[1mfirst_scan_filesystem[22m | 플러그인을 초기화 중...[39m[0m
+[  83% ] [90m[1mfirst_scan_filesystem[22m | 파일 스캔 시작 중...[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mexport[22m | Started Exporting for iOS (Project Files Only) (2 steps)[39m[0m
+[   0% ] [90m[1mexport[22m | Making .pck[39m[0m
+[   0% ] [90m[1msavepack[22m | Started 패킹 중 (102 steps)[39m[0m
+[   1% ] [90m[1msavepack[22m | 파일 저장 중: res://.godot/imported/android_bg.svg-57867627e80019c73b0d2bdc2037c603.ctex[39m[0m
+[   1% ] [90m[1msavepack[22m | 파일 저장 중: res://icons/android_bg.svg.import[39m[0m
+[   2% ] [90m[1msavepack[22m | 파일 저장 중: res://.godot/imported/android_bg_432.png-fdde0151e36a882ee1c06414e975315c.ctex[39m[0m
+[   2% ] [90m[1msavepack[22m | 파일 저장 중: res://icons/android_bg_432.png.import[39m[0m
+[   3% ] [90m[1msavepack[22m | 파일 저장 중: res://.godot/imported/android_fg.svg-c7fa95d069d6c7ff700bae2f03e746ed.ctex[39m[0m
+[   3% ] [90m[1msavepack[22m | 파일 저장 중: res://icons/android_fg.svg.import[39m[0m
+[   4% ] [90m[1msavepack[22m | 파일 저장 중: res://.godot/imported/android_fg_432.png-4f11b36a0e3ab431db9aa7cb776f505c.ctex[39m[0m
+[   4% ] [90m[1msavepack[22m | 파일 저장 중: res://icons/android_fg_432.png.import[39m[0m
+[   5% ] [90m[1msavepack[22m | 파일 저장 중: res://.godot/imported/android_main.svg-4db432f1534d3282d85a57abaff8cd93.ctex[39m[0m
+[   5% ] [90m[1msavepack[22m | 파일 저장 중: res://icons/android_main.svg.import[39m[0m
+[   6% ] [90m[1msavepack[22m | 파일 저장 중: res://.godot/imported/android_main_192.png-eb49a1335685ffc83bf20b2f0fb6b49c.ctex[39m[0m
+[   6% ] [90m[1msavepack[22m | 파일 저장 중: res://icons/android_main_192.png.import[39m[0m
+[   8% ] [90m[1msavepack[22m | 파일 저장 중: res://icons/icon.ico[39m[0m
+[   9% ] [90m[1msavepack[22m | 파일 저장 중: res://.godot/imported/icon_1024.png-44baa23f90c7346a3d806fa2ba1b38e2.ctex[39m[0m
+[   9% ] [90m[1msavepack[22m | 파일 저장 중: res://icons/icon_1024.png.import[39m[0m
+[  10% ] [90m[1msavepack[22m | 파일 저장 중: res://.godot/imported/icon_mac.svg-dacb4ff0e2a8d52863988e69f7bb2a25.ctex[39m[0m
+[  10% ] [90m[1msavepack[22m | 파일 저장 중: res://icons/icon_mac.svg.import[39m[0m
+[  11% ] [90m[1msavepack[22m | 파일 저장 중: res://.godot/imported/icon_mac_1024.png-136d8dcd35d7dce803d45623b7399001.ctex[39m[0m
+[  11% ] [90m[1msavepack[22m | 파일 저장 중: res://icons/icon_mac_1024.png.import[39m[0m
+[  12% ] [90m[1msavepack[22m | 파일 저장 중: res://.godot/imported/icon_square.svg-77db1cf3b2441681e9b96bc6998a134c.ctex[39m[0m
+[  12% ] [90m[1msavepack[22m | 파일 저장 중: res://icons/icon_square.svg.import[39m[0m
+[  13% ] [90m[1msavepack[22m | 파일 저장 중: res://qa_ios/lifecycle.gdc[39m[0m
+[  15% ] [90m[1msavepack[22m | 파일 저장 중: res://qa_ios/monitor.gdc[39m[0m
+[  16% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/app/feature.gdc[39m[0m
+[  17% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/app/gift_transactions.gdc[39m[0m
+[  18% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/app/session.gdc[39m[0m
+[  19% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/app/signal_scope.gdc[39m[0m
+[  21% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/domain/placement_policy.gdc[39m[0m
+[  22% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/abilities.gdc[39m[0m
+[  23% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/cards.gdc[39m[0m
+[  24% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/combat.gdc[39m[0m
+[  25% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/field_overlay.gdc[39m[0m
+[  26% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/field_view.gdc[39m[0m
+[  28% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/frame.gdc[39m[0m
+[  29% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/hud.gdc[39m[0m
+[  30% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/interaction.gdc[39m[0m
+[  31% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/leaderboard.gdc[39m[0m
+[  32% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/lobby.gdc[39m[0m
+[  33% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/menu.gdc[39m[0m
+[  34% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/multiplayer.gdc[39m[0m
+[  35% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/onboarding.gdc[39m[0m
+[  36% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/online.gdc[39m[0m
+[  37% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/patchlog.gdc[39m[0m
+[  38% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/perks.gdc[39m[0m
+[  40% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/persistence.gdc[39m[0m
+[  41% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/progression.gdc[39m[0m
+[  42% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/run_flow.gdc[39m[0m
+[  43% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/spawning.gdc[39m[0m
+[  44% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/ui_layout.gdc[39m[0m
+[  45% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/ui_shell.gdc[39m[0m
+[  47% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/viewport.gdc[39m[0m
+[  48% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/waves.gdc[39m[0m
+[  49% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/account.gdc[39m[0m
+[  50% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/ach.gdc[39m[0m
+[  51% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/attack_preview.gdc[39m[0m
+[  52% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/card_dock.gdc[39m[0m
+[  54% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/codex.gdc[39m[0m
+[  55% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/edit_history.gdc[39m[0m
+[  56% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/elem.gdc[39m[0m
+[  57% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/errlog.gdc[39m[0m
+[  58% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/float_panel.gdc[39m[0m
+[  60% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/glyph.gdc[39m[0m
+[  61% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/icons.gdc[39m[0m
+[  62% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/info_panel.gdc[39m[0m
+[  63% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/mac_updater.gdc[39m[0m
+[  64% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/main.gdc[39m[0m
+[  65% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/maprule.gdc[39m[0m
+[  66% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/meta.gdc[39m[0m
+[  67% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/modes.gdc[39m[0m
+[  68% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/mp.gdc[39m[0m
+[  69% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/net.gdc[39m[0m
+[  70% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/nick_filter.gdc[39m[0m
+[  71% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/online_config.gdc[39m[0m
+[  73% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/orb.gdc[39m[0m
+[  74% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/patch.gdc[39m[0m
+[  75% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/patch_notes.gdc[39m[0m
+[  76% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/patch_notes_data.gdc[39m[0m
+[  77% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/pattern.gdc[39m[0m
+[  79% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/progress.gdc[39m[0m
+[  80% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/projectile.gdc[39m[0m
+[  81% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/rules.gdc[39m[0m
+[  82% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/run_detail.gdc[39m[0m
+[  83% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/sfx.gdc[39m[0m
+[  84% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/share.gdc[39m[0m
+[  86% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/side.gdc[39m[0m
+[  87% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/skill.gdc[39m[0m
+[  88% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/tower.gdc[39m[0m
+[  89% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/tutorial.gdc[39m[0m
+[  90% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/tut_play.gdc[39m[0m
+[  91% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/updater.gdc[39m[0m
+[  93% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/vary.gdc[39m[0m
+[  94% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/vote.gdc[39m[0m
+[  95% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/zone.gdc[39m[0m
+[  96% ] [90m[1msavepack[22m | 파일 저장 중: res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex[39m[0m
+[  96% ] [90m[1msavepack[22m | 파일 저장 중: res://icon.svg.import[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://.godot/exported/133200997/export-3070c538c03ee49b7677ff960a3f5195-main.scn[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://qa_ios/lifecycle.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://qa_ios/monitor.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/app/feature.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/app/gift_transactions.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/app/session.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/app/signal_scope.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/domain/placement_policy.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/abilities.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/cards.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/combat.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/field_overlay.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/field_view.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/frame.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/hud.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/interaction.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/leaderboard.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/lobby.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/menu.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/multiplayer.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/onboarding.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/online.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/patchlog.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/perks.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/persistence.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/progression.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/run_flow.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/spawning.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/ui_layout.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/ui_shell.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/viewport.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/features/waves.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/account.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/ach.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/attack_preview.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/card_dock.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/codex.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/edit_history.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/elem.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/errlog.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/float_panel.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/glyph.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/icons.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/info_panel.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/mac_updater.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/main.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/maprule.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/meta.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/modes.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/mp.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/net.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/nick_filter.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/online_config.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/orb.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/patch.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/patch_notes.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/patch_notes_data.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/pattern.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/progress.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/projectile.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/rules.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/run_detail.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/sfx.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/share.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/side.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/skill.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/tower.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/tutorial.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/tut_play.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/updater.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/vary.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/vote.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://scripts/zone.gd.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://main.tscn.remap[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://.godot/global_script_class_cache.cfg[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://icon.svg[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://.godot/uid_cache.bin[39m[0m
+[  97% ] [90m[1msavepack[22m | 파일 저장 중: res://project.binary[39m[0m
+[92m[ DONE ][39m [1msavepack[22m
+[0m
+[  33% ] [90m[1mexport[22m | Extracting and configuring Xcode project[39m[0m
+Static framework: libgodot.ios.debug.xcframework
+Unzipping...
+READ: data.pck
+READ: godot_apple_embedded/
+READ: godot_apple_embedded/export_options.plist
+ADDING: BinduIOSQA/export_options.plist size: 480
+READ: godot_apple_embedded/godot_apple_embedded-Info.plist
+ADDING: BinduIOSQA/BinduIOSQA-Info.plist size: 2271
+READ: godot_apple_embedded/godot_apple_embedded.entitlements
+ADDING: BinduIOSQA/BinduIOSQA.entitlements size: 190
+READ: godot_apple_embedded/Launch Screen.storyboard
+WARNING: Property not found: application/boot_splash/fullsize
+     at: get_setting_with_override_and_custom_features (core/config/project_settings.cpp:409)
+ADDING: BinduIOSQA/Launch Screen.storyboard size: 3025
+READ: godot_apple_embedded/dummy.cpp
+ADDING: BinduIOSQA/dummy.cpp size: 2493
+READ: godot_apple_embedded/dummy.h
+ADDING: BinduIOSQA/dummy.h size: 2285
+READ: godot_apple_embedded/dummy.swift
+ADDING: BinduIOSQA/dummy.swift size: 2252
+READ: godot_apple_embedded/dylibs/
+READ: godot_apple_embedded/dylibs/empty
+ADDING: BinduIOSQA/dylibs/empty size: 42
+Creating /private/tmp/bindu-ios-layout-hint-typed-20261110/export/BinduIOSQA/dylibs
+READ: godot_apple_embedded/en.lproj/
+READ: godot_apple_embedded/en.lproj/InfoPlist.strings
+ADDING: BinduIOSQA/en.lproj/InfoPlist.strings size: 44
+Creating /private/tmp/bindu-ios-layout-hint-typed-20261110/export/BinduIOSQA/en.lproj
+READ: godot_apple_embedded/Images.xcassets/
+READ: godot_apple_embedded/Images.xcassets/SplashImage.imageset/
+READ: godot_apple_embedded/Images.xcassets/SplashImage.imageset/Contents.json
+ADDING: BinduIOSQA/Images.xcassets/SplashImage.imageset/Contents.json size: 343
+Creating /private/tmp/bindu-ios-layout-hint-typed-20261110/export/BinduIOSQA/Images.xcassets/SplashImage.imageset
+READ: godot_apple_embedded/Images.xcassets/SplashImage.imageset/splash@2x.png
+ADDING: BinduIOSQA/Images.xcassets/SplashImage.imageset/splash@2x.png size: 14701
+READ: godot_apple_embedded/Images.xcassets/SplashImage.imageset/splash@3x.png
+ADDING: BinduIOSQA/Images.xcassets/SplashImage.imageset/splash@3x.png size: 14701
+READ: godot_apple_embedded.xcodeproj/
+READ: godot_apple_embedded.xcodeproj/project.pbxproj
+ADDING: BinduIOSQA.xcodeproj/project.pbxproj size: 16166
+Creating /private/tmp/bindu-ios-layout-hint-typed-20261110/export/BinduIOSQA.xcodeproj
+READ: godot_apple_embedded.xcodeproj/project.xcworkspace/
+READ: godot_apple_embedded.xcodeproj/project.xcworkspace/contents.xcworkspacedata
+ADDING: BinduIOSQA.xcodeproj/project.xcworkspace/contents.xcworkspacedata size: 156
+Creating /private/tmp/bindu-ios-layout-hint-typed-20261110/export/BinduIOSQA.xcodeproj/project.xcworkspace
+READ: godot_apple_embedded.xcodeproj/xcshareddata/
+READ: godot_apple_embedded.xcodeproj/xcshareddata/xcschemes/
+READ: godot_apple_embedded.xcodeproj/xcshareddata/xcschemes/godot_apple_embedded.xcscheme
+ADDING: BinduIOSQA.xcodeproj/xcshareddata/xcschemes/BinduIOSQA.xcscheme size: 3458
+Creating /private/tmp/bindu-ios-layout-hint-typed-20261110/export/BinduIOSQA.xcodeproj/xcshareddata/xcschemes
+READ: libgodot_camera.ios.debug.xcframework/
+READ: libgodot_camera.ios.debug.xcframework/ios-arm64_x86_64-simulator/
+READ: libgodot_camera.ios.debug.xcframework/ios-arm64_x86_64-simulator/empty
+READ: libgodot_camera.ios.debug.xcframework/ios-arm64_x86_64-simulator/libgodot_camera.a
+READ: libgodot_camera.ios.debug.xcframework/Info.plist
+READ: libgodot_camera.ios.debug.xcframework/ios-arm64/
+READ: libgodot_camera.ios.debug.xcframework/ios-arm64/empty
+READ: libgodot_camera.ios.debug.xcframework/ios-arm64/libgodot_camera.a
+READ: libgodot_camera.ios.release.xcframework/
+READ: libgodot_camera.ios.release.xcframework/Info.plist
+READ: libgodot_camera.ios.release.xcframework/ios-arm64/
+READ: libgodot_camera.ios.release.xcframework/ios-arm64/empty
+READ: libgodot_camera.ios.release.xcframework/ios-arm64/libgodot_camera.a
+READ: libgodot_camera.ios.release.xcframework/ios-arm64_x86_64-simulator/
+READ: libgodot_camera.ios.release.xcframework/ios-arm64_x86_64-simulator/empty
+READ: libgodot_camera.ios.release.xcframework/ios-arm64_x86_64-simulator/libgodot_camera.a
+READ: libgodot_camera.visionos.debug.xcframework/
+READ: libgodot_camera.visionos.debug.xcframework/Info.plist
+ADDING: libgodot_camera.visionos.debug.xcframework/Info.plist size: 1011
+Creating /private/tmp/bindu-ios-layout-hint-typed-20261110/export/libgodot_camera.visionos.debug.xcframework
+READ: libgodot_camera.visionos.debug.xcframework/xros-arm64-simulator/
+READ: libgodot_camera.visionos.debug.xcframework/xros-arm64-simulator/empty
+ADDING: libgodot_camera.visionos.debug.xcframework/xros-arm64-simulator/empty size: 42
+Creating /private/tmp/bindu-ios-layout-hint-typed-20261110/export/libgodot_camera.visionos.debug.xcframework/xros-arm64-simulator
+READ: libgodot_camera.visionos.debug.xcframework/xros-arm64/
+READ: libgodot_camera.visionos.debug.xcframework/xros-arm64/empty
+ADDING: libgodot_camera.visionos.debug.xcframework/xros-arm64/empty size: 42
+Creating /private/tmp/bindu-ios-layout-hint-typed-20261110/export/libgodot_camera.visionos.debug.xcframework/xros-arm64
+READ: libgodot_camera.visionos.release.xcframework/
+READ: libgodot_camera.visionos.release.xcframework/xros-arm64-simulator/
+READ: libgodot_camera.visionos.release.xcframework/xros-arm64-simulator/empty
+ADDING: libgodot_camera.visionos.release.xcframework/xros-arm64-simulator/empty size: 42
+Creating /private/tmp/bindu-ios-layout-hint-typed-20261110/export/libgodot_camera.visionos.release.xcframework/xros-arm64-simulator
+READ: libgodot_camera.visionos.release.xcframework/xros-arm64/
+READ: libgodot_camera.visionos.release.xcframework/xros-arm64/empty
+ADDING: libgodot_camera.visionos.release.xcframework/xros-arm64/empty size: 42
+Creating /private/tmp/bindu-ios-layout-hint-typed-20261110/export/libgodot_camera.visionos.release.xcframework/xros-arm64
+READ: libgodot_camera.visionos.release.xcframework/Info.plist
+ADDING: libgodot_camera.visionos.release.xcframework/Info.plist size: 1011
+READ: libgodot.ios.debug.xcframework/
+READ: libgodot.ios.debug.xcframework/Info.plist
+ADDING: BinduIOSQA.xcframework/Info.plist size: 1000
+Creating /private/tmp/bindu-ios-layout-hint-typed-20261110/export/BinduIOSQA.xcframework
+READ: libgodot.ios.debug.xcframework/ios-arm64_x86_64-simulator/
+READ: libgodot.ios.debug.xcframework/ios-arm64_x86_64-simulator/empty
+READ: libgodot.ios.debug.xcframework/ios-arm64_x86_64-simulator/libgodot.a
+ADDING: BinduIOSQA.xcframework/ios-arm64_x86_64-simulator/libgodot.a size: 174745856
+Creating /private/tmp/bindu-ios-layout-hint-typed-20261110/export/BinduIOSQA.xcframework/ios-arm64_x86_64-simulator
+READ: libgodot.ios.debug.xcframework/ios-arm64/
+READ: libgodot.ios.debug.xcframework/ios-arm64/empty
+READ: libgodot.ios.debug.xcframework/ios-arm64/libgodot.a
+ADDING: BinduIOSQA.xcframework/ios-arm64/libgodot.a size: 220864544
+Creating /private/tmp/bindu-ios-layout-hint-typed-20261110/export/BinduIOSQA.xcframework/ios-arm64
+READ: libgodot.ios.release.xcframework/
+READ: libgodot.ios.release.xcframework/Info.plist
+READ: libgodot.ios.release.xcframework/ios-arm64/
+READ: libgodot.ios.release.xcframework/ios-arm64/empty
+READ: libgodot.ios.release.xcframework/ios-arm64/libgodot.a
+READ: libgodot.ios.release.xcframework/ios-arm64_x86_64-simulator/
+READ: libgodot.ios.release.xcframework/ios-arm64_x86_64-simulator/empty
+READ: libgodot.ios.release.xcframework/ios-arm64_x86_64-simulator/libgodot.a
+READ: MoltenVK.xcframework/
+READ: MoltenVK.xcframework/ios-arm64_x86_64-simulator/
+READ: MoltenVK.xcframework/ios-arm64_x86_64-simulator/libMoltenVK.a
+ADDING: MoltenVK.xcframework/ios-arm64_x86_64-simulator/libMoltenVK.a size: 13712744
+Creating /private/tmp/bindu-ios-layout-hint-typed-20261110/export/MoltenVK.xcframework/ios-arm64_x86_64-simulator
+READ: MoltenVK.xcframework/Info.plist
+ADDING: MoltenVK.xcframework/Info.plist size: 3177
+READ: MoltenVK.xcframework/ios-arm64/
+READ: MoltenVK.xcframework/ios-arm64/libMoltenVK.a
+ADDING: MoltenVK.xcframework/ios-arm64/libMoltenVK.a size: 6917632
+Creating /private/tmp/bindu-ios-layout-hint-typed-20261110/export/MoltenVK.xcframework/ios-arm64
+READ: PrivacyInfo.xcprivacy
+ADDING: PrivacyInfo.xcprivacy size: 990
+Exporting launch screen storyboard
+Exporting additional assets
+[  66% ] [90m[1mexport[22m | Code-signing dylibs[39m[0m
+[92m[ DONE ][39m [1mexport[22m
+[0m

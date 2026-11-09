@@ -1,0 +1,24 @@
+{
+  "owned_simulators": [
+    {
+      "profile": "phone",
+      "udid": "6535F835-2D8B-4BA5-A725-6A315A5829C9",
+      "name": "BinduUsabilityQA-Layout-phone",
+      "app_terminated": true,
+      "shutdown_deleted": true,
+      "sandbox_archive": "docs/qa/2026-11-09-battlefield-fixes/ios-layout/sandbox-final/phone"
+    },
+    {
+      "profile": "tablet",
+      "udid": "22ABD518-5952-4023-8665-97BAC953503D",
+      "name": "BinduUsabilityQA-Layout-tablet",
+      "app_terminated": true,
+      "shutdown_deleted": true,
+      "sandbox_archive": "docs/qa/2026-11-09-battlefield-fixes/ios-layout/sandbox-final/tablet"
+    }
+  ],
+  "other_devices_touched": false,
+  "outside_repository_build_cache_retained": true,
+  "unrelated_uid_sha256": "dffce8853f5a066cf276295fecadda52bb44c8962fe7152fd8a30425c12ef532",
+  "scope": "Only this task own2Simulators/QA bundle; normal product/real devices untouched"
+}

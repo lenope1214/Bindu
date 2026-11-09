@@ -1,0 +1,10 @@
+{
+  "score": 88,
+  "verdict": "REVISE",
+  "differences": [
+    {
+      "difference": "I09: at iPad130, primary damage/rate metrics remain partly below the inspector scroll fold after keeping skill controls clear. Geometry and button text fit pass; immediate primary-information reading still needs revision.",
+      "suggestion": "Expose the primary metrics before optional preview/detail controls, retaining the existing content and field/camera scale, then recapture the same reading states."
+    }
+  ]
+}

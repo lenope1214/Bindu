@@ -1,0 +1,9 @@
+{
+  "cases": 122,
+  "violations": {
+    "inspector_control_overlap": 12
+  },
+  "untrimmed_metric_trial_excluded": true,
+  "native_touch_in_baseline": "not_observed",
+  "source_ref": "0f9fe31196d0aa5b9122e49a84821ffae69d6509"
+}

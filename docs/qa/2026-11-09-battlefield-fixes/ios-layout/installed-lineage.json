@@ -1,0 +1,16 @@
+{
+  "phone": {
+    "installed_bundle": "/Users/leeseongjin/Library/Developer/CoreSimulator/Devices/6535F835-2D8B-4BA5-A725-6A315A5829C9/data/Containers/Bundle/Application/97624515-D669-4049-B3F4-B28ACD0A1DD0/BinduIOSQA.app",
+    "pack_relative_path": "BinduIOSQA.pck",
+    "pack_sha256": "920752f9fae7ebe0c81d93d625065bcaadf32a97911ce5a33e5b772d73cfa560",
+    "binary_sha256": "ef0c013d380ca8aece8506adb1d922bbb6302dc71b3e4828b058e2299db8954d",
+    "matches_built_app": true
+  },
+  "tablet": {
+    "installed_bundle": "/Users/leeseongjin/Library/Developer/CoreSimulator/Devices/22ABD518-5952-4023-8665-97BAC953503D/data/Containers/Bundle/Application/69B9A7B4-B861-4250-94E6-5DC872B90718/BinduIOSQA.app",
+    "pack_relative_path": "BinduIOSQA.pck",
+    "pack_sha256": "920752f9fae7ebe0c81d93d625065bcaadf32a97911ce5a33e5b772d73cfa560",
+    "binary_sha256": "ef0c013d380ca8aece8506adb1d922bbb6302dc71b3e4828b058e2299db8954d",
+    "matches_built_app": true
+  }
+}

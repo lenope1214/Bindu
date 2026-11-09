@@ -439,7 +439,8 @@
       "implementation": "implemented",
       "verification": "local_verified",
       "evidence": [
-        "docs/qa/2026-11-09-battlefield-fixes/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md"
       ]
     },
     {
@@ -472,7 +473,8 @@
       "implementation": "implemented",
       "verification": "local_verified",
       "evidence": [
-        "docs/qa/2026-11-09-battlefield-fixes/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md"
       ]
     },
     {
@@ -601,7 +603,8 @@
       "verification": "local_evidence_with_external_gaps",
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/remaining-user-tasks.md",
-        "docs/qa/2026-11-09-battlefield-fixes/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md"
       ]
     }
   ],
@@ -885,11 +888,40 @@
         "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/ios-runtime/summary.json"
       ]
+    },
+    {
+      "type": "fuzz_diagnostics_preserved",
+      "commit": "324e8a9",
+      "facts": [
+        "Earlier zero-error fuzz lacked completion/exit markers; raw logs had been deleted, exact cause remains unproven.",
+        "Actual exit/frames printed; failed raw retained. Fake incomplete exit0 remains failure, default failure retention and absolute-path guard verified. No random inputs or pass criteria relaxed.",
+        "Observed-only separate4seeds reached3000/exit0 without quit input; current fullcheck rerun passed with explicit DONE/exit markers."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/ios-layout/fuzz-wrapper/run.json"
+      ]
+    },
+    {
+      "type": "native_ios_skill_controls_and_selection_hint_verified",
+      "facts": [
+        "Baseline122scenes reproduce12inspector/mode overlaps; independent raw check finds12selection-hint/skill overlaps. First normal surface absent until a previous arm transition.",
+        "Current302actual iOS Simulator scenes:2devices,5scales,3sets,5states,2bar modes plus native defaults. Geometry/text/style violations0;12native UIKit action assertions pass.",
+        "122matched source conditions preserve field1280x720/camera/safe UI/objects/picks. Changed product scripts4, exact source hashes match checkout; custom debug single-player, URLs blank, no WebRTC.",
+        "Current fullcheck252/86/28 with345parity cases4140samples/fuzz4x3000/restore4,8,12to13 pass. Desktop4cohorts pass, prior phone modal UI8 and exit ObjectDB warnings retained. Architecture43old/new0.",
+        "Intermediate untrimmed text oracle, metadata parser, Rect2 compile failure and intentionally stopped281scene source are excluded/preserved.",
+        "I08 fresh mobile default1.0 vs documented1.3 remains open, as do physical/human/accessibility and high-speed/PERF01 tasks.",
+        "Structural302scene gate passed, but visual reading review88/REVISE remains for I09primary metrics below fold; do not treat this as full UI or goal completion."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/ios-layout/summary.json"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "Continue BF49 high-speed queue/remaining render cost investigation and remaining-user-tasks when physical devices and human participants are available. Actual iOS Simulator evidence does not close full50.",
+    "next_local_action": "Resolve I09 primary metrics below fold at large type and recapture reading states; then fix I08 fresh mobile UI defaults preserving stored user settings. Continue BF49 and physical/human tasks; full50 remains active.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },
@@ -903,5 +935,52 @@
     "goal_complete": false,
     "pr_url": "https://github.com/lenope1214/Bindu/pull/17",
     "fixture_commit": "41cb142"
-  }
+  },
+  "supplementary_findings": [
+    {
+      "id": "I-05",
+      "title": "정보창과 기술 모드 버튼 겹침",
+      "implementation": "implemented",
+      "verification": "local_native_verified",
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md"
+      ]
+    },
+    {
+      "id": "I-06",
+      "title": "첫 기술 버튼 표면 누락",
+      "implementation": "implemented",
+      "verification": "local_native_verified",
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md"
+      ]
+    },
+    {
+      "id": "I-07",
+      "title": "선택 안내와 기술 버튼 겹침",
+      "implementation": "implemented",
+      "verification": "local_native_verified",
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md"
+      ]
+    },
+    {
+      "id": "I-08",
+      "title": "첫 모바일 배율의 기본값 경로 불일치",
+      "implementation": "observed_unfixed",
+      "verification": "fresh_ios_observation_and_source_path",
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md"
+      ]
+    },
+    {
+      "id": "I-09",
+      "title": "큰 배율 정보창의 핵심 수치가 스크롤 아래에 남음",
+      "implementation": "observed_reading_followup",
+      "verification": "native_iPad130_capture_only_no_human_task",
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md"
+      ]
+    }
+  ]
 }

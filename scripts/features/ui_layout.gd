@@ -114,7 +114,7 @@ func _info_blockers() -> Array[Rect2]:
 	var session: BinduSession = self.session
 	var out: Array[Rect2] = []
 	var inv := session.ui_root.get_global_transform().affine_inverse()
-	for c: Control in [session.hud, session.dps_panel, session.legend, session.range_btn, session.zoom_btn, session.start_btn, session.skip_badge, session.bar_box, session.toast, session.banner, session.guide_label, session.guide_more, session.mp_bar, session.mp_act, session.ver_label, session.hint, session.apply_btn, session.reroll_btn, session.card_detail_btn, session.hide_btn, session.skip_btn, session.skip_n_btn, session.cancel_btn, session.detail_btn, session.aim_ok_btn, session.card_dock.focus_btn, session.card_dock.panel, session.card_dock.side, session.card_dock.footer]:
+	for c: Control in [session.hud, session.dps_panel, session.legend, session.range_btn, session.zoom_btn, session.start_btn, session.skip_badge, session.bar_box, session.toast, session.banner, session.guide_label, session.guide_more, session.mp_bar, session.mp_act, session.ver_label, session.hint, session.apply_btn, session.reroll_btn, session.card_detail_btn, session.hide_btn, session.skip_btn, session.skip_n_btn, session.cancel_btn, session.detail_btn, session.aim_ok_btn, session.card_dock.focus_btn, session.card_dock.panel, session.card_dock.side, session.card_dock.footer] + session.abilities_system.skill_controls():
 		if c == null or not c.is_visible_in_tree():
 			continue
 		if (c is Label and str(c.text) == "") or (c == session.hud and session.hud_chips.is_empty()):

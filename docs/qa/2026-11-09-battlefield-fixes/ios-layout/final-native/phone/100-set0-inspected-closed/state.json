@@ -1,0 +1,348 @@
+{
+  "bank_picks": [],
+  "command": "0fc6549ec529463f90fa7f9e80f076aa",
+  "continue_at": [
+    0.361341863870621,
+    0.476513236761093
+  ],
+  "continue_visible": false,
+  "debug_build": true,
+  "editor": false,
+  "input_events": [],
+  "ios": true,
+  "layout": {
+    "bar_rect": [
+      837.981689453125,
+      628.179077148438,
+      604.0,
+      44.0
+    ],
+    "bar_visible": false,
+    "buttons": [
+      {
+        "center": [
+          0.734173603484425,
+          0.81135982937283
+        ],
+        "font_names": [
+          "Apple SD Gothic Neo",
+          "Noto Sans CJK KR",
+          "Malgun Gothic",
+          "sans-serif"
+        ],
+        "font_size": 26,
+        "local_rect": [
+          944.96337890625,
+          550.179077148438,
+          186.0,
+          68.0
+        ],
+        "minimum": [
+          182.0,
+          68.0
+        ],
+        "name": "@Button@116",
+        "normal_border": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "rect": [
+          1055.98168945312,
+          550.179077148438,
+          186.0,
+          68.0
+        ],
+        "style_minimum": "(4.0, 4.0)",
+        "text": "집중 · 공격 속도↑\n준비",
+        "text_size": "(178.0, 64.0)",
+        "untrimmed_text_size": "(185.0, 64.0)",
+        "visible": true
+      },
+      {
+        "center": [
+          0.860691175369409,
+          0.81135982937283
+        ],
+        "font_names": [
+          "Apple SD Gothic Neo",
+          "Noto Sans CJK KR",
+          "Malgun Gothic",
+          "sans-serif"
+        ],
+        "font_size": 26,
+        "local_rect": [
+          1140.96337890625,
+          550.179077148438,
+          190.0,
+          68.0
+        ],
+        "minimum": [
+          190.0,
+          68.0
+        ],
+        "name": "@Button@117",
+        "normal_border": [
+          2,
+          2,
+          2,
+          2
+        ],
+        "rect": [
+          1251.98168945312,
+          550.179077148438,
+          190.0,
+          68.0
+        ],
+        "style_minimum": "(4.0, 4.0)",
+        "text": "붙잡기 · 구체 멈춤\n준비",
+        "text_size": "(186.0, 64.0)",
+        "untrimmed_text_size": "(193.0, 64.0)",
+        "visible": true
+      },
+      {
+        "center": [
+          0.734173603484425,
+          0.728026496039497
+        ],
+        "font_names": [
+          "Apple SD Gothic Neo",
+          "Noto Sans CJK KR",
+          "Malgun Gothic",
+          "sans-serif"
+        ],
+        "font_size": 23,
+        "local_rect": [
+          944.96337890625,
+          506.179077148438,
+          186.0,
+          36.0
+        ],
+        "minimum": [
+          120.0,
+          36.0
+        ],
+        "name": "SkillAutoMode",
+        "normal_border": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "rect": [
+          1055.98168945312,
+          506.179077148438,
+          186.0,
+          36.0
+        ],
+        "style_minimum": "(8.0, 8.0)",
+        "text": "기술: 수동",
+        "text_size": "(92.0, 28.0)",
+        "untrimmed_text_size": "(92.0, 28.0)",
+        "visible": true
+      }
+    ],
+    "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (142.5, 0.0)]",
+    "control_actions": [],
+    "display_safe_rect": [
+      186.0,
+      0.0,
+      2250.0,
+      1146.0
+    ],
+    "field": "(1280.0, 720.0)",
+    "hint_rect": [
+      639.0,
+      577.739074707031,
+      287.0,
+      35.0
+    ],
+    "hint_visible": true,
+    "inspector": {
+      "rect": [
+        1111.98168945312,
+        270.089538574219,
+        330.0,
+        228.089538574219
+      ],
+      "visible": true
+    },
+    "safe_pad": [
+      111.018310546875,
+      0.0,
+      111.018310546875,
+      35.8208923339844
+    ],
+    "safe_ui_rect": [
+      111.018310546875,
+      0.0,
+      1342.96337890625,
+      684.179077148438
+    ],
+    "screen_scale": 3.0,
+    "settled": true,
+    "ui_scale": 1.0,
+    "window_size": "(2622, 1206)"
+  },
+  "mobile": true,
+  "mouse_buttons": 0.0,
+  "mouse_emulation": true,
+  "notifications": [],
+  "offer": [
+    {
+      "id": "pierce",
+      "type": "mod"
+    },
+    {
+      "e": 0.0,
+      "lv": 1.0,
+      "type": "elem"
+    },
+    {
+      "e": 1.0,
+      "lv": 1.0,
+      "type": "elem"
+    }
+  ],
+  "os": "iOS",
+  "pause_setting": true,
+  "pause_ui_visible": false,
+  "paused": false,
+  "pending_card_empty": true,
+  "phase": 3.0,
+  "phase_name": "WAVE",
+  "picks": 0.0,
+  "pid": 46675.0,
+  "pinch_lock": false,
+  "press_empty": true,
+  "restoration_events": [],
+  "resume_at": [
+    0.283386588096619,
+    0.3084577023983
+  ],
+  "resume_can_process": true,
+  "runtime_log": [
+    {
+      "code": "BinduIOSQA logger probe",
+      "file": "core/variant/variant_utility.cpp",
+      "function": "push_warning",
+      "line": 1033.0,
+      "rationale": "",
+      "type": 1.0
+    }
+  ],
+  "save_text": "나가면 웨이브 5 앞 쉬는 시간부터",
+  "saved": {
+    "bank_perks": 0.0,
+    "bank_picks": [],
+    "bank_rerolls": 0.0,
+    "offer": [
+      {
+        "id": "pierce",
+        "type": "mod"
+      },
+      {
+        "e": 0.0,
+        "lv": 1.0,
+        "type": "elem"
+      },
+      {
+        "e": 1.0,
+        "lv": 1.0,
+        "type": "elem"
+      }
+    ],
+    "picks_left": 0.0,
+    "run_id": "ios-lifecycle-wave",
+    "sha256": "d29b67a9987b2c801f710c743328e05317900311359839ecf988c8b6a00cef5d",
+    "skip_left": 0.0,
+    "state": "ready",
+    "towers": [
+      {
+        "charge": 0.0,
+        "dealt": 0.0,
+        "dir": "(1.0, 0.0)",
+        "elements": {
+          "2": 1.0
+        },
+        "hist": [],
+        "mods": {},
+        "order": [
+          2.0
+        ],
+        "pattern": "shot",
+        "pincer": 0.0,
+        "plv": 1.0,
+        "pos": "(300.0, 320.0)",
+        "reso": 0.0,
+        "run_dealt": 0.0,
+        "run_src": {},
+        "src": {},
+        "star_e": {},
+        "star_sum": 0.0,
+        "third_n": 0.0,
+        "trigs": {}
+      },
+      {
+        "charge": 0.0,
+        "dealt": 0.0,
+        "dir": "(-1.0, 0.0)",
+        "elements": {
+          "2": 1.0
+        },
+        "hist": [],
+        "mods": {},
+        "order": [
+          2.0
+        ],
+        "pattern": "shot",
+        "pincer": 0.0,
+        "plv": 1.0,
+        "pos": "(950.0, 320.0)",
+        "reso": 0.0,
+        "run_dealt": 0.0,
+        "run_src": {},
+        "src": {},
+        "star_e": {},
+        "star_sum": 0.0,
+        "third_n": 0.0,
+        "trigs": {}
+      }
+    ],
+    "wave": 4.0
+  },
+  "skill_arm": "",
+  "skill_cd": {},
+  "skill_used": 0.0,
+  "skip_left": 0.0,
+  "stage": "1.0|0|inspected|closed",
+  "template": true,
+  "title_visible": false,
+  "touches_empty": true,
+  "towers": [
+    {
+      "elements": {
+        "2": 1.0
+      },
+      "mods": {},
+      "pos": [
+        300.0,
+        320.0
+      ]
+    },
+    {
+      "elements": {
+        "2": 1.0
+      },
+      "mods": {},
+      "pos": [
+        950.0,
+        320.0
+      ]
+    }
+  ],
+  "user_dir": "/Users/leeseongjin/Library/Developer/CoreSimulator/Devices/6535F835-2D8B-4BA5-A725-6A315A5829C9/data/Containers/Data/Application/4E393129-A5F8-4DDA-9145-6E8EE4590452/Documents",
+  "viewport": "[P: (0.0, 0.0), S: (1565.0, 720.0)]",
+  "wave": 5.0
+}

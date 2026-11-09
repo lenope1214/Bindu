@@ -53,7 +53,7 @@ func _panel_blocks(panel: Control) -> Array[Rect2]:
 			hb = c[0] if hb.size == Vector2.ZERO else hb.merge(c[0])
 		blocks.append(Rect2(session.hud.position + hb.position, hb.size).grow(4.0))
 	var dock_btns: Array = [session.card_dock.focus_btn, session.card_dock.skip_group, session.card_dock.panel, session.card_dock.footer] if session.card_dock != null else []
-	for c in [session.bar_box, session.start_btn, session.cancel_btn, session.aim_ok_btn, session.skip_badge, session.mp_bar, session.ver_label, session.legend] + session.skill_btns + dock_btns:
+	for c in [session.bar_box, session.start_btn, session.cancel_btn, session.aim_ok_btn, session.skip_badge, session.mp_bar, session.ver_label, session.legend] + session.abilities_system.skill_controls() + dock_btns:
 		if c != null and c is Control and c.is_visible_in_tree():
 			blocks.append((inv * c.get_global_rect()).grow(4.0))
 	if session.phase == BinduSession.Phase.WAVE:
