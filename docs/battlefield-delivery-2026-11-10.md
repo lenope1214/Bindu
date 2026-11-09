@@ -38,3 +38,5 @@
 11번째 작업은 [겹치는 상태 문구의 표시 정리](qa/2026-11-09-battlefield-fixes/performance/feedback-density/README.md)다. 원본 popup·피해 숫자·수명·RNG를 보존하며 같은 문구/색/크기의 겹침만 최신 표시로 줄인다. 실제 그리기 콜백·동일 장면·macOS release 확인을 기존 검증과 구분한다. 별도 성능 실행의 일부 증가를 숨기지 않고 PERF-01과 고배속 지연은 미완료로 남긴다.
 
 12번째 작업은 [같은 속성 입력의 상성 비트키 재사용](qa/2026-11-09-battlefield-fixes/performance/zone-application/README.md)이다. Tower별 캐시는 보류하고 Share에 마지막 값 사본 하나만 둔다. 실제 전투량·끝 상태·RNG까지 같은 ABBA와 제품/전투/release/전체 검사를 통과했으며, 제어되지 않은 이전 성능 수치는 인과 개선률로 쓰지 않는다. 배속·사운드·밸런스·카메라는 유지한다.
+
+13번째 작업은 [저강도 FX의 장식 생략](qa/2026-11-09-battlefield-fixes/performance/fx-quality/README.md)이다. 장식 외 명령·기본 모드·원본/snapshot·같은 draw 순서의 RNG를 보존한다. 계측 raw viewport CPU의 이전 draw 혼입을 제외하고 직접 callback과 강제 반환 시간을 구분했다. 기본 끔·카메라·배속·판정은 유지하며 고배속 지연과 물리 검증은 계속 미완료다.

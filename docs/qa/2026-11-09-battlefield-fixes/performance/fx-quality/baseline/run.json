@@ -1,0 +1,57 @@
+{
+  "scope": "Frozen native16tower/400orb scene, full vs reduced effects. Actual draw callback/primitive counters add overhead; inclusive script timings are localization only. Not before/after uninstrumented FPS.",
+  "profiles": {
+    "pc100": {
+      "command": [
+        "/Applications/Godot.app/Contents/MacOS/Godot",
+        "--audio-driver",
+        "Dummy",
+        "--path",
+        "/var/folders/qb/bsntsp65163_43tqgll4bsd40000gn/T/bindu-fx-profile-kz4914rk",
+        "--resolution",
+        "1280x720",
+        "-s",
+        "tools/battlefield_fx_quality_check.gd",
+        "--",
+        "/Users/leeseongjin/Desktop/Bindu/docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/baseline/pc100",
+        "1.0",
+        "pc",
+        "after"
+      ],
+      "checks": 246,
+      "failures": 0,
+      "ui_errors": 0
+    }
+  },
+  "original_source_hashes": {
+    "scripts/orb.gd": "224850d628f17f0e391a44e3c529f21f19d175df8d0aaf85fa8a614d84c7182d",
+    "scripts/projectile.gd": "47d44b7ede9c24ed396fa0ddb6da423493f010f53e615e5a7435c59781fa5b86",
+    "scripts/zone.gd": "b4fc8834b536da8312dd14c037fda29fdd85cbc24939614b43bafca1cf23b7f8",
+    "scripts/tower.gd": "fc9510c7d5463bf9610bb6c2acc4d57964122a4c12d0c5eaaced577df8e5764d",
+    "scripts/features/field_view.gd": "de936c328f4b690e437c43075bc23cbfe47340aa0a7f20561676d72e2c5900d9"
+  },
+  "instrumentation": {
+    "scripts/orb.gd": {
+      "primitive_call_sites": 51,
+      "instrumented_sha256": "811b268fa0f31fa91ec7cd13971575d2d11d7442ca6f5f4ced7f2240a249616c"
+    },
+    "scripts/projectile.gd": {
+      "primitive_call_sites": 17,
+      "instrumented_sha256": "3cd1ae66cca0e1dcc3e7ea7819b8d8577a9a8bdd59261a9f171481438a1a0d55"
+    },
+    "scripts/zone.gd": {
+      "primitive_call_sites": 17,
+      "instrumented_sha256": "dcc6713b7053b1e1c0e0202d95cadff3103dd973fb40e8c9ed92ba23f101e569"
+    },
+    "scripts/tower.gd": {
+      "primitive_call_sites": 102,
+      "instrumented_sha256": "d04c241080d0f680dccb5da6550414c9ab7403fc1d5c8cdbb757dbb0d892535d"
+    },
+    "scripts/features/field_view.gd": {
+      "primitive_call_sites": 106,
+      "instrumented_sha256": "65203e399da1e91fe8de2cf6c4a43660dddbda59f8e0ac1d01fab98909226bfd"
+    }
+  },
+  "isolated_save_removed": true,
+  "temporary_project_removed": true
+}

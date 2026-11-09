@@ -1,0 +1,106 @@
+{
+	"next_rng": [
+		[
+			578465731,
+			578465731,
+			578465731,
+			578465731,
+			578465731
+		],
+		[
+			578465731,
+			578465731,
+			578465731,
+			578465731,
+			578465731
+		]
+	],
+	"results": [
+		{
+			"inclusive_draw_us": {
+				"field_view/_draw": {
+					"calls": 1,
+					"us": 724
+				},
+				"field_view/_draw_fx": {
+					"calls": 1,
+					"us": 16620
+				},
+				"orb/_draw": {
+					"calls": 400,
+					"us": 11937
+				},
+				"projectile/_draw": {
+					"calls": 98,
+					"us": 1103
+				},
+				"tower/_draw": {
+					"calls": 22,
+					"us": 3145
+				},
+				"zone/_draw": {
+					"calls": 159,
+					"us": 1737
+				}
+			},
+			"primitives": {
+				"field_view": 4452,
+				"orb": 5032,
+				"projectile": 717,
+				"tower": 725,
+				"zone": 532
+			},
+			"reduced": false,
+			"render_cpu_ms": [
+				0.0,
+				0.0,
+				64.0719985961914,
+				58.7589988708496,
+				58.9410018920898
+			]
+		},
+		{
+			"inclusive_draw_us": {
+				"field_view/_draw": {
+					"calls": 1,
+					"us": 731
+				},
+				"field_view/_draw_fx": {
+					"calls": 1,
+					"us": 15001
+				},
+				"orb/_draw": {
+					"calls": 400,
+					"us": 11725
+				},
+				"projectile/_draw": {
+					"calls": 98,
+					"us": 1043
+				},
+				"tower/_draw": {
+					"calls": 22,
+					"us": 3171
+				},
+				"zone/_draw": {
+					"calls": 159,
+					"us": 1698
+				}
+			},
+			"primitives": {
+				"field_view": 4452,
+				"orb": 5032,
+				"projectile": 717,
+				"tower": 723,
+				"zone": 532
+			},
+			"reduced": true,
+			"render_cpu_ms": [
+				59.0800018310547,
+				60.0400009155273,
+				58.8370018005371,
+				59.4780006408691,
+				60.2649993896484
+			]
+		}
+	]
+}

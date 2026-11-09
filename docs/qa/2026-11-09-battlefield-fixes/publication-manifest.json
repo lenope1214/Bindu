@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/README.md",
-      "bytes": 10279,
-      "sha256": "0995d4d4f21fb13a70fcaa788836ca4bc0df4ba8ccbdaa81874cc19603dbb279",
+      "bytes": 10826,
+      "sha256": "b07752b8c052a145749a55650b8e74dc5d4f4ae89fe5a79e8cf41f640968d0d7",
       "published": true
     },
     {
@@ -20058,6 +20058,798 @@
       "path": "docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/summary.json",
       "bytes": 11279,
       "sha256": "84d32d23928a23aa023f6f507eb6291495700c36afaade564df8f6e24ee2f9fe",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/README.md",
+      "bytes": 7651,
+      "sha256": "9dd34dc12bcb717f939ddf5e06bbc1546b5beb7bae5af0deeacc6a956bdeef05",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/architecture.log",
+      "bytes": 2559,
+      "sha256": "56100687ac26ea2044943f0670a16da78fc0ba85752a5b3a38c0845f2a884293",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/baseline/import.log",
+      "bytes": 11032,
+      "sha256": "a4ce6fb8cdbc3ba2c19e4803bf4f20ff68ff8911fed11bf810f6f53d91eca719",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/baseline/pc100/dense.png",
+      "bytes": 587894,
+      "sha256": "05edc1230c8df6fcabfe2da94f67283a5e455998727c2a177d6542a7b7f096ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/baseline/pc100/feedback.json",
+      "bytes": 16460,
+      "sha256": "5e66953f31f3c57287fc58732742fea9bc14a524ab750b2c954c58e24e76c93e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/baseline/pc100/full.png",
+      "bytes": 588498,
+      "sha256": "b1f75b3111ed2f5f371d6d9e971f344fb004a1405c5bbaf6d01290ae19a0f035",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/baseline/pc100/fx-profile.json",
+      "bytes": 1582,
+      "sha256": "478f6b873167ff047e44717d32e5828cf4b541db99b4affc50a1f77f2c33e8f4",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/baseline/pc100/native.log",
+      "bytes": 12374,
+      "sha256": "2ce8db49d781689f686ee2d789e967daae0fea1685735232b147cc86b7a005f9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/baseline/pc100/reduced.png",
+      "bytes": 601720,
+      "sha256": "1f7b49e9e9d16e9351dce19c8a486d22459b954fc85b03c712657d870e5c2ef5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/baseline/run.json",
+      "bytes": 2277,
+      "sha256": "921cc3b59801494f0a16fc8b829bdae420b8f20391619c368fda4f21041bc8b1",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/candidate-field.txt",
+      "bytes": 65343,
+      "sha256": "a592ff877c29ca0577dbefddff1e6b92284ca50cdbcfee41721f6b41a7f2c5a3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/import.log",
+      "bytes": 11090,
+      "sha256": "8821bfa3a00ffeaf9d28a51775ae32d7c8fc0c5d529c8e3b923f0308e76782cb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/pc100/dense.png",
+      "bytes": 556183,
+      "sha256": "fabe7a01d4ab3fa203359d651c8cdeb9e781f7507e6ffc70763f28700e1308a9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/pc100/feedback.json",
+      "bytes": 16301,
+      "sha256": "c835843e0ce716155e066ffb90fe75221e98ad61e86c67bb39acc6de527412fd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/pc100/full-after.png",
+      "bytes": 557200,
+      "sha256": "f81cfa4662fdf6d592c3b3f761c4d254dd97e0e626360df8805b7e00d7514fc5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/pc100/full-before.png",
+      "bytes": 557361,
+      "sha256": "1a0e6e8a04ac94b197afa25098a109aa7690c18dfe463fd584571e7d554fbffb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/pc100/fx-compare.json",
+      "bytes": 1564,
+      "sha256": "f5b6315e89de92f032bae9e3c3769072faf51524ecb879064f1748632029062d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/pc100/native.log",
+      "bytes": 18023,
+      "sha256": "86473655b72545ea5dc1af5e9915b99eca686acae0979bff1b4f7172e111cf17",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/pc100/reduced-after.png",
+      "bytes": 520285,
+      "sha256": "735f27b3ed41ca1c6666993bfbd524b576b0cf4f0ee25318278d97c5f43b7622",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/pc100/reduced-before.png",
+      "bytes": 577482,
+      "sha256": "50378a52c4eedef86c65854808e1e7ec153e5e41197331a6073f8f8b0a75a5ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/phone130/dense.png",
+      "bytes": 283968,
+      "sha256": "f5355005c832e4b968cd3ff79fe3705bdb0e5ecdb0cb8c37ee0946b73cb4b807",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/phone130/feedback.json",
+      "bytes": 16511,
+      "sha256": "08635474e331687551256e6a3953dfc6f5448329efc3edd895be1a52fcfdc86c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/phone130/full-after.png",
+      "bytes": 284039,
+      "sha256": "f7cb807e9a3a8abc0d92ea3bc7bb435b7d634fe960bec9720235b912675864cb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/phone130/full-before.png",
+      "bytes": 283981,
+      "sha256": "145bfce0870d31baa668007308b7c2dc2ea0ca48149b74ebd93bdd66ec864f55",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/phone130/fx-compare.json",
+      "bytes": 1548,
+      "sha256": "a77f2b57246bebd6cd3a0eeda06825360d53e2bae7eabb8e3feae8d6c0507b8f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/phone130/native.log",
+      "bytes": 18023,
+      "sha256": "86473655b72545ea5dc1af5e9915b99eca686acae0979bff1b4f7172e111cf17",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/phone130/reduced-after.png",
+      "bytes": 267300,
+      "sha256": "3f153e1001db93ad7a6281f07670c2c67738c8c44569ad607655d4e9b7c4b30b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/phone130/reduced-before.png",
+      "bytes": 287978,
+      "sha256": "50f0c6d326a5b4d472e4bffc40df5798bd72a8f378d437ab76ae998da7de9827",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark/run.json",
+      "bytes": 6446,
+      "sha256": "903ae01a6fd24eef0dacc5b3d92b958baf967cffd2afef03bcdd336f5379537a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/candidate-field.txt",
+      "bytes": 65479,
+      "sha256": "f51e19e7078d71a97c3cfb5b844c91dcaa1e49097ecbc00a83024ea01da95299",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/import.log",
+      "bytes": 11090,
+      "sha256": "8821bfa3a00ffeaf9d28a51775ae32d7c8fc0c5d529c8e3b923f0308e76782cb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/pc100/dense.png",
+      "bytes": 578183,
+      "sha256": "5e791783a4e7f2acae9b712ef793e961f189fa7b917feddb96f41d0a5e0628ca",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/pc100/feedback.json",
+      "bytes": 16430,
+      "sha256": "81410ade919bf304838ac747a2306895a3c89ae84730ac1a79a3629d14a79c37",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/pc100/full-after.png",
+      "bytes": 580436,
+      "sha256": "b3e6363e77a167de82464926ec99095c491f272ca1096c00579e712ec230cb0a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/pc100/full-before.png",
+      "bytes": 580471,
+      "sha256": "6a0990f9523fb19c7767a4f88a237b2d11cef68de824bc1b851b310c12f63f63",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/pc100/fx-compare.json",
+      "bytes": 2242,
+      "sha256": "7129a405d2d43afb92be78f9952acbba2f71780539d2ad83f6ea58afa8753f55",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/pc100/native.log",
+      "bytes": 23735,
+      "sha256": "9629441a026cf4484ddd36b317c21d6d56d40002d4be27d4f6b3d598acaa3d0a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/pc100/reduced-after.png",
+      "bytes": 537681,
+      "sha256": "06dbb6905bd0b2fd255844f42440724db523c2779c53608a877ec0ae2f0a068a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/pc100/reduced-before.png",
+      "bytes": 596604,
+      "sha256": "4589fe48ceb51629b2a8d8a0fd157491cc74be71fd1e5d55205fa14ea9d761f2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/phone130/dense.png",
+      "bytes": 284838,
+      "sha256": "c0a0af195bbb8703dfbcb232535ebeb8870150455c8fabdfe7ecb85d9a6be085",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/phone130/feedback.json",
+      "bytes": 16064,
+      "sha256": "6597336674123a4c14dc48b1147cce6772a8091e63672d8c37da0c860fa9fddf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/phone130/full-after.png",
+      "bytes": 284968,
+      "sha256": "413aba6ff98ec04041641650f06163c4ca81835c6583c476eed1d80f83f56305",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/phone130/full-before.png",
+      "bytes": 284868,
+      "sha256": "417536b3b1b80982d1c071b60f352cfa46e1a04b1138e8d1a439c032e51f9821",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/phone130/fx-compare.json",
+      "bytes": 2240,
+      "sha256": "97928f4406596d1396efcebefca475b7a8101992e5fc1c6bf2c7346cf67137dd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/phone130/native.log",
+      "bytes": 23735,
+      "sha256": "9629441a026cf4484ddd36b317c21d6d56d40002d4be27d4f6b3d598acaa3d0a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/phone130/reduced-after.png",
+      "bytes": 267821,
+      "sha256": "7ce73b04476ac8a7b5245cad18c6dc5bb235498810792fe6ee7ea07c4af65c4c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/phone130/reduced-before.png",
+      "bytes": 288324,
+      "sha256": "853b49ae25ed4ddf063318fd2d33651c5470915ef16ff133b2440e42dfa6cd25",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/benchmark-final/run.json",
+      "bytes": 8536,
+      "sha256": "881222ca8a7c171780f6ab7b389cef92309f376ee9c37d73f20704f0a8f7985d",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/candidate-field.txt",
+      "bytes": 65343,
+      "sha256": "a592ff877c29ca0577dbefddff1e6b92284ca50cdbcfee41721f6b41a7f2c5a3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/import.log",
+      "bytes": 11090,
+      "sha256": "8821bfa3a00ffeaf9d28a51775ae32d7c8fc0c5d529c8e3b923f0308e76782cb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/pc100/dense.png",
+      "bytes": 583163,
+      "sha256": "f9e7664474466a5547da95cfbbffa18faf0d78773ec29c3fb465dc00f2e5d10e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/pc100/feedback.json",
+      "bytes": 16444,
+      "sha256": "5b698ca3aa185e67e89508c129e436f5886ca2e464e587222711a4c9c1f76bad",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/pc100/full-after.png",
+      "bytes": 585092,
+      "sha256": "8faa6287e3f78e9502c286f4ea260a695fdaea7ed30da48cbed71456e300b9c9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/pc100/full-before.png",
+      "bytes": 584434,
+      "sha256": "43916ba6367dd98afc10ad49b264432dc35d1418080e267e5e7d165f0bd83c0c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/pc100/fx-compare.json",
+      "bytes": 504,
+      "sha256": "ad66470765475b84efeb1162a73076ac52071977b0e35d8b7e3a95b28a759aec",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/pc100/native.log",
+      "bytes": 11393,
+      "sha256": "3cf4a51365cee84bf35c336080747c65508940f52a1ca2e0d2a4c5d344c0b74b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/pc100/reduced-after.png",
+      "bytes": 541249,
+      "sha256": "9f4ae7a8714d362e052c44d5bdccad0836d4f9fd9c03c1c2f683ccf2a7a758ad",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/pc100/reduced-before.png",
+      "bytes": 600977,
+      "sha256": "cbde51d5fd4eafe3e70f040511923961ecee081104e085d30fd98428e17565f3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/phone130/dense.png",
+      "bytes": 276401,
+      "sha256": "0c2253f40f9f2fecce5f6e2ae3ea26743fefe669d482f29d699efb7d4857a0ef",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/phone130/feedback.json",
+      "bytes": 16256,
+      "sha256": "1d88f1370a785e52c94393e2b0aadc50fa4f401c3959b2be4889de9f746e1439",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/phone130/full-after.png",
+      "bytes": 275964,
+      "sha256": "c8397fc695ab18c8adc77b3683e88da7ca9d9e3b21a25aed52b03a4976c62948",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/phone130/full-before.png",
+      "bytes": 275973,
+      "sha256": "bd68c506936a8a68555200f3de83dd326fc63e55c16e98124274f32425e6d287",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/phone130/fx-compare.json",
+      "bytes": 505,
+      "sha256": "d5d06fcd8976a1d9c077949d0d02be9643551c6ac1e75afc1dddc22cc270010a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/phone130/native.log",
+      "bytes": 11262,
+      "sha256": "50374224befbc62c26144067596a41feddcaf4def28b32ed05f6644c9c00a739",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/phone130/reduced-after.png",
+      "bytes": 262608,
+      "sha256": "7d8fc5ea9c141faa2f48a29b532e0c5f4583c0d6432ceeefb57fa02651393ee7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/phone130/reduced-before.png",
+      "bytes": 280707,
+      "sha256": "3c95742b8c2686ef78ef67f185aed55864d9913e6bc8c16866604101e7add5ea",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract/run.json",
+      "bytes": 3046,
+      "sha256": "7118418c4a460105068689acc6cd7c760dc04ebe212ac7e823b683b199584e93",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/candidate-field.txt",
+      "bytes": 65479,
+      "sha256": "f51e19e7078d71a97c3cfb5b844c91dcaa1e49097ecbc00a83024ea01da95299",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/import.log",
+      "bytes": 11090,
+      "sha256": "8821bfa3a00ffeaf9d28a51775ae32d7c8fc0c5d529c8e3b923f0308e76782cb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/pc100/dense.png",
+      "bytes": 569337,
+      "sha256": "f456d1035024e870e41b472d8571615b04546d6650f67e0e1bd355e9397889f9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/pc100/feedback.json",
+      "bytes": 15906,
+      "sha256": "c05a7e6569a7a425b3536b9da6d7ef77228a036f700122ad93b63665f857cf31",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/pc100/full-after.png",
+      "bytes": 568031,
+      "sha256": "9667fe73a03346f46b9dacb5c5128f9322adf9f112119f42d8747ba6b70395f0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/pc100/full-before.png",
+      "bytes": 567941,
+      "sha256": "185a783f73bea7fb499d9a13159c90ab7034c2297bbc0545d36fd7e7dab7458d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/pc100/fx-compare.json",
+      "bytes": 631,
+      "sha256": "29103b6c701d72fa8f36c42399858fd83d68823e1d8582691b9bbcbab55e6e78",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/pc100/native.log",
+      "bytes": 11393,
+      "sha256": "3cf4a51365cee84bf35c336080747c65508940f52a1ca2e0d2a4c5d344c0b74b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/pc100/reduced-after.png",
+      "bytes": 525303,
+      "sha256": "5a4641bc2ec9bf8605a3d11344434502ec2070b5fd96c4b36f8aeb4de1c62ab8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/pc100/reduced-before.png",
+      "bytes": 585760,
+      "sha256": "be3ea79cb220a6296bc1f58b5c1ef4798d43775826872863bfbd3cf45f5d13f1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/phone130/dense.png",
+      "bytes": 286863,
+      "sha256": "3cff89b00eb29fbc65ec7af52209c5467577f9165375a90a6731a1fc77344f44",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/phone130/feedback.json",
+      "bytes": 16500,
+      "sha256": "2be85b490fbc5c5ecbe24ce8d03079fc86a4b732cfbc51b24f2e71f10e388bb5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/phone130/full-after.png",
+      "bytes": 287670,
+      "sha256": "5b1c4f622d40b032f4816b7c688a52df38e1b8734f19e290ecf1a463ca30f966",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/phone130/full-before.png",
+      "bytes": 287502,
+      "sha256": "097d643fda1689787e4113d21979d3b00d9e3d75abb03d5e5f4ad04b4d838155",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/phone130/fx-compare.json",
+      "bytes": 632,
+      "sha256": "e5b88edb287bdcc38444f3bd54d649ee4101ae27ef56376cf02ca1d4119dd156",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/phone130/native.log",
+      "bytes": 11393,
+      "sha256": "3cf4a51365cee84bf35c336080747c65508940f52a1ca2e0d2a4c5d344c0b74b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/phone130/reduced-after.png",
+      "bytes": 270346,
+      "sha256": "675458229ab87eefb81059bbf9a892d95bb0828fbcc20a47500645831282188e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/phone130/reduced-before.png",
+      "bytes": 291269,
+      "sha256": "97b83f3b279c219c0cb823abac1876dd838f37f45c81d0b6174d53c7d2aa6b9e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-final/run.json",
+      "bytes": 3332,
+      "sha256": "d022ccd0fc26a97ca17f963e791c8cd54555f55a1a59f5f16b9f7dbced9c99a7",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-smoke/candidate-field.txt",
+      "bytes": 65475,
+      "sha256": "07c8db578072d257e7a25f0d1c351f9d542f5ff9bfc0b2dd9df034dd0423796b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-smoke/import.log",
+      "bytes": 11090,
+      "sha256": "8821bfa3a00ffeaf9d28a51775ae32d7c8fc0c5d529c8e3b923f0308e76782cb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-smoke/pc100/dense.png",
+      "bytes": 537796,
+      "sha256": "a8c58c915bc3da585eb4e919cfb46efe1b43a8866ed5a9afe255f9abae8da99d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-smoke/pc100/feedback.json",
+      "bytes": 16461,
+      "sha256": "8a73da9580c7736ffeb73c5b196fc6212bd6a3187eef6b4d8ca629a786236cee",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-smoke/pc100/full-after.png",
+      "bytes": 541302,
+      "sha256": "b6c934efddd1e7e251e5f4e0da5c2337ab9faad1decd2a13bfc5cc020a6046af",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-smoke/pc100/full-before.png",
+      "bytes": 541215,
+      "sha256": "3806393b15739be1adb13af384b1552c87734a7e146f1b4cb8c568c909701ed2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-smoke/pc100/fx-compare.json",
+      "bytes": 505,
+      "sha256": "f3108c637cab2ccba1fe457458412cff988d82306292284f5cfe4420b18f669c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-smoke/pc100/native.log",
+      "bytes": 11328,
+      "sha256": "984c474dc75bea3a363b612b04c3eaee7f9537d20b2c6e6c09e609c0bf1627eb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-smoke/pc100/reduced-after.png",
+      "bytes": 502805,
+      "sha256": "62af6d3a893cc9e058feeb25192e6dda78e0a6b7c58e51177a13649caee25d1d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-smoke/pc100/reduced-before.png",
+      "bytes": 557610,
+      "sha256": "34f628e50fef1d371d69ff600d38b13a3e51636cd59316c6e7ff957197b3c8ae",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/contract-smoke/run.json",
+      "bytes": 1830,
+      "sha256": "a95826c340135a72eaed27372b6bac0e3671a2ffc643ea56855b166de148b00d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/candidate-field.txt",
+      "bytes": 65479,
+      "sha256": "f51e19e7078d71a97c3cfb5b844c91dcaa1e49097ecbc00a83024ea01da95299",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/import.log",
+      "bytes": 11090,
+      "sha256": "8821bfa3a00ffeaf9d28a51775ae32d7c8fc0c5d529c8e3b923f0308e76782cb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/pc100/dense.png",
+      "bytes": 588010,
+      "sha256": "f31e3d416426a37d37665bb2db3d4cd1c173018d7a20f21ac850f2f38d34600f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/pc100/feedback.json",
+      "bytes": 16194,
+      "sha256": "79359dc3a3d7baf0838408f87f121a9ebe6aa76129c36c5cba9f6e5e053e1c24",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/pc100/full-after.png",
+      "bytes": 587886,
+      "sha256": "b72fa0e7f82b58e61911f8799f4fbfd1750d53a8c2d88590a2866a6d73974a39",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/pc100/full-before.png",
+      "bytes": 587528,
+      "sha256": "8126101c8448ddb2787f4638742aee7040e52426a149e9d58f6e4bfd241b1701",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/pc100/fx-compare.json",
+      "bytes": 632,
+      "sha256": "c4485604ec44c3f414e26f836ed9a34f6b2298736613656565ed22c0416de403",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/pc100/native.log",
+      "bytes": 11393,
+      "sha256": "3cf4a51365cee84bf35c336080747c65508940f52a1ca2e0d2a4c5d344c0b74b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/pc100/reduced-after.png",
+      "bytes": 545483,
+      "sha256": "2375010b32b9e007a271b9707f97c4be62390277be15ed3d93cb2a7040d854d4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/pc100/reduced-before.png",
+      "bytes": 608261,
+      "sha256": "d49f0684074dbc96f34edacaf3afd902d5ff7de2c8faeff1fc75f5965a4ddff7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/phone130/dense.png",
+      "bytes": 287549,
+      "sha256": "6de297acb9188709a48b61d84461a277b894579364d3f56d44e2bfd59217f69c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/phone130/feedback.json",
+      "bytes": 16255,
+      "sha256": "8782f31357c051e6d84bd06a0e0f7e56c49392cfba983c86c0eae32007a02976",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/phone130/full-after.png",
+      "bytes": 288219,
+      "sha256": "bb524c7b7fed5e769fce728adb80aa45bb2d224fd1b9e150834f92f24b080a6b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/phone130/full-before.png",
+      "bytes": 288325,
+      "sha256": "1608d0c3efdfeec93d11123532557c3122508553f255b3ca7e98a42a381ff5bb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/phone130/fx-compare.json",
+      "bytes": 631,
+      "sha256": "acc3bb3c0f45e6e7d48196885fe2ef93cfc8838affcf7d49c55c2b80a20dde36",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/phone130/native.log",
+      "bytes": 11393,
+      "sha256": "3cf4a51365cee84bf35c336080747c65508940f52a1ca2e0d2a4c5d344c0b74b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/phone130/reduced-after.png",
+      "bytes": 271166,
+      "sha256": "0e032e516633e62b8eca322619417d58fd0da648b0b6ccd72af682874650eb39",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/phone130/reduced-before.png",
+      "bytes": 292022,
+      "sha256": "8e496c60e0c9fbb739205a8f6977ce3a9e70ca84e91ff38eef095b28eb2e4fd8",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-contract/run.json",
+      "bytes": 3417,
+      "sha256": "0a904796b119790ea44d6c0e12092593ce341fc225d4f75b04e24354287247a0",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-full-check.log",
+      "bytes": 871,
+      "sha256": "9d69a27386321f1e4287873f231abc1bfeedc79cd34993d87ff0e812d81bfd20",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-release/export.log",
+      "bytes": 19085,
+      "sha256": "3b347d29527bf34bbd0163087faf41fb78a1118f4051987f5fea37d473091a20",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-release/import.log",
+      "bytes": 9487,
+      "sha256": "147b8f689b35c5228767af8191611943f1aa92a09e5fc23833e96500b16220c3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-release/pc100/dense.png",
+      "bytes": 522425,
+      "sha256": "9c05f34e56b32467d95b5de1728d9f2720a33e766160638b6b68c4a597bc5b75",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-release/pc100/feedback.json",
+      "bytes": 16193,
+      "sha256": "0c965aa16fc72067c7cd70300194d9d8e13cc488c9e025a8875a8251a07936c8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-release/pc100/native.log",
+      "bytes": 10550,
+      "sha256": "348b7c8a1079ff4421d539ced3d503599383efdf964e993219d7915d50eb61ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-release/phone130/dense.png",
+      "bytes": 265611,
+      "sha256": "23ce87f0f6236c6b9b841c7e0ad45ca380b78fa838f94e280170e5242a0ec3ae",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-release/phone130/feedback.json",
+      "bytes": 15676,
+      "sha256": "2fdbaf1892df1201db3828dcdfd04551cef59cd50d96318f519cd6aa3947c7da",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-release/phone130/native.log",
+      "bytes": 10550,
+      "sha256": "348b7c8a1079ff4421d539ced3d503599383efdf964e993219d7915d50eb61ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-release/qa-mode.json",
+      "bytes": 174,
+      "sha256": "6c68e74d03e7ef2f4789b54e81fbb1ed33e3e848880c76fcf7af107c97bce776",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-release/run.json",
+      "bytes": 2478,
+      "sha256": "1731ad65f89f56b0025dabeae2bb941d2fc856d6ef310f1e5aafe8db0030f3eb",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-release/source-before-export.json",
+      "bytes": 7126,
+      "sha256": "44ac179728adc6828001152f0693630431b1f4ba93f94d77d757c9994a8be50c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-verification.json",
+      "bytes": 7987,
+      "sha256": "3816623446d99baa082095ce74c8f831f278ac9f50b7d027aaadee04a6ae791a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/run_compare.py",
+      "bytes": 7212,
+      "sha256": "2c612621e05c379a60173618d3de811a5ec149329d6759e1b30f833154812a2a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/run_profile.py",
+      "bytes": 4714,
+      "sha256": "e04ebcfb376f8d016b0072f9116214c0e50ffd47c051a09af16f26b1516d5239",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/run_release.py",
+      "bytes": 2118,
+      "sha256": "e2d64fa0f8b17c09c515a39708996017d16f86bedbc513b0a55d90f7afc1e540",
       "published": true
     },
     {

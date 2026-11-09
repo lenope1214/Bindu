@@ -583,7 +583,8 @@
         "docs/qa/2026-11-09-battlefield-fixes/performance/hit-factors/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/export-runtime/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/README.md",
-        "docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/README.md"
       ]
     },
     {
@@ -820,11 +821,27 @@
         "docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/product-verification.json"
       ]
+    },
+    {
+      "type": "reduced_fx_decoration_verified",
+      "facts": [
+        "Measured original frozen400orb scene: FieldView4452native primitives with low effects both off/on; particle600 threshold reduces per-burst emission only, actual generated particles roughly4k.",
+        "Low effects removes only halo/inner ring/bolt accent/endpoint circles and particles smaller than3.5; source data/lifetime/collision/camera unchanged. Default setting remains off; menu copy reflects decoration reduction.",
+        "One frozen scene original/current FX native command trace: default args/order identical, reduced protected commands identical; observed raw effect/combat snapshot/camera and per-draw RNG equal. Product contract PC/phone pass.",
+        "Paired frozen native7batches5samples after6settling draws per switch. Low FX callback PC15.342to6.514ms/phone14.334to6.124; queue+2idle+force draw return137.848to94.094/135.422to93.417ms. Not physical FPS or whole-game frame. Default PC callback+0.021ms retained; PERF01 not closed.",
+        "Async viewport CPU query appears to mix prior variant timings; preserved but excluded from causal comparisons. No render scheduling or product audio changes.",
+        "Product FieldViewf51e19e7078d71a97c3cfb5b844c91dcaa1e49097ecbc00a83024ea01da95299 matches measured candidate. Low-mode macOS release442assertions/source-before-export manifest and full252/86/28check pass. New architecture unreviewed0.",
+        "All50 goal stays active. Physical/human/accessibility tasks and high-speed saturation/input queue remain open."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/product-verification.json"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "Re-profile remaining Share/Zone costs in the equal-workload sound-muted fixture before another optimization. High-speed input queue, PERF01 and physical/human tasks stay open; overload speed-policy preference remains pending.",
+    "next_local_action": "Re-profile remaining battle CPU and inspect practical access to low-effects control. Keep full50 scope, physical/human tasks, high-speed input queue and PERF01 open; speed-policy preference remains pending.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },

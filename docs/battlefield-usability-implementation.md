@@ -115,6 +115,8 @@
 
 [상성 조회 후속](qa/2026-11-09-battlefield-fixes/performance/zone-application/README.md): 같은 속성 입력의 비트키를 재사용한다. 제품2,988단언·실제 전투1,110사례/13,320표본 동등·잘못된 alias12건 검출·반영 후 전체 회귀와 release442단언 통과다. 전투량/끝 상태/RNG가 같은 제어 ABBA에서 main CPU0.77–1.29% 감소를 관찰했다. 매번 입력 교체와 빈 입력의 미세 비용 증가, native draw 일부 증가·전체 고배속 지연은 남는다.
 
+[효과 줄이기 후속](qa/2026-11-09-battlefield-fixes/performance/fx-quality/README.md): 알파만 낮추던 모드에서 후광·보조 고리·작은 장식 입자를 생략한다. 기본 모드 명령 인자/순서와 저강도의 장식 외 명령·원본/snapshot/카메라·같은 draw 순서의 RNG가 일치했다. 정지 장면 강제 재그리기에서 FX callback약57%·반환약31% 감소를 관찰했으며, 실제 FPS·고배속 전체 지연의 해결로 읽지 않는다. 제품 저강도 release442단언·전체 회귀 통과, 기본 설정은 끔 그대로다.
+
 ## 최신 main 반영과 전달
 
 [2026-11-10 전달 기록](battlefield-delivery-2026-11-10.md)에 작업별 커밋·복구 ref·main pull/rebase·충돌 해결을 기록했다. 최신 main의 결과 상세·v1.0.0·빌드 설정을 유지하며 [전체 재검증](qa/2026-11-09-battlefield-fixes/delivery/README.md)을 마쳤다. 실기기·사용자 과제와 후반 전체 지연은 그대로 미완료다.

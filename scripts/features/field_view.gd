@@ -621,6 +621,7 @@ func _popup_draw_rows() -> Array:
 
 func _draw_fx(preview := false) -> void:
 	var session: BinduSession = self.session
+	var low_fx := Meta.fx_low
 	if not preview:
 		var vw := session.viewport_system.view_rect()
 		var o := vw.position
@@ -660,10 +661,12 @@ func _draw_fx(preview := false) -> void:
 	for q in session.pulses:
 		var k: float = 1.0 - q[2] / 0.3
 		session.fx_layer.draw_arc(q[0], q[1] * (0.4 + 0.6 * k), 0, TAU, 32, Color(sc, (1.0 - k) * fx_k), 3.0)
-		session.fx_layer.draw_arc(q[0], q[1] * (0.2 + 0.5 * k), 0, TAU, 24, Color(sc, 0.6 * (1.0 - k) * fx_k), 2.0)
+		if not low_fx:
+			session.fx_layer.draw_arc(q[0], q[1] * (0.2 + 0.5 * k), 0, TAU, 24, Color(sc, 0.6 * (1.0 - k) * fx_k), 2.0)
 	for q in session.beams:
 		var bk: float = q[3] / 0.2 * fx_k
-		session.fx_layer.draw_line(q[0], q[1], Color(q[2], 0.35 * bk), 9.0)
+		if not low_fx:
+			session.fx_layer.draw_line(q[0], q[1], Color(q[2], 0.35 * bk), 9.0)
 		session.fx_layer.draw_line(q[0], q[1], Color(q[2], 0.9 * bk), 3.0)
 	var ec: Color = Elem.COLORS[Elem.ELECTRIC]
 	for b in session.bolts:
@@ -679,13 +682,22 @@ func _draw_fx(preview := false) -> void:
 				pts.append(p)
 		pts.append(src[-1])
 		var al := clampf(b[1] / 0.22, 0.0, 1.0) * fx_k
-		session.fx_layer.draw_polyline(pts, Color(ec, 0.35 * al), 9.0)
+		if not low_fx:
+			session.fx_layer.draw_polyline(pts, Color(ec, 0.35 * al), 9.0)
 		session.fx_layer.draw_polyline(pts, Color(ec, al), 3.5)
-		session.fx_layer.draw_polyline(pts, Color(1, 1, 1, al), 1.2)
-		for q in src.slice(1):
-			session.fx_layer.draw_circle(q, 6.0, Color(ec, 0.5 * al))
-	for p in session.particles:
-		session.fx_layer.draw_circle(p[0], p[4] * clampf(p[2] / 0.4, 0.2, 1.0), Color(p[3], p[3].a * fx_k))
+		if not low_fx:
+			session.fx_layer.draw_polyline(pts, Color(1, 1, 1, al), 1.2)
+		if not low_fx:
+			for q in src.slice(1):
+				session.fx_layer.draw_circle(q, 6.0, Color(ec, 0.5 * al))
+	if low_fx:
+		# 큰 장식 입자만 그린다. 원본과 난수는 보존한다.
+		for p in session.particles:
+			if p[4] >= 3.5:
+				session.fx_layer.draw_circle(p[0], p[4] * clampf(p[2] / 0.4, 0.2, 1.0), Color(p[3], p[3].a * fx_k))
+	else:
+		for p in session.particles:
+			session.fx_layer.draw_circle(p[0], p[4] * clampf(p[2] / 0.4, 0.2, 1.0), Color(p[3], p[3].a * fx_k))
 	for p in _popup_draw_rows():
 		var size := 22 if p[4] else 14
 		var a := clampf(p[2] / 0.3, 0.0, 1.0)
