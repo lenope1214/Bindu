@@ -1,0 +1,64 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+UNDO ENV phone=true ui_scale=1.3 viewport=(2556, 1180) display=macOS
+UNDO SOURCE scripts/edit_history.gd aa9d9e7fda6da45452290138e38e541b1e3ee37bdcd7ecba5ba508b0073007d0
+UNDO SOURCE scripts/features/cards.gd e046ab6190e09964446b852d97f39ef9624f754fd79c1db862a3af07fa98bc2b
+UNDO SOURCE scripts/features/interaction.gd 4cba39593544ee971dd169aa467a36e8db6c7b6880832253705db54662ddddec
+UNDO SOURCE scripts/card_dock.gd bf192b8b94ca58da311c363e6551e6703565729c286da248b83bf879e177e5a7
+UNDO SOURCE tools/battlefield_undo_check.gd d16506136b02849117d5cb267aa2d6221b06be57d7e3950224617e1f2d8a8640
+ok   UNDO-01 실제 방향키 입력으로 이동
+ok   UNDO-01 이동 undo는 모든 기존 Node identity 보존
+ok   UNDO-01 주사위 누적·배율·시간·보조공격·방향 시계·콜백·읽지 않은 조합 보존
+ok   UNDO-01 queued Callable은 원래 Tower 참조로 계속 유효
+UI ok 01-move-undo
+ok   UNDO-02 Ctrl/Cmd+A 뒤 그룹 이동 입력
+ok   UNDO-02 그룹 이동 undo는 위치·다중 선택 복구
+ok   UNDO-03 그룹 회전 실제 입력
+ok   UNDO-03 그룹 회전 undo는 원래 방향·런타임 복구
+ok   UNDO-03 명시 방향 편집 입력 확정
+ok   UNDO-03 방향 편집 undo 뒤 원래 단계와 런타임
+UI ok 02-group-direction-undo
+ok   UNDO-04 방향 취소는 이력 추가·소비 없음
+ok   UNDO-04 no-op 이력 없음
+ok   UNDO-05 마지막 카드 실제 적용·보류 선택 소비·통계 1회
+ok   UNDO-05 카드 undo도 기존 객체·모든 런타임 보존
+ok   UNDO-05 선택·offer·보류·로그·통계·UI 원상 복구
+ok   UNDO-05 undo는 wave RNG를 다시 뽑지 않음
+ok   UNDO-05 복구된 선택·통계·로그를 격리 디스크 저장에서도 확인
+UI ok 03-card-undo
+ok   UNDO-05 재적용해도 통계·로그 중복 없음
+ok   UNDO-06 새 오브젝트 실제 설치
+ok   UNDO-06 설치 undo는 새 Node만 제거하고 원본 보존
+UI ok 04-new-object-undo
+ok   UNDO-07 조합 발견·업적은 실제 카드 적용으로 발생
+ok   UNDO-07 도감·업적·누적·한 판 통계와 업적 목록 함께 복구
+ok   UNDO-07 조합 undo는 읽지 않은 이전 조합·원본 런타임 보존
+ok   UNDO-07 공격방식 적용은 실제로 기존 쿨다운을 비움
+ok   UNDO-07 공격방식 undo는 지워진 쿨다운과 런타임까지 복구
+ok   UNDO-08 PLACE에서 undo는 원자적으로 거절
+ok   UNDO-04 카드를 들었다가 취소해도 이력 없음
+ok   UNDO-08 카드 취소 뒤 이동 undo는 새 snapshot 사용
+ok   UNDO-08 AIM 중 undo는 이전 이동까지 잘못 되돌리지 않음
+TOUCH CARRY press phase=1 picks=1 pos=(280.0, 300.0) object_press=false
+TOUCH CARRY release phase=1 picks=1 pos=(280.0, 300.0) mod=0
+ok   UNDO-08 터치 carried-card 무효 드롭은 기존 오브젝트·선택수를 바꾸지 않음
+ok   UNDO-08 무효 드롭 뒤 카드 취소는 이력·로그를 남기지 않음
+ok   UNDO-09 새 무작위 카드 공개 뒤 이전 적용 undo 차단
+ok   UNDO-09 동일 내용 재추첨도 새 정보 경계
+ok   UNDO-09 실제 새로고침 입력은 이전 이동 이력도 폐기
+ok   UNDO-09 새 특성 공개 경계
+ok   UNDO-09 실제 웨이브 시작 입력은 이력 폐기
+ok   UNDO-10 다른 판 snapshot 복원 차단
+ok   UNDO-10 편집 뒤 다른 진행 변경은 덮어쓰지 않고 fail closed
+ok   UNDO-10 진행 동기화 이벤트는 이전 이력 폐기
+UI ok 05-boundaries
+ok   UNDO-11 이동 undo는 열려 있던 지난 웨이브 정보와 카드 복귀 상태도 복구
+UI ok 06-review-ui-undo
+ok   UNDO-12 화면의 전체 선택 버튼 실제 입력
+ok   UNDO-12 toolbar로 선택한 뒤 방향키는 전장 그룹 이동
+UI ok 07-toolbar-focus
+ok   UNDO-12 toolbar 사용 뒤 전장을 다시 선택하면 Space로 시작
+BATTLEFIELD UNDO failures=0 ui=0
+WARNING: 6 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

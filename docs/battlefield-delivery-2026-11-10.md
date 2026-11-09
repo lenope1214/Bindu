@@ -19,6 +19,8 @@
 - 로컬 main: `8fdfefe`에서 뒤처진 상태다. pull은 fast-forward만 허용한다.
 - rebase 전 feature와 로컬 main의 backup ref를 만든다. 이력 복구는 이 ref를 기준으로 하며 원격 main에는 push하지 않는다.
 
-## 남은 전달 단계
+## Rebase와 검증 결과
 
-최신 main의 결과 상세·버전·빌드 설정을 보존하며 rebase한다. 충돌한 문서의 기능 수와 검사 ID는 합친 실제 검사를 기준으로 다시 산출한다. 이후 전체 check·영향 native 검사·멀티 검증을 실행하고 원격 feature SHA와 PR head를 확인한다. 실기기·사용자 과제·후반 전체 지연이 남아 있으므로 PR은 Draft로 표시한다. 병합·배포는 이 요청 범위에 포함하지 않는다.
+최신 main8704b78 위로5개 커밋을 rebase했다. frame·재시작·기능표 충돌은 양쪽 의도를 보존하며 해결했다. 명세252개와 공통 전체 검사, native23묶음, 실제 통신55 actor·543단언, 조준14,527비교, 결과 상세 PC/폰 추가 검증을 통과했다. [전달 증거](qa/2026-11-09-battlefield-fixes/delivery/README.md).
+
+6번째 커밋은 이 호환 확인·재실행 도구·검증 자료를 담는다. 남은 실기기·사용자 과제·후반 전체 지연을 PR에 명시하고 Draft로 전달한다. 병합·배포는 수행하지 않는다.

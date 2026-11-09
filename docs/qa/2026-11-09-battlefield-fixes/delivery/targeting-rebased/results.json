@@ -1,0 +1,46 @@
+{
+	"benchmark": [],
+	"comparisons": 14527,
+	"display_server": "headless",
+	"engine": {
+		"build": "official",
+		"hash": "ed1daf0bf001b61586d9930840f2f1394092c079",
+		"hex": 263938,
+		"major": 4,
+		"minor": 7,
+		"patch": 2,
+		"status": "stable",
+		"string": "4.7.2-stable (official)",
+		"timestamp": 0
+	},
+	"finite_position_cases": true,
+	"maps": [
+		"plain",
+		"spiral",
+		"cross",
+		"storm",
+		"line"
+	],
+	"mismatch_count": 0,
+	"mismatches": [],
+	"patterns": [
+		"shot",
+		"spray",
+		"thorn",
+		"stream",
+		"chain",
+		"gust",
+		"shard",
+		"wall",
+		"vortex",
+		"laser",
+		"lob",
+		"iron",
+		"sonic",
+		"clock",
+		"wisp"
+	],
+	"rng_contract": "reference and actual leave global RNG untouched",
+	"tool_sha256": "1c60961afdf69051791ddd30e6a704c93b3916815a9916281c198169e15f5219",
+	"tower_sha256": "65fe9ec651dd0b9ec2eb1cf6f7b91d31e512d4442c425c5024e3d9d438ca4700"
+}

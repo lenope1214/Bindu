@@ -1,0 +1,273 @@
+{
+  "host": {
+    "exit": 0,
+    "runtime_errors": [],
+    "warnings": [],
+    "report": {
+      "failures": 0,
+      "results": [
+        {
+          "data": {
+            "id": 1,
+            "native_extension": true,
+            "peers": [
+              2,
+              3
+            ]
+          },
+          "event": "connected"
+        },
+        {
+          "data": {
+            "choice": {
+              "bank": [],
+              "offer": [
+                {
+                  "e": 0,
+                  "lv": 1,
+                  "type": "elem"
+                },
+                {
+                  "e": 6,
+                  "lv": 1,
+                  "type": "elem"
+                },
+                {
+                  "id": "rapid",
+                  "type": "mod"
+                }
+              ],
+              "phase": 0,
+              "picks": 2,
+              "rerolls": 1
+            },
+            "owner_role": "host",
+            "round": "53d5f7f28868cf35f1d770ecb108d6c9"
+          },
+          "event": "fixture-only"
+        }
+      ],
+      "role": "host",
+      "scenario": "donor_edit_rejoin",
+      "ui_messages": 0
+    }
+  },
+  "peer_a": {
+    "exit": 0,
+    "runtime_errors": [],
+    "warnings": [],
+    "report": {
+      "failures": 0,
+      "results": [
+        {
+          "data": {
+            "id": 3,
+            "native_extension": true,
+            "peers": [
+              1
+            ]
+          },
+          "event": "connected"
+        },
+        {
+          "data": {
+            "choice": {
+              "bank": [
+                0
+              ],
+              "offer": [
+                {
+                  "e": 2,
+                  "lv": 1,
+                  "type": "elem"
+                },
+                {
+                  "e": 6,
+                  "lv": 1,
+                  "type": "elem"
+                },
+                {
+                  "id": "rapid",
+                  "type": "mod"
+                }
+              ],
+              "phase": 0,
+              "picks": 2,
+              "rerolls": 1
+            },
+            "owner_role": "host",
+            "round": "53d5f7f28868cf35f1d770ecb108d6c9"
+          },
+          "event": "fixture-only"
+        },
+        {
+          "data": {
+            "choice": {
+              "bank": [],
+              "offer": [
+                {
+                  "e": 2,
+                  "lv": 1,
+                  "type": "elem"
+                },
+                {
+                  "e": 6,
+                  "lv": 1,
+                  "type": "elem"
+                },
+                {
+                  "id": "rapid",
+                  "type": "mod"
+                }
+              ],
+              "phase": 0,
+              "picks": 1,
+              "rerolls": 1
+            },
+            "own_nid": 300001
+          },
+          "event": "fixture-edit-last-offer"
+        },
+        {
+          "data": {
+            "choice": {
+              "bank": [],
+              "offer": [
+                {
+                  "e": 2,
+                  "lv": 1,
+                  "type": "elem"
+                },
+                {
+                  "e": 6,
+                  "lv": 1,
+                  "type": "elem"
+                },
+                {
+                  "id": "rapid",
+                  "type": "mod"
+                }
+              ],
+              "phase": 6,
+              "picks": 0,
+              "rerolls": 1
+            },
+            "own_nid": 300001,
+            "transaction": {
+              "awaiting_settled": false,
+              "caps": {
+                "1": 1,
+                "2": 1,
+                "3": 1
+              },
+              "closed": false,
+              "generation": 4,
+              "host_fence": {},
+              "host_ledger": {},
+              "implementation_ready": true,
+              "local_fence": "",
+              "owner_epochs": {
+                "1": 1,
+                "2": 1,
+                "3": 2
+              },
+              "owner_ledger": {},
+              "owner_revisions": {
+                "1": 4,
+                "2": 2,
+                "3": 5
+              },
+              "pending": {},
+              "protocol_armed": true,
+              "protocol_version": 1,
+              "received_rest": -1,
+              "round_id": "53d5f7f28868cf35f1d770ecb108d6c9",
+              "terminal": {
+                "3:b7e8408a088f454c8ac55f51:1": {
+                  "applied_revision": 4,
+                  "awaiting_settled": false,
+                  "choice_id": "4:0:1",
+                  "donor_id": 3,
+                  "e": 2,
+                  "f": 1,
+                  "fp": "f0aaa53732b8d055b9d755927baef0adcb53fcbf7d9115244d50ed9503ae471f",
+                  "gift_id": "b7e8408a088f454c8ac55f51:1",
+                  "lv": 1,
+                  "nid": 100001,
+                  "owner_id": 1,
+                  "reason": "",
+                  "request_id": 1,
+                  "rest_id": 0,
+                  "round_id": "53d5f7f28868cf35f1d770ecb108d6c9",
+                  "settlement_retry_at": 4005,
+                  "status": "accepted",
+                  "t": "gift_ack",
+                  "to": 3,
+                  "v": 1
+                }
+              }
+            }
+          },
+          "event": "zero-choice-edit-rejoined"
+        }
+      ],
+      "role": "peer_a",
+      "scenario": "donor_edit_rejoin",
+      "ui_messages": 0
+    }
+  },
+  "peer_b": {
+    "exit": 0,
+    "runtime_errors": [],
+    "warnings": [],
+    "report": {
+      "failures": 0,
+      "results": [
+        {
+          "data": {
+            "id": 2,
+            "native_extension": true,
+            "peers": [
+              1
+            ]
+          },
+          "event": "connected"
+        },
+        {
+          "data": {
+            "choice": {
+              "bank": [
+                0
+              ],
+              "offer": [
+                {
+                  "e": 2,
+                  "lv": 1,
+                  "type": "elem"
+                },
+                {
+                  "e": 6,
+                  "lv": 1,
+                  "type": "elem"
+                },
+                {
+                  "id": "rapid",
+                  "type": "mod"
+                }
+              ],
+              "phase": 0,
+              "picks": 2,
+              "rerolls": 1
+            },
+            "owner_role": "host",
+            "round": "53d5f7f28868cf35f1d770ecb108d6c9"
+          },
+          "event": "fixture-only"
+        }
+      ],
+      "role": "peer_b",
+      "scenario": "donor_edit_rejoin",
+      "ui_messages": 0
+    }
+  }
+}

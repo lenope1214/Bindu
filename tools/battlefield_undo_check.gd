@@ -2,7 +2,7 @@ extends "res://tools/carry_check.gd"
 ## 기존 편집 입력 → undo의 identity·런타임·통계·경계 회귀 검사. 임시 BinduTools native 사본 전용.
 var case_id := 0
 var callback_hits := 0
-const RUNTIME := ["dice_miss", "dice_x", "dice_t", "side_cd", "side_n", "focus_t", "clock_ph", "cont_acc", "answer_cd", "notify_cd", "light_cd", "cd", "mirror_src", "later", "new_reactions"]
+const RUNTIME := ["dice_miss", "dice_x", "dice_t", "side_cd", "side_n", "focus_t", "clock_ph", "cont_acc", "answer_cd", "notify_cd", "light_cd", "cd", "mirror_src", "later", "new_reactions", "wave_kills", "hist"]
 
 func _initialize() -> void:
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools") or DisplayServer.get_name() == "headless" or OnlineConfig.SERVER_URL != "" or OnlineConfig.MP_URL != "":
@@ -118,6 +118,8 @@ func arm_runtime() -> Dictionary:
 	target.mirror_src = refused
 	target.later = [[3.0, Callable(self, "delayed_effect").bind(target, refused)]]
 	target.new_reactions = {"review-unread":true}
+	target.wave_kills = 3
+	target.hist = [[main.wave - 1, 230, 7, 14.5]]
 	return runtime(target)
 
 func delayed_effect(tower: Tower, source: Tower) -> void:

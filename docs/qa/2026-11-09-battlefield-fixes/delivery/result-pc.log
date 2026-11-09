@@ -1,0 +1,14 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+ok   RES-MAIN 판 종료에서는 최신 main의 위 정보·설정·정지 숨김 유지
+ok   RES-MAIN 결과 상세 버튼이 실제 화면 안에 노출
+ok   RES-MAIN 실제 game over가 최신 main의 웨이브 피해·처치 기록 보존
+UI ok gameover
+ok   RES-MAIN 실제 결과 상세 버튼이 전체와 두 오브젝트를 엶
+UI ok result-detail
+ok   RES-MAIN pointer로 개별 오브젝트 결과 선택
+UI ok result-object
+ok   RES-MAIN Esc 한 번은 상세만 닫고 결과 화면 유지
+ok   RES-MAIN 실제 닫기 버튼도 결과 화면으로 복귀
+BATTLEFIELD RESULT failures=0 ui=0

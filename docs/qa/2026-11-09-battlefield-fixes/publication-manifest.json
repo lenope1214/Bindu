@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/README.md",
-      "bytes": 8336,
-      "sha256": "e527ba1cdc5306c3f3ad4f4723680666ae098203bde34c5ce8d310d5d3b23055",
+      "bytes": 8558,
+      "sha256": "72a7cb70ffab7c86d8b7b758ce2dadc69fd53a591bea6dd9d621c9e40706b495",
       "published": true
     },
     {
@@ -51,6 +51,30 @@
       "published": false
     },
     {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/README.md",
+      "bytes": 2790,
+      "sha256": "4e5d949acc5ee72239f1480269b826d7272a723287e4a23b1dc55dbaf7bba614",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/architecture-comparison.json",
+      "bytes": 211,
+      "sha256": "9c2c60027fcb57527887d35dfab62653bd32e5a3e9f7213b05e6142b4c1435ab",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/architecture-main.log",
+      "bytes": 3081,
+      "sha256": "e09a6ba3a65a6bde655677be3bea3d50612c9e8ce1d911861194f9bca9dce401",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/architecture-rebased.log",
+      "bytes": 2559,
+      "sha256": "56100687ac26ea2044943f0670a16da78fc0ba85752a5b3a38c0845f2a884293",
+      "published": true
+    },
+    {
       "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/core-staged-manifest.json",
       "bytes": 393,
       "sha256": "5e1f0feb5770b1116266c63efce9bdfdae09f39b00511a4d060fee8a57b2f3bd",
@@ -72,6 +96,1404 @@
       "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/gift-staged-state.log",
       "bytes": 4219,
       "sha256": "c93ec4a9f82d73b5d8b412a47586943ef6b295ef6930d9a39840d3e9b311c10a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/applied.png",
+      "bytes": 126556,
+      "sha256": "e52504717c9a8f2d9fd29183ef3eea433a2ec3030cf767a58f6c4ca308ee293c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/browse-expanded.png",
+      "bytes": 113169,
+      "sha256": "cb6cea79b8f517df69e47a331f913215641017857860b5c8fdbab460c3db6e0c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/browse.png",
+      "bytes": 112986,
+      "sha256": "b75e590e3385e068c9d9835653b55d17f046d15274417120074210e80942ba33",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/cancelled.png",
+      "bytes": 87605,
+      "sha256": "258ac7c00163b4703cf61c8dfdeff9e63e88ddb791a7dc0a7ace57ce5781a7d4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/detail.png",
+      "bytes": 114446,
+      "sha256": "d1d10c45849fca3e212d0d811363c3d3023193781e3af95d5c20d9757b52a36c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/direction-edit.png",
+      "bytes": 120382,
+      "sha256": "3cdb0c878be73ca1bb4cfe80a69ec34df405d255a4fc693853387aec74ba66e4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/drag-applied.png",
+      "bytes": 105531,
+      "sha256": "44fb72514507e8dfebf31d9ee483cdc516a99f6db8dc4715e58b547119b854b0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/element-aim.png",
+      "bytes": 95135,
+      "sha256": "16928b6971a80db7e7e7afa68ed615ce8b86c02726ea714c963c3406577859ce",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/element-edge-zoom.png",
+      "bytes": 97836,
+      "sha256": "3a397b44b8691c49c8366d16238c76f47eca100d069f85006e99d8088e298c24",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/element-near-core.png",
+      "bytes": 95979,
+      "sha256": "b24be5a5f4333b6b906c6c15a5dfabacc561b6c81ff60f48c33f2ed8703c2409",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/element-place.png",
+      "bytes": 96778,
+      "sha256": "4258559c7353c9daec65fc059e12a53643452f8e6e79e2b20cadc0e147c71f70",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/held-controls.png",
+      "bytes": 130465,
+      "sha256": "914cdaed6d720b8f8d39747f1732ee2e25dee795a4449d491a1a6095e9b1038b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/held-target.png",
+      "bytes": 127732,
+      "sha256": "c9822c3cb06c80af9a153f109093d555da0d6ba57875387307d7064a7646e7aa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/inspector-dismissed.png",
+      "bytes": 88042,
+      "sha256": "ed4066fe73b3a0aaac0f04a796dc706b43c34fb89db57713abc5cb2c10bba426",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/inspector-retained.png",
+      "bytes": 141197,
+      "sha256": "fb09b246d5bb40a28c7d6c076ecda0f298247c8f4859c33f4305fe2d3632d970",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/inspector-scrolled.png",
+      "bytes": 135325,
+      "sha256": "4db8acc739a08f4c78698259b630ede3b38ad69967bca5adc93ac71f8a7fb11e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/object-selected.png",
+      "bytes": 117095,
+      "sha256": "c9c20c51c1fb669f1403d512da1cdca9bbbed5b650788945e56791d81072e69c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/options.png",
+      "bytes": 67728,
+      "sha256": "e9a24cd9e1e04f82a27f2ca1588a6303487b2ff18f92825e9e2648ade0cba5f6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/ready.png",
+      "bytes": 67358,
+      "sha256": "0f84374a4a7b0fc1c854cfe220fd4c2d2ef59e110e339068f3e0a902d55509ef",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/refused.png",
+      "bytes": 102937,
+      "sha256": "9274817bc8b92f327b616764ce4c08a04cbb60671e6603ed6c921890abd34eee",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/run.log",
+      "bytes": 9375,
+      "sha256": "28056e003b671e75bd86e33765c8b362accce501286a34db45c827e3dc082354",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/skip-ten.png",
+      "bytes": 113108,
+      "sha256": "c5bf0492d1fd84db4e756dba3ff52681fb8e7d9cc602df8fda12912def2e210b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/speed-group.png",
+      "bytes": 64323,
+      "sha256": "4d0de1d50a68959ef2947191a96bf05d6d76694537e4b230cc6e0275f2cfe8e6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/toggle-restored.png",
+      "bytes": 103418,
+      "sha256": "6ec93dfa2a31bc36bde733e9034ac1ae480d7712685a94586444fd7e1819021c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/touch-direction.png",
+      "bytes": 113385,
+      "sha256": "5e9273f82c8b04aeeeb5c5769155d73f32b2739cf276d10b0023b1c4ee019446",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/touch-held.png",
+      "bytes": 94384,
+      "sha256": "b73cd0db6882dc92ee3c897ee17bbf29aeac4f5f282031302dec4185ff367f7e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/touch-selected.png",
+      "bytes": 114353,
+      "sha256": "8d8d26b9688eda8c45627246e125231ce4743efa54b91695b5cc787f78d2afa2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-pc/wave.png",
+      "bytes": 60726,
+      "sha256": "3932108c46155bee73405ad2ed386156e9833e3c8947e6b3c1adbe169c995332",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/applied.png",
+      "bytes": 406774,
+      "sha256": "9a48878cec18b83b6f7a098d077cd4451dcd47c852e82b3454bd7f964ec689c3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/browse-expanded.png",
+      "bytes": 339242,
+      "sha256": "ec169e941143af7e05e1c42c7469ee8bd40605d205554a7f4b8c645a9ce60013",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/browse.png",
+      "bytes": 339116,
+      "sha256": "a28f87e9692bccd6f248cb1653fe7fe2817b7129e284d53314d15614e47b5e45",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/cancelled.png",
+      "bytes": 285227,
+      "sha256": "dba54d2c2eec037dbc67444268d649ac3a759f749a40292a57e7ba849e4484b3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/detail.png",
+      "bytes": 313800,
+      "sha256": "86dafc1dbca9cda41801396d4ba71a78a53598421ac170d6d6682b09499274a1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/direction-edit.png",
+      "bytes": 255207,
+      "sha256": "003ad53f37dbf8e16876a02bcbf7f7e784bccf085b5a8c1bc28ebbc533a0f002",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/drag-applied.png",
+      "bytes": 365606,
+      "sha256": "358ba44904bddf5f73d951869d0194c697e7c10b8e307a3e227d5482e3bb21ff",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/element-aim.png",
+      "bytes": 190730,
+      "sha256": "4f8616d9182944792ea706383f6dc31362de2236088080933852a97fa958c33b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/element-edge-zoom.png",
+      "bytes": 197012,
+      "sha256": "3bb955f95a08de321eaee0428d53730ac5974c76e3d497956fea9ab7b1c9cb64",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/element-near-core.png",
+      "bytes": 186805,
+      "sha256": "4b4aebf0a47526cb08e7d6cd041beefb500e592e3a3ac27e31636fd25b7bd656",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/element-place.png",
+      "bytes": 187622,
+      "sha256": "3d350fc3d705d41fabb599b22a25a60fbe7195b853aba4f077d6caa2a8f454e2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/held-controls.png",
+      "bytes": 290132,
+      "sha256": "331dfcf8422af887b272889152ed368a51a7025a8ca10e12c0afed5037b98fd9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/held-target.png",
+      "bytes": 282083,
+      "sha256": "5fdb4d5c61711e5b7544d74bc56a93be6be64e8af0cee98767f3347770e16dd4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/inspector-dismissed.png",
+      "bytes": 198707,
+      "sha256": "d28d6d878756b561862c7ccaec9314399e7fb0a62887e479499f0f8aac6e0c06",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/inspector-retained.png",
+      "bytes": 307630,
+      "sha256": "6b7b556bb46dc9505493a97ab96d9a90782baf0738120298f0b1577d58e6992a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/inspector-scrolled.png",
+      "bytes": 313829,
+      "sha256": "b29a10a6c1d1045fbe7dec9e687825253cfb359d53d27f4cb4eee2c4141a92df",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/object-selected.png",
+      "bytes": 266271,
+      "sha256": "bcdeb0cc818b7c1b9d7b3a60b805fb3e5298f1b662f4db3b608b878d5536ff2e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/options.png",
+      "bytes": 150427,
+      "sha256": "ed74fb3e708664dc790de79ddf7393e02b24673eb83c59cc52223098b07faa3e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/ready.png",
+      "bytes": 132622,
+      "sha256": "5dd56ecc9e755f6fe85c9348c3a41cd2c8a4114dc7f0f312b79aa1d1dbe75048",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/refused.png",
+      "bytes": 269981,
+      "sha256": "229573ad14388551b3388c2883d9622f32e39d57967e0d20bc6533ac4b2b8743",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/run.log",
+      "bytes": 9769,
+      "sha256": "078a4e1358ad5d0fc2b4560c07dc210892fd2e22a7bb5547518d185f07cdde23",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/skip-ten.png",
+      "bytes": 340370,
+      "sha256": "8de77d1cffcc189ba182945337521b4ebe66e85c91deec3999dc23b21476a66b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/speed-group.png",
+      "bytes": 125000,
+      "sha256": "2cd7bc5388b839dc67dfe1f2dd6f644c692d0d570784d9da933d89dc3bf86d8d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/toggle-restored.png",
+      "bytes": 330568,
+      "sha256": "4f5b260358cb9b6b0e203608ace72342df27782463f1027b33a944a22966994c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/touch-direction.png",
+      "bytes": 279325,
+      "sha256": "7ba73c0db6751a37ed96fda8a322a07a2413f7414170d4e40e6077ad523923dc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/touch-held.png",
+      "bytes": 212879,
+      "sha256": "882c4059a55eb3469c3115f09bb137e1c39a053483ef96eb150c42419c0be176",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/touch-selected.png",
+      "bytes": 295832,
+      "sha256": "a6b42944a59fb43a06b41443c4e0c0bdde6f53fa45bfe666e164667e2de1dd44",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/carry-phone/wave.png",
+      "bytes": 101092,
+      "sha256": "c742a7c69bbdcf026cba6c99e8ca97496c5f1482a91ffb482ca469dc6ac61bbc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/cleanup.json",
+      "bytes": 169,
+      "sha256": "ad9e63b996d691078fab944027179c7ccc09da623fb232506f2e515c3b0fbc65",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/core-pc/read-card.png",
+      "bytes": 119360,
+      "sha256": "c9814006c2d4a50af58676ed47c904e90746da446a5fb9377ac2c67b9810debf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/core-pc/run.log",
+      "bytes": 1432,
+      "sha256": "59ff3b624cccf225c9fe38a663da848d63621a624830e0d75009cf53b78a6ce1",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/core-pc/undo-card.png",
+      "bytes": 98765,
+      "sha256": "d5b3a22709136b0a35a908bf7f759c88a8f947cb7c6b53899fbc9c4fb1432092",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/core-pc/wave-review.png",
+      "bytes": 103673,
+      "sha256": "ac976679c97bae8f76cdc589078a17ac5c14204caab21838bfb03fcf7ecc1f9b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/core-phone/read-card.png",
+      "bytes": 256279,
+      "sha256": "3eb7e7261854ba65f5dc678fca38141b1b6e7842670a05685f835f09df697fff",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/core-phone/run.log",
+      "bytes": 1432,
+      "sha256": "59ff3b624cccf225c9fe38a663da848d63621a624830e0d75009cf53b78a6ce1",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/core-phone/undo-card.png",
+      "bytes": 312924,
+      "sha256": "e13e8e154bfce5a82ddbc5911522db04a8f96fbaa62f158136997c8d19b0145d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/core-phone/wave-review.png",
+      "bytes": 281346,
+      "sha256": "3e15d7c8d1d681d393343bca316b02876ae1cdc538e8282879fe5de26477080a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/first-play-pc/aim.png",
+      "bytes": 61575,
+      "sha256": "e86669d9aa05fa493868f369e7f37c00391ef82363c6474ccbfe0b569822f9f3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/first-play-pc/choose.png",
+      "bytes": 87151,
+      "sha256": "285fa72ba281b908764a97601120f10b08f519dd172cacebc4d82b6348068eeb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/first-play-pc/one_left.png",
+      "bytes": 84293,
+      "sha256": "cf932d80bca8d3f93fe928d1cddc2df8c515be9afa63ae94ec8cde54c466f579",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/first-play-pc/place.png",
+      "bytes": 62756,
+      "sha256": "19ebc012bac11821221678ca51adeb28feff9474fc201f9e39163b12097c1e76",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/first-play-pc/preview.png",
+      "bytes": 62495,
+      "sha256": "92fb338304a82221330938aa2f407a087c3a730c3a97ee6b888281e44cc05792",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/first-play-pc/ready.png",
+      "bytes": 78168,
+      "sha256": "140728e10fe9da518ac1f8511706428d933480e9563e56f67bc915a31d2fb567",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/first-play-pc/run.log",
+      "bytes": 1634,
+      "sha256": "ea345ddfc408a4374800f7e7b4d461f18cac209a62b9a50b22839f6863b90371",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/first-play-pc/welcome.png",
+      "bytes": 34004,
+      "sha256": "16879288b014c43968b08f7a4612b4227ec91b9ca969b570dace47d48891eba8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/first-play-phone/aim.png",
+      "bytes": 152555,
+      "sha256": "e28724d59f429c97a7ac88c15685a17e877a42646a5385364d6b964630dbb14f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/first-play-phone/choose.png",
+      "bytes": 235462,
+      "sha256": "578ba5a2ba537b3777b0125bcf15727af0619b495caad092ce7c9a6e2bb75caf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/first-play-phone/one_left.png",
+      "bytes": 260214,
+      "sha256": "78001ed1a42be2f3a534973c5a394ff2493e390cc34c221634202e9b93c49046",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/first-play-phone/place.png",
+      "bytes": 151203,
+      "sha256": "c746605ca902798ea7f5c01594eda0d7be2b4c20a1c15eed318e3d8d819dc32e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/first-play-phone/preview.png",
+      "bytes": 150989,
+      "sha256": "75c3e3e979a8fc588cc58de93f8987e86621e6cda9fae361a49cbd288de737ee",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/first-play-phone/ready.png",
+      "bytes": 212093,
+      "sha256": "ca3358a45ecee14075a7e928683a199faaa722a4c7eeb85d3faceeb0fca36bc3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/first-play-phone/run.log",
+      "bytes": 1634,
+      "sha256": "ea345ddfc408a4374800f7e7b4d461f18cac209a62b9a50b22839f6863b90371",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/first-play-phone/welcome.png",
+      "bytes": 98980,
+      "sha256": "65933b663892fd1f01409996b3190a5b9a8ca13ddb81775f851bff079194cbb6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/flow-pc/continuous.png",
+      "bytes": 91774,
+      "sha256": "c88718b63edf80de7cc229d8c019d40e36123d73af57496993eae52b2cafecae",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/flow-pc/restored.png",
+      "bytes": 111639,
+      "sha256": "8826b1934b276f63b42fd3f584ba2afcd4a13df27517dd3327186ba5e541cf7e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/flow-pc/run.log",
+      "bytes": 2294,
+      "sha256": "21da8486ad7f0b545123316bb6779ced0054b7b3061a894c036ed4aa6a7e48aa",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/flow-pc/settings.png",
+      "bytes": 146338,
+      "sha256": "829de0480e602cbc4e656eb6402a532b55fc533afbc969da37cc56ebca26825f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/flow-pc/skill-mode.png",
+      "bytes": 91943,
+      "sha256": "9fd8c65776fc37d69ad0cae8a723facf2a2491a63709a9da39d3a95f8c3ce932",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/flow-pc/skills.png",
+      "bytes": 70207,
+      "sha256": "4d255aa4ea20847b93e15602b7cf5919c72a8e34a6a0db197a8ffaf0733d09f2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/flow-pc/skip-picker.png",
+      "bytes": 114981,
+      "sha256": "a8b468a8be734ad46a81249ab3fd18a793bfb0d4f5d79d3bd586cef3cbc43ab6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/flow-pc/speed.png",
+      "bytes": 89066,
+      "sha256": "96309f12399a148c2b4c9bc2a8e7e1e6d1a2c3ed005a41d26779c166197d4ef2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/flow-phone/continuous.png",
+      "bytes": 258432,
+      "sha256": "c1420c3fef68fe0d971a47abbfb96711c8a136350d54b363efbdb351108d307d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/flow-phone/restored.png",
+      "bytes": 380053,
+      "sha256": "33c2eb4b59c451982f4762fa7b97c0a2b9fa298f6454e63bbdbe2edd7df0f15e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/flow-phone/run.log",
+      "bytes": 3084,
+      "sha256": "69cce3432372facf110494a03064790d2d6829c48562f5c690c24b40d21e7011",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/flow-phone/settings.png",
+      "bytes": 170539,
+      "sha256": "56571a15dfc2249e4a4c705f773df25b3f4bf6a56fd6ffc6dbc76f4bcaf4799b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/flow-phone/skill-mode.png",
+      "bytes": 250923,
+      "sha256": "abecaeab41a0209cc62700426b8d64037e6e8c79af0cebcd16d9f3e72fd1c8c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/flow-phone/skills.png",
+      "bytes": 186644,
+      "sha256": "e474551b687415acfa5a6ddbe77bf04d9591da070be4f80e0b448254c9888f93",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/flow-phone/skip-picker.png",
+      "bytes": 356719,
+      "sha256": "b35abcd4cc6b484eb76ed7a9d2e0f7588abb302572455b5f0d5271b64576024d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/flow-phone/speed.png",
+      "bytes": 237128,
+      "sha256": "60097ef5fa862a037806b95f90b0ba5ec71fbc9804a30e31a5f8f021a090f99d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/information-pc/information-summary.png",
+      "bytes": 88061,
+      "sha256": "6818e7a16abaaf59010455cc2ef79d010e7a3d32f71bf2f136a652f7bcadd24e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/information-pc/run.log",
+      "bytes": 1636,
+      "sha256": "3d2b851f3bc84b4c650d736b55689bf576f52902f6393fcbd69e627ebc0c1cf9",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/information-phone/information-summary.png",
+      "bytes": 247676,
+      "sha256": "249036bfb2060053216456b2db60bd99d261284bdc3672d1f6ebd18349aeec7f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/information-phone/run.log",
+      "bytes": 1505,
+      "sha256": "89a33d1a5031e1c910576e45b02f80bb54ae28c73b09204ca30839dfc3a042cf",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/input-pc/01-modal-input.png",
+      "bytes": 101978,
+      "sha256": "85e45ee613f834ac0d98d3a02d987e3f7bda0d18026de2a67dc3ba4872206d3f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/input-pc/02-nearest-selection.png",
+      "bytes": 104594,
+      "sha256": "bba3225b74338549a770f31852c1e31b89e177e95be394920ea1b15a717406ff",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/input-pc/03-wave-immediate-pause.png",
+      "bytes": 89747,
+      "sha256": "53ba3584fb05dd1f4121fce6e8fde9c8c7f9199a894ec0015748c1296dbdb069",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/input-pc/04-auto-aim-placement.png",
+      "bytes": 115388,
+      "sha256": "e17e04c1181ab632178d6d3794e63beab9ad090beff121014c62d7e6716f39cd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/input-pc/05-keyboard-group.png",
+      "bytes": 103961,
+      "sha256": "4bb679a154bb703377877143a7c8801c79b0cec10c842e5702f04818898c0252",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/input-pc/06-invalid-drag-preview.png",
+      "bytes": 104671,
+      "sha256": "a6d1d1b16430e8d6bd185968d4334a532ce742ca4edf9e3781a82af08a470f82",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/input-pc/run.log",
+      "bytes": 1867,
+      "sha256": "6bf6960732bb6b6f4eb802ec198a37a222f223ccb47f3f1f90826792fc0feecd",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/input-phone/01-modal-input.png",
+      "bytes": 341063,
+      "sha256": "844578444542c114954e47c0f8458f8fd05bc7e219ddb48ed316fede44eb73f0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/input-phone/02-nearest-selection.png",
+      "bytes": 274489,
+      "sha256": "b3661e5bdbaf70b1df74a6fcf43ee1518baf9054bd60908cec30e00cae85fc2f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/input-phone/03-wave-immediate-pause.png",
+      "bytes": 225841,
+      "sha256": "9674ff5cc9288194286848a08ce89bf7827789d4e3c9c155961743525b67a0c2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/input-phone/04-auto-aim-placement.png",
+      "bytes": 285149,
+      "sha256": "8a6adb38a03e00a601cf17cc01b3229f8f8362ef47001927543381309c2e37e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/input-phone/05-keyboard-group.png",
+      "bytes": 289862,
+      "sha256": "9c94c3dbde8180637bf7911d0800f66ebbd6f5f31b4fc50dbf1689b9fd001ea2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/input-phone/06-invalid-drag-preview.png",
+      "bytes": 272549,
+      "sha256": "f6d80fa775e2493a8e6db39ee843fc9d0067aedbbb9857b7febce58385d69f67",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/input-phone/run.log",
+      "bytes": 1946,
+      "sha256": "ce7cb7ed5bee006ae1329641b62db7a23337e50a63e8d2b96b9eef732bdef04b",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-pc/aim-2015.png",
+      "bytes": 66789,
+      "sha256": "f8100892688116c3c3f994b9d5f4331e729cb496c425a28a40eb1fcdd4d4a4fd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-pc/aim-2017.png",
+      "bytes": 69550,
+      "sha256": "7726009130c871d8e34cdb280206569384f895e6917aa9760dae14f37c30e12e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-pc/choose-2015.png",
+      "bytes": 66357,
+      "sha256": "7436fccc2ea36b8d6c6698924be9b0912f2fa8e1a9fecd5cf2b575f4db01befc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-pc/choose-2017.png",
+      "bytes": 64386,
+      "sha256": "74de2c81a950a94baccb8433a8828afa561b9c7fd2f54bd8545500291a0a6aa6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-pc/continuous-2015.png",
+      "bytes": 69521,
+      "sha256": "6d47ee3f1789470a913c9ef4367ae44556910dbb3237c2ea2a88ab31279a0e56",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-pc/continuous-2017.png",
+      "bytes": 73540,
+      "sha256": "6e24c078a594867ba6f9a413d8f33e5de05cc576bca92cb951af31371d9a639a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-pc/place-2015.png",
+      "bytes": 67812,
+      "sha256": "64d0faa8520a1b0920129d65619da7591573bcb15d8296b024066a93b95e4b3f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-pc/place-2017.png",
+      "bytes": 67138,
+      "sha256": "07b93b81a266c60cfd31ae737f6ac3b630d93436b7db1ed620d4f18fe696eb62",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-pc/ready-2015.png",
+      "bytes": 87073,
+      "sha256": "25a172c1590736d25212389a1426bd2e1fd633ba3286b1cd7c7045d692a98e0d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-pc/ready-2017.png",
+      "bytes": 86280,
+      "sha256": "c9c7a60dc2cedf866eeb9230a2c239da4f30e524f54cde65354a4e1deca18199",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-pc/run.log",
+      "bytes": 4597,
+      "sha256": "3a1885a64777c57e04bd6c07e01758af75c2bab71c9735fdb55a47e5e1359b14",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-pc/skill-2015.png",
+      "bytes": 56767,
+      "sha256": "1afa0dfce86224e67bef9d31d63e25dc71aec0cb29c01a3a8a11b20cef04aef1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-pc/skill-2017.png",
+      "bytes": 56779,
+      "sha256": "7cabbd78faf232b526a4b8054c93a6b63c8517a6729eb50d92cf9801b89998e3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-pc/wave-2015.png",
+      "bytes": 54023,
+      "sha256": "5cfc2f992a17cc643a18f64fbe8b7fcebd80f788a95fba638378cb8fe0724f78",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-pc/wave-2017.png",
+      "bytes": 56744,
+      "sha256": "fb8753c8114fd4a2ba1b3e6b4c56c5e8ea7b2d40537bb3fc6609d225f96f6b3b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-phone/aim-2015.png",
+      "bytes": 183305,
+      "sha256": "dd11ee8ce52519d76fdf1c9ec2804a0942ac990861bdcd365cbfff33c82ce668",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-phone/aim-2017.png",
+      "bytes": 176188,
+      "sha256": "e70a9de1ec33aeb0e2a712067d906dd9c4fc1eb7507ef0f2cd97ddf0387b6975",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-phone/choose-2015.png",
+      "bytes": 171205,
+      "sha256": "ee2646999c4049ba9f698c18b0f31cf0c74c2c7a41c2745bfc24b8eac8f1e3cc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-phone/choose-2017.png",
+      "bytes": 170411,
+      "sha256": "2af418366ebd3b24d3db39ccd4942278fb906714e292ac41c3f8e49421a1dd7f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-phone/continuous-2015.png",
+      "bytes": 202870,
+      "sha256": "2d9539b7173f7adc7a8cd8264bc8c4f1a006c2c8f0ff075f0bd1de95f5f150a4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-phone/continuous-2017.png",
+      "bytes": 198300,
+      "sha256": "5a8d5565313eeb88f11d8472f5a8eb4317838cecd2e49a624d5fb1e1fc6ce0fe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-phone/place-2015.png",
+      "bytes": 178259,
+      "sha256": "bb9396ae269e694c9d945720d9cf158c6f3ffc8bde180808ba48ddc863eada01",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-phone/place-2017.png",
+      "bytes": 176530,
+      "sha256": "27a44861615f1ae81e9a0381873e7e39ce592fea291b5f902e155e48f035705f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-phone/ready-2015.png",
+      "bytes": 212284,
+      "sha256": "e218b0e64a892bdcde96dca4a8df05896be891fb307cfeb7de0846bd4fab5444",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-phone/ready-2017.png",
+      "bytes": 218969,
+      "sha256": "d2f98e9439c24a676b56eb2bc4b289704ac1c407aabe088b84c4b9e7e017298f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-phone/run.log",
+      "bytes": 4597,
+      "sha256": "3a1885a64777c57e04bd6c07e01758af75c2bab71c9735fdb55a47e5e1359b14",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-phone/skill-2015.png",
+      "bytes": 167989,
+      "sha256": "c7b051e9002e5e74dd41038840cf0d1c5784b58765b26401a6fc1bba86b50488",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-phone/skill-2017.png",
+      "bytes": 168326,
+      "sha256": "3c2a2de3605dccd06c6de94d24f87d2f126ab56588f2ab3337dd40a93c35c55e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-phone/wave-2015.png",
+      "bytes": 163504,
+      "sha256": "5294711175aee4c91b5ed06723e3cb08705c9f6c26ae964c44ec952673b1b1e3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/lifecycle-phone/wave-2017.png",
+      "bytes": 168039,
+      "sha256": "3b53487abe7c908d07f5cec160958b645aa334445de2c0c7b0179d87601f6c58",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc100/choose-dense.png",
+      "bytes": 213714,
+      "sha256": "f608ab8917e9138781625b20e60319a3cda1822c3c6bf33306ac7f09a79033a6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc100/field-folded.png",
+      "bytes": 220853,
+      "sha256": "ea660359a4622d73ee10995c7f2404d6b692576d12764e05d57bc2ca17c3cf48",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc100/inspector-dense.png",
+      "bytes": 211275,
+      "sha256": "f49e5d9647cf1a1600087f35d6ea874b8b67368f19034b05144bffe73d265042",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc100/measurements.json",
+      "bytes": 8701,
+      "sha256": "1cbbc52c5882ac24de5ad767438587c48609417c88142bd1b72a46a3e5f89579",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc100/ready-dense.png",
+      "bytes": 231460,
+      "sha256": "b82d1a42e65166f84bd1a15e39b6cf1344b2e53b4edc428195b0d53f5c0e63a8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc100/run.log",
+      "bytes": 303,
+      "sha256": "6956735d6cf2f6cb96c9e90dfe77533a27e093c3250749669d83cc0ce98a9870",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc100/wave-dense.png",
+      "bytes": 227759,
+      "sha256": "0eea748c3a8b73e83ff2f57a8bd5128bd252a6861bcd33c1a43ff8e5773a67e9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc115/choose-dense.png",
+      "bytes": 242056,
+      "sha256": "694b7685c4e9e66ccf39c89adf8747fe6b02d24d0e5f5fc16bd7225a6f304138",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc115/field-folded.png",
+      "bytes": 257069,
+      "sha256": "6efae8600553d941261454cdf144d5c023de8bb8ff27041b6aa662b7924a3e90",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc115/inspector-dense.png",
+      "bytes": 261576,
+      "sha256": "61b219f760c66f96a817181d82d2b262e0cbb0ede952cd688aeda586f603e545",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc115/measurements.json",
+      "bytes": 8702,
+      "sha256": "c8f96ea92814ecb899f8c499d7592bd614f8d3479afc5eb0b7f85fbf171727cf",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc115/ready-dense.png",
+      "bytes": 265046,
+      "sha256": "fa92caeb5e5a9189315b55a90be3de92541df217aaf9b92ad205fb084734b202",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc115/run.log",
+      "bytes": 434,
+      "sha256": "0743e42202fed35641ef14060ba4aa61f191a0666c42c9056cde1b89c02e67e6",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc115/wave-dense.png",
+      "bytes": 267426,
+      "sha256": "31e7428d9da7681bdf371bebbdf02b8f16d58917d49ea610bf3a0ed3f8fb767e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc130/choose-dense.png",
+      "bytes": 249510,
+      "sha256": "dea853817153c15d952fe0152d587e9f23d34a1e6736313c94cfcd0070d567d7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc130/field-folded.png",
+      "bytes": 264973,
+      "sha256": "55e63249928bf25ed92acf0556ecc365420573f46bffd8e2fc6b70dfed0fe58d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc130/inspector-dense.png",
+      "bytes": 272288,
+      "sha256": "aa2971db5d0a33fd0a4eb02da9619d031b9ebba5ac6ad0c337ecb676d8a70485",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc130/measurements.json",
+      "bytes": 8701,
+      "sha256": "2cec19888d15f7a1ebd0625fce21cd7d878199d5f5b1d5561a0897fc358ae25d",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc130/ready-dense.png",
+      "bytes": 278950,
+      "sha256": "8b7ffaeda9571baf6b2c4add481c29019e22ac779f06dcde8239085c4807e70e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc130/run.log",
+      "bytes": 434,
+      "sha256": "0743e42202fed35641ef14060ba4aa61f191a0666c42c9056cde1b89c02e67e6",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc130/wave-dense.png",
+      "bytes": 278465,
+      "sha256": "b793fd9b69f6eff2c70605ffd74f516a082bfc51294aaf06b55946297373b3d5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc70/choose-dense.png",
+      "bytes": 227245,
+      "sha256": "32f2b05d04f7d69291b1349eea16fc99d27554539f41978ea43a723efd4f6e35",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc70/field-folded.png",
+      "bytes": 205806,
+      "sha256": "90b11be4bcc0520a574d935c4caf69441934a61cc756fc272565498d306c4fc7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc70/inspector-dense.png",
+      "bytes": 238339,
+      "sha256": "58155aa52820926d42a9d7aae58312b7658cc812ad6d58610b5b71d717ffc95c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc70/measurements.json",
+      "bytes": 8701,
+      "sha256": "cc74fa44f33494917ae4a624179e0c2348fee9775d3dd92b89e6b50c971a3717",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc70/ready-dense.png",
+      "bytes": 216199,
+      "sha256": "66badeb9dd49cf59fdac1bd00fe9f981126542c7c166d398d72126888c29683d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc70/run.log",
+      "bytes": 434,
+      "sha256": "0743e42202fed35641ef14060ba4aa61f191a0666c42c9056cde1b89c02e67e6",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc70/wave-dense.png",
+      "bytes": 209372,
+      "sha256": "93065e2053e48d9ee844afaaa0ee664b2ef4025337aa7ea8ec336b9efe39ce0b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc85/choose-dense.png",
+      "bytes": 241549,
+      "sha256": "1814fe1867e5425d6930580dcff1f9a823372a2c99dd50352e51306a7a8298d6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc85/field-folded.png",
+      "bytes": 222343,
+      "sha256": "6ab102f4a6c99129f5102b5a7c37859a6f3a2dedf0f1b49ef3d615aa891d1c70",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc85/inspector-dense.png",
+      "bytes": 251826,
+      "sha256": "bfb42c27d2202ab7b3b42efa65cdc0a8155f13006da43bfcb49b0b24f6e07da6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc85/measurements.json",
+      "bytes": 8702,
+      "sha256": "79f919f62d35f09e56bd0fdcee2c5a50cc0b6dcacc511ecbab99bb9ae165d562",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc85/ready-dense.png",
+      "bytes": 235025,
+      "sha256": "89180f4c30359ebdc7391a3f1c4292468d4bb8f0bbe78bc1c635c697b6e8575a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc85/run.log",
+      "bytes": 434,
+      "sha256": "0743e42202fed35641ef14060ba4aa61f191a0666c42c9056cde1b89c02e67e6",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/pc85/wave-dense.png",
+      "bytes": 227483,
+      "sha256": "027173c910b5ca0f18f1fb62a718a4183215fc343a4c403ee27608f10ff72b54",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/phone130/choose-dense.png",
+      "bytes": 448024,
+      "sha256": "9b37ee9b13f3b7b497384c30e3a9623f286f02913aa8d71189522ba2b3368c22",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/phone130/field-folded.png",
+      "bytes": 494985,
+      "sha256": "a8dbf6fbd6a597d205175bbf03e3d8c20757795ae2df83a05874797649144e01",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/phone130/inspector-dense.png",
+      "bytes": 551657,
+      "sha256": "78903da6405ca05b77ebcadc443e26262d4fb7f6b31e7057fe0498dbc03433dc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/phone130/measurements.json",
+      "bytes": 8700,
+      "sha256": "9bd5f9a8c6c2d5a120c49448803aa0b3da26feec1da88cfa5bfb8827f48e62bc",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/phone130/ready-dense.png",
+      "bytes": 492720,
+      "sha256": "0d17e3190df1d4ff203429a25b630367f1f0e4c0d34589a5ef5c2edff6a8f9f2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/phone130/run.log",
+      "bytes": 434,
+      "sha256": "0743e42202fed35641ef14060ba4aa61f191a0666c42c9056cde1b89c02e67e6",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/phone130/wave-dense.png",
+      "bytes": 514909,
+      "sha256": "1dcfd14c43f1d9207144e14f71783f5d7d151cd41a0235390ccc08811c43c1e9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/results.json",
+      "bytes": 14991,
+      "sha256": "137d8930c71cdcbca9bc3656bc69c4075ff85888ed60c7d1201e091fb018e056",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/source-manifest.json",
+      "bytes": 13697,
+      "sha256": "5a2006f0869a28dd6a0a72fef9e557e376052298033b911680d1d99e2fea5ad8",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/tablet130/choose-dense.png",
+      "bytes": 537546,
+      "sha256": "0954d6b570b8ca48637688def6673ec1312c8b80a645b9ae48041878a1163e70",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/tablet130/field-folded.png",
+      "bytes": 533728,
+      "sha256": "f2ca23317c502cc4e0babd68f6fa2db19319af8cb545c26e09a74cc19e4102cf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/tablet130/inspector-dense.png",
+      "bytes": 678596,
+      "sha256": "ea64173889dcdb5af586eb5952b789dab0801fd735a670f99a1fdda9d320fec5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/tablet130/measurements.json",
+      "bytes": 8701,
+      "sha256": "b11836d632b03d5093e6a64044f2b8198cadac96fa2dd182d9edc2edc060d717",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/tablet130/ready-dense.png",
+      "bytes": 547662,
+      "sha256": "87636b44a661d70c112cf2dbecca78e9676be64d4e77f306d1b6acc4b4bf6100",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/tablet130/run.log",
+      "bytes": 434,
+      "sha256": "0743e42202fed35641ef14060ba4aa61f191a0666c42c9056cde1b89c02e67e6",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/tablet130/wave-dense.png",
+      "bytes": 567125,
+      "sha256": "26e1cfd1b6e4c55bf8c7ad6a3bd25ec6b60b0f3efec1274543ae3cbe77672153",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/undo-pc/01-move-undo.png",
+      "bytes": 120010,
+      "sha256": "0614bde73f9e44939d97082ad18197fb4600b77d533b505e1df7c4c64c46501c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/undo-pc/02-group-direction-undo.png",
+      "bytes": 120780,
+      "sha256": "060ca658f514bf2bd751a4079464132fd3acd9e85aa853fc02c28af316ee6969",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/undo-pc/03-card-undo.png",
+      "bytes": 111044,
+      "sha256": "b1538eebbf95f3da0a8f6571f4b62436879f8d642c1f1f7f55fd20d216219632",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/undo-pc/04-new-object-undo.png",
+      "bytes": 117348,
+      "sha256": "dcab9fdbe789176d567fbbf802469f2e6af35e9c44e23eb3a726e8f1baac4733",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/undo-pc/05-boundaries.png",
+      "bytes": 124060,
+      "sha256": "fd5cdf9e8519047e14a1611e1b5ab01dd3de90e778c607eab10901637e9b0fdf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/undo-pc/06-review-ui-undo.png",
+      "bytes": 114561,
+      "sha256": "f351827067e82f034c379e19ce67826db355a972ce495bd01809cc6d0b76b693",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/undo-pc/07-toolbar-focus.png",
+      "bytes": 113199,
+      "sha256": "7eb442f082ef4e313500897c953462aeef3bb9065931c61681a997320423db6d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/undo-pc/run.log",
+      "bytes": 3898,
+      "sha256": "ded250a84338f4795145b8d285b5ac96e44bc4bc4f9c0124f3ca0a8de5df35e2",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/undo-phone/01-move-undo.png",
+      "bytes": 300520,
+      "sha256": "fe7a71f7948aa78bb8bb2e567a75ba8f2ca781c07a8b1694d0e8235ad4884381",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/undo-phone/02-group-direction-undo.png",
+      "bytes": 320988,
+      "sha256": "321b8691da65ffb4636cbfec8ec1bcc5723d7ced455a305f6c2bfa9e5b3e8ac8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/undo-phone/03-card-undo.png",
+      "bytes": 353392,
+      "sha256": "322a59db00cf95f79ecfaf7a882507359caac6298484a07399acde716d8ab4a9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/undo-phone/04-new-object-undo.png",
+      "bytes": 369307,
+      "sha256": "df58a945d52cab26551d83021f3a2a31eed36d5be2fe5e3e5b793cc8e945b893",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/undo-phone/05-boundaries.png",
+      "bytes": 328538,
+      "sha256": "b3832efb306c75d188b1c1099cc90d77087a07f7e1f587b8e5f00bb0cbd712b3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/undo-phone/06-review-ui-undo.png",
+      "bytes": 273374,
+      "sha256": "753ea395dc1d58e1df218469a6a320ef13a7c90fa2bec3ba7fcc6341e977d08c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/undo-phone/07-toolbar-focus.png",
+      "bytes": 287495,
+      "sha256": "78c030283b11067a789f9ccf9f29df3169384ae916e6d932a45a8e0713fc268c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/native/undo-phone/run.log",
+      "bytes": 4076,
+      "sha256": "70842c7b0c66e704d272994cb6302fe69d0bb6361bfe6e7ba9dea474fc971977",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/rebase-before.json",
+      "bytes": 454,
+      "sha256": "e891b8e17b50ac696052c9314d33ac3845a5c0972042871920f3aa1a330707d7",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/rebase-resolution.md",
+      "bytes": 906,
+      "sha256": "e68673c4aca3e49573aa0910a75d9483e2d26daa86a628f37ed843c79aae9f6e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/rebased-check.log",
+      "bytes": 871,
+      "sha256": "32a05f0113f928dcf71581e7cc11125a6c5a1af5efdd7fff128e3ee699dba80f",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/rebased-gift-progress.log",
+      "bytes": 730,
+      "sha256": "b45135ac0152aa4b60a69689b5a41d3dd9ef8abe91697e1e492b0d9803be1a36",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/rebased-native-progress.log",
+      "bytes": 2654,
+      "sha256": "f77f6c9cb21ff8937013326be669a253dcbcab3e394bca3b6fb6eb924e26ef28",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/rebased-phone-progress.log",
+      "bytes": 141,
+      "sha256": "b81e61b606ba04a830f5dc08c77ad05a3c3b9d970f9accf149da5c4e5f697a68",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/rebased-two-progress.log",
+      "bytes": 130,
+      "sha256": "a5a32997c2d55be704a4f889e97123c45e65d089c01dee7260e554e17b1009d4",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/rebased-verification.json",
+      "bytes": 19319,
+      "sha256": "18182263e9402fb820fbca7ac4c53ea3f187aed0c0758cfa82635d91dcbd072f",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/result-pc/gameover.png",
+      "bytes": 64342,
+      "sha256": "2bd6e3ffe291e35b02838395b7b7dee117b498a8d12bc0ddff58bdcc5bded6f1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/result-pc/result-detail.png",
+      "bytes": 42123,
+      "sha256": "4c0357585583aa882c848f659da032a0cd9906b1f383807bace21aa54bda5e25",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/result-pc/result-object.png",
+      "bytes": 42728,
+      "sha256": "2a08978ba829a7234f0c6ddc4211a1ea11f3335c428d92b587b5812415f2ab91",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/result-pc.log",
+      "bytes": 754,
+      "sha256": "4087b68565a31cc9c151434943947c72fc606a326e61dd131130f7ce51bc1f6a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/result-phone/gameover.png",
+      "bytes": 155584,
+      "sha256": "95531e2fbb9731c98b59330ed5cf75a85285d0d3b0358fcaea9cfd3b4bb5324f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/result-phone/result-detail.png",
+      "bytes": 133618,
+      "sha256": "037886fefb91715ea2009e13f874e5fb04f62ffec9548f3a5f102bab982a7f5f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/result-phone/result-object.png",
+      "bytes": 135118,
+      "sha256": "8140586edfa6f03560c79b5eb340541ef7a08f7b479518ffba453ecd13e7d55e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/result-phone.log",
+      "bytes": 754,
+      "sha256": "4087b68565a31cc9c151434943947c72fc606a326e61dd131130f7ce51bc1f6a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/targeting-rebased/check.log",
+      "bytes": 114,
+      "sha256": "2d2826f252482fe274ef0836a0fab0ec08f63387d0eb8ef156e10dfb245b6b7b",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/targeting-rebased/import.log",
+      "bytes": 10684,
+      "sha256": "d0068211fee21c0922a8008c6010059c88390f6f6339c32f215444d82fc8d605",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/targeting-rebased/results.json",
+      "bytes": 862,
+      "sha256": "62850e5adb9f7aeae9352f6a84c5c93cdb3ce59f210fd5e9df8b19c7db2a0e59",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/targeting-rebased/run.json",
+      "bytes": 669,
+      "sha256": "4b30807448b119faecd618601a1888999f169e8a40866d2b0c9dba30c5234218",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/delivery/targeting-rebased-progress.log",
+      "bytes": 59,
+      "sha256": "bbe89b22119cac38213e128b09682d2443ec349b0170eb15d109bb314544ca8d",
       "published": true
     },
     {
@@ -10029,6 +11451,2406 @@
       "published": false
     },
     {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/checks.json",
+      "bytes": 23369,
+      "sha256": "d737dac7d17de9745896f542810e5623cfe5cd00aca2f21f079b835260b69725",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/host/owner-final.png",
+      "bytes": 95188,
+      "sha256": "c52bb73134beacb325d4d8750a95dea52f95aea0d3f34227ef9d13a12097202a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/host/packets.bin",
+      "bytes": 28740,
+      "sha256": "a6248195d20b53e0f70c92070db3fb69d6cb324f60a4faaf80ec15672c83cc05",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/host/result.json",
+      "bytes": 4787,
+      "sha256": "8ec30707453df7240e3e951049179727c0875df9ba0c6a20fe9a37e10b893360",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/host/transaction-state.json",
+      "bytes": 3198,
+      "sha256": "226a198558e523f25664ad3c6447a384baeeec108c5fb7c8d04aa38bd29ae5ec",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/host.log",
+      "bytes": 4755,
+      "sha256": "6cfdf25cb19b533566f0fa47fbfca6d90d5fc0ea66dd9f6c3e377ccce568ed0f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/peer_a/donor-result.png",
+      "bytes": 108124,
+      "sha256": "227c14657150e75ec8ebde13965c753238a602b51274ab779ef2104b6df0a6c0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/peer_a/packets.bin",
+      "bytes": 5560,
+      "sha256": "ef46b93bbeaf5acb33aa6f85188ac7f9c4594cfacde442edd9aff912d394093c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/peer_a/pending-reservation.png",
+      "bytes": 92298,
+      "sha256": "da183a2a459aad59d45550de2e94095fb586cd612697441f27cbaa8710334b0b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/peer_a/result.json",
+      "bytes": 5162,
+      "sha256": "aadf19dc581dc3c14bf8e02a558bf1c67ffa4de26d518edd4afa03cf7fc8f110",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/peer_a/transaction-state.json",
+      "bytes": 985,
+      "sha256": "4c47fe5ba581dd15b4334334d6afe4b582f1ecdfd2e31b589d137553c55e2054",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/peer_a.log",
+      "bytes": 5050,
+      "sha256": "ea88290bf1df38994450101554a4c23ebeab129a1eeedbe5b521bf54b64bd200",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/peer_b/donor-result.png",
+      "bytes": 93183,
+      "sha256": "dc5ad1205b06f0c4806dc16d1b56b73a3a24fbfd0694a137547329101fa36b04",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/peer_b/packets.bin",
+      "bytes": 6376,
+      "sha256": "2734e7547e12cf3bda9741939630a1153e3ef7c36bbf5869a8c000229d63a86d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/peer_b/pending-reservation.png",
+      "bytes": 92204,
+      "sha256": "9249212ba106c1df404826671435d241dd18baa1f1e092c3b750915f1bca2e27",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/peer_b/result.json",
+      "bytes": 5306,
+      "sha256": "52e46924d92ebc5c738590aba42a07900a6e2eee2423a0003f2961ebf4e7c9ad",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/peer_b/transaction-state.json",
+      "bytes": 1080,
+      "sha256": "8be4698fea633897d3c8fa1aad99317773edbb3722cc900f09986abda08ce9d0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/peer_b.log",
+      "bytes": 5184,
+      "sha256": "4e06439cffe2040cefd66fcf3a6eedb67289f6d2ed5ec3eac0734b5a5c404831",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/signal.log",
+      "bytes": 803,
+      "sha256": "413e6e641f4464c685349dfceb4068014df1d32520760f331159284d947c6bd2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/ack_loss/source-manifest.json",
+      "bytes": 14206,
+      "sha256": "0231463899c40c8261d50ebeaa4282d1ce68fc5cc5f958fd5528386af214ffc4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/checks.json",
+      "bytes": 19902,
+      "sha256": "cdeea38ae366a1c31c8a6780a75915649b9b3428ebba362738842df6376df239",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/host/owner-final.png",
+      "bytes": 90927,
+      "sha256": "c5dfbff6ea351f3626b8a01c331ed6e6764447b2ea5162eaf5aea2fe976d910e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/host/packets.bin",
+      "bytes": 36924,
+      "sha256": "edb0455938d7eef929ab9216e562dee0122b7056a996c8872b05af6f0a15afa8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/host/result.json",
+      "bytes": 4792,
+      "sha256": "7282aff2e42f73e5106e3e4d67ea153664d03f06095824559015b38820d67c79",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/host/transaction-state.json",
+      "bytes": 3198,
+      "sha256": "8c1296f6805258b782cfa18bcd8aa7c25db32f01cc5cf0e6bfe1673ba70a26bb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/host.log",
+      "bytes": 4862,
+      "sha256": "7402f1c01b312ef7bd21cd7588e17a5becb2586af2d57c3c25f8e670f4b1a1b1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/peer_a/donor-result.png",
+      "bytes": 109892,
+      "sha256": "1f60743b4bc1d7d64a8667e8c6f6ec609407c82f277e32b8fb464239f4c31926",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/peer_a/packets.bin",
+      "bytes": 7240,
+      "sha256": "6bba692c2cf01d4d3530ad99f12cb2c6bc39b0cfa6fa7cfcf04e67f5dc04a9e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/peer_a/pending-reservation.png",
+      "bytes": 86825,
+      "sha256": "4ef19fc8e8f41c2512edc14c50bb2edf7ba5039dba08242bdd571e9a685e4cd9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/peer_a/result.json",
+      "bytes": 4099,
+      "sha256": "9e0588ce9d1450583152d8ae80035eaac338a79722392d887041c12ac7fe88e9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/peer_a/transaction-state.json",
+      "bytes": 1017,
+      "sha256": "5974b7a700dca52e5b4a4400f7fcd1bce57f1596ecc50ba03bc81d7241b14e13",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/peer_a.log",
+      "bytes": 4613,
+      "sha256": "7bc4e87253b57b973272782c78e0982977254d4eb2f4239e5ee5c06ae307d3ff",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/peer_b/donor-result.png",
+      "bytes": 86690,
+      "sha256": "077e361d0f62881e5fc498b6b639b7fcaeb4fb47072af2a9395399ef7b6348a6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/peer_b/packets.bin",
+      "bytes": 7496,
+      "sha256": "defb1d30964bcf9148cbb4581c6185cf49ab795ad7b726aee178dfd3a5bb98d8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/peer_b/pending-reservation.png",
+      "bytes": 86740,
+      "sha256": "29df35d9db5dffb82ff54e703f0a1f1d19c73e855241685e8a73c7ade3a2a4d3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/peer_b/result.json",
+      "bytes": 4169,
+      "sha256": "aa5cbabf30b7edf28c0bb59bfbd51cc798a8bd9652bb7c23cd20467057928700",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/peer_b/transaction-state.json",
+      "bytes": 1080,
+      "sha256": "eb6090bbd021127b9436c05e3c21b70fd309228e3c67ab717842f3ff6252db0c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/peer_b.log",
+      "bytes": 4678,
+      "sha256": "79605feea05db3812383d5bfdd79f88d3b7b6d8eade9d14b91f9ab359550aa20",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/signal.log",
+      "bytes": 803,
+      "sha256": "74e0740008f63421df040cebc359d638677def793741644999c7f6705ac26113",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/complete_loss/source-manifest.json",
+      "bytes": 14206,
+      "sha256": "0231463899c40c8261d50ebeaa4282d1ce68fc5cc5f958fd5528386af214ffc4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/checks.json",
+      "bytes": 6625,
+      "sha256": "59d36aa22d8782652037301ce87fe014664e19117249c7c58747191a4f37491a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/host/edit-rejoin-owner.png",
+      "bytes": 109269,
+      "sha256": "0768ba20e8bd191a2ed4148b3bfd5c0c7f14a7b1d31ff072ce3698a17c38d559",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/host/packets.bin",
+      "bytes": 25328,
+      "sha256": "22e05a54a62f8b6bb2a085ed5775eb117f437787a213a85a8ff6fafa1e6a5a35",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/host/result.json",
+      "bytes": 680,
+      "sha256": "0e9f8aad06f298af6690b48f1f8aac98107e83b20d455deb8edc8ddb13dd988d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/host/transaction-state.json",
+      "bytes": 1777,
+      "sha256": "7e0376f4f57e9e449f9fd10e2a3f44b886af18b7d90abbddc75c47347b1cdbbd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/host.log",
+      "bytes": 1283,
+      "sha256": "57d3e24aceac0c9c07a9801dd06761d0b6b6e5ed7e45dd52bf9d2adfb04512bb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/peer_a/packets.bin",
+      "bytes": 4824,
+      "sha256": "07e55e20620cd75b85597046309abf7a7c76edb048c6efb788fa9d31e04f8371",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/peer_a/result.json",
+      "bytes": 2746,
+      "sha256": "f292be8629c9b146fd98541ad82b70dcb2a84498f9211d2a9aa70dadb7794f33",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/peer_a/transaction-state.json",
+      "bytes": 1017,
+      "sha256": "e8b03ba4dacf23705e55b609c38c6a6d12ba884854fce7cf1c9b824ac93a3b6a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/peer_a/zero-picks-direction-edit.png",
+      "bytes": 103726,
+      "sha256": "2fd328e3cb48b8a8a85e9b0cd646ab23e6181e717d784b3b378a1d85b08089ed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/peer_a/zero-picks-edit-recovered.png",
+      "bytes": 78327,
+      "sha256": "7593126b79235dfe0b0648b59b84d9688d3dc16fbaf3664ce62daa1834fae5c0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/peer_a.log",
+      "bytes": 2870,
+      "sha256": "5520bc0ab97ba68d357c391f86ddde3d341e97e4665d50ec38c683ab30c12a48",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/peer_b/packets.bin",
+      "bytes": 3064,
+      "sha256": "34c6bfca943c4b7f3c1e79eb328620e1527ed05a58c91684ed6ba1dff52434a6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/peer_b/result.json",
+      "bytes": 688,
+      "sha256": "0f7fa71c287c8a8f72bd2e2f6446c280b1daa97c7841af4b401ad0cb1c92284a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/peer_b/transaction-state.json",
+      "bytes": 481,
+      "sha256": "544455d8a63ae5925d071056173c6260fec21654dd6d8c90f12be0fc70c0a724",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/peer_b.log",
+      "bytes": 1101,
+      "sha256": "c1e12cd76239213fb7ce5bd8072d392d816b8164336e76c4c3bde473fc91ed6c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/signal.log",
+      "bytes": 803,
+      "sha256": "bb904e3f575ae6ba16b75ae503f7e244c3de884e950b929d28f93c725fdf6358",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_edit_rejoin/source-manifest.json",
+      "bytes": 14206,
+      "sha256": "0231463899c40c8261d50ebeaa4282d1ce68fc5cc5f958fd5528386af214ffc4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/checks.json",
+      "bytes": 19872,
+      "sha256": "66dccbab31f72bd8dad4e55d3ed807bc33786b335ac5cffc4eac714074457e6c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/host/owner-final.png",
+      "bytes": 97001,
+      "sha256": "6ca8e0d0333a101a7fb152fee9dcdba44cb2960730600a328d4378163e7345d1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/host/packets.bin",
+      "bytes": 42844,
+      "sha256": "eb3e3ba032fc7b82648364c7424baf6f09d9eefe043cc1ac1e97f8f8a4659a6b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/host/result.json",
+      "bytes": 4791,
+      "sha256": "fa2b3b0e2909e8631d6a1190a825038ae529ac43d2c844055151b2ef538328c2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/host/transaction-state.json",
+      "bytes": 3198,
+      "sha256": "8c56b7611f97385ba107f041a39e4185c46f6d1c5a59882f9def68b36aaf6a08",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/host.log",
+      "bytes": 4750,
+      "sha256": "96bf7aa4fed93714cb484d96f3aea61965c80037baec89a52f37c1234ac1ffd8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/peer_a/donor-result.png",
+      "bytes": 89776,
+      "sha256": "7b668fcfc428d1305b6c3fd40ea43bf80083ef84d34941d7a7ffc9a4053172a1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/peer_a/packets.bin",
+      "bytes": 8984,
+      "sha256": "423a5583ab7f15e9be1c1851350dfb083be5e65abcd0bcee6961ec4c0ac80cd0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/peer_a/pending-reservation.png",
+      "bytes": 94718,
+      "sha256": "0cb8b45a91c6050777e7310f93a7b1ad79ea85a309cc2f19a545a8748fd2d3d4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/peer_a/result.json",
+      "bytes": 4591,
+      "sha256": "9a0c589a302bebdd1433d7a44674d61f6cb40f57db696cbd325158a6d3dd4f4d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/peer_a/transaction-state.json",
+      "bytes": 994,
+      "sha256": "bf7940bb9bd8d956e1b7a0374584055e35e634ce8c262159f9595b5314d55514",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/peer_a.log",
+      "bytes": 4859,
+      "sha256": "db3e914f294cf16adfea2b8e2663d434d0d5524d10218f6470d7ca3e4058ead9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/peer_b/donor-result.png",
+      "bytes": 95403,
+      "sha256": "1b76cf434518a5ab791364af8eafc80fe412714192fd3a565ba173222fcc736e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/peer_b/packets.bin",
+      "bytes": 13176,
+      "sha256": "92a10e77c413b05a56a8f88a84df4f430fdcc65b06d369c6d3b426842268550a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/peer_b/pending-reservation.png",
+      "bytes": 94709,
+      "sha256": "c9b66d13f13cfb6900a206d13b796dbbf254ec505b00098489b972e658df130e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/peer_b/result.json",
+      "bytes": 3713,
+      "sha256": "68a6ba0e70c18a8ef250afeeb410475e2a917faf167c18a59f749ed03e50a766",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/peer_b/transaction-state.json",
+      "bytes": 1048,
+      "sha256": "d33d56a1dfef44578890a79820e1512080af0e49d5585f8e33f69d03632ff203",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/peer_b.log",
+      "bytes": 4237,
+      "sha256": "58ee07c18c232fa860374dcfd4c6e5ec32df7fd1eab77c008e9019c65f3b9b23",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/signal.log",
+      "bytes": 803,
+      "sha256": "355033b875f7a165058216bf0c5cb009f8d58935176658b546934de7522b8175",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin/source-manifest.json",
+      "bytes": 14206,
+      "sha256": "0231463899c40c8261d50ebeaa4282d1ce68fc5cc5f958fd5528386af214ffc4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/checks.json",
+      "bytes": 24481,
+      "sha256": "6575a158201627a1269633cc2e59e47edc81d9678f14b73fff050df0a368a6fb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/host/owner-final.png",
+      "bytes": 95263,
+      "sha256": "170a09d600b5a4d83cb0f86a2fabc194fc5805991c5c532135fbac1c438438c0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/host/packets.bin",
+      "bytes": 42712,
+      "sha256": "538882ac9779702cb0742550dd32c807048b4ad9f7206659dc662e87c9985f81",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/host/result.json",
+      "bytes": 5243,
+      "sha256": "ee84976cbac35829c8c27e2870e9ace59b6ffb80ec8e130de4467599c13057b8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/host/transaction-state.json",
+      "bytes": 3198,
+      "sha256": "2e2073dea47598e6b8b259807df0019750533044f75708fa57bfe746d8a64419",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/host.log",
+      "bytes": 5077,
+      "sha256": "a9cc7d0c9c8740f52e488fc818207592e3aecc5225f9958d14d4f440ee5ec1f2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/peer_a/donor-result.png",
+      "bytes": 93432,
+      "sha256": "43194aceefb2b94265a9d4563a795415611c68725589344528876a84d7fcd10d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/peer_a/packets.bin",
+      "bytes": 9064,
+      "sha256": "5e44b1cecb6eac40f39de3ea2039fc8be8581455a07a4ddccf2c63672066156a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/peer_a/pending-reservation.png",
+      "bytes": 94113,
+      "sha256": "5624237348b70c622e1d8d3d2af06efd9d6880fe3033ed5e17ab8290fb357dda",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/peer_a/result.json",
+      "bytes": 7270,
+      "sha256": "ba5d37dc57fc39b041a111b3dbebdc78685b2300b41e4b62b1028b042c2ec57a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/peer_a/transaction-state.json",
+      "bytes": 985,
+      "sha256": "cb6a1f3dfdedff82c2761e53bc912808875bce26d810f56723b043d6c3b6f1c4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/peer_a.log",
+      "bytes": 6285,
+      "sha256": "a2eaff232d0d8787daff482bfd0093118635db6c57276b57f18542557f6696fb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/peer_b/donor-result.png",
+      "bytes": 95063,
+      "sha256": "86b5e7d1ec30038ab6865b410d295f7bf466ecfb58fc4e29fe9057b7f9ac0bbe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/peer_b/packets.bin",
+      "bytes": 10648,
+      "sha256": "7ce9be85b3b5a03c37732cd560632c2ed9504d977b466a09a42504abf3ee1a3b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/peer_b/pending-reservation.png",
+      "bytes": 93908,
+      "sha256": "613e0b46c641a13550fe33e0ce8ed05b8895856e5beb36859884d3663cc54ae4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/peer_b/result.json",
+      "bytes": 3443,
+      "sha256": "dc3b0e90a948bfb9aff87eb7940b0b7ddc1b42a2ee2b909d9ff0050ef1a6ade2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/peer_b/transaction-state.json",
+      "bytes": 1048,
+      "sha256": "b8845c72fa0fbe5839b891fd4aaedc87f4d6d9eb2559c65110a9cbd52717fb96",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/peer_b.log",
+      "bytes": 4049,
+      "sha256": "c590074bb648392159eba60e1d342ac7c19ad3bc871330ebb93b3aa65cd42680",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/signal.log",
+      "bytes": 803,
+      "sha256": "660ca417bdd85334d16263ef7ddeafa9db84f67d4497d9969567351f87815e9e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/donor_rejoin_before_commit/source-manifest.json",
+      "bytes": 14206,
+      "sha256": "0231463899c40c8261d50ebeaa4282d1ce68fc5cc5f958fd5528386af214ffc4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/checks.json",
+      "bytes": 16503,
+      "sha256": "0030ac06f3ff4d5424e879c593249f2a420b44d479b6256200334d46d4499f3f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/host/fenced-wave.png",
+      "bytes": 67457,
+      "sha256": "129b73eaa2310507210073d7431f30219e8f2189e277940ffd4dc895b6e21655",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/host/owner-final.png",
+      "bytes": 103795,
+      "sha256": "7adc63685a696bedfd61aed571c3752d1fe2e50f4081004be73ff665f6d753ad",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/host/packets.bin",
+      "bytes": 31132,
+      "sha256": "cba5bc496f9e3a791a0b381addc4e8edc0974548d3eb05f65f13510230f18b2e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/host/result.json",
+      "bytes": 4790,
+      "sha256": "681913342dcd5b9aac069a07bfca291bc7a23b04088ea3bc022356a22cc2d337",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/host/transaction-state.json",
+      "bytes": 3198,
+      "sha256": "b6c092aa9a727b55f59ccde8e27df9ba0ae1320225f1d98bda41ab11504ca914",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/host.log",
+      "bytes": 4917,
+      "sha256": "76bd39ed33572076e0dc1521957bb8e1c0f16f9cdfe3d60868a392b4118b4513",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/peer_a/donor-result.png",
+      "bytes": 110689,
+      "sha256": "385df20de8d49a4f23b11283b4fbdacbb4c933165e6c18b0bd0f54c35e721364",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/peer_a/fenced-wave.png",
+      "bytes": 97013,
+      "sha256": "2c38be4d33a3ff72e491f9fbd12a479a1b7664638895443e9ef21349d417b5d5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/peer_a/packets.bin",
+      "bytes": 5836,
+      "sha256": "42b0896dfcbf0e80d7c0f96be7e26cc43ebc8b94275ff11f8daba7c17749adea",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/peer_a/pending-reservation.png",
+      "bytes": 86214,
+      "sha256": "d7ca2277c7179a330aee6ee9e098c2b79c0340bd41e4d2cb10a0dc625b80b830",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/peer_a/result.json",
+      "bytes": 2930,
+      "sha256": "525f96ea2f798f87139290d8d1d8d38212280e35774c0eae09ad56d7a4501591",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/peer_a/transaction-state.json",
+      "bytes": 1017,
+      "sha256": "db6c3a4df2148593e9f56fefcf81a46d9cb858dfda1734c8c8732c4a9b4e280f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/peer_a.log",
+      "bytes": 3835,
+      "sha256": "7ebc01f7c8fc3fe20ce5e9c67792cc0dfb95d9a3049e5fea2071dc3e17e8bacc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/peer_b/donor-result.png",
+      "bytes": 87510,
+      "sha256": "1b99953ded5b72aa040285e8ca5d9c3b411c77ae55df3c38f783ade8e39a1603",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/peer_b/fenced-wave.png",
+      "bytes": 76247,
+      "sha256": "dc6d30df39dfc8bfd5d2d98c4e157910de4acc6b30dc5d69115c9d93ab33f2a7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/peer_b/packets.bin",
+      "bytes": 6028,
+      "sha256": "cb6901d00768efe115ced06d2ef0629e938e2cd048a252e6933e8d7ca91feff0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/peer_b/pending-reservation.png",
+      "bytes": 85982,
+      "sha256": "b407c60269d3db2dca202b2467a4610ed0f1c640d9d479388b63ba36a0873250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/peer_b/result.json",
+      "bytes": 3038,
+      "sha256": "2c89e8c1c5e20de54f93a742e265e9e0282d38c53e81de418f5623666c5d0734",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/peer_b/transaction-state.json",
+      "bytes": 1080,
+      "sha256": "e76f0f5e8c0acd07256b7cbae36cc8fda8fdab93c69de195614ee12e5ef641a3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/peer_b.log",
+      "bytes": 3942,
+      "sha256": "9083919012ad9f9ee82bdfd7126fda2e137b5e5489eb202a3e3d9a26e207f6e3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/signal.log",
+      "bytes": 803,
+      "sha256": "023a28ae419853e2c35a8d39103c29a3719f32c4e0af929a643fbe8c38866ecc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/force_fence/source-manifest.json",
+      "bytes": 14206,
+      "sha256": "0231463899c40c8261d50ebeaa4282d1ce68fc5cc5f958fd5528386af214ffc4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/checks.json",
+      "bytes": 8640,
+      "sha256": "b4ca4a196f53b6ffe18f8745051b04362747df14fe50692262e197d47e59e627",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/host/host-donor-final.png",
+      "bytes": 112802,
+      "sha256": "18be8e6b634a088728dc3b89e00a7f2cec596c690c87e35b40e5ca52026b1197",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/host/packets.bin",
+      "bytes": 19636,
+      "sha256": "37fc3de091919dbfcccd1b707517014af8410ae1a6ee3415bfc7c95a592b873c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/host/result.json",
+      "bytes": 3991,
+      "sha256": "f65049e3cc9314d8bcf752f99e58ecceebf10b589e34512c75fe366d79a353a1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/host/transaction-state.json",
+      "bytes": 1828,
+      "sha256": "6c08267676d7477a245391efdb04f38c89a82ec52a76431b5b0e817c5d2a83c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/host.log",
+      "bytes": 3409,
+      "sha256": "6e0dc9d26c2c9a7cdc517ff2c9ee0af3b0d6c953a538f47b604576e47370cd98",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/peer_a/host-gift-recipient.png",
+      "bytes": 105111,
+      "sha256": "7689a045fbf39e154417f99e9d0744c6255c2bccc85e978fa60e0947bad24e89",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/peer_a/packets.bin",
+      "bytes": 4944,
+      "sha256": "2b0abfea2e58d3fb2a9c010881f55534b78ec3e132c354fb16e353f88aec6646",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/peer_a/result.json",
+      "bytes": 813,
+      "sha256": "b6f72b4eb0344e32a561376418317f5350217ba0ff0bd6240c8a2b50d63a4481",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/peer_a/transaction-state.json",
+      "bytes": 911,
+      "sha256": "01c10d554aff60f4a8ee718723094f9612144c0f2ee2a26929b2c2e5b9f0429b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/peer_a.log",
+      "bytes": 1501,
+      "sha256": "336d7f049c8c63372279ef2d2f185069de248745c5776fafecdcb9b8a520cdad",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/peer_b/packets.bin",
+      "bytes": 1320,
+      "sha256": "abd6b0a48baa79b7e7b85c9dbf7a1e5cf8bf72a382bbe5a289e1be2891bec985",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/peer_b/result.json",
+      "bytes": 683,
+      "sha256": "0a082b6302eb0cbb1bbb32fd98c4ade421b57a59ca2fe5ec8a0e0ed9f5edd924",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/peer_b/transaction-state.json",
+      "bytes": 481,
+      "sha256": "762b1dcb1cf495df26878de8c52498d290844faf8717060ae9c6de4fbb4ce0cb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/peer_b.log",
+      "bytes": 1100,
+      "sha256": "318e6419dd1048ed7cdcce4ff68a3cc2b217599eadd16ae9ab928ac806f44758",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/signal.log",
+      "bytes": 803,
+      "sha256": "c7493637a976457481e4ecc7515674fb7975f6021d304e3cfe5ec9741765f11e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/host_donor/source-manifest.json",
+      "bytes": 14206,
+      "sha256": "0231463899c40c8261d50ebeaa4282d1ce68fc5cc5f958fd5528386af214ffc4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/import-host.log",
+      "bytes": 12995,
+      "sha256": "eb935ea75d34fa626b7bc1d4acc44fc7a97abe40dd79746a35bc03e7ee9112e9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/import-peer_a.log",
+      "bytes": 12995,
+      "sha256": "eb935ea75d34fa626b7bc1d4acc44fc7a97abe40dd79746a35bc03e7ee9112e9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/import-peer_b.log",
+      "bytes": 12995,
+      "sha256": "eb935ea75d34fa626b7bc1d4acc44fc7a97abe40dd79746a35bc03e7ee9112e9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/import-signal.log",
+      "bytes": 12995,
+      "sha256": "eb935ea75d34fa626b7bc1d4acc44fc7a97abe40dd79746a35bc03e7ee9112e9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/checks.json",
+      "bytes": 21670,
+      "sha256": "263efd54a5d2bf1acf766d6cefc2fefbc73b6d611558ff0295335dae79534048",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/host/owner-final.png",
+      "bytes": 100570,
+      "sha256": "2e4d8caf332567bb566cd19f6c141f0940f2b5a46c64e0c09401df2f22e6db96",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/host/packets.bin",
+      "bytes": 39412,
+      "sha256": "f891ff23d53d51845207b7f02d03076bad215f89dbb16ce3ef6d45654f91bc06",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/host/result.json",
+      "bytes": 5856,
+      "sha256": "3ae772d75e2e051176fee0807943752d31b5ceb14640b10e617eae4da7a0bbce",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/host/transaction-state.json",
+      "bytes": 481,
+      "sha256": "592d0aad075ca92eef82697d97eab7eb9df957dc1f7fd974cf46176414d66065",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/host.log",
+      "bytes": 5650,
+      "sha256": "88b8d0becf44cabedad05d18c6c56b9edeb173a99eafbdcaed4477dcd35584e7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/peer_a/donor-result.png",
+      "bytes": 105220,
+      "sha256": "f9f6bf53dc2e31667ace5290628d2c299d3f28b1720ed2fc9d9ea13890f56138",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/peer_a/packets.bin",
+      "bytes": 8068,
+      "sha256": "b934dbf95d70beea038a6f239fa65206a005d359bf52ca86b6aaccd7d0ff7c27",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/peer_a/pending-reservation.png",
+      "bytes": 90670,
+      "sha256": "dad2fecf821f3de271d155f7fdcac1ade10652fe307d88db46bd4f404d35feaa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/peer_a/result.json",
+      "bytes": 4100,
+      "sha256": "a50b8e24e04abaddc798f44dd9557cef400fdb3b4cc821c8e5599cd45a0f5b53",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/peer_a/transaction-state.json",
+      "bytes": 481,
+      "sha256": "592d0aad075ca92eef82697d97eab7eb9df957dc1f7fd974cf46176414d66065",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/peer_a.log",
+      "bytes": 4617,
+      "sha256": "cae74d2b16069c32720c1d4fa239bcc34a4707cc4b0ecb44065f6118715a9f41",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/peer_b/donor-result.png",
+      "bytes": 91583,
+      "sha256": "a7890931f400936cda0f2737f947326b416991fc7d43d5fd0803c771397aad7f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/peer_b/packets.bin",
+      "bytes": 7684,
+      "sha256": "1f558cea0397fba226c3432bcebda40515797f1a4ff6c3aee2b3b28372b15b74",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/peer_b/pending-reservation.png",
+      "bytes": 90813,
+      "sha256": "675b8361cc327c86a0d0e413d35b551ed58e42738940e00ba5e23901a1d5267c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/peer_b/result.json",
+      "bytes": 4209,
+      "sha256": "e967f407a7073157d7b3ae75a5fdcf562b98c2a100b263940246fe6a16fd8873",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/peer_b/transaction-state.json",
+      "bytes": 481,
+      "sha256": "592d0aad075ca92eef82697d97eab7eb9df957dc1f7fd974cf46176414d66065",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/peer_b.log",
+      "bytes": 4725,
+      "sha256": "1505961882aae78d4e6782826b76a184a352ddeda8b4f7d6b4df6d0507e1f1e6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/signal.log",
+      "bytes": 1511,
+      "sha256": "fc5c103ac9c9690748855c5b0b3b4f6a083be3a0919d07ca92edce51fc64b0ec",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/old_round/source-manifest.json",
+      "bytes": 14206,
+      "sha256": "0231463899c40c8261d50ebeaa4282d1ce68fc5cc5f958fd5528386af214ffc4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/checks.json",
+      "bytes": 9855,
+      "sha256": "f68e4d503e0a81bd4b73eaab19c23bb904bc066aa69c5d4abe584340bc497b01",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/host/owner-recovery-coordinator.png",
+      "bytes": 81224,
+      "sha256": "76693092c410c911bf97b464caf17e94023220933c5c74c260dd0e44e4845c13",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/host/packets.bin",
+      "bytes": 39724,
+      "sha256": "c628efc942c03db4d7ec3f5588d30c272a09148dcd26b44a2d67ebff04fa9615",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/host/result.json",
+      "bytes": 2781,
+      "sha256": "cf0cd6afb45c68981f144fcc1e81ccc87ccaea96ed16b153548b01fc85df50ac",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/host/transaction-state.json",
+      "bytes": 1347,
+      "sha256": "09f68ef082bcda6eb1c2f55b1c40643f305dfd86460d0f891b97257e3cc21e42",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/host.log",
+      "bytes": 2623,
+      "sha256": "d2c71aa45c342912d0a3e73fa8ed1724a54bc62284d03cc5f201bd44af83d173",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/peer_a/owner-recovered.png",
+      "bytes": 74376,
+      "sha256": "643a81b6d396f79ca08c84f14d4872f3b86e25574a56070f4529f93e79652a55",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/peer_a/packets.bin",
+      "bytes": 6688,
+      "sha256": "e9831141a3b5e40581f38f573a3fef46be9462fc6ba6298708d1b39cbc85d4b6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/peer_a/result.json",
+      "bytes": 2249,
+      "sha256": "62e49fcc75c6278cc6e8570d16ed5545c00b1196c7e3c12b736c0ddff31d3d9e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/peer_a/transaction-state.json",
+      "bytes": 911,
+      "sha256": "8955cbe8a8f5983d8eff6acdfbc6c164ffc58fc46d07b9ad9f28a5408cf582dd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/peer_a.log",
+      "bytes": 2382,
+      "sha256": "dd1a53db544da30dc01a0d06ca68c22f7808598943c0a7d3cf2e66cf5b0af28f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/peer_b/packets.bin",
+      "bytes": 10824,
+      "sha256": "8d1bff22be930001b92605cc8c7b1571528fa1829a7f51ed189b2aa762d667fa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/peer_b/result.json",
+      "bytes": 1395,
+      "sha256": "d29da945887e55c3d5185dfcb5f0a48185022e8253895568cfc4a9646467b59a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/peer_b/transaction-state.json",
+      "bytes": 1017,
+      "sha256": "ea8b9b3d38373cfc6642e39874eef82aa9afa8832a0c29f216b5ed155afb9ec2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/peer_b.log",
+      "bytes": 1855,
+      "sha256": "e90839a5c22a68243c72b8f7dc5140f85b0cbfc4a43b40be5a9c71dd1b9e7c30",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/signal.log",
+      "bytes": 803,
+      "sha256": "dc1471a4c844e1cd94ae3eb41d537f9a95b55772255689bb751fab450d251026",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin/source-manifest.json",
+      "bytes": 14206,
+      "sha256": "0231463899c40c8261d50ebeaa4282d1ce68fc5cc5f958fd5528386af214ffc4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/checks.json",
+      "bytes": 9303,
+      "sha256": "784fe2d3b86864f3be0fbb021bec1dfda0eb5ff228c7cebfdf428022a53f59c8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/host/owner-recovery-coordinator.png",
+      "bytes": 80226,
+      "sha256": "32932882336f6e27eabe001a9228c353d4f63be4a5f56a2f70dea20a021d36b9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/host/packets.bin",
+      "bytes": 36080,
+      "sha256": "c3383c5776ed2ee666974e884f27bf1777162573c51c0dc60fd5eb3a26322be4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/host/result.json",
+      "bytes": 2940,
+      "sha256": "742e055422a0c8d86ba660d0aa651b9c5c1907503fc459f140dd7948a314ed8d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/host/transaction-state.json",
+      "bytes": 1347,
+      "sha256": "dee3b13323003739641986a32031c1ca7ebc20c8c2a12b9885b77732cf36b109",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/host.log",
+      "bytes": 2755,
+      "sha256": "b476c0269163c2475a9e70817ac0b16430940c6f85f8867e55c1f7996e085211",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/peer_a/owner-recovered.png",
+      "bytes": 70649,
+      "sha256": "136ee78385d96a81e343e9823141965572f1d85226e36e49857f75662c4d9119",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/peer_a/packets.bin",
+      "bytes": 9032,
+      "sha256": "83686ae6bdaccc81bc88df5b7fd4b676a3044d3e61f749d22a3116592b93991a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/peer_a/result.json",
+      "bytes": 2263,
+      "sha256": "75f8182eac2a5e40af620dd76a22e56f2eacf60fe40d5efd8082ca61dc03fa5e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/peer_a/transaction-state.json",
+      "bytes": 911,
+      "sha256": "297a6dcbfebe9faee541fa583ba61fa982ad9c1d22d63345a56ef723aca17a80",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/peer_a.log",
+      "bytes": 2396,
+      "sha256": "49543c93dbbb9bbe502c167b413fe191208e3687b249a27e1773dadf25d0fcbb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/peer_b/packets.bin",
+      "bytes": 5464,
+      "sha256": "3bcebfb5c04e37e8dc10a4af4970a2cfc1f6ce6f3c693e420aa6d7a4687099ce",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/peer_b/result.json",
+      "bytes": 841,
+      "sha256": "59c198ae289bb43fd33646c303a517eebc63b7e87f61679ab5256d2bdc568e76",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/peer_b/transaction-state.json",
+      "bytes": 985,
+      "sha256": "2010ea9e3b70d3e9155c7340e33574603432d10383c24298f71886ac7e11a252",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/peer_b.log",
+      "bytes": 1465,
+      "sha256": "4c0a6542766f1661f90e48c2f76c8de5d31166ecbece5811ea5e924ea75c14f0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/signal.log",
+      "bytes": 803,
+      "sha256": "0141e82e3d9b4e6795b0bba39c410aeeaeadd8ccd2db4d0a4d9b2884f9735389",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/owner_rejoin_before_commit/source-manifest.json",
+      "bytes": 14206,
+      "sha256": "0231463899c40c8261d50ebeaa4282d1ce68fc5cc5f958fd5528386af214ffc4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/parser-host.log",
+      "bytes": 73,
+      "sha256": "6d1c065383a27c36804949b6ffa4b09714470b112e5dacc0bd5aeb7b9c147c4e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/checks.json",
+      "bytes": 16785,
+      "sha256": "b3858a25084dd5d2c2d0f04b69a0e0e8e9ccb5277fb507758689b0c7da48d4ac",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/host/owner-final.png",
+      "bytes": 105211,
+      "sha256": "889ad54732b5e1db4de773e48df2b761b979a468a1e464f8cf0522d6d37a19d3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/host/packets.bin",
+      "bytes": 33260,
+      "sha256": "63cde7fdd8aaca4488c5b8222a7d83de4c2f053ed4867bbd16d7d0b9e45f17fb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/host/result.json",
+      "bytes": 4783,
+      "sha256": "abdef8beb63e9f8d48e0ad6e9fbf69fff91637e975a53b21b4218ee3711a4187",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/host/transaction-state.json",
+      "bytes": 3198,
+      "sha256": "3866651dfb3c83fb616b9e395748fdddf110ebc09d9e608d050e6eef0ab70f28",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/host.log",
+      "bytes": 4701,
+      "sha256": "d98c13ace0effe169a02773d94a5fb4d947c91617ae93d8bcd2359c1afc61aad",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/peer_a/donor-result.png",
+      "bytes": 106202,
+      "sha256": "651ffb86736c316dcc5bf538ad5da7f1ba34940e50809fdd294928563228a5cb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/peer_a/packets.bin",
+      "bytes": 6120,
+      "sha256": "ad272c23df275e20668430ebec7eb69b247c8dbe998d880d1d14db66ec925d8e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/peer_a/pending-reservation.png",
+      "bytes": 89386,
+      "sha256": "c7738386bb34a15cff91ff8b9398b1a9e1d3a4fbde48271785f0753f1632b8e9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/peer_a/result.json",
+      "bytes": 3028,
+      "sha256": "00133149fcdd4581f5cefe7f8342b720214199cb9627313a2dcba1703f544ea1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/peer_a/transaction-state.json",
+      "bytes": 985,
+      "sha256": "3d407f46df8da3bb5d652c871f936f9392e3f141348ce90e5cd151a61ee75d13",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/peer_a.log",
+      "bytes": 3717,
+      "sha256": "5754519051b10b2c7598eba9c9643e3fd611baf094da99699178cdfa579800d3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/peer_b/donor-result.png",
+      "bytes": 90848,
+      "sha256": "30d14f18ceb04cff81ff199b847862a30a3574600b5b87a280529fd3ef41b367",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/peer_b/packets.bin",
+      "bytes": 6376,
+      "sha256": "b5582c333e59a39ce8ff29faa8cf6a93b19e21dd557a4f6243d32917e91caf72",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/peer_b/pending-reservation.png",
+      "bytes": 89716,
+      "sha256": "6eddc4bcb852f04da7679203de20b1c4e39107e1806684a4e95e62b318f7c4a6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/peer_b/rejected-valid-alternative.png",
+      "bytes": 118333,
+      "sha256": "0d47cb728889771ba658d43ecb6d9dc732ffd46023dae3b075c3f8c9282d8e20",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/peer_b/result.json",
+      "bytes": 3137,
+      "sha256": "409ec65e1c74a924455c492341d9398ee3269d76dab9ad2d252b76b55666017c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/peer_b/transaction-state.json",
+      "bytes": 1048,
+      "sha256": "6df8ac222e2135299e55e73e783318ec4676ee6c0f1b8d15222abb8ca8e268dc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/peer_b.log",
+      "bytes": 3943,
+      "sha256": "80af8043660f90dfdba94a49ba9330544161fb9f6f8748556db92b47b3adf60a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/signal.log",
+      "bytes": 803,
+      "sha256": "106eb370ce4c91bc4c860534054c8358fb74466e02e247a42ead19736f1b1fda",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race/source-manifest.json",
+      "bytes": 14206,
+      "sha256": "0231463899c40c8261d50ebeaa4282d1ce68fc5cc5f958fd5528386af214ffc4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/checks.json",
+      "bytes": 16457,
+      "sha256": "43552d9403ff7c09cb417a57eabe68b0e933afa667a2eced2e69cea5116223c6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/host/owner-final.png",
+      "bytes": 110268,
+      "sha256": "ad55153d773ba98922e9068b2c67faaaf3471a6feef5ca924bddc41febf5b930",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/host/packets.bin",
+      "bytes": 28740,
+      "sha256": "74ed8dead01999b3fbdaa5f135f7e10dc545f869bf267ccd74f86c980cd0e17a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/host/result.json",
+      "bytes": 4791,
+      "sha256": "218af9e75f2b28f6470d07f09d454edbfe9ccec410b82625a6134c1d03a71143",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/host/transaction-state.json",
+      "bytes": 3198,
+      "sha256": "cca558100f645e55f9d006ea7bbbee8430d8fb620873c3e551aed2b6319487a1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/host.log",
+      "bytes": 4709,
+      "sha256": "2114b6e81dd328fac7e1d1f7c72591abf610a06d150ce8f835497a23463e8c42",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/peer_a/donor-result.png",
+      "bytes": 91734,
+      "sha256": "b26ef15b684fc92e82f5c22fe20dc5cc9f44ed58c6ba83fd2c207a68b2291583",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/peer_a/packets.bin",
+      "bytes": 5672,
+      "sha256": "ad4eefa7fce3a9ac3d61fdce34de4f4e93b089bfde25c4fe4106640ab3c895b9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/peer_a/pending-reservation.png",
+      "bytes": 90342,
+      "sha256": "ebc4ce28544f9a7bee04bc0d67cecc0a23bde68678fa2e464ed57f1e23dcffb4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/peer_a/rejected-valid-alternative.png",
+      "bytes": 119904,
+      "sha256": "c6c084a151bce6ad51885ed7417fddf34e2c68b2d3e6c938c81c376d7f00463e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/peer_a/result.json",
+      "bytes": 3039,
+      "sha256": "0f79259c9f90fbed2be636697aac6059deb8c651698d5af09ee1a2c0089691cd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/peer_a/transaction-state.json",
+      "bytes": 1080,
+      "sha256": "4073e0ba01441bf9d0e5f25b73596568b24c50824d9bfbe350cfffe8d0393570",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/peer_a.log",
+      "bytes": 3877,
+      "sha256": "ef4fa72064c47c080b86f638c1a18cdf4214babc2dc29de77e9b005663130896",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/peer_b/donor-result.png",
+      "bytes": 108000,
+      "sha256": "c233caf93d7dce3f12f8980bccc69dc1bfcb4c54981ddaae001a56756893fdaa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/peer_b/packets.bin",
+      "bytes": 4920,
+      "sha256": "38ba528d124e61b475a31ae7e9562c375472ba1a4a1b8c9c6dd8fdf6d68024e4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/peer_b/pending-reservation.png",
+      "bytes": 90762,
+      "sha256": "d3bee59036207b19b9ad040f549fcd4fe77262119db138f093eb236b58cf6185",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/peer_b/result.json",
+      "bytes": 2893,
+      "sha256": "5e10d62df4a02346ec8c46a08d21084ab90bf11f1156a24c90d5b3a9a225e171",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/peer_b/transaction-state.json",
+      "bytes": 985,
+      "sha256": "59fd8c8e7917280096c0f7949223e0981559496060ea654aec418b95fac97bce",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/peer_b.log",
+      "bytes": 3623,
+      "sha256": "4c7e9965b657c9973d77653439ed985ff31a70c9ec24df88cfd40388916d5b55",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/signal.log",
+      "bytes": 803,
+      "sha256": "69c601cefd7f92ed9bdc0dfc9e2091b3277287d3f3e46380401229c1d4a2b527",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/race_reverse/source-manifest.json",
+      "bytes": 14206,
+      "sha256": "0231463899c40c8261d50ebeaa4282d1ce68fc5cc5f958fd5528386af214ffc4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/checks.json",
+      "bytes": 8172,
+      "sha256": "17a20efb14e64035ad77e02b2c0ac9b8d9b1676cc130f2a2e08de76870bf2b93",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/host/packets.bin",
+      "bytes": 19312,
+      "sha256": "227e8998db8d1fb9d585f442a7928b25d2b4953bd5cec1e8353e5876b92d48fa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/host/result.json",
+      "bytes": 967,
+      "sha256": "55d175ca2b6ee6cf63d0ca6f62b2cc4363eeeeddcf9718164a608406202ca2a8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/host/retired-donor-owner.png",
+      "bytes": 97514,
+      "sha256": "af41d0cdeb490850cbc7fc44a78660c5920058b73487b4f5df4943cb982c1b3a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/host/transaction-state.json",
+      "bytes": 3198,
+      "sha256": "a9fe428df24663a6265db54eb2a8eea33e21b134f63c1dfe80dcf0969219a890",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/host.log",
+      "bytes": 1955,
+      "sha256": "26fd414832fef6613c94e8cce1320fd85baa010addd128e5d37f61829ebec9d3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/peer_a/packets.bin",
+      "bytes": 2600,
+      "sha256": "041acb4d39b695610b84feba7d44ce055f6da556e77c771eb363af40150430c5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/peer_a/pending-reservation.png",
+      "bytes": 93221,
+      "sha256": "e89a7472dc24253a2f089f7ca03d53142602e3a9d51809431320e901632cbb91",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/peer_a/result.json",
+      "bytes": 967,
+      "sha256": "042b900249ff8c78a658f9c826f7e3671b3296e4f2257acaca63d001b124f69c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/peer_a/retired-donor.png",
+      "bytes": 59287,
+      "sha256": "23fd77038e8f274b0a887d29eb3e5fe897efaca971ff778b46c44384b42a93d1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/peer_a/transaction-state.json",
+      "bytes": 480,
+      "sha256": "dfcef22171dad44e4405952a3487d154c980589f05057cf3616a25272a5e88a4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/peer_a.log",
+      "bytes": 1910,
+      "sha256": "e0c405bf08ec58d70df3f9b4f36c156e0777fa02f42a8b420bc4f92b207493dc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/peer_b/donor-result.png",
+      "bytes": 94324,
+      "sha256": "5209d179a7034f2a46c13b2b2596cc4b8722d0a524bdfb50655980eca8c5970b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/peer_b/packets.bin",
+      "bytes": 4408,
+      "sha256": "be9fc0be54578b1c649be8299146469bddfa684ab3c8a33bdb6d1502c9beee7c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/peer_b/pending-reservation.png",
+      "bytes": 93189,
+      "sha256": "0affae090e22f2d91d0aa55740293ecfe2f3d6f81d96a91dd759e3faff0a3cb3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/peer_b/result.json",
+      "bytes": 3181,
+      "sha256": "077feccbe6bc694db78aabd906fa5cddd431678640939609bf53f56e4d90f93b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/peer_b/transaction-state.json",
+      "bytes": 1080,
+      "sha256": "ba73684bf6b52dc810c9c81840a97ac33c10e87e000211a86bc700eec60a23c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/peer_b.log",
+      "bytes": 3590,
+      "sha256": "0ba931b7b14e6f1d95ed4cbc200c81cb812d7f66110d0f26228709b5a09da382",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/signal.log",
+      "bytes": 803,
+      "sha256": "8c0a957f21e80eb891b1d503aab67a724678d3073f3fc72d6d2af15f9ab5b933",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_donor/source-manifest.json",
+      "bytes": 14206,
+      "sha256": "0231463899c40c8261d50ebeaa4282d1ce68fc5cc5f958fd5528386af214ffc4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/checks.json",
+      "bytes": 8778,
+      "sha256": "05d8e128a422ffe28d2dc7fafcf2fa02f3bd21ce6297bc02c65b771a2a2b3682",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/host/host-donor-final.png",
+      "bytes": 78635,
+      "sha256": "2bcd0616abd613353ba26cb7a36f6161130ab9e9b3951b043022c59fec79fafe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/host/packets.bin",
+      "bytes": 11756,
+      "sha256": "e6c7ea73e199b02bf35333f13de1d4c5498d81ffb45ce546473f26bb73e0d081",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/host/result.json",
+      "bytes": 4040,
+      "sha256": "da645016e66a7b28f2375c05b26f423ae83b1fa8c9d18e621afb2b8ccdd6b29e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/host/transaction-state.json",
+      "bytes": 1905,
+      "sha256": "55a58605eee62232e14bcd1b611a29d40f6fc0117a9d3c0a7e489aa5e0d77dd2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/host.log",
+      "bytes": 3643,
+      "sha256": "4d932b0c2d0fc2a19da9a73b4c9dc5b982749b6e54d14c3d16e966ff80955cbc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/peer_a/packets.bin",
+      "bytes": 4340,
+      "sha256": "1f51515b0ef712c3a5eaeebcb013584cbdb45fbe788107d39311b74329074e9f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/peer_a/result.json",
+      "bytes": 815,
+      "sha256": "673cf7790bc5411677217a5acec28e82afa32cfcf605a2c7cadbf9d0246b7df5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/peer_a/retired-owner.png",
+      "bytes": 60000,
+      "sha256": "6710ac2a219f012777052839a45035d85e545906562b941e3842c8e433b23655",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/peer_a/transaction-state.json",
+      "bytes": 480,
+      "sha256": "0bfcc2a34371562fa6a372fc2126e47cb3be1b53c27f3257181396f532b98adc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/peer_a.log",
+      "bytes": 1436,
+      "sha256": "4e1b1557107a8466e5ebb9dd9cb6fda7bbddfbed60bd49cb38bdbb13db0e8bc0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/peer_b/packets.bin",
+      "bytes": 1320,
+      "sha256": "d7d508c26f2194efaa0872494d80bcbab141f517bfe249560b7fdde765d87098",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/peer_b/result.json",
+      "bytes": 685,
+      "sha256": "60c380b1a94eae4f2487acbb02369f4f3e2457b88ebee2c4eda19a7472109b52",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/peer_b/transaction-state.json",
+      "bytes": 481,
+      "sha256": "5e5d2b0ffa4c93774210f97ab668c3758e13cb2edb41666b632c256d394b9df2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/peer_b.log",
+      "bytes": 1102,
+      "sha256": "b28f1f0bf94e253c1a503d74902e05192d4e2b4c28fb970fd7181d65ff211a04",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/signal.log",
+      "bytes": 803,
+      "sha256": "cadf0956855935235224e40fd22e06a43c7c039fd288ee736111b61aad63b5b6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/retire_owner/source-manifest.json",
+      "bytes": 14206,
+      "sha256": "0231463899c40c8261d50ebeaa4282d1ce68fc5cc5f958fd5528386af214ffc4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/source-manifest.json",
+      "bytes": 14206,
+      "sha256": "0231463899c40c8261d50ebeaa4282d1ce68fc5cc5f958fd5528386af214ffc4",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased/summary.json",
+      "bytes": 1041,
+      "sha256": "af943baa7c7a0c2a76fffd163bad9133ac45f916e65b832f9fc79a3c8b81923d",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/checks.json",
+      "bytes": 23368,
+      "sha256": "a1cb51135cd1f9a636e7f6e2ed43ae3cebd11f3a3ef9aa29d8c3b16c1fa7f337",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/host/owner-final.png",
+      "bytes": 385248,
+      "sha256": "0bfd5670d0dcb0463061044ea3a27b0d243eada45e1c0a23b1934ee8b9bc0148",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/host/packets.bin",
+      "bytes": 30748,
+      "sha256": "711ee1a9562d0a1ae2dd7befa1deae3f7f1325493fd2dbce9af77c7e1b035604",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/host/result.json",
+      "bytes": 4787,
+      "sha256": "a40315c795a55d9a37cccbf197e03cfe8c4db77cdb2a47a4f07afa8ac0bb5e8b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/host/transaction-state.json",
+      "bytes": 3198,
+      "sha256": "3891f1e661e2973c33e8d9986d16793a996bc99c29467743c50d5205c7e4b458",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/host.log",
+      "bytes": 4755,
+      "sha256": "f9ad0a39f763149a79b1adece94afa714a80ad10035728166920d094c6c7ac41",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/peer_a/donor-result.png",
+      "bytes": 405649,
+      "sha256": "ec115a970dcef1bcfe671a8ac2a8029f23e25377e3827d1bd0e17fe4cf01d75b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/peer_a/packets.bin",
+      "bytes": 5560,
+      "sha256": "abcbd6b6f7154f46994465680523d8e2f8180d21281201839f9f8b20c8bd3b79",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/peer_a/pending-reservation.png",
+      "bytes": 278071,
+      "sha256": "9aa4bebd0b25903f7e2cda9beead7fa053ad7e950222388168cf31787c5bb4b5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/peer_a/result.json",
+      "bytes": 5161,
+      "sha256": "582d2634e4ed9f280a811cbc6a90b47bd23af8e595b4ae40f9bd696bf242b2c2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/peer_a/transaction-state.json",
+      "bytes": 985,
+      "sha256": "37a6447e7af7675496d816de5eebd34d5350e450a396c641471a14772d5c93c4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/peer_a.log",
+      "bytes": 5049,
+      "sha256": "ab9169e91d1eac62cd1e26f1805328ca24c9324058eb797cd47c0d0b39a41209",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/peer_b/donor-result.png",
+      "bytes": 286409,
+      "sha256": "f36eece02f117f97a9ad8b27fc73e3f01ef2e45872efdc81c9f680e3f1e78e8a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/peer_b/packets.bin",
+      "bytes": 6376,
+      "sha256": "3d44c56be2560dd9cb408f07f9315a037b3d6f94c2a16bea9fb93bef59ff1e0a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/peer_b/pending-reservation.png",
+      "bytes": 278570,
+      "sha256": "e2281d79fddd3745e5d7d4a362943b12e644af54701d3bfda6159f4c139b0a7e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/peer_b/result.json",
+      "bytes": 5306,
+      "sha256": "9c69ff93d1c2036c6a1f8bf85f47ca9e09b779c6e9350267b35adc8e838a2bc3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/peer_b/transaction-state.json",
+      "bytes": 1080,
+      "sha256": "b9131de69c88c76aab3b2857af58d2fb6321a9ec5e836bae04ce827b72a4f543",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/peer_b.log",
+      "bytes": 5184,
+      "sha256": "cc79940839bb8ae106e36bbc4a62cb7b3e33e107835d8f29453d0fc2a76cea86",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/signal.log",
+      "bytes": 803,
+      "sha256": "ae127bb37d963bbe0ce34cf2039902022f72e861ce23ee692c3a66c0403d0314",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/ack_loss/source-manifest.json",
+      "bytes": 14319,
+      "sha256": "5a812c321d6bcd890fb584d8407c53605b931df4236457eea0e001d56ddfe1e3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/import-host.log",
+      "bytes": 13053,
+      "sha256": "eb7765b6eeee436743b208ba360e41b8f3ff96564c4251fece65ee2a8ee9e791",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/import-peer_a.log",
+      "bytes": 13053,
+      "sha256": "eb7765b6eeee436743b208ba360e41b8f3ff96564c4251fece65ee2a8ee9e791",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/import-peer_b.log",
+      "bytes": 13053,
+      "sha256": "eb7765b6eeee436743b208ba360e41b8f3ff96564c4251fece65ee2a8ee9e791",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/import-signal.log",
+      "bytes": 13053,
+      "sha256": "eb7765b6eeee436743b208ba360e41b8f3ff96564c4251fece65ee2a8ee9e791",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/parser-host.log",
+      "bytes": 73,
+      "sha256": "6d1c065383a27c36804949b6ffa4b09714470b112e5dacc0bd5aeb7b9c147c4e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/checks.json",
+      "bytes": 16389,
+      "sha256": "1c3624dea09889b40467f93d491ea3419427772221ac1cb649cdbe9aaf64ae4e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/host/owner-final.png",
+      "bytes": 395558,
+      "sha256": "775ece0f03c1667ccecf664fec8d0f471866d9eed0e6a868d612916038820b97",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/host/packets.bin",
+      "bytes": 30024,
+      "sha256": "b37ec4f4b4943d1b36c2bbab6a41ad52ffe7a2d55fda65b95fb254a36bf4733d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/host/result.json",
+      "bytes": 4783,
+      "sha256": "ce0eb6bb62c10c5dc4d37b647245241b4adffc48bd19fae462536200bfceaeb5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/host/transaction-state.json",
+      "bytes": 3198,
+      "sha256": "65420de832e9935809dd169bfbb1e70e9a7d1eda54de3770e645ae99cf07580b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/host.log",
+      "bytes": 4701,
+      "sha256": "ac49b8b160b43c7a31bb158b6346439aaa78475e14410bd838f00a7d6c035bed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/peer_a/donor-result.png",
+      "bytes": 414668,
+      "sha256": "cf76c63e710f343adcc5897e9655d17bb2055efb667102bc79bde693f78f4c30",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/peer_a/packets.bin",
+      "bytes": 4920,
+      "sha256": "0f574aa898027ef28e0c594db8a87dcd060acddcedf6a3f216a121a784a96fe0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/peer_a/pending-reservation.png",
+      "bytes": 262605,
+      "sha256": "1aeb61ff9e1aa54901b6a21f571d042613ec8b6d3db461e6afca287ae844c83d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/peer_a/result.json",
+      "bytes": 2888,
+      "sha256": "2c79954c87e38654b866f69f0431091ebc75ea01439b65adc37e798e8805e095",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/peer_a/transaction-state.json",
+      "bytes": 985,
+      "sha256": "f8d86a0ef87588b3b99e7f9ca28cad8b9ffe3bc6c3030ae5ad273b16be67aea2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/peer_a.log",
+      "bytes": 3618,
+      "sha256": "1959b17b3f85fdaef7a93e0a60ca5df455f969c137113bb879477ddc180be93a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/peer_b/donor-result.png",
+      "bytes": 269350,
+      "sha256": "763e6735213ea9805a761f3626a21ac4d4cba36f967722f2547f2b7b5f5a8a04",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/peer_b/packets.bin",
+      "bytes": 5112,
+      "sha256": "137a1acf494bcba4b64bc5e381e408a21d4c32936bf8d2a2ea121477f89874a5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/peer_b/pending-reservation.png",
+      "bytes": 263899,
+      "sha256": "7fe5ae371216cc78eff0a21b6598168db77096745e76b819204490af3dc8a7e1",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/peer_b/rejected-valid-alternative.png",
+      "bytes": 432016,
+      "sha256": "4dd6b8f27dec4f58bb3d81f8f46d2ffbd10d7266c6f54b2351ff54a5d5d12344",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/peer_b/result.json",
+      "bytes": 2995,
+      "sha256": "ba021f58c20d391b03b85187936c5d2d0b7738c0e1cdc9b45de7e5b5fb0b4e37",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/peer_b/transaction-state.json",
+      "bytes": 1048,
+      "sha256": "13af6686f7d8d7a5f30086932765ae99bc160dd00b77e01ac995428cf011b2f7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/peer_b.log",
+      "bytes": 3842,
+      "sha256": "d61f65a0e8cafe7457f72e36193fc1c4870566de003a9f7bf65a82419af880bb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/signal.log",
+      "bytes": 803,
+      "sha256": "e148107909c7274cea22fd13563d3a509930a8e33d6942661058c744265fa325",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race/source-manifest.json",
+      "bytes": 14319,
+      "sha256": "5a812c321d6bcd890fb584d8407c53605b931df4236457eea0e001d56ddfe1e3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/checks.json",
+      "bytes": 16856,
+      "sha256": "b632d6d8c249df89592fe268946d4e03549e1164d32165121ba5e407a69d711b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/host/owner-final.png",
+      "bytes": 424887,
+      "sha256": "f3de4084274d9b3ed5c639f4a045842b238dd6dd0fc2b51df42c1b0b5209803a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/host/packets.bin",
+      "bytes": 34784,
+      "sha256": "680b8470c032e89229cc07da1d236fa9488e74d42b05903ac97f9eab6baf0f34",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/host/result.json",
+      "bytes": 4791,
+      "sha256": "50f4edde10f6c89df19a1e3a7a055ba17033dac93feeae27992782271819da31",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/host/transaction-state.json",
+      "bytes": 3198,
+      "sha256": "1776ccd5b60d00d793750f6dcd023287f58c5d21429554ea4d3379248022e0e6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/host.log",
+      "bytes": 4709,
+      "sha256": "78638737b52a73b5f7e9d047c997d0f5c9670884d32ae7aada9273542d279c94",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/peer_a/donor-result.png",
+      "bytes": 273086,
+      "sha256": "ad50893b0e0c905895bfdcd7ffb2df5ee0789f678a4c615911707a2c2fa01965",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/peer_a/packets.bin",
+      "bytes": 6936,
+      "sha256": "e6ae848f7dd48dc460465fc7f7f328b6a235df9dc93a2408d910a221cb49f4e7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/peer_a/pending-reservation.png",
+      "bytes": 264797,
+      "sha256": "866b219813cd6682c865be37611ff872ad03cc9549553f5c0abd8cc7fb168d73",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/peer_a/rejected-valid-alternative.png",
+      "bytes": 414483,
+      "sha256": "8283d01b7dd7327d5cf7f9c564e69821ffc5b49f2357a7bd7ac2316b15d1a602",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/peer_a/result.json",
+      "bytes": 3181,
+      "sha256": "d39dc4378493663517ca4d150df4f5fdaf7e402d84425b787c466f035a374381",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/peer_a/transaction-state.json",
+      "bytes": 1080,
+      "sha256": "015ebc7bd4ef728291413263c49a0b287bc9bb57b314309207210b4552e4ca49",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/peer_a.log",
+      "bytes": 3978,
+      "sha256": "198ba8a32ca997ad2fd92672ddc67d1fa34914400e014265a423baba34d47285",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/peer_b/donor-result.png",
+      "bytes": 400281,
+      "sha256": "cee28b9da73cba5115d954790a6c4e55902142fa20959ac09cdc13a4f965bdfd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/peer_b/packets.bin",
+      "bytes": 6120,
+      "sha256": "30f3340e47dd4e23c1d6a2fc16006ccdc812af8e3f070ee7606a17d55ffb0cf4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/peer_b/pending-reservation.png",
+      "bytes": 264769,
+      "sha256": "3f4ac0df79cdad9f2ce06ce2cd971a6cc8df46ca9d1e919f268bdf38dc31fb33",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/peer_b/result.json",
+      "bytes": 3036,
+      "sha256": "61f95b97b95023f6b39f63eafcf182522f28b9bb56f324d727125d5164477139",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/peer_b/transaction-state.json",
+      "bytes": 985,
+      "sha256": "7852549b85af09b4dcae65637ff1c684e5b5c11ba2a84f74ab9792f89a60249b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/peer_b.log",
+      "bytes": 3725,
+      "sha256": "dcc0bb5027e774a6c2d162b3c1ae6935ff3cb5439dee19e6ad9d207dea328c94",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/process-results.json",
+      "bytes": 46,
+      "sha256": "4b03623da612a560329a589b922501187b2bc84f4839edfe2f0112294dae06c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/signal.log",
+      "bytes": 803,
+      "sha256": "baf928c2d794f990a830b555d37e9bc98eb90e937bb066ea417427e4d2935a96",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/race_reverse/source-manifest.json",
+      "bytes": 14319,
+      "sha256": "5a812c321d6bcd890fb584d8407c53605b931df4236457eea0e001d56ddfe1e3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/source-manifest.json",
+      "bytes": 14319,
+      "sha256": "5a812c321d6bcd890fb584d8407c53605b931df4236457eea0e001d56ddfe1e3",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-phone/summary.json",
+      "bytes": 210,
+      "sha256": "ed3c9b29e3e836ef533e3684a237b2a21987552dddaf4a966ca0d2664d5e97e3",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-host/gift-received.png",
+      "bytes": 112450,
+      "sha256": "aad5fedc484289648a928b3265defdd67e55b054eedd32e7766927765183d706",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-host/initial-game.png",
+      "bytes": 80120,
+      "sha256": "c389d0446f9d8efa456e5b32437b71baa6f52b9cc0392b4add5a5f8e99df0328",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-host/participant-returned.png",
+      "bytes": 107707,
+      "sha256": "fd1111772821ae4b90374d6c2c763d042edba2a5d874729f3b28107cd8e4a9f0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-host/ready-second-click.png",
+      "bytes": 102219,
+      "sha256": "c355b42c7953432defd7656c5b18e117e9873ba82bf1eb1dec3216c23de78752",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-host/request-set.png",
+      "bytes": 114120,
+      "sha256": "7881b898459f7bfdf53fdae3d25d80e2a502f0a4a1ab1bc550080073b326456f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-host/result.json",
+      "bytes": 2314,
+      "sha256": "98acbde03c347f87b84cd2ffbde9e94e724c1b0f330f18308c1807f2b4ed98e7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-host/waiting-for-participant.png",
+      "bytes": 103237,
+      "sha256": "cef510888834a94a46c9dc54d55cbc2e4d19f7ed1b58cdc009bfbf87923f59d0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-host/wave.png",
+      "bytes": 100061,
+      "sha256": "dae16892632b70968d077ddb7dcd345b6866a6dd99e94cf36f9afd2e0ee1e164",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-host.log",
+      "bytes": 2962,
+      "sha256": "47ff26a0db7d11c0b1428b9f0e95f3677b731cd476cecce40ea858ab4f1b1475",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-join/initial-game.png",
+      "bytes": 76145,
+      "sha256": "a6fc7f09bd3018b503a0edf3f823c74797b41898acd9c06804d9c11995333f89",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-join/peer-permission.png",
+      "bytes": 101272,
+      "sha256": "988cee80701df1fde3a38ae0d734101553eda0bcd879abfa93f4427e471a7fbf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-join/reconnecting.png",
+      "bytes": 99048,
+      "sha256": "91fa7c200525a34dd791fc261fecb1469a3f45bfe358f96a5f53421b85daf878",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-join/recovered.png",
+      "bytes": 71015,
+      "sha256": "7da030db8ea79abc5e74e3d0f8a5f24c316fed75a7a2bb3be9a9535d40c11bba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-join/result.json",
+      "bytes": 1995,
+      "sha256": "4baf484d34c489cba2152886b8cf310a517a29df7dcee0790b0b126359e83177",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-join/wave.png",
+      "bytes": 100896,
+      "sha256": "17ce8dc93951e0d1265ea1704dfa53b4a2b4445ff2348abc291744d3afd19a9f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-join.log",
+      "bytes": 2951,
+      "sha256": "86cd37c011bf24af25293c732902cd8d9714e25247580bbb0367e651b6f684e3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-process-results.json",
+      "bytes": 29,
+      "sha256": "4a2f47de050547e826012acaadd1395039bb39856e127440526f05daf621ebcf",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-signal.log",
+      "bytes": 567,
+      "sha256": "6e98bdef6ad767115f7450acd97cf9dbb98913b6a45b8fc63cf872abc4ac86a2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/coop-source-manifest.json",
+      "bytes": 7120,
+      "sha256": "63c9124e2a380e327d67492aa78c45bf05d77c7ffebc52a719871ee3591741e0",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/native-import-host.log",
+      "bytes": 13053,
+      "sha256": "eb7765b6eeee436743b208ba360e41b8f3ff96564c4251fece65ee2a8ee9e791",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/native-import-join.log",
+      "bytes": 13053,
+      "sha256": "eb7765b6eeee436743b208ba360e41b8f3ff96564c4251fece65ee2a8ee9e791",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/native-import-signal.log",
+      "bytes": 13053,
+      "sha256": "eb7765b6eeee436743b208ba360e41b8f3ff96564c4251fece65ee2a8ee9e791",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/native-source-manifest.json",
+      "bytes": 7120,
+      "sha256": "63c9124e2a380e327d67492aa78c45bf05d77c7ffebc52a719871ee3591741e0",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/vs-host/initial-game.png",
+      "bytes": 75466,
+      "sha256": "fa18fdc3c47c1841d3ee403fe87709143aae8963c5333174d181e1c793f9dcf6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/vs-host/result.json",
+      "bytes": 1229,
+      "sha256": "4d05fd7320a116de45674354bed3cdec6511db18a9a7ae9aa5fa0722e109142d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/vs-host/vs-peer-disconnected.png",
+      "bytes": 82788,
+      "sha256": "1ba0869f9ec2e47fcd11cd8ba23b5e2873cc43de3ddd64906c1ee162aaceb3fd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/vs-host/vs-wave.png",
+      "bytes": 74573,
+      "sha256": "0a44351fc393d6799311bc977428f696b4dce579ec6220e3dbab898b638161c6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/vs-host.log",
+      "bytes": 1519,
+      "sha256": "7dd02c8ebdc1c98bf50c0b009aed662de4660ce9fcd9ea3d245eb8980f579c52",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/vs-join/initial-game.png",
+      "bytes": 75764,
+      "sha256": "39795368a20590d8d97ad474146b9c1425144e29b0872776a0ef19b8b14ad7b2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/vs-join/result.json",
+      "bytes": 1096,
+      "sha256": "ecbde31c5933d1d4660a104d352fefbe21ae1952b262d8347764ccd16ea62ac9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/vs-join/vs-disconnect.png",
+      "bytes": 61639,
+      "sha256": "618a9902276fd958e13b18e3ee73cd7f9e4af38b73f6cf246e395a36fd9910ea",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/vs-join/vs-wave.png",
+      "bytes": 74601,
+      "sha256": "ead14fa610772ef334c0eac7ab52341da84bb30c562eb896774eb4df33398d38",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/vs-join.log",
+      "bytes": 1448,
+      "sha256": "b14e6fec8d2a791686a1e876d7e1fd86e8f9fff5fcc5fd53194ca141ce8085b8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/vs-process-results.json",
+      "bytes": 29,
+      "sha256": "4a2f47de050547e826012acaadd1395039bb39856e127440526f05daf621ebcf",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/vs-signal.log",
+      "bytes": 567,
+      "sha256": "159a4a91fc190d1a35ff27109585db0a64fb39ff5c3cf21e6058186506927fac",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/delivery-rebased-two/vs-source-manifest.json",
+      "bytes": 7120,
+      "sha256": "63c9124e2a380e327d67492aa78c45bf05d77c7ffebc52a719871ee3591741e0",
+      "published": true
+    },
+    {
       "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/final/ack_loss/checks.json",
       "bytes": 23369,
       "sha256": "1a723373279f60aa359d932eb55407d3cd7af7c0507846f596a456e50a712375",
@@ -14104,8 +17926,8 @@
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/run_two_native.py",
-      "bytes": 479,
-      "sha256": "35643765dee75c7d16034924179002be25dba4a3840a5c8896ef68fad8a31f83",
+      "bytes": 531,
+      "sha256": "19098b47b78e03257e69eb5b7e75aa2f11a5f0e69de5a4eea35ac89e3f70023b",
       "published": true
     },
     {
@@ -14700,7 +18522,7 @@
       "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/two-participant-final/coop-process-results.json",
       "bytes": 29,
       "sha256": "4a2f47de050547e826012acaadd1395039bb39856e127440526f05daf621ebcf",
-      "published": false
+      "published": true
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/two-participant-final/coop-signal.log",
@@ -14712,7 +18534,7 @@
       "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/two-participant-final/coop-source-manifest.json",
       "bytes": 7023,
       "sha256": "b47335620f03d3a5fc732d898ad3b38a2ab066ca6063c1ae8345d9d8d19fc3c2",
-      "published": false
+      "published": true
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/two-participant-final/native-import-host.log",
@@ -14736,7 +18558,7 @@
       "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/two-participant-final/native-source-manifest.json",
       "bytes": 7023,
       "sha256": "b47335620f03d3a5fc732d898ad3b38a2ab066ca6063c1ae8345d9d8d19fc3c2",
-      "published": false
+      "published": true
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/two-participant-final/vs-host/initial-game.png",
@@ -14802,7 +18624,7 @@
       "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/two-participant-final/vs-process-results.json",
       "bytes": 29,
       "sha256": "4a2f47de050547e826012acaadd1395039bb39856e127440526f05daf621ebcf",
-      "published": false
+      "published": true
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/two-participant-final/vs-signal.log",
@@ -14814,7 +18636,7 @@
       "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/two-participant-final/vs-source-manifest.json",
       "bytes": 7023,
       "sha256": "b47335620f03d3a5fc732d898ad3b38a2ab066ca6063c1ae8345d9d8d19fc3c2",
-      "published": false
+      "published": true
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/verification-summary.json",

@@ -1,0 +1,9 @@
+{
+  "feature": "39590f226fc6a7858d498ed9e794572a5edb7d4c",
+  "local_main": "8fdfefe62f317d712fb8e8c9a8e5faf1f8aaf214",
+  "remote_main_observed": "8704b78688ee9be638e0ddd24eb91d54f3f56194",
+  "feature_backup": "backup/battlefield-usability-before-rebase-20261110",
+  "main_backup": "backup/main-before-usability-20261110",
+  "remote_feature_before": "absent",
+  "unrelated_uid_sha256": "dffce8853f5a066cf276295fecadda52bb44c8962fe7152fd8a30425c12ef532"
+}

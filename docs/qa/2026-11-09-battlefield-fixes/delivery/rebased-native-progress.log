@@ -1,0 +1,55 @@
+START pc70
+END pc70 0 BATTLEFIELD LOAD mode=layout conditions=1 failures=0 ui=0
+START pc85
+END pc85 0 BATTLEFIELD LOAD mode=layout conditions=1 failures=0 ui=0
+START pc100
+END pc100 0 BATTLEFIELD LOAD mode=layout conditions=1 failures=0 ui=0
+START pc115
+END pc115 0 BATTLEFIELD LOAD mode=layout conditions=1 failures=0 ui=0
+START pc130
+END pc130 0 BATTLEFIELD LOAD mode=layout conditions=1 failures=0 ui=0
+START tablet130
+END tablet130 0 BATTLEFIELD LOAD mode=layout conditions=1 failures=0 ui=0
+START phone130
+END phone130 0 BATTLEFIELD LOAD mode=layout conditions=1 failures=0 ui=0
+START core-pc
+END core-pc 0 BATTLEFIELD CORE failures=0 ui=0
+START core-phone
+END core-phone 0 BATTLEFIELD CORE failures=0 ui=0
+START input-pc
+END input-pc 0 BATTLEFIELD INPUT failures=0 ui=0
+START input-phone
+END input-phone 0 BATTLEFIELD INPUT failures=0 ui=0
+START undo-pc
+END undo-pc 0 BATTLEFIELD UNDO failures=0 ui=0
+START undo-phone
+END undo-phone 0 BATTLEFIELD UNDO failures=0 ui=0
+START flow-pc
+END flow-pc 0 BATTLEFIELD FLOW failures=0 ui=0
+START flow-phone
+END flow-phone 0 UI OVERLAP settings 점수 칩「12」 [99,7 71x39] × PanelContainer(@PanelContainer@404) [142,15 1276x650]
+UI OVERLAP settings 점수 칩「0」 [178,7 65x39] × PanelContainer(@PanelContainer@404) [142,15 1276x650]
+UI OVERLAP settings 점수 칩「10/10」 [251,7 102x39] × PanelContainer(@PanelContainer@404) [142,15 1276x650]
+UI OVERLAP settings 점수 칩「0 · 0」 [99,51 97x39] × PanelContainer(@PanelContainer@404) [142,15 1276x650]
+UI OVERLAP settings 점수 칩「2개 +7%」 [204,51 130x39] × PanelContainer(@PanelContainer@404) [142,15 1276x650]
+UI OVERLAP settings 점수 칩「보스까지 3」 [342,51 145x39] × PanelContainer(@PanelContainer@404) [142,15 1276x650]
+UI OVERLAP settings Button「범위 보기」 [1109,13 145x40] × PanelContainer(@PanelContainer@404) [142,15 1276x650]
+UI OVERLAP settings HBoxContainer(@HBoxContainer@88) [1332,609 124x57] × PanelContainer(@PanelContainer@404) [142,15 1276x650]
+BATTLEFIELD FLOW failures=0 ui=8
+START lifecycle-pc
+END lifecycle-pc 0 BATTLEFIELD LIFECYCLE failures=0 ui=0
+START lifecycle-phone
+END lifecycle-phone 0 BATTLEFIELD LIFECYCLE failures=0 ui=0
+START information-pc
+END information-pc 0 INFORMATION failures=0 ui=0
+START information-phone
+END information-phone 0 INFORMATION failures=0 ui=0
+START carry-pc
+END carry-pc 0 CARRY failures=0 ui=0
+START carry-phone
+END carry-phone 0 CARRY failures=0 ui=0
+START first-play-pc
+END first-play-pc 0 NATIVE FIRST failures=0
+START first-play-phone
+END first-play-phone 0 NATIVE FIRST failures=0
+REBASED NATIVE profiles=7 states=35 functional_suites=16 failures=0

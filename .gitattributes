@@ -1,0 +1,6 @@
+# Keep generated battlefield QA evidence expandable without obscuring code review.
+docs/qa/2026-11-09-battlefield-*/**/*.json linguist-generated=true
+docs/qa/2026-11-09-battlefield-*/**/*.log linguist-generated=true
+docs/qa/2026-11-09-battlefield-*/**/*.png linguist-generated=true
+docs/qa/2026-11-09-battlefield-*/**/*.bin linguist-generated=true
+docs/qa/2026-11-09-battlefield-*/**/*.txt linguist-generated=true

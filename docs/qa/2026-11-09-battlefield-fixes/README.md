@@ -1,5 +1,7 @@
 # 전장 사용성 수정 검증 기록
 
+**최신 전달 상태:** main8704b78 rebase 뒤 [새 전체 검증](delivery/README.md)을 통과했다. 아래 수치는 수정 과정의 보존 기록이며 최신252개 명세·55 actor 통신 결과와 구분한다.
+
 작업 진행 중. 브랜치 `codex/battlefield-usability-audit`, 기준 main `e25b6eab5b4e64cca7ee5e0089d50e149588e9b9`. [진단 50개](../../battlefield-usability-audit-2026-11-09.md), [항목별 구현·잔여 범위](../../battlefield-usability-implementation.md). 일반 조작·협동 거래·마지막 화면 수정의 증거를 아래처럼 구분한다. 실기기·사용자 과제와 후반 고배속 전체 지연은 미해결 범위다.
 
 ## 확인한 결과

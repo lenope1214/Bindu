@@ -1,0 +1,3 @@
+coop {'host': 0, 'join': 0}
+vs {'host': 0, 'join': 0}
+All signaling/client processes stopped; temporary snapshots cleaned on exit

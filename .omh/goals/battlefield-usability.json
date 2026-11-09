@@ -734,12 +734,30 @@
         "scope": "cumulative goal accounting at snapshot, not per-agent cost or final turn usage",
         "per_agent_cost": "not_available"
       }
+    },
+    {
+      "type": "delivery_rebase_verified",
+      "facts": [
+        "Five scoped commits replayed onto main8704b78; latest release/result details preserved.",
+        "Rebased whole check:SPEC252/gift86/server28; native23 suites; actual local WebRTC55 actors543 assertions; targeting14527 comparisons0 mismatch.",
+        "Result native PC/phone7 assertions each; undo keeps new hist and wave_kills.",
+        "Draft PR pending remote creation; overall50-item goal remains active."
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
     "next_local_action": "BF-49: evaluate a bounded optimization against the observed 5-16 point trail distribution and actual affect cost; preserve target order, damage, timers and RNG; no unconditional replacement of the rejected candidate.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
+    "goal_complete": false
+  },
+  "delivery": {
+    "instruction": "Task commits, pull latest main, rebase current branch, create PR",
+    "status": "validated_ready_for_draft_pr",
+    "main": "8704b78688ee9be638e0ddd24eb91d54f3f56194",
+    "feature_branch": "codex/battlefield-usability-audit",
+    "backup_ref": "backup/battlefield-usability-before-rebase-20261110",
+    "evidence": "docs/qa/2026-11-09-battlefield-fixes/delivery/README.md",
     "goal_complete": false
   }
 }

@@ -1,0 +1,14 @@
+race {'host': 0, 'peer_a': 0, 'peer_b': 0}
+race_reverse {'host': 0, 'peer_a': 0, 'peer_b': 0}
+ack_loss {'host': 0, 'peer_a': 0, 'peer_b': 0}
+complete_loss {'host': 0, 'peer_a': 0, 'peer_b': 0}
+donor_rejoin_before_commit {'host': 0, 'peer_a': 0, 'peer_b': 0}
+donor_rejoin {'host': 0, 'peer_a': 0, 'peer_b': 0}
+owner_rejoin_before_commit {'host': 0, 'peer_a': 0, 'peer_b': 0}
+owner_rejoin {'host': 0, 'peer_a': 0, 'peer_b': 0}
+old_round {'host': 0, 'peer_a': 0, 'peer_b': 0}
+host_donor {'host': 0, 'peer_a': 0, 'peer_b': 0}
+force_fence {'host': 0, 'peer_a': 0, 'peer_b': 0}
+retire_owner {'host': 0, 'peer_a': 0, 'peer_b': 0}
+retire_donor {'host': 0, 'peer_a': 0, 'peer_b': 0}
+donor_edit_rejoin {'host': 0, 'peer_a': 0, 'peer_b': 0}
