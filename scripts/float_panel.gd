@@ -112,6 +112,9 @@ func _head_btn(text: String) -> Button:
 	for s in ["normal", "hover", "pressed", "hover_pressed", "focus"]:
 		var sb := StyleBoxFlat.new()
 		sb.bg_color = Color(1, 1, 1, 0.0 if s == "focus" else (0.16 if s in ["hover", "hover_pressed"] else 0.06))
+		if s == "focus":
+			sb.border_color = Color("7798be")
+			sb.set_border_width_all(2)
 		sb.set_corner_radius_all(4)
 		sb.set_content_margin_all(0)
 		b.add_theme_stylebox_override(s, sb)

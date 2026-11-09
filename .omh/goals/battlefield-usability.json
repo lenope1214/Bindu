@@ -241,7 +241,8 @@
       "implementation": "implemented",
       "verification": "local_verified",
       "evidence": [
-        "docs/qa/2026-11-09-battlefield-fixes/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/keyboard/README.md"
       ]
     },
     {
@@ -600,11 +601,12 @@
       "diagnostic_status": "가설",
       "title": "화면·시각 조건별 접근성 사각지대가 남아 있다",
       "implementation": "partial",
-      "verification": "local_evidence_with_external_gaps",
+      "verification": "selected_keyboard126_locally_verified; assistive_technology_colour_contrast_physical_human_remaining",
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/remaining-user-tasks.md",
         "docs/qa/2026-11-09-battlefield-fixes/README.md",
-        "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/keyboard/README.md"
       ]
     }
   ],
@@ -958,11 +960,23 @@
         "docs/qa/2026-11-09-battlefield-fixes/mobile-default/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/mobile-default/summary.json"
       ]
+    },
+    {
+      "type": "keyboard_inspector_handoff_and_aim_anchor_verified",
+      "facts": [
+        "Frozen2d8c4c5 fails2entry assertions on3profiles; actual Tab observer has no GUI focus.",
+        "Current F6/visible focus/scroll/card read/preview/fold/close/pause/return/modal guards pass42assertions x3profiles.",
+        "Direction negative reproduces diagonal .707,-.707; current first Up aims Up.",
+        "BF50whole accessibility HOLD; BF49/PERF01 and physical/human tasks remain."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/keyboard/README.md"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "Finish task21scoped commit and latest main pull/rebase/push/PR update, then continue BF49high-speed/PERF01 and remaining physical/human/accessibility tasks. Full50active.",
+    "next_local_action": "Deliver task22keyboard commit via latest main pull/rebase/push/PR17 update, then continue BF49/PERF01 and remaining accessibility/physical/human tasks; full50active.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },
@@ -1030,6 +1044,24 @@
       "verification": "native40_and_explicit_reveal_desktop26_guarded",
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/attack-preview/README.md"
+      ]
+    },
+    {
+      "id": "I-12",
+      "title": "키보드 정보창 진입 경로 없음",
+      "implementation": "implemented",
+      "verification": "native_virtual_GUI_3profiles126_assertions",
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/keyboard/README.md"
+      ]
+    },
+    {
+      "id": "I-13",
+      "title": "이동 뒤 방향 편집의 오래된 키보드 포인터",
+      "implementation": "implemented",
+      "verification": "native_virtual_GUI_3profiles126_assertions",
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/keyboard/README.md"
       ]
     }
   ]

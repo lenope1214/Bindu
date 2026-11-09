@@ -56,3 +56,5 @@
 20번째 작업은 [명시적 공격 예시 노출과 복귀](qa/2026-11-09-battlefield-fixes/attack-preview/README.md)다. 실제 clip 안의 원본 비율 예시, 접기 수치 복귀와 비동기 닫기/대상/재열기 경합을 처리한다. native40조건/200비교·실제6동작·desktop26단언·정보/카드4묶음·전체 회귀를 검증했다.
 
 21번째 작업은 [첫 모바일 실행 기본 배율](qa/2026-11-09-battlefield-fixes/mobile-default/README.md)이다. Meta static 초기값 한 줄로 모바일1.3/desktop1.0을 맞추고 기존 유효5배율·무효값 복구 규칙·다른 설정을 보존한다. 실제 cold16개/기준fresh2개·desktop8단언·전체 공통 회귀를 검증했다.
+
+22번째 작업은 [키보드 정보 읽기와 전장 복귀](qa/2026-11-09-battlefield-fixes/keyboard/README.md)다. F6·창 안 포커스/스크롤·접힌 내용 제외·전투 즉시 정지·모달 보호와 이동 뒤 방향 편집 기준점을 실제 키 입력으로 확인한다. 3프로필126단언이며 접근성 전체 판정은 HOLD다. 최신 main pull/rebase/PR17 갱신은 커밋 뒤 실제 결과로 기록한다.

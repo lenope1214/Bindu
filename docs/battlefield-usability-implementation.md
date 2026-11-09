@@ -134,3 +134,5 @@
 [공격 예시 후속](qa/2026-11-09-battlefield-fixes/attack-preview/README.md): I-11의 전체 예시 노출·16:9/실제 clip 맞춤·접기 수치 복귀·닫고 같은 대상 재열기의 오래된 callback을 수정했다. native40조건/200상태 비교·실제6동작·desktop26단언과 기존4묶음·공통 전체 회귀를 통과했다. 새 예시 읽기 범위92/PASS와 전체50개 active는 구분한다.
 
 [첫 모바일 배율 후속](qa/2026-11-09-battlefield-fixes/mobile-default/README.md): I-08의 저장 없는 경로만 static 초기값1.3/desktop1.0으로 일치시켰다. 두 기기16cold 시작에서 유효 저장5개·다른 설정·기존 무효값 복구·카메라/전장을 보존했다. 실제 이전fresh2개·desktop8단언·전체 공통 회귀와 구분한다. 전체50개·물리/사람/고배속 과제는 active다.
+
+[키보드 읽기 후속](qa/2026-11-09-battlefield-fixes/keyboard/README.md): 정보창 진입 키가 없어 GUI 포커스가 비던 실제 경로를 F6 전환·창 안 순환·스크롤로 수정한다. Tab 선택/이동 뒤 방향 편집의 오래된 포인터도 초기화한다. 3프로필126단언과 모달 보호를 확인하며 BF-50 전체 접근성·스크린리더·색각/대비·실기기 과제는 HOLD로 유지한다.

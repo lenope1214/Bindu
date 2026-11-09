@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/README.md",
-      "bytes": 13318,
-      "sha256": "a1545e4e9830174771cc2dc4f0de7adf683cef531b0921e65730f0cd4bb9a0d7",
+      "bytes": 13600,
+      "sha256": "2f93e4f0c5b0a64741c59a3dc70d1b39ed66bd75c284986d2032bfe653ba1993",
       "published": true
     },
     {
@@ -35055,6 +35055,840 @@
       "published": true
     },
     {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/README.md",
+      "bytes": 4740,
+      "sha256": "66d7254fbce166a7fcb512f18ae04343af066a3492811062ad7a3b3491bbb086",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/architecture-audit.log",
+      "bytes": 2559,
+      "sha256": "56100687ac26ea2044943f0670a16da78fc0ba85752a5b3a38c0845f2a884293",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/audit.json",
+      "bytes": 4317,
+      "sha256": "c8a4e36dc110e0bd00d21c5c7f2090fa22e9194f1cbfacf85c25af42abe43248",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/baseline/import.log",
+      "bytes": 11380,
+      "sha256": "13b1d8a561c5eee1d056d631e7f01a28f130ce4974c6e72534b2ea5ec9d3990e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/baseline/pc100/run.log",
+      "bytes": 4854,
+      "sha256": "d8df4d911b59ce4e1784261e18710731795c8a25e890f895000074b65fa31e21",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/baseline/pc100/trace.json",
+      "bytes": 5613,
+      "sha256": "116a5c5660f04dfd0e9a7cdfc45c4740f38a841212bde213e365cd0c7a46bc6d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/baseline/phone130/run.log",
+      "bytes": 4854,
+      "sha256": "d8df4d911b59ce4e1784261e18710731795c8a25e890f895000074b65fa31e21",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/baseline/phone130/trace.json",
+      "bytes": 5613,
+      "sha256": "116a5c5660f04dfd0e9a7cdfc45c4740f38a841212bde213e365cd0c7a46bc6d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/baseline/run.json",
+      "bytes": 22806,
+      "sha256": "b5dd15b189f3093aa0b5aa2d1bcd7477487cf245f17d0033955c2ed7a2f3a8aa",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/baseline-check/import.log",
+      "bytes": 11380,
+      "sha256": "13b1d8a561c5eee1d056d631e7f01a28f130ce4974c6e72534b2ea5ec9d3990e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/baseline-check/pc100/focus-trace.json",
+      "bytes": 2,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/baseline-check/pc100/run.log",
+      "bytes": 464,
+      "sha256": "bddfb6857a0d15ee95b263efe9c2ebf418fe41135cdbc9eea35f92f8215fa630",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/baseline-check/pc130/focus-trace.json",
+      "bytes": 2,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/baseline-check/pc130/run.log",
+      "bytes": 333,
+      "sha256": "00d5aea675e3b7f8c9e5a8c2c047e36503a2945d24e951528ca4156f52bb7434",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/baseline-check/phone130/focus-trace.json",
+      "bytes": 2,
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/baseline-check/phone130/run.log",
+      "bytes": 464,
+      "sha256": "bddfb6857a0d15ee95b263efe9c2ebf418fe41135cdbc9eea35f92f8215fa630",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/baseline-check/run.json",
+      "bytes": 9255,
+      "sha256": "c37389e30251ebfa3bc9862c18821624fd0ab0296a28ef1de02c545468ccf79e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/candidate-check-1/import.log",
+      "bytes": 11380,
+      "sha256": "13b1d8a561c5eee1d056d631e7f01a28f130ce4974c6e72534b2ea5ec9d3990e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/candidate-check-1/pc100/focus-trace.json",
+      "bytes": 11578,
+      "sha256": "cda9b2c06b4b7073f8ab5726b75b5f06866e0487ac3ecdbc29faf1476f59d712",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/candidate-check-1/pc100/preview-focus.png",
+      "bytes": 129603,
+      "sha256": "6cb55a4a64b94c6512dd38e18ac88979b09b4b6ca4eb76faf2e4d2d780b212b5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/candidate-check-1/pc100/reading-focus.png",
+      "bytes": 126052,
+      "sha256": "d53186de65703d1a2adfd5bb69c359b9553f8f1ae0974eb00c55e90d1cd93083",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/candidate-check-1/pc100/run.log",
+      "bytes": 1862,
+      "sha256": "804f5df1bcc0e0b97828448f9732435cff2fb751c3c0e4319419a054460d7826",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility/import.log",
+      "bytes": 11380,
+      "sha256": "13b1d8a561c5eee1d056d631e7f01a28f130ce4974c6e72534b2ea5ec9d3990e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility/pc130-battlefield_core_check/read-card.png",
+      "bytes": 137864,
+      "sha256": "2da7db7d5ffb52c764c48eda588d9e1f501fe0624ae1c2fd0c7d6aa06d1d6a0e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility/pc130-battlefield_core_check/run.log",
+      "bytes": 1432,
+      "sha256": "59ff3b624cccf225c9fe38a663da848d63621a624830e0d75009cf53b78a6ce1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility/pc130-battlefield_core_check/undo-card.png",
+      "bytes": 163004,
+      "sha256": "db6a8ebd306e0da705b4bb9b29448075729e4fef56c6d55a3d2134f3fec0964f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility/pc130-battlefield_core_check/wave-review.png",
+      "bytes": 152118,
+      "sha256": "3e25011399520406b4b5d816a1d576ce0dfd150a924a42f50fd930d387a92a33",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility/pc130-battlefield_information_check/information-summary.png",
+      "bytes": 131988,
+      "sha256": "7abb912072e6ce613caf9a85e2b482429e338743760d47ec44abccd6e3607604",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility/pc130-battlefield_information_check/run.log",
+      "bytes": 1636,
+      "sha256": "3d2b851f3bc84b4c650d736b55689bf576f52902f6393fcbd69e627ebc0c1cf9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility/phone130-battlefield_core_check/read-card.png",
+      "bytes": 75653,
+      "sha256": "c3a440b2df8b1de94f53424e00ea9ad42fa251dfd078eb5c1b2b6d12d1002670",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility/phone130-battlefield_core_check/run.log",
+      "bytes": 1432,
+      "sha256": "59ff3b624cccf225c9fe38a663da848d63621a624830e0d75009cf53b78a6ce1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility/phone130-battlefield_core_check/undo-card.png",
+      "bytes": 89487,
+      "sha256": "172606a4cc3be49a7f40a10df33755b98ec1e53fe4687506ff7398143bc5d2a2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility/phone130-battlefield_core_check/wave-review.png",
+      "bytes": 81920,
+      "sha256": "51d7dd5bf66e7249b7d4ff54f169dfc9c2ed0f554e21c74e8b97b367fc15506c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility/phone130-battlefield_information_check/information-summary.png",
+      "bytes": 72458,
+      "sha256": "8cfc6b508d507842a383aa8755d635357e0d90d70d2fa8a06c0923ab8f527352",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility/phone130-battlefield_information_check/run.log",
+      "bytes": 1636,
+      "sha256": "3d2b851f3bc84b4c650d736b55689bf576f52902f6393fcbd69e627ebc0c1cf9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility/run.json",
+      "bytes": 8138,
+      "sha256": "fd792405fbfc8af38c709a31bd52f0c50af88b6d4d14095d69b16ea6dbf8e2ec",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-scoped/import.log",
+      "bytes": 11380,
+      "sha256": "13b1d8a561c5eee1d056d631e7f01a28f130ce4974c6e72534b2ea5ec9d3990e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-scoped/pc130-battlefield_core_check/read-card.png",
+      "bytes": 144524,
+      "sha256": "2533e623e3ebc21b7084370e59b6aca7f51756d58d6ffa7e7bd250469e3d5085",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-scoped/pc130-battlefield_core_check/run.log",
+      "bytes": 1432,
+      "sha256": "59ff3b624cccf225c9fe38a663da848d63621a624830e0d75009cf53b78a6ce1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-scoped/pc130-battlefield_core_check/undo-card.png",
+      "bytes": 153264,
+      "sha256": "665a881e0869315cf1c22a32fdb2b996e4fe1635d6f6a728fe07bb0283548ed9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-scoped/pc130-battlefield_core_check/wave-review.png",
+      "bytes": 140803,
+      "sha256": "85c4ce73ea3c536a4198333a9f55eb9abb9061d52051d0c14a61d513e1f279d0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-scoped/pc130-battlefield_information_check/information-summary.png",
+      "bytes": 132235,
+      "sha256": "7bc83bc1660ee45e568adc7f6036246d9a79b6265667811c7c10dd5a3f2e12aa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-scoped/pc130-battlefield_information_check/run.log",
+      "bytes": 1505,
+      "sha256": "89a33d1a5031e1c910576e45b02f80bb54ae28c73b09204ca30839dfc3a042cf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-scoped/phone130-battlefield_core_check/read-card.png",
+      "bytes": 74914,
+      "sha256": "829d5802d39782804a4589a185788d31564eb7da9349d6cf5d18bfc533b446e8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-scoped/phone130-battlefield_core_check/run.log",
+      "bytes": 1432,
+      "sha256": "59ff3b624cccf225c9fe38a663da848d63621a624830e0d75009cf53b78a6ce1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-scoped/phone130-battlefield_core_check/undo-card.png",
+      "bytes": 96387,
+      "sha256": "ce4a41552873f5a2509e2b8fa232fb6fc275f8524446efd9b8f1a650c96fe970",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-scoped/phone130-battlefield_core_check/wave-review.png",
+      "bytes": 87840,
+      "sha256": "e5f4993490e404416dd859bd3adb730aecf09a9f2c5bb0b0f7cb037d41fcac64",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-scoped/phone130-battlefield_information_check/information-summary.png",
+      "bytes": 72291,
+      "sha256": "aac6ad04232392fc049358438dd5b803a86449c091a87dacfd7fe17ff1f8bff7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-scoped/phone130-battlefield_information_check/run.log",
+      "bytes": 1636,
+      "sha256": "3d2b851f3bc84b4c650d736b55689bf576f52902f6393fcbd69e627ebc0c1cf9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-scoped/run.json",
+      "bytes": 8035,
+      "sha256": "a2d89697ffd779ba240a97e0357a3f91a3f2342550c05a130b6ce3ac1db7d523",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-visible/import.log",
+      "bytes": 11380,
+      "sha256": "13b1d8a561c5eee1d056d631e7f01a28f130ce4974c6e72534b2ea5ec9d3990e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-visible/pc130-battlefield_core_check/read-card.png",
+      "bytes": 144255,
+      "sha256": "e6b4e838f138277e38e27ebd7c69c915a4b832f51a9c680e6f900e8c1fb99272",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-visible/pc130-battlefield_core_check/run.log",
+      "bytes": 1432,
+      "sha256": "e270b68d221bac4d25f95d5cb058b2033022f0147604802b8be6cc2e02437a75",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-visible/pc130-battlefield_core_check/undo-card.png",
+      "bytes": 154378,
+      "sha256": "907c544840863f107b720d13d2a037c202d6bd54a45c22deb9fbc34619e82d28",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-visible/pc130-battlefield_core_check/wave-review.png",
+      "bytes": 140820,
+      "sha256": "d1c215de9ad3f3eb1ecbdb8deb6b932eaf94ad1fa3e5d2bdad00c5fc4d81c41a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-visible/pc130-battlefield_information_check/information-summary.png",
+      "bytes": 132122,
+      "sha256": "87167f2b3b4a5817aa60dd000fbe6320574f5eab56c41c01e3af1e98a54afad8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-visible/pc130-battlefield_information_check/run.log",
+      "bytes": 1636,
+      "sha256": "3d2b851f3bc84b4c650d736b55689bf576f52902f6393fcbd69e627ebc0c1cf9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-visible/phone130-battlefield_core_check/read-card.png",
+      "bytes": 69519,
+      "sha256": "e6205864e072e9b57e84ccc640c8083181e3e56b5a920f4526a9f4dd5fe6aa0c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-visible/phone130-battlefield_core_check/run.log",
+      "bytes": 1432,
+      "sha256": "59ff3b624cccf225c9fe38a663da848d63621a624830e0d75009cf53b78a6ce1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-visible/phone130-battlefield_core_check/undo-card.png",
+      "bytes": 92626,
+      "sha256": "ece4973ab21fe3d0cbe714ab318c7560e1bdb91d787a4f749d910311deda856c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-visible/phone130-battlefield_core_check/wave-review.png",
+      "bytes": 84675,
+      "sha256": "290592f9d9af8f163ec5fa525ffbd8019c00dbbe3da1f2e4e97b8adc7273fe38",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-visible/phone130-battlefield_information_check/information-summary.png",
+      "bytes": 72437,
+      "sha256": "ac1e6aabf567bee04aaf62208a98808c87901b08935c5105c3865324a6757a79",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-visible/phone130-battlefield_information_check/run.log",
+      "bytes": 1636,
+      "sha256": "3d2b851f3bc84b4c650d736b55689bf576f52902f6393fcbd69e627ebc0c1cf9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/compatibility-visible/run.json",
+      "bytes": 8138,
+      "sha256": "83cd43fb4a0694977e061ff2a649bcdce9e0387c3988ee76686341f8de3265ab",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/direction-negative/import.log",
+      "bytes": 11380,
+      "sha256": "13b1d8a561c5eee1d056d631e7f01a28f130ce4974c6e72534b2ea5ec9d3990e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/direction-negative/pc100/focus-trace.json",
+      "bytes": 11578,
+      "sha256": "cda9b2c06b4b7073f8ab5726b75b5f06866e0487ac3ecdbc29faf1476f59d712",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/direction-negative/pc100/preview-focus.png",
+      "bytes": 120791,
+      "sha256": "5e65b45cde77b6a517fc9aa8f9854cba8a3e7b82fec1e7c92073130f31a54901",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/direction-negative/pc100/reading-focus.png",
+      "bytes": 124344,
+      "sha256": "e9e7136ee98fb146418620aa6f05a8fbbe24969e78970fa31f34de6fa0f183e8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/direction-negative/pc100/run.log",
+      "bytes": 2098,
+      "sha256": "8237ac3ece6254f949f2c8843a19c1b62370dd12c94b861beda57c8c4510d254",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/direction-negative/run.json",
+      "bytes": 7863,
+      "sha256": "5940a0cedd8de86daa6deb5db5f4fd32efe85daef964862ae119ae0ea95d0cd1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-check/import.log",
+      "bytes": 11380,
+      "sha256": "13b1d8a561c5eee1d056d631e7f01a28f130ce4974c6e72534b2ea5ec9d3990e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-check/pc100/focus-trace.json",
+      "bytes": 11578,
+      "sha256": "cda9b2c06b4b7073f8ab5726b75b5f06866e0487ac3ecdbc29faf1476f59d712",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-check/pc100/preview-focus.png",
+      "bytes": 123833,
+      "sha256": "0d95608ced85400876299bc75109c378066f92a1922d2fa2f6ab1d798bc39df9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-check/pc100/reading-focus.png",
+      "bytes": 127394,
+      "sha256": "74080382317a63ace1e07a143aac726b901d8f55c26ddaae922dea783ed62d91",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-check/pc100/run.log",
+      "bytes": 1957,
+      "sha256": "b8ebc68e10f840ae4b51665c701d90fd6ee0af1ad234c7d0e8e994c401ef9c12",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-check/pc130/focus-trace.json",
+      "bytes": 11578,
+      "sha256": "cda9b2c06b4b7073f8ab5726b75b5f06866e0487ac3ecdbc29faf1476f59d712",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-check/pc130/preview-focus.png",
+      "bytes": 142845,
+      "sha256": "e1e3993c298aad7cfbaf89ecffbbe28c98f08a22e2c6f92cc0190e8dd1cce9bb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-check/pc130/reading-focus.png",
+      "bytes": 144060,
+      "sha256": "6a5394eb2925de3f30325a72e75fbcdb3c1c1a753e547d87f4cec22459da53b2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-check/pc130/run.log",
+      "bytes": 1957,
+      "sha256": "b8ebc68e10f840ae4b51665c701d90fd6ee0af1ad234c7d0e8e994c401ef9c12",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-check/phone130/focus-trace.json",
+      "bytes": 11578,
+      "sha256": "cda9b2c06b4b7073f8ab5726b75b5f06866e0487ac3ecdbc29faf1476f59d712",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-check/phone130/preview-focus.png",
+      "bytes": 68757,
+      "sha256": "0ff2f70e6178aa4d3c43cbda1a3a8741aa50003140924f134bde2ed0fbd2d16e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-check/phone130/reading-focus.png",
+      "bytes": 73433,
+      "sha256": "419825e953844446ae88c4ce5fad6cd007750aa5f2332b9b68a83665bc794230",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-check/phone130/run.log",
+      "bytes": 2089,
+      "sha256": "c10f9116b5dcb1a99036755a31678bbb60a80fb2ae58cda570f1b8e95ad1f60d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-check/run.json",
+      "bytes": 9118,
+      "sha256": "f6fd4e8f8c7f3583a7be047abaefdb5a09ca78d0660b0042d41afc6729a30d3c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-guarded/import.log",
+      "bytes": 11380,
+      "sha256": "13b1d8a561c5eee1d056d631e7f01a28f130ce4974c6e72534b2ea5ec9d3990e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-guarded/pc100/focus-trace.json",
+      "bytes": 40874,
+      "sha256": "fc16244f2cceae0f3083324325b6f0e067641572fbd04f4faa1a3e832f1e38eb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-guarded/pc100/preview-focus.png",
+      "bytes": 123799,
+      "sha256": "a19d75057e8b5e2c93a0ce1a14f002107df38fd7edb474b3fa8a60e553331e11",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-guarded/pc100/reading-focus.png",
+      "bytes": 127150,
+      "sha256": "9e2203073f2b0ee48b6ce75ac3e2aed6fd580b25192b91c826159b7b11422698",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-guarded/pc100/run.log",
+      "bytes": 2608,
+      "sha256": "32353a68332dc6e0f452b81ab95e55f48614736317bb86a46e744a4e02cb3fc0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-guarded/pc130/focus-trace.json",
+      "bytes": 40874,
+      "sha256": "9cb5be7cfc728b0d8efde8c2ac882aff6e505892e0e9ccdde0745b6aaa067b6e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-guarded/pc130/preview-focus.png",
+      "bytes": 144458,
+      "sha256": "ec7f5f47c9460b8a3379b73c09c8b27412b7d398aa2ce965fa81b0fcefc5e51e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-guarded/pc130/reading-focus.png",
+      "bytes": 145522,
+      "sha256": "058fc9e8b5b2a01241dd9f90a25026ee6afff3bf9f89e48a9207342f8bfc7ba6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-guarded/pc130/run.log",
+      "bytes": 2739,
+      "sha256": "a2bff447fa69a9081e511a697e5230fe1df03fb6a63b5baa4464387ce856ba68",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-guarded/phone130/focus-trace.json",
+      "bytes": 40875,
+      "sha256": "c1a20bd980b3d87324a26e45efbc1ece20a0b4424c8016b4e9429da0489b4e73",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-guarded/phone130/preview-focus.png",
+      "bytes": 68951,
+      "sha256": "9347bb7de1704e78f5267b5a1f88e3d4aec132281c1a02f7913f988a4006065b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-guarded/phone130/reading-focus.png",
+      "bytes": 73652,
+      "sha256": "20296728a0fa19d35f8a8620352483fe05a80f6c098dd7e205e64983135e4e06",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-guarded/phone130/run.log",
+      "bytes": 2740,
+      "sha256": "20e2a9320707eade91117bc9b7101a4f81a54ba4b368592d3574e1d27140c808",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-guarded/run.json",
+      "bytes": 9227,
+      "sha256": "5763bacbbb84841bed567cedea3e53968316de441327f3c411ca4624fd7b3ba3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-scoped/import.log",
+      "bytes": 11380,
+      "sha256": "13b1d8a561c5eee1d056d631e7f01a28f130ce4974c6e72534b2ea5ec9d3990e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-scoped/pc100/focus-trace.json",
+      "bytes": 40874,
+      "sha256": "fc16244f2cceae0f3083324325b6f0e067641572fbd04f4faa1a3e832f1e38eb",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-scoped/pc100/preview-focus.png",
+      "bytes": 122259,
+      "sha256": "b0096174e6282a3f88275dce41aa47e3f1d2c525140adaed09b1201cafa4463e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-scoped/pc100/reading-focus.png",
+      "bytes": 124869,
+      "sha256": "76bde5a98ff650b82976b749eab6a090d4e9a324d7dcf957f8ac26042f0f5524",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-scoped/pc100/run.log",
+      "bytes": 2608,
+      "sha256": "32353a68332dc6e0f452b81ab95e55f48614736317bb86a46e744a4e02cb3fc0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-scoped/pc130/focus-trace.json",
+      "bytes": 40874,
+      "sha256": "9cb5be7cfc728b0d8efde8c2ac882aff6e505892e0e9ccdde0745b6aaa067b6e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-scoped/pc130/preview-focus.png",
+      "bytes": 146206,
+      "sha256": "95b1a59741cf37a703156857f6a874f5e28d61dcd8f349510954be6abde09935",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-scoped/pc130/reading-focus.png",
+      "bytes": 146299,
+      "sha256": "a5bf0ea32aacd500b0249f351c36311c53b4ed6dbf9d4b28fbfd01dc6314d32b",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-scoped/pc130/run.log",
+      "bytes": 2739,
+      "sha256": "a2bff447fa69a9081e511a697e5230fe1df03fb6a63b5baa4464387ce856ba68",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-scoped/phone130/focus-trace.json",
+      "bytes": 40875,
+      "sha256": "c1a20bd980b3d87324a26e45efbc1ece20a0b4424c8016b4e9429da0489b4e73",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-scoped/phone130/preview-focus.png",
+      "bytes": 71025,
+      "sha256": "92f0e22f5832150b429516e83318b9e213776a628403817abfe6aa9eb906ba5c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-scoped/phone130/reading-focus.png",
+      "bytes": 75976,
+      "sha256": "6395005c97d32df48c17d5438125f4805e1acb571073ddaa7325f6a82315aee1",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-scoped/phone130/run.log",
+      "bytes": 2609,
+      "sha256": "4a4569b234963805f98227d4e2301dd2b40fce953b55d4072f5d87cee223d3b8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-scoped/run.json",
+      "bytes": 9121,
+      "sha256": "6259ae7be537d29287b34975b80c84db811ed3871205972f02a85a49a17faa5c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-visible/import.log",
+      "bytes": 11380,
+      "sha256": "13b1d8a561c5eee1d056d631e7f01a28f130ce4974c6e72534b2ea5ec9d3990e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-visible/pc100/focus-trace.json",
+      "bytes": 40874,
+      "sha256": "fc16244f2cceae0f3083324325b6f0e067641572fbd04f4faa1a3e832f1e38eb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-visible/pc100/preview-focus.png",
+      "bytes": 124737,
+      "sha256": "0ef716a233de0412afddbf5ba31c5425337937d0f42c9dae4ff9f407dc3ed42f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-visible/pc100/reading-focus.png",
+      "bytes": 127232,
+      "sha256": "97635556077a93bc8a65caf049dc8de1c671028fac47232c27fc5a757a4a0fd3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-visible/pc100/run.log",
+      "bytes": 2739,
+      "sha256": "a2bff447fa69a9081e511a697e5230fe1df03fb6a63b5baa4464387ce856ba68",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-visible/pc130/focus-trace.json",
+      "bytes": 40874,
+      "sha256": "9cb5be7cfc728b0d8efde8c2ac882aff6e505892e0e9ccdde0745b6aaa067b6e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-visible/pc130/preview-focus.png",
+      "bytes": 143513,
+      "sha256": "32d936fde511dfddf3ed413408084105215c3c6758ce5769c76dba2748031dc0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-visible/pc130/reading-focus.png",
+      "bytes": 144094,
+      "sha256": "e7ca0125e071d6535ca08e65e73e24729e2d25af5dfcdf1e212cff14c5e5fc99",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-visible/pc130/run.log",
+      "bytes": 2608,
+      "sha256": "32353a68332dc6e0f452b81ab95e55f48614736317bb86a46e744a4e02cb3fc0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-visible/phone130/focus-trace.json",
+      "bytes": 40875,
+      "sha256": "c1a20bd980b3d87324a26e45efbc1ece20a0b4424c8016b4e9429da0489b4e73",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-visible/phone130/preview-focus.png",
+      "bytes": 67009,
+      "sha256": "6e6552e1fe84f805817decb663c1a3b41e268dcb62ad4052a698135011de4ada",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-visible/phone130/reading-focus.png",
+      "bytes": 72014,
+      "sha256": "9ee8e2b15758a1b1341d43c40344cbfbb62779ac9194ffd10dffd1799f383cde",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-visible/phone130/run.log",
+      "bytes": 2740,
+      "sha256": "20e2a9320707eade91117bc9b7101a4f81a54ba4b368592d3574e1d27140c808",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/final-visible/run.json",
+      "bytes": 9227,
+      "sha256": "07e0d468fd8d28233641451c567ebae7dafd44c6ece469a9d8b65739056d5292",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/full-check.log",
+      "bytes": 1133,
+      "sha256": "d4c7c55eb8a15ea3d3d4e127f4789f2de9dd8b2a1e00119d18bd7a9e13b5f425",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/initial-candidate/import.log",
+      "bytes": 11380,
+      "sha256": "13b1d8a561c5eee1d056d631e7f01a28f130ce4974c6e72534b2ea5ec9d3990e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/initial-candidate/pc100/run.log",
+      "bytes": 4854,
+      "sha256": "d8df4d911b59ce4e1784261e18710731795c8a25e890f895000074b65fa31e21",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/initial-candidate/pc100/trace.json",
+      "bytes": 5613,
+      "sha256": "116a5c5660f04dfd0e9a7cdfc45c4740f38a841212bde213e365cd0c7a46bc6d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/initial-candidate/phone130/run.log",
+      "bytes": 4854,
+      "sha256": "d8df4d911b59ce4e1784261e18710731795c8a25e890f895000074b65fa31e21",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/initial-candidate/phone130/trace.json",
+      "bytes": 5613,
+      "sha256": "116a5c5660f04dfd0e9a7cdfc45c4740f38a841212bde213e365cd0c7a46bc6d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/initial-candidate/run.json",
+      "bytes": 22806,
+      "sha256": "6491a47295f7faca4a361fd15a7f9393bc42bd272551d1836ca98ca9bf1f010c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/observe.gd",
+      "bytes": 2452,
+      "sha256": "85ab84e88271960f8b7f77a62edf51b058c803c2d87ab6070b9963f0be04186c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/pre-scoped-full-check.log",
+      "bytes": 1133,
+      "sha256": "5cd2fa145ba167cb2ba54178af73b47b752fd3b86395c80615e6a2000aa35454",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/pre-visible-full-check.log",
+      "bytes": 1133,
+      "sha256": "7863074046378afa683520b86fde7818254e251c91f28a2ca4684e8fdc3ba518",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/run_check.py",
+      "bytes": 3656,
+      "sha256": "e48665d1694aa6a4306286acd6ce54660dded65c3c4b843d16850e63a7b259c5",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/run_observe.py",
+      "bytes": 2251,
+      "sha256": "15eb112afc0b8697d83dd83ec9927ecd5b28bbc691370600af1698ba724f52b4",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/keyboard/summary.json",
+      "bytes": 8547,
+      "sha256": "9eac8a9602b7df267eb65fb75959db35f4ff227ece36580c149a81544f2b5b9b",
+      "published": true
+    },
+    {
       "path": "docs/qa/2026-11-09-battlefield-fixes/legacy-native/README.md",
       "bytes": 2129,
       "sha256": "ba2009c29224e24a96405ac84bc0ee43552c46eeb475a392fe168874425138fd",
@@ -56788,8 +57622,8 @@
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/remaining-user-tasks.md",
-      "bytes": 5561,
-      "sha256": "5e07b3aa944eb68facb4a013c1e9c76c6bbe633bb106af8f41b799f962ee9135",
+      "bytes": 5842,
+      "sha256": "ef145bc9a2fcbf4d2b6f7ed21a22fb3926e794a8ab0d3f7e07471f49ec07cf0b",
       "published": true
     },
     {

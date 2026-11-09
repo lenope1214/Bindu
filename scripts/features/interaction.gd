@@ -1211,6 +1211,7 @@ func _start_move(t: Tower, group: Array = []) -> void:
 	move_orig_dir = t.dir
 	session.place_pos = t.position
 	session.phase = BinduSession.Phase.AIM
+	keyboard_active = false  # 첫 방향키는 이전 선택·이동 포인터 대신 이 오브젝트 자리에서 시작한다.
 	aim_start_ms = Time.get_ticks_msec()
 	_aim_begin()
 	session.choice_box.visible = false

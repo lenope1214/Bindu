@@ -1,0 +1,135 @@
+{
+  "schema": "accessibility_audit_plan/v1",
+  "platform": "Godot4.7.2 native macOS; PC100/130 and phone130 simulation",
+  "surfaces": [
+    "card/object inspector",
+    "field handoff and direction editing"
+  ],
+  "critical_tasks": [
+    "read previous/next card without spending",
+    "reveal/collapse preview",
+    "scroll and close",
+    "select/edit/cancel/pause"
+  ],
+  "standard_boundary": "WCAG2.2 AA criteria used to classify issues; no whole-native-app WCAG conformance claim",
+  "supplied_evidence": [
+    "source",
+    "fresh rendered captures",
+    "actual virtual GUI key press/release traces"
+  ],
+  "missing_observations": [
+    "OS keyboard delivery",
+    "accessibility tree",
+    "screen reader",
+    "switch control",
+    "human colour/contrast tasks",
+    "all field/skill/menu journeys"
+  ],
+  "findings": [
+    {
+      "rule_id": "KEY-2",
+      "severity": "major",
+      "location": "CardDock reading entry",
+      "wcag": [
+        "2.1.1",
+        "2.4.3"
+      ],
+      "fix_class": "manual",
+      "fix": "Explicit F6 field/reading handoff with visible-only navigation and keyboard scrolling",
+      "state": "resolved_for_selected_journeys"
+    },
+    {
+      "rule_id": "KEY-2",
+      "severity": "major",
+      "location": "direction-edit keyboard continuation",
+      "wcag": [
+        "2.1.1"
+      ],
+      "fix_class": "manual",
+      "fix": "Reset stale keyboard aim anchor on direction-edit entry",
+      "state": "resolved_in_actual_key_sequence"
+    }
+  ],
+  "wcag_success_criteria_matrix/v1": [
+    {
+      "criterion": "2.1.1",
+      "verdict": "HOLD",
+      "evidence": "126 key assertions",
+      "selected_task_result": "PASS selected inspector journeys; HOLD whole field",
+      "boundary": "Selected virtual GUI task success is not whole-criterion accessibility conformance."
+    },
+    {
+      "criterion": "2.1.2",
+      "verdict": "HOLD",
+      "evidence": "F6 return, close, Esc cancellation and immediate wave pause",
+      "selected_task_result": "PASS selected handoff; HOLD whole app",
+      "boundary": "Selected virtual GUI task success is not whole-criterion accessibility conformance."
+    },
+    {
+      "criterion": "2.4.3",
+      "verdict": "HOLD",
+      "evidence": "forward/backward and folded content exclusion",
+      "selected_task_result": "PASS selected inspector; HOLD whole app",
+      "boundary": "Selected virtual GUI task success is not whole-criterion accessibility conformance."
+    },
+    {
+      "criterion": "2.4.7",
+      "verdict": "HOLD",
+      "evidence": "focus border visually observed in representative captures; no full-state/contrast survey"
+    },
+    {
+      "criterion": "4.1.2",
+      "verdict": "HOLD",
+      "evidence": "not_observed accessibility tree/assistive technology"
+    },
+    {
+      "criterion": "1.4.1",
+      "verdict": "HOLD",
+      "evidence": "human colour distinction tasks not_observed"
+    },
+    {
+      "criterion": "1.4.3",
+      "verdict": "HOLD",
+      "evidence": "contrast not_measured"
+    },
+    {
+      "criterion": "2.5.8",
+      "verdict": "HOLD",
+      "evidence": "no new physical target task this run"
+    }
+  ],
+  "semantic_structure_review/v1": {
+    "verdict": "HOLD",
+    "reason": "No current accessibility tree or announced names/roles/values"
+  },
+  "focus_and_keyboard_trace/v1": {
+    "observed": true,
+    "source": "final-scoped/*/focus-trace.json",
+    "input": "Input.parse_input_event with press/release and actual GUI dispatch; no test focus assignment"
+  },
+  "screen_reader_announcement_map/v1": {
+    "observed": false,
+    "map": []
+  },
+  "target_size_and_pointer_review/v1": {
+    "verdict": "HOLD",
+    "scope": "UI dimensions unchanged; physical pointer/gesture task not run"
+  },
+  "contrast_and_reflow_review/v1": {
+    "verdict": "HOLD",
+    "scope": "3 layout profiles and focus screenshots; contrast/colour human evidence absent"
+  },
+  "accessibility_remediation_handoff/v1": {
+    "implemented": "selected reading/field handoff and keyboard anchor",
+    "remaining": "assistive technology, all action paths and colour/contrast tasks"
+  },
+  "accessibility_audit_verdict/v1": {
+    "verdict": "HOLD",
+    "not_a_claim": [
+      "WCAG pass",
+      "screen-reader compatibility",
+      "full keyboard accessibility",
+      "physical-device usability"
+    ]
+  }
+}

@@ -171,6 +171,7 @@ func _init(main) -> void:
 	expand_btn = _action_button("전체 정보", read_actions, func():
 		game.cards_system._set_cards_hidden(not game.cards_hidden))
 	preview_btn = _action_button("공격 예시", read_actions, _toggle_attack_preview)
+	preview_btn.tooltip_text = "F6: 정보창/전장 전환 · Tab: 버튼 이동 · Enter/Space: 실행"
 	read_prev = _action_button("이전", read_actions, func(): cycle_read(-1))
 	read_next = _action_button("다음", read_actions, func(): cycle_read(1))
 	use_btn = _action_button("이 카드 들기", read_actions, func():
@@ -187,11 +188,21 @@ func _init(main) -> void:
 	direction_btn.pressed.connect(game.interaction_system._edit_selected_direction)
 	inspector_header.add_child(direction_btn)
 	close_btn = side.close_btn
+	for button: Button in [side.pin_btn, side.fold_btn, close_btn]:
+		button.focus_mode = Control.FOCUS_ALL
 	close_btn.tooltip_text = "상세 닫기 (Esc)"
 	side.close_pressed.connect(func(): close_inspector(true))
 	scroll = ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.focus_mode = Control.FOCUS_ALL
+	scroll.draw_focus_border = true
+	var scroll_focus := surface()
+	scroll_focus.bg_color = Color.TRANSPARENT
+	scroll_focus.border_color = Color("7798be")
+	scroll_focus.set_border_width_all(2)
+	scroll_focus.set_content_margin_all(0)
+	scroll.add_theme_stylebox_override("focus", scroll_focus)
 	scroll.mouse_filter = Control.MOUSE_FILTER_STOP  # 읽는 창의 스크롤은 뒤 전장으로 넘기지 않는다
 	content.add_child(scroll)
 	var column := VBoxContainer.new()
@@ -254,6 +265,52 @@ func _action_button(label: String, parent: Node, action: Callable) -> Button:
 	b.pressed.connect(action)
 	parent.add_child(b)
 	return b
+
+## 전장 Tab 순환과 정보 읽기 포커스를 F6으로 분리한다. 읽는 동안 대상은 바뀌지 않는다.
+func _keyboard_read_input(event: InputEventKey) -> bool:
+	if not event.pressed or event.ctrl_pressed or event.meta_pressed or event.alt_pressed or game.perk_mode or game.interaction_system._reading_modal_open() or not game.phase in [game.Phase.CHOOSE, game.Phase.READY, game.Phase.WAVE]:
+		return false
+	var owner := game.get_viewport().gui_get_focus_owner() as Control
+	var in_side := owner != null and side.is_ancestor_of(owner)
+	if event.keycode == KEY_F6 and not event.echo:
+		if in_side:
+			owner.release_focus()
+		else:
+			if not side.is_visible_in_tree() and game.phase == game.Phase.CHOOSE and not game.offer.is_empty():
+				read_card(game.offer[clampi(game.tap_sel, 0, game.offer.size() - 1)])
+			if not side.is_visible_in_tree(): return false
+			var controls := _reading_focus_order()
+			if not controls.is_empty(): controls[0].grab_focus()
+		return true
+	if not in_side:
+		return false
+	if event.keycode == KEY_TAB or (owner != scroll and event.keycode in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]):
+		if not event.echo:
+			var controls := _reading_focus_order()
+			if not controls.is_empty():
+				var backward := event.shift_pressed if event.keycode == KEY_TAB else event.keycode in [KEY_LEFT, KEY_UP]
+				var index := controls.find(owner)
+				if index < 0 and backward: index = 0
+				controls[posmod(index + (-1 if backward else 1), controls.size())].grab_focus()
+		return true
+	if owner == scroll:
+		match event.keycode:
+			KEY_UP: scroll.scroll_vertical -= 32
+			KEY_DOWN: scroll.scroll_vertical += 32
+			KEY_PAGEUP: scroll.scroll_vertical -= maxi(1, floori(scroll.size.y * 0.8))
+			KEY_PAGEDOWN: scroll.scroll_vertical += maxi(1, floori(scroll.size.y * 0.8))
+			KEY_HOME: scroll.scroll_vertical = 0
+			KEY_END: scroll.scroll_vertical = ceili(scroll.get_v_scroll_bar().max_value)
+			_: return false
+		return true
+	return false
+
+func _reading_focus_order() -> Array[Control]:
+	var result: Array[Control] = []
+	for control: Control in [expand_btn, side.pin_btn, side.fold_btn, side.close_btn, scroll, read_prev, read_next, use_btn, preview_btn]:
+		if control != null and control.is_visible_in_tree() and (not control is BaseButton or not control.disabled):
+			result.append(control)
+	return result
 
 func read_card(card: Dictionary) -> void:
 	if input_blocked() or game.phase != game.Phase.CHOOSE or not card in game.offer:
@@ -398,6 +455,8 @@ func handle_input(event: InputEvent) -> bool:
 		clear_gesture()
 		touch_capture = false
 		return false
+	if event is InputEventKey and _keyboard_read_input(event):
+		return true
 	if event is InputEventScreenTouch:
 		if event.index == read_pointer:
 			if not event.pressed: read_pointer = -1
