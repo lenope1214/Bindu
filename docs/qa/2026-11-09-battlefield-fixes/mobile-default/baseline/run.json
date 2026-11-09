@@ -1,0 +1,49 @@
+{
+  "scope": "Actual ARM64 debug iOS Simulator native cold startup; QA autoload prepares only its isolated save before main._load_best. No manual scale assignment to Meta, physical device or release claims.",
+  "cases": {
+    "phone/fresh": {
+      "passed": true,
+      "pid": 77825,
+      "expected": 1.0,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (142.5, 0.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 0,
+        "initial_save_exists": false,
+        "initial_scale": 1.0,
+        "loaded_scale": 1.0,
+        "scenario": "fresh",
+        "settled": true,
+        "ui_root_scale": [
+          1.0,
+          1.0
+        ],
+        "volume": 1.0
+      },
+      "state_sha256": "f0c2e9d10596e1aa22f0daaf71b8f013a70689cc8f0e79e3a77a1b85510f1123",
+      "capture_sha256": "55278b9336bc2368ae43aa55c19536c7d5d1e1c25e1d3f25910dd7e693add8eb"
+    },
+    "tablet/fresh": {
+      "passed": true,
+      "pid": 78173,
+      "expected": 1.0,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 81.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 0,
+        "initial_save_exists": false,
+        "initial_scale": 1.0,
+        "loaded_scale": 1.0,
+        "scenario": "fresh",
+        "settled": true,
+        "ui_root_scale": [
+          1.0,
+          1.0
+        ],
+        "volume": 1.0
+      },
+      "state_sha256": "c33e5cd579fde90b4edc17f9a64432f1113608188bd087fa5b124263902e9ffb",
+      "capture_sha256": "f9dd80cc0b85867d9f79d6e0418efbf734a837d825821b31b0a6521f2de808b5"
+    }
+  }
+}

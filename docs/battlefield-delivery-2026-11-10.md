@@ -54,3 +54,5 @@
 19번째 작업은 [정보창 핵심 수치와 공격 예시](qa/2026-11-09-battlefield-fixes/inspector-reading/README.md)다. 수치 네 개를 먼저 읽고, 긴 정보를 스크롤한 뒤에도 고정 버튼으로 공격 예시를 펼치고 접는다. 긴 라벨과 왼쪽 정보창/배너의 가림도 같은 작업에서 다룬다. 실제 그리기/글꼴 폭·native 터치·공통 회귀를 구분하며 전체50개 완료로 확대하지 않는다.
 
 20번째 작업은 [명시적 공격 예시 노출과 복귀](qa/2026-11-09-battlefield-fixes/attack-preview/README.md)다. 실제 clip 안의 원본 비율 예시, 접기 수치 복귀와 비동기 닫기/대상/재열기 경합을 처리한다. native40조건/200비교·실제6동작·desktop26단언·정보/카드4묶음·전체 회귀를 검증했다.
+
+21번째 작업은 [첫 모바일 실행 기본 배율](qa/2026-11-09-battlefield-fixes/mobile-default/README.md)이다. Meta static 초기값 한 줄로 모바일1.3/desktop1.0을 맞추고 기존 유효5배율·무효값 복구 규칙·다른 설정을 보존한다. 실제 cold16개/기준fresh2개·desktop8단언·전체 공통 회귀를 검증했다.

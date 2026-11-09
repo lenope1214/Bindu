@@ -945,11 +945,24 @@
         "docs/qa/2026-11-09-battlefield-fixes/attack-preview/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/attack-preview/summary.json"
       ]
+    },
+    {
+      "type": "fresh_mobile_ui_default_and_saved_choices_verified",
+      "facts": [
+        "Exact product delta oneMeta static initializer:mobile1.3,desktop1.0. Existing valid stored choices and invalid1.0fallback untouched.",
+        "Same observer/template baseline2fresh1.0, current16native cold processes validate fresh/missing/valid5/invalid cases; loaded UI scale/games/volume/camera/field correct.",
+        "70current product hashes match built app, onlyMeta differs from035aeb8. Headless macOS default/config8assertions and fresh fullcheck252/86/28 pass.",
+        "First-run captures inspected; no onboarding task/Android/release/accessibility/human/physical completion claim. Full50active."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/mobile-default/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/mobile-default/summary.json"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "Fix I08fresh mobile UI defaults preserving saved choices; then BF49 and physical/human/accessibility. Full50active.",
+    "next_local_action": "Finish task21scoped commit and latest main pull/rebase/push/PR update, then continue BF49high-speed/PERF01 and remaining physical/human/accessibility tasks. Full50active.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },
@@ -995,10 +1008,10 @@
     {
       "id": "I-08",
       "title": "첫 모바일 배율의 기본값 경로 불일치",
-      "implementation": "observed_unfixed",
-      "verification": "fresh_ios_observation_and_source_path",
+      "implementation": "implemented",
+      "verification": "actual_ios16cold_and_desktop8_defaults",
       "evidence": [
-        "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/mobile-default/README.md"
       ]
     },
     {

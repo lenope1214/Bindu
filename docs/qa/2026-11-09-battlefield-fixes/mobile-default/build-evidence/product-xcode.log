@@ -1,0 +1,476 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project /private/tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcodeproj -scheme BinduIOSQA -configuration Debug -destination "generic/platform=iOS Simulator" -derivedDataPath /private/tmp/bindu-mobile-default-product-20261110/derived CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY= DEVELOPMENT_TEAM= ARCHS=arm64 ONLY_ACTIVE_ARCH=YES build
+
+Build settings from command line:
+    ARCHS = arm64
+    CODE_SIGN_IDENTITY = 
+    CODE_SIGNING_ALLOWED = NO
+    DEVELOPMENT_TEAM = 
+    ONLY_ACTIVE_ARCH = YES
+
+2026-11-10 05:53:19.990 xcodebuild[77366:2539059] [MT] IDESchemeActionsInvocationRecord: Device <DVTiOSDeviceSimulatorPlaceholder: 0x7ce9d2dcc0 (Any iOS Simulator Device | undefined_arch)> is missing operatingSystemVersion, operatingSystemVersionWithBuildNumber.
+note: Using codesigning identity override: 
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (1 target)
+    Target 'BinduIOSQA' in project 'BinduIOSQA' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -x c++ -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/ibtool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/Images.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: 4a2520061ad0df04c723d0ff893811ca
+Build description path: /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/XCBuildData/4a2520061ad0df04c723d0ff893811ca.xcbuilddata
+CreateBuildDirectory /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules
+    cd /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcodeproj
+    builtin-create-build-directory /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules
+
+CreateBuildDirectory /tmp/bindu-mobile-default-product-20261110/derived/ModuleCache.noindex
+    cd /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcodeproj
+    builtin-create-build-directory /tmp/bindu-mobile-default-product-20261110/derived/ModuleCache.noindex
+
+CreateBuildDirectory /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex
+    cd /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcodeproj
+    builtin-create-build-directory /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex
+
+CreateBuildDirectory /tmp/bindu-mobile-default-product-20261110/derived/CompilationCache.noindex
+    cd /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcodeproj
+    builtin-create-build-directory /tmp/bindu-mobile-default-product-20261110/derived/CompilationCache.noindex
+
+CreateBuildDirectory /tmp/bindu-mobile-default-product-20261110/derived/Build/Products
+    cd /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcodeproj
+    builtin-create-build-directory /tmp/bindu-mobile-default-product-20261110/derived/Build/Products
+
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk /tmp/bindu-mobile-default-product-20261110/derived/SDKStatCaches.noindex/iphonesimulator27.2-24B8118-cc78df9d8a9de6526dea716b1c70fd8e.sdkstatcache
+    cd /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -o /tmp/bindu-mobile-default-product-20261110/derived/SDKStatCaches.noindex/iphonesimulator27.2-24B8118-cc78df9d8a9de6526dea716b1c70fd8e.sdkstatcache
+
+CreateBuildDirectory /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+    cd /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcodeproj
+    builtin-create-build-directory /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+CreateBuildDirectory /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/PrecompiledHeaders
+    cd /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcodeproj
+    builtin-create-build-directory /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/PrecompiledHeaders
+
+CreateBuildDirectory /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/ExplicitPrecompiledModules
+    cd /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcodeproj
+    builtin-create-build-directory /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+CreateBuildDirectory /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator
+    cd /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcodeproj
+    builtin-create-build-directory /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator
+
+WriteAuxiliaryFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA-9a7617b6db25522741bcbafa0c6398a9-VFS-iphonesimulator/all-product-headers.yaml
+    cd /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcodeproj
+    write-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA-9a7617b6db25522741bcbafa0c6398a9-VFS-iphonesimulator/all-product-headers.yaml
+
+CreateBuildDirectory /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator
+    cd /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcodeproj
+    builtin-create-build-directory /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator
+
+ProcessXCFramework /tmp/bindu-mobile-default-product-20261110/export/MoltenVK.xcframework /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/libMoltenVK.a ios simulator
+    cd /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcodeproj
+    builtin-process-xcframework --xcframework /tmp/bindu-mobile-default-product-20261110/export/MoltenVK.xcframework --platform ios --environment simulator --library-identifier ios-arm64_x86_64-simulator --target-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator
+
+ProcessXCFramework /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcframework /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/libgodot.a ios simulator
+    cd /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcodeproj
+    builtin-process-xcframework --xcframework /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.xcframework --platform ios --environment simulator --library-identifier ios-arm64_x86_64-simulator --target-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator
+
+WriteAuxiliaryFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA.hmap (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    write-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA.hmap
+
+WriteAuxiliaryFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA.DependencyStaticMetadataFileList (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    write-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA.DependencyMetadataFileList (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    write-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA.DependencyMetadataFileList
+
+WriteAuxiliaryFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.SwiftConstValuesFileList (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    write-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA-OutputFileMap.json (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    write-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA-OutputFileMap.json
+
+WriteAuxiliaryFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.SwiftFileList (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    write-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.SwiftFileList
+
+WriteAuxiliaryFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA_const_extract_protocols.json (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    write-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA_const_extract_protocols.json
+
+WriteAuxiliaryFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    write-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+'-std=gnu++11' '-stdlib=libc++' -fmodules -fno-cxx-modules -gmodules '-fmodules-cache-path=/tmp/bindu-mobile-default-product-20261110/derived/ModuleCache.noindex' '-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG' -fpascal-strings -O0 -g -fvisibility-inlines-hidden -iquote /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-generated-files.hmap -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-own-target-headers.hmap -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-all-target-headers.hmap -iquote /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-project-headers.hmap -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/include -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources-normal/arm64 -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources/arm64 -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources -F/tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator -F. -FBinduIOSQA -FBinduIOSQA.xcframework -FMoltenVK.xcframework -Flibgodot_camera.visionos.debug.xcframework -Flibgodot_camera.visionos.release.xcframework -FBinduIOSQA/dylibs -FBinduIOSQA.xcframework/ios-arm64 -FBinduIOSQA.xcframework/ios-arm64_x86_64-simulator -FMoltenVK.xcframework/ios-arm64 -FMoltenVK.xcframework/ios-arm64_x86_64-simulator -Flibgodot_camera.visionos.debug.xcframework/xros-arm64 -Flibgodot_camera.visionos.debug.xcframework/xros-arm64-simulator -Flibgodot_camera.visionos.release.xcframework/xros-arm64 -Flibgodot_camera.visionos.release.xcframework/xros-arm64-simulator
+
+WriteAuxiliaryFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.LinkFileList (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    write-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.LinkFileList
+
+WriteAuxiliaryFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-project-headers.hmap (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    write-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-project-headers.hmap
+
+WriteAuxiliaryFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-own-target-headers.hmap (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    write-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-own-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-generated-files.hmap (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    write-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-generated-files.hmap
+
+WriteAuxiliaryFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-all-target-headers.hmap (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    write-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-all-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-all-non-framework-target-headers.hmap (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    write-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-all-non-framework-target-headers.hmap
+
+MkDir /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    /bin/mkdir -p /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app
+
+CpResource /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/PrivacyInfo.xcprivacy /tmp/bindu-mobile-default-product-20261110/export/PrivacyInfo.xcprivacy (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /tmp/bindu-mobile-default-product-20261110/export/PrivacyInfo.xcprivacy /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app
+
+MkDir /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_output/unthinned (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    /bin/mkdir -p /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_output/unthinned
+
+MkDir /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_output/thinned (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    /bin/mkdir -p /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_output/thinned
+
+CpResource /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/BinduIOSQA.pck /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.pck (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA.pck /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app
+
+CompileStoryboard /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/Launch\ Screen.storyboard (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    /Applications/Xcode.app/Contents/Developer/usr/bin/ibtool --errors --warnings --notices --module BinduIOSQA --output-partial-info-plist /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Launch\ Screen-SBPartialInfo.plist --auto-activate-custom-fonts --target-device iphone --target-device ipad --minimum-deployment-target 15.0 --output-format human-readable-text /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/Launch\ Screen.storyboard --compilation-directory /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build
+
+GenerateAssetSymbols /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/Images.xcassets (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    /Applications/Xcode.app/Contents/Developer/usr/bin/actool /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/Images.xcassets --compile /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app --output-format human-readable-text --notices --warnings --export-dependency-info /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_dependencies --output-partial-info-plist /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_generated_info.plist --app-icon AppIcon --compress-pngs --enable-on-demand-resources YES --development-region en --target-device iphone --target-device ipad --minimum-deployment-target 15.0 --platform iphonesimulator --bundle-identifier dev.bindu.usabilityqa.lifecycle --generate-swift-asset-symbol-extensions NO --generate-swift-asset-symbols /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources/GeneratedAssetSymbols.swift --generate-objc-asset-symbols /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources/GeneratedAssetSymbols.h --generate-asset-symbol-index /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/* com.apple.actool.compilation-results */
+/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources/GeneratedAssetSymbols.h
+/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources/GeneratedAssetSymbols.swift
+
+
+CopyStringsFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/en.lproj/InfoPlist.strings /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/en.lproj/InfoPlist.strings (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-copyStrings --validate --outputencoding binary --outfilename InfoPlist.strings --outdir /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/en.lproj -- /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/en.lproj/InfoPlist.strings
+/tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/en.lproj/InfoPlist.strings:1:1: note: detected encoding of input file as Unicode (UTF-8) (in target 'BinduIOSQA' from project 'BinduIOSQA')
+
+CompileAssetCatalogVariant thinned /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/Images.xcassets (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    /Applications/Xcode.app/Contents/Developer/usr/bin/actool /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/Images.xcassets --compile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_output/thinned --output-format human-readable-text --notices --warnings --export-dependency-info /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_dependencies_thinned --output-partial-info-plist /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_generated_info.plist_thinned --app-icon AppIcon --compress-pngs --enable-on-demand-resources YES --development-region en --target-device iphone --target-device ipad --minimum-deployment-target 15.0 --platform iphonesimulator
+/* com.apple.actool.compilation-results */
+/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_generated_info.plist_thinned
+/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_output/thinned/AppIcon60x60@2x.png
+/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_output/thinned/AppIcon76x76@2x~ipad.png
+/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_output/thinned/Assets.car
+
+
+SwiftDriver BinduIOSQA normal arm64 com.apple.xcode.tools.swift.compiler (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name BinduIOSQA -O @/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.SwiftFileList -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -target arm64-apple-ios15.0-simulator -g -module-cache-path /tmp/bindu-mobile-default-product-20261110/derived/ModuleCache.noindex -Xfrontend -serialize-debugging-options -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator -F /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator -F . -F BinduIOSQA -F BinduIOSQA.xcframework -F MoltenVK.xcframework -F libgodot_camera.visionos.debug.xcframework -F libgodot_camera.visionos.release.xcframework -F BinduIOSQA/dylibs -F BinduIOSQA.xcframework/ios-arm64 -F BinduIOSQA.xcframework/ios-arm64_x86_64-simulator -F MoltenVK.xcframework/ios-arm64 -F MoltenVK.xcframework/ios-arm64_x86_64-simulator -F libgodot_camera.visionos.debug.xcframework/xros-arm64 -F libgodot_camera.visionos.debug.xcframework/xros-arm64-simulator -F libgodot_camera.visionos.release.xcframework/xros-arm64 -F libgodot_camera.visionos.release.xcframework/xros-arm64-simulator -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/bindu-mobile-default-product-20261110/derived/SDKStatCaches.noindex/iphonesimulator27.2-24B8118-cc78df9d8a9de6526dea716b1c70fd8e.sdkstatcache -output-file-map /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/bindu-mobile-default-product-20261110/derived/ModuleCache.noindex -sdk-module-cache-path /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules -emit-dependencies -emit-module -emit-module-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.swiftmodule -serialize-diagnostics -dependency-scan-serialize-diagnostics-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA-dependency-scan.dia -validate-clang-modules-once -clang-build-session-file /tmp/bindu-mobile-default-product-20261110/derived/ModuleCache.noindex/Session.modulevalidation -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -emit-const-values -const-gather-protocols-list /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-generated-files.hmap -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-own-target-headers.hmap -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-project-headers.hmap -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources-normal/arm64 -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources/arm64 -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources -emit-objc-header -emit-objc-header-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA-Swift.h -import-objc-header /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/dummy.h -working-directory /tmp/bindu-mobile-default-product-20261110/export -experimental-emit-module-separately -disable-cmo
+
+LinkStoryboards (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    /Applications/Xcode.app/Contents/Developer/usr/bin/ibtool --errors --warnings --notices --module BinduIOSQA --target-device iphone --target-device ipad --minimum-deployment-target 15.0 --output-format human-readable-text --link /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Launch\ Screen.storyboardc
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/DeveloperToolsSupport-D4JQ8HWCCS6HSFRZVXKROQXI.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/_Builtin_stddef-A296CWFZU7CSAKMDG70UU2BT6.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/_Builtin_float-239U8MNRDZ5CBHBHOS07NYG8L.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/SwiftShims-3E10DYFEENMEM3GY0VZWW52W.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/_SwiftConcurrencyShims-12OWL40COY9MYZESX70PW3ID5.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/_Builtin_stdarg-CAYSVT5JP9WFIS2V1IT1WU3YH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/ptrcheck-E7BTCMK8UGOH9TNGB04UW0SDC.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/ptrauth-80Q048ARDS6RBSDFZ097X80WA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/_AvailabilityInternal-3PW8C9E0HQL5DL41FASPF2MSA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/_Builtin_stdbool-A43TL5OBDHAHFC2X42VBWKBQF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/_DarwinFoundation1-F571U1T9S708MJSJHBY4DX28P.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/_Builtin_limits-EHXOR0T5PHK9U7V2UH3Y9NPER.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/_DarwinFoundation2-C6FA1FEC6HRUJOZHCYTH3KQJL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/sys_types-5PXTMJB6UC456RIJA97LYV2ZH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/string_h-4FW121E58QYZLSV9ZKG6QN717.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/_Builtin_stdint-A4Y9HYPNE3X7K5WUUKCILUY8N.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/_Builtin_tgmath-BRR35BJ1V151AALC3T1MUBQ8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/_Builtin_stdatomic-36IZY8F2XCEDO8IL8STHGZPBG.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/_DarwinFoundation3-3DOJX5NL66MDM5KMXB0AZOSNP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/_Builtin_intrinsics-B61948PS6UVH499XGLP1GN6V8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/_Builtin_inttypes-EK0XHHUNEUTH4AYW7L42IHSFA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/Darwin-51WWVBTGC01JE887CE1MKKCBS.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/simd-6IEZNMXRMCLTE6RICKXJF1UBW.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/MachO-EX7AV5AXPN1DJ8J34Y8O2LUOC.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/ObjectiveC-CKO90FKT3MEKHGBXWH6SMZIOY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/os_object-BX6CZO02LXGDLQ9BP0OAVXZM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/os_workgroup-5IABTBVF56ZXJNYZJ3189EYKO.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/Dispatch-4K6G0BRYNL0TTWNC4L8IZNU7K.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/Spatial-B3PTA41A4OV051SVT4RX8KGNM.pcm
+
+LinkAssetCatalog /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/Images.xcassets (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-linkAssetCatalog --thinned /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_output/thinned --thinned-dependencies /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_dependencies_thinned --thinned-info-plist-content /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_generated_info.plist_thinned --unthinned /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_output/unthinned --unthinned-dependencies /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_generated_info.plist_unthinned --output /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app --plist-output /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_generated_info.plist
+note: Emplaced /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/AppIcon76x76@2x~ipad.png (in target 'BinduIOSQA' from project 'BinduIOSQA')
+note: Emplaced /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/Assets.car (in target 'BinduIOSQA' from project 'BinduIOSQA')
+note: Emplaced /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/AppIcon60x60@2x.png (in target 'BinduIOSQA' from project 'BinduIOSQA')
+
+ProcessInfoPlistFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/Info.plist /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/BinduIOSQA-Info.plist (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-infoPlistUtility /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/BinduIOSQA-Info.plist -producttype com.apple.product-type.application -genpkginfo /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/PkgInfo -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Launch\ Screen-SBPartialInfo.plist -additionalcontentfile /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/assetcatalog_generated_info.plist -o /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/Info.plist
+warning: The value for NSCameraUsageDescription must be a non-empty string. (in target 'BinduIOSQA' from project 'BinduIOSQA')
+warning: The value for NSMicrophoneUsageDescription must be a non-empty string. (in target 'BinduIOSQA' from project 'BinduIOSQA')
+warning: The value for NSPhotoLibraryUsageDescription must be a non-empty string. (in target 'BinduIOSQA' from project 'BinduIOSQA')
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/CoreFoundation-I5W3QK73CKQWGI6TJ44C3NRI.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/XPC-8VVUUWYS6CCN2TJ7BRBSLQH2Z.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/os-2T9YGYNFMYWJA7LZ6J7EH5QX4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/Security-DOM28HY7CCQ6X6BCPL7OF98YK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/CoreGraphics-3SSTR21HR3VMCHSN5VGKVRR0W.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/CFNetwork-7TBETXUMPNDJWT8IMA5Z6PYY9.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/CoreAudioTypes-D7CRAFRTH0GZDKVO7CQMSZ0LL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/CoreAudio-7TLMFA8ST4WUYQ4BCJL38827H.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/ImageIO-7PR7O96CAGQ6K3EG8W2Y99J7M.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/CoreText-CU34P6R57KEQGHEDF37JXP633.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/Foundation-78OENRUWAFB2J2KLJSW5UJT7T.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/Accessibility-11SQB90JM9YSFVOTTZANTIPX6.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/DataDetection-83HKMRX8YO4OUM20I22B6SR6W.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/_LocationEssentials-6FWEN9MS5SYGHVLVK6NG6Q1JF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/IOSurface-7OGYQRGJGTS731IGZNP5XMDMG.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/CoreTransferable-D4RR2H6NVMIZELCFHIQYXCIX2.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/OpenGLES-8MFB5TI3WK1YPYD311JZEA02I.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/UIUtilities-15SPX0PUIZ9V5D6XUVO8WJYWM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/OSLog-D3KI4PA5JKU7E8ZVKKYGEI6OY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/UserNotifications-63I3T4S81EX53A5DFHOK9JB17.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/CoreData-4SFJMTE6RANVNRMU7M0OUOI1B.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/Symbols-CAVM5VRA3LYRCI1HK4AJEYUNF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/UniformTypeIdentifiers-9PJB63EY9M0FKGG46VEQGE7YS.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/FileProvider-20RO715GTQ5G4MX5UI12Q5IWK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/Metal-8NRPFJOL1EW8VJRZY5FA8Y0ZS.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/CoreLocation-4J67E3ZZL7YM1TNJRP2KWV0V0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/CoreMotion-7BT71TIWN6HRI0V0BSOYXJOCP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/CoreVideo-ANOHKVFOHVN4S242SR77R450W.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/QuartzCore-5C0JEXF5L4178XH59DJIXSCM4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/CoreImage-7SN2MZCSG6217MQJSGTQT9JGI.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/CoreMedia-12XS714UANZ64LHZ7FNXBTEQQ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/SwiftUICore-47GG50IKNXJLWKCMWKYWYEV6F.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/UIKit-5ZK6Z4SHGFTM6QNKSWOXW4XVB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules/SwiftUI-DMH4WQJIZXJF5AQAEDYDB7EI9.pcm
+
+SwiftGeneratePch normal arm64 Compiling\ bridging\ header (in target 'BinduIOSQA' from project 'BinduIOSQA')
+1 warning generated.
+/tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/dummy.h:31:9: warning: #pragma once in main file
+29 | /**************************************************************************/
+30 | 
+31 | #pragma once
+   |         `- warning: #pragma once in main file
+32 | 
+33 | // #import <Foundation/Foundation.h>
+
+SwiftDriverJobDiscovery normal arm64 Compiling bridging header (in target 'BinduIOSQA' from project 'BinduIOSQA')
+
+SwiftCompile normal arm64 Compiling\ GeneratedAssetSymbols.swift /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'BinduIOSQA' from project 'BinduIOSQA')
+
+SwiftCompile normal arm64 /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-SwiftPerFileCompile GeneratedAssetSymbols.swift
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ BinduIOSQA (in target 'BinduIOSQA' from project 'BinduIOSQA')
+
+SwiftCompile normal arm64 (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    
+
+SwiftCompile normal arm64 Compiling\ dummy.swift /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/dummy.swift (in target 'BinduIOSQA' from project 'BinduIOSQA')
+
+SwiftCompile normal arm64 (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling dummy.swift (in target 'BinduIOSQA' from project 'BinduIOSQA')
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for BinduIOSQA (in target 'BinduIOSQA' from project 'BinduIOSQA')
+
+SwiftDriver\ Compilation\ Requirements BinduIOSQA normal arm64 com.apple.xcode.tools.swift.compiler (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name BinduIOSQA -O @/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.SwiftFileList -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -target arm64-apple-ios15.0-simulator -g -module-cache-path /tmp/bindu-mobile-default-product-20261110/derived/ModuleCache.noindex -Xfrontend -serialize-debugging-options -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator -F /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator -F . -F BinduIOSQA -F BinduIOSQA.xcframework -F MoltenVK.xcframework -F libgodot_camera.visionos.debug.xcframework -F libgodot_camera.visionos.release.xcframework -F BinduIOSQA/dylibs -F BinduIOSQA.xcframework/ios-arm64 -F BinduIOSQA.xcframework/ios-arm64_x86_64-simulator -F MoltenVK.xcframework/ios-arm64 -F MoltenVK.xcframework/ios-arm64_x86_64-simulator -F libgodot_camera.visionos.debug.xcframework/xros-arm64 -F libgodot_camera.visionos.debug.xcframework/xros-arm64-simulator -F libgodot_camera.visionos.release.xcframework/xros-arm64 -F libgodot_camera.visionos.release.xcframework/xros-arm64-simulator -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/bindu-mobile-default-product-20261110/derived/SDKStatCaches.noindex/iphonesimulator27.2-24B8118-cc78df9d8a9de6526dea716b1c70fd8e.sdkstatcache -output-file-map /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/bindu-mobile-default-product-20261110/derived/ModuleCache.noindex -sdk-module-cache-path /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules -emit-dependencies -emit-module -emit-module-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.swiftmodule -serialize-diagnostics -dependency-scan-serialize-diagnostics-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA-dependency-scan.dia -validate-clang-modules-once -clang-build-session-file /tmp/bindu-mobile-default-product-20261110/derived/ModuleCache.noindex/Session.modulevalidation -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -emit-const-values -const-gather-protocols-list /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-generated-files.hmap -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-own-target-headers.hmap -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-project-headers.hmap -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources-normal/arm64 -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources/arm64 -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources -emit-objc-header -emit-objc-header-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA-Swift.h -import-objc-header /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/dummy.h -working-directory /tmp/bindu-mobile-default-product-20261110/export -experimental-emit-module-separately -disable-cmo
+
+SwiftMergeGeneratedHeaders /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources/BinduIOSQA-Swift.h /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA-Swift.h (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-swiftHeaderTool -arch arm64 /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA-Swift.h -o /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources/BinduIOSQA-Swift.h
+
+Copy /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.swiftmodule/arm64-apple-ios-simulator.swiftmodule /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.swiftmodule (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.swiftmodule /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.swiftmodule/arm64-apple-ios-simulator.swiftmodule
+
+Copy /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.swiftmodule/arm64-apple-ios-simulator.abi.json /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.abi.json (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.abi.json /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.swiftmodule/arm64-apple-ios-simulator.abi.json
+
+Copy /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.swiftmodule/arm64-apple-ios-simulator.swiftdoc /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.swiftdoc (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.swiftdoc /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.swiftmodule/arm64-apple-ios-simulator.swiftdoc
+
+Copy /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.swiftsourceinfo (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.swiftsourceinfo /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.swiftmodule/Project/arm64-apple-ios-simulator.swiftsourceinfo
+
+CompileC /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/dummy-c158635ab7e079e7ff54a2dc7cd015cb.o /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/dummy.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    
+    Using response file: /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /tmp/bindu-mobile-default-product-20261110/derived/SDKStatCaches.noindex/iphonesimulator27.2-24B8118-cc78df9d8a9de6526dea716b1c70fd8e.sdkstatcache -target arm64-apple-ios15.0-simulator -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -fmodules-prune-interval\=86400 -fmodules-prune-after\=345600 -fbuild-session-file\=/tmp/bindu-mobile-default-product-20261110/derived/ModuleCache.noindex/Session.modulevalidation -fmodules-validate-once-per-build-session -Wnon-modular-include-in-framework-module -Werror\=non-modular-include-in-framework-module -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Werror\=return-type -Werror\=deprecated-objc-isa-usage -Werror\=objc-root-class -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wunused-function -Wno-unused-label -Wno-unused-parameter -Wunused-variable -Wunused-value -Wempty-body -Wuninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wconstant-conversion -Wint-conversion -Wbool-conversion -Wenum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /tmp/bindu-mobile-default-product-20261110/derived/Index.noindex/DataStore @/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/dummy-c158635ab7e079e7ff54a2dc7cd015cb.d --serialize-diagnostics /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/dummy-c158635ab7e079e7ff54a2dc7cd015cb.dia -c /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/dummy.cpp -o /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/dummy-c158635ab7e079e7ff54a2dc7cd015cb.o -index-unit-output-path /BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/dummy-c158635ab7e079e7ff54a2dc7cd015cb.o
+
+SwiftDriverJobDiscovery normal arm64 Compiling GeneratedAssetSymbols.swift (in target 'BinduIOSQA' from project 'BinduIOSQA')
+
+SwiftDriver\ Compilation BinduIOSQA normal arm64 com.apple.xcode.tools.swift.compiler (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-Swift-Compilation -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name BinduIOSQA -O @/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.SwiftFileList -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -target arm64-apple-ios15.0-simulator -g -module-cache-path /tmp/bindu-mobile-default-product-20261110/derived/ModuleCache.noindex -Xfrontend -serialize-debugging-options -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator -F /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator -F . -F BinduIOSQA -F BinduIOSQA.xcframework -F MoltenVK.xcframework -F libgodot_camera.visionos.debug.xcframework -F libgodot_camera.visionos.release.xcframework -F BinduIOSQA/dylibs -F BinduIOSQA.xcframework/ios-arm64 -F BinduIOSQA.xcframework/ios-arm64_x86_64-simulator -F MoltenVK.xcframework/ios-arm64 -F MoltenVK.xcframework/ios-arm64_x86_64-simulator -F libgodot_camera.visionos.debug.xcframework/xros-arm64 -F libgodot_camera.visionos.debug.xcframework/xros-arm64-simulator -F libgodot_camera.visionos.release.xcframework/xros-arm64 -F libgodot_camera.visionos.release.xcframework/xros-arm64-simulator -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/bindu-mobile-default-product-20261110/derived/SDKStatCaches.noindex/iphonesimulator27.2-24B8118-cc78df9d8a9de6526dea716b1c70fd8e.sdkstatcache -output-file-map /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA-OutputFileMap.json -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/bindu-mobile-default-product-20261110/derived/ModuleCache.noindex -sdk-module-cache-path /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules -emit-dependencies -emit-module -emit-module-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.swiftmodule -serialize-diagnostics -dependency-scan-serialize-diagnostics-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA-dependency-scan.dia -validate-clang-modules-once -clang-build-session-file /tmp/bindu-mobile-default-product-20261110/derived/ModuleCache.noindex/Session.modulevalidation -Xcc -fmodules-prune-interval\=86400 -Xcc -fmodules-prune-after\=345600 -emit-const-values -const-gather-protocols-list /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-generated-files.hmap -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-own-target-headers.hmap -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA-project-headers.hmap -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources-normal/arm64 -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources/arm64 -Xcc -I/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/DerivedSources -emit-objc-header -emit-objc-header-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA-Swift.h -import-objc-header /tmp/bindu-mobile-default-product-20261110/export/BinduIOSQA/dummy.h -working-directory /tmp/bindu-mobile-default-product-20261110/export -experimental-emit-module-separately -disable-cmo
+
+Ld /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/BinduIOSQA normal (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++ -Xlinker -reproducible -target arm64-apple-ios15.0-simulator -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk -O0 -Xlinker -no_warn_duplicate_libraries -L/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator -L. -LBinduIOSQA -LBinduIOSQA.xcframework -LMoltenVK.xcframework -Llibgodot_camera.visionos.debug.xcframework -Llibgodot_camera.visionos.release.xcframework -LBinduIOSQA/dylibs -LBinduIOSQA.xcframework/ios-arm64 -LBinduIOSQA.xcframework/ios-arm64_x86_64-simulator -LMoltenVK.xcframework/ios-arm64 -LMoltenVK.xcframework/ios-arm64_x86_64-simulator -Llibgodot_camera.visionos.debug.xcframework/xros-arm64 -Llibgodot_camera.visionos.debug.xcframework/xros-arm64-simulator -Llibgodot_camera.visionos.release.xcframework/xros-arm64 -Llibgodot_camera.visionos.release.xcframework/xros-arm64-simulator -F/tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator -F. -FBinduIOSQA -FBinduIOSQA.xcframework -FMoltenVK.xcframework -Flibgodot_camera.visionos.debug.xcframework -Flibgodot_camera.visionos.release.xcframework -FBinduIOSQA/dylibs -FBinduIOSQA.xcframework/ios-arm64 -FBinduIOSQA.xcframework/ios-arm64_x86_64-simulator -FMoltenVK.xcframework/ios-arm64 -FMoltenVK.xcframework/ios-arm64_x86_64-simulator -Flibgodot_camera.visionos.debug.xcframework/xros-arm64 -Flibgodot_camera.visionos.debug.xcframework/xros-arm64-simulator -Flibgodot_camera.visionos.release.xcframework/xros-arm64 -Flibgodot_camera.visionos.release.xcframework/xros-arm64-simulator -filelist /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.LinkFileList -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @executable_path/Frameworks -Xlinker -dead_strip -Xlinker -object_path_lto -Xlinker /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA_lto.o -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -dependency_info -Xlinker /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA_dependency_info.dat -stdlib\=libc++ -fobjc-link-runtime -L/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.swiftmodule -lMoltenVK -lgodot -o /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/BinduIOSQA
+
+CopySwiftLibs /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/BinduIOSQA --scan-folder /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/Frameworks --scan-folder /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/PlugIns --scan-folder /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/SystemExtensions --scan-folder /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/Extensions --platform iphonesimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os --back-deploy-swift-span
+Ignoring --strip-bitcode because --sign was not passed
+
+ExtractAppIntentsMetadata (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name BinduIOSQA --sdk-root /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.2.sdk --xcode-version 27B52 --platform-family iOS --deployment-target 15.0 --bundle-identifier dev.bindu.usabilityqa.lifecycle --output /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app --target-triple arm64-apple-ios15.0-simulator --binary-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/BinduIOSQA --dependency-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA_dependency_info.dat --stringsdata-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.SwiftFileList --metadata-file-list /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA.DependencyMetadataFileList --static-metadata-file-list /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA.DependencyStaticMetadataFileList --swift-const-vals-list /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/Objects-normal/arm64/BinduIOSQA.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --no-app-shortcuts-localization
+2026-11-10 05:53:24.730 appintentsmetadataprocessor[77466:2539547] Starting App Intents metadata extraction
+2026-11-10 05:53:24.733 appintentsmetadataprocessor[77466:2539547] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+
+GenerateDSYMFile /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app.dSYM /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/BinduIOSQA (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    export PATH\=/Applications/Xcode.app/Contents/SharedFrameworks/SwiftBuild.framework/Versions/A/PlugIns/SWBBuildService.bundle/Contents/PlugIns/SWBUniversalPlatformPlugin.bundle/Contents/Frameworks/SWBUniversalPlatform.framework/Resources:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/local/bin:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/libexec:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/usr/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/usr/local/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin:/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/local/bin:/Applications/Xcode.app/Contents/Developer/usr/bin:/Applications/Xcode.app/Contents/Developer/usr/local/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/opt/homebrew/opt/ruby/bin:/Users/leeseongjin/Library/pnpm:/opt/homebrew/opt/postgresql@17/bin:/Users/leeseongjin/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/Users/leeseongjin/.nvm/versions/node/v24.15.0/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/Users/leeseongjin/.codex/tmp/arg0-macos/codex-arg0pYYZFQ:/Users/leeseongjin/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/leeseongjin/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/leeseongjin/Library/Android/sdk/emulator:/Users/leeseongjin/Library/Android/sdk/platform-tools:/Users/leeseongjin/.gem/ruby/2.6.0/bin:/Users/leeseongjin/.maestro/bin
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/dsymutil /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/BinduIOSQA -o /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app.dSYM
+
+AppIntentsSSUTraining (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/Info.plist --temp-dir-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/ssu --bundle-id dev.bindu.usabilityqa.lifecycle --product-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app --extracted-metadata-path /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/Metadata.appintents --metadata-file-list /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/BinduIOSQA.build/Debug-iphonesimulator/BinduIOSQA.build/BinduIOSQA.DependencyMetadataFileList --source-file /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app/Info.plist --archive-ssu-assets
+2026-11-10 05:53:24.762 appintentsnltrainingprocessor[77468:2539549] Parsing options for appintentsnltrainingprocessor
+2026-11-10 05:53:24.762 appintentsnltrainingprocessor[77468:2539549] Starting AppIntents SSU YAML Generation
+2026-11-10 05:53:24.762 appintentsnltrainingprocessor[77468:2539549] No AppShortcuts found - Skipping.
+
+RegisterExecutionPolicyException /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-RegisterExecutionPolicyException /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app
+
+Validate /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    builtin-validationUtility /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app -shallow-bundle -infoplist-subpath Info.plist
+
+Touch /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app (in target 'BinduIOSQA' from project 'BinduIOSQA')
+    cd /tmp/bindu-mobile-default-product-20261110/export
+    /usr/bin/touch -c /tmp/bindu-mobile-default-product-20261110/derived/Build/Products/Debug-iphonesimulator/BinduIOSQA.app
+
+PruneExplicitPrecompiledModules /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /tmp/bindu-mobile-default-product-20261110/derived/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+PruneExplicitPrecompiledModules /tmp/bindu-mobile-default-product-20261110/derived/SDKExplicitPrecompiledModules
+
+** BUILD SUCCEEDED **
+

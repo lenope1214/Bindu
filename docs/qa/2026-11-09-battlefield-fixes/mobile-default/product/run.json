@@ -1,0 +1,357 @@
+{
+  "scope": "Actual ARM64 debug iOS Simulator native cold startup; QA autoload prepares only its isolated save before main._load_best. No manual scale assignment to Meta, physical device or release claims.",
+  "cases": {
+    "phone/fresh": {
+      "passed": true,
+      "pid": 78747,
+      "expected": 1.3,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (142.5, 0.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 0,
+        "initial_save_exists": false,
+        "initial_scale": 1.3,
+        "loaded_scale": 1.3,
+        "scenario": "fresh",
+        "settled": true,
+        "ui_root_scale": [
+          1.29999995231628,
+          1.29999995231628
+        ],
+        "volume": 1.0
+      },
+      "state_sha256": "52e303e2f209efb4cf31a9eb7641c6db888c95b5c3f05c0f5202b6cf4a1c355d",
+      "capture_sha256": "41177e4cf8a4b45657e62fa7280145613d8e043c923d3189d42b07cfa29afc66"
+    },
+    "phone/missing": {
+      "passed": true,
+      "pid": 79044,
+      "expected": 1.3,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (142.5, 0.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 7,
+        "initial_save_exists": true,
+        "initial_scale": 1.3,
+        "loaded_scale": 1.3,
+        "scenario": "missing",
+        "settled": true,
+        "ui_root_scale": [
+          1.29999995231628,
+          1.29999995231628
+        ],
+        "volume": 0.37
+      },
+      "state_sha256": "f16e970023f28d1c27d7b977b58d25be714d08ab7a26fd351b8e1eef407e1ee7",
+      "capture_sha256": "7632f4cbee537b24c51b6e296579cda94c126b0b0e5c0161a405b21155d76549"
+    },
+    "phone/saved-0.7": {
+      "passed": true,
+      "pid": 79092,
+      "expected": 0.7,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (142.5, 0.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 7,
+        "initial_save_exists": true,
+        "initial_scale": 1.3,
+        "loaded_scale": 0.7,
+        "scenario": "saved:0.7",
+        "settled": true,
+        "ui_root_scale": [
+          0.699999988079071,
+          0.699999988079071
+        ],
+        "volume": 0.37
+      },
+      "state_sha256": "6499602bcd827e4dbf6af7e62abf1ba694e048f5981c793aa820077ad0dc2080",
+      "capture_sha256": "b50b0e23faa31d6576f40ac2bfef5e402c453569964b3ce219e8410d6787ed6f"
+    },
+    "phone/saved-0.85": {
+      "passed": true,
+      "pid": 79142,
+      "expected": 0.85,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (142.5, 0.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 7,
+        "initial_save_exists": true,
+        "initial_scale": 1.3,
+        "loaded_scale": 0.85,
+        "scenario": "saved:0.85",
+        "settled": true,
+        "ui_root_scale": [
+          0.850000023841858,
+          0.850000023841858
+        ],
+        "volume": 0.37
+      },
+      "state_sha256": "59e74b384c6a62f677eed9e9e6d50a9828def0d29681ea0c540b553c5a4c6b65",
+      "capture_sha256": "e03d21795dab7c34574af80b738fa5c164634c046a30350ed38caf8f8562807f"
+    },
+    "phone/saved-1.0": {
+      "passed": true,
+      "pid": 79191,
+      "expected": 1.0,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (142.5, 0.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 7,
+        "initial_save_exists": true,
+        "initial_scale": 1.3,
+        "loaded_scale": 1.0,
+        "scenario": "saved:1.0",
+        "settled": true,
+        "ui_root_scale": [
+          1.0,
+          1.0
+        ],
+        "volume": 0.37
+      },
+      "state_sha256": "ca83b664d5879ef31f4b6ba8f82358a1b512cd419abd617799203a2ab105534e",
+      "capture_sha256": "b4430f9d65c3f04721aaed70ccb6856d4216053a2e87bbdcf043af592d284194"
+    },
+    "phone/saved-1.15": {
+      "passed": true,
+      "pid": 79241,
+      "expected": 1.15,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (142.5, 0.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 7,
+        "initial_save_exists": true,
+        "initial_scale": 1.3,
+        "loaded_scale": 1.15,
+        "scenario": "saved:1.15",
+        "settled": true,
+        "ui_root_scale": [
+          1.14999997615814,
+          1.14999997615814
+        ],
+        "volume": 0.37
+      },
+      "state_sha256": "bc9499514bf2cc143bdf69fcb5a614c83082ba57dca9cd14945f9d7b3ce84853",
+      "capture_sha256": "b711c4f84885e052d5d36dd78f4862854e049e4aab04c05e1e20e1c880c852b8"
+    },
+    "phone/saved-1.3": {
+      "passed": true,
+      "pid": 79290,
+      "expected": 1.3,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (142.5, 0.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 7,
+        "initial_save_exists": true,
+        "initial_scale": 1.3,
+        "loaded_scale": 1.3,
+        "scenario": "saved:1.3",
+        "settled": true,
+        "ui_root_scale": [
+          1.29999995231628,
+          1.29999995231628
+        ],
+        "volume": 0.37
+      },
+      "state_sha256": "44d9eb2fdffb32b351116c01b1204f2e190319e690654f3da2913daee6a6ff57",
+      "capture_sha256": "7789321fb359d6ba538d3424290ae41d19a073ccff62141bec4f87f91907be10"
+    },
+    "phone/saved-0.93": {
+      "passed": true,
+      "pid": 79339,
+      "expected": 1.0,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (142.5, 0.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 7,
+        "initial_save_exists": true,
+        "initial_scale": 1.3,
+        "loaded_scale": 1.0,
+        "scenario": "saved:0.93",
+        "settled": true,
+        "ui_root_scale": [
+          1.0,
+          1.0
+        ],
+        "volume": 0.37
+      },
+      "state_sha256": "37abf7a75dd0e5ee001cdd8f6b9cc4b8c44c6b1f1ba1d14640547f057d0011eb",
+      "capture_sha256": "fb19078a340671e9090c1b4363e5c57f769e6b58a4319cd78bd00d440e5ce953"
+    },
+    "tablet/fresh": {
+      "passed": true,
+      "pid": 79425,
+      "expected": 1.3,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 81.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 0,
+        "initial_save_exists": false,
+        "initial_scale": 1.3,
+        "loaded_scale": 1.3,
+        "scenario": "fresh",
+        "settled": true,
+        "ui_root_scale": [
+          1.29999995231628,
+          1.29999995231628
+        ],
+        "volume": 1.0
+      },
+      "state_sha256": "7f6db101d9c4d554a4e9de2a94e4160339ff2c92f993ed41bc720c12361e8687",
+      "capture_sha256": "d0c0f56862f2bc27c79a45228b5650931351e692b74dc94ad58563c0ead92b7a"
+    },
+    "tablet/missing": {
+      "passed": true,
+      "pid": 79714,
+      "expected": 1.3,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 81.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 7,
+        "initial_save_exists": true,
+        "initial_scale": 1.3,
+        "loaded_scale": 1.3,
+        "scenario": "missing",
+        "settled": true,
+        "ui_root_scale": [
+          1.29999995231628,
+          1.29999995231628
+        ],
+        "volume": 0.37
+      },
+      "state_sha256": "140af2e2a45f9aad36567b699da11395a314cedd5d489bdd54dfdf8d689fe195",
+      "capture_sha256": "5ece2130bd0f3200153313032a42cc3a17ac57651e456790be8d080f09430a29"
+    },
+    "tablet/saved-0.7": {
+      "passed": true,
+      "pid": 79763,
+      "expected": 0.7,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 81.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 7,
+        "initial_save_exists": true,
+        "initial_scale": 1.3,
+        "loaded_scale": 0.7,
+        "scenario": "saved:0.7",
+        "settled": true,
+        "ui_root_scale": [
+          0.699999988079071,
+          0.699999988079071
+        ],
+        "volume": 0.37
+      },
+      "state_sha256": "c8cd142a42ad17e7d609ea01ef981c04ac8729a8827d5be1eefe9ba89c024762",
+      "capture_sha256": "ef884b076e78a837b4fe9e9613daefa11acc7d299f2697703ad9a50f74a34a78"
+    },
+    "tablet/saved-0.85": {
+      "passed": true,
+      "pid": 79812,
+      "expected": 0.85,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 81.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 7,
+        "initial_save_exists": true,
+        "initial_scale": 1.3,
+        "loaded_scale": 0.85,
+        "scenario": "saved:0.85",
+        "settled": true,
+        "ui_root_scale": [
+          0.850000023841858,
+          0.850000023841858
+        ],
+        "volume": 0.37
+      },
+      "state_sha256": "41bd5de0f507616de0ef9725eeaa92ef3f851bc90171cfed7474092ea198e4bd",
+      "capture_sha256": "b1ff20abb7be86f578531b4e97ceeb5badd1b57d830e28b4c0665542c8bb2311"
+    },
+    "tablet/saved-1.0": {
+      "passed": true,
+      "pid": 79863,
+      "expected": 1.0,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 81.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 7,
+        "initial_save_exists": true,
+        "initial_scale": 1.3,
+        "loaded_scale": 1.0,
+        "scenario": "saved:1.0",
+        "settled": true,
+        "ui_root_scale": [
+          1.0,
+          1.0
+        ],
+        "volume": 0.37
+      },
+      "state_sha256": "ec56ef56640a54a8d33fa84d850b49f374f23e8ce5e83b585b0c35478e577fc9",
+      "capture_sha256": "0a5673c7635cad18b643bdc3d2d9e3a73b8adcdbfaef13b8c5f7894ce93e6ef7"
+    },
+    "tablet/saved-1.15": {
+      "passed": true,
+      "pid": 79913,
+      "expected": 1.15,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 81.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 7,
+        "initial_save_exists": true,
+        "initial_scale": 1.3,
+        "loaded_scale": 1.15,
+        "scenario": "saved:1.15",
+        "settled": true,
+        "ui_root_scale": [
+          1.14999997615814,
+          1.14999997615814
+        ],
+        "volume": 0.37
+      },
+      "state_sha256": "512d3b6247c11a8adbd5bba971872c6ff849b1b54308906b08811bcbcf8a6d91",
+      "capture_sha256": "b981dbde5860933bb0fe3f6c90745683e981336ec225b0d354c5c5bec216dddc"
+    },
+    "tablet/saved-1.3": {
+      "passed": true,
+      "pid": 79967,
+      "expected": 1.3,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 81.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 7,
+        "initial_save_exists": true,
+        "initial_scale": 1.3,
+        "loaded_scale": 1.3,
+        "scenario": "saved:1.3",
+        "settled": true,
+        "ui_root_scale": [
+          1.29999995231628,
+          1.29999995231628
+        ],
+        "volume": 0.37
+      },
+      "state_sha256": "8fbf875bf16cfaab4c34276a80621ebbe45261ecec4486954413b60a8a1d79f2",
+      "capture_sha256": "a3b92a2856772d750e059f88c5a8e38a241e77c22d57b26cf36f4f8eb962152e"
+    },
+    "tablet/saved-0.93": {
+      "passed": true,
+      "pid": 80019,
+      "expected": 1.0,
+      "startup": {
+        "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 81.0)]",
+        "field": "(1280.0, 720.0)",
+        "games": 7,
+        "initial_save_exists": true,
+        "initial_scale": 1.3,
+        "loaded_scale": 1.0,
+        "scenario": "saved:0.93",
+        "settled": true,
+        "ui_root_scale": [
+          1.0,
+          1.0
+        ],
+        "volume": 0.37
+      },
+      "state_sha256": "a2cd9d0af004649b1acadf3d63c04354d8fc901d5c9db0fc519c75095c4ccc00",
+      "capture_sha256": "b03c3c297e3a33cb469eb63a9b5614caed1ea068db6a660db3ec518dc48bad95"
+    }
+  }
+}

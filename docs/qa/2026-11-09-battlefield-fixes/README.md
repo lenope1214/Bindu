@@ -1,6 +1,6 @@
 # 전장 사용성 수정 검증 기록
 
-**최신 후속:** [공격 예시의 즉시 노출·복귀](attack-preview/README.md). 핵심 수치 읽기 다음으로 요청한 예시 전체를 바로 보여 주고 접으면 수치로 복귀한다.40조건·기기별 실제 터치·빠른 재열기 경합을 검증했다. 첫 설치 배율 I-08·실기기/사람 과제·고배속/PERF-01은 별도다.
+**최신 후속:** [첫 모바일 실행 배율](mobile-default/README.md). 저장 없는 첫 실행을1.3으로 맞추며 유효 저장5배율을 보존한다. 실제 iOS16cold 시작·기준fresh2개·desktop8단언·전체 회귀를 확인했다. [정보 수치](inspector-reading/README.md)와 [예시 읽기](attack-preview/README.md)는 각 단계 소스의 증거다. 실기기/사람·접근성·고배속/PERF-01은 미완료다.
 
 **lifecycle 후속:** [실제 iOS Simulator lifecycle](ios-runtime/README.md)에서7상태129개 native 단언과 bank/skip/조준 원자료35개 검사를 통과했다. 실제 UIKit 앱 전환·같은 PID 재개·새 PID 저장 복원을 확인했다. custom ARM64 debug 싱글 QA이며 제품 소스는 변경하지 않았다. 실기기·잠금·전화·Jetsam·멀티·성능·사람 과제는 미완료다.
 

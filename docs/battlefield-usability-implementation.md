@@ -132,3 +132,5 @@
 [정보 읽기 후속](qa/2026-11-09-battlefield-fixes/inspector-reading/README.md): I-09의 제목 아래 핵심 수치 네 개·스크롤 밖 고정 공격 예시 버튼·긴 라벨 폭·좌우 정보창을 구분하는 배너 배치를 수정한다. 중간 화면의 남은 잘림/배너 겹침과 최종 재검증을 구분한다. 첫 설치 배율 I-08·실기기/사람 과제·BF-49/PERF-01은 별도 미완료다.
 
 [공격 예시 후속](qa/2026-11-09-battlefield-fixes/attack-preview/README.md): I-11의 전체 예시 노출·16:9/실제 clip 맞춤·접기 수치 복귀·닫고 같은 대상 재열기의 오래된 callback을 수정했다. native40조건/200상태 비교·실제6동작·desktop26단언과 기존4묶음·공통 전체 회귀를 통과했다. 새 예시 읽기 범위92/PASS와 전체50개 active는 구분한다.
+
+[첫 모바일 배율 후속](qa/2026-11-09-battlefield-fixes/mobile-default/README.md): I-08의 저장 없는 경로만 static 초기값1.3/desktop1.0으로 일치시켰다. 두 기기16cold 시작에서 유효 저장5개·다른 설정·기존 무효값 복구·카메라/전장을 보존했다. 실제 이전fresh2개·desktop8단언·전체 공통 회귀와 구분한다. 전체50개·물리/사람/고배속 과제는 active다.

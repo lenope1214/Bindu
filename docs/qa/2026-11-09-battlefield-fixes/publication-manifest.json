@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/README.md",
-      "bytes": 13238,
-      "sha256": "266969ddd891b18d4e7b0f2cb113ac66ca4083e966d5de3ee3e1c05cbb2bca59",
+      "bytes": 13318,
+      "sha256": "a1545e4e9830174771cc2dc4f0de7adf683cef531b0921e65730f0cd4bb9a0d7",
       "published": true
     },
     {
@@ -36345,6 +36345,786 @@
       "published": false
     },
     {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/README.md",
+      "bytes": 4314,
+      "sha256": "ddd42e4e8608e763795900672e9c74a47b46c6acc1c343dc328d911044b8a37d",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/architecture-comparison.json",
+      "bytes": 46,
+      "sha256": "a6f82c3434509311256ca8330dba3afb8453afccafb99dbda02fb355bb67b310",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/phone/foreground.log",
+      "bytes": 401,
+      "sha256": "f1430e779d90d891772df8028f24e7b639764bf79aa8d5b38ba363fc5a26b895",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/phone/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/phone/fresh/capture.log",
+      "bytes": 290,
+      "sha256": "591446d16fdcae25bf053d743b265424cb87081d21a564dc8196d30aed6d6b80",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/phone/fresh/screen.png",
+      "bytes": 133408,
+      "sha256": "55278b9336bc2368ae43aa55c19536c7d5d1e1c25e1d3f25910dd7e693add8eb",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/phone/fresh/state.json",
+      "bytes": 1799,
+      "sha256": "f0c2e9d10596e1aa22f0daaf71b8f013a70689cc8f0e79e3a77a1b85510f1123",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/phone/fresh/terminate.json",
+      "bytes": 401,
+      "sha256": "e60d75c79af4013f326d089340e2b8ea1574013519031f0112b77e374e620c60",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/phone/installed-hashes.json",
+      "bytes": 175,
+      "sha256": "403fcb62abafe14e088eecc2d525f274f259306beed828dca361f36d87b38a24",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/phone/uninstall.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/run.json",
+      "bytes": 1561,
+      "sha256": "845d5e8665ef6b2caeeb1e4fe7403ab1b91e96a9ff980973f850ad0707f4c4a4",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/source-build.json",
+      "bytes": 7846,
+      "sha256": "ceada9097e4fbbf336409c47ec39d1461a5f87b305a4cc35df9761acf69ad160",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/tablet/foreground.log",
+      "bytes": 402,
+      "sha256": "0dc068bd9d946dba09e665a35cb7de178aab7cc04fab44a6f2ae229346c2cfb4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/tablet/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/tablet/fresh/capture.log",
+      "bytes": 291,
+      "sha256": "4c6bf16529493521057e10788866017c095edfd997d9e461cbda5856a8b0a241",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/tablet/fresh/screen.png",
+      "bytes": 159929,
+      "sha256": "f9dd80cc0b85867d9f79d6e0418efbf734a837d825821b31b0a6521f2de808b5",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/tablet/fresh/state.json",
+      "bytes": 1800,
+      "sha256": "c33e5cd579fde90b4edc17f9a64432f1113608188bd087fa5b124263902e9ffb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/tablet/fresh/terminate.json",
+      "bytes": 401,
+      "sha256": "e60d75c79af4013f326d089340e2b8ea1574013519031f0112b77e374e620c60",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/tablet/installed-hashes.json",
+      "bytes": 175,
+      "sha256": "403fcb62abafe14e088eecc2d525f274f259306beed828dca361f36d87b38a24",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/baseline/tablet/uninstall.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/build-evidence/baseline-build.json",
+      "bytes": 7846,
+      "sha256": "ceada9097e4fbbf336409c47ec39d1461a5f87b305a4cc35df9761acf69ad160",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/build-evidence/baseline-export.log",
+      "bytes": 26303,
+      "sha256": "5e32cc5233c233d1130fa061055413d3bff21733b8acb55ac7ea693f8b02ad7a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/build-evidence/baseline-import.log",
+      "bytes": 9154,
+      "sha256": "fef471bccd62a516e93109081843db161e327666df2bd2b8e7bcf0724fc384f3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/build-evidence/baseline-xcode.log",
+      "bytes": 81378,
+      "sha256": "848923cdbe6c07af65d0bcbf4c71c4f4b51ad9907564b1c7f7ff23d24fd927e3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/build-evidence/product-build.json",
+      "bytes": 7863,
+      "sha256": "33eb5bdcfeb73d0684ef36b0a92c6fd1281c14e13d479b021f04f61959557edf",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/build-evidence/product-export.log",
+      "bytes": 26287,
+      "sha256": "3bf0037ae84f41ec1540afcad88793a696a8041b482a8841f73a5ca0675c2d28",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/build-evidence/product-import.log",
+      "bytes": 9154,
+      "sha256": "fef471bccd62a516e93109081843db161e327666df2bd2b8e7bcf0724fc384f3",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/build-evidence/product-xcode.log",
+      "bytes": 80967,
+      "sha256": "007f63c2a3f22a1b5b7ddc8478285386ab36af0381fdc9e6dc2982e7fd16f687",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/compare.py",
+      "bytes": 2330,
+      "sha256": "4de513edcb5e530542d76dd88171fecc753acc467f2bb33a3b380ae3337c9805",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/desktop/import.log",
+      "bytes": 11380,
+      "sha256": "dccd9be514f9dac08a12e51e016f5d6d97c2c879b2e68ff89088f946c30e9602",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/desktop/run.json",
+      "bytes": 7059,
+      "sha256": "393e5f8e2291263a6aacb02f5739b83b217b841cf7f21251d6cd8e2efe54ce70",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/desktop/run.log",
+      "bytes": 113,
+      "sha256": "9add09626b62893910e25412872226209c07785b33162af6f872a4bae593f85a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/desktop/state.json",
+      "bytes": 355,
+      "sha256": "df5a778603758ddf5388e7b8f78eb405adaead72764e54351818db933047b529",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/desktop_default.gd",
+      "bytes": 1103,
+      "sha256": "c2b44cfc9d46cdf745b399fa4b3e141f2e6a2021297e123b02e55ecde7e8dd5b",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/full-check.log",
+      "bytes": 1133,
+      "sha256": "876eed3f4d1c8b3e684ff29ad10285df2b88456399be9be2fcc07e77a41ee688",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/observer.gd",
+      "bytes": 1809,
+      "sha256": "dc23b7eeeba35cc40146d7682138fc77ab6a7b1d316ce26dce7b14ee622d753a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/plan.json",
+      "bytes": 7519,
+      "sha256": "9a33d44bea10b95ce48bff3fd19a36dfafebab50bd9ccc2f69c37c79fa0141b3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/final-sandbox/account.cfg",
+      "bytes": 136,
+      "sha256": "d8c9a85bd1acaa4b5df4fef47bcbed7916b823e1a2ce348c951b6777d31de6f1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/final-sandbox/best.cfg",
+      "bytes": 988,
+      "sha256": "73dd48adcc8a4c3d18273e186c1e94842bc73fc4154e60a7426e11fda4662e16",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/final-sandbox/ios-qa-status.json",
+      "bytes": 1461,
+      "sha256": "b26f8d1611f67fba2b3f2512973ea4046ae7c0f64fa935f9df8a46053a9123d9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/final-sandbox/shader_cache/CanvasShaderGLES3/9fd373027ff88c4cc643c9ca4e7b84a922d8d6bb8e275bf0665e6af005208e9c/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 52,
+      "sha256": "8536ab4dedf7da6734c268f305dd61615ded0f618d255807f1a24086adfc0c4f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/final-sandbox/shader_cache/CopyShaderGLES3/5368c91b75ff19d583b7b032eb036430ae1fb3b5df2aefe26f2172b22e45f2c3/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 88,
+      "sha256": "69fe071475748522956e23b9705d21528c248b975396c29be75c1feb0651568c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/final-sandbox/shader_cache/FeedShaderGLES3/4d6f88e14600bd50ab613390a90ba5bb1eb6a331d97369a79fa5d8b5f51f6e7c/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 28,
+      "sha256": "d5d95a2771931e0f52c31da022cc0c0050b9b8ed410d53b6898a015126ced977",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/final-sandbox/shader_cache/PostShaderGLES3/f57603353f0170bf5c93e3121d8a3179514d92795f4eb41c830aee2ea195036d/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 28,
+      "sha256": "d5d95a2771931e0f52c31da022cc0c0050b9b8ed410d53b6898a015126ced977",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/final-sandbox/shader_cache/SceneShaderGLES3/e0035651aed114f69bc48f3aeb8826b38659393011875fb62fc74c20cc59b91f/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 40,
+      "sha256": "a35ef63010150fd4ee16d0fcdb319f3318505fa1d4e5bb19478c46392138cbe0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/foreground.log",
+      "bytes": 401,
+      "sha256": "f1430e779d90d891772df8028f24e7b639764bf79aa8d5b38ba363fc5a26b895",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/fresh/capture.log",
+      "bytes": 289,
+      "sha256": "5935336ef09583b18d9102b754e105a6b27cb9a2df0501ac11c5be0c7c20970c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/fresh/screen.png",
+      "bytes": 155236,
+      "sha256": "41177e4cf8a4b45657e62fa7280145613d8e043c923d3189d42b07cfa29afc66",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/fresh/state.json",
+      "bytes": 1827,
+      "sha256": "52e303e2f209efb4cf31a9eb7641c6db888c95b5c3f05c0f5202b6cf4a1c355d",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/fresh/terminate.json",
+      "bytes": 401,
+      "sha256": "e60d75c79af4013f326d089340e2b8ea1574013519031f0112b77e374e620c60",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/installed-hashes.json",
+      "bytes": 175,
+      "sha256": "306636d3ad8a85fd1afeb431506af13d353b36aea2981c7fa439f4b27f6ed985",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/missing/capture.log",
+      "bytes": 291,
+      "sha256": "71a9860af6427e8f846d862f674b159fa785b26213b781abe8cacbf00ca6b232",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/missing/screen.png",
+      "bytes": 155596,
+      "sha256": "7632f4cbee537b24c51b6e296579cda94c126b0b0e5c0161a405b21155d76549",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/missing/state.json",
+      "bytes": 1829,
+      "sha256": "f16e970023f28d1c27d7b977b58d25be714d08ab7a26fd351b8e1eef407e1ee7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/missing/terminate.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-0.7/capture.log",
+      "bytes": 293,
+      "sha256": "1dda6076c936fd382d10af72bbdd057b5dfff907d5321e2de365e35ea11b889e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-0.7/screen.png",
+      "bytes": 112312,
+      "sha256": "b50b0e23faa31d6576f40ac2bfef5e402c453569964b3ce219e8410d6787ed6f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-0.7/state.json",
+      "bytes": 1833,
+      "sha256": "6499602bcd827e4dbf6af7e62abf1ba694e048f5981c793aa820077ad0dc2080",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-0.7/terminate.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-0.85/capture.log",
+      "bytes": 294,
+      "sha256": "c04f0aa97498cb9043c844f21128bc1659c97d22526fd69928f90cef2c61f2ed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-0.85/screen.png",
+      "bytes": 123464,
+      "sha256": "e03d21795dab7c34574af80b738fa5c164634c046a30350ed38caf8f8562807f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-0.85/state.json",
+      "bytes": 1835,
+      "sha256": "59e74b384c6a62f677eed9e9e6d50a9828def0d29681ea0c540b553c5a4c6b65",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-0.85/terminate.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-0.93/capture.log",
+      "bytes": 294,
+      "sha256": "d11da87fcfa493e46b72d6b7398976037b66c08a5eafddbae293cbaffd60d581",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-0.93/screen.png",
+      "bytes": 133708,
+      "sha256": "fb19078a340671e9090c1b4363e5c57f769e6b58a4319cd78bd00d440e5ce953",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-0.93/state.json",
+      "bytes": 1804,
+      "sha256": "37abf7a75dd0e5ee001cdd8f6b9cc4b8c44c6b1f1ba1d14640547f057d0011eb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-0.93/terminate.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-1.0/capture.log",
+      "bytes": 293,
+      "sha256": "3c166b96df1b78e3ad7c6b9d5190bf513401a1e9571fe8f7d38215295dbfb24f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-1.0/screen.png",
+      "bytes": 133172,
+      "sha256": "b4430f9d65c3f04721aaed70ccb6856d4216053a2e87bbdcf043af592d284194",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-1.0/state.json",
+      "bytes": 1803,
+      "sha256": "ca83b664d5879ef31f4b6ba8f82358a1b512cd419abd617799203a2ab105534e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-1.0/terminate.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-1.15/capture.log",
+      "bytes": 294,
+      "sha256": "94e179fba5665d812ab08d1c453430f9441a153dbb5dd8634b15205559f0fafc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-1.15/screen.png",
+      "bytes": 145156,
+      "sha256": "b711c4f84885e052d5d36dd78f4862854e049e4aab04c05e1e20e1c880c852b8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-1.15/state.json",
+      "bytes": 1833,
+      "sha256": "bc9499514bf2cc143bdf69fcb5a614c83082ba57dca9cd14945f9d7b3ce84853",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-1.15/terminate.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-1.3/capture.log",
+      "bytes": 293,
+      "sha256": "99bcd8c8c7f4b7fb702e4daa5783e323d01cd04d47f68265441a38249d08435b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-1.3/screen.png",
+      "bytes": 155848,
+      "sha256": "7789321fb359d6ba538d3424290ae41d19a073ccff62141bec4f87f91907be10",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-1.3/state.json",
+      "bytes": 1831,
+      "sha256": "44d9eb2fdffb32b351116c01b1204f2e190319e690654f3da2913daee6a6ff57",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/saved-1.3/terminate.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/phone/uninstall.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/run.json",
+      "bytes": 11343,
+      "sha256": "f242c7cbd6e54b546245fb0ab55655083541939740a57ea286921d375bb377fb",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/source-build.json",
+      "bytes": 7863,
+      "sha256": "33eb5bdcfeb73d0684ef36b0a92c6fd1281c14e13d479b021f04f61959557edf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/final-sandbox/account.cfg",
+      "bytes": 136,
+      "sha256": "97b0643ee88e921ad5f63b1215933adcf18cce71ca70747ca21852c68114f6b0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/final-sandbox/best.cfg",
+      "bytes": 988,
+      "sha256": "8712b2e18b12b6c988b413d8fbb43a5f896b9b1fa2ab3af21f53268d75b15c49",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/final-sandbox/ios-qa-status.json",
+      "bytes": 1462,
+      "sha256": "f5397fbc5feb9de0dba5ffa24ccd269d8dc61f059b49b2959b718d1f5ce92133",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/final-sandbox/shader_cache/CanvasShaderGLES3/9fd373027ff88c4cc643c9ca4e7b84a922d8d6bb8e275bf0665e6af005208e9c/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 52,
+      "sha256": "8536ab4dedf7da6734c268f305dd61615ded0f618d255807f1a24086adfc0c4f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/final-sandbox/shader_cache/CopyShaderGLES3/5368c91b75ff19d583b7b032eb036430ae1fb3b5df2aefe26f2172b22e45f2c3/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 88,
+      "sha256": "69fe071475748522956e23b9705d21528c248b975396c29be75c1feb0651568c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/final-sandbox/shader_cache/FeedShaderGLES3/4d6f88e14600bd50ab613390a90ba5bb1eb6a331d97369a79fa5d8b5f51f6e7c/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 28,
+      "sha256": "d5d95a2771931e0f52c31da022cc0c0050b9b8ed410d53b6898a015126ced977",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/final-sandbox/shader_cache/PostShaderGLES3/f57603353f0170bf5c93e3121d8a3179514d92795f4eb41c830aee2ea195036d/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 28,
+      "sha256": "d5d95a2771931e0f52c31da022cc0c0050b9b8ed410d53b6898a015126ced977",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/final-sandbox/shader_cache/SceneShaderGLES3/e0035651aed114f69bc48f3aeb8826b38659393011875fb62fc74c20cc59b91f/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 40,
+      "sha256": "a35ef63010150fd4ee16d0fcdb319f3318505fa1d4e5bb19478c46392138cbe0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/foreground.log",
+      "bytes": 402,
+      "sha256": "0dc068bd9d946dba09e665a35cb7de178aab7cc04fab44a6f2ae229346c2cfb4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/fresh/capture.log",
+      "bytes": 290,
+      "sha256": "4acba903af3d6f5fec67eff95f37e68f176127e0d44300678d79d5b3cbfc4b3c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/fresh/screen.png",
+      "bytes": 185853,
+      "sha256": "d0c0f56862f2bc27c79a45228b5650931351e692b74dc94ad58563c0ead92b7a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/fresh/state.json",
+      "bytes": 1825,
+      "sha256": "7f6db101d9c4d554a4e9de2a94e4160339ff2c92f993ed41bc720c12361e8687",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/fresh/terminate.json",
+      "bytes": 401,
+      "sha256": "e60d75c79af4013f326d089340e2b8ea1574013519031f0112b77e374e620c60",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/installed-hashes.json",
+      "bytes": 175,
+      "sha256": "306636d3ad8a85fd1afeb431506af13d353b36aea2981c7fa439f4b27f6ed985",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/missing/capture.log",
+      "bytes": 292,
+      "sha256": "d0a380c4d9a0172948378c3fe134b816a7640de67d728e255b1e16ca42516b9e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/missing/screen.png",
+      "bytes": 185614,
+      "sha256": "5ece2130bd0f3200153313032a42cc3a17ac57651e456790be8d080f09430a29",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/missing/state.json",
+      "bytes": 1827,
+      "sha256": "140af2e2a45f9aad36567b699da11395a314cedd5d489bdd54dfdf8d689fe195",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/missing/terminate.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-0.7/capture.log",
+      "bytes": 294,
+      "sha256": "5aa9661c7c5d18b2eb820da118dd419a7325f7e4ea4abf521d537cb9c7db58d8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-0.7/screen.png",
+      "bytes": 133760,
+      "sha256": "ef884b076e78a837b4fe9e9613daefa11acc7d299f2697703ad9a50f74a34a78",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-0.7/state.json",
+      "bytes": 1831,
+      "sha256": "c8cd142a42ad17e7d609ea01ef981c04ac8729a8827d5be1eefe9ba89c024762",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-0.7/terminate.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-0.85/capture.log",
+      "bytes": 295,
+      "sha256": "7f2f119c1bf0734f0ae197e58e90fa06f2533c616ae783ee2e0800919c93a9a9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-0.85/screen.png",
+      "bytes": 146655,
+      "sha256": "b1ff20abb7be86f578531b4e97ceeb5badd1b57d830e28b4c0665542c8bb2311",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-0.85/state.json",
+      "bytes": 1834,
+      "sha256": "41bd5de0f507616de0ef9725eeaa92ef3f851bc90171cfed7474092ea198e4bd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-0.85/terminate.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-0.93/capture.log",
+      "bytes": 295,
+      "sha256": "ad6ece1ddd149ed8022d2a042f2fbe6f2ecc3d53dc6c7c93acfbec4323dde309",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-0.93/screen.png",
+      "bytes": 159809,
+      "sha256": "b03c3c297e3a33cb469eb63a9b5614caed1ea068db6a660db3ec518dc48bad95",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-0.93/state.json",
+      "bytes": 1805,
+      "sha256": "a2cd9d0af004649b1acadf3d63c04354d8fc901d5c9db0fc519c75095c4ccc00",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-0.93/terminate.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-1.0/capture.log",
+      "bytes": 294,
+      "sha256": "81537350c4c5764dec9e79360b4ac9956227e545d7a3fcc0d55083ef42e266b8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-1.0/screen.png",
+      "bytes": 159793,
+      "sha256": "0a5673c7635cad18b643bdc3d2d9e3a73b8adcdbfaef13b8c5f7894ce93e6ef7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-1.0/state.json",
+      "bytes": 1804,
+      "sha256": "ec56ef56640a54a8d33fa84d850b49f374f23e8ce5e83b585b0c35478e577fc9",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-1.0/terminate.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-1.15/capture.log",
+      "bytes": 295,
+      "sha256": "fe6aa593be90e64934118eca9cdda11764be4d5ffe9d82895539e2557372ab33",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-1.15/screen.png",
+      "bytes": 173363,
+      "sha256": "b981dbde5860933bb0fe3f6c90745683e981336ec225b0d354c5c5bec216dddc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-1.15/state.json",
+      "bytes": 1832,
+      "sha256": "512d3b6247c11a8adbd5bba971872c6ff849b1b54308906b08811bcbcf8a6d91",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-1.15/terminate.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-1.3/capture.log",
+      "bytes": 294,
+      "sha256": "e918b2f2be8ced8a18e728cec90acef604df26ffe9f4c7fc5434545f56a066a7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-1.3/screen.png",
+      "bytes": 185468,
+      "sha256": "a3b92a2856772d750e059f88c5a8e38a241e77c22d57b26cf36f4f8eb962152e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-1.3/state.json",
+      "bytes": 1829,
+      "sha256": "8fbf875bf16cfaab4c34276a80621ebbe45261ecec4486954413b60a8a1d79f2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/saved-1.3/terminate.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/product/tablet/uninstall.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/run_desktop.py",
+      "bytes": 1479,
+      "sha256": "a843cffb51a714574a9e28a3880c98db98a6c5923d4a68faa50d2eb38f8b0cbb",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/run_native.py",
+      "bytes": 5102,
+      "sha256": "323f031fb71e6fdffd15d97edcf8d6a970f9808ece36036446e47bb568a66258",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/mobile-default/summary.json",
+      "bytes": 747,
+      "sha256": "9afb36e92b34e0c17c8b1c8ace9b79c7155751a5cc6043a6a2707ec2eda7a808",
+      "published": true
+    },
+    {
       "path": "docs/qa/2026-11-09-battlefield-fixes/multiplayer/README.md",
       "bytes": 8709,
       "sha256": "649c427e4befbf1646c468e9678c35fdde899b6b33001dba3eeff2806145f7b3",
@@ -56008,8 +56788,8 @@
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/remaining-user-tasks.md",
-      "bytes": 5335,
-      "sha256": "2e6b83f68d5471cf196d1d6aec5c3ff88937e6abe92079afc05e90ae4d22718a",
+      "bytes": 5561,
+      "sha256": "5e07b3aa944eb68facb4a013c1e9c76c6bbe633bb106af8f41b799f962ee9135",
       "published": true
     },
     {
