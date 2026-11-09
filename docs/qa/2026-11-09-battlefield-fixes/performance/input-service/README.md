@@ -71,3 +71,5 @@ python3 docs/qa/2026-11-09-battlefield-fixes/performance/input-service/run_rende
 ```
 
 새 output을 사용하며 성능 실행끼리 겹치지 않는다. [검사 구현](../../../../../tools/battlefield_input_service_check.gd)과 [화면 후속](../../../../../tools/battlefield_input_render_check.gd)은 반드시 저장/서버를 격리하는 위 runner로 실행한다.
+
+후속 전체 회귀에서 이 시제품 도구의 직접 `Input.parse_input_event()` 호출이 UI-34 공용 입력 경로 규칙에 걸렸다. 테스트 예외를 추가하지 않고 buffer-only API를 `VirtualInput.enqueue()`로 모았다. 기존 `VirtualInput.send()` 본문은 이전 커밋과 byte 단위로 같다. [worker canary](../../accessibility/enqueue-preserved-send/results.json)는 main flush 전 미전달·새 press/release4개 순서·최종 key release를 확인했다. [재현 도구](../../accessibility/run_enqueue.py). 위 ABBA 수치는 당시 동결 관찰 결과이며 이 보정을 새 성능 측정으로 합산하지 않는다.

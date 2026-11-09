@@ -52,6 +52,11 @@ static func send(event: InputEvent) -> void:
 	Input.flush_buffered_events()
 	sending = false
 
+## Buffer-only injection for worker probes. No Node access or shared sending flag.
+## The caller owns accumulation/relay setup and flushes on the main thread.
+static func enqueue(event: InputEvent) -> void:
+	Input.parse_input_event(event)
+
 static func move(at: Vector2, mask := 0) -> void:
 	var event := InputEventMouseMotion.new()
 	event.position = at

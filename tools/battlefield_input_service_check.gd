@@ -126,7 +126,7 @@ func post_buffered(code: int) -> void:
 		event.device = TAG
 		event.keycode = code
 		event.pressed = pressed
-		Input.parse_input_event(event)
+		VirtualInput.enqueue(event)
 	post_mutex.lock()
 	post_times["after_parse_us"] = Time.get_ticks_usec()
 	post_mutex.unlock()
