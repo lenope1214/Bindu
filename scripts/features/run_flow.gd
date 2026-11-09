@@ -162,6 +162,8 @@ func _can_skip() -> bool:
 ## 선택지(또는 특성) 화면에서 넘기기: 이번 쉬는 시간의 고르기를 쌓아 두고 웨이브를 시작한다.
 func _on_skip() -> void:
 	var session: BinduSession = self.session
+	if session.cards_system._gift_blocked():
+		return
 	if session.phase not in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY] or not _can_skip() or session.title_label.visible or session.get_tree().paused:
 		return
 	if TutPlay.on and session.tplay != null and not session.tplay.allow_skip():
@@ -329,6 +331,8 @@ func _update_skip_ui() -> void:
 func _reload() -> void:
 	var session: BinduSession = self.session
 	session.run_detail.close()
+	if session.mp_mode == "coop":
+		session.multiplayer_system.gifts().close_round()
 	session.cards_system.clear_edit_history()
 	_mp_keep_room()
 	if session.is_inside_tree() and session.get_tree().current_scene != null:
@@ -352,6 +356,8 @@ func _mp_keep_room() -> void:
 ## 왼쪽 아래 안내 글 위쪽 끝 (안내 글이 없으면 아래 버튼 줄 위).
 func _start_wave() -> void:
 	var session: BinduSession = self.session
+	if session.mp_mode == "coop" and not session.multiplayer_system.gifts().before_wave():
+		return
 	if TutPlay.on and session.tplay != null and not session.tplay.can_start():
 		session.countdown = -1.0
 		return
@@ -489,6 +495,8 @@ func _wave_attack_reach(t: Tower) -> float:
 
 func _game_over() -> void:
 	var session: BinduSession = self.session
+	if session.mp_mode == "coop":
+		session.multiplayer_system.gifts().close_round()
 	session.cards_system.clear_edit_history()
 	session.multiplayer_system._mp_over()
 	session.onboarding_system._tut_event("over")
@@ -714,6 +722,10 @@ func _pause_restart() -> void:
 
 ## 소유권·대기 행동을 설명하는 공용 상태. 준비/연결 상태를 추측해 완료로 표시하지 않는다.
 func multiplayer_status_text() -> String:
+	if session.mp_mode == "coop":
+		var notice: String = session.multiplayer_system.gifts().pending_notice()
+		if notice != "":
+			return notice
 	if session.mp_mode == "":
 		return ""
 	var mode := "협동" if session.mp_mode == "coop" else "대결"

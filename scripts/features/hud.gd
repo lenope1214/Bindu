@@ -305,7 +305,11 @@ func card_comparisons(card: Dictionary) -> Array[Dictionary]:
 		var reason := ""
 		var changes := PackedStringArray()
 		var reactions := PackedStringArray()
-		if not owner_ok:
+		if session.mp_mode == "coop":
+			var status: Dictionary = session.multiplayer_system.gifts().offer_status(t, card)
+			allowed = bool(status.get("ok", false))
+			reason = str(status.get("reason", ""))
+		elif not owner_ok:
 			reason = "친구 오브젝트 · 요청한 속성만 적용 가능" if t.req_e >= 0 else "친구 오브젝트 · 적용 요청 없음"
 		elif not allowed:
 			reason = t.refuse_text(card)

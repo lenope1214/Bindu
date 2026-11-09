@@ -1,0 +1,1092 @@
+{
+  "protocol_cases": {
+    "race": {
+      "host": {
+        "exit": 0,
+        "assertions_passed": 11,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 1,
+          "native_extension": true,
+          "peers": [
+            2,
+            3
+          ]
+        }
+      },
+      "peer_a": {
+        "exit": 0,
+        "assertions_passed": 12,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 3,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      },
+      "peer_b": {
+        "exit": 0,
+        "assertions_passed": 13,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 2,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      }
+    },
+    "race_reverse": {
+      "host": {
+        "exit": 0,
+        "assertions_passed": 11,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 1,
+          "native_extension": true,
+          "peers": [
+            2,
+            3
+          ]
+        }
+      },
+      "peer_a": {
+        "exit": 0,
+        "assertions_passed": 13,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 2,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      },
+      "peer_b": {
+        "exit": 0,
+        "assertions_passed": 12,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 3,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      }
+    },
+    "ack_loss": {
+      "host": {
+        "exit": 0,
+        "assertions_passed": 11,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 1,
+          "native_extension": true,
+          "peers": [
+            2,
+            3
+          ]
+        }
+      },
+      "peer_a": {
+        "exit": 0,
+        "assertions_passed": 12,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 2,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      },
+      "peer_b": {
+        "exit": 0,
+        "assertions_passed": 12,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 3,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      }
+    },
+    "complete_loss": {
+      "host": {
+        "exit": 0,
+        "assertions_passed": 13,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 1,
+          "native_extension": true,
+          "peers": [
+            2,
+            3
+          ]
+        }
+      },
+      "peer_a": {
+        "exit": 0,
+        "assertions_passed": 13,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 3,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      },
+      "peer_b": {
+        "exit": 0,
+        "assertions_passed": 13,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 2,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      }
+    },
+    "donor_rejoin_before_commit": {
+      "host": {
+        "exit": 0,
+        "assertions_passed": 11,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 1,
+          "native_extension": true,
+          "peers": [
+            2,
+            3
+          ]
+        }
+      },
+      "peer_a": {
+        "exit": 0,
+        "assertions_passed": 14,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 3,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      },
+      "peer_b": {
+        "exit": 0,
+        "assertions_passed": 12,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 2,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      }
+    },
+    "donor_rejoin": {
+      "host": {
+        "exit": 0,
+        "assertions_passed": 11,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 1,
+          "native_extension": true,
+          "peers": [
+            2,
+            3
+          ]
+        }
+      },
+      "peer_a": {
+        "exit": 0,
+        "assertions_passed": 13,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 2,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      },
+      "peer_b": {
+        "exit": 0,
+        "assertions_passed": 12,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 3,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      }
+    },
+    "owner_rejoin_before_commit": {
+      "host": {
+        "exit": 0,
+        "assertions_passed": 3,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [
+          "ERROR: rtc::impl::SctpTransport::trySendMessage@687: SCTP sending failed, errno=32",
+          "ERROR: Sending failed, errno=25",
+          "ERROR: Method/function failed. Returning: FAILED"
+        ],
+        "warnings": [],
+        "actual_connection": {
+          "id": 1,
+          "native_extension": true,
+          "peers": [
+            2,
+            3
+          ]
+        }
+      },
+      "peer_a": {
+        "exit": 0,
+        "assertions_passed": 6,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 2,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      },
+      "peer_b": {
+        "exit": 0,
+        "assertions_passed": 4,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 3,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      }
+    },
+    "owner_rejoin": {
+      "host": {
+        "exit": 0,
+        "assertions_passed": 3,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 1,
+          "native_extension": true,
+          "peers": [
+            2,
+            3
+          ]
+        }
+      },
+      "peer_a": {
+        "exit": 0,
+        "assertions_passed": 6,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 3,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      },
+      "peer_b": {
+        "exit": 0,
+        "assertions_passed": 4,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 2,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      }
+    },
+    "old_round": {
+      "host": {
+        "exit": 0,
+        "assertions_passed": 12,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 1,
+          "native_extension": true,
+          "peers": [
+            2,
+            3
+          ]
+        }
+      },
+      "peer_a": {
+        "exit": 0,
+        "assertions_passed": 13,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 3,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      },
+      "peer_b": {
+        "exit": 0,
+        "assertions_passed": 13,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 2,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      }
+    },
+    "host_donor": {
+      "host": {
+        "exit": 0,
+        "assertions_passed": 5,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 1,
+          "native_extension": true,
+          "peers": [
+            2,
+            3
+          ]
+        }
+      },
+      "peer_a": {
+        "exit": 0,
+        "assertions_passed": 5,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 2,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      },
+      "peer_b": {
+        "exit": 0,
+        "assertions_passed": 3,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 3,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      }
+    },
+    "force_fence": {
+      "host": {
+        "exit": 0,
+        "assertions_passed": 12,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 1,
+          "native_extension": true,
+          "peers": [
+            2,
+            3
+          ]
+        }
+      },
+      "peer_a": {
+        "exit": 0,
+        "assertions_passed": 13,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 2,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      },
+      "peer_b": {
+        "exit": 0,
+        "assertions_passed": 13,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 3,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      }
+    },
+    "retire_owner": {
+      "host": {
+        "exit": 0,
+        "assertions_passed": 7,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 1,
+          "native_extension": true,
+          "peers": [
+            2,
+            3
+          ]
+        }
+      },
+      "peer_a": {
+        "exit": 0,
+        "assertions_passed": 6,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 3,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      },
+      "peer_b": {
+        "exit": 0,
+        "assertions_passed": 3,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 2,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      }
+    },
+    "retire_donor": {
+      "host": {
+        "exit": 0,
+        "assertions_passed": 9,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 1,
+          "native_extension": true,
+          "peers": [
+            2,
+            3
+          ]
+        }
+      },
+      "peer_a": {
+        "exit": 0,
+        "assertions_passed": 8,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 3,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      },
+      "peer_b": {
+        "exit": 0,
+        "assertions_passed": 10,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 2,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      }
+    },
+    "donor_edit_rejoin": {
+      "host": {
+        "exit": 0,
+        "assertions_passed": 5,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 1,
+          "native_extension": true,
+          "peers": [
+            2,
+            3
+          ]
+        }
+      },
+      "peer_a": {
+        "exit": 0,
+        "assertions_passed": 6,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 2,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      },
+      "peer_b": {
+        "exit": 0,
+        "assertions_passed": 3,
+        "assertions_failed": 0,
+        "ui_messages": 0,
+        "runtime_errors": [],
+        "warnings": [],
+        "actual_connection": {
+          "id": 3,
+          "native_extension": true,
+          "peers": [
+            1
+          ]
+        }
+      }
+    }
+  },
+  "two_participant": {
+    "coop/host": {
+      "exit": 0,
+      "assertions_passed": 8,
+      "assertions_failed": 0,
+      "ui_messages": 0,
+      "runtime_errors": [],
+      "warnings": []
+    },
+    "coop/join": {
+      "exit": 0,
+      "assertions_passed": 9,
+      "assertions_failed": 0,
+      "ui_messages": 0,
+      "runtime_errors": [],
+      "warnings": []
+    },
+    "vs/host": {
+      "exit": 0,
+      "assertions_passed": 2,
+      "assertions_failed": 0,
+      "ui_messages": 0,
+      "runtime_errors": [],
+      "warnings": []
+    },
+    "vs/join": {
+      "exit": 0,
+      "assertions_passed": 2,
+      "assertions_failed": 0,
+      "ui_messages": 0,
+      "runtime_errors": [],
+      "warnings": []
+    }
+  },
+  "focused": {
+    "pending-pc": {
+      "race": {
+        "host": {
+          "exit": 0,
+          "assertions_passed": 11,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 1,
+            "native_extension": true,
+            "peers": [
+              2,
+              3
+            ]
+          }
+        },
+        "peer_a": {
+          "exit": 0,
+          "assertions_passed": 13,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 3,
+            "native_extension": true,
+            "peers": [
+              1
+            ]
+          }
+        },
+        "peer_b": {
+          "exit": 0,
+          "assertions_passed": 14,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 2,
+            "native_extension": true,
+            "peers": [
+              1
+            ]
+          }
+        }
+      },
+      "race_reverse": {
+        "host": {
+          "exit": 0,
+          "assertions_passed": 11,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 1,
+            "native_extension": true,
+            "peers": [
+              2,
+              3
+            ]
+          }
+        },
+        "peer_a": {
+          "exit": 0,
+          "assertions_passed": 14,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 3,
+            "native_extension": true,
+            "peers": [
+              1
+            ]
+          }
+        },
+        "peer_b": {
+          "exit": 0,
+          "assertions_passed": 13,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 2,
+            "native_extension": true,
+            "peers": [
+              1
+            ]
+          }
+        }
+      },
+      "ack_loss": {
+        "host": {
+          "exit": 0,
+          "assertions_passed": 11,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 1,
+            "native_extension": true,
+            "peers": [
+              2,
+              3
+            ]
+          }
+        },
+        "peer_a": {
+          "exit": 0,
+          "assertions_passed": 13,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 2,
+            "native_extension": true,
+            "peers": [
+              1
+            ]
+          }
+        },
+        "peer_b": {
+          "exit": 0,
+          "assertions_passed": 13,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 3,
+            "native_extension": true,
+            "peers": [
+              1
+            ]
+          }
+        }
+      }
+    },
+    "pending-phone": {
+      "race": {
+        "host": {
+          "exit": 0,
+          "assertions_passed": 11,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 1,
+            "native_extension": true,
+            "peers": [
+              2,
+              3
+            ]
+          }
+        },
+        "peer_a": {
+          "exit": 0,
+          "assertions_passed": 13,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 3,
+            "native_extension": true,
+            "peers": [
+              1
+            ]
+          }
+        },
+        "peer_b": {
+          "exit": 0,
+          "assertions_passed": 14,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 2,
+            "native_extension": true,
+            "peers": [
+              1
+            ]
+          }
+        }
+      },
+      "race_reverse": {
+        "host": {
+          "exit": 0,
+          "assertions_passed": 11,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 1,
+            "native_extension": true,
+            "peers": [
+              2,
+              3
+            ]
+          }
+        },
+        "peer_a": {
+          "exit": 0,
+          "assertions_passed": 14,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 3,
+            "native_extension": true,
+            "peers": [
+              1
+            ]
+          }
+        },
+        "peer_b": {
+          "exit": 0,
+          "assertions_passed": 13,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 2,
+            "native_extension": true,
+            "peers": [
+              1
+            ]
+          }
+        }
+      },
+      "ack_loss": {
+        "host": {
+          "exit": 0,
+          "assertions_passed": 11,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 1,
+            "native_extension": true,
+            "peers": [
+              2,
+              3
+            ]
+          }
+        },
+        "peer_a": {
+          "exit": 0,
+          "assertions_passed": 13,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 3,
+            "native_extension": true,
+            "peers": [
+              1
+            ]
+          }
+        },
+        "peer_b": {
+          "exit": 0,
+          "assertions_passed": 13,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 2,
+            "native_extension": true,
+            "peers": [
+              1
+            ]
+          }
+        }
+      }
+    },
+    "pending-pc-before-toast-fix": {
+      "owner_rejoin_before_commit": {
+        "host": {
+          "exit": 0,
+          "assertions_passed": 3,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 1,
+            "native_extension": true,
+            "peers": [
+              2,
+              3
+            ]
+          }
+        },
+        "peer_a": {
+          "exit": 0,
+          "assertions_passed": 6,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 2,
+            "native_extension": true,
+            "peers": [
+              1
+            ]
+          }
+        },
+        "peer_b": {
+          "exit": 0,
+          "assertions_passed": 4,
+          "assertions_failed": 0,
+          "ui_messages": 0,
+          "runtime_errors": [],
+          "warnings": [],
+          "actual_connection": {
+            "id": 3,
+            "native_extension": true,
+            "peers": [
+              1
+            ]
+          }
+        }
+      }
+    }
+  },
+  "runtime_observations": [
+    {
+      "case": "owner_rejoin_before_commit/host",
+      "errors": [
+        "ERROR: rtc::impl::SctpTransport::trySendMessage@687: SCTP sending failed, errno=32",
+        "ERROR: Sending failed, errno=25",
+        "ERROR: Method/function failed. Returning: FAILED"
+      ],
+      "after_final_capture": true,
+      "followup": "pending-pc-before-toast-fix/owner_rejoin_before_commit"
+    }
+  ],
+  "source_boundaries": {
+    "primary_and_two_share_original_product_snapshot": true,
+    "protocol_sha256": {
+      "scripts/app/gift_transactions.gd": "6ecbf9f4ec22542a73461102d503732f58f9dbce2e24532183dda71828326aa3",
+      "scripts/features/multiplayer.gd": "abc0855a27ace293408725eef48c0c18d0c97d8ae9d7d64f0bddbfc7103286e5",
+      "scripts/mp.gd": "acd8199337450400dca5fbc5a53aefd7698f353f6e46e9dc31b855bc9d2c30ec",
+      "scripts/card_dock.gd": "bf192b8b94ca58da311c363e6551e6703565729c286da248b83bf879e177e5a7"
+    },
+    "later_product_changes": [
+      "scripts/features/field_view.gd",
+      "scripts/features/frame.gd",
+      "scripts/features/ui_layout.gd"
+    ],
+    "latest_pc_phone_manifest_matches_current_scripts": true,
+    "test_revision": "Original 14-case tool preserved in manifest; focused tool adds neutral-preview assertions, phone touch profile, and synchronized QA shutdown."
+  },
+  "failures": [],
+  "actor_results": 67,
+  "assertions_passed": 651,
+  "behavior_failures": 0,
+  "ui_messages": 0,
+  "verdict": "pass with preserved post-check QA teardown observation"
+}

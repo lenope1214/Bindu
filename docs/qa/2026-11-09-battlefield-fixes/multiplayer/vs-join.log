@@ -1,0 +1,30 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+MPUX wait-ok join room-code
+MPUX wait-ok join real-webrtc-connected
+MPUX OBS join connected {"extension":true,"id":2,"peers":[1]}
+MPUX wait-ok join actual-game-start
+UI ok initial-game
+ok   BF-46 join 실제 선택지의 속성 카드 존재
+MPUX OBS join card-pick-at {"blocked":false,"paused":false,"phase":0,"rect":"[P: (12.0, 558.0), S: (411.0, 94.0)]"}
+MPUX wait-ok join card-held
+MPUX wait-ok join actual-placement
+MPUX OBS join placed {"mine":1,"phase":0,"picks":1}
+MPUX wait-ok join own-tower
+MPUX wait-ok join replicated-towers
+ok   BF-46 join 실제 선택지의 속성 카드 존재
+MPUX OBS join card-pick-at {"blocked":false,"paused":false,"phase":0,"rect":"[P: (12.0, 558.0), S: (411.0, 94.0)]"}
+MPUX wait-ok join card-held
+MPUX wait-ok join actual-placement
+MPUX OBS join placed {"mine":2,"phase":6,"picks":0}
+MPUX wait-ok join vs-ready
+MPUX wait-ok join vs-wave
+MPUX OBS join vs-wave {"lanes":[1.9612818847029],"status":"대결 · 로컬 호스트 W0 ♥13/13 0점","wave":1}
+UI ok vs-wave
+MPUX wait-ok join vs-disconnect-loss
+MPUX OBS join vs-disconnect {"rank":"대결 2위 / 2명 · 나 W1 · 로컬 호스트 W0 (진행 중)","status":"대결 · 로컬 호스트 W0 ♥13/13 0점 · 14ms"}
+UI ok vs-disconnect
+MPUX vs join failures=0
+WARNING: 4 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

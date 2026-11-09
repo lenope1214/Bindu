@@ -483,6 +483,8 @@ func preview_card() -> Dictionary:
 	return {}
 
 func target_ok(t: Tower, card: Dictionary) -> bool:
+	if game.mp_mode == "coop":
+		return bool(game.multiplayer_system.gifts().offer_status(t, card).get("ok", false))
 	return (game.multiplayer_system._mine(t) or (game.mp_mode == "coop" and card.get("type") == "elem" and t.req_e >= 0 and t.req_e == card.get("e", -1))) and t.can_take(card)
 
 func watch(b: Button, card: Dictionary) -> void:
@@ -521,6 +523,7 @@ func tick() -> void:
 	var size: Vector2 = game.ui_root.size
 	var footer_y := size.y - CONTROL_HEIGHT - 12.0
 	var blocked := input_blocked()
+	var gift_waiting: bool = game.mp_mode == "coop" and game.multiplayer_system.gifts().blocks_local_choice()
 	if not is_equal_approx(game.bar_box.custom_minimum_size.y, CONTROL_HEIGHT):
 		game.bar_box.custom_minimum_size.y = CONTROL_HEIGHT
 	if not is_equal_approx(game.bar_box.offset_top, -CONTROL_HEIGHT - 12.0):
@@ -553,6 +556,7 @@ func tick() -> void:
 	for button: Control in cs:
 		if button.is_queued_for_deletion():
 			continue
+		button.disabled = gift_waiting
 		button.custom_minimum_size = Vector2((size.x - 24 - maxf(0, cs.size() - 1) * 12) / maxi(1, cs.size()), CARD_HEIGHT)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
@@ -562,6 +566,8 @@ func tick() -> void:
 			info_button.size = Vector2(56 * K, 30 * K)
 	if choosing and not game.perk_mode:
 		game.cards_system._update_reroll_btn()
+	if gift_waiting:
+		game.reroll_btn.disabled = true
 	var x := size.x - 12.0
 	var skip_visible: bool = game.skip_btn.visible and not blocked and (cards or game.phase == game.Phase.READY)
 	game.skip_btn.visible = skip_visible
@@ -598,6 +604,11 @@ func tick() -> void:
 		game.ui_root.move_child(side, game.ui_root.get_child_count() - 1)  # GUI 입력 순서도 일시정지 막 위로 올린다.
 	game.detail_btn.visible = side.visible and shown_tower != null and game.touch_ui
 	game.start_btn.visible = game.phase == game.Phase.READY and not blocked
+	game.start_btn.disabled = gift_waiting
+	game.cancel_btn.disabled = gift_waiting
+	game.skip_btn.disabled = gift_waiting
+	if gift_waiting:
+		game.start_btn.text = "진행 확인 중"
 	game.cancel_btn.visible = game.phase in [game.Phase.PLACE, game.Phase.AIM, game.Phase.MOVE] and not blocked
 	game.aim_ok_btn.visible = game.interaction_system._ok_btn_on() and not blocked
 	var actions: Array = [game.start_btn, game.cancel_btn, game.aim_ok_btn].filter(func(button): return button.visible)
@@ -635,6 +646,8 @@ func tick() -> void:
 			game.hint.show()
 	_place_side(size, cards)
 	game.cancel_btn.text = game.ui_layout_system._kh("카드 돌려놓기 (Esc)") if carrying() and game.phase == game.Phase.PLACE else game.ui_layout_system._kh("위치 다시 정하기 (Esc)" if carrying() else "편집 취소 (Esc)")
+	if gift_waiting:
+		game.cancel_btn.text = "전달 확인 중"
 	var skill_widths: Array[float] = []
 	var skills_width := 0.0
 	for button: Button in game.skill_btns:
@@ -677,7 +690,9 @@ func tick() -> void:
 	undo_btn.disabled = not game.cards_system.can_undo()
 	undo_btn.tooltip_text = game.cards_system._history_service().last_reason if undo_btn.disabled else "최근 변경 되돌리기 (Ctrl/Cmd+Z)"
 	select_btn.text = "선택 추가: 켬" if game.interaction_system.additive_selection else "여러 개 선택"
-	group_direction_btn.disabled = not game.interaction_system.selected.any(func(t): return game.multiplayer_system._mine(t))
+	select_btn.disabled = gift_waiting
+	select_all_btn.disabled = gift_waiting
+	group_direction_btn.disabled = gift_waiting or not game.interaction_system.selected.any(func(t): return game.multiplayer_system._mine(t))
 	select_all_btn.visible = game.towers.get_child_count() > 1
 	group_direction_btn.visible = edit_tools.visible and not game.interaction_system.selected.is_empty()
 	review_btn.visible = not game.leak_log.is_empty()
@@ -725,6 +740,10 @@ static func _top_left(c: Control) -> void:
 
 
 func operation_text() -> String:
+	if game.mp_mode == "coop":
+		var notice: String = game.multiplayer_system.gifts().pending_notice()
+		if notice != "":
+			return notice
 	game.interaction_system.selected = game.interaction_system.selected.filter(func(t): return is_instance_valid(t) and not t.is_queued_for_deletion())
 	var cancel := "아래 버튼으로 취소" if game.touch_ui else "Esc 취소"
 	if game.interaction_system.dragging:
@@ -904,7 +923,7 @@ func _update_side() -> void:
 	read_prev.visible = not reading_card.is_empty()
 	read_next.visible = not reading_card.is_empty()
 	use_btn.visible = not reading_card.is_empty() and game.phase == game.Phase.CHOOSE and game.picks_left > 0
-	use_btn.disabled = input_blocked()
+	use_btn.disabled = input_blocked() or (game.mp_mode == "coop" and game.multiplayer_system.gifts().blocks_local_choice())
 	heading.visible = not ((game.touch_ui or Meta.phone()) and pic.mode == "tower")
 	detail.visible = text != "" and not compact
 	var sig: String = title + "|" + text + ("|" + str(tower.get_instance_id()) if is_instance_valid(tower) and card.is_empty() else "")

@@ -1,0 +1,37 @@
+{
+  "observed_at_utc": "2026-11-09T14:41:34.207138+00:00",
+  "command": "GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh gift",
+  "exit_code": 0,
+  "marker": "GIFT STATE assertions=86 failures=0",
+  "isolation": "BinduTools temporary project; SERVER_URL and MP_URL empty; no sockets; actual session/features/owner/card consumption, queued transport double only",
+  "source_hashes": {
+    "scripts/app/gift_transactions.gd": "6ecbf9f4ec22542a73461102d503732f58f9dbce2e24532183dda71828326aa3",
+    "scripts/features/multiplayer.gd": "abc0855a27ace293408725eef48c0c18d0c97d8ae9d7d64f0bddbfc7103286e5",
+    "scripts/features/lobby.gd": "eae458e0feabc72935d3698188132ab4733c68030299a881ce70ebc0387a139b",
+    "scripts/features/interaction.gd": "6121744510261d0c6f42106fc2e6771f58eb8e1563602d8b6cb93e286dd0fbc6",
+    "scripts/mp.gd": "acd8199337450400dca5fbc5a53aefd7698f353f6e46e9dc31b855bc9d2c30ec",
+    "scripts/features/cards.gd": "e046ab6190e09964446b852d97f39ef9624f754fd79c1db862a3af07fa98bc2b",
+    "scripts/features/run_flow.gd": "a27932f6eab1fb00d4a5d48d33128f81401c4925bbfa478dbacf5fa73ab47211",
+    "tools/battlefield_gift_state_check.gd": "f8289ade0e1d459db6295b7f024d4c7923eacd51b39fad768f527fc70b7083d2",
+    "tools/run.sh": "f128f6ae743fd10fcdc084423288762be7b7ece00ffdf254c4402eeec423d857"
+  },
+  "artifacts": {
+    "run.log": "5deb53db15fb7138900bb593ef97663d2af7df747ff5548f56bcc3d8e1d98b29",
+    "legacy-tw-before.log": "ca996b8e9bb7df43078f568416556175e0ca41ca9a58e82a5ba5f48ff96b8f7d",
+    "direction-rejoin-before.log": "513df641341b435af09e80bd2b97812b3d4954afea7abd58453c80d78d6337a9",
+    "initial-import.log": "5691718ec122f9232d6cfa1a4ffe3aea5fecaf0b8ee8440519f74b76f5d9adab",
+    "gate.log": "c93ec4a9f82d73b5d8b412a47586943ef6b295ef6930d9a39840d3e9b311c10a"
+  },
+  "direction_rejoin_red": {
+    "source_service_sha256": "c780308068bea79a221f1b88a9f567880518224a4816e11c0782ae4af1c62258",
+    "exit_code": 1,
+    "marker": "GIFT STATE assertions=80 failures=2",
+    "artifact": "direction-rejoin-before.log"
+  },
+  "legacy_tw_red": {
+    "multiplayer_sha256": "16dba398e2eb7420af88bac5fb569b16d90df092b7bcbe88ad5334b6b81d2258",
+    "exit_code": 1,
+    "marker": "GIFT STATE assertions=86 failures=2",
+    "artifact": "legacy-tw-before.log"
+  }
+}

@@ -76,6 +76,14 @@ func _orb(p: Vector2, hp: float, kind := Orb.Kind.NORMAL, spd := 0.0) -> Orb:
 
 
 ## 적용 가능 조회의 협상 fixture. 실제 전송·정산은 gift state/native 검사에서 별도로 확인한다.
+func _gift_protocol_fixture(tag: String) -> BinduGiftTransactions:
+	var transactions: BinduGiftTransactions = main.multiplayer_system.gifts()
+	transactions.start_round({"gift_round":tag, "gift_v":BinduGiftTransactions.VERSION, "ids":[1, 2]})
+	transactions.receive(2, {"t":"gift_hello", "v":BinduGiftTransactions.VERSION, "round_id":tag,
+		"rest_id":main.wave, "owner_epoch":1})
+	return transactions
+
+
 func _initialize():
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools"):
 		print("FAIL 실제 게임 저장 폴더를 쓰게 됨: tools/run.sh spec 으로 돌리세요")
@@ -3013,11 +3021,19 @@ func _meta_misc() -> void:
 	dt.req_e = -1
 	var ownership: bool = not main.card_dock.target_ok(dt, {"type":"mod", "id":"rapid"})
 	dt.req_e = Elem.FIRE
-	var requested: bool = main.card_dock.target_ok(dt, {"type":"elem", "e":Elem.FIRE, "lv":1})
+	var request_card := {"type":"elem", "e":Elem.FIRE, "lv":1}
+	var unconfirmed: bool = not main.card_dock.target_ok(dt, request_card)
+	var preview_transactions := _gift_protocol_fixture("spec-preview-request")
+	var original_net_id: int = dt.net_id
+	dt.net_id = 200001
+	dt.set_meta("gift_request_id", 1)
+	var requested: bool = main.card_dock.target_ok(dt, request_card)
+	preview_transactions.close_round()
 	main.mp_mode = ""
 	main.mp.my_id = old_my_id
 	dt.owner_id = 0
-	ok("UI-29", target_good and target_capped and ownership and requested, "카드 미리보기 적용 상한·협동 소유권·요청 속성 구분")
+	dt.net_id = original_net_id
+	ok("UI-29", target_good and target_capped and ownership and unconfirmed and requested, "카드 미리보기 상한·소유권·전달 지원 확인 뒤 요청 속성만 허용")
 	# UI-32: 설명창은 내용 높이만큼, 보고 있는 오브젝트를 가리지 않는 위쪽 구석에
 	var dock = main.card_dock
 	var ui_size: Vector2 = main.ui_root.size
@@ -3774,14 +3790,17 @@ func _mp_more() -> void:
 	main.mp_i_ready = false
 	main.mp_afk_n = 0
 
-	# MP-16: 속성 요청 — 요청한 속성 카드만 친구 오브젝트에, 받으면 주인 기기가 넣고 요청이 지워짐
+	# MP-16: 요청 조회·상태 전달·ACK 없는 이전 패킷 차단. 실제 수락/정산은 gift state/native 게이트.
 	_fresh(3)
 	main.mp_mode = "coop"
 	main.mp.my_id = 1
 	var mine := _tower(main.viewport_system.center() + Vector2(-200, 0), Elem.FIRE)
 	var other := _tower(main.viewport_system.center() + Vector2(200, 0), Elem.WOOD)
 	other.owner_id = 2
+	other.net_id = 200001
 	other.req_e = Elem.WATER
+	other.set_meta("gift_request_id", 1)
+	var request_transactions := _gift_protocol_fixture("spec-coop-request")
 	main.picked = {"type": "elem", "e": Elem.WATER, "lv": 1}
 	var can_req: bool = main.interaction_system._place_ok(other)
 	main.picked = {"type": "elem", "e": Elem.FIRE, "lv": 1}
@@ -3794,11 +3813,12 @@ func _mp_more() -> void:
 	copy.free()
 	mine.req_e = Elem.WATER
 	main.lobby_system._mp_recv_gift(2, {"nid": mine.net_id, "e": Elem.WATER, "lv": 1})
-	var given: bool = mine.lv(Elem.WATER) == 1 and mine.req_e == -1 and main.lobby_system.mp_req_got_w == main.wave
+	var legacy_denied: bool = mine.lv(Elem.WATER) == 0 and mine.req_e == Elem.WATER
 	main.lobby_system._mp_recv_gift(2, {"nid": mine.net_id, "e": Elem.ICE, "lv": 1})
 	var no_req: bool = mine.lv(Elem.ICE) == 0
-	ok("MP-16", can_req and cant_other and synced and given and no_req,
-		"속성 요청: 요청 속성 넣기 %s, 다른 속성 막힘 %s, 상태 주고받기 %s, 받음 %s, 요청 없으면 안 들어감 %s" % [can_req, cant_other, synced, given, no_req])
+	ok("MP-16", can_req and cant_other and synced and legacy_denied and no_req,
+		"속성 요청: 요청 조회 %s, 다른 속성 막힘 %s, 상태 전달 %s, ACK 없는 패킷 거절 %s, 요청 없는 적용 없음 %s" % [can_req, cant_other, synced, legacy_denied, no_req])
+	request_transactions.close_round()
 	main.picked = {}
 
 	# MP-17: 대결 보낸 구체 — 살아 있는 인원 4명 x0.5·3명 x0.7, 한 웨이브 받는 상한 (1+웨이브/4)x1.5

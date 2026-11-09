@@ -855,7 +855,16 @@ func _draw() -> void:
 			var fresh := Elem.new_reactions(t.eff_now(), session.hover_elem)
 			if not fresh.is_empty():
 				session.draw_arc(t.position, Tower.RADIUS + 10.0 + pulse2 * 4.0, 0, TAU, 32, Color(fresh[0]["color"], 0.9), 3.0)
-	if session.phase == BinduSession.Phase.PLACE and not session.picked.is_empty():
+	var gift_waiting: bool = session.mp_mode == "coop" and session.multiplayer_system.gifts().blocks_local_choice()
+	if session.phase == BinduSession.Phase.PLACE and not session.picked.is_empty() and gift_waiting:
+		# 이미 예약한 카드를 거절/새 설치로 안내하지 않는다. 처리 결과까지 선택은 보관된다.
+		place_note = {}
+		var waiting_target := session.interaction_system._tower_at(mpos)
+		if waiting_target != null:
+			var waiting_color := Color(0.65, 0.85, 1.0)
+			session.draw_arc(waiting_target.position, Tower.RADIUS + 8.0, 0, TAU, 32, waiting_color, 2.0)
+			place_note = {"t":waiting_target, "lines":PackedStringArray(["처리 결과 확인 중", "결과가 올 때까지 카드를 보관해요"]), "col":waiting_color, "fs":16, "refuse":false}
+	elif session.phase == BinduSession.Phase.PLACE and not session.picked.is_empty():
 		var col := session.cards_system._card_color(session.picked)
 		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 150.0)
 		var is_elem: bool = session.picked["type"] == "elem"

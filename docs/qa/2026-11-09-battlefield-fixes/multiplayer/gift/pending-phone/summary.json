@@ -1,0 +1,17 @@
+{
+  "race": {
+    "host": 0,
+    "peer_a": 0,
+    "peer_b": 0
+  },
+  "race_reverse": {
+    "host": 0,
+    "peer_a": 0,
+    "peer_b": 0
+  },
+  "ack_loss": {
+    "host": 0,
+    "peer_a": 0,
+    "peer_b": 0
+  }
+}

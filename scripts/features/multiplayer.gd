@@ -18,6 +18,13 @@ var mp_was_last := false  # 대결: 한때 웨이브 꼴찌
 var mp_cur_layer: Node2D
 var mp_cur_t := 0.0
 var mp_cur_last := Vector2.INF
+var _gift_transactions: BinduGiftTransactions
+
+func gifts() -> BinduGiftTransactions:
+	if _gift_transactions == null:
+		_gift_transactions = BinduGiftTransactions.new(session)
+	return _gift_transactions
+
 func wf() -> float:
 	var session: BinduSession = self.session
 	return session.wrng.randf() if session.mp_seed != 0 and not session.w_off else randf()
@@ -86,6 +93,7 @@ func _mp_begin(msg: Dictionary) -> void:
 	session.mp_cursors.clear()
 	mp_code_last = session.mp.code
 	session.mp_mode = str(msg.get("mode", "vs"))
+	if session.mp_mode == "coop": gifts().start_round(msg)
 	session.mp.save_rejoin(session.mp_mode == "coop" and not session.mp.is_host())  # 협동 참가자만 다시 들어올 수 있다
 	var m := str(msg.get("map", "plain"))
 	Meta.map_id = m if m in Meta.MAP_IDS else "plain"
@@ -118,7 +126,8 @@ func _mp_begin(msg: Dictionary) -> void:
 	Meta.tutor_next = false  # 멀티플레이는 첫 판 안내(카드 종류를 하나씩 엶) 없이
 	session.progression_system._hide_title()
 	session.lanes.clear()
-	session.run_flow_system._start_choose()
+	if str(msg.get("t", "")) != "re":
+		session.run_flow_system._start_choose()
 	Meta.tutor_next = tn
 	session.hud_system.big_banner("%s 시작! %d명" % ["대결" if session.mp_mode == "vs" else "협동", session.mp_others.size() + 1], Color(0.6, 0.9, 1.0))
 
@@ -144,7 +153,10 @@ func _mp_packet(from: int, msg: Dictionary) -> void:
 		return
 	if session.mp_mode == "":
 		return
+	if session.mp_mode == "coop" and gifts().receive(from, msg): return
 	match t:
+		"lobby":
+			if session.mp_mode == "coop": gifts().mark_retired(from)
 		"gone":
 			session.mp_cursors.erase(from)
 			if session.mp_others.has(from):
@@ -197,7 +209,10 @@ func _mp_packet(from: int, msg: Dictionary) -> void:
 			session.hud_system._show_toast("%s가 구체 %d개를 보냈어요 (다음 웨이브에 더 옴)" % [_mp_name(from), n])
 			session.sfx.play("danger", 0.0)
 		"tw":
-			_mp_recv_towers(from, msg.get("list", []))
+			if session.mp_mode == "coop" and gifts().protocol_version == BinduGiftTransactions.VERSION and int(gifts().caps.get(from, 0)) == BinduGiftTransactions.VERSION:
+				gifts().accept_tw(from, msg)
+			elif not msg.has("gift_round"):
+				_mp_recv_towers(from, msg.get("list", []))
 		"cur":
 			if session.mp_mode == "coop" and from != session.mp.my_id:
 				var to := Vector2(float(msg.get("x", 0)), float(msg.get("y", 0)))
@@ -240,12 +255,14 @@ func _mp_packet(from: int, msg: Dictionary) -> void:
 			session.lobby_system._mp_recv_gift(from, msg)
 		"wave":
 			if session.mp_ghost and from == 1:
+				if int(msg.get("w", -1)) != session.wave + 1 or not gifts().accept_wave(msg): return
 				session.lobby_system._mp_wait_end()
 				session.wave = int(msg.get("w", session.wave + 1)) - 1
 				session.mp_wave_go = true
 				_end_ghost_rest()
 				session.run_flow_system._start_wave()
 				session.mp_wave_go = false
+				if session.phase == BinduSession.Phase.WAVE: gifts().wave_started()
 				session.mp_i_ready = false
 		"next":
 			if session.mp_ghost and from == 1:
@@ -273,9 +290,11 @@ func _mp_peer_up(id: int) -> void:
 	var session: BinduSession = self.session
 	if session.mp_mode != "coop" or not session.mp.is_host() or not session.mp_others.has(id) or session.phase == BinduSession.Phase.GAMEOVER:
 		return
-	if session.mp_kicked.has(id):
+	if session.mp_kicked.has(id) or gifts().retired_members.has(id):
 		session.mp.send({"t": "kick"}, id)  # 내보낸 사람은 다시 들어올 수 없다
 		return
+	session.mp.in_game[id] = true
+	gifts().peer_rejoined(id)
 	session.mp_others[id]["gone"] = false
 	var st := mp_start.duplicate(true)
 	st["t"] = "re"
@@ -291,9 +310,12 @@ func _mp_peer_up(id: int) -> void:
 			continue
 		if not tw.has(t.owner_id):
 			tw[t.owner_id] = []
-		tw[t.owner_id].append(t.mp_state())
+		var data: Dictionary = t.mp_state()
+		data["rqid"] = int(t.get_meta("gift_request_id", 0))
+		tw[t.owner_id].append(data)
 	st.merge({"w": session.wave, "ph": "wave" if session.phase == BinduSession.Phase.WAVE else "rest", "sc": session.score, "k": session.kills, "hp": session.core_hp, "mx": session.core_max,
 		"perks": session.perks.duplicate(), "tw": tw, "next": {"t": "next", "w": session.wave, "lanes": Array(session.lanes), "res": session.wave_resist, "boss": session.boss_plan}}, true)
+	st["gift_state"] = gifts().rejoin_state(id)
 	session.mp.send(st, id)
 	session.hud_system._show_toast("%s 다시 들어왔어요" % _mp_name(id))
 
@@ -305,6 +327,19 @@ func _mp_resync(msg: Dictionary) -> void:
 	var fresh := session.mp_mode == ""
 	session.mp_rejoin_until = 0
 	session.mp_rejoin_wait = 0.0
+	# 이전 전장의 gesture가 삭제된 Tower를 계속 가리키지 않게 새 snapshot 전에 정리한다.
+	session.card_dock.clear_gesture()
+	session.card_dock.close_inspector()
+	session.interaction_system.moving = null
+	session.interaction_system.press_t = null
+	session.interaction_system.dragging = false
+	session.interaction_system.drag_group.clear()
+	session.interaction_system.drag_origs.clear()
+	session.interaction_system._direction_group.clear()
+	session.interaction_system._direction_origins.clear()
+	session.interaction_system._move_selection.clear()
+	session.interaction_system.boxing = false
+	session.interaction_system.aim_hold = false
 	for t in session.towers.get_children():
 		session.towers.remove_child(t)
 		t.queue_free()
@@ -340,6 +375,7 @@ func _mp_resync(msg: Dictionary) -> void:
 			t.owner_id = int(owner)
 			t.net_id = int(d.get("nid", 0))
 			t.mp_apply(d)
+			t.set_meta("gift_request_id", int(d.get("rqid", 0)))
 			if t.order.is_empty():
 				t.free()
 				continue
@@ -353,14 +389,21 @@ func _mp_resync(msg: Dictionary) -> void:
 		session.wave = int(msg.get("w", 1)) - 1
 		mp_next["w"] = session.wave  # 호스트가 지금 웨이브 진입 방향을 보냈다 (평소 next는 쉬는 시간에 지난 웨이브 번호로)
 		_mp_ghost_rest()
+		var gift_state: Dictionary = msg.get("gift_state", {})
+		gifts().restore_rejoin(gift_state)
+		if not gifts().accept_rejoin_wave(gift_state):
+			session.hud_system._show_toast("전달 결과를 확인한 뒤 전장으로 돌아와요")
+			return
 		session.mp_wave_go = true
 		session.run_flow_system._start_wave()
 		session.mp_wave_go = false
+		if session.phase == BinduSession.Phase.WAVE: gifts().wave_started()
 	else:
 		session.wave = int(msg.get("w", 0))
 		_mp_ghost_rest()
 		session.cards_system._enter_ready()
 		session.waves_system._update_preview()
+		if msg.get("gift_state") is Dictionary: gifts().restore_rejoin(msg.gift_state)
 	session.mp_i_ready = false
 	session.hud_system._refresh_dps()
 	session.hud_system._show_toast("다시 들어왔어요 (웨이브 %d)" % maxi(session.wave, 1))
@@ -385,6 +428,7 @@ func _mp_tick(delta: float) -> void:
 	if session.mp_mode == "":
 		return
 	if session.mp_mode == "coop":
+		gifts().tick(delta)
 		_mp_cursor_tick(delta)
 	if session.mp_rejoin_wait > 0.0:
 		session.mp_rejoin_wait -= delta
@@ -412,6 +456,8 @@ func _mp_tick(delta: float) -> void:
 	session.mp_bar.visible = not session.title_label.visible
 	session.mp_bar.position = Vector2(session.hud.position.x + 2.0, session.hud.position.y + session.hud.size.y + 4.0)
 	var mine_n := _my_towers().size() if session.mp_mode == "coop" else 0
+	session.mp_req_btn.disabled = not gifts().supported_all() or gifts().blocks_local_choice()
+	session.mp_req_btn.tooltip_text = "친구들의 연결 확인 후 요청할 수 있어요" if not gifts().supported_all() else gifts().pending_notice()
 	session.mp_req_btn.visible = session.mp_mode == "coop" and session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY] and not session.perk_mode and mine_n > 0
 	session.mp_kick_btn.visible = session.mp_mode == "coop" and session.mp.is_host() and session.phase != BinduSession.Phase.GAMEOVER \
 		and session.mp_others.keys().any(func(id): return not session.mp_kicked.has(id))
@@ -459,6 +505,7 @@ func _mp_tick(delta: float) -> void:
 			elif session.mp_wait_left > 0.0:
 				me += ", %d초 뒤 대신 고름" % ceili(session.mp_wait_left)
 			session.mp_bar.text = "협동 · 나(%s) + %s" % [me, ", ".join(parts)]
+			if gifts().pending_notice() != "": session.mp_bar.text = gifts().pending_notice()
 			if session.mp_rejoin_until > 0:
 				session.mp_bar.text = "협동 · 다시 접속하는 중… %d초" % maxi(0, (session.mp_rejoin_until - Time.get_ticks_msec()) / 1000)
 			session.mp_bar.add_theme_color_override("font_color", Mp.owner_color(session.mp.my_id))
@@ -699,6 +746,7 @@ func _mp_cancel_wait_if_empty() -> void:
 ## force: 기다림이 다 지나 안 누른 사람(응답 없는 기기)을 두고 시작.
 func _mp_try_go(force := false) -> void:
 	var session: BinduSession = self.session
+	if session.mp_mode == "coop" and gifts().host_ledger.values().any(func(entry): return not entry.settled): return
 	var need: Array = session.mp.connected_ids()
 	var have := need.filter(func(id): return session.mp_ready.get(id, false)).size()
 	var host_ok: bool = session.mp_ready.get(1, false) and session.phase == BinduSession.Phase.READY
@@ -719,16 +767,19 @@ func _mp_try_go(force := false) -> void:
 			session.mp.send({"t": "wait", "s": w, "ids": left})
 			_mp_packet(1, {"t": "wait", "s": w, "ids": left})  # 호스트 자신에게도
 		if host_ok:
-			session.start_btn.text = "친구를 준비 취소 (%d/%d)" % [have + 1, need.size() + 1]
+			session.start_btn.text = "준비 취소 (%d/%d)" % [have + 1, need.size() + 1]
 		return
 	if session.phase != BinduSession.Phase.READY:
 		return
+	if not gifts().prepare_wave(force): return
+	var fence := gifts().local_fence
 	session.mp_ready.clear()
 	session.lobby_system._mp_wait_end()
-	session.mp.send({"t": "wave", "w": session.wave + 1})
+	session.mp.send({"t": "wave", "w": session.wave + 1, "gift_round":gifts().round_id, "gift_fence":fence})
 	session.mp_wave_go = true
 	session.run_flow_system._start_wave()
 	session.mp_wave_go = false
+	if session.phase == BinduSession.Phase.WAVE: gifts().wave_started()
 
 
 ## 참가자: 호스트가 웨이브를 시작했는데 아직 고르는 중이면 그대로 닫는다.
@@ -848,15 +899,18 @@ func _mp_apply_snap(msg: Dictionary) -> void:
 
 ## 내 오브젝트가 바뀌었으면 다른 기기로 보낸다.
 func _mp_send_towers() -> void:
-	var session: BinduSession = self.session
-	var list: Array = []
-	for t in _my_towers():
-		list.append(t.mp_state())
-	var sig := var_to_str(list)
-	if sig == mp_tw_sig:
-		return
+	if not gifts().can_publish_state(): return
+	var state: Dictionary
+	if gifts().protocol_version == BinduGiftTransactions.VERSION:
+		state = gifts().current_state()
+	else:
+		# 구host 판의 newclient끼리도 기존 relay의 plain TW를 주고받는다.
+		state = {"list":_my_towers().map(func(tower): return tower.mp_state())}
+	var sig := var_to_str(state)
+	if sig == mp_tw_sig: return
 	mp_tw_sig = sig
-	session.mp.send({"t": "tw", "list": list})
+	state["t"] = "tw"
+	session.mp.send(state)
 
 
 func _mp_recv_towers(owner: int, list: Variant) -> void:

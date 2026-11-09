@@ -16,6 +16,7 @@
 #   compare [기준=1] [새 규칙=3] [판 수=32] [stack]   같은 시드로 두 규칙을 돌려 차이와 판정 (새 규칙을 내기 전에)
 #   modes [규칙=1] [판 수=32] [모드...]   모드마다 같은 시드로 모드 없는 판과 비교: 웨이브 차이·점수 손익분기 배율
 #   spec                                   docs/features.md의 기대 동작 자동 점검 (tools/spec_check.gd)
+#   gift                                   협동 전달의 예약·정산·중복·복원 결정론 검사 (실통신은 별도 native)
 #   rulekeys                               관리자 페이지 수치 표 목록(server/app/rule_keys.json)을 Rules에서 다시 만듦 (VERIFY=1이면 비교만, check에 포함)
 #   patchkeys                              관리자 페이지 [패치] 하위 탭·특성·카드·모드 칸 목록(server/app/patch_sections.json)을 다시 만듦 (VERIFY=1이면 비교만, check에 포함)
 #   tutplay                                플레이 튜토리얼 23단계를 직접·건너뛰기·장 고르기로 끝까지 (tools/tut_play_check.gd)
@@ -275,6 +276,26 @@ PYCONFIG
 		cd / && rm -rf "$D"
 		exit $r
 		;;
+	gift)
+		if [[ ! -f "$ROOT/tools/battlefield_gift_state_check.gd" ]]; then
+			echo "FAIL gift state 검사 도구 없음"
+			exit 1
+		fi
+		D=$(copy_project "$$")
+		trap 'rm -rf "$D"' EXIT
+		python3 - "$D/scripts/online_config.gd" <<'PYGIFT'
+import re, sys
+from pathlib import Path
+path = Path(sys.argv[1])
+path.write_text(re.sub(r'const (SERVER_URL|MP_URL) := "[^\"]*"', r'const \1 := ""', path.read_text()))
+PYGIFT
+		r=0
+		T 300 "$G" --headless --fixed-fps 60 --path "$D" -s tools/battlefield_gift_state_check.gd > "$D/gift.txt" 2>&1 || r=1
+		grep -E "^(ok|FAIL|GIFT STATE)|SCRIPT ERROR|Parse Error|^ERROR:" "$D/gift.txt" || true
+		grep -qE '^GIFT STATE .*failures=0$' "$D/gift.txt" || r=1
+		grep -qE 'SCRIPT ERROR|Parse Error|^ERROR:' "$D/gift.txt" && r=1
+		exit $r
+		;;
 	tutplay)
 		# 플레이 튜토리얼: 23단계 직접 해내기(PC·터치)·건너뛰기만·장 고르기, 끝나면 기록·설정 그대로
 		D=$(copy_project "$$")
@@ -334,6 +355,8 @@ PYCONFIG
 		if python3 "$ROOT/tools/notes_check.py" > "$CHECK_DIR/notes.txt" 2>&1; then echo "notes 통과"; else grep -E "^FAIL|^NOTES" "$CHECK_DIR/notes.txt" | head -10; bad="$bad notes"; fi
 		"$0" spec > "$CHECK_DIR/spec.txt" 2>&1 || bad="$bad spec"
 		grep -E "^FAIL|^SPEC|SCRIPT ERROR|Parse Error|^ERROR:" "$CHECK_DIR/spec.txt" || true
+		"$0" gift > "$CHECK_DIR/gift.txt" 2>&1 || bad="$bad gift"
+		grep -E "^FAIL|^GIFT STATE|SCRIPT ERROR|Parse Error|^ERROR:" "$CHECK_DIR/gift.txt" || true
 		for suite in basic deaths; do
 			"$0" preview "$suite" > "$CHECK_DIR/preview-$suite.txt" 2>&1 || bad="$bad preview-$suite"
 			grep -E "^PARITY suite=|^FAIL|SCRIPT ERROR|Parse Error|^ERROR:" "$CHECK_DIR/preview-$suite.txt" || true

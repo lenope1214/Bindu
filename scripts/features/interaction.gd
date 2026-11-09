@@ -51,8 +51,14 @@ func _history_finish() -> void:
 		session.cards_system.call("finish_edit")
 
 
+func _gift_blocked() -> bool:
+	if session.mp_mode != "coop" or not session.multiplayer_system.gifts().blocks_local_choice(): return false
+	session.hud_system._show_toast(session.multiplayer_system.gifts().pending_notice())
+	return true
+
+
 func _can_edit_selection() -> bool:
-	return not session.get_tree().paused and not _reading_modal_open() and session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY] and not session.perk_mode
+	return not _gift_blocked() and not session.get_tree().paused and not _reading_modal_open() and session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY] and not session.perk_mode
 
 
 func set_additive_selection(on: bool) -> void:
@@ -731,6 +737,7 @@ func _drop_carried_card(screen: Vector2) -> void:
 
 func _place_card_at(mpos: Vector2, direct := false) -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked(): return
 	var target := _tower_at(mpos)
 	if TutPlay.on and session.tplay != null and not session.tplay.allow_place(target):
 		return
@@ -798,7 +805,7 @@ func _place_ok(t: Tower) -> bool:
 func _place_refuse(t: Tower) -> String:
 	var session: BinduSession = self.session
 	if not session.multiplayer_system._mine(t) and not session.lobby_system._req_ok(t):
-		return "친구가 놓은 오브젝트에는 넣을 수 없어요" + (" (요청한 속성 %s만)" % Elem.NAMES[t.req_e] if t.req_e >= 0 else "")
+		return str(session.multiplayer_system.gifts().offer_status(t, session.picked).reason)
 	return t.refuse_text(session.picked)
 
 
@@ -817,6 +824,7 @@ func _update_place_dim() -> void:
 ## 고른 카드를 오브젝트에 넣는다 (PLACE에서 오브젝트를 짧게 클릭).
 func _place_on(target: Tower) -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked(): return
 	if not session.multiplayer_system._mine(target):
 		if session.lobby_system._req_ok(target) and target.can_take(session.picked):
 			session.lobby_system._mp_give(target)  # 협동: 친구가 요청한 속성
@@ -843,6 +851,9 @@ func _place_on(target: Tower) -> void:
 
 func _begin_press(t: Tower, mpos: Vector2) -> void:
 	var session: BinduSession = self.session
+	if session.multiplayer_system.gifts().blocks_local_choice():
+		_select_tower(t)
+		return
 	if session.mp_req_mode and session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY]:
 		if session.multiplayer_system._mine(t):
 			session.lobby_system._mp_req_open(t)
@@ -1080,6 +1091,7 @@ func _aim_release() -> void:
 ## 방향 확정 (클릭, 또는 끌었다 놓기, 터치 [확정]).
 func _confirm_aim() -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked(): return
 	var d := session.field_view_system._aim_dir(session.place_pos)
 	if d == Vector2.ZERO:
 		return
@@ -1110,6 +1122,7 @@ func _confirm_aim() -> void:
 ## 메인 메뉴: 맵·스킨 선택, 시작, 기록·업적, 설정, 도움말.
 func _cancel_step() -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked(): return
 	if press_t:
 		_drop_press()
 		_restore_hint()
@@ -1147,6 +1160,7 @@ func _cancel_step() -> void:
 ## 선택지를 그대로 둔 채 오브젝트 고르기로 돌아간다.
 func _back_to_choose() -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked(): return
 	session.card_dock.clear_gesture()
 	session.cards_hidden = false
 	session.tap_sel = session.offer.find(session.picked)
@@ -1184,6 +1198,7 @@ func _end_move() -> void:
 ## 선택한 오브젝트의 [방향 변경] 또는 우클릭 끌기로 제자리 방향을 편집한다.
 func _start_move(t: Tower, group: Array = []) -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked(): return
 	_history_begin("방향 편집")
 	_move_selection = selected.duplicate()
 	_direction_group = group.duplicate() if not group.is_empty() else [t]
@@ -1228,6 +1243,7 @@ func _tower_at(p: Vector2, except: Tower = null) -> Tower:
 
 func _place_tower(p: Vector2, d: Vector2) -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked(): return
 	var t := Tower.new()
 	t.add(session.picked["e"], session.picked["lv"])
 	t.dir = d

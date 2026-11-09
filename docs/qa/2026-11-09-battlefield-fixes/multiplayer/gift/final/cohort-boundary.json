@@ -1,0 +1,17 @@
+{
+  "scope": "14 actual native scenarios + matching two-player regression before pending neutral-preview visual patch.",
+  "product_behavior_failures": 0,
+  "ui_messages": 0,
+  "native_actor_process_exit_failures": 0,
+  "strict_runtime_observation": {
+    "case": "owner_rejoin_before_commit/host",
+    "phase": "after assertions and final capture, during staggered QA process shutdown",
+    "stack": "Mp._send_pings -> _send_bytes -> native SCTP",
+    "errors": [
+      "SCTP sending failed errno=32",
+      "Sending failed errno=25",
+      "Method/function failed. Returning: FAILED"
+    ]
+  },
+  "followup": "QA shutdown shared-done barrier and stopped Mp processing, focused owner recovery rerun; pending neutral UI PC/phone followups."
+}

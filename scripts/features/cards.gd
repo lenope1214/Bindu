@@ -53,6 +53,8 @@ func _clear_shots() -> void:
 
 func _make_choices() -> void:
 	var session: BinduSession = self.session
+	if session.mp_mode == "coop" and not session.multiplayer_system.gifts().note_new_offer():
+		return
 	clear_edit_history()
 	session.offer.clear()
 	var guard := 0
@@ -631,6 +633,8 @@ func _choose_hint() -> String:
 ## 자동 튜토리얼 모달은 예약하지 않는다. 기존 이벤트 호출부는 짧은 안내와 함께 유지한다.
 func _on_reroll() -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked():
+		return
 	if session.phase != BinduSession.Phase.CHOOSE or session.get_tree().paused or session.coin_stage > 0:
 		return
 	if session.perk_mode:
@@ -651,6 +655,8 @@ func _on_reroll() -> void:
 ## 특성 새로고침: 지금 나온 특성 말고 다른 것으로 3개를 다시 뽑는다 (모자라면 지금 것으로 채움).
 func _perk_reroll() -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked():
+		return
 	if session.perk_rerolls <= 0 or not _perk_can_reroll():
 		session.hud_system._show_toast("이번 특성 선택의 새로고침을 다 썼어요")
 		return
@@ -732,8 +738,17 @@ func _tap_hover() -> void:
 		cs[k].modulate.a = 0.55 if session.tap_sel >= 0 and k != session.tap_sel else 1.0
 
 
+func _gift_blocked() -> bool:
+	if session.mp_mode != "coop" or not session.multiplayer_system.gifts().blocks_local_choice():
+		return false
+	session.hud_system._show_toast(session.multiplayer_system.gifts().pending_notice())
+	return true
+
+
 func _on_pick(card: Dictionary) -> bool:
 	var session: BinduSession = self.session
+	if _gift_blocked():
+		return false
 	var automatic: bool = session.mp_mode != "" and session.mp_auto_now
 	if session.phase != BinduSession.Phase.CHOOSE or session.picks_left <= 0 or session.perk_mode or not card in session.offer or (session.card_dock.input_blocked() and not automatic):
 		return false
@@ -785,6 +800,8 @@ func _place_hint() -> String:
 ## card: 이번에 넣은 카드.
 func _after_place(card: Dictionary = {}) -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked():
+		return
 	_log_offer(session.picked if card.is_empty() else card)
 	Ach.on_pick(_stat_key(session.picked if card.is_empty() else card))
 	session.progression_system._check_progress()
@@ -920,6 +937,8 @@ var short_re := RegEx.create_from_string("\\s*\\([^)]*\\)")  # 카드 간소화:
 ## 오른쪽 설명 줄 앞 그림. 글자를 키우면 줄이 접히므로 앞줄들이 몇 줄로 접히는지 세어 자리를 맞춘다.
 func _apply_card(target: Tower) -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked():
+		return
 	if target == null:
 		session.hud_system._show_toast("오브젝트 위에 놓으세요")
 		return
