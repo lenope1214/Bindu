@@ -128,7 +128,7 @@ func show_card(c: Dictionary, hd: Dictionary, n_take: int, n_react: int, els: Ar
 
 # ---------------- 높이 ----------------
 
-## 모든 속성 이름·레벨을 줄바꿈해 보여 주고 그 아래에 미리보기를 둔다.
+## 제목과 줄바꿈한 모든 속성 칩의 합계 높이. 수치와 순서를 바꿔도 전체 높이는 유지한다.
 func tower_header_h() -> float:
 	var x := 0.0
 	var rows := 1
@@ -140,6 +140,11 @@ func tower_header_h() -> float:
 			x = 0.0
 		x += width + 4.0
 	return 34.0 + rows * 28.0
+
+
+## 제목 바로 아래 핵심 수치 네 개. 속성 칩·공격 예시·상세 길이와 무관하다.
+func primary_metrics_rect() -> Rect2:
+	return Rect2(0, 34, size.x, 112)
 
 
 func tower_h() -> float:
@@ -220,7 +225,7 @@ func _tile(r: Rect2, icon: String, icol: Color, big: String, small: String) -> v
 	while fs > 13.0 and _tw(big, fs) > r.size.x - 42:
 		fs -= 1.0
 	_txt(r.position + Vector2(34, r.size.y / 2 + 2), big, fs, Color.WHITE)
-	_txt(r.position + Vector2(34, r.size.y - 7), small, 11, DIM, r.size.x - 38)
+	_txt(r.position + Vector2(8, r.size.y - 7), small, 11, DIM, r.size.x - 16)
 
 
 # ---------------- 미리보기 ----------------
@@ -387,20 +392,11 @@ func _draw_tower() -> void:
 	var y := 0.0
 	var w := size.x
 	var els: Dictionary = tw.eff if not tw.eff.is_empty() else tw.elements
-	# 제목: 공격방식 그림 + 이름 (+Lv) + 속성 칩
+	# 제목 → 핵심 수치 → 속성 칩. 속성이 많아져도 수치를 밀어내지 않는다.
 	var pname := Pat.pname(tw.pattern) + ("" if tw.plv == 1 else " Lv%d" % tw.plv)
 	Glyph.pat(self, tw.pattern, Vector2(10, 14), 9, Color.WHITE)
 	_txt(Vector2(26, 21), pname, 18, Color.WHITE)
-	var cx := 0.0
-	var cy := 34.0
-	for e in tw.order:
-		var label := "%s %d" % [Elem.NAMES[e], tw.lv(e)]
-		var cw := 34.0 + _tw(label, 13)
-		if cx > 0 and cx + cw > w:
-			cx = 0.0
-			cy += 28.0
-		cx += _chip(Vector2(cx, cy), "e:%d" % e, label, Elem.COLORS[e]) + 4.0
-	y = tower_header_h() + 8.0
+	y = primary_metrics_rect().position.y
 	var hc := tw.hit_calc()
 	var one: float = hc["one"] + hc["metal"]
 	var iv := tw.attack_iv()
@@ -425,7 +421,16 @@ func _draw_tower() -> void:
 		_tile(Rect2(tw2 + 8, y + 60, tw2, 52), "e:%d" % Elem.LIGHT, Color.WHITE, "%d%%" % roundi(ci[0] * 100.0), "치명타 ×%s" % ci[1])
 	else:
 		_tile(Rect2(tw2 + 8, y + 60, tw2, 52), "range", GREEN, "끝까지" if far else rnum, ("%s부터 약해짐" % rnum) if far else "사거리")
-	y += 120.0
+	var cx := 0.0
+	var cy := primary_metrics_rect().end.y + 8.0
+	for e in tw.order:
+		var label := "%s %d" % [Elem.NAMES[e], tw.lv(e)]
+		var cw := 34.0 + _tw(label, 13)
+		if cx > 0 and cx + cw > w:
+			cx = 0.0
+			cy += 28.0
+		cx += _chip(Vector2(cx, cy), "e:%d" % e, label, Elem.COLORS[e]) + 4.0
+	y = tower_header_h() + 8.0 + 120.0
 	_txt(Vector2(0, y + 14), targeting_summary(tw), 12, BLUE, w)
 	y += 22.0
 	var support: String = game.hud_system.support_summary(tw)

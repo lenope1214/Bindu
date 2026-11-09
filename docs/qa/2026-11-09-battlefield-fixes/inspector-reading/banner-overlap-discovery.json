@@ -1,0 +1,5 @@
+{
+  "run": "final-native",
+  "reason": "Confirmed left inspector title is covered by wave banner; legacy right-boundary helper treats left inspector as right boundary. Stop known failing visual revision, retain originals. Core tile/text fix already passes first130% cases; new final rerun will include explicit banner-overlap and safe-area assertions.",
+  "at": 1794255903.143452
+}

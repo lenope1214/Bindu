@@ -1,0 +1,4 @@
+appId: dev.bindu.usabilityqa.lifecycle
+---
+- tapOn:
+    point: "76%,65%"

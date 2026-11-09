@@ -1,0 +1,5 @@
+Picked up _JAVA_OPTIONS: -Xmx4g -XX:MaxMetaspaceSize=1g
+Picked up _JAVA_OPTIONS: -Xmx4g -XX:MaxMetaspaceSize=1g
+Running on BinduUsabilityQA-Reading-tablet - iOS 26.5 - 43CED725-4722-404F-AF81-D5C28190A761
+ > Flow native-collapse
+Tap on point (76%,65%)... COMPLETED

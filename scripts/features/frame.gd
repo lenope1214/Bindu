@@ -106,12 +106,22 @@ func _process(delta: float) -> void:
 		session.banner.position.y = maxf(session.banner.position.y, session.toast.get_rect().end.y + 4.0)  # 점수 줄이 세 줄일 때 알림과 겹치던 것
 	if session.guide_more.visible:
 		session.banner.position.y = maxf(session.banner.position.y, session.guide_more.get_rect().end.y + 4.0)  # [더 알아보기]가 "특성 선택" 큰 글 위에 걸치던 것
-	var ban_w := session.ui_root.size.x
-	var ban_full := session.ui_font.get_string_size(session.banner.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x
-	if ban_w / 2.0 + minf(ban_full, 800.0) / 2.0 > session.ui_layout_system._right_panel_x() - 8.0:
-		ban_w = minf(ban_w, session.ui_layout_system._right_panel_x() - 8.0)  # 긴 큰 글이 오른쪽 설명 위로 넘치던 것 (폰 "웨이브 3개 넘기기")
-	session.banner.size.x = minf(800.0, ban_w - 16.0)
-	session.banner.position.x = (ban_w - session.banner.size.x) / 2.0
+	# 설명창은 좌우로 옮겨진다. 왼쪽 창을 오른쪽 경계로 읽으면 음수 폭·글자 겹침이 생긴다.
+	var ban_left := 0.0
+	var ban_right := session.ui_root.size.x
+	for blocker: Control in [session.legend, session.card_dock.side]:
+		if blocker == null or not blocker.is_visible_in_tree():
+			continue
+		if blocker == session.card_dock.side and blocker.modulate.a <= 0.05:
+			continue
+		var br := blocker.get_rect()
+		if br.get_center().x < session.ui_root.size.x / 2.0:
+			ban_left = maxf(ban_left, br.end.x + 8.0)
+		else:
+			ban_right = minf(ban_right, br.position.x - 8.0)
+	var ban_w := maxf(16.0, ban_right - ban_left)
+	session.banner.size.x = maxf(1.0, minf(800.0, ban_w - 16.0))
+	session.banner.position.x = ban_left + (ban_w - session.banner.size.x) / 2.0
 	session.banner.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if session.ui_font.get_string_size(session.banner.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x > session.banner.size.x else TextServer.AUTOWRAP_OFF
 	if session.choice_box.visible and not session.cards_hidden and session.choice_box.get_child_count() > 0:
 		# 카드가 떠 있으면 "웨이브 N" 큰 글이 카드 윗변에 걸치지 않게 그 위로

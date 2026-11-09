@@ -50,3 +50,5 @@
 12번째 작업은 [같은 속성 입력의 상성 비트키 재사용](qa/2026-11-09-battlefield-fixes/performance/zone-application/README.md)이다. Tower별 캐시는 보류하고 Share에 마지막 값 사본 하나만 둔다. 실제 전투량·끝 상태·RNG까지 같은 ABBA와 제품/전투/release/전체 검사를 통과했으며, 제어되지 않은 이전 성능 수치는 인과 개선률로 쓰지 않는다. 배속·사운드·밸런스·카메라는 유지한다.
 
 13번째 작업은 [저강도 FX의 장식 생략](qa/2026-11-09-battlefield-fixes/performance/fx-quality/README.md)이다. 장식 외 명령·기본 모드·원본/snapshot·같은 draw 순서의 RNG를 보존한다. 계측 raw viewport CPU의 이전 draw 혼입을 제외하고 직접 callback과 강제 반환 시간을 구분했다. 기본 끔·카메라·배속·판정은 유지하며 고배속 지연과 물리 검증은 계속 미완료다.
+
+19번째 작업은 [정보창 핵심 수치와 공격 예시](qa/2026-11-09-battlefield-fixes/inspector-reading/README.md)다. 수치 네 개를 먼저 읽고, 긴 정보를 스크롤한 뒤에도 고정 버튼으로 공격 예시를 펼치고 접는다. 긴 라벨과 왼쪽 정보창/배너의 가림도 같은 작업에서 다룬다. 실제 그리기/글꼴 폭·native 터치·공통 회귀를 구분하며 전체50개 완료로 확대하지 않는다.

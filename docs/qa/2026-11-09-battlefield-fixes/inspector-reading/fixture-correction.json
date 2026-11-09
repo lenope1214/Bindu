@@ -1,0 +1,5 @@
+{
+  "reason": "Known fixture coverage gap: base lifecycle fixture does not initialize skill_ids. Initial baseline and product observations cover no-skills only; product matrix stopped deliberately, not on an observation timeout. Preserve all originals. Final paired builds will initialize the real skill set.",
+  "stopped_pid": 56395,
+  "at": 1794255292.38449
+}

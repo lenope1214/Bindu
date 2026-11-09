@@ -71,3 +71,5 @@ compare는 baseline122와 현재302의 원자료를 요구한다. 중간 PNG/상
 **I-08 / P2, 미수정:** 저장 없는 첫 iOS 진입의 배율은1.0이다. 코드의 모바일 missing-key 기본값/주석은1.3이지만, `_load_best()`가 저장 파일이 없을 때 `Meta.load_into()`를 건너뛴다. [새 설치 기본 진입 원자료](final-native/phone/native-set0-ready-closed/state.json). 실제 사람의 판독 실패를 관측했다고 주장하지 않는다. 첫 설치와 기존 사용자 선택을 분리해 후속 검증·수정한다. BF-50과 전체50개 목표는 active/partial을 유지한다.
 
 **I-09 / P2, 읽기 후속:** [iPad130 정보창](final-native/tablet/130-set0-inspected-closed/screen.png)에서는 핵심 수치 일부가 스크롤 아래에 남는다. 정보창을 조작부 위에서 끝내는 현재 배치의 제약이다. 이번 버튼 문구/겹침 통과를 정보 읽기 과제 성공으로 확대하지 않는다. 핵심 수치를 먼저 읽는 구조와 예시/부가 정보의 노출을 추가 검토한다. 실제 사람의 실패율·시간은 미측정이다.
+
+이 단계의88/REVISE는 위 snapshot의 판정으로 보존한다. 이후 핵심 수치·고정 공격 예시 버튼·라벨 잘림을 다루는 [별도 수정과 재검증](../inspector-reading/README.md)으로 이어진다.

@@ -58,6 +58,8 @@ var reading_review := false
 var reading_return_cards := false
 var inspect_return_cards := false
 var brief: Label
+var read_actions: HBoxContainer
+var preview_actions: HBoxContainer
 var preview_btn: Button
 var expand_btn: Button
 var use_btn: Button
@@ -156,12 +158,13 @@ func _init(main) -> void:
 	side.set_folded(Meta.panel_fold.get("info", false))
 	game.ui_root.add_child(side)
 	var content := side.body
+	content.add_theme_constant_override("separation", 8)
 	brief = Label.new()
 	brief.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	brief.add_theme_font_size_override("font_size", Meta.fs(14))
 	brief.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	content.add_child(brief)
-	var read_actions := HBoxContainer.new()
+	read_actions = HBoxContainer.new()
 	read_actions.add_theme_constant_override("separation", 6)
 	content.add_child(read_actions)
 	expand_btn = _action_button("전체 정보", read_actions, func():
@@ -200,6 +203,9 @@ func _init(main) -> void:
 	pic = InfoPanel.new(game)
 	pic.hide()
 	column.add_child(pic)
+	preview_actions = HBoxContainer.new()
+	content.add_child(preview_actions)
+	preview_btn.reparent(preview_actions)
 	detail = RichTextLabel.new()
 	detail.add_theme_font_size_override("normal_font_size", Meta.fs(14))
 	detail.add_theme_color_override("default_color", Color("c5cfdc"))
@@ -943,6 +949,8 @@ func _update_side() -> void:
 	read_next.visible = not reading_card.is_empty()
 	use_btn.visible = not reading_card.is_empty() and game.phase == game.Phase.CHOOSE and game.picks_left > 0
 	use_btn.disabled = input_blocked() or (game.mp_mode == "coop" and game.multiplayer_system.gifts().blocks_local_choice())
+	read_actions.visible = read_prev.visible or read_next.visible or use_btn.visible
+	preview_actions.visible = preview_btn.visible
 	heading.visible = not ((game.touch_ui or Meta.phone()) and pic.mode == "tower")
 	detail.visible = text != "" and not compact
 	var sig: String = title + "|" + text + ("|" + str(tower.get_instance_id()) if is_instance_valid(tower) and card.is_empty() else "")
@@ -990,10 +998,16 @@ func _place_side(size: Vector2, cards: bool) -> void:
 			parts.append(control.get_combined_minimum_size().y)
 	if not side.folded:
 		parts.append((scroll.get_child(0) as Control).get_combined_minimum_size().y)
-	var want: float = sb.get_minimum_size().y + 4.0 + 12.0 * maxf(0, parts.size() - 2)
+	var want: float = sb.get_minimum_size().y + 4.0 + side.body.get_theme_constant("separation") * maxf(0, parts.size() - 2)
 	for v in parts:
 		want += v
 	var minimum_height: float = maxf(64.0, side.get_combined_minimum_size().y)
+	# 잠깐 뜨는 배너를 피하더라도 제목과 핵심 수치 네 개는 첫 화면에 남긴다.
+	var reading_height := minimum_height
+	if not side.folded and pic.visible and pic.mode == "tower":
+		reading_height = maxf(reading_height, sb.get_minimum_size().y + side.head.get_combined_minimum_size().y + 4.0 + pic.primary_metrics_rect().end.y)
+		if preview_actions.visible:
+			reading_height += preview_actions.get_combined_minimum_size().y + side.body.get_theme_constant("separation")
 	want = maxf(want, minimum_height)
 	var cands := [Rect2(size.x - w - 12.0, rtop, w, 0.0), Rect2(12.0, ltop, w, 0.0)]
 	for control: Control in [game.toast, game.banner, game.paused_label, game.pause_box, game.skip_badge]:
@@ -1003,7 +1017,7 @@ func _place_side(size: Vector2, cards: bool) -> void:
 		for i in cands.size():
 			var candidate: Rect2 = cands[i]
 			# 잠깐 뜨는 글(알림·배너) 아래로 내리면 창이 카드 줄 머리 버튼(새로고침·넘기기)을 덮을 만큼 좁아지면 그대로 둔다.
-			if overlay.position.x < candidate.end.x and overlay.end.x > candidate.position.x and overlay.end.y + 8 <= bottom - 100.0:
+			if overlay.position.x < candidate.end.x and overlay.end.x > candidate.position.x and overlay.end.y + 8 <= bottom - reading_height:
 				candidate.position.y = maxf(candidate.position.y, overlay.end.y + 8)
 				cands[i] = candidate
 	var scores := []

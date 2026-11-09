@@ -917,11 +917,25 @@
         "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/ios-layout/summary.json"
       ]
+    },
+    {
+      "type": "native_inspector_primary_metrics_verified_preview_followup_open",
+      "facts": [
+        "Baseline16cases:14withmetric/label clipping; final152actual iOS cases:0metric/text/safe-area/banner/skill-control violations.",
+        "Matched16cases80state comparisons preserve metrics/labels, field1280x720, camera, picks and towers; same observer/template, product70script hashes verified, changed3scripts.",
+        "Both devices native expand/scroll/collapse preserve gameplay state; all152inspector crops reviewed in12contact sheets.",
+        "Full check252/86/28,345parity cases4140samples,fuzz4x3000/exit0,restore4/8/12to13 and desktop6groups pass. Existing phone modalUI8, desktopObjectDB, Loggerpositive warning and architecture43old/new0 remain explicit.",
+        "I11actual native expand leaves animation below fold, region180exceeds clip146 atphone130; visual89/REVISE and full50active. I08fresh scale and physical/human/performance remain open."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/inspector-reading/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/inspector-reading/summary.json"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "Resolve I09 primary metrics below fold at large type and recapture reading states; then fix I08 fresh mobile UI defaults preserving stored user settings. Continue BF49 and physical/human tasks; full50 remains active.",
+    "next_local_action": "Fix I11 explicit preview reveal with matching native interaction proof; then I08fresh mobile defaults preserving choices. Continue BF49 and physical/human/accessibility tasks. Full50 remains active.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },
@@ -976,10 +990,19 @@
     {
       "id": "I-09",
       "title": "큰 배율 정보창의 핵심 수치가 스크롤 아래에 남음",
-      "implementation": "observed_reading_followup",
-      "verification": "native_iPad130_capture_only_no_human_task",
+      "implementation": "implemented",
+      "verification": "local_native152geometry_and_text_verified_no_human_claim",
       "evidence": [
-        "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/inspector-reading/README.md"
+      ]
+    },
+    {
+      "id": "I-11",
+      "title": "공격 예시를 펼쳐도 요청한 영역이 바로 보이지 않음",
+      "implementation": "observed_unfixed",
+      "verification": "actual_native_expansion_and_screenshot",
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/inspector-reading/preview-followup.json"
       ]
     }
   ]
