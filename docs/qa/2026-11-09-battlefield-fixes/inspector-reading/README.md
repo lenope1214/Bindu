@@ -50,3 +50,5 @@
 재실행은 격리 앱 생성기의 `--source-ref <읽기 수정 commit>`와 이 폴더의 observer를 사용한다. `run_native.py --devices <owned Reading devices.json> --build <build.json> --output <새 빈 폴더> --full --require-pass` 뒤 `compare.py`로 baseline16/제품152를 대조한다. 현재 checkout이 해당 제품 소스와 다르면 비교기가 실패한다. 로컬 원본 중 일부만 PR에 포함하며 포함 여부는 [게시 manifest](../publication-manifest.json)를 따른다.
 
 native 실행 흐름: [폰 펼침](final-verified/phone/native-expand.yaml) · [로그](final-verified/phone/native-expand.log), [폰 스크롤](final-verified/phone/native-scroll.yaml) · [로그](final-verified/phone/native-scroll.log), [폰 접기](final-verified/phone/native-collapse.yaml) · [로그](final-verified/phone/native-collapse.log), [태블릿 펼침](final-verified/tablet/native-expand.yaml) · [로그](final-verified/tablet/native-expand.log), [태블릿 스크롤](final-verified/tablet/native-scroll.yaml) · [로그](final-verified/tablet/native-scroll.log), [태블릿 접기](final-verified/tablet/native-collapse.yaml) · [로그](final-verified/tablet/native-collapse.log).
+
+I-11은 이후 [별도 예시 노출 수정](../attack-preview/README.md)에서 처리했다. 이 단계의89/REVISE와180/146관찰은 해당 snapshot의 기록으로 보존한다.

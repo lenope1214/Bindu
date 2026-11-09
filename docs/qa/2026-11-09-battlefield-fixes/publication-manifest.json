@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/README.md",
-      "bytes": 13247,
-      "sha256": "8dd3f987ac50369d53edf267cf4227f545cd7fe0cdc5dbe52db9c5e97afb280f",
+      "bytes": 13238,
+      "sha256": "266969ddd891b18d4e7b0f2cb113ac66ca4083e966d5de3ee3e1c05cbb2bca59",
       "published": true
     },
     {
@@ -30,6 +30,2718 @@
       "path": "docs/qa/2026-11-09-battlefield-fixes/architecture-final.log",
       "bytes": 2559,
       "sha256": "56100687ac26ea2044943f0670a16da78fc0ba85752a5b3a38c0845f2a884293",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/README.md",
+      "bytes": 6141,
+      "sha256": "dc480f925e5013468a5d6649760ba378851c915960357f011c43af8c38dd681d",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/architecture-comparison.json",
+      "bytes": 46,
+      "sha256": "a6f82c3434509311256ca8330dba3afb8453afccafb99dbda02fb355bb67b310",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/build-evidence/build.json",
+      "bytes": 7863,
+      "sha256": "b2bc4b090e2ab7f1132e915710e151502aa051ab67714fef53a82a7fcecefb9c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/build-evidence/export.log",
+      "bytes": 26287,
+      "sha256": "5407e5a6e54586c4c089b793fa179abe61cf52d486a32a74662c63c4c7f2986a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/build-evidence/import.log",
+      "bytes": 9154,
+      "sha256": "fef471bccd62a516e93109081843db161e327666df2bd2b8e7bcf0724fc384f3",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/build-evidence/xcode.log",
+      "bytes": 80972,
+      "sha256": "169db4f2c1de039d3a4c4f26a376de37dbb469f9f6be09923656cf192925e787",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/compare.py",
+      "bytes": 2410,
+      "sha256": "fd4c2699f390ea54f25f29d33b08d41e471883f083772d4cdd5f30259ce07c54",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/compatibility/import.log",
+      "bytes": 11322,
+      "sha256": "7a9eb1d31739d96c8115c2bdc5448ef751b1f56845db24781e17167d5b5cc497",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/compatibility/pc130-battlefield_core_check/read-card.png",
+      "bytes": 149684,
+      "sha256": "728481acbdc38966b1903c25441a84fead798a103cb2d4cc3eb384c99ff4e108",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/compatibility/pc130-battlefield_core_check/run.log",
+      "bytes": 1432,
+      "sha256": "59ff3b624cccf225c9fe38a663da848d63621a624830e0d75009cf53b78a6ce1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/compatibility/pc130-battlefield_core_check/undo-card.png",
+      "bytes": 151303,
+      "sha256": "0c7984035ea9459a58377813322a086ff97ef7244fa672683de98da3da7cd67f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/compatibility/pc130-battlefield_core_check/wave-review.png",
+      "bytes": 147593,
+      "sha256": "ef05b796d82128ee3830ca8ad1c4eac566a864a54f48786266c4228c56d92a4b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/compatibility/pc130-battlefield_information_check/information-summary.png",
+      "bytes": 131737,
+      "sha256": "882b0d1f825a43657d2e9edec2ddc6a7a5ddb7f0873120da0ae2132cd857ad04",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/compatibility/pc130-battlefield_information_check/run.log",
+      "bytes": 1505,
+      "sha256": "89a33d1a5031e1c910576e45b02f80bb54ae28c73b09204ca30839dfc3a042cf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/compatibility/phone130-battlefield_core_check/read-card.png",
+      "bytes": 70494,
+      "sha256": "403a9074f9b1b211630d04fe2fa9b228488161778bdb7f0347d7b380a22ff22d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/compatibility/phone130-battlefield_core_check/run.log",
+      "bytes": 1301,
+      "sha256": "c8cce3573da3bb5e672ed36bdf47375f9173b4c9016d9e1f354ef4ab12b7b8df",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/compatibility/phone130-battlefield_core_check/undo-card.png",
+      "bytes": 93760,
+      "sha256": "87cda3a1b0a02be03710bfc85fc74ea0875f4b67861683105bb3579656677116",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/compatibility/phone130-battlefield_core_check/wave-review.png",
+      "bytes": 88628,
+      "sha256": "e79471fccb975e49bc8776748ea65358c8bfe8a4bb921ec19d55956798cdfc91",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/compatibility/phone130-battlefield_information_check/information-summary.png",
+      "bytes": 72399,
+      "sha256": "7192f2de71616e8b528f061adb8598e4949d1cba31f3660863de5845f10bbd2c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/compatibility/phone130-battlefield_information_check/run.log",
+      "bytes": 1636,
+      "sha256": "3d2b851f3bc84b4c650d736b55689bf576f52902f6393fcbd69e627ebc0c1cf9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/compatibility/run.json",
+      "bytes": 7932,
+      "sha256": "94d8ba4861d57d4725d673b58b9bb726f00cc241872010d37f058de8a10e41b3",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop/import.log",
+      "bytes": 11322,
+      "sha256": "7a9eb1d31739d96c8115c2bdc5448ef751b1f56845db24781e17167d5b5cc497",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop/pc/preview-revealed.png",
+      "bytes": 241188,
+      "sha256": "b0e74e204a772b7a08ff9806e35a38bb892487b352a0763cf308ad54370b6ee8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop/pc/primary-returned.png",
+      "bytes": 241290,
+      "sha256": "ae4c65d6792eeca85466c6652c92c5a8b4a92317b70c5a158681239d44393955",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop/pc/run.log",
+      "bytes": 824,
+      "sha256": "52f61f3eace5aa1b80994c34449d6770c4db5b9d90d9190bd19947ff2b7b0dcb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-all-phases/import.log",
+      "bytes": 11322,
+      "sha256": "7a9eb1d31739d96c8115c2bdc5448ef751b1f56845db24781e17167d5b5cc497",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-all-phases/pc/preview-phase-0.png",
+      "bytes": 202330,
+      "sha256": "7998783245c194289667dc32a22f258b918d6b948e42e8ee621db0276c903b0c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-all-phases/pc/preview-phase-6.png",
+      "bytes": 207405,
+      "sha256": "785f74728b995b74033f8b013406d31477dd4d5acc52b2c67fa87626cba68660",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-all-phases/pc/preview-revealed.png",
+      "bytes": 152568,
+      "sha256": "49be97d38fad14ec25c7a5128249da66f26c9c7c7961c35dd6646b3c5e8352bb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-all-phases/pc/primary-returned.png",
+      "bytes": 149741,
+      "sha256": "fb2d19917c10241656fbb3e114a155acbdedcbde88b3168c70588525b723a6a1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-all-phases/pc/run.log",
+      "bytes": 2369,
+      "sha256": "233f6641ccd7d69fd6389e1b2bd4a2d9da3eebd791166a56617a49f908968233",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-all-phases/phone/preview-phase-0.png",
+      "bytes": 88864,
+      "sha256": "3ad95f91226d3b9da2bee6c94eb3abc2df97364f7e561917cf01b60c8ed39110",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-all-phases/phone/preview-phase-6.png",
+      "bytes": 90508,
+      "sha256": "4553eca47bbbff77e2ae79375f085710b5ac12ddbb284525784803ba4843ca6b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-all-phases/phone/preview-revealed.png",
+      "bytes": 80546,
+      "sha256": "226a0a83f53d595d9d2c0414e0e92c5ce06bfdbe1ee023093e174506da289701",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-all-phases/phone/primary-returned.png",
+      "bytes": 78367,
+      "sha256": "e8d7cbc6aff2f8adfd2362b76ea77615b896861ef6fc639e7e45cf1af8269592",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-all-phases/phone/run.log",
+      "bytes": 1253,
+      "sha256": "2b3c0fbf7f246c822ecf3c28fc0e25c63ea30d71d2bd7e2b018af64f48aea0b6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-all-phases/run.json",
+      "bytes": 7279,
+      "sha256": "441f8ccd235101fdf937ce7a63eec6bacc85f3c82798d88185b150ec3239177b",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-current/import.log",
+      "bytes": 11322,
+      "sha256": "7a9eb1d31739d96c8115c2bdc5448ef751b1f56845db24781e17167d5b5cc497",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-current/pc/preview-revealed.png",
+      "bytes": 136446,
+      "sha256": "7adeafa5d9b38336325270790d586d46191ebaf5441e095c00d858c070033fb5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-current/pc/primary-returned.png",
+      "bytes": 139421,
+      "sha256": "fadc8b901df18a8eac8e6548b0164526c82ecb8c916b486b6f8f7c53f3f9d717",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-current/pc/run.log",
+      "bytes": 1175,
+      "sha256": "207266ea6687f3fbbdc7300794c22a257e1c179e9b0ab8ce34863559d3ecc976",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-current/phone/preview-revealed.png",
+      "bytes": 79167,
+      "sha256": "3b6e1fbe3403629ff0116bc977b26835e1c53ac598941e75aa6080be65a0623b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-current/phone/primary-returned.png",
+      "bytes": 77818,
+      "sha256": "626e691a06f358873a9171900e70919d223deff972c9f4816fddb87603bc5699",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-current/phone/run.log",
+      "bytes": 981,
+      "sha256": "907803b421feca48a53db4fb679420ea74d665a71d96f9320b3e4310ffe518c0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-current/run.json",
+      "bytes": 7279,
+      "sha256": "f2af5a87e1eabfd96b8a2163bc6fc349bac91a89919b3edad8486552d3c0cfb8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-final/import.log",
+      "bytes": 11322,
+      "sha256": "7a9eb1d31739d96c8115c2bdc5448ef751b1f56845db24781e17167d5b5cc497",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-final/pc/preview-revealed.png",
+      "bytes": 251357,
+      "sha256": "7d71d954b284cddfebdf7e30a918f25b183dc5d139c4357646a90d9374b1a1f4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-final/pc/primary-returned.png",
+      "bytes": 251345,
+      "sha256": "2dec0ed4845b88b72a0ab8470b22333bab9dcdd78cd0c401f8548fd73c79763b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-final/pc/run.log",
+      "bytes": 974,
+      "sha256": "90661bdec428b62c0aea98e78f0d3a764c986b198b6cb76f357d998cb2eccb50",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-reopen-before/import.log",
+      "bytes": 11322,
+      "sha256": "7a9eb1d31739d96c8115c2bdc5448ef751b1f56845db24781e17167d5b5cc497",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-reopen-before/pc/preview-revealed.png",
+      "bytes": 142937,
+      "sha256": "40ffce118b743ad5ab4e032c88273fec3f4b24ccad7b20d270addf18b9bf22de",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-reopen-before/pc/primary-returned.png",
+      "bytes": 140278,
+      "sha256": "d165a7ba74e0479967ea8c7027c9515cabc728a5ce1476aba8f2e519fbeff020",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-reopen-before/pc/run.log",
+      "bytes": 1260,
+      "sha256": "4bf0588a2ba8c1395957cb9a50fa0ab3199727b3ed2ed2d110a2a034452ad7c9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-reopen-fixed/import.log",
+      "bytes": 11322,
+      "sha256": "7a9eb1d31739d96c8115c2bdc5448ef751b1f56845db24781e17167d5b5cc497",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-reopen-fixed/pc/preview-revealed.png",
+      "bytes": 143954,
+      "sha256": "9e1729ae87a270aa577be26cd0e9e819154830966afe17f745858c8bd7e8a275",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-reopen-fixed/pc/primary-returned.png",
+      "bytes": 139085,
+      "sha256": "6fedb149b5defe6ab4d84e6175cd74558ba9689bc6a36b8923caf7865c92f08d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-reopen-fixed/pc/run.log",
+      "bytes": 1260,
+      "sha256": "d335a0be1a14664ac87c0811e722c291a764e5023385a4bcb1d8cab0ebc22622",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-reopen-fixed/phone/preview-revealed.png",
+      "bytes": 80014,
+      "sha256": "370ca6354bc7ec41ec314215270a05a1cc4d29aa0f5a3401b33466e6bb9dc5f7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-reopen-fixed/phone/primary-returned.png",
+      "bytes": 78010,
+      "sha256": "152f0aca9c0074a0bf7127b6ec1f5cd8033a17304be37f56597bc6026e258af5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-reopen-fixed/phone/run.log",
+      "bytes": 1066,
+      "sha256": "0b5f9f88bc713acf763c5352baf1b5e0e576bba0a0229617d2f657e73bd7528b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-reopen-fixed/run.json",
+      "bytes": 7279,
+      "sha256": "910b9b5a556d6652c82f7e4e5075548ae40cc503993293615bfd8cc9d99e6bca",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-routing/import.log",
+      "bytes": 11322,
+      "sha256": "7a9eb1d31739d96c8115c2bdc5448ef751b1f56845db24781e17167d5b5cc497",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-routing/pc/preview-revealed.png",
+      "bytes": 238967,
+      "sha256": "ac7d8947f6a43022ffca652eecd635fa9a4f55c592ba1f2c8ef72809726ac515",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-routing/pc/primary-returned.png",
+      "bytes": 238646,
+      "sha256": "c7b72e7670de506f249a5c90aba657bcf529cd6ff61b28ca1e0127f5d56eb1fd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-routing/pc/run.log",
+      "bytes": 1298,
+      "sha256": "59f2af431faf28a3ad39881dd4159db68dd72403a975b0f93128bb34fdc80f5d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-verified/import.log",
+      "bytes": 11322,
+      "sha256": "7a9eb1d31739d96c8115c2bdc5448ef751b1f56845db24781e17167d5b5cc497",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-verified/pc/preview-revealed.png",
+      "bytes": 152006,
+      "sha256": "e04f9fcf0b0870653305ded934b0e05e3a6f8669dd7896dccf1ad13e9b743b43",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-verified/pc/primary-returned.png",
+      "bytes": 147429,
+      "sha256": "fb8c81cfecd37030df061ea9fa01e2d78108fc78e08f33877d66b3ae3f360cb1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/desktop-verified/pc/run.log",
+      "bytes": 1175,
+      "sha256": "61880183fe68dd441c020744b3565d0468d9415eef4ddf3dc8477109300b8860",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/full-check.log",
+      "bytes": 1133,
+      "sha256": "70be47922a1ef93fdbd45273f1970a7b5b4bca63097ce20488c86b6e5e610f4d",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/intermediate-failures.json",
+      "bytes": 1907,
+      "sha256": "3d3af86009e60b17e626a08220a8a4c7eca7046a2e47b3320e21d90cf0c79662",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.7-dense-wave-left-preview/capture.log",
+      "bytes": 310,
+      "sha256": "759b3576763c744362efcc61e85accdc575cf5f49766405cd270f9be8df88a8d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.7-dense-wave-left-preview/screen.png",
+      "bytes": 304251,
+      "sha256": "54b942b8a61b983324b1a3c56c0aa231ebe8f67402bbc8863d3b4625fbd0f33b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.7-dense-wave-left-preview/state.json",
+      "bytes": 7475,
+      "sha256": "5ca97a26a9736cbe8bfdf34d85ee9600c6479636495050fa3e1fbb80412bebee",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.7-dense-wave-right-preview/capture.log",
+      "bytes": 311,
+      "sha256": "885a545b122a6d882ae0931bc298c4e5d6b7dc654dc91db1ab4adc45f22a9eb7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.7-dense-wave-right-preview/screen.png",
+      "bytes": 301987,
+      "sha256": "12127da30eb46ccf55110af81b866cd4c5825c977681184e6a44a2204b69c800",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.7-dense-wave-right-preview/state.json",
+      "bytes": 7487,
+      "sha256": "c8fbbadead3e9c52bc8e014d40af38926fb033f15407587129b8772e40ed4c0d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.7-simple-wave-left-preview/capture.log",
+      "bytes": 311,
+      "sha256": "49cf0c19aeb459794688953f3da341929411236250e90f899bcae8200aeba92c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.7-simple-wave-left-preview/screen.png",
+      "bytes": 226663,
+      "sha256": "0e235fc8c83ec735488efd588d42eac35473be6c1fe381400a9589efa4cc1f2a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.7-simple-wave-left-preview/state.json",
+      "bytes": 7116,
+      "sha256": "9d58047e7f39f4564893cb19bdf381fcc6050c0bc7212b43462eba63f571310b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.7-simple-wave-right-preview/capture.log",
+      "bytes": 312,
+      "sha256": "76c4016fd4615a215bdb8a0b0f14410b145db10225bf0c85c62f3bdce2fae318",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.7-simple-wave-right-preview/screen.png",
+      "bytes": 226671,
+      "sha256": "25f2695f8dda5de38191cdfc6fb0a6d2ba7b5af6f34785d1dd0a7636cee35684",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.7-simple-wave-right-preview/state.json",
+      "bytes": 7117,
+      "sha256": "40fad79c93020cbdf319c93a980c3e0fa2581d7b77975dc6bca572104e044a51",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.85-dense-wave-left-preview/capture.log",
+      "bytes": 311,
+      "sha256": "544b95edc2fc5847dc3c441a0a04f76de2b14badd35cac4b3f9c5e231c567112",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.85-dense-wave-left-preview/screen.png",
+      "bytes": 311620,
+      "sha256": "9584ac49ee3fabfb71075bccfbb4f8f074aa4b2b08d2c0d1016ec023fb5dca0d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.85-dense-wave-left-preview/state.json",
+      "bytes": 7473,
+      "sha256": "4f4ec005b7624c278ca567b8d6313d3acd4069736d48f8d4b931d6c9ec3c7aa6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.85-dense-wave-right-preview/capture.log",
+      "bytes": 312,
+      "sha256": "34fde339a16dce2df1c294f728bf2fb71488d68e3f8e4a601e260e0f4a0ab5e7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.85-dense-wave-right-preview/screen.png",
+      "bytes": 312032,
+      "sha256": "fb05d438f1320e12d248ce7552affac99704eb6f9e5dbe3373b1847982e634fe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.85-dense-wave-right-preview/state.json",
+      "bytes": 7474,
+      "sha256": "8217985658e43ad180fb506fda9f2667d919d8f9758717996b0c51961e0a60d7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.85-simple-wave-left-preview/capture.log",
+      "bytes": 312,
+      "sha256": "a0221ff0d29c6e521727cf175df0d79fc19480814522eedc36eb0691df8743e0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.85-simple-wave-left-preview/screen.png",
+      "bytes": 260779,
+      "sha256": "2277812515361cbc0c87a95dbf0cf7b63d4d03fb2810c4c1ab451143d98b9f46",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.85-simple-wave-left-preview/state.json",
+      "bytes": 7144,
+      "sha256": "fb03e0c8eed06a247b8688c357140c0277fbcabd488d2b8cd33a4d21e65f6269",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.85-simple-wave-right-preview/capture.log",
+      "bytes": 313,
+      "sha256": "84f5585d6a4c22d526a275f5732b486cfa9b35f4f4ce522a7b447c7436d8d10a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.85-simple-wave-right-preview/screen.png",
+      "bytes": 261077,
+      "sha256": "83b95b4bc9cbb0367a7032a32186ab5d2ea6b0235a445bf5765fbbf46c10eeb2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/0.85-simple-wave-right-preview/state.json",
+      "bytes": 7145,
+      "sha256": "4664bb4eb5f21501726d7dd7c0e84fbfabb2b3dc4e227606ab3b6bc4f6e15ef9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.0-dense-wave-left-preview/capture.log",
+      "bytes": 310,
+      "sha256": "9a0fe8c0c68a411b2a88bad56e478f738b5328b72006bfe980f2aa4fd4f56823",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.0-dense-wave-left-preview/screen.png",
+      "bytes": 312459,
+      "sha256": "02c1a8848ed995309ba99b6eecb268b75a3d8f8363cc5518d5bea87390c5af6c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.0-dense-wave-left-preview/state.json",
+      "bytes": 7145,
+      "sha256": "3d8308f968a5e83b245f1de84af6ac671ce8646540c818a4b8ab0f27342f98e8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.0-dense-wave-right-preview/capture.log",
+      "bytes": 311,
+      "sha256": "54c9f76e388d4e076ea7cf46331cef3ede7d82c2383f7858debd6f957cb2cdd2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.0-dense-wave-right-preview/screen.png",
+      "bytes": 311939,
+      "sha256": "61cbc4ce0b25f8c1a95bbde93447aaf21fde81d92d660244b00bc4df261030d5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.0-dense-wave-right-preview/state.json",
+      "bytes": 7146,
+      "sha256": "e1dc6216af7b82001ecf9171e5b5fcd18e1e237b82a5b609fdd1d78c89516803",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.0-simple-wave-left-preview/capture.log",
+      "bytes": 311,
+      "sha256": "f2516bbdcabc725cdd6e5a4278e5b885ea44407c5b5d07e4a32f97d27da611d0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.0-simple-wave-left-preview/screen.png",
+      "bytes": 271705,
+      "sha256": "75a4f928807b750877c8c98e1cbb17c0415556c6069898c0332fc2ac3b850bc4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.0-simple-wave-left-preview/state.json",
+      "bytes": 6827,
+      "sha256": "ddf6982656cc7fbd64f5bb9317471d0abecac73a14518e67c3fdb5be71eb8b34",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.0-simple-wave-right-preview/capture.log",
+      "bytes": 312,
+      "sha256": "a7eb04cfc6c572847f08439ea44647f1600adb100e1585798040700fe74d97cd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.0-simple-wave-right-preview/screen.png",
+      "bytes": 271603,
+      "sha256": "a04ef6d2c577ec4f861fe6c70cc1d535495bab674b9dc17a12b090795816f43d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.0-simple-wave-right-preview/state.json",
+      "bytes": 6828,
+      "sha256": "11aee845bf3879dbd11e94617f7c3f4f6c4349fdec3542b6a347fb84043bc44c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.15-dense-wave-left-preview/capture.log",
+      "bytes": 311,
+      "sha256": "ec125c761d06bec5e4d9cc1f52cd5d8b724e4061a25af0d0208225492b55dde1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.15-dense-wave-left-preview/screen.png",
+      "bytes": 316894,
+      "sha256": "ead6b43436ce90d4d71cbff9e292f716bf1d0828b0dcb294a677fb291fae907c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.15-dense-wave-left-preview/state.json",
+      "bytes": 7449,
+      "sha256": "a2e5cc101d0a0a51185c36c66c6f9c98430aefe0c1c61959047d664d01b544fe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.15-dense-wave-right-preview/capture.log",
+      "bytes": 312,
+      "sha256": "05d376b638f73eb1de50d2d01310764af3d5f8e7e02cc15431c0360d916b7e32",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.15-dense-wave-right-preview/screen.png",
+      "bytes": 316487,
+      "sha256": "10021b91626d33b440124b04fa6614f80f4791a34e4bdec2ada8d65158273c43",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.15-dense-wave-right-preview/state.json",
+      "bytes": 7481,
+      "sha256": "97cdc8b3f815761f58d9953a789764f764c3d80c683211fc53b35424d389ba90",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.15-simple-wave-left-preview/capture.log",
+      "bytes": 312,
+      "sha256": "76393003d45e85a6bed782d4a47f7436c8cbed33fec1c2ca0b1f60d9083e3b95",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.15-simple-wave-left-preview/screen.png",
+      "bytes": 283744,
+      "sha256": "6eb23121238a0c5b2b812056e43b85d37805c494ed8d15df81f1a7b6971d3965",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.15-simple-wave-left-preview/state.json",
+      "bytes": 7120,
+      "sha256": "0e219e4fff420ebe96a23fc98853b8d307f79401f467da979f6f1328d4e272c8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.15-simple-wave-right-preview/capture.log",
+      "bytes": 313,
+      "sha256": "34eacb233f6bb7bb1e95a37efd96add463d6239a392fa2ddb05dcedb9d710c1b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.15-simple-wave-right-preview/screen.png",
+      "bytes": 283671,
+      "sha256": "db84e076f6d3c25a6d9d98d2ed4a2f14cc4f0b614d99bce07f61b5cb996468a0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.15-simple-wave-right-preview/state.json",
+      "bytes": 7152,
+      "sha256": "cb579a74c2e3357327557ead4285a73b8e3dfcb919143b1055c8b45fd67019c3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.3-dense-wave-left-preview/capture.log",
+      "bytes": 310,
+      "sha256": "c4b27bbbd0c7921e3499d3cd3b7b645894f3eb7eac46cca23fba4c8f9dea09cd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.3-dense-wave-left-preview/screen.png",
+      "bytes": 314548,
+      "sha256": "5d5e36f49a548f5c753f9b2f094de31f0553f7c8560a1299e8901f8fd6294144",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.3-dense-wave-left-preview/state.json",
+      "bytes": 7515,
+      "sha256": "499dbb04d699f9f96e1d43c59fc62e0a5f46aed6ff58fccb23289df29e952667",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.3-dense-wave-right-preview/capture.log",
+      "bytes": 311,
+      "sha256": "95db053f5eeb8eae673c715330da4afa116c2d42888ad1201ba6eaaa3e4b22ff",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.3-dense-wave-right-preview/screen.png",
+      "bytes": 314311,
+      "sha256": "9db62f5ef6a3298241a7f51aea9f6d99bd0ec8db21250f40af91c3a0ac77de8b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.3-dense-wave-right-preview/state.json",
+      "bytes": 7516,
+      "sha256": "51a653c9e9b9c36eb171115be4587e6e816c91e03b1164b40ae32201bccd0861",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.3-simple-wave-left-preview/capture.log",
+      "bytes": 311,
+      "sha256": "53f46aa0ea6b896da036a9ff1efcc9591f6b7a9b6c03efa5aa5e52013f48de2e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.3-simple-wave-left-preview/screen.png",
+      "bytes": 298237,
+      "sha256": "7023dc191280531525bc9a6ff1e3c3711e8cf350f175ebe1b762a6b13e0547d0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.3-simple-wave-left-preview/state.json",
+      "bytes": 7186,
+      "sha256": "a30b9209f1ac83f561ecf674bfa1969f7f79f57fb60d64f3965ee51cc1811bfb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.3-simple-wave-right-preview/capture.log",
+      "bytes": 312,
+      "sha256": "2f78e58930b030c67d52e2afc30e242bfcccfff30ed0fbd86bad9f7c7cbc3876",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.3-simple-wave-right-preview/screen.png",
+      "bytes": 298385,
+      "sha256": "fa736e86ef957d96cd6b1e8e4d2d6b670bd67db5dd153d59ba86a6f508d807ea",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/1.3-simple-wave-right-preview/state.json",
+      "bytes": 7187,
+      "sha256": "62a609cda53c0ab59d620a8c670fa508c5ce36d73ff11b63b4157a4f98401d6f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/boot.log",
+      "bytes": 137,
+      "sha256": "18b148890fc58da15bf24311f8288fbf1cc050f4bf32549e74858e198dc6a936",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/foreground.log",
+      "bytes": 401,
+      "sha256": "f1430e779d90d891772df8028f24e7b639764bf79aa8d5b38ba363fc5a26b895",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/native-expand-capture.log",
+      "bytes": 289,
+      "sha256": "b278aebaeeee5423696c6573e161dd223747b45fd3e9f54d938e1074a4935c94",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/native-expand-state.json",
+      "bytes": 7895,
+      "sha256": "ad04c482e699441d873e0192b1b13afad775d7c697c75e6a0c579d49a6a8105b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/native-expand.log",
+      "bytes": 262,
+      "sha256": "733303426633a57699bb06fa253506dbf4b4d5b8dda766619df3370370d023d2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/native-expand.png",
+      "bytes": 373757,
+      "sha256": "63e2b39ea1c1b629e5dde53dace3b019e2cbb0276323ff1a3e7ac7a0ded0fa3a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/native-expand.yaml",
+      "bytes": 73,
+      "sha256": "562afbd2d16354824b95f4e1691584c7e59b26e420269e6c52da31e8c30dee9c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/phone/uninstall.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/run.json",
+      "bytes": 25863,
+      "sha256": "6e04db81dea6f6b3528be1c4e8faaab0e3ff633a293875668a45d03e5388ad12",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native/source-build.json",
+      "bytes": 7863,
+      "sha256": "1bf412efef7f665cd44754205fd35eb1bbc8134f016540373f47b391ff86de73",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.7-dense-wave-left-preview/capture.log",
+      "bytes": 316,
+      "sha256": "b100c1ed19af98e05f343356ff8dc69117d8b5406b0b1225eb76c3523d2cc395",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.7-dense-wave-left-preview/screen.png",
+      "bytes": 305355,
+      "sha256": "b73b14518b07d2c06ac3d8a2ef823a1664065b8cb793ac8385c179a609b7e374",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.7-dense-wave-left-preview/state.json",
+      "bytes": 7486,
+      "sha256": "b1d7b40c910b79ab5bf25cf1a066b838857dfc566c46ed1d4b771498ddb5c386",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.7-dense-wave-right-preview/capture.log",
+      "bytes": 317,
+      "sha256": "8b4a70746074858873d1327c60c4e5f0ffd157459f68515ffbcda3fe9be77b32",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.7-dense-wave-right-preview/screen.png",
+      "bytes": 305107,
+      "sha256": "febbb0a6205246ebbcf581db234cfe64b1c3edd9b5008fa1f41e3a00d0914f93",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.7-dense-wave-right-preview/state.json",
+      "bytes": 7476,
+      "sha256": "4f8d60f52ffeb931da62d2f4fe6ec738e9db4c2a98b5944fb576c27e7148f3d9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.7-simple-wave-left-preview/capture.log",
+      "bytes": 317,
+      "sha256": "20b3e75c8a74248fe836e85789341a4432149260bb05e333bb471e1ff4e64f1a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.7-simple-wave-left-preview/screen.png",
+      "bytes": 226947,
+      "sha256": "cb3a564c954f782d458102c49807504c7f48b22455f2727280333fd1aaaf950c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.7-simple-wave-left-preview/state.json",
+      "bytes": 7127,
+      "sha256": "d9a3e05035451555155f0f2cd5f5b63952fb34cccca4565c89613dfdfc349a26",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.7-simple-wave-right-preview/capture.log",
+      "bytes": 318,
+      "sha256": "f9a3b0caf54dc69a7c1722ccb71a4845c5b4da9deb6af8129af91df0acd4f9d8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.7-simple-wave-right-preview/screen.png",
+      "bytes": 226834,
+      "sha256": "d16d1419a2b0f4f5d7f29ba3a774340896ac62f2a9362279f889172b36bf91d2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.7-simple-wave-right-preview/state.json",
+      "bytes": 7128,
+      "sha256": "74326ff21c184e9e8da6b32094904e55332a1849f5fdf5d9695d88e7e89fc83f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.85-dense-wave-left-preview/capture.log",
+      "bytes": 317,
+      "sha256": "5a19d78719a9f325e8f0ca35dd9fb38ec09d286be2cd85056dc866a43ce482ec",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.85-dense-wave-left-preview/screen.png",
+      "bytes": 319331,
+      "sha256": "2d26961b3719547a052c2ebf5672e7c60a3487e37f68210b1c8ec1d904ef1152",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.85-dense-wave-left-preview/state.json",
+      "bytes": 7473,
+      "sha256": "1e14cfbe1ab0ef09e02e9d3bacf4b09273e83911372d1b924b28f943d4cf9cf7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.85-dense-wave-right-preview/capture.log",
+      "bytes": 318,
+      "sha256": "e6ae35cbb3e0c74b6136a2e8387c74b1f21254eeaeb9cc167bf7e1ea89bb7194",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.85-dense-wave-right-preview/screen.png",
+      "bytes": 321872,
+      "sha256": "61fc9b26506ae98a8d4ae5c3e56481fa530da1fea784171057168d8bede17991",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.85-dense-wave-right-preview/state.json",
+      "bytes": 7474,
+      "sha256": "68ddee1d73372ea84478197c7aa990575a2d1d7a7afeebe16f105b9263ba1c63",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.85-simple-wave-left-preview/capture.log",
+      "bytes": 318,
+      "sha256": "86fb5d0229bcc6a18898138f87a918d3c4615b59ba2746b8b02fd968a1d7bd10",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.85-simple-wave-left-preview/screen.png",
+      "bytes": 260540,
+      "sha256": "878cac9bfce905620321125de76e461bfe72322540a40891fa1d4d847198712c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.85-simple-wave-left-preview/state.json",
+      "bytes": 7144,
+      "sha256": "210305486a1efa34f2f416a0f1ca7efed3796f8559565e60e9543388eb6b99af",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.85-simple-wave-right-preview/capture.log",
+      "bytes": 319,
+      "sha256": "d9e52a06f8e78b8a09587b4bb2437516c6220831c5c32a871c2939c32ef4425e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.85-simple-wave-right-preview/screen.png",
+      "bytes": 260694,
+      "sha256": "79d3422cc3d4f516d493835c08701008a6dec7dd5d3c6750e617314336aa80dd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/0.85-simple-wave-right-preview/state.json",
+      "bytes": 7145,
+      "sha256": "b1c75aad9d97100a221485257ac5048f922a640505ae1a08a70ac1ca9885fc6c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.0-dense-wave-left-preview/capture.log",
+      "bytes": 316,
+      "sha256": "d5d95dbdda69b8ad56cc04d5b997cd97e1038d62394a889a79fab4e1cb4fbd5d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.0-dense-wave-left-preview/screen.png",
+      "bytes": 312711,
+      "sha256": "b98c5911b3450587a94f3c1f039ea56c5a31b5e24e83339f1884705f03717aff",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.0-dense-wave-left-preview/state.json",
+      "bytes": 7145,
+      "sha256": "0c465e31cd7d9d2c81bd0fb4a8f9932a9cbdfc9a19db4142f84dd40ab4cbdc5e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.0-dense-wave-right-preview/capture.log",
+      "bytes": 317,
+      "sha256": "2c02307bbba2e37869c714f4eb31ac93257d22b4e793e2d67f10e39b2aef35ad",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.0-dense-wave-right-preview/screen.png",
+      "bytes": 311441,
+      "sha256": "8b92b1a681e35e51ced59acf31db29430d9b41761b96b6a2fb9fafe57e7de9b0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.0-dense-wave-right-preview/state.json",
+      "bytes": 7146,
+      "sha256": "8511e875336ea1eeb2a1c6be3c330781c649bff46da291e1a95d0061d8bb335a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.0-simple-wave-left-preview/capture.log",
+      "bytes": 317,
+      "sha256": "1f68996ad5d0eb909f66c355fcb7c04fb0e99365004999dfd5222b11f6de6608",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.0-simple-wave-left-preview/screen.png",
+      "bytes": 272010,
+      "sha256": "58641e84669bffe51dcb92adbd0227353a104ee9e73455260841ed152181315d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.0-simple-wave-left-preview/state.json",
+      "bytes": 6827,
+      "sha256": "a4bbb8ce60c250cd9e656681bc866beb8bdf8f146633e577efe67a61bc87f9f4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.0-simple-wave-right-preview/capture.log",
+      "bytes": 318,
+      "sha256": "7dacda3112cd1735015fbc84c1297a41c039ca6fe224d95ba40a34a45ac32906",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.0-simple-wave-right-preview/screen.png",
+      "bytes": 271668,
+      "sha256": "f9d8aec65fe383128c242a55ca49c5f96a1cfe7ed6c31ae33fe1242c0044971d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.0-simple-wave-right-preview/state.json",
+      "bytes": 6828,
+      "sha256": "4d89fed5d3f6553b3a073c7a378ba0103f05f661a22a630e99d0a8ea3dc052d7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.15-dense-wave-left-preview/capture.log",
+      "bytes": 317,
+      "sha256": "482529e1db06d7045aee30dc143021b6efcbf724e92cf63ee76baaccefc2f27b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.15-dense-wave-left-preview/screen.png",
+      "bytes": 316912,
+      "sha256": "c96ad138eec71bb259571d40e64417de19239aded03b381d02a0fc47bd58038c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.15-dense-wave-left-preview/state.json",
+      "bytes": 7449,
+      "sha256": "4844b04090be5054437107cd8d16bc63da12f941f593daff4974db279e9fd433",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.15-dense-wave-right-preview/capture.log",
+      "bytes": 318,
+      "sha256": "f2cf35abc052362a2324b73a31025864eeeac24621fbeae137b46563c6fa87e7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.15-dense-wave-right-preview/screen.png",
+      "bytes": 316153,
+      "sha256": "c7be72c8390889546218aac1f0035321d8507f226ebe05ad3e8659f464c46409",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.15-dense-wave-right-preview/state.json",
+      "bytes": 7481,
+      "sha256": "b8f961060ad2c145b32ba047a4c4479a408a2f9d83572313be1c65381b660bea",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.15-simple-wave-left-preview/capture.log",
+      "bytes": 318,
+      "sha256": "19999c4a921dba2478bbc364766aad561431e7847deb4fd2e67571254cedd156",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.15-simple-wave-left-preview/screen.png",
+      "bytes": 284157,
+      "sha256": "b35e516362295d942d84ed73d5c114ab0039b3180b5eed7b04ab5c5f719f9c33",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.15-simple-wave-left-preview/state.json",
+      "bytes": 7120,
+      "sha256": "4794a78c5985f7fab5b5f7f72a64d652688e722e06c4940655b6c40331d56741",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.15-simple-wave-right-preview/capture.log",
+      "bytes": 319,
+      "sha256": "94a1f46288d4635e9b4c774a6d9a81b88a19426448c8873f6e7d1f73e6f13fe2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.15-simple-wave-right-preview/screen.png",
+      "bytes": 283379,
+      "sha256": "a0457726f0c568846309ced3bfc0e5f67a1da49502798b5977bd1d2a6adf8267",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.15-simple-wave-right-preview/state.json",
+      "bytes": 7152,
+      "sha256": "222139fedd2cab26c97f09ec377f519d4ef8df7fc55b0a3cd07321fe4399df36",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.3-dense-wave-left-preview/capture.log",
+      "bytes": 316,
+      "sha256": "29ffa3151468c6c0456239cafb2d4a58517f2a7965f67e77542bd8064fca80aa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.3-dense-wave-left-preview/screen.png",
+      "bytes": 314424,
+      "sha256": "4eecf1d0825601e04265ceaaffe6d2e634871ab22af2babe861b889ff955f2c0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.3-dense-wave-left-preview/state.json",
+      "bytes": 7515,
+      "sha256": "86b438df009eec6814e35241304646234d57b71e10a3106150da9b36959de40b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.3-dense-wave-right-preview/capture.log",
+      "bytes": 317,
+      "sha256": "40d2ef36ecf60154a431d445d256b837398377bb1175931f0274a2749beb7634",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.3-dense-wave-right-preview/screen.png",
+      "bytes": 313531,
+      "sha256": "bfed1297c9fd250df874afc0720fc3c3e97d284ac06781e3a26f953b3556befe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.3-dense-wave-right-preview/state.json",
+      "bytes": 7516,
+      "sha256": "862ee79fef84c70fcdb5da1b25946ac1112b3cd2369295bee02ecfb5c3a00e50",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.3-simple-wave-left-preview/capture.log",
+      "bytes": 317,
+      "sha256": "afa7d264f976925c472a66d0b11b090bdd661bd58905b03d59ea0b449d1804a8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.3-simple-wave-left-preview/screen.png",
+      "bytes": 298163,
+      "sha256": "0024b071395e14697514a20313b9524b6df3af419c97a0ec9f59839a9a301769",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.3-simple-wave-left-preview/state.json",
+      "bytes": 7186,
+      "sha256": "6923dee1856fa4e653170bbcc61bf9301fc9cb9bbbbf1e8cf10f1926c64e8672",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.3-simple-wave-right-preview/capture.log",
+      "bytes": 318,
+      "sha256": "2a9ac2eef8c77adfd4b0e05e39b83d8ca6a0ad8cbae2091c0205c7dd673e411b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.3-simple-wave-right-preview/screen.png",
+      "bytes": 297541,
+      "sha256": "e6ef8cbb38594803cbf92a8288ba2dedd626e6f56a3601e592968d914a3028bc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/1.3-simple-wave-right-preview/state.json",
+      "bytes": 7187,
+      "sha256": "d79256b8a8f2310ea1fa474adf9af4228d2bfde186166468d91fd687dd97b205",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/boot.log",
+      "bytes": 137,
+      "sha256": "18b148890fc58da15bf24311f8288fbf1cc050f4bf32549e74858e198dc6a936",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/foreground.log",
+      "bytes": 401,
+      "sha256": "f1430e779d90d891772df8028f24e7b639764bf79aa8d5b38ba363fc5a26b895",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/installed-hashes.json",
+      "bytes": 175,
+      "sha256": "d8a649c8df6516e9a3d7fa117d983687ab3a33076e884f62f4f5470f014bbfb0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/native-collapse-capture.log",
+      "bytes": 297,
+      "sha256": "27cb596624dc2bf1943d805b34891db4b02bd12cdbf8c1da7d7506c05ebb135d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/native-collapse-state.json",
+      "bytes": 8639,
+      "sha256": "145cadf7d0769928404ef0b0cf53654b86d990397752b76d061794c5ea71c5a9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/native-collapse.log",
+      "bytes": 264,
+      "sha256": "2ceb24bd8d24452196aaa98c9499a577a07431c245daeb905842788ec1dc1ec8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/native-collapse.png",
+      "bytes": 318647,
+      "sha256": "a282744b73d5665d1cdb0af0576f6e8a48aaeda6f273c4e4cab68b80800268ab",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/native-collapse.yaml",
+      "bytes": 73,
+      "sha256": "562afbd2d16354824b95f4e1691584c7e59b26e420269e6c52da31e8c30dee9c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/native-expand-capture.log",
+      "bytes": 295,
+      "sha256": "4949d4106b623d66b8f7601f499f71a4e056c2a01a9b0f3335f7a6a2911ecd36",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/native-expand-state.json",
+      "bytes": 7895,
+      "sha256": "558f8518255df4cd497d02c6ac59da8ea0cce59773ecfd19a6fac5d14ce11840",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/native-expand.log",
+      "bytes": 262,
+      "sha256": "733303426633a57699bb06fa253506dbf4b4d5b8dda766619df3370370d023d2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/native-expand.png",
+      "bytes": 410396,
+      "sha256": "378f2f836bc136401b830ca82886b6ae811d1c549e3bae5b36f8682ea2f3aafc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/native-expand.yaml",
+      "bytes": 73,
+      "sha256": "562afbd2d16354824b95f4e1691584c7e59b26e420269e6c52da31e8c30dee9c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/native-scroll-capture.log",
+      "bytes": 295,
+      "sha256": "ec624eeb85401649fa913646905c71494df1769a075d1eb45b518cb526ccc3c5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/native-scroll-state.json",
+      "bytes": 8269,
+      "sha256": "e358dc18d9edbb72b289a52cef27231fa44b1d3e7d16e3480714c7beaff36e78",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/native-scroll.log",
+      "bytes": 283,
+      "sha256": "0910ed246a71df40c0f7c33e1d72ebba3ac89997315294f1bb44f69e976492e5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/native-scroll.png",
+      "bytes": 321290,
+      "sha256": "89eddbc4220351bec7ceaf08bddb88ffcaf5cc5483b8bb374ac2551c61a0259f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/native-scroll.yaml",
+      "bytes": 110,
+      "sha256": "ff403e78d73ff3b2edca6a9721db9ef4c0ed9d78a895f05e0c7bc77e9a66b60a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/phone/uninstall.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/run.json",
+      "bytes": 38604,
+      "sha256": "9719b5f446a19a3984abd6208b99436be379493706eaee2b139cfb4c5ad26a7f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/source-build.json",
+      "bytes": 7861,
+      "sha256": "1eff5ce1ac40d9062a206f0e71d485200265e8fda6093d1a7ea49d4e2c4af839",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.0-dense-wave-left-preview/capture.log",
+      "bytes": 317,
+      "sha256": "3e160cacc71aa4d3396f6027f710e56db809babcec01b5ad8e9da07d766aab02",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.0-dense-wave-left-preview/screen.png",
+      "bytes": 460420,
+      "sha256": "6f66b0319b877f84567dde609e0b871c0453a85ca9d677c1ae813a0293ec17df",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.0-dense-wave-left-preview/state.json",
+      "bytes": 6993,
+      "sha256": "ce5ee191997d3d21d3b14f677ac2814a0be55ec4b9b8e75429a6741298f9da15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.0-dense-wave-right-preview/capture.log",
+      "bytes": 318,
+      "sha256": "9923971ee0847265d8b4e220cbcd20810eef94654f77d0ce3487a8f355daee29",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.0-dense-wave-right-preview/screen.png",
+      "bytes": 457154,
+      "sha256": "5b03e3db96c47aff4966ad21d63ca4fcef1500aae3dc5159ce7f8eb0fbe1cc15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.0-dense-wave-right-preview/state.json",
+      "bytes": 6986,
+      "sha256": "f8cd7876558c08022469a9c851c3689dc41f2831d362ebe2a085701f8ff1a748",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.0-simple-wave-left-preview/capture.log",
+      "bytes": 318,
+      "sha256": "b98aaec203ddb8f77b243cd8ea3e0c95b151deb7b5974d33efb43cb4a2f2004e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.0-simple-wave-left-preview/screen.png",
+      "bytes": 350835,
+      "sha256": "532b58a4a84b4fc7606996d289f3ca9db64a78173c1b8568d7905bc9b366544f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.0-simple-wave-left-preview/state.json",
+      "bytes": 6664,
+      "sha256": "735182460834589efbad66b26b46b823403f34efbcd507e8e2fe16e3a4e84d37",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.0-simple-wave-right-preview/capture.log",
+      "bytes": 319,
+      "sha256": "698937fbaa3371238bc74af9cb096366396df7269928f3c8a6db3611afe4ddfc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.0-simple-wave-right-preview/screen.png",
+      "bytes": 350231,
+      "sha256": "929f3abbfe3e085609aa22a91cfcdab79bb12d5659250bc7e963ab0467507306",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.0-simple-wave-right-preview/state.json",
+      "bytes": 6657,
+      "sha256": "8cf2c79bc835ee110c0c47d07756268e5bb463f59e3743e6b20fe8ced829d623",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.15-simple-wave-left-preview/capture.log",
+      "bytes": 319,
+      "sha256": "60dc989e7edf092d0923e922ae149f3801f9f1bd5e41e21d28507e40619f5ac5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.15-simple-wave-left-preview/screen.png",
+      "bytes": 381183,
+      "sha256": "69c76c26872f9a1752b73e4d99fecdd32fc7076e89ec7e7e9746123eb6e091f5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.15-simple-wave-left-preview/state.json",
+      "bytes": 7122,
+      "sha256": "c4a604bc0a26917487c77a9084ce47b7caa00c5ad59413187d6084e663b572d5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.15-simple-wave-right-preview/capture.log",
+      "bytes": 320,
+      "sha256": "c2994fd1e1c55b57e0c7d737c52c1be2c906d1b47948a2ba3e789a0f36a5cee4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.15-simple-wave-right-preview/screen.png",
+      "bytes": 378283,
+      "sha256": "1d211a1ba3cef5b9735c194d280c806dc8486054bed84d2e03cf4ca1deb24537",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.15-simple-wave-right-preview/state.json",
+      "bytes": 7103,
+      "sha256": "970f2de9c2ff5ed6d501dfcee50ff7974bdfdcbff4408ae4f08d3c9527ac090d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.3-dense-wave-left-preview/capture.log",
+      "bytes": 317,
+      "sha256": "4af59e35cab63a68eabdd304ca31a6271b8b6530c83c45e3e610bad1a3be1c29",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.3-dense-wave-left-preview/screen.png",
+      "bytes": 438565,
+      "sha256": "d14b94e3155b26eff4aa844c42d3b4e64b32336b1b3a07648110d4933457ac0e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.3-dense-wave-left-preview/state.json",
+      "bytes": 7382,
+      "sha256": "c695e3280210d25867ba9e30e11ea1416949327352b2ca6fc4285b3496c201dc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.3-dense-wave-right-preview/capture.log",
+      "bytes": 318,
+      "sha256": "5026137ee41873446c044f6fc25929b88faad28113a016c1078cab6a0b377ed1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.3-dense-wave-right-preview/screen.png",
+      "bytes": 438501,
+      "sha256": "81b755082cda5e5d72b26de6c6b13b91405b0f7c8a70d0e30179cb3c9f71b584",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.3-dense-wave-right-preview/state.json",
+      "bytes": 7467,
+      "sha256": "e2b37ee8e94813c6de74ba94ebab655dee92cbf31a2306ee6af74cb900b49441",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.3-simple-wave-left-preview/capture.log",
+      "bytes": 318,
+      "sha256": "7161fdf6a94e84df8a4f8d670797964a3f4bc1a683327ccf384a1e96238ad394",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.3-simple-wave-left-preview/screen.png",
+      "bytes": 389868,
+      "sha256": "2ac1d2b0676b1b6ac011a6931bf2224a474fe322a6e7e1e1031cedc48158d71a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.3-simple-wave-left-preview/state.json",
+      "bytes": 7064,
+      "sha256": "3de516b556ab4986c40a0664b20e5d400d899e6bf4a4ad17d408d6dcb012ad4b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.3-simple-wave-right-preview/capture.log",
+      "bytes": 319,
+      "sha256": "a02316ddc5d341c5fdb71f05555b4749a3ca49635f0549bbd5bd258ffd607396",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.3-simple-wave-right-preview/screen.png",
+      "bytes": 389826,
+      "sha256": "d7e65de9c289369c38cc2210333aa59bcfb7e9ccc8d960dfc3b7f711a8102358",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/1.3-simple-wave-right-preview/state.json",
+      "bytes": 7149,
+      "sha256": "14a5aeb9ddce7653abd44de4433d157d7f226a707d5f2a4f501ba20f35fbdea2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/boot.log",
+      "bytes": 138,
+      "sha256": "bd086935aa7965e48852db565127a186503e1a070f22b2418db8ac5a06e77448",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/foreground.log",
+      "bytes": 402,
+      "sha256": "0dc068bd9d946dba09e665a35cb7de178aab7cc04fab44a6f2ae229346c2cfb4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-final/tablet/uninstall.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.7-dense-wave-left-preview/capture.log",
+      "bytes": 318,
+      "sha256": "0fa3dae94595904e6f96ce604c37f9a1e67423fe6e266d0ea4fc6df009760bdf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.7-dense-wave-left-preview/screen.png",
+      "bytes": 304711,
+      "sha256": "e02ca515c17c475f72f78e2a144baf351e36c8d695b29ef4ceb1e07738c75ea5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.7-dense-wave-left-preview/state.json",
+      "bytes": 7486,
+      "sha256": "c0a566f7600467ba4b84a14258ab8825e55d54af02b8c17068ac38a04adb582d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.7-dense-wave-right-preview/capture.log",
+      "bytes": 319,
+      "sha256": "085168fd9333d5d55987b6b0574fb862f7d95c0105ee991c5ba1ab33e43cc95c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.7-dense-wave-right-preview/screen.png",
+      "bytes": 304863,
+      "sha256": "dd19a2413f040492d5b9e51e9db75ac2fc52aa4d374762779ddee8dc07e68bf8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.7-dense-wave-right-preview/state.json",
+      "bytes": 7476,
+      "sha256": "df74f9f443d77b53708f4b367d11f1a645e6f1039acf47fbbcf0967181189750",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.7-simple-wave-left-preview/capture.log",
+      "bytes": 319,
+      "sha256": "1be02b7806529886db137ea57ec4253206dca5d79255be53cca0a268ed3ad70f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.7-simple-wave-left-preview/screen.png",
+      "bytes": 227003,
+      "sha256": "76f9209cf45e13ec4525a90ab0fc8b8a4ac69a0f765f61b21ae205c394e79609",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.7-simple-wave-left-preview/state.json",
+      "bytes": 7116,
+      "sha256": "04917fdc404b03f6d9c2c0598259677ee0c47e022b7e96f2ded747a4843476b0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.7-simple-wave-right-preview/capture.log",
+      "bytes": 320,
+      "sha256": "63f2b87f7683a2f3d9ccc688b9f3010183c71ac1c85881bbcd7a42882793040d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.7-simple-wave-right-preview/screen.png",
+      "bytes": 226391,
+      "sha256": "615abd11d29109881a6d11e8a375bcc9b451c918f48037cbd57f52a784f3f70b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.7-simple-wave-right-preview/state.json",
+      "bytes": 7128,
+      "sha256": "d1ea4e9a1730b5aefdb9d9403a692a417fda19fe6756f8f694bf70f70df0105f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.85-dense-wave-left-preview/capture.log",
+      "bytes": 319,
+      "sha256": "d59a6423d11f6f1b72454a52328a79e96c8a17bf6954ec4884aeb0ebccc98195",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.85-dense-wave-left-preview/screen.png",
+      "bytes": 311369,
+      "sha256": "2a52bdbc2d71c4eea8e393c5345fbddb8cb8844a40ee9c694fc1654dde371547",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.85-dense-wave-left-preview/state.json",
+      "bytes": 7473,
+      "sha256": "de4b819ed69ed7d7063a9cd0dc6179e7c95af9109f63f4b3699d71fbb4e6734d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.85-dense-wave-right-preview/capture.log",
+      "bytes": 320,
+      "sha256": "766bf58fda97ae38f9f7692bb06cce6d833a3df39f1640c62de0a1dbfadf0237",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.85-dense-wave-right-preview/screen.png",
+      "bytes": 311050,
+      "sha256": "216e68243a3bf0d9f03e0a6f211682d00e198ca33b6f35c6e8e86e60fa82a1f0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.85-dense-wave-right-preview/state.json",
+      "bytes": 7474,
+      "sha256": "75c9626ef83a070e761b125c1bf010e8b13069c27d35ae9aa70e283207a4e87d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.85-simple-wave-left-preview/capture.log",
+      "bytes": 320,
+      "sha256": "aa71ae1c0e19cc24834711b33e640e118283e3ceda35de256d0f2f2f7156c509",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.85-simple-wave-left-preview/screen.png",
+      "bytes": 259958,
+      "sha256": "0ca9e44ef36187bf2deacaa1888d6fad9ed2628a8be042a852df532b0cd04c27",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.85-simple-wave-left-preview/state.json",
+      "bytes": 7144,
+      "sha256": "6a4bd959119b5aa33aa483724122685eaadf5b6359952a441d68240576aa0f23",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.85-simple-wave-right-preview/capture.log",
+      "bytes": 321,
+      "sha256": "651ee9a33afaa5b019a874f0c4ea21326dee03f39d84c613b258231fe4cd454a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.85-simple-wave-right-preview/screen.png",
+      "bytes": 260526,
+      "sha256": "95df2e6c47c6e4cbf356d158b5038392798ab01ef577a62c1c9c88a59b28b94a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/0.85-simple-wave-right-preview/state.json",
+      "bytes": 7145,
+      "sha256": "74611b2071b3d8f2722b172a40c74c08b8fb803558ce29f7697057e9839a12ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.0-dense-wave-left-preview/capture.log",
+      "bytes": 318,
+      "sha256": "69ba4905706938bebf6b5ef977aff2b51da74c3a48cfaee4327eb19724b53f3f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.0-dense-wave-left-preview/screen.png",
+      "bytes": 312725,
+      "sha256": "592e7a4e297990bbcd7fd9dc6679ffb6de4eca615e763f508f2cf4ff2ddee041",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.0-dense-wave-left-preview/state.json",
+      "bytes": 7145,
+      "sha256": "15fdd7cf339afe755a352cc7e710d709776f313b5ba16d822e8fb4cc49d1af38",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.0-dense-wave-right-preview/capture.log",
+      "bytes": 319,
+      "sha256": "4300ad4708d9a9b5083a04b3d07af6cd84f8e3d1a2222a1088fd34bff7f443b8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.0-dense-wave-right-preview/screen.png",
+      "bytes": 311398,
+      "sha256": "232821519a9836014e543d3218ffc523a42dd11d6158616305145155c468fff9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.0-dense-wave-right-preview/state.json",
+      "bytes": 7146,
+      "sha256": "46353717fd7d4e65169aca5459a4e4fe4c9d308d5aea76ba7a71496a498a6fe8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.0-simple-wave-left-preview/capture.log",
+      "bytes": 319,
+      "sha256": "d828166973a77eb5d504a01d3b8bc3a6361555b9eca88ba59a5996d1730aa30a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.0-simple-wave-left-preview/screen.png",
+      "bytes": 272449,
+      "sha256": "5e06602b621a1a262068b74aeb6b34bf5a29c4a0f1c99b54469ca751922519d1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.0-simple-wave-left-preview/state.json",
+      "bytes": 6827,
+      "sha256": "6c1f0ded201b1797f09d1b860a7d3cc0245b1a78d722b09e734000b914e3ffc5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.0-simple-wave-right-preview/capture.log",
+      "bytes": 320,
+      "sha256": "beced9ccf582801a7bdea72a07a7b5336d44a271a9e992800fae164f98dcfd6c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.0-simple-wave-right-preview/screen.png",
+      "bytes": 270960,
+      "sha256": "5af41944351f59a579f858634832b61e531dc47921279342f40764b75756cb3d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.0-simple-wave-right-preview/state.json",
+      "bytes": 6828,
+      "sha256": "5c7389c424b31cb2b555ab7512482b0aec4cb9a127117f8111e0653b90762194",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.15-dense-wave-left-preview/capture.log",
+      "bytes": 319,
+      "sha256": "055f512930d7984c9cf179ef7c0a59bf40e24151303c3c86872f753c695b272e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.15-dense-wave-left-preview/screen.png",
+      "bytes": 317113,
+      "sha256": "e11c5346b62cb521cda54c89e5d0d0e30e7e789355ef4d789a4a72335dd05c34",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.15-dense-wave-left-preview/state.json",
+      "bytes": 7449,
+      "sha256": "592be2ad9354738bda60cd561114715739a054b68f96fb28f334a068526e7bc7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.15-dense-wave-right-preview/capture.log",
+      "bytes": 320,
+      "sha256": "07dba367b2d510fe8d21aa1ea7f9a9b2c9c064996e2da96db2d269d3e54cd28d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.15-dense-wave-right-preview/screen.png",
+      "bytes": 316221,
+      "sha256": "50b4105399169b8fe86c734586b09aec4bcb0a1be10c53727fae9fcaa9c50fb8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.15-dense-wave-right-preview/state.json",
+      "bytes": 7481,
+      "sha256": "7c05df4457649d93d9cd007f7266d0714473329e0115ff10694e22764cb9dff1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.15-simple-wave-left-preview/capture.log",
+      "bytes": 320,
+      "sha256": "992459d6fcc013a61bfbb28eae55ae31f8b909f6f2093e9bbaf7feb0bc73e807",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.15-simple-wave-left-preview/screen.png",
+      "bytes": 284096,
+      "sha256": "37ed079ea8813f6fac49d36a3749b008b75160419d900df2058fcbdac01497cd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.15-simple-wave-left-preview/state.json",
+      "bytes": 7120,
+      "sha256": "7d0ee46f2a055cc6fa30267ef8eea979f8c47acc41f1e652903daa1d468d13b9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.15-simple-wave-right-preview/capture.log",
+      "bytes": 321,
+      "sha256": "54409ad76481855ec46a3225d728a31a56117eb4dd5a50740629b5ff44ea7931",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.15-simple-wave-right-preview/screen.png",
+      "bytes": 283394,
+      "sha256": "a78377a3f96e64b0341f65bf0a02ca679f27bbe2c27da7a0747e5e776f474d26",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.15-simple-wave-right-preview/state.json",
+      "bytes": 7152,
+      "sha256": "f85946d1d281bdf40e7403e025b588878bbb92f1c49428c7dc80889893284921",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.3-dense-wave-left-preview/capture.log",
+      "bytes": 318,
+      "sha256": "552c67a458abc266721846a5136f1b0fe82ae615f40dadc959255d753726724d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.3-dense-wave-left-preview/screen.png",
+      "bytes": 314426,
+      "sha256": "171f717189ddb15c245d8799696670dd9e380583261f303f639c65bcbc6ecc6f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.3-dense-wave-left-preview/state.json",
+      "bytes": 7504,
+      "sha256": "6e75629f877afddf703aeabe8874ea783f78e228e605552ecb128b1af557f4fe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.3-dense-wave-right-preview/capture.log",
+      "bytes": 319,
+      "sha256": "10d892f17ca955559ebcb823f47991281737803e77b0ee5924e05a1e18d2174c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.3-dense-wave-right-preview/screen.png",
+      "bytes": 313357,
+      "sha256": "c432b5df521a3dea543aed60c6e802f198b59e6efac119e686bd4a2ff565f09b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.3-dense-wave-right-preview/state.json",
+      "bytes": 7505,
+      "sha256": "7c13a9beaa310f2273f2bb96634e995ba944fe7e1dc370ea1cecebd9a1d6f57b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.3-simple-wave-left-preview/capture.log",
+      "bytes": 319,
+      "sha256": "d8d9a77da3faa6444d6a3e543a97573e119c3a038c645d80bd7a7245bb3b9e3f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.3-simple-wave-left-preview/screen.png",
+      "bytes": 298146,
+      "sha256": "3f527f54fa7b28b8c82f9c8837f44a8113b381f4858d70967006114d136585fb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.3-simple-wave-left-preview/state.json",
+      "bytes": 7175,
+      "sha256": "1de397093ccd8f42d376fde6401b839dce712c59d8ae6bab608d2a71e7e7e92f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.3-simple-wave-right-preview/capture.log",
+      "bytes": 320,
+      "sha256": "32f3a1b552e200fb043fbf429219a4cb343aa97647a8c2e055f1615d4c0945e4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.3-simple-wave-right-preview/screen.png",
+      "bytes": 297489,
+      "sha256": "53303f8945f32964ffff739ff6cc61e1f71bc640e315d1bd60057bf30debc1f9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/1.3-simple-wave-right-preview/state.json",
+      "bytes": 7176,
+      "sha256": "d870f0875c958b95a7aaf457d2e08e0d7f3ba9c6d97c04e6b63e620e9a6ec287",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/boot.log",
+      "bytes": 137,
+      "sha256": "18b148890fc58da15bf24311f8288fbf1cc050f4bf32549e74858e198dc6a936",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/final-sandbox/account.cfg",
+      "bytes": 136,
+      "sha256": "235cc4cd54785e5e7285f64e154c333da268a8adda13bae09e9d9f8f3451e8f6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/final-sandbox/best.cfg",
+      "bytes": 1067,
+      "sha256": "6fda4134c6023a641cfacc819452fa59e6ebd00c69fcdff907936ff4bd1e533e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/final-sandbox/device.cfg",
+      "bytes": 45,
+      "sha256": "22173757e21f82f210fd799f0b3f7c1166ab42fee56a14e94019028116d0bc69",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/final-sandbox/ios-qa-status.json",
+      "bytes": 5223,
+      "sha256": "ba2572accc04c8af203b8349de4fc3b47635827990919d65a630de0d170776e0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/final-sandbox/run.cfg",
+      "bytes": 1844,
+      "sha256": "a182b8e996d66dc5d43610786267595c1480bb9de24c28bf5f1821a38cd7d7a3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/final-sandbox/shader_cache/CanvasShaderGLES3/9fd373027ff88c4cc643c9ca4e7b84a922d8d6bb8e275bf0665e6af005208e9c/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 64,
+      "sha256": "8741baf30d220298330abc83de2931a18a52e888c0e8bc4f2152f38e64650c58",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/final-sandbox/shader_cache/CopyShaderGLES3/5368c91b75ff19d583b7b032eb036430ae1fb3b5df2aefe26f2172b22e45f2c3/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 220,
+      "sha256": "980acd76ec7d06fc794074955520d7b758e63b91811a2cde422bdba0f8279c34",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/final-sandbox/shader_cache/FeedShaderGLES3/4d6f88e14600bd50ab613390a90ba5bb1eb6a331d97369a79fa5d8b5f51f6e7c/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 28,
+      "sha256": "d5d95a2771931e0f52c31da022cc0c0050b9b8ed410d53b6898a015126ced977",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/final-sandbox/shader_cache/PostShaderGLES3/f57603353f0170bf5c93e3121d8a3179514d92795f4eb41c830aee2ea195036d/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 28,
+      "sha256": "d5d95a2771931e0f52c31da022cc0c0050b9b8ed410d53b6898a015126ced977",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/final-sandbox/shader_cache/SceneShaderGLES3/e0035651aed114f69bc48f3aeb8826b38659393011875fb62fc74c20cc59b91f/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 76,
+      "sha256": "0d33a228c7d0c88233ce66449cc07739e1571bfb28a64e8fd0c9f8e154ba0fcd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/foreground.log",
+      "bytes": 401,
+      "sha256": "f1430e779d90d891772df8028f24e7b639764bf79aa8d5b38ba363fc5a26b895",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/installed-hashes.json",
+      "bytes": 175,
+      "sha256": "f5c74a03ad1b824230531672ae7e01ec33b1128f28545c3cd07baf95a28c12d8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/native-collapse-capture.log",
+      "bytes": 299,
+      "sha256": "addd07ac7503694aaa9aff8286066f43967ad42fc5fb7a8cefdade00f5bab4d9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/native-collapse-state.json",
+      "bytes": 8630,
+      "sha256": "667cb1fd949b787b31c835cd216baf0ca800ededb9c38dd915a48799e2c7fb68",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/native-collapse.log",
+      "bytes": 264,
+      "sha256": "2ceb24bd8d24452196aaa98c9499a577a07431c245daeb905842788ec1dc1ec8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/native-collapse.png",
+      "bytes": 317607,
+      "sha256": "dfcbd1a97ce9d19a7e59439e486e78b380c5cc365cf006e85eaa79750f5b7824",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/native-collapse.yaml",
+      "bytes": 73,
+      "sha256": "562afbd2d16354824b95f4e1691584c7e59b26e420269e6c52da31e8c30dee9c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/native-expand-capture.log",
+      "bytes": 297,
+      "sha256": "1253ac7715b15a01b860141cc36bc04c3caf9cbca7509cb670c114a36ab3773e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/native-expand-state.json",
+      "bytes": 7884,
+      "sha256": "f9b438d9918f253a0d3bcd4a084ad4cb26075f632feadf04986f3aef93628cfc",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/native-expand.log",
+      "bytes": 262,
+      "sha256": "733303426633a57699bb06fa253506dbf4b4d5b8dda766619df3370370d023d2",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/native-expand.png",
+      "bytes": 345337,
+      "sha256": "dc1d9eaae88c1096faf450ebf3736dcbe3d54906381522f995fa7a6fb88753ec",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/native-expand.yaml",
+      "bytes": 73,
+      "sha256": "562afbd2d16354824b95f4e1691584c7e59b26e420269e6c52da31e8c30dee9c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/native-scroll-capture.log",
+      "bytes": 297,
+      "sha256": "e594b136b1a61b04dbf0b18a029fcf1e13c36e952015e0aa2e5cd086e60d2ab9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/native-scroll-state.json",
+      "bytes": 8260,
+      "sha256": "934a5688e179d957468649e251a471cd4229518572170c760047ff5b7144b7d3",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/native-scroll.log",
+      "bytes": 283,
+      "sha256": "0910ed246a71df40c0f7c33e1d72ebba3ac89997315294f1bb44f69e976492e5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/native-scroll.png",
+      "bytes": 314408,
+      "sha256": "c6a25c68b683d25f797f1b8fb9a77fa108d6403887ed3472641aaaf7bbc6ca72",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/native-scroll.yaml",
+      "bytes": 110,
+      "sha256": "ff403e78d73ff3b2edca6a9721db9ef4c0ed9d78a895f05e0c7bc77e9a66b60a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/phone/uninstall.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/run.json",
+      "bytes": 52064,
+      "sha256": "ee30e6247094de65dd90512629e8e629743be3f024b5c9aa68448d1dcea79ac0",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/source-build.json",
+      "bytes": 7863,
+      "sha256": "b2bc4b090e2ab7f1132e915710e151502aa051ab67714fef53a82a7fcecefb9c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.7-dense-wave-left-preview/capture.log",
+      "bytes": 319,
+      "sha256": "d0284efeb11cc9fe7509ef8a974dc6cdb85ec2045660d0400d35ea1630b50125",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.7-dense-wave-left-preview/screen.png",
+      "bytes": 418215,
+      "sha256": "13822d7b09827711367d8dbb6483986b6d945cd1faf8dd23ca1b9108032c0a34",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.7-dense-wave-left-preview/state.json",
+      "bytes": 7462,
+      "sha256": "896b78bd1188c39cc3c1ab58ecc0b3eef071a89f5a4fe711f00e85213a4152d9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.7-dense-wave-right-preview/capture.log",
+      "bytes": 320,
+      "sha256": "f2475098481871d5611298efd16529ec93800850a6998379c676eb33787f2ee0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.7-dense-wave-right-preview/screen.png",
+      "bytes": 439721,
+      "sha256": "b8dbd2593872a6167aa340ce00ed13ab8045123577242156984b06662faeae93",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.7-dense-wave-right-preview/state.json",
+      "bytes": 7463,
+      "sha256": "2fe2084d90df11556cd024095b6134edafe305f11d36ee15a1911a162a41d32b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.7-simple-wave-left-preview/capture.log",
+      "bytes": 320,
+      "sha256": "180c48bc4963b93987eb52f8b5733d1d57e9eca072514d5cb2ed07e1c217954d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.7-simple-wave-left-preview/screen.png",
+      "bytes": 271998,
+      "sha256": "a10ba92295c185dd0d581292552659ae2f24ab9a737bda76e97f8adb52001800",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.7-simple-wave-left-preview/state.json",
+      "bytes": 7103,
+      "sha256": "449b4a36a5d0066ccbeaf5ee1f03c9586e426e7b1ba5b622d8d7212e3cf712ed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.7-simple-wave-right-preview/capture.log",
+      "bytes": 321,
+      "sha256": "30d4a1ffdf8237f847d34ad36f6f707b26b382a29b59f603d29369312675e2d1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.7-simple-wave-right-preview/screen.png",
+      "bytes": 271674,
+      "sha256": "a139ac54ed17ac2c6e7d6b0b93a13abcbae5b4a884055548aa3b6f892197646d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.7-simple-wave-right-preview/state.json",
+      "bytes": 7104,
+      "sha256": "49f6a886851a5cb1fc5eee5048d607fbffeabb3b0225c508ecf38dbebf7c01a0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.85-dense-wave-left-preview/capture.log",
+      "bytes": 320,
+      "sha256": "7263c2cc2a3f2a76acbc1fabb22979005abc9783150824a1dc5288b2dc3a2bd0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.85-dense-wave-left-preview/screen.png",
+      "bytes": 428177,
+      "sha256": "869565d39364bda6b61bcb208bf236fb976d93073a889dfd25ee1e1c3d29740d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.85-dense-wave-left-preview/state.json",
+      "bytes": 7446,
+      "sha256": "8794cfcf285316de47fab883aeb0dfc4ef32a86fcfeb08d2f04e005e7fd86b01",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.85-dense-wave-right-preview/capture.log",
+      "bytes": 321,
+      "sha256": "c66ca2477d65586de83afefbcafb8c19c9f2d922881b2f62c4a30ff85946ba67",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.85-dense-wave-right-preview/screen.png",
+      "bytes": 449474,
+      "sha256": "815295c09cea9665b51364f1de4495a20fbd1b0a6602fbb5500dfe816c75a32e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.85-dense-wave-right-preview/state.json",
+      "bytes": 7447,
+      "sha256": "4be7849b18162dabb36ecaec47a65b870ff43531d70693baac2673c8a8d2b805",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.85-simple-wave-left-preview/capture.log",
+      "bytes": 321,
+      "sha256": "056dec4fbcf4cb7a006f541c89435ba596f8803c9cafe7e6c5b7c8ae7cb05537",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.85-simple-wave-left-preview/screen.png",
+      "bytes": 310505,
+      "sha256": "62e6dafea4e5571205480aae043a4b79c70d630b500ab526ea0c111ab67f9bc6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.85-simple-wave-left-preview/state.json",
+      "bytes": 7091,
+      "sha256": "309c124c65ff1ab8522c69f88596980ddf15b72c5f39d68d8fbedd82114da826",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.85-simple-wave-right-preview/capture.log",
+      "bytes": 322,
+      "sha256": "9f968a5efe63e35b9aa3c1714ed813c80a52f203136f1b2d3f56d118df933208",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.85-simple-wave-right-preview/screen.png",
+      "bytes": 310462,
+      "sha256": "be2b39b5395a02312d171440dd7cb1a51b59f6d16f3dea30335b349f2213ff05",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/0.85-simple-wave-right-preview/state.json",
+      "bytes": 7092,
+      "sha256": "1c5e541b58cbf43a67be653f7eb08c1b00d6f8eafc73ece420f3fafb19a56867",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.0-dense-wave-left-preview/capture.log",
+      "bytes": 319,
+      "sha256": "3afc0053f7f3edc394fabc10051a12732f8d479023417d8ec3d443857eca8548",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.0-dense-wave-left-preview/screen.png",
+      "bytes": 459644,
+      "sha256": "f667f82f00e14c18d27180abee6210083f020e306221048c99dd63c675f3d68a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.0-dense-wave-left-preview/state.json",
+      "bytes": 6993,
+      "sha256": "c7a92803fdb4753f7b7f00ca7d0309e89e4efe4dd49432b4bed2e1c57bdb7f42",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.0-dense-wave-right-preview/capture.log",
+      "bytes": 320,
+      "sha256": "2303df980f1ca5ed5773dc8dc388984847ddceabf997b721f51aaf7425808793",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.0-dense-wave-right-preview/screen.png",
+      "bytes": 457252,
+      "sha256": "d1468b95c0445dde44205f9dbbfb021a0b9c7ea003e129357fd1084fb0392a0f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.0-dense-wave-right-preview/state.json",
+      "bytes": 6986,
+      "sha256": "c1182ff9acb8f9249afaa3035bd3b427b210ece22e7b6d4bd458cc8b0eb39f2d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.0-simple-wave-left-preview/capture.log",
+      "bytes": 320,
+      "sha256": "63e1a27b1ce1fa4b17ffa5e6a058dc65a42abe32cdf7e4cc00a4ac2f4d222fa6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.0-simple-wave-left-preview/screen.png",
+      "bytes": 351258,
+      "sha256": "1a256927b9c42e8965ddc661f91555ea1c67558755b6a1e765fbcc6256de3b3e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.0-simple-wave-left-preview/state.json",
+      "bytes": 6664,
+      "sha256": "af042d7ccb71b98db49b817837c3a75673190f0c7611779e356bb98ec8cbd45b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.0-simple-wave-right-preview/capture.log",
+      "bytes": 321,
+      "sha256": "cdc2df2dfe1c9ed83bc2bb8d0a3b5013c7e0c4815de9f9bf6b488b0450833441",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.0-simple-wave-right-preview/screen.png",
+      "bytes": 349434,
+      "sha256": "f797ca0ee9c25cef4cae8e66e39d1e288da96ccd4ad0d6dbe17f38f9d2872a61",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.0-simple-wave-right-preview/state.json",
+      "bytes": 6657,
+      "sha256": "9fc70348cf6d956c9248bfa9ed870bc88bb7c2c9ec4b27d7f9266c0d03cdcd3f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.15-dense-wave-left-preview/capture.log",
+      "bytes": 320,
+      "sha256": "7f3d3113f4aa6fa7774a77ecb719aee359c1fb71deeb55e35a98a0fe7b51751e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.15-dense-wave-left-preview/screen.png",
+      "bytes": 440593,
+      "sha256": "9e6b58c882ff0f6a30d20c2b04e755e24e078ef2164bcc7511084fae9fd4a953",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.15-dense-wave-left-preview/state.json",
+      "bytes": 7451,
+      "sha256": "9125cd040709976d9ff10045eccb380b61e8ada8316e6240da92a3b7a5d74893",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.15-dense-wave-right-preview/capture.log",
+      "bytes": 321,
+      "sha256": "a1991a67c5254cea17bd4db094c808a4b77ddac509627ceff160f1deb6561044",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.15-dense-wave-right-preview/screen.png",
+      "bytes": 439186,
+      "sha256": "4a04b426072b2134ef762f57c45c987b6efaf28656480bb0f1b037272ea4fa94",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.15-dense-wave-right-preview/state.json",
+      "bytes": 7432,
+      "sha256": "74dc205d9f25ee52c802676ead61ffbb126c9f5d8d2972c4d9187f6c1dabe7d0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.15-simple-wave-left-preview/capture.log",
+      "bytes": 321,
+      "sha256": "1ea1ebf4810d53b1efc4ae3d09051261b0461601277d9e39347ad82c9bb43cd6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.15-simple-wave-left-preview/screen.png",
+      "bytes": 380630,
+      "sha256": "ecf6183259cc6af485fee07e05ffc7afb6baf35780016251dffa30b2345dae6d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.15-simple-wave-left-preview/state.json",
+      "bytes": 7122,
+      "sha256": "538d6092518aa7f562d8138c8fb0649120ed8833ec6c58c720afe651d37560bd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.15-simple-wave-right-preview/capture.log",
+      "bytes": 322,
+      "sha256": "2c7839bfdfd0258a6bd71d4e64ab8763fc6ce1ac014c4094d439f1895c59eacf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.15-simple-wave-right-preview/screen.png",
+      "bytes": 379398,
+      "sha256": "6db0c37590b03b2fa0aa806b9907e257deea879adb48b6a0e8d12323e7341726",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.15-simple-wave-right-preview/state.json",
+      "bytes": 7103,
+      "sha256": "f577d235d8ee47817cc4e9063d4f39c0118f2a3048157a439a1085bdb7910bea",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.3-dense-wave-left-preview/capture.log",
+      "bytes": 319,
+      "sha256": "cbdf5d8a39a28b8d7954caedd256b86756caac8f9bd205b66450889de7deb742",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.3-dense-wave-left-preview/screen.png",
+      "bytes": 438295,
+      "sha256": "aee1dbff8160470bc586ddec659db3bca47c095a468134b75bbdd84f8b4cec64",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.3-dense-wave-left-preview/state.json",
+      "bytes": 7382,
+      "sha256": "af5ae5a7ea9cf10a34ea1bb9569bd6c1aaff24ea367f89eb2a64f6462604ad2b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.3-dense-wave-right-preview/capture.log",
+      "bytes": 320,
+      "sha256": "054634cdda850b2474fd625c45a9285fa087ea23524b72cf92dbd806590dd827",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.3-dense-wave-right-preview/screen.png",
+      "bytes": 438679,
+      "sha256": "ef398bac753d07aa42f4651653ebefe7560446244dc5f3ffa67568f98715b162",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.3-dense-wave-right-preview/state.json",
+      "bytes": 7467,
+      "sha256": "892fae8f92c0c36bf4fb73acf7debc8e1cfe2f7277d6e6156c6c4e0bc27eda0e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.3-simple-wave-left-preview/capture.log",
+      "bytes": 320,
+      "sha256": "2ab648fac4e77a5d8ab122dd1870c3fbfb7203cb078916d47daed36c22c27398",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.3-simple-wave-left-preview/screen.png",
+      "bytes": 389856,
+      "sha256": "b2109821d94881e2430c05d1465f5f25011eda7968cf6af4d7cbf8ef493061eb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.3-simple-wave-left-preview/state.json",
+      "bytes": 7064,
+      "sha256": "0a83dc412f03e52227a66d6a09fbf929c21b3774717954a8ff1cf5265a148ba0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.3-simple-wave-right-preview/capture.log",
+      "bytes": 321,
+      "sha256": "fd5ed2ca50f640189da6dad52f9a89c6d6dba67ccb42b1c215dcd8e84edcae69",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.3-simple-wave-right-preview/screen.png",
+      "bytes": 389835,
+      "sha256": "90788ef7ddcfdac5f9e6cac1e1501b3baae2f1bb81f7905bdb8a7bcaf0f2a7bc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/1.3-simple-wave-right-preview/state.json",
+      "bytes": 7149,
+      "sha256": "fd9e163e75c33cb6739ea79d6d2790940fb802c1404a0c660c2b50c13e1bfb58",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/boot.log",
+      "bytes": 138,
+      "sha256": "bd086935aa7965e48852db565127a186503e1a070f22b2418db8ac5a06e77448",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/final-sandbox/account.cfg",
+      "bytes": 136,
+      "sha256": "5630cda9d9b2e66085e721761c657fd50730379e7d021149ea82030e50e113c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/final-sandbox/best.cfg",
+      "bytes": 1067,
+      "sha256": "339b65864373145c97ed649e101139f26400eac8a4ec95377919840453e8fea7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/final-sandbox/device.cfg",
+      "bytes": 45,
+      "sha256": "22173757e21f82f210fd799f0b3f7c1166ab42fee56a14e94019028116d0bc69",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/final-sandbox/ios-qa-status.json",
+      "bytes": 5099,
+      "sha256": "f385338c5dbe4299d2f7e65e2a42cd8272a0a32ce2855290928160f7355a2208",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/final-sandbox/run.cfg",
+      "bytes": 1845,
+      "sha256": "191152804f95bb511b566f2b47d4e73edc353a6687d171a1dbee72aabce3bc3b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/final-sandbox/shader_cache/CanvasShaderGLES3/9fd373027ff88c4cc643c9ca4e7b84a922d8d6bb8e275bf0665e6af005208e9c/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 64,
+      "sha256": "8741baf30d220298330abc83de2931a18a52e888c0e8bc4f2152f38e64650c58",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/final-sandbox/shader_cache/CopyShaderGLES3/5368c91b75ff19d583b7b032eb036430ae1fb3b5df2aefe26f2172b22e45f2c3/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 220,
+      "sha256": "980acd76ec7d06fc794074955520d7b758e63b91811a2cde422bdba0f8279c34",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/final-sandbox/shader_cache/FeedShaderGLES3/4d6f88e14600bd50ab613390a90ba5bb1eb6a331d97369a79fa5d8b5f51f6e7c/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 28,
+      "sha256": "d5d95a2771931e0f52c31da022cc0c0050b9b8ed410d53b6898a015126ced977",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/final-sandbox/shader_cache/PostShaderGLES3/f57603353f0170bf5c93e3121d8a3179514d92795f4eb41c830aee2ea195036d/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 28,
+      "sha256": "d5d95a2771931e0f52c31da022cc0c0050b9b8ed410d53b6898a015126ced977",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/final-sandbox/shader_cache/SceneShaderGLES3/e0035651aed114f69bc48f3aeb8826b38659393011875fb62fc74c20cc59b91f/fa7b62523470356194bdf709eb2639ab149a07cc.cache",
+      "bytes": 76,
+      "sha256": "0d33a228c7d0c88233ce66449cc07739e1571bfb28a64e8fd0c9f8e154ba0fcd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/foreground.log",
+      "bytes": 402,
+      "sha256": "0dc068bd9d946dba09e665a35cb7de178aab7cc04fab44a6f2ae229346c2cfb4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/foreground.yaml",
+      "bytes": 152,
+      "sha256": "8f29aa9fdd47089ff863d5d10a86092612cdad792a55aaf0e8aa039d9dc550e1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/installed-hashes.json",
+      "bytes": 175,
+      "sha256": "f5c74a03ad1b824230531672ae7e01ec33b1128f28545c3cd07baf95a28c12d8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/native-collapse-capture.log",
+      "bytes": 300,
+      "sha256": "27bdb5b82aaaae571551744b2800a42eb241c31a679ccc5b3b91e1f6a9bec074",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/native-collapse-state.json",
+      "bytes": 8506,
+      "sha256": "e4f15308955ddceef76bcbe5cf145d6464b4566e9eb6c04c17ac65a904704315",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/native-collapse.log",
+      "bytes": 265,
+      "sha256": "fd20713334835558ba77b522662d5a6e94aeaafaad9dc51f2654f7fb8660161d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/native-collapse.png",
+      "bytes": 443086,
+      "sha256": "2e0b40e734c89f3fb2941d5cb863fb3707c8a2cf6af56a21d8bacfead6041d97",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/native-collapse.yaml",
+      "bytes": 73,
+      "sha256": "fe1eb5fd4e4d99c434c145d93792bd0610032fbd97dd3110c8d6d4f2f4a63450",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/native-expand-capture.log",
+      "bytes": 298,
+      "sha256": "c214ca3f08af47c4b2a700642cfdc5b2e4cf869f99c5f95a88fc7984b5121b5c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/native-expand-state.json",
+      "bytes": 7774,
+      "sha256": "2922354d4c2a5e886da788a5db80b74fcdb8ce3088fa0faead78c98757018ec8",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/native-expand.log",
+      "bytes": 263,
+      "sha256": "4acba4514c4681598caf269d718130eca6f889ab63226782eb80486410f50d1b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/native-expand.png",
+      "bytes": 437430,
+      "sha256": "efc9db156d330e9be6787276880e9b9093dc52b4377b456c24f397c3e4d8796a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/native-expand.yaml",
+      "bytes": 73,
+      "sha256": "fe1eb5fd4e4d99c434c145d93792bd0610032fbd97dd3110c8d6d4f2f4a63450",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/native-scroll-capture.log",
+      "bytes": 298,
+      "sha256": "ada2a9859def633c97ee8f2374aac13c6007df88891d300ee2e905f63e3c3f83",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/native-scroll-state.json",
+      "bytes": 8149,
+      "sha256": "9682bd873b2b1dd636c350965b3b95c1f5e94703d4e94f2a2379a187cc832db1",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/native-scroll.log",
+      "bytes": 284,
+      "sha256": "beedd7d57cbd9492b54d565e6d5484cef40d2eae1acb65388f268698aa2f918b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/native-scroll.png",
+      "bytes": 390477,
+      "sha256": "e9c89a3b5754b7393ab35acfe0892335593f39e1dead6ab1179127284b68f3c9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/native-scroll.yaml",
+      "bytes": 110,
+      "sha256": "76b88133c2a434a2ece2d9001ed559559937e2b8342a023814da27e0638e93da",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/native-guarded/tablet/uninstall.json",
+      "bytes": 32,
+      "sha256": "9c7647d776cf672ae0ef5d4db68f9d629df6bf5bf488b5d6813dbebb87be931d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/observer.gd",
+      "bytes": 4578,
+      "sha256": "866b5bd666edcb091b40cc979a739badd469d34564a9a9e570a51fc961b66612",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/plan.json",
+      "bytes": 8940,
+      "sha256": "21e1f305debdc759ef0ad6c2bb75f91dfd40505b330b34943ffa0f53253218fc",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/run_desktop.py",
+      "bytes": 1984,
+      "sha256": "3359f04615ba3a104899db5110ff9c43a6a16a9f4e4a8c0235bd7c5b297bb0dc",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/run_native.py",
+      "bytes": 9780,
+      "sha256": "fff389439ebb3e86f4c89d89b84200620c1b73fcb7e032f6e996ffa4bb549483",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/run_regressions.py",
+      "bytes": 2423,
+      "sha256": "3060245ee03cd2c9d50d73182c585d38d96dd193090bfeebc2f49ca3d08436f8",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/summary.json",
+      "bytes": 1298,
+      "sha256": "e89d148ebbcf9d85dbf251981bc08a75146b7cdc923b74bcfb07dd55570ad2a7",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/visual-contact/phone.json",
+      "bytes": 6699,
+      "sha256": "9794893cb2483b3c375f50bc3eae283126980da13c05f3c83501319d7e3017ef",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/visual-contact/phone.png",
+      "bytes": 1052173,
+      "sha256": "32db6dcfd29b77518ed2e5ff3697b4c464aac8e8a7571b59835b9d479e5df7c2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/visual-contact/tablet.json",
+      "bytes": 6609,
+      "sha256": "ee001e3ccc355c4f472eae567c1f4c5bdc59fe6419b144d422fae636e11e7f8a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/visual-contact/tablet.png",
+      "bytes": 1309575,
+      "sha256": "5adffcaebf728f8d2c4909433006c1c3a9b8d3c589c1abe1f8b422446b0a02cf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/visual-review.json",
+      "bytes": 2073,
+      "sha256": "fc66be52f8c1f83717fd5933c1ca583d06f18ce677b110e0dd540a0c58093c7d",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/attack-preview/visual-verdict.json",
+      "bytes": 60,
+      "sha256": "153f83e409e9df9e08cf94b970b5fe4174f54c1c0fac48413f116ba698182972",
       "published": true
     },
     {
@@ -4168,8 +6880,8 @@
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/inspector-reading/README.md",
-      "bytes": 10051,
-      "sha256": "2f0fc02110f5fd8116290334bf51738b91ebd262a25c680ef441594a66d3df81",
+      "bytes": 10234,
+      "sha256": "405388f913b7d449cbd3f06d874cdd33d9703e654178a2e7a015c0c7e3a9b32f",
       "published": true
     },
     {

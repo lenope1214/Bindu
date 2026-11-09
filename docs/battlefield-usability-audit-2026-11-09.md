@@ -430,7 +430,7 @@ macOS의 Godot 4.7.2 native 렌더러에서 PC 1280×720 / 글자 100%·130%, �
 
 - **I-09 · P2 · 구현·로컬 검증:** [읽기 후속](qa/2026-11-09-battlefield-fixes/inspector-reading/README.md)에서 제목 아래 핵심 수치·고정 예시 버튼·라벨 폭·좌우 배너 배치를 수정했다. baseline16조건 중14조건의 수치/라벨 잘림이 현재152조건에서0이며, 같은16조건80개 상태 비교도 일치했다. 사람의 실패율은 미측정이다.
 
-- **I-11 · P2 · 추가 발견·미수정:** 실제 공격 예시 버튼을 눌러도 예시가 스크롤 아래에 남고130%에서는 예시 영역 자체도 clip보다 크다. [관찰 기록](qa/2026-11-09-battlefield-fixes/inspector-reading/preview-followup.json). 핵심 수치 구조 통과와 전체 읽기 흐름을 구분해89/REVISE로 유지한다.
+- **I-11 · P2 · 추가 발견 뒤 구현·로컬 검증:** 실제 공격 예시 버튼을 눌러도 예시가 스크롤 아래에 남고130%에서는 예시 영역 자체도 clip보다 크다. [관찰 기록](qa/2026-11-09-battlefield-fixes/inspector-reading/preview-followup.json). 앞 단계89/REVISE 뒤 [별도 수정](qa/2026-11-09-battlefield-fixes/attack-preview/README.md)에서 실제 예시 노출·수치 복귀·같은 대상 즉시 재열기 경합을 처리했다. native40조건/200비교·실제6동작·desktop26단언에서 확인했으며 이 읽기 범위의 새 판정은92/PASS다. 전체50개 완료는 아니다.
 
 현재 제품의302장면·실제 native12단언과 공통 전체 회귀를 통과했다. 실기기 손가락·대비/색각·스크린리더·사람 과제·고배속 지연은 계속 미완료다.
 

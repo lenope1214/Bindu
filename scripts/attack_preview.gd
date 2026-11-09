@@ -2,6 +2,11 @@ class_name AttackPreview
 extends TextureRect
 ## 실제 Tower·Projectile·Orb·Share를 사용하는 독립 전장. boot/입력/온라인/저장은 실행하지 않는다.
 const HEIGHT := 180.0
+const WIDTH := 320.0
+
+static func height_for_width(width: float) -> float:
+	return maxf(1.0, width) * HEIGHT / WIDTH
+
 var caption: Label
 var world: BinduSession
 var viewport: SubViewport

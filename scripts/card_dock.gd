@@ -61,6 +61,7 @@ var brief: Label
 var read_actions: HBoxContainer
 var preview_actions: HBoxContainer
 var preview_btn: Button
+var preview_reveal_generation := 0
 var expand_btn: Button
 var use_btn: Button
 var read_prev: Button
@@ -169,8 +170,7 @@ func _init(main) -> void:
 	content.add_child(read_actions)
 	expand_btn = _action_button("전체 정보", read_actions, func():
 		game.cards_system._set_cards_hidden(not game.cards_hidden))
-	preview_btn = _action_button("공격 예시", read_actions, func():
-		pic.set_preview_visible(not pic.preview_visible))
+	preview_btn = _action_button("공격 예시", read_actions, _toggle_attack_preview)
 	read_prev = _action_button("이전", read_actions, func(): cycle_read(-1))
 	read_next = _action_button("다음", read_actions, func(): cycle_read(1))
 	use_btn = _action_button("이 카드 들기", read_actions, func():
@@ -287,6 +287,7 @@ func cycle_read(step: int) -> void:
 	read_card(game.offer[posmod(index + step, game.offer.size())])
 
 func inspect_object(tower: Tower) -> void:
+	preview_reveal_generation += 1
 	reading_review = false
 	inspect_return_cards = inspect_return_cards or reading_return_cards
 	reading_card = {}
@@ -804,6 +805,7 @@ func layout_skip(at: Vector2, height: float) -> void:
 
 
 func close_inspector(explicit := false) -> void:
+	preview_reveal_generation += 1
 	var restore_cards: bool = (not reading_card.is_empty() and reading_return_cards) or inspect_return_cards
 	reading_card = {}
 	reading_review = false
@@ -917,7 +919,7 @@ func _update_side() -> void:
 				total += o.dealt
 			var part: float = tower.dealt / total if total > 0.0 and game.towers.get_child_count() > 1 else -1.0
 			var more: bool = game.field_view_system._tip_detail_on()
-			pic.show_tower(tower, more, part, "이번 웨이브 몫" if game.phase == game.Phase.WAVE else "지난 웨이브 몫", _pic_w())
+			pic.show_tower(tower, more, part, "이번 웨이브 몫" if game.phase == game.Phase.WAVE else "지난 웨이브 몫", _pic_w(), scroll.size.y)
 			# 조합의 발동 조건은 기본 정보에도 표시한다. 공격 모습은 위의 공용 미리보기에서 보여 준다.
 			for rx in tower.reactions():
 				text += ("\n\n" if text != "" else "") + ("NEW · " if tower.new_reactions.has(rx["id"]) else "") + str(rx["name"]) + ": " + str(rx["desc"])
@@ -1061,7 +1063,25 @@ func _place_side(size: Vector2, cards: bool) -> void:
 
 ## 설명창 그림 폭: 설명창 폭에서 안쪽 여백을 뺀 값.
 func _pic_w() -> float:
-	return side.size.x - 28.0
+	var column: Control = scroll.get_child(0)
+	return maxf(1.0, column.size.x if column.size.x > 0.0 else side.size.x - 28.0)
+
+
+func _toggle_attack_preview() -> void:
+	preview_reveal_generation += 1
+	var generation := preview_reveal_generation
+	var target: Tower = pic.tower
+	pic.set_preview_visible(not pic.preview_visible)
+	if not pic.preview_visible:
+		scroll.scroll_vertical = 0
+		return
+	# 크기 변경과 스크롤 범위가 반영된 뒤 요청한 예시를 보여 준다.
+	var tree: SceneTree = game.get_tree()
+	for i in 2:
+		await tree.process_frame
+	if generation == preview_reveal_generation and is_instance_valid(pic) and is_instance_valid(scroll) and pic.is_visible_in_tree() and pic.mode == "tower" and pic.preview_visible and is_instance_valid(target) and pic.tower == target:
+		var relative: Vector2 = scroll.get_global_transform().affine_inverse() * pic.attack_preview.global_position
+		scroll.scroll_vertical = maxi(0, floori(relative.y + scroll.scroll_vertical))
 
 
 func summary_text(b: Button) -> String:

@@ -931,11 +931,25 @@
         "docs/qa/2026-11-09-battlefield-fixes/inspector-reading/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/inspector-reading/summary.json"
       ]
+    },
+    {
+      "type": "explicit_attack_preview_reveal_and_stale_callback_verified",
+      "facts": [
+        "Native40cases:primary/text/16:9/caption/safe-area violations0; paired200fields preserve gameplay/UI context;70product scripts match.",
+        "Both devices actual native expand fully reveals preview, manual scroll, collapse returns0/primary; no input synthesis.",
+        "Desktop26actual virtual GUI assertions acrossWAVE/READY/CHOOSE and rapid toggle,target,close,reopen,scene exit pass; compatibility4cohorts and common fullcheck252/86/28 pass.",
+        "Initial1px fit, fractional built-in reveal, empty-wave fixture and stale same-target reopen failures preserved. Generation guard verifies negative reproduction.",
+        "Reading round5scoped92/PASS; physical/human/accessibility/high-speed goal remains active."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/attack-preview/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/attack-preview/summary.json"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "Fix I11 explicit preview reveal with matching native interaction proof; then I08fresh mobile defaults preserving choices. Continue BF49 and physical/human/accessibility tasks. Full50 remains active.",
+    "next_local_action": "Fix I08fresh mobile UI defaults preserving saved choices; then BF49 and physical/human/accessibility. Full50active.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },
@@ -999,10 +1013,10 @@
     {
       "id": "I-11",
       "title": "공격 예시를 펼쳐도 요청한 영역이 바로 보이지 않음",
-      "implementation": "observed_unfixed",
-      "verification": "actual_native_expansion_and_screenshot",
+      "implementation": "implemented",
+      "verification": "native40_and_explicit_reveal_desktop26_guarded",
       "evidence": [
-        "docs/qa/2026-11-09-battlefield-fixes/inspector-reading/preview-followup.json"
+        "docs/qa/2026-11-09-battlefield-fixes/attack-preview/README.md"
       ]
     }
   ]

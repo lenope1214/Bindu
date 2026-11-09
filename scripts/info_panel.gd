@@ -29,6 +29,7 @@ var new_read_keys := ""
 var t := 0.0
 var _w := 300.0
 var preview_visible := false  # 공격 예시는 명시적으로 펼칠 때만 실행한다.
+var preview_height_limit := -1.0
 
 
 func _init(main) -> void:
@@ -65,14 +66,16 @@ func clear() -> void:
 	hide()
 
 
-func show_tower(tw: Tower, more: bool, part: float, label: String, w: float) -> void:
+func show_tower(tw: Tower, more: bool, part: float, label: String, w: float, max_preview_height := -1.0) -> void:
 	if tower != tw: new_read_time = 0.0
 	mode = "tower"
 	tower = tw
 	attack_preview.configure(tw)
 	_w = w
-	attack_preview.position = Vector2(0, tower_header_h() + 8.0 + 142.0 + support_h())
-	attack_preview.size = Vector2(w, AttackPreview.HEIGHT)
+	preview_height_limit = max_preview_height
+	var preview_size := _preview_size()
+	attack_preview.position = Vector2((w - preview_size.x) / 2.0, tower_header_h() + 8.0 + 142.0 + support_h())
+	attack_preview.size = preview_size
 	attack_preview.visible = preview_visible
 	detail = more
 	share = part
@@ -85,8 +88,14 @@ func show_tower(tw: Tower, more: bool, part: float, label: String, w: float) -> 
 func set_preview_visible(on: bool) -> void:
 	preview_visible = on
 	if mode == "tower" and is_instance_valid(tower):
-		show_tower(tower, detail, share, share_label, _w)
+		show_tower(tower, detail, share, share_label, _w, preview_height_limit)
 	queue_redraw()
+
+
+func _preview_size() -> Vector2:
+	var natural := Vector2(_w, AttackPreview.height_for_width(_w))
+	var limit := floorf(preview_height_limit) - 1.0  # 정수 스크롤 위치와 소수점 크기 사이 1단위 여유.
+	return natural * minf(1.0, limit / natural.y) if limit > 0.0 else natural
 
 
 ## 카드 도크가 짧은 요약을 따로 보여줄 때 재사용하는 실제 계산값.
@@ -150,7 +159,7 @@ func primary_metrics_rect() -> Rect2:
 func tower_h() -> float:
 	var h := tower_header_h() + 8.0 + 142.0 + support_h()  # 제목·수치·조준·지원 역할을 먼저 읽는다.
 	if preview_visible:
-		h += AttackPreview.HEIGHT + 8.0
+		h += _preview_size().y + 8.0
 	if share >= 0.0:
 		h += 22.0
 	h += 22.0  # 자세히 안내 / 구분선
@@ -438,8 +447,9 @@ func _draw_tower() -> void:
 		_txt(Vector2(0, y + 14), support, 12, GREEN, w)
 		y += 22.0
 	if preview_visible:
-		_box(Rect2(0, y, w, AttackPreview.HEIGHT), Color(0, 0, 0, 0.3))
-		y += AttackPreview.HEIGHT + 8.0
+		var preview_size := _preview_size()
+		_box(Rect2(Vector2((w - preview_size.x) / 2.0, y), preview_size), Color(0, 0, 0, 0.3))
+		y += preview_size.y + 8.0
 	if share >= 0.0:
 		_txt(Vector2(0, y + 12), share_label, 12, DIM)
 		var bx := _tw(share_label, 12) + 8.0

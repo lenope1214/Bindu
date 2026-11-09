@@ -1,0 +1,16 @@
+{
+  "native_initial": "native/run.json:20phone cases captured; real native expand revealed but 190.856pxheight exceeded189.800clip. Kept0.1geometry tolerance; added actual clip-height fit preserving16:9.",
+  "desktop_initial": [
+    "desktop",
+    "desktop-final",
+    "desktop-routing"
+  ],
+  "desktop_cause": "Diagnostic callback=[] and hovered CardDock panel. Frozen QA WAVE had zero pending spawns; even delta0 sim step completed the wave and reopened cards. Corrected fixture to the same pending-spawn guard used by native lifecycle fixture; no product input workaround or relaxed assertion.",
+  "all_originals_preserved": true,
+  "desktop_after_fixture_correction": "Actual GUI callback fired and preview scrolled, but built-in ensure_control_visible left1.2187viewport units below clip atPC130 due integer scroll vs fractional preview height. Preserve desktop-verified/pc/run.log.",
+  "native_final_stop": "Stopped earlier source native-final deliberately after confirmed fractional reveal failure in desktop. Preserve all native cases/actions; no timeout-based restart.",
+  "correction": "Align requested preview top using actual local content position and integer scroll; reserve1logical unit within fitted height. Keep geometry tolerance0.1 and all full-image containment assertions.",
+  "stale_reopen_reproduced": "desktop-reopen-before/pc/run.log: close then same-target reopen within pending2frames allows old reveal to scroll new reading session. Actual callback/GUI path otherwise passes.",
+  "stale_reopen_fix": "Monotonic reveal generation invalidated by toggle, inspector close and explicit object inspection. Preserve target/mode/liveness guards and same containment oracle.",
+  "pre_guard_check": "Earlier check started before the final reveal-generation guard edit; retained as an intermediate log, not adopted as current validation. A fresh guarded-source check owns separate logs."
+}
