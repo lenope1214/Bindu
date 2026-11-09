@@ -541,9 +541,10 @@
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/remaining-user-tasks.md",
         "docs/qa/2026-11-09-battlefield-fixes/README.md",
-        "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/multiplayer/mixed-version/README.md"
       ],
-      "remaining": "Physical device/Internet NAT and loss, OS kill/relaunch of multiplayer reservations, and mixed-version real socket cohort remain unverified."
+      "remaining": "Local actual WebRTC legacy/current source cohorts verified; physical device/Internet NAT and loss, OS kill/relaunch of reservations, and shipped legacy release binary cohort remain unverified."
     },
     {
       "id": "BF-47",
@@ -851,6 +852,21 @@
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/fx-controls/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/fx-controls/product-verification.json"
+      ]
+    },
+    {
+      "type": "mixed_version_transport_and_support_notice_verified",
+      "facts": [
+        "Frozen8704b78 legacy/3c1d7f2 baseline real3-peer WebRTC:3cohorts9actors231assertions pass; metadata and outcomes not injected.",
+        "Current product PC3cohorts9actors256assertions and phone130two mixed cohorts6actors170assertions pass. Known unsupported protocol differs from unconfirmed participant; visible recovery, healthy request tooltip, safe bounds and actions verified.",
+        "Actual native donor rejection preserves card, owner and picks; same card remains usable on own object. TW across all owners, all-new accepted gift single consumption/settlement and actual W1 readiness converge.",
+        "QA host-only ICE is explicitly empty for every adopted actor. Earlier local server empty ICE was ignored by product; default STUN persisted and prior no-STUN claims corrected. Production Mp network defaults unchanged.",
+        "Final fullcheck252/86/28 with345parity cases4140samples/fuzz4/continue4,8,12to13 pass. Architecture43 baseline-only,new0. All adopted saves/projects/processes cleaned.",
+        "Full50 remains active: physical/human tasks, Internet/NAT, OS kill/relaunch, actual legacy release binaries and high-speed saturation/PERF01 remain open."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/multiplayer/mixed-version/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/multiplayer/mixed-version/summary.json"
       ]
     }
   ],

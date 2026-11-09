@@ -4,7 +4,7 @@
 
 ## 실행 구조와 경계
 
-[`run_native.py`](run_native.py)는 현재 작업 소스의 단일 snapshot을 만든 뒤 고유 `BinduToolsGift*` 프로젝트 4개로 복제한다. 로컬 headless signaling 하나와 native Godot 세 참가자(host/peer_a/peer_b)를 실행한다. `addons/webrtc`의 실제 native 확장과 실제 `Mp` reliable transport를 쓴다. `OnlineConfig.SERVER_URL/MP_URL`은 격리 사본에서 빈 값이고 `BINDU_MP_URL`만 `127.0.0.1` 임시 port로 지정한다. 실제 사용자·운영 방·외부 signaling·STUN/TURN을 사용하지 않는다.
+[`run_native.py`](run_native.py)는 현재 작업 소스의 단일 snapshot을 만든 뒤 고유 `BinduToolsGift*` 프로젝트 4개로 복제한다. 로컬 headless signaling 하나와 native Godot 세 참가자(host/peer_a/peer_b)를 실행한다. `addons/webrtc`의 실제 native 확장과 실제 `Mp` reliable transport를 쓴다. `OnlineConfig.SERVER_URL/MP_URL`은 격리 사본에서 빈 값이고 `BINDU_MP_URL`만 `127.0.0.1` 임시 port로 지정한다. 실제 사용자·운영 방·외부 signaling에는 접속하지 않으며 TURN은 제공하지 않는다. STUN 미사용 주장은 아래 정정한다.
 
 결정적 fixture는 초기 Lv1 속성 카드 3장·남은 선택2회·donor 보류 선택1회·새로고침1회를 준비하는 범위다. `donor_edit_rejoin`만 실제 자기 오브젝트 설치 후 남은 마지막 유효 Water offer를 결정적으로 준비한다. owner의 설치·속성 요청, donor의 카드 선택·타깃 선택은 실제 GUI 입력을 사용한다. 거래 pending/receipt/결과·owner 레벨·선택 소비는 fixture로 만들지 않는다.
 
@@ -78,6 +78,8 @@ ui_layout.gd          0cbd2450e0c4943bf58da62a5a336999759a18e82025544af76b8a55df
 로컬 `mp_signal.gd`는 WebSocket 전용이다. 앱의 `Mp.check_status→GET /status`와 기존2인 runner의 TCP listener probe 때문에 signal 로그에 invalid-upgrade가 남을 수 있다. 참가자 RTC packet 처리 오류와 구분했다. 외부 `/status`·외부 signaling 접촉은 없다.
 
 현재 증거는 macOS의 실제 native WebRTC·동일 기기 loopback, phone은 폰 글꼴/레이아웃·touch 입력 모사다. 인터넷 NAT/TURN·다른 기기·실물 iOS/Android·OS kill 뒤 앱 재실행/디스크 reservation 복원·host migration·실제 구버전 바이너리 조합은 검증하지 않았다. 프로토콜 결과를 주입한 상태 검사는 이 실행 결과에 포함하지 않았다.
+
+2026-11-10 정정: 위 실행 구조의 ‘STUN/TURN 미사용’ 중 STUN은 입증되지 않았다. 로컬 중개는 `ice: []`를 보내지만 `Mp._on_signal()`은 빈 배열을 채택하지 않아 기본 STUN이 남는다. 혼합 검사의 실제 ICE 기록에서도 이를 확인했다. 기존 실제 로컬 WebRTC 결과는 유지하되 외부 STUN 무접촉 증거로 사용하지 않는다. [혼합 버전 후속](../mixed-version/README.md)은 QA에서 ICE를 명시적으로 비운 조건과 구분한다. 제품 네트워크 기본값은 변경하지 않는다.
 
 최신 PC/폰3조건 캡처는 각17장·합계34장이며 UI 겹침0이다. `toast_top+height+4`와 card panel 사이의 정확한 여유는 도구가 Control geometry를 저장하지 않아 소급 측정하지 않았다. 소스상의 조건부 반례와 실제 관측 범위는 [toast-headroom.md](toast-headroom.md)에 구분했다.
 

@@ -456,8 +456,15 @@ func _mp_tick(delta: float) -> void:
 	session.mp_bar.visible = not session.title_label.visible
 	session.mp_bar.position = Vector2(session.hud.position.x + 2.0, session.hud.position.y + session.hud.size.y + 4.0)
 	var mine_n := _my_towers().size() if session.mp_mode == "coop" else 0
-	session.mp_req_btn.disabled = not gifts().supported_all() or gifts().blocks_local_choice()
-	session.mp_req_btn.tooltip_text = "친구들의 연결 확인 후 요청할 수 있어요" if not gifts().supported_all() else gifts().pending_notice()
+	session.mp_req_btn.disabled = not gifts().implementation_ready or not gifts().supported_all() or gifts().blocks_local_choice()
+	var support_notice := gifts().support_notice()
+	var pending_notice := gifts().pending_notice()
+	if support_notice != "":
+		session.mp_req_btn.tooltip_text = support_notice
+		session.mp_req_btn.text = "요청 미지원" if gifts().protocol_version != BinduGiftTransactions.VERSION else "요청 확인 중"
+	else:
+		session.mp_req_btn.tooltip_text = pending_notice if pending_notice != "" else "내 오브젝트에 필요한 속성을 요청해요 · 쉬는 시간마다 1장"
+		session.mp_req_btn.text = "요청 취소" if session.mp_req_mode else "속성 요청"
 	session.mp_req_btn.visible = session.mp_mode == "coop" and session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY] and not session.perk_mode and mine_n > 0
 	session.mp_kick_btn.visible = session.mp_mode == "coop" and session.mp.is_host() and session.phase != BinduSession.Phase.GAMEOVER \
 		and session.mp_others.keys().any(func(id): return not session.mp_kicked.has(id))
@@ -505,7 +512,10 @@ func _mp_tick(delta: float) -> void:
 			elif session.mp_wait_left > 0.0:
 				me += ", %d초 뒤 대신 고름" % ceili(session.mp_wait_left)
 			session.mp_bar.text = "협동 · 나(%s) + %s" % [me, ", ".join(parts)]
-			if gifts().pending_notice() != "": session.mp_bar.text = gifts().pending_notice()
+			if pending_notice != "":
+				session.mp_bar.text = pending_notice
+			elif support_notice != "":
+				session.mp_bar.text += "\n" + support_notice
 			if session.mp_rejoin_until > 0:
 				session.mp_bar.text = "협동 · 다시 접속하는 중… %d초" % maxi(0, (session.mp_rejoin_until - Time.get_ticks_msec()) / 1000)
 			session.mp_bar.add_theme_color_override("font_color", Mp.owner_color(session.mp.my_id))

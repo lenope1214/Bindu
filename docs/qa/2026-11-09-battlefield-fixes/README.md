@@ -1,6 +1,8 @@
 # 전장 사용성 수정 검증 기록
 
-**최신 후속:** [효과 설정 구분](fx-controls/README.md)에서 전장 빠른 메뉴·설정창 동기화·폰 안전 영역을 고쳤다. PC/폰100·130% 실제 가상 입력108단언을 통과했다. 실기기·사람 과제·고배속 전체 지연·PERF-01은 미완료다.
+**최신 후속:** [혼합 버전 협동](multiplayer/mixed-version/README.md)에서 미지원/지원 확인 중·업데이트 후 새 판 안내를 구분했다. 현재 제품의 실제 native15actor426단언과 전체 check252/86/28을 통과했다. 이전 STUN 미사용 설명도 정정했다. 실기기·사람 과제·고배속 전체 지연·PERF-01은 미완료다.
+
+**효과 설정 후속:** [효과 설정 구분](fx-controls/README.md) 단계에서 전장 빠른 메뉴·설정창 동기화·폰 안전 영역을 고쳤다. PC/폰100·130% 실제 가상 입력108단언을 통과했다.
 
 **렌더 후속:** [저강도 FX 장식 생략](performance/fx-quality/README.md) 단계의 실제 명령/RNG 계약·정지 장면 비용 비교·저강도 release442단언과 전체 check를 통과했다. 기본 설정은 끔이다.
 
@@ -27,6 +29,7 @@
 | 정보·기존 사용성 | PC/폰 실제 native 버튼·hover·touch·숫자 우선·예시 opt-in·정지·권한 | [정보](information/README.md), [상세 통합](usability/README.md) |
 | 64종 카드 앞면 | 실제 Meta.fs 글꼴/폭/3줄·핵심 수치/부정어·온라인 패치 반영 및 전체 설명 보존 | [상세 통합](usability/README.md) |
 | 실제 로컬 멀티 | 협동3인14조건·협동/대결2인·PC/폰 대기 표시 후속, 총67 actor 실행·651단언·행동/UI실패0. 검사 뒤 QA 종료에서 발생한 SCTP3줄과 종료 절차 교정 후 strict0을 분리 보존 | [멀티 증거](multiplayer/README.md), [거래 후속](multiplayer/gift/README.md) |
+| 최신 혼합 소스 멀티 | 기존 main/현재 소스의 구host·신규host·전원 신규, PC9actor256·폰6actor170단언. 미지원/지원 확인 중 표시·거절 보관·정상 TW/진행·전원 신규 단일 소비/정산 | [현재 증거·실제 ICE·범위](multiplayer/mixed-version/README.md) |
 | 후반 부하 | 16개 오브젝트·약300구체, 1/4/8배속×효과 줄이기 켬/끔, 30준비+180표본/조건. main/current 동일 도구 비교 | [측정 의미·결과](performance/README.md) |
 | 자동 조준 계산 | 기존 fixture 범위 오류 정정. 실제15종×레벨1/3/8·41,564대상/RNG 동등, 의도적 경계 오류2건 검출. 사거리 호출 내 재사용과 native6조건 개선 관찰 | [정정](performance/targeting/README.md), [후속 증거](performance/guard-range/README.md) |
 | hit 후처리 비용 | 없는 특징 호출 생략. 실제 전투885사례/10,620표본 상태·예약·RNG 동등, 의도적 조건 오류75건 검출. 혼합8배속 ABBA main CPU2.4–4.8% 감소, 모두 활성 경로는 큰 이득 없음 | [후속 증거](performance/hit-factors/README.md) |

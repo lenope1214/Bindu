@@ -1,0 +1,38 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+MIXED peer_b ok native WebRTC extension available
+MIXED peer_b ok actual version API matches actor
+MIXED peer_b ok room-code
+MIXED peer_b ok actual WebRTC peers
+MIXED peer_b ok actual three-player game start
+MIXED peer_b ok valid fixture offer generation
+MIXED peer_b ok actual card held
+MIXED peer_b ok actual own placement
+MIXED peer_b ok own placement consumes exactly one pick
+MIXED peer_b ok valid fixture offer generation
+MIXED peer_b ok placed barrier
+MIXED peer_b ok all owners replicated across actual transport
+MIXED peer_b ok capability negotiation matches real versions
+MIXED peer_b ok request button matches supported capability
+MIXED peer_b ok unsupported or unconfirmed capability shows recovery without hover
+MIXED peer_b ok unsupported protocol differs from unconfirmed participant
+MIXED peer_b ok capability text fits safe UI bounds
+MIXED peer_b ok cooperative actions stay below status text
+MIXED peer_b ok owner requested
+MIXED peer_b ok actual remote request replicated
+MIXED peer_b ok unsupported foreign placement preserves held card and pick
+MIXED peer_b ok blocked gift explains support and recovery action
+MIXED peer_b ok blocked gift cancels without consumption
+MIXED peer_b ok donor finished real attempt
+MIXED peer_b ok blocked gift did not mutate owner or replica
+MIXED peer_b ok gift-observed barrier
+MIXED peer_b ok same remaining Water card usable on own object
+MIXED peer_b ok edited barrier
+MIXED peer_b ok post-edit TW convergence for every owner
+MIXED peer_b ok mixed-version rejection creates no transaction or reservation
+MIXED peer_b ok real ready and wave start converge
+MIXED peer_b ok mixed-wave preserves all owner objects
+MIXED peer_b ok verified barrier
+MIXED peer_b ok stopped barrier
+MIXED FINAL peer_b checks=34 failures=0

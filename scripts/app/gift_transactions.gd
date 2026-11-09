@@ -200,6 +200,16 @@ func pending_notice() -> String:
 		return "친구의 속성 전달 결과를 확인 중이에요"
 	return ""
 
+## 지원 불가와 아직 확인되지 않은 상태를 구분한다. 연결 자체가 정상이어도 전달은 막힐 수 있다.
+func support_notice() -> String:
+	if session.mp_mode != "coop" or closed or session.phase == BinduSession.Phase.GAMEOVER:
+		return ""
+	if protocol_version != VERSION:
+		return "속성 전달 미지원 · 모두 업데이트 후 새 판을 시작하세요"
+	if not implementation_ready or not supported_all():
+		return "전달 지원 확인 중 · 오래 걸리면 모두 업데이트 후 새 판을 시작하세요"
+	return ""
+
 func note_new_offer() -> bool:
 	if blocks_local_choice():
 		return false
@@ -241,7 +251,8 @@ func offer_status(tower: Tower, card: Dictionary) -> Dictionary:
 	if session.mp_mode != "coop":
 		return {"ok":false, "reason":"소유자만 편집할 수 있어요"}
 	if not implementation_ready or not supported_all():
-		return {"ok":false, "reason":"친구의 전달 지원을 확인 중이에요. 오래 걸리면 모두 업데이트한 뒤 새 판을 시작하세요"}
+		var reason := support_notice()
+		return {"ok":false, "reason":reason if reason != "" else "협동 판 준비가 끝난 뒤 속성을 전달할 수 있어요"}
 	if card.get("type", "") != "elem" or tower.req_e < 0 or int(card.get("e", -1)) != tower.req_e:
 		return {"ok":false, "reason":"친구가 요청한 속성 카드만 전달할 수 있어요"}
 	if int(tower.get_meta("gift_request_id", 0)) <= 0:
