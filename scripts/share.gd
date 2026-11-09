@@ -370,8 +370,8 @@ static func apply(tw: Object, o: Orb, f: float, key: String) -> void:
 	if f <= 0.0 or not is_instance_valid(tw) or not is_instance_valid(o) or o.hp <= 0.0:
 		return
 	var els := _els(tw)
-	var dm := dur(tw)
-	f *= grow(tw, o)
+	var dm := dur(tw) if els.has(Elem.ICE) else 1.0
+	f *= grow(tw, o) if els.has(Elem.WOOD) else 1.0
 	var rm := o.resist_mul(els)
 	var n := 0
 	for e in els:

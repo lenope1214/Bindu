@@ -2107,8 +2107,8 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	if o.hp <= 0.0 and echo_cd <= 0.0 and tg("echo") > 0:
 		_echo(o)
 	# 효과 (Elem.RIDER). 얼음 오래감은 지속 시간, 나무 자람은 먼 구체일수록 세기를 키운다 (Share)
-	var dm := Share.dur(self)
-	var g := Share.grow(self, o)
+	var dm := Share.dur(self) if els.has(Elem.ICE) else 1.0
+	var g := Share.grow(self, o) if els.has(Elem.WOOD) else 1.0
 	var had_chill := o.chill
 	if els.has(Elem.FIRE):
 		o.burn(Rules.fire_dps * els.get(Elem.FIRE, 0) * rm * g * Share.am(self, Elem.FIRE), Rules.fire_t * dm, self)

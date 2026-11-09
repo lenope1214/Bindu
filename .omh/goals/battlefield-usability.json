@@ -582,7 +582,7 @@
       "diagnostic_status": "가설",
       "title": "후반 효과 밀도·지연이 입력 실패처럼 느껴질 수 있다",
       "implementation": "partial",
-      "verification": "local_evidence_with_external_gaps",
+      "verification": "partial_local_CPU_improvement; highspeed_queue/PERF01/physical/human_remaining",
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/remaining-user-tasks.md",
         "docs/qa/2026-11-09-battlefield-fixes/README.md",
@@ -592,7 +592,8 @@
         "docs/qa/2026-11-09-battlefield-fixes/performance/feedback-density/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/zone-application/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/performance/fx-quality/README.md",
-        "docs/qa/2026-11-09-battlefield-fixes/fx-controls/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/fx-controls/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/performance/zone-hit/README.md"
       ]
     },
     {
@@ -972,11 +973,26 @@
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/keyboard/README.md"
       ]
+    },
+    {
+      "type": "inert_duration_growth_helpers_measured_and_adopted",
+      "facts": [
+        "Rejected single-read/typed source candidates; nested profiles separate source selection, effect application and source attribution.",
+        "Exact4line Tower/Share delta matches tested source hashes;885combat cases/10620normalized samples and nextRNG equal; mutant30; direct48raw selected-state/source/RNG cases equal.",
+        "Controlled12headless runs/1440samples: mixed/metal-earth-blood mainCPU~2%down; all-present wood-ice-fire+.08to+.30% retained.",
+        "Controlled4native ABBA runs/960samples: same workload/endstate/nextRNG; mixed8speed mainCPU~3%down;1speed forced draw interval+.21to+.82% retained.",
+        "24synthetic pause requests preserve menu,camera,picks;12highspeed requests actually posted during compute; candidate queue170.448to211.594ms remains. One-speed late posting classified explicitly; initial bad-assumption attempt preserved.",
+        "Common fullcheck252/86/parity345/fuzz4x3000/restore4,8,12to13/server28 exit0. Full50 and PERF01 not complete."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/performance/zone-hit/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/performance/zone-hit/summary.json"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "Deliver task22keyboard commit via latest main pull/rebase/push/PR17 update, then continue BF49/PERF01 and remaining accessibility/physical/human tasks; full50active.",
+    "next_local_action": "Deliver task23 scoped commit via latest main pull/rebase/push/PR update. Then prototype bounded main-thread work/input service in isolation without silently changing speed/game-time/debt policy; continue BF50 accessibility and physical/human tasks. Full50 active.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },

@@ -70,3 +70,5 @@ native는 Godot4.7.2/macOS·빈 운영 URL·고유 BinduTools 저장·최소화/
 확정 사용성 수정의 로컬 구현·공통 회귀·실통신·화면 검증을 기록했다. 목표 `전부 수정하기`는 active다. BF-49 조준의 호출 내 불변값 재사용은 native6조건에서 개선돼 반영했지만 고배속 전체 지연은 남는다. 장판·이동·렌더 비용과 기기 연결 후 `remaining-user-tasks.md`가 후속 범위다. 제품 Zone을 빠른 일부 benchmark만 보고 교체하지 않았다.
 
 [키보드 정보 읽기/전장 복귀](keyboard/README.md): F6 진입·카드 읽기·설명 스크롤·예시·접기/닫기·정지/복귀·방향 편집과 모달 보호126단언. macOS 가상 GUI 관찰이며 스크린리더/스위치/실기기 전체 접근성은 미확인.
+
+[없는 지속/성장 호출](performance/zone-hit/README.md): 제품4줄, 동결 참조/실제 전투/예약/RNG/직접 extra·fallback 검사와 제어 CPU/native ABBA. 모든 효과 활성 CPU 증가·1배속 draw 간격 증가·남은 긴 합성 입력 대기 및 거절한 후보를 함께 기록한다.

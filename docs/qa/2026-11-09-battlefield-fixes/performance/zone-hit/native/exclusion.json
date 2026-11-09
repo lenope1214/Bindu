@@ -1,0 +1,12 @@
+{
+  "adopted": false,
+  "runtime_exit": 0,
+  "runtime_errors": 0,
+  "ui_violations": 0,
+  "python_postcondition_failure": "The1x compute window was shorter than thread wakeup; original verifier wrongly required every1x request to post during compute.",
+  "one_speed_in_compute_samples": 0,
+  "eight_speed_in_compute_samples": 3,
+  "scope_correction": "All pause delivery/menu/camera/picks checks still required. Actual posted_during_compute required for8x;1x kept with explicit classification. New fresh run required for adoption.",
+  "product_edits": 0,
+  "originals_preserved": true
+}
