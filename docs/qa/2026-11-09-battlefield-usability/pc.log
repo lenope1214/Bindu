@@ -1,0 +1,115 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+SHOT title
+UI ok title
+SHOT title_prep
+UI ok title_prep
+SHOT notes
+UI ok notes
+SHOT records
+UI ok records
+SHOT board
+UI ok board
+SHOT settings
+UI ok settings
+SHOT sound_pop
+UI OVERLAP sound_pop VBoxContainer(@VBoxContainer@142) [309,60 662x600] × PanelContainer(@PanelContainer@420) [836,491 380x175]
+SHOT codex
+UI ok codex
+SHOT codex_pat
+UI ok codex_pat
+SHOT codex_rx
+UI ok codex_rx
+SHOT codex_perk
+UI ok codex_perk
+SHOT codex_ach
+UI ok codex_ach
+SHOT codex_ach_end
+UI ok codex_ach_end
+SHOT codex_elem
+UI ok codex_elem
+SHOT modes
+UI ok modes
+SHOT modes_easy
+UI ok modes_easy
+SHOT tut_goal
+UI ok tut_goal
+SHOT tut_place
+UI ok tut_place
+SHOT tut_react
+UI ok tut_react
+SHOT tut_coin
+UI ok tut_coin
+SHOT tut_coop
+UI ok tut_coop
+SHOT tut_link
+UI ok tut_link
+SHOT tut_list
+UI ok tut_list
+SHOT help
+UI ok help
+SHOT title_remote
+UI ok title_remote
+SHOT cards
+UI ok cards
+SHOT cards_tap
+UI ok cards_tap
+SHOT cards_detail_full
+UI ok cards_detail_full
+SHOT cards_detail
+UI ok cards_detail
+SHOT zoom
+UI ok zoom
+SHOT cards2
+UI ok cards2
+SHOT cards_guide
+UI ok cards_guide
+SHOT combination_inspector
+UI ok combination_inspector
+SHOT combination_inspector_multi
+UI ok combination_inspector_multi
+SHOT place_mod
+UI ok place_mod
+SHOT place_mod_ok
+UI ok place_mod_ok
+SHOT cards_hidden
+UI ok cards_hidden
+SHOT tip
+UI ok tip
+SHOT aim_touch_detail
+UI ok aim_touch_detail
+SHOT aim_touch_hold
+UI ok aim_touch_hold
+SHOT aim_touch_wait
+UI ok aim_touch_wait
+SHOT ready_skip
+UI ok ready_skip
+SHOT skip_ready
+UI ok skip_ready
+SHOT skip_wave
+UI ok skip_wave
+SHOT wave_dps
+UI ok wave_dps
+SHOT orb_tip
+UI ok orb_tip
+SHOT perks
+UI ok perks
+SHOT coin_air
+UI ok coin_air
+SHOT coin_fall
+UI ok coin_fall
+SHOT coin_edge
+UI ok coin_edge
+SHOT coin_land
+UI ok coin_land
+SHOT coin_perks
+UI ok coin_perks
+SHOT pause
+UI ok pause
+SHOT pause_settings
+UI ok pause_settings
+SHOT gameover
+UI ok gameover
+WARNING: 4 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
