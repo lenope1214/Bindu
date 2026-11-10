@@ -1,0 +1,51 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M4
+
+ok   KEY-2 F6 enters card reading without pointer input
+ok   KEY-2 next-card button reachable by Tab
+ok   KEY-2 Enter reads next card without consuming a choice
+ok   KEY-2 previous-card button reachable by Shift+Tab
+ok   KEY-2 Space reads previous card without playing it
+ok   KEY-2 use-card action reachable by Tab
+ok   KEY-2 use card hands Enter back to field without consuming early
+ok   KEY-2 Esc returns unchanged offers
+ok   KEY-2 card inspector close button reachable
+ok   KEY-2 keyboard close releases hidden focus
+ok   KEY-2 field Tab still selects a tower
+ok   KEY-2 F6 enters selected-object inspector
+ok   KEY-2 Tab reaches preview, reading area, pin, fold and close
+ok   KEY-2 reading navigation never cycles or moves field targets
+ok   KEY-2 reading area reached
+ok   KEY-2 End scrolls actual overflowing content
+ok   KEY-2 Home returns to primary metrics
+ok   KEY-2 Down scrolls rather than moving the selected tower
+UI ok reading-focus
+ok   KEY-2 preview action reached
+ok   KEY-2 Enter reveals entire attack example
+UI ok preview-focus
+ok   KEY-2 Space collapses example and returns to metrics
+ok   KEY-2 fold action reached
+ok   KEY-2 fold keeps visible header focus
+ok   KEY-2 folded content is excluded from focus traversal
+ok   KEY-2 keyboard unfolds inspector
+ok   KEY-2 wave Esc immediately pauses while inspector button focused
+ok   KEY-2 P resumes after reading pause
+ok   KEY-2 F6 returns focus to field
+ok   KEY-2 field Tab resumes target cycling after leaving inspector
+ok   KEY-2 reading preserves positions, cards and camera
+ok   KEY-2 field arrows work after inspector focus exits
+KEYBOARD FINAL EDIT phase=6 direction=(0.0, -1.0) pointer=(1076.0, 288.0) target=(938.0, 300.0)
+ok   KEY-2 field direction editing still completes by keyboard
+ok   KEY-2 reading modal retains input ownership: @PanelContainer@405
+ok   KEY-2 reading modal retains input ownership: @Label@462
+ok   KEY-2 reading modal retains input ownership: @PanelContainer@294
+ok   KEY-2 reading modal retains input ownership: @PanelContainer@358
+ok   KEY-2 reading modal retains input ownership: @PanelContainer@383
+ok   KEY-2 reading modal retains input ownership: @Label@255
+ok   KEY-2 reading modal retains input ownership: @PanelContainer@306
+ok   KEY-2 reading modal retains input ownership: @Control@450
+ok   KEY-2 perk selection does not expose a stale normal offer
+ok   KEY-2 pause blocks entering hidden card reading
+BATTLEFIELD KEYBOARD failures=0 ui=0
+WARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)

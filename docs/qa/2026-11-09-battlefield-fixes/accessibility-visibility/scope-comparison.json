@@ -1,0 +1,15 @@
+{
+  "schema": "scoped_visibility_comparison/v1",
+  "baseline": "baseline-02",
+  "candidate": "current-01",
+  "only_product_delta": [
+    "scripts/features/ui_shell.gd"
+  ],
+  "states": 14,
+  "control_records": 1148,
+  "exact_fields": "Full before/after state dicts and complete all-Control inventory including path, class, text, name, local/tree visibility, disabled, focus and rect. Positive shown-card AXPress intentionally changes phase in both.",
+  "equal": true,
+  "not_proven": "Complete AT navigation, hidden-only PASS for all product states, missing READY cause, physical or speech",
+  "published_complete_input": "comparison-records.jsonl",
+  "raw_originals": "Retained local unchanged; JSONL carries all parsed fields and original bytes/SHA paths."
+}

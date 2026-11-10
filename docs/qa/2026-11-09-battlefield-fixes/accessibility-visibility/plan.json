@@ -1,0 +1,98 @@
+{
+  "schema": "accessibility_audit_plan/v1",
+  "platform": "macOS Godot4.7.2 ed1daf0bf native owned unfocusable Window/AccessKit",
+  "scope": "BF50 visibility/name-role state updates for card folding and READY/WAVE start control; not complete assistive navigation",
+  "standard": "WCAG2.2 AA used as review reference; no conformance claim",
+  "critical_tasks": [
+    "Visible offers can be selected through native AXPress.",
+    "Folded cards are absent from fresh native AX tree and previously cached references cannot select them.",
+    "READY start button is present and WAVE hidden start button is absent after state transition.",
+    "Camera, towers, offer/picks, visible control layout and focus are preserved except explicit positive card press."
+  ],
+  "evidence": [
+    "baseline-01/run.json",
+    "cached-baseline-01/run.json",
+    "baseline-02/run.json",
+    "current-01/run.json"
+  ],
+  "hypotheses": [
+    {
+      "axis": "input/state",
+      "claim": "Raw AX snapshot includes wrong scene or fixture state.",
+      "test": "Owned PID, native Window marker, actual Control.visible_in_tree, phase and geometry. Marker alone does not prove descendants.",
+      "result": "Baseline02 owned READY has visible start, AX misses it through5probes; WAVE hides it but AX still reports it."
+    },
+    {
+      "axis": "dependency",
+      "claim": "Visibility changes do not schedule all needed accessibility state refreshes.",
+      "test": "Connect UI-only Control visibility signals to queue_accessibility_update; observe same native sequence.",
+      "result": "Candidate1 removes WAVE phantom but does not restore READY start; insufficient explanation, unadopted pending diagnosis."
+    },
+    {
+      "axis": "hierarchy/order",
+      "claim": "Parent-child AX relationship or another ancestor flag remains stale despite button update.",
+      "test": "Observe actual NOTIFICATION_ACCESSIBILITY_UPDATE on start/reroll/UI root and visibility queue events, then isolate parent refresh if indicated.",
+      "result": "Diagnostic01 proves child refresh visible=true twice. Immediate-parent prototype still misses READY. Parent-only hypothesis insufficient."
+    },
+    {
+      "axis": "timing/client cache",
+      "claim": "A stale read or cached AX element causes the mismatch or hidden activation.",
+      "test": "Repeated native reads and press a previously visible cached element after fold.",
+      "result": "Five READY/WAVE probes retain mismatches; cached hidden card returns kAXErrorInvalidUIElement/-25202 with unchanged gameplay. Hidden-card activation hypothesis contradicted for measured case."
+    }
+  ],
+  "fix_attempts": [
+    {
+      "id": 1,
+      "scope": "UI subtree visibility signal refresh only, one product file",
+      "result": "current01 strict freshness check fails READY; WAVE phantom gone",
+      "adoption": "implemented_only_for_separately_reproduced_I16_hidden_button_execution; READY_I17_remains_unresolved"
+    },
+    {
+      "id": 2,
+      "scope": "Temporary-copy-only parent refresh added to visibility helper; same observer/reader, original7state sequence",
+      "result": "Parent-prototype01 strict native7state run also fails READY; WAVE phantom absent. Parent update does not account for missing READY start.",
+      "adoption": "not_adopted"
+    },
+    {
+      "id": 3,
+      "scope": "QA-copy-only start FOCUS_ACCESSIBILITY instead of NONE",
+      "result": "focus-prototype01 same strict7state reproduction fails READY",
+      "adoption": "not_adopted"
+    }
+  ],
+  "matrix": {
+    "schema": "wcag_success_criteria_matrix/v1",
+    "4.1.2": "HOLD: visible READY control absent from native AX; selected names/actions verified separately. Catalog BTN-1 is not the same hidden-state finding; use project finding BF50-AX-VIS instead of mislabelling it.",
+    "2.1.1": "HOLD: prior selected keyboard126 is historical context; no complete critical-task or AT traversal claim",
+    "2.4.3": "HOLD: this run does not walk VoiceOver/focus order",
+    "1.4.3": "not_observed",
+    "2.5.8": "not_observed"
+  },
+  "verdict": "HOLD",
+  "missing": [
+    "VoiceOver speech/linear traversal",
+    "mobile AT/physical/human tasks",
+    "contrast/target-size scope",
+    "full field critical tasks"
+  ],
+  "stop_condition": "Observed same native reproduction passes after a demonstrated cause and appropriate regression, or diagnostic evidence identifies a concrete external blocker. No blind fix loop or queue limit changes.",
+  "delivery": "Task-specific local commit only; main pull/rebase/push and existing PR update once at the end.",
+  "observations": [
+    "Cached hidden card native action rejected with kAXErrorInvalidUIElement. No visibility guard added to card callbacks.",
+    "Current native screenshot visibly contains READY start; native AXChildren repeatedly omits it. Existing first-candidate source is not adopted yet.",
+    "Third fix not prepared. Next observation reads AXChildrenInNavigationOrder with explicit child-query errors to separate scanner limitations from missing platform hierarchy."
+  ],
+  "I16": {
+    "reproduction": "Engine-only hidden Button native AXPress triggers callback; default2hidden activations, initial-hidden1activation.",
+    "verification": "Same observer/reader initial-hidden pair and two7state candidate mini runs all exact visibility; hidden callbacks0, visible positive1. Product WAVE phantom gone, game/UI state exact.",
+    "implemented": true
+  },
+  "I17": {
+    "reproduction": "READY visible start absent across repeated AXChildren and navigation-order reads; no child query timeout.",
+    "root_cause": "not_observed",
+    "failed_interventions": 3,
+    "next": "No fourth guessed fix; preserve UI/engine and isolate structure by default unless user selects alternative. Optional user preference requested per skill, current structure maintained.",
+    "goal_complete": false
+  }
+}

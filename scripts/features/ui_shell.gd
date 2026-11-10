@@ -18,6 +18,7 @@ func _build_ui() -> void:
 	root.theme = theme
 	layer.add_child(root)
 	session.ui_root = root
+	_watch_accessibility_visibility(root)
 	session.card_dock = CardDock.new(session)
 	session.get_viewport().size_changed.connect(session.hud_system._apply_ui_scale)
 
@@ -550,3 +551,21 @@ func _build_ui() -> void:
 	session.help_label.visible = false
 	session.help_scroll.add_child(session.help_label)
 	root.add_child(session.help_scroll)
+
+
+## Godot 4.7 does not always refresh AX hidden flags after a visibility change.
+## Observe only this UI subtree; scene-local signals expire with their nodes.
+func _watch_accessibility_visibility(node: Node) -> void:
+	if node is Control:
+		var refresh := _refresh_accessibility_visibility.bind(node)
+		if not node.visibility_changed.is_connected(refresh):
+			node.visibility_changed.connect(refresh)
+	if not node.child_entered_tree.is_connected(_watch_accessibility_visibility):
+		node.child_entered_tree.connect(_watch_accessibility_visibility)
+	for child in node.get_children():
+		_watch_accessibility_visibility(child)
+
+
+func _refresh_accessibility_visibility(control: Control) -> void:
+	if AccessibilityServer.is_supported():
+		control.queue_accessibility_update()

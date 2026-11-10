@@ -603,13 +603,14 @@
       "diagnostic_status": "가설",
       "title": "화면·시각 조건별 접근성 사각지대가 남아 있다",
       "implementation": "partial",
-      "verification": "selected_keyboard126_and_native_AX_names_help_one_press_verified; whole_assistive_navigation_colour_contrast_physical_human_remaining",
+      "verification": "selected_keyboard126_native_names_action_and_hidden_visibility_fix;READY_AX_discovery_I17_and_full_AT/colour/contrast/physical/human_remaining",
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/remaining-user-tasks.md",
         "docs/qa/2026-11-09-battlefield-fixes/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/ios-layout/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/keyboard/README.md",
-        "docs/qa/2026-11-09-battlefield-fixes/accessibility/README.md"
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/README.md"
       ]
     }
   ],
@@ -1036,11 +1037,27 @@
         "docs/qa/2026-11-09-battlefield-fixes/message-queue/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/message-queue/summary.json"
       ]
+    },
+    {
+      "type": "native_hidden_visibility_reproduced_and_scoped_fix_verified",
+      "facts": [
+        "Single product script adds scene-local UI visibility and dynamic-child observers; no frame/input loop, geometry/focus/gameplay changes. Exact70source snapshot is retained.",
+        "Engine-only baseline hidden AXPress runs callback twice; initial-hidden counterfactual hidden action once. Same-observer/reader initial-hidden bridge pair and2candidate mini7states strictly pass, hidden actions0 and visible actions1.",
+        "Cached hidden product card was already rejected invalidElement/-25202; no redundant guard added. Product WAVE hidden start disappears; exact14state dictionaries/1148control records equal before/after.",
+        "Fullcheck exit0:252/86/parity345/4140/fuzz4actualDONE3000exit0/restore4,8,12to13/server28warning1; native keyboard126 and architecture runtime0. One-time architecture41existing/new0; ObjectDB2perkeyboard retained.",
+        "READY visible start still missing after child/parent/focus3interventions,5probes and native navigation-order check. Child actual notifications visible=true observed; root cause unknown, strict failures retained. No fourth guessed fix or full AT pass.",
+        "User preference requested per3failed-fix skill; default next observation keeps current UI/engine. Task local commit only; no main pull/rebase/push or PR update. Full goal active."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/summary.json",
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/plan.json"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "I15 remains unresolved after8original nominal and2traced3000frame runs. Use recorded logical input/actual config and obtain permitted symbolized native fault evidence; do not treat later passes as a fix. Continue BF50 actual assistive navigation and high-speed/physical/human gaps. Keep task commits local. Latest main pull/rebase/push and existing PR update once only at the end of all work.",
+    "next_local_action": "Keep all remaining scope. Prioritize I17 native READY discovery: preserve current UI/engine by default, isolate structural hierarchy with observed data, no fourth speculative fix after3failed interventions. I16 hidden execution fixed; retain strict integration failure and I15 unresolved. Then complete remaining actual assistive field tasks and highspeed/physical/human gaps. Local commits only; latest main pull/rebase/push/PR update once at the final end.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },
@@ -1146,6 +1163,27 @@
         "docs/qa/2026-11-09-battlefield-fixes/accessibility/fuzz-oom.json",
         "docs/qa/2026-11-09-battlefield-fixes/accessibility/full-check-fixed.log",
         "docs/qa/2026-11-09-battlefield-fixes/message-queue/README.md"
+      ]
+    },
+    {
+      "id": "I-16",
+      "title": "표시 변경 뒤 숨은 native AX 버튼이 계속 실행됨",
+      "implementation": "implemented",
+      "verification": "isolated_native_hidden_execution_before;14candidate_mini_states_match;product_WAVE_phantom_removed;common_and_keyboard126_pass;I17_separate",
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/summary.json"
+      ]
+    },
+    {
+      "id": "I-17",
+      "title": "READY의 화면상 시작 버튼이 native AX에 나타나지 않음",
+      "implementation": "unresolved",
+      "verification": "repeated5probes_before_after;native_notifications_visible_true;parent_focus_variants_fail;navigation_order_still_missing;whole_accessibility_HOLD",
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/baseline-02/run.json",
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/current-01/run.json"
       ]
     }
   ]

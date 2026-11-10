@@ -1,0 +1,753 @@
+{
+  "limit_reached" : false,
+  "pid" : 98386,
+  "preferred_children_attribute" : "AXChildrenInNavigationOrder",
+  "rows" : [
+    {
+      "actions" : [
+        "AXRaise"
+      ],
+      "attribute_errors" : {
+        "AXEnabled" : -25205
+      },
+      "AXFocused" : false,
+      "AXRole" : "AXWindow",
+      "AXTitle" : "Bindu QA ready (DEBUG)",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 5,
+      "children_error" : 0,
+      "path" : [
+        0
+      ],
+      "preferred_children_error" : 0,
+      "supported_attributes" : [
+        "AXFocused",
+        "AXFullScreen",
+        "AXTitle",
+        "AXChildrenInNavigationOrder",
+        "AXFrame",
+        "AXPosition",
+        "AXGrowArea",
+        "AXMinimizeButton",
+        "AXDocument",
+        "AXSections",
+        "AXCloseButton",
+        "AXMain",
+        "AXActivationPoint",
+        "AXFullScreenButton",
+        "AXProxy",
+        "AXDefaultButton",
+        "AXMinimized",
+        "AXChildren",
+        "AXRole",
+        "AXParent",
+        "AXTitleUIElement",
+        "AXCancelButton",
+        "AXModal",
+        "AXSubrole",
+        "AXZoomButton",
+        "AXRoleDescription",
+        "AXSize",
+        "AXToolbarButton"
+      ]
+    },
+    {
+      "actions" : [
+        "AXPress"
+      ],
+      "attribute_errors" : {
+        "AXTitle" : -25212
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXButton",
+      "children_attribute" : "AXChildren",
+      "children_count" : 0,
+      "children_error" : -25212,
+      "path" : [
+        0,
+        0
+      ],
+      "preferred_children_error" : -25205,
+      "supported_attributes" : [
+        "AXEnabled",
+        "AXFrame",
+        "AXParent",
+        "AXSize",
+        "AXFocused",
+        "AXRole",
+        "AXTopLevelUIElement",
+        "AXHelp",
+        "AXPosition",
+        "AXTitle",
+        "AXWindow",
+        "AXRoleDescription",
+        "AXSubrole",
+        "AXEdited"
+      ]
+    },
+    {
+      "actions" : [
+        "AXPress"
+      ],
+      "attribute_errors" : {
+        "AXTitle" : -25212
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXButton",
+      "children_attribute" : "AXChildren",
+      "children_count" : 0,
+      "children_error" : -25212,
+      "path" : [
+        0,
+        1
+      ],
+      "preferred_children_error" : -25205,
+      "supported_attributes" : [
+        "AXEnabled",
+        "AXFrame",
+        "AXParent",
+        "AXSize",
+        "AXFocused",
+        "AXRole",
+        "AXTopLevelUIElement",
+        "AXHelp",
+        "AXPosition",
+        "AXTitle",
+        "AXWindow",
+        "AXRoleDescription",
+        "AXSubrole"
+      ]
+    },
+    {
+      "actions" : [
+        "AXPress",
+        "AXZoomWindow",
+        "AXShowMenu"
+      ],
+      "attribute_errors" : {
+        "AXTitle" : -25212
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXButton",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 1,
+      "children_error" : 0,
+      "path" : [
+        0,
+        2
+      ],
+      "preferred_children_error" : 0,
+      "supported_attributes" : [
+        "AXEnabled",
+        "AXFrame",
+        "AXParent",
+        "AXSize",
+        "AXFocused",
+        "AXChildren",
+        "AXRole",
+        "AXTopLevelUIElement",
+        "AXHelp",
+        "AXPosition",
+        "AXTitle",
+        "AXWindow",
+        "AXRoleDescription",
+        "AXSubrole"
+      ]
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+        "AXEnabled" : -25205,
+        "AXTitle" : -25205
+      },
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 1,
+      "children_error" : 0,
+      "path" : [
+        0,
+        2,
+        0
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+        "AXEnabled" : -25205,
+        "AXTitle" : -25205
+      },
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        2,
+        0,
+        0
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+        "AXTitle" : -25205
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXStaticText",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        3
+      ],
+      "preferred_children_error" : 0,
+      "supported_attributes" : [
+        "AXFocused",
+        "AXFrame",
+        "AXChildrenInNavigationOrder",
+        "AXSelectedText",
+        "AXInsertionPointLineNumber",
+        "AXPosition",
+        "AXNumberOfCharacters",
+        "AXEnabled",
+        "AXPlaceholderValue",
+        "AXSelectedTextRange",
+        "AXHelp",
+        "AXChildren",
+        "AXRole",
+        "AXParent",
+        "AXTopLevelUIElement",
+        "AXVisibleCharacterRange",
+        "AXValue",
+        "AXSize",
+        "AXRoleDescription",
+        "AXWindow"
+      ]
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+        "AXTitle" : -25212
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 22,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4
+      ],
+      "preferred_children_error" : 0,
+      "supported_attributes" : [
+        "AXFocused",
+        "AXChildrenInNavigationOrder",
+        "AXTitle",
+        "AXSelectedChildren",
+        "AXFrame",
+        "AXLinkedUIElements",
+        "AXRequired",
+        "AXMinValue",
+        "AXPlaceholderValue",
+        "AXEnabled",
+        "AXMaxValue",
+        "AXHelp",
+        "AXChildren",
+        "AXRole",
+        "AXParent",
+        "AXTopLevelUIElement",
+        "AXSubrole",
+        "AXOrientation",
+        "AXValue",
+        "AXIdentifier",
+        "AXRoleDescription",
+        "AXWindow",
+        "AXSize",
+        "AXPosition"
+      ]
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@3",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        0
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@4",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        1
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@5",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        2
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@6",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        3
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@7",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        4
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@8",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        5
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@9",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        6
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@10",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        7
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@11",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        8
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@12",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        9
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@13",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        10
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@14",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        11
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@15",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        12
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@16",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        13
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@17",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        14
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@18",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        15
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@19",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        16
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXGroup",
+      "AXTitle" : "@AudioStreamPlayer@20",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        17
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+        "AXScrollToVisible"
+      ],
+      "attribute_errors" : {
+        "AXTitle" : -25212
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXUnknown",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        18
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+        "AXScrollToVisible",
+        "AXPress"
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : false,
+      "AXFocused" : false,
+      "AXRole" : "AXButton",
+      "AXTitle" : "되돌리기",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        19
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+        "AXScrollToVisible",
+        "AXPress"
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXButton",
+      "AXTitle" : "여러 개 선택",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        20
+      ],
+      "preferred_children_error" : 0
+    },
+    {
+      "actions" : [
+        "AXScrollToVisible",
+        "AXPress"
+      ],
+      "attribute_errors" : {
+
+      },
+      "AXEnabled" : true,
+      "AXFocused" : false,
+      "AXRole" : "AXButton",
+      "AXTitle" : "전체 선택",
+      "children_attribute" : "AXChildrenInNavigationOrder",
+      "children_count" : 0,
+      "children_error" : 0,
+      "path" : [
+        0,
+        4,
+        21
+      ],
+      "preferred_children_error" : 0
+    }
+  ],
+  "trusted" : true
+}

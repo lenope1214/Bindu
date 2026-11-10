@@ -1,0 +1,283 @@
+{
+	"@Button@116": {
+		"notifications": [
+			{
+				"children": [],
+				"frame": 53,
+				"name": "@Button@116",
+				"time_usec": 1634152,
+				"visible": false,
+				"visible_in_tree": false
+			},
+			{
+				"children": [],
+				"frame": 5246,
+				"name": "@Button@116",
+				"time_usec": 45102908,
+				"visible": true,
+				"visible_in_tree": true
+			},
+			{
+				"children": [],
+				"frame": 5249,
+				"name": "@Button@116",
+				"time_usec": 45122335,
+				"visible": true,
+				"visible_in_tree": true
+			}
+		],
+		"queued": [
+			{
+				"frame": 5246,
+				"time_usec": 45098871,
+				"visible": true
+			}
+		]
+	},
+	"@Button@82": {
+		"notifications": [
+			{
+				"children": [],
+				"frame": 53,
+				"name": "@Button@82",
+				"time_usec": 1634091,
+				"visible": true,
+				"visible_in_tree": true
+			},
+			{
+				"children": [],
+				"frame": 1264,
+				"name": "@Button@82",
+				"time_usec": 11772160,
+				"visible": false,
+				"visible_in_tree": false
+			},
+			{
+				"children": [],
+				"frame": 2004,
+				"name": "@Button@82",
+				"time_usec": 17970417,
+				"visible": true,
+				"visible_in_tree": true
+			},
+			{
+				"children": [],
+				"frame": 2007,
+				"name": "@Button@82",
+				"time_usec": 17989583,
+				"visible": true,
+				"visible_in_tree": true
+			},
+			{
+				"children": [],
+				"frame": 2009,
+				"name": "@Button@82",
+				"time_usec": 18006927,
+				"visible": true,
+				"visible_in_tree": true
+			},
+			{
+				"children": [],
+				"frame": 2011,
+				"name": "@Button@82",
+				"time_usec": 18022311,
+				"visible": true,
+				"visible_in_tree": true
+			},
+			{
+				"children": [],
+				"frame": 3243,
+				"name": "@Button@82",
+				"time_usec": 28303373,
+				"visible": false,
+				"visible_in_tree": false
+			},
+			{
+				"children": [],
+				"frame": 3255,
+				"name": "@Button@82",
+				"time_usec": 28435541,
+				"visible": true,
+				"visible_in_tree": true
+			},
+			{
+				"children": [],
+				"frame": 3257,
+				"name": "@Button@82",
+				"time_usec": 28451376,
+				"visible": true,
+				"visible_in_tree": true
+			},
+			{
+				"children": [],
+				"frame": 3259,
+				"name": "@Button@82",
+				"time_usec": 28468241,
+				"visible": true,
+				"visible_in_tree": true
+			},
+			{
+				"children": [],
+				"frame": 3261,
+				"name": "@Button@82",
+				"time_usec": 28484306,
+				"visible": true,
+				"visible_in_tree": true
+			},
+			{
+				"children": [],
+				"frame": 3264,
+				"name": "@Button@82",
+				"time_usec": 28504232,
+				"visible": true,
+				"visible_in_tree": true
+			},
+			{
+				"children": [],
+				"frame": 4507,
+				"name": "@Button@82",
+				"time_usec": 38904131,
+				"visible": false,
+				"visible_in_tree": false
+			},
+			{
+				"children": [],
+				"frame": 5242,
+				"name": "@Button@82",
+				"time_usec": 45067802,
+				"visible": true,
+				"visible_in_tree": true
+			},
+			{
+				"children": [],
+				"frame": 5244,
+				"name": "@Button@82",
+				"time_usec": 45084481,
+				"visible": true,
+				"visible_in_tree": true
+			},
+			{
+				"children": [],
+				"frame": 5246,
+				"name": "@Button@82",
+				"time_usec": 45102870,
+				"visible": false,
+				"visible_in_tree": false
+			}
+		],
+		"queued": [
+			{
+				"frame": 1,
+				"time_usec": 1156905,
+				"visible": true
+			},
+			{
+				"frame": 1264,
+				"time_usec": 11769042,
+				"visible": false
+			},
+			{
+				"frame": 2004,
+				"time_usec": 17966889,
+				"visible": true
+			},
+			{
+				"frame": 3243,
+				"time_usec": 28301097,
+				"visible": false
+			},
+			{
+				"frame": 3255,
+				"time_usec": 28431614,
+				"visible": true
+			},
+			{
+				"frame": 4507,
+				"time_usec": 38900946,
+				"visible": false
+			},
+			{
+				"frame": 5242,
+				"time_usec": 45064055,
+				"visible": true
+			},
+			{
+				"frame": 5246,
+				"time_usec": 45098867,
+				"visible": false
+			}
+		]
+	},
+	"@Control@23": {
+		"notifications": [
+			{
+				"children": [
+					"CardDock",
+					"ControlBarSurface",
+					"SkipControls",
+					"CardInspector",
+					"@Button@61",
+					"BattlefieldEditControls",
+					"@Button@66",
+					"@Control@67",
+					"@Label@68",
+					"@Label@69",
+					"@Label@70",
+					"@Label@71",
+					"@Button@72",
+					"@ColorRect@73",
+					"@HBoxContainer@74",
+					"@PanelContainer@78",
+					"@Button@79",
+					"@Button@80",
+					"@Label@81",
+					"@Button@82",
+					"@Button@83",
+					"@Button@84",
+					"@Button@85",
+					"@Button@86",
+					"@Button@87",
+					"@HBoxContainer@88",
+					"@Button@116",
+					"SkillAutoMode",
+					"@Button@117",
+					"@Button@118",
+					"@Button@119",
+					"@Button@120",
+					"@ColorRect@122",
+					"@Label@123",
+					"@HBoxContainer@133",
+					"@Control@134",
+					"@Control@135",
+					"@Label@136",
+					"@Control@139",
+					"@Label@137",
+					"@Button@138",
+					"@Control@142",
+					"Float_dps",
+					"@Control@156",
+					"@PanelContainer@228",
+					"@Label@245",
+					"@HBoxContainer@246",
+					"@PanelContainer@250",
+					"@Label@254",
+					"@PanelContainer@287",
+					"@PanelContainer@299",
+					"@PanelContainer@348",
+					"@PanelContainer@373",
+					"@Control@394",
+					"@PanelContainer@395",
+					"@Control@436",
+					"@ScrollContainer@449",
+					"@Button@102"
+				],
+				"frame": 53,
+				"name": "@Control@23",
+				"time_usec": 1633881,
+				"visible": true,
+				"visible_in_tree": true
+			}
+		],
+		"queued": []
+	}
+}
