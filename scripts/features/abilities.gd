@@ -90,6 +90,17 @@ func _draw_ley() -> void:
 # ---------- 중앙 기술 (Skill) ----------
 
 var auto_skills := false  # 봇·점검: 설정과 상관없이 자동 사용
+var skill_auto_btn: Button
+
+## 전투 조작부 전체. 정보창·배지는 수동/자동 전환도 기술 버튼과 함께 피한다.
+func skill_controls() -> Array[Control]:
+	var controls: Array[Control] = []
+	for button: Button in session.skill_btns:
+		controls.append(button)
+	if is_instance_valid(skill_auto_btn):
+		controls.append(skill_auto_btn)
+	return controls
+var _automatic_cast := false
 
 
 ## 이번 판에 중앙 기술을 쓰는가 (멀티플레이·온라인 패치 skill_on 0이면 없음).
@@ -123,7 +134,9 @@ func _skill_tick(delta: float) -> void:
 			if skill_left(id) <= 0.0 and id != session.skill_arm:
 				var p: Variant = Skill.auto_target(session, id)
 				if p != null:
+					_automatic_cast = true
 					_use_skill(id, p)
+					_automatic_cast = false
 
 
 ## 기술 버튼(1·2 키): 쓸 곳을 누르기를 기다린다. 다시 누르면 취소.
@@ -133,7 +146,7 @@ func _arm_skill(i: int) -> void:
 		return
 	var id: String = session.skill_ids[i]
 	if skill_left(id) > 0.0:
-		session.hud_system._show_toast("%s: %d초 뒤에 다시 쓸 수 있어요" % [Skill.NAMES[id], ceili(skill_left(id))])
+		session.hud_system._show_toast("%s: %s" % [Skill.NAMES[id], skill_cooldown_text(id)])
 		return
 	session.skill_arm = "" if session.skill_arm == id else id
 	if session.skill_arm != "":
@@ -158,13 +171,46 @@ func _use_skill(id: String, p: Vector2) -> bool:
 	if session.skill_arm == id:
 		session.skill_arm = ""
 	session.sfx.play("place")
+	if _automatic_cast and not auto_skills:
+		session.hud_system._show_toast("%s 자동 사용 · %s" % [Skill.NAMES[id], Skill.short(id)])
 	return true
+
+
+## 수동 조준만 감속한다. 멀티·미리보기·봇의 전투 규칙은 바꾸지 않는다.
+func skill_speed_factor() -> float:
+	return 0.25 if Meta.skill_aim_slow and session.mp_mode == "" and session.phase == BinduSession.Phase.WAVE and session.skill_arm != "" and not auto_skills else 1.0
+
+
+func skill_mode_text() -> String:
+	return "기술: 자동" if Meta.skill_auto else "기술: 수동"
+
+
+func toggle_skill_auto() -> void:
+	Meta.skill_auto = not Meta.skill_auto
+	session.progression_system._save_best()
+	_skill_ui()
+	session.hud_system._show_toast(skill_mode_text() + (" · 조건에 맞으면 바로 사용해요" if Meta.skill_auto else " · 기술을 고른 뒤 쓸 곳을 누르세요"))
+
+
+func skill_cooldown_text(id: String) -> String:
+	var left := skill_left(id)
+	if left <= 0.0:
+		return "준비됨 · 웨이브마다 재충전"
+	if session.get_tree().paused:
+		return "정지 중 · 게임 시간 %.1f초 남음" % left
+	var speed := maxf(0.01, session.game_speed * skill_speed_factor())
+	return "실제 약 %.1f초 · 게임 시간 %.1f초" % [left / speed, left]
 
 
 ## 기술 버튼: 웨이브 중에만, 다시 쓰기까지 남은 초를 글로.
 func _skill_ui() -> void:
 	var session: BinduSession = self.session
 	var show := session.phase == session.Phase.WAVE and not session.skill_ids.is_empty() and not session.title_label.visible
+	if is_instance_valid(skill_auto_btn):
+		skill_auto_btn.visible = show
+		if skill_auto_btn.text != skill_mode_text():
+			skill_auto_btn.text = skill_mode_text()
+		skill_auto_btn.set_pressed_no_signal(Meta.skill_auto)
 	for i in session.skill_btns.size():
 		var b: Button = session.skill_btns[i]
 		b.visible = show and i < session.skill_ids.size()
@@ -172,7 +218,9 @@ func _skill_ui() -> void:
 			continue
 		var id: String = session.skill_ids[i]
 		var left := skill_left(id)
-		var txt: String = Skill.NAMES[id] if left <= 0.0 else "%s %d초" % [Skill.NAMES[id], ceili(left)]
+		var effect: String = {"focus": "공격 속도↑", "hold": "구체 멈춤", "brand": "받는 피해↑"}[id]
+		var readiness := "준비" if left <= 0.0 else "실제 약 %.1f초" % (left / maxf(0.01, session.game_speed * skill_speed_factor()))
+		var txt: String = "%s · %s\n%s" % [Skill.NAMES[id], effect, readiness]
 		if b.text != txt:
 			b.text = txt
 		var col: Color = Skill.COLORS[id]
@@ -180,9 +228,9 @@ func _skill_ui() -> void:
 		var fc: Color = col if left <= 0.0 else Color(1, 1, 1, 0.8)
 		if b.get_theme_color("font_color") != fc:  # 같은 값으로 덮어써도 테마가 바뀐 것으로 쳐 매 프레임 다시 그렸다
 			b.add_theme_color_override("font_color", fc)
-		b.tooltip_text = "%s (%d): %s · 다시 쓰기 %d초" % [Skill.NAMES[id], i + 1, Skill.desc(id), roundi(Skill.cd_full(id, session.perks.get("quick", 0)))]
+		b.tooltip_text = "%s (%d): %s\n%s\n웨이브마다 재충전 · 현재 x%.2f · %s" % [Skill.NAMES[id], i + 1, Skill.desc(id), skill_cooldown_text(id), session.game_speed * skill_speed_factor(), skill_mode_text()]
 		var armed := session.skill_arm == id
-		if b.get_meta("armed", false) != armed:
+		if not b.has_meta("armed") or b.get_meta("armed") != armed:
 			b.set_meta("armed", armed)
 			var sb := StyleBoxFlat.new()
 			sb.bg_color = Color(col, 0.35) if armed else Color(0.06, 0.07, 0.1, 0.85)
@@ -195,6 +243,16 @@ func _skill_ui() -> void:
 
 func _make_skill_btns(root: Control) -> void:
 	var session: BinduSession = self.session
+	skill_auto_btn = Button.new()
+	skill_auto_btn.name = "SkillAutoMode"
+	skill_auto_btn.toggle_mode = true
+	skill_auto_btn.text = skill_mode_text()
+	skill_auto_btn.tooltip_text = "자동은 조건에 맞을 때 기술을 사용해요. 누르면 수동·자동 전환"
+	skill_auto_btn.custom_minimum_size = Vector2(120, 36)
+	skill_auto_btn.focus_mode = Control.FOCUS_ALL
+	skill_auto_btn.hide()
+	skill_auto_btn.pressed.connect(toggle_skill_auto)
+	root.add_child(skill_auto_btn)
 	for i in 2:
 		var b := Button.new()
 		b.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)

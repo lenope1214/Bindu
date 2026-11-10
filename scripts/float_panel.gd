@@ -92,8 +92,10 @@ func _init(panel_id := "", main = null, closable := false) -> void:
 	fold_btn = _head_btn("–")
 	fold_btn.pressed.connect(func(): fold_pressed.emit())
 	fold_btn.tooltip_text = "접기·펴기"
+	fold_btn.accessibility_name = "정보창 접기"
 	if closable:
 		close_btn = _head_btn("×")
+		close_btn.accessibility_name = "정보창 닫기"
 		close_btn.pressed.connect(func(): close_pressed.emit())
 	body = VBoxContainer.new()
 	body.add_theme_constant_override("separation", 12)
@@ -112,6 +114,9 @@ func _head_btn(text: String) -> Button:
 	for s in ["normal", "hover", "pressed", "hover_pressed", "focus"]:
 		var sb := StyleBoxFlat.new()
 		sb.bg_color = Color(1, 1, 1, 0.0 if s == "focus" else (0.16 if s in ["hover", "hover_pressed"] else 0.06))
+		if s == "focus":
+			sb.border_color = Color("7798be")
+			sb.set_border_width_all(2)
 		sb.set_corner_radius_all(4)
 		sb.set_content_margin_all(0)
 		b.add_theme_stylebox_override(s, sb)
@@ -153,6 +158,7 @@ func toggle_pin() -> void:
 func set_folded(on: bool) -> void:
 	folded = on
 	fold_btn.text = "+" if on else "–"
+	fold_btn.accessibility_name = "정보창 펼치기" if on else "정보창 접기"
 	body.visible = not on
 
 

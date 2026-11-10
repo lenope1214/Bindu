@@ -495,7 +495,7 @@ func _on_peer_up(id: int) -> void:
 	if peers.has(id):
 		peers[id]["ok"] = true
 	if Account.pid != "" and multiplayer is SceneMultiplayer:
-		(multiplayer as SceneMultiplayer).send_bytes(var_to_bytes({"t": "_pid", "p": Account.pid}), id, MultiplayerPeer.TRANSFER_MODE_RELIABLE, 0)
+		_send_bytes(var_to_bytes({"t": "_pid", "p": Account.pid}), id, MultiplayerPeer.TRANSFER_MODE_RELIABLE, 0)
 	if is_host() and not pids.is_empty():
 		_send_pids()
 	if id == 1:
@@ -561,6 +561,23 @@ func connected_ids() -> Array:
 	return out
 
 
+## peer_disconnected 통지 직전에도 native 데이터 채널은 먼저 닫힐 수 있다.
+## 멤버십 판정은 유지하고, 이미 닫힌 채널에는 실제 송신을 시도하지 않는다.
+func _send_bytes(bytes: PackedByteArray, id: int, mode: MultiplayerPeer.TransferMode, channel_id := 0) -> Error:
+	if rtc == null or not rtc.has_peer(id) or not multiplayer is SceneMultiplayer:
+		return ERR_UNAVAILABLE
+	var peer: Dictionary = rtc.get_peer(id)
+	if not bool(peer.get("connected", false)):
+		return ERR_UNAVAILABLE
+	var channels: Array = peer.get("channels", [])
+	if channels.is_empty():
+		return ERR_UNAVAILABLE
+	for data_channel in channels:
+		if not is_instance_valid(data_channel) or data_channel.get_ready_state() != WebRTCDataChannel.STATE_OPEN:
+			return ERR_UNAVAILABLE
+	return (multiplayer as SceneMultiplayer).send_bytes(bytes, id, mode, channel_id)
+
+
 ## to: 0이면 모두에게 (참가자가 보내면 호스트가 다른 참가자에게도 전한다).
 func send(msg: Dictionary, to := 0, reliable := true) -> void:
 	if rtc == null or my_id == 0:
@@ -569,16 +586,15 @@ func send(msg: Dictionary, to := 0, reliable := true) -> void:
 	var b := var_to_bytes(msg)
 	var m := MultiplayerPeer.TRANSFER_MODE_RELIABLE if reliable else MultiplayerPeer.TRANSFER_MODE_UNRELIABLE_ORDERED
 	var ch := 0  # SceneMultiplayer 기본 채널 (전송 방식은 m이 고름)
-	var sm := multiplayer as SceneMultiplayer
 	if is_host():
 		for id in connected_ids():
 			if to == 0 or to == id:
-				sm.send_bytes(b, id, m, ch)
+				_send_bytes(b, id, m, ch)
 	elif peers.get(1, {}).get("ok", false):
 		if to != 0 and to != 1:
 			msg["to"] = to
 			b = var_to_bytes(msg)
-		sm.send_bytes(b, 1, m, ch)
+		_send_bytes(b, 1, m, ch)
 
 
 ## 핑: 연결된 상대에게 시각을 보내고 되돌아오면 왕복 시간. 호스트는 잰 값 표를 참가자에게도 돌려
@@ -586,15 +602,14 @@ func send(msg: Dictionary, to := 0, reliable := true) -> void:
 func _send_pings() -> void:
 	if my_id == 0 or not multiplayer is SceneMultiplayer:
 		return
-	var sm := multiplayer as SceneMultiplayer
 	var ping_b := var_to_bytes({"t": "_ping", "ts": Time.get_ticks_msec()})
 	var ids := connected_ids() if is_host() else ([1] if peers.get(1, {}).get("ok", false) else [])
 	for id in ids:
-		sm.send_bytes(ping_b, id, MultiplayerPeer.TRANSFER_MODE_UNRELIABLE, 0)
+		_send_bytes(ping_b, id, MultiplayerPeer.TRANSFER_MODE_UNRELIABLE, 0)
 	if is_host() and not ids.is_empty():
 		var tb := var_to_bytes({"t": "_pings", "p": ping.duplicate()})
 		for id in ids:
-			sm.send_bytes(tb, id, MultiplayerPeer.TRANSFER_MODE_UNRELIABLE, 0)
+			_send_bytes(tb, id, MultiplayerPeer.TRANSFER_MODE_UNRELIABLE, 0)
 
 
 func _send_pids() -> void:
@@ -603,7 +618,7 @@ func _send_pids() -> void:
 		all[my_id] = Account.pid
 	var b := var_to_bytes({"t": "_pids", "p": all})
 	for id in connected_ids():
-		(multiplayer as SceneMultiplayer).send_bytes(b, id, MultiplayerPeer.TRANSFER_MODE_RELIABLE, 0)
+		_send_bytes(b, id, MultiplayerPeer.TRANSFER_MODE_RELIABLE, 0)
 
 
 func _on_ping_msg(id: int, msg: Dictionary) -> bool:
@@ -623,7 +638,7 @@ func _on_ping_msg(id: int, msg: Dictionary) -> bool:
 						pids[int(k)] = p
 				peers_changed.emit()
 		"_ping":
-			(multiplayer as SceneMultiplayer).send_bytes(var_to_bytes({"t": "_pong", "ts": msg.get("ts", 0)}), id, MultiplayerPeer.TRANSFER_MODE_UNRELIABLE, 0)
+			_send_bytes(var_to_bytes({"t": "_pong", "ts": msg.get("ts", 0)}), id, MultiplayerPeer.TRANSFER_MODE_UNRELIABLE, 0)
 		"_pong":
 			ping[id] = maxi(0, Time.get_ticks_msec() - int(msg.get("ts", 0)))
 			ping_changed.emit()
@@ -649,15 +664,16 @@ func _on_bytes(id: int, b: PackedByteArray) -> void:
 		msg["f"] = id  # 보낸 사람은 연결로 정한다 (참가자가 다른 id를 사칭하지 못하게)
 		var to := int(msg.get("to", 0))
 		var bb := var_to_bytes(msg)
-		var sm := multiplayer as SceneMultiplayer
 		var tm := MultiplayerPeer.TRANSFER_MODE_UNRELIABLE_ORDERED if msg.get("t") == "cur" else MultiplayerPeer.TRANSFER_MODE_RELIABLE  # 마우스 위치는 늦게 오느니 버림
 		for other in connected_ids():
 			if other != id and (to == 0 or to == other):
-				sm.send_bytes(bb, other, tm, 0)
+				_send_bytes(bb, other, tm, 0)
 		if to != 0 and to != 1:
 			return
 	if msg.get("t") == "lobby":
 		in_game.erase(int(msg.get("f", id)))
+		# 명시적 판 이탈은 일시적인 연결 끊김과 구분해 게임에도 전달한다.
+		packet.emit(int(msg.get("f", id)), msg)
 		peers_changed.emit()
 		return
 	packet.emit(int(msg.get("f", id)), msg)

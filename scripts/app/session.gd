@@ -137,7 +137,7 @@ var sim_id := 0  # 계산 조각 번호: 조각 안에서 변하지 않는 값(�
 var prof_on := false  # tools/perf.gd: 부분별 계산 시간 기록
 var fx_layer: Node2D  # 피해 숫자·파편 (맨 위)
 const FX_DPS := [0.0, 0.4, 0.7, 0.9]  # Meta.fx_dps별로 피해 몫이 작은 오브젝트 효과를 옅게 하는 세기
-var fx_pick: OptionButton  # 아래 버튼 줄: 그 세기 고르기
+var fx_pick: MenuButton  # 아래 버튼 줄: 장식 줄이기·약한 공격 진하기를 각각 설정
 var popups: Array = []  # [위치, 글자, 남은 시간, 색, 큰 글씨]
 var particles: Array = []  # [위치, 속도, 남은 시간, 색, 크기]
 var camera: Camera2D
@@ -513,9 +513,9 @@ func boot() -> void:
 			menu_system._set_prep(true)  # 튜토리얼 끝 [첫 판 시작]: 일반 판 준비 화면
 
 
-## 창이 포커스를 잃어도 판은 계속 진행된다 (직접 조작이 없으니 멈추지 않음).
+## 싱글 판은 포커스 상실 때 정지하며 돌아온 뒤 명시적으로 재개한다.
 func _notification(what: int) -> void:
-	if what in [NOTIFICATION_WM_WINDOW_FOCUS_OUT, NOTIFICATION_APPLICATION_PAUSED] and card_dock != null:
+	if what in [NOTIFICATION_WM_WINDOW_FOCUS_OUT, NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_APPLICATION_PAUSED] and card_dock != null:
 		card_dock.clear_gesture()
 	# Android 뒤로가기 = Esc (한 단계 되돌리기 / 일시정지)
 	if what == NOTIFICATION_WM_GO_BACK_REQUEST:
@@ -530,6 +530,9 @@ func _notification(what: int) -> void:
 		interaction_system.mid_drag = false
 		interaction_system.info_mouse_capture = false
 		interaction_system.info_touch_capture = -1
+		interaction_system._abort_touch_action()
+		if Meta.pause_on_focus_loss and mp_mode == "" and title_label != null and not title_label.visible and phase != Phase.GAMEOVER and not get_tree().paused:
+			run_flow_system._toggle_pause()
 	# 창을 닫거나 (모바일) 앱이 뒤로 가면 지금 쉬는 시간 상태를 한 번 더 저장 (옮긴 위치까지)
 	if (what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED) and towers and title_label:
 		persistence_system._save_run()

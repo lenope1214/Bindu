@@ -125,9 +125,18 @@ func _reached_core(o: Orb) -> bool:
 ## 중앙에 닿은 구체를 기록하고, 그 구체가 들어온 화면 가장자리를 붉게 번지게 한다.
 func _record_leak(o: Orb, hp_lost: int) -> void:
 	var session: BinduSession = self.session
-	session.wave_leaks.append([_lane_of(o.from_a), o.kind, o.core_dmg, hp_lost])
+	var traits := PackedStringArray()
+	if o.resist_e in Elem.ALL:
+		traits.append(Elem.NAMES[o.resist_e] + " 저항")
+	if o.shield > 0.0:
+		traits.append("보호막 남음")
+	if o.sturdy:
+		traits.append("굳셈 · 제어 약화")
+	if o.root_immune > 0.0:
+		traits.append("기절 일시 면역")
+	session.wave_leaks.append([_lane_of(o.from_a), o.kind, o.core_dmg, hp_lost, traits])
 	session.leak_flash.append([Vector2(session.viewport_system.core().x, o.position.y) if Meta.map_id == "line" else _entry_point(o.from_a), 1.2])
-	session.onboarding_system._guide("leak", "구체가 중앙에 닿았어요. 붉게 번쩍인 가장자리 쪽 길목이 비어 있어요. 쉬는 시간에 그쪽으로 오브젝트를 옮기거나 새로 놓으세요")
+	session.onboarding_system._guide("leak", "구체가 중앙에 닿았어요. 붉게 번쩍인 방향의 방어를 확인하세요. 쉬는 시간의 지난 웨이브에서 놓친 구체 종류와 저항·보호막 상태를 읽을 수 있어요")
 
 
 ## 각도 a에서 가장 가까운 진입 방향 번호 (없으면 -1).
@@ -162,6 +171,7 @@ func _log_wave() -> void:
 	var by_lane := {}
 	var kinds := {}
 	var kdmg := {}
+	var traits := {}
 	var dmg := 0
 	var lost := 0
 	for l in session.wave_leaks:
@@ -170,6 +180,9 @@ func _log_wave() -> void:
 		kdmg[l[1]] = kdmg.get(l[1], 0) + l[2]
 		dmg += l[2]
 		lost += l[3] if l.size() > 3 else l[2]
+		if l.size() > 4 and (l[4] is Array or l[4] is PackedStringArray):
+			for status_name in l[4]:
+				traits[str(status_name)] = int(traits.get(str(status_name), 0)) + 1
 	var dirs := {}
 	session.leak_marks.clear()
 	for i in by_lane:
@@ -181,7 +194,7 @@ func _log_wave() -> void:
 	var dealt := 0.0
 	for t in session.towers.get_children():
 		dealt += t.dealt
-	session.leak_log.append({"w": session.wave, "n": session.wave_leaks.size(), "dmg": dmg, "lost": lost, "dirs": dirs, "kinds": kinds, "kdmg": kdmg, "towers": session.towers.get_child_count(), "lanes": session.lanes.size(), "core": session.core_hp,
+	session.leak_log.append({"w": session.wave, "n": session.wave_leaks.size(), "dmg": dmg, "lost": lost, "dirs": dirs, "kinds": kinds, "kdmg": kdmg, "traits":traits, "towers": session.towers.get_child_count(), "lanes": session.lanes.size(), "core": session.core_hp,
 		"secs": snappedf(session.wave_time, 0.1), "hp_in": roundi(ws.get("hp", 0.0)), "dealt": roundi(dealt), "life": snappedf(ws.get("life", 0.0) / kn, 0.01) if kn > 0 else 0.0,
 		"close": roundi(ws.get("close", -1.0)), "peak": int(ws.get("peak", 0))})
 	if session.leak_log.size() > 200:
@@ -203,7 +216,7 @@ func _leak_text() -> String:
 	var ks := PackedStringArray()
 	for k in e["kinds"]:
 		ks.append("%s %d" % [names.get(k, "?"), e["kinds"][k]])
-	return "지난 웨이브에 놓친 구체: %s (%s, 중앙 체력 -%d)" % [" · ".join(parts), ", ".join(ks), e["dmg"]]
+	return "지난 웨이브에 놓친 구체: %s (%s, 중앙 실제 손실 %d)" % [" · ".join(parts), ", ".join(ks), e.get("lost", e["dmg"])]
 
 
 func _leak_records() -> Array:

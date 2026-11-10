@@ -28,8 +28,173 @@ var info_mouse_capture := false
 var info_touch_capture := -1
 var aim_start_ms := 0
 var aim_hold := false  # 손가락을 대고 있는 중 (터치)
+var additive_selection := false  # 화면 선택 모드: 터치로 선택에 더하고 뺀다.
+var drag_refusal := ""
+var drag_invalid: Array = []
+var keyboard_active := false
+var _direction_group: Array = []
+var _direction_origins: Array = []
+var _move_selection: Array = []
+
+
+func _reading_modal_open() -> bool:
+	return session.settings_panel.visible or session.notes_panel.visible or session.codex_panel.visible or session.vote_panel.visible or session.records_panel.visible or session.help_label.visible or session.modes_panel.visible or session.menu_system.sound_pop.visible or (session.tut != null and session.tut.visible)
+
+
+func _history_begin(label: String) -> void:
+	if session.cards_system.has_method("begin_edit"):
+		session.cards_system.call("begin_edit", label)
+
+
+func _history_finish() -> void:
+	if session.cards_system.has_method("finish_edit"):
+		session.cards_system.call("finish_edit")
+
+
+func _gift_blocked() -> bool:
+	if session.mp_mode != "coop" or not session.multiplayer_system.gifts().blocks_local_choice(): return false
+	session.hud_system._show_toast(session.multiplayer_system.gifts().pending_notice())
+	return true
+
+
+func _can_edit_selection() -> bool:
+	return not _gift_blocked() and not session.get_tree().paused and not _reading_modal_open() and session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY] and not session.perk_mode
+
+
+func set_additive_selection(on: bool) -> void:
+	additive_selection = on and _can_edit_selection()
+	_restore_hint()
+
+
+func toggle_additive_selection() -> void:
+	set_additive_selection(not additive_selection)
+
+
+func clear_selection() -> void:
+	selected.clear()
+	session.card_dock.close_inspector()
+	_restore_hint()
+
+
+func select_all() -> void:
+	if not _can_edit_selection():
+		return
+	selected = session.multiplayer_system._my_towers()
+	if not selected.is_empty():
+		session.card_dock.inspector_dismissed = false
+		session.card_dock.inspected_tower = selected[0]
+	_restore_hint()
+
+
+func cycle_selection(backward := false) -> void:
+	if session.get_tree().paused or _reading_modal_open() or session.perk_mode or not session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY, BinduSession.Phase.WAVE, BinduSession.Phase.PLACE]:
+		return
+	var candidates: Array = session.towers.get_children().filter(func(t): return is_instance_valid(t) and not t.is_queued_for_deletion())
+	candidates.sort_custom(func(a, b): return a.position.x < b.position.x if not is_equal_approx(a.position.x, b.position.x) else a.position.y < b.position.y)
+	if candidates.is_empty():
+		return
+	var current: Tower = selected[0] if not selected.is_empty() else session.card_dock.inspected_tower
+	var at := candidates.find(current)
+	if at < 0 and backward:
+		at = 0
+	var t: Tower = candidates[posmod(at + (-1 if backward else 1), candidates.size())]
+	_select_tower(t)
+	pointer_position = session.get_canvas_transform() * t.position
+	keyboard_active = true
+
+
+func move_selected(delta: Vector2) -> bool:
+	if not _can_edit_selection():
+		return false
+	var group: Array = selected.filter(func(t): return is_instance_valid(t) and session.multiplayer_system._mine(t))
+	if group.is_empty():
+		return false
+	var origins: Array[Vector2] = []
+	for t in group:
+		origins.append(t.position)
+	delta = BinduPlacementPolicy.clamp_group_delta(origins, delta, session.combat_system.field_rect())
+	for t in group:
+		var occupied: Array[Vector2] = []
+		for other in session.towers.get_children():
+			if not other in group:
+				occupied.append(other.position)
+		var refusal := BinduPlacementPolicy.refusal(t.position + delta, session.viewport_system.core(), occupied, BinduSession.MERGE_DIST)
+		if refusal != "":
+			session.hud_system._show_toast(refusal)
+			return false
+	_history_begin("오브젝트 이동")
+	for t in group:
+		t.position += delta
+		t.queue_redraw()
+	session.persistence_system._save_run()
+	_history_finish()
+	return true
+
+
+func rotate_selected(radians: float) -> void:
+	if not _can_edit_selection():
+		return
+	var group: Array = selected.filter(func(t): return is_instance_valid(t) and session.multiplayer_system._mine(t))
+	if group.is_empty():
+		return
+	_history_begin("방향 회전")
+	for t in group:
+		t.set_attack_direction(t.dir.rotated(radians))
+		t.queue_redraw()
+	if session.tplay != null:
+		session.tplay.flags["aimed"] = true
+	session.persistence_system._save_run()
+	_history_finish()
+
+
+func drag_preview() -> Dictionary:
+	return {"active":dragging, "valid":drag_refusal == "", "reason":drag_refusal, "invalid":drag_invalid.duplicate(), "targets":drag_group.duplicate()}
+
+
+func _keyboard_input(event: InputEventKey) -> bool:
+	if session.title_label.visible or session.get_tree().paused or _reading_modal_open() or session.perk_mode:
+		return false
+	if event.keycode == KEY_TAB:
+		cycle_selection(event.shift_pressed)
+		return true
+	if event.keycode == KEY_E and _can_edit_selection() and not selected.is_empty():
+		_edit_selected_direction()
+		return true
+	if event.keycode in [KEY_BRACKETLEFT, KEY_BRACKETRIGHT] and _can_edit_selection():
+		rotate_selected(deg_to_rad((-1.0 if event.keycode == KEY_BRACKETLEFT else 1.0) * (5.0 if event.shift_pressed else 15.0)))
+		return true
+	if event.keycode in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]:
+		var step := Vector2(-1 if event.keycode == KEY_LEFT else (1 if event.keycode == KEY_RIGHT else 0), -1 if event.keycode == KEY_UP else (1 if event.keycode == KEY_DOWN else 0)) * (2.0 if event.shift_pressed else 12.0)
+		if session.phase in [BinduSession.Phase.PLACE, BinduSession.Phase.AIM, BinduSession.Phase.MOVE]:
+			if not keyboard_active:
+				pointer_position = session.get_canvas_transform() * (session.place_pos if session.phase == BinduSession.Phase.AIM else session.viewport_system.center())
+			keyboard_active = true
+			pointer_position = (pointer_position + step).clamp(Vector2(1, 1), session.get_viewport_rect().size - Vector2(1, 1))
+			if session.phase == BinduSession.Phase.AIM:
+				var d := _pointer_world() - session.place_pos
+				if d.length() > 0.1:
+					session.aim_d = d.normalized()
+					session.aim_wait = true
+			return true
+		if _can_edit_selection() and not selected.is_empty():
+			move_selected(session.get_canvas_transform().basis_xform_inv(step))
+			return true
+	if event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
+		if session.phase == BinduSession.Phase.PLACE:
+			if not keyboard_active:
+				pointer_position = session.get_canvas_transform() * (session.viewport_system.core() + Vector2(140, 0))
+			keyboard_active = true
+			_place_card_at(_pointer_world(), true)
+			return true
+		if session.phase == BinduSession.Phase.AIM:
+			_confirm_aim()
+			return true
+	return false
+
 func _zoom_input(event: InputEvent) -> bool:
 	var session: BinduSession = self.session
+	if _reading_modal_open():
+		return false
 	if session.card_dock != null and session.card_dock.active():
 		if event is InputEventMouseButton and session.card_dock.over_ui(event.position):
 			if event.button_index == MOUSE_BUTTON_MIDDLE and not event.pressed:
@@ -88,11 +253,10 @@ func _zoom_input(event: InputEvent) -> bool:
 	return false
 
 
-## PC 쉬는 시간: 선택한 내 오브젝트 위에서 휠 = 그 자리에서 15도씩 돌리기 (Shift: 5도). 위로 굴리면 시계 반대.
-## 그 밖의 곳에서는 휠이 그대로 확대. 트랙패드처럼 잘게 오는 휠은 모아서 한 칸씩 돈다.
+## Alt+휠만 선택 방향 회전. 일반 휠은 선택 여부와 관계없이 확대다.
 func _wheel_turn(event: InputEventMouseButton) -> bool:
 	var session: BinduSession = self.session
-	if session.touch_ui or session.perk_mode or session.get_tree().paused or not session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY] or press_t or boxing:
+	if not event.alt_pressed or session.touch_ui or session.perk_mode or session.get_tree().paused or not session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY] or press_t or boxing:
 		return false
 	if session.settings_panel.visible or session.notes_panel.visible or session.codex_panel.visible or session.vote_panel.visible or session.records_panel.visible or session.help_label.visible:
 		return false
@@ -104,12 +268,8 @@ func _wheel_turn(event: InputEventMouseButton) -> bool:
 		return true
 	wheel_acc = 0.0
 	var step := deg_to_rad(5.0 if Input.is_key_pressed(KEY_SHIFT) else 15.0)
-	t.set_attack_direction(t.dir.rotated(-step if event.button_index == MOUSE_BUTTON_WHEEL_UP else step))
-	if session.tplay != null:
-		session.tplay.flags["aimed"] = true
-	t.queue_redraw()
+	rotate_selected(-step if event.button_index == MOUSE_BUTTON_WHEEL_UP else step)
 	session.sfx.play("place")
-	session.persistence_system._save_run()
 	return true
 
 
@@ -152,8 +312,10 @@ func _input(event: InputEvent) -> void:
 	var was_touch := session.touch_ui
 	if event is InputEventMouse:
 		pointer_position = event.position
+		keyboard_active = false
 	if event is InputEventScreenTouch or event is InputEventScreenDrag:
 		pointer_position = event.position
+		keyboard_active = false
 		session.touch_ui = true
 		session.touch_tip_t = BinduSession.TOUCH_TIP_SEC
 	elif event is InputEventMouseMotion and event.device != InputEvent.DEVICE_ID_EMULATION:
@@ -226,11 +388,57 @@ func _info_input(event: InputEvent) -> bool:
 
 func _unhandled_input(event: InputEvent) -> void:
 	var session: BinduSession = self.session
+	# 터치의 carried-card drop은 원래 ScreenTouch 경로 하나가 처리한다.
+	# 일부 플랫폼의 emulated MousePress가 먼저 와도 같은 손가락으로 Tower 이동까지 시작하지 않는다.
+	if event is InputEventMouseButton and event.device == InputEvent.DEVICE_ID_EMULATION and session.phase == BinduSession.Phase.PLACE and session.card_dock.carrying():
+		return
 	# 글 입력 칸(닉네임)에 쓰는 중엔 단축키를 막는다. 한글 조합 중 키는 입력 칸이 받지 않고 넘겨서
 	# ㅐ(O)·ㅔ(P)·ㅡ(M) 같은 글자가 설정 닫기·일시정지·소리 끄기로 먹혔다. Esc는 그대로 창을 닫는다.
 	if event is InputEventKey and session.get_viewport().gui_get_focus_owner() is LineEdit and event.keycode != KEY_ESCAPE:
 		return
+	if event is InputEventKey and event.pressed and event.echo:
+		if not event.ctrl_pressed and not event.meta_pressed and event.keycode in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]:
+			_keyboard_input(event)
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
+		# 수정키 조합은 plain 게임 단축키로 해석하지 않는다.
+		if event.ctrl_pressed or event.meta_pressed:
+			if not _reading_modal_open() and not session.get_tree().paused:
+				if event.keycode == KEY_Z and session.cards_system.has_method("undo_edit"):
+					session.cards_system.call("undo_edit")
+				elif event.keycode == KEY_A:
+					select_all()
+			return
+		# 읽기 창이 입력을 소유한다. 시뮬레이션 정지와 게임 명령 차단은 별개다.
+		if _reading_modal_open():
+			if event.keycode == KEY_ESCAPE:
+				if session.menu_system.sound_pop.visible:
+					session.menu_system._close_sound_pop()
+				elif session.notes_panel.visible:
+					session.patchlog_system._close_notes()
+				elif session.tut != null and session.tut.visible:
+					session.tut.close()
+				else:
+					session.settings_panel.hide()
+					session.help_label.hide()
+					session.records_panel.hide()
+					session.modes_panel.hide()
+					session.codex_panel.hide()
+					if session.vote_panel.visible:
+						session.vote_panel.hide_panel()
+			elif event.keycode == KEY_O and session.settings_panel.visible:
+				session.menu_system._toggle_settings()
+			elif event.keycode == KEY_H and session.help_label.visible:
+				session.help_label.hide()
+			elif event.keycode == KEY_N and session.notes_panel.visible:
+				session.patchlog_system._close_notes()
+			elif event.keycode == KEY_M:
+				session.cards_system._toggle_mute()
+			elif event.keycode == KEY_F11:
+				session.menu_system._toggle_fullscreen()
+			return
+		if _keyboard_input(event):
+			return
 		if session.coin_stage > 0 and event.keycode in [KEY_SPACE, KEY_ENTER, KEY_KP_ENTER, KEY_1, KEY_2, KEY_3, KEY_KP_1, KEY_KP_2, KEY_KP_3]:
 			session.perks_system._coin_tap()
 			return
@@ -321,6 +529,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			session.run_flow_system._leave(true)
 		elif event.keycode in [KEY_1, KEY_2, KEY_KP_1, KEY_KP_2] and session.phase == BinduSession.Phase.WAVE and not session.skill_ids.is_empty():
 			session.abilities_system._arm_skill(event.keycode - (KEY_KP_1 if event.keycode >= KEY_KP_1 else KEY_1))
+		elif event.keycode == KEY_ESCAPE and session.phase == BinduSession.Phase.WAVE:
+			session.run_flow_system._toggle_pause()
 		elif event.keycode == KEY_ESCAPE and session.skill_arm != "":
 			session.skill_arm = ""
 		elif event.keycode == KEY_H:
@@ -331,6 +541,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				if i < session.perk_offer.size():
 					session.perks_system._on_perk(session.perk_offer[i])
 			elif i < session.offer.size():
+				keyboard_active = false
 				session.cards_system._on_pick(session.offer[i])
 		elif event.keycode == KEY_Q and session.phase == BinduSession.Phase.CHOOSE:
 			session.cards_system._on_reroll()
@@ -341,8 +552,13 @@ func _unhandled_input(event: InputEvent) -> void:
 				session.run_flow_system._on_skip()
 		elif event.keycode == KEY_V and session.phase == BinduSession.Phase.CHOOSE:
 			session.cards_system._toggle_cards_hidden()
-		elif event.keycode == KEY_Z and session.phase == BinduSession.Phase.CHOOSE and not session.perk_mode:
-			session.cards_system._set_card_detail(not Meta.card_detail)
+		elif event.keycode == KEY_Z and not session.perk_mode:
+			if session.phase == BinduSession.Phase.CHOOSE:
+				session.cards_system._set_card_detail(not Meta.card_detail)
+			elif session.phase in [BinduSession.Phase.READY, BinduSession.Phase.WAVE]:
+				session.card_dock.inspector_dismissed = false
+				if not selected.is_empty():
+					_select_tower(selected[0])
 		elif event.keycode == KEY_D and session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY, BinduSession.Phase.WAVE]:
 			session.hud_system._toggle_dps()
 		elif event.keycode == KEY_A and (event.ctrl_pressed or event.meta_pressed) and session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY] and not session.perk_mode:
@@ -358,7 +574,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_SPACE and session.phase == BinduSession.Phase.READY:
 			session.run_flow_system._start_wave()
 		elif event.keycode == KEY_SPACE and session.phase == BinduSession.Phase.WAVE:
-			session.run_flow_system._toggle_speed()
+			session.run_flow_system._toggle_speed(true)
 		elif event.keycode == KEY_SPACE and session.phase == BinduSession.Phase.CHOOSE:
 			session.hud_system._show_toast(("특성을" if session.perk_mode else "선택지를") + " 먼저 고르세요 (1·2·3 또는 클릭)")
 		elif event.keycode == KEY_ESCAPE and not session.get_tree().paused and (session.phase in [BinduSession.Phase.PLACE, BinduSession.Phase.AIM, BinduSession.Phase.MOVE] or press_t or boxing or (not selected.is_empty() and session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY])):
@@ -446,7 +662,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.button_index == MOUSE_BUTTON_LEFT and session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY, BinduSession.Phase.WAVE] and _tower_at(mpos) == null:
 		session.card_dock.inspected_tower = null
 		session.tip_tower = null
-		if not (Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META)):
+		if not (additive_selection or Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META)):
 			selected.clear()
 	if session.perk_mode:
 		return
@@ -460,6 +676,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		var t := _tower_at(mpos)
 		if t:
 			_select_tower(t)
+		elif session.field_view_system.has_method("pin_orb_at"):
+			if session.field_view_system.call("pin_orb_at", mpos):
+				session.card_dock.close_inspector()
+			elif session.field_view_system.has_method("clear_orb_pin"):
+				session.field_view_system.call("clear_orb_pin")
 		return
 	if session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY] and event.button_index == MOUSE_BUTTON_LEFT:
 		var t := _tower_at(mpos)
@@ -516,6 +737,7 @@ func _drop_carried_card(screen: Vector2) -> void:
 
 func _place_card_at(mpos: Vector2, direct := false) -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked(): return
 	var target := _tower_at(mpos)
 	if TutPlay.on and session.tplay != null and not session.tplay.allow_place(target):
 		return
@@ -544,6 +766,15 @@ func _place_card_at(mpos: Vector2, direct := false) -> void:
 		return
 	else:
 		session.place_pos = mpos
+		# 일반 판 기본 자동 조준은 기본 방향으로 설치한다. 방향 학습 연습 판은 유지한다.
+		if Rules.t("auto_aim") > 0.0 and not TutPlay.on:
+			_history_begin("새 오브젝트 설치")
+			var d := (mpos - session.viewport_system.core()).normalized()
+			_place_tower(mpos, d if d != Vector2.ZERO else Vector2.RIGHT)
+			session.sfx.play("place")
+			session.cards_system._after_place()
+			_history_finish()
+			return
 		session.phase = BinduSession.Phase.AIM
 		aim_start_ms = Time.get_ticks_msec()
 		_aim_begin()
@@ -574,7 +805,7 @@ func _place_ok(t: Tower) -> bool:
 func _place_refuse(t: Tower) -> String:
 	var session: BinduSession = self.session
 	if not session.multiplayer_system._mine(t) and not session.lobby_system._req_ok(t):
-		return "친구가 놓은 오브젝트에는 넣을 수 없어요" + (" (요청한 속성 %s만)" % Elem.NAMES[t.req_e] if t.req_e >= 0 else "")
+		return str(session.multiplayer_system.gifts().offer_status(t, session.picked).reason)
 	return t.refuse_text(session.picked)
 
 
@@ -593,6 +824,7 @@ func _update_place_dim() -> void:
 ## 고른 카드를 오브젝트에 넣는다 (PLACE에서 오브젝트를 짧게 클릭).
 func _place_on(target: Tower) -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked(): return
 	if not session.multiplayer_system._mine(target):
 		if session.lobby_system._req_ok(target) and target.can_take(session.picked):
 			session.lobby_system._mp_give(target)  # 협동: 친구가 요청한 속성
@@ -605,6 +837,7 @@ func _place_on(target: Tower) -> void:
 	if not target.can_take(session.picked):
 		session.hud_system._show_toast(target.refuse_text(session.picked))
 		return
+	_history_begin("속성 카드 적용")
 	var msg: String = target.add(session.picked["e"], session.picked["lv"])
 	session.sfx.play("place")
 	if msg.begins_with("조합"):
@@ -613,10 +846,14 @@ func _place_on(target: Tower) -> void:
 	else:
 		session.hud_system._show_toast(msg)
 	session.cards_system._after_place()
+	_history_finish()
 
 
 func _begin_press(t: Tower, mpos: Vector2) -> void:
 	var session: BinduSession = self.session
+	if session.multiplayer_system.gifts().blocks_local_choice():
+		_select_tower(t)
+		return
 	if session.mp_req_mode and session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY]:
 		if session.multiplayer_system._mine(t):
 			session.lobby_system._mp_req_open(t)
@@ -628,7 +865,10 @@ func _begin_press(t: Tower, mpos: Vector2) -> void:
 			_place_on(t)  # 요청한 속성을 넣어 주기 (옮기지는 못함)
 			return
 		if session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY]:
-			_select_tower(t)
+			if additive_selection:
+				session.hud_system._show_toast("여러 개 선택에는 내 오브젝트만 더할 수 있어요")
+			else:
+				_select_tower(t)
 		else:
 			session.hud_system._show_toast("친구가 놓은 오브젝트는 바꿀 수 없어요")
 		return
@@ -638,7 +878,7 @@ func _begin_press(t: Tower, mpos: Vector2) -> void:
 	dragging = false
 
 
-## 누른 오브젝트: 꾹 누르거나(0.35초) 끌면 옮기기 시작한다. 선택된 것을 끌면 선택 전부가 함께.
+## 이동은 화면상 충분히 움직였을 때만 시작한다. 정지한 길게 누르기는 정보 읽기다.
 func _update_press() -> void:
 	var session: BinduSession = self.session
 	if not press_t:
@@ -650,7 +890,9 @@ func _update_press() -> void:
 	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		_release_press()
 		return
-	if not dragging and (mpos.distance_to(press_pos) > 12.0 or Time.get_ticks_msec() - press_ms >= 350):
+	var screen_delta := session.get_canvas_transform().basis_xform(mpos - press_pos)
+	if not dragging and screen_delta.length() > (16.0 if session.touch_ui else 12.0):
+		_history_begin("오브젝트 이동")
 		dragging = true
 		drag_group = selected.filter(func(t): return is_instance_valid(t) and session.multiplayer_system._mine(t)) if press_t in selected else [press_t]
 		drag_origs = drag_group.map(func(t): return t.position)
@@ -670,6 +912,15 @@ func _update_press() -> void:
 			if is_instance_valid(drag_group[i]):
 				drag_group[i].position = drag_origs[i] + delta
 				drag_group[i].queue_redraw()
+		drag_refusal = ""
+		drag_invalid.clear()
+		for t in drag_group:
+			if is_instance_valid(t):
+				var refusal := _bad_spot(t, drag_group)
+				if refusal != "":
+					drag_invalid.append(t)
+					if drag_refusal == "":
+						drag_refusal = refusal
 
 
 ## 누른 오브젝트에서 손을 뗐을 때: 끌었으면 그 자리에 두고, 짧은 클릭이면 원래 클릭 동작.
@@ -687,14 +938,14 @@ func _release_press() -> void:
 	if not dragging:
 		if session.phase == BinduSession.Phase.PLACE:
 			_place_on(t)
-		elif Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META):
+		elif additive_selection or Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META):
 			if t in selected:
 				selected.erase(t)
 			else:
 				selected.append(t)
+			session.card_dock.inspector_dismissed = false
+			session.card_dock.inspected_tower = selected[0] if not selected.is_empty() else null
 			_restore_hint()
-		elif session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY] and selected == [t] and session.card_dock.inspected_tower == t:
-			_edit_selected_direction()  # 이미 선택해 상세가 열린 오브젝트를 한 번 더 누르면 바로 방향 바꾸기
 		else:
 			_select_tower(t)
 		return
@@ -719,8 +970,11 @@ func _release_press() -> void:
 		else:
 			selected = drag_group.duplicate()
 	drag_group.clear()
+	drag_refusal = ""
+	drag_invalid.clear()
 	_restore_hint()
 	session.persistence_system._save_run()
+	_history_finish()
 
 
 ## 옮기는 자리에 놓을 수 없으면 그 이유 (movers: 함께 움직이는 것들끼리는 겹쳐도 됨).
@@ -741,11 +995,16 @@ func _revert_drag() -> void:
 
 
 func _drop_press() -> void:
+	var was_dragging := dragging
 	if dragging:
 		_revert_drag()
 	press_t = null
 	dragging = false
 	drag_group.clear()
+	drag_refusal = ""
+	drag_invalid.clear()
+	if was_dragging:
+		_history_finish()
 
 
 ## 선택 상자를 놓았을 때: 상자 안 오브젝트 선택 (Shift/Ctrl: 기존 선택에 더함). 짧은 클릭이면 선택 해제.
@@ -756,7 +1015,7 @@ func _finish_box() -> void:
 		_restore_hint()
 		return
 	var r := Rect2(box_start, _pointer_world() - box_start).abs()
-	var add := Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META)
+	var add := additive_selection or Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META)
 	if not add:
 		selected.clear()
 	if r.size.length() > 8.0:
@@ -768,18 +1027,23 @@ func _finish_box() -> void:
 
 func _select_tower(t: Tower) -> void:
 	var session: BinduSession = self.session
+	if session.field_view_system.has_method("clear_orb_pin"):
+		session.field_view_system.call("clear_orb_pin")
 	selected = [t] if session.multiplayer_system._mine(t) else []
+	session.card_dock.inspector_dismissed = false
 	session.card_dock.dismissed_tower = null
 	session.card_dock.hovered = null
 	session.card_dock.inspected_tower = t
 	session.tip_tower = t
+	session.card_dock.inspect_object(t)
 	_restore_hint()
 
 
 func _edit_selected_direction() -> void:
 	var session: BinduSession = self.session
-	if session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY] and not session.card_dock.input_blocked() and selected.size() == 1 and is_instance_valid(selected[0]) and session.multiplayer_system._mine(selected[0]):
-		_start_move(selected[0])
+	var own: Array = selected.filter(func(t): return is_instance_valid(t) and session.multiplayer_system._mine(t))
+	if _can_edit_selection() and not session.card_dock.input_blocked() and not own.is_empty():
+		_start_move(own[0], own)
 
 
 ## 단계에 맞는 안내 문구로 되돌린다 (선택 중이면 선택 안내).
@@ -827,6 +1091,7 @@ func _aim_release() -> void:
 ## 방향 확정 (클릭, 또는 끌었다 놓기, 터치 [확정]).
 func _confirm_aim() -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked(): return
 	var d := session.field_view_system._aim_dir(session.place_pos)
 	if d == Vector2.ZERO:
 		return
@@ -834,7 +1099,13 @@ func _confirm_aim() -> void:
 		if session.tplay != null:
 			session.tplay.flags["aimed"] = true  # 튜토리얼 '보스 길 쪽으로 돌리기': 이미 그쪽이라 거의 안 돌아도 한 번 정하면 된다
 		moving.position = session.place_pos
-		moving.set_attack_direction(d)
+		if _direction_group.size() > 1:
+			for t in _direction_group:
+				if is_instance_valid(t) and session.multiplayer_system._mine(t):
+					t.set_attack_direction(d)
+					t.queue_redraw()
+		else:
+			moving.set_attack_direction(d)
 		moving.place_pop = 1.0
 		session.sfx.play("place")
 		moving.queue_redraw()
@@ -845,11 +1116,13 @@ func _confirm_aim() -> void:
 
 	session.sfx.play("place")
 	session.cards_system._after_place()
+	_history_finish()
 
 
 ## 메인 메뉴: 맵·스킨 선택, 시작, 기록·업적, 설정, 도움말.
 func _cancel_step() -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked(): return
 	if press_t:
 		_drop_press()
 		_restore_hint()
@@ -863,12 +1136,19 @@ func _cancel_step() -> void:
 		return
 	if moving:
 		var t := moving
+		var restore_selection := _move_selection.duplicate()
 		moving.position = move_orig_pos
 		moving.set_attack_direction(move_orig_dir)
+		for i in _direction_group.size():
+			if is_instance_valid(_direction_group[i]):
+				_direction_group[i].set_attack_direction(_direction_origins[i])
+				_direction_group[i].queue_redraw()
 		moving.queue_redraw()
 		moving = null
 		_end_move()
 		_select_tower(t)
+		selected = restore_selection.filter(func(o): return is_instance_valid(o))
+		_restore_hint()
 		return
 	if session.phase == BinduSession.Phase.AIM:
 		session.phase = BinduSession.Phase.PLACE
@@ -880,6 +1160,7 @@ func _cancel_step() -> void:
 ## 선택지를 그대로 둔 채 오브젝트 고르기로 돌아간다.
 func _back_to_choose() -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked(): return
 	session.card_dock.clear_gesture()
 	session.cards_hidden = false
 	session.tap_sel = session.offer.find(session.picked)
@@ -892,6 +1173,7 @@ func _back_to_choose() -> void:
 	session.cards_system._update_reroll_btn()
 	session.hint.text = session.ui_layout_system._th(session.cards_system._choose_hint())
 	session.persistence_system._save_run()
+	_history_finish()
 
 
 ## 방향 바꾸기를 끝내고 원래 단계로.
@@ -907,11 +1189,20 @@ func _end_move() -> void:
 		session.cards_system._set_cards_hidden(move_cards_hidden)
 		_restore_hint()
 		session.persistence_system._save_run()
+	_direction_group.clear()
+	_direction_origins.clear()
+	_move_selection.clear()
+	_history_finish()
 
 
-## 선택한 오브젝트의 [방향 변경]·한 번 더 누르기 또는 우클릭 끌기로 제자리 방향을 편집한다.
-func _start_move(t: Tower) -> void:
+## 선택한 오브젝트의 [방향 변경] 또는 우클릭 끌기로 제자리 방향을 편집한다.
+func _start_move(t: Tower, group: Array = []) -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked(): return
+	_history_begin("방향 편집")
+	_move_selection = selected.duplicate()
+	_direction_group = group.duplicate() if not group.is_empty() else [t]
+	_direction_origins = _direction_group.map(func(o): return o.dir)
 	move_cards_hidden = session.cards_hidden
 	move_return = session.phase
 	session.start_btn.visible = false
@@ -920,6 +1211,7 @@ func _start_move(t: Tower) -> void:
 	move_orig_dir = t.dir
 	session.place_pos = t.position
 	session.phase = BinduSession.Phase.AIM
+	keyboard_active = false  # 첫 방향키는 이전 선택·이동 포인터 대신 이 오브젝트 자리에서 시작한다.
 	aim_start_ms = Time.get_ticks_msec()
 	_aim_begin()
 	session.choice_box.visible = false
@@ -932,14 +1224,27 @@ func _start_move(t: Tower) -> void:
 
 func _tower_at(p: Vector2, except: Tower = null) -> Tower:
 	var session: BinduSession = self.session
+	var canvas := session.get_canvas_transform()
+	var at := canvas * p
+	var radius := maxf(30.0 if session.touch_ui else 22.0, Tower.RADIUS * canvas.get_scale().length() / sqrt(2.0) + 8.0)
+	var nearest: Tower = null
+	var distance := INF
 	for t in session.towers.get_children():
-		if t != except and t.position.distance_to(p) < BinduSession.MERGE_DIST:
-			return t
-	return null
+		if t == except or t.is_queued_for_deletion():
+			continue
+		var d: float = (canvas * t.position).distance_to(at)
+		if d > radius:
+			continue
+		var tie_preferred: bool = nearest == null or t.position.x < nearest.position.x or (is_equal_approx(t.position.x, nearest.position.x) and t.position.y < nearest.position.y)
+		if d < distance - 0.01 or (absf(d - distance) <= 0.01 and tie_preferred):
+			nearest = t
+			distance = d
+	return nearest
 
 
 func _place_tower(p: Vector2, d: Vector2) -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked(): return
 	var t := Tower.new()
 	t.add(session.picked["e"], session.picked["lv"])
 	t.dir = d

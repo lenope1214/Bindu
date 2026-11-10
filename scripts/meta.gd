@@ -61,7 +61,7 @@ static var numbers_on := true
 static var symbols_on := true  # 속성 색 위에 속성 그림 표시 (색만으로 구분하기 어려울 때). 새 저장은 켬
 static var card_detail := false  # 선택지 카드 [자세히]: 끄면 간소화, 켜면 설명 전체 + 올리면 카드 위 창 (기본 끔)
 static var rank_on := true  # 피해 1~3위 오브젝트에 왕관·은/동 메달 (기본 켬)
-static var fx_low := false  # 효과 줄이기: 형태 성질·반응 장판과 터지는 효과를 옅게, 많이 겹칠수록 더 옅게 (기본 끔)
+static var fx_low := false  # 효과 줄이기: 후광·보조 고리·작은 장식 입자를 줄이고 장판은 옅게 (기본 끔)
 static var fx_dps := 2  # 피해 몫이 작은 오브젝트의 탄·장판을 옅게: 0 그대로 · 1 조금 · 2 보통 · 3 많이 (아래 버튼 줄)
 static var dps_fold := OS.has_feature("mobile")  # 왼쪽 위 DPS 표 접기 (D·표 제목). 폰·태블릿은 접어 두고 시작, 바꾸면 저장
 static var panel_pos := {}  # 떠 있는 창(FloatPanel)을 옮겨 둔 자리: 창 id("dps"·"info") → 화면 안 빈 폭 비율 0~1. 없으면 자동 자리 (압정 꺼짐)
@@ -69,6 +69,8 @@ static var panel_fold := {}  # 떠 있는 창 접기 (DPS 표는 dps_fold를 따
 static var skip_n := 3  # 웨이브 넘기기 한 번에 넘길 웨이브 수 (1·3·5·10)
 static var skill_set := 0  # 중앙 기술 묶음 (Skill.SETS 번호, 일반 판 준비 화면)
 static var skill_auto := false  # 중앙 기술 자동 사용 (설정)
+static var pause_on_focus_loss := true  # 싱글: 다른 앱으로 이동하면 명시적으로 재개할 때까지 정지
+static var skill_aim_slow := true  # 싱글 수동 기술 조준 중 1/4 속도 (배속에 곱함)
 static var skip_danger := true  # 넘기는 중 중앙 체력이 50% 아래로 처음 떨어지면 그 웨이브 뒤 멈춤
 static var danger_slow := false  # 중앙 체력이 50%·25% 아래로 처음 떨어질 때 1배속으로 (기본 끔)
 static var orb_hp_on := false  # 모든 구체에 체력 숫자 (끄면 고리만, 보스·마우스를 올린 구체는 숫자도)
@@ -83,7 +85,7 @@ static var notes_seen := ""  # 마지막으로 패치노트를 연 게임 버전
 const FIELD := Vector2(1280, 720)  # 전장 크기. 화면비가 달라도(폰 20:9, 태블릿 4:3) 이 넓이만 쓰고 남는 곳은 배경·UI (main.arena)
 static var sim_phone := false  # 점검 도구(tools/shot.gd phone): 데스크톱에서 폰 화면 구성 흉내 (main._phone)
 static var sim_safe := Rect2()  # 점검 도구: 안전 영역 밖 여백 흉내 (main._safe_pad와 같은 모양, 뷰포트 좌표 왼쪽·위·오른쪽·아래)
-static var ui_scale := 1.0  # 글자·버튼 크기 (UI_SCALES 중 하나). 폰은 기본 1.3
+static var ui_scale := 1.3 if OS.has_feature("mobile") else 1.0  # 글자·버튼 크기 (UI_SCALES 중 하나). 모바일은 기본 1.3
 static var modes: Array = []  # 시작 화면에서 고른 모드 (Modes). 다음 판에도 남는다
 const UI_SCALES := [0.7, 0.85, 1.0, 1.15, 1.3]
 
@@ -203,6 +205,8 @@ static func load_into(cfg: ConfigFile) -> void:
 	skip_danger = val(cfg, "settings", "skip_danger", true)
 	skill_set = clampi(int(val(cfg, "settings", "skill_set", 0)), 0, 2)
 	skill_auto = val(cfg, "settings", "skill_auto", false) == true
+	pause_on_focus_loss = val(cfg, "settings", "pause_on_focus_loss", true) == true
+	skill_aim_slow = val(cfg, "settings", "skill_aim_slow", true) == true
 	fx_low = val(cfg, "settings", "fx_low", false)
 	rank_on = val(cfg, "settings", "rank_on", true)
 	card_detail = val(cfg, "settings", "card_detail", false)
@@ -279,6 +283,8 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("settings", "skip_danger", skip_danger)
 	cfg.set_value("settings", "skill_set", skill_set)
 	cfg.set_value("settings", "skill_auto", skill_auto)
+	cfg.set_value("settings", "pause_on_focus_loss", pause_on_focus_loss)
+	cfg.set_value("settings", "skill_aim_slow", skill_aim_slow)
 	cfg.set_value("settings", "fx_low", fx_low)
 	cfg.set_value("settings", "rank_on", rank_on)
 	cfg.set_value("settings", "card_detail", card_detail)

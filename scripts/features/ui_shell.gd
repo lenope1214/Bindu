@@ -18,6 +18,7 @@ func _build_ui() -> void:
 	root.theme = theme
 	layer.add_child(root)
 	session.ui_root = root
+	_watch_accessibility_visibility(root)
 	session.card_dock = CardDock.new(session)
 	session.get_viewport().size_changed.connect(session.hud_system._apply_ui_scale)
 
@@ -226,7 +227,7 @@ func _build_ui() -> void:
 	session.skip_n_btn = Button.new()
 	session.skip_n_btn.set_anchors_preset(Control.PRESET_CENTER)
 	session.skip_n_btn.tooltip_text = "넘길 웨이브 수 바꾸기 (1·3·5·10)"
-	session.skip_n_btn.pressed.connect(session.run_flow_system._cycle_skip_n)
+	session.skip_n_btn.pressed.connect(session.run_flow_system.open_skip_picker)
 	session.skip_n_btn.visible = false
 	session.skip_n_btn.z_index = 2  # 카드 선택 막(card_dim) 위
 	root.add_child(session.skip_n_btn)
@@ -247,7 +248,7 @@ func _build_ui() -> void:
 	session.card_detail_btn.text = "자세히"
 	session.card_detail_btn.toggle_mode = true
 	session.card_detail_btn.button_pressed = Meta.card_detail
-	session.card_detail_btn.tooltip_text = "카드 설명 자세히 (Z): 켜면 설명 전체, 카드에 올리면(터치는 한 번 누르면) 위에 모든 내용"
+	session.card_detail_btn.tooltip_text = "카드 설명 자세히 (Z) · 카드의 [정보]로 소비 없이 전체 설명과 대상 비교 읽기"
 	session.card_detail_btn.toggled.connect(session.cards_system._set_card_detail)
 	session.cards_system._icon_btn(session.card_detail_btn, func(): return ["help", Color(1, 0.88, 0.5) if Meta.card_detail else Color(1, 1, 1, 0.7)])
 	session.cards_system._keycap(session.card_detail_btn, "Z")
@@ -270,17 +271,16 @@ func _build_ui() -> void:
 	session.bar_box = bar
 	bar.theme = session.card_dock.controls_theme
 	# 글 대신 아이콘 (이름·단축키는 올리면 말풍선)
-	session.fx_pick = OptionButton.new()
-	for i in BinduSession.FX_DPS.size():
-		session.fx_pick.add_item("효과 %d%%" % roundi(maxf(0.15, 1.0 - BinduSession.FX_DPS[i]) * 100))
-	session.fx_pick.select(Meta.fx_dps)
+	session.fx_pick = MenuButton.new()
+	session.fx_pick.flat = false
 	session.fx_pick.custom_minimum_size = Vector2(104, 36)
 	session.fx_pick.focus_mode = Control.FOCUS_NONE
-	session.fx_pick.tooltip_text = "피해를 적게 주는 오브젝트의 탄·장판 진하기\n(가장 센 오브젝트와 비교해 약할수록 이 값까지 옅어짐. 센 오브젝트는 그대로)"
-	session.fx_pick.item_selected.connect(func(i):
-		Meta.fx_dps = i
-		session.progression_system._save_best())
+	session.fx_pick.tooltip_text = "장식 후광·작은 입자 줄이기와 약한 공격의 진하기를 각각 설정합니다"
+	session.fx_pick.about_to_popup.connect(session.menu_system._refresh_fx_menu)
+	session.fx_pick.about_to_popup.connect(func(): session.menu_system._fit_fx_popup.call_deferred())
+	session.fx_pick.get_popup().id_pressed.connect(session.menu_system._on_fx_menu_pick)
 	bar.add_child(session.fx_pick)
+	session.menu_system._refresh_fx_menu()
 	session.mute_btn = Button.new()
 	session.mute_btn.custom_minimum_size = Vector2(44, 36)
 	session.mute_btn.pressed.connect(func(): session.menu_system._toggle_sound_pop())  # 작은 소리 창 (켜기·끄기·음량). M은 바로 켜기·끄기
@@ -303,11 +303,13 @@ func _build_ui() -> void:
 	session.speed_group.add_theme_constant_override("separation", 0)
 	bar.add_child(session.speed_group)
 	session.speed_btn = Button.new()
+	session.speed_btn.accessibility_name = "배속 전환"
 	session.speed_btn.custom_minimum_size = Vector2(72, 36)
 	session.speed_btn.pressed.connect(session.run_flow_system._toggle_speed)
 	session.cards_system._icon_btn(session.speed_btn, func(): return ["speed", Color(1, 0.85, 0.45) if session.game_speed > 1.0 else Color(1, 1, 1, 0.9)])
 	session.speed_group.add_child(session.speed_btn)
 	session.speed_pick = OptionButton.new()
+	session.speed_pick.accessibility_name = "빠른 배속 선택"
 	for sp in BinduSession.SPEEDS:
 		session.speed_pick.add_item("x%d" % roundi(sp))
 	session.speed_pick.custom_minimum_size = Vector2(64, 36)
@@ -317,6 +319,7 @@ func _build_ui() -> void:
 	session.speed_group.add_child(session.speed_pick)
 	# 맨 오른쪽: 접으면 이것만 남고, 펼치면 왼쪽으로 버튼이 늘어선다
 	session.bar_btn = Button.new()
+	session.bar_btn.accessibility_name = "설정 버튼"
 	session.bar_btn.custom_minimum_size = Vector2(96, 36)
 	session.bar_btn.pressed.connect(session.cards_system._toggle_bar)
 	bar.add_child(session.bar_btn)
@@ -548,3 +551,21 @@ func _build_ui() -> void:
 	session.help_label.visible = false
 	session.help_scroll.add_child(session.help_label)
 	root.add_child(session.help_scroll)
+
+
+## Godot 4.7 does not always refresh AX hidden flags after a visibility change.
+## Observe only this UI subtree; scene-local signals expire with their nodes.
+func _watch_accessibility_visibility(node: Node) -> void:
+	if node is Control:
+		var refresh := _refresh_accessibility_visibility.bind(node)
+		if not node.visibility_changed.is_connected(refresh):
+			node.visibility_changed.connect(refresh)
+	if not node.child_entered_tree.is_connected(_watch_accessibility_visibility):
+		node.child_entered_tree.connect(_watch_accessibility_visibility)
+	for child in node.get_children():
+		_watch_accessibility_visibility(child)
+
+
+func _refresh_accessibility_visibility(control: Control) -> void:
+	if AccessibilityServer.is_supported():
+		control.queue_accessibility_update()

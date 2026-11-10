@@ -53,7 +53,7 @@ func _panel_blocks(panel: Control) -> Array[Rect2]:
 			hb = c[0] if hb.size == Vector2.ZERO else hb.merge(c[0])
 		blocks.append(Rect2(session.hud.position + hb.position, hb.size).grow(4.0))
 	var dock_btns: Array = [session.card_dock.focus_btn, session.card_dock.skip_group, session.card_dock.panel, session.card_dock.footer] if session.card_dock != null else []
-	for c in [session.bar_box, session.start_btn, session.cancel_btn, session.aim_ok_btn, session.skip_badge, session.mp_bar, session.ver_label, session.legend] + session.skill_btns + dock_btns:
+	for c in [session.bar_box, session.start_btn, session.cancel_btn, session.aim_ok_btn, session.skip_badge, session.mp_bar, session.ver_label, session.legend] + session.abilities_system.skill_controls() + dock_btns:
 		if c != null and c is Control and c.is_visible_in_tree():
 			blocks.append((inv * c.get_global_rect()).grow(4.0))
 	if session.phase == BinduSession.Phase.WAVE:
@@ -176,7 +176,7 @@ func _refresh_dps() -> void:
 	if sig == dps_sig:
 		return
 	dps_sig = sig
-	session.dps_head.text = session.ui_layout_system._kh("실시간 DPS (D)" if live else "지난 웨이브 DPS (D)")
+	session.dps_head.text = session.ui_layout_system._kh("실측 DPS · 최근 5초 (D)" if live else "실측 DPS · 지난 웨이브 (D)")
 	for c in dps_list.get_children():
 		c.queue_free()
 	session.dps_panel.set_folded(folded)
@@ -190,7 +190,7 @@ func _refresh_dps() -> void:
 	for i in list.size():
 		var row := _dps_row(list[i], i + 1, dv[list[i]], total, live)
 		dps_list.add_child(row)
-	var rows := list.size() * 24.0
+	var rows := list.size() * (38.0 if session.touch_ui else 28.0)
 	dps_scroll.custom_minimum_size.y = minf(rows, room)
 	session.dps_panel.set_pass(session.dps_panel.passing, true)  # 새 줄도 통과 상태를 따르게
 	session.dps_panel.size = Vector2.ZERO  # 줄이 줄면 판도 줄인다
@@ -203,14 +203,25 @@ func _dps_row(t: Tower, rank: int, dps: float, total: float, live := false) -> C
 	var session: BinduSession = self.session
 	var share := dps / total if total > 0.0 else 0.0
 	var row := HBoxContainer.new()
-	row.custom_minimum_size = Vector2(0, 22)
+	row.custom_minimum_size = Vector2(0, 36 if session.touch_ui else 26)
 	row.mouse_filter = Control.MOUSE_FILTER_STOP
+	row.focus_mode = Control.FOCUS_ALL
 	row.add_theme_constant_override("separation", 6)
 	var col := t.color()
 	var target: WeakRef = weakref(t)
+	row.gui_input.connect(func(event: InputEvent):
+		var activate: bool = event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed
+		activate = activate or (event is InputEventScreenTouch and event.pressed)
+		activate = activate or (event is InputEventKey and event.pressed and event.keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE])
+		if activate:
+			var tower: Tower = target.get_ref()
+			if is_instance_valid(tower) and not tower.is_queued_for_deletion():
+				session.card_dock.inspector_dismissed = false
+				session.interaction_system._select_tower(tower)
+				row.accept_event())
 	row.draw.connect(func():
 		var tower: Tower = target.get_ref()
-		var hot := tower != null and session.dps_focus == tower
+		var hot := tower != null and (session.dps_focus == tower or tower in session.interaction_system.selected or row.has_focus())
 		row.draw_rect(Rect2(Vector2.ZERO, row.size), Color(1, 1, 1, 0.14 if hot else 0.04))
 		row.draw_rect(Rect2(Vector2.ZERO, Vector2(row.size.x * share, row.size.y)), Color(col, 0.28))
 		if hot:
@@ -223,6 +234,8 @@ func _dps_row(t: Tower, rank: int, dps: float, total: float, live := false) -> C
 		if session.dps_focus == target.get_ref():
 			session.dps_focus = null
 		row.queue_redraw())
+	row.focus_entered.connect(func(): row.queue_redraw())
+	row.focus_exited.connect(func(): row.queue_redraw())
 	var cells := [["%d" % rank, 18, HORIZONTAL_ALIGNMENT_RIGHT, Tower.RANK_COLORS[rank - 1] if rank <= 3 and rank_of.get(t.get_instance_id(), 0) == rank else Color(1, 1, 1, 0.55)],
 		["", 0],
 		["%.1f" % dps, 52, HORIZONTAL_ALIGNMENT_RIGHT, Color(1, 0.9, 0.5)],
@@ -250,6 +263,10 @@ func _dps_row(t: Tower, rank: int, dps: float, total: float, live := false) -> C
 		row.tooltip_text = "%s\n최근 %d초 초당 %.1f · 전체의 %d%%\n이번 웨이브 피해 %d (평균 초당 %.1f)" % [t.title(), roundi(BinduSession.DPS_WIN), dps, roundi(share * 100.0), roundi(t.dealt), t.dealt / session.wave_time]
 	else:
 		row.tooltip_text = "%s\n지난 웨이브 피해 %d · 초당 %.1f · 전체의 %d%%" % [t.title(), roundi(t.dealt), dps, roundi(share * 100.0)]
+	row.tooltip_text += "\n실전에서 준 피해입니다. 기본 공격 계산치와 포함 범위가 다릅니다.\n누르기 / Enter: 전장 오브젝트 선택"
+	var support := support_summary(t)
+	if support != "":
+		row.tooltip_text += "\n" + support + " (지원 기여는 피해 순위와 별도)"
 	var b := t.breakdown()
 	if t.dealt > 0.0 and not b.is_empty():
 		row.tooltip_text += "\n\n%s피해 출처 (초당 · 이 오브젝트의 몫)" % ("이번 웨이브 " if live else "")
@@ -258,6 +275,99 @@ func _dps_row(t: Tower, rank: int, dps: float, total: float, live := false) -> C
 		if b.has("pat:" + t.pattern) and b.size() > 1:
 			row.tooltip_text += "\n(직접 타격 안의 배율 몫은 추정)"
 	return row
+
+
+## 직접 피해로 환산하지 않는 지원 역할의 사실만 표시한다.
+func support_summary(t: Tower) -> String:
+	if not is_instance_valid(t):
+		return ""
+	var parts := PackedStringArray()
+	var els: Dictionary = t.eff_now()
+	if els.has(Elem.WIND):
+		parts.append("밀쳐내기 역할")
+	if els.has(Elem.WATER) or els.has(Elem.ICE) or els.has(Elem.EARTH):
+		parts.append("감속·제어 역할")
+	if els.has(Elem.ILLUSION):
+		parts.append("효과 전달 역할")
+	return " · ".join(parts)
+
+
+## 후보별 실제 적용 가능 여부와 기존 preview의 변경값. 조회는 선택·빌드를 바꾸지 않는다.
+func card_comparisons(card: Dictionary) -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	if card.is_empty():
+		return rows
+	var i := 0
+	for t: Tower in session.towers.get_children():
+		i += 1
+		var owner_ok: bool = session.multiplayer_system._mine(t)
+		var allowed: bool = owner_ok and t.can_take(card)
+		var reason := ""
+		var changes := PackedStringArray()
+		var reactions := PackedStringArray()
+		if session.mp_mode == "coop":
+			var status: Dictionary = session.multiplayer_system.gifts().offer_status(t, card)
+			allowed = bool(status.get("ok", false))
+			reason = str(status.get("reason", ""))
+		elif not owner_ok:
+			reason = "친구 오브젝트 · 요청한 속성만 적용 가능" if t.req_e >= 0 else "친구 오브젝트 · 적용 요청 없음"
+		elif not allowed:
+			reason = t.refuse_text(card)
+		if allowed:
+			var preview: Array = t.preview(card)
+			if not preview.is_empty():
+				changes = preview[0]
+			if card.get("type") == "elem":
+				for reaction in Elem.new_reactions(t.eff_now(), card["e"]):
+					reactions.append(str(reaction["name"]))
+		rows.append({"tower":t, "index":i, "title":t.title(), "allowed":allowed, "reason":reason, "changes":changes, "new_reactions":reactions})
+	return rows
+
+
+func card_comparison_text(card: Dictionary) -> String:
+	var lines := PackedStringArray()
+	var rows := card_comparisons(card)
+	var allowed := 0
+	for row in rows:
+		if row["allowed"]:
+			allowed += 1
+	lines.append("기존 대상 %d개 중 %d개에 적용 가능" % [rows.size(), allowed])
+	for row in rows:
+		var head := "%d · %s" % [row["index"], row["title"]]
+		if not row["allowed"]:
+			lines.append(head + "\n불가: " + row["reason"])
+		else:
+			var changes: PackedStringArray = row["changes"]
+			lines.append(head + "\n" + " · ".join(changes.slice(0, mini(2, changes.size()))))
+			if not row["new_reactions"].is_empty():
+				lines.append("새 조합: " + " · ".join(row["new_reactions"]))
+	return "\n\n".join(lines)
+
+
+## 이미 기록한 누수만 설명한다. 사거리·화력 부족 등의 인과를 추정하지 않는다.
+func leak_review_text() -> String:
+	if session.leak_log.is_empty():
+		return ""
+	var entry: Dictionary = session.leak_log[-1]
+	if int(entry.get("n", 0)) == 0:
+		return "지난 웨이브: 놓친 구체 없음"
+	var lines := PackedStringArray(["웨이브 %d: 구체 %d개 통과 · 중앙 실제 손실 %d" % [entry.get("w", 0), entry.get("n", 0), entry.get("lost", entry.get("dmg", 0))]])
+	var dirs := PackedStringArray()
+	for dir in entry.get("dirs", {}):
+		dirs.append("%s쪽 %d개" % [dir, entry["dirs"][dir]])
+	lines.append("통과 방향: " + " · ".join(dirs))
+	var kinds := PackedStringArray()
+	var names := {Orb.Kind.NORMAL:"일반", Orb.Kind.FAST:"빠른", Orb.Kind.TANK:"단단한", Orb.Kind.BOSS:"보스"}
+	for kind in entry.get("kinds", {}):
+		kinds.append("%s %d개" % [names.get(int(kind), "특수"), entry["kinds"][kind]])
+	lines.append("통과 구체: " + " · ".join(kinds))
+	var traits := PackedStringArray()
+	for status_name in entry.get("traits", {}):
+		traits.append("%s %d개" % [status_name, entry["traits"][status_name]])
+	if not traits.is_empty():
+		lines.append("통과할 때의 상태: " + " · ".join(traits))
+	lines.append("이 기록만으로 화력·사거리 부족을 확정할 수 없어요. 해당 길목과 구체 특성을 함께 확인하세요.")
+	return "\n".join(lines)
 
 
 ## 표 이름 칸: 글 대신 공격방식 그림 + 속성 그림(레벨 2 이상은 작은 숫자). 이름은 줄 말풍선에.
@@ -422,6 +532,10 @@ func _fit_panels() -> void:
 			# 모드 줄 작은 설명이 두 줄로 접히면 버튼도 키운다 (버튼은 안 글 높이를 따라 크지 않는다)
 			var mh := (session.modes_btn.get_child(0) as Control).get_combined_minimum_size().y + 8.0
 			session.modes_btn.custom_minimum_size.y = maxf(64.0 if session.viewport_system._phone() else 56.0, mh)
+		if session.continue_btn.is_visible_in_tree():
+			# _tile의 위아래 여백 16씩. Button은 자식 VBox의 최소 높이를 따라 커지지 않는다.
+			var ch := (session.continue_info.get_parent() as Control).get_combined_minimum_size().y + 32.0
+			session.continue_btn.custom_minimum_size.y = maxf(170.0 if session.viewport_system._phone() else 92.0, ch)
 	for c: Control in [session.title_box, session.help_scroll, session.records_panel, session.settings_panel, session.notes_panel, session.modes_panel, session.codex_panel, session.vote_panel]:
 		if not c.is_visible_in_tree():
 			continue
@@ -556,6 +670,13 @@ func _update_hud(force := false) -> void:
 			first = false
 	# 오른쪽 위 버튼(설명 보기, 터치면 범위 보기) 앞까지. 글자를 키우면(설정) 화면이 좁아진 만큼 줄어든다
 	var hud_w := session.ui_root.size.x - (410.0 if session.zoom_btn.visible else 300.0 if session.range_btn.visible else 190.0)  # [확대 풀기]까지 피함
+	# 항상 보이는 즉시 정지 버튼도 실제 위치·UI 배율로 피한다.
+	var to_hud := session.hud.get_global_transform().affine_inverse()
+	for button: Control in [session.pause_btn, session.range_btn, session.zoom_btn]:
+		if button != null and button.is_visible_in_tree():
+			var r: Rect2 = to_hud * button.get_global_rect()
+			if r.position.y < 40.0 and r.end.y > 0.0:
+				hud_w = minf(hud_w, maxf(180.0, r.position.x - 8.0))
 	# 둘째 줄부터는 오른쪽 설명(위에서 48부터) 왼쪽까지 (특성이 많으면 둘째 줄이 설명 글 위로 지나갔다)
 	var hud_w2 := minf(hud_w, session.legend.position.x - 8.0) if session.legend.visible else hud_w
 	var sig := "%s|%s" % [hud_w, hud_w2]

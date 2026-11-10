@@ -18,6 +18,7 @@ func _lv2_chance() -> float:
 
 
 func _start_perk() -> void:
+	session.cards_system.clear_edit_history()
 	var session: BinduSession = self.session
 	var pool := _perk_pool()
 	if pool.is_empty():
@@ -100,6 +101,8 @@ func _show_perks() -> void:
 		b.add_theme_color_override("font_hover_color", Color(1, 0.95, 0.7))
 		b.focus_mode = Control.FOCUS_NONE
 		b.set_meta("perk_desc", desc + ("\n\n" + coin if coin != "" else ""))
+		b.accessibility_description = "현재 보유 %d개. %s" % [have, b.get_meta("perk_desc")]
+		b.set_meta("perk_summary", _perk_summary(pk))
 		b.mouse_entered.connect(func():
 			session.card_dock.inspected_tower = null
 			session.card_dock.hovered = b)
@@ -138,6 +141,7 @@ func _on_perk(pk: Dictionary) -> void:
 	var session: BinduSession = self.session
 	if not session.perk_mode or session.coin_stage > 0:
 		return
+	session.cards_system.clear_edit_history()
 	session.perk_mode = false
 	var id: String = pk["id"]
 	session.perks[id] = session.perks.get(id, 0) + 1
@@ -449,6 +453,20 @@ func _perk_big(id: String, desc: String) -> Dictionary:
 	if mm == null:
 		return {}
 	return {"big": mm.get_string() + ("/웨이브" if id == "regen" else ""), "i": BinduSession.PERK_GLYPH[id]}
+
+
+## 앞면은 핵심 수치·대가를 먼저 읽는다. 전체 설명·동전 결과는 perk_desc에 보존한다.
+func _perk_summary(pk: Dictionary) -> String:
+	match str(pk["id"]):
+		"harmony":
+			return "겹치기 속도 감소 ×%s\n1회만 · 속도 최대 +%s%%" % [String.num(_perk_val("harmony")).trim_suffix(".0"), String.num(_perk_val("harmony_cap") * 100.0).trim_suffix(".0")]
+		"coin":
+			return "새 특성 3개\n앞면 2회 적용 / 뒷면 1회\n뒷면 새로고침 +%d" % int(_perk_val("coin"))
+		"shield":
+			return "매 웨이브 실드 +%d · 최대 %d\n피격 시 체력 대신 소모\n다음 웨이브 이월 없음" % [int(_perk_val("shield")), int(_perk_val("shield_max"))]
+		"rampart":
+			return "매 웨이브 벽 · 최대 %d조각\n(벽 레벨합+고른 횟수)×%s\n다가온 구체를 밀쳐요" % [int(_perk_val("rampart_max")), String.num(_perk_val("rampart")).trim_suffix(".0")]
+	return _perk_desc(pk)
 
 
 func _perk_desc(pk: Dictionary) -> String:

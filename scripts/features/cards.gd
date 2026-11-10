@@ -1,5 +1,31 @@
 class_name BinduCards
 extends BinduFeature
+var _history: BinduEditHistory
+var edit_history: Array[Dictionary]:
+	get: return _history_service().edit_history
+var pending_edit: Dictionary:
+	get: return _history_service().pending_edit
+
+func _history_service() -> BinduEditHistory:
+	if _history == null:
+		_history = BinduEditHistory.new(session)
+	return _history
+
+func begin_edit(label := "배치") -> void:
+	_history_service().begin_edit(label)
+
+func finish_edit() -> void:
+	_history_service().finish_edit()
+
+func clear_edit_history() -> void:
+	_history_service().clear_edit_history()
+
+func can_undo() -> bool:
+	return _history_service().can_undo()
+
+func undo_edit() -> bool:
+	return _history_service().undo_edit()
+
 ## 카드 선택·표현·적용. 예약 콜백은 main의 순서를 따른다.
 
 func _open_choose() -> void:
@@ -27,6 +53,9 @@ func _clear_shots() -> void:
 
 func _make_choices() -> void:
 	var session: BinduSession = self.session
+	if session.mp_mode == "coop" and not session.multiplayer_system.gifts().note_new_offer():
+		return
+	clear_edit_history()
 	session.offer.clear()
 	var guard := 0
 	while session.offer.size() < 3 and guard < 50:
@@ -275,6 +304,7 @@ func _card_button(card: Dictionary, idx: int) -> Button:
 	var rows: Array = cc["rows"]
 	var foot: Array = cc["foot"]
 	b.set_meta("full", _card_full(card))
+	b.accessibility_description = "\n".join(b.get_meta("full").map(func(row): return str(row[0])))
 	b.set_meta("summary", _card_content(card, 0)["rows"])
 	session.card_dock.watch(b, card)
 	var fit := session.hud_system.core_fit(card)
@@ -370,6 +400,20 @@ func _card_simple(card: Dictionary, rows: Array) -> Array:
 		return out
 	if card["type"] == "cata":
 		return rows  # 다시 뽑는 대상·레벨 유지·즉시 발동 조건을 생략하지 않는다.
+	if card["type"] == "link" and card.get("id", "") == "pincer":
+		return [{"t": "최대 체력 %d%% 피해\n%s" % [roundi(Rules.pincer_frac * 100.0), Rules.fmt("다른 오브젝트와 {pincer_t}초 안에 같은 구체 명중")]}]
+	var concise := ""
+	if card["type"] == "mod" and card.get("id", "") == "homing":
+		var blocked := PackedStringArray()
+		for pat: String in Pat.NO_MOD["homing"]:
+			blocked.append(Pat.pname(pat))
+		concise = Rules.fmt("휘면 약해짐 · 최저 {homing_fade_min%}%") + "\n불가: " + "·".join(blocked.slice(0, 2)) + "\n" + "·".join(blocked.slice(2))
+	if card["type"] == "mod" and card.get("id", "") == "pierce":
+		concise = Rules.fmt("탄 +1관통 · 매번 피해 ×{pierce_hit}\n그 외 공격 피해 +{pierce_dmg%}%\n보호막 +{pierce_shield%}% · 갑옷 {pierce_armor%}% 무시")
+	if card["type"] == "pat" and card.get("id", "") == "vortex":
+		concise = "구체 무리에 우물 · 끌어모음\n다른 오브젝트의 피해를 모아\n끝날 때 함께 폭발"
+	if card["type"] == "trig" and card.get("id", "") == "charge":
+		concise = "근처 처치로 힘을 모아\n다음 공격을 강화해요\n다음 웨이브에도 힘 유지"
 	var first := true
 	for r in rows:
 		if not r.has("t"):
@@ -378,7 +422,7 @@ func _card_simple(card: Dictionary, rows: Array) -> Array:
 			if r.get("c", Color.WHITE) != Color(1, 1, 1, 0.55):
 				out.append(r)  # 넣을 수 없는 대상 경고는 남긴다.
 		elif first:
-			out.append({"t": Pat.brief(card["type"], card["id"], r["t"])})
+			out.append({"t": concise if concise != "" else Pat.brief(card["type"], card["id"], r["t"])})
 			first = false
 	return out
 
@@ -510,6 +554,8 @@ func _draw_card_full() -> void:
 func _card_paint(b: Button, head: Dictionary, rows: Array, foot: Array, col: Color, base_fs := 14, count := 3) -> void:
 	var session: BinduSession = self.session
 	b.text = ""
+	var kind: String = {"elem": "속성", "pat": "공격방식", "mod": "강화", "trig": "발동", "link": "연계", "perk": "특성"}.get(head.get("kind", ""), "")
+	b.accessibility_name = "카드 %d. %s %s%s" % [head.get("idx", 1), kind, head.get("name", ""), " " + str(head["lv"]) if head.has("lv") else ""]
 	var cw := 230.0 if count <= 3 else 166.0  # 4장일 때는 좁게
 	var fs := base_fs
 	var lay: Array = []
@@ -590,6 +636,8 @@ func _choose_hint() -> String:
 ## 자동 튜토리얼 모달은 예약하지 않는다. 기존 이벤트 호출부는 짧은 안내와 함께 유지한다.
 func _on_reroll() -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked():
+		return
 	if session.phase != BinduSession.Phase.CHOOSE or session.get_tree().paused or session.coin_stage > 0:
 		return
 	if session.perk_mode:
@@ -598,6 +646,7 @@ func _on_reroll() -> void:
 	if session.rerolls_left <= 0:
 		session.hud_system._show_toast("이번 쉬는 시간의 새로고침을 다 썼어요")  # Q를 눌러도 아무 일이 없던 것
 		return
+	clear_edit_history()
 	session.rerolls_left -= 1
 	Ach.on_reroll()
 	_log_offer({})
@@ -609,9 +658,12 @@ func _on_reroll() -> void:
 ## 특성 새로고침: 지금 나온 특성 말고 다른 것으로 3개를 다시 뽑는다 (모자라면 지금 것으로 채움).
 func _perk_reroll() -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked():
+		return
 	if session.perk_rerolls <= 0 or not _perk_can_reroll():
 		session.hud_system._show_toast("이번 특성 선택의 새로고침을 다 썼어요")
 		return
+	clear_edit_history()
 	session.perk_rerolls -= 1
 	var now: Array = session.perk_offer.map(func(pk): return pk["id"])
 	var pool := session.perks_system._perk_pool()
@@ -654,12 +706,14 @@ func _set_cards_hidden(h: bool) -> void:
 func _update_reroll_btn() -> void:
 	var session: BinduSession = self.session
 	if session.perk_mode:
-		session.reroll_btn.visible = session.perk_rerolls > 0 and not session.cards_hidden and session.coin_stage == 0 and _perk_can_reroll()
-		session.reroll_btn.text = str(session.perk_rerolls)
+		session.reroll_btn.visible = not session.cards_hidden and session.coin_stage == 0
+		session.reroll_btn.disabled = session.perk_rerolls <= 0 or not _perk_can_reroll()
+		session.reroll_btn.text = "다시 뽑기 %d" % session.perk_rerolls
 		session.reroll_btn.tooltip_text = "특성 새로고침 (Q): 이번 특성 선택에 %d번 남음" % session.perk_rerolls
 		return
-	session.reroll_btn.visible = session.rerolls_left > 0 and not session.cards_hidden  # 모드 '외길'은 늘 0
-	session.reroll_btn.text = str(session.rerolls_left)
+	session.reroll_btn.visible = not session.cards_hidden
+	session.reroll_btn.disabled = session.rerolls_left <= 0
+	session.reroll_btn.text = "다시 뽑기 %d" % session.rerolls_left
 	session.reroll_btn.tooltip_text = "선택지 새로고침 (Q): 이번 쉬는 시간에 %d번 남음" % session.rerolls_left
 
 
@@ -687,11 +741,26 @@ func _tap_hover() -> void:
 		cs[k].modulate.a = 0.55 if session.tap_sel >= 0 and k != session.tap_sel else 1.0
 
 
-func _on_pick(card: Dictionary) -> void:
+func _gift_blocked() -> bool:
+	if session.mp_mode != "coop" or not session.multiplayer_system.gifts().blocks_local_choice():
+		return false
+	session.hud_system._show_toast(session.multiplayer_system.gifts().pending_notice())
+	return true
+
+
+func _on_pick(card: Dictionary) -> bool:
 	var session: BinduSession = self.session
+	if _gift_blocked():
+		return false
+	var automatic: bool = session.mp_mode != "" and session.mp_auto_now
+	if session.phase != BinduSession.Phase.CHOOSE or session.picks_left <= 0 or session.perk_mode or not card in session.offer or (session.card_dock.input_blocked() and not automatic):
+		return false
 	if TutPlay.on and session.tplay != null and not session.tplay.allow_pick(card):
-		return
+		return false
+	begin_edit("카드 적용")
 	session.persistence_system._save_run()  # 카드를 들고 앱을 닫아도 적용 전 목록과 남은 선택을 복원한다.
+	session.card_dock.reading_card = {}
+	session.card_dock.reading_review = false
 	session.tap_sel = -1
 	_tap_hover()
 	session.picked = card
@@ -704,6 +773,7 @@ func _on_pick(card: Dictionary) -> void:
 	session.hint.text = session.ui_layout_system._th(_place_hint())
 	if session.card_dock.active():
 		session.card_dock.tick()
+	return true
 
 
 ## 통계용 카드 이름: elem:fire, pat:spray, mod:rapid, link:reso
@@ -733,6 +803,8 @@ func _place_hint() -> String:
 ## card: 이번에 넣은 카드.
 func _after_place(card: Dictionary = {}) -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked():
+		return
 	_log_offer(session.picked if card.is_empty() else card)
 	Ach.on_pick(_stat_key(session.picked if card.is_empty() else card))
 	session.progression_system._check_progress()
@@ -745,6 +817,7 @@ func _after_place(card: Dictionary = {}) -> void:
 		_enter_ready()
 		if session.auto_start:
 			session.countdown = 2.0
+	finish_edit()
 
 
 ## 자동 시작이 꺼져 있을 때: 설치를 마치고 Space를 기다린다. 이때도 오브젝트를 옮길 수 있다.
@@ -801,6 +874,7 @@ func _keycap(b: Button, key: Variant) -> void:
 func _menu_glyph(b: Button, icon: String, label: String) -> void:
 	var session: BinduSession = self.session
 	b.text = ""
+	b.accessibility_name = label
 	b.draw.connect(func():
 		var hov := b.is_hovered()
 		var c := Color(1, 1, 1, 1.0 if hov else 0.9)
@@ -867,6 +941,8 @@ var short_re := RegEx.create_from_string("\\s*\\([^)]*\\)")  # 카드 간소화:
 ## 오른쪽 설명 줄 앞 그림. 글자를 키우면 줄이 접히므로 앞줄들이 몇 줄로 접히는지 세어 자리를 맞춘다.
 func _apply_card(target: Tower) -> void:
 	var session: BinduSession = self.session
+	if _gift_blocked():
+		return
 	if target == null:
 		session.hud_system._show_toast("오브젝트 위에 놓으세요")
 		return

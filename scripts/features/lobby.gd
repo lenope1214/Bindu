@@ -229,7 +229,7 @@ func _mp_pop_center() -> void:
 ## [속성 요청]: 다음에 누른 내 오브젝트에 요청할 속성을 고른다.
 func _mp_req_toggle() -> void:
 	var session: BinduSession = self.session
-	if session.mp_mode != "coop":
+	if session.mp_mode != "coop" or session.multiplayer_system.gifts().blocks_local_choice() or not session.multiplayer_system.gifts().supported_all():
 		return
 	if mp_req_got_w == session.wave:
 		session.hud_system._show_toast("이번 쉬는 시간에는 이미 요청한 속성을 받았어요")
@@ -260,62 +260,36 @@ func _mp_req_open(t: Tower) -> void:
 ## 요청은 사람마다 하나: 다른 내 오브젝트의 요청은 지운다. 상태는 오브젝트 상태(tw)로 친구에게 간다.
 func _mp_req_set(t: Tower, e: int) -> void:
 	var session: BinduSession = self.session
-	if not is_instance_valid(t):
+	var gifts := session.multiplayer_system.gifts()
+	if not is_instance_valid(t) or not session.multiplayer_system._mine(t) or not session.phase in [BinduSession.Phase.CHOOSE, BinduSession.Phase.READY] or gifts.blocks_local_choice() or not gifts.supported_all():
 		return
+	if e >= 0 and (not e in Elem.ALL or not t.can_take({"type":"elem", "e":e, "lv":1}) or mp_req_got_w == session.wave): return
 	for x in session.multiplayer_system._my_towers():
 		if x != t and x.req_e >= 0:
 			x.req_e = -1
+			gifts.next_request(x)
 			x.queue_redraw()
 	t.req_e = e
+	gifts.next_request(t)
 	t.queue_redraw()
+	session.multiplayer_system._mp_send_towers()
 	if e >= 0:
 		session.hud_system._show_toast("요청: %s 속성 (친구 화면에 표시돼요)" % Elem.NAMES[e])
 
 
 ## 친구 오브젝트가 지금 든 속성 카드를 요청했나.
 func _req_ok(t: Tower) -> bool:
-	var session: BinduSession = self.session
-	return session.mp_mode == "coop" and is_instance_valid(t) and t.owner_id != session.mp.my_id and t.req_e >= 0 \
-		and str(session.picked.get("type", "")) == "elem" and int(session.picked.get("e", -1)) == t.req_e
+	return session.mp_mode == "coop" and is_instance_valid(t) and not session.multiplayer_system._mine(t) and session.multiplayer_system.gifts().offer_status(t, session.picked).ok
 
 
-## 요청한 속성을 친구 오브젝트에 넣어 준다: 주인 기기가 넣고 상태를 다시 보낸다.
+## 선택을 예약한다. owner 적용과 host 확정 ACK 전에는 소비하지 않는다.
 func _mp_give(t: Tower) -> void:
-	var session: BinduSession = self.session
-	session.mp.send({"t": "gift", "nid": t.net_id, "e": session.picked["e"], "lv": session.picked["lv"]}, t.owner_id)
-	session.hud_system._show_toast("%s에게 %s 속성을 넣어 줬어요" % [session.multiplayer_system._mp_name(t.owner_id), Elem.NAMES[session.picked["e"]]])
-	session.sfx.play("place")
-	session.spawning_system.burst(t.position, session.cards_system._card_color(session.picked), 16, 160.0)
-	t.req_e = -1
-	t.queue_redraw()
-	session.cards_system._after_place()
+	session.multiplayer_system.gifts().begin_gift(t)
 
 
-func _mp_recv_gift(from: int, msg: Dictionary) -> void:
-	var session: BinduSession = self.session
-	if session.mp_mode != "coop":
-		return
-	var nid := int(msg.get("nid", 0))
-	var e := int(msg.get("e", -1))
-	var lv := maxi(1, int(msg.get("lv", 1)))
-	for t in session.multiplayer_system._my_towers():
-		if t.net_id != nid:
-			continue
-		if t.req_e != e or not t.can_take({"type": "elem", "e": e, "lv": lv}):
-			session.hud_system._show_toast("%s가 보낸 %s 속성은 요청이 이미 채워져 들어가지 않았어요" % [session.multiplayer_system._mp_name(from), Elem.NAMES.get(e, "?")])
-			return
-		var m: String = t.add(e, lv)
-		t.req_e = -1
-		mp_req_got_w = session.wave
-		t.place_pop = 1.0
-		t.queue_redraw()
-		session.hud_system._show_toast("%s가 %s 속성을 넣어 줬어요 · %s" % [session.multiplayer_system._mp_name(from), Elem.NAMES[e], m])
-		session.sfx.play("place")
-		if m.begins_with("조합"):
-			session.sfx.play("reaction", 0.0)
-		session.spawning_system.burst(t.position, Elem.COLORS[e], 20, 200.0)
-		session.progression_system._check_progress()
-		return
+## 구버전 즉시 소비 프로토콜은 fail closed. 새 요청은 capability 확인 뒤만 노출한다.
+func _mp_recv_gift(_from: int, _msg: Dictionary) -> void:
+	pass
 
 
 ## 호스트 [내보내기]: 내보낼 사람 고르기 (두 번 눌러야).
@@ -392,6 +366,7 @@ func _mp_wait_end() -> void:
 ## 매 프레임 (멀티 판): 잠수 처리 시간 재기.
 func _mp_afk_tick(delta: float) -> void:
 	var session: BinduSession = self.session
+	if session.multiplayer_system.gifts().blocks_local_choice(): return
 	if session.phase == BinduSession.Phase.GAMEOVER or session.title_label.visible:
 		return
 	if session.mp_wait_show > 0.0:
@@ -436,6 +411,7 @@ func _mp_presence() -> void:
 ## 다른 카드는 넣을 수 있는 내 오브젝트에, 특성은 동전 말고 첫 번째).
 func _mp_auto_rest() -> void:
 	var session: BinduSession = self.session
+	if session.multiplayer_system.gifts().blocks_local_choice(): return
 	if session.phase == BinduSession.Phase.GAMEOVER or session.phase == BinduSession.Phase.WAVE or session.mp_mode == "":
 		return
 	session.mp_auto_now = true
@@ -489,13 +465,15 @@ func _mp_auto_pick() -> bool:
 		if o["type"] == "elem":
 			for t in mine:
 				if t.can_take(o) and not Elem.new_reactions(t.eff_now(), o["e"]).is_empty():
-					session.cards_system._on_pick(o)
+					if not session.cards_system._on_pick(o):
+						return false
 					session.interaction_system._place_on(t)
 					return true
 		else:
 			for t in mine:
 				if t.can_take(o):
-					session.cards_system._on_pick(o)
+					if not session.cards_system._on_pick(o):
+						return false
 					session.cards_system._apply_card(t)
 					return true
 	for o in session.offer:
@@ -503,7 +481,8 @@ func _mp_auto_pick() -> bool:
 			var spot := _mp_auto_spot()
 			if spot.is_empty():
 				return false
-			session.cards_system._on_pick(o)
+			if not session.cards_system._on_pick(o):
+				return false
 			session.interaction_system._place_tower(spot[0], spot[1])
 			session.cards_system._after_place()
 			return true
@@ -898,7 +877,7 @@ func _mp_start() -> void:
 	for id in ids:
 		names[id] = session.mp.peers.get(id, {}).get("name", "")
 	var msg := {"t": "start", "seed": randi() % 2000000000 + 1, "map": Meta.map_id, "flip": Meta.line_flip, "rules": Meta.rules,
-		"mode": session.mp.mode, "ids": ids, "names": names}
+		"mode": session.mp.mode, "ids": ids, "names": names, "gift_v":BinduGiftTransactions.VERSION, "gift_round":Crypto.new().generate_random_bytes(16).hex_encode()}
 	session.mp.lock()
 	session.mp.send(msg)
 	session.multiplayer_system._mp_begin(msg)

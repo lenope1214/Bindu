@@ -170,7 +170,7 @@ func _guide(id: String, text: String) -> void:
 func _rest_guides() -> void:
 	var session: BinduSession = self.session
 	if session.wave == 0:
-		_guide("start", "빨간 부채꼴이 구체가 들어오는 길목이에요. 그 넓이 어디로든 와요. 속성 카드를 고른 뒤 길목 쪽 빈 곳을 눌러 놓고, 한 번 더 눌러 쏠 방향을 정하세요")
+		_guide("start", "빨간 부채꼴이 구체가 들어오는 길목이에요. 그 넓이 어디로든 와요. 속성 카드를 고른 뒤 길목 쪽 빈 곳에 놓으세요. 자동으로 위험한 구체를 먼저 겨누고, 필요하면 방향 선호를 바꿀 수 있어요")
 	elif session.towers.get_child_count() > 0:
 		_guide("stack", "속성 카드를 오브젝트 위에 놓으면 겹쳐져요. 같은 속성은 레벨업, 다른 속성은 추가 효과가 더해지고, 속성마다 특징이 다른 속성 효과까지 실어 날라요")
 	if not session.boss_plan.is_empty() and session.boss_plan["wave"] == session.wave + 1:

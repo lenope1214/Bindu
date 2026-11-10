@@ -7,6 +7,7 @@ var volume_rows: Array = []  # 음량 줄 전부 [이름, 슬라이더, 글, get
 var sound_pop: Control  # 오른쪽 아래 소리 버튼을 누르면 뜨는 작은 창 (바깥 막 + 창)
 var sound_panel: PanelContainer
 var sound_toggle: CheckButton  # 작은 창의 소리 켜기·끄기
+var fx_low_toggle: CheckButton  # 빠른 효과 메뉴와 설정 창의 장식 줄이기 상태를 맞춘다
 var account_label: Label  # 설정: 계정 상태 한 줄
 var map_label: Label  # 준비 화면 맵 카드 아래 설명 (고른 맵 이름·규칙, 작은 설명은 meta "sub")
 var map_cards: Array[Button] = []  # 준비 화면 맵 카드 (Meta.MAP_IDS 순서, _draw_map_card)
@@ -337,6 +338,7 @@ func _build_menu(root: Control) -> void:
 	for v in Meta.UI_SCALES:
 		var zb := Button.new()
 		zb.text = "%d%%" % roundi(v * 100.0)
+		zb.accessibility_name = "글자·버튼 크기"
 		zb.toggle_mode = true
 		zb.button_group = zg
 		zb.button_pressed = is_equal_approx(v, Meta.ui_scale)
@@ -349,8 +351,8 @@ func _build_menu(root: Control) -> void:
 		zrow.add_child(zb)
 	sv.add_child(zrow)
 	# 오브젝트·중앙 모양 (예전엔 시작 화면에 있었다)
-	skin_label = _menu_row(sv, func(): _cycle_skin("tower", -1), func(): _cycle_skin("tower", 1), sw - (220.0 if session.viewport_system._phone() else 160.0))
-	core_label = _menu_row(sv, func(): _cycle_skin("core", -1), func(): _cycle_skin("core", 1), sw - (220.0 if session.viewport_system._phone() else 160.0))
+	skin_label = _menu_row(sv, func(): _cycle_skin("tower", -1), func(): _cycle_skin("tower", 1), sw - (220.0 if session.viewport_system._phone() else 160.0), "오브젝트 모양")
+	core_label = _menu_row(sv, func(): _cycle_skin("core", -1), func(): _cycle_skin("core", 1), sw - (220.0 if session.viewport_system._phone() else 160.0), "중앙 모양")
 	var cbox: Container = sv
 	if session.viewport_system._phone():
 		var grid := GridContainer.new()
@@ -359,7 +361,7 @@ func _build_menu(root: Control) -> void:
 		grid.add_theme_constant_override("v_separation", 4)
 		sv.add_child(grid)
 		cbox = grid
-	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 속성 그림)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"], ["웨이브 넘기기 중 중앙이 위험하면 멈춤 (체력 50%)", "skip_danger"], ["중앙 기술 자동 사용 (구체가 몰린 곳에)", "skill_auto"], ["효과 줄이기 (장판·터지는 효과를 옅게, 많을수록 더)", "fx_low"], ["피해 1~3위 왕관·메달", "rank_on"]]:
+	for spec in [["화면 흔들림", "shake_on"], ["피해 숫자", "numbers_on"], ["속성 기호 표시 (색 위에 속성 그림)", "symbols_on"], ["모든 구체에 체력 숫자 (끄면 고리만)", "orb_hp_on"], ["중앙이 위험하면 1배속으로 (체력 50%·25%)", "danger_slow"], ["웨이브 넘기기 중 중앙이 위험하면 멈춤 (체력 50%)", "skip_danger"], ["다른 앱으로 이동하면 정지 (싱글 판)", "pause_on_focus_loss"], ["기술 조준 중 1/4 속도 (싱글 판)", "skill_aim_slow"], ["중앙 기술 자동 사용 (구체가 몰린 곳에)", "skill_auto"], ["효과 줄이기 (후광·작은 입자 줄임)", "fx_low"], ["피해 1~3위 왕관·메달", "rank_on"]]:
 		var cb := CheckButton.new()
 		cb.text = spec[0]
 		if cbox != sv:
@@ -376,9 +378,13 @@ func _build_menu(root: Control) -> void:
 			"danger_slow": cb.button_pressed = Meta.danger_slow
 			"skip_danger": cb.button_pressed = Meta.skip_danger
 			"skill_auto": cb.button_pressed = Meta.skill_auto
-			"fx_low": cb.button_pressed = Meta.fx_low
+			"pause_on_focus_loss": cb.button_pressed = Meta.pause_on_focus_loss
+			"skill_aim_slow": cb.button_pressed = Meta.skill_aim_slow
+			"fx_low":
+				fx_low_toggle = cb
+				cb.button_pressed = Meta.fx_low
 			"rank_on": cb.button_pressed = Meta.rank_on
-		cb.focus_mode = Control.FOCUS_NONE
+		cb.focus_mode = Control.FOCUS_ALL
 		cb.toggled.connect(func(on):
 			match key:
 				"shake_on": Meta.shake_on = on
@@ -387,7 +393,9 @@ func _build_menu(root: Control) -> void:
 				"danger_slow": Meta.danger_slow = on
 				"skip_danger": Meta.skip_danger = on
 				"skill_auto": Meta.skill_auto = on
-				"fx_low": Meta.fx_low = on
+				"pause_on_focus_loss": Meta.pause_on_focus_loss = on
+				"skill_aim_slow": Meta.skill_aim_slow = on
+				"fx_low": _set_fx_low(on)
 				"rank_on":
 					Meta.rank_on = on
 					session.hud_system._rank_update()
@@ -543,6 +551,7 @@ func _on_delete_data(b: Button, nick_edit: LineEdit) -> void:
 ## ◀ 글자 ▶ 한 줄.
 ## 시작 화면 큰 타일: 버튼 위에 이름(색)과 설명 줄. 설명 Label을 돌려준다.
 func _tile(b: Button, title: String, col: Color, key: Variant) -> Label:
+	b.accessibility_name = title
 	var session: BinduSession = self.session
 	b.text = ""
 	b.custom_minimum_size = Vector2(_tile_w(), 170 if session.viewport_system._phone() else 150)
@@ -676,6 +685,7 @@ func _prep_row(box: BoxContainer, title: String, prev: Callable, next: Callable)
 	var bs := Vector2(56, 52) if OS.has_feature("mobile") else Vector2(40, 40)
 	var a := Button.new()
 	a.text = "◀"
+	a.accessibility_name = title + " 이전"
 	a.flat = true
 	a.focus_mode = Control.FOCUS_NONE
 	a.custom_minimum_size = bs
@@ -699,6 +709,7 @@ func _prep_row(box: BoxContainer, title: String, prev: Callable, next: Callable)
 	v.add_child(sub)
 	var b := Button.new()
 	b.text = "▶"
+	b.accessibility_name = title + " 다음"
 	b.flat = true
 	b.focus_mode = Control.FOCUS_NONE
 	b.custom_minimum_size = bs
@@ -834,7 +845,7 @@ func _prep_set(l: Label, main_t: String, sub_t: String) -> void:
 	sub.visible = sub_t != ""
 
 
-func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0) -> Label:
+func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0, title := "선택") -> Label:
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 12)
@@ -843,6 +854,7 @@ func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0) ->
 	var bs := Vector2(64, 56) if OS.has_feature("mobile") else Vector2(44, 40)
 	var a := Button.new()
 	a.text = "◀"
+	a.accessibility_name = title + " 이전"
 	a.focus_mode = Control.FOCUS_NONE
 	a.custom_minimum_size = bs
 	a.pressed.connect(prev)
@@ -860,6 +872,7 @@ func _menu_row(box: BoxContainer, prev: Callable, next: Callable, w := 560.0) ->
 	row.add_child(l)
 	var b := Button.new()
 	b.text = "▶"
+	b.accessibility_name = title + " 다음"
 	b.focus_mode = Control.FOCUS_NONE
 	b.custom_minimum_size = bs
 	b.pressed.connect(next)
@@ -1154,9 +1167,51 @@ func _toggle_records() -> void:
 	session.records_panel.text = session.patchlog_system._kr_keep("\n".join(lines))
 
 
-# ---------- 온라인 ----------
+## 전장 빠른 메뉴: 장식 생략과 공격 진하기를 독립적으로 고른다.
+func _refresh_fx_menu() -> void:
+	var popup := session.fx_pick.get_popup()
+	popup.clear()
+	popup.add_check_item("효과 줄이기 (후광·작은 입자)", 0)
+	popup.set_item_checked(0, Meta.fx_low)
+	popup.set_item_tooltip(0, "장식 후광과 작은 입자를 줄입니다. 피해 숫자와 공격 범위는 유지합니다.")
+	popup.add_separator("약한 공격 진하기")
+	for i in BinduSession.FX_DPS.size():
+		var percent := roundi(maxf(0.15, 1.0 - BinduSession.FX_DPS[i]) * 100)
+		popup.add_radio_check_item("최소 %d%%" % percent, i + 1)
+		var index := popup.item_count - 1
+		popup.set_item_checked(index, Meta.fx_dps == i)
+		popup.set_item_tooltip(index, "피해가 작은 오브젝트의 탄·장판을 이 진하기까지 옅게 합니다. 가장 센 오브젝트는 원래 진하기를 유지합니다.")
+	session.fx_pick.text = "효과 줄임 ▾" if Meta.fx_low else "효과 ▾"
 
-## 서버 응답(켤 때, 시작 화면으로 돌아올 때): 시작 화면이면 받은 패치를 바로 적용하고, 새 버전·공지를 띄운다.
+
+func _set_fx_low(on: bool) -> void:
+	Meta.fx_low = on
+	if is_instance_valid(fx_low_toggle):
+		fx_low_toggle.set_pressed_no_signal(on)
+	_refresh_fx_menu()
+
+
+func _fit_fx_popup() -> void:
+	var popup := session.fx_pick.get_popup()
+	if not popup.visible:
+		return
+	# Window의 화면 끝 보정은 폰의 노치·홈 막대 여백을 모른다. 최종 크기로 UI 안전 영역에 맞춘다.
+	var bounds := session.ui_root.get_global_rect()
+	var last := (bounds.end - Vector2(popup.size)).max(bounds.position)
+	popup.position = Vector2i(Vector2(popup.position).clamp(bounds.position, last).round())
+
+
+func _on_fx_menu_pick(id: int) -> void:
+	if id == 0:
+		_set_fx_low(not Meta.fx_low)
+	elif id >= 1 and id <= BinduSession.FX_DPS.size():
+		Meta.fx_dps = id - 1
+		_refresh_fx_menu()
+	else:
+		return
+	session.progression_system._save_best()
+
+
 func _toggle_settings() -> void:
 	var session: BinduSession = self.session
 	session.settings_panel.visible = not session.settings_panel.visible
@@ -1348,6 +1403,7 @@ func _volume_row(parent: Container, title: String, getter: Callable, setter: Cal
 	row.add_child(lab)
 	var slider := HSlider.new()
 	slider.name = "Vol_" + title
+	slider.accessibility_name = title
 	slider.min_value = 0.0
 	slider.max_value = 1.0
 	slider.step = 0.05

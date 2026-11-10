@@ -1817,28 +1817,55 @@ func goal_dist(o: Orb) -> float:
 ## 자동 조준 대상 (2026-11-07): 사거리 안에서 지키는 곳에 가장 가까운 구체를 먼저.
 ## 그 구체와 지키는 곳까지 거리가 aim_band 안으로 비슷한 구체끼리는 정한 방향(±aim_pref) 쪽을 먼저, 그다음 지키는 곳에 가까운 것.
 func _guard_pick(orbs: Array) -> Orb:
-	var cand := []
-	var top := INF
-	for o in orbs:
-		if not is_instance_valid(o) or o.hp <= 0.0:
+	if orbs.is_empty():
+		return null
+	if orbs.size() == 1:
+		var only = orbs[0]
+		if not is_instance_valid(only) or only.hp <= 0.0:
+			return null
+		var toward: Vector2 = only.position - position
+		if toward.length() > reflex_range(toward):
+			return null
+		var goal := goal_dist(only)
+		return only if not (goal > goal + Rules.t("aim_band")) else null
+	var closest: Orb = null
+	var closest_g := INF
+	var preferred: Orb = null
+	var preferred_g := INF
+	var aim_pref := Rules.t("aim_pref")
+	var range_ready := false
+	var fixed_range := 0.0
+	var directional_range := false
+	var goal_ready := false
+	var goal_center := Vector2.ZERO
+	var line_goal := false
+	for orb in orbs:
+		if not is_instance_valid(orb) or orb.hp <= 0.0:
 			continue
-		var v: Vector2 = o.position - position
-		if v.length() > reflex_range(v):
+		var v: Vector2 = orb.position - position
+		if not range_ready:
+			var far_guard: bool = Rules.t("auto_aim") > 0.0 and pattern in Tower.FAR_PATS
+			directional_range = not far_guard and main != null and MapRule.is_map("storm") and (pattern in ["shot", "gust", "lob"] or (pattern in Pat.PROJECTILE and mf("homing") > 0.0))
+			if not directional_range:
+				fixed_range = reflex_range(v)
+			range_ready = true
+		if v.length() > (reflex_range(v) if directional_range else fixed_range):
 			continue
-		var g := goal_dist(o)
-		cand.append([o, g, Rules.t("aim_pref") > 0.0 and absf(dir.angle_to(v)) <= Rules.t("aim_pref")])
-		top = minf(top, g)
-	var pick: Orb = null
-	var pick_g := INF
-	var pick_in := false
-	for c in cand:
-		if c[1] > top + Rules.t("aim_band"):
-			continue
-		if pick == null or (c[2] and not pick_in) or (c[2] == pick_in and c[1] < pick_g):
-			pick = c[0]
-			pick_g = c[1]
-			pick_in = c[2]
-	return pick
+		if not goal_ready:
+			line_goal = main != null and Meta.map_id == "line"
+			goal_center = position if main == null else (main.viewport_system.core() if line_goal else main.viewport_system.center())
+			goal_ready = true
+		var distance: float = absf(orb.position.x - goal_center.x) if line_goal else orb.position.distance_to(goal_center)
+		if closest == null or distance < closest_g:
+			closest = orb
+			closest_g = distance
+		if aim_pref > 0.0 and absf(dir.angle_to(v)) <= aim_pref and (preferred == null or distance < preferred_g):
+			preferred = orb
+			preferred_g = distance
+	var limit := closest_g + Rules.t("aim_band")
+	if preferred != null and not (preferred_g > limit):
+		return preferred
+	return closest if closest != null and not (closest_g > limit) else null
 
 
 ## 날아가는 탄의 속도 (예측 조준용). 바로 닿는 공격(분사·레이저·번개 등)은 0.
@@ -2080,8 +2107,8 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	if o.hp <= 0.0 and echo_cd <= 0.0 and tg("echo") > 0:
 		_echo(o)
 	# 효과 (Elem.RIDER). 얼음 오래감은 지속 시간, 나무 자람은 먼 구체일수록 세기를 키운다 (Share)
-	var dm := Share.dur(self)
-	var g := Share.grow(self, o)
+	var dm := Share.dur(self) if els.has(Elem.ICE) else 1.0
+	var g := Share.grow(self, o) if els.has(Elem.WOOD) else 1.0
 	var had_chill := o.chill
 	if els.has(Elem.FIRE):
 		o.burn(Rules.fire_dps * els.get(Elem.FIRE, 0) * rm * g * Share.am(self, Elem.FIRE), Rules.fire_t * dm, self)
@@ -2123,13 +2150,15 @@ func hit(o: Orb, dmg: float, k := 1.0, extra := {}, can_split := true, force_cri
 	if els.has(Elem.ILLUSION) and o.hp > 0.0 and randf() < Share.illu_ch(self, els.get(Elem.ILLUSION, 0)) * minf(k, 1.0) * minf(g, 1.5):
 		o.confuse(Rules.illu_t * dm, Share.has(self, "nightmare"))
 	# 특징 공유: 금속 응축 · 빛 꿰뚫음 · 땅 묻어둠 · 시간 되풀이 (나머지 특징은 전류·음파·죽을 때·물길에서)
-	if o.hp > 0.0:
+	if els.has(Elem.METAL) and o.hp > 0.0:
 		Share.condense(self, o, Share.carry_n(self), minf(k, 1.0))
 	if lit:
 		Share.pierce(self, o)
 	Share.aff_hit(self, o, k, lit, had_chill)
-	Share.on_hit(self, o, false)
-	Share.mark(self, o)
+	if els.has(Elem.EARTH) or els.has(Elem.TIME):
+		Share.on_hit(self, o, false)
+	if els.has(Elem.BLOOD) or els.has(Elem.ILLUSION):
+		Share.mark(self, o)
 	if not in_rx and mirror_src != null and mirror_t > 0.0:
 		Share.reflect(self, o)
 	if not in_rx and bounce_cd <= 0.0 and m("bounce") > 0 and not pattern in Pat.PROJECTILE and pattern != "chain" and not tag.begins_with("mod:"):
