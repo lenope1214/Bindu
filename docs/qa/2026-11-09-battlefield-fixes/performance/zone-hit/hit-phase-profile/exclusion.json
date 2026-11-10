@@ -1,7 +1,0 @@
-{
-  "adopted": false,
-  "failure": "Python record dictionary overwritten by instrumentation string; TypeError before Godot import/run",
-  "godot_started": false,
-  "product_changed": false,
-  "source": "driver-failed.py.txt"
-}

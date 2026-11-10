@@ -1,6 +1,0 @@
-appId: dev.bindu.usabilityqa.lifecycle
----
-- swipe:
-    start: "80%,45%"
-    end: "80%,29%"
-    duration: 800

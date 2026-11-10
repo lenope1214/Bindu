@@ -1,6 +1,0 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<testsuites>
-  <testsuite name="Test Suite" device="BinduUsabilityQA-Layout-tablet - iOS 26.5 - 22ABD518-5952-4023-8665-97BAC953503D" tests="1" failures="0" time="9.351" timestamp="2026-11-10T04:55:39">
-    <testcase id="native-controls" name="native-controls" classname="native-controls" file="docs/qa/2026-11-09-battlefield-fixes/ios-layout/final-native/tablet/native-controls.yaml" time="9.345" timestamp="2026-11-10T04:55:39" status="SUCCESS"/>
-  </testsuite>
-</testsuites>

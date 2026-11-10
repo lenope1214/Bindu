@@ -1,1 +1,0 @@
-/tmp/bindu-ios-qa-bootstrap/build-venv/bin/scons platform=ios target=template_debug arch=arm64 simulator=yes debug_symbols=no optimize=size vulkan=no metal=no -j8

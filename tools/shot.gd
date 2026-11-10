@@ -156,10 +156,6 @@ func _initialize():
 			# 강화 카드를 넣는 단계: 넣을 수 있는 오브젝트는 빛나는 고리, 못 넣는 것(관통 연사 ✕ 관통)은 흐리게·이유 글
 			main.towers.get_child(0).set_pattern("thorn")
 			main.towers.get_child(3).set_pattern("thorn")
-			main.phase = main.Phase.CHOOSE
-			main.perk_mode = false
-			main.picks_left = maxi(main.picks_left, 1)
-			main.offer = [{"type": "mod", "id": "pierce"}]
 			main.cards_system._on_pick({"type": "mod", "id": "pierce"})
 			VirtualInput.move(main.towers.get_child(0).get_global_transform_with_canvas().origin),
 		# 넣을 수 있는 오브젝트에 올린 설명 상자 (다른 오브젝트를 가리지 않는 자리)

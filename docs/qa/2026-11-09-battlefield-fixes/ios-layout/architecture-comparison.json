@@ -1,8 +1,0 @@
-{
-  "runtime_gate": "full-check-verified.log separately",
-  "one_time_audit_exit": 1,
-  "old_unreviewed": 43,
-  "current_unreviewed": 43,
-  "new_unreviewed": [],
-  "resolved": []
-}

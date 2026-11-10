@@ -1,5 +1,0 @@
-{
-  "reason": "Confirmed 130% phone second metric row extends roughly5.2 viewport units below clip; long primary label also clips horizontally. Stop known failing revision, retain all original cases and tighten text observation; no timeout-based restart or relaxed oracle.",
-  "at": 1794255626.776049,
-  "run": "product-skills"
-}

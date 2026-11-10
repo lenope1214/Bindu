@@ -1,5 +1,0 @@
-Picked up _JAVA_OPTIONS: -Xmx4g -XX:MaxMetaspaceSize=1g
-Picked up _JAVA_OPTIONS: -Xmx4g -XX:MaxMetaspaceSize=1g
-Running on BinduUsabilityQA-Reading-tablet - iOS 26.5 - 43CED725-4722-404F-AF81-D5C28190A761
- > Flow native-scroll
-Swipe from (85%,52%) to (85%,28%) in 800 ms... COMPLETED

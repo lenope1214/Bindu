@@ -1,1 +1,0 @@
-Initial native measurement awaited RenderingServer.frame_post_draw in a minimized window without forcing a draw. Observed process: 65332, elapsed 01:38, CPU 0.4%, no MEASURE rows. Current repository screenshot harness uses force_draw. This is a measurement harness defect, not product performance evidence.

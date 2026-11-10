@@ -1,8 +1,7 @@
 extends SceneTree
 ## 멀티플레이 중개 서버(server/mp-worker)와 같은 약속으로 도는 로컬 시험용 서버.
 ## godot --headless -s tools/mp_signal.gd -- [포트=8790]
-## 게임은 BINDU_MP_URL=http://127.0.0.1:8790 으로 붙는다. TURN은 제공하지 않는다.
-## STUN도 제외하려면 QA 클라이언트의 Mp.ice를 비운다. 제품은 서버의 빈 ICE 배열을 채택하지 않는다.
+## 게임은 BINDU_MP_URL=http://127.0.0.1:8790 으로 붙는다. 중계(TURN)는 없고 STUN도 쓰지 않는다(같은 기기라 필요 없음).
 
 const MAX := 4
 var tcp := TCPServer.new()

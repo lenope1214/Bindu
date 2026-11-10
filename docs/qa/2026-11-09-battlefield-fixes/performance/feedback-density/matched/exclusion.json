@@ -1,5 +1,0 @@
-{
-  "adopted": false,
-  "reason": "Synchronous force_draw did not flush scheduled CanvasItem redraw callbacks. Matched before/after screenshots have identical SHA256. Timing compares repeated unchanged rendering, not popup selection variants.",
-  "replacement": "matched-verified/ uses awaited frame_post_draw, counts actual FieldView popup draw callbacks and requires captures to differ."
-}

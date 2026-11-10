@@ -1,7 +1,0 @@
-{
-  "adopted_as_performance_evidence": false,
-  "reason": "Fatal QA startup: missing main scene. Owned Godot terminated after error was observed.",
-  "owned_process_terminal_verified": true,
-  "isolated_save_removed": true,
-  "temporary_project_cleanup": "TemporaryDirectory context exited after owned Godot terminated."
-}

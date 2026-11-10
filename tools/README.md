@@ -47,7 +47,7 @@ GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh ui shot.gd /tmp/
 | `mp_play.gd` | 두(이상) 프로세스로 봇 판: `MP_ROLE=host\|join MP_MODE=vs\|coop MP_FILE=<코드 파일> MP_WAVES=8 MP_N=<참가 인원>` + BINDU_MP_URL (`MP_IDLE=<역할>`이면 그 역할은 아무것도 안 함: 잠수 처리 시험). 대결은 웨이브마다 진입 방향이 같은지, 협동은 웨이브·점수·오브젝트가 같은지 | 웨이브마다 `MPW`·`MPDEALT`(주인별 피해), 끝에 `MPPLAY` |
 | `mp_shot.gd` | `tools/run.sh ui mp_shot.gd <폴더> [글자 크기] [touch] [vs\|coop]`: 연결 없이 상태만 채워 시작 버튼·방 화면·상태 줄·웨이브·끝 화면 스크린샷 | PNG |
 | `vote_shot.gd` | `tools/run.sh ui vote_shot.gd <폴더> [글자 크기] [touch] [phone]`: 서버 없이 응답을 채워 시작 화면 [투표]·투표 창(표·개선 의견·표 다 씀·지난 회차 결과)·판 끝 화면 버튼·이번 판 탭 스크린샷. 사본의 online_config SERVER_URL은 http://127.0.0.1:9로 | PNG |
-| `card_writing_check.gd` | 온라인·멀티 주소를 비운 `BinduTools` native 사본에서 `tools/run.sh ui card_writing_check.gd <폴더> 1.0`. 130%는 `1.3`, 폰은 `2556x1179`·`1.3 phone`, 태블릿은 `2048x1536`·`1.3 touch`. 전체 64종(현재 일반49·특성15, 데이터에 따라 변경) 요약·상세, 4장 선택지, 가로 넘침·본문 높이·스크롤 마지막 줄 검사 | PNG·본문/해상도 manifest·`CARD WRITING failures=0` |
+| `card_writing_check.gd` | 온라인·멀티 주소를 비운 `BinduTools` native 사본에서 `tools/run.sh ui card_writing_check.gd <폴더> 1.0`. 130%는 `1.3`, 폰은 `2556x1179`·`1.3 phone`, 태블릿은 `2048x1536`·`1.3 touch`. 전체 62종(직선탄 정의·특성 포함) 요약·상세, 4장 선택지, 가로 넘침·본문 높이·스크롤 마지막 줄 검사 | PNG·본문/해상도 manifest·`CARD WRITING failures=0` |
 | `carry_check.gd` | `tools/run.sh ui carry_check.gd <출력 폴더> <글자 배율> [phone]`: 서버 주소를 비운 native 사본에서 가상 카드 클릭·드래그·터치, 무효 대상·취소·앱 전환·확대·중복 소비 방지·카메라 독립·UI 검사 | PNG·ok/FAIL·CARRY failures |
 | `first_play_check.gd` | 저장 분리 사본(`config/name`은 BinduTools로 시작)에서 `tools/run.sh ui first_play_check.gd <캡처 폴더> <글자 배율> [touch]`: 첫 기기 진입·선택형 설명·첫 2회 배치·취소·이어하기·웨이브 시작 확인. 창 필요, 실제 게임 저장에서는 실행 거부 | 항목별 ok/FAIL, 캡처 PNG, `NATIVE FIRST failures=0` |
 | `spec` | [docs/features.md](../docs/features.md)에서 검사가 spec인 기능마다 기대 동작을 확인(tools/spec_check.gd), 끝에 문서와 대조 | 기능별 ok/FAIL, 실패가 있으면 끝 코드 1 |
@@ -136,18 +136,3 @@ python3 tools/macos_update_smoke.py
 두 번째는 저장·접속 키가 분리된 실제 Bindu 앱 `0.0.1`·`0.0.2`를 내보냅니다. 로컬 HTTPS 서버와 시험용 릴리스 키를 사용하고 실제 홈화면 버튼 경로로 다운로드·검증·교체·새 앱 시작·진행 기록 보존·임시 파일 정리까지 검사합니다. `MACOS_SMOKE_OUT`으로 로그 출력 폴더를 지정할 수 있습니다(기본 `/tmp/bindu-macos-update-smoke`). 운영 릴리스·개인 게임 저장은 변경하지 않습니다.
 
 `build_macos.command`와 같은 Xcode·libarchive 빌드 의존성이 필요합니다. 테스트 앱은 ad-hoc 서명이며 Apple Silicon에서의 실행 성공을 Intel 실기 실행·Developer ID 공증·운영 배포 증거로 확대하지 않습니다.
-
-## 전장 사용성 회귀 검사
-
-전장 개선 묶음은 `battlefield_core_check.gd`(카드 읽기·정지·누수 기록), `battlefield_input_check.gd`(선택·편집·키보드), `battlefield_information_check.gd`(수치·비교·적/기술 정보), `battlefield_flow_check.gd`(연속 진행·기술·실제 저장/이어하기), `battlefield_undo_check.gd`(기존 Node·지연 동작·내부 카운터·이력 경계), `battlefield_lifecycle_check.gd`(합성 중단·늦은 release·저장 복원)로 확인한다.
-
-```sh
-GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh ui battlefield_core_check.gd /tmp/bindu-core 1.0
-RESOLUTION=2556x1179 GODOT=/Applications/Godot.app/Contents/MacOS/Godot tools/run.sh ui battlefield_core_check.gd /tmp/bindu-core-phone 1.3 phone
-```
-
-다른 검사도 파일명만 바꿔 같은 두 조건으로 실행한다. `battlefield_load_check.gd`는 별도 native 부하 측정/화면 매트릭스 도구다. 순차 단독 측정하고 [측정 의미와 한계](../docs/qa/2026-11-09-battlefield-fixes/performance/README.md)를 먼저 읽는다. 실통신은 [로컬 WebRTC 검사](../docs/qa/2026-11-09-battlefield-fixes/multiplayer/README.md)의 실행기로 확인한다. 위 검사는 실제 iOS·Android·손가락·인터넷 지연의 증거가 아니다.
-
-## 협동 전달 정합성
-
-`GODOT=<godot> tools/run.sh gift`는 실제 저장·서버 주소와 분리한 headless 사본에서 예약·수락/거절·중복·정산·복원을 검사한다. `check`에도 포함한다. 종료0·`GIFT STATE ... failures=0`·스크립트 오류 없음이 모두 필요하다. 실제3프로세스 WebRTC 경합·지연·재접속은 별도 `python3 docs/qa/2026-11-09-battlefield-fixes/multiplayer/gift/run_native.py`로 확인한다. 도구 준비만으로 성공을 표시하지 않는다.

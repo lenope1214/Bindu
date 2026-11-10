@@ -6,9 +6,6 @@ static var sending := false
 var host: Window
 
 static func mount(main: Node, window: Window) -> void:
-	# 최소화된 검사 창의 실제 포커스 알림은 가상 사용자 행동이 아니다.
-	# 포커스 정책 검사는 해당 사례에서 명시적으로 다시 켜고 알림을 주입한다.
-	Meta.pause_on_focus_loss = false
 	window.unfocusable = true
 	window.mode = Window.MODE_MINIMIZED
 	window.set_deferred("mode", Window.MODE_MINIMIZED)
@@ -51,11 +48,6 @@ static func send(event: InputEvent) -> void:
 	Input.parse_input_event(event)
 	Input.flush_buffered_events()
 	sending = false
-
-## Buffer-only injection for worker probes. No Node access or shared sending flag.
-## The caller owns accumulation/relay setup and flushes on the main thread.
-static func enqueue(event: InputEvent) -> void:
-	Input.parse_input_event(event)
 
 static func move(at: Vector2, mask := 0) -> void:
 	var event := InputEventMouseMotion.new()

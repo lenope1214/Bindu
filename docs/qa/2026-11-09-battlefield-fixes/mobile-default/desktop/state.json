@@ -1,1 +1,0 @@
-{"mobile":false,"os":"macOS","rows":[{"case":"initial","value":1.0},{"case":"missing","value":1.0},{"case":"saved","expected":0.7,"value":0.7},{"case":"saved","expected":0.85,"value":0.85},{"case":"saved","expected":1.0,"value":1.0},{"case":"saved","expected":1.15,"value":1.15},{"case":"saved","expected":1.3,"value":1.3},{"case":"invalid","value":1.0}]}

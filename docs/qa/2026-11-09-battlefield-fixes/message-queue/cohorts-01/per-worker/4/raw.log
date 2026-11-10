@@ -1,9 +1,0 @@
-Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-
-FUZZR rules=1 map=spiral tutor=true ui=1.3 modes=glass,angry
-FUZZ f=1000 phase=6 wave=0 towers=1 sel=0
-FUZZ f=2000 phase=6 wave=0 towers=1 sel=1
-FUZZ f=3000 phase=0 wave=1 towers=1 sel=1
-FUZZ DONE frames=3000
-WARNING: 2 ObjectDB instances were leaked at exit (run with `--verbose` for details).
-   at: cleanup (core/object/object.cpp:2536)

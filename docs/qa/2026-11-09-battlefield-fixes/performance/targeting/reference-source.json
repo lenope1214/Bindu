@@ -1,6 +1,0 @@
-{
-  "baseline": "e25b6eab5b4e64cca7ee5e0089d50e149588e9b9",
-  "original_function_sha256": "38dcec2b9e4e310a415003d27722e42d39875b2779da70da5effab2d0849f8aa",
-  "reference_normalized_matches_original": true,
-  "normalization": "method name and explicit Tower receiver t. only"
-}

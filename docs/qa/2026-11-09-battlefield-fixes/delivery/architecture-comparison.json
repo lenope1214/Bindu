@@ -1,7 +1,0 @@
-{
-  "main": "8704b78688ee9be638e0ddd24eb91d54f3f56194",
-  "rebased_head": "ed3bdc9d6b5be61a592d43885122f571e0529b55",
-  "baseline_failure_count": 52,
-  "rebased_failure_count": 43,
-  "new_failure_methods": []
-}

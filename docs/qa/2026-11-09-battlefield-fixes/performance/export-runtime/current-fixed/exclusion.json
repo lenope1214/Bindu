@@ -1,7 +1,0 @@
-{
-  "adopted_as_performance_evidence": false,
-  "reason": "Aborted because failed prior QA process was still alive during initial measurement. No samples adopted.",
-  "owned_process_terminal_verified": true,
-  "isolated_save_removed": true,
-  "temporary_project_cleanup": "TemporaryDirectory context exited after owned Godot terminated."
-}

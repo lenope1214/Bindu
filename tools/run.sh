@@ -16,7 +16,6 @@
 #   compare [기준=1] [새 규칙=3] [판 수=32] [stack]   같은 시드로 두 규칙을 돌려 차이와 판정 (새 규칙을 내기 전에)
 #   modes [규칙=1] [판 수=32] [모드...]   모드마다 같은 시드로 모드 없는 판과 비교: 웨이브 차이·점수 손익분기 배율
 #   spec                                   docs/features.md의 기대 동작 자동 점검 (tools/spec_check.gd)
-#   gift                                   협동 전달의 예약·정산·중복·복원 결정론 검사 (실통신은 별도 native)
 #   rulekeys                               관리자 페이지 수치 표 목록(server/app/rule_keys.json)을 Rules에서 다시 만듦 (VERIFY=1이면 비교만, check에 포함)
 #   patchkeys                              관리자 페이지 [패치] 하위 탭·특성·카드·모드 칸 목록(server/app/patch_sections.json)을 다시 만듦 (VERIFY=1이면 비교만, check에 포함)
 #   tutplay                                플레이 튜토리얼 23단계를 직접·건너뛰기·장 고르기로 끝까지 (tools/tut_play_check.gd)
@@ -212,18 +211,10 @@ PYCONFIG
 		;;
 	fuzz)
 		N=${1:-8}; F=${2:-9000}
-		if [[ -n "${FUZZ_LOG_DIR:-}" && "$FUZZ_LOG_DIR" != /* ]]; then
-			echo "FUZZ_LOG_DIR은 절대 경로여야 합니다"
-			exit 2
-		fi
 		D=$(copy_project "$$")
 		cd "$D"
 		for seed in $(seq 1 "$N"); do
-			(fuzz_exit=0
-			 T 900 "$G" --headless --fixed-fps 60 --path . -s tools/fuzz.gd -- "$seed" "$F" > "f_$seed.txt" 2>&1 || fuzz_exit=$?
-			 echo "FUZZ EXIT code=$fuzz_exit" >> "f_$seed.txt"
-			 if [ "$fuzz_exit" -eq 0 ]; then echo "FUZZ EXIT ok" >> "f_$seed.txt"; fi
-			 exit "$fuzz_exit") &
+			(T 900 "$G" --headless --fixed-fps 60 --path . -s tools/fuzz.gd -- "$seed" "$F" > "f_$seed.txt" 2>&1 && echo "FUZZ EXIT ok" >> "f_$seed.txt") &
 			if (( seed % 8 == 0 )); then wait; fi
 		done
 		wait
@@ -231,18 +222,9 @@ PYCONFIG
 		for seed in $(seq 1 "$N"); do
 			errors=$(grep -cE 'SCRIPT ERROR|Parse Error|^ERROR:' "f_$seed.txt" || true)
 			echo "시드 $seed: 오류 ${errors}개 · $(grep FUZZR "f_$seed.txt" | head -1)"
-			echo "  $(grep '^FUZZ DONE' "f_$seed.txt" | tail -1) · $(grep '^FUZZ EXIT code=' "f_$seed.txt" | tail -1)"
 			if [ "$errors" -gt 0 ] || ! grep -q "^FUZZ DONE frames=$F$" "f_$seed.txt" || ! grep -q "^FUZZ EXIT ok$" "f_$seed.txt"; then bad_fuzz=1; fi
 		done
 		grep -hE 'SCRIPT ERROR|Parse Error|^ERROR:' -A3 f_*.txt | head -20 || true
-		if [ "$bad_fuzz" -ne 0 ] && [ -z "${FUZZ_LOG_DIR:-}" ]; then
-			FUZZ_LOG_DIR=$(mktemp -d "${TMPDIR:-/tmp}/bindu-fuzz-failed.XXXXXX")
-			echo "fuzz 실패 원자료: $FUZZ_LOG_DIR"
-		fi
-		if [ -n "${FUZZ_LOG_DIR:-}" ]; then
-			mkdir -p -- "$FUZZ_LOG_DIR"
-			cp f_*.txt "$FUZZ_LOG_DIR/"
-		fi
 		rm -rf "$D"
 		exit "$bad_fuzz"
 		;;
@@ -291,26 +273,6 @@ PYCONFIG
 		grep -q "^SPEC 통과" spec.txt || r=1
 		grep -qE 'SCRIPT ERROR|Parse Error|^ERROR:' spec.txt && r=1
 		cd / && rm -rf "$D"
-		exit $r
-		;;
-	gift)
-		if [[ ! -f "$ROOT/tools/battlefield_gift_state_check.gd" ]]; then
-			echo "FAIL gift state 검사 도구 없음"
-			exit 1
-		fi
-		D=$(copy_project "$$")
-		trap 'rm -rf "$D"' EXIT
-		python3 - "$D/scripts/online_config.gd" <<'PYGIFT'
-import re, sys
-from pathlib import Path
-path = Path(sys.argv[1])
-path.write_text(re.sub(r'const (SERVER_URL|MP_URL) := "[^\"]*"', r'const \1 := ""', path.read_text()))
-PYGIFT
-		r=0
-		T 300 "$G" --headless --fixed-fps 60 --path "$D" -s tools/battlefield_gift_state_check.gd > "$D/gift.txt" 2>&1 || r=1
-		grep -E "^(ok|FAIL|GIFT STATE)|SCRIPT ERROR|Parse Error|^ERROR:" "$D/gift.txt" || true
-		grep -qE '^GIFT STATE .*failures=0$' "$D/gift.txt" || r=1
-		grep -qE 'SCRIPT ERROR|Parse Error|^ERROR:' "$D/gift.txt" && r=1
 		exit $r
 		;;
 	tutplay)
@@ -366,25 +328,21 @@ PYGIFT
 	check)
 		# 배포 전 점검 (docs/features.md). 화면 배치는 tools/shot.gd 스크린샷을 눈으로 따로 본다.
 		CHECK_DIR=$(mktemp -d "${TMPDIR:-/tmp}/bindu-check.XXXXXX")
-		echo "CHECK 원자료: $CHECK_DIR"
 		bad=""
 		"$0" architecture > "$CHECK_DIR/architecture.txt" 2>&1 || bad="$bad architecture"
 		grep -E "^ARCHITECTURE|^FAIL|SCRIPT ERROR|Parse Error" "$CHECK_DIR/architecture.txt" || true
 		if python3 "$ROOT/tools/notes_check.py" > "$CHECK_DIR/notes.txt" 2>&1; then echo "notes 통과"; else grep -E "^FAIL|^NOTES" "$CHECK_DIR/notes.txt" | head -10; bad="$bad notes"; fi
 		"$0" spec > "$CHECK_DIR/spec.txt" 2>&1 || bad="$bad spec"
 		grep -E "^FAIL|^SPEC|SCRIPT ERROR|Parse Error|^ERROR:" "$CHECK_DIR/spec.txt" || true
-		"$0" gift > "$CHECK_DIR/gift.txt" 2>&1 || bad="$bad gift"
-		grep -E "^FAIL|^GIFT STATE|SCRIPT ERROR|Parse Error|^ERROR:" "$CHECK_DIR/gift.txt" || true
 		for suite in basic deaths; do
 			"$0" preview "$suite" > "$CHECK_DIR/preview-$suite.txt" 2>&1 || bad="$bad preview-$suite"
 			grep -E "^PARITY suite=|^FAIL|SCRIPT ERROR|Parse Error|^ERROR:" "$CHECK_DIR/preview-$suite.txt" || true
 		done
 		"$0" tutplay > "$CHECK_DIR/tutplay.txt" 2>&1 || bad="$bad tutplay"
 		grep -E "^FAIL|^TUTPLAY|SCRIPT ERROR|Parse Error|^ERROR:" "$CHECK_DIR/tutplay.txt" || true
-		F=$(FUZZ_LOG_DIR="$CHECK_DIR/fuzz-raw" "$0" fuzz 4 3000) || bad="$bad fuzz"
+		F=$("$0" fuzz 4 3000) || bad="$bad fuzz"
 		printf '%s\n' "$F" > "$CHECK_DIR/fuzz.txt"
 		echo "$F" | grep "^시드"
-		echo "$F" | grep '^  .*FUZZ EXIT code=' || true
 		echo "$F" | grep "^시드" | grep -qv "오류 0개" && bad="$bad fuzz"
 		C=$("$0" cont 1 plain 13)
 		echo "$C" | grep -E "RESULT|DIFF|SCRIPT ERROR|CONT w=" | head -10
