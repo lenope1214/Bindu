@@ -86,14 +86,14 @@ func _ensemble() -> void:
 	var s0 := a.spd_k()
 	a.add_link("ensemble")
 	main.sim_id += 1
-	ok("LINK-ENS-01", is_equal_approx(a.spd_k(), s0 * 1.12), "같은 속성 오브젝트 2개 → +12%")
+	ok("ENS-01", is_equal_approx(a.spd_k(), s0 * 1.12), "같은 속성 오브젝트 2개 → +12%")
 	a.add_link("ensemble")
 	main.sim_id += 1
-	ok("LINK-ENS-01", is_equal_approx(a.spd_k(), s0 * 1.24) and a.spd_parts().any(func(p): return p[0] == "합주"), "2장 → +24%, 공격 속도 줄에 합주")
+	ok("ENS-01", is_equal_approx(a.spd_k(), s0 * 1.24) and a.spd_parts().any(func(p): return p[0] == "합주"), "2장 → +24%, 공격 속도 줄에 합주")
 	var d := a.to_save()
 	var b := _tower(c + Vector2(300, 250), Elem.ICE, 1)
 	b.load_save(d)
-	ok("LINK-ENS-01", b.ensemble == 2, "이어하기 저장")
+	ok("ENS-01", b.ensemble == 2, "이어하기 저장")
 	_clear()
 
 
