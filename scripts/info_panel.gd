@@ -110,6 +110,8 @@ func summary_lines(tw: Tower) -> PackedStringArray:
 
 func targeting_summary(tw: Tower) -> String:
 	if tw.auto_aim():
+		if tw.prio != "front":
+			return "표적: %s 구체 먼저 (G로 바꾸기)" % Tower.PRIO_NAME.get(tw.prio, "")
 		return "위험 우선 · 비슷하면 정한 방향 선호"
 	if tw.pattern == "wisp":
 		return "혼불: 범위 안 구체 추적"

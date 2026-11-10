@@ -71,6 +71,7 @@ var undo_btn: Button
 var select_btn: Button
 var select_all_btn: Button
 var group_direction_btn: Button
+var prio_btn: Button  # 표적 우선순위 (시험): 선택한 오브젝트들을 다음 우선순위로
 var save_btn: Button
 var review_btn: Button
 
@@ -247,14 +248,30 @@ func _init(main) -> void:
 	direction_btn.reparent(edit_tools)
 	direction_btn.focus_mode = Control.FOCUS_ALL
 	group_direction_btn = direction_btn
+	prio_btn = _action_button("표적: 앞선", edit_tools, func(): cycle_selected_prio(1))
+	prio_btn.tooltip_text = "표적 우선순위: 앞선·가까운·먼·강한·약한·무리 (G, Shift+G 거꾸로)"
 	# 편집 버튼의 실행 뒤에는 방향키·Enter를 전장 편집으로 돌려준다.
 	# 정보 읽기 버튼은 키보드로 연속 탐색할 수 있게 포커스를 유지한다.
-	for field_action: Button in [undo_btn, select_btn, select_all_btn, group_direction_btn]:
+	for field_action: Button in [undo_btn, select_btn, select_all_btn, group_direction_btn, prio_btn]:
 		field_action.pressed.connect(field_action.release_focus)
 	review_btn = _action_button("지난 웨이브", edit_tools, read_wave_review)
 	save_btn = _action_button("저장 상태", game.ui_root, func():
 		game.hud_system._show_toast(game.persistence_system.save_status_text() + " · " + ("멀티 판은 이어하기가 없어요" if game.mp_mode != "" else "전투 중 나가면 앞 쉬는 시간부터 이어집니다")))
 	save_btn.z_index = 10
+
+## 표적 우선순위 (시험): 선택한 내 오브젝트를 첫 오브젝트 기준 다음 우선순위로 모두 맞춘다.
+func cycle_selected_prio(step := 1) -> void:
+	var sel: Array = game.interaction_system.selected.filter(func(t): return is_instance_valid(t) and game.multiplayer_system._mine(t))
+	if sel.is_empty():
+		return
+	var first: Tower = sel[0]
+	first.cycle_prio(step)
+	for t: Tower in sel:
+		t.prio = first.prio
+		t.prio_cd = 0.0
+		t.queue_redraw()
+	game.hud_system._show_toast("표적 우선순위: " + Tower.PRIO_NAME[first.prio])
+
 
 func _action_button(label: String, parent: Node, action: Callable) -> Button:
 	var b := Button.new()
@@ -763,6 +780,11 @@ func tick() -> void:
 	group_direction_btn.disabled = gift_waiting or not game.interaction_system.selected.any(func(t): return game.multiplayer_system._mine(t))
 	select_all_btn.visible = game.towers.get_child_count() > 1
 	group_direction_btn.visible = edit_tools.visible and not game.interaction_system.selected.is_empty()
+	prio_btn.visible = edit_tools.visible and not game.interaction_system.selected.is_empty()
+	prio_btn.disabled = group_direction_btn.disabled
+	if prio_btn.visible:
+		var first: Tower = game.interaction_system.selected[0] if is_instance_valid(game.interaction_system.selected[0]) else null
+		prio_btn.text = "표적: " + (Tower.PRIO_NAME.get(first.prio, "앞선") if first else "앞선")
 	review_btn.visible = not game.leak_log.is_empty()
 	if edit_tools.visible and game.hint.visible and edit_tools.get_rect().intersects(game.hint.get_rect()):
 		game.hint.position.y = edit_tools.position.y - game.hint.size.y - 8

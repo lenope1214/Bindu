@@ -160,6 +160,9 @@ func _keyboard_input(event: InputEventKey) -> bool:
 	if event.keycode == KEY_E and _can_edit_selection() and not selected.is_empty():
 		_edit_selected_direction()
 		return true
+	if event.keycode == KEY_G and not selected.is_empty():  # 표적 우선순위 (시험)
+		session.card_dock.cycle_selected_prio(-1 if event.shift_pressed else 1)
+		return true
 	if event.keycode in [KEY_BRACKETLEFT, KEY_BRACKETRIGHT] and _can_edit_selection():
 		rotate_selected(deg_to_rad((-1.0 if event.keycode == KEY_BRACKETLEFT else 1.0) * (5.0 if event.shift_pressed else 15.0)))
 		return true

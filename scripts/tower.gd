@@ -50,6 +50,11 @@ var wind_buff := 0.0  # 둘레 바람 오브젝트가 주는 공격 속도 (main
 var eff := {}  # 지금 쓰는 속성 (매 프레임 갱신)
 var dir := Vector2.RIGHT
 var reflex_target: Orb = null
+var prio := "front"  # 표적 우선순위 (시험, test/target-priority): PRIOS 중 하나
+var prio_cd := 0.0  # 무리 우선순위: 다시 고를 때까지 (무리 세기는 무거워 0.2초마다)
+## 표적 우선순위 6종: 앞선(지키는 곳에 가까운, 기본)·가까운·먼·강한(현재 체력 최대)·약한(최소)·무리(가장 많이 모인 곳)
+const PRIOS := ["front", "near", "far", "strong", "weak", "crowd"]
+const PRIO_NAME := {"front": "앞선", "near": "가까운", "far": "먼", "strong": "강한", "weak": "약한", "crowd": "무리"}
 var aim := Vector2.RIGHT  # 유도 강화로 살짝 돈 실제 공격 방향
 var cd := {}  # 공격별 쿨다운
 var fx := {}  # 공격별 이펙트 남은 시간
@@ -1181,7 +1186,7 @@ func spec() -> Dictionary:
 ## 이어하기 저장용.
 func to_save() -> Dictionary:
 	return {"elements": elements, "order": Array(order), "pattern": pattern, "plv": plv, "mods": mods,
-		"reso": reso, "pincer": pincer, "trigs": trigs, "charge": charge, "third_n": third_n, "star_sum": star_sum, "star_e": star_e, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt,
+		"reso": reso, "pincer": pincer, "trigs": trigs, "charge": charge, "third_n": third_n, "star_sum": star_sum, "star_e": star_e, "pos": position, "dir": dir, "prio": prio, "dealt": dealt, "run_dealt": run_dealt,
 		"src": src, "run_src": run_src, "hist": hist}
 
 
@@ -1258,6 +1263,8 @@ func load_save(d: Dictionary) -> void:
 	var pos: Variant = d.get("pos")
 	if pos is Vector2:
 		position = pos
+	var pv: Variant = d.get("prio", "front")
+	prio = pv if pv is String and pv in PRIOS else "front"
 	var dv: Variant = d.get("dir")
 	if dv is Vector2 and dv.length() > 0.01:
 		set_attack_direction(dv)
@@ -1478,6 +1485,7 @@ func attack(delta: float, orbs: Array) -> void:
 		fx[k] = maxf(fx[k] - delta, 0.0)
 	recoil = maxf(recoil - delta * 6.0, 0.0)
 	echo_cd = maxf(echo_cd - delta, 0.0)
+	prio_cd = maxf(prio_cd - delta, 0.0)
 	focus_t = maxf(focus_t - delta, 0.0)
 	jam_imm = maxf(jam_imm - delta, 0.0)
 	if leech_t > 0.0:
@@ -1819,6 +1827,8 @@ func goal_dist(o: Orb) -> float:
 func _guard_pick(orbs: Array) -> Orb:
 	if orbs.is_empty():
 		return null
+	if prio != "front" and prio in PRIOS:
+		return _prio_pick(orbs)
 	if orbs.size() == 1:
 		var only = orbs[0]
 		if not is_instance_valid(only) or only.hp <= 0.0:
@@ -1866,6 +1876,55 @@ func _guard_pick(orbs: Array) -> Orb:
 	if preferred != null and not (preferred_g > limit):
 		return preferred
 	return closest if closest != null and not (closest_g > limit) else null
+
+
+## 표적 우선순위(앞선 말고): 사거리 안 구체 중 정한 기준으로 고른다. 무리는 구체 둘레 90 안 수가 가장 많은 것.
+func _prio_pick(orbs: Array) -> Orb:
+	if prio == "crowd" and is_instance_valid(reflex_target) and reflex_target.hp > 0.0 and prio_cd > 0.0:
+		return reflex_target
+	var best: Orb = null
+	var best_v := -INF
+	var cands: Array = []
+	for orb in orbs:
+		if not is_instance_valid(orb) or orb.hp <= 0.0:
+			continue
+		var v: Vector2 = orb.position - position
+		if v.length() > reflex_range(v):
+			continue
+		cands.append(orb)
+	if cands.is_empty():
+		return null
+	if prio == "crowd":
+		prio_cd = 0.2
+		if cands.size() > 32:  # 무거우니 지키는 곳에 가까운 32개만 후보
+			cands.sort_custom(func(a, b): return goal_dist(a) < goal_dist(b))
+			cands.resize(32)
+	for orb in cands:
+		var d: float = orb.position.distance_to(position)
+		var val := 0.0
+		match prio:
+			"near": val = -d
+			"far": val = d
+			"strong": val = orb.hp - 0.001 * goal_dist(orb)
+			"weak": val = -orb.hp - 0.001 * goal_dist(orb)
+			"crowd":
+				var n := 0
+				for o2 in cands:
+					if o2.position.distance_squared_to(orb.position) < 8100.0:
+						n += 1
+				val = n - 0.0001 * goal_dist(orb)
+		if best == null or val > best_v:
+			best = orb
+			best_v = val
+	return best
+
+
+## 다음 우선순위로 (정보창 [표적] 버튼).
+func cycle_prio(step := 1) -> void:
+	var i := PRIOS.find(prio)
+	prio = PRIOS[posmod(i + step, PRIOS.size())]
+	prio_cd = 0.0
+	queue_redraw()
 
 
 ## 날아가는 탄의 속도 (예측 조준용). 바로 닿는 공격(분사·레이저·번개 등)은 0.
@@ -2626,6 +2685,14 @@ func _draw() -> void:
 		_draw_attack()
 	_draw_body()
 	_draw_rank()
+	if prio != "front" and main:
+		# 표적 우선순위 꼬리표 (기본 '앞선'이 아닐 때만)
+		var fnt: Font = main.ui_font if main.ui_font else ThemeDB.fallback_font
+		var nm: String = PRIO_NAME.get(prio, "")
+		var w := fnt.get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x + 8.0
+		var r := Rect2(Vector2(-w * 0.5, RADIUS + 5.0), Vector2(w, 15.0))
+		draw_rect(r, Color(0.05, 0.07, 0.12, 0.85))
+		draw_string(fnt, r.position + Vector2(4, 11.5), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color("ffd479"))
 	if owner_id > 0:
 		_draw_owner_mark()
 	if req_e >= 0 and Elem.COLORS.has(req_e):

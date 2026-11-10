@@ -75,6 +75,47 @@ func _orb(p: Vector2, hp: float, kind := Orb.Kind.NORMAL, spd := 0.0) -> Orb:
 	return o
 
 
+func _target_prio() -> void:
+	_fresh(5)
+	var c: Vector2 = main.viewport_system.center()
+	var t := _tower(c + Vector2(-200, 0), Elem.FIRE, 1)
+	var front := _orb(c + Vector2(-60, 40), 30.0)  # 지키는 곳에 가장 가까움
+	var near := _orb(c + Vector2(-230, 20), 50.0)  # 오브젝트에 가장 가까움
+	var strong := _orb(c + Vector2(-80, -150), 400.0)
+	var weak := _orb(c + Vector2(-330, -60), 5.0)
+	var res := {}
+	for p in Tower.PRIOS:
+		t.prio = p
+		t.prio_cd = 0.0
+		res[p] = t._guard_pick(main.orbs.get_children())
+	var far_ok := true
+	for o in [front, near, strong, weak]:
+		if o.position.distance_to(t.position) > res["far"].position.distance_to(t.position):
+			far_ok = false
+	ok("PRIO-01", res["front"] == front and res["near"] == near and res["strong"] == strong and res["weak"] == weak and far_ok, "앞선·가까운·먼·강한·약한 표적을 고름")
+	# 무리: 뭉친 셋 중 하나
+	_clear()
+	t = _tower(c + Vector2(-200, 0), Elem.FIRE, 1)
+	_orb(c + Vector2(-60, 0), 10.0)
+	var pack := [_orb(c + Vector2(-200, 160), 10.0), _orb(c + Vector2(-220, 170), 10.0), _orb(c + Vector2(-190, 180), 10.0)]
+	t.prio = "crowd"
+	ok("PRIO-01", pack.has(t._guard_pick(main.orbs.get_children())), "무리: 가장 많이 모인 구체를 고름")
+	var d := t.to_save()
+	t.prio = "front"
+	t.load_save(d)
+	var bad := t.to_save()
+	bad["prio"] = "nonsense"
+	var t2 := _tower(c + Vector2(200, 200), Elem.FIRE, 1)
+	t2.load_save(bad)
+	ok("PRIO-01", t.prio == "crowd" and t2.prio == "front", "이어하기 저장·알 수 없는 값은 앞선")
+	main.interaction_system.selected = [t, t2]
+	t.prio = "front"
+	main.card_dock.cycle_selected_prio(1)
+	ok("PRIO-01", t.prio == "near" and t2.prio == "near", "선택한 오브젝트들을 함께 바꿈")
+	main.interaction_system.selected = []
+	_clear()
+
+
 func _initialize():
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools"):
 		print("FAIL 실제 게임 저장 폴더를 쓰게 됨: tools/run.sh spec 으로 돌리세요")
@@ -92,6 +133,7 @@ func _initialize():
 	await _multi_center()
 	_reflex()
 	_reflex_review_regressions()
+	_target_prio()
 	_mods_links()
 	await _mods_area()
 	_waves()
