@@ -165,7 +165,9 @@ static func _panel(session, title: String) -> VBoxContainer:
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(head)
 	session.ui_root.add_child(root)
-	root.resized.connect(func(): root.position = (session.ui_root.size - root.size) * 0.5)
+	var center := func(): root.position = ((session.ui_root.size - root.size) * 0.5).max(Vector2.ZERO)
+	root.resized.connect(center)
+	center.call_deferred()
 	return box
 
 
