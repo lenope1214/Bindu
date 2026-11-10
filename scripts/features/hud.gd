@@ -662,6 +662,9 @@ func _update_hud(force := false) -> void:
 		items.append(["boss", Color(1, 0.6, 0.75), "보스!" if bl == 0 else "보스까지 %d" % bl, Color(1, 0.75, 0.85), [[bt, W]], false])
 	if not session.interaction_system.selected.is_empty():
 		items.append(["sel", Color(0.6, 1, 0.7), str(session.interaction_system.selected.size()), W, [["선택한 오브젝트", W]], false])
+	for oid in Oath.taken:
+		var od: Dictionary = Oath.DEFS[oid]
+		items.append(["tag", Color(0.85, 0.55, 1.0), "서약 " + od["name"], Color(0.9, 0.75, 1.0), [["서약 " + od["name"] + " (판 끝까지)", W], ["+ " + od["gain"], D], ["- " + od["cost"], D]], false])
 	var first := true
 	for pk in BinduSession.PERKS:
 		var n: int = session.perks.get(pk["id"], 0)

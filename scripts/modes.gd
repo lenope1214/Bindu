@@ -65,7 +65,7 @@ static func mul() -> float:
 	var m := 1.0
 	for id in on:
 		m *= score_of(id)
-	return clampf(m, MUL_MIN, MUL_MAX)
+	return clampf(m, MUL_MIN, MUL_MAX) * Oath.score_k()
 
 
 ## "+30%" / "-25%"

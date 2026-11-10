@@ -110,6 +110,7 @@ func _start_choose(new_round := true) -> void:
 		session.legacy_grow = false
 		session.abilities_system._skills_new_run(Meta.skill_set)
 		session.abilities_system._ley_new_run()
+		Oath.new_run()
 	if new_round and session.tutor and session.wave + 1 >= BinduSession.TUTOR_OPEN.values().max() and Meta.tutor_next:
 		Meta.tutor_next = false  # 모두 열렸다: 다음 판부터는 처음부터 모두
 		session.progression_system._save_best()
@@ -122,6 +123,8 @@ func _start_choose(new_round := true) -> void:
 	session.persistence_system._save_run()
 	if new_round:
 		session.onboarding_system._rest_guides()
+	if Oath.should_offer(session):
+		Oath.open(session)  # 보스 서약 (시험)
 
 
 ## 새 쉬는 시간: 다음 웨이브(방향·저항·보스)를 뽑고 고르기·새로고침 수를 정한다.
@@ -147,6 +150,7 @@ func _new_rest() -> void:
 	if TutPlay.on and session.tplay != null and session.tplay.rest_picks(session.wave) >= 0:
 		session.picks_left = session.tplay.rest_picks(session.wave)  # 플레이 튜토리얼: 그 쉬는 시간의 카드 단계 수
 	session.rerolls_left = Modes.rerolls(1 + session.bonus_rerolls + session.perks.get("reroll", 0) * int(session.perks_system._perk_val("reroll")))
+	session.rerolls_left += Oath.rerolls()  # 질주 서약
 	session.bonus_rerolls = 0
 
 
@@ -361,6 +365,10 @@ func _start_wave() -> void:
 		return
 	if TutPlay.on and session.tplay != null and not session.tplay.can_start():
 		session.countdown = -1.0
+		return
+	if Oath.is_open(session):
+		session.countdown = -1.0
+		session.hud_system._show_toast("서약 창에서 먼저 고르세요")
 		return
 	if session.mp_mode == "coop" and not session.mp_wave_go:
 		session.countdown = -1.0

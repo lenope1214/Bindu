@@ -107,8 +107,8 @@ static func k(tw: Object, e: int) -> float:
 		return 0.0
 	var v: float = LV_K[mini(l, 3)] * Rules.share_mul * Rules.share_k.get(e, 1.0)
 	if aff(tw)["strong_e"].has(e):
-		v *= AFF_CARRY
-	return v
+		v *= Oath.aff_carry()
+	return v * Oath.share_k(e)
 
 
 ## 오브젝트의 상성: {"ids": {규칙 id: true}, "strong_e": {강상성에 든 속성: true}, "pairs": [[a, b, Elem.aff_of]]}

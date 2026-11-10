@@ -96,7 +96,7 @@ static func kinds(tw: Object) -> int:
 
 ## 보조 공격 간격(초)
 static func iv(tw: Object) -> float:
-	return Rules.t("side_iv") / kinds(tw)
+	return Rules.t("side_iv") * Oath.side_iv_k() / kinds(tw)
 
 
 ## 큰 보조 공격·섞인 보조 공격 모양을 정하는 속성 (나르는 특징 중 레벨이 가장 높은 것, 같으면 먼저 넣은 것, 없으면 -1)
@@ -183,10 +183,10 @@ static func tick(tw: Object, delta: float) -> void:
 	if tw.side_cd > 0.0:
 		return
 	var main: Node = tw.main
-	var big: bool = tw.side_n + 1 >= int(Rules.t("side_big_n")) and Rules.t("side_big_n") > 0.0
+	var big: bool = tw.side_n + 1 >= Oath.side_big_n(int(Rules.t("side_big_n"))) and Rules.t("side_big_n") > 0.0
 	if big and main.side_big_t > 0.0:
 		big = false  # 화면에 큰 보조 공격이 이미 있으면 이번엔 보통 보조 공격 (차례는 남겨 둠)
-		tw.side_n = int(Rules.t("side_big_n")) - 2
+		tw.side_n = Oath.side_big_n(int(Rules.t("side_big_n"))) - 2
 	var o: Orb = nearest(tw, Rules.t("side_r"))
 	if o == null:
 		tw.side_cd = 0.2  # 둘레에 구체가 없으면 잠깐 뒤 다시 본다

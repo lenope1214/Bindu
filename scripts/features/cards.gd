@@ -58,7 +58,7 @@ func _make_choices() -> void:
 	clear_edit_history()
 	session.offer.clear()
 	var guard := 0
-	while session.offer.size() < 3 and guard < 50:
+	while session.offer.size() < Oath.offer_n() and guard < 50:
 		guard += 1
 		var card := _roll_card()
 		if card.is_empty():
@@ -85,6 +85,9 @@ func _make_choices() -> void:
 				session.offer.append(fallback)
 			else:
 				session.offer[randi() % session.offer.size()] = fallback
+	for cd in session.offer:
+		if cd["type"] == "elem":
+			cd["lv"] = Oath.elem_lv(int(cd.get("lv", 1)))  # 깊이 서약
 	if session.tutor:
 		_tutor_offer()
 	if TutPlay.on and session.tplay != null:
@@ -229,7 +232,7 @@ func _card_enabled(card: Dictionary) -> bool:
 		if e < 0 or e >= Patch.ELEM_KEYS.size():
 			return false
 		id = Patch.ELEM_KEYS[e]
-	return Patch.num("card_enabled", "%s.%s" % [kind, id], 1.0) >= 0.5
+	return Patch.num("card_enabled", "%s.%s" % [kind, id], 1.0) >= 0.5 and Oath.card_ok(session, card)
 
 
 ## 선택지 한 장: 속성 / 공격방식 / 강화 / 연계 중 하나.

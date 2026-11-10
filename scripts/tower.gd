@@ -186,7 +186,7 @@ static var SHADE_T := 3.0  # 어둠 형태 성질 그림자 표식 시간 (2026-
 
 ## 공격 속도 배율: 특성 × 속사 × 바람 버프 ÷ 속성을 겹친 대가 (모두 곱한다). 특수 반응 공격도 이 배율.
 func spd_k() -> float:
-	return spd_mul * (1.0 + Rules.rapid_k * mf("rapid")) * (1.0 + wind_buff) * skill_k() / tax()
+	return spd_mul * (1.0 + Rules.rapid_k * mf("rapid")) * (1.0 + wind_buff) * skill_k() / tax() * Oath.spd_k(self)
 
 
 ## 중앙 기술 집중·흡수 구체가 바꾼 공격 속도 배율.

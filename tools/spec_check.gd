@@ -75,6 +75,57 @@ func _orb(p: Vector2, hp: float, kind := Orb.Kind.NORMAL, spd := 0.0) -> Orb:
 	return o
 
 
+func _oath() -> void:
+	_fresh(9)
+	Oath.new_run()
+	var c: Vector2 = main.viewport_system.center()
+	var ts: Array = []
+	for i in 4:
+		ts.append(_tower(c + Vector2.from_angle(i * TAU / 4.0) * 180.0, [Elem.FIRE, Elem.WATER, Elem.ICE, Elem.WIND][i], 2))
+	ts[0].set_pattern("laser")
+	ts[1].set_pattern("spray")
+	main.wave = 9
+	ok("OATH-01", not Oath.should_offer(main), "10웨이브가 아니면 없음")
+	main.wave = 10
+	var ids := Oath.choices(ts)
+	ok("OATH-01", Oath.should_offer(main) and ids.size() >= 2 and ids.size() <= 3 and Oath.available("rigid", ts) and Oath.available("bare", ts), "10웨이브에 뜻 있는 서약 2~3장 %s" % [ids])
+	Oath.open(main)
+	ok("OATH-01", Oath.is_open(main) and not Oath.should_offer(main), "창 + 같은 웨이브 다시 안 띄움")
+	main.countdown = 1.0
+	main.run_flow_system._start_wave()
+	ok("OATH-01", main.wave == 10 and not main.wave_active, "창이 열린 동안 웨이브 시작 막음")
+	Oath.close(main)
+	var p0: int = ts[2].plv
+	Oath.take(main, "rigid")
+	ok("OATH-02", ts[2].plv == p0 + 1 and not main.cards_system._card_enabled({"type": "pat", "id": "laser"}) and main.cards_system._card_enabled({"type": "mod", "id": "multi"}), "굳은 형태: Lv+1, 공격방식 카드 없음")
+	Oath.take(main, "sprint")
+	main.cards_system._make_choices()
+	ok("OATH-02", main.offer.size() == 2 and is_equal_approx(Oath.score_k(), 1.2) and Oath.rerolls() == 1, "질주: 선택지 2장, 점수 x1.2, 새로고침 +1")
+	var iv0 := Side.iv(ts[2])
+	Oath.take(main, "bare")
+	Oath.take(main, "depth")
+	ok("OATH-02", Oath.taken.size() == 3 and not Oath.has("depth") and is_equal_approx(Side.iv(ts[2]), iv0 * 0.7) and Oath.side_big_n(8) == 5 and not main.cards_system._card_enabled({"type": "mod", "id": "multi"}), "최대 3개, 맨손 곁공격 x0.7·큰 곁공격 5번째·강화 카드 없음")
+	var d := Oath.save()
+	Oath.new_run()
+	Oath.load_from(d)
+	ok("OATH-01", Oath.taken == ["rigid", "sprint", "bare"] and Oath.offered_w == 10, "이어하기 저장")
+	Oath.new_run()
+	Oath.taken = ["depth"]
+	ok("OATH-02", not main.cards_system._card_enabled({"type": "elem", "e": Elem.POISON, "lv": 1}) and main.cards_system._card_enabled({"type": "elem", "e": Elem.FIRE, "lv": 1}) and Oath.elem_lv(1) == 2 and Oath.elem_lv(5) == 5, "깊이: 새 종류 없음, 카드 Lv+1(상한 안)")
+	Oath.taken = ["one_path"]
+	Oath.path_e = Elem.FIRE
+	var weak := Oath.weak_of(Elem.FIRE)
+	var s0 := Share.k(ts[0], Elem.FIRE)
+	Oath.taken = []
+	var s1 := Share.k(ts[0], Elem.FIRE)
+	Oath.taken = ["one_path"]
+	ok("OATH-02", is_equal_approx(s0, s1 * 1.5) and (weak.is_empty() or not main.cards_system._card_enabled({"type": "elem", "e": weak[0], "lv": 1})), "한길: 특징 x1.5, 약상성 카드 없음")
+	Oath.taken = ["affinity"]
+	ok("OATH-02", Oath.aff_carry() == 2.0, "상성: 강상성 x2.0")
+	Oath.new_run()
+	_clear()
+
+
 func _initialize():
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools"):
 		print("FAIL 실제 게임 저장 폴더를 쓰게 됨: tools/run.sh spec 으로 돌리세요")
@@ -92,6 +143,7 @@ func _initialize():
 	await _multi_center()
 	_reflex()
 	_reflex_review_regressions()
+	_oath()
 	_mods_links()
 	await _mods_area()
 	_waves()
