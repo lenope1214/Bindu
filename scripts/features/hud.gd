@@ -532,6 +532,10 @@ func _fit_panels() -> void:
 			# 모드 줄 작은 설명이 두 줄로 접히면 버튼도 키운다 (버튼은 안 글 높이를 따라 크지 않는다)
 			var mh := (session.modes_btn.get_child(0) as Control).get_combined_minimum_size().y + 8.0
 			session.modes_btn.custom_minimum_size.y = maxf(64.0 if session.viewport_system._phone() else 56.0, mh)
+		if session.continue_btn.is_visible_in_tree():
+			# _tile의 위아래 여백 16씩. Button은 자식 VBox의 최소 높이를 따라 커지지 않는다.
+			var ch := (session.continue_info.get_parent() as Control).get_combined_minimum_size().y + 32.0
+			session.continue_btn.custom_minimum_size.y = maxf(170.0 if session.viewport_system._phone() else 92.0, ch)
 	for c: Control in [session.title_box, session.help_scroll, session.records_panel, session.settings_panel, session.notes_panel, session.modes_panel, session.codex_panel, session.vote_panel]:
 		if not c.is_visible_in_tree():
 			continue

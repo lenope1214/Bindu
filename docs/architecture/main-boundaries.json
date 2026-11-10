@@ -1397,6 +1397,7 @@
     "_menu_glyph": "Expose the existing painted menu caption as the accessible name; no visual or action change.",
     "_tile": "Expose existing tile title as accessible name; no layout/action change.",
     "_prep_row": "Name the two arrows using the existing row title and previous/next direction; callbacks unchanged.",
-    "_menu_row": "Optional row title names skin-cycle arrows; both existing callers supply displayed domain; width/defaults/callbacks unchanged."
+    "_menu_row": "Optional row title names skin-cycle arrows; both existing callers supply displayed domain; width/defaults/callbacks unchanged.",
+    "_fit_panels": "Continue summary follows existing title-layout sizing owner: visible continue Button height uses child VBox minimum plus existing16px top/bottom margins, with PC92/phone170 floors. Recomputed from floors to shrink after width/text changes. No new frame/input loop, focus, save semantics, battlefield geometry or camera mutation. Native layout/Enter restoration matrix and common checks recorded in continue-tile QA."
   }
 }

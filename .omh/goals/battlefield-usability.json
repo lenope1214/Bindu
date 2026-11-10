@@ -2,7 +2,7 @@
   "schema": "goal_ledger/v1",
   "objective": "전부 수정하기.",
   "source_revision": "e25b6eab5b4e64cca7ee5e0089d50e149588e9b9",
-  "status": "active",
+  "status": "paused",
   "phases": [
     {
       "name": "bootstrap",
@@ -1071,11 +1071,26 @@
         "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine.md",
         "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-comparison.json"
       ]
+    },
+    {
+      "type": "continue_tile_clipping_verified_and_status_reported_while_goal_paused",
+      "facts": [
+        "Only product script change is hud.gd4lines in existing title sizing owner; actual child minimum+existing32padding with PC92/phone170floors, no sticky prior height.",
+        "Same observer SHA:600before/current each;PC150clipped ->0,phone0 ->0;450already-fitting sizes and selected text/fonts/focus/name/camera preserved.20extra return states each and10actual virtual Enter genuine save/resume profiles each.",
+        "Initial baseline01 QA startup nil error excluded, original logs retained and owned process terminated. Final baseline03/current01 finish/cleanup confirmed.",
+        "Latest full checkexit0:252spec/86gift/345cases4140samples/fuzz4x3000DONEandexit0/restore4,8,12to13/runtime architecture0. Server skipped missing system Python dependencies; one-time audit41existing/new0.",
+        "Visual review still observes 랭/크 word splitting and up to4.6% existing title-fit scale reduction. Full goal remains paused/incomplete; I15/I17 and physical/human/high-speed scopes remain.",
+        "Current PR17 verifiedOpen/Draft athead5a46ac7/basemain8704b78. No PR update/ready or main pull/rebase/push because all-fix completion condition is false."
+      ],
+      "evidence": [
+        "docs/battlefield-usability-status-2026-11-10.md",
+        "docs/qa/2026-11-09-battlefield-fixes/continue-tile/summary.json"
+      ]
     }
   ],
   "continuation": {
-    "status": "continue",
-    "next_local_action": "I17 remains open: outgoing target/4ancestor fields equal while native0vs1; next boundary is actual transfer and AccessKit consumer/filter/cache/macOS exposure, no speculative fourth fix. Also inspect visible continue-tile description clipping observed in native-resume01 screenshot as a separate usability candidate. Keep I15 and physical/human/high-speed gaps. Local task commits; final-only main pull/rebase/push/PR update.",
+    "status": "paused",
+    "next_local_action": "User paused the full goal. Reporting/packaging completed continue-tile measurements only. On explicit resume: address visible word grouping and title auto-fit impact, then unresolved I17/I15/high-speed/physical/human scopes. Final-only main pull/rebase/push/PR update; do not mark ready while known failures remain.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },
@@ -1206,6 +1221,17 @@
         "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine.md",
         "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-comparison.json"
       ]
+    },
+    {
+      "id": "I-18",
+      "title": "이어하기 저장 요약이 타일 아래에서 잘림",
+      "implementation": "implemented",
+      "verification": "same_observer_native600_each_before150clipped_after0;20return_states_each;10genuine_Enter_resume_profiles_each;latest_common_excludes_server;word_grouping_and_title_fit_readability_remaining",
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/continue-tile/README.md",
+        "docs/qa/2026-11-09-battlefield-fixes/continue-tile/summary.json"
+      ],
+      "remaining": "Current caption splits 랭크 across lines; existing title fitting scale changes up to4.6% in some PC cases. Reported as separate reading-quality follow-up, not whole-usability completion."
     }
   ]
 }
