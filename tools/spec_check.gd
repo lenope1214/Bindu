@@ -75,6 +75,28 @@ func _orb(p: Vector2, hp: float, kind := Orb.Kind.NORMAL, spd := 0.0) -> Orb:
 	return o
 
 
+func _ensemble() -> void:
+	_fresh(6)
+	var c: Vector2 = main.viewport_system.center()
+	var a := _tower(c + Vector2(-250, 0), Elem.FIRE, 1)
+	_tower(c + Vector2(250, 0), Elem.FIRE, 1)
+	var x := _tower(c + Vector2(0, 220), Elem.WATER, 1)
+	x.add(Elem.FIRE, 1)
+	_tower(c + Vector2(0, -220), Elem.ICE, 1)
+	var s0 := a.spd_k()
+	a.add_link("ensemble")
+	main.sim_id += 1
+	ok("LINK-ENS-01", is_equal_approx(a.spd_k(), s0 * 1.12), "같은 속성 오브젝트 2개 → +12%")
+	a.add_link("ensemble")
+	main.sim_id += 1
+	ok("LINK-ENS-01", is_equal_approx(a.spd_k(), s0 * 1.24) and a.spd_parts().any(func(p): return p[0] == "합주"), "2장 → +24%, 공격 속도 줄에 합주")
+	var d := a.to_save()
+	var b := _tower(c + Vector2(300, 250), Elem.ICE, 1)
+	b.load_save(d)
+	ok("LINK-ENS-01", b.ensemble == 2, "이어하기 저장")
+	_clear()
+
+
 func _initialize():
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools"):
 		print("FAIL 실제 게임 저장 폴더를 쓰게 됨: tools/run.sh spec 으로 돌리세요")
@@ -92,6 +114,7 @@ func _initialize():
 	await _multi_center()
 	_reflex()
 	_reflex_review_regressions()
+	_ensemble()
 	_mods_links()
 	await _mods_area()
 	_waves()

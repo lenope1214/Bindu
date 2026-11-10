@@ -140,9 +140,10 @@ static func no_mods(pat: String) -> PackedStringArray:
 const LINKS := {
 	"pincer": {"name": "협공", "desc": "다른 오브젝트가 맞힌 구체를 {pincer_t}초 안에 이 오브젝트도 맞히면 터져서 그 구체 최대 체력의 10% 피해를 줘요."},
 	"reso": {"name": "공명", "desc": "가까이(거리 {reso_r} 안) 있는 다른 오브젝트 하나당 피해 +{reso_k%}%"},
+	"ensemble": {"name": "합주", "desc": "같은 속성을 하나라도 가진 다른 오브젝트 하나당 공격 속도 +6% (장마다 +6%, 8개까지 셈). 거리는 상관없어요. (시험)"},
 }
 
-const LINK_IDS := ["pincer", "reso"]  # 프리즘(속성 나눠 주기)은 2026-11-03 특징 공유로 삭제
+const LINK_IDS := ["pincer", "reso", "ensemble"]  # 프리즘(속성 나눠 주기)은 2026-11-03 특징 공유로 삭제
 
 ## 발동: 기본 공격과 별개로, 조건이 맞을 때 추가로 터지는 공격 (Tower.trigs). 겹치면 세진다.
 const TRIGS := {

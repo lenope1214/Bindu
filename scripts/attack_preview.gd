@@ -56,7 +56,7 @@ func _exit_tree() -> void:
 	if is_instance_valid(world.sfx): world.sfx.free()
 
 ## 배치·레벨·강화·주변 오브젝트가 바뀔 때만 다시 만든다. 진행 중 카운터는 초기 스냅샷에만 복사한다.
-const BUILD_KEYS := ["elements", "order", "pattern", "plv", "mods", "trigs", "pincer", "reso", "position", "dir"]
+const BUILD_KEYS := ["elements", "order", "pattern", "plv", "mods", "trigs", "pincer", "reso", "ensemble", "position", "dir"]
 const STATE_KEYS := ["charge", "third_n", "star_sum", "star_e", "focus_t", "leech_n", "leech_t"]
 var copies := {}  # 실제 instance id -> 격리된 사본
 var include_support_attacks := false  # 수치 대조 도구만 전체 전투를 실행한다. 화면은 활성 오브젝트에 집중한다.

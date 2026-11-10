@@ -18,6 +18,8 @@ var mods := {}  # 강화 id -> 겹친 수
 const PRISM_FX_GAP := 0.8  # 프리즘 연출(번쩍·파편·육각형) 최소 간격 초
 var pincer := 0  # 협공: 여러 오브젝트가 함께 맞힌 구체에 표식 폭발
 var reso := 0
+var ensemble := 0  # 합주 (시험): 같은 속성을 가진 다른 오브젝트 하나당 공격 속도 +6%/장
+var _ens := [-1, 1.0]  # [sim_id, 배율]
 var trigs := {}  # 발동 id -> 겹친 수
 var echo_cd := 0.0  # 여진: 다시 터질 때까지
 var focus_t := 0.0  # 중앙 기술 집중: 공격 속도 배율 남은 시간 (Skill)
@@ -186,7 +188,25 @@ static var SHADE_T := 3.0  # 어둠 형태 성질 그림자 표식 시간 (2026-
 
 ## 공격 속도 배율: 특성 × 속사 × 바람 버프 ÷ 속성을 겹친 대가 (모두 곱한다). 특수 반응 공격도 이 배율.
 func spd_k() -> float:
-	return spd_mul * (1.0 + Rules.rapid_k * mf("rapid")) * (1.0 + wind_buff) * skill_k() / tax()
+	return spd_mul * (1.0 + Rules.rapid_k * mf("rapid")) * (1.0 + wind_buff) * skill_k() / tax() * ensemble_k()
+
+
+## 합주 (시험): 같은 속성을 하나라도 가진 다른 오브젝트 수(8까지) x 0.06 x 장 수. 계산 조각마다 한 번.
+func ensemble_k() -> float:
+	if ensemble <= 0 or main == null:
+		return 1.0
+	if _ens[0] == main.sim_id:
+		return _ens[1]
+	var n := 0
+	for o in main.towers.get_children():
+		if o == self or not o is Tower:
+			continue
+		for e in elements:
+			if o.elements.has(e):
+				n += 1
+				break
+	_ens = [main.sim_id, 1.0 + 0.06 * ensemble * mini(n, 8)]
+	return _ens[1]
 
 
 ## 중앙 기술 집중·흡수 구체가 바꾼 공격 속도 배율.
@@ -463,6 +483,8 @@ func spd_parts() -> Array:
 		out.append(["바람 버프", 1.0 + wind_buff])
 	if spd_mul != 1.0:
 		out.append(["특성", spd_mul])
+	if ensemble_k() != 1.0:
+		out.append(["합주", ensemble_k()])
 	if focus_t > 0.0:
 		out.append(["집중", Rules.t("skill_focus_spd")])
 	if leech_n > 0:
@@ -1110,6 +1132,8 @@ func add_link(id: String) -> String:
 			reso += 1
 		"pincer":
 			pincer += 1
+		"ensemble":
+			ensemble += 1
 	var n := link_lv(id)
 	return Pat.LINKS[id]["name"] + ("" if n <= 1 else " x%d (%s %s)" % [n, LINK_POWER[id], link_value(id, n)])
 
@@ -1181,7 +1205,7 @@ func spec() -> Dictionary:
 ## 이어하기 저장용.
 func to_save() -> Dictionary:
 	return {"elements": elements, "order": Array(order), "pattern": pattern, "plv": plv, "mods": mods,
-		"reso": reso, "pincer": pincer, "trigs": trigs, "charge": charge, "third_n": third_n, "star_sum": star_sum, "star_e": star_e, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt,
+		"reso": reso, "pincer": pincer, "ensemble": ensemble, "trigs": trigs, "charge": charge, "third_n": third_n, "star_sum": star_sum, "star_e": star_e, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt,
 		"src": src, "run_src": run_src, "hist": hist}
 
 
@@ -1242,6 +1266,7 @@ func load_save(d: Dictionary) -> void:
 					mods[id] = _int(ms[id])
 	reso = maxi(0, _int(d.get("reso")))
 	pincer = maxi(0, _int(d.get("pincer")))
+	ensemble = maxi(0, _int(d.get("ensemble")))
 	var tgs: Variant = d.get("trigs", {})
 	if tgs is Dictionary:
 		for id in tgs:
@@ -3291,11 +3316,13 @@ func link_lv(id: String) -> int:
 			return reso
 		"pincer":
 			return pincer
+		"ensemble":
+			return ensemble
 	return 0
 
 
 ## 연계 카드를 n장 넣었을 때의 세기 (dmg_factor·_pincer와 같은 식).
-const LINK_POWER := {"reso": "가까운 오브젝트 하나당 피해", "pincer": "폭발 피해: 구체 최대 체력의"}
+const LINK_POWER := {"reso": "가까운 오브젝트 하나당 피해", "pincer": "폭발 피해: 구체 최대 체력의", "ensemble": "같은 속성 오브젝트 하나당 공격 속도"}
 
 
 static func link_value(id: String, n: int) -> String:
@@ -3304,4 +3331,6 @@ static func link_value(id: String, n: int) -> String:
 			return "+%d%%" % (12 * n)
 		"pincer":
 			return "%d%%" % roundi(Rules.pincer_frac * (1.0 + 0.5 * (n - 1)) * 100.0)
+		"ensemble":
+			return "+%d%%" % (6 * n)
 	return ""
