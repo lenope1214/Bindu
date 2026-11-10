@@ -152,9 +152,14 @@ const TRIGS := {
 	"third": {"name": "3타 강타", "desc": "3번째 공격마다 피해 x1.8 (탄은 크기도 x{third_size}). 계속 뿜는 공격은 1.5초마다 잠깐 강해져요."},
 	"finish": {"name": "마무리", "desc": "체력이 {finish_hp%}% 아래인 구체에 피해 x{finish_mul} (보스는 절반). 다른 오브젝트가 깎은 구체에 강해요."},
 	"answer": {"name": "따라 쏘기", "desc": "거리 {answer_r} 안 다른 오브젝트의 발동이 터지면 그쪽으로 한 발 더 쏴요. ({answer_cd}초에 한 번)"},
+	# 움직임 (시험, test/move-cards): 웨이브 동안 놓은 자리를 기준으로 움직이고 웨이브가 끝나면 제자리. 한 오브젝트에 움직임은 한 종류
+	"patrol": {"name": "순찰", "desc": "웨이브 동안 정한 방향과 수직으로 좌우 90(장마다 +30)을 오가요. 웨이브가 끝나면 제자리로 와요. (움직임 카드는 한 종류만)"},
+	"orbit": {"name": "공전", "desc": "웨이브 동안 가장 가까운 다른 오브젝트 둘레를 돌아요(장마다 더 빠르게). 300 안에 오브젝트가 없으면 제자리를 작게 돌아요. (움직임 카드는 한 종류만)"},
+	"chase": {"name": "추적", "desc": "웨이브 동안 겨눈 구체 쪽으로 110(장마다 +40)까지 다가갔다 돌아와요. (움직임 카드는 한 종류만)"},
 }
 
-const TRIG_IDS := ["echo", "vanguard", "charge", "third", "finish", "answer"]
+const TRIG_IDS := ["echo", "vanguard", "charge", "third", "finish", "answer", "patrol", "orbit", "chase"]
+const MOVE_IDS := ["patrol", "orbit", "chase"]
 const TRIG_COLOR := Color(1.0, 0.55, 0.45)
 
 
@@ -178,6 +183,9 @@ const BRIEF := {
 		"third": "세 번째 공격마다 강해져요. 계속 뿜는 공격은 일정 시간마다 잠깐 강해져요.",
 		"finish": "체력이 얼마 남지 않은 구체를 더 세게 때려요. 보스에게는 효과가 절반이에요.",
 		"answer": "근처 다른 오브젝트가 발동·반응 공격을 하면 그쪽으로 한 발 더 쏴요.",
+		"patrol": "웨이브 동안 좌우로 오가며 넓은 곳을 쓸어요.",
+		"orbit": "웨이브 동안 가까운 오브젝트 둘레를 돌아요.",
+		"chase": "웨이브 동안 겨눈 구체 쪽으로 다가갔다 돌아와요.",
 	},
 }
 

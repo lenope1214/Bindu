@@ -75,6 +75,44 @@ func _orb(p: Vector2, hp: float, kind := Orb.Kind.NORMAL, spd := 0.0) -> Orb:
 	return o
 
 
+func _move_cards() -> void:
+	_fresh(5)
+	var c: Vector2 = main.viewport_system.center()
+	var a := _tower(c + Vector2(-250, 0), Elem.FIRE, 1, Vector2.RIGHT)
+	var b := _tower(c + Vector2(-250, 150), Elem.ICE, 1)
+	a.add_trig("patrol")
+	ok("TRIG-10", not a.can_take({"type": "trig", "id": "orbit"}) and a.can_take({"type": "trig", "id": "patrol"}), "움직임은 한 종류만")
+	b.add_trig("orbit")
+	var a0 := a.position
+	var b0 := b.position
+	a.move_begin()
+	b.move_begin()
+	var max_a := 0.0
+	var max_b := 0.0
+	for i in 120:
+		a.attack(1.0 / 60.0, [])
+		b.attack(1.0 / 60.0, [])
+		max_a = maxf(max_a, absf(a.position.y - a0.y))
+		max_b = maxf(max_b, b.position.distance_to(b0))
+	ok("TRIG-10", max_a > 60.0 and max_a <= 91.0 and absf(a.position.x - a0.x) < 1.0, "순찰: 수직 좌우로 90까지 (%.0f)" % max_a)
+	ok("TRIG-10", max_b > 20.0 and absf(b.position.distance_to(a0) - b0.distance_to(a0)) < 1.0 or absf(b.position.distance_to(a0) - 150.0) < 5.0, "공전: 가장 가까운 오브젝트 둘레 (%.0f)" % max_b)
+	var sv := a.to_save()
+	ok("TRIG-10", sv["pos"] == a0, "웨이브 중 이어하기는 제자리 저장")
+	a.move_end()
+	b.move_end()
+	ok("TRIG-10", a.position == a0 and b.position == b0 and a.home == Vector2.INF, "웨이브 끝 제자리")
+	var ch := _tower(c + Vector2(250, -150), Elem.FIRE, 1)
+	ch.add_trig("chase")
+	var o := _orb(ch.position + Vector2(300, 0), 1000.0)
+	ch.move_begin()
+	ch.reflex_target = o
+	var p0 := ch.position
+	for i in 120:
+		ch._move_step(1.0 / 60.0)
+	ok("TRIG-10", ch.position.distance_to(p0) > 100.0 and ch.position.distance_to(p0) <= 110.5, "추적: 겨눈 구체 쪽으로 110까지 (%.0f)" % ch.position.distance_to(p0))
+	_clear()
+
+
 func _initialize():
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools"):
 		print("FAIL 실제 게임 저장 폴더를 쓰게 됨: tools/run.sh spec 으로 돌리세요")
@@ -92,6 +130,7 @@ func _initialize():
 	await _multi_center()
 	_reflex()
 	_reflex_review_regressions()
+	_move_cards()
 	_mods_links()
 	await _mods_area()
 	_waves()

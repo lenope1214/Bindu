@@ -50,6 +50,66 @@ var wind_buff := 0.0  # 둘레 바람 오브젝트가 주는 공격 속도 (main
 var eff := {}  # 지금 쓰는 속성 (매 프레임 갱신)
 var dir := Vector2.RIGHT
 var reflex_target: Orb = null
+var home := Vector2.INF  # 움직임 카드: 웨이브 동안 기준 자리 (INF면 움직이지 않는 중)
+var move_t := 0.0
+var orbit_at := Vector2.INF  # 공전: 도는 중심
+
+
+## 움직임 카드 (Pat.MOVE_IDS 중 하나, 없으면 "").
+func move_id() -> String:
+	for id in Pat.MOVE_IDS:
+		if tg(id) > 0:
+			return id
+	return ""
+
+
+## 웨이브 시작: 지금 자리를 기준으로.
+func move_begin() -> void:
+	if move_id() == "":
+		home = Vector2.INF
+		return
+	home = position
+	move_t = 0.0
+	orbit_at = Vector2.INF
+	if move_id() == "orbit" and main:
+		var best := 300.0
+		for o in main.towers.get_children():
+			if o != self and o.position.distance_to(position) < best:
+				best = o.position.distance_to(position)
+				orbit_at = o.position
+		if orbit_at == Vector2.INF:
+			orbit_at = position + dir.orthogonal() * 50.0  # 둘레에 아무도 없으면 제자리를 작게
+
+
+## 웨이브 끝: 제자리로.
+func move_end() -> void:
+	if home != Vector2.INF:
+		position = home
+	home = Vector2.INF
+	queue_redraw()
+
+
+func _move_step(delta: float) -> void:
+	var id := move_id()
+	if id == "" or home == Vector2.INF:
+		return
+	move_t += delta
+	var n := tg(id)
+	var want := position
+	match id:
+		"patrol":
+			want = home + dir.orthogonal() * sin(move_t * TAU / 3.5) * (90.0 + 30.0 * (n - 1))
+		"orbit":
+			want = orbit_at + (home - orbit_at).rotated(move_t * 0.7 * (1.0 + 0.25 * (n - 1)))
+		"chase":
+			want = home
+			if is_instance_valid(reflex_target) and reflex_target.hp > 0.0:
+				want = home + (reflex_target.position - home).limit_length(110.0 + 40.0 * (n - 1))
+			want = position.move_toward(want, 120.0 * delta)
+	if main:
+		var fr: Rect2 = main.combat_system.field_rect().grow(-24.0)
+		want = want.clamp(fr.position, fr.end)
+	position = want
 var aim := Vector2.RIGHT  # 유도 강화로 살짝 돈 실제 공격 방향
 var cd := {}  # 공격별 쿨다운
 var fx := {}  # 공격별 이펙트 남은 시간
@@ -326,6 +386,7 @@ func _answer(p: Vector2) -> void:
 
 ## 웨이브 시작 (main._start_wave).
 func wave_begin() -> void:
+	move_begin()
 	echo_cd = 0.0
 	focus_t = 0.0
 	jam_t = 0.0
@@ -938,6 +999,8 @@ func can_take(card: Dictionary) -> bool:
 		"mod":
 			return m(card["id"]) < mod_cap(card["id"]) and mod_count() < Rules.mod_total and mod_useless(card["id"]).is_empty()
 		"trig":
+			if card["id"] in Pat.MOVE_IDS and move_id() != "" and move_id() != card["id"]:
+				return false  # 움직임은 한 종류만
 			return tg(card["id"]) < int(Rules.t("trig_max"))
 	return true
 
@@ -1011,6 +1074,8 @@ func refuse_text(card: Dictionary) -> String:
 				return "강화는 한 오브젝트에 %d개까지예요. 다른 오브젝트에 넣으세요" % Rules.mod_total
 			return "%s은(는) %d개까지 쌓을 수 있어요" % [Pat.MODS[card["id"]]["name"], mod_cap(card["id"])]
 		"trig":
+			if card["id"] in Pat.MOVE_IDS and move_id() != "" and move_id() != card["id"]:
+				return "움직임 카드는 한 오브젝트에 한 종류만 넣을 수 있어요 (지금 %s)" % Pat.TRIGS[move_id()]["name"]
 			return "%s은(는) %d개까지 쌓을 수 있어요" % [Pat.TRIGS[card["id"]]["name"], int(Rules.t("trig_max"))]
 	return ""
 
@@ -1137,6 +1202,12 @@ static func trig_value(id: String, n: int) -> String:
 			return "약한 구체 피해 x%s" % _num(finish_mul(n))
 		"answer":
 			return "한 발 피해 %d%%" % roundi(answer_dmg(n) * 100.0)
+		"patrol":
+			return "좌우 %d" % (90 + 30 * (n - 1))
+		"orbit":
+			return "도는 빠르기 x%s" % _num(1.0 + 0.25 * (n - 1))
+		"chase":
+			return "다가가기 %d" % (110 + 40 * (n - 1))
 	return ""
 
 
@@ -1181,7 +1252,7 @@ func spec() -> Dictionary:
 ## 이어하기 저장용.
 func to_save() -> Dictionary:
 	return {"elements": elements, "order": Array(order), "pattern": pattern, "plv": plv, "mods": mods,
-		"reso": reso, "pincer": pincer, "trigs": trigs, "charge": charge, "third_n": third_n, "star_sum": star_sum, "star_e": star_e, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt,
+		"reso": reso, "pincer": pincer, "trigs": trigs, "charge": charge, "third_n": third_n, "star_sum": star_sum, "star_e": star_e, "pos": home if home != Vector2.INF else position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt,
 		"src": src, "run_src": run_src, "hist": hist}
 
 
@@ -1473,6 +1544,8 @@ func fade_fx(delta: float) -> void:
 
 func attack(delta: float, orbs: Array) -> void:
 	t += delta
+	if home != Vector2.INF:
+		_move_step(delta)
 	eff = eff_now()
 	for k in fx.keys():
 		fx[k] = maxf(fx[k] - delta, 0.0)
@@ -2624,6 +2697,11 @@ func _draw() -> void:
 		_draw_owner_glow()
 	if main and main.wave_active:
 		_draw_attack()
+	if home != Vector2.INF and main and main.wave_active:
+		# 움직임 카드: 제자리 표시 (옅은 점 + 선)
+		var hp0 := home - position
+		draw_line(Vector2.ZERO, hp0, Color(1, 1, 1, 0.12), 1.5)
+		draw_arc(hp0, 6.0, 0.0, TAU, 16, Color(1, 1, 1, 0.3), 1.5)
 	_draw_body()
 	_draw_rank()
 	if owner_id > 0:

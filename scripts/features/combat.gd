@@ -53,6 +53,8 @@ func _sim_step(delta: float) -> void:
 		session.combo_hold = true  # 쉬는 시간·카드 고르기 동안 콤보가 끊기지 않게
 		_log_wave()
 		Vary.wave_done(session.wave, session.multiplayer_system._my_towers())
+		for t in session.towers.get_children():
+			t.move_end()  # 움직임 카드: 제자리로
 		session.progression_system._achieve("first")
 		Ach.on_wave_clear(session.wave, session.wave_dmg, session.core_hp, session.core_max)
 		session.progression_system._ach_check()
