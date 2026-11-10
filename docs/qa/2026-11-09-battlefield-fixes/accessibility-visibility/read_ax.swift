@@ -21,10 +21,23 @@ func walk(_ element: AXUIElement, _ path: [Int]) {
     if path.count > 40 || rows.count >= 5000 { return }
     var row: [String: Any] = ["path": path]
     var errors: [String: Int32] = [:]
-    for name in ["AXRole", "AXTitle", "AXEnabled", "AXFocused"] {
+    for name in ["AXRole", "AXRoleDescription", "AXTitle", "AXEnabled", "AXFocused", "AXPosition", "AXSize"] {
         if let value = attribute(element, name) {
             if let string = value as? String { row[name] = string }
             else if let number = value as? NSNumber { row[name] = number }
+            else if CFGetTypeID(value as CFTypeRef) == AXValueGetTypeID() {
+                let axValue = value as! AXValue
+                switch AXValueGetType(axValue) {
+                case .cgPoint:
+                    var point = CGPoint.zero
+                    if AXValueGetValue(axValue, .cgPoint, &point) { row[name] = [point.x, point.y] }
+                case .cgSize:
+                    var size = CGSize.zero
+                    if AXValueGetValue(axValue, .cgSize, &size) { row[name] = [size.width, size.height] }
+                default:
+                    row[name + "_value_type"] = AXValueGetType(axValue).rawValue
+                }
+            }
         } else { errors[name] = lastError }
     }
     var actionNames: CFArray?

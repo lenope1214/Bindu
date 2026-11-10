@@ -1,0 +1,178 @@
+{
+  "schema": "outgoing_accesskit_pair/v1",
+  "product_changed": false,
+  "native_engine": {
+    "path": "/private/tmp/bindu-ax-engine-trace-20261110/bin/godot.macos.editor.arm64",
+    "sha256": "dbaa91156762cad1e8622cdb806615e0df48ecbef9d160e1f4910130fe6c20de",
+    "version": "4.7.2.stable.custom_build",
+    "outgoing_node_trace": true
+  },
+  "compared_target_fields": [
+    "role",
+    "name",
+    "extra",
+    "hidden",
+    "clips_children",
+    "bounds",
+    "children"
+  ],
+  "compared_ancestor_fields": [
+    "role",
+    "name",
+    "extra",
+    "hidden",
+    "clips_children",
+    "bounds"
+  ],
+  "target_and_ancestor_fields_equal": true,
+  "native_start_counts": [
+    0,
+    1
+  ],
+  "entries": [
+    {
+      "run": "engine-ready-04",
+      "outgoing_records": 592,
+      "submission": {
+        "role": 18,
+        "name": "웨이브 시작 (Space)",
+        "extra": "",
+        "hidden": false,
+        "clips_children": false,
+        "bounds": [
+          0.0,
+          0.0,
+          240.0,
+          44.0
+        ],
+        "children": []
+      },
+      "ancestors": [
+        {
+          "role": 133,
+          "name": "Bindu QA ready (DEBUG)",
+          "extra": "",
+          "hidden": false,
+          "clips_children": false,
+          "bounds": [
+            0.0,
+            0.0,
+            1280.0,
+            720.0
+          ]
+        },
+        {
+          "role": 14,
+          "name": "Main",
+          "extra": "",
+          "hidden": false,
+          "clips_children": false,
+          "bounds": null
+        },
+        {
+          "role": 14,
+          "name": "@CanvasLayer@22",
+          "extra": "",
+          "hidden": false,
+          "clips_children": false,
+          "bounds": null
+        },
+        {
+          "role": 14,
+          "name": "",
+          "extra": "",
+          "hidden": false,
+          "clips_children": false,
+          "bounds": [
+            0.0,
+            0.0,
+            1280.0,
+            720.0
+          ]
+        }
+      ],
+      "native_start_count": 0,
+      "source": {
+        "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/native.log",
+        "bytes": 139788,
+        "sha256": "5357fa46f49b5c8e6dcf08d7fa6ef5dcac868ff1e6860efcbb04b8b67dc3a937"
+      },
+      "native_ax_source": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready-ax.json",
+      "native_ax_sha256": "010c78c4e12d78f0066264dfc4132b58bbe7386faa02117cb1575a8f3e7ec503",
+      "exit": 0
+    },
+    {
+      "run": "engine-inspector-01",
+      "outgoing_records": 638,
+      "submission": {
+        "role": 18,
+        "name": "웨이브 시작 (Space)",
+        "extra": "",
+        "hidden": false,
+        "clips_children": false,
+        "bounds": [
+          0.0,
+          0.0,
+          240.0,
+          44.0
+        ],
+        "children": []
+      },
+      "ancestors": [
+        {
+          "role": 133,
+          "name": "Bindu QA ready (DEBUG)",
+          "extra": "",
+          "hidden": false,
+          "clips_children": false,
+          "bounds": [
+            0.0,
+            0.0,
+            1280.0,
+            720.0
+          ]
+        },
+        {
+          "role": 14,
+          "name": "Main",
+          "extra": "",
+          "hidden": false,
+          "clips_children": false,
+          "bounds": null
+        },
+        {
+          "role": 14,
+          "name": "@CanvasLayer@22",
+          "extra": "",
+          "hidden": false,
+          "clips_children": false,
+          "bounds": null
+        },
+        {
+          "role": 14,
+          "name": "",
+          "extra": "",
+          "hidden": false,
+          "clips_children": false,
+          "bounds": [
+            0.0,
+            0.0,
+            1280.0,
+            720.0
+          ]
+        }
+      ],
+      "native_start_count": 1,
+      "source": {
+        "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/native.log",
+        "bytes": 149682,
+        "sha256": "46b5335d4d064707dd2e75f6b129181ef2c7db0b7e2983ae46406fac6299f1af"
+      },
+      "native_ax_source": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/ready-ax.json",
+      "native_ax_sha256": "db47c02ca697de4650db8133704295f6db9d87623f6fece0ecff25f84d42bcd3",
+      "exit": 0
+    }
+  ],
+  "root_cause": "not_observed",
+  "limit": "Observed immediately before accesskit_tree_update_push_node and at native AX query. Actual transfer, consumer internal tree/filter/cache and macOS exposure remain unobserved. Equal selected fields do not mean entire trees are identical; inspector subtree intentionally differs."
+}

@@ -1,0 +1,112 @@
+{
+  "schema": "accesskit_outgoing_trace_build/v1",
+  "base_revision": "ed1daf0bf001b61586d9930840f2f1394092c079",
+  "base_source_clean_observed": true,
+  "archive": "git archive exact revision into separate /tmp directory; original engine source not edited",
+  "initial_archive_setup_error": "System Python tarfile lacks filter argument; no source extracted. Retry validates all member paths and rejects links before extraction.",
+  "patch": "engine-trace.patch",
+  "patch_check": "git apply --check --unidiff-zero against clean base: exit0",
+  "source_hashes": {
+    "scene/main/node.cpp": {
+      "base": "0db10a968bd027fec03f6b78ddf793660001f61eacb369cf4cf2cf6dd48f2b80",
+      "diagnostic": "0db10a968bd027fec03f6b78ddf793660001f61eacb369cf4cf2cf6dd48f2b80"
+    },
+    "scene/main/canvas_item.cpp": {
+      "base": "7abbd605dd2babf8771857852966b0ed0efb95c7f7da0a433a7495f6d7da137d",
+      "diagnostic": "7abbd605dd2babf8771857852966b0ed0efb95c7f7da0a433a7495f6d7da137d"
+    },
+    "scene/main/window.cpp": {
+      "base": "1e94ba6ccef7fea34b00aab4e40d06730e796471f232d21ced7255d06d45f9fb",
+      "diagnostic": "1e94ba6ccef7fea34b00aab4e40d06730e796471f232d21ced7255d06d45f9fb"
+    },
+    "scene/main/scene_tree.cpp": {
+      "base": "eed6dbff323344efff19f2de6763705aff062a76e00fd7cbe42a4ee849b7e5a4",
+      "diagnostic": "eed6dbff323344efff19f2de6763705aff062a76e00fd7cbe42a4ee849b7e5a4"
+    },
+    "scene/gui/control.cpp": {
+      "base": "2b55287a767ffc44a0c89a1a772696eced2058d8b82c92a43d32132c7c9ca5a2",
+      "diagnostic": "2b55287a767ffc44a0c89a1a772696eced2058d8b82c92a43d32132c7c9ca5a2"
+    },
+    "scene/gui/base_button.cpp": {
+      "base": "98b17be1146da1f32752befd0def0bc5963f9bbcea624f45fdc20b9b038bf61a",
+      "diagnostic": "98b17be1146da1f32752befd0def0bc5963f9bbcea624f45fdc20b9b038bf61a"
+    },
+    "scene/gui/button.cpp": {
+      "base": "8fd726a156dd72dfcca68044e8d3823c313c4fe66a856cc15fd8503ed01337cd",
+      "diagnostic": "8fd726a156dd72dfcca68044e8d3823c313c4fe66a856cc15fd8503ed01337cd"
+    },
+    "scene/2d/node_2d.cpp": {
+      "base": "a71aed2b44350f5c355c830ad6797d0f9ca8d693d811a9a5c474f823e7936aae",
+      "diagnostic": "a71aed2b44350f5c355c830ad6797d0f9ca8d693d811a9a5c474f823e7936aae"
+    },
+    "drivers/accesskit/accessibility_server_accesskit.cpp": {
+      "base": "60f4c0ea872ce2142d684507b5b44fc4d1fae0e9c4c7df466115806cadfdf0b1",
+      "diagnostic": "d509db3b147b2f5642052827a2598f4232f60953141e8f8c152c6de134caa189"
+    }
+  },
+  "sdk": {
+    "release": "0.22.3",
+    "download": "https://github.com/godotengine/godot-accesskit-c-static/releases/download/0.22.3/accesskit-c-0.22.3.zip",
+    "header_sha256": "c7e0dff6b97ba5793d5a092d6ef817d5a4ec5ffe409345f5927fc0da4b06cf61",
+    "arm64_static_sha256": "75bb1a8c82367c4873a026fe56e1f9ee7913b9615daf3ad86fdc8667855a39ed",
+    "limit": "Binary archive hashes do not prove byte-for-byte identity with the stock installed Godot dependency."
+  },
+  "final_build": {
+    "command": [
+      "/tmp/bindu-ios-qa-bootstrap/build-venv/bin/scons",
+      "platform=macos",
+      "target=editor",
+      "arch=arm64",
+      "debug_symbols=no",
+      "optimize=none",
+      "vulkan=no",
+      "metal=no",
+      "disable_3d=no",
+      "modules_enabled_by_default=yes",
+      "accesskit=yes",
+      "-j8"
+    ],
+    "exit": 0,
+    "rendering": "same OpenGL Compatibility runtime; Metal/Vulkan backends omitted",
+    "limit": "Custom logging build with changed optimization/backend build flags; matching source and reproduced symptom, not the stock executable."
+  },
+  "setup_failures": [
+    "engine-ready-01: template path override disabled; no native observation",
+    "engine-ready-02: reduced modules cannot resolve inherited QA script; no valid observation",
+    "engine-ready-03: parse passes but 3D-disabled build lacks SubViewport.disable_3d property required by product preview; no valid observation"
+  ],
+  "logs": {
+    "dependencies": {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-build/dependencies.log",
+      "bytes": 160,
+      "sha256": "8ec12bb7d52768b444acbcd03f542df5ab24f968254fa98c6895139a6893f1f3"
+    },
+    "first-build": {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-build/first-build.log",
+      "bytes": 83318,
+      "sha256": "ee52befcaba728822470dc044c4c96ed001b25722edbeadb9a2d7ec59f7dac59"
+    },
+    "logger-recheck": {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-build/logger-recheck.log",
+      "bytes": 921,
+      "sha256": "6eed292c434b0eeebeee21cbec3429c696c4b2281ffbdbbd44cdebedb0d24556"
+    },
+    "path-override-build": {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-build/path-override-build.log",
+      "bytes": 69942,
+      "sha256": "f2aa820b709ffb3017832377444e59e04d665a494d7ebe760bbbaa0c8f78aa01"
+    },
+    "default-modules-build": {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-build/default-modules-build.log",
+      "bytes": 59440,
+      "sha256": "a6778f5350034847dfac037c3df5d0df9218cb0e046d5b4b690e6b0fd610e0ab"
+    },
+    "editor-build": {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-build/editor-build.log",
+      "bytes": 168161,
+      "sha256": "38ec2a06d4804c3a96e4e4626548a356667bc50a95e2c8d10dda01ffa9d11a06"
+    }
+  },
+  "scope": "Logger reads outgoing node before accesskit_tree_update_push_node ownership transfer. No product fix, consumer internal-state inspection, native debugger bypass, or root-cause claim.",
+  "patch_format": "Zero-context unified diff avoids treating embedded patch context whitespace as source whitespace."
+}

@@ -1,6 +1,7 @@
 extends "res://tools/carry_check.gd"
 ## Real Window and native AX handshake; no virtual input or OS activation.
 var observations := []
+var handshake_timeout_usec := 30000000
 
 func _initialize() -> void:
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools") or DisplayServer.get_name() == "headless" or OnlineConfig.SERVER_URL != "" or OnlineConfig.MP_URL != "":
@@ -60,7 +61,7 @@ func finish() -> void:
 	quit(1 if fails else 0)
 
 func state() -> Dictionary:
-	return {"phase":main.phase, "picks":main.picks_left, "cards_hidden":main.cards_hidden,
+	return {"phase":main.phase, "wave":main.wave, "picks":main.picks_left, "cards_hidden":main.cards_hidden,
 		"choice_visible":main.choice_box.is_visible_in_tree(), "held":held(),
 		"reroll_visible":main.reroll_btn.is_visible_in_tree(), "start_visible":main.start_btn.is_visible_in_tree(),
 		"camera":str(main.get_canvas_transform()),
@@ -74,23 +75,36 @@ func expose(label: String) -> void:
 	RenderingServer.force_draw()
 	var controls := []
 	collect(main, controls)
-	var card_name := str(main.choice_box.get_child(0).accessibility_name) if main.choice_box.get_child_count() > 0 else ""
+	var card_name := card_action_name()
 	var sentinels := [{"name":main.reroll_btn.text, "visible":main.reroll_btn.is_visible_in_tree()},
 		{"name":main.start_btn.text, "visible":main.start_btn.is_visible_in_tree()}]
 	for button in main.choice_box.get_children():
 		if button is Button:
 			sentinels.append({"name":button.accessibility_name, "visible":button.is_visible_in_tree()})
 	var before := state()
+	if OS.get_environment("BINDU_AX_TRACE") == "1":
+		print("BINDU_AX_STATE " + JSON.stringify({"label":label, "time_usec":Time.get_ticks_usec(), "state":before}))
 	FileAccess.open(output.path_join(label + "-ready.json"), FileAccess.WRITE).store_string(JSON.stringify({"label":label, "pid":OS.get_process_id(), "supported":AccessibilityServer.is_supported(), "card_name":card_name, "sentinels":sentinels, "controls":controls, "before":before}, "\t"))
-	var deadline := Time.get_ticks_usec() + 30000000
+	var deadline := Time.get_ticks_usec() + handshake_timeout_usec
 	while not FileAccess.file_exists(output.path_join(label + "-done.json")) and Time.get_ticks_usec() < deadline:
 		await create_timer(0.05).timeout
-	ok("BF-50", FileAccess.file_exists(output.path_join(label + "-done.json")), "native AX observed " + label)
+	var confirmed := FileAccess.file_exists(output.path_join(label + "-done.json"))
+	ok("BF-50", confirmed, "native AX observed " + label)
+	if not confirmed:
+		print("AX_HANDSHAKE_TIMEOUT " + label)
+		quit(2)
+		await process_frame
+		return
+	if OS.get_environment("BINDU_AX_TRACE") == "1":
+		print("BINDU_AX_OBSERVED " + JSON.stringify({"label":label, "time_usec":Time.get_ticks_usec(), "state":state()}))
 	for i in 3: await process_frame
 	var after := state()
 	observations.append({"label":label, "before":before, "after":after, "controls":controls})
 	FileAccess.open(output.path_join(label + "-result.json"), FileAccess.WRITE).store_string(JSON.stringify(observations[-1], "\t"))
 	main.get_viewport().get_texture().get_image().save_png(output.path_join(label + ".png"))
+
+func card_action_name() -> String:
+	return str(main.choice_box.get_child(0).accessibility_name) if main.choice_box.get_child_count() > 0 else ""
 
 func collect(node: Node, result: Array) -> void:
 	if node is BaseButton:

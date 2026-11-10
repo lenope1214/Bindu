@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/README.md",
-      "bytes": 16213,
-      "sha256": "6893ebd156b73e40ba6c39ee22d2b324e9aa21a69176f5b56530e122794969e4",
+      "bytes": 16813,
+      "sha256": "57cc1b9c85add1c47a70758ae33511a692cb7f24e878e193bb23f5a9b402eb68",
       "published": true
     },
     {
@@ -2692,8 +2692,8 @@
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/README.md",
-      "bytes": 8453,
-      "sha256": "9d66eea06c2b25af65b111d7137e3094b5ea43fbf4b33e5891d2921e4b05bc23",
+      "bytes": 8788,
+      "sha256": "038667f569aff396578f36e7ac2fcc8d6f54e22f6e747496f29ac2cdcab1ffc1",
       "published": true
     },
     {
@@ -3651,6 +3651,240 @@
       "published": true
     },
     {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/native.log",
+      "bytes": 336,
+      "sha256": "5d3d822e9071b8e384d9c390005ea71806c3d9fd5c42a3f8d6c7d8a723340fe0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/observations.json",
+      "bytes": 170893,
+      "sha256": "bd75eb384793ed7910daa95cca152312602802ceee9f4e6740eaca1814609606",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/observer-used.gd",
+      "bytes": 3275,
+      "sha256": "f96d4ee3a2fd38b79df18ba46a9f9ceecd04f445b66df31f9adbe8cb7895445d",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/ready-ax.json",
+      "bytes": 15090,
+      "sha256": "cfa074e6df4225848ed3e48267191c91719b95ed4e3ddd484e629528751af991",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/ready-ax.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/ready-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/ready-ready.json",
+      "bytes": 54997,
+      "sha256": "ecbb66ee9e41659d451eaf9e57e8a68e7a4a404b497dd41b9945536e7e3d50bb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/ready-result.json",
+      "bytes": 55085,
+      "sha256": "23913be0d996c47392e7069d6fa1aaad17052024d13d89a0a5570c4a82f9f53f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/ready-warm-0.json",
+      "bytes": 15090,
+      "sha256": "cfa074e6df4225848ed3e48267191c91719b95ed4e3ddd484e629528751af991",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/ready-warm-0.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/ready-warm-1.json",
+      "bytes": 15090,
+      "sha256": "cfa074e6df4225848ed3e48267191c91719b95ed4e3ddd484e629528751af991",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/ready-warm-1.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/ready-warm-2.json",
+      "bytes": 15090,
+      "sha256": "cfa074e6df4225848ed3e48267191c91719b95ed4e3ddd484e629528751af991",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/ready-warm-2.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/ready-warm-3.json",
+      "bytes": 15090,
+      "sha256": "cfa074e6df4225848ed3e48267191c91719b95ed4e3ddd484e629528751af991",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/ready-warm-3.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/ready-warm-4.json",
+      "bytes": 15090,
+      "sha256": "cfa074e6df4225848ed3e48267191c91719b95ed4e3ddd484e629528751af991",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/ready-warm-4.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/ready.png",
+      "bytes": 88762,
+      "sha256": "63506f124650aa7eeb11fca076e9712484965c41d04aa1cca8f561dd50b7d8a8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/run.json",
+      "bytes": 14761,
+      "sha256": "0484caa635d3ac213b016db6fb206a824a0a25f72af8ffa0bf328e0bb38e7479",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/start-method.json",
+      "bytes": 1721,
+      "sha256": "c93170f2e52217429dd88bdb09f805484a37866cae5d0422499756ecd45052ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/visible-ax.json",
+      "bytes": 24374,
+      "sha256": "33ae430c034d960d376871dec1973f7c983c9a4b5d19bc4ae4de8e07cc6b250e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/visible-ax.log",
+      "bytes": 27,
+      "sha256": "3f2ee3a384c60644c8ac63ecdee7b09efb1001554463799160d8091eda00719d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/visible-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/visible-ready.json",
+      "bytes": 54989,
+      "sha256": "996f14d12232d5a8361982a47183fe3f69fb0360f09aadd71fa7e4c1376714e8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/visible-result.json",
+      "bytes": 55079,
+      "sha256": "8ef257cc49178855ec6f950c0426a360eac79aab562661e45ff3e869817a867b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/visible-warm-0.json",
+      "bytes": 23976,
+      "sha256": "1cf8cddc510f4d2fcb17a424d53179c9fa932176fdd9ac36f4fdfe2a7040576e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/visible-warm-0.log",
+      "bytes": 27,
+      "sha256": "9baa191797e5c46423670e187d8d786a7d9fbc3918bd9d5d2700b94c9c1a0e69",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/visible.png",
+      "bytes": 104241,
+      "sha256": "f77589c1ff768d3be2812251f666d238869f49ba395c0765b8d838990ea42f15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/wave-ax.json",
+      "bytes": 18612,
+      "sha256": "e66704e03e50873ed1460f50b8cf4edf6c1e91bc0f6277543d1737afefd3b904",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/wave-ax.log",
+      "bytes": 27,
+      "sha256": "3b6e33a01daa258033471b21aa37485ef051302d1ce083579682d6929d08fec7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/wave-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/wave-ready.json",
+      "bytes": 55014,
+      "sha256": "485bf950f50dc7626472462f5d716b49f17ad78001370db7fe1d32e7556a29a5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/wave-result.json",
+      "bytes": 55102,
+      "sha256": "f31ea4c8ecc07e56d0f7ba6b318066d326d461e537ad3bf459127785c5ba81c2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/wave-warm-0.json",
+      "bytes": 18612,
+      "sha256": "e66704e03e50873ed1460f50b8cf4edf6c1e91bc0f6277543d1737afefd3b904",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/wave-warm-0.log",
+      "bytes": 27,
+      "sha256": "3b6e33a01daa258033471b21aa37485ef051302d1ce083579682d6929d08fec7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/choose-ready-01/wave.png",
+      "bytes": 76734,
+      "sha256": "d8cbfa0a1f07a1862e77dfab0609755efe43ae3a99b92d36fbe08f65e54b91e7",
+      "published": false
+    },
+    {
       "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/comparison-records.jsonl",
       "bytes": 653126,
       "sha256": "a18452cada71c11df53589f2ce36dc5153b7caaf0a321ad17acfe81cf79c22d7",
@@ -4545,6 +4779,630 @@
       "published": false
     },
     {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-build/default-modules-build.log",
+      "bytes": 59440,
+      "sha256": "a6778f5350034847dfac037c3df5d0df9218cb0e046d5b4b690e6b0fd610e0ab",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-build/dependencies.log",
+      "bytes": 160,
+      "sha256": "8ec12bb7d52768b444acbcd03f542df5ab24f968254fa98c6895139a6893f1f3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-build/editor-build.log",
+      "bytes": 168161,
+      "sha256": "38ec2a06d4804c3a96e4e4626548a356667bc50a95e2c8d10dda01ffa9d11a06",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-build/first-build.log",
+      "bytes": 83318,
+      "sha256": "ee52befcaba728822470dc044c4c96ed001b25722edbeadb9a2d7ec59f7dac59",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-build/logger-recheck.log",
+      "bytes": 921,
+      "sha256": "6eed292c434b0eeebeee21cbec3429c696c4b2281ffbdbbd44cdebedb0d24556",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-build/path-override-build.log",
+      "bytes": 69942,
+      "sha256": "f2aa820b709ffb3017832377444e59e04d665a494d7ebe760bbbaa0c8f78aa01",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-comparison.json",
+      "bytes": 4661,
+      "sha256": "3fae50461e8533438617c5fe9030d69d6b6984a0f18baf932aed7595a1bc4148",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/native-parse-0.log",
+      "bytes": 67,
+      "sha256": "fa5a2e251c5d57d35136db0bd8e0215004a79927a3efa97197f85ca8bc0e77b3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/native-parse-1.log",
+      "bytes": 67,
+      "sha256": "fa5a2e251c5d57d35136db0bd8e0215004a79927a3efa97197f85ca8bc0e77b3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/native-parse-2.log",
+      "bytes": 67,
+      "sha256": "fa5a2e251c5d57d35136db0bd8e0215004a79927a3efa97197f85ca8bc0e77b3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/native-parse-3.log",
+      "bytes": 67,
+      "sha256": "fa5a2e251c5d57d35136db0bd8e0215004a79927a3efa97197f85ca8bc0e77b3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/native.log",
+      "bytes": 149682,
+      "sha256": "46b5335d4d064707dd2e75f6b129181ef2c7db0b7e2983ae46406fac6299f1af",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/observations.json",
+      "bytes": 120727,
+      "sha256": "f43909e08d063a0f0313f76253d29fa827f868db1ce9312640c9a859509f8ac9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/observer-used.gd",
+      "bytes": 6832,
+      "sha256": "75a501302ae71371311ba8b29d4ae016edcaeef2f334aecae0ed046fb1187296",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/outgoing-nodes.jsonl",
+      "bytes": 144826,
+      "sha256": "1d99e53a0aa44415c84c3fe2da6d669b395d1f24b2963cd699c153825690f88f",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/outgoing-summary.json",
+      "bytes": 16971,
+      "sha256": "eca46a6bfb8810995cca36a92b8ed224a90a9f4866c8504f1829ae313e5f97c2",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/parse.log",
+      "bytes": 73,
+      "sha256": "6d1c065383a27c36804949b6ffa4b09714470b112e5dacc0bd5aeb7b9c147c4e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/ready-ax.json",
+      "bytes": 29511,
+      "sha256": "db47c02ca697de4650db8133704295f6db9d87623f6fece0ecff25f84d42bcd3",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/ready-ax.log",
+      "bytes": 27,
+      "sha256": "a0d660011acc5018273c42643c753823c28e7ec8b963586ac591ea18688a3bb3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/ready-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/ready-ready.json",
+      "bytes": 56642,
+      "sha256": "6d594cb8c556352e468c32ee7b0d7952000a6ac5904673ab1f79edae71daa013",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/ready-result.json",
+      "bytes": 58370,
+      "sha256": "051fbcb1636c08faee1dbae237ddffe184ecc8bfea309de031e5926f992415e9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/ready-warm-0.json",
+      "bytes": 28968,
+      "sha256": "a5656104ea6e2201b5718690cd64ca707e825417f1101c3818389d29bed8eb7d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/ready-warm-0.log",
+      "bytes": 27,
+      "sha256": "0a17b5aadad84ba1cf280eb68ae48f8093d2ee47f582760739ad18f9c9050717",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/ready.png",
+      "bytes": 113932,
+      "sha256": "952b4344b440e6a60f030fe9864c18e89578bcc2f4dd446af9c0536a61fd875d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/run.json",
+      "bytes": 20510,
+      "sha256": "29fad02cd2f9ff389f06d439bd0456dc056f88ceab4894d6fe047c73659efbde",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/start-method.json",
+      "bytes": 11559,
+      "sha256": "203213fe040f7eb47a26f2d90ea015203c5377478dff5b4154244a8cbadd026e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/wave-ax.json",
+      "bytes": 27652,
+      "sha256": "ba347b6d16c844f780f33872058f0b674f3591950005e61e926a24931cbc23a1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/wave-ax.log",
+      "bytes": 27,
+      "sha256": "7729b7c8853f39507213c751f4412d1b95e60662f30cd66a2a166f8a98a793d2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/wave-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/wave-ready.json",
+      "bytes": 56630,
+      "sha256": "e890cc281957721888924b3be016784100e2bfd2b7c3034626e633669434c74f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/wave-result.json",
+      "bytes": 58337,
+      "sha256": "c1728f74b5677b51ae2d872ffe8fd08760b63a2a85e197898d694c8dfc99e3c8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/wave-warm-0.json",
+      "bytes": 27652,
+      "sha256": "ba347b6d16c844f780f33872058f0b674f3591950005e61e926a24931cbc23a1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/wave-warm-0.log",
+      "bytes": 27,
+      "sha256": "7729b7c8853f39507213c751f4412d1b95e60662f30cd66a2a166f8a98a793d2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/wave.png",
+      "bytes": 96691,
+      "sha256": "70ffbf9f2c9d8c533544b6de6c381ecb6c0e03ab8a9fc247d9e888e3fdc48947",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-provenance.json",
+      "bytes": 5712,
+      "sha256": "909909b1a06a0a060a6f25e12faf649b3154a91dce0ead66175ed44ea42a656d",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-01/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-01/native.log",
+      "bytes": 260,
+      "sha256": "643a1774cc18f93ecf497f97bad46c9c5047f3439b79ebef2d2c4739a25a92a6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-01/observer-used.gd",
+      "bytes": 6832,
+      "sha256": "75a501302ae71371311ba8b29d4ae016edcaeef2f334aecae0ed046fb1187296",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-01/parse.log",
+      "bytes": 73,
+      "sha256": "6d1c065383a27c36804949b6ffa4b09714470b112e5dacc0bd5aeb7b9c147c4e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-01/run.json",
+      "bytes": 8947,
+      "sha256": "f390459f42eb6182b20633e52a04937b9ddb194ddda1f87532f8b62a963fde6b",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-01/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-02/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-02/native.log",
+      "bytes": 677,
+      "sha256": "bbb8ff477ef285b80b95e40106e40c351aa0b0118abea7607ff2df5fe87996f7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-02/observer-used.gd",
+      "bytes": 6832,
+      "sha256": "75a501302ae71371311ba8b29d4ae016edcaeef2f334aecae0ed046fb1187296",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-02/parse.log",
+      "bytes": 73,
+      "sha256": "6d1c065383a27c36804949b6ffa4b09714470b112e5dacc0bd5aeb7b9c147c4e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-02/run.json",
+      "bytes": 9380,
+      "sha256": "03f973ddf92573ab733a7507b114169bc842fa206222ff47347b8ab47a460dee",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-02/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-03/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-03/native-parse-0.log",
+      "bytes": 67,
+      "sha256": "fa5a2e251c5d57d35136db0bd8e0215004a79927a3efa97197f85ca8bc0e77b3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-03/native-parse-1.log",
+      "bytes": 67,
+      "sha256": "fa5a2e251c5d57d35136db0bd8e0215004a79927a3efa97197f85ca8bc0e77b3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-03/native-parse-2.log",
+      "bytes": 67,
+      "sha256": "fa5a2e251c5d57d35136db0bd8e0215004a79927a3efa97197f85ca8bc0e77b3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-03/native-parse-3.log",
+      "bytes": 67,
+      "sha256": "fa5a2e251c5d57d35136db0bd8e0215004a79927a3efa97197f85ca8bc0e77b3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-03/native.log",
+      "bytes": 1210,
+      "sha256": "7ebd22ec5e2a365fe160fedca79e7998bcfcd21f100b04e9f19244f937dfb414",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-03/observer-used.gd",
+      "bytes": 6832,
+      "sha256": "75a501302ae71371311ba8b29d4ae016edcaeef2f334aecae0ed046fb1187296",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-03/parse.log",
+      "bytes": 73,
+      "sha256": "6d1c065383a27c36804949b6ffa4b09714470b112e5dacc0bd5aeb7b9c147c4e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-03/run.json",
+      "bytes": 9943,
+      "sha256": "98eddc7bf38d8c6849bacf775a92cd8fc8b22967c0528e28a4bc623fffde46cc",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-03/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/native-parse-0.log",
+      "bytes": 67,
+      "sha256": "fa5a2e251c5d57d35136db0bd8e0215004a79927a3efa97197f85ca8bc0e77b3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/native-parse-1.log",
+      "bytes": 67,
+      "sha256": "fa5a2e251c5d57d35136db0bd8e0215004a79927a3efa97197f85ca8bc0e77b3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/native-parse-2.log",
+      "bytes": 67,
+      "sha256": "fa5a2e251c5d57d35136db0bd8e0215004a79927a3efa97197f85ca8bc0e77b3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/native-parse-3.log",
+      "bytes": 67,
+      "sha256": "fa5a2e251c5d57d35136db0bd8e0215004a79927a3efa97197f85ca8bc0e77b3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/native.log",
+      "bytes": 139788,
+      "sha256": "5357fa46f49b5c8e6dcf08d7fa6ef5dcac868ff1e6860efcbb04b8b67dc3a937",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/observations.json",
+      "bytes": 120683,
+      "sha256": "52e26a918d93cdd7d51d1aab1d2f0a47a0fed6f33d3faab8b3403ca579dff046",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/observer-used.gd",
+      "bytes": 6832,
+      "sha256": "75a501302ae71371311ba8b29d4ae016edcaeef2f334aecae0ed046fb1187296",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/outgoing-nodes.jsonl",
+      "bytes": 134776,
+      "sha256": "7c36a2f403fb8593ebdf0962127104685178c1837eb2f03b643ada212ba0f779",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/outgoing-summary.json",
+      "bytes": 16929,
+      "sha256": "d082b598b8e329b31fc78ccfe314b0f082363cbd27a1b75ee49e263302c98089",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/parse.log",
+      "bytes": 73,
+      "sha256": "6d1c065383a27c36804949b6ffa4b09714470b112e5dacc0bd5aeb7b9c147c4e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready-ax.json",
+      "bytes": 19432,
+      "sha256": "010c78c4e12d78f0066264dfc4132b58bbe7386faa02117cb1575a8f3e7ec503",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready-ax.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready-ready.json",
+      "bytes": 56617,
+      "sha256": "58241a5f3b27f17f8426a12585dd3efda611e66b5888851ec35aff24c647b47a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready-result.json",
+      "bytes": 58323,
+      "sha256": "897b596e3ab0b579de8c36a53d69e704dec9875414bf23c1b856b3ef09a7f7da",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready-warm-0.json",
+      "bytes": 18889,
+      "sha256": "81493abdcd8e33437697ac2b15268e662126d32ca9c7ce2f6d5d188e4b288a6a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready-warm-0.log",
+      "bytes": 27,
+      "sha256": "45daea2853e62c80d0a3c55beef1093f2671803db085b99ec3a117f41d24713d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready-warm-1.json",
+      "bytes": 19432,
+      "sha256": "010c78c4e12d78f0066264dfc4132b58bbe7386faa02117cb1575a8f3e7ec503",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready-warm-1.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready-warm-2.json",
+      "bytes": 19432,
+      "sha256": "010c78c4e12d78f0066264dfc4132b58bbe7386faa02117cb1575a8f3e7ec503",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready-warm-2.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready-warm-3.json",
+      "bytes": 19432,
+      "sha256": "010c78c4e12d78f0066264dfc4132b58bbe7386faa02117cb1575a8f3e7ec503",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready-warm-3.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready-warm-4.json",
+      "bytes": 19432,
+      "sha256": "010c78c4e12d78f0066264dfc4132b58bbe7386faa02117cb1575a8f3e7ec503",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready-warm-4.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/ready.png",
+      "bytes": 88778,
+      "sha256": "a10c820ebfabd7b8e3d8b1e5a07fdb5e7e92efb62243a0b80616c9d7b071cfbd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/run.json",
+      "bytes": 21740,
+      "sha256": "28481ab4bf0ba85c33dfb66f24b151883101eab0b0a57968c94f9a31ba046999",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/start-method.json",
+      "bytes": 6846,
+      "sha256": "c5a66c2825380808e1c9974314c9321b79b797cd96aeb3a1afe8f13d85516a60",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/wave-ax.json",
+      "bytes": 24142,
+      "sha256": "0e6b9fb011be2f7ac9910d8d40cde6c5324008ece0c1966d18f22439220b81bd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/wave-ax.log",
+      "bytes": 27,
+      "sha256": "3b6e33a01daa258033471b21aa37485ef051302d1ce083579682d6929d08fec7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/wave-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/wave-ready.json",
+      "bytes": 56636,
+      "sha256": "ed5edc684febe0e841ad4c8bda07cfaecad0de71ddac0d43a13798653704f515",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/wave-result.json",
+      "bytes": 58344,
+      "sha256": "daac14b61e4269dcc6cd3353868a490ccf872b00d8cf1032b48a4d9c9baaf9bf",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/wave-warm-0.json",
+      "bytes": 24142,
+      "sha256": "0e6b9fb011be2f7ac9910d8d40cde6c5324008ece0c1966d18f22439220b81bd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/wave-warm-0.log",
+      "bytes": 27,
+      "sha256": "3b6e33a01daa258033471b21aa37485ef051302d1ce083579682d6929d08fec7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-ready-04/wave.png",
+      "bytes": 76554,
+      "sha256": "85218979a416b1dbf21aac8c20644f07627559b599f6da525fd827153a9854c3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-trace.patch",
+      "bytes": 1449,
+      "sha256": "7dd59e6493032d40ca55bce2490b37fa8f12b436314ba8eb3375323d109bba72",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine.md",
+      "bytes": 5444,
+      "sha256": "4aa6517cc4416b114d568dc76300b25a6cb7fdd73ffa23087bfc9e879d75f3ba",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/extract_engine.py",
+      "bytes": 3781,
+      "sha256": "d0161e6c82eef5e15fb1793d82d690b34f4b7705f255fe733f484e6fb8fcc649",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/final-parse-import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/final-parse-result.json",
+      "bytes": 1043,
+      "sha256": "5a723127554dc4ba4329563679c29502ee91c0075ce832fdd305f62c7d11c367",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/final-parse.log",
+      "bytes": 73,
+      "sha256": "6d1c065383a27c36804949b6ffa4b09714470b112e5dacc0bd5aeb7b9c147c4e",
+      "published": false
+    },
+    {
       "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/focus-prototype-01/hidden-ax.json",
       "bytes": 15187,
       "sha256": "ab5f52d419c03f9e954ff4fba7fccdd5c38ef17d343b59338eee15831113da21",
@@ -4968,6 +5826,174 @@
       "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/full-check-visibility.log",
       "bytes": 1133,
       "sha256": "65c50e205e74a868c506552834dc222d3a68db70b6b3b72020991d9a8feebf7f",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/geometry-comparison.json",
+      "bytes": 6920,
+      "sha256": "c64bbbc0605b9370fde54d003a4bbf80a10d16578c7bda425ce122a03a0719d0",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/native.log",
+      "bytes": 429,
+      "sha256": "e34e059cbecf51a3d00352b138f3f08f4f35ceca21e6b344ba36136aab3fead1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/observations.json",
+      "bytes": 120727,
+      "sha256": "80314934eb1132365c727d6a5d60ea1f096950fb1787e583dd2b7ff2440cb0b8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/observer-used.gd",
+      "bytes": 6832,
+      "sha256": "75a501302ae71371311ba8b29d4ae016edcaeef2f334aecae0ed046fb1187296",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/parse.log",
+      "bytes": 73,
+      "sha256": "6d1c065383a27c36804949b6ffa4b09714470b112e5dacc0bd5aeb7b9c147c4e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/ready-ax.json",
+      "bytes": 29570,
+      "sha256": "1d5eb7d36c6800d43f89219ddc398722f77935fd21e67b4ea13de6b48c9a590f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/ready-ax.log",
+      "bytes": 27,
+      "sha256": "a0d660011acc5018273c42643c753823c28e7ec8b963586ac591ea18688a3bb3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/ready-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/ready-ready.json",
+      "bytes": 56641,
+      "sha256": "af52353b41b1e7641c0269d266be6f00dad20f6301d155e8f1a27c6d609b4bf0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/ready-result.json",
+      "bytes": 58370,
+      "sha256": "7dd7ad94f5b09d1fea4a603c93c03a17d73104e9b2b6e174ba3c82d2f77be139",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/ready-warm-0.json",
+      "bytes": 29026,
+      "sha256": "46cd12340e40478aa5aec7bd1a6adb514ddb5eb3405ee9b31795577b71ea2b60",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/ready-warm-0.log",
+      "bytes": 27,
+      "sha256": "0a17b5aadad84ba1cf280eb68ae48f8093d2ee47f582760739ad18f9c9050717",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/ready.png",
+      "bytes": 113797,
+      "sha256": "03add8b95d5f561d19ff6885a42218fec75243388e4ab22233868e6f4391fc99",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/run.json",
+      "bytes": 20212,
+      "sha256": "df0b32d7812c082f8f10a058008d960c93e684586a71967e2d1fa7357d04fabb",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/start-method.json",
+      "bytes": 11559,
+      "sha256": "bed4d3115e3e49f27387b68a9587c918d5cb710367ecd7514f4ab47735ab042d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/wave-ax.json",
+      "bytes": 27719,
+      "sha256": "a0942050c1411283baba960ecb6582902019aa0f2d8405108cd314072a45ffa5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/wave-ax.log",
+      "bytes": 27,
+      "sha256": "7729b7c8853f39507213c751f4412d1b95e60662f30cd66a2a166f8a98a793d2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/wave-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/wave-ready.json",
+      "bytes": 56629,
+      "sha256": "703a0a18ae20a1efb854bfd4860ddd22dd1b9ebd666adf4ace74716b6550201b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/wave-result.json",
+      "bytes": 58337,
+      "sha256": "0012853344ac6b68da393934dd26b693e2913bfe8ad699aa174c1b620473463a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/wave-warm-0.json",
+      "bytes": 27719,
+      "sha256": "a0942050c1411283baba960ecb6582902019aa0f2d8405108cd314072a45ffa5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/wave-warm-0.log",
+      "bytes": 27,
+      "sha256": "7729b7c8853f39507213c751f4412d1b95e60662f30cd66a2a166f8a98a793d2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/inspector-geometry-01/wave.png",
+      "bytes": 96788,
+      "sha256": "ed42f5d6b481bec1946e33332a6eb5021a2dc7d55722f90159de467289ed01ab",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/journey-input-sources.jsonl",
+      "bytes": 30443,
+      "sha256": "5b426b086a8c6ad43d3c5ba6ed4fb31c5495331acf240bbb3c690c70a2ed71c6",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/journey-summary.json",
+      "bytes": 50930,
+      "sha256": "e144f181d3eeeaa30def70a8c54830aece8587d05ed3674af90355c83a3c5e53",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/journeys.md",
+      "bytes": 9185,
+      "sha256": "5e03a744190762e4416e65256a379e42cbc7e8ab90fae982f9ba53bdcea40b58",
       "published": true
     },
     {
@@ -6621,6 +7647,1914 @@
       "published": true
     },
     {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-01/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-01/native.log",
+      "bytes": 490,
+      "sha256": "d3adea4924f516cf021250143958fc12cefa602b26f365eea4b8d7e1cbdcb0c7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-01/observer-used.gd",
+      "bytes": 4159,
+      "sha256": "e07a7a1bc159c3440b1ef3060f4319819f45b805537436f7ac4a484fb1273346",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-01/run.json",
+      "bytes": 8879,
+      "sha256": "098f3fb798a75503cc7047c61cef22ea6ec02569bab4daebf4844c3c4c7cef0d",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-01/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/native.log",
+      "bytes": 950,
+      "sha256": "8c67ef6893c550e23c4ca5a11298c414ed3215349082bf1b10e8f9c945479210",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/observations.json",
+      "bytes": 343585,
+      "sha256": "6a701363c1297a889d478ae6533b63102f5ab1b6c0f9800b66b46b86f94ec95f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/observer-used.gd",
+      "bytes": 4167,
+      "sha256": "c8fc45638a4d93a6875f3869184d1bc1b6f7862ef596148953eac338dfdc0f71",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/parse.log",
+      "bytes": 73,
+      "sha256": "6d1c065383a27c36804949b6ffa4b09714470b112e5dacc0bd5aeb7b9c147c4e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/pick_one-ax.json",
+      "bytes": 24461,
+      "sha256": "af7cf9745d490a79a199fd327a724e69bcd2b0cc42a18c718c84c05fafad4b27",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/pick_one-ax.log",
+      "bytes": 27,
+      "sha256": "407c255bb3f3a487b7bc73e015b4293bcbd954b3a2da6c673915f76fb14380da",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/pick_one-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/pick_one-ready.json",
+      "bytes": 55117,
+      "sha256": "5192bfa8dc219f739eff33510f9b6a9caceb6219558747ee9f07040425f0e04a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/pick_one-result.json",
+      "bytes": 55335,
+      "sha256": "9122787a1a69d336b7ab3689784bc42310c6789709ba7a18496a1cee08a34a0f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/pick_one-warm-0.json",
+      "bytes": 23977,
+      "sha256": "17244e894b77ccc99927d0acd7fe46ae376eeb5ae387e1475e341bb14ab2dfde",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/pick_one-warm-0.log",
+      "bytes": 27,
+      "sha256": "9baa191797e5c46423670e187d8d786a7d9fbc3918bd9d5d2700b94c9c1a0e69",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/pick_one.png",
+      "bytes": 79102,
+      "sha256": "16be72ca5fcdaf04958bd5eaae0afdadf76be8b1f87d75b02469a753623b97ee",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/pick_two-ax.json",
+      "bytes": 27508,
+      "sha256": "aef51cdafe4bc30a5f12a47e5a32707c43cc949cc1f31c43e6c18d099149c23c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/pick_two-ax.log",
+      "bytes": 27,
+      "sha256": "01ee8759e98dcb49366f20a3ccf73b405d5f57485c98474e1c8581528e728d3c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/pick_two-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/pick_two-ready.json",
+      "bytes": 55143,
+      "sha256": "ce4b6d720498c0c6b9637255ef8025d5223f8ed1642f874400b82f92eee7cbac",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/pick_two-result.json",
+      "bytes": 55366,
+      "sha256": "47e1f7fd96d9671aa6a19394dd0a8b8f198c42556dc5095945ee01faccf681e6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/pick_two-warm-0.json",
+      "bytes": 27422,
+      "sha256": "b5446c9748558ccb63258888d894755458fd74d5b5d1ce111b869e0378bbce91",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/pick_two-warm-0.log",
+      "bytes": 27,
+      "sha256": "3f16d212e31206ad7f1dd4a452671ac9ca5a522c46ca3fbb10200a70be6db8ce",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/pick_two.png",
+      "bytes": 84542,
+      "sha256": "a25e8c31bd770e1c63c2fcb967c400b09299dbe4b4d5672e3c9eb808f0bfdf2d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready-ax.json",
+      "bytes": 23141,
+      "sha256": "05a472ae322e64c6cda24abf24fd8f3a260c2f71c00b5b69bcb9cf343f11c10a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready-ax.log",
+      "bytes": 27,
+      "sha256": "dc7cbfc07dad334bf6730e1bca217b9c3a48b9f523244996fc0a1210307b0170",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready-ready.json",
+      "bytes": 55173,
+      "sha256": "2abb2ad76a74d9763b49a585a380431bf47d4b6459944ade0dab9e11456ea7be",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready-result.json",
+      "bytes": 55393,
+      "sha256": "cf65b4bee055cb519ad071a9205e8e91695bfd0386cb9e64ab598c902409b92f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready-warm-0.json",
+      "bytes": 23051,
+      "sha256": "c15c01c6285daf452a6d0061ad3f60845759a78a7d4588c37fba94c387ef743f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready-warm-0.log",
+      "bytes": 27,
+      "sha256": "56f4a81717852cc93f35d39806b5c4a4b453eb43960506ada839b25aef5976f2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready.png",
+      "bytes": 115677,
+      "sha256": "85cb924830e960df571081ddea2ca3c662e23320c3eb7450002f98505edd5af0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready_closed-ax.json",
+      "bytes": 19588,
+      "sha256": "0ad929ff94b6b567dba3ec65222fc708f890657bb282a6aa4e9784d61d78c972",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready_closed-ax.log",
+      "bytes": 27,
+      "sha256": "33ee162c91ce92228432b76981045cee642d50a18467f8141e8c7f9b3840325d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready_closed-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready_closed-ready.json",
+      "bytes": 55169,
+      "sha256": "160cbf5951cc596e86c3c0379d6a9fb549a703fd6459a0206e21af03d08b6a7e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready_closed-result.json",
+      "bytes": 55389,
+      "sha256": "4c71e7b3db72a7705bedf03d613ef66683b4c0976b7ad7510feaca5e6d050b97",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready_closed-warm-0.json",
+      "bytes": 19588,
+      "sha256": "0ad929ff94b6b567dba3ec65222fc708f890657bb282a6aa4e9784d61d78c972",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready_closed-warm-0.log",
+      "bytes": 27,
+      "sha256": "33ee162c91ce92228432b76981045cee642d50a18467f8141e8c7f9b3840325d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready_closed.png",
+      "bytes": 95578,
+      "sha256": "4f13931ae51683d7fbc30e46048aaedea2b59779eb75678b4e323ba199c0ebb3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready_open-ax.json",
+      "bytes": 22200,
+      "sha256": "74152922ae4fd623287e1be192bf1a0d6f77f03277a19e8c9b6584f2a06327f4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready_open-ax.log",
+      "bytes": 27,
+      "sha256": "0a17b5aadad84ba1cf280eb68ae48f8093d2ee47f582760739ad18f9c9050717",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready_open-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready_open-ready.json",
+      "bytes": 55156,
+      "sha256": "d2a95d63c334c2936cbcd437a5f660189966ad281d931318f2d4379b8e45834f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready_open-result.json",
+      "bytes": 55375,
+      "sha256": "0e3001b272480fa6d997df5b38d8cbc8873b4b6561e2596cfd0ea9812375fa80",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready_open-warm-0.json",
+      "bytes": 22200,
+      "sha256": "74152922ae4fd623287e1be192bf1a0d6f77f03277a19e8c9b6584f2a06327f4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready_open-warm-0.log",
+      "bytes": 27,
+      "sha256": "0a17b5aadad84ba1cf280eb68ae48f8093d2ee47f582760739ad18f9c9050717",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/ready_open.png",
+      "bytes": 107235,
+      "sha256": "1d92f95df7e847f18bc46570467047145d10c7455659dd9fc7232f5884528380",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/run.json",
+      "bytes": 20794,
+      "sha256": "53694c35d4d6d46b1fe3abc663719dcbf76ee3532b73e935382149ee438a48b5",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/start-method.json",
+      "bytes": 6580,
+      "sha256": "e1de70339879a8a1373d8902e6b918eba92eb2040076838f5204426836ecb75b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/wave-ax.json",
+      "bytes": 21226,
+      "sha256": "9b3a5399b938917ef5a9092b4d18c795760e527b3a92ca1dd8d762f3cfc98a16",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/wave-ax.log",
+      "bytes": 27,
+      "sha256": "7729b7c8853f39507213c751f4412d1b95e60662f30cd66a2a166f8a98a793d2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/wave-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/wave-ready.json",
+      "bytes": 55158,
+      "sha256": "ba39de85e8e3afea438c60fedb7d7e6a10b28cba504cf05839120a8d0457118d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/wave-result.json",
+      "bytes": 55377,
+      "sha256": "9433d5da1980f0d0ed4ca9983d9f7cf9ecbb302cdec967677a2357e80f6a36a2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/wave-warm-0.json",
+      "bytes": 21226,
+      "sha256": "9b3a5399b938917ef5a9092b4d18c795760e527b3a92ca1dd8d762f3cfc98a16",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/wave-warm-0.log",
+      "bytes": 27,
+      "sha256": "7729b7c8853f39507213c751f4412d1b95e60662f30cd66a2a166f8a98a793d2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-close-02/wave.png",
+      "bytes": 96832,
+      "sha256": "7028f106134418b49386cd0471a52dfcc3fc1d51d2a525a7a58d41ed67e93fc1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/native.log",
+      "bytes": 769,
+      "sha256": "6a61be6204abaee98d2a33953b50dd861577f895ab2ffd9ca6b59bdf50bf25e5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/observations.json",
+      "bytes": 227940,
+      "sha256": "cde037ad80920650ec37d6cad9886bf851eb8ca59e5831f8a4aee045feb78b06",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/observer-used.gd",
+      "bytes": 3213,
+      "sha256": "47525b6ce11c104f4da9f183a3be8d4f3022e330c4bcf2805e70aa64e0b80c2a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/pick_one-ax.json",
+      "bytes": 24461,
+      "sha256": "5e0b656c5a90dbdafec2891ffacc420de7a1ef47f54227f030d37562450e6cc1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/pick_one-ax.log",
+      "bytes": 27,
+      "sha256": "407c255bb3f3a487b7bc73e015b4293bcbd954b3a2da6c673915f76fb14380da",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/pick_one-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/pick_one-ready.json",
+      "bytes": 54990,
+      "sha256": "626814e0c98fd0d898ca7b932f9a50f2ddf3de4ceb6d9dc8d7992aaad1b0c0b4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/pick_one-result.json",
+      "bytes": 55081,
+      "sha256": "e30a0fabd1da2dcafe5d4e097258859fb875c12fd0c045b3bbc060b1a0d3a791",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/pick_one-warm-0.json",
+      "bytes": 23977,
+      "sha256": "caebbdfe77fe6e8b90851eab47426fc07637ad3b5ead013609fbaa4f787a92ed",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/pick_one-warm-0.log",
+      "bytes": 27,
+      "sha256": "9baa191797e5c46423670e187d8d786a7d9fbc3918bd9d5d2700b94c9c1a0e69",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/pick_one.png",
+      "bytes": 79333,
+      "sha256": "142f57beb362d1a253efe6fabc2fe8b07f94c082ebe5403167ffdd12351c71ee",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/pick_two-ax.json",
+      "bytes": 27508,
+      "sha256": "ae37fb92335aa404919f05d3501390b054d718e5f0385eb8d0b522dc7e42f016",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/pick_two-ax.log",
+      "bytes": 27,
+      "sha256": "01ee8759e98dcb49366f20a3ccf73b405d5f57485c98474e1c8581528e728d3c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/pick_two-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/pick_two-ready.json",
+      "bytes": 55017,
+      "sha256": "e6cb3cf2466121e4b17f43dd81c0b3f190b0968a2dd6e4b889ed54ac1992dc87",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/pick_two-result.json",
+      "bytes": 55113,
+      "sha256": "7a41df21a4f8686ffbe4921cc9503c107a1f53404a0c985533d100d83adf0963",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/pick_two-warm-0.json",
+      "bytes": 27422,
+      "sha256": "68f83ad679822a25fba6f17d3cc890151fdf6ebfc81f81a9e3279a17414640d1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/pick_two-warm-0.log",
+      "bytes": 27,
+      "sha256": "3f16d212e31206ad7f1dd4a452671ac9ca5a522c46ca3fbb10200a70be6db8ce",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/pick_two.png",
+      "bytes": 84424,
+      "sha256": "3e424d72e4e53fc42328f08879998224db504e38150b087480feade331a07763",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/ready-ax.json",
+      "bytes": 22285,
+      "sha256": "ccae513840b78ba25e8d5690b68044ca34e28c69ea6f780f5f2c78d49b0bd116",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/ready-ax.log",
+      "bytes": 27,
+      "sha256": "65f176b2c572c124ae1b87b81302faaeae83e1786f33cd1d7a88ff1c9de340a5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/ready-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/ready-ready.json",
+      "bytes": 55025,
+      "sha256": "70c6d87846419d8399bdb483f2eb0046d34845924dfaec87ee45f7e99f60d99a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/ready-result.json",
+      "bytes": 55119,
+      "sha256": "f693a6e001705bb30059a1459a90c6e4b1d8bf8ced25919e90c3c813f2aded83",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/ready-warm-0.json",
+      "bytes": 22195,
+      "sha256": "aea9ee1ffdb54b47c3be124ac726ada5d219eeace14f3a514f1e2537421a760b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/ready-warm-0.log",
+      "bytes": 27,
+      "sha256": "0a17b5aadad84ba1cf280eb68ae48f8093d2ee47f582760739ad18f9c9050717",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/ready.png",
+      "bytes": 112109,
+      "sha256": "c40c41d41aa1ab8aff984d2d3893faaa6d751dc3731246a79f4432ed1a3c2545",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/run.json",
+      "bytes": 15189,
+      "sha256": "eb2a485a1ba25bb518d657923de6cdb90e75cf5c283cad02b8e483ccd77e1d06",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/start-method.json",
+      "bytes": 2918,
+      "sha256": "8310b7fe8a11070718c47950826c35d59ef68f8430d9560efd11701d42100a12",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/wave-ax.json",
+      "bytes": 21226,
+      "sha256": "01ddc11bf3c9e4f36ebc8b0bc22f8fec2b9f7ccd5735c87949c36bfeeb6e789b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/wave-ax.log",
+      "bytes": 27,
+      "sha256": "7729b7c8853f39507213c751f4412d1b95e60662f30cd66a2a166f8a98a793d2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/wave-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/wave-ready.json",
+      "bytes": 55032,
+      "sha256": "6333f628d18365b258a5467541aa860416d075351dbcf4669fd94ff9db458f0e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/wave-result.json",
+      "bytes": 55125,
+      "sha256": "0915ba720f1322d8d4f8c5ba62e46f1bbd1452e547784f4b8018e04b6339efdd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/wave-warm-0.json",
+      "bytes": 21226,
+      "sha256": "01ddc11bf3c9e4f36ebc8b0bc22f8fec2b9f7ccd5735c87949c36bfeeb6e789b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/wave-warm-0.log",
+      "bytes": 27,
+      "sha256": "7729b7c8853f39507213c751f4412d1b95e60662f30cd66a2a166f8a98a793d2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-journey-01/wave.png",
+      "bytes": 95283,
+      "sha256": "dfbddc9d60898165e0ac83c9afa9589fb7bfc2b3939eb8652dbe82cfdd20bdcb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/continue-ax.json",
+      "bytes": 14294,
+      "sha256": "091730fcc5e88113a7574fad72816f34f2a9c064376209a6dce0af92a971ef95",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/continue-ax.log",
+      "bytes": 27,
+      "sha256": "e2a2a57aaabba3c16258ac59d232d4803dcf6799e37e250e193f5a4246c3ffa4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/continue-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/continue-ready.json",
+      "bytes": 53232,
+      "sha256": "c272431cf887453bdebeb2f83db71b58bc716fe9ac816e6fc75d1443561289f4",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/continue-result.json",
+      "bytes": 53529,
+      "sha256": "0f302c46c2e26ff08296bd62ec146c6eb57699c56eb1359bea89acba33d3440c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/continue-warm-0.json",
+      "bytes": 14237,
+      "sha256": "2c410e2d964375ba37a9c19afaac7055ced589d9f055403fb9cb163be791fd1d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/continue-warm-0.log",
+      "bytes": 27,
+      "sha256": "e2a2a57aaabba3c16258ac59d232d4803dcf6799e37e250e193f5a4246c3ffa4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/continue.png",
+      "bytes": 64496,
+      "sha256": "906959e10e900f902824576f0e779551a691a41b2bb8a64a903ea84d1c0ad9ee",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/leave-ax.json",
+      "bytes": 23566,
+      "sha256": "1cffafdb8328c6dd20adc86d6ab1227e3e704762b9abad88a799e893c8926466",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/leave-ax.log",
+      "bytes": 27,
+      "sha256": "2afb89b8f5fd492dae0cd433c611af949b1835af718d31b802451aedac604ab4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/leave-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/leave-ready.json",
+      "bytes": 55326,
+      "sha256": "1034f7908f25c1121a4bb6d30c7ac551ffce5b81d4132610be914020225cc6d6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/leave-result.json",
+      "bytes": 55404,
+      "sha256": "2df1cc7d5d36fc7450fc3a9a166a442184962969597438c1583dc733930d2ea5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/leave-warm-0.json",
+      "bytes": 23487,
+      "sha256": "cd7a66581391621f62d0e4f3bf168075fc78291f9c9dbb7666ce54a499a20448",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/leave-warm-0.log",
+      "bytes": 27,
+      "sha256": "68083274feb803a98e4d5a56527f447ab80b4fdbbc7eef86c6de4f74ce748e90",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/leave.png",
+      "bytes": 64483,
+      "sha256": "602450f684d4e3a969dff0f0c01617e995dc70fdad0fab9421afe8682f04ff50",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/native.log",
+      "bytes": 925,
+      "sha256": "d34067747e7ee42eee79d6252ff3da01775dee6cf4231c2b8110f2c2e18c0285",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/observer-used.gd",
+      "bytes": 5823,
+      "sha256": "72fc45db83b0bd2b860d93d2034f69993c39d79979fa48c7d0d370d67376bd3b",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/parse.log",
+      "bytes": 73,
+      "sha256": "6d1c065383a27c36804949b6ffa4b09714470b112e5dacc0bd5aeb7b9c147c4e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pause-ax.json",
+      "bytes": 23487,
+      "sha256": "af04df3d1fef73105a678262e01155818831ba013b3a6b4b641fd94a8a8cd816",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pause-ax.log",
+      "bytes": 27,
+      "sha256": "68083274feb803a98e4d5a56527f447ab80b4fdbbc7eef86c6de4f74ce748e90",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pause-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pause-ready.json",
+      "bytes": 55326,
+      "sha256": "2eaadacd46ecde73dbb3c0b702e4a8b7eedb76d44d9684858b3e86d5ead7e943",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pause-result.json",
+      "bytes": 55735,
+      "sha256": "47c6cd4f25a52b4393cca785a4fee85d220f618b80ecda09b0c0c74b6cbc0316",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pause-warm-0.json",
+      "bytes": 23487,
+      "sha256": "af04df3d1fef73105a678262e01155818831ba013b3a6b4b641fd94a8a8cd816",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pause-warm-0.log",
+      "bytes": 27,
+      "sha256": "68083274feb803a98e4d5a56527f447ab80b4fdbbc7eef86c6de4f74ce748e90",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pause.png",
+      "bytes": 90339,
+      "sha256": "57907c90b650d432976ff6ba1fdf32b23f6a82796f6ff891b34f004fdbf85a2f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pick_one-ax.json",
+      "bytes": 24461,
+      "sha256": "5d8fe2cea6a11b6b471909f61cdabf9f7bc057d1a07e2841cc9e4110e2e1bf5f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pick_one-ax.log",
+      "bytes": 27,
+      "sha256": "407c255bb3f3a487b7bc73e015b4293bcbd954b3a2da6c673915f76fb14380da",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pick_one-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pick_one-ready.json",
+      "bytes": 55278,
+      "sha256": "821da18b24449edf9ee7dcf6acec725c9239fd9e385ba9fb3ee252d3b95f08c4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pick_one-result.json",
+      "bytes": 55657,
+      "sha256": "76e4aab736ee09ba296c4b5b2bb30f2db9592f587ed9f772007606e190029f5e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pick_one-warm-0.json",
+      "bytes": 23977,
+      "sha256": "661abbbe9673d3edb3455a4d9d97edbfc86c4a0051e5696eadaf5e4286beefd5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pick_one-warm-0.log",
+      "bytes": 27,
+      "sha256": "9baa191797e5c46423670e187d8d786a7d9fbc3918bd9d5d2700b94c9c1a0e69",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pick_one.png",
+      "bytes": 79188,
+      "sha256": "0d6cd1ae4717389b984aeb1908bc2f53f9ecbbb1a897a2bc0589200ee83ea89c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pick_two-ax.json",
+      "bytes": 27508,
+      "sha256": "ea08e6c8433f2f139a6cb144ad463ecbc57e5535f8ea13b6062d977ae388187e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pick_two-ax.log",
+      "bytes": 27,
+      "sha256": "01ee8759e98dcb49366f20a3ccf73b405d5f57485c98474e1c8581528e728d3c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pick_two-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pick_two-ready.json",
+      "bytes": 55326,
+      "sha256": "6a92102e91d850335d6ca479d3b60d7922e6d48c35e531d30566872a871dddc8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pick_two-result.json",
+      "bytes": 55732,
+      "sha256": "771bc6cdeff6988caa66ad44606f3b2dbdbf240a5126156d90d9f83bf8347cda",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pick_two-warm-0.json",
+      "bytes": 27422,
+      "sha256": "01066ac13b22f7fdbd2f891327cc5ec1d29a170841ab69a1ee4619039a97ae70",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pick_two-warm-0.log",
+      "bytes": 27,
+      "sha256": "3f16d212e31206ad7f1dd4a452671ac9ca5a522c46ca3fbb10200a70be6db8ce",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/pick_two.png",
+      "bytes": 84680,
+      "sha256": "2e718c3024c4300c8325090e7ba7f8e5c0856cd4c390be065522b881cd96c0c0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/ready-ready.json",
+      "bytes": 53229,
+      "sha256": "d7654c7387f7052a44eb209b54ff6cc5eadea14fa8597bef3201c492b261b1da",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/ready-warm-0.json",
+      "bytes": 14234,
+      "sha256": "86b654b8edf5279ef3770c931bef816d6b5194ef01edc478934886a3e6a5c2e0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/ready-warm-0.log",
+      "bytes": 27,
+      "sha256": "e2a2a57aaabba3c16258ac59d232d4803dcf6799e37e250e193f5a4246c3ffa4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/run.json",
+      "bytes": 22354,
+      "sha256": "9998951fee0b05a2af4ce2253ab3bd027bc9d889d2739495a7d3fa2b25783f77",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/saved_ready-ax.json",
+      "bytes": 22201,
+      "sha256": "e4e4938cd48da477eebfdbb7b706fe9708ae92f0338c9e46197bf0e8c63cb9eb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/saved_ready-ax.log",
+      "bytes": 27,
+      "sha256": "0a17b5aadad84ba1cf280eb68ae48f8093d2ee47f582760739ad18f9c9050717",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/saved_ready-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/saved_ready-ready.json",
+      "bytes": 55340,
+      "sha256": "45b28106322eb84561727b373e45e7647268a33e9b9ab72659c2b12adde62dbe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/saved_ready-result.json",
+      "bytes": 55742,
+      "sha256": "5ff4018fb65e110286ee7f8fc03791c72faebd33d047211f01bb65b278b3fe5d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/saved_ready-warm-0.json",
+      "bytes": 22201,
+      "sha256": "e4e4938cd48da477eebfdbb7b706fe9708ae92f0338c9e46197bf0e8c63cb9eb",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/saved_ready-warm-0.log",
+      "bytes": 27,
+      "sha256": "0a17b5aadad84ba1cf280eb68ae48f8093d2ee47f582760739ad18f9c9050717",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/saved_ready.png",
+      "bytes": 107344,
+      "sha256": "41f863328f932e5fdec05c45983365256be152274ba2c515cd8096817332f185",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-01/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/continue-ax.json",
+      "bytes": 18379,
+      "sha256": "42ae24d7d5f7320c66fed9dcacb5836d633a8f1d78dbc5fe23531ea3ec05d905",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/continue-ax.log",
+      "bytes": 27,
+      "sha256": "e2a2a57aaabba3c16258ac59d232d4803dcf6799e37e250e193f5a4246c3ffa4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/continue-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/continue-ready.json",
+      "bytes": 54569,
+      "sha256": "4d62973061d911754654c326d0eafa714d37eb04202e1d3221707fb89553cc20",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/continue-result.json",
+      "bytes": 56203,
+      "sha256": "20a8f0798be4f754c1c1e4fd00dc4d727a35aca4f693bb532280d005039cca1b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/continue-warm-0.json",
+      "bytes": 18322,
+      "sha256": "596347db1a981afd1e9ecf93b921756d07b3963605b88a66a956c7dad118cfcc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/continue-warm-0.log",
+      "bytes": 27,
+      "sha256": "e2a2a57aaabba3c16258ac59d232d4803dcf6799e37e250e193f5a4246c3ffa4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/continue.png",
+      "bytes": 64570,
+      "sha256": "a053630658099035872d631f78b9c6594148f654bb328220a6181089a878aa47",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/leave-ax.json",
+      "bytes": 30781,
+      "sha256": "42a1b1426a52887b75f6ba05302ced2b87ec6b5f23fdac3b158409eb67abb4c1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/leave-ax.log",
+      "bytes": 27,
+      "sha256": "2afb89b8f5fd492dae0cd433c611af949b1835af718d31b802451aedac604ab4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/leave-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/leave-ready.json",
+      "bytes": 56658,
+      "sha256": "8f4b375c88d05cf0be6c5b5f6b165a55ae76c4a3cc2595db9c48a945044df402",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/leave-result.json",
+      "bytes": 58073,
+      "sha256": "eb6c422fbf313e0eddd9ccd8ea32e5397ae2e97d8c0e3a17d6556710c6194b3a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/leave-warm-0.json",
+      "bytes": 30702,
+      "sha256": "b045cf472a4f2b6cc95545ce89b6269d4ad5af873da1a09539366e88c4c679f3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/leave-warm-0.log",
+      "bytes": 27,
+      "sha256": "68083274feb803a98e4d5a56527f447ab80b4fdbbc7eef86c6de4f74ce748e90",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/leave.png",
+      "bytes": 64595,
+      "sha256": "53bdcfafcb427f9aaf45cdd21ba3f9de786655c1cd26d48688c625d634b227a7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/native.log",
+      "bytes": 857,
+      "sha256": "de689085b921bcfc7604ea4278898091e74460e217482585adce06162beaff9a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/observer-used.gd",
+      "bytes": 6832,
+      "sha256": "75a501302ae71371311ba8b29d4ae016edcaeef2f334aecae0ed046fb1187296",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/parse.log",
+      "bytes": 73,
+      "sha256": "6d1c065383a27c36804949b6ffa4b09714470b112e5dacc0bd5aeb7b9c147c4e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pause-ax.json",
+      "bytes": 30702,
+      "sha256": "5fea6dbba16fa1734fa59d6593b6dd72b13f357695728e5e87f41c38cd319937",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pause-ax.log",
+      "bytes": 27,
+      "sha256": "68083274feb803a98e4d5a56527f447ab80b4fdbbc7eef86c6de4f74ce748e90",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pause-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pause-ready.json",
+      "bytes": 56658,
+      "sha256": "a1e60971251a06e32cac6cd9a09a62a2b9536641194d63a97df066798c2071c9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pause-result.json",
+      "bytes": 58399,
+      "sha256": "6522c07b8bae5ba7c1995a4c0db6ed46580178d0ef749cf89d017b67ea48a687",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pause-warm-0.json",
+      "bytes": 30702,
+      "sha256": "5fea6dbba16fa1734fa59d6593b6dd72b13f357695728e5e87f41c38cd319937",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pause-warm-0.log",
+      "bytes": 27,
+      "sha256": "68083274feb803a98e4d5a56527f447ab80b4fdbbc7eef86c6de4f74ce748e90",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pause.png",
+      "bytes": 90292,
+      "sha256": "db81d0c3997d39d7e3ce77a1d119df6745f6c20f6e8438c5dbb9efbf1dd37d9f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pick_one-ax.json",
+      "bytes": 32011,
+      "sha256": "c165b8f78eae6feccf771ff3be95c1c09058ab6f1ac822750f20d11dac000e28",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pick_one-ax.log",
+      "bytes": 27,
+      "sha256": "407c255bb3f3a487b7bc73e015b4293bcbd954b3a2da6c673915f76fb14380da",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pick_one-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pick_one-ready.json",
+      "bytes": 56610,
+      "sha256": "e6f53ae7e287a81386e83d8b492af27fe1906400fc967b9e7d760ed1ad71630e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pick_one-result.json",
+      "bytes": 58321,
+      "sha256": "0b1a9477c9a253d61dcda9587baf313e0191d1cbf12da11144205ab1ee667279",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pick_one-warm-0.json",
+      "bytes": 31381,
+      "sha256": "ac3168af2b08f2ec66b7a48447ef7e939ada391f956c71cef62e33a44dfea696",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pick_one-warm-0.log",
+      "bytes": 27,
+      "sha256": "9baa191797e5c46423670e187d8d786a7d9fbc3918bd9d5d2700b94c9c1a0e69",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pick_one.png",
+      "bytes": 79193,
+      "sha256": "90244c20a62939c1c4fd110586e1e9f98c831c464c8307ae191a25c9ed67ad1d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pick_two-ax.json",
+      "bytes": 36108,
+      "sha256": "86b0052f3b9abd07562be8d07de7ab0e10aaf7e7a3f588479cfb80a6f63ede27",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pick_two-ax.log",
+      "bytes": 27,
+      "sha256": "01ee8759e98dcb49366f20a3ccf73b405d5f57485c98474e1c8581528e728d3c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pick_two-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pick_two-ready.json",
+      "bytes": 56658,
+      "sha256": "d542976af0facb823519d682d5311ec0c4bb375e529a632c7e5ea73c446aa5b1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pick_two-result.json",
+      "bytes": 58396,
+      "sha256": "1a657bc0c17077c1028697427974b4164885be1e29427e5b1296e74eef5408af",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pick_two-warm-0.json",
+      "bytes": 36022,
+      "sha256": "fbde1cdd194158e48b51491af6870a6b7fb1734b9445d01fe91ca8f4fd1b2448",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pick_two-warm-0.log",
+      "bytes": 27,
+      "sha256": "3f16d212e31206ad7f1dd4a452671ac9ca5a522c46ca3fbb10200a70be6db8ce",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/pick_two.png",
+      "bytes": 84329,
+      "sha256": "23082e13bf884ccb26aae989f60582a48ecf9c5dbfae9f11a81757bb2703a5c0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/run.json",
+      "bytes": 42607,
+      "sha256": "1c6bc620452412dc90ff913fc09a32101fdb1d096bce123633076ac319ab158e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/saved_ready-ax.json",
+      "bytes": 28987,
+      "sha256": "8a0c9861bbc679a7fb4b61f2d4735bc50a444ed458ca60a60527984a66d9391d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/saved_ready-ax.log",
+      "bytes": 27,
+      "sha256": "0a17b5aadad84ba1cf280eb68ae48f8093d2ee47f582760739ad18f9c9050717",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/saved_ready-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/saved_ready-ready.json",
+      "bytes": 56670,
+      "sha256": "f44f5d21d23ba8f4ff74d7c8e6c7437569c4c35915fd6954282f8f9ab91ace53",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/saved_ready-result.json",
+      "bytes": 58402,
+      "sha256": "f6338357ac10636e31aba3afb4dc419d3df64689deb7997129b3ba6e2da37921",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/saved_ready-warm-0.json",
+      "bytes": 28987,
+      "sha256": "8a0c9861bbc679a7fb4b61f2d4735bc50a444ed458ca60a60527984a66d9391d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/saved_ready-warm-0.log",
+      "bytes": 27,
+      "sha256": "0a17b5aadad84ba1cf280eb68ae48f8093d2ee47f582760739ad18f9c9050717",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/saved_ready.png",
+      "bytes": 107373,
+      "sha256": "ea419b2ee3247667e9fc41a6a87d4a1026d40d75e424b7c403cf09f613faec37",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-02/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/leave-ax.json",
+      "bytes": 21297,
+      "sha256": "476c3cb32e98a1a38bc5fff271030257c9bc9b44e39a2349d8dbeaeeb34db9ef",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/leave-ax.log",
+      "bytes": 27,
+      "sha256": "4d6605cb4c691db534d4695647a9e94c37e89f7d11c684997c12fbd53b98f914",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/leave-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/leave-ready.json",
+      "bytes": 56803,
+      "sha256": "31c790cefeb3ae36f0350e4ee2314e3eab673d6cb4765a5a215d8afdd4c0570b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/leave-result.json",
+      "bytes": 58676,
+      "sha256": "4ac7b11ae2f649b62feea06d1e545c5ae29466aa15c8c8b966bc45b9fe3267d3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/leave-warm-0.json",
+      "bytes": 21239,
+      "sha256": "280e78473e42ba499ba01a64c1df6281a6e7f794721fe45de0edeb5f0199ccd8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/leave-warm-0.log",
+      "bytes": 27,
+      "sha256": "4d6605cb4c691db534d4695647a9e94c37e89f7d11c684997c12fbd53b98f914",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/native.log",
+      "bytes": 647,
+      "sha256": "993d632b16e0b265df2624631c1486a85c29f158f4bf1a9ca74bf9a98cc2cdc0",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/observer-used.gd",
+      "bytes": 7334,
+      "sha256": "a1e417c456f5ca4d1dcbd601e127edb6696fde532365c36911a331689c95dad8",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/parse.log",
+      "bytes": 73,
+      "sha256": "6d1c065383a27c36804949b6ffa4b09714470b112e5dacc0bd5aeb7b9c147c4e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pause-ax.json",
+      "bytes": 21239,
+      "sha256": "fe0fce69d293023e3d6eae94fcf5ecaef8f767b8338c82c50b49ef79bf1f4aaa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pause-ax.log",
+      "bytes": 27,
+      "sha256": "4d6605cb4c691db534d4695647a9e94c37e89f7d11c684997c12fbd53b98f914",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pause-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pause-ready.json",
+      "bytes": 56803,
+      "sha256": "35e06149b481a1532af41dc39e1327c1b80b7f59d90e842bcbcc4f3c9b888072",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pause-result.json",
+      "bytes": 58675,
+      "sha256": "75cf8d7a18fa46d2fcb74c7b89ba7252cf21fe7ec230fba09cee7552a540a857",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pause-warm-0.json",
+      "bytes": 21239,
+      "sha256": "fe0fce69d293023e3d6eae94fcf5ecaef8f767b8338c82c50b49ef79bf1f4aaa",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pause-warm-0.log",
+      "bytes": 27,
+      "sha256": "4d6605cb4c691db534d4695647a9e94c37e89f7d11c684997c12fbd53b98f914",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pause.png",
+      "bytes": 100862,
+      "sha256": "8e612ac97d56f3e0e45b49250b19ae660ae390884b41cddd04450c187f974c81",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pick_one-ax.json",
+      "bytes": 32012,
+      "sha256": "e3083c6bcaa83e17324d0f0325c82e0c4ca791ba83d8f997f1a912a195189fc8",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pick_one-ax.log",
+      "bytes": 27,
+      "sha256": "407c255bb3f3a487b7bc73e015b4293bcbd954b3a2da6c673915f76fb14380da",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pick_one-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pick_one-ready.json",
+      "bytes": 56726,
+      "sha256": "746b10847bbab3cf92e919cd5b89e70c9d667c27a1e5d0d10712ab095f157c09",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pick_one-result.json",
+      "bytes": 58551,
+      "sha256": "d4602b4f5a01189d62276945cec8012a0526dbfd1b885a6a7fbbe2f12ee4dd89",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pick_one-warm-0.json",
+      "bytes": 31926,
+      "sha256": "71c11eb2c474fe66463ac87b3bf841246f5c3674021dc1909ccf7d4e259e7f43",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pick_one-warm-0.log",
+      "bytes": 27,
+      "sha256": "3f2ee3a384c60644c8ac63ecdee7b09efb1001554463799160d8091eda00719d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pick_one.png",
+      "bytes": 86376,
+      "sha256": "762119f74e393e0c41bcaa9b6096341eddb55681bd881e221c6cc2cd419ba5d5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pick_two-ax.json",
+      "bytes": 36116,
+      "sha256": "d83642062b944a4843b9123346cb0495d47617e299f6f583315f31bf9cdd94d1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pick_two-ax.log",
+      "bytes": 27,
+      "sha256": "01ee8759e98dcb49366f20a3ccf73b405d5f57485c98474e1c8581528e728d3c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pick_two-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pick_two-ready.json",
+      "bytes": 56794,
+      "sha256": "80a02677685cf5d3d71b024dfdb1b903bbb7ed7151965f8d3d0fba71849e29af",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pick_two-result.json",
+      "bytes": 58648,
+      "sha256": "bee6f0325372849f04f8cbd9aa83ea3c05decfe1063ca4c9e23d546947680f77",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pick_two-warm-0.json",
+      "bytes": 36027,
+      "sha256": "6a44f39c0a32d2ce41fd1a5effaf6ddba0eec339a72821994e48ecac42b38968",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pick_two-warm-0.log",
+      "bytes": 27,
+      "sha256": "3f16d212e31206ad7f1dd4a452671ac9ca5a522c46ca3fbb10200a70be6db8ce",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/pick_two.png",
+      "bytes": 117542,
+      "sha256": "952b76d782225a23b524c548670785d0037881274d16e4f53714a2907a5f2983",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/run.json",
+      "bytes": 41515,
+      "sha256": "e141895538e0e99aa7639a2f0df60a91f9c26a5a431ae80ab9175b772f3ea48d",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/saved_ready-ax.json",
+      "bytes": 23109,
+      "sha256": "ed28c9819ac65337421652202a8a42d304d92d09442f5758569f8f5f62ddcd23",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/saved_ready-ax.log",
+      "bytes": 27,
+      "sha256": "adbf127806dd8252f68dfe70f7133167b2a89d49fdbaaee749cbed3921c3d6ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/saved_ready-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/saved_ready-ready.json",
+      "bytes": 56818,
+      "sha256": "9e05cfc1a954db604fb2318f854b58ef9104308da61f64d5e89d92bda4023d73",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/saved_ready-result.json",
+      "bytes": 58678,
+      "sha256": "e0ba3224f0b30c4eb2d6777e89b7aeb8e762c9a644cb2b14e876352c9b93c8fc",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/saved_ready-warm-0.json",
+      "bytes": 23580,
+      "sha256": "c3cd80cfe004b27ff97401296fbe511fde830ce79f1bfdb76940f2448d5a5fb7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/saved_ready-warm-0.log",
+      "bytes": 27,
+      "sha256": "adbf127806dd8252f68dfe70f7133167b2a89d49fdbaaee749cbed3921c3d6ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/saved_ready-warm-1.json",
+      "bytes": 23578,
+      "sha256": "a67ac79a28b47f22c8d6fb63d8354a63a4a6c584e314a4642142823854883c69",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/saved_ready-warm-1.log",
+      "bytes": 27,
+      "sha256": "adbf127806dd8252f68dfe70f7133167b2a89d49fdbaaee749cbed3921c3d6ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/saved_ready-warm-2.json",
+      "bytes": 23578,
+      "sha256": "a67ac79a28b47f22c8d6fb63d8354a63a4a6c584e314a4642142823854883c69",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/saved_ready-warm-2.log",
+      "bytes": 27,
+      "sha256": "adbf127806dd8252f68dfe70f7133167b2a89d49fdbaaee749cbed3921c3d6ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/saved_ready-warm-3.json",
+      "bytes": 23578,
+      "sha256": "a67ac79a28b47f22c8d6fb63d8354a63a4a6c584e314a4642142823854883c69",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/saved_ready-warm-3.log",
+      "bytes": 27,
+      "sha256": "adbf127806dd8252f68dfe70f7133167b2a89d49fdbaaee749cbed3921c3d6ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/saved_ready-warm-4.json",
+      "bytes": 23578,
+      "sha256": "a67ac79a28b47f22c8d6fb63d8354a63a4a6c584e314a4642142823854883c69",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/saved_ready-warm-4.log",
+      "bytes": 27,
+      "sha256": "adbf127806dd8252f68dfe70f7133167b2a89d49fdbaaee749cbed3921c3d6ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/saved_ready.png",
+      "bytes": 117144,
+      "sha256": "9423a1b48dd2f0b1ee6056ee503802ecbe872578928044abdc25056c16a35fa9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-01/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/leave-ax.json",
+      "bytes": 21299,
+      "sha256": "e6990ceb7c7b3c5b5cc15f46196417096fa121a590ee7b1401d35cc1942a693c",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/leave-ax.log",
+      "bytes": 27,
+      "sha256": "4d6605cb4c691db534d4695647a9e94c37e89f7d11c684997c12fbd53b98f914",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/leave-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/leave-ready.json",
+      "bytes": 56787,
+      "sha256": "27181736c16f1fdf8d078c3762e5c5dd37008fe05051947f63085f6ebb7f31d9",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/leave-result.json",
+      "bytes": 58683,
+      "sha256": "b553377be8aa9efb23daa5ec81b13003d78e7fb175fccee7d01ee8cd2576d594",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/leave-warm-0.json",
+      "bytes": 21241,
+      "sha256": "aa5c064bdda8d89096a04699dbdefb2a65652117c642e44a8588f64253566dff",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/leave-warm-0.log",
+      "bytes": 27,
+      "sha256": "4d6605cb4c691db534d4695647a9e94c37e89f7d11c684997c12fbd53b98f914",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/leave.png",
+      "bytes": 102329,
+      "sha256": "c591d17d2080ff018d4a9a40a215bcef84a631256a469d5d717a4b8ffd78cf29",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/native.log",
+      "bytes": 769,
+      "sha256": "707f5aedd1260d2fe7d699649e04c6aa53b8ca74897ee9755a49a64494f959d5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/observer-used.gd",
+      "bytes": 7452,
+      "sha256": "66639f62a00af743793cab6639623417ba677df7a9171f30be259aea60601de5",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/parse.log",
+      "bytes": 73,
+      "sha256": "6d1c065383a27c36804949b6ffa4b09714470b112e5dacc0bd5aeb7b9c147c4e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pause-ax.json",
+      "bytes": 21241,
+      "sha256": "1add80293cd0a8dfc505484b56d253057ff581b71eaf5c05f195416fe21e415f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pause-ax.log",
+      "bytes": 27,
+      "sha256": "4d6605cb4c691db534d4695647a9e94c37e89f7d11c684997c12fbd53b98f914",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pause-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pause-ready.json",
+      "bytes": 56787,
+      "sha256": "2bb09f81b8efe1c05e9c2d39d70cfffe9437ae3e34c3a03323296d776a42cdb9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pause-result.json",
+      "bytes": 58682,
+      "sha256": "6ef2d415615101f0127ad193e83a159d90ccf8592971a13f6f08f768b074bda3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pause-warm-0.json",
+      "bytes": 21241,
+      "sha256": "1add80293cd0a8dfc505484b56d253057ff581b71eaf5c05f195416fe21e415f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pause-warm-0.log",
+      "bytes": 27,
+      "sha256": "4d6605cb4c691db534d4695647a9e94c37e89f7d11c684997c12fbd53b98f914",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pause.png",
+      "bytes": 102532,
+      "sha256": "a682f91c370ff36350bcc05fa0f291181396c6520d5353d4c4715187ecca2216",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pick_one-ax.json",
+      "bytes": 32012,
+      "sha256": "bca26c72953e46e7358753dab60d9f08e024df2bffbd0ec0aba142527a1c8214",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pick_one-ax.log",
+      "bytes": 27,
+      "sha256": "407c255bb3f3a487b7bc73e015b4293bcbd954b3a2da6c673915f76fb14380da",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pick_one-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pick_one-ready.json",
+      "bytes": 56716,
+      "sha256": "ce89235448e0fc4763dd202c9cd94eed304c82bba649cd6c1c9833703d98c6d7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pick_one-result.json",
+      "bytes": 58541,
+      "sha256": "cb4c618bd8c2f00c25f2b7885450a4ca1854be3b14aabbc9e39e9579b93f6044",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pick_one-warm-0.json",
+      "bytes": 31926,
+      "sha256": "592be11b1f565292569d6d1a143bcb7966a9522d0968d1704d56e4bd3b878d44",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pick_one-warm-0.log",
+      "bytes": 27,
+      "sha256": "3f2ee3a384c60644c8ac63ecdee7b09efb1001554463799160d8091eda00719d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pick_one.png",
+      "bytes": 86043,
+      "sha256": "a40945b361a2937e280c45d143123dd61edffb21202c6307fd2ee5412cfe5cc5",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pick_two-ax.json",
+      "bytes": 36103,
+      "sha256": "570f50e96dc345da4de72991d51e9172234642654ecb52be58819ba3c24da29a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pick_two-ax.log",
+      "bytes": 27,
+      "sha256": "01ee8759e98dcb49366f20a3ccf73b405d5f57485c98474e1c8581528e728d3c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pick_two-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pick_two-ready.json",
+      "bytes": 56776,
+      "sha256": "f6a02c5cc1545dbe19ed2333ab96870b046a1bd0ab02c44c0cc61fe3d3275b96",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pick_two-result.json",
+      "bytes": 58652,
+      "sha256": "bdc6f31c28edd8f7215705ef8cf100a4830cd50bff0be5f68a73ba147ac3b713",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pick_two-warm-0.json",
+      "bytes": 36014,
+      "sha256": "086b4ac705c2ab4da1953e85c62a3430ad432b91ff0aad7bb810d3cceb9290a3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pick_two-warm-0.log",
+      "bytes": 27,
+      "sha256": "3f16d212e31206ad7f1dd4a452671ac9ca5a522c46ca3fbb10200a70be6db8ce",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/pick_two.png",
+      "bytes": 123630,
+      "sha256": "a0c488998802eb01db57b34e3a62c1ac54415a7897c75f172e777a95ad6c0174",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/run.json",
+      "bytes": 41730,
+      "sha256": "6affc43b9122f6489b966bff643e6a3d55f80acfaacdb6c3320890b4b1e7a0e6",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/saved_ready-ax.json",
+      "bytes": 23580,
+      "sha256": "8860df890f4f6384b654d989be7ea5f11e49b16cb78c9e524531851fc45a647e",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/saved_ready-ax.log",
+      "bytes": 27,
+      "sha256": "adbf127806dd8252f68dfe70f7133167b2a89d49fdbaaee749cbed3921c3d6ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/saved_ready-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/saved_ready-ready.json",
+      "bytes": 56802,
+      "sha256": "b75001acaeb3541ab5571befc3ef8e5ea55d0e3e3b60d731110318bf358ab626",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/saved_ready-result.json",
+      "bytes": 58685,
+      "sha256": "ea8804fc582d5313062c1c4c4d1a120993e33c12253dc9d539853c2ed9058650",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/saved_ready-warm-0.json",
+      "bytes": 23580,
+      "sha256": "3a8d3f461ae2a504f7550f2292b0c06ec931127c2c90264e31df25a766e6cf66",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/saved_ready-warm-0.log",
+      "bytes": 27,
+      "sha256": "adbf127806dd8252f68dfe70f7133167b2a89d49fdbaaee749cbed3921c3d6ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/saved_ready-warm-1.json",
+      "bytes": 23580,
+      "sha256": "8860df890f4f6384b654d989be7ea5f11e49b16cb78c9e524531851fc45a647e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/saved_ready-warm-1.log",
+      "bytes": 27,
+      "sha256": "adbf127806dd8252f68dfe70f7133167b2a89d49fdbaaee749cbed3921c3d6ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/saved_ready-warm-2.json",
+      "bytes": 23580,
+      "sha256": "8860df890f4f6384b654d989be7ea5f11e49b16cb78c9e524531851fc45a647e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/saved_ready-warm-2.log",
+      "bytes": 27,
+      "sha256": "adbf127806dd8252f68dfe70f7133167b2a89d49fdbaaee749cbed3921c3d6ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/saved_ready-warm-3.json",
+      "bytes": 23580,
+      "sha256": "8860df890f4f6384b654d989be7ea5f11e49b16cb78c9e524531851fc45a647e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/saved_ready-warm-3.log",
+      "bytes": 27,
+      "sha256": "adbf127806dd8252f68dfe70f7133167b2a89d49fdbaaee749cbed3921c3d6ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/saved_ready-warm-4.json",
+      "bytes": 23580,
+      "sha256": "8860df890f4f6384b654d989be7ea5f11e49b16cb78c9e524531851fc45a647e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/saved_ready-warm-4.log",
+      "bytes": 27,
+      "sha256": "adbf127806dd8252f68dfe70f7133167b2a89d49fdbaaee749cbed3921c3d6ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/saved_ready.png",
+      "bytes": 119022,
+      "sha256": "f0f4f16ef0627dda3853f87a627387792f055f7f06f71d63bf180d7d0563e617",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/native-resume-live-02/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
       "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/navigation-baseline-01/hidden-ax.json",
       "bytes": 16110,
       "sha256": "0e58d8573336a8e78ac915456a9c9bdec2337d6e1767aebc92eb019bc4baced1",
@@ -7090,8 +10024,8 @@
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/observe.gd",
-      "bytes": 4694,
-      "sha256": "77a6435b4b84b65a54758d5a592bd611c26b507744eee2e3e47604d6f5729c1f",
+      "bytes": 5283,
+      "sha256": "61fdd8622e0b916e8164c7caa51b13d2c5c96030e44d6b3a167bd1b40583a491",
       "published": true
     },
     {
@@ -7516,14 +10450,14 @@
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/plan.json",
-      "bytes": 5876,
-      "sha256": "635ebc1534c6fc2e804302ac1ebc6aca60dc7c8a8ccf3f08b580921d1cdc4c77",
+      "bytes": 7113,
+      "sha256": "637bc4cb02e78a1150b7b3b5f79274cf47d9c6c1a8944964f4bb452fbec18705",
       "published": true
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/read_ax.swift",
-      "bytes": 3400,
-      "sha256": "63ee3d77e10819e6fdb5ed0c36a1232e3db079e40b6e866595b9469c203be948",
+      "bytes": 4112,
+      "sha256": "8fdc8690f622ceb85096e5b8afd020e8fcd275e68da276c08acc61cab6264d12",
       "published": true
     },
     {
@@ -7533,9 +10467,753 @@
       "published": true
     },
     {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/native.log",
+      "bytes": 429,
+      "sha256": "e34e059cbecf51a3d00352b138f3f08f4f35ceca21e6b344ba36136aab3fead1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/observations.json",
+      "bytes": 113939,
+      "sha256": "b665da43d9b84ae7a408b205f5f73ce19971bd5f2401ce1a527c21a42b6dfaf7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/observer-used.gd",
+      "bytes": 3213,
+      "sha256": "47525b6ce11c104f4da9f183a3be8d4f3022e330c4bcf2805e70aa64e0b80c2a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/ready-ax.json",
+      "bytes": 15090,
+      "sha256": "ab5d2cb881fbfa2e576e81199a12f0fcd0e4196cfbbbe0446476e046f42ebbfe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/ready-ax.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/ready-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/ready-ready.json",
+      "bytes": 54997,
+      "sha256": "b0e458238261680425354eec130640958654d8ff4a29da03add610d542f48c8a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/ready-result.json",
+      "bytes": 55085,
+      "sha256": "23913be0d996c47392e7069d6fa1aaad17052024d13d89a0a5570c4a82f9f53f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/ready-warm-0.json",
+      "bytes": 14692,
+      "sha256": "2fde220743e6f9f80c91d1b384301a5f4a21ca700de242f9430bf1939d637db0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/ready-warm-0.log",
+      "bytes": 27,
+      "sha256": "45daea2853e62c80d0a3c55beef1093f2671803db085b99ec3a117f41d24713d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/ready-warm-1.json",
+      "bytes": 15090,
+      "sha256": "ab5d2cb881fbfa2e576e81199a12f0fcd0e4196cfbbbe0446476e046f42ebbfe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/ready-warm-1.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/ready-warm-2.json",
+      "bytes": 15090,
+      "sha256": "ab5d2cb881fbfa2e576e81199a12f0fcd0e4196cfbbbe0446476e046f42ebbfe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/ready-warm-2.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/ready-warm-3.json",
+      "bytes": 15090,
+      "sha256": "ab5d2cb881fbfa2e576e81199a12f0fcd0e4196cfbbbe0446476e046f42ebbfe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/ready-warm-3.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/ready-warm-4.json",
+      "bytes": 15090,
+      "sha256": "ab5d2cb881fbfa2e576e81199a12f0fcd0e4196cfbbbe0446476e046f42ebbfe",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/ready-warm-4.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/ready.png",
+      "bytes": 88795,
+      "sha256": "3efffa1f5a719f3d9663eef270405a73c450ece0a4d30a4517068b4957129123",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/run.json",
+      "bytes": 13059,
+      "sha256": "a10e741bb6655e26d16b06644fa658a1b07ea88b5974deefb020d72c05da5054",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/start-method.json",
+      "bytes": 1721,
+      "sha256": "c93170f2e52217429dd88bdb09f805484a37866cae5d0422499756ecd45052ba",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/wave-ax.json",
+      "bytes": 18612,
+      "sha256": "1235c9e796bd145896833dc9bb4af5dae982683122e44b7ceade4064ce3c02fd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/wave-ax.log",
+      "bytes": 27,
+      "sha256": "3b6e33a01daa258033471b21aa37485ef051302d1ce083579682d6929d08fec7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/wave-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/wave-ready.json",
+      "bytes": 55014,
+      "sha256": "c1f1ac8f255bd6339fc337ff8e671ea2ab25f97765696dc71a1f0ee976a4b44d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/wave-result.json",
+      "bytes": 55102,
+      "sha256": "f31ea4c8ecc07e56d0f7ba6b318066d326d461e537ad3bf459127785c5ba81c2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/wave-warm-0.json",
+      "bytes": 18612,
+      "sha256": "1235c9e796bd145896833dc9bb4af5dae982683122e44b7ceade4064ce3c02fd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/wave-warm-0.log",
+      "bytes": 27,
+      "sha256": "3b6e33a01daa258033471b21aa37485ef051302d1ce083579682d6929d08fec7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-first-01/wave.png",
+      "bytes": 76657,
+      "sha256": "203753af48094028e70d451d5d53b810014ead6d54ebef454220b7c5265712b9",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/native.log",
+      "bytes": 429,
+      "sha256": "e34e059cbecf51a3d00352b138f3f08f4f35ceca21e6b344ba36136aab3fead1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/observations.json",
+      "bytes": 120683,
+      "sha256": "f486dcd651fc41882bd3c6233bc546e0fed7a2da7b329f9ed8170c9c72c84fc0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/observer-used.gd",
+      "bytes": 6832,
+      "sha256": "75a501302ae71371311ba8b29d4ae016edcaeef2f334aecae0ed046fb1187296",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/parse.log",
+      "bytes": 73,
+      "sha256": "6d1c065383a27c36804949b6ffa4b09714470b112e5dacc0bd5aeb7b9c147c4e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/ready-ax.json",
+      "bytes": 19474,
+      "sha256": "c9dcacb01576a07c262352125b001e26f59687eedb580ff67278d89178e6a43b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/ready-ax.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/ready-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/ready-ready.json",
+      "bytes": 56616,
+      "sha256": "46e3a3d63b469e391f65ac536f274f9c2667bb6a2f64d6a3dce69c918683b4d4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/ready-result.json",
+      "bytes": 58323,
+      "sha256": "2ea4428895698456e7f2394ab2868d0f6e96ac6796d5f462eb18a428a4d131c4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/ready-warm-0.json",
+      "bytes": 18930,
+      "sha256": "d870b5a50c7b1f91b9ca495740ed5676d3f157fce3844ea630863d221c5ac27f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/ready-warm-0.log",
+      "bytes": 27,
+      "sha256": "45daea2853e62c80d0a3c55beef1093f2671803db085b99ec3a117f41d24713d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/ready-warm-1.json",
+      "bytes": 19474,
+      "sha256": "c9dcacb01576a07c262352125b001e26f59687eedb580ff67278d89178e6a43b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/ready-warm-1.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/ready-warm-2.json",
+      "bytes": 19474,
+      "sha256": "c9dcacb01576a07c262352125b001e26f59687eedb580ff67278d89178e6a43b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/ready-warm-2.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/ready-warm-3.json",
+      "bytes": 19474,
+      "sha256": "c9dcacb01576a07c262352125b001e26f59687eedb580ff67278d89178e6a43b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/ready-warm-3.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/ready-warm-4.json",
+      "bytes": 19474,
+      "sha256": "c9dcacb01576a07c262352125b001e26f59687eedb580ff67278d89178e6a43b",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/ready-warm-4.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/ready.png",
+      "bytes": 88880,
+      "sha256": "101d821979fbcb9e12f8363272198a9183e1ef9eb456ed8f0aeacf53569fcdd0",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/run.json",
+      "bytes": 21442,
+      "sha256": "2b34e66e3c7d4d7bc156c17c1c25f284724c7794b18d51fbdf3b3e28f480f164",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/start-method.json",
+      "bytes": 6846,
+      "sha256": "03fc5732fd823b1a79d9a1b8ddf5a22711fe68059f9054121ed0e06aebb8b696",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/wave-ax.json",
+      "bytes": 24197,
+      "sha256": "d782378161107e5840f53219d86abc2d90c14da9fa6bd8e482f6f98ec510d059",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/wave-ax.log",
+      "bytes": 27,
+      "sha256": "3b6e33a01daa258033471b21aa37485ef051302d1ce083579682d6929d08fec7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/wave-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/wave-ready.json",
+      "bytes": 56635,
+      "sha256": "28ef5111a20d226671802f9bab7bde4873ceac4ffa4d098f6d11bc2798cd017a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/wave-result.json",
+      "bytes": 58344,
+      "sha256": "f7c7b3cd9cfb8b805f04446b9c53b311c53b9b031b38a500debb7ed4c32fb342",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/wave-warm-0.json",
+      "bytes": 24197,
+      "sha256": "d782378161107e5840f53219d86abc2d90c14da9fa6bd8e482f6f98ec510d059",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/wave-warm-0.log",
+      "bytes": 27,
+      "sha256": "3b6e33a01daa258033471b21aa37485ef051302d1ce083579682d6929d08fec7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-geometry-01/wave.png",
+      "bytes": 76382,
+      "sha256": "42a3b8a077c5e7721aac67bda5f6d2f8246b257353a773f78c5a178b4731d75a",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-01/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-01/native.log",
+      "bytes": 490,
+      "sha256": "d3adea4924f516cf021250143958fc12cefa602b26f365eea4b8d7e1cbdcb0c7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-01/observer-used.gd",
+      "bytes": 4159,
+      "sha256": "e07a7a1bc159c3440b1ef3060f4319819f45b805537436f7ac4a484fb1273346",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-01/run.json",
+      "bytes": 8903,
+      "sha256": "a95322407765d8532b7a5499d7ff884efaddeb69c33aab183129b735df29e045",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-01/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/native.log",
+      "bytes": 298,
+      "sha256": "5c4919107c0dbab829095e6d65d228823782cee512a56c8d2f3fd5c715e92827",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/observations.json",
+      "bytes": 114523,
+      "sha256": "91926d36c89cc2ac68cfc8badfa239aac789e9722f383027fe0cee18299882b3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/observer-used.gd",
+      "bytes": 4167,
+      "sha256": "c8fc45638a4d93a6875f3869184d1bc1b6f7862ef596148953eac338dfdc0f71",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/parse.log",
+      "bytes": 73,
+      "sha256": "6d1c065383a27c36804949b6ffa4b09714470b112e5dacc0bd5aeb7b9c147c4e",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/ready-ax.json",
+      "bytes": 22636,
+      "sha256": "f0a168330a9315f521a35018468f484dfce361fdf5ce55fbcb3931ffbe0b78dd",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/ready-ax.log",
+      "bytes": 27,
+      "sha256": "a0d660011acc5018273c42643c753823c28e7ec8b963586ac591ea18688a3bb3",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/ready-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/ready-ready.json",
+      "bytes": 55149,
+      "sha256": "0b1676de7f3ab42ea9d4067cbacba032feab9d934d163f507662918e2965c2d2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/ready-result.json",
+      "bytes": 55386,
+      "sha256": "aece4bd9119ce8df5daa09c8a9a4ef18e0e3911f2842d46fdf4db48ee34ae7b4",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/ready-warm-0.json",
+      "bytes": 22238,
+      "sha256": "3ca97fa60b8fbc31b0acd2fbf018765c11abe082f66d182b0dc4cca7ebb18e5c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/ready-warm-0.log",
+      "bytes": 27,
+      "sha256": "0a17b5aadad84ba1cf280eb68ae48f8093d2ee47f582760739ad18f9c9050717",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/ready.png",
+      "bytes": 114185,
+      "sha256": "b759bfbb832468adf6473fb3d454d3a3ce275a4f0a7c80de7f4b45fe1ac9d408",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/run.json",
+      "bytes": 12546,
+      "sha256": "e01ea4babacd9496dedc1f66dc4fb802b2caf2f5a79c26b9adaf04636e69752f",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/start-method.json",
+      "bytes": 3631,
+      "sha256": "f183a306a9e254ce359b5d48cc665b0a1922afa6f7ab9242e5392eb4cbf4d3d6",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/wave-ax.json",
+      "bytes": 21226,
+      "sha256": "1d90bbc3c058dc0853d96121a9b3e0f4148d6770b90ad74c6996027bd03b8c78",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/wave-ax.log",
+      "bytes": 27,
+      "sha256": "7729b7c8853f39507213c751f4412d1b95e60662f30cd66a2a166f8a98a793d2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/wave-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/wave-ready.json",
+      "bytes": 55135,
+      "sha256": "7e3550b3f043e23a21d8dc5ac6ea668ae8c4f584b92208dc21622ae3ba2cc074",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/wave-result.json",
+      "bytes": 55349,
+      "sha256": "eb1a83ab43d903392e1d6e076154445fbdc42425f797a30b8a85ea33328e3092",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/wave-warm-0.json",
+      "bytes": 21226,
+      "sha256": "1d90bbc3c058dc0853d96121a9b3e0f4148d6770b90ad74c6996027bd03b8c78",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/wave-warm-0.log",
+      "bytes": 27,
+      "sha256": "7729b7c8853f39507213c751f4412d1b95e60662f30cd66a2a166f8a98a793d2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-inspector-02/wave.png",
+      "bytes": 96745,
+      "sha256": "17ccbcf7883d40a0a6afd29bd6be1ada64efd5ba7cbe9555dba07b0ea0dc9b67",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/import.log",
+      "bytes": 11844,
+      "sha256": "74e764f718e29146a6ff5812b9291308260a9cc6aefa4cba031bbc87d8dc286c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/native.log",
+      "bytes": 429,
+      "sha256": "e34e059cbecf51a3d00352b138f3f08f4f35ceca21e6b344ba36136aab3fead1",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/observations.json",
+      "bytes": 113939,
+      "sha256": "b665da43d9b84ae7a408b205f5f73ce19971bd5f2401ce1a527c21a42b6dfaf7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/observer-used.gd",
+      "bytes": 3275,
+      "sha256": "f96d4ee3a2fd38b79df18ba46a9f9ceecd04f445b66df31f9adbe8cb7895445d",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/ready-ax.json",
+      "bytes": 15090,
+      "sha256": "2e5528b039e8cff35f85391a320fbdfd4935ce698611c8dd58f02fae184ede12",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/ready-ax.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/ready-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/ready-ready.json",
+      "bytes": 54997,
+      "sha256": "415bf84324744dce706f5710fbfc82813ab92b6c6397c92d21c35dd91b34c582",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/ready-result.json",
+      "bytes": 55085,
+      "sha256": "23913be0d996c47392e7069d6fa1aaad17052024d13d89a0a5570c4a82f9f53f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/ready-warm-0.json",
+      "bytes": 14692,
+      "sha256": "d7f4286fec54bec5d3867a74af0248b9bb7640bd5d641e39015645c796b5e451",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/ready-warm-0.log",
+      "bytes": 27,
+      "sha256": "45daea2853e62c80d0a3c55beef1093f2671803db085b99ec3a117f41d24713d",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/ready-warm-1.json",
+      "bytes": 15090,
+      "sha256": "2e5528b039e8cff35f85391a320fbdfd4935ce698611c8dd58f02fae184ede12",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/ready-warm-1.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/ready-warm-2.json",
+      "bytes": 15090,
+      "sha256": "2e5528b039e8cff35f85391a320fbdfd4935ce698611c8dd58f02fae184ede12",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/ready-warm-2.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/ready-warm-3.json",
+      "bytes": 15090,
+      "sha256": "2e5528b039e8cff35f85391a320fbdfd4935ce698611c8dd58f02fae184ede12",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/ready-warm-3.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/ready-warm-4.json",
+      "bytes": 15090,
+      "sha256": "2e5528b039e8cff35f85391a320fbdfd4935ce698611c8dd58f02fae184ede12",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/ready-warm-4.log",
+      "bytes": 27,
+      "sha256": "884473ee28820b3022cd26951d9d40f65eeb4a158b28e67dd12b9c3ad77a8250",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/ready.png",
+      "bytes": 89167,
+      "sha256": "9e718b962891d2ff6c3d761c312bc7334da8f62bfe877968a8664b082ff51155",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/run.json",
+      "bytes": 13070,
+      "sha256": "ea11ecf207ad6561063ea4947322e241264d877bba31280ba25d064286c3338a",
+      "published": true
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/start-method.json",
+      "bytes": 2880,
+      "sha256": "4abd539a315e6efc9044c0c0ffb931d9e61713ee63f56caad28b0011d6095a0f",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/swift-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/wave-ax.json",
+      "bytes": 18612,
+      "sha256": "a824ba04550e09f08950a8edfacf4c551339c2196b8802b63f3d00976dedb6de",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/wave-ax.log",
+      "bytes": 27,
+      "sha256": "3b6e33a01daa258033471b21aa37485ef051302d1ce083579682d6929d08fec7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/wave-done.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/wave-ready.json",
+      "bytes": 55014,
+      "sha256": "235f3b514b19a802b2268f30272d009f30db0af7a8a8de838f5ea9d1b75c2b15",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/wave-result.json",
+      "bytes": 55102,
+      "sha256": "f31ea4c8ecc07e56d0f7ba6b318066d326d461e537ad3bf459127785c5ba81c2",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/wave-warm-0.json",
+      "bytes": 18612,
+      "sha256": "a824ba04550e09f08950a8edfacf4c551339c2196b8802b63f3d00976dedb6de",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/wave-warm-0.log",
+      "bytes": 27,
+      "sha256": "3b6e33a01daa258033471b21aa37485ef051302d1ce083579682d6929d08fec7",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready-with-key-01/wave.png",
+      "bytes": 76397,
+      "sha256": "11fe02031080cef3add037ed041a4fbc44a1b8ea27f7f2c9ee18694ef5705a2c",
+      "published": false
+    },
+    {
+      "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/ready_journey.gd",
+      "bytes": 7518,
+      "sha256": "56920fffaa33cbd53902fe7e179e0922a374dbb1a837e7371e60055f805bfad8",
+      "published": true
+    },
+    {
       "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/run.py",
-      "bytes": 13067,
-      "sha256": "317ded034097a73f065e8f66a060ac157e276b41d5a5b0015d808e1deadf86d9",
+      "bytes": 17028,
+      "sha256": "4a49107e0de608934bc94ee5bcfddca81b0ec9385d74a6459e244587af796e23",
       "published": true
     },
     {
@@ -66880,8 +70558,8 @@
     },
     {
       "path": "docs/qa/2026-11-09-battlefield-fixes/remaining-user-tasks.md",
-      "bytes": 7254,
-      "sha256": "056e427eebc9bd69c81349876f5c88b759662912048fe0add827fb1844306897",
+      "bytes": 7700,
+      "sha256": "7aea0a7809bdc568fb35911a62af4f320591e0ef99c3eda033e5a6f18c338fd9",
       "published": true
     },
     {

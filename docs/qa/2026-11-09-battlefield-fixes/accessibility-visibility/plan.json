@@ -1,7 +1,7 @@
 {
   "schema": "accessibility_audit_plan/v1",
   "platform": "macOS Godot4.7.2 ed1daf0bf native owned unfocusable Window/AccessKit",
-  "scope": "BF50 visibility/name-role state updates for card folding and READY/WAVE start control; not complete assistive navigation",
+  "scope": "BF50 visibility/name-role state updates and native supported card/place/start/reload/continue journeys; not complete assistive navigation",
   "standard": "WCAG2.2 AA used as review reference; no conformance claim",
   "critical_tasks": [
     "Visible offers can be selected through native AXPress.",
@@ -13,7 +13,8 @@
     "baseline-01/run.json",
     "cached-baseline-01/run.json",
     "baseline-02/run.json",
-    "current-01/run.json"
+    "current-01/run.json",
+    "journeys.md"
   ],
   "hypotheses": [
     {
@@ -79,9 +80,14 @@
   "stop_condition": "Observed same native reproduction passes after a demonstrated cause and appropriate regression, or diagnostic evidence identifies a concrete external blocker. No blind fix loop or queue limit changes.",
   "delivery": "Task-specific local commit only; main pull/rebase/push and existing PR update once at the end.",
   "observations": [
-    "Cached hidden card native action rejected with kAXErrorInvalidUIElement. No visibility guard added to card callbacks.",
-    "Current native screenshot visibly contains READY start; native AXChildren repeatedly omits it. Existing first-candidate source is not adopted yet.",
-    "Third fix not prepared. Next observation reads AXChildrenInNavigationOrder with explicit child-query errors to separate scanner limitations from missing platform hierarchy."
+    "Cached hidden card native action rejected with kAXErrorInvalidUIElement; no redundant card guard.",
+    "Historical first-candidate strict integration failed READY. Separate minimal hidden-execution proof later justified adopting I16 visibility bridge; I17 remains unresolved.",
+    "Three executed READY interventions failed: visibility bridge, parent refresh and FOCUS_ACCESSIBILITY. Navigation-order query also omits READY. No fourth speculative product fix.",
+    "Current supported two native card presses plus virtual GUI Enter placements and native start succeeds. Inspector visit changes discovery; generic F17 does not.",
+    "Actual native start-screen action reloads scene; visible title continue button is absent from owned native AX. This is not solely a direct READY fixture artifact.",
+    "Read-only geometry observation has equal model size/ancestors and correct native Retina mapping; does not establish actual native tree topology.",
+    "Same-source full editor diagnostic pair reproduces READY missing/present:592vs638outgoing records; target/4ancestor selected fields equal; no hidden/clipping ancestor or missing/multiple/root references. This observes before transfer, not library internal state.",
+    "Normal-time live02 keeps main processing enabled and uses real frames, run_real33.7to68.4s at READY. Start and subsequent visible pause start-screen action missing. Live01 observer30s timeout excluded; QA timeout now fatal, live budget120s/600s."
   ],
   "I16": {
     "reproduction": "Engine-only hidden Button native AXPress triggers callback; default2hidden activations, initial-hidden1activation.",
@@ -89,10 +95,11 @@
     "implemented": true
   },
   "I17": {
-    "reproduction": "READY visible start absent across repeated AXChildren and navigation-order reads; no child query timeout.",
+    "reproduction": "Fixed-schedule READY start and native-reloaded title continue missing. Valid live02 normal processing also has READY start and visible pause start-screen action missing; no observer timeout.",
     "root_cause": "not_observed",
     "failed_interventions": 3,
-    "next": "No fourth guessed fix; preserve UI/engine and isolate structure by default unless user selects alternative. Optional user preference requested per skill, current structure maintained.",
-    "goal_complete": false
+    "next": "No fourth speculative fix. Actual submission, AccessKit consumer tree/filter/cache and macOS exposure remain unobserved; outgoing target and4ancestor fields are equal despite native0vs1.",
+    "goal_complete": false,
+    "evidence": "journeys.md, journey-summary.json, engine.md and engine-comparison.json"
   }
 }

@@ -1053,11 +1053,29 @@
         "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/summary.json",
         "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/plan.json"
       ]
+    },
+    {
+      "type": "supported_native_journey_and_outgoing_accesskit_boundary_observed",
+      "facts": [
+        "Product70source hashes unchanged across19task snapshots.12fixed-schedule stock cases include2QAparse failures;2live cases include1observer-timeout exclusion;5diagnostic engine cases include3setup exclusions and2valid trace runs. No product edit or fourth speculative fix.",
+        "Ordinary native card2+virtual Enter placement2+native start passes4states; inspector-close/reopen6states passes. Direct READY and F17 boundary still miss; Tab inspector changes discovery.",
+        "Actual native pause/start-screen scene reload exposes visible continue absent in2runs. First wrapper fails later; reinforced wrapper fails at missing native continue action.",
+        "Valid live02: main processing enabled, no manual loop calls, run_real33.7to68.4s/READY stable. READY start and visible pause start-screen action missing; stops before reload/continue. Live01 observer30s timeout contaminated later reads and is excluded. QA timeout guard now fatal; live handshake120s/global600s.19driver copies and6base/reader variants match recorded SHA;3helpers unchanged.",
+        "Same diagnostic binary:592/638outgoing records. READY target and4ancestor selected fields equal, reachable/non-hidden/unclipped, no missing/multiple/root references; native discovery0/1. Observation is before accesskit_tree_update_push_node, not successful transfer or consumer internal-state proof.",
+        "Both diagnostic native processes exit0 with2ObjectDB warnings retained; first observational run preserves READY mismatch, counterpart strict pass. All owned processes/temp projects/isolated saves terminal/removed. Full accessibility, I15, physical/human and high-speed remain open.",
+        "Task-specific local commit only. Main pull/rebase/push and existing PR update once at the final overall end."
+      ],
+      "evidence": [
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/journeys.md",
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/journey-summary.json",
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine.md",
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-comparison.json"
+      ]
     }
   ],
   "continuation": {
     "status": "continue",
-    "next_local_action": "Keep all remaining scope. Prioritize I17 native READY discovery: preserve current UI/engine by default, isolate structural hierarchy with observed data, no fourth speculative fix after3failed interventions. I16 hidden execution fixed; retain strict integration failure and I15 unresolved. Then complete remaining actual assistive field tasks and highspeed/physical/human gaps. Local commits only; latest main pull/rebase/push/PR update once at the final end.",
+    "next_local_action": "I17 remains open: outgoing target/4ancestor fields equal while native0vs1; next boundary is actual transfer and AccessKit consumer/filter/cache/macOS exposure, no speculative fourth fix. Also inspect visible continue-tile description clipping observed in native-resume01 screenshot as a separate usability candidate. Keep I15 and physical/human/high-speed gaps. Local task commits; final-only main pull/rebase/push/PR update.",
     "external_checkpoint": "Run remaining-user-tasks.md on actual devices and human tasks when devices become available.",
     "goal_complete": false
   },
@@ -1177,13 +1195,16 @@
     },
     {
       "id": "I-17",
-      "title": "READY의 화면상 시작 버튼이 native AX에 나타나지 않음",
+      "title": "표시된 일부 UI 버튼이 native AX에 누락됨",
       "implementation": "unresolved",
-      "verification": "repeated5probes_before_after;native_notifications_visible_true;parent_focus_variants_fail;navigation_order_still_missing;whole_accessibility_HOLD",
+      "verification": "unresolved;fixed_schedule_reload_continue_missing2runs;valid_live_READY_and_pause_start_screen_missing;outgoing_selected_fields_equal_but_native0vs1;whole_accessibility_HOLD",
       "evidence": [
         "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/README.md",
         "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/baseline-02/run.json",
-        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/current-01/run.json"
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/current-01/run.json",
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/journeys.md",
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine.md",
+        "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-comparison.json"
       ]
     }
   ]

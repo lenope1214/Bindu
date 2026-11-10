@@ -24,6 +24,8 @@ macOS Godot4.7.2 `ed1daf0bf`의 버튼 하나짜리 격리 장면에서 버튼�
 
 ## READY 누락은 아직 해결되지 않았다
 
+추가 [실제 선택·배치·장면 복귀 비교](journeys.md)에서 일반 시작 경로는 통과했지만, 시작 화면으로 실제 장면을 재생성한 뒤 ‘이어하기’가 native AX에서 누락됐다. 두 복귀 실행에서 확인했다. 인위적인 READY fixture에만 국한된 실패로 처리하지 않는다.
+
 화면과 Godot inventory에는 READY의 ‘웨이브 시작’이 보이지만 native AX에서 찾을 수 없다. 수정 전 두 장면과 반복 조회5회에서 관찰했다. [실제 화면](current-01/ready.png), [수정 전 AX](baseline-02/ready-ax.json), [수정 후 AX](current-01/ready-ax.json). 창 제목 marker는 이 창의 상태만 식별하며 모든 자식이 최신이라는 증거가 아니다.
 
 - 표시 갱신만 연결한 제품은 전투 중 잔류는 없앴지만 READY 누락은 남았다. [엄격한 검사](current-01/run.json)는 실패로 보존했다.

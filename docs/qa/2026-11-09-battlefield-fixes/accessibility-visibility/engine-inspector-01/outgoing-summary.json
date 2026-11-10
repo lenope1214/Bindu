@@ -1,0 +1,567 @@
+{
+  "schema": "outgoing_accesskit_observation/v1",
+  "source": {
+    "path": "docs/qa/2026-11-09-battlefield-fixes/accessibility-visibility/engine-inspector-01/native.log",
+    "bytes": 149682,
+    "sha256": "46b5335d4d064707dd2e75f6b129181ef2c7db0b7e2983ae46406fac6299f1af"
+  },
+  "target": "웨이브 시작 (Space)",
+  "records": 638,
+  "snapshots": [
+    {
+      "marker": {
+        "label": "ready",
+        "state": {
+          "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 0.0)]",
+          "cards_hidden": false,
+          "choice_visible": false,
+          "current_scene_is_main": false,
+          "focus": false,
+          "gui_focus": "",
+          "held": false,
+          "inspector_visible": true,
+          "offer": [
+            {
+              "id": "pierce",
+              "type": "mod"
+            },
+            {
+              "e": 0,
+              "lv": 1,
+              "type": "elem"
+            },
+            {
+              "e": 1,
+              "lv": 1,
+              "type": "elem"
+            }
+          ],
+          "phase": 6,
+          "picked": {
+            "e": 2,
+            "lv": 1,
+            "type": "elem"
+          },
+          "picks": 0,
+          "reroll_visible": false,
+          "selected": [
+            "(220.0, 620.0)"
+          ],
+          "session_id": "135425689048",
+          "start_ancestors": [
+            {
+              "class": "Button",
+              "clip": false,
+              "focus_override": 0,
+              "path": "/root/Main/@CanvasLayer@22/@Control@23/@Button@116",
+              "rect": "[P: (404.0, 608.0), S: (240.0, 44.0)]",
+              "transform": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (404.0, 608.0)]",
+              "visible": true,
+              "visible_in_tree": true
+            },
+            {
+              "class": "Control",
+              "clip": false,
+              "focus_override": 0,
+              "path": "/root/Main/@CanvasLayer@22/@Control@23",
+              "rect": "[P: (0.0, 0.0), S: (1280.0, 720.0)]",
+              "transform": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 0.0)]",
+              "visible": true,
+              "visible_in_tree": true
+            },
+            {
+              "class": "CanvasLayer",
+              "path": "/root/Main/@CanvasLayer@22"
+            },
+            {
+              "class": "Node2D",
+              "path": "/root/Main",
+              "transform": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 0.0)]",
+              "visible": true,
+              "visible_in_tree": true
+            },
+            {
+              "class": "Window",
+              "path": "/root"
+            }
+          ],
+          "start_visible": true,
+          "title_visible": false,
+          "tower_elements": [
+            {
+              "2": 1
+            },
+            {
+              "2": 1
+            }
+          ],
+          "tower_positions": [
+            "(220.0, 620.0)",
+            "(1060.0, 620.0)"
+          ],
+          "wave": 12,
+          "window_model": {
+            "content_scale_factor": 1.0,
+            "content_scale_size": "(1280, 720)",
+            "final_transform": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 0.0)]",
+            "position": "(1070, 782)",
+            "screen_transform": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 0.0)]",
+            "size": "(1280, 720)",
+            "ui_root_clip": false,
+            "ui_root_rect": "[P: (0.0, 0.0), S: (1280.0, 720.0)]"
+          }
+        },
+        "time_usec": 19029952
+      },
+      "source_line": 505,
+      "root_id": "34359738368",
+      "known_nodes": 499,
+      "reachable_nodes": 499,
+      "missing_references": [],
+      "multiple_parent_references": {},
+      "root_is_child": false,
+      "targets": [
+        {
+          "node": {
+            "bounds": [
+              0.0,
+              0.0,
+              240.0,
+              44.0
+            ],
+            "children": [],
+            "clips_children": false,
+            "extra": "",
+            "hidden": false,
+            "id": "21320217657407",
+            "name": "웨이브 시작 (Space)",
+            "role": 18,
+            "root_id": "34359738368",
+            "time_usec": 4973584,
+            "window": 0
+          },
+          "reachable": true,
+          "ancestors": [
+            {
+              "bounds": [
+                0.0,
+                0.0,
+                1280.0,
+                720.0
+              ],
+              "children": [
+                "21053929684993",
+                "21058224652290"
+              ],
+              "clips_children": false,
+              "extra": "",
+              "hidden": false,
+              "id": "34359738368",
+              "name": "Bindu QA ready (DEBUG)",
+              "role": 133,
+              "root_id": "34359738368",
+              "time_usec": 4968098,
+              "window": 0
+            },
+            {
+              "children": [
+                "21062519619587",
+                "21066814586884",
+                "21071109554181",
+                "21075404521478",
+                "21079699488775",
+                "21083994456072",
+                "21088289423369",
+                "21092584390666",
+                "21096879357963",
+                "21101174325260",
+                "21105469292557",
+                "21109764259854",
+                "21114059227151"
+              ],
+              "clips_children": false,
+              "extra": "",
+              "hidden": false,
+              "id": "21053929684993",
+              "name": "Main",
+              "role": 14,
+              "root_id": "34359738368",
+              "time_usec": 4968272,
+              "window": 0
+            },
+            {
+              "children": [
+                "21204253540388"
+              ],
+              "clips_children": false,
+              "extra": "",
+              "hidden": false,
+              "id": "21096879357963",
+              "name": "@CanvasLayer@22",
+              "role": 14,
+              "root_id": "34359738368",
+              "time_usec": 4969526,
+              "window": 0
+            },
+            {
+              "bounds": [
+                0.0,
+                0.0,
+                1280.0,
+                720.0
+              ],
+              "children": [
+                "21208548507685",
+                "21212843474982",
+                "21217138442279",
+                "21221433409576",
+                "21225728376873",
+                "21230023344170",
+                "21234318311467",
+                "21238613278764",
+                "21242908246061",
+                "21247203213358",
+                "21251498180655",
+                "21255793147952",
+                "21260088115249",
+                "21264383082546",
+                "21268678049843",
+                "21272973017140",
+                "21277267984437",
+                "21281562951734",
+                "21285857919031",
+                "21290152886328",
+                "21294447853625",
+                "21298742820922",
+                "21303037788219",
+                "21307332755516",
+                "21311627722813",
+                "21315922690110",
+                "21320217657407",
+                "21324512624704",
+                "21328807592001",
+                "21333102559298",
+                "21337397526595",
+                "21341692493892",
+                "21345987461189",
+                "21350282428486",
+                "21354577395783",
+                "21358872363080",
+                "21363167330377",
+                "21367462297674",
+                "21371757264971",
+                "21376052232268",
+                "21380347199565",
+                "21384642166862",
+                "21388937134159",
+                "21393232101456",
+                "21397527068753",
+                "21401822036050",
+                "21406117003347",
+                "21410411970644",
+                "21414706937941",
+                "21419001905238",
+                "21423296872535",
+                "21427591839832",
+                "21431886807129",
+                "21436181774426",
+                "21440476741723",
+                "21444771709020",
+                "21449066676317",
+                "21453361643614"
+              ],
+              "clips_children": false,
+              "extra": "",
+              "hidden": false,
+              "id": "21204253540388",
+              "name": "",
+              "role": 14,
+              "root_id": "34359738368",
+              "time_usec": 4969576,
+              "window": 0
+            }
+          ],
+          "hidden_chain": []
+        }
+      ]
+    },
+    {
+      "marker": {
+        "label": "wave",
+        "state": {
+          "camera": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 0.0)]",
+          "cards_hidden": false,
+          "choice_visible": false,
+          "current_scene_is_main": false,
+          "focus": false,
+          "gui_focus": "",
+          "held": false,
+          "inspector_visible": true,
+          "offer": [
+            {
+              "id": "pierce",
+              "type": "mod"
+            },
+            {
+              "e": 0,
+              "lv": 1,
+              "type": "elem"
+            },
+            {
+              "e": 1,
+              "lv": 1,
+              "type": "elem"
+            }
+          ],
+          "phase": 3,
+          "picked": {
+            "e": 2,
+            "lv": 1,
+            "type": "elem"
+          },
+          "picks": 0,
+          "reroll_visible": false,
+          "selected": [],
+          "session_id": "135425689048",
+          "start_ancestors": [
+            {
+              "class": "Button",
+              "clip": false,
+              "focus_override": 0,
+              "path": "/root/Main/@CanvasLayer@22/@Control@23/@Button@116",
+              "rect": "[P: (404.0, 608.0), S: (240.0, 44.0)]",
+              "transform": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (404.0, 608.0)]",
+              "visible": false,
+              "visible_in_tree": false
+            },
+            {
+              "class": "Control",
+              "clip": false,
+              "focus_override": 0,
+              "path": "/root/Main/@CanvasLayer@22/@Control@23",
+              "rect": "[P: (0.0, 0.0), S: (1280.0, 720.0)]",
+              "transform": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 0.0)]",
+              "visible": true,
+              "visible_in_tree": true
+            },
+            {
+              "class": "CanvasLayer",
+              "path": "/root/Main/@CanvasLayer@22"
+            },
+            {
+              "class": "Node2D",
+              "path": "/root/Main",
+              "transform": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 0.0)]",
+              "visible": true,
+              "visible_in_tree": true
+            },
+            {
+              "class": "Window",
+              "path": "/root"
+            }
+          ],
+          "start_visible": false,
+          "title_visible": false,
+          "tower_elements": [
+            {
+              "2": 1
+            },
+            {
+              "2": 1
+            }
+          ],
+          "tower_positions": [
+            "(220.0, 620.0)",
+            "(1060.0, 620.0)"
+          ],
+          "wave": 13,
+          "window_model": {
+            "content_scale_factor": 1.0,
+            "content_scale_size": "(1280, 720)",
+            "final_transform": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 0.0)]",
+            "position": "(1070, 782)",
+            "screen_transform": "[X: (1.0, 0.0), Y: (0.0, 1.0), O: (0.0, 0.0)]",
+            "size": "(1280, 720)",
+            "ui_root_clip": false,
+            "ui_root_rect": "[P: (0.0, 0.0), S: (1280.0, 720.0)]"
+          }
+        },
+        "time_usec": 32613347
+      },
+      "source_line": 646,
+      "root_id": "34359738368",
+      "known_nodes": 506,
+      "reachable_nodes": 499,
+      "missing_references": [],
+      "multiple_parent_references": {},
+      "root_is_child": false,
+      "targets": [
+        {
+          "node": {
+            "bounds": [
+              0.0,
+              0.0,
+              240.0,
+              44.0
+            ],
+            "children": [],
+            "clips_children": false,
+            "extra": "",
+            "hidden": true,
+            "id": "21320217657407",
+            "name": "웨이브 시작 (Space)",
+            "role": 18,
+            "root_id": "34359738368",
+            "time_usec": 19151341,
+            "window": 0
+          },
+          "reachable": true,
+          "ancestors": [
+            {
+              "bounds": [
+                0.0,
+                0.0,
+                1280.0,
+                720.0
+              ],
+              "children": [
+                "21053929684993",
+                "21058224652290"
+              ],
+              "clips_children": false,
+              "extra": "",
+              "hidden": false,
+              "id": "34359738368",
+              "name": "Bindu QA wave (DEBUG)",
+              "role": 133,
+              "root_id": "34359738368",
+              "time_usec": 19192991,
+              "window": 0
+            },
+            {
+              "children": [
+                "21062519619587",
+                "21066814586884",
+                "21071109554181",
+                "21075404521478",
+                "21079699488775",
+                "21083994456072",
+                "21088289423369",
+                "21092584390666",
+                "21096879357963",
+                "21101174325260",
+                "21105469292557",
+                "21109764259854",
+                "21114059227151"
+              ],
+              "clips_children": false,
+              "extra": "",
+              "hidden": false,
+              "id": "21053929684993",
+              "name": "Main",
+              "role": 14,
+              "root_id": "34359738368",
+              "time_usec": 4968272,
+              "window": 0
+            },
+            {
+              "children": [
+                "21204253540388"
+              ],
+              "clips_children": false,
+              "extra": "",
+              "hidden": false,
+              "id": "21096879357963",
+              "name": "@CanvasLayer@22",
+              "role": 14,
+              "root_id": "34359738368",
+              "time_usec": 4969526,
+              "window": 0
+            },
+            {
+              "bounds": [
+                0.0,
+                0.0,
+                1280.0,
+                720.0
+              ],
+              "children": [
+                "21208548507685",
+                "21212843474982",
+                "21217138442279",
+                "21221433409576",
+                "21225728376873",
+                "21230023344170",
+                "21234318311467",
+                "21238613278764",
+                "21242908246061",
+                "21247203213358",
+                "21251498180655",
+                "21255793147952",
+                "21260088115249",
+                "21264383082546",
+                "21268678049843",
+                "21272973017140",
+                "21277267984437",
+                "21281562951734",
+                "21285857919031",
+                "21290152886328",
+                "21294447853625",
+                "21298742820922",
+                "21303037788219",
+                "21307332755516",
+                "21311627722813",
+                "21315922690110",
+                "21320217657407",
+                "21324512624704",
+                "21328807592001",
+                "21333102559298",
+                "21337397526595",
+                "21341692493892",
+                "21345987461189",
+                "21350282428486",
+                "21354577395783",
+                "21358872363080",
+                "21363167330377",
+                "21367462297674",
+                "21371757264971",
+                "21376052232268",
+                "21380347199565",
+                "21384642166862",
+                "21388937134159",
+                "21393232101456",
+                "21397527068753",
+                "21401822036050",
+                "21406117003347",
+                "21410411970644",
+                "21414706937941",
+                "21419001905238",
+                "21423296872535",
+                "21427591839832",
+                "21431886807129",
+                "21436181774426",
+                "21440476741723",
+                "21444771709020",
+                "21449066676317",
+                "21453361643614"
+              ],
+              "clips_children": false,
+              "extra": "",
+              "hidden": false,
+              "id": "21204253540388",
+              "name": "",
+              "role": 14,
+              "root_id": "34359738368",
+              "time_usec": 4969576,
+              "window": 0
+            }
+          ],
+          "hidden_chain": [
+            "21320217657407"
+          ]
+        }
+      ]
+    }
+  ],
+  "limit": "Engine submission data only; does not observe the AccessKit consumer internal tree or prove native platform inclusion."
+}

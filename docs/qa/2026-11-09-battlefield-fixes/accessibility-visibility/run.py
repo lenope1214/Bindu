@@ -43,6 +43,8 @@ def main():
     parser.add_argument('--minimal-bridge', action='store_true')
     parser.add_argument('--start-hidden', action='store_true')
     parser.add_argument('--accessibility-focus', action='store_true')
+    parser.add_argument('--journey', choices=['ready-only', 'choose-ready', 'ready-with-key', 'ready-with-inspector', 'native-journey', 'native-close', 'native-resume', 'native-resume-live'])
+    parser.add_argument('--native-engine', type=Path, help='Diagnostic engine for the native launch only; stock engine still imports/checks the QA script.')
     args = parser.parse_args()
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=True)
@@ -67,7 +69,16 @@ def main():
             record['product_sha256'] = {str(p.relative_to(project)):hashlib.sha256(p.read_bytes()).hexdigest() for p in (project/'scripts').rglob('*.gd')}
             online = project/'scripts/online_config.gd'
             online.write_text(re.sub(r'const (SERVER_URL|MP_URL) := "[^\"]*"', r'const \1 := ""', online.read_text()))
-            shutil.copy2(HERE/('minimal.gd' if args.minimal else 'observe.gd'), project/'tools/ax_visibility_check.gd')
+            observer_name = 'ready_journey.gd' if args.journey else ('minimal.gd' if args.minimal else 'observe.gd')
+            shutil.copy2(HERE/observer_name, project/'tools/ax_visibility_check.gd')
+            if args.journey:
+                assert not any([args.minimal, args.cached, args.diagnose, args.refresh_parent, args.accessibility_focus])
+                shutil.copy2(HERE/'observe.gd', project/'tools/ax_visibility_base.gd')
+                record['journey'] = args.journey
+                record['snapshot_protocol'] = {'timeout_seconds':120 if args.journey == 'native-resume-live' else 30,
+                                                'timeout_fatal':True}
+                record['observer_dependencies'] = {name:hashlib.sha256((project/name).read_bytes()).hexdigest()
+                                                   for name in ['tools/ax_visibility_base.gd', 'tools/carry_check.gd', 'tools/spec_check.gd', 'tools/virtual_input.gd']}
             if args.minimal:
                 record['scope'] = 'Engine-only isolated Button visibility/AXPress; game UI and frame systems not instantiated. No product behavior conclusion.'
             if args.accessibility_focus:
@@ -108,7 +119,21 @@ def main():
             shutil.copy2(project/'tools/ax_visibility_check.gd', out/'observer-used.gd')
             helper.checked(['swiftc', str(reader), '-o', str(binary)], out/'swift-build.log')
             helper.checked([helper.GODOT, '--headless', '--import', '--path', directory], out/'import.log')
-            command = [helper.GODOT, '--audio-driver', 'Dummy', '--accessibility', 'always', '--accessibility-driver', 'accesskit',
+            helper.checked([helper.GODOT, '--headless', '--path', directory, '--check-only', '--script', 'tools/ax_visibility_check.gd'], out/'parse.log')
+            engine = str(args.native_engine.resolve()) if args.native_engine else helper.GODOT
+            assert Path(engine).is_file()
+            record['native_engine'] = {'path':engine, 'sha256':hashlib.sha256(Path(engine).read_bytes()).hexdigest(),
+                                       'version':subprocess.check_output([engine, '--version'], text=True).strip(),
+                                       'outgoing_node_trace':os.environ.get('BINDU_AX_TRACE') == '1'}
+            if args.native_engine:
+                checks = ['tools/spec_check.gd', 'tools/carry_check.gd'] if args.journey else []
+                if args.journey:
+                    checks.append('tools/ax_visibility_base.gd')
+                checks.append('tools/ax_visibility_check.gd')
+                for index, script in enumerate(checks):
+                    helper.checked([engine, '--headless', '--path', directory, '--check-only', '--script', script],
+                                   out/('native-parse-'+str(index)+'.log'))
+            command = [engine, '--audio-driver', 'Dummy', '--accessibility', 'always', '--accessibility-driver', 'accesskit',
                        '--path', directory, '--resolution', '1280x720', '-s', 'tools/ax_visibility_check.gd', '--', str(out)]
             if args.cached:
                 command.append('cached')
@@ -118,6 +143,8 @@ def main():
             if args.start_hidden:
                 assert args.minimal
                 command.append('start-hidden')
+            if args.journey:
+                command.append(args.journey)
             record['command'] = command
             log = out/'native.log'
             with log.open('w') as stream:
@@ -132,7 +159,12 @@ def main():
                             wait_for(out/(label+'-result.json'), process, log)
                             record['states'][label] = json.loads((out/(label+'-result.json')).read_text())
                         record['cached_action'] = json.loads((out/'hidden-ax.json').read_text())
-                    for label in ([] if args.cached else LABELS):
+                    labels = {'ready-only':['ready', 'wave'], 'ready-with-key':['ready', 'wave'], 'ready-with-inspector':['ready', 'wave'],
+                              'choose-ready':['visible', 'ready', 'wave'], 'native-journey':['pick_one', 'pick_two', 'ready', 'wave'],
+                              'native-close':['pick_one', 'pick_two', 'ready_open', 'ready_closed', 'ready', 'wave'],
+                              'native-resume-live':['pick_one', 'pick_two', 'saved_ready', 'pause', 'leave', 'continue'],
+                              'native-resume':['pick_one', 'pick_two', 'saved_ready', 'pause', 'leave', 'continue', 'ready', 'wave']}.get(args.journey, LABELS)
+                    for label in ([] if args.cached else labels):
                         wait_for(out/(label+'-ready.json'), process, log)
                         state = json.loads((out/(label+'-ready.json')).read_text())
                         assert state['pid'] == process.pid and state['supported']
@@ -156,6 +188,14 @@ def main():
                         if label in ['hidden', 'hidden_again', 'shown']:
                             assert state['card_name']
                             command.append(state['card_name'])
+                        if args.journey and args.journey.startswith('native-'):
+                            if label in ['pick_one', 'pick_two', 'leave', 'continue']:
+                                assert state['card_name']
+                                command.append(state['card_name'])
+                            if label == 'ready':
+                                commands = [s['name'] for s in state['sentinels'] if '웨이브 시작' in s['name'] and s['visible']]
+                                assert len(commands) == 1
+                                command.append(commands[0])
                         helper.checked(command, out/(label+'-ax.log'), env={**os.environ, 'BINDU_AX_CHILDREN':args.tree})
                         ax = json.loads((out/(label+'-ax.json')).read_text())
                         assert not ax['limit_reached']
@@ -170,6 +210,8 @@ def main():
                         record['states'][label].update({'before':result['before'], 'after':result['after']})
                         print('AX VISIBILITY', label, record['states'][label]['press_matches'],
                               'phase', result['before']['phase'], '->', result['after']['phase'], flush=True)
+                        if args.journey in ['native-resume', 'native-resume-live'] and label in ['leave', 'continue']:
+                            assert ax.get('press_matches') == 1 and ax.get('press_error') == 0, (label, 'native action not discoverable or rejected')
                     process.wait(timeout=15)
                     raw = log.read_text()
                     assert process.returncode == 0 and not re.search(r'^(?:SCRIPT ERROR|ERROR:)', raw, re.M), raw[-2000:]
