@@ -50,6 +50,13 @@ var wind_buff := 0.0  # 둘레 바람 오브젝트가 주는 공격 속도 (main
 var eff := {}  # 지금 쓰는 속성 (매 프레임 갱신)
 var dir := Vector2.RIGHT
 var reflex_target: Orb = null
+var hero := false  # 영웅 오브젝트 (시험, Hero)
+var hero_e := -1  # 영웅 속성
+var hero_lv := 1
+var hero_xp := 0.0
+var hero_n := {}  # 경험치 길 -> 받은 횟수 (같은 길은 줄어듦)
+var hero_ab := {}  # "레벨" -> 고른 능력 id
+var hero_pend: Array = []  # 아직 고르지 않은 능력 레벨
 var aim := Vector2.RIGHT  # 유도 강화로 살짝 돈 실제 공격 방향
 var cd := {}  # 공격별 쿨다운
 var fx := {}  # 공격별 이펙트 남은 시간
@@ -121,6 +128,8 @@ func lv(e: int) -> int:
 
 
 func m(id: String) -> int:
+	if hero:
+		return mods.get(id, 0) + Hero.free_mod(self, id)
 	return mods.get(id, 0)
 
 
@@ -186,7 +195,7 @@ static var SHADE_T := 3.0  # 어둠 형태 성질 그림자 표식 시간 (2026-
 
 ## 공격 속도 배율: 특성 × 속사 × 바람 버프 ÷ 속성을 겹친 대가 (모두 곱한다). 특수 반응 공격도 이 배율.
 func spd_k() -> float:
-	return spd_mul * (1.0 + Rules.rapid_k * mf("rapid")) * (1.0 + wind_buff) * skill_k() / tax()
+	return spd_mul * (1.0 + Rules.rapid_k * mf("rapid")) * (1.0 + wind_buff) * skill_k() / tax() * (Hero.spd_k(self) if hero else 1.0)
 
 
 ## 중앙 기술 집중·흡수 구체가 바꾼 공격 속도 배율.
@@ -779,6 +788,7 @@ func dmg_factor(rx := false) -> float:
 		f *= 1.0 + Rules.t("map_cross_dmg")  # 십자로: 길목에서 길 따라 겨눔
 	if main and _abilities_port.on_ley(self):
 		f *= 1.0 + Rules.t("ley_dmg")  # 기맥 위
+	f *= Hero.dmg_k(self) if hero else Hero.teach_k(self)  # 영웅 레벨·능력 (시험)
 	return f
 
 
@@ -902,7 +912,7 @@ func color() -> Color:
 func add(e: int, n: int) -> String:
 	var fresh := Elem.new_reactions(eff_now(), e)
 	for reaction in fresh: new_reactions[reaction["id"]] = true
-	elements[e] = mini(lv(e) + n, elem_cap())
+	elements[e] = lv(e) + n if hero and e == hero_e else mini(lv(e) + n, elem_cap())  # 영웅 속성은 레벨 상한 없음
 	eff = eff_now()
 	if not order.has(e):
 		order.append(e)
@@ -925,6 +935,8 @@ static func elem_cap() -> int:
 func can_take(card: Dictionary) -> bool:
 	match card["type"]:
 		"elem":
+			if hero and card["e"] == hero_e:
+				return true
 			if elements.has(card["e"]):
 				return lv(card["e"]) < elem_cap()
 			# 별이 든 오브젝트는 별 + 하나(그 속성의 행성)까지
@@ -932,7 +944,7 @@ func can_take(card: Dictionary) -> bool:
 				return false
 			if not planet_refuse(card["e"]).is_empty():
 				return false
-			return order.size() < Rules.max_elems
+			return order.size() - (1 if hero and order.has(hero_e) else 0) < Rules.max_elems  # 영웅 속성은 종류 상한에 세지 않음
 		"pat":
 			return can_pattern(card["id"])
 		"mod":
@@ -1181,7 +1193,7 @@ func spec() -> Dictionary:
 ## 이어하기 저장용.
 func to_save() -> Dictionary:
 	return {"elements": elements, "order": Array(order), "pattern": pattern, "plv": plv, "mods": mods,
-		"reso": reso, "pincer": pincer, "trigs": trigs, "charge": charge, "third_n": third_n, "star_sum": star_sum, "star_e": star_e, "pos": position, "dir": dir, "dealt": dealt, "run_dealt": run_dealt,
+		"reso": reso, "pincer": pincer, "trigs": trigs, "charge": charge, "third_n": third_n, "star_sum": star_sum, "star_e": star_e, "pos": position, "dir": dir, "hero": hero, "hero_e": hero_e, "hero_lv": hero_lv, "hero_xp": hero_xp, "hero_n": hero_n, "hero_ab": hero_ab, "hero_pend": hero_pend, "dealt": dealt, "run_dealt": run_dealt,
 		"src": src, "run_src": run_src, "hist": hist}
 
 
@@ -1258,6 +1270,26 @@ func load_save(d: Dictionary) -> void:
 	var pos: Variant = d.get("pos")
 	if pos is Vector2:
 		position = pos
+	hero = d.get("hero") == true
+	hero_e = _int(d.get("hero_e")) if hero else -1
+	if hero and not hero_e in Elem.ALL:
+		hero = false
+		hero_e = -1
+	hero_lv = maxi(1, _int(d.get("hero_lv")))
+	hero_xp = maxf(0.0, _float(d.get("hero_xp")))
+	hero_n = d.get("hero_n") if d.get("hero_n") is Dictionary else {}
+	hero_ab = {}
+	var ha: Variant = d.get("hero_ab", {})
+	if ha is Dictionary:
+		for k in ha:
+			if ha[k] is String:
+				hero_ab[str(k)] = ha[k]
+	hero_pend = []
+	var hp0: Variant = d.get("hero_pend", [])
+	if hp0 is Array:
+		for v in hp0:
+			if (v is int or v is float) and int(v) in Hero.AB_LV:
+				hero_pend.append(int(v))
 	var dv: Variant = d.get("dir")
 	if dv is Vector2 and dv.length() > 0.01:
 		set_attack_direction(dv)
@@ -2626,6 +2658,8 @@ func _draw() -> void:
 		_draw_attack()
 	_draw_body()
 	_draw_rank()
+	if hero and main:
+		_draw_hero()
 	if owner_id > 0:
 		_draw_owner_mark()
 	if req_e >= 0 and Elem.COLORS.has(req_e):
@@ -2673,6 +2707,22 @@ const RANK_COLORS := [Color(1.0, 0.82, 0.25), Color(0.85, 0.88, 0.95), Color(0.8
 
 
 ## 피해 1위 왕관, 2·3위 메달 (왼쪽 위, 협동 요청 방울은 오른쪽 위)
+## 영웅: 경험치 고리 + 머리 위 "영웅 LvN" 배지 (고를 능력이 있으면 느낌표).
+func _draw_hero() -> void:
+	var c := Color("ffd479")
+	var f := clampf(hero_xp / Hero.need(hero_lv), 0.0, 1.0)
+	draw_arc(Vector2.ZERO, RADIUS + 7.0, 0.0, TAU, 40, Color(1, 1, 1, 0.15), 3.0)
+	if f > 0.0:
+		draw_arc(Vector2.ZERO, RADIUS + 7.0, -PI * 0.5, -PI * 0.5 + TAU * f, 40, c, 3.0)
+	var fnt: Font = main.ui_font if main.ui_font else ThemeDB.fallback_font
+	var s := "영웅 Lv%d%s" % [hero_lv, " !" if not hero_pend.is_empty() else ""]
+	var w := fnt.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x + 10.0
+	var r := Rect2(Vector2(-w * 0.5, RADIUS + 11.0), Vector2(w, 16.0))
+	draw_rect(r, Color(0.2, 0.14, 0.02, 0.9))
+	draw_rect(r, c, false, 1.0)
+	draw_string(fnt, r.position + Vector2(5, 12), s, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, c)
+
+
 func _draw_rank() -> void:
 	if not main:
 		return

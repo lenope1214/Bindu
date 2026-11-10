@@ -122,6 +122,10 @@ func _start_choose(new_round := true) -> void:
 	session.persistence_system._save_run()
 	if new_round:
 		session.onboarding_system._rest_guides()
+	if Hero.should_pick(session):
+		Hero.open_pick(session)  # 영웅 속성 고르기 (시험)
+	else:
+		Hero.open_ability(session)
 
 
 ## 새 쉬는 시간: 다음 웨이브(방향·저항·보스)를 뽑고 고르기·새로고침 수를 정한다.
@@ -361,6 +365,10 @@ func _start_wave() -> void:
 		return
 	if TutPlay.on and session.tplay != null and not session.tplay.can_start():
 		session.countdown = -1.0
+		return
+	if Hero.is_open(session):
+		session.countdown = -1.0
+		session.hud_system._show_toast("영웅 창에서 먼저 고르세요")
 		return
 	if session.mp_mode == "coop" and not session.mp_wave_go:
 		session.countdown = -1.0

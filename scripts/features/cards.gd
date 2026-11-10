@@ -262,6 +262,9 @@ func _roll_card() -> Dictionary:
 		return {"type": "elem", "e": MapRule.pick("elem", elems), "lv": 2 if randf() < session.perks_system._lv2_chance() else 1}
 	var r := randf() * total
 	if r < we:
+		var hero_t := Hero.tower_of(session)
+		if hero_t != null and elems.has(hero_t.hero_e) and randf() < (Hero.CARD_K - 1.0) / elems.size():
+			return {"type": "elem", "e": hero_t.hero_e, "lv": 1}  # 영웅 속성 카드 1.5배
 		return {"type": "elem", "e": MapRule.pick("elem", elems), "lv": 2 if randf() < session.perks_system._lv2_chance() else 1}
 	r -= we
 	if r < wp:
@@ -968,6 +971,8 @@ func _apply_card(target: Tower) -> void:
 				session.hud_system._show_toast(target.refuse_text(session.picked))
 				return
 			msg = target.add_trig(session.picked["id"])
+	if target.hero and Hero.gain(target, "card", Hero.XP_CARD) > 0:
+		msg += " · 영웅 Lv%d!" % target.hero_lv
 	session.hud_system._show_toast(msg)
 	session.sfx.play("place")
 	session.spawning_system.burst(target.position, _card_color(session.picked), 16, 160.0)

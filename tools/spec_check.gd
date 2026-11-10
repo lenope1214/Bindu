@@ -75,6 +75,54 @@ func _orb(p: Vector2, hp: float, kind := Orb.Kind.NORMAL, spd := 0.0) -> Orb:
 	return o
 
 
+func _hero() -> void:
+	_fresh(0)
+	ok("HERO-01", not Hero.should_pick(main), "헤드리스(봇)에서는 고르기 창을 띄우지 않음")
+	var h := Hero.spawn(main, Elem.ELECTRIC)
+	ok("HERO-01", h != null and h.hero and h.hero_e == Elem.ELECTRIC and h.lv(Elem.ELECTRIC) == 1 and h.pattern == Pat.DEFAULT and Hero.spawn(main, Elem.FIRE) == null, "영웅 오브젝트 하나 (직선탄 + 영웅 속성 Lv1)")
+	Hero.open_pick(main)
+	ok("HERO-01", Hero.is_open(main), "고르기 창")
+	main.countdown = 1.0
+	var w0: int = main.wave
+	main.run_flow_system._start_wave()
+	ok("HERO-01", main.wave == w0 and not main.wave_active, "창이 열린 동안 웨이브 시작 막음")
+	Hero.close(main)
+	# 경험치·레벨
+	var base := h.dmg_factor()
+	ok("HERO-02", Hero.gain(h, "card", Hero.XP_CARD) == 1 and h.hero_lv == 2 and is_equal_approx(h.dmg_factor(), base * (1.0 + Hero.LV_K)), "카드 한 장 = 1레벨, 레벨당 피해 +8%")
+	Hero.gain(h, "wave", 10.0)
+	ok("HERO-02", h.hero_lv == 3 and h.hero_pend == [3], "Lv3에 고를 능력")
+	Hero.gain(h, "card", Hero.XP_CARD)
+	var x0 := h.hero_xp
+	Hero.gain(h, "card", Hero.XP_CARD)
+	ok("HERO-02", h.hero_lv == 4 and is_equal_approx(h.hero_xp + 10.0 - x0, Hero.XP_CARD / (1.0 + 2.0 / Hero.FADE)), "같은 길은 줄어듦 (3번째 카드 10/(1+2/8))")
+	ok("HERO-02", Hero.need(9) == 10.0 and is_equal_approx(Hero.need(10), 13.0), "Lv10 뒤 필요량 1.3배")
+	for i in 6:
+		h.add(Elem.ELECTRIC, 1)
+	ok("HERO-02", h.lv(Elem.ELECTRIC) == 7 and h.can_take({"type": "elem", "e": Elem.ELECTRIC, "lv": 1}), "영웅 속성 레벨 상한 없음")
+	h.add(Elem.FIRE, 1)
+	h.add(Elem.WATER, 1)
+	ok("HERO-02", h.can_take({"type": "elem", "e": Elem.WOOD, "lv": 1}), "영웅 속성은 종류 상한에 안 셈 (영웅 + 3종)")
+	var d := h.to_save()
+	var t2 := _tower(main.viewport_system.center() + Vector2(200, 150), Elem.ELECTRIC)
+	t2.load_save(d)
+	ok("HERO-02", t2.hero and t2.hero_lv == h.hero_lv and is_equal_approx(t2.hero_xp, h.hero_xp) and t2.hero_pend == [3], "이어하기 저장")
+	t2.free()
+	# 능력
+	var m0 := h.mod_count()
+	Hero.choose(h, 3, "twin")
+	ok("HERO-03", h.m("multi") == 1 and h.mod_count() == m0 and h.hero_pend.is_empty(), "두 갈래: 공짜 다중 발사, 강화 합계에 안 셈")
+	var other := _tower(main.viewport_system.center() + Vector2(220, -150), Elem.ELECTRIC)
+	var o0 := other.dmg_factor()
+	h.hero_ab["6"] = "teach"
+	main.sim_id += 1
+	ok("HERO-03", is_equal_approx(other.dmg_factor(), o0 * (1.0 + 0.03 * h.hero_lv)), "가르침: 영웅 속성 든 다른 오브젝트 피해 +")
+	var s0 := h.spd_k()
+	h.hero_ab["10"] = "overload"
+	ok("HERO-03", is_equal_approx(h.spd_k(), s0 * 1.5), "과부하: 공격 속도 x1.5")
+	_clear()
+
+
 func _initialize():
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools"):
 		print("FAIL 실제 게임 저장 폴더를 쓰게 됨: tools/run.sh spec 으로 돌리세요")
@@ -92,6 +140,7 @@ func _initialize():
 	await _multi_center()
 	_reflex()
 	_reflex_review_regressions()
+	_hero()
 	_mods_links()
 	await _mods_area()
 	_waves()

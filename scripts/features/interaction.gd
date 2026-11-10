@@ -839,6 +839,8 @@ func _place_on(target: Tower) -> void:
 		return
 	_history_begin("속성 카드 적용")
 	var msg: String = target.add(session.picked["e"], session.picked["lv"])
+	if target.hero and Hero.gain(target, "card", Hero.XP_CARD) > 0:
+		session.hud_system._show_toast("영웅 Lv%d!" % target.hero_lv)
 	session.sfx.play("place")
 	if msg.begins_with("조합"):
 		session.sfx.play("reaction", 0.0)
