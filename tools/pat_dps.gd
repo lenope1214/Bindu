@@ -2,7 +2,7 @@ extends SceneTree
 # 공격방식별 피해/초: 속성 하나(ELEM, 기본 불) Lv1 오브젝트에 공격방식 Lv(PLV, 기본 1) 하나를 넣고,
 # 구체 무리(초당 3개, 죽지 않음)가 30초 지나갈 때 준 피해/초.
 # cross: 앞 160에서 가로지름(폭 ±50). head: 정면 700에서 오브젝트 쪽으로 걸어옴(폭 ±30, 중앙 반대쪽을 겨눔).
-# PAT=lob,shot 으로 골라 보기.
+# PAT=lob,shot 으로 골라 보기. MODS=homing,homing 이면 강화도 넣는다.
 var main
 func _initialize():
 	main = load("res://main.tscn").instantiate()
@@ -34,6 +34,9 @@ func _initialize():
 				var t = main.towers.get_child(0)
 				for i in plv:
 					t.set_pattern(p)
+				for mid in OS.get_environment("MODS").split(",", false):
+					if t.can_take({"type": "mod", "id": mid}):
+						t.add_mod(mid)
 				var spawn_t := 0.0
 				for f in 60 * 30:
 					spawn_t -= 1.0 / 60

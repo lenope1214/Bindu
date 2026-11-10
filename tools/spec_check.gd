@@ -75,6 +75,28 @@ func _orb(p: Vector2, hp: float, kind := Orb.Kind.NORMAL, spd := 0.0) -> Orb:
 	return o
 
 
+func _aoe_homing() -> void:
+	_fresh(5)
+	var c: Vector2 = main.viewport_system.center()
+	var tp := c + Vector2(-300, 0)
+	var t := _tower(tp, Elem.FIRE, 1)
+	t.set_pattern("spray")
+	t.add_mod("homing")
+	t.add_mod("homing")
+	var lone := _orb(tp + Vector2(150, 0), 50.0)
+	for i in 5:
+		_orb(tp + Vector2.from_angle(0.3).rotated(randf_range(-0.03, 0.03)) * (130.0 + 10.0 * i), 50.0)
+	main.combat_system.targets = main.orbs.get_children()
+	main.sim_id += 1
+	t.reflex_target = null
+	t._update_aim(main.orbs.get_children(), 0.016)
+	var a: float = (lone.position - t.position).angle_to(t.aim) if t.reflex_target == lone else Vector2.RIGHT.angle_to(t.aim)
+	ok("HOMING-01", t.auto_aim() and a > 0.05 and a <= 0.1 * t.mf("homing") + 0.01, "분사+유도: 겨눈 구체에서 무리 쪽으로 돌기 %.2f" % a)
+	var t2 := _tower(c + Vector2(300, 200), Elem.FIRE, 1)
+	t2.add_mod("homing")
+	_clear()
+
+
 func _initialize():
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools"):
 		print("FAIL 실제 게임 저장 폴더를 쓰게 됨: tools/run.sh spec 으로 돌리세요")
@@ -92,6 +114,7 @@ func _initialize():
 	await _multi_center()
 	_reflex()
 	_reflex_review_regressions()
+	_aoe_homing()
 	_mods_links()
 	await _mods_area()
 	_waves()

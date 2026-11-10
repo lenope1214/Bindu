@@ -1960,35 +1960,46 @@ func _update_aim(orbs: Array, delta: float) -> void:
 					reflex_target = o
 		if reflex_target != null and best > 0.001:
 			aim = lead_dir(reflex_target)
+			# 범위 공격 + 유도 (시험, test/aoe-homing): 자동 조준한 구체 쪽에서 무리가 가장 많이 모인 가운데로 조금 더 돈다
+			# (자동 조준 뒤 범위 공격의 유도가 효과 0이던 것, 분사 58→47·음파 46→30)
+			var hn := mf("homing")
+			if hn > 0.0 and not pattern in Pat.PROJECTILE:
+				aim = _crowd_turn(aim, hn)
 		return
 	var n := mf("homing")
 	if n == 0.0 or pattern in Pat.PROJECTILE:
 		aim = dir
 		return
+	aim = aim.slerp(_crowd_turn(dir, n), minf(1.0, delta * 6.0)).normalized()
+
+
+## 유도: base 방향에서 0.1 x n 라디안 안으로, 400 안 구체가 0.6라디안 창에 가장 많이 든 곳의 가운데로 돈 방향.
+## 가장 가까운 구체가 아니라 구체가 가장 많이 모인 쪽으로 (2026-10-30: 가까운 한 개를 따라가 무리 가운데를 벗어나
+## 분사·음파·물줄기·레이저·시계침에서 유도가 피해를 0.65~0.86배로 깎던 것)
+func _crowd_turn(base: Vector2, n: float) -> Vector2:
 	var limit := 0.1 * n
-	# 가장 가까운 구체가 아니라 구체가 가장 많이 모인 쪽으로 (2026-10-30: 가까운 한 개를 따라가 무리 가운데를 벗어나
-	# 분사·음파·물줄기·레이저·시계침에서 유도가 피해를 0.65~0.86배로 깎던 것)
 	var angs := PackedFloat32Array()
 	for o in _combat_port.near_t(position, 400.0):
+		if not is_instance_valid(o):
+			continue
 		var v: Vector2 = o.position - position
 		if v.length() < 400.0:
-			var a := dir.angle_to(v)
+			var a := base.angle_to(v)
 			if absf(a) < limit + 0.4:
 				angs.append(a)
-	var want := dir
-	if not angs.is_empty():
-		angs.sort()
-		var best_a := 0.0
-		var best_n := 0
-		var j := 0
-		for i in angs.size():  # 0.6라디안 창에 가장 많이 든 곳의 가운데
-			while angs[i] - angs[j] > 0.6:
-				j += 1
-			if i - j + 1 > best_n:
-				best_n = i - j + 1
-				best_a = (angs[i] + angs[j]) * 0.5
-		want = dir.rotated(clampf(best_a, -limit, limit))
-	aim = aim.slerp(want, minf(1.0, delta * 6.0)).normalized()
+	if angs.is_empty():
+		return base
+	angs.sort()
+	var best_a := 0.0
+	var best_n := 0
+	var j := 0
+	for i in angs.size():  # 0.6라디안 창에 가장 많이 든 곳의 가운데
+		while angs[i] - angs[j] > 0.6:
+			j += 1
+		if i - j + 1 > best_n:
+			best_n = i - j + 1
+			best_a = (angs[i] + angs[j]) * 0.5
+	return base.rotated(clampf(best_a, -limit, limit))
 
 
 ## 크기 강화가 주는 피해 몫 (탄 공격 +size_dmg/개 x 보정표 크기 칸). 공격방식 자기 공격에만 붙는다.
