@@ -26,7 +26,6 @@
 | update | `tools/update_check.gd` 서명·zip 확인 (실제 교체는 Windows에서 손으로) | 실패 줄 |
 | tutplay | `tools/run.sh tutplay` (tools/tut_play_check.gd) 플레이 튜토리얼을 직접(PC·터치)·건너뛰기만·장 고르기로 끝까지 | `FAIL` 줄, 끝 코드 1 |
 | tutplay_shot | `tools/tut_play_shot.gd` 플레이 튜토리얼 단계별 스크린샷 (글자 1.0·1.3, touch phone) | 겹침·잘림·글 깨짐 |
-| 수동 | `tools/battlefield_{core,input,information,flow,undo,lifecycle}_check.gd`를 격리 native 사본에서 PC·폰 모의로 실행 | `failures`·UI 경고·스크립트 오류를 구분해 검토. 실제 기기 성공으로 확대하지 않음 |
 | 수동 | 사람이 직접 해 보기 | |
 
 `tools/run.sh check` = spec + gift state + fuzz(4판) + cont(13웨이브) + online + server(파이썬 패키지가 있을 때). 화면 배치(shot)는 따로 본다.
