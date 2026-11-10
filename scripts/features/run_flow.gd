@@ -110,6 +110,7 @@ func _start_choose(new_round := true) -> void:
 		session.legacy_grow = false
 		session.abilities_system._skills_new_run(Meta.skill_set)
 		session.abilities_system._ley_new_run()
+		Daily.new_run(session)
 	if new_round and session.tutor and session.wave + 1 >= BinduSession.TUTOR_OPEN.values().max() and Meta.tutor_next:
 		Meta.tutor_next = false  # 모두 열렸다: 다음 판부터는 처음부터 모두
 		session.progression_system._save_best()

@@ -164,7 +164,7 @@ static func hidden(a: Dictionary) -> bool:
 static func add(key: String, n := 1) -> void:
 	if not _key_ok(key):
 		return
-	Meta.tally[key] = int(Meta.tally.get(key, 0)) + n
+	Meta.tally[key] = int(Meta.tally.get(key, 0)) + n * Daily.ach_k()  # 오늘의 맵 판은 2배 (시험)
 
 
 static func raise(key: String, v: int) -> void:

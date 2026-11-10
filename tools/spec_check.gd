@@ -75,6 +75,32 @@ func _orb(p: Vector2, hp: float, kind := Orb.Kind.NORMAL, spd := 0.0) -> Orb:
 	return o
 
 
+func _daily() -> void:
+	var same := 0
+	var seen_maps := {}
+	for d in range(20000, 20400):
+		var a := Daily.map_of(d)
+		seen_maps[a] = true
+		if a == Daily.map_of(d + 1):
+			same += 1
+	ok("DAILY-01", same == 0 and seen_maps.size() == Daily.pool().size() and not seen_maps.has("line"), "400일 동안 이틀 연속 같은 맵 없음, 시험 맵 제외, 모든 맵 나옴 %s" % [seen_maps.keys()])
+	ok("DAILY-01", Daily.map_of(20123) == Daily.map_of(20123), "같은 날은 같은 맵")
+	var keep_map := Meta.map_id
+	Meta.map_id = Daily.today()
+	Daily.new_run(main)
+	var t0 := int(Meta.tally.get("boss_kills", 0))
+	Ach.mp = ""
+	Ach.add("boss_kills")
+	var on_k := int(Meta.tally.get("boss_kills", 0)) - t0
+	Meta.map_id = Daily.pool()[(Daily.pool().find(Daily.today()) + 1) % Daily.pool().size()]
+	Daily.new_run(main)
+	Ach.add("boss_kills")
+	var off_k := int(Meta.tally.get("boss_kills", 0)) - t0 - on_k
+	ok("DAILY-01", on_k == 2 and off_k == 1, "오늘의 맵 판은 업적 누적 2배 (%d / %d)" % [on_k, off_k])
+	Meta.map_id = keep_map
+	Daily.run_on = false
+
+
 func _initialize():
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools"):
 		print("FAIL 실제 게임 저장 폴더를 쓰게 됨: tools/run.sh spec 으로 돌리세요")
@@ -92,6 +118,7 @@ func _initialize():
 	await _multi_center()
 	_reflex()
 	_reflex_review_regressions()
+	_daily()
 	_mods_links()
 	await _mods_area()
 	_waves()

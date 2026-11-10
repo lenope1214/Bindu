@@ -662,6 +662,8 @@ func _update_hud(force := false) -> void:
 		items.append(["boss", Color(1, 0.6, 0.75), "보스!" if bl == 0 else "보스까지 %d" % bl, Color(1, 0.75, 0.85), [[bt, W]], false])
 	if not session.interaction_system.selected.is_empty():
 		items.append(["sel", Color(0.6, 1, 0.7), str(session.interaction_system.selected.size()), W, [["선택한 오브젝트", W]], false])
+	if Daily.run_on:
+		items.append(["tag", Color(1, 0.75, 0.3), "오늘의 맵", Color(1, 0.85, 0.55), [["오늘의 맵 (시험)", W], ["이 판은 업적 누적 진행이 2배예요. 점수는 그대로예요.", D]], false])
 	var first := true
 	for pk in BinduSession.PERKS:
 		var n: int = session.perks.get(pk["id"], 0)

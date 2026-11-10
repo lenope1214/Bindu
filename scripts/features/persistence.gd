@@ -43,7 +43,7 @@ func _capture_cfg() -> ConfigFile:
 		"core_hp": session.core_hp, "core_max": session.core_max, "perks": session.perks.keys().map(func(k): return [k, session.perks[k]]), "regen_acc": session.regen_acc, "shield_keep": session.shield_keep, "orb_speed_mul": session.orb_speed_mul,
 		"dmg_mul": Tower.dmg_mul, "spd_mul": Tower.spd_mul, "reach_mul": Tower.reach_mul, "tax_step": Tower.tax_step,
 		"rerolls_left": session.rerolls_left, "bonus_rerolls": session.bonus_rerolls, "picks_left": session.picks_left,
-		"vary": Vary.save(), "skip_left": session.skip_left, "skip_total": session.skip_total, "skip_stop": session.skip_stop, "bank_picks": session.bank_picks, "bank_rerolls": session.bank_rerolls, "bank_perks": session.bank_perks, "perk_rerolls": session.perk_rerolls, "coin_next": session.coin_next, "rest_ready": session.rest_ready,
+		"vary": Vary.save(), "daily": Daily.run_on, "skip_left": session.skip_left, "skip_total": session.skip_total, "skip_stop": session.skip_stop, "bank_picks": session.bank_picks, "bank_rerolls": session.bank_rerolls, "bank_perks": session.bank_perks, "perk_rerolls": session.perk_rerolls, "coin_next": session.coin_next, "rest_ready": session.rest_ready,
 		"new_angles": session.waves_system.new_angles, "lanes": Array(session.lanes), "wave_resist": session.wave_resist, "boss": session.boss_plan, "achievements": session.new_achievements, "ach_run": Ach.run,
 		"state": "perk" if session.perk_mode else ("ready" if session.phase == BinduSession.Phase.READY else "choose"),
 		"offer": session.offer, "perk_offer": session.perk_offer.map(func(pk): return pk["id"]), "towers": list,
@@ -234,6 +234,7 @@ func _restore_info(info: Dictionary) -> void:
 	if not session.wave_resist in Elem.ALL:
 		session.wave_resist = -1
 	Vary.load_from(g.call("vary", {}))
+	Daily.run_on = g.call("daily", false) == true
 	session.abilities_system._skills_new_run(int(g.call("skill_set", 0)))
 	session.ley = []
 	if session.abilities_system.leys_on():

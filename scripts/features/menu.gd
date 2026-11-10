@@ -792,6 +792,13 @@ func _draw_map_card(b: Button) -> void:
 	b.draw_string(session.ui_font, Vector2(0, 22), m["name"], HORIZONTAL_ALIGNMENT_CENTER, b.size.x, Meta.fs(16), nc)
 	if id in Meta.TRIAL_MAPS:
 		b.draw_string(session.ui_font, Vector2(0, 35), "시험", HORIZONTAL_ALIGNMENT_CENTER, b.size.x, 10, Color(1, 1, 1, 0.45))
+	elif id == Daily.today():
+		# 오늘의 맵 띠 (업적 진행 2배)
+		var tag := "오늘 · 업적 x2"
+		var tw := session.ui_font.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x + 10.0
+		var tr := Rect2(Vector2(cx - tw * 0.5, 27), Vector2(tw, 15))
+		b.draw_rect(tr, Color(1, 0.75, 0.3, 0.9))
+		b.draw_string(session.ui_font, tr.position + Vector2(5, 11.5), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.15, 0.08, 0.0))
 	_draw_map_path(b, id, Vector2(cx, 62.0), 20.0, Color(acc, 0.75 if sel else 0.5))
 	var rt := MapRule.rule_text(id).get_slice(":", 0)
 	b.draw_string(session.ui_font, Vector2(0, 100), rt, HORIZONTAL_ALIGNMENT_CENTER, b.size.x, Meta.fs(13), Color(BinduSession.MAP_AFF_COLOR, 0.95 if sel else 0.7))
