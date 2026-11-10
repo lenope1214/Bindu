@@ -57,6 +57,7 @@ static var volume := 1.0  # 전체 음량
 static var music_volume := 1.0  # 배경음 (전체 음량에 곱함)
 static var sfx_volume := 1.0  # 효과음 (전체 음량에 곱함)
 static var shake_on := true
+static var vibrate_on := OS.has_feature("mobile")  # 폰 진동 (시험, Haptic). 폰 기본 켬
 static var numbers_on := true
 static var symbols_on := true  # 속성 색 위에 속성 그림 표시 (색만으로 구분하기 어려울 때). 새 저장은 켬
 static var card_detail := false  # 선택지 카드 [자세히]: 끄면 간소화, 켜면 설명 전체 + 올리면 카드 위 창 (기본 끔)
@@ -195,6 +196,7 @@ static func load_into(cfg: ConfigFile) -> void:
 	music_volume = val(cfg, "settings", "music_volume", 1.0)
 	sfx_volume = val(cfg, "settings", "sfx_volume", 1.0)
 	shake_on = val(cfg, "settings", "shake", true)
+	vibrate_on = val(cfg, "settings", "vibrate", OS.has_feature("mobile"))
 	numbers_on = val(cfg, "settings", "numbers", true)
 	symbols_on = val(cfg, "settings", "symbols", false)  # 예전 저장(키가 없던 v0.4.20 이전)은 그대로 끔
 	orb_hp_on = val(cfg, "settings", "orb_hp", false)
@@ -275,6 +277,7 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("settings", "music_volume", music_volume)
 	cfg.set_value("settings", "sfx_volume", sfx_volume)
 	cfg.set_value("settings", "shake", shake_on)
+	cfg.set_value("settings", "vibrate", vibrate_on)
 	cfg.set_value("settings", "numbers", numbers_on)
 	cfg.set_value("settings", "symbols", symbols_on)
 	cfg.set_value("settings", "orb_hp", orb_hp_on)

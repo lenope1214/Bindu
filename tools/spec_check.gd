@@ -75,6 +75,21 @@ func _orb(p: Vector2, hp: float, kind := Orb.Kind.NORMAL, spd := 0.0) -> Orb:
 	return o
 
 
+func _haptic() -> void:
+	var keep := Meta.vibrate_on
+	Meta.vibrate_on = false
+	Haptic.log.clear()
+	Haptic.buzz("boss")
+	ok("HAPTIC-01", Haptic.log.is_empty(), "꺼져 있으면 기록 없음")
+	Meta.vibrate_on = true
+	Haptic.last = -1.0
+	Haptic.buzz("core")
+	Haptic.buzz("core")
+	Haptic.buzz("over")
+	ok("HAPTIC-01", Haptic.log == [["core", 35], ["over", 260]], "중앙 피격 겹치면 한 번, 게임 오버 %s" % [Haptic.log])
+	Meta.vibrate_on = keep
+
+
 func _initialize():
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools"):
 		print("FAIL 실제 게임 저장 폴더를 쓰게 됨: tools/run.sh spec 으로 돌리세요")
@@ -92,6 +107,7 @@ func _initialize():
 	await _multi_center()
 	_reflex()
 	_reflex_review_regressions()
+	_haptic()
 	_mods_links()
 	await _mods_area()
 	_waves()

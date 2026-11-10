@@ -95,6 +95,7 @@ func _check_danger() -> void:
 	var lv := _danger_of(session.core_hp)
 	if lv > session.danger_lv and session.core_hp > 0:
 		session.hud_system.big_banner("중앙 위험! %d/%d" % [session.core_hp, session.core_max], Color(1, 0.3, 0.35) if lv == 2 else Color(1, 0.6, 0.3))
+		Haptic.buzz("danger")
 		session.sfx.play("danger", 0.0)
 		if session.skip_left > 0 and not session.skip_stop and Meta.skip_danger:
 			session.skip_stop = true
@@ -361,6 +362,7 @@ func _resolve(delta: float, preview := false) -> void:
 				session.perks_system._heal_core(2)
 				session.bonus_rerolls += 1
 				session.progression_system._achieve("boss")
+				Haptic.buzz("boss")
 				session.hud_system._show_toast("보스 처치! 중앙 체력 +2" + ("" if Modes.has("narrow") else ", 새로고침 +1"))
 			session.spawning_system.burst(o.position, o.death_color(), 10 if o.kind != Orb.Kind.BOSS else 40, 180.0)
 			session.kills += 1
@@ -402,6 +404,7 @@ func _resolve(delta: float, preview := false) -> void:
 			session.hud_system._show_toast("중앙 피격! %d/%d" % [maxi(session.core_hp, 0), session.core_max])
 			session.wave_dmg += dmg
 			Ach.on_core_hit(dmg)
+			Haptic.buzz("core")
 			session.spawning_system.popup(hit_p + Vector2(0, -BinduSession.CORE_RADIUS - 24.0), dmg, Color(1, 0.3, 0.35), true, "-%d" % dmg, 1.2)
 			_check_danger()
 			_record_leak(o, dmg)

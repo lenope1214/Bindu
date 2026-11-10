@@ -501,6 +501,7 @@ func _game_over() -> void:
 	session.cards_system.clear_edit_history()
 	session.multiplayer_system._mp_over()
 	session.onboarding_system._tut_event("over")
+	Haptic.buzz("over")
 	session.combat_system._log_wave()
 	session.phase = BinduSession.Phase.GAMEOVER
 	session.over_ms = Time.get_ticks_msec()
