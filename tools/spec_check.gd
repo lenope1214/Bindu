@@ -75,6 +75,26 @@ func _orb(p: Vector2, hp: float, kind := Orb.Kind.NORMAL, spd := 0.0) -> Orb:
 	return o
 
 
+func _recent_runs() -> void:
+	var keep := Meta.recent.duplicate()
+	Meta.recent = []
+	for i in 25:
+		Meta.add_recent(i + 1, 100 * i, "")
+	ok("RECENT-01", Meta.recent.size() == Meta.RECENT_MAX and int(Meta.recent[0][3]) == 25, "최대 20개, 새것이 앞")
+	_fresh(7)
+	main.score = 1234
+	var g0 := Meta.games
+	main.run_flow_system._game_over()
+	ok("RECENT-01", Meta.games == g0 + 1 and int(Meta.recent[0][3]) == 7 and int(Meta.recent[0][4]) == 1234 and str(Meta.recent[0][1]) == Meta.map_id, "판이 끝나면 맨 앞에 기록 %s" % [Meta.recent[0]])
+	main.records_panel.visible = false
+	main.menu_system._toggle_records()
+	var rt: String = main.records_panel.text.replace(char(0x2060), "")
+	ok("RECENT-01", rt.contains("[최근 판]") and rt.contains("웨이브 7"), "기록 창에 최근 판")
+	main.records_panel.visible = false
+	Meta.recent = keep
+	main.phase = main.Phase.CHOOSE
+
+
 func _initialize():
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools"):
 		print("FAIL 실제 게임 저장 폴더를 쓰게 됨: tools/run.sh spec 으로 돌리세요")
@@ -92,6 +112,7 @@ func _initialize():
 	await _multi_center()
 	_reflex()
 	_reflex_review_regressions()
+	_recent_runs()
 	_mods_links()
 	await _mods_area()
 	_waves()

@@ -53,6 +53,8 @@ static var coin_streak := 0  # 운명의 동전 연속 앞면 (판을 넘어 이
 static var title := ""  # 고른 칭호 (업적 id, 리더보드 닉네임 옆)
 static var total_kills := 0
 static var games := 0
+static var recent: Array = []  # 최근 판 (시험, test/run-history): 새것이 앞, RECENT_MAX개. [날짜, 맵, 규칙, 웨이브, 점수, 주력]
+const RECENT_MAX := 20
 static var volume := 1.0  # 전체 음량
 static var music_volume := 1.0  # 배경음 (전체 음량에 곱함)
 static var sfx_volume := 1.0  # 효과음 (전체 음량에 곱함)
@@ -147,6 +149,14 @@ static func best_of(id: String) -> Array:
 
 
 ## 저장값 읽기: 형식이 다르면(깨졌거나 손으로 고친 파일) 기본값으로. 숫자는 정수·실수를 서로 받아 준다.
+## 판을 끝냈다: 최근 판 맨 앞에 넣는다.
+static func add_recent(w: int, score: int, top: String) -> void:
+	var d := Time.get_datetime_dict_from_system()
+	recent.push_front(["%02d-%02d %02d:%02d" % [d["month"], d["day"], d["hour"], d["minute"]], map_id, rules, w, score, top])
+	if recent.size() > RECENT_MAX:
+		recent.resize(RECENT_MAX)
+
+
 static func val(cfg: ConfigFile, sec: String, key: String, d: Variant) -> Variant:
 	var v: Variant = cfg.get_value(sec, key, d)
 	if typeof(d) == TYPE_FLOAT and typeof(v) == TYPE_INT:
@@ -188,6 +198,13 @@ static func load_into(cfg: ConfigFile) -> void:
 	favs = val(cfg, "meta", "favs", {})
 	total_kills = val(cfg, "meta", "kills", 0)
 	games = val(cfg, "meta", "games", 0)
+	recent = []
+	var rc: Variant = val(cfg, "meta", "recent", [])
+	if rc is Array:
+		for r in rc:
+			if r is Array and r.size() >= 6:
+				recent.append(r)
+		recent = recent.slice(0, RECENT_MAX)
 	tally = val(cfg, "meta", "tally", {})
 	coin_streak = val(cfg, "meta", "coin_streak", 0)
 	title = val(cfg, "meta", "title", "")
@@ -267,6 +284,7 @@ static func save_into(cfg: ConfigFile) -> void:
 	cfg.set_value("meta", "favs", favs)
 	cfg.set_value("meta", "kills", total_kills)
 	cfg.set_value("meta", "games", games)
+	cfg.set_value("meta", "recent", recent)
 	cfg.set_value("meta", "tally", tally)
 	cfg.set_value("meta", "coin_streak", coin_streak)
 	cfg.set_value("meta", "title", title)

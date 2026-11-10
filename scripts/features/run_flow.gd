@@ -525,6 +525,9 @@ func _game_over() -> void:
 	if session.mp_mode == "":  # 멀티 판은 누적 처치·판 수(업적)에 넣지 않는다
 		Meta.total_kills += session.kills
 		Meta.games += 1
+		if not TutPlay.on and session.wave > 0:
+			var bt: Array = session.hud_system.build_top(1)
+			Meta.add_recent(session.wave, session.score, "%s %d%%" % [session.src_name(bt[0][0]), roundi(bt[0][1] * 100)] if not bt.is_empty() else "")
 	Ach.live_kills = 0
 	session.progression_system._ach_check()
 	if session.tutor:

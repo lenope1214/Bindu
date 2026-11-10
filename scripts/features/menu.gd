@@ -1139,6 +1139,11 @@ func _toggle_records() -> void:
 	if not olds.is_empty():
 		lines.append("  이전 규칙 최고 웨이브  %s" % " · ".join(olds))
 	lines.append("  총 처치 %s · 플레이 %d판" % [session.num(Meta.total_kills), Meta.games])
+	if not Meta.recent.is_empty():
+		lines.append("")
+		lines.append("[최근 판] (시험, 최근 5판)")
+		for r in Meta.recent.slice(0, 5):
+			lines.append("  %s  %s · %s  웨이브 %d · 점수 %s%s" % [r[0], Meta.map_name(str(r[1])) if Meta.MAPS.has(str(r[1])) else str(r[1]), Rules.NAMES.get(int(r[2]), ""), int(r[3]), session.num(int(r[4])), ("  · 주력 " + str(r[5])) if str(r[5]) != "" else ""])
 	lines.append("")
 	# 업적은 도감 업적 탭에 진행 막대와 함께 (55개라 여기에 다 쓰면 창이 넘친다). 등급마다 수만
 	var tiers := PackedStringArray()
