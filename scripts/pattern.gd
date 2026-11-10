@@ -152,9 +152,10 @@ const TRIGS := {
 	"third": {"name": "3타 강타", "desc": "3번째 공격마다 피해 x1.8 (탄은 크기도 x{third_size}). 계속 뿜는 공격은 1.5초마다 잠깐 강해져요."},
 	"finish": {"name": "마무리", "desc": "체력이 {finish_hp%}% 아래인 구체에 피해 x{finish_mul} (보스는 절반). 다른 오브젝트가 깎은 구체에 강해요."},
 	"answer": {"name": "따라 쏘기", "desc": "거리 {answer_r} 안 다른 오브젝트의 발동이 터지면 그쪽으로 한 발 더 쏴요. ({answer_cd}초에 한 번)"},
+	"satellite": {"name": "위성", "desc": "오브젝트 둘레(거리 46)를 도는 작은 위성 1개(장마다 +1)가 닿은 구체에 직선탄 한 발의 30% 피해를 줘요. 같은 구체는 위성마다 0.5초에 한 번. (시험)"},
 }
 
-const TRIG_IDS := ["echo", "vanguard", "charge", "third", "finish", "answer"]
+const TRIG_IDS := ["echo", "vanguard", "charge", "third", "finish", "answer", "satellite"]
 const TRIG_COLOR := Color(1.0, 0.55, 0.45)
 
 
@@ -178,6 +179,7 @@ const BRIEF := {
 		"third": "세 번째 공격마다 강해져요. 계속 뿜는 공격은 일정 시간마다 잠깐 강해져요.",
 		"finish": "체력이 얼마 남지 않은 구체를 더 세게 때려요. 보스에게는 효과가 절반이에요.",
 		"answer": "근처 다른 오브젝트가 발동·반응 공격을 하면 그쪽으로 한 발 더 쏴요.",
+		"satellite": "오브젝트 둘레를 도는 작은 위성이 닿은 구체를 때려요.",
 	},
 }
 

@@ -75,6 +75,27 @@ func _orb(p: Vector2, hp: float, kind := Orb.Kind.NORMAL, spd := 0.0) -> Orb:
 	return o
 
 
+func _satellite() -> void:
+	_fresh(5)
+	var c: Vector2 = main.viewport_system.center()
+	var t := _tower(c + Vector2(-250, 0), Elem.FIRE, 1)
+	t.add_trig("satellite")
+	t.add_trig("satellite")
+	var o := _orb(t.position + Vector2(Tower.SAT_R, 0), 100000.0)
+	main.combat_system.targets = main.orbs.get_children()
+	t.sat_ph = 0.0
+	t.dealt = 0.0
+	t.src = {}
+	for i in 30:
+		t._satellites(1.0 / 60.0)
+		t.t += 1.0 / 60.0
+	var got: float = t.src.get("trig:satellite", 0.0)
+	var one: float = t.base_hit("shot")[0] * t.pw(t.plv) * Tower.SAT_K * t.dmg_k_bare()
+	ok("TRIG-11", got > 0.0 and got <= one * 2.05, "위성 2개가 0.5초 동안 같은 구체를 위성마다 한 번 (%.2f / 한 번 %.2f)" % [got, one])
+	ok("TRIG-11", t.sat_pos(0).length() > Tower.SAT_R - 0.1 and t.sat_pos(1).distance_to(-t.sat_pos(0)) < 0.1, "위성은 둘레에 고르게")
+	_clear()
+
+
 func _initialize():
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools"):
 		print("FAIL 실제 게임 저장 폴더를 쓰게 됨: tools/run.sh spec 으로 돌리세요")
@@ -92,6 +113,7 @@ func _initialize():
 	await _multi_center()
 	_reflex()
 	_reflex_review_regressions()
+	_satellite()
 	_mods_links()
 	await _mods_area()
 	_waves()

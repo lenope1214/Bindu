@@ -50,6 +50,42 @@ var wind_buff := 0.0  # 둘레 바람 오브젝트가 주는 공격 속도 (main
 var eff := {}  # 지금 쓰는 속성 (매 프레임 갱신)
 var dir := Vector2.RIGHT
 var reflex_target: Orb = null
+var sat_ph := 0.0  # 위성 (시험): 도는 각
+var sat_hit := {}  # [위성 번호, 구체 id] -> 마지막으로 때린 t
+const SAT_R := 46.0
+const SAT_K := 0.3
+const SAT_SPIN := 2.4  # 라디안/초
+
+
+## 위성 자리 (오브젝트 기준).
+func sat_pos(k: int) -> Vector2:
+	var n := tg("satellite")
+	return Vector2.from_angle(sat_ph + TAU * k / maxi(n, 1)) * SAT_R
+
+
+func _satellites(delta: float) -> void:
+	var n := tg("satellite")
+	sat_ph = fmod(sat_ph + delta * SAT_SPIN, TAU)
+	if main == null:
+		return
+	var raw: float = base_hit("shot")[0] * pw(plv) * SAT_K
+	for k in n:
+		var p := position + sat_pos(k)
+		for o in _combat_port.near_t(p, 20.0):
+			if not is_instance_valid(o) or o.hp <= 0.0 or o.position.distance_to(p) > 7.0 + o.radius():
+				continue
+			var key := [k, o.get_instance_id()]
+			if t - float(sat_hit.get(key, -9.0)) < 0.5:
+				continue
+			sat_hit[key] = t
+			var old := tag
+			tag = "trig:satellite"
+			no_size = true
+			hit(o, raw)
+			no_size = false
+			tag = old
+	if sat_hit.size() > 400:
+		sat_hit.clear()
 var aim := Vector2.RIGHT  # 유도 강화로 살짝 돈 실제 공격 방향
 var cd := {}  # 공격별 쿨다운
 var fx := {}  # 공격별 이펙트 남은 시간
@@ -1137,6 +1173,8 @@ static func trig_value(id: String, n: int) -> String:
 			return "약한 구체 피해 x%s" % _num(finish_mul(n))
 		"answer":
 			return "한 발 피해 %d%%" % roundi(answer_dmg(n) * 100.0)
+		"satellite":
+			return "위성 %d개" % n
 	return ""
 
 
@@ -1473,6 +1511,8 @@ func fade_fx(delta: float) -> void:
 
 func attack(delta: float, orbs: Array) -> void:
 	t += delta
+	if tg("satellite") > 0:
+		_satellites(delta)
 	eff = eff_now()
 	for k in fx.keys():
 		fx[k] = maxf(fx[k] - delta, 0.0)
@@ -2625,6 +2665,11 @@ func _draw() -> void:
 	if main and main.wave_active:
 		_draw_attack()
 	_draw_body()
+	for k in tg("satellite"):
+		var sp := sat_pos(k)
+		draw_circle(sp, 6.0, Color(0, 0, 0, 0.5))
+		draw_circle(sp, 4.5, color())
+		draw_arc(sp, 6.0, 0.0, TAU, 12, Color(1, 1, 1, 0.8), 1.2)
 	_draw_rank()
 	if owner_id > 0:
 		_draw_owner_mark()
@@ -2714,6 +2759,8 @@ func _draw_rank() -> void:
 
 
 func _process(delta: float) -> void:
+	if not trigs.is_empty() and tg("satellite") > 0:
+		queue_redraw()  # 위성이 돈다
 	if crown_t > 0.0:
 		crown_t = maxf(crown_t - delta, 0.0)
 	if main and _hud_port.rank_of.has(get_instance_id()):
