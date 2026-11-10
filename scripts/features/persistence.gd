@@ -246,6 +246,8 @@ func _restore_info(info: Dictionary) -> void:
 	session.boss_plan = {}
 	if bp is Dictionary and bp.get("wave") is int and bp["wave"] == session.wave + 1 and bp.get("a") is float and bp.get("hp") is float and bp.get("spd") is float and bp.get("resist") is int and bp.get("sturdy") is bool:
 		session.boss_plan = {"wave": bp["wave"], "a": bp["a"], "hp": maxf(1.0, bp["hp"]), "spd": maxf(1.0, bp["spd"]), "resist": bp["resist"] if bp["resist"] in Elem.ALL else -1, "sturdy": bp["sturdy"], "y": clampf(float(bp.get("y", 0.0)), -BinduSession.LINE_HALF, BinduSession.LINE_HALF)}
+		if bp.get("final", false) == true:
+			session.boss_plan["final"] = true
 	else:
 		session.spawning_system._plan_boss()
 	session.new_achievements = (g.call("achievements", []) as Array).filter(func(a): return a is String)

@@ -159,6 +159,7 @@ func _plan_boss() -> void:
 	if (session.wave + 1) % 5 == 0 and not session.lanes.is_empty():
 		session.boss_plan = _roll_orb(session.wave + 1)
 		session.boss_plan["wave"] = session.wave + 1
+		Expedition.plan(session)  # 원정 끝판 보스 (시험)
 
 
 ## 구체가 나오는 거리. 예전(lane_even 0)은 모든 방향 화면 대각선 반 + 30.

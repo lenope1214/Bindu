@@ -803,7 +803,8 @@ func _draw_map_card(b: Button) -> void:
 		Glyph.elem(b, es[i], Vector2(x0 + gap * i, 118.0), 9.0)
 	var best := Meta.best_of(Meta.run_key(id))
 	if best[0] > 0:
-		b.draw_string(session.ui_font, Vector2(0, b.size.y - 6.0), "최고 %d" % best[0], HORIZONTAL_ALIGNMENT_CENTER, b.size.x, Meta.fs(11), Color(1, 1, 1, 0.5))
+		var done: bool = best[0] >= Expedition.GOAL
+		b.draw_string(session.ui_font, Vector2(0, b.size.y - 6.0), ("원정 완료 · 최고 %d" if done else "최고 %d / 원정 50") % best[0], HORIZONTAL_ALIGNMENT_CENTER, b.size.x, Meta.fs(11), Color(1, 0.85, 0.4, 0.85) if done else Color(1, 1, 1, 0.5))
 
 
 ## 맵 카드 가운데 길 모양 그림 (구체가 들어오는 모양). c 가운데, s 반지름.

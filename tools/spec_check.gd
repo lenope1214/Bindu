@@ -75,6 +75,27 @@ func _orb(p: Vector2, hp: float, kind := Orb.Kind.NORMAL, spd := 0.0) -> Orb:
 	return o
 
 
+func _expedition() -> void:
+	_fresh(48)
+	main.spawning_system._plan_boss()
+	ok("EXPED-01", main.boss_plan.is_empty() or not main.boss_plan.get("final", false), "49웨이브 보스 계획 없음/끝판 아님")
+	main.wave = 49
+	main.spawning_system._plan_boss()
+	var hp_final: float = main.boss_plan.get("hp", 0.0)
+	var fin: bool = main.boss_plan.get("final", false)
+	main.wave = 44
+	main.spawning_system._plan_boss()
+	ok("EXPED-01", fin and main.boss_plan.get("wave", 0) == 45 and not main.boss_plan.get("final", false), "50웨이브 보스만 끝판")
+	ok("EXPED-01", hp_final > 0.0, "끝판 보스 체력 %s" % hp_final)
+	main.wave = 49
+	ok("EXPED-01", Expedition.chip(main) == "원정 49/50" and not Expedition.wave_done(main), "원정 칩·49웨이브는 완료 아님")
+	main.wave = 50
+	ok("EXPED-01", Expedition.wave_done(main) and Expedition.chip(main) == "끝없는 원정 +0", "50웨이브를 넘기면 원정 완료")
+	main.mp_mode = "vs"
+	ok("EXPED-01", Expedition.chip(main) == "", "멀티는 없음")
+	main.mp_mode = ""
+
+
 func _initialize():
 	if not str(ProjectSettings.get_setting("application/config/name")).begins_with("BinduTools"):
 		print("FAIL 실제 게임 저장 폴더를 쓰게 됨: tools/run.sh spec 으로 돌리세요")
@@ -92,6 +113,7 @@ func _initialize():
 	await _multi_center()
 	_reflex()
 	_reflex_review_regressions()
+	_expedition()
 	_mods_links()
 	await _mods_area()
 	_waves()

@@ -662,6 +662,9 @@ func _update_hud(force := false) -> void:
 		items.append(["boss", Color(1, 0.6, 0.75), "보스!" if bl == 0 else "보스까지 %d" % bl, Color(1, 0.75, 0.85), [[bt, W]], false])
 	if not session.interaction_system.selected.is_empty():
 		items.append(["sel", Color(0.6, 1, 0.7), str(session.interaction_system.selected.size()), W, [["선택한 오브젝트", W]], false])
+	var ex := Expedition.chip(session)
+	if ex != "":
+		items.append(["boss", Color(1, 0.85, 0.4), ex, Color(1, 0.9, 0.6), [["원정 (시험)", W], ["%d웨이브 끝판 보스(체력 x%d)를 넘으면 원정 완료, 그 뒤는 끝없는 원정이에요." % [Expedition.GOAL, int(Expedition.FINAL_HP)], D]], false])
 	var first := true
 	for pk in BinduSession.PERKS:
 		var n: int = session.perks.get(pk["id"], 0)

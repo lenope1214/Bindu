@@ -214,7 +214,7 @@ func _boss_text() -> String:
 	var session: BinduSession = self.session
 	if session.boss_plan.is_empty():
 		return "보스 등장! 중앙에 닿으면 체력 3 감소"
-	var sp := PackedStringArray(["보스: 체력 %s" % session.num(ceilf(session.boss_plan["hp"] * Orb.KIND.boss_hp * Modes.boss_hp()))])
+	var sp := PackedStringArray([("끝판 보스: 체력 %s" if session.boss_plan.get("final", false) else "보스: 체력 %s") % session.num(ceilf(session.boss_plan["hp"] * Orb.KIND.boss_hp * Modes.boss_hp()))])
 	if session.boss_plan["resist"] >= 0:
 		sp.append("%s 저항" % Elem.NAMES[session.boss_plan["resist"]])
 	if session.boss_plan["sturdy"]:
@@ -460,7 +460,7 @@ func _boss_mark() -> Dictionary:
 		j2 += 1
 	var d2 := (pts[j2] - pts[j2 - 1]).normalized()
 	var m := pts[j2 - 1] + d2 * (at - lens[j2 - 1])
-	var label := "보스 · 웨이브 %d" % session.boss_plan["wave"]
+	var label := ("끝판 보스 · 웨이브 %d" if session.boss_plan.get("final", false) else "보스 · 웨이브 %d") % session.boss_plan["wave"]
 	var w := session.ui_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, BinduSession.BOSS_FS).x
 	# 길 옆에 쓴다 (길 위에 쓰면 화살과 겹침): 중앙에서 먼 쪽 옆
 	var side := d2.orthogonal()
