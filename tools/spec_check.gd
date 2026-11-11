@@ -1847,13 +1847,13 @@ func _perks() -> void:
 	main.cards_system._on_reroll()
 	var after: Array = main.perk_offer.map(func(p): return p["id"])
 	var diff: bool = after.size() == 3 and not after.any(func(id): return id in before)
-	var gone: bool = main.perk_rerolls == 0 and not main.reroll_btn.visible
+	var gone: bool = main.perk_rerolls == 0 and main.reroll_btn.visible and main.reroll_btn.disabled and "0번" in main.reroll_btn.tooltip_text
 	main.cards_system._on_reroll()  # 다 쓰면 그대로
 	var same: bool = main.perk_offer.map(func(p): return p["id"]) == after
 	main.perks_system._start_perk()  # 다음 특성 선택에는 다시 1번
 	var pr1: int = main.perk_rerolls
 	ok("PERK-12", pr0 == 1 and shown and diff and gone and same and pr1 == 1 and main.rerolls_left == 2 and main.perk_mode,
-		"특성 새로고침: 선택마다 1번(%d·%d), 다른 특성 3개, 다 쓰면 버튼 숨김, 카드 새로고침 %d 그대로" % [pr0, pr1, main.rerolls_left])
+		"특성 새로고침: 선택마다 1번(%d·%d), 다른 특성 3개, 다 쓰면 비활성 버튼, 카드 새로고침 %d 그대로" % [pr0, pr1, main.rerolls_left])
 	main.perk_mode = false
 
 
@@ -2959,10 +2959,13 @@ func _meta_misc() -> void:
 		main.frame_system._process(0.0)
 		toggles = toggles and not main.card_dock.panel.visible and main.hide_btn.visible and main.offer == same_offer
 	main.cards_system._set_cards_hidden(false)
-	main.cards_system._on_pick({"type": "mod", "id": "pierce"})
+	var pierce_card := {"type": "mod", "id": "pierce"}
+	if not pierce_card in main.offer:
+		main.offer.append(pierce_card)  # 선택지에 있는 카드만 들 수 있다
+	main.cards_system._on_pick(pierce_card)
 	main.frame_system._process(0.016)
 	var dim_off: bool = not main.card_dim.visible and main.phase == main.Phase.PLACE
-	ok("UI-23", fold_ok and toggles and dim_on and dim_hide and dim_off, "일반 판 카드 선택 시 전장 어둠 없음 %s, 필드 보기 %s·카드 고른 뒤 %s 유지" % [dim_on, dim_hide, dim_off])
+	ok("UI-23", fold_ok and toggles and dim_on and dim_hide and dim_off, "일반 판 카드 선택 시 전장 어둠 없음 %s, 필드 보기 %s·카드 고른 뒤 %s 유지, 접기 %s·반복 %s" % [dim_on, dim_hide, dim_off, fold_ok, toggles])
 	var controls: bool = main.speed_btn.get_parent() == main.speed_group and main.speed_pick.get_parent() == main.speed_group and main.speed_group.get_theme_constant("separation") == 0 and main.card_detail_btn.theme == main.bar_box.theme and main.speed_pick.get_theme_stylebox("normal").bg_color == main.reroll_btn.get_theme_stylebox("normal").bg_color and main.fx_pick.get_popup().get_theme_stylebox("panel") is StyleBoxFlat
 	ok("UI-30", controls and bottom_controls and icon_fits and head_two and head_one and no_apply and head_perk and head_hide and not main.choice_header.visible,
 		"카드 줄 선택 안내: 갱신 %s·%s, 중간 적용 버튼 없음 %s, 숨김 %s·%s·%s" % [head_two, head_one, no_apply, head_perk, head_hide, not main.choice_header.visible])
@@ -3008,11 +3011,24 @@ func _meta_misc() -> void:
 	dt.req_e = -1
 	var ownership: bool = not main.card_dock.target_ok(dt, {"type":"mod", "id":"rapid"})
 	dt.req_e = Elem.FIRE
-	var requested: bool = main.card_dock.target_ok(dt, {"type":"elem", "e":Elem.FIRE, "lv":1})
+	dt.set_meta("gift_request_id", 1)
+	var dt_nid: int = dt.net_id
+	dt.net_id = 200001
+	var gx29: BinduGiftTransactions = main.multiplayer_system.gifts()
+	gx29.start_round({"gift_round": "spec29", "gift_v": BinduGiftTransactions.VERSION, "ids": [1, 2]})
+	var unsupported: bool = not main.card_dock.target_ok(dt, {"type":"elem", "e":Elem.FIRE, "lv":1})  # 친구 기기 전달 지원 확인 전
+	var hello29 := gx29._base("gift_hello")
+	hello29["owner_epoch"] = 1
+	gx29.receive(2, hello29)
+	var requested: bool = unsupported and main.card_dock.target_ok(dt, {"type":"elem", "e":Elem.FIRE, "lv":1}) and not main.card_dock.target_ok(dt, {"type":"elem", "e":Elem.WATER, "lv":1})
+	gx29.close_round()
+	dt.net_id = dt_nid
+	dt.remove_meta("gift_request_id")
+	dt.req_e = -1
 	main.mp_mode = ""
 	main.mp.my_id = old_my_id
 	dt.owner_id = 0
-	ok("UI-29", target_good and target_capped and ownership and requested, "카드 미리보기 적용 상한·협동 소유권·요청 속성 구분")
+	ok("UI-29", target_good and target_capped and ownership and requested, "카드 미리보기 적용 상한 %s·%s·협동 소유권 %s·요청 속성 구분(전달 지원 확인 뒤) %s" % [target_good, target_capped, ownership, requested])
 	# UI-32: 설명창은 내용 높이만큼, 보고 있는 오브젝트를 가리지 않는 위쪽 구석에
 	var dock = main.card_dock
 	var ui_size: Vector2 = main.ui_root.size
@@ -3152,7 +3168,7 @@ func _meta_misc() -> void:
 	dock.tick()
 	var selection_status: bool = main.hint.visible and main.patchlog_system._kr_keep("오브젝트 1개 선택") in main.hint.text
 	var click_selects: bool = main.interaction_system.selected == [dt] and main.interaction_system.moving == null and main.phase == main.Phase.READY and dock.direction_btn.visible
-	# 선택 없이 끌어 놓아도 상세를 열어 다음 클릭 한 번으로 방향을 바꾼다.
+	# 선택 없이 끌어 놓아도 선택·상세를 열고, 다음 클릭은 선택 유지(방향 편집은 [방향 변경]·E).
 	main.interaction_system.selected.clear()
 	dock.inspected_tower = null
 	var drag_origin: Vector2 = dt.position
@@ -3164,9 +3180,8 @@ func _meta_misc() -> void:
 	var drop_selects: bool = main.interaction_system.selected == [dt] and dock.inspected_tower == dt
 	main.interaction_system.press_t = dt
 	main.interaction_system._release_press()
-	drop_selects = drop_selects and main.phase == main.Phase.AIM and main.interaction_system.moving == dt
-	main.interaction_system._cancel_step()
-	ok("UI-05", drop_selects, "끌어 놓기 후 선택·상세 유지, 다음 클릭은 방향 편집")
+	drop_selects = drop_selects and main.phase == main.Phase.READY and main.interaction_system.moving == null and main.interaction_system.selected == [dt]
+	ok("UI-05", drop_selects, "끌어 놓기 후 선택·상세 유지, 다음 클릭도 선택 유지")
 	var status_gap: bool = main.hint.get_rect().end.y <= main.start_btn.position.y - 7.9
 	ok("UI-35", status_gap, "상태 안내는 실제 높이로 웨이브 버튼 위 8px 간격")
 	main.phase = main.Phase.WAVE
@@ -3195,14 +3210,19 @@ func _meta_misc() -> void:
 	main.interaction_system.pointer_position = main.get_canvas_transform() * dt.position
 	ok("UI-05", right_ok, "선택 유무와 무관하게 오브젝트 우클릭은 조준 우선, 빈 곳은 선택 해제")
 	var original_dir: Vector2 = dt.dir
-	# 이미 선택해 상세가 열린 오브젝트를 한 번 더 누르면 바로 방향 바꾸기, 취소하면 그대로
+	# 이미 선택한 오브젝트를 한 번 더 눌러도 선택 유지(방향 편집으로 들어가지 않음), E는 방향 편집
 	main.interaction_system.press_t = dt
 	main.interaction_system.dragging = false
 	main.interaction_system._release_press()
-	var tap_again: bool = main.phase == main.Phase.AIM and main.interaction_system.moving == dt
+	var tap_again: bool = main.phase == main.Phase.READY and main.interaction_system.moving == null and main.interaction_system.selected == [dt] and dt.dir == original_dir
+	var key_e := InputEventKey.new()
+	key_e.keycode = KEY_E
+	key_e.pressed = true
+	main.interaction_system._keyboard_input(key_e)
+	var e_edits: bool = main.phase == main.Phase.AIM and main.interaction_system.moving == dt
 	main.interaction_system._cancel_step()
-	tap_again = tap_again and main.phase == main.Phase.READY and dt.dir == original_dir and main.interaction_system.selected == [dt]
-	# 선택한 오브젝트 위에서 휠: 15도씩 돌리기, 선택 안 한 오브젝트 위·전투 중이면 확대
+	tap_again = tap_again and e_edits and main.phase == main.Phase.READY and dt.dir == original_dir and main.interaction_system.selected == [dt]
+	# 선택한 오브젝트 위에서 Alt+휠: 15도씩 돌리기, 수정키 없는 휠·선택 안 한 오브젝트 위·전투 중이면 확대
 	var was_touch_w: bool = main.touch_ui
 	main.touch_ui = false
 	var wheel := InputEventMouseButton.new()
@@ -3211,7 +3231,9 @@ func _meta_misc() -> void:
 	wheel.factor = 1.0
 	wheel.position = main.get_canvas_transform() * dt.position
 	var a0: float = dt.dir.angle()
-	var wheel_turns: bool = main.interaction_system._wheel_turn(wheel) and absf(angle_difference(a0, dt.dir.angle()) + deg_to_rad(-15.0)) < 0.01
+	var wheel_plain_zooms: bool = not main.interaction_system._wheel_turn(wheel) and is_equal_approx(dt.dir.angle(), a0)
+	wheel.alt_pressed = true
+	var wheel_turns: bool = wheel_plain_zooms and main.interaction_system._wheel_turn(wheel) and absf(angle_difference(a0, dt.dir.angle()) + deg_to_rad(-15.0)) < 0.01
 	main.phase = main.Phase.WAVE
 	var wheel_wave_zooms: bool = not main.interaction_system._wheel_turn(wheel)
 	main.phase = main.Phase.READY
@@ -3237,8 +3259,11 @@ func _meta_misc() -> void:
 	main.cards_hidden = false
 	dock.close_inspector()
 	main.interaction_system.selected = [dt]
-	main.cards_system._on_pick({"type": "mod", "id": "multi"})
-	var carry_status: bool = main.interaction_system.selected.is_empty() and main.hint.visible and main.patchlog_system._kr_keep("카드 놓는 중") in main.hint.text and main.patchlog_system._kr_keep("Esc 취소") in main.hint.text
+	var multi_card := {"type": "mod", "id": "multi"}
+	if not multi_card in main.offer:
+		main.offer.append(multi_card)  # 선택지에 있는 카드만 들 수 있다
+	main.cards_system._on_pick(multi_card)
+	var carry_status: bool = main.interaction_system.selected.is_empty() and main.hint.visible and main.patchlog_system._kr_keep("다중 발사 놓는 중") in main.hint.text and main.patchlog_system._kr_keep("Esc 취소") in main.hint.text
 	var was_touch: bool = main.touch_ui
 	main.touch_ui = true
 	var touch_status: bool = "버튼으로 취소" in dock.operation_text() and not "Esc" in dock.operation_text()
@@ -3341,7 +3366,7 @@ func _meta_misc() -> void:
 	var guide_was_visible: bool = main.guide_label.visible
 	main.guide_label.hide()
 	main.card_dock.tick()
-	var preview_status: bool = main.hint.visible and main.patchlog_system._kr_keep("카드 놓는 중") in main.hint.text
+	var preview_status: bool = main.hint.visible and main.patchlog_system._kr_keep("다중 발사 놓는 중") in main.hint.text
 	preview_target.free()
 	main.card_dock.tick()
 	ok("UI-25", preview_status and main.hint.visible, "대상 미리보기 중 상태 유지 %s/%s · 문구 %s · 입력 차단 %s" % [preview_status, main.hint.visible, main.hint.text, main.card_dock.input_blocked()])
@@ -3417,13 +3442,27 @@ func _meta_misc() -> void:
 	var was_phone := Meta.sim_phone
 	Meta.sim_phone = false
 	CardDock.fit_phone()
-	var fs_pc: bool = Meta.fs(13) == 13 and Meta.fs(18) == 18 and Meta.fs(72) == 72 and is_equal_approx(CardDock.CARD_HEIGHT, 94.0) and Meta.fs_bb("[font_size=12]a") == "[font_size=12]a"
+	var fs_pc: bool = Meta.fs(13) == 13 and Meta.fs(18) == 18 and Meta.fs(72) == 72 and is_equal_approx(CardDock.CARD_HEIGHT, 112.0) and Meta.fs_bb("[font_size=12]a") == "[font_size=12]a"
 	Meta.sim_phone = true
 	CardDock.fit_phone()
-	var fs_phone: bool = Meta.fs(11) == 18 and Meta.fs(18) == 23 and Meta.fs(24) == 30 and Meta.fs(72) == 72 and CardDock.CARD_HEIGHT > 94.0 and CardDock.CONTROL_HEIGHT > 36.0 and Meta.fs_bb("[font_size=12]a") == "[font_size=18]a"
+	var fs_phone: bool = Meta.fs(11) == 18 and Meta.fs(18) == 23 and Meta.fs(24) == 30 and Meta.fs(72) == 72 and CardDock.CARD_HEIGHT > 112.0 and CardDock.CONTROL_HEIGHT > 36.0 and Meta.fs_bb("[font_size=12]a") == "[font_size=18]a"
 	Meta.sim_phone = was_phone
 	CardDock.fit_phone()
-	ok("UI-41", fs_pc and fs_phone, "폰 글자 크기: PC 그대로 %s, 폰 키움 %s" % [fs_pc, fs_phone])
+	# 전체 UI 배율: 저장 없음·키 누락은 데스크톱 1.0(모바일 1.3), 저장한 유효 배율 우선, 잘못된 값은 1.0
+	var sc_back := ConfigFile.new()
+	Meta.save_into(sc_back)
+	var sc_cfg := ConfigFile.new()
+	Meta.load_into(sc_cfg)
+	var sc_default: bool = is_equal_approx(Meta.ui_scale, 1.3 if OS.has_feature("mobile") else 1.0)
+	sc_cfg.set_value("settings", "ui_scale", 0.85)
+	Meta.load_into(sc_cfg)
+	var sc_saved: bool = is_equal_approx(Meta.ui_scale, 0.85)
+	sc_cfg.set_value("settings", "ui_scale", 2.5)
+	Meta.load_into(sc_cfg)
+	var sc_bad: bool = is_equal_approx(Meta.ui_scale, 1.0)
+	Meta.load_into(sc_back)
+	var sc_ok: bool = sc_default and sc_saved and sc_bad
+	ok("UI-41", fs_pc and fs_phone and sc_ok, "폰 글자 크기: PC 그대로 %s, 폰 키움 %s, 배율 기본·저장·복구 %s" % [fs_pc, fs_phone, sc_ok])
 	# 소리 버튼: 누르면 작은 창(켜기·끄기 + 음량 세 줄), 창에서 끄면 소리 꺼짐, 창 음량은 설정 창과 같은 값, 바깥·버튼 다시 누르면 닫힘
 	var mm = main.menu_system
 	var was_muted: bool = main.sfx.muted
@@ -3459,7 +3498,7 @@ func _meta_misc() -> void:
 	main.countdown = -1.0
 	main.run_flow_system._update_skip_ui()
 	main.card_dock.tick()
-	var ready_btn: bool = main.skip_btn.visible and main.card_dock.skip_group.visible and is_equal_approx(main.skip_btn.get_rect().end.x, main.skip_n_btn.position.x) and main.skip_btn.text == "넘기기" and main.skip_n_btn.text == "3웨이브 ▸"
+	var ready_btn: bool = main.skip_btn.visible and main.card_dock.skip_group.visible and is_equal_approx(main.skip_btn.get_rect().end.x, main.skip_n_btn.position.x) and main.skip_btn.text == "연속 진행" and main.skip_n_btn.text == "3웨이브 ▾"
 	main.run_flow_system._on_skip()
 	ok("SKIP-03", ready_btn and main.skip_left == 3 and main.bank_picks.is_empty() and main.phase == main.Phase.READY, "웨이브 시작 대기에서도 넘기기 (버튼 %s, 남은 %d)" % [ready_btn, main.skip_left])
 	main.skip_left = 0
@@ -3763,16 +3802,24 @@ func _mp_more() -> void:
 	main.mp_i_ready = false
 	main.mp_afk_n = 0
 
-	# MP-16: 속성 요청 — 요청한 속성 카드만 친구 오브젝트에, 받으면 주인 기기가 넣고 요청이 지워짐
+	# MP-16: 속성 요청 — 전달 지원 확인 뒤 요청 속성만, 주인 기기 적용·호스트 확정 ACK 뒤에만 카드 선택 1회 소비, 거절은 카드 보존
 	_fresh(3)
 	main.mp_mode = "coop"
 	main.mp.my_id = 1
+	var gx: BinduGiftTransactions = main.multiplayer_system.gifts()
+	gx.start_round({"gift_round": "spec16a", "gift_v": BinduGiftTransactions.VERSION, "ids": [1, 2]})
 	var mine := _tower(main.viewport_system.center() + Vector2(-200, 0), Elem.FIRE)
 	var other := _tower(main.viewport_system.center() + Vector2(200, 0), Elem.WOOD)
 	other.owner_id = 2
+	other.net_id = 200001
 	other.req_e = Elem.WATER
+	other.set_meta("gift_request_id", 1)
 	main.picked = {"type": "elem", "e": Elem.WATER, "lv": 1}
-	var can_req: bool = main.interaction_system._place_ok(other)
+	var unconfirmed: bool = not main.interaction_system._place_ok(other)  # 친구 기기 전달 지원 확인 전
+	var hello := gx._base("gift_hello")
+	hello["owner_epoch"] = 1
+	gx.receive(2, hello)
+	var can_req: bool = gx.supported_all() and main.interaction_system._place_ok(other)
 	main.picked = {"type": "elem", "e": Elem.FIRE, "lv": 1}
 	var cant_other: bool = not main.interaction_system._place_ok(other)
 	var st: Dictionary = other.mp_state()
@@ -3781,13 +3828,59 @@ func _mp_more() -> void:
 	copy.mp_apply(st)
 	var synced: bool = copy.req_e == Elem.WATER
 	copy.free()
+	# 주인 기기(나=1): 호스트가 보낸 적용 → 넣고 요청 지움, 같은 패킷 다시 와도 한 번만
+	main.phase = main.Phase.CHOOSE
 	mine.req_e = Elem.WATER
-	main.lobby_system._mp_recv_gift(2, {"nid": mine.net_id, "e": Elem.WATER, "lv": 1})
-	var given: bool = mine.lv(Elem.WATER) == 1 and mine.req_e == -1 and main.lobby_system.mp_req_got_w == main.wave
-	main.lobby_system._mp_recv_gift(2, {"nid": mine.net_id, "e": Elem.ICE, "lv": 1})
-	var no_req: bool = mine.lv(Elem.ICE) == 0
-	ok("MP-16", can_req and cant_other and synced and given and no_req,
-		"속성 요청: 요청 속성 넣기 %s, 다른 속성 막힘 %s, 상태 주고받기 %s, 받음 %s, 요청 없으면 안 들어감 %s" % [can_req, cant_other, synced, given, no_req])
+	gx.next_request(mine)
+	var ap := gx._base("gift_apply")
+	ap.merge({"gift_id": "d2:1", "choice_id": "0:0:1", "donor_id": 2, "owner_id": 1, "nid": mine.net_id, "request_id": int(mine.get_meta("gift_request_id", 0)), "e": Elem.WATER, "lv": 1, "owner_epoch": 1})
+	ap["fp"] = gx._fingerprint(ap)
+	gx.receive(1, ap)
+	gx.receive(1, ap.duplicate(true))
+	var given: bool = mine.lv(Elem.WATER) == 1 and mine.req_e == -1 and main.lobby_system.mp_req_got_w == main.wave and not gx.owner_retry.is_empty()
+	var ack_o: Dictionary = gx.owner_ledger[gx._key(ap)].duplicate(true)
+	ack_o["t"] = "gift_ack"
+	gx.receive(1, ack_o)
+	given = given and gx.owner_retry.is_empty()
+	var ap2 := ap.duplicate(true)
+	ap2.merge({"t": "gift_apply", "gift_id": "d2:2", "e": Elem.ICE}, true)
+	ap2["fp"] = gx._fingerprint(ap2)
+	gx.receive(1, ap2)
+	var no_req: bool = mine.lv(Elem.ICE) == 0 and gx.owner_ledger.get(gx._key(ap2), {}).get("status", "") == "rejected"
+	var ack_o2: Dictionary = gx.owner_ledger.get(gx._key(ap2), {}).duplicate(true)
+	ack_o2["t"] = "gift_ack"
+	gx.receive(1, ack_o2)
+	no_req = no_req and gx.owner_retry.is_empty()
+	# 주는 기기(나=1, 친구 2의 오브젝트): 보낸 직후엔 소비 안 함 → 수락 ACK에 1번 소비, 같은 ACK 다시 와도 그대로
+	var wcard := {"type": "elem", "e": Elem.WATER, "lv": 1}
+	main.offer = [wcard]
+	main.picked = wcard
+	main.picks_left = 2
+	main.phase = main.Phase.PLACE
+	var began: bool = gx.begin_gift(other)
+	var held: bool = began and main.picks_left == 2 and not gx.pending.is_empty() and gx.blocks_local_choice()
+	var ost: Dictionary = other.mp_state()
+	ost["rqid"] = 1
+	var res: Dictionary = gx._thin(gx.pending.get("request", {}))
+	res.merge({"t": "gift_result", "status": "accepted", "reason": "", "applied_revision": 1, "owner_revision": 1, "owner_epoch": 1, "owner_towers": [ost], "choice_context": {}})
+	gx.receive(2, res)
+	var consumed: bool = main.picks_left == 1 and gx.pending.is_empty()
+	var ack_d: Dictionary = gx.host_ledger.get(gx._key(res), {}).get("result", {}).duplicate(true)
+	ack_d["t"] = "gift_ack"
+	gx.receive(1, ack_d)
+	var once: bool = main.picks_left == 1 and gx.host_ledger.get(gx._key(res), {}).get("settled", false)
+	# 거절: 카드·선택 횟수 그대로
+	main.offer = [wcard]
+	main.picked = wcard
+	main.phase = main.Phase.PLACE
+	gx.begin_gift(other)
+	var rej: Dictionary = gx._thin(gx.pending.get("request", {}))
+	rej.merge({"t": "gift_result", "status": "rejected", "reason": "x", "applied_revision": 1, "owner_revision": 2, "owner_epoch": 1, "owner_towers": [ost], "choice_context": {}})
+	gx.receive(2, rej)
+	var kept: bool = main.picks_left == 1 and gx.pending.is_empty() and main.picked.get("e", -1) == Elem.WATER and main.offer.size() == 1
+	gx.close_round()
+	ok("MP-16", unconfirmed and can_req and cant_other and synced and given and no_req and held and consumed and once and kept,
+		"속성 요청: 지원 확인 전 막힘 %s, 요청 속성 넣기 %s, 다른 속성 막힘 %s, 상태 주고받기 %s, 받음(한 번) %s, 다른 요청 거절 %s, ACK 전 보존 %s, 수락에 1회 소비 %s, 중복 ACK 그대로 %s, 거절 보존 %s" % [unconfirmed, can_req, cant_other, synced, given, no_req, held, consumed, once, kept])
 	main.picked = {}
 
 	# MP-17: 대결 보낸 구체 — 살아 있는 인원 4명 x0.5·3명 x0.7, 한 웨이브 받는 상한 (1+웨이브/4)x1.5
